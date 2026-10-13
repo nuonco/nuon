@@ -172,6 +172,8 @@ func (s *InstallStateIntegrationSuite) updateInput() {
 }
 
 func (s *InstallStateIntegrationSuite) TestPartialRefreshRemainsFreshOnRepeatedRead() {
+	var original app.InstallState
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallState{InstallID: s.install.ID}).Order("created_at DESC").First(&original).Error)
 	s.updateInput()
 	for read := 1; read <= 2; read++ {
 		snapshot, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
@@ -179,6 +181,15 @@ func (s *InstallStateIntegrationSuite) TestPartialRefreshRemainsFreshOnRepeatedR
 		require.Equal(s.T(), "eu-west-1", snapshot.Inputs.Inputs["region"], "read %d must not revert to the old S3 blob", read)
 		require.Equal(s.T(), "eu-west-1", snapshot.Install.Inputs["region"], "legacy input reference on read %d", read)
 	}
+	stored, fromBlob := original.GetState(s.ctx, true)
+	require.True(s.T(), fromBlob)
+	require.Equal(s.T(), "us-east-1", stored.Inputs.Inputs["region"], "an existing blob reference must remain immutable")
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.InstallState{}).
+		Where(app.InstallState{ID: original.ID}).Select("state", "archived").
+		Updates(app.InstallState{State: nil, Archived: true}).Error)
+	snapshot, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), "eu-west-1", snapshot.Inputs.Inputs["region"], "refreshed state must remain readable without its inline copy")
 }
 
 func (s *InstallStateIntegrationSuite) TestLateGenerationDoesNotRestoreOldInputs() {
@@ -198,4 +209,54 @@ func (s *InstallStateIntegrationSuite) TestLateGenerationDoesNotRestoreOldInputs
 	latest, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), "eu-west-1", latest.Inputs.Inputs["region"], "a late generation must not restore an older input value")
+	s.deps.Cfg.BlobReadEnabled = true
+	latest, err = s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), "eu-west-1", latest.Inputs.Inputs["region"])
+	require.Equal(s.T(), "eu-west-1", latest.Install.Inputs["region"])
+}
+
+func (s *InstallStateIntegrationSuite) TestRedactedRefreshPreservesCanonicalInputsAndDefaults() {
+	older, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	require.NoError(s.T(), err)
+	var region app.AppInput
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Where(app.AppInput{AppInputConfigID: s.inputCfg.ID, Name: "region"}).First(&region).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&region).Update("sensitive", true).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.AppInput{
+		AppInputConfigID: s.inputCfg.ID, AppInputGroupID: region.AppInputGroupID,
+		Name: "replicas", DisplayName: "Replicas", Description: "Replica count",
+		Type: app.AppInputTypeString, Default: "3",
+	}).Error)
+	s.deps.Seeder.CreateInstallInputs(s.ctx, s.T(), s.install.ID, s.inputCfg.ID,
+		map[string]*string{
+			"region": generics.ToPtr("example-secret"), "replicas": generics.ToPtr(""),
+			"undeclared": generics.ToPtr("ignore-me"),
+		})
+	require.NoError(s.T(), s.deps.Helpers.MarkInstallStatePartialsStale(s.ctx, s.deps.DB, s.install.ID, pkgstate.PartialInputs))
+	for read := 0; read < 2; read++ {
+		redacted, err := s.deps.Helpers.GetInstallState(s.ctx, s.install.ID, true, true)
+		require.NoError(s.T(), err)
+		require.Equal(s.T(), map[string]string{"region": "********", "replicas": "3"}, redacted.Inputs.Inputs)
+		require.Equal(s.T(), redacted.Inputs.Inputs, redacted.Install.Inputs)
+	}
+	canonical, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), map[string]string{"region": "example-secret", "replicas": "3"}, canonical.Inputs.Inputs)
+	_, err = s.saveState(older)
+	require.NoError(s.T(), err)
+	canonical, err = s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), map[string]string{"region": "example-secret", "replicas": "3"}, canonical.Inputs.Inputs)
+}
+
+func (s *InstallStateIntegrationSuite) TestFailedBlobPublicationLeavesInputsStale() {
+	s.updateInput()
+	_, err := s.activities.GetInstallState(blobstore.WithBlobWriteEnabled(s.ctx, false), &GetInstallStateRequest{InstallID: s.install.ID})
+	require.Error(s.T(), err)
+	for read := 0; read < 2; read++ {
+		snapshot, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+		require.NoError(s.T(), err)
+		require.Equal(s.T(), "eu-west-1", snapshot.Inputs.Inputs["region"])
+	}
 }
