@@ -1,4 +1,4 @@
-package activities
+package activities_test
 
 import (
 	"context"
@@ -19,12 +19,18 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -34,11 +40,16 @@ import (
 type installStateIntegrationDeps struct {
 	fx.In
 
-	DB      *gorm.DB `name:"psql"`
-	Cfg     *internal.Config
-	Helpers *helpers.Helpers
-	Seeder  *testseed.Seeder
-	Blobs   blobstore.Service
+	DB             *gorm.DB `name:"psql"`
+	Cfg            *internal.Config
+	Helpers        *helpers.Helpers
+	Seeder         *testseed.Seeder
+	Blobs          blobstore.Service
+	MW             metrics.Writer
+	AppsHelpers    *appshelpers.Helpers
+	ActionHelpers  *actionshelpers.Helpers
+	RunnersHelpers *runnershelpers.Helpers
+	Audit          *audit.Emitter
 }
 
 type InstallStateIntegrationSuite struct {
@@ -46,7 +57,7 @@ type InstallStateIntegrationSuite struct {
 
 	fxApp      *fxtest.App
 	deps       installStateIntegrationDeps
-	activities *Activities
+	activities *installactivities.Activities
 	s3Client   *s3.Client
 	bucket     string
 	ctx        context.Context
@@ -92,7 +103,10 @@ func (s *InstallStateIntegrationSuite) SetupSuite() {
 	s.fxApp = fxtest.New(s.T(), opts...)
 	s.fxApp.RequireStart()
 	s.SetDB(s.deps.DB)
-	s.activities = New(Params{DB: s.deps.DB, Cfg: s.deps.Cfg, Helpers: s.deps.Helpers})
+	s.activities = installactivities.New(installactivities.Params{
+		DB: s.deps.DB, Cfg: s.deps.Cfg, Helpers: s.deps.Helpers, AppsHelpers: s.deps.AppsHelpers,
+		ActionHelpers: s.deps.ActionHelpers, RunnersHelpers: s.deps.RunnersHelpers, Audit: s.deps.Audit,
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -158,7 +172,7 @@ func (s *InstallStateIntegrationSuite) TearDownSuite() {
 }
 
 func (s *InstallStateIntegrationSuite) saveState(snapshot *state.State) (*app.InstallState, error) {
-	return s.activities.SaveState(s.ctx, &SaveStateRequest{
+	return s.activities.SaveState(s.ctx, &installactivities.SaveStateRequest{
 		State: snapshot, InstallID: s.install.ID,
 		TriggeredByID: s.install.ID, TriggeredByType: "installs",
 		GeneratedBy: app.InstallStateGenerateSourceStateManager,
@@ -176,7 +190,7 @@ func (s *InstallStateIntegrationSuite) TestPartialRefreshRemainsFreshOnRepeatedR
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallState{InstallID: s.install.ID}).Order("created_at DESC").First(&original).Error)
 	s.updateInput()
 	for read := 1; read <= 2; read++ {
-		snapshot, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+		snapshot, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 		require.NoError(s.T(), err)
 		require.Equal(s.T(), "eu-west-1", snapshot.Inputs.Inputs["region"], "read %d must not revert to the old S3 blob", read)
 		require.Equal(s.T(), "eu-west-1", snapshot.Install.Inputs["region"], "legacy input reference on read %d", read)
@@ -187,18 +201,18 @@ func (s *InstallStateIntegrationSuite) TestPartialRefreshRemainsFreshOnRepeatedR
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.InstallState{}).
 		Where(app.InstallState{ID: original.ID}).Select("state", "archived").
 		Updates(app.InstallState{State: nil, Archived: true}).Error)
-	snapshot, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	snapshot, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), "eu-west-1", snapshot.Inputs.Inputs["region"], "refreshed state must remain readable without its inline copy")
 }
 
 func (s *InstallStateIntegrationSuite) TestLateGenerationDoesNotRestoreOldInputs() {
 	s.deps.Cfg.BlobReadEnabled = false
-	older, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	older, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), "us-east-1", older.Inputs.Inputs["region"])
 	s.updateInput()
-	current, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	current, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), "eu-west-1", current.Inputs.Inputs["region"])
 	_, err = s.saveState(current)
@@ -206,18 +220,18 @@ func (s *InstallStateIntegrationSuite) TestLateGenerationDoesNotRestoreOldInputs
 	if _, err = s.saveState(older); err != nil {
 		s.T().Logf("late snapshot save rejected: %v", err)
 	}
-	latest, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	latest, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), "eu-west-1", latest.Inputs.Inputs["region"], "a late generation must not restore an older input value")
 	s.deps.Cfg.BlobReadEnabled = true
-	latest, err = s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	latest, err = s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), "eu-west-1", latest.Inputs.Inputs["region"])
 	require.Equal(s.T(), "eu-west-1", latest.Install.Inputs["region"])
 }
 
 func (s *InstallStateIntegrationSuite) TestRedactedRefreshPreservesCanonicalInputsAndDefaults() {
-	older, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	older, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	var region app.AppInput
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
@@ -240,22 +254,22 @@ func (s *InstallStateIntegrationSuite) TestRedactedRefreshPreservesCanonicalInpu
 		require.Equal(s.T(), map[string]string{"region": "********", "replicas": "3"}, redacted.Inputs.Inputs)
 		require.Equal(s.T(), redacted.Inputs.Inputs, redacted.Install.Inputs)
 	}
-	canonical, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	canonical, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), map[string]string{"region": "example-secret", "replicas": "3"}, canonical.Inputs.Inputs)
 	_, err = s.saveState(older)
 	require.NoError(s.T(), err)
-	canonical, err = s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+	canonical, err = s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), map[string]string{"region": "example-secret", "replicas": "3"}, canonical.Inputs.Inputs)
 }
 
 func (s *InstallStateIntegrationSuite) TestFailedBlobPublicationLeavesInputsStale() {
 	s.updateInput()
-	_, err := s.activities.GetInstallState(blobstore.WithBlobWriteEnabled(s.ctx, false), &GetInstallStateRequest{InstallID: s.install.ID})
+	_, err := s.activities.GetInstallState(blobstore.WithBlobWriteEnabled(s.ctx, false), &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.Error(s.T(), err)
 	for read := 0; read < 2; read++ {
-		snapshot, err := s.activities.GetInstallState(s.ctx, &GetInstallStateRequest{InstallID: s.install.ID})
+		snapshot, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 		require.NoError(s.T(), err)
 		require.Equal(s.T(), "eu-west-1", snapshot.Inputs.Inputs["region"])
 	}
