@@ -703,10 +703,20 @@ func (s *service) buildInstallDeployments(ctx *gin.Context, orgID, installID str
 	if err != nil {
 		return nil, err
 	}
+	sandboxBranches, err := s.sandboxConfigBranches(ctx, orgID, workflowIDs)
+	if err != nil {
+		return nil, err
+	}
 
 	deployments := make([]InstallDeployment, 0, len(workflows))
 	for i := range workflows {
 		d := buildInstallDeployment(&workflows[i], versionsByWorkflowID[workflows[i].ID], diffsByWorkflowID[workflows[i].ID], buildsByID, fallbackBranch)
+		if d.AppBranch == nil || d.AppBranch.RunID == "" {
+			if ref := sandboxBranches[workflows[i].ID]; ref != nil {
+				copied := *ref
+				d.AppBranch = &copied
+			}
+		}
 		applyPinnedConfigBranch(&d, pinnedBranch)
 		if d.Type == "" {
 			continue
@@ -786,19 +796,7 @@ func buildInstallDeployment(wf *app.Workflow, version *app.InstallAppConfigVersi
 	}
 
 	if version != nil && version.AppBranchRunID != nil {
-		run := &version.AppBranchRun
-		branchRef := &InstallDeploymentAppBranchRef{
-			ID:    run.AppBranchID,
-			Name:  run.AppBranch.Name,
-			RunID: run.ID,
-		}
-		meta := run.RunMetadata()
-		branchRef.GitRef = meta.GitRef
-		branchRef.CommitSHA = meta.HeadSHA
-		if branchRef.CommitSHA == "" && run.VCSConnectionCommit != nil {
-			branchRef.CommitSHA = run.VCSConnectionCommit.SHA
-		}
-		d.AppBranch = branchRef
+		d.AppBranch = branchRefFromRun(&version.AppBranchRun)
 	}
 	if d.AppBranch == nil && fallbackBranch != nil {
 		copied := *fallbackBranch
@@ -1050,6 +1048,13 @@ func (s *service) pinnedAppConfigBranch(ctx *gin.Context, orgID, installID strin
 		return nil, fmt.Errorf("unable to get app config branch run: %w", err)
 	}
 
+	return branchRefFromRun(&run), nil
+}
+
+func branchRefFromRun(run *app.AppBranchRun) *InstallDeploymentAppBranchRef {
+	if run == nil || run.AppBranchID == "" {
+		return nil
+	}
 	ref := &InstallDeploymentAppBranchRef{
 		ID:    run.AppBranchID,
 		Name:  run.AppBranch.Name,
@@ -1061,7 +1066,107 @@ func (s *service) pinnedAppConfigBranch(ctx *gin.Context, orgID, installID strin
 	if ref.CommitSHA == "" && run.VCSConnectionCommit != nil {
 		ref.CommitSHA = run.VCSConnectionCommit.SHA
 	}
-	return ref, nil
+	return ref
+}
+
+func (s *service) sandboxConfigBranches(ctx *gin.Context, orgID string, workflowIDs []string) (map[string]*InstallDeploymentAppBranchRef, error) {
+	refs := map[string]*InstallDeploymentAppBranchRef{}
+	if len(workflowIDs) == 0 {
+		return refs, nil
+	}
+
+	var sandboxRuns []app.InstallSandboxRun
+	err := s.db.WithContext(ctx).
+		Select("install_workflow_id", "app_sandbox_config_id", "created_at").
+		Where("install_workflow_id IN ?", workflowIDs).
+		Where("app_sandbox_config_id <> ''").
+		Order("created_at ASC").
+		Find(&sandboxRuns).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to query install sandbox runs: %w", err)
+	}
+	if len(sandboxRuns) == 0 {
+		return refs, nil
+	}
+
+	configIDByWorkflow := map[string]string{}
+	configIDs := make([]string, 0)
+	seenConfig := map[string]struct{}{}
+	for i := range sandboxRuns {
+		run := &sandboxRuns[i]
+		if run.InstallWorkflowID == nil || run.AppSandboxConfigID == "" {
+			continue
+		}
+		workflowID := *run.InstallWorkflowID
+		if _, ok := configIDByWorkflow[workflowID]; ok {
+			continue
+		}
+		configIDByWorkflow[workflowID] = run.AppSandboxConfigID
+		if _, ok := seenConfig[run.AppSandboxConfigID]; ok {
+			continue
+		}
+		seenConfig[run.AppSandboxConfigID] = struct{}{}
+		configIDs = append(configIDs, run.AppSandboxConfigID)
+	}
+	if len(configIDs) == 0 {
+		return refs, nil
+	}
+
+	var configs []app.AppSandboxConfig
+	err = s.db.WithContext(ctx).
+		Select("id", "app_config_id").
+		Where("id IN ?", configIDs).
+		Find(&configs).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to query app sandbox configs: %w", err)
+	}
+	appConfigBySandbox := map[string]string{}
+	appConfigIDs := make([]string, 0)
+	seenAppConfig := map[string]struct{}{}
+	for i := range configs {
+		if configs[i].AppConfigID == "" {
+			continue
+		}
+		appConfigBySandbox[configs[i].ID] = configs[i].AppConfigID
+		if _, ok := seenAppConfig[configs[i].AppConfigID]; ok {
+			continue
+		}
+		seenAppConfig[configs[i].AppConfigID] = struct{}{}
+		appConfigIDs = append(appConfigIDs, configs[i].AppConfigID)
+	}
+	if len(appConfigIDs) == 0 {
+		return refs, nil
+	}
+
+	var branchRuns []app.AppBranchRun
+	err = s.db.WithContext(ctx).
+		Preload("AppBranch").
+		Preload("VCSConnectionCommit").
+		Where("org_id = ? AND app_config_id IN ?", orgID, appConfigIDs).
+		Order("created_at DESC").
+		Find(&branchRuns).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to query sandbox config branch runs: %w", err)
+	}
+	refByAppConfig := map[string]*InstallDeploymentAppBranchRef{}
+	for i := range branchRuns {
+		if branchRuns[i].AppConfigID == "" {
+			continue
+		}
+		if _, ok := refByAppConfig[branchRuns[i].AppConfigID]; ok {
+			continue
+		}
+		refByAppConfig[branchRuns[i].AppConfigID] = branchRefFromRun(&branchRuns[i])
+	}
+
+	for workflowID, sandboxConfigID := range configIDByWorkflow {
+		ref := refByAppConfig[appConfigBySandbox[sandboxConfigID]]
+		if ref == nil {
+			continue
+		}
+		refs[workflowID] = ref
+	}
+	return refs, nil
 }
 
 func (s *service) installDeploymentBranch(ctx *gin.Context, orgID, installID string) (*InstallDeploymentAppBranchRef, error) {
