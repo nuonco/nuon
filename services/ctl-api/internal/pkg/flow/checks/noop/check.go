@@ -13,6 +13,8 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
+const planOnlyNoSkipVersion = "noop-plan-only-no-skip-v1"
+
 // Check implements directive.ApprovalCreateCheck for noop plan detection.
 type Check struct {
 	sig      signal.Signal
@@ -114,7 +116,12 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		zap.String("step_id", step.ID),
 		zap.String("workflow_id", flw.ID))
 
-	if err := handleNoopDeployPlan(ctx, step, flw); err != nil {
+	planOnlyNoSkip := workflow.GetVersion(ctx, planOnlyNoSkipVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if planOnlyNoSkip && flw.PlanOnly {
+		return directive.Pass(), nil
+	}
+
+	if err := handleNoopDeployPlan(ctx, step, flw, planOnlyNoSkip); err != nil {
 		return directive.Pass(), errors.Wrap(err, "failed to handle noop plan")
 	}
 
@@ -136,7 +143,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	}, nil
 }
 
-func handleNoopDeployPlan(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
+func handleNoopDeployPlan(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, sameGroupOnly bool) error {
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
@@ -168,19 +175,20 @@ func handleNoopDeployPlan(ctx workflow.Context, step *app.WorkflowStep, flw *app
 	}
 
 	nextStep := flw.Steps[nextStepIndex]
-
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: nextStep.ID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusAutoSkipped,
-			StatusHumanDescription: "Noop Plan, automatically skipped " + nextStep.Name,
-			Metadata: map[string]any{
-				"step_idx": nextStep.Idx,
-				"status":   "auto-skipped",
+	if !sameGroupOnly || nextStep.GroupIdx == step.GroupIdx {
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: nextStep.ID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusAutoSkipped,
+				StatusHumanDescription: "Noop Plan, automatically skipped " + nextStep.Name,
+				Metadata: map[string]any{
+					"step_idx": nextStep.Idx,
+					"status":   "auto-skipped",
+				},
 			},
-		},
-	}); err != nil {
-		return errors.Wrap(err, "unable to update step to success status")
+		}); err != nil {
+			return errors.Wrap(err, "unable to update step to success status")
+		}
 	}
 
 	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{

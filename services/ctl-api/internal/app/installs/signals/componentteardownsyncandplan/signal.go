@@ -196,8 +196,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	var installDeploy *app.InstallDeploy
 	latestDeploy, err := activities.AwaitGetLatestDeploy(ctx, activities.GetLatestDeployRequest{
-		ComponentID: s.ComponentID,
-		InstallID:   install.ID,
+		ComponentID:   s.ComponentID,
+		InstallID:     install.ID,
+		PreferApplied: true,
 	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

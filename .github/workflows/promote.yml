@@ -110,6 +110,7 @@ jobs:
         service:
           - ctl-api
           - telemetry-relay
+          - telemetry-agent
           - dashboard-ui
           - runner
           - cli
