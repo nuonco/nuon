@@ -18,6 +18,7 @@ type CreateInstallAppConfigVersionWorkflowInput struct {
 	AppBranchRunID string       `json:"app_branch_run_id"`
 	InstallGroupID string       `json:"install_group_id"`
 	PlanOnly       bool         `json:"plan_only"`
+	ConfigOnly     bool         `json:"config_only,omitempty"`
 	Callback       callback.Ref `json:"callback,omitempty"`
 }
 
@@ -38,6 +39,7 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 		AppBranchRunID: input.AppBranchRunID,
 		InstallGroupID: input.InstallGroupID,
 		PlanOnly:       input.PlanOnly,
+		ConfigOnly:     input.ConfigOnly,
 		Callback:       input.Callback,
 	})
 	if err != nil {

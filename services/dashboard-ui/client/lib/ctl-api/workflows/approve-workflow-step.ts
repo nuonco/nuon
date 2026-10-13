@@ -5,6 +5,7 @@ export type TApproveWorkflowStepBody = {
   note: string
   response_type:
     | 'approve'
+    | 'approve-config-only'
     | 'deny'
     | 'retry'
     | 'deny-skip-current'

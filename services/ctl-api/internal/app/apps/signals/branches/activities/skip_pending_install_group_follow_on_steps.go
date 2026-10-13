@@ -74,22 +74,35 @@ func shouldSkipInstallGroupFollowOn(step app.WorkflowStep, installGroupID string
 	if _, ok := installGroupSkipStatuses[step.Status.Status]; !ok {
 		return false
 	}
-	if step.QueueSignal == nil || step.QueueSignal.Signal == nil {
+	sigType, groupID, ok := stepInstallGroup(step)
+	if !ok {
 		return false
+	}
+	if _, ok := installGroupSkipSignalTypes[sigType]; !ok {
+		return false
+	}
+	return groupID == installGroupID
+}
+
+func isInstallGroupStep(step app.WorkflowStep, sigType signal.SignalType, installGroupID string) bool {
+	t, groupID, ok := stepInstallGroup(step)
+	return ok && t == sigType && groupID == installGroupID
+}
+
+func stepInstallGroup(step app.WorkflowStep) (signal.SignalType, string, bool) {
+	if step.QueueSignal == nil || step.QueueSignal.Signal == nil {
+		return "", "", false
 	}
 	sig := step.QueueSignal.Signal
-	if _, ok := installGroupSkipSignalTypes[sig.Type()]; !ok {
-		return false
-	}
 	raw, err := json.Marshal(sig)
 	if err != nil {
-		return false
+		return "", "", false
 	}
 	var payload struct {
 		InstallGroupID string `json:"install_group_id"`
 	}
 	if err := json.Unmarshal(raw, &payload); err != nil {
-		return false
+		return "", "", false
 	}
-	return payload.InstallGroupID == installGroupID
+	return sig.Type(), payload.InstallGroupID, true
 }

@@ -88,7 +88,7 @@ func (s *Signal) dispatchApprovalResponse(ctx workflow.Context, step *app.Workfl
 	l, _ := log.WorkflowLogger(ctx)
 
 	switch resp.Type {
-	case app.WorkflowStepApprovalResponseTypeApprove:
+	case app.WorkflowStepApprovalResponseTypeApprove, app.WorkflowStepApprovalResponseTypeApproveConfigOnly:
 		return s.handleApproveResponse(ctx, l, step, flw)
 	case app.WorkflowStepApprovalResponseTypeSkipCurrent:
 		return s.handleSkipResponse(ctx, l, step, flw)

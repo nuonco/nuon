@@ -39,6 +39,7 @@ type AppBranchConfigUpdateInput struct {
 	AppBranchRunID string
 	InstallGroupID string
 	PlanOnly       bool
+	ConfigOnly     bool
 	Callback       callback.Ref
 	DeferDiff      bool
 }
@@ -267,6 +268,9 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 	}
 	if diff != nil && diff.StackChanged {
 		metadata[app.WorkflowMetadataKeyStackChanged] = "true"
+	}
+	if input.ConfigOnly {
+		metadata[app.WorkflowMetadataKeyConfigOnly] = "true"
 	}
 
 	wf, err := h.CreateWorkflow(ctx, input.InstallID, app.WorkflowTypeAppBranchConfigUpdate, metadata, input.PlanOnly, nil)

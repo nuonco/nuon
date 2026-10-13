@@ -32,7 +32,7 @@ func New(
 func (c *Check) Name() string { return "superseded" }
 
 func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow, resp *app.WorkflowStepApprovalResponse) bool {
-	if resp.Type != app.WorkflowStepApprovalResponseTypeApprove {
+	if !resp.Type.IsApproval() {
 		return false
 	}
 	sig := c.stepSignalFn(step)

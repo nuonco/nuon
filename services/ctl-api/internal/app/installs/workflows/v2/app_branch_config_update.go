@@ -68,6 +68,10 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 	steps = append(steps, configStep)
 
+	if flw.IsConfigOnly() {
+		return sg.Result(steps), nil
+	}
+
 	if useGroupDirective && installConfigDiffEmpty(diff) {
 		return sg.Result(steps), nil
 	}

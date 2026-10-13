@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast'
 import { approveWorkflowStep } from '@/lib'
 import type { TAPIError } from '@/types'
 
-type GroupAction = 'approve' | 'deny-skip-current'
+type GroupAction = 'approve' | 'approve-config-only' | 'deny-skip-current'
 
 interface IGroupActionTarget {
   orgId: string
@@ -28,7 +28,10 @@ const ACTION_COPY: Record<
     message: (groupName: string) => string
     confirm: string
     pending: string
-    variant: 'primary' | 'danger'
+    variant: 'primary' | 'secondary' | 'danger'
+    toastHeading: string
+    toastMessage: (groupName: string) => string
+    errorHeading: string
   }
 > = {
   approve: {
@@ -39,6 +42,22 @@ const ACTION_COPY: Record<
     confirm: 'Approve plan',
     pending: 'Approving plan',
     variant: 'primary',
+    toastHeading: 'Plan approved',
+    toastMessage: (groupName) =>
+      `Deploying ${groupName}. This may take a few minutes.`,
+    errorHeading: 'Approval failed',
+  },
+  'approve-config-only': {
+    title: 'Approve app config only',
+    heading: 'Update app config only?',
+    message: (groupName) =>
+      `This moves every install in ${groupName} to the new app config without running stack, sandbox or component steps. Those changes apply on the next full deploy.`,
+    confirm: 'Approve config only',
+    pending: 'Approving config only',
+    variant: 'primary',
+    toastHeading: 'Config-only update approved',
+    toastMessage: (groupName) => `Updating app config for ${groupName}.`,
+    errorHeading: 'Approval failed',
   },
   'deny-skip-current': {
     title: 'Skip install group',
@@ -48,6 +67,9 @@ const ACTION_COPY: Record<
     confirm: 'Skip install group',
     pending: 'Skipping',
     variant: 'danger',
+    toastHeading: 'Install group skipped',
+    toastMessage: (groupName) => `Skipped ${groupName}.`,
+    errorHeading: 'Skip failed',
   },
 }
 
@@ -81,17 +103,8 @@ const ConfirmGroupActionModal = ({
       }),
     onSuccess: () => {
       addToast(
-        <Toast
-          heading={
-            action === 'approve' ? 'Plan approved' : 'Install group skipped'
-          }
-          theme="success"
-        >
-          <Text>
-            {action === 'approve'
-              ? `Deploying ${target.groupName}. This may take a few minutes.`
-              : `Skipped ${target.groupName}.`}
-          </Text>
+        <Toast heading={copy.toastHeading} theme="success">
+          <Text>{copy.toastMessage(target.groupName)}</Text>
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['branch-run'] })
@@ -99,10 +112,7 @@ const ConfirmGroupActionModal = ({
     },
     onError: (err: TAPIError) => {
       addToast(
-        <Toast
-          heading={action === 'approve' ? 'Approval failed' : 'Skip failed'}
-          theme="error"
-        >
+        <Toast heading={copy.errorHeading} theme="error">
           <Text>{err?.error || 'Unable to respond to this plan.'}</Text>
         </Toast>
       )
@@ -147,9 +157,10 @@ const ConfirmGroupActionModal = ({
 
 const ACTION_LABEL: Record<
   GroupAction,
-  { label: string; variant: 'primary' | 'danger' }
+  { label: string; variant: 'primary' | 'secondary' | 'danger' }
 > = {
   approve: { label: 'Approve', variant: 'primary' },
+  'approve-config-only': { label: 'Approve config only', variant: 'secondary' },
   'deny-skip-current': { label: 'Skip', variant: 'danger' },
 }
 
@@ -182,6 +193,7 @@ interface IGroupApprovalActions {
 export const GroupApprovalActions = ({ target }: IGroupApprovalActions) => (
   <>
     <GroupActionButton action="deny-skip-current" target={target} />
+    <GroupActionButton action="approve-config-only" target={target} />
     <GroupActionButton action="approve" target={target} />
   </>
 )

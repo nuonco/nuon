@@ -21,9 +21,15 @@ const (
 	WorkflowStepApprovalResponseTypeSkipCurrentAndDependents WorkflowStepResponseType = "deny-skip-current-and-dependents"
 	WorkflowStepApprovalResponseTypeRetryPlan                WorkflowStepResponseType = "retry"
 
+	WorkflowStepApprovalResponseTypeApproveConfigOnly WorkflowStepResponseType = "approve-config-only"
+
 	// auto approve is when the workflow uses auto-approve
 	WorkflowStepApprovalResponseTypeAutoApprove WorkflowStepResponseType = "auto-approve"
 )
+
+func (t WorkflowStepResponseType) IsApproval() bool {
+	return t == WorkflowStepApprovalResponseTypeApprove || t == WorkflowStepApprovalResponseTypeApproveConfigOnly
+}
 
 type WorkflowStepApprovalResponse struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
