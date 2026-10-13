@@ -14,25 +14,23 @@ import (
 )
 
 func (h *Helpers) MarkInstallStateStale(ctx context.Context, installID string) error {
-	var is app.InstallState
-
-	err := h.db.WithContext(ctx).
-		Where("install_id = ?", installID).
-		Order("created_at DESC").
-		First(&is).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil // No record to update
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := LockInstallInputs(ctx, tx, installID); err != nil {
+			return err
 		}
-
-		return err
-	}
-
-	if res := h.db.WithContext(ctx).Model(&is).Update("stale_at", time.Now()); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update stale_at field")
-	}
-
-	return nil
+		var is app.InstallState
+		err := tx.Where(app.InstallState{InstallID: installID}).Order("created_at DESC").First(&is).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return err
+		}
+		if err := tx.Model(&is).Update("stale_at", time.Now()).Error; err != nil {
+			return errors.Wrap(err, "unable to update stale_at field")
+		}
+		return nil
+	})
 }
 
 // MarkInstallStatePartialsStale marks the latest install state stale and appends the given partials
@@ -41,44 +39,42 @@ func (h *Helpers) MarkInstallStatePartialsStale(ctx context.Context, db *gorm.DB
 	if len(partials) == 0 {
 		return nil
 	}
-
-	var is app.InstallState
-	err := db.WithContext(ctx).
-		Where(app.InstallState{InstallID: installID}).
-		Order("created_at DESC").
-		First(&is).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil // No record to update
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := LockInstallInputs(ctx, tx, installID); err != nil {
+			return err
+		}
+		var is app.InstallState
+		err := tx.Where(app.InstallState{InstallID: installID}).Order("created_at DESC").First(&is).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return err
 		}
 
-		return err
-	}
-
-	set := make(map[pkgstate.PartialName]struct{}, len(is.StalePartials)+len(partials))
-	for _, p := range is.StalePartials {
-		set[p] = struct{}{}
-	}
-	for _, p := range partials {
-		set[p] = struct{}{}
-	}
-
-	// preserve deterministic order from AllPartials
-	merged := make([]pkgstate.PartialName, 0, len(set))
-	for _, p := range pkgstate.AllPartials {
-		if _, ok := set[p]; ok {
-			merged = append(merged, p)
+		set := make(map[pkgstate.PartialName]struct{}, len(is.StalePartials)+len(partials))
+		for _, p := range is.StalePartials {
+			set[p] = struct{}{}
 		}
-	}
+		for _, p := range partials {
+			set[p] = struct{}{}
+		}
 
-	if res := db.WithContext(ctx).Model(&is).
-		Select("stale_at", "stale_partials").
-		Updates(app.InstallState{
-			StaleAt:       generics.NewNullTime(time.Now()),
-			StalePartials: merged,
-		}); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update stale_partials field")
-	}
+		merged := make([]pkgstate.PartialName, 0, len(set))
+		for _, p := range pkgstate.AllPartials {
+			if _, ok := set[p]; ok {
+				merged = append(merged, p)
+			}
+		}
 
-	return nil
+		if err := tx.Model(&is).
+			Select("stale_at", "stale_partials").
+			Updates(app.InstallState{
+				StaleAt:       generics.NewNullTime(time.Now()),
+				StalePartials: merged,
+			}).Error; err != nil {
+			return errors.Wrap(err, "unable to update stale_partials field")
+		}
+		return nil
+	})
 }
