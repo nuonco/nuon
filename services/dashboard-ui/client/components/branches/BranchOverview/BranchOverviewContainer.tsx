@@ -57,7 +57,8 @@ export const BranchOverviewContainer = () => {
           steps: workflowSteps,
         }
       : undefined,
-    groups
+    groups,
+    { branchRunId, workflowSteps }
   )
 
   const { builds, metaBuilds, templateBuilds } = useRunTemplateBuilds({

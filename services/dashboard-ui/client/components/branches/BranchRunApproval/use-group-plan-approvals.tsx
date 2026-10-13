@@ -30,9 +30,15 @@ const factsFor = (group?: TTrackGroup) => {
   )
 }
 
+interface IUseGroupPlanApprovals {
+  branchRunId?: string
+  workflowSteps?: TInstallWorkflowStep[]
+}
+
 export const useGroupPlanApprovals = (
   run: TApprovalRun | undefined,
-  groups: TTrackGroup[]
+  groups: TTrackGroup[],
+  { branchRunId, workflowSteps }: IUseGroupPlanApprovals = {}
 ): IGroupPlanApproval[] => {
   const { org } = useOrg()
   const { addPanel } = useSurfaces()
@@ -64,6 +70,8 @@ export const useGroupPlanApprovals = (
                     <PlanDiffPanel
                       step={step}
                       installFacts={factsFor(group)}
+                      branchRunId={branchRunId}
+                      workflowSteps={workflowSteps}
                     />,
                     `plan-diff-${step.id}`
                   )
