@@ -88,7 +88,7 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("monitoring").
 		Example("{{.nuon.install.id}}").
 		Field("storage_driver").Short("Helm storage driver").
-		Long("Backend storage driver for Helm release metadata. Defaults to configmap").
+		Long("Backend storage driver for Helm release metadata. Defaults to secret").
 		Enum("configmap", "secret").
 		Example("configmap").
 		Field("take_ownership").Short("adopt existing Helm releases").

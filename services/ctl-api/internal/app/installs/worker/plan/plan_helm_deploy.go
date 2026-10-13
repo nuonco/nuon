@@ -117,7 +117,7 @@ func (p *Planner) RenderHelmDeployPlan(
 		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render namespace")
 	}
 
-	driver := cfg.StorageDriver.ValueOrDefault("configmap")
+	driver := cfg.StorageDriver.ValueOrDefault("secret")
 	renderedDriver, err := render.RenderV2(driver, in.StateData)
 	if err != nil {
 		l.Error("error rendering driver",
