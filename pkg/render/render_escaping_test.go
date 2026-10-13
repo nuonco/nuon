@@ -28,9 +28,9 @@ func escapingData() map[string]interface{} {
 	return map[string]interface{}{
 		"install": map[string]interface{}{
 			"inputs": map[string]interface{}{
-				"lovable_public_api_key": pemPublicKey,
-				"bootstrap_token":        "bst_ws-abc_dGVzdC10b2tlbg",
-				"connection":             `user=a&pass="b"<c>'d'`,
+				"vendor_public_api_key": pemPublicKey,
+				"bootstrap_token":       "bst_ws-abc_dGVzdC10b2tlbg",
+				"connection":            `user=a&pass="b"<c>'d'`,
 			},
 		},
 	}
@@ -43,7 +43,7 @@ func TestRenderStruct_HelmValuesFileKeepsPEMIntact(t *testing.T) {
 	cfg := &helmComponentConfig{
 		ChartName: "sandbox-cluster",
 		ValuesFiles: []string{
-			"sandboxAuth:\n  lovablePublicKey: |-{{ .nuon.install.inputs.lovable_public_api_key | nindent 4 }}\n",
+			"sandboxAuth:\n  vendorPublicKey: |-{{ .nuon.install.inputs.vendor_public_api_key | nindent 4 }}\n",
 		},
 	}
 
