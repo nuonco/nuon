@@ -128,6 +128,7 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 
 	var runbookConfig app.RunbookConfig
 	configQuery := s.db.WithContext(ctx).
+		Preload("Triggers").
 		Preload("Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
@@ -148,6 +149,13 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 	} else {
 		if err := configQuery.Order("created_at DESC").First(&runbookConfig).Error; err != nil {
 			return nil, fmt.Errorf("runbook has no configurations")
+		}
+	}
+
+	if !runbookConfig.CanTriggerManually() {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("runbook does not have a manual trigger"),
+			Description: "this runbook is not configured for manual runs",
 		}
 	}
 

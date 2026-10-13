@@ -16,8 +16,9 @@ import (
 const SignalType signal.SignalType = "appconfig-updated"
 
 const (
-	actionCronEmitterPrefix = "action-cron-"
-	driftEmitterPrefix      = "drift-"
+	actionCronEmitterPrefix  = "action-cron-"
+	runbookCronEmitterPrefix = "runbook-cron-"
+	driftEmitterPrefix       = "drift-"
 	// driftSandboxEmitterPrefix is the per-install sandbox drift cron prefix.
 	// IMPORTANT: this string starts with the more generic `drift-` prefix —
 	// the splitting loop in Execute() must check for `drift-sandbox-` BEFORE
@@ -146,10 +147,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	stopAndDeleteEmitters(ctx, l, legacyEmitters)
 
-	var actionEmitters []app.QueueEmitter
+	var actionEmitters, runbookEmitters []app.QueueEmitter
 	for _, em := range actionCronEmitters {
-		if strings.HasPrefix(em.Name, actionCronEmitterPrefix) {
+		switch {
+		case strings.HasPrefix(em.Name, actionCronEmitterPrefix):
 			actionEmitters = append(actionEmitters, em)
+		case strings.HasPrefix(em.Name, runbookCronEmitterPrefix):
+			runbookEmitters = append(runbookEmitters, em)
 		}
 	}
 
@@ -167,6 +171,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if err := s.reconcileActionCronEmitters(ctx, l, install, appCfg, actionCronQueue, actionEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile action cron emitters: %w", err)
+	}
+
+	if err := s.reconcileRunbookCronEmitters(ctx, l, install, actionCronQueue, runbookEmitters); err != nil {
+		return fmt.Errorf("unable to reconcile runbook cron emitters: %w", err)
 	}
 
 	if err := s.reconcileDriftEmitters(ctx, l, install, appCfg, driftCronQueue, driftEmitters); err != nil {

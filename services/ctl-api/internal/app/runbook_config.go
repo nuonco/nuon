@@ -33,9 +33,10 @@ type RunbookConfig struct {
 	RunbookID string  `json:"runbook_id,omitzero" gorm:"index:idx_runbook_config_runbook_id_app_config_id,unique" temporaljson:"runbook_id,omitzero,omitempty"`
 	Runbook   Runbook `json:"-" temporaljson:"runbook,omitzero,omitempty"`
 
-	Readme string              `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`
-	Steps  []RunbookStepConfig `json:"steps,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
-	Inputs []RunbookInput      `json:"inputs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"inputs,omitzero,omitempty"`
+	Readme   string                 `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`
+	Triggers []RunbookTriggerConfig `json:"triggers,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"triggers,omitzero,omitempty"`
+	Steps    []RunbookStepConfig    `json:"steps,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
+	Inputs   []RunbookInput         `json:"inputs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"inputs,omitzero,omitempty"`
 }
 
 func (r *RunbookConfig) BeforeCreate(tx *gorm.DB) error {
@@ -71,4 +72,16 @@ func (r *RunbookConfig) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 	}
+}
+
+func (r *RunbookConfig) CanTriggerManually() bool {
+	if len(r.Triggers) == 0 {
+		return true
+	}
+	for _, trigger := range r.Triggers {
+		if trigger.Type == RunbookTriggerTypeManual {
+			return true
+		}
+	}
+	return false
 }

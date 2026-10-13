@@ -526,7 +526,7 @@ func canonicalRunbookDefinitions(ctx context.Context, db *gorm.DB, cfg *app.AppC
 	}
 	var configs []app.RunbookConfig
 	if err := db.WithContext(ctx).
-		Preload("Runbook").Preload("Steps").Preload("Inputs").
+		Preload("Runbook").Preload("Triggers").Preload("Steps").Preload("Inputs").
 		Where(app.RunbookConfig{OrgID: cfg.OrgID, AppConfigID: cfg.ID}).Find(&configs).Error; err != nil {
 		return nil, err
 	}
