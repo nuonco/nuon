@@ -266,7 +266,7 @@ func TestGetCustomLinkedDeployments_OutputWiring(t *testing.T) {
 			wiringStack{name: "sandbox_proxy_postgres", params: map[string]any{
 				"dbSubnetId": stringParam(), "privateDnsZoneId": stringParam(),
 			}},
-			wiringStack{name: "bauleiter"},
+			wiringStack{name: "worker"},
 		)
 
 		resources, hoisted, _, _, err := tmpl.getCustomLinkedDeployments(inp)
@@ -295,7 +295,7 @@ func TestGetCustomLinkedDeployments_PrincipalIDOutput(t *testing.T) {
 	t.Run("exact identityPrincipalId resolves", func(t *testing.T) {
 		tmpl := &Templates{cfg: &internal.Config{}}
 		inp := armWiringInput(t, wiringStack{
-			name:            "bauleiter",
+			name:            "worker",
 			managedIdentity: true,
 			outputs:         []string{"identityPrincipalId"},
 		})
@@ -309,23 +309,23 @@ func TestGetCustomLinkedDeployments_PrincipalIDOutput(t *testing.T) {
 	t.Run("prefixed output resolves", func(t *testing.T) {
 		tmpl := &Templates{cfg: &internal.Config{}}
 		inp := armWiringInput(t, wiringStack{
-			name:            "bauleiter",
+			name:            "worker",
 			managedIdentity: true,
 			outputs: []string{
-				"bauleiterIdentityClientId", "bauleiterIdentityId",
-				"bauleiterIdentityName", "bauleiterIdentityPrincipalId",
+				"workerIdentityClientId", "workerIdentityId",
+				"workerIdentityName", "workerIdentityPrincipalId",
 			},
 		})
 
 		_, _, identities, _, err := tmpl.getCustomLinkedDeployments(inp)
 		require.NoError(t, err)
 		require.Len(t, identities, 1)
-		assert.Equal(t, "bauleiterIdentityPrincipalId", identities[0].PrincipalIDOutput)
+		assert.Equal(t, "workerIdentityPrincipalId", identities[0].PrincipalIDOutput)
 
 		role := tmpl.getCustomDeploymentRoleAssignment(identities[0], inp.Install.ID, armScope{})
 		params := role["properties"].(map[string]any)["parameters"].(map[string]any)
 		assert.Equal(t,
-			"[reference('Bauleiter').outputs.bauleiterIdentityPrincipalId.value]",
+			"[reference('Worker').outputs.workerIdentityPrincipalId.value]",
 			params["principalID"].(map[string]any)["value"],
 		)
 	})
@@ -346,7 +346,7 @@ func TestGetCustomLinkedDeployments_PrincipalIDOutput(t *testing.T) {
 	t.Run("managed identity without the output fails at generation", func(t *testing.T) {
 		tmpl := &Templates{cfg: &internal.Config{}}
 		inp := armWiringInput(t, wiringStack{
-			name:            "bauleiter",
+			name:            "worker",
 			managedIdentity: true,
 			outputs:         []string{"identityId", "identityName"},
 		})

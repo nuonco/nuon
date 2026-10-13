@@ -7,7 +7,7 @@ export default {
 }
 
 const branchOptions = [
-  { name: 'am/add-lovable-enterprise-azure' },
+  { name: 'am/add-azure-enterprise-stack' },
   { name: 'am/gcp-custom-root-domain' },
   { name: 'am/gitops-ui' },
   { name: 'am/restore-preview-ingress' },
