@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { AnimatedHeight } from '@/components/common/AnimatedHeight'
 import { Button } from '@/components/common/Button'
 import { CodeBlock } from '@/components/common/CodeBlock'
@@ -25,6 +25,11 @@ export const AgentPromptBanner = ({
 }: IAgentPromptBanner) => {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const contentId = useId()
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.inert = !expanded
+  }, [expanded])
 
   return (
     <div
@@ -54,9 +59,9 @@ export const AgentPromptBanner = ({
       <AnimatedHeight>
         <div className={expanded ? undefined : 'h-0'}>
           <div
+            ref={contentRef}
             id={contentId}
             aria-hidden={!expanded}
-            inert={!expanded}
             className="flex flex-col gap-2 pt-3"
           >
             <Text as="p" variant="subtext">
