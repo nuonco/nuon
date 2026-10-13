@@ -64,6 +64,7 @@ const DeploymentPanelContent = ({
     orgId,
     appId,
     type,
+    installId,
     deployment: record,
     workflow,
     repo,

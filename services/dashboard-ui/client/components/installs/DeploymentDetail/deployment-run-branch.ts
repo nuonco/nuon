@@ -1,4 +1,8 @@
-import type { TInstallDeploymentRecord, TWorkflow } from '@/types'
+import type {
+  TAppBranchRun,
+  TInstallDeploymentRecord,
+  TWorkflow,
+} from '@/types'
 import { vcsRepo } from '@/utils/vcs-urls'
 
 export type TDeploymentRunBranch = {
@@ -47,4 +51,23 @@ export const deploymentRunBranch = (
   }
 
   return undefined
+}
+
+export const branchFromAppBranchRun = (
+  run?: TAppBranchRun | null
+): TDeploymentRunBranch | undefined => {
+  if (!run?.app_branch?.id) return undefined
+  const commit = run.vcs_connection_commit
+  return {
+    id: run.app_branch.id,
+    name: run.app_branch.name || undefined,
+    runId: run.id,
+    status: run.status,
+    sha: commit?.sha || run.head_sha || run.metadata?.head_sha || undefined,
+    message: commit?.message?.split('\n')[0] || undefined,
+    author: commit?.author_name || undefined,
+    avatarUrl: commit?.author_avatar_url || undefined,
+    createdAt: run.created_at,
+    repo: vcsRepo(run.app_branch_config),
+  }
 }

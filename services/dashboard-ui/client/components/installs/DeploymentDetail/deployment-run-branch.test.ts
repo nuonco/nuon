@@ -1,6 +1,9 @@
 import { expect, test } from 'bun:test'
 import type { TInstallDeploymentRecord, TWorkflow } from '@/types'
-import { deploymentRunBranch } from './deployment-run-branch'
+import {
+  branchFromAppBranchRun,
+  deploymentRunBranch,
+} from './deployment-run-branch'
 
 const installBranch = {
   id: 'br-install',
@@ -61,6 +64,30 @@ test('uses the deployment branch run when the workflow has none', () => {
     name: 'release',
     runId: 'run-1',
     sha: 'abc123def456',
+  })
+})
+
+test('reads the commit from an applied branch run', () => {
+  expect(
+    branchFromAppBranchRun({
+      id: 'run-applied',
+      created_at: '2026-10-10T10:00:00Z',
+      app_branch: { id: 'br-main', name: 'main' },
+      head_sha: '678d683aaa',
+      vcs_connection_commit: {
+        sha: '678d683aaa',
+        message: 'chore: bump charts\n\nbody',
+        author_name: 'Ada',
+        author_avatar_url: 'https://example.com/ada.png',
+      },
+    })
+  ).toMatchObject({
+    id: 'br-main',
+    name: 'main',
+    runId: 'run-applied',
+    sha: '678d683aaa',
+    message: 'chore: bump charts',
+    author: 'Ada',
   })
 })
 

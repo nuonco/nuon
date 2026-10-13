@@ -50,6 +50,7 @@ const DeploymentDetailLayoutContent = () => {
     orgId: org?.id,
     appId: install?.app_id,
     type: deployment?.type || workflow?.type,
+    installId: install?.id,
     deployment,
     workflow,
   })
