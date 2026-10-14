@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	approvalplan "github.com/nuonco/nuon/pkg/plans/types/approval_plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -22,6 +23,11 @@ type CheckNoopPlanRequest struct {
 func (a *Activities) CheckNoopPlan(ctx context.Context, req *CheckNoopPlanRequest) (bool, error) {
 	plan, err := a.getApprovalPlan(ctx, req.StepTargetID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if sandbox, sErr := a.isSandboxModeJob(ctx, req.StepTargetID); sErr == nil && sandbox {
+				return false, nil
+			}
+		}
 		a.recordDriftPlanEvaluationForTarget(ctx, req.WorkflowType, req.InstallID, req.ComponentID, false, "load_plan", err)
 		return false, errors.Wrap(err, "unable to get approval plan")
 	}
@@ -29,6 +35,24 @@ func (a *Activities) CheckNoopPlan(ctx context.Context, req *CheckNoopPlanReques
 	isNoop, err := plan.IsNoopPlan()
 	a.recordDriftPlanEvaluationForTarget(ctx, req.WorkflowType, req.InstallID, req.ComponentID, isNoop, "evaluate_plan", err)
 	return isNoop, err
+}
+
+func (a *Activities) isSandboxModeJob(ctx context.Context, stepTargetID string) (bool, error) {
+	runnerJob, err := a.getRunnerJob(ctx, &GetRunnerJobRequest{RunnerJobOwnerID: stepTargetID})
+	if err != nil {
+		return false, err
+	}
+
+	var runner app.Runner
+	res := a.db.WithContext(ctx).
+		Preload("RunnerGroup.Settings").
+		Where(app.Runner{ID: runnerJob.RunnerID}).
+		First(&runner)
+	if res.Error != nil {
+		return false, res.Error
+	}
+
+	return runner.RunnerGroup.Settings.SandboxMode, nil
 }
 
 func (a *Activities) getApprovalPlan(ctx context.Context, stepTargetID string) (*ApprovalPlan, error) {
