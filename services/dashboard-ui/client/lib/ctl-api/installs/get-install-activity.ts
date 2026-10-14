@@ -5,7 +5,8 @@ import { buildQueryParams } from '@/utils/build-query-params'
 export const getInstallActivity = ({
   installId,
   orgId,
-  offset = 0,
+  offset,
+  cursor,
   limit = 20,
   status,
   type,
@@ -15,6 +16,7 @@ export const getInstallActivity = ({
   installId: string
   orgId: string
   offset?: number
+  cursor?: string
   limit?: number
   status?: string
   type?: string
@@ -24,6 +26,7 @@ export const getInstallActivity = ({
   api<TInstallActivityResponse>({
     path: `installs/${installId}/activity${buildQueryParams({
       offset,
+      cursor,
       limit,
       status: status || undefined,
       type: type || undefined,
