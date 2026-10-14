@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { OnboardingWizardLayout } from '@/components/onboarding/OnboardingWizard/OnboardingWizard'
 import type { TFirstRunStep } from '@/hooks/use-first-run-journey'
 import { OnboardingWizardProvider } from '@/providers/onboarding-wizard-provider'
+import { CopyEditor } from '../CopyEditor'
 import type { TCloud, TPath } from './constants'
 import { buildFirstRunSteps } from './steps'
 
@@ -24,13 +25,15 @@ export const StoryFrame = ({
     steps.findIndex((def) => def.id === step)
   )
   return (
-    <OnboardingWizardProvider
-      steps={steps}
-      initialStepIndex={index}
-      initialSharedData={{}}
-      onComplete={() => {}}
-    >
-      <OnboardingWizardLayout onSkip={() => {}} />
-    </OnboardingWizardProvider>
+    <CopyEditor>
+      <OnboardingWizardProvider
+        steps={steps}
+        initialStepIndex={index}
+        initialSharedData={{}}
+        onComplete={() => {}}
+      >
+        <OnboardingWizardLayout onSkip={() => {}} />
+      </OnboardingWizardProvider>
+    </CopyEditor>
   )
 }
