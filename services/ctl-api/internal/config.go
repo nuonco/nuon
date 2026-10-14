@@ -105,6 +105,7 @@ func init() {
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
 	config.RegisterDefault("runner_container_image_url_gcp", "us-west1-docker.pkg.dev/nuon-public/runner/runner")
 	config.RegisterDefault("runner_container_image_url_azure", "")
+	config.RegisterDefault("runner_container_image_pull_service_account", "")
 	config.RegisterDefault("runner_container_image_verification_mode", "warn")
 	config.RegisterDefault("runner_container_image_signature_issuer", "https://token.actions.githubusercontent.com")
 	config.RegisterDefault("runner_container_image_signature_identity_regexp", `^https://github\.com/nuonco/nuon/\.github/workflows/service\.yml@refs/heads/main$`)
@@ -418,8 +419,10 @@ type Config struct {
 	RunnerContainerImageURL      string `config:"runner_container_image_url" validate:"required"`
 	RunnerContainerImageURLGCP   string `config:"runner_container_image_url_gcp"`
 	RunnerContainerImageURLAzure string `config:"runner_container_image_url_azure"`
-	RunnerContainerImageTag      string `config:"runner_container_image_tag" validate:"required"`
-	UseLocalRunners              bool   `config:"use_local_runners"`
+	// GCP service account impersonated to mint pull tokens for a private Artifact Registry runner image.
+	RunnerContainerImagePullServiceAccount string `config:"runner_container_image_pull_service_account"`
+	RunnerContainerImageTag                string `config:"runner_container_image_tag" validate:"required"`
+	UseLocalRunners                        bool   `config:"use_local_runners"`
 
 	// Runner VMs verify the runner image's keyless signature before running it: warn logs a failure,
 	// enforce refuses to run an image that fails.

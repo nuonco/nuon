@@ -80,6 +80,7 @@ type service struct {
 	emitterClient          *emitterclient.Client
 	queueClient            *queueclient.Client
 	telemetryTokenIssuer   *telemetrytoken.Issuer
+	registryAuthIssuer     *registryAuthIssuer
 	telemetryRelayEndpoint string
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
@@ -434,6 +435,7 @@ func New(params Params) (*service, error) {
 		emitterClient:          params.EmitterClient,
 		queueClient:            params.QueueClient,
 		telemetryTokenIssuer:   telemetryTokenIssuer,
+		registryAuthIssuer:     newRegistryAuthIssuer(params.Cfg),
 		telemetryRelayEndpoint: telemetryRelayEndpoint,
 		logStreamCache:         expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}, nil
