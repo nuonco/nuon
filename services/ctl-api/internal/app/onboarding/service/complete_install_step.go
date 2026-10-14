@@ -15,6 +15,7 @@ import (
 	installscreated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/created"
 	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/polldependencies"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/orgscope"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
@@ -100,7 +101,7 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		onboarding.CurrentStep = app.OnboardingStepDeploy
 		onboarding.StepStatus = app.OnboardingStepStatusActive
 		onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStepStatusActive))
-		if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
+		if err := s.db.WithContext(ctx).Scopes(orgscope.WithoutOrgScope).Save(onboarding).Error; err != nil {
 			ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))
 			return
 		}
@@ -223,7 +224,7 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 	onboarding.StepError = nil
 	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStepStatusActive))
 
-	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
+	if err := s.db.WithContext(ctx).Scopes(orgscope.WithoutOrgScope).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))
 		return
 	}

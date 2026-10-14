@@ -22,6 +22,15 @@ func Skip(ctx context.Context) context.Context {
 	return context.WithValue(ctx, skipKey{}, true)
 }
 
+// WithoutOrgScope skips the org filter for this statement. Use it after WithContext.
+func WithoutOrgScope(db *gorm.DB) *gorm.DB {
+	ctx := context.Background()
+	if db != nil && db.Statement != nil && db.Statement.Context != nil {
+		ctx = db.Statement.Context
+	}
+	return db.WithContext(Skip(ctx))
+}
+
 func New() gorm.Plugin {
 	return &plugin{}
 }

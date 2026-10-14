@@ -11,6 +11,7 @@ import (
 	createapp "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/orgscope"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -103,13 +104,13 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 	onboarding.StepStatus = app.OnboardingStepStatusInProgress
 	onboarding.SetCompositeStatus(ctx, app.StatusInProgress)
 
-	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
+	if err := s.db.WithContext(ctx).Scopes(orgscope.WithoutOrgScope).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))
 		return
 	}
 
 	// Get queue and enqueue signal
-	queue, err := s.queueClient.GetDefaultQueueByOwner(ctx, onboarding.ID, plugins.TableName(s.db, app.Onboarding{}))
+	queue, err := s.queueClient.GetDefaultQueueByOwner(orgscope.Skip(ctx), onboarding.ID, plugins.TableName(s.db, app.Onboarding{}))
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get onboarding queue: %w", err))
 		return

@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/cors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/global"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/headers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/installauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/invites"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/metrics"
@@ -38,7 +37,6 @@ var MiddlewaresModule = fx.Module("middlewares",
 	fx.Provide(middlewares.AsMiddleware(headers.New)),
 	fx.Provide(middlewares.AsMiddleware(auth.New)),
 	fx.Provide(middlewares.AsMiddleware(org.New)),
-	fx.Provide(installauth.New),
 	fx.Provide(middlewares.AsMiddleware(org.NewRunner)),
 	fx.Provide(middlewares.AsMiddleware(public.New)),
 	fx.Provide(middlewares.AsMiddleware(pagination.New)),

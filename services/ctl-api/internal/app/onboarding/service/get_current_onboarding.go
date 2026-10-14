@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/orgscope"
 )
 
 // @ID						GetCurrentOnboarding
@@ -41,6 +42,7 @@ func (s *service) GetCurrentOnboarding(ctx *gin.Context) {
 func (s *service) getActiveOnboarding(ctx *gin.Context, accountID string) (*app.Onboarding, error) {
 	var onboarding app.Onboarding
 	res := s.db.WithContext(ctx).
+		Scopes(orgscope.WithoutOrgScope).
 		Where("account_id = ? AND status = ?", accountID, app.OnboardingStatusActive).
 		Order("created_at DESC").
 		First(&onboarding)

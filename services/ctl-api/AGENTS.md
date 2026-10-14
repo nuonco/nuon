@@ -180,7 +180,8 @@ The Postgres plugin `internal/pkg/db/plugins/orgscope` is a backstop. On GORM Qu
 column is `org_id`. It leaves the query alone when the WHERE already constrains that same org. It does not cover
 Create, `Exec`, raw SQL, preloads, association saves, or models that store `OrgID` without a belongs-to `Org`
 (`RunnerGroup` is one). Statements with no org in context are unchanged (workers and admin lookups that run before the
-org is set). The auth listener marks every request with `orgscope.Skip`, so auth API queries are not scoped.
+org is set). The auth listener marks every request with `orgscope.Skip`, so auth API queries are not scoped. A single
+statement opts out with `Scopes(orgscope.WithoutOrgScope)` after `WithContext`.
 
 New tenant-owned models need `OrgID` and a belongs-to `Org` association so the plugin can see them. Handlers still
 write the org filter. MCP tools that load the same records use the same lookups. Internal, runner, and admin routes

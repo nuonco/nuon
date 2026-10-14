@@ -7,7 +7,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/installauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
@@ -19,7 +18,6 @@ type Params struct {
 
 	Services      []Service                `group:"services"`
 	Middlewares   []middlewares.Middleware `group:"middlewares"`
-	InstallAuth   *installauth.Middleware  `optional:"true"`
 	L             *zap.Logger
 	Cfg           *internal.Config
 	DB            *gorm.DB `name:"psql"`

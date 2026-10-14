@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/orgscope"
 )
 
 // @ID						CompleteOnboardingGetStartedStep
@@ -43,7 +44,7 @@ func (s *service) CompleteGetStartedStep(ctx *gin.Context) {
 	onboarding.Status = app.OnboardingStatusCompleted
 	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStatusCompleted))
 
-	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
+	if err := s.db.WithContext(ctx).Scopes(orgscope.WithoutOrgScope).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))
 		return
 	}

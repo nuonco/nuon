@@ -217,6 +217,14 @@ func TestOrgScope(t *testing.T) {
 			wantCaller: 2,
 			wantWhere:  true,
 		},
+		"scope skips": {
+			ctx: caller,
+			query: func(db *gorm.DB) *gorm.DB {
+				var row record
+				return db.Scopes(WithoutOrgScope).Where("id = ?", "rec_1").Find(&row)
+			},
+			wantWhere: true,
+		},
 		"auth api": {
 			ctx: Skip(caller),
 			query: func(db *gorm.DB) *gorm.DB {
