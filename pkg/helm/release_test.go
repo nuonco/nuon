@@ -3,10 +3,11 @@ package helm
 import (
 	"testing"
 
+	rcommon "helm.sh/helm/v4/pkg/release/common"
 	release "helm.sh/helm/v4/pkg/release/v1"
 )
 
-func rev(version int, status release.Status) *release.Release {
+func rev(version int, status rcommon.Status) *release.Release {
 	return &release.Release{
 		Version: version,
 		Info:    &release.Info{Status: status},
@@ -21,13 +22,13 @@ func TestIsPending(t *testing.T) {
 	}{
 		{"nil release", nil, false},
 		{"nil info", &release.Release{Version: 1}, false},
-		{"pending install", rev(1, release.StatusPendingInstall), true},
-		{"pending upgrade", rev(4, release.StatusPendingUpgrade), true},
-		{"pending rollback", rev(7, release.StatusPendingRollback), true},
-		{"deployed", rev(2, release.StatusDeployed), false},
-		{"failed", rev(3, release.StatusFailed), false},
-		{"superseded", rev(1, release.StatusSuperseded), false},
-		{"uninstalled", rev(5, release.StatusUninstalled), false},
+		{"pending install", rev(1, rcommon.StatusPendingInstall), true},
+		{"pending upgrade", rev(4, rcommon.StatusPendingUpgrade), true},
+		{"pending rollback", rev(7, rcommon.StatusPendingRollback), true},
+		{"deployed", rev(2, rcommon.StatusDeployed), false},
+		{"failed", rev(3, rcommon.StatusFailed), false},
+		{"superseded", rev(1, rcommon.StatusSuperseded), false},
+		{"uninstalled", rev(5, rcommon.StatusUninstalled), false},
 	}
 
 	for _, tt := range tests {
@@ -56,15 +57,15 @@ func TestLastGoodRevision(t *testing.T) {
 			// out. There is nothing to roll back to, so the caller has to
 			// uninstall instead.
 			name:    "only a pending first install",
-			history: []*release.Release{rev(1, release.StatusPendingInstall)},
+			history: []*release.Release{rev(1, rcommon.StatusPendingInstall)},
 			wantOK:  false,
 		},
 		{
 			name: "pending upgrade over a deployed revision",
 			history: []*release.Release{
-				rev(1, release.StatusSuperseded),
-				rev(2, release.StatusDeployed),
-				rev(3, release.StatusPendingUpgrade),
+				rev(1, rcommon.StatusSuperseded),
+				rev(2, rcommon.StatusDeployed),
+				rev(3, rcommon.StatusPendingUpgrade),
 			},
 			want:   2,
 			wantOK: true,
@@ -73,10 +74,10 @@ func TestLastGoodRevision(t *testing.T) {
 			// A failed rollout is not a safe target: it ran and did not work.
 			name: "failed revisions are skipped",
 			history: []*release.Release{
-				rev(1, release.StatusDeployed),
-				rev(2, release.StatusFailed),
-				rev(3, release.StatusFailed),
-				rev(4, release.StatusPendingUpgrade),
+				rev(1, rcommon.StatusDeployed),
+				rev(2, rcommon.StatusFailed),
+				rev(3, rcommon.StatusFailed),
+				rev(4, rcommon.StatusPendingUpgrade),
 			},
 			want:   1,
 			wantOK: true,
@@ -84,10 +85,10 @@ func TestLastGoodRevision(t *testing.T) {
 		{
 			name: "highest superseded wins when nothing is deployed",
 			history: []*release.Release{
-				rev(1, release.StatusSuperseded),
-				rev(3, release.StatusSuperseded),
-				rev(2, release.StatusSuperseded),
-				rev(4, release.StatusPendingRollback),
+				rev(1, rcommon.StatusSuperseded),
+				rev(3, rcommon.StatusSuperseded),
+				rev(2, rcommon.StatusSuperseded),
+				rev(4, rcommon.StatusPendingRollback),
 			},
 			want:   3,
 			wantOK: true,
@@ -95,14 +96,14 @@ func TestLastGoodRevision(t *testing.T) {
 		{
 			name: "every revision pending",
 			history: []*release.Release{
-				rev(1, release.StatusPendingInstall),
-				rev(2, release.StatusPendingUpgrade),
+				rev(1, rcommon.StatusPendingInstall),
+				rev(2, rcommon.StatusPendingUpgrade),
 			},
 			wantOK: false,
 		},
 		{
 			name:    "malformed revisions are ignored",
-			history: []*release.Release{nil, {Version: 9}, rev(2, release.StatusDeployed)},
+			history: []*release.Release{nil, {Version: 9}, rev(2, rcommon.StatusDeployed)},
 			want:    2,
 			wantOK:  true,
 		},

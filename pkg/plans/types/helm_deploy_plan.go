@@ -43,3 +43,15 @@ type HelmDeployPlan struct {
 	// struct value, which decodes non-nil on every deploy.
 	RecoverRelease bool `json:"recover_release,omitempty"`
 }
+
+// NormalizeHelmStorageDriver maps a helm component storage_driver onto the
+// release-store name the runner accepts. Component config follows Helm and
+// uses "secret"; the runner store is "secrets".
+func NormalizeHelmStorageDriver(driver string) string {
+	switch driver {
+	case "secret":
+		return "secrets"
+	default:
+		return driver
+	}
+}

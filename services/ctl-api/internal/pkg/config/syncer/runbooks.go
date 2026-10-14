@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
 // ensureRunbook creates a runbook if it doesn't exist, using the shared helpers
@@ -74,6 +75,27 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 			Description: fmt.Sprintf("unable to get runbook %s", runbook.Name),
 			Err:         err,
 		}
+	}
+
+	configured := runbook.Triggers
+	if len(configured) == 0 {
+		configured = []config.RunbookTrigger{{Type: config.RunbookTriggerTypeManual}}
+	}
+	triggers := make([]app.RunbookTriggerConfig, 0, len(configured))
+	for _, trigger := range configured {
+		if err := validation.ValidateCronSchedule(trigger.CronSchedule); err != nil {
+			return sync.SyncErr{
+				Resource:    fmt.Sprintf("runbook-%s", runbook.Name),
+				Description: err.Error(),
+				Err:         err,
+			}
+		}
+		triggers = append(triggers, app.RunbookTriggerConfig{
+			AppID:        s.appID,
+			AppConfigID:  s.appConfigID,
+			Type:         app.RunbookTriggerType(trigger.Type),
+			CronSchedule: trigger.CronSchedule,
+		})
 	}
 
 	steps := make([]app.RunbookStepConfig, 0, len(runbook.Steps))
@@ -173,6 +195,7 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 		RunbookID:   rbk.ID,
 		AppID:       s.appID,
 		Readme:      runbook.Readme,
+		Triggers:    triggers,
 		Steps:       steps,
 		Inputs:      inputs,
 	}

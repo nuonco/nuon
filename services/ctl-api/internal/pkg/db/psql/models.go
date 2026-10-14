@@ -193,6 +193,7 @@ func AllModels() []any {
 		// runbooks
 		&app.Runbook{},
 		&app.RunbookConfig{},
+		&app.RunbookTriggerConfig{},
 		&app.RunbookStepConfig{},
 		&app.RunbookInput{},
 		&app.InstallRunbook{},
