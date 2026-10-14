@@ -54,10 +54,10 @@ jobs:
             run=true
           elif [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
             reason="fork PR; runs after merge to main"
-          elif [[ "${{ contains(github.event.pull_request.labels.*.name, 'integration') }}" == "true" ]]; then
+          elif [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-integration') }}" == "true" ]]; then
             run=true
           else
-            reason="runs after merge to main and gates promotion; to run it here, add the integration label and push, or dispatch the workflow on this branch"
+            reason="runs after merge to main and gates promotion; to run it here, add the run-integration label and push, or dispatch the workflow on this branch"
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
