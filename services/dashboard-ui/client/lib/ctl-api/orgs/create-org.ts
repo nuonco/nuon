@@ -1,5 +1,6 @@
 import { api } from '@/lib/api'
 import type { TAPIError, TOrg } from '@/types'
+import { orgNameFromEmail } from './org-name-from-email'
 
 export type TCreateOrgBody = {
   name: string
@@ -23,12 +24,16 @@ export const fetchRandomName = async (): Promise<string> => {
   return data.name
 }
 
+// Names the org after the user's work domain when there is one. A free email
+// address, or a domain name another org already uses, gets a random name.
 export async function createTrialOrg({
   attempts = TRIAL_ORG_ATTEMPTS,
-}: { attempts?: number } = {}): Promise<TOrg> {
+  email,
+}: { attempts?: number; email?: string } = {}): Promise<TOrg> {
+  const domainName = orgNameFromEmail(email)
   let lastError: unknown
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const name = await fetchRandomName()
+    const name = attempt === 0 && domainName ? domainName : await fetchRandomName()
     try {
       return await createOrg({
         body: { name, use_sandbox_mode: false, tags: ['Trial'] },
