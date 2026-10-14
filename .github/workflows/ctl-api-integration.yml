@@ -17,10 +17,11 @@ name: ctl-api integration
     branches:
       - main
 
-# A new push supersedes the in-flight run instead of stacking lanes behind it.
+# PR pushes supersede each other. Main runs one per commit and never cancels: promotion of a
+# commit waits on its own run (.github/actions/await-ctl-api-integration).
 concurrency:
-  group: ctl-api-integration-${{ github.event.pull_request.number || github.ref_name }}
-  cancel-in-progress: true
+  group: ctl-api-integration-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -45,45 +46,18 @@ jobs:
       run: ${{ steps.decide.outputs.run }}
       reason: ${{ steps.decide.outputs.reason }}
     steps:
-      - name: Checkout repo
-        if: github.event_name != 'workflow_dispatch'
-        uses: actions/checkout@v6
-        with:
-          sparse-checkout: ci-triggers.yml
-          sparse-checkout-cone-mode: false
-
-      - name: read ci triggers file
-        if: github.event_name != 'workflow_dispatch'
-        uses: pietrobolcato/action-read-yaml@1.1.0
-        id: ci_triggers
-        with:
-          config: ci-triggers.yml
-
-      - uses: dorny/paths-filter@v3
-        if: github.event_name != 'workflow_dispatch'
-        id: filter
-        with:
-          filters: |
-            ${{ steps.ci_triggers.outputs['services'] }}
-            integration-workflow:
-              - .github/workflows/ctl-api-integration.yml
-
       - name: Decide whether to run the lanes
         id: decide
         run: |
           run=false
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             run=true
-          elif [[ "${{ github.event.pull_request.head.repo.full_name || github.repository }}" != "${{ github.repository }}" ]]; then
-            reason="fork PR; the lanes need mono and stage credentials, which forks do not get"
-          elif [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
-            reason="draft PR; integration run skipped until marked ready for review"
-          elif [[ "${{ github.triggering_actor }}" == "nuonbot" ]]; then
-            reason="bot merge; the merged result is tested by the main-push run"
-          elif [[ "${{ steps.filter.outputs['ctl-api'] }}" == "true" || "${{ steps.filter.outputs['integration-workflow'] }}" == "true" ]]; then
+          elif [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
+            reason="fork PR; runs after merge to main"
+          elif [[ "${{ contains(github.event.pull_request.labels.*.name, 'integration') }}" == "true" ]]; then
             run=true
           else
-            reason="no ctl-api changes in this diff"
+            reason="runs after merge to main and gates promotion; to run it here, add the integration label and push, or dispatch the workflow on this branch"
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
@@ -351,8 +325,7 @@ jobs:
           fi
           if [[ "${{ needs.changes.outputs.run }}" != "true" ]]; then
             echo "skipped: ${{ needs.changes.outputs.reason }}"
-            [[ "${{ needs.changes.outputs.reason }}" != fork* ]]
-            exit
+            exit 0
           fi
           echo "flow lane: ${{ needs.flow-lane.result }}, integration: ${{ needs.integration.result }}"
           [[ "${{ needs.flow-lane.result }}" == "success" && "${{ needs.integration.result }}" == "success" ]]
