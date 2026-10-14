@@ -17,6 +17,7 @@ func (a *Activities) getAppBranchRunWithCommit(ctx context.Context, runID string
 	var run app.AppBranchRun
 	res := a.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
+		Preload("Preview").
 		First(&run, "id = ?", runID)
 
 	if res.Error != nil {
