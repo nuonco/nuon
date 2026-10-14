@@ -147,6 +147,10 @@ const (
 	WorkflowMetadataKeyStackOnly          = "stack_only"
 	WorkflowMetadataKeyInputsOnly         = "inputs_only"
 	WorkflowMetadataKeyStackChanged       = "stack_changed"
+	WorkflowMetadataKeyTriggeredByID      = "triggered_by_id"
+
+	// misspelled key written by workflows created before triggered_by_id; remove once none remain in flight.
+	workflowMetadataKeyTriggeredByIDLegacy = "triggerred_by_id"
 )
 
 // AwaitInstallStackStepName is the install workflow step that waits for a stack
@@ -168,6 +172,15 @@ func (w *Workflow) IsStackOnly() bool {
 // deploying anything against them.
 func (w *Workflow) IsInputsOnly() bool {
 	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyInputsOnly]) == "true"
+}
+
+func (w *Workflow) TriggeredByID() (string, bool) {
+	for _, key := range []string{WorkflowMetadataKeyTriggeredByID, workflowMetadataKeyTriggeredByIDLegacy} {
+		if v, ok := w.Metadata[key]; ok && v != nil {
+			return *v, true
+		}
+	}
+	return "", false
 }
 
 // IsStackChanged reports whether this app-branch config update includes a stack
