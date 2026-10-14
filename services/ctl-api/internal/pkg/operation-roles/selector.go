@@ -402,6 +402,12 @@ func resolveRoleARN(
 	}
 
 	roleARN, ok := availableRoles[renderedRoleName]
+	// Legacy Azure stacks have no per-operation identities; an empty ID makes the
+	// operation run as the runner's ambient identity.
+	if ok && roleARN == "" && installStackOutputs.AzureStackOutputs != nil &&
+		!installStackOutputs.HasAzureOperationIdentities() {
+		return "", nil
+	}
 	// A role that is disabled in the install stack reports an empty ID.
 	if !ok || roleARN == "" {
 		return "", fmt.Errorf("role %s not found in install stack outputs, please enable it in install stack", renderedRoleName)

@@ -6,6 +6,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -275,6 +277,46 @@ func TestResolveRoleARN(t *testing.T) {
 			expectedARN:   "",
 			expectError:   true,
 			errorContains: "role custom-missing-role not found in install stack outputs",
+		},
+		{
+			name:     "legacy azure stack without operation identities falls back to runner identity",
+			roleName: "maintenance",
+			appCfg: &app.AppConfig{
+				PermissionsConfig: app.AppPermissionsConfig{
+					ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+					MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+					DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+				},
+			},
+			stackOutputs: &app.InstallStackOutputs{
+				Data:              pgtype.Hstore{"resource_group_id": generics.ToPtr("rg")},
+				AzureStackOutputs: &app.AzureStackOutputs{},
+			},
+			installState: installState,
+			expectedARN:  "",
+			expectError:  false,
+		},
+		{
+			name:     "azure stack with disabled operation identity",
+			roleName: "maintenance",
+			appCfg: &app.AppConfig{
+				PermissionsConfig: app.AppPermissionsConfig{
+					ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+					MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+					DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+				},
+			},
+			stackOutputs: &app.InstallStackOutputs{
+				Data: pgtype.Hstore{
+					"resource_group_id":              generics.ToPtr("rg"),
+					"maintenance_identity_client_id": generics.ToPtr(""),
+				},
+				AzureStackOutputs: &app.AzureStackOutputs{},
+			},
+			installState:  installState,
+			expectedARN:   "",
+			expectError:   true,
+			errorContains: "role maintenance not found in install stack outputs",
 		},
 	}
 
