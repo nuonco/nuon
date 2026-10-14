@@ -8,6 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 )
 
@@ -54,7 +55,9 @@ func ResolvePreviewTarget(
 	return &Resolved{InstallIDs: resolved.InstallIDs, GroupName: "preview"}, nil
 }
 
-func Resolve(ctx workflow.Context, installGroupID, appBranchID string) (*Resolved, error) {
+// Resolve returns the installs the group targets. With a run, installs created
+// on that run's config after it started are left out.
+func Resolve(ctx workflow.Context, installGroupID, appBranchID string, run *app.AppBranchRun) (*Resolved, error) {
 	logger := workflow.GetLogger(ctx)
 
 	group, err := activities.AwaitGetInstallGroupByID(ctx, installGroupID)
@@ -67,13 +70,18 @@ func Resolve(ctx workflow.Context, installGroupID, appBranchID string) (*Resolve
 		return nil, fmt.Errorf("unable to get app branch for label resolution: %w", err)
 	}
 
-	resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, &activities.ResolveInstallGroupInstallsInput{
+	input := &activities.ResolveInstallGroupInstallsInput{
 		AppID:       branch.AppID,
 		GroupID:     group.ID,
 		Selector:    group.LabelSelector,
 		Default:     group.Default,
 		AppBranchID: appBranchID,
-	})
+	}
+	if run != nil && run.AppConfigID != "" {
+		input.SkipAppConfigID = run.AppConfigID
+		input.SkipCreatedAfter = run.CreatedAt
+	}
+	resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve install group: %w", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -24,6 +25,12 @@ type ResolveInstallGroupInstallsInput struct {
 	// AppBranchID is the branch the group belongs to. Every mode resolves within
 	// the installs that branch owns.
 	AppBranchID string `json:"app_branch_id,omitempty"`
+
+	// SkipAppConfigID and SkipCreatedAfter drop installs created after the run
+	// started on the config the run produced. Their provision is already
+	// applying that config, and deploying it again would cancel the provision.
+	SkipAppConfigID  string    `json:"skip_app_config_id,omitempty"`
+	SkipCreatedAfter time.Time `json:"skip_created_after,omitzero"`
 }
 
 type ResolveInstallGroupInstallsOutput struct {
@@ -76,6 +83,14 @@ func (a *Activities) ResolveInstallGroupInstalls(ctx context.Context, input *Res
 			if !matchesID && !appshelpers.InstallMatchesGroup(group, install) {
 				continue
 			}
+		}
+		if input.SkipAppConfigID != "" &&
+			install.AppConfigID == input.SkipAppConfigID &&
+			install.CreatedAt.After(input.SkipCreatedAfter) {
+			a.l.Info("skipping install created on this run's config",
+				zap.String("install_id", install.ID),
+				zap.String("app_config_id", install.AppConfigID))
+			continue
 		}
 		ids = append(ids, install.ID)
 	}

@@ -79,7 +79,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
-	installIDs, groupName, err := s.resolveInstallIDs(ctx)
+	installIDs, groupName, err := s.resolveInstallIDs(ctx, run)
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func countInstallOutcomes(entries []app.InstallGroupRunInstall) (completed, fail
 	return
 }
 
-func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, error) {
+func (s *Signal) resolveInstallIDs(ctx workflow.Context, run *app.AppBranchRun) ([]string, string, error) {
 	if s.PreviewInstallID != "" || s.PreviewLabelSelector != nil {
 		resolved, err := installgroups.ResolvePreviewTarget(ctx, s.AppBranchID, s.PreviewInstallID, s.PreviewLabelSelector)
 		if err != nil {
@@ -215,7 +215,7 @@ func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, erro
 		}
 		return resolved.InstallIDs, name, nil
 	}
-	resolved, err := installgroups.Resolve(ctx, s.InstallGroupID, s.AppBranchID)
+	resolved, err := installgroups.Resolve(ctx, s.InstallGroupID, s.AppBranchID, run)
 	if err != nil {
 		return nil, "", err
 	}

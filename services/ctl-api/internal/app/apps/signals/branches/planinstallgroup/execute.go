@@ -147,8 +147,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, error) {
 	previewInstallID := s.PreviewInstallID
 	previewLabelSelector := s.PreviewLabelSelector
+	var run *app.AppBranchRun
 	if previewInstallID == "" && previewLabelSelector == nil {
-		run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
+		var err error
+		run, err = activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to get app branch run: %w", err)
 		}
@@ -168,7 +170,7 @@ func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, erro
 		}
 		return resolved.InstallIDs, name, nil
 	}
-	resolved, err := installgroups.Resolve(ctx, s.InstallGroupID, s.AppBranchID)
+	resolved, err := installgroups.Resolve(ctx, s.InstallGroupID, s.AppBranchID, run)
 	if err != nil {
 		return nil, "", err
 	}

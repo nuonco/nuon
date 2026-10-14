@@ -50,7 +50,7 @@ func (s *Signal) computeImpact(ctx workflow.Context, l log.Logger, newAppConfigI
 
 	impact := make([]activities.InstallGroupImpact, 0, len(installGroups))
 	for _, group := range installGroups {
-		resolved, err := installgroups.Resolve(ctx, group.ID, s.AppBranchID)
+		resolved, err := installgroups.Resolve(ctx, group.ID, s.AppBranchID, nil)
 		if err != nil {
 			return nil, fmt.Errorf("install group %s: %w", group.Name, err)
 		}
