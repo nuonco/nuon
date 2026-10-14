@@ -19,6 +19,7 @@ import type { TAPIError } from '@/types'
 import { BranchOverview, type TFailedBuildLink } from './BranchOverview'
 import {
   buildOverviewLoadingStages,
+  groupCompositeError,
   preRolloutCompositeError,
 } from './overview-loading'
 import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
@@ -141,6 +142,14 @@ export const BranchOverviewContainer = () => {
   )
   const configError = isConfigValidationError(failure) ? failure : undefined
   const compositeError = configError ? undefined : failure
+  const groupsWithErrors = groups.map((group) => {
+    const error = groupCompositeError(
+      workflowSteps,
+      group,
+      branchRun?.composite_error
+    )
+    return error ? { ...group, error } : group
+  })
 
   if (pinnedWorkflowId && rolloutError && !rollout) {
     return (
@@ -200,7 +209,7 @@ export const BranchOverviewContainer = () => {
             />
           ) : null
         }
-        groups={groups}
+        groups={groupsWithErrors}
         loadingStages={loadingStages}
         compositeError={compositeError}
         failedBuilds={failedBuilds}
