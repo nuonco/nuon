@@ -1302,6 +1302,13 @@ export interface paths {
      */
     get: operations["GetCLIConfig"];
   };
+  "/v1/general/cli-events": {
+    /**
+     * Record a CLI command run for product analytics
+     * @description Records one CLI command run (command path without arguments, CLI version, outcome, duration, OS and architecture) for product analytics. The CLI skips this call when telemetry is disabled with `DO_NOT_TRACK=1`, `NUON_DISABLE_TELEMETRY=true` or `disable_telemetry: true` in the CLI config. The event is dropped when the control plane has no analytics key configured.
+     */
+    post: operations["CreateCLIEvent"];
+  };
   "/v1/general/cloud-platform/{cloud_platform}/regions": {
     /**
      * Get regions for a cloud platform
@@ -1678,7 +1685,9 @@ export interface paths {
      *
      * Records include a `type` (`action_run`, `runbook_run`, or `policy_check`), a `status` taken from that source, a human-readable `title` and `summary`, and a type-specific payload (`action`, `runbook`, or `policy`). Action and runbook records include a `workflow` reference when the run has one.
      *
-     * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`. `status` matches each source's own status string. Action and runbook runs use values such as `queued`, `in-progress`, `finished`, and `error`. Policy checks use `success`, `warning`, and `error`.
+     * For efficient pagination, request the first page with `limit`, then pass the returned `next_cursor` as `cursor` to fetch the next page. Keep filters unchanged while paging; restart without a cursor when changing filters. Records sort by timestamp, type, and ID descending. `has_more` indicates another page is available. Legacy `page`/`offset` pagination remains supported, but cannot be combined with a cursor and reads preceding records on deep pages.
+     *
+     * Supports filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`. `status` matches each source's own stored status string. Action and runbook runs use values such as `queued`, `in-progress`, `finished`, and `error`. Policy checks use `success`, `warning`, and `error`.
      */
     get: operations["GetInstallActivity"];
   };
@@ -6362,6 +6371,7 @@ export interface components {
       readme?: string;
       runbook_id?: string;
       steps?: components["schemas"]["app.RunbookStepConfig"][];
+      triggers?: components["schemas"]["app.RunbookTriggerConfig"][];
       updated_at?: string;
     };
     "app.RunbookInput": {
@@ -6415,6 +6425,19 @@ export interface components {
       name?: string;
       step_id?: string;
     };
+    "app.RunbookTriggerConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      cron_schedule?: string;
+      id?: string;
+      runbook_config_id?: string;
+      type?: components["schemas"]["app.RunbookTriggerType"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.RunbookTriggerType": "manual" | "cron";
     "app.Runner": {
       created_at?: string;
       created_by_id?: string;
@@ -8728,6 +8751,14 @@ export interface components {
       type: components["schemas"]["app.StackType"];
       vpc_nested_template_url?: string;
     };
+    "service.CreateCLIEventRequest": {
+      agent?: string;
+      cli_version: string;
+      command: string;
+      duration_ms?: number;
+      os?: string;
+      success?: boolean;
+    };
     "service.CreateCellRequest": {
       command?: string;
       enable_kube_config?: boolean | null;
@@ -9116,6 +9147,7 @@ export interface components {
       inputs?: components["schemas"]["service.CreateRunbookInputRequest"][];
       readme?: string;
       steps: components["schemas"]["service.CreateRunbookStepConfigRequest"][];
+      triggers?: components["schemas"]["service.CreateRunbookTriggerRequest"][];
     };
     "service.CreateRunbookInputRequest": {
       default?: string;
@@ -9165,6 +9197,10 @@ export interface components {
       timeout?: number;
       trigger?: string;
       type: string;
+    };
+    "service.CreateRunbookTriggerRequest": {
+      cron_schedule?: string;
+      type: components["schemas"]["app.RunbookTriggerType"];
     };
     "service.CreateRunnerBootstrapTokenResponse": {
       expires_at?: string;
@@ -9320,6 +9356,7 @@ export interface components {
       activity?: components["schemas"]["service.InstallActivity"][];
       has_more?: boolean;
       limit?: number;
+      next_cursor?: string;
       offset?: number;
       page?: number;
     };
@@ -21030,6 +21067,54 @@ export interface operations {
     };
   };
   /**
+   * Record a CLI command run for product analytics
+   * @description Records one CLI command run (command path without arguments, CLI version, outcome, duration, OS and architecture) for product analytics. The CLI skips this call when telemetry is disabled with `DO_NOT_TRACK=1`, `NUON_DISABLE_TELEMETRY=true` or `disable_telemetry: true` in the CLI config. The event is dropped when the control plane has no analytics key configured.
+   */
+  CreateCLIEvent: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateCLIEventRequest"];
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: never;
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * Get regions for a cloud platform
    * @description Return region metadata for the Nuon supported cloud platforms.
    */
@@ -23192,7 +23277,9 @@ export interface operations {
    *
    * Records include a `type` (`action_run`, `runbook_run`, or `policy_check`), a `status` taken from that source, a human-readable `title` and `summary`, and a type-specific payload (`action`, `runbook`, or `policy`). Action and runbook records include a `workflow` reference when the run has one.
    *
-   * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`. `status` matches each source's own status string. Action and runbook runs use values such as `queued`, `in-progress`, `finished`, and `error`. Policy checks use `success`, `warning`, and `error`.
+   * For efficient pagination, request the first page with `limit`, then pass the returned `next_cursor` as `cursor` to fetch the next page. Keep filters unchanged while paging; restart without a cursor when changing filters. Records sort by timestamp, type, and ID descending. `has_more` indicates another page is available. Legacy `page`/`offset` pagination remains supported, but cannot be combined with a cursor and reads preceding records on deep pages.
+   *
+   * Supports filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`. `status` matches each source's own stored status string. Action and runbook runs use values such as `queued`, `in-progress`, `finished`, and `error`. Policy checks use `success`, `warning`, and `error`.
    */
   GetInstallActivity: {
     parameters: {
@@ -23203,6 +23290,8 @@ export interface operations {
         offset?: number;
         /** @description page size */
         limit?: number;
+        /** @description opaque cursor from next_cursor; replaces page and offset */
+        cursor?: string;
         /** @description filter by activity type (comma-separated: action_run, runbook_run, policy_check) */
         type?: string;
         /** @description filter by source status (comma-separated) */
