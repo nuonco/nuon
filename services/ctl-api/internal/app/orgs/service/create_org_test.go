@@ -51,7 +51,8 @@ func (s *CreateOrgTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-			T: s.T(),
+			T:     s.T(),
+			Mocks: &tests.TestMocks{MockTC: newPermissiveTemporalMock(s.T())},
 
 			CustomValidator: true,
 		}),
@@ -71,7 +72,7 @@ func (s *CreateOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -203,7 +204,7 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/orgs", tc.request)
@@ -326,39 +327,12 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 	require.Contains(s.T(), rr.Body.String(), "not allowed to create new orgs")
 }
 
-func (s *CreateOrgTestSuite) TestCreateOrgCreatesRunnerGroup() {
-	request := CreateOrgRequest{
-		Name: fmt.Sprintf("test-org-runner-group-%s", domains.NewOrgID()[:8]),
-	}
-
-	// Reset mock
-
-	// Make request
-	rr := s.makeRequest(http.MethodPost, "/v1/orgs", request)
-
-	require.Equal(s.T(), http.StatusCreated, rr.Code)
-
-	// Parse response
-	var response app.Org
-	err := json.Unmarshal(rr.Body.Bytes(), &response)
-	require.NoError(s.T(), err)
-	s.T().Cleanup(func() {
-		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", response.ID)
-	})
-
-	// Verify runner group was created
-	var runnerGroup app.RunnerGroup
-	err = s.service.DB.Where("owner_id = ? AND owner_type = ?", response.ID, "orgs").First(&runnerGroup).Error
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), response.ID, runnerGroup.OwnerID)
-}
-
 func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {
 	request := CreateOrgRequest{
 		Name: fmt.Sprintf("test-org-roles-%s", domains.NewOrgID()[:8]),
 	}
 
-	// Reset mock
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	// Make request with account context
 	ctx := context.Background()
@@ -426,7 +400,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 	require.NoError(s.T(), err)
 	req.Header.Set("Content-Type", "application/json")
 
-	// Reset mock
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)

@@ -26,6 +26,7 @@ import (
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	orginvitecreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/invite_created"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -43,6 +44,7 @@ type CreateOrgInviteTestService struct {
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	Seeder          *testseed.Seeder
+	AuthzClient     *authz.Client
 }
 
 // CreateOrgInviteTestSuite is the testify suite for create org invite endpoint.
@@ -92,7 +94,7 @@ func (s *CreateOrgInviteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -114,6 +116,8 @@ func (s *CreateOrgInviteTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, s.testOrg.ID)
+	createOrgRoles(s.T(), s.service.AuthzClient, s.testAcc, s.testOrg.ID)
 }
 
 func (s *CreateOrgInviteTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -330,7 +334,7 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Setup test data
 			reqBody := tc.setupFunc()
@@ -473,6 +477,8 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSam
 	}
 	err = s.service.DB.WithContext(ctx).Create(org2).Error
 	require.NoError(s.T(), err)
+	createOrgSignalsQueue(s.T(), s.service.DB, acc2, org2.ID)
+	createOrgRoles(s.T(), s.service.AuthzClient, acc2, org2.ID)
 	s.T().Cleanup(func() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
 	})

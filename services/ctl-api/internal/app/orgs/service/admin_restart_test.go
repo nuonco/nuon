@@ -92,7 +92,7 @@ func (s *RestartOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -114,6 +114,7 @@ func (s *RestartOrgTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, s.testOrg.ID)
 }
 
 func (s *RestartOrgTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -160,6 +161,7 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -187,6 +189,7 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -214,6 +217,7 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -231,7 +235,7 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 			// Setup test data
 			org := tc.setupFunc()
 
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", org.ID), tc.requestBody)
@@ -305,6 +309,7 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -322,7 +327,7 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 			// Setup test data
 			orgID := tc.setupFunc()
 
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request with invalid JSON if needed
 			var rr *httptest.ResponseRecorder
@@ -368,11 +373,12 @@ func (s *RestartOrgTestSuite) TestRestartOrgSignalDetails() {
 		}
 		err := s.service.DB.WithContext(ctx).Create(org).Error
 		require.NoError(s.T(), err)
+		createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 		s.T().Cleanup(func() {
 			s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 		})
 
-		// Reset mock before test
+		tests.ClearQueueSignals(s.T(), s.service.DB)
 
 		// Make request
 		rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", org.ID), RestartOrgRequest{})
