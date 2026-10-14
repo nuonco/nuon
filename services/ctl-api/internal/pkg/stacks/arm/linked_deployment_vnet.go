@@ -178,6 +178,10 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 	}
 
 	declared, hoistedParams := extractARMParameters(armTmpl, vnetReservedParamNames)
+	vendorNames, err := t.vendorUIParameterNames(inp)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
 	deploymentParams := map[string]any{}
 	for paramName, val := range managedParams {
@@ -188,8 +192,17 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 	}
 	for paramName, param := range hoistedParams {
 		if !hoistableDefault(param.DefaultValue) {
-			delete(hoistedParams, paramName)
-			continue
+			// An expression default cannot be lifted: at subscription scope it
+			// rebinds onto parameters the root does not declare. A vendor UI
+			// that names the parameter is asking to collect the value, so the
+			// parameter is hoisted without that default and the portal value
+			// replaces the expression.
+			if !vendorNames[paramName] {
+				delete(hoistedParams, paramName)
+				continue
+			}
+			param.DefaultValue = nil
+			hoistedParams[paramName] = param
 		}
 		// Customer-configurable — surfaced in the root and threaded back down.
 		deploymentParams[paramName] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", paramName)}

@@ -53,6 +53,10 @@ type AppStackConfig struct {
 
 	DeploymentScope StackDeploymentScope `json:"deployment_scope,omitzero" temporaljson:"deployment_scope,omitzero,omitempty"`
 
+	// Column name matches GORM's default for this field. "UI" is treated as one
+	// word, so the column is uidefinition rather than ui_definition.
+	UIDefinition *config.UploadedUIDefinition `json:"ui_definition,omitempty" gorm:"column:uidefinition;type:jsonb;serializer:json" temporaljson:"ui_definition,omitzero,omitempty"`
+
 	CustomNestedStacks []config.CustomNestedStack `json:"custom_nested_stacks,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"custom_nested_stacks,omitzero,omitempty"`
 }
 

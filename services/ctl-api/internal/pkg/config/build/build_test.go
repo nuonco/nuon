@@ -315,6 +315,34 @@ func TestSandboxConfigRejectsBadInput(t *testing.T) {
 	}
 }
 
+func TestStackConfigUIDefinitionIsOptional(t *testing.T) {
+	obj, err := StackConfig(&config.StackConfig{
+		Type:        string(app.StackTypeAzure),
+		Name:        "stack",
+		Description: "stack",
+	}, "app1", "cfg1")
+	require.NoError(t, err)
+	assert.Nil(t, obj.UIDefinition)
+
+	obj, err = StackConfig(&config.StackConfig{
+		Type:         string(app.StackTypeAzure),
+		Name:         "stack",
+		Description:  "stack",
+		UIDefinition: "./arm/ui.json",
+	}, "app1", "cfg1")
+	require.NoError(t, err)
+	assert.Nil(t, obj.UIDefinition)
+
+	_, err = StackConfig(&config.StackConfig{
+		Type:                 string(app.StackTypeAzure),
+		Name:                 "stack",
+		Description:          "stack",
+		UIDefinition:         "./arm/ui.json",
+		UIDefinitionContents: `{"handler":"Microsoft.Azure.CreateUIDef"}`,
+	}, "app1", "cfg1")
+	require.ErrorContains(t, err, "createUiDefinition")
+}
+
 func TestStackConfigKeepsCustomNestedStacksPending(t *testing.T) {
 	obj, err := StackConfig(&config.StackConfig{
 		Type:        string(app.StackTypeAWS),
