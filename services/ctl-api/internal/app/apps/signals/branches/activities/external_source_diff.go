@@ -13,11 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
-// applyExternalSourceChanges marks components whose repo is not the app branch
-// repo. The latest commit on the component's own branch is diffed against the
-// commit stored on the previous build, and only paths under the component
-// directory count.
-func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []componentSource, branchRepo string, out *ConfigDiffWithSourceOutput, previousSHAs map[string]string) error {
+func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []componentSource, branchRepo, branchName string, out *ConfigDiffWithSourceOutput, previousSHAs map[string]string) error {
 	if out == nil {
 		return nil
 	}
@@ -27,7 +23,7 @@ func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []c
 
 	cache := map[string][]string{}
 	for _, src := range sources {
-		if src.Name == "" || src.Repo == "" || repoURLsEqual(src.Repo, branchRepo) {
+		if src.Name == "" || src.Repo == "" || (repoURLsEqual(src.Repo, branchRepo) && src.Branch == branchName) {
 			continue
 		}
 		if src.VCSConfigID == "" {
@@ -129,7 +125,7 @@ func (a *Activities) changedPathsBetween(ctx context.Context, vcsConfigID, baseS
 		return nil, err
 	}
 	if diff == nil {
-		return nil, nil
+		return nil, fmt.Errorf("no source comparison returned for %s..%s", baseSHA, headSHA)
 	}
 	return diff.ChangedPaths, nil
 }

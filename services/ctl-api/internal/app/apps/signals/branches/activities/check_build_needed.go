@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 )
 
@@ -75,6 +76,7 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 
 	var newConfigConnection app.ComponentConfigConnection
 	err = a.db.WithContext(ctx).
+		Preload("AppConfig").
 		Preload("ExternalImageComponentConfig").
 		Where(app.ComponentConfigConnection{
 			AppConfigID: input.NewAppConfigID,
@@ -83,6 +85,20 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 		First(&newConfigConnection).Error
 	if err != nil {
 		return &CheckBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
+	}
+
+	if newConfigConnection.AppConfig.BuildsPinned {
+		if !build.RequiresFreshBuild(&newConfigConnection) && input.SourceChanged != nil && !*input.SourceChanged &&
+			oldConn.Checksum != "" && oldConn.Checksum == newConfigConnection.Checksum && oldConn.LatestBuildID.Valid {
+			existing, err := buildselection.Component(ctx, a.db, oldConn.ID)
+			if err == nil && existing != nil && existing.ID == oldConn.LatestBuildID.String {
+				return reuseExistingBuild(existing.ID), nil
+			}
+		}
+		return &CheckBuildNeededOutput{
+			NeedsBuild:   true,
+			ChangeReason: buildChangeReason(sourceCommitChanged(input), oldConn.Checksum, newConfigConnection.Checksum),
+		}, nil
 	}
 
 	if build.RequiresFreshBuild(&newConfigConnection) {

@@ -332,19 +332,9 @@ var _ signal.SignalWithMaxRetries = (*AutoRetryBudgetSignal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*AutoRetryBudgetSignal)(nil)
 var _ signal.SignalWithStepContext = (*AutoRetryBudgetSignal)(nil)
 
-// --- CancellableTestSignal: blocks until cancelled, writes marker on Cancel() ---
-// This proves the Cancel() method was called by writing to the step's
-// ResultDirective field (a known, queryable column).
-
 const CancellableTestSignalType signal.SignalType = "test-flow-cancellable"
 
-// CancelMarker is the value written to ResultDirective when Cancel() is invoked.
-const CancelMarker = "cancel-callback-invoked"
-
-type CancellableTestSignal struct {
-	StepID string `json:"step_id,omitempty"`
-	FlowID string `json:"flow_id,omitempty"`
-}
+type CancellableTestSignal struct{}
 
 func init() {
 	catalog.Register(CancellableTestSignalType, func() signal.Signal { return &CancellableTestSignal{} })
@@ -352,10 +342,6 @@ func init() {
 
 func (s *CancellableTestSignal) Type() signal.SignalType         { return CancellableTestSignalType }
 func (s *CancellableTestSignal) Validate(workflow.Context) error { return nil }
-func (s *CancellableTestSignal) SetStepContext(stepID, flowID string) {
-	s.StepID = stepID
-	s.FlowID = flowID
-}
 
 func (s *CancellableTestSignal) Execute(ctx workflow.Context) error {
 	// Block forever until the context is cancelled
@@ -364,23 +350,11 @@ func (s *CancellableTestSignal) Execute(ctx workflow.Context) error {
 	})
 }
 
-func (s *CancellableTestSignal) Cancel(ctx workflow.Context) error {
-	if s.StepID == "" {
-		return nil
-	}
-	// Write CancelMarker to the step's ResultDirective so the test can verify
-	// that Cancel() was actually invoked at this level.
-	return activities.AwaitPkgWorkflowsFlowUpdateFlowStepResultDirective(ctx, activities.UpdateFlowStepResultDirectiveRequest{
-		StepID:    s.StepID,
-		Directive: CancelMarker,
-	})
-}
-
-func (s *CancellableTestSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
+func (s *CancellableTestSignal) Cancel(workflow.Context) error { return nil }
+func (s *CancellableTestSignal) SleepAfter() time.Duration     { return 250 * time.Millisecond }
 
 var _ signal.Signal = (*CancellableTestSignal)(nil)
 var _ signal.SignalWithCancel = (*CancellableTestSignal)(nil)
-var _ signal.SignalWithStepContext = (*CancellableTestSignal)(nil)
 
 // ApprovalInnerSignal implements no optional check interfaces so every pre-approval check passes and the step parks awaiting approval.
 

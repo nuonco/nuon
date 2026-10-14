@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 )
 
 type CreateInstallDeployRequest struct {
@@ -28,6 +29,16 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {
 		return nil, err
+	}
+
+	if req.Type != app.InstallDeployTypeTeardown {
+		appConfigID, err := buildselection.InstallConfigID(ctx, a.db, install, req.WorkflowID)
+		if err != nil {
+			return nil, err
+		}
+		if err := buildselection.ValidateComponent(ctx, a.db, appConfigID, req.ComponentID, req.BuildID); err != nil {
+			return nil, err
+		}
 	}
 
 	installCmp := app.InstallComponent{}
