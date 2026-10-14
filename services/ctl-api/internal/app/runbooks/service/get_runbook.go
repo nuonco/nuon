@@ -41,6 +41,7 @@ func (s *service) GetRunbook(ctx *gin.Context) {
 		Preload("Configs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("created_at DESC").Limit(1)
 		}).
+		Preload("Configs.Triggers").
 		Preload("Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
