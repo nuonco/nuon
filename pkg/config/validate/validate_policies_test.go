@@ -130,6 +130,39 @@ func TestValidatePoliciesUniqueNames(t *testing.T) {
 		assert.Contains(t, err.Error(), `duplicate policy name "warn-public-sensitive-ports"`)
 	})
 
+	t.Run("accepts a nil config", func(t *testing.T) {
+		require.NoError(t, ValidatePolicyNames(nil))
+	})
+
+	t.Run("accepts missing policies", func(t *testing.T) {
+		require.NoError(t, ValidatePolicyNames(&config.AppConfig{}))
+		require.NoError(t, ValidateUniquePolicyNames(nil))
+	})
+
+	t.Run("accepts one unnamed policy", func(t *testing.T) {
+		require.NoError(t, ValidateUniquePolicyNames([]config.AppPolicy{{}}))
+	})
+
+	t.Run("rejects two unnamed policies", func(t *testing.T) {
+		err := ValidateUniquePolicyNames([]config.AppPolicy{{}, {}})
+		require.Error(t, err)
+		assert.EqualError(t, err, "policies must have unique names")
+	})
+
+	t.Run("keeps an explicit name over the contents path", func(t *testing.T) {
+		cfg := &config.AppConfig{Policies: &config.PoliciesConfig{Policies: []config.AppPolicy{
+			{
+				Name:     "sandbox-ports",
+				Contents: "./policies/warn-public-sensitive-ports.rego",
+			},
+			{
+				Name:     "module-ports",
+				Contents: "./policies/warn-public-sensitive-ports.rego",
+			},
+		}}}
+		require.NoError(t, ValidatePolicyNames(cfg))
+	})
+
 	t.Run("rejects names derived from the same contents path", func(t *testing.T) {
 		cfg := &config.AppConfig{Policies: &config.PoliciesConfig{Policies: []config.AppPolicy{
 			{

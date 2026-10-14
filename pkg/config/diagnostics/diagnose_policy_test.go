@@ -20,8 +20,16 @@ type = "terraform_module"
 engine = "opa"
 contents = "package nuon"
 `
-	if !hasMessage(DiagnoseFile("policies.toml", text), `duplicate policy name "warn-public-sensitive-ports"`) {
-		t.Fatalf("missing duplicate name diagnostic: %#v", DiagnoseFile("policies.toml", text))
+	diags := DiagnoseFile("policies.toml", text)
+	if !hasMessage(diags, `duplicate policy name "warn-public-sensitive-ports"`) {
+		t.Fatalf("missing duplicate name diagnostic: %#v", diags)
+	}
+	for _, diag := range diags {
+		if strings.Contains(diag.Message, `duplicate policy name "warn-public-sensitive-ports"`) {
+			if diag.StartLine != 9 {
+				t.Fatalf("diagnostic landed on line %d, want the second policy name", diag.StartLine)
+			}
+		}
 	}
 }
 
