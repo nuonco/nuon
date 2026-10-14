@@ -4,6 +4,8 @@ import {
   stepStatusCategory,
 } from '@/components/branches/shared/step-status'
 import type { TCompositeError, TInstallWorkflowStep } from '@/types'
+import { deployStepForGroup } from './rollout-stages'
+import type { TTrackGroup } from './RolloutTrack'
 
 export type TOverviewStageStatus =
   | 'pending'
@@ -187,6 +189,30 @@ export const preRolloutCompositeError = (
   )
   if (rolloutFailed || isRolloutError(runError)) return undefined
   return runError?.message || runError?.type ? runError : undefined
+}
+
+const failedInstallId = (error?: TCompositeError) =>
+  (error?.data as unknown as { install_id?: string } | undefined)?.install_id
+
+export const groupCompositeError = (
+  steps: TInstallWorkflowStep[],
+  group: Pick<TTrackGroup, 'name' | 'status' | 'installs'>,
+  runError?: TCompositeError
+): TCompositeError | undefined => {
+  const deploy = deployStepForGroup(steps, group.name)
+  if (deploy && stepStageStatus(deploy) === 'error') {
+    const stepError = deploy.status?.composite_error
+    if (stepError?.message || stepError?.type) return stepError
+    const description = deploy.status?.status_human_description
+    if (description) return { message: description, severity: 'error' }
+  }
+  if (groupStageStatus(group.status) !== 'error' || !isRolloutError(runError)) {
+    return undefined
+  }
+  const installId = failedInstallId(runError)
+  return installId && group.installs.some((install) => install.id === installId)
+    ? runError
+    : undefined
 }
 
 export const installFailureHref = (

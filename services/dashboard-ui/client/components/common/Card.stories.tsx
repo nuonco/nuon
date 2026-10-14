@@ -12,8 +12,8 @@ import { Input } from './form/Input'
 const STEPS = [
   { level: '0', className: 'bg-elevation-0', where: 'Page' },
   { level: '1', className: 'bg-elevation-1', where: 'Card on the page' },
-  { level: '2', className: 'bg-elevation-2', where: 'Panel and modal' },
-  { level: '3', className: 'bg-elevation-3', where: 'Card inside a panel or modal' },
+  { level: '2', className: 'bg-elevation-2', where: 'Card inside a step-1 card' },
+  { level: '3', className: 'bg-elevation-3', where: 'Card inside a step-2 card' },
 ] as const
 
 export const Elevation = () => (
@@ -51,7 +51,7 @@ export const Elevation = () => (
         </Text>
         <Card elevation="2" className="!p-4 !gap-4">
           <Text weight="strong">Elevation 2</Text>
-          <Text theme="neutral">One step above its parent, same fill as a panel.</Text>
+          <Text theme="neutral">One step above its parent.</Text>
         </Card>
       </Card>
     </div>
