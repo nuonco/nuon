@@ -4261,6 +4261,7 @@ export interface components {
       app_config_id?: string;
       app_id?: string;
       app_policies_config?: string;
+      apply_on_teardown?: boolean;
       components?: string[];
       contents?: string;
       created_at?: string;
@@ -8337,6 +8338,7 @@ export interface components {
       policy_name?: string;
     };
     "service.AppPolicyConfig": {
+      apply_on_teardown?: boolean;
       components?: string[];
       contents: string;
       description?: string;

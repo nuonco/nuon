@@ -185,6 +185,7 @@ export type TAppPolicyConfig = {
   name?: string
   contents?: string
   components?: string[]
+  apply_on_teardown?: boolean
 }
 
 export type TAppPoliciesConfig = {
