@@ -4,6 +4,7 @@ import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Code } from '@/components/common/Code'
+import { Duration } from '@/components/common/Duration'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
@@ -14,12 +15,13 @@ import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { CloudRegion } from '@/components/common/CloudRegion'
 import { RadioInput } from '@/components/common/form/RadioInput'
 import { Select, type SelectOption } from '@/components/common/form/Select'
+import { Status } from '@/components/common/Status'
 import { Toggle } from '@/components/common/form/Toggle'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { MainTopbar } from '@/components/layout/MainTopbar'
 import { OnboardingWizardLayout } from '@/components/onboarding/OnboardingWizard/OnboardingWizard'
 import { BreadcrumbNav } from '@/components/navigation/Breadcrumb'
-import { WorkflowSteps } from '@/components/workflows/WorkflowSteps/WorkflowSteps'
+import { WorkflowStepRow } from '@/components/workflows/WorkflowSteps/WorkflowStepRow'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 import {
   OnboardingWizardProvider,
@@ -75,22 +77,55 @@ const teardownCrumbs: TNavLink[] = [
   { path: '/org-1/apps/app-1/installs/inst-1/teardown', text: 'Teardown' },
 ]
 
-const PROVISION_STEPS = [
-  'generate install state',
-  'generate install stack',
-  'await install stack',
-  'runner healthy',
-  'provision sandbox plan',
-  'provision sandbox apply',
-  'deploy components',
+interface IWorkflowGroup {
+  id: string
+  label: string
+  steps: string[]
+}
+
+const PROVISION_GROUPS: IWorkflowGroup[] = [
+  {
+    id: 'setup',
+    label: 'Setup',
+    steps: ['generate install state', 'generate install stack'],
+  },
+  {
+    id: 'customer-setup',
+    label: 'Awaiting customer setup',
+    steps: ['await install stack', 'runner healthy'],
+  },
+  {
+    id: 'sandbox',
+    label: 'Sandbox',
+    steps: ['provision sandbox plan', 'provision sandbox apply'],
+  },
+  {
+    id: 'components',
+    label: 'Deploy components',
+    steps: ['deploy components'],
+  },
 ]
 
-const TEARDOWN_STEPS = [
-  'teardown components',
-  'deprovision sandbox plan',
-  'deprovision sandbox apply',
-  'deprovision runner',
+const TEARDOWN_GROUPS: IWorkflowGroup[] = [
+  {
+    id: 'components',
+    label: 'Teardown components',
+    steps: ['teardown components'],
+  },
+  {
+    id: 'sandbox',
+    label: 'Sandbox',
+    steps: ['deprovision sandbox plan', 'deprovision sandbox apply'],
+  },
+  {
+    id: 'runner',
+    label: 'Deprovision runner',
+    steps: ['deprovision runner'],
+  },
 ]
+
+const PROVISION_STEPS = PROVISION_GROUPS.flatMap((group) => group.steps)
+const TEARDOWN_STEPS = TEARDOWN_GROUPS.flatMap((group) => group.steps)
 
 interface IWizardActions {
   stepMs: number
@@ -519,7 +554,8 @@ const InstallDetailsStep = ({
     typeof sharedData.accountId === 'string' ? sharedData.accountId : ''
   const autoApprove = sharedData.autoApprove === true
   const stackOnly = sharedData.stackOnly === true
-  const valid = !!name.trim() && !!region && /^[0-9]{12}$/.test(accountId)
+  const accountValid = accountId.length === 0 || /^[0-9]{12}$/.test(accountId)
+  const valid = !!name.trim() && !!region && accountValid
 
   return (
     <div className="flex flex-col gap-8">
@@ -585,7 +621,11 @@ const InstallDetailsStep = ({
         label="Continue"
         showCaret
         disabled={!valid}
-        disabledReason="Enter the install name, region, and AWS account ID"
+        disabledReason={
+          !name.trim() || !region
+            ? 'Enter the install name and region'
+            : 'Enter a 12-digit AWS account ID'
+        }
       />
     </div>
   )
@@ -699,7 +739,11 @@ const ReviewCreateStep = ({ onAdvance, onGoBack, sharedData }: IWizardStepCompon
             )}
           </LabeledValue>
           <LabeledValue label="AWS account ID">
-            <Code variant="inline">{String(sharedData.accountId)}</Code>
+            {typeof sharedData.accountId === 'string' && sharedData.accountId ? (
+              <Code variant="inline">{sharedData.accountId}</Code>
+            ) : (
+              'None'
+            )}
           </LabeledValue>
           <LabeledValue label="Auto-approve changes">
             {sharedData.autoApprove === true ? 'On' : 'Off'}
@@ -809,6 +853,116 @@ const ConfirmTeardownStep = ({ onAdvance, onGoBack }: IWizardStepComponentProps)
   )
 }
 
+const groupStatus = (steps: TWorkflowStep[]) => {
+  if (steps.every((step) => step.status?.status === 'success')) return 'success'
+  if (
+    steps.some(
+      (step) => step.status?.status === 'in-progress' || step.status?.status === 'success'
+    )
+  ) {
+    return 'in-progress'
+  }
+  return 'pending'
+}
+
+const WizardWorkflowSteps = ({
+  groups,
+  steps,
+}: {
+  groups: IWorkflowGroup[]
+  steps: TWorkflowStep[]
+}) => {
+  const byName = new Map(steps.map((step) => [step.name, step]))
+  const completed = steps.filter((step) => step.status?.status === 'success').length
+  const active = steps.some((step) => step.status?.status === 'in-progress')
+  const fraction = steps.length ? (completed + (active ? 0.5 : 0)) / steps.length : 0
+
+  const visible = groups
+    .map((group) => ({
+      group,
+      groupSteps: group.steps.flatMap((name) => {
+        const step = byName.get(name)
+        return step ? [step] : []
+      }),
+    }))
+    .filter((item) => item.groupSteps.length)
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        className="h-2 overflow-hidden rounded-full bg-cool-grey-200 dark:bg-dark-grey-700"
+        role="progressbar"
+        aria-valuenow={Math.round(fraction * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Workflow progress"
+      >
+        <div
+          className="h-full rounded-full bg-green-600 transition-[width] duration-500 dark:bg-green-500"
+          style={{ width: `${Math.min(100, fraction * 100)}%` }}
+        />
+      </div>
+      <div className="flex flex-col divide-y overflow-hidden rounded-md border">
+        {visible.map(({ group, groupSteps }) => {
+            const status = groupStatus(groupSteps)
+            if (groupSteps.length === 1) {
+              return (
+                <div key={group.id} className="px-4 py-2">
+                  <WorkflowStepRow step={groupSteps[0]} showRetry />
+                </div>
+              )
+            }
+
+            const duration = groupSteps.reduce(
+              (total, step) => total + (step.execution_time ?? 0),
+              0
+            )
+
+            return (
+              <Expand
+                key={group.id}
+                id={`workflow-group-${group.id}`}
+                isOpen={status === 'in-progress'}
+                interactiveHeading
+                headerToggle
+                isIconBeforeHeading
+                headerClassName="px-4 py-2"
+                heading={
+                  <span className="flex min-w-0 flex-1 flex-wrap items-center gap-4">
+                    <span className="flex min-w-0 items-center gap-4">
+                      <Status isWithoutText status={status} variant="timeline" />
+                      <Text variant="base" nowrap className="truncate">
+                        {group.label}
+                      </Text>
+                    </span>
+                    {status === 'success' ? (
+                      <Badge size="sm" theme="success">
+                        Completed
+                      </Badge>
+                    ) : null}
+                    {status === 'success' ? (
+                      <Text variant="subtext" theme="neutral">
+                        Completed in <Duration variant="subtext" nanoseconds={duration} />
+                      </Text>
+                    ) : null}
+                  </span>
+                }
+              >
+                <div className="flex flex-col divide-y border-t">
+                  {groupSteps.map((step) => (
+                    <div key={step.id} className="py-2 pr-4 pl-12">
+                      <WorkflowStepRow step={step} showRetry />
+                    </div>
+                  ))}
+                </div>
+              </Expand>
+            )
+        })}
+      </div>
+    </div>
+  )
+}
+
 const WorkflowStep = ({
   mode,
   installName,
@@ -871,7 +1025,10 @@ const WorkflowStep = ({
           policyViolationsCount: 0,
         }}
       >
-        <WorkflowSteps workflowSteps={workflowSteps} />
+        <WizardWorkflowSteps
+          groups={mode === 'create' ? PROVISION_GROUPS : TEARDOWN_GROUPS}
+          steps={workflowSteps}
+        />
       </WorkflowContext.Provider>
 
       <div className="flex flex-wrap justify-end gap-3">
