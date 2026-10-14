@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
@@ -36,6 +38,8 @@ func TestDeprovisionECRRepositoryRoutesByCloud(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var ts testsuite.WorkflowTestSuite
 			env := ts.NewTestWorkflowEnvironment()
+			// CI runs many test binaries at once; a starved workflow goroutine must not read as a deadlock.
+			env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 
 			started := map[string]int{}
 			env.SetOnActivityStartedListener(func(info *activity.Info, _ context.Context, _ converter.EncodedValues) {
@@ -47,11 +51,11 @@ func TestDeprovisionECRRepositoryRoutesByCloud(t *testing.T) {
 				env.RegisterWorkflow(fn)
 			}
 
-			env.OnActivity((*ecrrepository.Activities).DeleteECRRepository, mock.Anything, mock.Anything).
+			env.OnActivity((*ecrrepository.Activities).DeleteECRRepository, mock.Anything, mock.Anything, mock.Anything).
 				Return(&ecrrepository.DeleteECRRepositoryResponse{}, tt.deleteErr).Maybe()
-			env.OnActivity((*ecrrepository.Activities).DeleteGARPackage, mock.Anything, mock.Anything).
+			env.OnActivity((*ecrrepository.Activities).DeleteGARPackage, mock.Anything, mock.Anything, mock.Anything).
 				Return(&ecrrepository.DeleteGARPackageResponse{}, tt.deleteErr).Maybe()
-			env.OnActivity((*ecrrepository.Activities).DeleteACRRepository, mock.Anything, mock.Anything).
+			env.OnActivity((*ecrrepository.Activities).DeleteACRRepository, mock.Anything, mock.Anything, mock.Anything).
 				Return(&ecrrepository.DeleteACRRepositoryResponse{}, tt.deleteErr).Maybe()
 
 			env.ExecuteWorkflow("DeprovisionECRRepository", &ecrrepository.DeprovisionECRRepositoryRequest{
