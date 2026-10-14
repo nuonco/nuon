@@ -3,10 +3,12 @@ import { WizardNav } from './WizardNav'
 
 export const WizardNavContainer = ({
   isScrolled = false,
+  showHeader = true,
   skipHref,
   onSkip,
 }: {
   isScrolled?: boolean
+  showHeader?: boolean
   skipHref?: string | null
   onSkip?: () => void
 }) => {
@@ -18,7 +20,8 @@ export const WizardNavContainer = ({
       steps={steps}
       currentStepIndex={currentStepIndex}
       completedSteps={completedSteps}
-      showHeader
+      showHeader={showHeader}
+      isLocked={!!steps[currentStepIndex]?.lockPrevious}
       skipHref={skipHref}
       onSkip={onSkip}
       onGoToStep={goToStep}

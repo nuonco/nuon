@@ -54,6 +54,10 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 	}
 
 	workflowID := ctx.Param("workflow_id")
+	if err := s.requireOrgWorkflow(ctx, org.ID, workflowID); err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	// Find the queue signal for this workflow.
 	var qs app.QueueSignal
