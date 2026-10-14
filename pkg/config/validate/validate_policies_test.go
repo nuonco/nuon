@@ -117,7 +117,7 @@ func TestValidatePoliciesUniqueNames(t *testing.T) {
 			policy("sandbox-ports", config.AppPolicyTypeSandbox, nil),
 			policy("module-ports", config.AppPolicyTypeTerraformModule, []string{"*"}),
 		}}}
-		require.NoError(t, ValidatePolicies(cfg))
+		require.NoError(t, ValidatePolicyNames(cfg))
 	})
 
 	t.Run("rejects duplicate names", func(t *testing.T) {
@@ -125,7 +125,7 @@ func TestValidatePoliciesUniqueNames(t *testing.T) {
 			policy("warn-public-sensitive-ports", config.AppPolicyTypeSandbox, nil),
 			policy("warn-public-sensitive-ports", config.AppPolicyTypeTerraformModule, []string{"*"}),
 		}}}
-		err := ValidatePolicies(cfg)
+		err := ValidatePolicyNames(cfg)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), `duplicate policy name "warn-public-sensitive-ports"`)
 	})
@@ -144,7 +144,7 @@ func TestValidatePoliciesUniqueNames(t *testing.T) {
 				Contents:   "./policies/warn-public-sensitive-ports.rego",
 			},
 		}}}
-		err := ValidatePolicies(cfg)
+		err := ValidatePolicyNames(cfg)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), `duplicate policy name "warn-public-sensitive-ports"`)
 	})

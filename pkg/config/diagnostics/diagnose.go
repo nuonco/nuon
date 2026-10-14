@@ -14,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/schema"
+	"github.com/nuonco/nuon/pkg/config/validate"
 	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 )
 
@@ -315,26 +316,36 @@ func duplicatePolicyNames(doc *tomlparser.TomlDocument) []Diagnostic {
 		}
 	}
 
-	seen := make(map[string]struct{}, len(raw))
-	var out []Diagnostic
-	for i, item := range raw {
+	policies := make([]config.AppPolicy, 0, len(raw))
+	for _, item := range raw {
 		fields, _ := item.(map[string]any)
 		name, _ := fields["name"].(string)
+		contents, _ := fields["contents"].(string)
+		policies = append(policies, config.AppPolicy{Name: name, Contents: contents})
+	}
+	if err := validate.ValidateUniquePolicyNames(policies); err != nil {
+		return []Diagnostic{at(SeverityError, err.Error(), policyRange(doc, headers, duplicatePolicyIndex(policies)))}
+	}
+	return nil
+}
+
+func duplicatePolicyIndex(policies []config.AppPolicy) int {
+	seen := make(map[string]struct{}, len(policies))
+	for i, policy := range policies {
+		name := policy.Name
 		if name == "" {
-			contents, _ := fields["contents"].(string)
-			policy := config.AppPolicy{Contents: contents}
 			policy.SetNameFromContents()
 			name = policy.Name
 		}
 		if name == "" {
 			continue
 		}
-		if _, exists := seen[name]; exists {
-			out = append(out, at(SeverityError, fmt.Sprintf("duplicate policy name %q", name), policyRange(doc, headers, i)))
+		if _, ok := seen[name]; ok {
+			return i
 		}
 		seen[name] = struct{}{}
 	}
-	return out
+	return len(policies) - 1
 }
 
 func policyRange(doc *tomlparser.TomlDocument, headers []tomlparser.Table, index int) tomlparser.Range {
