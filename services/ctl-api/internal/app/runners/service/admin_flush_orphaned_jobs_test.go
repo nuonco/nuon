@@ -61,6 +61,7 @@ func (s *AdminFlushOrphanedJobsTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)

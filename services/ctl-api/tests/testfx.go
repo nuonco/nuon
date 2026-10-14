@@ -37,6 +37,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
@@ -183,6 +184,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 			})
 		}),
 		fx.Provide(queueclient.New),
+		fx.Provide(flowclient.New),
 
 		// Queue emitter client (uses mock temporal client)
 		fx.Provide(emitterclient.New),
