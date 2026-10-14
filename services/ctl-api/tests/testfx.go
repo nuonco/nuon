@@ -18,6 +18,7 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
@@ -196,6 +197,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		fx.Provide(runbookshelpers.New),
 		fx.Provide(installshelpers.New),
 		fx.Provide(orgshelpers.New),
+		fx.Provide(generalhelpers.New),
 
 		// Endpoint audit
 		fx.Provide(api.NewEndpointAudit),
