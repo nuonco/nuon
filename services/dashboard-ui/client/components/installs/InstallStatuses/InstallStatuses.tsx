@@ -1,7 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useInstallHref } from '@/hooks/use-install-path'
+import { useInstallHref, useInstallNested } from '@/hooks/use-install-path'
+import {
+  installComponentStatusSuffix,
+  installStatusSuffix,
+  type TInstallStatusPage,
+} from '@/lib/install-path'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Icon } from '@/components/common/Icon'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
@@ -34,6 +39,37 @@ export interface IInstallStatuses
   stack?: TInstallStack
 }
 
+const useInstallStatusHref = (install?: TInstall) => {
+  const href = useInstallHref()
+  const nested = useInstallNested()
+  const link = (suffix: string) =>
+    href({
+      orgId: install?.org_id,
+      appId: install?.app_id,
+      installId: install?.id,
+      suffix,
+    })
+  return {
+    page: (page: TInstallStatusPage, health?: string) =>
+      link(installStatusSuffix(page, nested, health)),
+    component: (component: TInstallComponent) =>
+      link(
+        installComponentStatusSuffix({
+          nested,
+          componentId: component.component_id,
+          name: component.component?.name,
+          type: component.component?.type,
+        })
+      ),
+    workflow: (workflowId?: string) =>
+      link(
+        workflowId
+          ? `/workflows/${workflowId}`
+          : installStatusSuffix('workflows', nested)
+      ),
+  }
+}
+
 const LazyComponentsStatus = ({
   install,
   tooltipPosition,
@@ -44,12 +80,7 @@ const LazyComponentsStatus = ({
   children: React.ReactNode
 }) => {
   const [hovered, setHovered] = useState(false)
-  const installHref = useInstallHref()
-  const installRoot = installHref({
-    orgId: install.org_id,
-    installId: install.id,
-    appId: install.app_id,
-  })
+  const statusHref = useInstallStatusHref(install)
 
   const { data } = useQuery({
     placeholderData: keepPreviousData,
@@ -82,8 +113,9 @@ const LazyComponentsStatus = ({
         )}
         componentSummaries={getContextTooltipItemsFromInstallComponents(
           components,
-          `${installRoot}/components`,
-          install?.lifecycle_phase?.phase
+          '',
+          install?.lifecycle_phase?.phase,
+          statusHref.component
         )}
         position={tooltipPosition}
       >
@@ -150,12 +182,7 @@ export const InstallStatuses = ({
   stack,
   ...props
 }: IInstallStatuses) => {
-  const installHref = useInstallHref()
-  const installRoot = installHref({
-    orgId: install?.org_id,
-    installId: install?.id,
-    appId: install?.app_id,
-  })
+  const statusHref = useInstallStatusHref(install)
   const lifecycleStatus = install?.lifecycle_phase?.phase
   const isDeprovisioning = lifecycleStatus === 'deprovisioning'
   const isDeprovisioned = lifecycleStatus === 'deprovisioned'
@@ -183,8 +210,8 @@ export const InstallStatuses = ({
         )
   const sandboxHref =
     sandboxDisplayStatus !== sandboxBaseStatus
-      ? `${installRoot}/resources?health=${sandboxDisplayStatus}`
-      : `${installRoot}/sandbox`
+      ? statusHref.page('health', sandboxDisplayStatus)
+      : statusHref.page('sandbox')
 
   const driftStatus = install?.drifted_objects?.length ? 'warn' : 'active'
   const latestStackVersion = stack?.versions?.[0]
@@ -197,7 +224,7 @@ export const InstallStatuses = ({
       items={
         install?.drifted_objects?.length
           ? install?.drifted_objects?.map((drift) => ({
-              href: `${installRoot}/workflows/${drift?.install_workflow_id}`,
+              href: statusHref.workflow(drift?.install_workflow_id),
               id: drift?.target_id,
               title:
                 drift?.target_type === 'install_deploy'
@@ -260,7 +287,7 @@ export const InstallStatuses = ({
       position={tooltipPosition}
       items={[
         {
-          href: `${installRoot}/runner`,
+          href: statusHref.page('runner'),
           id: install?.runner_id,
           title: `${humanize(install?.runner_type)} runner`,
           subtitle: getInstallStatusTitle(
@@ -356,8 +383,9 @@ export const InstallStatuses = ({
       )}
       componentSummaries={getContextTooltipItemsFromInstallComponents(
         install?.install_components as TInstallComponent[],
-        `${installRoot}/components`,
-        install?.lifecycle_phase?.phase
+        '',
+        install?.lifecycle_phase?.phase,
+        statusHref.component
       )}
       position={tooltipPosition}
     >
@@ -377,7 +405,7 @@ export const InstallStatuses = ({
           subtitle:
             install?.composite_health_status_description ??
             humanize(healthStatus),
-          href: `${installRoot}/resources?health=${healthStatus}`,
+          href: statusHref.page('health', healthStatus),
           leftContent: (
             <Status
               status={healthStatus}
@@ -407,7 +435,7 @@ export const InstallStatuses = ({
       position={tooltipPosition}
       items={[
         {
-          href: `${installRoot}/stacks`,
+          href: statusHref.page('stacks'),
           id: latestStackVersion?.id ?? 'stack',
           title: humanize(stackStatus),
           subtitle: latestStackVersion?.created_at ? (
@@ -468,7 +496,7 @@ export const InstallStatuses = ({
             id: 'stack',
             title: 'Stack',
             subtitle: humanize(stackStatus),
-            href: `${installRoot}/stacks`,
+            href: statusHref.page('stacks'),
             leftContent: (
               <Status
                 status={stackStatus}
@@ -484,7 +512,7 @@ export const InstallStatuses = ({
       id: 'runner',
       title: 'Runner',
       subtitle: getInstallStatusTitle('runner_status', install?.runner_status, install?.lifecycle_phase?.phase),
-      href: `${installRoot}/runner`,
+      href: statusHref.page('runner'),
       leftContent: (
         <Status
           status={effectiveStatus(install?.runner_status)}
@@ -516,7 +544,7 @@ export const InstallStatuses = ({
         install?.composite_component_status,
         install?.lifecycle_phase?.phase
       ),
-      href: `${installRoot}/components`,
+      href: statusHref.page('components'),
       leftContent: (
         <Status
           status={effectiveStatus(install?.composite_component_status)}
@@ -534,7 +562,7 @@ export const InstallStatuses = ({
             subtitle:
               install?.composite_health_status_description ??
               humanize(healthStatus),
-            href: `${installRoot}/resources?health=${healthStatus}`,
+            href: statusHref.page('health', healthStatus),
             leftContent: (
               <Status
                 status={healthStatus}
@@ -555,7 +583,7 @@ export const InstallStatuses = ({
               ? 'Drift detected'
               : 'No drift',
             href: install.drifted_objects.length
-              ? `${installRoot}/workflows`
+              ? statusHref.workflow()
               : undefined,
             leftContent: (
               <Status

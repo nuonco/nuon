@@ -18,6 +18,61 @@ const workflowDetailSuffix = (suffix: string) =>
     '/deployments/$1$2'
   )
 
+const IMAGE_COMPONENT_TYPES = new Set(['docker_build', 'external_image'])
+
+export type TInstallStatusPage =
+  | 'runner'
+  | 'sandbox'
+  | 'stacks'
+  | 'components'
+  | 'workflows'
+  | 'health'
+
+export const installStatusSuffix = (
+  page: TInstallStatusPage,
+  nested: boolean,
+  health?: string
+) => {
+  if (!nested) {
+    if (page === 'health') return `/resources?health=${health ?? ''}`
+    return `/${page}`
+  }
+  switch (page) {
+    case 'runner':
+      return '/operations/runner'
+    case 'sandbox':
+      return '/resources/sandbox'
+    case 'stacks':
+      return '/resources'
+    case 'components':
+      return '/resources/components'
+    case 'workflows':
+      return '/deployments'
+    case 'health':
+      return '/health'
+  }
+}
+
+export const installComponentStatusSuffix = ({
+  nested,
+  componentId,
+  name,
+  type,
+}: {
+  nested: boolean
+  componentId?: string
+  name?: string
+  type?: string
+}) => {
+  if (!nested) return `/components/${componentId ?? ''}`
+  const page =
+    type && IMAGE_COMPONENT_TYPES.has(type)
+      ? '/resources/images'
+      : '/resources/components'
+  if (!name) return page
+  return `${page}?q=${encodeURIComponent(name)}`
+}
+
 export const installHref = ({
   orgId,
   appId,

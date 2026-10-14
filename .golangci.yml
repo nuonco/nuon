@@ -84,6 +84,10 @@ formatters:
     # - gofmt
     - goimports
     # - golines
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/nuonco
   exclusions:
     generated: lax
 run:

@@ -122,12 +122,12 @@ Only the default light and dark themes step. Classic, high contrast, and monochr
 
 | Step | Fill | Use |
 | --- | --- | --- |
-| `0` | Page (`--background`) | The page, and anything that should match its parent. `Card` defaults here and paints nothing, so it inherits. |
+| `0` | Page (`--background`) | The page, `Panel`, and `Modal`. They share the page fill; the overlay, border, and shadow separate a modal or panel from the page. `Card` defaults here and paints nothing, so it inherits. |
 | `1` | `--elevation-1` | A card on the page that should read as its own surface. `Card elevation="1"`. |
-| `2` | `--elevation-2` | `Panel` and `Modal`, which share one fill; the overlay and shadow separate a modal stacked on a panel. Also a card nested inside a step-1 card. |
-| `3` | `--elevation-3` | A card inside a panel or modal that needs its own fill. |
+| `2` | `--elevation-2` | A card nested inside a step-1 card. |
+| `3` | `--elevation-3` | A card nested inside a step-2 card. |
 
-- Climb one step from the parent. Page → `1`. A step-1 card → `2`. A panel or modal → `3`. A step-2 or step-3 card on the page reads as an overlay that isn't one.
+- Climb one step from the parent. Page, panel, or modal → `1`. A step-1 card → `2`. A step-2 card → `3`. A step-2 or step-3 card on the page reads as an overlay that isn't one.
 - Form fields are tinted, not filled: `bg-black/6` in light mode and `bg-white/6` in dark mode, so they sit a little darker or lighter than whatever they are on. Their border is `--field-border` (`cool-grey-400` / `dark-grey-200`), darker or lighter than that tint, because the page border token sits on top of the tint and disappears. Don't give a field an opaque dark fill; on a raised surface it reads as a hole.
 - Don't put a lower step inside a higher one. It cuts a hole back toward the page. Inside a panel or modal, leave cards at the default so they inherit that surface; separate them with spacing, type, or the border.
 - Same-step neighbors don't separate by fill. Use spacing or a border.

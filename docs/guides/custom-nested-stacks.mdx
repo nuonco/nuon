@@ -292,12 +292,12 @@ providers. ARM does not allow subscription-scoped deployments inside a linked de
 parent template — which means Nuon needs the identity's `principalId` as an **output**.
 
 Your template must expose an output named `identityPrincipalId`, or one ending in that suffix (for example
-`bauleiterIdentityPrincipalId`, useful when a stack has several identities' outputs to keep distinct). Matching is
+`workerIdentityPrincipalId`, useful when a stack has several identities' outputs to keep distinct). Matching is
 case-insensitive and an exact `identityPrincipalId` wins over a suffixed one.
 
 ```json
 "outputs": {
-  "bauleiterIdentityPrincipalId": {
+  "workerIdentityPrincipalId": {
     "type": "string",
     "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'my-identity'), '2023-01-31').principalId]"
   }
