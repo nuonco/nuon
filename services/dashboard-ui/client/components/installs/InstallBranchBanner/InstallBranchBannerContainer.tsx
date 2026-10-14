@@ -1,3 +1,4 @@
+import { Link } from '@/components/common/Link'
 import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallOverview } from '@/hooks/use-install-overview'
@@ -5,7 +6,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TInstallOverviewCommit } from '@/types'
 import { InstallBranchBanner } from './InstallBranchBanner'
-import { PendingCommits } from './PendingCommits'
+import { SuccessfulBranchRuns } from './SuccessfulBranchRuns'
 
 export const InstallBranchBannerContainer = ({
   className,
@@ -19,6 +20,10 @@ export const InstallBranchBannerContainer = ({
   const tracking = data?.branch_tracking
   const branchName = tracking?.target_branch ?? install?.app_branch?.name
   const branchId = tracking?.branch_id ?? install?.app_branch?.id
+  const branchHref =
+    org?.id && install?.app_id && branchId
+      ? `/${org.id}/apps/${install.app_id}/branches/${branchId}`
+      : undefined
   const hrefFor = (commit?: TInstallOverviewCommit) =>
     org?.id && install?.app_id && commit?.branch_id && commit?.workflow_id
       ? `/${org.id}/apps/${install.app_id}/branches/${commit.branch_id}/runs/${commit.workflow_id}`
@@ -33,24 +38,27 @@ export const InstallBranchBannerContainer = ({
       <InstallBranchBanner
         error={error}
         onRetry={() => void refetch()}
-        commitsBehind={tracking?.commits_behind}
+        runsBehind={tracking?.commits_behind}
         branchName={branchName}
-        branchHref={
-          org?.id && install?.app_id && branchId
-            ? `/${org.id}/apps/${install.app_id}/branches/${branchId}`
-            : undefined
-        }
-        onViewCommits={() =>
+        branchHref={branchHref}
+        onViewRuns={() =>
           addPanel(
             <Panel
-              heading={`Commits available on ${branchName ?? 'the app branch'}`}
+              heading={`Successful app branch runs on ${branchName ?? 'the app branch'}`}
               size="half"
-              data-testid="pending-commits-panel"
+              data-testid="successful-runs-panel"
+              footer={
+                branchHref ? (
+                  <Link className="mr-auto" href={`${branchHref}/runs`}>
+                    View all runs
+                  </Link>
+                ) : undefined
+              }
             >
-              <PendingCommits
+              <SuccessfulBranchRuns
                 branchName={branchName}
-                commits={tracking?.pending_commits ?? []}
-                commitsBehind={tracking?.commits_behind}
+                runs={tracking?.pending_commits ?? []}
+                runsBehind={tracking?.commits_behind}
                 selectedCommit={tracking?.selected_commit}
                 repo={tracking?.repo}
                 hrefFor={hrefFor}
