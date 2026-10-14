@@ -74,6 +74,8 @@ account/RBAC models.
 - Database-backed tests use PostgreSQL, not SQLite.
 - After Go edits: `gofmt` and `goimports` on the package/directory (do not hand-manage imports).
 - Prefer struct-based GORM `Where` clauses over raw SQL strings.
+- New ctl-api public routes scope every id lookup to the `X-Nuon-Org-ID` org. See
+  [services/ctl-api/AGENTS.md](services/ctl-api/AGENTS.md).
 - Log with zap (see conventions above), not `fmt.Println`.
 - Comment only when the *why* is non-obvious.
 - After changing annotated types, Temporal `@temporal-gen` surfaces, or swagger endpoints: `go generate` in the

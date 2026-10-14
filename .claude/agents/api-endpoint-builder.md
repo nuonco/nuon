@@ -70,8 +70,10 @@ Every endpoint MUST include comprehensive Swagger annotations:
 **Authentication Requirements:**
 - Include both `@Security APIKey` and `@Security OrgID` for authenticated endpoints
 - Use account context from middleware: `cctx.GetAccountContext(ctx)`
-- Validate organization access through account's `OrgIDs` slice
 - Set account context before operations: `ctx = cctx.SetAccountContext(ctx, account)`
+
+**Org isolation for public routes:**
+Follow [services/ctl-api/AGENTS.md](services/ctl-api/AGENTS.md) under "Public routes and cross-org access". Org middleware only checks that the caller may act in `X-Nuon-Org-ID`. A `RegisterPublicRoutes` handler that loads or writes a row by id must filter that query by the context org: `cctx.OrgFromContext`, `db.WithContext(ctx)`, and `org_id` in the WHERE clause (see `installs/helpers.GetInstall`). Another org's id is a 404. The `orgscope` GORM plugin is a backstop for Query, Update, and Delete on models with a belongs-to `Org`. It does not cover Create, raw SQL, preloads, or models that only have an `OrgID` column.
 
 ### 2. Data Model Development
 

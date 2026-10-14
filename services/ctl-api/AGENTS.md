@@ -94,7 +94,8 @@ Every HTTP domain implements `internal/pkg/api.Service` with `RegisterPublicRout
 4. Ensure the target listener's FX module includes that services module
 
 **Routes are not registered unless the service is in `services.go`.** Wrong `Register*Routes` method means the route
-never mounts on the intended port.
+never mounts on the intended port. New `RegisterPublicRoutes` handlers that load a record by id follow
+[Public routes and cross-org access](#public-routes-and-cross-org-access).
 
 Optional MCP: implement `api.MCPService` with `RegisterMCPTools(*mcp.Server)`.
 
@@ -157,6 +158,33 @@ Never use `fmt.Println`. See [conventions/logging.md](/conventions/logging.md).
 - Global allowlist patterns must **exactly** match route registration (`:param` segments, not literal paths)
 - RBAC: accounts → roles → policies in `internal/pkg/authz/`
 - **`cctx.SetAccountContext(ctx, account)`** before authz/org mutations so `CreatedByID` hooks populate
+
+### Public routes and cross-org access
+
+`RegisterPublicRoutes` is the authenticated customer API. Org middleware (`internal/middlewares/org`) allows the call
+when the account may act in the `X-Nuon-Org-ID` org. The handler proves each path id belongs to that org.
+`cctx.IsPublic` is the unauthenticated allowlist in `internal/middlewares/public/public.go` (health, docs, webhooks,
+OIDC). Authenticated `/v1` routes are not on that list.
+
+A new public handler that reads or writes a row by id:
+
+1. Take the org from `cctx.OrgFromContext` and run the query with `db.WithContext(ctx)`.
+2. Put `org_id` and the id (or name) in the WHERE clause. Follow `installs/helpers.GetInstall` and
+   `installs/service.findInstall`. Another org's id is a 404.
+3. Load children from that parent, or by their own `org_id`. A child query by id alone is a cross-org read.
+4. On create, set `OrgID` from context and use parent ids from an org-scoped load. A `BeforeCreate` hook that stamps
+   `OrgID` still accepts another org's parent id.
+
+The Postgres plugin `internal/pkg/db/plugins/orgscope` is a backstop. On GORM Query, Update, and Delete it adds
+`org_id = <context org>` when the statement context has an org and the model has a belongs-to `Org` whose foreign key
+column is `org_id`. It leaves the query alone when the WHERE already constrains that same org. It does not cover
+Create, `Exec`, raw SQL, preloads, association saves, or models that store `OrgID` without a belongs-to `Org`
+(`RunnerGroup` is one). Statements with no org in context are unchanged (workers and admin lookups that run before the
+org is set). The auth listener marks every request with `orgscope.Skip`, so auth API queries are not scoped.
+
+New tenant-owned models need `OrgID` and a belongs-to `Org` association so the plugin can see them. Handlers still
+write the org filter. MCP tools that load the same records use the same lookups. Internal, runner, and admin routes
+keep their own auth.
 
 ## Workflow and Status Conventions
 

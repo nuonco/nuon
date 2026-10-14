@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/orgscope"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
@@ -38,6 +39,12 @@ type API struct {
 
 func (a *API) init(httpMetrics *metrics.HTTPMetrics) error {
 	a.handler = gin.New()
+	if a.name == "auth" {
+		a.handler.Use(func(c *gin.Context) {
+			c.Request = c.Request.WithContext(orgscope.Skip(c.Request.Context()))
+			c.Next()
+		})
+	}
 	if httpMetrics != nil {
 		a.handler.Use(func(c *gin.Context) {
 			metrics.SetHTTPRoute(c.Request.Context(), c.FullPath())

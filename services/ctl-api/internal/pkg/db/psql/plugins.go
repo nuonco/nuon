@@ -5,6 +5,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/afterquery"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/orgscope"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/pagination"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
@@ -17,6 +18,9 @@ func (d *database) registerPlugins(db *gorm.DB) error {
 	db.Use(tracing.NewTracingPlugin("psql"))
 	db.Use(afterquery.NewAfterQueryPlugin())
 	db.Use(views.NewViewsPlugin(AllModels()))
+	if err := db.Use(orgscope.New()); err != nil {
+		return err
+	}
 	db.Use(pagination.NewOffsetPaginationPlugin())
 	db.Use(patcher.NewPatcherPlugin())
 
