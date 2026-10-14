@@ -9,6 +9,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
 import type { TRunbook } from '@/lib/ctl-api/apps/runbooks'
+import { RunbookTriggerType } from '../RunbookTriggerType'
 
 export type TRunbooksTableScope = 'app' | 'install'
 
@@ -20,6 +21,7 @@ export type TRunbookRow = {
   lastUpdated: ReactNode
   href: string
   steps?: number
+  triggers: ReactNode
   lastRun?: ReactNode
   actions?: ReactNode
   removed?: boolean
@@ -82,6 +84,21 @@ export function parseRunbooksToTableData(
       ),
       href: `${basePath}/runbooks/${runbook.id}`,
       steps: runbookStepCount(runbook),
+      triggers: (() => {
+        const triggers = runbook.configs?.[0]?.triggers
+        if (!triggers?.length) return <Icon variant="MinusIcon" />
+        return (
+          <div className="flex flex-wrap gap-2">
+            {triggers.map((trigger) => (
+              <RunbookTriggerType
+                key={trigger.id}
+                triggerType={trigger.type}
+                cronSchedule={trigger.cron_schedule}
+              />
+            ))}
+          </div>
+        )
+      })(),
     }
   })
 }
@@ -117,6 +134,12 @@ const columns: ColumnDef<TRunbookRow>[] = [
       )
     },
     enableSorting: true,
+  },
+  {
+    accessorKey: 'triggers',
+    header: 'Triggers',
+    cell: (info) => info.getValue() as ReactNode,
+    enableSorting: false,
   },
   {
     accessorKey: 'description',

@@ -14,6 +14,7 @@ import (
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -40,6 +41,7 @@ type Params struct {
 	VCSHelpers              *vcshelpers.Helpers
 	Helpers                 *helpers.Helpers
 	ActionHelpers           *actionhelper.Helpers
+	RunbooksHelpers         *runbookshelpers.Helpers
 	AcctClient              *account.Client
 	AuthzClient             *authz.Client
 	Cfg                     *internal.Config
@@ -68,6 +70,7 @@ type Activities struct {
 	runnersHelpers          *runnershelpers.Helpers
 	helpers                 *helpers.Helpers
 	actionHelpers           *actionhelper.Helpers
+	runbooksHelpers         *runbookshelpers.Helpers
 	acctClient              *account.Client
 	authzClient             *authz.Client
 	vcsHelpers              *vcshelpers.Helpers
@@ -94,6 +97,7 @@ func New(params Params) *Activities {
 		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
 		runnersHelpers:          params.RunnersHelpers,
 		actionHelpers:           params.ActionHelpers,
+		runbooksHelpers:         params.RunbooksHelpers,
 		helpers:                 params.Helpers,
 		acctClient:              params.AcctClient,
 		authzClient:             params.AuthzClient,

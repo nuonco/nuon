@@ -41,7 +41,16 @@ export type TRunbookConfig = {
   readme?: string
   steps?: TRunbookStep[]
   inputs?: TRunbookInput[]
+  triggers?: TRunbookTrigger[]
   created_at?: string
+}
+
+export type TRunbookTriggerType = 'manual' | 'cron'
+
+export type TRunbookTrigger = {
+  id: string
+  type: TRunbookTriggerType
+  cron_schedule?: string
 }
 
 export type TRunbookInput = {
