@@ -56,6 +56,7 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 			}
 			return tx.Where(app.RunbookConfig{AppConfigID: install.AppConfigID})
 		}).
+		Preload("Runbook.Configs.Triggers").
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).

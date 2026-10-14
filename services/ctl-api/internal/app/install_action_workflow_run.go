@@ -110,6 +110,11 @@ func (i *InstallActionWorkflowRun) Views(db *gorm.DB) []migrations.View {
 func (i *InstallActionWorkflowRun) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
+			Name:    indexes.Name(db, &InstallActionWorkflowRun{}, "activity"),
+			Columns: []string{"org_id", "install_id", "created_at DESC", "id DESC"},
+			Option:  "WHERE deleted_at = 0",
+		},
+		{
 			Name: indexes.Name(db, &InstallActionWorkflowRun{}, "preload"),
 			Columns: []string{
 				"install_action_workflow_id",

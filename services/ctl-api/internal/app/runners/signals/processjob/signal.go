@@ -180,6 +180,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if runner.RunnerGroup.Settings.SandboxMode {
 		l.Info("runner is in sandbox mode")
 		if runner.Org.CreatedBy.AccountType == app.AccountTypeCanary {
+			s.recordSandboxJobExecution(ctx)
 			s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusFinished, "success in sandbox/canary mode")
 			return nil
 		}
@@ -195,6 +196,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				zap.String("runner_id", s.RunnerID),
 			)
 			workflow.Sleep(ctx, s.cfg.SandboxModeSleep)
+			s.recordSandboxJobExecution(ctx)
 			s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusFinished, "success in sandbox mode")
 			return nil
 		}
@@ -690,6 +692,23 @@ func (s *Signal) recordJobLifecycleCompositeError(ctx workflow.Context, jobID st
 		zap.String("runner-job-id", jobID),
 		zap.String("reason", string(reason)),
 		zap.Error(err))
+}
+
+const sandboxJobExecutionVersion = "process-job-sandbox-execution-v1"
+
+func (s *Signal) recordSandboxJobExecution(ctx workflow.Context) {
+	if workflow.GetVersion(ctx, sandboxJobExecutionVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return
+	}
+
+	if err := activities.AwaitCreateSandboxJobExecution(ctx, activities.CreateSandboxJobExecutionRequest{
+		JobID: s.JobID,
+	}); err != nil {
+		workflow.GetLogger(ctx).Error("unable to record sandbox job execution",
+			"job_id", s.JobID,
+			"error", err,
+		)
+	}
 }
 
 func (s *Signal) updateJobStatus(ctx workflow.Context, jobID string, status app.RunnerJobStatus, statusDescription string) {

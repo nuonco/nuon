@@ -1,6 +1,8 @@
 package service
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
@@ -12,6 +14,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -67,11 +70,41 @@ type InstallActivity struct {
 }
 
 type GetInstallActivityResponse struct {
-	Activity []InstallActivity `json:"activity"`
-	Page     int               `json:"page"`
-	Offset   int               `json:"offset"`
-	Limit    int               `json:"limit"`
-	HasMore  bool              `json:"has_more"`
+	Activity   []InstallActivity `json:"activity"`
+	Page       int               `json:"page"`
+	Offset     int               `json:"offset"`
+	Limit      int               `json:"limit"`
+	HasMore    bool              `json:"has_more"`
+	NextCursor string            `json:"next_cursor,omitempty"`
+}
+
+type installActivityCursor struct {
+	CreatedAt time.Time           `json:"t"`
+	Type      InstallActivityType `json:"k"`
+	ID        string              `json:"i"`
+}
+
+func decodeInstallActivityCursor(raw string) (*installActivityCursor, error) {
+	if len(raw) > 1024 {
+		return nil, errors.New("cursor is not valid")
+	}
+	data, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		return nil, errors.New("cursor is not valid")
+	}
+	var cursor installActivityCursor
+	if err := json.Unmarshal(data, &cursor); err != nil {
+		return nil, errors.New("cursor is not valid")
+	}
+	if cursor.CreatedAt.IsZero() || len(cursor.ID) != 26 {
+		return nil, errors.New("cursor is not valid")
+	}
+	switch cursor.Type {
+	case InstallActivityTypeActionRun, InstallActivityTypeRunbookRun, InstallActivityTypePolicyCheck:
+		return &cursor, nil
+	default:
+		return nil, errors.New("cursor is not valid")
+	}
 }
 
 // @ID                    GetInstallActivity
@@ -81,6 +114,7 @@ type GetInstallActivityResponse struct {
 // @Param                 page            query  int     false  "page number"                                         Default(0)
 // @Param                 offset          query  int     false  "offset of results to return"                         Default(0)
 // @Param                 limit           query  int     false  "page size"                                           Default(20)
+// @Param                 cursor          query  string  false  "opaque cursor from next_cursor; replaces page and offset"
 // @Param                 type            query  string  false  "filter by activity type (comma-separated: action_run, runbook_run, policy_check)"
 // @Param                 status          query  string  false  "filter by source status (comma-separated)"
 // @Param                 search          query  string  false  "case-insensitive substring match on id or title"
@@ -115,6 +149,22 @@ func (s *service) GetInstallActivity(ctx *gin.Context) {
 		page = offset / limit
 	}
 
+	var cursor *installActivityCursor
+	if raw := ctx.Query("cursor"); raw != "" {
+		if offset > 0 {
+			ctx.Error(stderr.ErrUser{
+				Err:         errors.New("cursor cannot be combined with page or offset"),
+				Description: "use either cursor or page/offset",
+			})
+			return
+		}
+		cursor, err = decodeInstallActivityCursor(raw)
+		if err != nil {
+			ctx.Error(stderr.ErrUser{Err: err, Description: "invalid cursor"})
+			return
+		}
+	}
+
 	var createdAtGte *time.Time
 	if raw := ctx.Query("created_at_gte"); raw != "" {
 		t, err := time.Parse(time.RFC3339, raw)
@@ -147,6 +197,7 @@ func (s *service) GetInstallActivity(ctx *gin.Context) {
 		ctx.Query("search"),
 		createdAtGte,
 		createdAtLte,
+		cursor,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install activity: %w", err))
@@ -163,6 +214,7 @@ func (s *service) getInstallActivity(
 	filterTypes, filterStatuses []string,
 	search string,
 	createdAtGte, createdAtLte *time.Time,
+	cursor *installActivityCursor,
 ) (*GetInstallActivityResponse, error) {
 	selected := selectedActivityTypes(filterTypes)
 	empty := &GetInstallActivityResponse{
@@ -179,7 +231,7 @@ func (s *service) getInstallActivity(
 	activity := make([]InstallActivity, 0)
 
 	if selected[InstallActivityTypeActionRun] {
-		runs, err := s.listActivityActionRuns(ctx, orgID, installID, fetchLimit, filterStatuses, search, createdAtGte, createdAtLte)
+		runs, err := s.listActivityActionRuns(ctx, orgID, installID, fetchLimit, filterStatuses, search, createdAtGte, createdAtLte, cursor)
 		if err != nil {
 			return nil, err
 		}
@@ -189,7 +241,7 @@ func (s *service) getInstallActivity(
 	}
 
 	if selected[InstallActivityTypeRunbookRun] {
-		runs, err := s.listActivityRunbookRuns(ctx, orgID, installID, fetchLimit, filterStatuses, search, createdAtGte, createdAtLte)
+		runs, err := s.listActivityRunbookRuns(ctx, orgID, installID, fetchLimit, filterStatuses, search, createdAtGte, createdAtLte, cursor)
 		if err != nil {
 			return nil, err
 		}
@@ -199,7 +251,7 @@ func (s *service) getInstallActivity(
 	}
 
 	if selected[InstallActivityTypePolicyCheck] {
-		reports, err := s.listActivityPolicyReports(ctx, orgID, installID, fetchLimit, filterStatuses, search, createdAtGte, createdAtLte)
+		reports, err := s.listActivityPolicyReports(ctx, orgID, installID, fetchLimit, filterStatuses, search, createdAtGte, createdAtLte, cursor)
 		if err != nil {
 			return nil, err
 		}
@@ -228,12 +280,23 @@ func (s *service) getInstallActivity(
 		end = len(activity)
 	}
 
+	var nextCursor string
+	if hasMore && end > start {
+		last := activity[end-1]
+		data, err := json.Marshal(installActivityCursor{CreatedAt: last.CreatedAt, Type: last.Type, ID: last.ID})
+		if err != nil {
+			return nil, fmt.Errorf("unable to encode cursor: %w", err)
+		}
+		nextCursor = base64.RawURLEncoding.EncodeToString(data)
+	}
+
 	return &GetInstallActivityResponse{
-		Activity: activity[start:end],
-		Page:     page,
-		Offset:   offset,
-		Limit:    limit,
-		HasMore:  hasMore,
+		Activity:   activity[start:end],
+		Page:       page,
+		Offset:     offset,
+		Limit:      limit,
+		HasMore:    hasMore,
+		NextCursor: nextCursor,
 	}, nil
 }
 
@@ -244,9 +307,16 @@ func (s *service) listActivityActionRuns(
 	filterStatuses []string,
 	search string,
 	createdAtGte, createdAtLte *time.Time,
+	cursor *installActivityCursor,
 ) ([]app.InstallActionWorkflowRun, error) {
 	query := s.db.WithContext(ctx).
-		Preload("InstallActionWorkflow.ActionWorkflow").
+		Select("id", "created_at", "install_action_workflow_id", "install_workflow_id", "status", "status_description", "status_v2", "composite_error", "trigger_type").
+		Preload("InstallActionWorkflow", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "action_workflow_id")
+		}).
+		Preload("InstallActionWorkflow.ActionWorkflow", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "name")
+		}).
 		Where(app.InstallActionWorkflowRun{OrgID: orgID, InstallID: installID}).
 		Where(`install_workflow_id IS NULL OR EXISTS (
 			SELECT 1
@@ -254,8 +324,9 @@ func (s *service) listActivityActionRuns(
 			WHERE install_workflows.id = install_action_workflow_runs.install_workflow_id
 			  AND install_workflows.type = ?
 		)`, app.WorkflowTypeActionWorkflowRun).
-		Order("install_action_workflow_runs.created_at DESC").
+		Order("install_action_workflow_runs.created_at DESC, install_action_workflow_runs.id DESC").
 		Limit(fetchLimit)
+	query = applyActivityCursor(query, "install_action_workflow_runs.created_at", "install_action_workflow_runs.id", InstallActivityTypeActionRun, cursor)
 	query = applyActivityStatusFilter(query, "install_action_workflow_runs.status", filterStatuses)
 	query = applyActivityTimeFilter(query, "install_action_workflow_runs.created_at", createdAtGte, createdAtLte)
 	for _, token := range strings.Fields(search) {
@@ -284,12 +355,20 @@ func (s *service) listActivityRunbookRuns(
 	filterStatuses []string,
 	search string,
 	createdAtGte, createdAtLte *time.Time,
+	cursor *installActivityCursor,
 ) ([]app.InstallRunbookRun, error) {
 	query := s.db.WithContext(ctx).
-		Preload("InstallRunbook.Runbook").
+		Select("id", "created_at", "install_runbook_id", "install_workflow_id", "status", "status_description", "status_v2").
+		Preload("InstallRunbook", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "runbook_id")
+		}).
+		Preload("InstallRunbook.Runbook", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "name")
+		}).
 		Where(app.InstallRunbookRun{OrgID: orgID, InstallID: installID}).
-		Order("created_at DESC").
+		Order("created_at DESC, id DESC").
 		Limit(fetchLimit)
+	query = applyActivityCursor(query, "created_at", "id", InstallActivityTypeRunbookRun, cursor)
 	query = applyActivityStatusFilter(query, "status", filterStatuses)
 	query = applyActivityTimeFilter(query, "created_at", createdAtGte, createdAtLte)
 	for _, token := range strings.Fields(search) {
@@ -318,12 +397,15 @@ func (s *service) listActivityPolicyReports(
 	filterStatuses []string,
 	search string,
 	createdAtGte, createdAtLte *time.Time,
+	cursor *installActivityCursor,
 ) ([]app.PolicyReport, error) {
 	query := s.db.WithContext(ctx).
+		Select("id", "created_at", "evaluated_at", "status", "owner_type", "owner_id", "component_name", "deny_count", "warn_count", "pass_count").
 		Where(app.PolicyReport{OrgID: orgID}).
 		Where("install_id = ?", installID).
-		Order("evaluated_at DESC").
+		Order(app.PolicyReportActivityTimeExpression + " DESC, id DESC").
 		Limit(fetchLimit)
+	query = applyActivityCursor(query, app.PolicyReportActivityTimeExpression, "id", InstallActivityTypePolicyCheck, cursor)
 	if len(filterStatuses) > 0 {
 		query = query.Where("status->>'status' IN ?", filterStatuses)
 	}
@@ -338,6 +420,19 @@ func (s *service) listActivityPolicyReports(
 		return nil, fmt.Errorf("unable to query policy reports: %w", err)
 	}
 	return reports, nil
+}
+
+func applyActivityCursor(query *gorm.DB, timeColumn, idColumn string, activityType InstallActivityType, cursor *installActivityCursor) *gorm.DB {
+	if cursor == nil {
+		return query
+	}
+	if activityType == cursor.Type {
+		return query.Where("("+timeColumn+", "+idColumn+") < (?, ?)", cursor.CreatedAt, cursor.ID)
+	}
+	if activityType < cursor.Type {
+		return query.Where(timeColumn+" <= ?", cursor.CreatedAt)
+	}
+	return query.Where(timeColumn+" < ?", cursor.CreatedAt)
 }
 
 func applyActivityStatusFilter(query *gorm.DB, column string, statuses []string) *gorm.DB {

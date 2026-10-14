@@ -13,8 +13,12 @@ import (
 )
 
 type RunbookStepType string
+type RunbookTriggerType string
 
 const (
+	RunbookTriggerTypeManual RunbookTriggerType = "manual"
+	RunbookTriggerTypeCron   RunbookTriggerType = "cron"
+
 	RunbookStepTypeComponentDeploy    RunbookStepType = "component_deploy"
 	RunbookStepTypeComponentTearDown  RunbookStepType = "component_tear_down"
 	RunbookStepTypeAction             RunbookStepType = "action"
@@ -32,6 +36,7 @@ type RunbookConfig struct {
 	Description string               `mapstructure:"description,omitempty" toml:"description,omitempty"`
 	Readme      string               `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
 	Labels      map[string]string    `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
+	Triggers    []RunbookTrigger     `mapstructure:"triggers,omitempty" toml:"triggers,omitempty"`
 	Steps       []*RunbookStepConfig `mapstructure:"steps" toml:"steps" jsonschema:"required"`
 	Inputs      []RunbookInput       `mapstructure:"input,omitempty" toml:"input"`
 
@@ -41,6 +46,11 @@ type RunbookConfig struct {
 	// DeprecationWarnings collects messages about legacy field usage observed during parse().
 	// Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the
 	DeprecationWarnings []string `mapstructure:"-" toml:"-" jsonschema:"-"`
+}
+
+type RunbookTrigger struct {
+	Type         RunbookTriggerType `mapstructure:"type" toml:"type" jsonschema:"required"`
+	CronSchedule string             `mapstructure:"cron_schedule,omitempty" toml:"cron_schedule,omitempty"`
 }
 
 type RunbookStepConfig struct {
@@ -88,10 +98,23 @@ func (r RunbookConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("readme").Short("readme file for the runbook").
 		Long("Markdown file with runbook documentation and instructions. Supports Go templating and external file sources: HTTP(S) URLs, git repositories, file paths, and relative paths").
 		Example("./release-notes.md").
+		Field("triggers").Short("triggers that execute this runbook").
+		Long("Runbooks can be triggered manually or on a cron schedule. When omitted, manual triggering is enabled").
 		Field("steps").Short("ordered steps to execute in the runbook").Required().
 		Long("Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing actions or define inline actions")
 	// Field("input").Short("inputs collected when the runbook is run").
 	// Long("List of inputs prompted for when running the runbook. Values are templated into step fields (command, inline_contents, env_vars, role) via {{.runbook_inputs.input_name}}")
+}
+
+func (r RunbookTrigger) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("type").Short("type of trigger").Required().
+		Long("Supported trigger types: manual and cron").
+		Example("manual").
+		Example("cron").
+		Field("cron_schedule").Short("cron schedule expression for scheduled triggers").
+		Long("Standard five-field cron format evaluated in UTC").
+		Example("0 0 * * *")
 }
 
 func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -148,6 +171,26 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 func (r *RunbookConfig) parse() error {
 	if r == nil {
 		return nil
+	}
+
+	triggerTypes := make(map[RunbookTriggerType]struct{}, len(r.Triggers))
+	for _, trigger := range r.Triggers {
+		if _, exists := triggerTypes[trigger.Type]; exists {
+			return ErrConfig{Description: fmt.Sprintf("runbook %q has duplicate %s trigger", r.Name, trigger.Type)}
+		}
+		triggerTypes[trigger.Type] = struct{}{}
+		switch trigger.Type {
+		case RunbookTriggerTypeManual:
+			if trigger.CronSchedule != "" {
+				return ErrConfig{Description: fmt.Sprintf("runbook %q manual trigger cannot set cron_schedule", r.Name)}
+			}
+		case RunbookTriggerTypeCron:
+			if trigger.CronSchedule == "" {
+				return ErrConfig{Description: fmt.Sprintf("runbook %q cron trigger requires cron_schedule", r.Name)}
+			}
+		default:
+			return ErrConfig{Description: fmt.Sprintf("runbook %q has unsupported trigger type %q", r.Name, trigger.Type)}
+		}
 	}
 
 	waitStepNames := make(map[string]struct{})

@@ -55,6 +55,7 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 		Preload("Configs", func(tx2 *gorm.DB) *gorm.DB {
 			return tx2.Scopes(scopes.WithOverrideTable("runbook_configs_latest_view_v1"))
 		}).
+		Preload("Configs.Triggers").
 		Preload("Configs.Steps", func(tx2 *gorm.DB) *gorm.DB {
 			return tx2.Order("idx ASC")
 		}).
