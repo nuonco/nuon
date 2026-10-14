@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -215,6 +216,11 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 			if len(installCfg.StackOverrides.CustomNestedStacks) > 0 {
 				icParams.CustomNestedStacks = installCfg.StackOverrides.CustomNestedStacks
 			}
+			ui, err := prepareInstallUIDefinition(ctx, installHelpers, orgID, appID, installCfg.StackOverrides)
+			if err != nil {
+				return nil, err
+			}
+			icParams.UIDefinition = ui
 		}
 		req.InstallConfig = icParams
 	}
@@ -287,6 +293,7 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil {
 			updates["telemetry_enabled"] = installCfg.Telemetry.Enabled
 		}
+		var uploadedUI *config.UploadedUIDefinition
 		if installCfg.StackOverrides != nil {
 			if installCfg.StackOverrides.VPCNestedTemplateURL != "" {
 				url := installCfg.StackOverrides.VPCNestedTemplateURL
@@ -303,6 +310,18 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 				}
 				updates["custom_nested_stacks"] = string(b)
 			}
+			ui, err := prepareInstallUIDefinition(ctx, installHelpers, existing.OrgID, existing.AppID, installCfg.StackOverrides)
+			if err != nil {
+				return nil, err
+			}
+			uploadedUI = ui
+			if ui != nil {
+				b, err := json.Marshal(ui)
+				if err != nil {
+					return nil, fmt.Errorf("unable to marshal ui_definition: %w", err)
+				}
+				updates["ui_definition"] = string(b)
+			}
 		}
 
 		if len(updates) > 0 && existing.InstallConfig != nil {
@@ -315,6 +334,7 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 			icParams := &installhelpers.CreateInstallConfigParams{
 				ApprovalOption: app.InstallApprovalOption(installCfg.ApprovalOption),
 				Telemetry:      installCfg.Telemetry,
+				UIDefinition:   uploadedUI,
 			}
 			if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, icParams); err != nil {
 				return nil, fmt.Errorf("unable to create config for install %s: %w", installCfg.Name, err)
@@ -531,7 +551,8 @@ func existingToConfig(install *app.Install) *config.Install {
 		}
 		if install.InstallConfig.VPCNestedTemplateURL != nil ||
 			install.InstallConfig.RunnerNestedTemplateURL != nil ||
-			len(install.InstallConfig.CustomNestedStacks) > 0 {
+			len(install.InstallConfig.CustomNestedStacks) > 0 ||
+			(install.InstallConfig.UIDefinition != nil && install.InstallConfig.UIDefinition.Path != "") {
 			cfg.StackOverrides = &config.InstallStackOverrides{}
 			if install.InstallConfig.VPCNestedTemplateURL != nil {
 				cfg.StackOverrides.VPCNestedTemplateURL = *install.InstallConfig.VPCNestedTemplateURL
@@ -540,6 +561,9 @@ func existingToConfig(install *app.Install) *config.Install {
 				cfg.StackOverrides.RunnerNestedTemplateURL = *install.InstallConfig.RunnerNestedTemplateURL
 			}
 			cfg.StackOverrides.CustomNestedStacks = install.InstallConfig.CustomNestedStacks
+			if install.InstallConfig.UIDefinition != nil {
+				cfg.StackOverrides.UIDefinition = install.InstallConfig.UIDefinition.Path
+			}
 		}
 		cfg.ComponentToggles = install.InstallConfig.ComponentToggles
 	}
@@ -564,6 +588,21 @@ func upstreamLabels(install *app.Install) labels.Labels {
 		delete(merged, key)
 	}
 	return merged
+}
+
+func prepareInstallUIDefinition(ctx context.Context, h *installhelpers.Helpers, orgID, appID string, overrides *config.InstallStackOverrides) (*config.UploadedUIDefinition, error) {
+	if overrides == nil || overrides.UIDefinition == "" || strings.TrimSpace(overrides.UIDefinitionContents) == "" {
+		return nil, nil
+	}
+	ui := &config.UploadedUIDefinition{
+		Path:     overrides.UIDefinition,
+		Contents: overrides.UIDefinitionContents,
+		Status:   config.CustomNestedStackStatusPending,
+	}
+	if err := h.UploadUIDefinition(ctx, orgID, appID, ui); err != nil {
+		return nil, fmt.Errorf("unable to upload install ui definition: %w", err)
+	}
+	return ui, nil
 }
 
 func firstNonEmpty(vals ...string) string {

@@ -22,3 +22,16 @@ func CustomNestedStackTemplateURL(baseURL, orgID, appID, contentsHash, templateU
 	key := CustomNestedStackS3Key(orgID, appID, contentsHash, templateURL)
 	return fmt.Sprintf("%s/%s", strings.TrimSuffix(baseURL, "/"), key)
 }
+
+// UIDefinitionS3Key returns the object key for an uploaded Azure createUiDefinition.
+func UIDefinitionS3Key(orgID, appID, contentsHash string) string {
+	return fmt.Sprintf("stacks/%s/%s/%s.ui.json", orgID, appID, contentsHash)
+}
+
+// UIDefinitionSourceURL returns the HTTPS URL for an uploaded createUiDefinition.
+func UIDefinitionSourceURL(baseURL, orgID, appID, contentsHash string) string {
+	if baseURL == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s/%s", strings.TrimSuffix(baseURL, "/"), UIDefinitionS3Key(orgID, appID, contentsHash))
+}

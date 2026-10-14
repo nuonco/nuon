@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -128,6 +129,42 @@ func TestVNetLinkedDeployment_LeavesExpressionDefaultsInPlace(t *testing.T) {
 				t.Error("passed a value for derivedName, overriding the default it computes for itself")
 			}
 		})
+	}
+}
+
+// A vendor UI that names a parameter with an expression default is collecting that
+// value. The parameter is hoisted without the expression, and the portal value
+// replaces what the nested template would have computed.
+func TestVNetLinkedDeployment_HoistsExpressionDefaultWhenVendorUIBindsIt(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, hoistFixture)
+	inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{
+		Contents: `{
+		  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+		  "handler": "Microsoft.Azure.CreateUIDef",
+		  "parameters": {
+		    "basics": [{"name": "derivedName", "type": "Microsoft.Common.TextBox", "label": "Name"}],
+		    "steps": [],
+		    "outputs": {"derivedName": "[basics('derivedName')]"}
+		  }
+		}`,
+	}
+
+	dep, hoisted, _, err := tmpl.getVNetLinkedDeployment(inp, scopeFor(inp))
+	if err != nil {
+		t.Fatal(err)
+	}
+	param, ok := hoisted["derivedName"]
+	if !ok {
+		t.Fatal("derivedName was not hoisted")
+	}
+	if param.DefaultValue != nil {
+		t.Fatalf("derivedName default = %#v, want the expression default dropped", param.DefaultValue)
+	}
+	got := dep["properties"].(map[string]any)["parameters"].(map[string]any)["derivedName"]
+	want := map[string]any{"value": "[parameters('derivedName')]"}
+	if got.(map[string]any)["value"] != want["value"] {
+		t.Fatalf("derivedName passed as %#v, want %#v", got, want)
 	}
 }
 
