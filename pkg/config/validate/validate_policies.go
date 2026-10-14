@@ -97,6 +97,36 @@ func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 	return nil
 }
 
+func ValidatePolicyNames(a *config.AppConfig) error {
+	if a == nil || a.Policies == nil {
+		return nil
+	}
+	return ValidateUniquePolicyNames(a.Policies.Policies)
+}
+
+func ValidateUniquePolicyNames(policies []config.AppPolicy) error {
+	seen := make(map[string]struct{}, len(policies))
+	for _, policy := range policies {
+		name := policyName(policy)
+		if _, ok := seen[name]; ok {
+			if name == "" {
+				return fmt.Errorf("policies must have unique names")
+			}
+			return fmt.Errorf("duplicate policy name %q", name)
+		}
+		seen[name] = struct{}{}
+	}
+	return nil
+}
+
+func policyName(policy config.AppPolicy) string {
+	if policy.Name != "" {
+		return policy.Name
+	}
+	policy.SetNameFromContents()
+	return policy.Name
+}
+
 func validatePolicyType(policyType config.AppPolicyType) error {
 	switch policyType {
 	case config.AppPolicyTypeKubernetesCluster,

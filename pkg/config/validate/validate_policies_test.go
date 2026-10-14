@@ -101,6 +101,88 @@ func TestValidatePolicyTypeEngineCompatibility(t *testing.T) {
 	}
 }
 
+func TestValidatePoliciesUniqueNames(t *testing.T) {
+	policy := func(name string, typ config.AppPolicyType, components []string) config.AppPolicy {
+		return config.AppPolicy{
+			Name:       name,
+			Type:       typ,
+			Engine:     config.AppPolicyEngineOPA,
+			Contents:   "package nuon\ndeny := []",
+			Components: components,
+		}
+	}
+
+	t.Run("accepts distinct names", func(t *testing.T) {
+		cfg := &config.AppConfig{Policies: &config.PoliciesConfig{Policies: []config.AppPolicy{
+			policy("sandbox-ports", config.AppPolicyTypeSandbox, nil),
+			policy("module-ports", config.AppPolicyTypeTerraformModule, []string{"*"}),
+		}}}
+		require.NoError(t, ValidatePolicyNames(cfg))
+	})
+
+	t.Run("rejects duplicate names", func(t *testing.T) {
+		cfg := &config.AppConfig{Policies: &config.PoliciesConfig{Policies: []config.AppPolicy{
+			policy("warn-public-sensitive-ports", config.AppPolicyTypeSandbox, nil),
+			policy("warn-public-sensitive-ports", config.AppPolicyTypeTerraformModule, []string{"*"}),
+		}}}
+		err := ValidatePolicyNames(cfg)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `duplicate policy name "warn-public-sensitive-ports"`)
+	})
+
+	t.Run("accepts a nil config", func(t *testing.T) {
+		require.NoError(t, ValidatePolicyNames(nil))
+	})
+
+	t.Run("accepts missing policies", func(t *testing.T) {
+		require.NoError(t, ValidatePolicyNames(&config.AppConfig{}))
+		require.NoError(t, ValidateUniquePolicyNames(nil))
+	})
+
+	t.Run("accepts one unnamed policy", func(t *testing.T) {
+		require.NoError(t, ValidateUniquePolicyNames([]config.AppPolicy{{}}))
+	})
+
+	t.Run("rejects two unnamed policies", func(t *testing.T) {
+		err := ValidateUniquePolicyNames([]config.AppPolicy{{}, {}})
+		require.Error(t, err)
+		assert.EqualError(t, err, "policies must have unique names")
+	})
+
+	t.Run("keeps an explicit name over the contents path", func(t *testing.T) {
+		cfg := &config.AppConfig{Policies: &config.PoliciesConfig{Policies: []config.AppPolicy{
+			{
+				Name:     "sandbox-ports",
+				Contents: "./policies/warn-public-sensitive-ports.rego",
+			},
+			{
+				Name:     "module-ports",
+				Contents: "./policies/warn-public-sensitive-ports.rego",
+			},
+		}}}
+		require.NoError(t, ValidatePolicyNames(cfg))
+	})
+
+	t.Run("rejects names derived from the same contents path", func(t *testing.T) {
+		cfg := &config.AppConfig{Policies: &config.PoliciesConfig{Policies: []config.AppPolicy{
+			{
+				Type:     config.AppPolicyTypeSandbox,
+				Engine:   config.AppPolicyEngineOPA,
+				Contents: "./policies/warn-public-sensitive-ports.rego",
+			},
+			{
+				Type:       config.AppPolicyTypeTerraformModule,
+				Engine:     config.AppPolicyEngineOPA,
+				Components: []string{"*"},
+				Contents:   "./policies/warn-public-sensitive-ports.rego",
+			},
+		}}}
+		err := ValidatePolicyNames(cfg)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `duplicate policy name "warn-public-sensitive-ports"`)
+	})
+}
+
 func TestValidatePolicyComponents(t *testing.T) {
 	tests := map[string]struct {
 		policyType config.AppPolicyType

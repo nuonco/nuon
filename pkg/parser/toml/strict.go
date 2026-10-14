@@ -55,7 +55,9 @@ func extractTablesAndKeys(data map[string]any, parentPath []string, doc *TomlDoc
 			}
 
 			if allMaps {
-				// Array of tables
+				// Keep the items so callers can tell one [[table]] from the next.
+				// Nested keys still share a path and the last value wins.
+				doc.Values[pathStr] = valueSlice
 				doc.Tables = append(doc.Tables, Table{
 					Name: pathStr,
 					Path: currentPath,

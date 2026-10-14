@@ -537,6 +537,24 @@ func TestPoliciesConfigKeepsName(t *testing.T) {
 	assert.Equal(t, "no-public-buckets", obj.Policies[0].Name)
 }
 
+func TestPoliciesConfigRejectsDuplicateNames(t *testing.T) {
+	_, err := PoliciesConfig([]PolicyInput{
+		{Type: config.AppPolicyTypeSandbox, Engine: config.AppPolicyEngineOPA, Name: "warn-public-sensitive-ports", Contents: "package nuon\ndeny := []"},
+		{Type: config.AppPolicyTypeTerraformModule, Engine: config.AppPolicyEngineOPA, Name: "warn-public-sensitive-ports", Contents: "package nuon\ndeny := []", Components: []string{"*"}},
+	}, "app1", "cfg1")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `duplicate policy name "warn-public-sensitive-ports"`)
+}
+
+func TestPoliciesConfigRejectsDuplicateDerivedNames(t *testing.T) {
+	_, err := PoliciesConfig([]PolicyInput{
+		{Type: config.AppPolicyTypeSandbox, Engine: config.AppPolicyEngineOPA, Contents: "./policies/warn-public-sensitive-ports.rego"},
+		{Type: config.AppPolicyTypeTerraformModule, Engine: config.AppPolicyEngineOPA, Contents: "./policies/warn-public-sensitive-ports.rego", Components: []string{"*"}},
+	}, "app1", "cfg1")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `duplicate policy name "warn-public-sensitive-ports"`)
+}
+
 func TestPoliciesConfigRejectsUnknownType(t *testing.T) {
 	_, err := PoliciesConfig([]PolicyInput{{Type: "nope", Contents: "package x"}}, "app1", "cfg1")
 	require.Error(t, err)
