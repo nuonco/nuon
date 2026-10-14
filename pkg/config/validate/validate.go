@@ -32,6 +32,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 			return ValidatePolicies(a)
 		},
 		func() error {
+			return ValidatePolicyNames(a)
+		},
+		func() error {
 			return ValidateTriggers(a)
 		},
 
