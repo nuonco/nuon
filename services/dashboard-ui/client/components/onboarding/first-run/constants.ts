@@ -304,3 +304,99 @@ export const buildStages = (cloud: TCloud, appName: string): IBuildStage[] => [
     blurb: `${appName}'s Terraform, Helm charts and images, deployed into the sandbox. A few minutes.`,
   },
 ]
+
+export const AWESOME_BYOC_URL = 'https://www.awesomebyoc.com'
+
+// From github.com/nuonco/awesome-byoc. BYOC platform vendors are left out on purpose.
+export const BYOC_REFERENCES: { name: string; category: string; blurb: string; href: string }[] = [
+  {
+    name: 'Datadog',
+    category: 'Observability',
+    blurb: 'Log management with indexing and search running in your own Kubernetes cluster.',
+    href: 'https://docs.datadoghq.com/cloudprem/introduction/',
+  },
+  {
+    name: 'Snowflake Openflow',
+    category: 'Data integration',
+    blurb: 'Moves data into Snowflake while keeping compute in your environment.',
+    href: 'https://www.snowflake.com/en/blog/openflow-byoc-data-integration/',
+  },
+  {
+    name: 'Vercel',
+    category: 'Dev platforms',
+    blurb: 'Deploy enterprise apps and AI agents in your own cloud, with Vercel running the control plane.',
+    href: 'https://vercel.com/enterprise',
+  },
+  {
+    name: 'ClickHouse',
+    category: 'Databases',
+    blurb: 'Real-time OLAP database for analytics, deployed in your own cloud account.',
+    href: 'https://clickhouse.com/cloud/bring-your-own-cloud',
+  },
+  {
+    name: 'Redpanda',
+    category: 'Streaming',
+    blurb: 'Kafka-compatible streaming platform with a BYOC deployment option.',
+    href: 'https://www.redpanda.com/product/bring-your-own-cloud-byoc',
+  },
+  {
+    name: 'LangChain',
+    category: 'AI',
+    blurb: 'LangSmith traces, datasets and prompts stored in your own AWS account.',
+    href: 'https://www.langchain.com/blog/langsmith-byoc-is-now-generally-available-on-aws',
+  },
+  {
+    name: 'Grafana',
+    category: 'Observability',
+    blurb: 'Metrics, logs and traces with a bring your own cloud option.',
+    href: 'https://grafana.com/products/bring-your-own-cloud-byoc/',
+  },
+  {
+    name: 'Pinecone',
+    category: 'Databases',
+    blurb: 'Vector database for AI applications, deployable in your own cloud.',
+    href: 'https://docs.pinecone.io/guides/production/bring-your-own-cloud',
+  },
+  {
+    name: 'Fivetran',
+    category: 'Data integration',
+    blurb: 'Managed ELT pipelines with a data-plane agent running in your own VPC.',
+    href: 'https://fivetran.com/docs/deployment-models/hybrid-deployment',
+  },
+  {
+    name: 'Retool',
+    category: 'Internal tools',
+    blurb: 'Internal tool builder with vendor-managed deployment in your AWS VPC.',
+    href: 'https://docs.retool.com/self-hosted/retool-managed/concepts/architecture',
+  },
+  {
+    name: 'Glean',
+    category: 'Apps',
+    blurb: 'Enterprise AI search and assistant platform managed in your own cloud.',
+    href: 'https://docs.glean.com/get-started/build/about-self-hosted',
+  },
+  {
+    name: 'Cohere',
+    category: 'AI',
+    blurb: 'Enterprise LLM platform with model containers deployed in your own cloud.',
+    href: 'https://docs.cohere.com/docs/private-deployment-overview',
+  },
+  {
+    name: 'Braintrust',
+    category: 'AI',
+    blurb: 'LLM evals platform with its data plane running in your own cloud VPC.',
+    href: 'https://www.braintrust.dev/docs/guides/self-hosting',
+  },
+  {
+    name: 'CockroachDB',
+    category: 'Databases',
+    blurb: 'Distributed SQL database with a bring your own cloud deployment option.',
+    href: 'https://www.cockroachlabs.com/product/cloud/bring-your-own-cloud/',
+  },
+]
+
+export const STACK_RENDER_LABEL: Record<TCloud, string> = {
+  aws: 'Render the CloudFormation template',
+  gcp: 'Render the Terraform stack',
+  azure: 'Render the Bicep template',
+}

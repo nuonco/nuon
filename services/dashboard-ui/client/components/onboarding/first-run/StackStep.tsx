@@ -14,7 +14,7 @@ import { InstallAppConfigProvider } from '@/providers/install-app-config-provide
 import { InstallProvider } from '@/providers/install-provider'
 import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
-import { getInstallStack } from '@/lib'
+import { getInstallStack, getWorkflow, getWorkflowSteps } from '@/lib'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TInstallStack } from '@/types'
@@ -25,13 +25,16 @@ import {
   DOCS_STACKS,
   KITCHEN_SINK_LABEL,
   STACK_METHODS,
+  STACK_RENDER_LABEL,
   defaultRegion,
   isCloud,
   type TCloud,
 } from './constants'
+import { waitItems, type IWaitItem } from './progress'
 import { FirstRunCloudRegion } from './shared'
+import { ByocReferences, WaitProgress } from './WaitProgress'
 
-const STACK_POLL_MS = 3000
+const STACK_POLL_MS = 2000
 
 export type TStackPhase = 'generating' | 'ready' | 'launched' | 'done' | 'error'
 
@@ -53,6 +56,8 @@ export interface IStackStepView {
   quickLinkUrl?: string
   errorDescription?: string
   details?: React.ReactNode
+  progress?: IWaitItem[]
+  progressSince?: number
   onLaunch: () => void
   onContinue: () => void
   onBack?: () => void
@@ -66,6 +71,8 @@ export const StackStepView = ({
   quickLinkUrl,
   errorDescription,
   details,
+  progress,
+  progressSince,
   onLaunch,
   onContinue,
   onBack,
@@ -85,7 +92,7 @@ export const StackStepView = ({
   )
   const status = generating ? (
     <>
-      Generating the {connect.artifactNoun} for {regionName}. About 30 seconds.
+      Generating the {connect.artifactNoun} for {regionName}. Usually under a minute.
     </>
   ) : ready ? (
     <>
@@ -131,6 +138,13 @@ export const StackStepView = ({
           {generating ? 'Generating' : ready ? 'Ready' : done ? 'Created' : failed ? 'Failed' : 'Waiting'}
         </Status>
       </Card>
+
+      {generating && progress ? (
+        <>
+          <WaitProgress title={connect.generating} items={progress} since={progressSince} />
+          <ByocReferences />
+        </>
+      ) : null}
 
       <Card className="!gap-5">
         <div className="flex flex-col gap-1">
@@ -252,6 +266,32 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
     refetchInterval: STACK_POLL_MS,
   })
   const phase = phaseFromStatus(stackStatus(stack), launched)
+
+  const workflowId = readString(sharedData.workflow_id)
+  const { data: workflow } = useQuery({
+    queryKey: ['first-run-provision-workflow', orgId, workflowId],
+    queryFn: () => getWorkflow({ orgId, workflowId }),
+    enabled: !!workflowId,
+    staleTime: Infinity,
+  })
+  const { data: steps } = useQuery({
+    queryKey: ['first-run-provision-steps', orgId, workflowId],
+    queryFn: () => getWorkflowSteps({ orgId, workflowId }),
+    enabled: !!workflowId && phase === 'generating',
+    refetchInterval: STACK_POLL_MS,
+  })
+  const progress = waitItems(
+    [
+      { label: 'Create the install', done: true },
+      { label: 'Plan the install workflow', done: !!steps?.length },
+      { label: 'Generate the install state', step: 'generate install state' },
+      { label: "Create the runner's identity", step: 'provision runner service account' },
+      { label: STACK_RENDER_LABEL[cloud], step: 'generate install stack' },
+      { label: `Publish the ${CLOUD_CONNECT[cloud].artifactNoun}`, done: phase !== 'generating' },
+    ],
+    steps
+  )
+  const progressSince = workflow?.created_at ? Date.parse(workflow.created_at) : undefined
   const version = stack?.versions?.at(0)
 
   const advance = () => {
@@ -287,6 +327,8 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
       quickLinkUrl={version?.quick_link_url}
       errorDescription={version?.composite_status?.status_human_description}
       details={details}
+      progress={progress}
+      progressSince={progressSince}
       onLaunch={() => {
         setLaunched(true)
         trackEvent({ event: 'install_stack_launch', status: 'ok', user, props: { installId, cloud } })

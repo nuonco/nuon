@@ -24,7 +24,21 @@ const Harness = (overrides: Partial<IStackStepView>) => {
   )
 }
 
-export const AwsGenerating = () => <Harness />
+const since = Date.now() - 23_000
+
+export const AwsGenerating = () => (
+  <Harness
+    progressSince={since}
+    progress={[
+      { label: 'Create the install', state: 'done' },
+      { label: 'Plan the install workflow', state: 'done' },
+      { label: 'Generate the install state', state: 'done' },
+      { label: "Create the runner's identity", state: 'active' },
+      { label: 'Render the CloudFormation template', state: 'pending' },
+      { label: 'Publish the CloudFormation stack link', state: 'pending' },
+    ]}
+  />
+)
 AwsGenerating.meta = { fullBleed: true }
 
 export const AwsReady = () => <Harness phase="ready" />

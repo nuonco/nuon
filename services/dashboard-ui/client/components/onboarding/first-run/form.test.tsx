@@ -96,3 +96,29 @@ test('deploy submits the region and auto-approve choice', async () => {
     expect(onCreate).toHaveBeenCalledWith({ region: 'us-east-1', autoApprove: true })
   })
 })
+
+test('deploy shows live progress and a BYOC reference while waiting for the app config', () => {
+  render(
+    <DeployStepView
+      path="example"
+      appName="kitchen-sink"
+      repo="nuonco/kitchen-sink"
+      cloud="aws"
+      region="us-east-1"
+      phase="waiting-config"
+      installCreated={false}
+      missingInputs={[]}
+      progressSince={Date.now() - 5_000}
+      progress={[
+        { label: 'Start a branch run on main', state: 'done' },
+        { label: 'Read and validate the app config', state: 'active' },
+      ]}
+      onCreate={() => {}}
+    />
+  )
+  expect(screen.getByText('Getting your app config ready')).toBeInTheDocument()
+  expect(screen.getByText('Read and validate the app config')).toBeInTheDocument()
+  expect(screen.getByText('0:05')).toBeInTheDocument()
+  expect(screen.getByText('Datadog')).toBeInTheDocument()
+  expect(screen.getByText('See all on Awesome BYOC')).toBeInTheDocument()
+})

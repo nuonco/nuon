@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
+import { getWorkflowSteps } from '@/lib'
 import type { TAPIError } from '@/types'
 import {
   createTestInstall,
@@ -35,10 +36,12 @@ import {
   type TCloud,
   type TPath,
 } from './constants'
+import { waitItems, type IWaitItem } from './progress'
 import { deploySchema, type DeployValues } from './schema'
 import { MiniArch, NextButton, RepoChip } from './shared'
+import { ByocReferences, WaitProgress } from './WaitProgress'
 
-const CONFIG_POLL_MS = 5000
+const CONFIG_POLL_MS = 2000
 
 const InstallSummaryCard = ({
   path,
@@ -145,6 +148,8 @@ export interface IDeployStepView {
   installCreated: boolean
   missingInputs: string[]
   syncError?: string
+  progress?: IWaitItem[]
+  progressSince?: number
   error?: string
   onCreate: (values: DeployValues) => void
   onBack?: () => void
@@ -163,6 +168,8 @@ export const DeployStepView = ({
   installCreated,
   missingInputs,
   syncError,
+  progress,
+  progressSince,
   error,
   onCreate,
   onBack,
@@ -241,6 +248,13 @@ export const DeployStepView = ({
 
       <InstallSummaryCard path={path} appName={appName} repo={repo} cloud={cloud} />
 
+      {busy && progress ? (
+        <>
+          <WaitProgress title="Getting your app config ready" items={progress} since={progressSince} />
+          <ByocReferences />
+        </>
+      ) : null}
+
       {missingInputs.length ? (
         <Banner theme="error">
           <div className="flex flex-col gap-1">
@@ -299,6 +313,13 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
     refetchInterval: CONFIG_POLL_MS,
   })
   const latestRun = runs?.[0]
+
+  const { data: runSteps } = useQuery({
+    queryKey: ['first-run-branch-run-steps', orgId, latestRun?.id],
+    queryFn: () => getWorkflowSteps({ orgId, workflowId: latestRun!.id! }),
+    enabled: phase === 'waiting-config' && !!latestRun?.id,
+    refetchInterval: CONFIG_POLL_MS,
+  })
   const syncError =
     latestRun?.status?.status === 'error'
       ? latestRun.status.status_human_description || 'The branch run ended in an error.'
@@ -371,6 +392,17 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
     run()
   }, [phase, activeConfig, orgId, appId, appName, branchId, cloud, journey, setSharedData, onAdvance, path, user])
 
+  const progress = waitItems(
+    [
+      { label: `Start a branch run on ${TRACKED_GIT_BRANCH}`, done: !!latestRun },
+      { label: `Fetch the latest commit from ${repo}`, step: 'fetch commit' },
+      { label: 'Read and validate the app config', step: 'fetch app config', done: !!activeConfig },
+      { label: 'Create the install', done: false },
+    ],
+    runSteps
+  )
+  const progressSince = latestRun?.created_at ? Date.parse(latestRun.created_at) : undefined
+
   // Changing a setting after the install exists drops it from the flow, so
   // the button creates a new install with the new settings.
   const clearInstall = () => {
@@ -407,6 +439,8 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
       installCreated={!!installId}
       missingInputs={missingInputs}
       syncError={syncError}
+      progress={progress}
+      progressSince={progressSince}
       error={error}
       onCreate={onCreate}
       onBack={onGoBack}

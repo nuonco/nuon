@@ -34,7 +34,18 @@ OwnApp.meta = { fullBleed: true }
 export const ExampleApp = () => <Harness path="example" cloud="gcp" />
 ExampleApp.meta = { fullBleed: true }
 
-export const WaitingForConfig = () => <Harness phase="waiting-config" />
+export const WaitingForConfig = () => (
+  <Harness
+    phase="waiting-config"
+    progressSince={Date.now() - 14_000}
+    progress={[
+      { label: 'Start a branch run on main', state: 'done' },
+      { label: 'Fetch the latest commit from acme/acme-api', state: 'done' },
+      { label: 'Read and validate the app config', state: 'active' },
+      { label: 'Create the install', state: 'pending' },
+    ]}
+  />
+)
 WaitingForConfig.meta = { fullBleed: true }
 
 export const SyncFailed = () => (
