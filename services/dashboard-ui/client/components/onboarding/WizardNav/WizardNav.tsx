@@ -17,6 +17,7 @@ interface IWizardNav {
   currentStepIndex: number
   completedSteps: Set<string>
   showHeader?: boolean
+  isLocked?: boolean
   skipHref?: string | null
   onSkip?: () => void
   onGoToStep: (index: number) => void
@@ -28,6 +29,7 @@ export const WizardNav = ({
   currentStepIndex,
   completedSteps,
   showHeader = false,
+  isLocked = false,
   skipHref,
   onSkip,
   onGoToStep,
@@ -64,7 +66,9 @@ export const WizardNav = ({
           const isActive = index === currentStepIndex
           const isComplete = completedSteps.has(step.id)
           const furthestReachable = steps.findLastIndex((s) => completedSteps.has(s.id)) + 1
-          const canClick = index <= Math.max(furthestReachable, currentStepIndex)
+          const canClick = isLocked
+            ? index === currentStepIndex
+            : index <= Math.max(furthestReachable, currentStepIndex)
           const isLast = index === steps.length - 1
 
           return (
