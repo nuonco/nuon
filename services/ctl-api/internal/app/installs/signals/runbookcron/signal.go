@@ -2,7 +2,6 @@ package runbookcron
 
 import (
 	"fmt"
-	"time"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -57,12 +56,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	tick := workflow.Now(ctx).UTC().Truncate(time.Minute).Format("20060102T1504Z")
 	if err := activities.AwaitTriggerRunbookCron(ctx, activities.TriggerRunbookCronRequest{
 		InstallRunbookID: s.InstallRunbookID,
 		RunbookConfigID:  s.RunbookConfigID,
 		TriggeredByID:    s.TriggeredByID,
-		IdempotencyKey:   fmt.Sprintf("runbook-cron:%s:%s", s.RunbookConfigID, tick),
+		IdempotencyKey:   fmt.Sprintf("runbook-cron:%s", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	}); err != nil {
 		return fmt.Errorf("unable to trigger runbook cron run: %w", err)
 	}
