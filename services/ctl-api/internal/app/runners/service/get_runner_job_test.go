@@ -239,6 +239,7 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(execution).Error)
 
 				result := &app.RunnerJobExecutionResult{
+					OrgID:                s.testOrg.ID,
 					RunnerJobExecutionID: execution.ID,
 					CompositeError: &compositeerrors.CompositeErrorData{
 						Type: "terraform.error",
