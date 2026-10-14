@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	relapi "helm.sh/helm/v4/pkg/release"
 	rspb "helm.sh/helm/v4/pkg/release/v1"
 	"helm.sh/helm/v4/pkg/storage/driver"
 )
@@ -57,8 +58,21 @@ func (h *Nuon) Name() string {
 	return NuonDriverName
 }
 
+func releaserToRelease(rel relapi.Releaser) (*rspb.Release, error) {
+	switch r := rel.(type) {
+	case *rspb.Release:
+		return r, nil
+	case rspb.Release:
+		return &r, nil
+	case nil:
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("unsupported release type: %T", rel)
+	}
+}
+
 // Get returns the release named by key or returns ErrReleaseNotFound.
-func (h *Nuon) Get(key string) (*rspb.Release, error) {
+func (h *Nuon) Get(key string) (relapi.Releaser, error) {
 	endpoint := fmt.Sprintf("%s/releases/%s/%s", h.serverURL, h.namespace, url.PathEscape(key))
 
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
@@ -92,7 +106,7 @@ func (h *Nuon) Get(key string) (*rspb.Release, error) {
 }
 
 // List returns the list of all releases such that filter(release) == true
-func (h *Nuon) List(filter func(*rspb.Release) bool) ([]*rspb.Release, error) {
+func (h *Nuon) List(filter func(relapi.Releaser) bool) ([]relapi.Releaser, error) {
 	endpoint := fmt.Sprintf("%s/releases/%s", h.serverURL, h.namespace)
 
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
@@ -118,7 +132,7 @@ func (h *Nuon) List(filter func(*rspb.Release) bool) ([]*rspb.Release, error) {
 		return nil, err
 	}
 
-	var filtered []*rspb.Release
+	var filtered []relapi.Releaser
 	for _, rls := range releases {
 		if filter(rls) {
 			filtered = append(filtered, rls)
@@ -129,7 +143,7 @@ func (h *Nuon) List(filter func(*rspb.Release) bool) ([]*rspb.Release, error) {
 }
 
 // Query returns the set of releases that match the provided set of labels
-func (h *Nuon) Query(keyvals map[string]string) ([]*rspb.Release, error) {
+func (h *Nuon) Query(keyvals map[string]string) ([]relapi.Releaser, error) {
 	params := url.Values{}
 	for k, v := range keyvals {
 		params.Add(k, v)
@@ -164,11 +178,22 @@ func (h *Nuon) Query(keyvals map[string]string) ([]*rspb.Release, error) {
 		return nil, err
 	}
 
-	return releases, nil
+	out := make([]relapi.Releaser, 0, len(releases))
+	for _, rls := range releases {
+		out = append(out, rls)
+	}
+	return out, nil
 }
 
 // Create creates a new release or returns ErrReleaseExists.
-func (h *Nuon) Create(key string, rls *rspb.Release) error {
+func (h *Nuon) Create(key string, rel relapi.Releaser) error {
+	rls, err := releaserToRelease(rel)
+	if err != nil {
+		return err
+	}
+	if rls == nil {
+		return fmt.Errorf("create: release is nil")
+	}
 	// For backwards compatibility, we protect against an unset namespace
 	namespace := rls.Namespace
 	if namespace == "" {
@@ -211,7 +236,14 @@ func (h *Nuon) Create(key string, rls *rspb.Release) error {
 }
 
 // Update updates a release or returns ErrReleaseNotFound.
-func (h *Nuon) Update(key string, rls *rspb.Release) error {
+func (h *Nuon) Update(key string, rel relapi.Releaser) error {
+	rls, err := releaserToRelease(rel)
+	if err != nil {
+		return err
+	}
+	if rls == nil {
+		return fmt.Errorf("update: release is nil")
+	}
 	// For backwards compatibility, we protect against an unset namespace
 	namespace := rls.Namespace
 	if namespace == "" {
@@ -254,7 +286,7 @@ func (h *Nuon) Update(key string, rls *rspb.Release) error {
 }
 
 // Delete deletes a release or returns ErrReleaseNotFound.
-func (h *Nuon) Delete(key string) (*rspb.Release, error) {
+func (h *Nuon) Delete(key string) (relapi.Releaser, error) {
 	release, err := h.Get(key)
 	if err != nil {
 		return nil, err

@@ -14,6 +14,8 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 	"helm.sh/helm/v4/pkg/action"
 	kubefake "helm.sh/helm/v4/pkg/kube/fake"
+	relapi "helm.sh/helm/v4/pkg/release"
+	rcommon "helm.sh/helm/v4/pkg/release/common"
 	release "helm.sh/helm/v4/pkg/release/v1"
 	"helm.sh/helm/v4/pkg/storage"
 	"helm.sh/helm/v4/pkg/storage/driver"
@@ -64,7 +66,7 @@ type vanishedOnPurgeDriver struct {
 	driver.Driver
 }
 
-func (d *vanishedOnPurgeDriver) Delete(key string) (*release.Release, error) {
+func (d *vanishedOnPurgeDriver) Delete(key string) (relapi.Releaser, error) {
 	if _, err := d.Driver.Delete(key); err != nil {
 		return nil, err
 	}
@@ -78,7 +80,7 @@ type phantomNotFoundDriver struct {
 	driver.Driver
 }
 
-func (d *phantomNotFoundDriver) Delete(_ string) (*release.Release, error) {
+func (d *phantomNotFoundDriver) Delete(_ string) (relapi.Releaser, error) {
 	return nil, driver.ErrReleaseNotFound
 }
 
@@ -86,7 +88,7 @@ type purgeFailureDriver struct {
 	driver.Driver
 }
 
-func (d *purgeFailureDriver) Delete(_ string) (*release.Release, error) {
+func (d *purgeFailureDriver) Delete(_ string) (relapi.Releaser, error) {
 	return nil, errors.New("etcdserver: request timed out")
 }
 
@@ -98,7 +100,7 @@ type vanishesAfterFirstReadDriver struct {
 	reads int
 }
 
-func (d *vanishesAfterFirstReadDriver) Query(labels map[string]string) ([]*release.Release, error) {
+func (d *vanishesAfterFirstReadDriver) Query(labels map[string]string) ([]relapi.Releaser, error) {
 	d.reads++
 	if d.reads > 1 {
 		return nil, driver.ErrReleaseNotFound
@@ -111,7 +113,7 @@ type readFailureDriver struct {
 	driver.Driver
 }
 
-func (d *readFailureDriver) Query(_ map[string]string) ([]*release.Release, error) {
+func (d *readFailureDriver) Query(_ map[string]string) ([]relapi.Releaser, error) {
 	return nil, errors.New("the api server refused the request")
 }
 
@@ -132,7 +134,7 @@ func TestUninstall_NoPreviousRelease(t *testing.T) {
 func TestUninstall_ReadFailurePropagates(t *testing.T) {
 	h, cfg := helmHandler(t, func(d driver.Driver) driver.Driver {
 		return &readFailureDriver{Driver: d}
-	}, testRevision(1, release.StatusDeployed))
+	}, testRevision(1, rcommon.StatusDeployed))
 
 	err := h.uninstall(context.Background(), zap.NewNop(), cfg)
 	require.Error(t, err)
@@ -142,7 +144,7 @@ func TestUninstall_ReadFailurePropagates(t *testing.T) {
 func TestUninstall_ReleaseRemovedAfterTheReadIsNotAnError(t *testing.T) {
 	h, cfg := helmHandler(t, func(d driver.Driver) driver.Driver {
 		return &vanishesAfterFirstReadDriver{Driver: d}
-	}, testRevision(1, release.StatusDeployed))
+	}, testRevision(1, rcommon.StatusDeployed))
 
 	l, logs := observedLogger()
 	require.NoError(t, h.uninstall(context.Background(), l, cfg))
@@ -152,7 +154,7 @@ func TestUninstall_ReleaseRemovedAfterTheReadIsNotAnError(t *testing.T) {
 func TestUninstall_PurgeNotFoundIsTreatedAsUninstalled(t *testing.T) {
 	h, cfg := helmHandler(t, func(d driver.Driver) driver.Driver {
 		return &vanishedOnPurgeDriver{Driver: d}
-	}, testRevision(1, release.StatusDeployed))
+	}, testRevision(1, rcommon.StatusDeployed))
 
 	l, logs := observedLogger()
 	require.NoError(t, h.uninstall(context.Background(), l, cfg))
@@ -167,7 +169,7 @@ func TestUninstall_PurgeNotFoundIsTreatedAsUninstalled(t *testing.T) {
 func TestUninstall_NotFoundWithReleaseStillStoredFails(t *testing.T) {
 	h, cfg := helmHandler(t, func(d driver.Driver) driver.Driver {
 		return &phantomNotFoundDriver{Driver: d}
-	}, testRevision(1, release.StatusDeployed))
+	}, testRevision(1, rcommon.StatusDeployed))
 
 	err := h.uninstall(context.Background(), zap.NewNop(), cfg)
 	require.Error(t, err)
@@ -177,7 +179,7 @@ func TestUninstall_NotFoundWithReleaseStillStoredFails(t *testing.T) {
 func TestUninstall_RealFailurePropagates(t *testing.T) {
 	h, cfg := helmHandler(t, func(d driver.Driver) driver.Driver {
 		return &purgeFailureDriver{Driver: d}
-	}, testRevision(1, release.StatusDeployed))
+	}, testRevision(1, rcommon.StatusDeployed))
 
 	err := h.uninstall(context.Background(), zap.NewNop(), cfg)
 	require.Error(t, err)

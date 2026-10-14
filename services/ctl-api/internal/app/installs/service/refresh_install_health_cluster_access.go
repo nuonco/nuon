@@ -93,11 +93,12 @@ func (s *service) refreshHealthClusterAccess(ctx context.Context, orgID, install
 		return nil, fmt.Errorf("unable to marshal cluster info: %w", err)
 	}
 
-	// Keep the sandbox releases the runner discovered; only access is derived.
+	// Keep what the runner discovered; only access is derived.
 	update := app.Install{
 		ComponentHealthContext: app.ComponentHealthContext{
 			ClusterInfoJSON:     string(raw),
 			SandboxHelmReleases: install.ComponentHealthContext.SandboxHelmReleases,
+			ComponentKinds:      install.ComponentHealthContext.ComponentKinds,
 		},
 	}
 	if err := s.db.WithContext(ctx).

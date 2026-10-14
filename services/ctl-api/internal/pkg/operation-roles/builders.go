@@ -20,6 +20,7 @@ func GetRoleForDeploy(
 	stack *app.InstallStack,
 	installState *state.State,
 	flw *app.Workflow,
+	legacyAzureRoleFallback bool,
 ) (*RoleSelection, app.OperationType, error) {
 	operation := app.OperationDeploy
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
@@ -41,6 +42,8 @@ func GetRoleForDeploy(
 		AppConfig:    appCfg,
 		StackOutputs: &stack.InstallStackOutputs,
 		InstallState: installState,
+
+		LegacyAzureRoleFallback: legacyAzureRoleFallback,
 	}
 
 	roleSelection, err := SelectRole(selectionCtx, l)
@@ -82,6 +85,7 @@ func GetRoleForSandbox(
 	run *app.InstallSandboxRun,
 	stack *app.InstallStack,
 	installState *state.State,
+	legacyAzureRoleFallback bool,
 ) (*RoleSelection, app.OperationType, error) {
 	var operation app.OperationType
 	switch run.RunType {
@@ -113,6 +117,8 @@ func GetRoleForSandbox(
 		AppConfig:    appCfg,
 		StackOutputs: &stack.InstallStackOutputs,
 		InstallState: installState,
+
+		LegacyAzureRoleFallback: legacyAzureRoleFallback,
 	}
 
 	roleSelection, err := SelectRole(selectionCtx, l)
@@ -155,6 +161,7 @@ func GetRoleForAction(
 	stack *app.InstallStack,
 	installState *state.State,
 	flw *app.Workflow,
+	legacyAzureRoleFallback bool,
 ) (*RoleSelection, app.OperationType, error) {
 	operation := app.OperationTrigger
 
@@ -184,6 +191,8 @@ func GetRoleForAction(
 		StackOutputs:   &stack.InstallStackOutputs,
 		BreakGlassRole: breakGlassRole,
 		InstallState:   installState,
+
+		LegacyAzureRoleFallback: legacyAzureRoleFallback,
 	}
 
 	roleSelection, err := SelectRole(selectionCtx, l)

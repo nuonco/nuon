@@ -40,7 +40,7 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	l.Info("rendered values", zap.Any("values", values))
 
 	client := action.NewUpgrade(actionCfg)
-	client.DryRun = true
+	client.DryRunStrategy = action.DryRunServer
 	client.DisableHooks = false
 	client.WaitForJobs = false
 	client.WaitStrategy = kube.StatusWatcherStrategy
@@ -62,8 +62,12 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	if err != nil {
 		return "", nil, "", errors.Wrap(err, "unable to execute with dry-run")
 	}
+	dryRun, err := helm.AsRelease(rel)
+	if err != nil {
+		return "", nil, "", err
+	}
 	l.Info("parsing previous and current release manifests")
-	diffH, diffReport, err := h.getDiff(l, kubeCfg, prevRel, rel, h.state.plan.HelmDeployPlan.Namespace)
+	diffH, diffReport, err := h.getDiff(l, kubeCfg, prevRel, dryRun, h.state.plan.HelmDeployPlan.Namespace)
 	if err != nil {
 		return "", nil, "", errors.Wrap(err, "unable to execute with dry-run")
 	}
@@ -92,7 +96,7 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 		contentDiff = append(contentDiff, d)
 	}
 
-	return string(diffH), &contentDiff, rel.Manifest, nil
+	return string(diffH), &contentDiff, dryRun.Manifest, nil
 }
 
 func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, *[]diff.ResourceDiff, string, error) {
@@ -112,8 +116,7 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	l.Info("rendered values", zap.Any("values", values))
 
 	client := action.NewInstall(actionCfg)
-	client.ClientOnly = false
-	client.DryRun = true
+	client.DryRunStrategy = action.DryRunServer
 	client.DisableHooks = false
 
 	client.WaitForJobs = false
@@ -138,7 +141,11 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	if err != nil {
 		return "", nil, "", errors.Wrap(err, "unable to execute with dry-run")
 	}
-	diffH, diffReport, err := h.getDiff(l, kubeCfg, nil, rel, h.state.plan.HelmDeployPlan.Namespace)
+	dryRun, err := helm.AsRelease(rel)
+	if err != nil {
+		return "", nil, "", err
+	}
+	diffH, diffReport, err := h.getDiff(l, kubeCfg, nil, dryRun, h.state.plan.HelmDeployPlan.Namespace)
 	if err != nil {
 		return "", nil, "", errors.Wrap(err, "unable to get diff")
 	}
@@ -167,7 +174,7 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 		contentDiff = append(contentDiff, d)
 	}
 
-	return string(diffH), &contentDiff, rel.Manifest, nil
+	return string(diffH), &contentDiff, dryRun.Manifest, nil
 }
 
 func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config, prevRel *release.Release) (string, *[]diff.ResourceDiff, string, error) {

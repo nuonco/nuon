@@ -39,7 +39,14 @@ const BreadcrumbItem = ({
   }
 
   if (crumb.quickNav) {
-    return <BreadcrumbQuickNav label={crumb.text} config={crumb.quickNav} />
+    return (
+      <BreadcrumbQuickNav
+        label={crumb.text}
+        href={crumb.path}
+        isActive={isLast}
+        config={crumb.quickNav}
+      />
+    )
   }
 
   return (

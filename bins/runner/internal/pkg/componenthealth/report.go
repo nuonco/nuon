@@ -2,7 +2,9 @@ package componenthealth
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 	"sync"
@@ -10,6 +12,8 @@ import (
 
 	"github.com/sourcegraph/conc"
 	"go.uber.org/zap"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -125,6 +129,11 @@ func (e *Engine) bound(resources []*models.ServiceComponentHealthResource, owner
 	return resources[:maxResourcesPerComponent], true
 }
 
+type listedObject struct {
+	gvr schema.GroupVersionResource
+	u   *unstructured.Unstructured
+}
+
 // collectCluster lists the watched kinds plus current warning events, assesses
 // each object, and groups it under the component or sandbox release owning it.
 func (e *Engine) collectCluster(
@@ -144,12 +153,9 @@ func (e *Engine) collectCluster(
 		return fmt.Errorf("unable to build dynamic client: %w", err)
 	}
 
-	warnings := e.latestWarnings(ctx, dynClient)
+	namespaces := e.scopedNamespaces()
+	warnings := e.latestWarnings(ctx, dynClient, namespaces)
 
-	type listedObject struct {
-		gvr schema.GroupVersionResource
-		u   *unstructured.Unstructured
-	}
 	objects := make([]listedObject, 0, 256)
 	byKey := map[string]*unstructured.Unstructured{}
 
@@ -158,8 +164,16 @@ func (e *Engine) collectCluster(
 	var failedKinds []string
 	var firstListErr error
 
-	for _, gvr := range e.watchList(ctx, restCfg) {
-		list, err := dynClient.Resource(gvr).List(ctx, metav1.ListOptions{})
+	watched, clusterScoped, kinds := e.watchList(ctx, restCfg)
+	for _, gvr := range watched {
+		var scope []string
+		if _, ok := clusterScoped[gvr]; !ok {
+			scope = namespaces
+		}
+		items, err := listScoped(ctx, dynClient, gvr, metav1.ListOptions{}, scope)
+		if err != nil && apierrors.IsForbidden(err) {
+			err = e.forgiveForbidden(installID, gvr, kinds[gvr], err, objects)
+		}
 		if err != nil {
 			e.l.Warn("unable to list resources for component health",
 				zap.String("resource", gvr.String()), zap.Error(err))
@@ -167,10 +181,9 @@ func (e *Engine) collectCluster(
 			if firstListErr == nil {
 				firstListErr = err
 			}
-			continue
 		}
-		for i := range list.Items {
-			u := &list.Items[i]
+		for i := range items {
+			u := &items[i]
 			objects = append(objects, listedObject{gvr: gvr, u: u})
 			byKey[resourceKey(u.GetKind(), u.GetNamespace(), u.GetName())] = u
 		}
@@ -226,6 +239,174 @@ func (e *Engine) collectCluster(
 	return nil
 }
 
+// scopedNamespaces are the namespaces this install's components deploy into,
+// listed one by one when the identity may not list cluster-wide.
+func (e *Engine) scopedNamespaces() []string {
+	seen := map[string]struct{}{}
+	for _, ns := range e.idx.helmNamespaces() {
+		seen[ns] = struct{}{}
+	}
+	if e.manifestKinds != nil {
+		for _, ns := range e.manifestKinds.Namespaces() {
+			seen[ns] = struct{}{}
+		}
+	}
+
+	out := make([]string, 0, len(seen))
+	for ns := range seen {
+		out = append(out, ns)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// coreKinds names the always-watched resources so they can be matched against
+// the kinds components actually render.
+var coreKinds = map[schema.GroupVersionResource]schema.GroupKind{
+	{Group: "apps", Version: "v1", Resource: "deployments"}:            {Group: "apps", Kind: "Deployment"},
+	{Group: "apps", Version: "v1", Resource: "statefulsets"}:           {Group: "apps", Kind: "StatefulSet"},
+	{Group: "apps", Version: "v1", Resource: "daemonsets"}:             {Group: "apps", Kind: "DaemonSet"},
+	{Group: "", Version: "v1", Resource: "services"}:                   {Kind: "Service"},
+	{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}:     {Kind: "PersistentVolumeClaim"},
+	{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}: {Group: "networking.k8s.io", Kind: "Ingress"},
+	{Group: "batch", Version: "v1", Resource: "jobs"}:                  {Group: "batch", Kind: "Job"},
+	podsGVR: {Kind: "Pod"},
+}
+
+// identityKinds never carry a health signal, so being unable to list them
+// loses nothing.
+var identityKinds = map[schema.GroupKind]struct{}{
+	{Kind: "Namespace"}:      {},
+	{Kind: "ServiceAccount"}: {},
+	{Kind: "ConfigMap"}:      {},
+	{Kind: "Secret"}:         {},
+	{Group: "rbac.authorization.k8s.io", Kind: "Role"}:               {},
+	{Group: "rbac.authorization.k8s.io", Kind: "RoleBinding"}:        {},
+	{Group: "rbac.authorization.k8s.io", Kind: "ClusterRole"}:        {},
+	{Group: "rbac.authorization.k8s.io", Kind: "ClusterRoleBinding"}: {},
+}
+
+// listScoped lists cluster-wide, falling back to each of namespaces when that
+// is forbidden — namespace-scoped RBAC is a supported install posture. Items
+// from namespaces that did list are returned alongside a *namespaceListError.
+func listScoped(
+	ctx context.Context,
+	dynClient dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	opts metav1.ListOptions,
+	namespaces []string,
+) ([]unstructured.Unstructured, error) {
+	list, err := dynClient.Resource(gvr).List(ctx, opts)
+	if err == nil {
+		return list.Items, nil
+	}
+	if !apierrors.IsForbidden(err) || len(namespaces) == 0 {
+		return nil, err
+	}
+
+	var items []unstructured.Unstructured
+	failed := map[string]error{}
+	for _, ns := range namespaces {
+		nsList, err := dynClient.Resource(gvr).Namespace(ns).List(ctx, opts)
+		if err != nil {
+			failed[ns] = err
+			continue
+		}
+		items = append(items, nsList.Items...)
+	}
+	if len(failed) == 0 {
+		return items, nil
+	}
+	return items, &namespaceListError{failed: failed}
+}
+
+// namespaceListError holds the namespaces a fallback list failed in.
+type namespaceListError struct {
+	failed map[string]error
+}
+
+func (e *namespaceListError) namespaces() []string {
+	out := make([]string, 0, len(e.failed))
+	for ns := range e.failed {
+		out = append(out, ns)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func (e *namespaceListError) Error() string {
+	first := e.namespaces()[0]
+	return fmt.Sprintf("namespace %s: %v", first, e.failed[first])
+}
+
+func (e *namespaceListError) Unwrap() []error {
+	out := make([]error, 0, len(e.failed))
+	for _, ns := range e.namespaces() {
+		out = append(out, e.failed[ns])
+	}
+	return out
+}
+
+var podOwnerKinds = map[string]struct{}{
+	"Deployment":  {},
+	"StatefulSet": {},
+	"DaemonSet":   {},
+	"ReplicaSet":  {},
+	"Job":         {},
+}
+
+// forgiveForbidden drops 403s that hide nothing health needs. A namespace-scoped
+// role grants only what the install deploys there, so a namespace where no
+// component renders the kind (or, for pods, runs a workload) is not a gap.
+func (e *Engine) forgiveForbidden(installID string, gvr schema.GroupVersionResource, gk schema.GroupKind, err error, objects []listedObject) error {
+	if _, ok := identityKinds[gk]; ok && gk.Kind != "" {
+		e.l.Debug("skipping identity kind the identity may not list",
+			zap.String("resource", gvr.String()), zap.Error(err))
+		return nil
+	}
+
+	var nsErr *namespaceListError
+	if !errors.As(err, &nsErr) || e.manifestKinds == nil || gk.Kind == "" {
+		return err
+	}
+
+	var withWorkloads map[string]struct{}
+	if gvr == podsGVR {
+		withWorkloads = e.namespacesWithWorkloads(installID, objects)
+	}
+
+	kept := map[string]error{}
+	for ns, listErr := range nsErr.failed {
+		_, runsWorkload := withWorkloads[ns]
+		if runsWorkload || !apierrors.IsForbidden(listErr) || e.manifestKinds.RendersIn(ns, gk) {
+			kept[ns] = listErr
+			continue
+		}
+		e.l.Debug("skipping namespace where no component renders the kind the identity may not list",
+			zap.String("resource", gvr.String()), zap.String("namespace", ns), zap.Error(listErr))
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	return &namespaceListError{failed: kept}
+}
+
+func (e *Engine) namespacesWithWorkloads(installID string, objects []listedObject) map[string]struct{} {
+	out := map[string]struct{}{}
+	for _, obj := range objects {
+		if _, ok := podOwnerKinds[obj.u.GetKind()]; !ok {
+			continue
+		}
+		if _, owned := e.componentFor(installID, obj.u); !owned {
+			if _, owned = e.sandboxReleaseFor(obj.u); !owned {
+				continue
+			}
+		}
+		out[obj.u.GetNamespace()] = struct{}{}
+	}
+	return out
+}
+
 // watchList is the core workload kinds plus any kind this install's components
 // actually deploy. Without it a component shipping only CRs (a Karpenter
 // NodePool, a ClickHouseInstallation) reports nothing at all, because nobody
@@ -238,27 +419,32 @@ func (e *Engine) collectCluster(
 //
 // Resolving kind to a listable resource needs the cluster's own discovery data,
 // so an unresolvable kind is simply skipped rather than guessed at.
-func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.GroupVersionResource {
+//
+// The second return holds the cluster-scoped kinds, which have no namespace to
+// fall back to; the third maps each resource to its kind.
+func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) ([]schema.GroupVersionResource, map[schema.GroupVersionResource]struct{}, map[schema.GroupVersionResource]schema.GroupKind) {
 	out := make([]schema.GroupVersionResource, 0, len(watchedGVRs)+8)
 	out = append(out, watchedGVRs...)
+	clusterScoped := map[schema.GroupVersionResource]struct{}{}
+	kinds := maps.Clone(coreKinds)
 
 	var discovered []schema.GroupVersionKind
 	if e.manifestKinds != nil {
 		discovered = e.manifestKinds.DiscoveredGVKs()
 	}
 	if len(discovered) == 0 {
-		return out
+		return out, clusterScoped, kinds
 	}
 
 	disco, err := discovery.NewDiscoveryClientForConfig(restCfg)
 	if err != nil {
 		e.l.Warn("unable to build discovery client for dynamic kinds", zap.Error(err))
-		return out
+		return out, clusterScoped, kinds
 	}
 	groups, err := restmapper.GetAPIGroupResources(disco)
 	if err != nil {
 		e.l.Warn("unable to fetch api group resources for dynamic kinds", zap.Error(err))
-		return out
+		return out, clusterScoped, kinds
 	}
 	mapper := restmapper.NewDiscoveryRESTMapper(groups)
 
@@ -278,9 +464,13 @@ func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.G
 		}
 		seen[m.Resource] = struct{}{}
 		out = append(out, m.Resource)
+		kinds[m.Resource] = gvk.GroupKind()
+		if m.Scope.Name() == meta.RESTScopeNameRoot {
+			clusterScoped[m.Resource] = struct{}{}
+		}
 	}
 
-	return out
+	return out, clusterScoped, kinds
 }
 
 // maxOwnerHops bounds the ownerReferences walk so a cyclic chain cannot spin.

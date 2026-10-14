@@ -16,6 +16,7 @@ title: 'Runbook'
 | **`description`**<br/>string | - | **Optional** | - |
 | **`readme`**<br/>string | readme file for the runbook Markdown file with runbook documentation and instructions. Supports Go templating and external file sources: HTTP(S) URLs, git repositories, file paths, and relative paths | **Optional** | `"./release-notes.md"` |
 | **`labels`**<br/>object | - | **Optional** | - |
+| **`triggers`**<br/>[array](#triggers) | triggers that execute this runbook Runbooks can be triggered manually or on a cron schedule. When omitted, manual triggering is enabled | **Optional** | - |
 | **`input`**<br/>[array](#input) | - | **Optional** | - |
 | **`dependencies`**<br/>array | - | **Optional** | - |
 
@@ -41,6 +42,13 @@ title: 'Runbook'
 | **`event_types`**<br/>array | event types that can resume this step For wait_for_event steps, the step resumes when an event from trigger has one of these types and matches every configured filter | **Optional** | - |
 | **`filters`**<br/>array | - | **Optional** | - |
 | **`match_all`**<br/>boolean | explicitly match all event types For wait_for_event steps, permits matching all event types, including when filters contain only exclusion predicates | **Optional** | - |
+
+### `triggers`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`type`**<br/>string | type of trigger Supported trigger types: manual and cron | **✅ Required** | `"manual"`, `"cron"` |
+| **`cron_schedule`**<br/>string | cron schedule expression for scheduled triggers Standard five-field cron format evaluated in UTC | **Optional** | `"0 0 * * *"` |
 
 ### `input`
 

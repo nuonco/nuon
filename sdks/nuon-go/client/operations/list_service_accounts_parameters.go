@@ -64,13 +64,13 @@ type ListServiceAccountsParams struct {
 
 	/* IncludeRunners.
 
-	   include service accounts with the runner role (excluded by default)
+	   include service accounts with the runner role (excluded by default; ignored when management is set)
 	*/
 	IncludeRunners *bool
 
 	/* IncludeStacks.
 
-	   include service accounts with the stack role (excluded by default)
+	   include service accounts with the stack role (excluded by default; ignored when management is set)
 	*/
 	IncludeStacks *bool
 
@@ -81,6 +81,12 @@ type ListServiceAccountsParams struct {
 	   Default: 10
 	*/
 	Limit *int64
+
+	/* Management.
+
+	   filter by who manages the account
+	*/
+	Management *string
 
 	/* Offset.
 
@@ -93,6 +99,18 @@ type ListServiceAccountsParams struct {
 	   page number of results to return
 	*/
 	Page *int64
+
+	/* Purpose.
+
+	   filter to service accounts with this exact purpose
+	*/
+	Purpose *string
+
+	/* Q.
+
+	   case-insensitive substring match on name, email, ID, or owner name and ID
+	*/
+	Q *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -197,6 +215,17 @@ func (o *ListServiceAccountsParams) SetLimit(limit *int64) {
 	o.Limit = limit
 }
 
+// WithManagement adds the management to the list service accounts params
+func (o *ListServiceAccountsParams) WithManagement(management *string) *ListServiceAccountsParams {
+	o.SetManagement(management)
+	return o
+}
+
+// SetManagement adds the management to the list service accounts params
+func (o *ListServiceAccountsParams) SetManagement(management *string) {
+	o.Management = management
+}
+
 // WithOffset adds the offset to the list service accounts params
 func (o *ListServiceAccountsParams) WithOffset(offset *int64) *ListServiceAccountsParams {
 	o.SetOffset(offset)
@@ -217,6 +246,28 @@ func (o *ListServiceAccountsParams) WithPage(page *int64) *ListServiceAccountsPa
 // SetPage adds the page to the list service accounts params
 func (o *ListServiceAccountsParams) SetPage(page *int64) {
 	o.Page = page
+}
+
+// WithPurpose adds the purpose to the list service accounts params
+func (o *ListServiceAccountsParams) WithPurpose(purpose *string) *ListServiceAccountsParams {
+	o.SetPurpose(purpose)
+	return o
+}
+
+// SetPurpose adds the purpose to the list service accounts params
+func (o *ListServiceAccountsParams) SetPurpose(purpose *string) {
+	o.Purpose = purpose
+}
+
+// WithQ adds the q to the list service accounts params
+func (o *ListServiceAccountsParams) WithQ(q *string) *ListServiceAccountsParams {
+	o.SetQ(q)
+	return o
+}
+
+// SetQ adds the q to the list service accounts params
+func (o *ListServiceAccountsParams) SetQ(q *string) {
+	o.Q = q
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -278,6 +329,23 @@ func (o *ListServiceAccountsParams) WriteToRequest(r runtime.ClientRequest, reg 
 		}
 	}
 
+	if o.Management != nil {
+
+		// query param management
+		var qrManagement string
+
+		if o.Management != nil {
+			qrManagement = *o.Management
+		}
+		qManagement := qrManagement
+		if qManagement != "" {
+
+			if err := r.SetQueryParam("management", qManagement); err != nil {
+				return err
+			}
+		}
+	}
+
 	if o.Offset != nil {
 
 		// query param offset
@@ -307,6 +375,40 @@ func (o *ListServiceAccountsParams) WriteToRequest(r runtime.ClientRequest, reg 
 		if qPage != "" {
 
 			if err := r.SetQueryParam("page", qPage); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Purpose != nil {
+
+		// query param purpose
+		var qrPurpose string
+
+		if o.Purpose != nil {
+			qrPurpose = *o.Purpose
+		}
+		qPurpose := qrPurpose
+		if qPurpose != "" {
+
+			if err := r.SetQueryParam("purpose", qPurpose); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+
+		if o.Q != nil {
+			qrQ = *o.Q
+		}
+		qQ := qrQ
+		if qQ != "" {
+
+			if err := r.SetQueryParam("q", qQ); err != nil {
 				return err
 			}
 		}

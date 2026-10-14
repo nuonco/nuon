@@ -143,9 +143,15 @@ type Runbook struct {
 }
 
 type RunbookDefinition struct {
-	ReadmeDigest string                   `json:"readme_digest,omitempty"`
-	Inputs       []RunbookInputDefinition `json:"inputs,omitempty"`
-	Steps        []RunbookStepDefinition  `json:"steps"`
+	ReadmeDigest string                     `json:"readme_digest,omitempty"`
+	Triggers     []RunbookTriggerDefinition `json:"triggers,omitempty"`
+	Inputs       []RunbookInputDefinition   `json:"inputs,omitempty"`
+	Steps        []RunbookStepDefinition    `json:"steps"`
+}
+
+type RunbookTriggerDefinition struct {
+	Type         string `json:"type"`
+	CronSchedule string `json:"cron_schedule,omitempty"`
 }
 
 type RunbookStepDefinition struct {

@@ -52,6 +52,19 @@ Counters are cumulative; apply rates per instance before aggregating replicas.
 Retries count as separate attempts. Request and operation metrics appear when
 observed; they do not provide an idle heartbeat.
 
+### State telemetry
+
+The [state telemetry collector](../statetelemetry/README.md) runs in internal and
+all-in-one API processes when `STATE_TELEMETRY_ENABLED=true` and an OTLP
+endpoint is configured. The global toggle controls database-backed state collection,
+not existing request/operation metrics, logs or traces. It exports
+`nuon.inventory.current` counts for retained orgs, apps, installs, component
+definitions, installed component targets and runners, plus app-scoped
+install/component/install-runner counts, org-scoped
+org/build-runner counts and collection/freshness diagnostics. These are lifecycle
+counts, not workload-health gauges. See its README for membership, cardinality
+budgets, dimensions, query limitations and troubleshooting.
+
 ### Entity correlation
 
 The following counters carry IDs when available; their duration histograms stay aggregate:
@@ -71,7 +84,9 @@ Match with downstream application telemetry using the install ID and retain
 `nuon.control_plane.id` for control-plane scope. Workflow, job, deploy and build IDs
 remain log fields, not metric labels.
 
-Each metric stream is capped at 2,000 attribute sets per process. Excess combinations
+Counter/histogram streams are capped at 2,000 attribute sets per process;
+observable gauges are capped at 4,096. This applies to all observable gauges,
+not only fleet inventory. Excess combinations
 aggregate into `otel.metric.overflow=true` without entity identity. Monitor overflow;
 install-filtered queries cannot account for that population. Entity churn consumes
 the cumulative counter budget until process restart. Histograms do not multiply by IDs.

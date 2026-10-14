@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v4/pkg/action"
 	kubefake "helm.sh/helm/v4/pkg/kube/fake"
+	relapi "helm.sh/helm/v4/pkg/release"
+	rcommon "helm.sh/helm/v4/pkg/release/common"
 	release "helm.sh/helm/v4/pkg/release/v1"
 	"helm.sh/helm/v4/pkg/storage"
 	"helm.sh/helm/v4/pkg/storage/driver"
@@ -81,7 +83,7 @@ func confirmConfig(t *testing.T, wrap func(driver.Driver) driver.Driver, revisio
 	}
 }
 
-func storedRelease(version int, status release.Status) *release.Release {
+func storedRelease(version int, status rcommon.Status) *release.Release {
 	return &release.Release{
 		Name:      confirmReleaseName,
 		Namespace: "default",
@@ -96,7 +98,7 @@ type queryFailureDriver struct {
 	driver.Driver
 }
 
-func (d *queryFailureDriver) Query(_ map[string]string) ([]*release.Release, error) {
+func (d *queryFailureDriver) Query(_ map[string]string) ([]relapi.Releaser, error) {
 	return nil, errors.New("the api server refused the request")
 }
 
@@ -107,7 +109,7 @@ func TestConfirmUninstalled(t *testing.T) {
 	})
 
 	t.Run("a real failure is returned untouched", func(t *testing.T) {
-		cfg := confirmConfig(t, nil, storedRelease(1, release.StatusDeployed))
+		cfg := confirmConfig(t, nil, storedRelease(1, rcommon.StatusDeployed))
 		want := errors.New("etcdserver: request timed out")
 
 		assert.Same(t, want, ConfirmUninstalled(cfg, confirmReleaseName, want))
@@ -120,13 +122,13 @@ func TestConfirmUninstalled(t *testing.T) {
 	})
 
 	t.Run("not found but still stored is a failure", func(t *testing.T) {
-		cfg := confirmConfig(t, nil, storedRelease(3, release.StatusUninstalling))
+		cfg := confirmConfig(t, nil, storedRelease(3, rcommon.StatusUninstalling))
 		uninstallErr := joinedNotFound()
 
 		err := ConfirmUninstalled(cfg, confirmReleaseName, uninstallErr)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "still stored at revision 3")
-		assert.Contains(t, err.Error(), string(release.StatusUninstalling))
+		assert.Contains(t, err.Error(), string(rcommon.StatusUninstalling))
 		assert.ErrorIs(t, err, uninstallErr, "the original uninstall error must stay reachable")
 	})
 

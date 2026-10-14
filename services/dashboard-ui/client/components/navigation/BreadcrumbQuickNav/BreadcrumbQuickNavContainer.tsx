@@ -27,9 +27,13 @@ const useDebouncedValue = (value: string) => {
 
 const BranchQuickNav = ({
   label,
+  href,
+  isActive,
   config,
 }: {
   label: string
+  href: string
+  isActive?: boolean
   config: NonNullable<TNavLink['quickNav']>
 }) => {
   const { pathname } = useLocation()
@@ -80,6 +84,8 @@ const BranchQuickNav = ({
     <BreadcrumbQuickNav
       id="breadcrumb-branch-quick-nav"
       label={label}
+      href={href}
+      isActive={isActive}
       title="Switch branch"
       items={items}
       currentId={config.resourceId}
@@ -93,9 +99,13 @@ const BranchQuickNav = ({
 
 const InstallQuickNav = ({
   label,
+  href,
+  isActive,
   config,
 }: {
   label: string
+  href: string
+  isActive?: boolean
   config: NonNullable<TNavLink['quickNav']>
 }) => {
   const { pathname } = useLocation()
@@ -139,6 +149,8 @@ const InstallQuickNav = ({
     <BreadcrumbQuickNav
       id="breadcrumb-install-quick-nav"
       label={label}
+      href={href}
+      isActive={isActive}
       title="Switch install"
       items={items}
       currentId={config.resourceId}
@@ -152,13 +164,27 @@ const InstallQuickNav = ({
 
 export const BreadcrumbQuickNavContainer = ({
   label,
+  href,
+  isActive,
   config,
 }: {
   label: string
+  href: string
+  isActive?: boolean
   config: NonNullable<TNavLink['quickNav']>
 }) =>
   config.type === 'branch' ? (
-    <BranchQuickNav label={label} config={config} />
+    <BranchQuickNav
+      label={label}
+      href={href}
+      isActive={isActive}
+      config={config}
+    />
   ) : (
-    <InstallQuickNav label={label} config={config} />
+    <InstallQuickNav
+      label={label}
+      href={href}
+      isActive={isActive}
+      config={config}
+    />
   )

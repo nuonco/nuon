@@ -29,8 +29,8 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		zap.String("name", prevRel.Name),
 		zap.String("namespace", prevRel.Namespace),
 		zap.Int("version", prevRel.Version),
-		zap.Time("first_deployed", prevRel.Info.FirstDeployed.Time),
-		zap.Time("last_deployed", prevRel.Info.LastDeployed.Time),
+		zap.Time("first_deployed", prevRel.Info.FirstDeployed),
+		zap.Time("last_deployed", prevRel.Info.LastDeployed),
 	)
 
 	l.Debug("loading chart options")
@@ -51,7 +51,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 
 	client := helm.DefaultUpgrade(actionCfg)
 	// configure the client with additional, chart and context -specific values
-	client.DryRun = true
+	client.DryRunStrategy = action.DryRunServer
 	// wait logic
 	client.Devel = true
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
@@ -59,6 +59,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.SkipCRDs = h.state.plan.HelmDeployPlan.SkipCRDs
 	client.Timeout = h.state.timeout
 
+	var rendered string
 	crds := chart.CRDObjects()
 	if len(crds) > 0 && !client.SkipCRDs {
 		// skip dry run
@@ -71,6 +72,10 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 			"chart contains CRDs - skipping dry-run",
 			crdZapFieldList...,
 		)
+		rendered, err = helm.RenderManifest(chart, values, h.state.plan.HelmDeployPlan.Name, client.Namespace)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render helm chart: %w", err)
+		}
 	} else {
 
 		l.Info("calculating helm diff")
@@ -78,17 +83,30 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
 		}
+		dryRun, err := helm.AsRelease(rel)
+		if err != nil {
+			return nil, err
+		}
+		rendered = dryRun.Manifest
 		prevMapping := manifest.Parse(prevRel.Manifest, prevRel.Namespace, true)
-		newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
+		newMapping := manifest.Parse(dryRun.Manifest, dryRun.Namespace, true)
 		if err := h.logDiff(l, prevMapping, newMapping); err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
 		}
 	}
 
+	resources, err := helm.ResourcesFromManifest(rendered)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read rendered chart: %w", err)
+	}
+	if err := helm.CheckResourceAccess(ctx, kubeCfg, resources, client.Namespace, l); err != nil {
+		return nil, fmt.Errorf("unable to access chart resources: %w", err)
+	}
+
 	l.Info("upgrading helm release")
 	client = helm.DefaultUpgrade(actionCfg)
 
-	client.DryRun = false
+	client.DryRunStrategy = action.DryRunNone
 	client.ServerSideApply = "false"
 	client.Devel = true
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
@@ -96,7 +114,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.SkipCRDs = h.state.plan.HelmDeployPlan.SkipCRDs
 	client.Timeout = h.state.timeout
 
-	rel, err := helm.HelmUpgradeWithLogStreaming(ctx, client, prevRel.Name, chart, values, kubeCfg, l)
+	rel, err := helm.HelmUpgradeWithLogStreaming(ctx, client, prevRel.Name, chart, values, kubeCfg, resources, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
 	}
@@ -108,22 +126,13 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		return nil, errors.Wrap(err, "unable to parse outputs")
 	}
 
-	ingressOutputs, err := outputs.K8SGetHelmReleaseIngresses(ctx, rel.Name, kubeCfg, l)
+	live, err := helm.CollectLiveOutputs(ctx, kubeCfg, resources, rel.Namespace, l)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to retrieve ingresses for this release from k8s")
+		return nil, fmt.Errorf("unable to retrieve chart resources from kubernetes: %w", err)
 	}
-	serviceOutputs, err := outputs.K8SGetHelmReleaseServices(ctx, rel.Name, kubeCfg, l)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to retrieve services for this release from k8s")
-	}
-	deploymentOutputs, err := outputs.K8SGetHelmReleaseDeployments(ctx, rel.Name, kubeCfg, l)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to retrieve deployments for this release from k8s")
-	}
-
-	outs["ingresses"] = ingressOutputs
-	outs["services"] = serviceOutputs
-	outs["deployments"] = deploymentOutputs
+	outs["ingresses"] = live.Ingresses
+	outs["services"] = live.Services
+	outs["deployments"] = live.Deployments
 	h.state.outputs = outs
 
 	return rel, nil

@@ -126,6 +126,7 @@ func (p *Planner) RenderHelmDeployPlan(
 
 		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render storage driver")
 	}
+	renderedDriver = plantypes.NormalizeHelmStorageDriver(renderedDriver)
 
 	var helmChartID string
 	if driver == "nuon" {

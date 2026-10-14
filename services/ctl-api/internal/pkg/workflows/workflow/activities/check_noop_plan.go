@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	approvalplan "github.com/nuonco/nuon/pkg/plans/types/approval_plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -21,13 +20,12 @@ type CheckNoopPlanRequest struct {
 // @temporal-gen-v2 activity
 // @max-retries 5
 func (a *Activities) CheckNoopPlan(ctx context.Context, req *CheckNoopPlanRequest) (bool, error) {
+	if sandbox, err := a.isSandboxModeJob(ctx, req.StepTargetID); err == nil && sandbox {
+		return false, nil
+	}
+
 	plan, err := a.getApprovalPlan(ctx, req.StepTargetID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if sandbox, sErr := a.isSandboxModeJob(ctx, req.StepTargetID); sErr == nil && sandbox {
-				return false, nil
-			}
-		}
 		a.recordDriftPlanEvaluationForTarget(ctx, req.WorkflowType, req.InstallID, req.ComponentID, false, "load_plan", err)
 		return false, errors.Wrap(err, "unable to get approval plan")
 	}
