@@ -812,8 +812,8 @@ func TestSecretsConfigAcceptsTemplatedAndStaticNames(t *testing.T) {
 	}{
 		{
 			name:   "templated name",
-			secret: "{{.nuon.install.inputs.prefix}}_retool_encryption_key",
-			want:   "{{.nuon.install.inputs.prefix}}_retool_encryption_key",
+			secret: "{{.nuon.install.inputs.prefix}}_app_encryption_key",
+			want:   "{{.nuon.install.inputs.prefix}}_app_encryption_key",
 		},
 		{
 			name:   "hyphenated static name",
@@ -822,8 +822,8 @@ func TestSecretsConfigAcceptsTemplatedAndStaticNames(t *testing.T) {
 		},
 		{
 			name:   "underscore static name",
-			secret: "retool_encryption_key",
-			want:   "retool_encryption_key",
+			secret: "app_encryption_key",
+			want:   "app_encryption_key",
 		},
 		{
 			name:    "uppercase rejected",
