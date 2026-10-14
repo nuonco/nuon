@@ -396,10 +396,7 @@ func runbookTearDownSingleComponent(ctx workflow.Context, installID, componentID
 }
 
 func runbookActionStep(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, flw *app.Workflow, sg *stepGroup) (*app.WorkflowStep, error) {
-	triggeredByID := ""
-	if v, ok := flw.Metadata["triggerred_by_id"]; ok {
-		triggeredByID = generics.FromPtrStr(v)
-	}
+	triggeredByID, _ := flw.TriggeredByID()
 
 	sg.nextGroupNamed(fmt.Sprintf("action: %s", stepCfg.Name))
 
