@@ -6658,7 +6658,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobExecutionStatus": "pending" | "initializing" | "in-progress" | "cleaning-up" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
     /** @enum {string} */
-    "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "image-actions" | "" | "any";
+    "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "cron-actions" | "image-actions" | "" | "any";
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
     "app.RunnerJobPlan": {

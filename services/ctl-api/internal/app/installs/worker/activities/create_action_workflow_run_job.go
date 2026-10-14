@@ -34,11 +34,15 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 	}
 	ctx = cctx.SetFlowInstallIDContext(ctx, run.InstallID)
 
-	// image-backed actions are launched by the mng process on VM runners, which
-	// polls the dedicated image-actions group.
-	group := app.RunnerJobGroupActions
-	if cfg.Image != "" {
-		group = app.RunnerJobGroupImageActions
+	group := actionRunnerJobGroup(run.TriggerType, cfg.Image)
+	if group == app.RunnerJobGroupCronActions {
+		enabled, err := a.ensureRunnerJobGroup(ctx, req.RunnerID, group)
+		if err != nil {
+			return nil, err
+		}
+		if !enabled {
+			group = app.RunnerJobGroupActions
+		}
 	}
 
 	job, err := a.runnersHelpers.CreateActionsWorkflowRunJob(ctx,
@@ -54,4 +58,34 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 	}
 
 	return job, nil
+}
+
+func actionRunnerJobGroup(trigger app.ActionWorkflowTriggerType, image string) app.RunnerJobGroup {
+	if image != "" {
+		return app.RunnerJobGroupImageActions
+	}
+	if trigger == app.ActionWorkflowTriggerTypeCron {
+		return app.RunnerJobGroupCronActions
+	}
+	return app.RunnerJobGroupActions
+}
+
+func (a *Activities) ensureRunnerJobGroup(ctx context.Context, runnerID string, group app.RunnerJobGroup) (bool, error) {
+	var runner app.Runner
+	if err := a.db.WithContext(ctx).
+		Preload("Queues").
+		Preload("RunnerGroup.Settings").
+		First(&runner, "id = ?", runnerID).Error; err != nil {
+		return false, errors.Wrap(err, "unable to get runner")
+	}
+	if runner.GetQueueForGroup(group) != nil {
+		return true, nil
+	}
+	if runner.GetQueueForGroup(app.RunnerJobGroupActions) == nil {
+		return false, nil
+	}
+	if err := a.runnersHelpers.EnsureRunnerJobGroupQueue(ctx, &runner, &runner.RunnerGroup.Settings, group); err != nil {
+		return false, err
+	}
+	return true, nil
 }
