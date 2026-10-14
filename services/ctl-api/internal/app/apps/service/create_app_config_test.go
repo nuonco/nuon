@@ -74,7 +74,6 @@ func (s *AppConfigsTestSuite) TestCreateAppConfigV2WithEmptyFields() {
 }
 
 func (s *AppConfigsTestSuite) TestActivatingAPIAppConfigSyncsTriggers() {
-	s.skipBlobTestsInCI()
 	ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
 	ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
 	triggerID := domains.NewTriggerID()
@@ -105,7 +104,6 @@ func (s *AppConfigsTestSuite) TestActivatingAPIAppConfigSyncsTriggers() {
 }
 
 func (s *AppConfigsTestSuite) TestActivatingAPIAppConfigRollsBackAllTriggersWhenLaterRuleFails() {
-	s.skipBlobTestsInCI()
 	ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
 	ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
 	triggerID := domains.NewTriggerID()

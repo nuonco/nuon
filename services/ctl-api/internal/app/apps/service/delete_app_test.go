@@ -32,6 +32,7 @@ func (s *AppCRUDTestSuite) TestDeleteApp() {
 				}
 				err := s.service.DB.Create(testApp).Error
 				require.NoError(s.T(), err)
+				s.createAppSignalsQueue(testApp.ID)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.App{}, "id = ?", testApp.ID)
@@ -131,6 +132,7 @@ func (s *AppCRUDTestSuite) TestDeleteApp() {
 				}
 				err := s.service.DB.Create(testApp).Error
 				require.NoError(s.T(), err)
+				s.createAppSignalsQueue(testApp.ID)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.App{}, "id = ?", testApp.ID)
@@ -191,4 +193,16 @@ func (s *AppCRUDTestSuite) TestDeleteApp() {
 			}
 		})
 	}
+}
+
+func (s *AppCRUDTestSuite) createAppSignalsQueue(appID string) {
+	require.NoError(s.T(), s.service.DB.Create(&app.Queue{
+		OrgID:       &s.testOrg.ID,
+		OwnerID:     appID,
+		OwnerType:   "apps",
+		Name:        "app-signals",
+		MaxDepth:    100,
+		MaxInFlight: 1,
+		CreatedByID: s.testAcc.ID,
+	}).Error)
 }

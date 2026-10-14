@@ -14,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	psqlmigrations "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -67,6 +68,7 @@ func (s *migration127TestSuite) seedOrgWithNotificationsConfig(
 		AccountType: acctType,
 	}
 	require.NoError(s.T(), s.db.WithContext(ctx).Create(acct).Error)
+	ctx = cctx.SetAccountIDContext(ctx, acct.ID)
 
 	org := &app.Org{
 		ID:          domains.NewOrgID(),
