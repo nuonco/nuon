@@ -256,6 +256,14 @@ func (a *InstallStackOutputs) RunnerDisabled() bool {
 	return false
 }
 
+// HasAzureOperationIdentities reports whether the Azure stack reports
+// per-operation identities. Stacks created before they were introduced omit the
+// keys entirely, while newer stacks report an empty ID for a disabled role.
+func (a *InstallStackOutputs) HasAzureOperationIdentities() bool {
+	_, ok := a.Data["maintenance_identity_client_id"]
+	return ok
+}
+
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
