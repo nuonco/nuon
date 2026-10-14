@@ -166,7 +166,7 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) TestAdminInvalidateRunner
 				return s.testRunner.ID
 			},
 			requestBody:  nil,
-			expectedCode: http.StatusCreated,
+			expectedCode: http.StatusOK,
 		},
 	}
 

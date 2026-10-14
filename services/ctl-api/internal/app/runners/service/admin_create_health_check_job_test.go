@@ -209,6 +209,7 @@ func (s *AdminCreateHealthCheckJobTestSuite) TestAdminCreateHealthCheckJob() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetQueueSignals(s.T(), s.service.DB)
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/health-check-job", AdminCreateHealthCheckJobRequest{})
 

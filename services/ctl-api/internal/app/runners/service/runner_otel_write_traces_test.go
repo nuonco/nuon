@@ -89,7 +89,7 @@ func (s *RunnerOtelWriteTracesTestSuite) SetupTest() {
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestOrg: s.testOrg,
-		TestAcc: s.testAcc,
+		TestAcc: withOrgAccess(s.testAcc, s.testOrg),
 	})
 	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)

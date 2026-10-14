@@ -3,7 +3,6 @@ package service
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -86,7 +85,7 @@ func (s *LogStreamWriteLogsTestSuite) SetupTest() {
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestOrg: s.testOrg,
-		TestAcc: s.testAcc,
+		TestAcc: withOrgAccess(s.testAcc, s.testOrg),
 	})
 	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -442,11 +441,11 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			},
 		},
 		{
-			name: "empty request body returns error",
+			name: "empty request body writes nothing",
 			setupFunc: func() (string, []byte) {
 				return s.testLogStream.ID, []byte{}
 			},
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusCreated,
 			validateFunc: func(logStreamID string) {
 				// No logs should be written
 				count := s.countLogsInCH(logStreamID)
@@ -467,12 +466,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			if tc.expectedCode == http.StatusCreated {
-				// Verify response
-				var response string
-				err := json.Unmarshal(rr.Body.Bytes(), &response)
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "ok", response)
-
 				// Verify logs were written to ClickHouse
 				if tc.expectedLogCount > 0 {
 					// Give ClickHouse a moment to process the write

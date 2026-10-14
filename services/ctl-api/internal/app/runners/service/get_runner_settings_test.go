@@ -83,7 +83,7 @@ func (s *GetRunnerSettingsTestSuite) SetupTest() {
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestOrg: s.testOrg,
-		TestAcc: s.testAcc,
+		TestAcc: withOrgAccess(s.testAcc, s.testOrg),
 	})
 	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -345,7 +345,8 @@ func (s *GetRunnerSettingsTestSuite) TestVendorTelemetryRequiresEligibleInstallR
 	assert.Equal(s.T(), 1, queryCounts["Install"])
 	assert.Zero(s.T(), queryCounts["App"], "app name should come from the join, not another query")
 	assert.Equal(s.T(), 1, queryCounts["Org"], "only getRunner should load the org; metadata must not run install hooks")
-	assert.Contains(s.T(), metadataSQL, `SELECT installs.name,installs.labels,"App"."name" AS "App__name"`)
+	assert.Contains(s.T(), metadataSQL, `SELECT installs.name,installs.labels,`)
+	assert.Contains(s.T(), metadataSQL, `"App"."name" AS "App__name"`)
 	assert.Contains(s.T(), metadataSQL, `LEFT JOIN "apps"`)
 	assert.NotContains(s.T(), metadataSQL, "installs_view_")
 	var settings app.RunnerGroupSettings

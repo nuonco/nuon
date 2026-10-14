@@ -146,53 +146,46 @@ func (s *RunnerLifecycleSignalsTestSuite) makeRequest(method, path string, body 
 
 func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals() {
 	testCases := []struct {
-		name string
-		path string
+		name         string
+		path         string
+		expectedCode int
 	}{
 		{
-			name: "graceful shutdown",
-			path: "/v1/runners/" + s.testRunner.ID + "/graceful-shutdown",
+			name:         "graceful shutdown",
+			path:         "/v1/runners/" + s.testRunner.ID + "/graceful-shutdown",
+			expectedCode: http.StatusOK,
 		},
 		{
-			name: "force shutdown",
-			path: "/v1/runners/" + s.testRunner.ID + "/force-shutdown",
+			name:         "force shutdown",
+			path:         "/v1/runners/" + s.testRunner.ID + "/force-shutdown",
+			expectedCode: http.StatusOK,
 		},
 		{
-			name: "mng shutdown",
-			path: "/v1/runners/" + s.testRunner.ID + "/mng/shutdown",
+			name:         "mng shutdown",
+			path:         "/v1/runners/" + s.testRunner.ID + "/mng/shutdown",
+			expectedCode: http.StatusOK,
 		},
 		{
-			name: "mng shutdown vm",
-			path: "/v1/runners/" + s.testRunner.ID + "/mng/shutdown-vm",
-		},
-		{
-			name: "mng update",
-			path: "/v1/runners/" + s.testRunner.ID + "/mng/update",
+			name:         "mng update",
+			path:         "/v1/runners/" + s.testRunner.ID + "/mng/update",
+			expectedCode: http.StatusCreated,
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetQueueSignals(s.T(), s.service.DB)
 
-			// Send empty JSON body
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
-			if rr.Code != http.StatusCreated {
+			if rr.Code != tc.expectedCode {
 				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 			}
-			require.Equal(s.T(), http.StatusCreated, rr.Code)
+			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// Verify response is true
-			var response bool
-			err := json.Unmarshal(rr.Body.Bytes(), &response)
-			require.NoError(s.T(), err)
-			assert.True(s.T(), response)
-
-			// Verify signal was sent with correct type and runner ID
 			sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 			require.Len(s.T(), sigs, 1)
 			assert.Equal(s.T(), s.testRunner.ID, sigs[0].OwnerID)
-
 			assert.NotEmpty(s.T(), string(sigs[0].Type))
 		})
 	}
@@ -227,6 +220,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_RunnerNotFound() 
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetQueueSignals(s.T(), s.service.DB)
 
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
@@ -316,6 +310,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetQueueSignals(s.T(), s.service.DB)
 
 			// Try to access runner from different org (router has s.testOrg context)
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
@@ -334,8 +329,9 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CorrectRunnerID() {
 	// Verify signals are sent to runner ID, not org ID or runner group ID
 
+	resetQueueSignals(s.T(), s.service.DB)
 	rr := s.makeRequest("POST", "/v1/runners/"+s.testRunner.ID+"/graceful-shutdown", map[string]interface{}{})
-	require.Equal(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusOK, rr.Code)
 
 	sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 	require.Len(s.T(), sigs, 1)

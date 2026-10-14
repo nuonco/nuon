@@ -83,7 +83,7 @@ func (s *CreateHeartbeatTestSuite) SetupTest() {
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestOrg: s.testOrg,
-		TestAcc: s.testAcc,
+		TestAcc: withOrgAccess(s.testAcc, s.testOrg),
 	})
 	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -183,8 +183,11 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				assert.False(s.T(), hb.CreatedAt.IsZero())
 
 				// Verify stored in ClickHouse
-				chHeartbeats := s.getHeartbeatsFromCH(s.testRunner.ID)
-				require.NotEmpty(s.T(), chHeartbeats)
+				var chHeartbeats []app.RunnerHeartBeat
+				require.Eventually(s.T(), func() bool {
+					chHeartbeats = s.getHeartbeatsFromCH(s.testRunner.ID)
+					return len(chHeartbeats) > 0
+				}, 5*time.Second, 50*time.Millisecond)
 				assert.Equal(s.T(), s.testRunner.ID, chHeartbeats[0].RunnerID)
 				assert.Equal(s.T(), 5*time.Minute, chHeartbeats[0].AliveTime)
 			},
@@ -517,15 +520,14 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatDifferentProcesses() {
 			assert.Equal(s.T(), tc.process, heartbeat.Process)
 
 			// Verify in ClickHouse
-			chHeartbeats := s.getHeartbeatsFromCH(s.testRunner.ID)
-			found := false
-			for _, chHB := range chHeartbeats {
-				if chHB.Process == tc.process {
-					found = true
-					break
+			assert.Eventually(s.T(), func() bool {
+				for _, chHB := range s.getHeartbeatsFromCH(s.testRunner.ID) {
+					if chHB.Process == tc.process {
+						return true
+					}
 				}
-			}
-			assert.True(s.T(), found, "Heartbeat with process %s should exist in ClickHouse", tc.process)
+				return false
+			}, 5*time.Second, 50*time.Millisecond, "Heartbeat with process %s should exist in ClickHouse", tc.process)
 		})
 	}
 }

@@ -149,6 +149,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) createRunnerHeartBeat(runner
 	heartBeat := &app.RunnerHeartBeat{
 		ID:        domains.NewRunnerHeartBeatID(),
 		RunnerID:  runnerID,
+		ProcessID: "prc-" + string(process),
 		Process:   process,
 		AliveTime: aliveTime,
 		Version:   version,
