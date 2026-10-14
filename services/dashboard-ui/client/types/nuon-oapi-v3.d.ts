@@ -2242,7 +2242,7 @@ export interface paths {
   "/v1/installs/{install_id}/overview": {
     /**
      * install overview
-     * @description Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+     * @description Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
      */
     get: operations["GetInstallOverview"];
   };
@@ -9468,8 +9468,10 @@ export interface components {
       git_branch?: string;
       pending_commits?: components["schemas"]["service.InstallOverviewCommit"][];
       repo?: string;
+      runs_behind?: number | null;
       selected_commit?: components["schemas"]["service.InstallOverviewCommit"];
       status?: string;
+      successful_runs?: components["schemas"]["service.InstallOverviewCommit"][];
       target_branch?: string;
     };
     "service.InstallComponentHealthSummary": {
@@ -9655,6 +9657,7 @@ export interface components {
       branch_id?: string;
       created_at?: string;
       message?: string;
+      metadata?: components["schemas"]["app.AppBranchRunMetadata"];
       run_id?: string;
       run_status?: string;
       sha?: string;
@@ -26911,7 +26914,7 @@ export interface operations {
   };
   /**
    * install overview
-   * @description Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+   * @description Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
    */
   GetInstallOverview: {
     parameters: {
