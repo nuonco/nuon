@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 )
 
 type CreateSandboxRunRequest struct {
@@ -25,7 +26,11 @@ func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunR
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	appCfg, err := a.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
+	appConfigID, err := buildselection.InstallConfigID(ctx, a.db, install, req.WorkflowID)
+	if err != nil {
+		return nil, err
+	}
+	appCfg, err := a.appsHelpers.GetFullAppConfig(ctx, appConfigID, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get full app config")
 	}

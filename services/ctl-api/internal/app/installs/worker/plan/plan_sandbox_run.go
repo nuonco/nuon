@@ -52,6 +52,17 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, nil, errors.Wrap(err, "unable to get sandbox run")
 	}
 
+	if workflow.GetVersion(ctx, "sandbox-plan-selected-config-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
+		run.AppSandboxConfig.AppConfigID != "" && run.AppSandboxConfig.AppConfigID != appCfg.ID {
+		target, err := activities.AwaitGetAppConfigByID(ctx, run.AppSandboxConfig.AppConfigID)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get sandbox run app config")
+		}
+		if target.BuildsPinned {
+			appCfg = target
+		}
+	}
+
 	return p.RenderSandboxRunPlan(l, &RenderSandboxRunPlanInput{
 		RootDomain: req.RootDomain,
 		Install:    install,
@@ -80,7 +91,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 				// is faked — so its registry and region cannot mint credentials, and the
 				// run does not pull the artifact anyway.
 				l.Info("install is in sandbox mode, using git source")
-			case req.OCISource != nil:
+			case req.OCISource != nil && !appCfg.BuildsPinned:
 				l.Info("using OCI source from caller")
 				ociSource = req.OCISource
 			default:
@@ -265,7 +276,7 @@ func (p *Planner) RenderSandboxRunPlan(l *zap.Logger, in *RenderSandboxRunPlanIn
 
 	plan := &plantypes.SandboxRunPlan{
 		AppID:       install.AppID,
-		AppConfigID: install.AppConfigID,
+		AppConfigID: appCfg.ID,
 		InstallID:   install.ID,
 
 		Vars:               vars,
