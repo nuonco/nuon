@@ -36,6 +36,9 @@ func Client(log *zap.Logger, kubeCfg *rest.Config, ns string) (*action.Configura
 	if err != nil {
 		return nil, fmt.Errorf("unable to get rest client: %w", err)
 	}
+	if client, ok := ac.KubeClient.(*kube.Client); ok {
+		ac.KubeClient = newScopedKubeClient(client, ns)
+	}
 
 	return &ac, nil
 }
@@ -94,7 +97,7 @@ func initActionConfig(getter *RestClientGetter) (*action.Configuration, error) {
 	kc := kube.New(getter)
 
 	actionCfg.RESTClientGetter = getter
-	actionCfg.KubeClient = kc
+	actionCfg.KubeClient = newScopedKubeClient(kc, getter.Namespace)
 
 	return &actionCfg, nil
 }

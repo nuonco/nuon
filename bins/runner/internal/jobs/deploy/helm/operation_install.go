@@ -43,9 +43,10 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
 	client.SkipCRDs = h.state.plan.HelmDeployPlan.SkipCRDs
 	client.Timeout = h.state.timeout
-	client.DryRun = true
+	client.DryRunStrategy = action.DryRunServer
 
 	// determine if we're going to calculate the diff
+	var rendered string
 	crds := chart.CRDObjects()
 	if len(crds) > 0 && !client.SkipCRDs {
 		// skip dry run
@@ -58,22 +59,39 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 			"chart contains CRDs - skipping dry-run",
 			crdZapFieldList...,
 		)
+		rendered, err = helm.RenderManifest(chart, values, client.ReleaseName, client.Namespace)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render helm chart: %w", err)
+		}
 	} else {
 		l.Info("calculating helm diff", zap.String("operation", "install"), zap.String("exec", "install"))
 		rel, err := client.RunWithContext(ctx, chart, values)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
 		}
-		newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
+		dryRun, err := helm.AsRelease(rel)
+		if err != nil {
+			return nil, err
+		}
+		rendered = dryRun.Manifest
+		newMapping := manifest.Parse(dryRun.Manifest, dryRun.Namespace, true)
 		if err := h.logDiff(l, map[string]*manifest.MappingResult{}, newMapping); err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
 		}
 
 	}
 
+	resources, err := helm.ResourcesFromManifest(rendered)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read rendered chart: %w", err)
+	}
+	if err := helm.CheckResourceAccess(ctx, kubeCfg, resources, client.Namespace, l); err != nil {
+		return nil, fmt.Errorf("unable to access chart resources: %w", err)
+	}
+
 	l.Info("running helm install")
-	client.DryRun = false
-	rel, err := helm.HelmInstallWithLogStreaming(ctx, client, chart, values, kubeCfg, l)
+	client.DryRunStrategy = action.DryRunNone
+	rel, err := helm.HelmInstallWithLogStreaming(ctx, client, chart, values, kubeCfg, resources, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
 	}
@@ -84,22 +102,13 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 		return nil, errors.Wrap(err, "unable to parse outputs")
 	}
 
-	ingressOutputs, err := outputs.K8SGetHelmReleaseIngresses(ctx, rel.Name, kubeCfg, l)
+	live, err := helm.CollectLiveOutputs(ctx, kubeCfg, resources, rel.Namespace, l)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to retrieve ingresses for this release from k8s")
+		return nil, fmt.Errorf("unable to retrieve chart resources from kubernetes: %w", err)
 	}
-	serviceOutputs, err := outputs.K8SGetHelmReleaseServices(ctx, rel.Name, kubeCfg, l)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to retrieve services for this release from k8s")
-	}
-	deploymentOutputs, err := outputs.K8SGetHelmReleaseDeployments(ctx, rel.Name, kubeCfg, l)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to retrieve deployments for this release from k8s")
-	}
-
-	outs["ingresses"] = ingressOutputs
-	outs["services"] = serviceOutputs
-	outs["deployments"] = deploymentOutputs
+	outs["ingresses"] = live.Ingresses
+	outs["services"] = live.Services
+	outs["deployments"] = live.Deployments
 	h.state.outputs = outs
 
 	return rel, nil

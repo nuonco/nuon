@@ -40,8 +40,9 @@ func TestHTTPGet(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test successful get
-	release, err := driver.Get("sh.helm.release.v1.test.v1")
+	got, err := driver.Get("sh.helm.release.v1.test.v1")
 	require.NoError(t, err)
+	release := got.(*rspb.Release)
 	assert.Equal(t, "test", release.Name)
 	assert.Equal(t, 1, release.Version)
 
@@ -100,8 +101,9 @@ func TestHTTPDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test successful delete
-	release, err := driver.Delete("sh.helm.release.v1.test.v1")
+	got, err := driver.Delete("sh.helm.release.v1.test.v1")
 	require.NoError(t, err)
+	release := got.(*rspb.Release)
 	assert.Equal(t, "test", release.Name)
 
 	// Test release not found

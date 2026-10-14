@@ -2,12 +2,42 @@ package helm
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"helm.sh/helm/v4/pkg/action"
+	relapi "helm.sh/helm/v4/pkg/release"
+	rcommon "helm.sh/helm/v4/pkg/release/common"
 	release "helm.sh/helm/v4/pkg/release/v1"
 	"helm.sh/helm/v4/pkg/storage/driver"
 )
+
+// AsRelease unwraps a Helm 4.1 action result into the v1 release the rest of
+// the runner reads. Helm returns the same value as an empty interface.
+func AsRelease(rel relapi.Releaser) (*release.Release, error) {
+	switch r := rel.(type) {
+	case *release.Release:
+		return r, nil
+	case release.Release:
+		return &r, nil
+	case nil:
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("unsupported helm release type %T", rel)
+	}
+}
+
+func asReleases(rels []relapi.Releaser) ([]*release.Release, error) {
+	out := make([]*release.Release, 0, len(rels))
+	for _, item := range rels {
+		rel, err := AsRelease(item)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, rel)
+	}
+	return out, nil
+}
 
 const releaseNotFound = "release: not found"
 
@@ -38,7 +68,7 @@ func GetRelease(cfg *action.Configuration, name string) (*release.Release, error
 		return nil, err
 	}
 
-	return res, nil
+	return AsRelease(res)
 }
 
 // History returns every stored revision of a release, oldest first. A release
@@ -54,7 +84,7 @@ func History(cfg *action.Configuration, name string) ([]*release.Release, error)
 		return nil, err
 	}
 
-	return res, nil
+	return asReleases(res)
 }
 
 // IsPending reports whether a release is parked mid-operation, which helm
@@ -64,9 +94,9 @@ func IsPending(rel *release.Release) bool {
 		return false
 	}
 	switch rel.Info.Status {
-	case release.StatusPendingInstall,
-		release.StatusPendingUpgrade,
-		release.StatusPendingRollback:
+	case rcommon.StatusPendingInstall,
+		rcommon.StatusPendingUpgrade,
+		rcommon.StatusPendingRollback:
 		return true
 	default:
 		return false
@@ -83,7 +113,7 @@ func LastGoodRevision(history []*release.Release) (int, bool) {
 			continue
 		}
 		switch rel.Info.Status {
-		case release.StatusDeployed, release.StatusSuperseded:
+		case rcommon.StatusDeployed, rcommon.StatusSuperseded:
 			if rel.Version > best {
 				best = rel.Version
 			}
@@ -102,9 +132,9 @@ func ShouldUpgrade(rel *release.Release) bool {
 		return false
 	}
 	switch rel.Info.Status {
-	case release.StatusDeployed,
-		release.StatusFailed,
-		release.StatusSuperseded:
+	case rcommon.StatusDeployed,
+		rcommon.StatusFailed,
+		rcommon.StatusSuperseded:
 		return true
 	default:
 		return false
