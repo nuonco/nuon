@@ -3,4 +3,7 @@ export {
   InstallBranchBanner as InstallBranchBannerPresentation,
   type IInstallBranchBanner,
 } from './InstallBranchBanner'
-export { PendingCommits, type IPendingCommits } from './PendingCommits'
+export {
+  SuccessfulBranchRuns,
+  type ISuccessfulBranchRuns,
+} from './SuccessfulBranchRuns'
