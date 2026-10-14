@@ -126,9 +126,12 @@ jobs:
             echo $? > /tmp/deps-up.exit
           ' > /tmp/deps-up.log 2>&1 &
 
-      # temporal-gen wrappers (*_gen.go) are not tracked in git.
+      # temporal-gen wrappers (*_gen.go) are not tracked in git. The flow lane needs no API docs or
+      # templ output, so only the temporal target runs.
       - name: Generate code
         working-directory: nuon
+        env:
+          NUON_GEN_TARGETS: temporal
         run: |
           go mod download
           go generate ./...
@@ -176,6 +179,11 @@ jobs:
           echo "::group::recent ctl-api test logs"
           tail -n 200 /tmp/nuontest-shard0-tests-*.log 2>/dev/null || true
           echo "::endgroup::"
+
+      - name: Stop dependencies
+        if: always()
+        working-directory: mono
+        run: docker compose down -v --remove-orphans || true
 
   integration:
     name: integration
@@ -293,11 +301,19 @@ jobs:
           DB_REPLICA_ENABLED: "false"
         run: |
           source tests/integration.env
+          # flow/testworker runs in the flow lane. grep, not rg: build-run runners have no rg, and an
+          # empty package list makes nuontest pass without running anything.
           mapfile -t packages < <(
-            rg -l 'INTEGRATION' . --glob '*_test.go' \
-              | xargs -n1 dirname \
-              | sort -u
+            grep -rl --include='*_test.go' 'INTEGRATION' . \
+              | xargs -r -n1 dirname \
+              | sort -u \
+              | grep -vx './internal/pkg/flow/testworker'
           )
+          if (( ${#packages[@]} == 0 )); then
+            echo "no integration test packages found"
+            exit 1
+          fi
+          printf 'testing %s\n' "${packages[@]}"
           go run ./cmd/nuontest -v -timeout=40m -count=1 -p=1 \
             -skip 'TestSuite/TestPin' "${packages[@]}"
 
