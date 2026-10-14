@@ -71,3 +71,11 @@ export const MidProgress = () => (
     <OnboardingWizardLayout onSkip={() => {}} />
   </Providers>
 )
+
+export const Pane = () => (
+  <Providers>
+    <div className="h-[32rem] border rounded overflow-hidden">
+      <OnboardingWizardLayout variant="pane" />
+    </div>
+  </Providers>
+)

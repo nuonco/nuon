@@ -20,6 +20,9 @@ import './Select.css'
 export interface SelectOption {
   value: string
   label: string
+  content?: ReactNode
+  detail?: ReactNode
+  searchText?: string
   description?: string
   disabled?: boolean
   badge?: {
@@ -113,7 +116,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       if (!buttonRef.current) return null
       const rect = buttonRef.current.getBoundingClientRect()
       const margin = 8
-      const desiredMax = 288 // matches max-h-72
+      const desiredMax = 288
       const spaceBelow = window.innerHeight - rect.bottom - margin
       const spaceAbove = rect.top - margin
       const openUpward =
@@ -251,7 +254,9 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
     const filteredOptions =
       searchable && searchQuery
         ? options.filter((o) =>
-            o.label.toLowerCase().includes(searchQuery.toLowerCase())
+            `${o.label} ${o.searchText ?? ''}`
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase())
           )
         : options
 
@@ -411,14 +416,26 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             className
           )}
         >
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span
-              className={cn('truncate', {
-                'text-cool-grey-500 dark:text-cool-grey-400': !currentValue,
-              })}
-            >
-              {currentValue?.label || placeholder || 'Select an option...'}
-            </span>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            {currentValue?.detail ? (
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-0.5 text-left">
+                <span className="truncate">
+                  {currentValue.content ?? currentValue.label}
+                </span>
+                <span className="min-w-0 truncate text-xs text-cool-grey-600 dark:text-cool-grey-400">
+                  {currentValue.detail}
+                </span>
+              </span>
+            ) : (
+              <span
+                className={cn('truncate', {
+                  'text-cool-grey-500 dark:text-cool-grey-400': !currentValue,
+                })}
+              >
+                {currentValue?.content ??
+                  (currentValue?.label || placeholder || 'Select an option...')}
+              </span>
+            )}
             {currentValue?.badge && (
               <Badge size="sm" theme={currentValue.badge.theme}>
                 {currentValue.badge.label}
@@ -519,7 +536,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                         onMouseEnter={() => setHighlightedIndex(idx)}
                         disabled={option.disabled}
                         className={cn(
-                          'w-full transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-sans text-left flex items-center justify-between gap-2',
+                          'w-full transition duration-200 px-2 py-1.5 -mx-1.5 cursor-pointer select-none rounded text-sm font-sans text-left flex items-start justify-between gap-2',
                           {
                             'text-on-primary bg-primary-600':
                               currentValue?.value === option.value &&
@@ -538,7 +555,27 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                           }
                         )}
                       >
-                        <span className="truncate flex-1">{option.label}</span>
+                        {option.detail ? (
+                          <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-0.5">
+                            <span className="truncate">
+                              {option.content ?? option.label}
+                            </span>
+                            <span
+                              className={cn('min-w-0 text-xs', {
+                                'text-cool-grey-600 dark:text-cool-grey-300':
+                                  currentValue?.value !== option.value,
+                                'opacity-80':
+                                  currentValue?.value === option.value,
+                              })}
+                            >
+                              {option.detail}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="truncate flex-1">
+                            {option.content ?? option.label}
+                          </span>
+                        )}
                         {option.badge && (
                           <Badge size="sm" theme={option.badge.theme}>
                             {option.badge.label}
