@@ -91,4 +91,3 @@ func PrintEnv(ctx context.Context, env map[string]string) {
 		writeToLogFile("%s", s+"\n")
 	}
 }
-var _cacheProbe = 1
