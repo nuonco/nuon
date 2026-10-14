@@ -48,5 +48,5 @@ E2E_ONBOARDING_REPO_AWS=nuonco/kitchen-sink \
 bunx playwright test -c e2e/playwright.config.ts specs/onboarding --workers=1
 ```
 
-`--workers=1` keeps the local control plane from queueing several app syncs at once; each spec waits up to five
+`--workers=1` keeps the local control plane from queueing several app syncs at once. Each spec waits up to five
 minutes for its app config and stack.
