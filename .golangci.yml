@@ -91,7 +91,7 @@ formatters:
   exclusions:
     generated: lax
 run:
-  timeout: 5m
+  timeout: 10m
   go: "1.25"
   exclude-dirs:
     - exp
