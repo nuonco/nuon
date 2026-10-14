@@ -22,7 +22,7 @@ const messages = [
   'Raise the checkout worker retry budget',
 ]
 
-const commit = (
+const runCommit = (
   index: number,
   runStatus = 'success'
 ): TInstallOverviewCommit => ({
@@ -52,9 +52,9 @@ const page = (
   const deployments = deploymentsFixture('results')
   const appRuns = appFixture('runs')
   const history = [
-    ...excludedStatuses.map((status, index) => commit(index, status)),
+    ...excludedStatuses.map((status, index) => runCommit(index, status)),
     ...Array.from({ length: count ?? 0 }, (_, index) =>
-      commit(index + excludedStatuses.length)
+      runCommit(index + excludedStatuses.length)
     ),
   ]
   const tracking: TInstallBranchTracking = {
@@ -63,7 +63,7 @@ const page = (
     repo: 'acme/payments',
     status: 'current',
     selected_commit: {
-      ...commit(3),
+      ...runCommit(3),
       run_id: 'run-selected',
       workflow_id: 'wf-selected',
       app_config_id: 'cfg-1',
@@ -73,8 +73,8 @@ const page = (
         Date.now() - (history.length + 1) * 3_600_000
       ).toISOString(),
     },
-    commits_behind: count,
-    pending_commits: history
+    runs_behind: count,
+    successful_runs: history
       .filter((run) => run.run_status === 'success')
       .slice(0, 50),
   }

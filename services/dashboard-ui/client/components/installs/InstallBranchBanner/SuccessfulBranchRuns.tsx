@@ -19,7 +19,7 @@ export interface ISuccessfulBranchRuns {
   branchName?: string
   runs: TInstallOverviewCommit[]
   runsBehind?: number | null
-  hrefFor: (commit?: TInstallOverviewCommit) => string | undefined
+  getRunHref: (run?: TInstallOverviewCommit) => string | undefined
   repo?: string
   selectedCommit?: TInstallOverviewCommit
 }
@@ -28,12 +28,12 @@ export const SuccessfulBranchRuns = ({
   branchName,
   runs,
   runsBehind,
-  hrefFor,
+  getRunHref,
   repo,
   selectedCommit,
 }: ISuccessfulBranchRuns) => {
   const hidden = (runsBehind ?? runs.length) - runs.length
-  const selectedHref = hrefFor(selectedCommit)
+  const selectedHref = getRunHref(selectedCommit)
 
   return (
     <div className="flex flex-col gap-4" data-testid="successful-runs">
@@ -69,7 +69,7 @@ export const SuccessfulBranchRuns = ({
           getEventKey={(run) => run.run_id ?? run.workflow_id ?? run.sha}
           pagination={{ hasNext: false, offset: 0, limit: 50 }}
           renderEvent={(run) => {
-            const href = hrefFor(run)
+            const href = getRunHref(run)
             const branchRun = {
               metadata: run.metadata,
               head_sha: run.sha,

@@ -72,7 +72,7 @@ test('shows each successful run with its commit and keeps repeated commits disti
             metadata: { trigger: 'manual' },
           },
         ]}
-        hrefFor={(commit) => `/runs/${commit?.workflow_id}`}
+        getRunHref={(run) => `/runs/${run?.workflow_id}`}
       />
     </MemoryRouter>
   )
@@ -112,7 +112,7 @@ test('reports when the successful run history is capped', () => {
           },
         ]}
         runsBehind={60}
-        hrefFor={(commit) => `/runs/${commit?.workflow_id}`}
+        getRunHref={(run) => `/runs/${run?.workflow_id}`}
       />
     </MemoryRouter>
   )
@@ -122,7 +122,7 @@ test('reports when the successful run history is capped', () => {
 })
 
 test('explains how successful runs appear when history is empty', () => {
-  render(<SuccessfulBranchRuns runs={[]} hrefFor={() => undefined} />)
+  render(<SuccessfulBranchRuns runs={[]} getRunHref={() => undefined} />)
   expect(screen.getByText('No successful runs')).toBeTruthy()
   expect(screen.getByText(/after an app branch run succeeds/)).toBeTruthy()
   expect(screen.queryByRole('link')).toBeNull()

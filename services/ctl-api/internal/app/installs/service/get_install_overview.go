@@ -39,8 +39,10 @@ type InstallBranchTracking struct {
 	ExpectedCommit *InstallOverviewCommit  `json:"expected_commit,omitempty"`
 	AppliedCommit  *InstallOverviewCommit  `json:"applied_commit,omitempty"`
 	SelectedCommit *InstallOverviewCommit  `json:"selected_commit,omitempty"`
-	CommitsBehind  *int64                  `json:"commits_behind,omitempty" extensions:"x-nullable"`
-	PendingCommits []InstallOverviewCommit `json:"pending_commits"`
+	RunsBehind     *int64                  `json:"runs_behind,omitempty" extensions:"x-nullable"`
+	SuccessfulRuns []InstallOverviewCommit `json:"successful_runs"`
+	CommitsBehind  *int64                  `json:"commits_behind,omitempty" extensions:"x-nullable,x-deprecated"`
+	PendingCommits []InstallOverviewCommit `json:"pending_commits" extensions:"x-deprecated"`
 }
 
 type InstallConfigDriftResource struct {
@@ -69,7 +71,7 @@ type InstallOverviewResponse struct {
 
 // @ID						GetInstallOverview
 // @Summary				install overview
-// @Description			Returns branch tracking and config drift for an install. commits_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 successful runs with their associated commits, ordered by run creation time. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+// @Description			Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json
@@ -114,6 +116,8 @@ func (s *service) getInstallOverview(ctx context.Context, orgID, installID strin
 	if err != nil {
 		return nil, err
 	}
+	tracking.CommitsBehind = tracking.RunsBehind
+	tracking.PendingCommits = tracking.SuccessfulRuns
 	return &InstallOverviewResponse{
 		BranchTracking: tracking,
 		ConfigDrift:    drift,
@@ -202,7 +206,7 @@ func (d InstallConfigDrift) driftedCount() int {
 }
 
 func (s *service) installBranchTracking(ctx context.Context, install *app.Install) (InstallBranchTracking, error) {
-	tracking := InstallBranchTracking{Status: "current", PendingCommits: []InstallOverviewCommit{}}
+	tracking := InstallBranchTracking{Status: "current", SuccessfulRuns: []InstallOverviewCommit{}}
 
 	var connection app.InstallAppBranchConnection
 	err := s.db.WithContext(ctx).
@@ -236,7 +240,7 @@ func (s *service) installBranchTracking(ctx context.Context, install *app.Instal
 	tracking.ExpectedCommit = commitFromRun(expected)
 	tracking.AppliedCommit = commitFromRun(applied)
 	tracking.Status = branchTrackingStatus(expected, applied)
-	if err := s.installPendingCommits(ctx, install, &tracking); err != nil {
+	if err := s.installSuccessfulBranchRuns(ctx, install, &tracking); err != nil {
 		return tracking, err
 	}
 	return tracking, nil
@@ -251,7 +255,7 @@ func installTrackingRuns(db *gorm.DB, orgID, branchID string) *gorm.DB {
 		Where("NOT EXISTS (SELECT 1 FROM app_branch_run_previews p WHERE p.app_branch_run_id = app_branch_runs.id AND p.deleted_at = 0)")
 }
 
-func (s *service) installPendingCommits(ctx context.Context, install *app.Install, tracking *InstallBranchTracking) error {
+func (s *service) installSuccessfulBranchRuns(ctx context.Context, install *app.Install, tracking *InstallBranchTracking) error {
 	if tracking.BranchID == "" || install.AppConfigID == "" {
 		return nil
 	}
@@ -292,7 +296,7 @@ func (s *service) installPendingCommits(ctx context.Context, install *app.Instal
 	if err := newerRuns.Session(&gorm.Session{}).Count(&count).Error; err != nil {
 		return fmt.Errorf("unable to count successful app branch runs: %w", err)
 	}
-	tracking.CommitsBehind = &count
+	tracking.RunsBehind = &count
 	if count == 0 {
 		return nil
 	}
@@ -306,7 +310,7 @@ func (s *service) installPendingCommits(ctx context.Context, install *app.Instal
 		return fmt.Errorf("unable to get successful app branch runs: %w", err)
 	}
 	for i := range runs {
-		tracking.PendingCommits = append(tracking.PendingCommits, *commitFromRun(&runs[i]))
+		tracking.SuccessfulRuns = append(tracking.SuccessfulRuns, *commitFromRun(&runs[i]))
 	}
 	return nil
 }

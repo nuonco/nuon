@@ -460,8 +460,8 @@ const chrome = (
     return reply({
       branch_tracking: {
         status: 'current',
-        commits_behind: 0,
-        pending_commits: [],
+        runs_behind: 0,
+        successful_runs: [],
       },
       config_drift: { components: [] },
     })

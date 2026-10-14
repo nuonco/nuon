@@ -24,12 +24,12 @@ export const InstallBranchBannerContainer = ({
     org?.id && install?.app_id && branchId
       ? `/${org.id}/apps/${install.app_id}/branches/${branchId}`
       : undefined
-  const hrefFor = (commit?: TInstallOverviewCommit) =>
-    org?.id && install?.app_id && commit?.branch_id && commit?.workflow_id
-      ? `/${org.id}/apps/${install.app_id}/branches/${commit.branch_id}/runs/${commit.workflow_id}`
+  const getRunHref = (run?: TInstallOverviewCommit) =>
+    org?.id && install?.app_id && run?.branch_id && run?.workflow_id
+      ? `/${org.id}/apps/${install.app_id}/branches/${run.branch_id}/runs/${run.workflow_id}`
       : undefined
 
-  if (!error && !(tracking?.commits_behind && tracking.commits_behind > 0)) {
+  if (!error && !(tracking?.runs_behind && tracking.runs_behind > 0)) {
     return null
   }
 
@@ -38,7 +38,7 @@ export const InstallBranchBannerContainer = ({
       <InstallBranchBanner
         error={error}
         onRetry={() => void refetch()}
-        runsBehind={tracking?.commits_behind}
+        runsBehind={tracking?.runs_behind}
         branchName={branchName}
         branchHref={branchHref}
         onViewRuns={() =>
@@ -57,11 +57,11 @@ export const InstallBranchBannerContainer = ({
             >
               <SuccessfulBranchRuns
                 branchName={branchName}
-                runs={tracking?.pending_commits ?? []}
-                runsBehind={tracking?.commits_behind}
+                runs={tracking?.successful_runs ?? []}
+                runsBehind={tracking?.runs_behind}
                 selectedCommit={tracking?.selected_commit}
                 repo={tracking?.repo}
-                hrefFor={hrefFor}
+                getRunHref={getRunHref}
               />
             </Panel>
           )
