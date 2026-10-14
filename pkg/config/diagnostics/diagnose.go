@@ -3,6 +3,7 @@ package diagnostics
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"net/url"
 	"path"
 	"sort"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/invopop/jsonschema"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/schema"
 	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 )
@@ -295,7 +297,68 @@ func Diagnose(doc *tomlparser.TomlDocument, rootSchema *jsonschema.Schema) []Dia
 		}
 	}
 
+	diagnostics = append(diagnostics, duplicatePolicyNames(doc)...)
+
 	return diagnostics
+}
+
+func duplicatePolicyNames(doc *tomlparser.TomlDocument) []Diagnostic {
+	raw, ok := doc.Values["policy"].([]any)
+	if !ok {
+		return nil
+	}
+
+	var headers []tomlparser.Table
+	for _, table := range doc.Tables {
+		if len(table.Path) == 1 && table.Path[0] == "policy" {
+			headers = append(headers, table)
+		}
+	}
+
+	seen := make(map[string]struct{}, len(raw))
+	var out []Diagnostic
+	for i, item := range raw {
+		fields, _ := item.(map[string]any)
+		name, _ := fields["name"].(string)
+		if name == "" {
+			contents, _ := fields["contents"].(string)
+			policy := config.AppPolicy{Contents: contents}
+			policy.SetNameFromContents()
+			name = policy.Name
+		}
+		if name == "" {
+			continue
+		}
+		if _, exists := seen[name]; exists {
+			out = append(out, at(SeverityError, fmt.Sprintf("duplicate policy name %q", name), policyRange(doc, headers, i)))
+		}
+		seen[name] = struct{}{}
+	}
+	return out
+}
+
+func policyRange(doc *tomlparser.TomlDocument, headers []tomlparser.Table, index int) tomlparser.Range {
+	start, end := 0, math.MaxInt
+	if index < len(headers) {
+		start = headers[index].Range.Start.Line
+		if index+1 < len(headers) {
+			end = headers[index+1].Range.Start.Line
+		}
+	}
+	for _, field := range []string{"name", "contents"} {
+		for _, key := range doc.Keys {
+			if key.Name != field || len(key.Path) < 2 || key.Path[0] != "policy" {
+				continue
+			}
+			if key.Range.Start.Line >= start && key.Range.Start.Line < end {
+				return key.Range
+			}
+		}
+	}
+	if index < len(headers) {
+		return headers[index].Range
+	}
+	return tomlparser.Range{}
 }
 
 // Helper functions

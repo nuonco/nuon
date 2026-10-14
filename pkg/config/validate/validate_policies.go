@@ -38,7 +38,7 @@ func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 
 	l.Info("validating policies", zap.Int("count", len(a.Policies.Policies)))
 
-	if err := validateUniquePolicyNames(a.Policies.Policies); err != nil {
+	if err := ValidateUniquePolicyNames(a.Policies.Policies); err != nil {
 		l.Error("duplicate policy name", zap.Error(err))
 		return err
 	}
@@ -102,7 +102,7 @@ func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 	return nil
 }
 
-func validateUniquePolicyNames(policies []config.AppPolicy) error {
+func ValidateUniquePolicyNames(policies []config.AppPolicy) error {
 	seen := make(map[string]struct{}, len(policies))
 	for _, policy := range policies {
 		name := policyName(policy)

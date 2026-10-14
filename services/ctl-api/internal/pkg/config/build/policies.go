@@ -38,6 +38,10 @@ func PolicyInputsFromConfig(policies *config.PoliciesConfig) []PolicyInput {
 }
 
 func PoliciesConfig(policies []PolicyInput, appID, appConfigID string) (*app.AppPoliciesConfig, error) {
+	if err := validate.ValidateUniquePolicyNames(appPolicies(policies)); err != nil {
+		return nil, err
+	}
+
 	objs := make([]app.AppPolicyConfig, 0, len(policies))
 	for idx, policy := range policies {
 		if !generics.SliceContains(policy.Type, app.AllPolicyTypes) {
@@ -74,4 +78,18 @@ func PoliciesConfig(policies []PolicyInput, appID, appConfigID string) (*app.App
 		AppConfigID: appConfigID,
 		Policies:    objs,
 	}, nil
+}
+
+func appPolicies(policies []PolicyInput) []config.AppPolicy {
+	out := make([]config.AppPolicy, len(policies))
+	for i, policy := range policies {
+		out[i] = config.AppPolicy{
+			Type:       policy.Type,
+			Engine:     policy.Engine,
+			Name:       policy.Name,
+			Contents:   policy.Contents,
+			Components: policy.Components,
+		}
+	}
+	return out
 }
