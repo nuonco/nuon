@@ -350,7 +350,7 @@ func (h *Helpers) CompositeAppConfigTree(ctx context.Context, install *app.Insta
 	if err != nil {
 		return nil, err
 	}
-	tree, err := configdiff.ComputeCompositeAppConfigTree(ctx, h.db, baselines, newAppConfigID)
+	tree, err := configdiff.ComputeCompositeAppConfigTree(blobstore.WithBlobService(ctx, h.blobSvc), h.db, baselines, newAppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)
 	}
