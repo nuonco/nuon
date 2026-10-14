@@ -11,7 +11,6 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TAPIError, TInstallActivity, TInstallActivityType } from '@/types'
@@ -117,7 +116,7 @@ const ActivityCard = ({
         </div>
       </div>
 
-      {(subjectHref || activity.workflow || activity.policy) && (
+      {(subjectHref || activity.policy) && (
         <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
           {subjectHref && subjectName && (
             <span className="flex items-center gap-2">
@@ -127,19 +126,6 @@ const ActivityCard = ({
               <Link href={subjectHref} textVariant="subtext">
                 {subjectName}
               </Link>
-            </span>
-          )}
-          {activity.workflow && (
-            <span className="flex items-center gap-2">
-              <Text as="span" variant="subtext" theme="neutral">
-                Workflow
-              </Text>
-              <WorkflowPanelLink
-                workflowId={activity.workflow.id}
-                textVariant="subtext"
-              >
-                {activity.workflow.name}
-              </WorkflowPanelLink>
             </span>
           )}
           {activity.policy && (

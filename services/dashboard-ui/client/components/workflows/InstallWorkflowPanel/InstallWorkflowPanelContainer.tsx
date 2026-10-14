@@ -13,6 +13,7 @@ import { WorkflowProvider } from '@/providers/workflow-provider'
 import {
   InstallWorkflowPanel,
   InstallWorkflowPanelContent,
+  InstallWorkflowPanelLoading,
 } from './InstallWorkflowPanel'
 
 const WORKFLOW_PARAM = 'workflow'
@@ -26,7 +27,11 @@ const WorkflowPanel = ({
   onClose: () => void
 } & Partial<IPanel>) => (
   <InstallWorkflowPanel onClose={onClose} {...props}>
-    <WorkflowProvider workflowId={workflowId} shouldPoll>
+    <WorkflowProvider
+      workflowId={workflowId}
+      shouldPoll
+      loadingElement={<InstallWorkflowPanelLoading />}
+    >
       <InstallWorkflowPanelContent />
     </WorkflowProvider>
   </InstallWorkflowPanel>
