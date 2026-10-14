@@ -1,14 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 import {
   getAccountDisplayName,
+  getApprovalHref,
   getWorkflowBadge,
+  getWorkflowHref,
   getStepBadge,
   getStepButtons,
   getStepBanner,
   getWorkflowStepTitle,
   isRetryChain,
 } from './workflow-utils'
-import type { TWorkflow, TWorkflowStep } from '@/types'
+import type { TWorkflow, TWorkflowStep, TWorkflowStepApproval } from '@/types'
 
 describe('workflow-utils', () => {
   describe('getWorkflowStepTitle', () => {
@@ -650,6 +652,79 @@ describe('workflow-utils', () => {
           email: 'ada@example.com',
         })
       ).toBe('ada@example.com')
+    })
+  })
+
+  describe('org workflow links', () => {
+    test('a branch workflow opens its branch run', () => {
+      expect(
+        getWorkflowHref('org-1', {
+          id: 'wf-1',
+          owner_type: 'app_branches',
+          owner_id: 'br-1',
+          metadata: { app_id: 'app-1', app_branch_id: 'br-1' },
+        } as TWorkflow)
+      ).toBe('/org-1/apps/app-1/branches/br-1/runs/wf-1')
+    })
+
+    test('an install workflow opens the nested deployment when the new install IA is on', () => {
+      expect(
+        getWorkflowHref(
+          'org-1',
+          {
+            id: 'wf-1',
+            owner_type: 'installs',
+            owner_id: 'inst-1',
+          } as TWorkflow,
+          { nested: true, appId: 'app-1' }
+        )
+      ).toBe('/org-1/apps/app-1/installs/inst-1/deployments/wf-1')
+    })
+
+    test('an install workflow stays on history when the new install IA is off', () => {
+      expect(
+        getWorkflowHref('org-1', {
+          id: 'wf-1',
+          owner_type: 'installs',
+          owner_id: 'inst-1',
+        } as TWorkflow)
+      ).toBe('/org-1/installs/inst-1/history/wf-1')
+    })
+
+    test('an install update from a branch run opens that run', () => {
+      expect(
+        getWorkflowHref(
+          'org-1',
+          {
+            id: 'wf-install',
+            owner_type: 'installs',
+            owner_id: 'inst-1',
+            type: 'app_branch_config_update',
+            metadata: { app_branch_run_id: 'run-1' },
+          } as TWorkflow,
+          { nested: true, appId: 'app-1', branchId: 'br-1' }
+        )
+      ).toBe('/org-1/apps/app-1/branches/br-1/runs/run-1')
+    })
+
+    test('a branch run does not fall back to an install path', () => {
+      expect(
+        getWorkflowHref('org-1', {
+          id: 'wf-1',
+          owner_type: 'app_branches',
+          owner_id: 'br-1',
+        } as TWorkflow)
+      ).toBe('')
+    })
+
+    test('a branch approval opens its branch run', () => {
+      expect(
+        getApprovalHref('org-1', {
+          app_id: 'app-1',
+          app_branch_id: 'br-1',
+          workflow_step: { install_workflow_id: 'wf-1' },
+        } as TWorkflowStepApproval)
+      ).toBe('/org-1/apps/app-1/branches/br-1/runs/wf-1')
     })
   })
 })
