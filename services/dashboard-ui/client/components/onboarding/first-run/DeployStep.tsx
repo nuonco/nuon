@@ -42,6 +42,8 @@ import { MiniArch, NextButton, RepoChip } from './shared'
 import { ByocReferences, WaitProgress } from './WaitProgress'
 
 const CONFIG_POLL_MS = 2000
+const BUILDS_STEP = 'building components and sandbox'
+const BUILDS_DONE = ['success', 'skipped', 'user-skipped', 'auto-skipped', 'noop']
 
 const InstallSummaryCard = ({
   path,
@@ -325,6 +327,12 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
       ? latestRun.status.status_human_description || 'The branch run ended in an error.'
       : undefined
 
+  // A branch-run config pins its builds, and an install provisioned before they
+  // finish fails, so wait for the run's builds step too. An app with no runs
+  // (configs synced from the CLI) has nothing to wait for.
+  const buildsStatus = runSteps?.find((step) => step.name === BUILDS_STEP)?.status?.status as string | undefined
+  const buildsReady = (!!runs && !runs.length) || (!!buildsStatus && BUILDS_DONE.includes(buildsStatus))
+
   const { data: activeConfig } = useQuery({
     queryKey: ['first-run-active-config', orgId, appId, branchId],
     queryFn: () => findActiveAppConfig({ orgId, appId, branchId }).then((c) => c ?? null),
@@ -333,7 +341,7 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
   })
 
   useEffect(() => {
-    if (phase !== 'waiting-config' || !activeConfig?.id || creating.current) return
+    if (phase !== 'waiting-config' || !activeConfig?.id || !buildsReady || creating.current) return
     creating.current = true
     setPhase('creating')
     const { region: chosenRegion, autoApprove } = choice.current
@@ -390,13 +398,14 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
       }
     }
     run()
-  }, [phase, activeConfig, orgId, appId, appName, branchId, cloud, journey, setSharedData, onAdvance, path, user])
+  }, [phase, activeConfig, buildsReady, orgId, appId, appName, branchId, cloud, journey, setSharedData, onAdvance, path, user])
 
   const progress = waitItems(
     [
       { label: `Start a branch run on ${TRACKED_GIT_BRANCH}`, done: !!latestRun },
       { label: `Fetch the latest commit from ${repo}`, step: 'fetch commit' },
       { label: 'Read and validate the app config', step: 'fetch app config', done: !!activeConfig },
+      { label: 'Build the components and sandbox', step: BUILDS_STEP, done: buildsReady },
       { label: 'Create the install', done: false },
     ],
     runSteps
