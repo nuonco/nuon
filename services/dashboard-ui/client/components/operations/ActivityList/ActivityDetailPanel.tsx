@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -6,8 +7,13 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
-import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
+import {
+  InstallWorkflowPanelContent,
+  InstallWorkflowPanelLoading,
+} from '@/components/workflows/InstallWorkflowPanel'
 import { useInstallLink } from '@/hooks/use-install-path'
+import { getInstallActionRun } from '@/lib'
+import { WorkflowProvider } from '@/providers/workflow-provider'
 import type { TInstallActivity } from '@/types'
 import { humanize } from '@/utils/string-utils'
 import { ACTIVITY_TYPE_LABELS } from './ActivityListPresenter'
@@ -43,92 +49,133 @@ export const ActivityDetailPanel = ({
         suffix: `/operations/runbooks?q=${encodeURIComponent(activity.runbook.name)}`,
       })
     : undefined
+  const actionRunId = activity.action?.run_id
+  const { data: actionRun, isLoading: actionRunLoading } = useQuery({
+    queryKey: ['install-action-run', orgId, installId, actionRunId],
+    queryFn: () =>
+      getInstallActionRun({ orgId, installId, runId: actionRunId! }),
+    enabled: !activity.workflow?.id && !!orgId && !!installId && !!actionRunId,
+  })
+  const workflowId =
+    activity.workflow?.id ||
+    actionRun?.workflow_id ||
+    actionRun?.install_workflow_id
+  const showsWorkflow = !!workflowId || !!actionRunId
+  const loading = (
+    <InstallWorkflowPanelLoading
+      status={activity.status}
+      createdAt={activity.created_at}
+    />
+  )
 
   return (
-    <Panel heading={activity.title} size="half" {...props}>
-      <div className="flex items-center gap-2 flex-wrap">
-        <Status status={activity.status} variant="badge" />
-        <Badge size="sm" theme="neutral">
-          {ACTIVITY_TYPE_LABELS[activity.type]}
-        </Badge>
-      </div>
-
-      {activity.summary && (
-        <Text variant="subtext" theme="neutral">
-          {activity.summary}
-        </Text>
+    <Panel
+      heading={activity.title}
+      size={showsWorkflow ? '3/4' : 'half'}
+      aria-label="Activity details"
+      {...props}
+    >
+      {workflowId ? (
+        <WorkflowProvider
+          workflowId={workflowId}
+          shouldPoll
+          loadingElement={loading}
+        >
+          <InstallWorkflowPanelContent />
+        </WorkflowProvider>
+      ) : actionRunLoading ? (
+        loading
+      ) : (
+        <ActivitySummary
+          activity={activity}
+          actionHref={actionHref}
+          runbookHref={runbookHref}
+        />
       )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <LabeledValue label="Ran">
-          <Time
-            time={activity.created_at}
-            format="relative"
-            variant="subtext"
-          />
-        </LabeledValue>
-        <LabeledValue label="Activity ID">
-          <ID>{activity.id}</ID>
-        </LabeledValue>
-        {activity.workflow && (
-          <LabeledValue label="Workflow">
-            <WorkflowPanelLink workflowId={activity.workflow.id}>
-              {activity.workflow.name}
-            </WorkflowPanelLink>
-          </LabeledValue>
-        )}
-        {activity.action && (
-          <LabeledValue label="Action">
-            {actionHref ? (
-              <Link href={actionHref}>
-                {activity.action.name || activity.title}
-              </Link>
-            ) : (
-              <Text variant="subtext">{activity.title}</Text>
-            )}
-          </LabeledValue>
-        )}
-        {activity.action?.trigger_type && (
-          <LabeledValue label="Trigger">
-            <Text variant="subtext">
-              {humanize(activity.action.trigger_type)}
-            </Text>
-          </LabeledValue>
-        )}
-        {activity.runbook && (
-          <LabeledValue label="Runbook">
-            {runbookHref ? (
-              <Link href={runbookHref}>
-                {activity.runbook.name || activity.title}
-              </Link>
-            ) : (
-              <Text variant="subtext">{activity.title}</Text>
-            )}
-          </LabeledValue>
-        )}
-        {activity.policy && (
-          <>
-            <LabeledValue label="Checked">
-              <Text variant="subtext">
-                {POLICY_OWNER_LABELS[activity.policy.owner_type] ??
-                  humanize(activity.policy.owner_type)}
-              </Text>
-            </LabeledValue>
-            {activity.policy.component_name && (
-              <LabeledValue label="Component">
-                <Text variant="subtext">{activity.policy.component_name}</Text>
-              </LabeledValue>
-            )}
-            <LabeledValue label="Results">
-              <Text variant="subtext">
-                {activity.policy.deny_count} denied,{' '}
-                {activity.policy.warn_count} warnings,{' '}
-                {activity.policy.pass_count} passed
-              </Text>
-            </LabeledValue>
-          </>
-        )}
-      </div>
     </Panel>
   )
 }
+
+const ActivitySummary = ({
+  activity,
+  actionHref,
+  runbookHref,
+}: {
+  activity: TInstallActivity
+  actionHref?: string
+  runbookHref?: string
+}) => (
+  <>
+    <div className="flex items-center gap-2 flex-wrap">
+      <Status status={activity.status} variant="badge" />
+      <Badge size="sm" theme="neutral">
+        {ACTIVITY_TYPE_LABELS[activity.type]}
+      </Badge>
+    </div>
+
+    {activity.summary && (
+      <Text variant="subtext" theme="neutral">
+        {activity.summary}
+      </Text>
+    )}
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <LabeledValue label="Ran">
+        <Time time={activity.created_at} format="relative" variant="subtext" />
+      </LabeledValue>
+      <LabeledValue label="Activity ID">
+        <ID>{activity.id}</ID>
+      </LabeledValue>
+      {activity.action && (
+        <LabeledValue label="Action">
+          {actionHref ? (
+            <Link href={actionHref}>
+              {activity.action.name || activity.title}
+            </Link>
+          ) : (
+            <Text variant="subtext">{activity.title}</Text>
+          )}
+        </LabeledValue>
+      )}
+      {activity.action?.trigger_type && (
+        <LabeledValue label="Trigger">
+          <Text variant="subtext">
+            {humanize(activity.action.trigger_type)}
+          </Text>
+        </LabeledValue>
+      )}
+      {activity.runbook && (
+        <LabeledValue label="Runbook">
+          {runbookHref ? (
+            <Link href={runbookHref}>
+              {activity.runbook.name || activity.title}
+            </Link>
+          ) : (
+            <Text variant="subtext">{activity.title}</Text>
+          )}
+        </LabeledValue>
+      )}
+      {activity.policy && (
+        <>
+          <LabeledValue label="Checked">
+            <Text variant="subtext">
+              {POLICY_OWNER_LABELS[activity.policy.owner_type] ??
+                humanize(activity.policy.owner_type)}
+            </Text>
+          </LabeledValue>
+          {activity.policy.component_name && (
+            <LabeledValue label="Component">
+              <Text variant="subtext">{activity.policy.component_name}</Text>
+            </LabeledValue>
+          )}
+          <LabeledValue label="Results">
+            <Text variant="subtext">
+              {activity.policy.deny_count} denied, {activity.policy.warn_count}{' '}
+              warnings, {activity.policy.pass_count} passed
+            </Text>
+          </LabeledValue>
+        </>
+      )}
+    </div>
+  </>
+)

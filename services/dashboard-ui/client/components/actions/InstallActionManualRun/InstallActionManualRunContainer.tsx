@@ -9,15 +9,18 @@ import { RoleSelector } from '@/components/roles/RoleSelector'
 import { useAuth } from '@/hooks/use-auth'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallLink } from '@/hooks/use-install-path'
+import { useNewInstallIA } from '@/hooks/use-new-install-ia'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { runAction } from '@/lib'
+import { installRunActivitySuffix } from '@/lib/install-path'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { TAction, TAPIError } from '@/types'
 import { InstallActionManualRunModal } from './InstallActionManualRun'
 
-interface IInstallActionManualRunModalContainer extends Omit<IModal, 'heading'> {
+interface IInstallActionManualRunModalContainer
+  extends Omit<IModal, 'heading'> {
   action: TAction
   actionConfigId: string
   isRerun?: boolean
@@ -37,14 +40,20 @@ export const InstallActionManualRunModalContainer = ({
   const { org } = useOrg()
   const { install } = useInstall()
   const installLink = useInstallLink()
+  const newInstallIA = useNewInstallIA()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const [selectedRole, setSelectedRole] = useState<string>('')
 
-  const { isPending: isLoading, error, mutate } = useMutation({
-    mutationFn: (body: Parameters<typeof runAction>[0]['body'] & { role?: string }) =>
-      runAction({ body, installId: install.id, orgId: org.id }),
+  const {
+    isPending: isLoading,
+    error,
+    mutate,
+  } = useMutation({
+    mutationFn: (
+      body: Parameters<typeof runAction>[0]['body'] & { role?: string }
+    ) => runAction({ body, installId: install.id, orgId: org.id }),
     onSuccess: (result) => {
       trackEvent({
         event: 'action_run',
@@ -65,11 +74,17 @@ export const InstallActionManualRunModalContainer = ({
       queryClient.invalidateQueries({ queryKey: ['install-action'] })
       queryClient.invalidateQueries({ queryKey: ['install-actions'] })
       const workflowId = result.data.workflow_id
-      if (workflowId) {
-        navigate(installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows/${workflowId}` }))
-      } else {
-        navigate(installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows` }))
-      }
+      navigate(
+        installLink({
+          installId: install.id,
+          appId: install.app_id,
+          suffix: installRunActivitySuffix(
+            newInstallIA,
+            workflowId,
+            '/workflows'
+          ),
+        })
+      )
     },
     onError: (err: TAPIError) => {
       trackEvent({

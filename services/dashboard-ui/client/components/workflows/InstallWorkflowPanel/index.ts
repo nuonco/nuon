@@ -5,4 +5,5 @@ export {
 export {
   InstallWorkflowPanel,
   InstallWorkflowPanelContent,
+  InstallWorkflowPanelLoading,
 } from './InstallWorkflowPanel'

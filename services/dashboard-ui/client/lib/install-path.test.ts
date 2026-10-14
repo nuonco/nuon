@@ -3,6 +3,7 @@ import {
   installComponentStatusSuffix,
   installHref,
   installPathnameSuffix,
+  installRunActivitySuffix,
   installStatusSuffix,
   isNewInstallIAEnabled,
   withAppInstallBreadcrumbs,
@@ -76,6 +77,21 @@ test('workflow detail nests under deployments when the new install IA is on', ()
       suffix: '/history/wf-1',
     })
   ).toBe('/org-1/installs/inst-1/history/wf-1')
+})
+
+test('triggered runs land on activity when the new install IA is on', () => {
+  expect(installRunActivitySuffix(false, 'wf-1', '/workflows')).toBe(
+    '/workflows/wf-1'
+  )
+  expect(installRunActivitySuffix(false, undefined, '/runbooks/rb-1')).toBe(
+    '/runbooks/rb-1'
+  )
+  expect(installRunActivitySuffix(true, 'wf-1', '/workflows')).toBe(
+    '/operations?workflow=wf-1'
+  )
+  expect(installRunActivitySuffix(true, undefined, '/runbooks/rb-1')).toBe(
+    '/operations'
+  )
 })
 
 test('status links use the new install pages when the new install IA is on', () => {
