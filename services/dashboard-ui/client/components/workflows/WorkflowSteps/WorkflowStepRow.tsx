@@ -67,7 +67,7 @@ export const WorkflowStepRow = ({
           />
         )}
 
-        {step?.finished ? (
+        {step?.finished && step.execution_time > 0 ? (
           <Text variant="subtext" theme="neutral">
             Completed in{' '}
             <Duration variant="subtext" nanoseconds={step?.execution_time} />

@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -74,6 +75,14 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	defer cancel()
 	if s.runnerJobID != "" {
 		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+	} else {
+		var cp imagesync.SyncCheckpoint
+		if _, err := job.LoadCheckpoint(cancelCtx, "sync-image", &cp); err == nil && cp.JobID != "" && !cp.Finalized {
+			if err := jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, cp.JobID); err != nil {
+				return err
+			}
+			s.updateDeployStatus(cancelCtx, cp.DeployID, app.InstallDeployStatusCancelled, "image sync cancelled")
+		}
 	}
 	return nil
 }
@@ -121,7 +130,7 @@ func (s *Signal) configConnectionID(ctx workflow.Context, install *app.Install) 
 	return "", fmt.Errorf("no component config connection for component %s in app config %s", s.ComponentID, install.AppConfigID)
 }
 
-func (s *Signal) Execute(ctx workflow.Context) error {
+func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to create logger")
@@ -138,6 +147,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	var installDeploy *app.InstallDeploy
+	var cp imagesync.SyncCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, "sync-image", &cp); err != nil {
+		return err
+	}
+	if cp.DeployID != "" {
+		s.DeployID = cp.DeployID
+	}
 	if s.DeployID != "" {
 		installDeploy, err = activities.AwaitGetDeployByDeployID(ctx, s.DeployID)
 		if err != nil {
@@ -175,6 +191,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 		s.DeployID = installDeploy.ID
 	}
+	cp.DeployID = installDeploy.ID
+	if err := job.SaveCheckpoint(ctx, "sync-image", cp); err != nil {
+		return err
+	}
+	if cp.Finalized {
+		return nil
+	}
 
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         s.WorkflowStepID,
@@ -184,20 +207,32 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update install workflow")
 	}
 
-	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-		DeployID: s.DeployID,
-	})
+	var logStream *app.LogStream
+	if cp.LogStreamID != "" {
+		logStream, err = activities.AwaitGetLogStreamByLogStreamID(ctx, cp.LogStreamID)
+	} else {
+		logStream, err = activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{DeployID: s.DeployID})
+	}
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}
+	cp.LogStreamID = logStream.ID
+	if err := job.SaveCheckpoint(ctx, "sync-image", cp); err != nil {
+		return err
+	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		if !job.IsSuspended(err) {
+			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		}
 	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 
 	l.Info("syncing oci artifact")
-	if err := s.execSync(ctx, install, installDeploy); err != nil {
+	if err := s.execSync(ctx, install, installDeploy, &cp); err != nil {
+		if job.IsSuspended(err) {
+			return err
+		}
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync")
 		return errors.Wrap(err, "unable to execute sync")
 	}
@@ -220,12 +255,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return err
 	}
-
-	return nil
+	cp.Finalized = true
+	return job.SaveCheckpoint(ctx, "sync-image", cp)
 }
 
-func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) error {
-	return imagesync.RunSyncJob(ctx, imagesync.RunSyncJobRequest{
+func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, cp *imagesync.SyncCheckpoint) error {
+	req := imagesync.RunSyncJobRequest{
 		Install:       install,
 		InstallDeploy: installDeploy,
 		Status: func(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
@@ -236,7 +271,15 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 		},
 		PlanWorkflowID: fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 		JobWorkflowID:  fmt.Sprintf("%s-execute-job", workflow.GetInfo(ctx).WorkflowExecution.ID),
-	})
+		JobID:          cp.JobID,
+	}
+	if job.DemandEnabled(ctx) {
+		req.OnJobPrepared = func(ctx workflow.Context, jobID string) error {
+			cp.JobID = jobID
+			return job.SaveCheckpoint(ctx, "sync-image", cp)
+		}
+	}
+	return imagesync.RunSyncJob(ctx, req)
 }
 
 func (s *Signal) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {

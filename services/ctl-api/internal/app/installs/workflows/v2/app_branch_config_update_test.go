@@ -14,6 +14,7 @@ import (
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
+	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	dataconverter "github.com/nuonco/nuon/pkg/temporal/dataconverter"
@@ -144,6 +145,7 @@ func TestAppBranchConfigUpdateSuite(t *testing.T) {
 
 func (s *appBranchConfigUpdateSuite) SetupTest() {
 	s.env = s.NewTestWorkflowEnvironment()
+	s.env.OnGetVersion(runnerHealthGateRemovedVersion, workflow.DefaultVersion, 1).Return(workflow.DefaultVersion).Maybe()
 
 	// app.* models carry their Temporal payload shape on `temporaljson` tags, so
 	// the SDK's default converter would drop fields the step generator reads —

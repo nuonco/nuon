@@ -44,7 +44,15 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 	// call signal-level cancel callback if implemented
 	cancelCallbackInvoked := false
 	if sc, ok := h.sig.(signal.SignalWithCancel); ok {
-		if err := sc.Cancel(ctx); err != nil {
+		cancelCtx := ctx
+		if workflow.GetVersion(ctx, "runner-demand-cancel-context-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			var contextErr error
+			cancelCtx, contextErr = h.signalContext(ctx, false)
+			if contextErr != nil {
+				return nil, contextErr
+			}
+		}
+		if err := sc.Cancel(cancelCtx); err != nil {
 			if l, logErr := log.WorkflowLogger(ctx); logErr == nil {
 				l.Warn("signal cancel callback failed", zap.Error(err))
 			}

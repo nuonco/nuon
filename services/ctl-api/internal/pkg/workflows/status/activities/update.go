@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -117,6 +116,14 @@ func (a *Activities) updateStatusV2(ctx context.Context, obj any, status app.Com
 }
 
 func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app.CompositeStatus, statusGetter func(ctx context.Context) (app.CompositeStatus, error), statusField string) error {
+	metadata := []byte("{}")
+	if status.Metadata != nil {
+		var err error
+		metadata, err = json.Marshal(status.Metadata)
+		if err != nil {
+			return err
+		}
+	}
 	existingStatus, err := statusGetter(ctx)
 	if err != nil {
 		return err
@@ -126,25 +133,35 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 		return err
 	}
 
-	res := a.db.WithContext(ctx).Model(obj).Updates(
-		map[string]any{
-			statusField: status,
-		})
+	query := a.db.WithContext(ctx).Model(obj)
+	guardCancellation := false
+	switch obj.(type) {
+	case *app.Workflow, *app.WorkflowStep, *app.WorkflowStepGroup, *app.QueueSignal:
+		guardCancellation = status.Status != app.StatusCancelled
+		if guardCancellation {
+			query = query.Where("status->>'status' <> ? AND COALESCE(status->'metadata'->>'cancel_requested_at', '') = ''", app.StatusCancelled)
+		}
+	case *app.InstallDeploy, *app.InstallSandboxRun, *app.InstallActionWorkflowRun:
+		guardCancellation = status.Status != app.StatusCancelled
+		if guardCancellation {
+			query = query.Where("status <> ? AND COALESCE(status_v2->>'status', '') <> ?", app.StatusCancelled, app.StatusCancelled)
+		}
+	}
+	encoded, err := json.Marshal(status)
+	if err != nil {
+		return err
+	}
+	res := query.Updates(map[string]any{
+		statusField: gorm.Expr("jsonb_set(?::jsonb, '{metadata}', COALESCE(NULLIF("+statusField+"->'metadata', 'null'::jsonb), '{}'::jsonb) || ?::jsonb)", string(encoded), string(metadata)),
+	})
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to update")
 	}
 	if res.RowsAffected < 1 {
-		return errors.New("no object found to update")
-	}
-
-	// Also atomically merge new metadata keys via jsonb_set so that any
-	// metadata written concurrently (e.g. by the background enqueuer)
-	// between our read and this write is not lost.
-	if len(status.Metadata) > 0 {
-		id := reflectID(obj)
-		if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), obj, id, statusField, status.Metadata); err != nil {
-			return errors.Wrap(err, "unable to merge metadata")
+		if guardCancellation {
+			return nil
 		}
+		return errors.New("no object found to update")
 	}
 
 	return nil
@@ -189,15 +206,6 @@ func prepareCompositeStatus(existingStatus, status app.CompositeStatus) app.Comp
 	status.Metadata = newMetadata
 
 	return status
-}
-
-// reflectID extracts the ID field from a model pointer via reflection.
-func reflectID(obj any) string {
-	v := reflect.ValueOf(obj)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-	return v.FieldByName("ID").String()
 }
 
 // @temporal-gen-v2 activity
@@ -479,6 +487,10 @@ func (a *Activities) UpdateInstallWorkflowRunStatusV2(ctx context.Context, req U
 	install := app.InstallActionWorkflowRun{
 		ID: req.RunID,
 	}
+	if req.Status == app.InstallActionRunStatusCancelled {
+		_, err := CancelIfUnfinished(ctx, a.db, &install, req.StatusDescription, true)
+		return err
+	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
 		var install app.InstallActionWorkflowRun
@@ -505,6 +517,10 @@ func (a *Activities) UpdateRunStatusV2(ctx context.Context, req UpdateRunStatusV
 	install := app.InstallSandboxRun{
 		ID: req.RunID,
 	}
+	if req.Status == app.SandboxRunStatusCancelled {
+		_, err := CancelIfUnfinished(ctx, a.db, &install, req.StatusDescription, req.SkipStatusSync)
+		return err
+	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
 		var install app.InstallSandboxRun
@@ -528,6 +544,9 @@ func (a *Activities) UpdateRunStatusV2(ctx context.Context, req UpdateRunStatusV
 		First(&run)
 	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
 		return fmt.Errorf("unable to get install sandbox run: %w", res.Error)
+	}
+	if run.Status == app.SandboxRunStatusCancelled {
+		return nil
 	}
 
 	installObj := &app.Install{}
@@ -952,6 +971,10 @@ func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployS
 	installDeploy := app.InstallDeploy{
 		ID: req.DeployID,
 	}
+	if req.Status == app.StatusCancelled {
+		_, err := CancelIfUnfinished(ctx, a.db, &installDeploy, req.StatusDescription, req.SkipStatusSync)
+		return err
+	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
 		var installDeploy app.InstallDeploy
@@ -979,6 +1002,9 @@ func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployS
 		First(&extantInstallDeploy)
 	if res.Error != nil {
 		return fmt.Errorf("unable to get install deploy: %w", res.Error)
+	}
+	if extantInstallDeploy.Status == app.InstallDeployStatusCancelled && req.Status != app.StatusCancelled {
+		return nil
 	}
 
 	compositeStatus = app.NewCompositeStatus(ctx, req.Status)

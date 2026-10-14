@@ -4,13 +4,18 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/demand"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type UpdateRunnerJobExecutionRequest struct {
@@ -64,6 +69,37 @@ func (s *service) UpdateRunnerJobExecution(ctx *gin.Context) {
 }
 
 func (s *service) updateRunnerJobExecution(ctx context.Context, runnerJobID, runnerJobExecutionID string, req UpdateRunnerJobExecutionRequest) (*app.RunnerJobExecution, error) {
+	var job app.RunnerJob
+	if err := s.db.WithContext(ctx).Scopes(scopes.WithDisableViews).Where(app.RunnerJob{ID: runnerJobID}).First(&job).Error; err != nil {
+		return nil, err
+	}
+	if demand.SignalID(&job) != "" {
+		var execution app.RunnerJobExecution
+		err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			if _, err := demand.LockWorkflow(ctx, tx, job.FlowWorkflowID()); err != nil {
+				return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
+			}
+			if err := tx.Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJob{ID: runnerJobID}).First(&job).Error; err != nil {
+				return err
+			}
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJobExecution{ID: runnerJobExecutionID, RunnerJobID: runnerJobID}).First(&execution).Error; err != nil {
+				return err
+			}
+			if !execution.Status.IsRunning() {
+				if execution.Status == req.Status {
+					return nil
+				}
+				return stderr.ErrConflict{Err: fmt.Errorf("execution is already terminal"), Description: "execution is already terminal"}
+			}
+			if job.Status.IsTerminal() || !time.Now().Before(execution.CreatedAt.Add(job.ExecutionTimeout)) {
+				return stderr.ErrConflict{Err: fmt.Errorf("job is terminal or expired"), Description: "job is terminal or expired"}
+			}
+			status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+			status.StatusHumanDescription = truncateStatusDescription(req.StatusDescription)
+			return tx.Model(&execution).Updates(map[string]any{"status": req.Status, "status_v2": status}).Error
+		})
+		return &execution, err
+	}
 	updates := app.RunnerJobExecution{
 		Status: req.Status,
 	}

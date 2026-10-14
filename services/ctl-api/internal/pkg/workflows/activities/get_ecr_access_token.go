@@ -2,11 +2,8 @@ package activities
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	ecrauthorization "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
 )
 
 type GetECRAccessTokenRequest struct {
@@ -26,19 +23,14 @@ type ECRAccessToken struct {
 // @temporal-gen-v2 activity
 // @max-retries 1
 func (a *Activities) GetECRAccessToken(ctx context.Context, req *GetECRAccessTokenRequest) (*ECRAccessToken, error) {
-	authorizer, err := ecrauthorization.New(a.v, ecrauthorization.WithCredentials(req.Credentials))
+	token, err := a.registryAuth.ECR(ctx, req.Credentials)
 	if err != nil {
-		return nil, fmt.Errorf("unable to build ecr authorizer: %w", err)
-	}
-
-	auth, err := authorizer.GetAuthorization(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get ecr authorization: %w", err)
+		return nil, err
 	}
 
 	return &ECRAccessToken{
-		Username:      auth.Username,
-		Password:      auth.RegistryToken,
-		ServerAddress: strings.TrimPrefix(auth.ServerAddress, "https://"),
+		Username:      token.Username,
+		Password:      token.Password,
+		ServerAddress: token.ServerAddress,
 	}, nil
 }

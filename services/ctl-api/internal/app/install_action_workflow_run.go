@@ -31,6 +31,15 @@ const (
 	InstallActionRunStatusRetried    InstallActionWorkflowRunStatus = "retried"
 )
 
+func (s InstallActionWorkflowRunStatus) IsTerminal() bool {
+	switch s {
+	case InstallActionRunStatusFinished, InstallActionRunStatusError, InstallActionRunStatusTimedOut,
+		InstallActionRunStatusCancelled, InstallActionRunStatusRetried, InstallActionWorkflowRunStatus(StatusSuccess):
+		return true
+	}
+	return false
+}
+
 type InstallActionWorkflowRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`

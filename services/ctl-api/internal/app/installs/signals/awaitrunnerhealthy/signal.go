@@ -35,6 +35,8 @@ const processReadinessPolicyVersion = "await-runner-healthy-process-readiness-v1
 // waits for it instead of failing fast.
 const requireActiveAwaitsStartingRunnerVersion = "await-runner-healthy-require-active-starting-v1"
 
+const noopVersion = "await-runner-healthy-noop-v1"
+
 type Mode string
 
 const (
@@ -96,6 +98,22 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
+	if workflow.GetVersion(ctx, noopVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if s.WorkflowStepID == "" {
+			return nil
+		}
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.WorkflowStepID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusUserSkipped,
+				StatusHumanDescription: "runner health is no longer awaited; jobs wait for the runner to claim them",
+			},
+		}); err != nil {
+			return errors.Wrap(err, "unable to mark runner health step skipped")
+		}
+		return nil
+	}
+
 	// Get the install
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {

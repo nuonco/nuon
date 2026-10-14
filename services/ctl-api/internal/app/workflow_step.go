@@ -106,8 +106,10 @@ type WorkflowStep struct {
 	// install_runner_update
 	// install_deploy
 	// install_action_workflow_run (can be many of these)
-	StepTargetID   string `json:"step_target_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"step_target_id,omitzero,omitempty"`
-	StepTargetType string `json:"step_target_type,omitzero" gorm:"type:text;" temporaljson:"step_target_type,omitzero,omitempty"`
+	StepTargetID      string  `json:"step_target_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"step_target_id,omitzero,omitempty"`
+	StepTargetType    string  `json:"step_target_type,omitzero" gorm:"type:text;" temporaljson:"step_target_type,omitzero,omitempty"`
+	RunnerJobID       *string `json:"runner_job_id,omitempty" gorm:"default:null" temporaljson:"runner_job_id,omitempty"`
+	RunnerJobSignalID *string `json:"-" gorm:"default:null" temporaljson:"runner_job_signal_id,omitempty"`
 
 	Metadata pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 

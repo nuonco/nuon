@@ -40,9 +40,11 @@ type QueueSignal struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
-	Status CompositeStatus     `json:"status"`
-	Type   signal.SignalType   `json:"type"`
-	Signal signaldb.SignalData `json:"signal" temporaljson:"-"`
+	Status       CompositeStatus     `json:"status"`
+	Type         signal.SignalType   `json:"type"`
+	Signal       signaldb.SignalData `json:"signal" temporaljson:"-"`
+	Continuation []byte              `json:"-" gorm:"type:jsonb;default:null" temporaljson:"-"`
+	RunnerDemand bool                `json:"-" gorm:"default:false;not null" temporaljson:"runner_demand,omitempty"`
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
 

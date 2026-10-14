@@ -10,6 +10,7 @@ import (
 
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	flowdirective "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
@@ -31,6 +32,7 @@ const (
 	residentScheduleBlocked          residentScheduleState = "blocked"
 	residentScheduleAwaitingApproval residentScheduleState = "awaiting-approval"
 	residentScheduleRunnable         residentScheduleState = "runnable"
+	residentScheduleAwaitingRunner   residentScheduleState = "awaiting-runner"
 )
 
 type residentScheduleDecision struct {
@@ -90,6 +92,9 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 		} else {
 			decision := s.residentScheduleDecision(ctx)
 			initialScheduleState = decision.State
+			if initialScheduleState == residentScheduleAwaitingRunner {
+				return callback.Suspended()
+			}
 			if pos, ok := residentInitialGroupPosition(decision); ok {
 				initialStartIdx = pos
 			}
@@ -111,6 +116,14 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			runErr = s.executeRun(ctx, run)
 		}
 		initialScheduleState = residentScheduleRunnable
+		if _, waiting := runErr.(*flow.RunnerPauseErr); waiting {
+			s.updateRunStatus(ctx, run.ID, app.StatusWaitingForRunner)
+			pauseCtx := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
+			if err := workflow.ExecuteActivity(pauseCtx, (*workflowactivities.Activities).PauseForRunner, s.WorkflowID, "").Get(ctx, nil); err != nil {
+				return err
+			}
+			return callback.Suspended()
+		}
 		_, awaitingRetry := runErr.(*flow.AwaitRetryPauseErr)
 		_, awaitingApproval := runErr.(*flow.ApprovalPauseErr)
 		if awaitingRetry || awaitingApproval {
@@ -145,6 +158,18 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 
 			if awaitingRetry {
 				s.updateRunStatus(ctx, run.ID, app.StatusFailedPendingRetry)
+				if s.Resident && workflow.GetVersion(ctx, "runner-demand-parallel-retry-status-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+					if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+						ID: s.WorkflowID,
+						Status: app.CompositeStatus{
+							Status:                 app.StatusFailedPendingRetry,
+							StatusHumanDescription: "step failed, awaiting retry or skip",
+							Metadata:               map[string]any{"awaiting_retry": true},
+						},
+					}); err != nil {
+						return err
+					}
+				}
 			} else if awaitingApproval {
 				s.updateRunStatus(ctx, run.ID, app.AwaitingApproval)
 			} else if s.isWorkflowComplete(ctx) {
@@ -658,6 +683,8 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		case flowdirective.GroupAwaitApproval:
 			return flow.NewApprovalPauseErr("")
+		case flowdirective.GroupAwaitRunner:
+			return &flow.RunnerPauseErr{}
 
 		case flowdirective.GroupAwaitRetry:
 			if s.Resident {
@@ -893,7 +920,11 @@ func (s *Signal) residentScheduleDecision(ctx workflow.Context) residentSchedule
 	pending := make(map[int]bool)
 	unresolved := make(map[int]bool)
 	unanswered := make(map[int]bool)
+	waitingRunner := make(map[int]bool)
 	for _, st := range steps {
+		if st.ResultDirective == string(flowdirective.StepAwaitRunner) {
+			waitingRunner[st.GroupIdx] = true
+		}
 		if !isStepTerminal(st.Status.Status) {
 			pending[st.GroupIdx] = true
 		}
@@ -905,6 +936,9 @@ func (s *Signal) residentScheduleDecision(ctx workflow.Context) residentSchedule
 		}
 	}
 	for pos, g := range groups {
+		if waitingRunner[g.GroupIdx] {
+			return residentScheduleDecision{State: residentScheduleAwaitingRunner}
+		}
 		// A group that failed without a directive (no stop sweep ran) leaves
 		// downstream groups pending; they must wait for a retry or skip of the
 		// errored step rather than run past it.

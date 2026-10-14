@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/demand"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -66,6 +67,14 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string, reaso
 		return nil, fmt.Errorf("unable to build runner job cancellation composite error: %w", err)
 	}
 
+	job, err := s.getRunnerJob(ctx, runnerJobID)
+	if err != nil {
+		return nil, err
+	}
+	if demand.SignalID(job) != "" {
+		return s.queueClient.CancelDemandRunnerJob(ctx, runnerJobID, compositeError)
+	}
+
 	runnerJob := app.RunnerJob{
 		ID:             runnerJobID,
 		Status:         app.RunnerJobStatusCancelled,
@@ -80,7 +89,7 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string, reaso
 		return nil, fmt.Errorf("unable to cancel runner job: %w", res.Error)
 	}
 
-	job, err := s.getRunnerJob(ctx, runnerJobID)
+	job, err = s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get runner job: %w", err)
 	}

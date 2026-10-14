@@ -169,6 +169,13 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	defer cancel()
 	if s.runnerJobID != "" {
 		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+		return nil
+	}
+	if jobID, runID := activeCheckpointJobID(cancelCtx); jobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, jobID)
+		if runID != "" {
+			s.updateRunStatusWithoutStatusSync(cancelCtx, runID, app.SandboxRunStatusCancelled, "install sandbox run cancelled")
+		}
 	}
 	return nil
 }
@@ -221,20 +228,37 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) Execute(ctx workflow.Context) error {
+func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	install, err := activities.AwaitGetInstallForSandboxBySandboxID(ctx, s.InstallSandboxID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	installRun, err := activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
-		InstallID:  install.ID,
-		RunType:    app.SandboxRunTypeReprovision,
-		WorkflowID: s.FlowID,
-		Role:       s.Role,
-	})
-	if err != nil {
-		return fmt.Errorf("unable to create install: %w", err)
+	var prep runCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, checkpointRun, &prep); err != nil {
+		return errors.Wrap(err, "unable to load sandbox run checkpoint")
+	}
+
+	var installRun *app.InstallSandboxRun
+	if prep.SandboxRunID != "" {
+		installRun, err = activities.AwaitGetSandboxRunByRunID(ctx, prep.SandboxRunID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get sandbox run")
+		}
+	} else {
+		installRun, err = activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
+			InstallID:  install.ID,
+			RunType:    app.SandboxRunTypeReprovision,
+			WorkflowID: s.FlowID,
+			Role:       s.Role,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to create install: %w", err)
+		}
+		prep.SandboxRunID = installRun.ID
+		if err := job.SaveCheckpoint(ctx, checkpointRun, prep); err != nil {
+			return errors.Wrap(err, "unable to checkpoint sandbox run")
+		}
 	}
 
 	defer func() {
@@ -264,14 +288,28 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatus(app.InstallDeployStatusPlanning), "planning")
 
-	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-		SandboxRunID: installRun.ID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to create log stream")
+	var logStream *app.LogStream
+	if prep.LogStreamID != "" {
+		logStream, err = activities.AwaitGetLogStreamByLogStreamID(ctx, prep.LogStreamID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get log stream")
+		}
+	} else {
+		logStream, err = activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+			SandboxRunID: installRun.ID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create log stream")
+		}
+		prep.LogStreamID = logStream.ID
+		if err := job.SaveCheckpoint(ctx, checkpointRun, prep); err != nil {
+			return errors.Wrap(err, "unable to checkpoint log stream")
+		}
 	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		if !job.IsSuspended(err) {
+			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		}
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 
@@ -279,6 +317,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l.Info("executing reprovision plan")
 
 	err = s.executeSandboxPlan(ctx, install, installRun, s.FlowStepID, s.SandboxMode, s.cfg.DNSRootDomain)
+	if job.IsSuspended(err) {
+		return err
+	}
 	if err != nil {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 		return err
@@ -296,83 +337,36 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, sandboxMode bool, dnsRootDomain string) error {
 	l := workflow.GetLogger(ctx)
 
-	op := app.RunnerJobOperationTypeCreateApplyPlan
-	if installRun.RunType == app.SandboxRunTypeDeprovision {
-		op = app.RunnerJobOperationTypeCreateTeardownPlan
+	var cp phaseCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, checkpointPlan, &cp); err != nil {
+		return errors.Wrap(err, "unable to load plan checkpoint")
+	}
+	if cp.Finalized {
+		return nil
 	}
 
-	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
-		InstallID: install.ID,
-		RunnerID:  install.RunnerID,
-		OwnerType: "install_sandbox_runs",
-		OwnerID:   installRun.ID,
-		JobType:   install.AppSandboxConfig.JobType(),
-		Op:        op,
-		Metadata: map[string]string{
-			"install_id":       install.ID,
-			"sandbox_run_id":   installRun.ID,
-			"sandbox_run_type": string(installRun.RunType),
-		},
-	})
-	if err != nil {
-		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
-		return fmt.Errorf("unable to create runner job: %w", err)
-	}
-	s.runnerJobID = runnerJob.ID
-
-	planResponse, planErr := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
-		RunID:      installRun.ID,
-		InstallID:  install.ID,
-		RootDomain: dnsRootDomain,
-		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
-	})
-	if planErr != nil {
-		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
-		if stackerrors.IsPlanRenderFailed(planErr) {
-			planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-			if planCompositeErrorsEnabled {
-				_ = activities.AwaitSetInstallSandboxRunPlanCompositeError(ctx, activities.SetInstallSandboxRunPlanCompositeErrorRequest{
-					SandboxRunID: installRun.ID,
-					Detail:       planErr.Error(),
-				})
-			}
-			return temporal.NewNonRetryableApplicationError("sandbox plan render failed", stackerrors.PlanRenderFailedTemporalType, errors.Wrap(planErr, "unable to create plan"))
+	if cp.JobID == "" {
+		jobID, err := s.prepareSandboxPlanJob(ctx, install, installRun, dnsRootDomain)
+		if err != nil {
+			return err
 		}
-		return fmt.Errorf("unable to create plan: %w", planErr)
+		cp.JobID = jobID
+		if err := job.SaveCheckpoint(ctx, checkpointPlan, cp); err != nil {
+			return errors.Wrap(err, "unable to checkpoint plan job")
+		}
 	}
-
-	planJSON, err := json.Marshal(planResponse.Plan)
-	if err != nil {
-		return errors.Wrap(err, "unable to create json")
-	}
-
-	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:    runnerJob.ID,
-		PlanJSON: string(planJSON),
-		CompositePlan: plantypes.CompositePlan{
-			SandboxRunPlan: planResponse.Plan,
-		},
-	}); err != nil {
-		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
-		return fmt.Errorf("unable to get install: %w", err)
-	}
-
-	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
-		InstallID:     install.ID,
-		RunnerJobID:   runnerJob.ID,
-		RoleSelection: planResponse.RoleSelection,
-	}); err != nil {
-		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to record install role usage")
-		return fmt.Errorf("unable to record install role usage: %w", err)
-	}
+	s.runnerJobID = cp.JobID
 
 	l.Info("queued job and waiting on it to be picked up by runner")
-	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		JobID:    runnerJob.ID,
+	status, err := job.Execute(ctx, &job.ExecuteJobRequest{
+		JobID:    cp.JobID,
 		RunnerID: install.RunnerID,
 	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, cp.JobID),
 	})
+	if job.IsSuspended(err) {
+		return err
+	}
 	if err != nil {
 		msg := job.JobErrorMessage(err, "reprovision plan job failed")
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, msg)
@@ -384,7 +378,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		return fmt.Errorf("runner job failed with status %s", status)
 	}
 
-	jobResult, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
+	jobResult, err := activities.AwaitGetJobByID(ctx, cp.JobID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get job")
 	}
@@ -406,7 +400,86 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		return errors.Wrap(err, "unable to create approval")
 	}
 
+	cp.Finalized = true
+	if err := job.SaveCheckpoint(ctx, checkpointPlan, cp); err != nil {
+		return errors.Wrap(err, "unable to checkpoint plan finalization")
+	}
+
 	return nil
+}
+
+func (s *Signal) prepareSandboxPlanJob(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, dnsRootDomain string) (string, error) {
+	op := app.RunnerJobOperationTypeCreateApplyPlan
+	if installRun.RunType == app.SandboxRunTypeDeprovision {
+		op = app.RunnerJobOperationTypeCreateTeardownPlan
+	}
+
+	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
+		InstallID: install.ID,
+		RunnerID:  install.RunnerID,
+		OwnerType: "install_sandbox_runs",
+		OwnerID:   installRun.ID,
+		JobType:   install.AppSandboxConfig.JobType(),
+		Op:        op,
+		Metadata: map[string]string{
+			"install_id":       install.ID,
+			"sandbox_run_id":   installRun.ID,
+			"sandbox_run_type": string(installRun.RunType),
+		},
+	})
+	if err != nil {
+		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
+		return "", fmt.Errorf("unable to create runner job: %w", err)
+	}
+	s.runnerJobID = runnerJob.ID
+
+	planResponse, planErr := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
+		RunID:      installRun.ID,
+		InstallID:  install.ID,
+		RootDomain: dnsRootDomain,
+		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
+	if planErr != nil {
+		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
+		if stackerrors.IsPlanRenderFailed(planErr) {
+			planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+			if planCompositeErrorsEnabled {
+				_ = activities.AwaitSetInstallSandboxRunPlanCompositeError(ctx, activities.SetInstallSandboxRunPlanCompositeErrorRequest{
+					SandboxRunID: installRun.ID,
+					Detail:       planErr.Error(),
+				})
+			}
+			return "", temporal.NewNonRetryableApplicationError("sandbox plan render failed", stackerrors.PlanRenderFailedTemporalType, errors.Wrap(planErr, "unable to create plan"))
+		}
+		return "", fmt.Errorf("unable to create plan: %w", planErr)
+	}
+
+	planJSON, err := json.Marshal(planResponse.Plan)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to create json")
+	}
+
+	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+		JobID:    runnerJob.ID,
+		PlanJSON: string(planJSON),
+		CompositePlan: plantypes.CompositePlan{
+			SandboxRunPlan: planResponse.Plan,
+		},
+	}); err != nil {
+		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
+		return "", fmt.Errorf("unable to get install: %w", err)
+	}
+
+	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
+		InstallID:     install.ID,
+		RunnerJobID:   runnerJob.ID,
+		RoleSelection: planResponse.RoleSelection,
+	}); err != nil {
+		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to record install role usage")
+		return "", fmt.Errorf("unable to record install role usage: %w", err)
+	}
+
+	return runnerJob.ID, nil
 }
 
 func (s *Signal) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID string, status app.SandboxRunStatus, statusDescription string) {

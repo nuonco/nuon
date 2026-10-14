@@ -130,15 +130,19 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		len(filterActionWorkflowsByTrigger(awData, app.ActionWorkflowTriggerTypePreUpdateInputs, "", appConfig)) > 0 ||
 		len(filterActionWorkflowsByTrigger(awData, app.ActionWorkflowTriggerTypePostUpdateInputs, "", appConfig)) > 0
 	if needsRunner {
-		sg.nextGroupEager()
-		step, err = sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-			InstallID: installID,
-			Mode:      awaitrunnerhealthy.ModeRequireActive,
-		}, flw.PlanOnly)
-		if err != nil {
-			return nil, err
+		if sg.keepRunnerHealthGate(ctx) {
+			sg.nextGroupEager()
+			step, err = sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+				InstallID: installID,
+				Mode:      awaitrunnerhealthy.ModeRequireActive,
+			}, flw.PlanOnly)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, step)
+		} else {
+			sg.deferGroupEager()
 		}
-		steps = append(steps, step)
 	}
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreUpdateInputs)

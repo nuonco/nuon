@@ -48,8 +48,12 @@ func (s *Signal) Timeout() time.Duration                { return 2 * time.Hour }
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
 	defer cancel()
-	if s.runnerJobID != "" {
-		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+	jobID := s.runnerJobID
+	if jobID == "" {
+		jobID = activeCheckpointJobID(cancelCtx)
+	}
+	if jobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, jobID)
 	}
 	return nil
 }
@@ -78,7 +82,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) Execute(ctx workflow.Context) error {
+func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	install, err := activities.AwaitGet(ctx, activities.GetRequest{
 		InstallID: s.InstallID,
 	})
@@ -86,14 +90,33 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-		StepID: s.WorkflowStepID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to create log stream")
+	var lsCheckpoint logStreamCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, checkpointLogStream, &lsCheckpoint); err != nil {
+		return errors.Wrap(err, "unable to load log stream checkpoint")
+	}
+
+	var logStream *app.LogStream
+	if lsCheckpoint.LogStreamID != "" {
+		logStream, err = activities.AwaitGetLogStreamByLogStreamID(ctx, lsCheckpoint.LogStreamID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get log stream")
+		}
+	} else {
+		logStream, err = activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+			StepID: s.WorkflowStepID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create log stream")
+		}
+		lsCheckpoint.LogStreamID = logStream.ID
+		if err := job.SaveCheckpoint(ctx, checkpointLogStream, lsCheckpoint); err != nil {
+			return errors.Wrap(err, "unable to checkpoint log stream")
+		}
 	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		if !job.IsSuspended(err) {
+			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		}
 	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
@@ -114,61 +137,79 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	l.Info("creating plan")
-	syncSecretsPlan, err := plan.AwaitCreateSyncSecretsPlan(ctx, &plan.CreateSyncSecretsPlanRequest{
-		InstallID: install.ID,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("%s-create-sync-secrets-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to create plan")
+	var cp phaseCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, checkpointSyncSecrets, &cp); err != nil {
+		return errors.Wrap(err, "unable to load sync secrets checkpoint")
 	}
-
-	if len(syncSecretsPlan.KubernetesSecrets) < 1 {
-		l.Debug("no secrets to sync")
+	if cp.Finalized {
 		return nil
 	}
 
-	// create the job
-	l.Info("creating sync secrets job")
-	runnerJob, err := activities.AwaitCreateSyncSecretsJob(ctx, &activities.CreateSyncSecretsJobRequest{
-		RunnerID:  install.RunnerID,
-		InstallID: install.ID,
-		OwnerType: "install_workflow_steps",
-		OwnerID:   s.WorkflowStepID,
-		Op:        app.RunnerJobOperationTypeExec,
-		Metadata: map[string]string{
-			"install_id": install.ID,
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("unable to create runner job: %w", err)
-	}
-	s.runnerJobID = runnerJob.ID
+	if cp.JobID == "" {
+		l.Info("creating plan")
+		syncSecretsPlan, err := plan.AwaitCreateSyncSecretsPlan(ctx, &plan.CreateSyncSecretsPlanRequest{
+			InstallID: install.ID,
+		}, &workflow.ChildWorkflowOptions{
+			WorkflowID: fmt.Sprintf("%s-create-sync-secrets-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create plan")
+		}
 
-	planJSON, err := json.Marshal(syncSecretsPlan)
-	if err != nil {
-		return errors.Wrap(err, "unable to create json")
-	}
+		if len(syncSecretsPlan.KubernetesSecrets) < 1 {
+			l.Debug("no secrets to sync")
+			return nil
+		}
 
-	// Deprecated: for now we dual write both the plan json and the composite plan
-	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:    runnerJob.ID,
-		PlanJSON: string(planJSON),
-		CompositePlan: plantypes.CompositePlan{
-			SyncSecretsPlan: syncSecretsPlan,
-		},
-	}); err != nil {
-		return fmt.Errorf("unable to save plan: %w", err)
+		l.Info("creating sync secrets job")
+		runnerJob, err := activities.AwaitCreateSyncSecretsJob(ctx, &activities.CreateSyncSecretsJobRequest{
+			RunnerID:  install.RunnerID,
+			InstallID: install.ID,
+			OwnerType: "install_workflow_steps",
+			OwnerID:   s.WorkflowStepID,
+			Op:        app.RunnerJobOperationTypeExec,
+			Metadata: map[string]string{
+				"install_id": install.ID,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("unable to create runner job: %w", err)
+		}
+		s.runnerJobID = runnerJob.ID
+
+		planJSON, err := json.Marshal(syncSecretsPlan)
+		if err != nil {
+			return errors.Wrap(err, "unable to create json")
+		}
+
+		// Deprecated: for now we dual write both the plan json and the composite plan
+		if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+			JobID:    runnerJob.ID,
+			PlanJSON: string(planJSON),
+			CompositePlan: plantypes.CompositePlan{
+				SyncSecretsPlan: syncSecretsPlan,
+			},
+		}); err != nil {
+			return fmt.Errorf("unable to save plan: %w", err)
+		}
+
+		cp.JobID = runnerJob.ID
+		if err := job.SaveCheckpoint(ctx, checkpointSyncSecrets, cp); err != nil {
+			return errors.Wrap(err, "unable to checkpoint sync secrets job")
+		}
 	}
+	s.runnerJobID = cp.JobID
 
 	l.Info("queueing job and waiting on execution")
-	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		JobID:    runnerJob.ID,
+	status, err := job.Execute(ctx, &job.ExecuteJobRequest{
+		JobID:    cp.JobID,
 		RunnerID: install.RunnerID,
 	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, cp.JobID),
 	})
+	if job.IsSuspended(err) {
+		return err
+	}
 	if err != nil {
 		return fmt.Errorf("unable to execute job: %w", err)
 	}
@@ -182,10 +223,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		InstallID:       s.InstallID,
 		Targets:         statemanager.TargetsForHint(statemanager.HintSecretsUpdated, ""),
 		ForceAll:        true,
-		TriggeredByID:   runnerJob.ID,
+		TriggeredByID:   cp.JobID,
 		TriggeredByType: "runner_jobs",
 	}); err != nil {
 		return err
+	}
+
+	cp.Finalized = true
+	if err := job.SaveCheckpoint(ctx, checkpointSyncSecrets, cp); err != nil {
+		return errors.Wrap(err, "unable to checkpoint sync secrets finalization")
 	}
 
 	return nil

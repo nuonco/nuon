@@ -42,6 +42,8 @@ var DrainTimeout = callback.QuickTimeout
 // neither the callbacks nor the skip.
 const handlerCancelledStatusVersion = "queue-handler-cancelled-status-v1"
 
+const handlerTerminalDemandVersion = "queue-handler-terminal-runner-demand-v1"
+
 // rewarmEligible reports whether a terminal queue signal may re-enter Execute
 // on a fresh Handler run. Only resident signals qualify, and only from success
 // or error: a stale queue run can overwrite a completed resident signal with
@@ -49,7 +51,7 @@ const handlerCancelledStatusVersion = "queue-handler-cancelled-status-v1"
 func (h *handler) rewarmEligible(qs *app.QueueSignal) bool {
 	r, ok := h.sig.(signal.AutoExecuteOnTerminalStart)
 	return ok && r.AutoExecuteOnTerminalStart() &&
-		generics.SliceContains(qs.Status.Status, []app.Status{app.StatusSuccess, app.StatusError})
+		generics.SliceContains(qs.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusWaitingForRunner})
 }
 
 // isTerminalQueueStatus reports whether the queue signal's DB status means the
@@ -111,7 +113,12 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// Await below forever, leaking the workflow (visible as failed
 	// assert-temporal-drained checks).
 	if !h.finished {
-		if isTerminalQueueStatus(qs.Status.Status) && !h.rewarmEligible(qs) {
+		terminalDemand := qs.RunnerDemand && qs.Status.Status != app.StatusCancelled
+		if terminalDemand && isTerminalQueueStatus(qs.Status.Status) && !h.rewarmEligible(qs) &&
+			workflow.GetVersion(ctx, handlerTerminalDemandVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			terminalDemand = false
+		}
+		if isTerminalQueueStatus(qs.Status.Status) && !h.rewarmEligible(qs) && !terminalDemand {
 			l.Debug("terminal signal re-entered via update; draining update handlers")
 			h.setFinished(qs.Status.Status, "")
 			if qs.Status.Status == app.StatusCancelled &&
@@ -263,6 +270,9 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	cacheDur := signal.DefaultSleepAfter
 	if sa, ok := h.sig.(signal.SleepAfter); ok {
 		cacheDur = sa.SleepAfter()
+	}
+	if h.finishedStatus == app.StatusWaitingForRunner {
+		cacheDur = 0
 	}
 	if cacheDur > 0 {
 		l.Debug("handler finished, caching workflow")

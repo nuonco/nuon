@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 type UpdateRunStatusRequest struct {
@@ -21,7 +22,12 @@ func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusReq
 	install := app.InstallSandboxRun{
 		ID: req.RunID,
 	}
-	res := a.db.WithContext(ctx).Model(&install).Updates(app.InstallSandboxRun{
+	if req.Status == app.SandboxRunStatusCancelled {
+		_, err := statusactivities.CancelIfUnfinished(ctx, a.db, &install, req.StatusDescription, req.SkipStatusSync)
+		return err
+	}
+	query := a.db.WithContext(ctx).Model(&install).Where("status <> ?", app.SandboxRunStatusCancelled)
+	res := query.Updates(app.InstallSandboxRun{
 		Status:            req.Status,
 		StatusDescription: req.StatusDescription,
 	})
@@ -29,6 +35,10 @@ func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusReq
 		return fmt.Errorf("unable to update install run: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
+		var existing app.InstallSandboxRun
+		if err := a.db.WithContext(ctx).Where(app.InstallSandboxRun{ID: req.RunID}).First(&existing).Error; err == nil && existing.Status == app.SandboxRunStatusCancelled {
+			return nil
+		}
 		return fmt.Errorf("no run found: %s %w", req.RunID, gorm.ErrRecordNotFound)
 	}
 

@@ -37,6 +37,10 @@ func NewApprovalPauseErr(stepID string) *ApprovalPauseErr {
 
 type AwaitRetryPauseErr struct{}
 
+type RunnerPauseErr struct{}
+
+func (*RunnerPauseErr) Error() string { return "workflow paused waiting for runner" }
+
 func (e *AwaitRetryPauseErr) Error() string {
 	return "workflow paused awaiting retry"
 }

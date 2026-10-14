@@ -52,6 +52,17 @@ const (
 	InstallDeployStatusHealthFailed InstallDeployStatus = "health-failed"
 )
 
+func (s InstallDeployStatus) IsTerminal() bool {
+	switch s {
+	case InstallDeployStatusActive, InstallDeployStatusInactive, InstallDeployStatusError,
+		InstallDeployStatusNoop, InstallDeployStatusCancelled, InstallDeployStatusAutoSkipped,
+		InstallDeployStatusNoDrift, InstallDeployApprovalDenied, InstallDeployStatusRetried,
+		InstallDeployStatusHealthFailed, InstallDeployStatus(StatusSuccess):
+		return true
+	}
+	return false
+}
+
 type InstallDeploy struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`

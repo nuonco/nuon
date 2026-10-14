@@ -25,13 +25,14 @@ import (
 )
 
 type EnqueueSignalRequest struct {
-	QueueID   string        `validate:"required"`
-	Signal    signal.Signal `validate:"required"`
-	OwnerID   string
-	OwnerType string
-	ExpiresAt *time.Time
-	EmitterID *string
-	DedupeKey *string
+	QueueID      string        `validate:"required"`
+	Signal       signal.Signal `validate:"required"`
+	OwnerID      string
+	OwnerType    string
+	ExpiresAt    *time.Time
+	EmitterID    *string
+	DedupeKey    *string
+	RunnerDemand bool
 
 	// IdempotencyKey deduplicates repeated requests for the same signal type and queue.
 	IdempotencyKey string `validate:"omitempty,max=255"`
@@ -51,10 +52,17 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 	if err != nil {
 		return nil, err
 	}
-	if c.enqueuer != nil && queueSignal != nil {
-		c.enqueuer.Send(queueSignal.ID)
+	if queueSignal != nil {
+		c.DispatchSignal(queueSignal.ID)
 	}
 	return resp, nil
+}
+
+func (c *Client) DispatchSignal(signalID string) error {
+	if c.enqueuer != nil && signalID != "" {
+		c.enqueuer.Send(signalID)
+	}
+	return nil
 }
 
 func (c *Client) EnqueueSignalInTransaction(ctx context.Context, tx *gorm.DB, req *EnqueueSignalRequest) (*queue.EnqueueResponse, error) {
@@ -116,14 +124,15 @@ func (c *Client) enqueueSignal(ctx context.Context, db *gorm.DB, req *EnqueueSig
 		Signal: signaldb.SignalData{
 			Signal: req.Signal,
 		},
-		QueueID:   req.QueueID,
-		Type:      req.Signal.Type(),
-		OwnerID:   req.OwnerID,
-		OwnerType: req.OwnerType,
-		EmitterID: req.EmitterID,
-		DedupeKey: req.DedupeKey,
-		Status:    status,
-		ExpiresAt: req.ExpiresAt,
+		QueueID:      req.QueueID,
+		Type:         req.Signal.Type(),
+		OwnerID:      req.OwnerID,
+		OwnerType:    req.OwnerType,
+		RunnerDemand: req.RunnerDemand,
+		EmitterID:    req.EmitterID,
+		DedupeKey:    req.DedupeKey,
+		Status:       status,
+		ExpiresAt:    req.ExpiresAt,
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  q.Workflow.Namespace,
 			IDTemplate: q.Workflow.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),

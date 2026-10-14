@@ -36,6 +36,7 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/registryauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/arm"
@@ -120,6 +121,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 
 	// Blob storage service
 	fx.Provide(blobstore.NewInstrumentedService),
+	fx.Provide(registryauth.New),
 	fx.Provide(transport.AsStore(transport.NewStore)),
 
 	// File cache for blob codec

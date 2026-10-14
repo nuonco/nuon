@@ -34,6 +34,7 @@ const (
 	StatusWarning            Status = "warning"
 	StatusFailedPendingRetry Status = "failed-pending-retry"
 	StatusDisabled           Status = "disabled"
+	StatusWaitingForRunner   Status = "waiting-for-runner"
 )
 
 // type specific statuses

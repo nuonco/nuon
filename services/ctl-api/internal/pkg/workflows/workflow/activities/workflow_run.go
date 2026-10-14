@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -53,10 +54,14 @@ type UpdateWorkflowRunStatusRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) PkgWorkflowsFlowUpdateWorkflowRunStatus(ctx context.Context, req UpdateWorkflowRunStatusRequest) error {
+	updates := map[string]any{"status": req.Status}
+	if req.Status.Status == app.StatusWaitingForRunner {
+		updates["finished_at"] = time.Now()
+	}
 	res := a.db.WithContext(ctx).
 		Model(&app.WorkflowRun{}).
 		Where(app.WorkflowRun{ID: req.RunID}).
-		Update("status", req.Status)
+		Updates(updates)
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to update workflow run status")
 	}

@@ -27,6 +27,7 @@ type EnqueueSignalToOwnerRequest struct {
 	SignalOwnerID   string `json:"signal_owner_id,omitempty"`
 	SignalOwnerType string `json:"signal_owner_type,omitempty"`
 	IdempotencyKey  string `json:"idempotency_key,omitempty" validate:"omitempty,max=255"`
+	RunnerDemand    bool   `json:"runner_demand,omitempty"`
 
 	// Callback describes where the handler should send a Temporal signal on completion.
 	// Deprecated: use Callbacks for new code.
@@ -77,6 +78,7 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		Callback:       req.Callback,
 		Callbacks:      req.Callbacks,
 		DedupeKey:      req.DedupeKey,
+		RunnerDemand:   req.RunnerDemand,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal")

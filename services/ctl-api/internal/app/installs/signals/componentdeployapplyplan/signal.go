@@ -148,6 +148,16 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	defer cancel()
 	if s.runnerJobID != "" {
 		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+		return nil
+	}
+	if jobID := activeCheckpointJobID(cancelCtx); jobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, jobID)
+		if deploy, err := activities.AwaitGetInstallDeployForApplyStep(cancelCtx, activities.GetInstallDeployForApplyStep{
+			InstallWorkflowID: s.FlowID,
+			ComponentID:       s.ComponentID,
+		}); err == nil {
+			s.updateDeployStatus(cancelCtx, deploy.ID, app.InstallDeployStatusCancelled, "deploy apply cancelled")
+		}
 	}
 	return nil
 }
@@ -215,7 +225,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	l.Info("executing plan")
-	_, err = s.execApplyPlan(ctx, install, installDeploy, s.InstallWorkflowStepID, s.SandboxMode)
+	err = s.execApplyPlan(ctx, install, installDeploy, s.InstallWorkflowStepID, s.SandboxMode)
+	if job.IsSuspended(err) {
+		return err
+	}
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
 		return errors.Wrap(err, "unable to execute deploy")
@@ -244,45 +257,103 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, sandboxMode bool) (*app.ComponentBuild, error) {
-	l, err := log.WorkflowLogger(ctx)
-	if err != nil {
-		return nil, err
+func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, sandboxMode bool) (err error) {
+	var cp phaseCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, checkpointApply, &cp); err != nil {
+		return errors.Wrap(err, "unable to load apply checkpoint")
 	}
 
-	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	if cp.JobID == "" {
+		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
+	}
 	l.Info("creating execution plan")
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
-		return nil, fmt.Errorf("unable to get build: %w", err)
+		return fmt.Errorf("unable to get build: %w", err)
 	}
 
-	// get previous job
-	operation := app.RunnerJobOperationTypeCreateApplyPlan
-	if installDeploy.Type == app.InstallDeployTypeTeardown {
-		operation = app.RunnerJobOperationTypeCreateTeardownPlan
-	}
-	runnerJobType := build.ComponentConfigConnection.Type.DeployJobType()
-	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
-		OwnerID:   installDeploy.ID,
-		Operation: operation,
-		Group:     runnerJobType.Group(),
-		Type:      runnerJobType,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to plan runner job for current apply job")
+	var planJob *app.RunnerJob
+	if cp.JobID == "" {
+		operation := app.RunnerJobOperationTypeCreateApplyPlan
+		if installDeploy.Type == app.InstallDeployTypeTeardown {
+			operation = app.RunnerJobOperationTypeCreateTeardownPlan
+		}
+		runnerJobType := build.ComponentConfigConnection.Type.DeployJobType()
+		planJob, err = activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
+			OwnerID:   installDeploy.ID,
+			Operation: operation,
+			Group:     runnerJobType.Group(),
+			Type:      runnerJobType,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to plan runner job for current apply job")
+		}
 	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
+		if !job.IsSuspended(err) {
+			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
+		}
 	}()
+
+	if cp.Finalized {
+		return nil
+	}
+
+	if cp.JobID == "" {
+		jobID, err := s.prepareApplyJob(ctx, install, installDeploy, installWorkflowStepID, build, planJob, logStreamID)
+		if err != nil {
+			return err
+		}
+		cp.JobID = jobID
+		if err := job.SaveCheckpoint(ctx, checkpointApply, cp); err != nil {
+			return errors.Wrap(err, "unable to checkpoint apply job")
+		}
+	}
+	s.runnerJobID = cp.JobID
+
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "executing deploy plan")
+	_, err = job.Execute(ctx, &job.ExecuteJobRequest{
+		RunnerID: install.RunnerID,
+		JobID:    cp.JobID,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, cp.JobID),
+	})
+	if job.IsSuspended(err) {
+		return err
+	}
+	if err != nil {
+		msg := job.JobErrorMessage(err, "apply job failed")
+		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, msg)
+		l.Error("job did not succeed", zap.Error(err))
+		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	cp.Finalized = true
+	if err := job.SaveCheckpoint(ctx, checkpointApply, cp); err != nil {
+		return errors.Wrap(err, "unable to checkpoint apply finalization")
+	}
+
+	return nil
+}
+
+func (s *Signal) prepareApplyJob(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, build *app.ComponentBuild, planJob *app.RunnerJob, logStreamID string) (string, error) {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return "", err
+	}
 
 	op := app.RunnerJobOperationTypeApplyPlan
 	jobTyp := build.ComponentConfigConnection.Type.DeployJobType()
@@ -305,7 +376,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	})
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
-		return nil, fmt.Errorf("unable to create runner job: %w", err)
+		return "", fmt.Errorf("unable to create runner job: %w", err)
 	}
 	s.runnerJobID = runnerJob.ID
 
@@ -333,7 +404,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 				Detail:          deployerrors.PlanRenderDetail(err),
 			})
 		}
-		return nil, errors.Wrap(err, "unable to create deploy plan")
+		return "", errors.Wrap(err, "unable to create deploy plan")
 	}
 
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
@@ -341,7 +412,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		StepTargetID:   installDeploy.ID,
 		StepTargetType: "install_deploys",
 	}); err != nil {
-		return nil, errors.Wrap(err, "unable to update install workflow")
+		return "", errors.Wrap(err, "unable to update install workflow")
 	}
 
 	// Add Plan contents from the result to the plan
@@ -356,12 +427,12 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		l.Info("using the compressed contents from the runner job execution result")
 		applyPlanContents, err := planJob.Execution.Result.GetContentsB64String()
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to get contents string")
+			return "", errors.Wrap(err, "unable to get contents string")
 		}
 		deployPlan.Plan.ApplyPlanContents = applyPlanContents
 		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayString()
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to get contents display string")
+			return "", errors.Wrap(err, "unable to get contents display string")
 		}
 		deployPlan.Plan.ApplyPlanDisplay = applyPlanContentsDisplay
 	}
@@ -369,7 +440,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	planJSON, err := json.Marshal(deployPlan.Plan)
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
-		return nil, errors.Wrap(err, "unable to create json from plan")
+		return "", errors.Wrap(err, "unable to create json from plan")
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
@@ -380,7 +451,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		},
 	}); err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return nil, fmt.Errorf("unable to get install: %w", err)
+		return "", fmt.Errorf("unable to get install: %w", err)
 	}
 
 	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
@@ -389,26 +460,10 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		RoleSelection: deployPlan.RoleSelection,
 	}); err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to record install role usage")
-		return nil, fmt.Errorf("unable to record install role usage: %w", err)
+		return "", fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
-	planJSON = nil
-
-	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "executing deploy plan")
-	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID: install.RunnerID,
-		JobID:    runnerJob.ID,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
-	})
-	if err != nil {
-		msg := job.JobErrorMessage(err, "apply job failed")
-		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, msg)
-		l.Error("job did not succeed", zap.Error(err))
-		return nil, fmt.Errorf("unable to get install: %w", err)
-	}
-
-	return build, nil
+	return runnerJob.ID, nil
 }
 
 func (s *Signal) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
