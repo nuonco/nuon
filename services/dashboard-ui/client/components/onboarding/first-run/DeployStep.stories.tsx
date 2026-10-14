@@ -41,7 +41,8 @@ export const WaitingForConfig = () => (
     progress={[
       { label: 'Start a branch run on main', state: 'done' },
       { label: 'Fetch the latest commit from acme/acme-api', state: 'done' },
-      { label: 'Read and validate the app config', state: 'active' },
+      { label: 'Read and validate the app config', state: 'done' },
+      { label: 'Build the components and sandbox', state: 'active' },
       { label: 'Create the install', state: 'pending' },
     ]}
   />
