@@ -16,6 +16,8 @@ export type TBreadcrumbQuickNavItem = {
 
 export interface IBreadcrumbQuickNav {
   id: string
+  href: string
+  isActive?: boolean
   label: string
   title: string
   items: TBreadcrumbQuickNavItem[]
@@ -28,6 +30,8 @@ export interface IBreadcrumbQuickNav {
 
 export const BreadcrumbQuickNav = ({
   id,
+  href,
+  isActive = false,
   label,
   title,
   items,
@@ -43,57 +47,69 @@ export const BreadcrumbQuickNav = ({
   )
 
   return (
-    <Dropdown
-      id={id}
-      variant="ghost"
-      position="below"
-      alignment="left"
-      onOpenChange={onOpenChange}
-      icon={<Icon variant="CaretDownIcon" size={12} />}
-      buttonClassName="!p-0 !h-fit !border-0 !bg-transparent gap-1 max-w-48"
-      buttonText={
-        <span className="truncate text-sm font-semibold">{label}</span>
-      }
-    >
-      <Menu className="w-72 max-h-[400px]">
-        <Text>{title}</Text>
-        <SearchInput
-          className="md:!min-w-full md:!w-full"
-          labelClassName="md:!min-w-full md:!w-full"
-          placeholder={`Search ${title.toLowerCase()}...`}
-          value={searchTerm}
-          onChange={onSearch}
-        />
-        <div className="flex flex-col gap-0.5 overflow-y-auto mt-2">
-          {isLoading ? (
-            Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} height="32px" />
-            ))
-          ) : visibleItems.length ? (
-            visibleItems.map((item) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                variant="ghost"
-                className={cn(
-                  '!p-2 text-sm !leading-none h-8 w-full !rounded-md',
-                  'items-center justify-between'
-                )}
+    <span className="inline-flex items-center gap-1.5 min-w-0">
+      <Text weight="strong" className="min-w-0">
+        <Link
+          href={href}
+          isActive={isActive}
+          variant="breadcrumb"
+          className="truncate max-w-48 inline-block align-bottom"
+        >
+          {label}
+        </Link>
+      </Text>
+      <Dropdown
+        id={id}
+        variant="ghost"
+        position="below"
+        alignment="left"
+        aria-label={title}
+        className="shrink-0"
+        onOpenChange={onOpenChange}
+        hideIcon
+        buttonClassName="!size-5 !min-w-0 !p-0 !gap-0 !justify-center !border-0 !bg-transparent rounded hover:!bg-cool-grey-100 dark:hover:!bg-white/10"
+        buttonText={<Icon variant="CaretDownIcon" size={12} />}
+      >
+        <Menu className="w-72 max-h-[400px]">
+          <Text>{title}</Text>
+          <SearchInput
+            className="md:!min-w-full md:!w-full"
+            labelClassName="md:!min-w-full md:!w-full"
+            placeholder={`Search ${title.toLowerCase()}...`}
+            value={searchTerm}
+            onChange={onSearch}
+          />
+          <div className="flex flex-col gap-0.5 overflow-y-auto mt-2">
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} height="32px" />
+              ))
+            ) : visibleItems.length ? (
+              visibleItems.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  variant="ghost"
+                  className={cn(
+                    '!p-2 text-sm !leading-none h-8 w-full !rounded-md',
+                    'items-center justify-between'
+                  )}
+                >
+                  <span className="truncate">{item.name}</span>
+                </Link>
+              ))
+            ) : (
+              <Text
+                variant="subtext"
+                theme="neutral"
+                className="px-2 py-4 text-center"
               >
-                <span className="truncate">{item.name}</span>
-              </Link>
-            ))
-          ) : (
-            <Text
-              variant="subtext"
-              theme="neutral"
-              className="px-2 py-4 text-center"
-            >
-              No other results
-            </Text>
-          )}
-        </div>
-      </Menu>
-    </Dropdown>
+                No other results
+              </Text>
+            )}
+          </div>
+        </Menu>
+      </Dropdown>
+    </span>
   )
 }
