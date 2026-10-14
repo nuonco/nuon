@@ -74,6 +74,12 @@ jobs:
           fi
           CI=true nuonctl tests run-all pkg "${CACHE_ARGS[@]}"
 
+      - name: Save Go build cache to S3
+        if: ${{ env.IS_FORK_PR != 'true' }}
+        run: CI=true nuonctl builds gocache pkg --tag=${{ github.event.pull_request.head.sha || github.sha }}
+        env:
+          AWS_REGION: us-west-2
+
   update_status:
     name: update status
     needs:
