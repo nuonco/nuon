@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
@@ -9,17 +10,13 @@ import { formatElapsed, type IWaitItem } from './progress'
 const ROTATE_MS = 7000
 const FADE_MS = 250
 
-const Elapsed = ({ since }: { since: number }) => {
+const useNow = () => {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
   }, [])
-  return (
-    <Text variant="subtext" theme="neutral" className="tabular-nums">
-      {formatElapsed(now - since)}
-    </Text>
-  )
+  return now
 }
 
 const ItemIcon = ({ state }: { state: IWaitItem['state'] }) =>
@@ -37,34 +34,59 @@ export const WaitProgress = ({
   title,
   items,
   since,
+  slowAfterMs,
+  onGetHelp,
 }: {
   title: string
   items: IWaitItem[]
   since?: number
-}) => (
-  <Card className="!gap-4 !p-5">
-    <div className="flex items-center justify-between gap-3">
-      <Text variant="base" weight="strong">
-        {title}
-      </Text>
-      {since ? <Elapsed since={since} /> : null}
-    </div>
-    <ol className="flex flex-col gap-2.5" aria-live="polite">
-      {items.map((item) => (
-        <li key={item.label} className="flex items-center gap-2.5">
-          <ItemIcon state={item.state} />
-          <Text
-            variant="body"
-            theme={item.state === 'pending' ? 'neutral' : item.state === 'error' ? 'error' : undefined}
-            weight={item.state === 'active' ? 'strong' : undefined}
-          >
-            {item.label}
+  slowAfterMs?: number
+  onGetHelp?: () => void
+}) => {
+  const now = useNow()
+  const slow = !!since && !!slowAfterMs && now - since > slowAfterMs && !items.some((i) => i.state === 'error')
+
+  return (
+    <Card className="!gap-4 !p-5">
+      <div className="flex items-center justify-between gap-3">
+        <Text variant="base" weight="strong">
+          {title}
+        </Text>
+        {since ? (
+          <Text variant="subtext" theme={slow ? 'warn' : 'neutral'} className="tabular-nums">
+            {formatElapsed(now - since)}
           </Text>
-        </li>
-      ))}
-    </ol>
-  </Card>
-)
+        ) : null}
+      </div>
+      <ol className="flex flex-col gap-2.5" aria-live="polite">
+        {items.map((item) => (
+          <li key={item.label} className="flex items-center gap-2.5">
+            <ItemIcon state={item.state} />
+            <Text
+              variant="body"
+              theme={item.state === 'pending' ? 'neutral' : item.state === 'error' ? 'error' : undefined}
+              weight={item.state === 'active' ? 'strong' : undefined}
+            >
+              {item.label}
+            </Text>
+          </li>
+        ))}
+      </ol>
+      {slow ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <Text variant="subtext" theme="neutral">
+            This is taking longer than usual. Nuon keeps working on it, but a step may be stuck.
+          </Text>
+          {onGetHelp ? (
+            <Button variant="secondary" size="sm" onClick={onGetHelp}>
+              <Icon variant="ChatCircleIcon" size={14} /> Get help
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+    </Card>
+  )
+}
 
 export const ByocReferences = ({ start = 0 }: { start?: number }) => {
   const [index, setIndex] = useState(start % BYOC_REFERENCES.length)

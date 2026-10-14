@@ -122,3 +122,71 @@ test('deploy shows live progress and a BYOC reference while waiting for the app 
   expect(screen.getByText('Datadog')).toBeInTheDocument()
   expect(screen.getByText('See all on Awesome BYOC')).toBeInTheDocument()
 })
+
+test('a failed Kitchen Sink sync offers a retry and help instead of a push', () => {
+  const onRetry = mock(() => {})
+  const onGetHelp = mock(() => {})
+  render(
+    <DeployStepView
+      path="example"
+      appName="kitchen-sink"
+      repo="nuonco/kitchen-sink"
+      cloud="aws"
+      region="us-east-1"
+      phase="waiting-config"
+      installCreated={false}
+      missingInputs={[]}
+      syncError="Component builds failed."
+      onRetry={onRetry}
+      onGetHelp={onGetHelp}
+      onCreate={() => {}}
+    />
+  )
+  expect(screen.getByText('The Kitchen Sink app config did not sync')).toBeInTheDocument()
+  expect(screen.queryByText(/Push a fix/)).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: /Run the sync again/ }))
+  fireEvent.click(screen.getByRole('button', { name: /Get help/ }))
+  expect(onRetry).toHaveBeenCalledTimes(1)
+  expect(onGetHelp).toHaveBeenCalledTimes(1)
+})
+
+test('a wait past the slow threshold says so and offers help', () => {
+  render(
+    <DeployStepView
+      path="example"
+      appName="kitchen-sink"
+      repo="nuonco/kitchen-sink"
+      cloud="aws"
+      region="us-east-1"
+      phase="waiting-config"
+      installCreated={false}
+      missingInputs={[]}
+      progressSince={Date.now() - 11 * 60_000}
+      progress={[{ label: 'Build the components and sandbox', state: 'active' }]}
+      onGetHelp={() => {}}
+      onCreate={() => {}}
+    />
+  )
+  expect(screen.getByText(/taking longer than usual/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Get help/ })).toBeInTheDocument()
+})
+
+test('a normal wait shows no slow note', () => {
+  render(
+    <DeployStepView
+      path="example"
+      appName="kitchen-sink"
+      repo="nuonco/kitchen-sink"
+      cloud="aws"
+      region="us-east-1"
+      phase="waiting-config"
+      installCreated={false}
+      missingInputs={[]}
+      progressSince={Date.now() - 60_000}
+      progress={[{ label: 'Build the components and sandbox', state: 'active' }]}
+      onGetHelp={() => {}}
+      onCreate={() => {}}
+    />
+  )
+  expect(screen.queryByText(/taking longer than usual/)).toBeNull()
+})

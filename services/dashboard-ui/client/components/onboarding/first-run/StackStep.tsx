@@ -15,6 +15,7 @@ import { InstallProvider } from '@/providers/install-provider'
 import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
 import { getInstallStack, getInstallWorkflows, getWorkflowSteps } from '@/lib'
+import { openSupportChat } from '@/lib/pylon-chat'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TInstallStack } from '@/types'
@@ -24,7 +25,9 @@ import {
   CLOUD_LABEL,
   DOCS_STACKS,
   KITCHEN_SINK_LABEL,
+  STACK_HELP_MESSAGE,
   STACK_METHODS,
+  STACK_SLOW_MS,
   STACK_RENDER_LABEL,
   defaultRegion,
   isCloud,
@@ -58,6 +61,7 @@ export interface IStackStepView {
   details?: React.ReactNode
   progress?: IWaitItem[]
   progressSince?: number
+  onGetHelp?: () => void
   onLaunch: () => void
   onContinue: () => void
   onBack?: () => void
@@ -73,6 +77,7 @@ export const StackStepView = ({
   details,
   progress,
   progressSince,
+  onGetHelp,
   onLaunch,
   onContinue,
   onBack,
@@ -141,7 +146,13 @@ export const StackStepView = ({
 
       {generating && progress ? (
         <>
-          <WaitProgress title={connect.generating} items={progress} since={progressSince} />
+          <WaitProgress
+            title={connect.generating}
+            items={progress}
+            since={progressSince}
+            slowAfterMs={STACK_SLOW_MS}
+            onGetHelp={onGetHelp}
+          />
           <ByocReferences />
         </>
       ) : null}
@@ -343,6 +354,10 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
       details={details}
       progress={progress}
       progressSince={progressSince}
+      onGetHelp={() => {
+        openSupportChat(STACK_HELP_MESSAGE)
+        trackEvent({ event: 'support_chat_open', status: 'ok', user, props: { source: 'onboarding_stack' } })
+      }}
       onLaunch={() => {
         setLaunched(true)
         trackEvent({ event: 'install_stack_launch', status: 'ok', user, props: { installId, cloud } })
