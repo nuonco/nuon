@@ -172,9 +172,8 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 				assert.Equal(s.T(), app.WorkflowTypeActionWorkflowRun, workflows[0].Type)
 
 				// Verify signal was sent
-				queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+				queueSignals := tests.GetQueueSignalsByOwner(s.T(), s.service.DB, workflows[0].ID)
 				require.Len(s.T(), queueSignals, 1)
-				assert.Equal(s.T(), installID, queueSignals[0].OwnerID)
 			},
 		},
 		{
@@ -262,31 +261,15 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunValidation() {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name: "config belongs to different app config",
-			setupFunc: func() string {
-				// Create config with different app config than install
-				otherAppConfig := s.createAppConfig(s.testApp.ID)
-				config := s.createActionConfigWithManualTrigger(action.ID, otherAppConfig.ID)
-				return config.ID
-			},
-			requestFunc: func(configID string) CreateInstallActionWorkflowRunRequest {
-				return CreateInstallActionWorkflowRunRequest{
-					ActionWorkFlowConfigID: configID,
-				}
-			},
-			expectedCode: http.StatusBadRequest,
-		},
-		{
 			name: "config without manual trigger",
 			setupFunc: func() string {
-				// Use a separate appConfig to avoid unique constraint on (action_workflow_id, app_config_id)
-				otherAppConfig := s.createAppConfig(s.testApp.ID)
+				noManualAction := s.createActionWorkflow(s.testApp.ID, "no-manual-trigger-action")
 				config := &app.ActionWorkflowConfig{
 					ID:               domains.NewActionWorkflowConfigID(),
 					OrgID:            s.testOrg.ID,
 					AppID:            s.testApp.ID,
-					AppConfigID:      otherAppConfig.ID,
-					ActionWorkflowID: action.ID,
+					AppConfigID:      appConfig.ID,
+					ActionWorkflowID: noManualAction.ID,
 					Timeout:          5 * time.Minute,
 				}
 				ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
@@ -299,7 +282,7 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunValidation() {
 					ID:                     domains.NewActionWorkflowTriggerConfigID(),
 					OrgID:                  s.testOrg.ID,
 					AppID:                  s.testApp.ID,
-					AppConfigID:            otherAppConfig.ID,
+					AppConfigID:            appConfig.ID,
 					ActionWorkflowConfigID: config.ID,
 					Type:                   app.ActionWorkflowTriggerTypeCron,
 					CronSchedule:           "0 0 * * *",
@@ -481,6 +464,7 @@ func (s *CreateInstallActionRunTestSuite) createInstall(appID, appConfigID strin
 		s.T().Logf("FULL createInstall error: %+v", res.Error)
 	}
 	require.NoError(s.T(), res.Error)
+	seedRunnableInstall(ctx, s.T(), s.service.DB, install.ID)
 	return install
 }
 

@@ -25,6 +25,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -102,6 +103,7 @@ func (s *GeneralTemporalTestSuite) SetupTest() {
 
 	// Manually create the service with the mock temporal client
 	svc := &service{
+		RouteRegister:  apiPkg.RouteRegister{EndpointAudit: apiPkg.NewEndpointAudit()},
 		l:              s.deps.L,
 		v:              s.deps.V,
 		db:             s.deps.DB,
