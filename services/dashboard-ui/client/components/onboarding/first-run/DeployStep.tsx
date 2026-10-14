@@ -327,18 +327,20 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
       ? latestRun.status.status_human_description || 'The branch run ended in an error.'
       : undefined
 
-  // A branch-run config pins its builds, and an install provisioned before they
-  // finish fails, so wait for the run's builds step too. An app with no runs
-  // (configs synced from the CLI) has nothing to wait for.
-  const buildsStatus = runSteps?.find((step) => step.name === BUILDS_STEP)?.status?.status as string | undefined
-  const buildsReady = (!!runs && !runs.length) || (!!buildsStatus && BUILDS_DONE.includes(buildsStatus))
-
   const { data: activeConfig } = useQuery({
     queryKey: ['first-run-active-config', orgId, appId, branchId],
     queryFn: () => findActiveAppConfig({ orgId, appId, branchId }).then((c) => c ?? null),
     enabled: phase === 'waiting-config' && !!appId,
     refetchInterval: (query) => (query.state.data ? false : CONFIG_POLL_MS),
   })
+
+  // A branch-run config pins its builds, and an install provisioned before they
+  // finish fails, so wait for the run's builds step too. Only a config that no
+  // branch run produced (synced from the CLI) has no builds to wait for.
+  const buildsStatus = runSteps?.find((step) => step.name === BUILDS_STEP)?.status?.status as string | undefined
+  const buildsReady =
+    (!!buildsStatus && BUILDS_DONE.includes(buildsStatus)) ||
+    (!!runs && !runs.length && !!activeConfig && !activeConfig.app_branch_id)
 
   useEffect(() => {
     if (phase !== 'waiting-config' || !activeConfig?.id || !buildsReady || creating.current) return
