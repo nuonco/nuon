@@ -3,6 +3,7 @@ package diagnostics
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"net/url"
 	"path"
 	"sort"
@@ -11,7 +12,9 @@ import (
 
 	"github.com/invopop/jsonschema"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/schema"
+	"github.com/nuonco/nuon/pkg/config/validate"
 	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 )
 
@@ -295,7 +298,78 @@ func Diagnose(doc *tomlparser.TomlDocument, rootSchema *jsonschema.Schema) []Dia
 		}
 	}
 
+	diagnostics = append(diagnostics, duplicatePolicyNames(doc)...)
+
 	return diagnostics
+}
+
+func duplicatePolicyNames(doc *tomlparser.TomlDocument) []Diagnostic {
+	raw, ok := doc.Values["policy"].([]any)
+	if !ok {
+		return nil
+	}
+
+	var headers []tomlparser.Table
+	for _, table := range doc.Tables {
+		if len(table.Path) == 1 && table.Path[0] == "policy" {
+			headers = append(headers, table)
+		}
+	}
+
+	policies := make([]config.AppPolicy, 0, len(raw))
+	for _, item := range raw {
+		fields, _ := item.(map[string]any)
+		name, _ := fields["name"].(string)
+		contents, _ := fields["contents"].(string)
+		policies = append(policies, config.AppPolicy{Name: name, Contents: contents})
+	}
+	if err := validate.ValidateUniquePolicyNames(policies); err != nil {
+		return []Diagnostic{at(SeverityError, err.Error(), policyRange(doc, headers, duplicatePolicyIndex(policies)))}
+	}
+	return nil
+}
+
+func duplicatePolicyIndex(policies []config.AppPolicy) int {
+	seen := make(map[string]struct{}, len(policies))
+	for i, policy := range policies {
+		name := policy.Name
+		if name == "" {
+			policy.SetNameFromContents()
+			name = policy.Name
+		}
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			return i
+		}
+		seen[name] = struct{}{}
+	}
+	return len(policies) - 1
+}
+
+func policyRange(doc *tomlparser.TomlDocument, headers []tomlparser.Table, index int) tomlparser.Range {
+	start, end := 0, math.MaxInt
+	if index < len(headers) {
+		start = headers[index].Range.Start.Line
+		if index+1 < len(headers) {
+			end = headers[index+1].Range.Start.Line
+		}
+	}
+	for _, field := range []string{"name", "contents"} {
+		for _, key := range doc.Keys {
+			if key.Name != field || len(key.Path) < 2 || key.Path[0] != "policy" {
+				continue
+			}
+			if key.Range.Start.Line >= start && key.Range.Start.Line < end {
+				return key.Range
+			}
+		}
+	}
+	if index < len(headers) {
+		return headers[index].Range
+	}
+	return tomlparser.Range{}
 }
 
 // Helper functions
