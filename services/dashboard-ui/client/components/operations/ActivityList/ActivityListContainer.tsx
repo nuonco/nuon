@@ -67,7 +67,6 @@ export const ActivityListContainer = ({
   const { install } = useInstall()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const offset = Number(searchParams.get(OFFSET_PARAM) ?? 0)
   const since = searchParams.get(SINCE_PARAM)
   const filter: IActivityFilter = {
     search: searchParams.get(SEARCH_PARAM) ?? '',
@@ -89,16 +88,23 @@ export const ActivityListContainer = ({
   const status = activityStatusParameter(filter.status)
   const type = filter.type.size ? [...filter.type].join(',') : undefined
   const createdAtGte = useMemo(() => datePresetQueryParameter(since), [since])
-  const queryKey = [
+  const filterKey = JSON.stringify([
     'install-activity',
     org?.id,
     install?.id,
-    offset,
     status,
     type,
     createdAtGte,
     filter.search,
-  ]
+  ])
+  const [previousFilterKey, setPreviousFilterKey] = useState(filterKey)
+  const [cursors, setCursors] = useState<(string | undefined)[]>([undefined])
+  if (previousFilterKey !== filterKey) {
+    setPreviousFilterKey(filterKey)
+    setCursors([undefined])
+  }
+  const cursor = cursors.at(-1)
+  const offset = (cursors.length - 1) * PAGE_LIMIT
 
   const [search, setSearch] = useState(filter.search)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -114,13 +120,13 @@ export const ActivityListContainer = ({
     []
   )
 
-  const { data, isLoading, error } = useQuery({
-    queryKey,
+  const { data, isLoading, isPlaceholderData, error } = useQuery({
+    queryKey: [filterKey, cursor],
     queryFn: () =>
       getInstallActivity({
         orgId: org!.id,
         installId: install!.id,
-        offset,
+        cursor,
         limit: PAGE_LIMIT,
         status,
         type,
@@ -129,7 +135,7 @@ export const ActivityListContainer = ({
       }),
     enabled: !!org?.id && !!install?.id,
     placeholderData: keepPreviousData,
-    refetchInterval: shouldPoll ? pollInterval : false,
+    refetchInterval: shouldPoll && !cursor ? pollInterval : false,
   })
 
   const writeParam = (key: string, value?: string) => {
@@ -174,12 +180,20 @@ export const ActivityListContainer = ({
   return (
     <ActivityListPresenter
       activity={data?.activity ?? []}
-      isLoading={isLoading}
+      isLoading={isLoading || isPlaceholderData}
       error={(error as TAPIError | null) ?? null}
       pagination={{
-        hasNext: data?.has_more ?? false,
+        hasNext: !!data?.next_cursor && !!data?.has_more,
         offset,
         limit: PAGE_LIMIT,
+        onNext: () => {
+          if (data?.next_cursor && !isPlaceholderData)
+            setCursors((current) => [...current, data.next_cursor])
+        },
+        onPrevious: () =>
+          setCursors((current) =>
+            current.length > 1 ? current.slice(0, -1) : current
+          ),
       }}
       orgId={org?.id ?? ''}
       installId={install?.id ?? ''}

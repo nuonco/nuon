@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -6,7 +5,7 @@ import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdo
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
-import { Pagination, type IPagination } from '@/components/common/Pagination'
+import type { IPagination } from '@/components/common/Pagination'
 import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
@@ -14,9 +13,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
 import { useInstallLink } from '@/hooks/use-install-path'
-import { usePagination } from '@/hooks/use-pagination'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { PaginationProvider } from '@/providers/pagination-provider'
 import type { TAPIError, TInstallActivity, TInstallActivityType } from '@/types'
 import {
   WORKFLOW_DATE_LABELS,
@@ -46,8 +43,6 @@ const ACTIVITY_TYPE_ICON: Record<TInstallActivityType, TIconVariant> = {
   runbook_run: 'BookIcon',
   policy_check: 'ShieldCheckIcon',
 }
-
-const OFFSET_PARAM = 'activity_offset'
 
 interface IActivityCard {
   activity: TInstallActivity
@@ -196,7 +191,10 @@ export interface IActivityListPresenter {
   activity: TInstallActivity[]
   isLoading: boolean
   error?: TAPIError | null
-  pagination: Omit<IPagination, 'position'>
+  pagination: Omit<IPagination, 'position'> & {
+    onNext?: () => void
+    onPrevious?: () => void
+  }
   orgId: string
   installId: string
   search: string
@@ -208,7 +206,7 @@ export interface IActivityListPresenter {
   onClearFilters: () => void
 }
 
-const ActivityListBase = ({
+export const ActivityListPresenter = ({
   activity,
   isLoading,
   error,
@@ -224,11 +222,6 @@ const ActivityListBase = ({
   onClearFilters,
 }: IActivityListPresenter) => {
   const { addPanel } = useSurfaces()
-  const { isPaginating, setIsPaginating } = usePagination()
-
-  useEffect(() => {
-    setIsPaginating(false)
-  }, [activity, setIsPaginating])
 
   const hasActiveFilters =
     filter.search !== '' ||
@@ -289,7 +282,7 @@ const ActivityListBase = ({
         )}
       </div>
 
-      {isPaginating || (isLoading && activity.length === 0) ? (
+      {isLoading ? (
         <div className="flex flex-col gap-3">
           {Array.from({ length: pagination.limit ?? 5 }).map((_, index) => (
             <ActivityCardSkeleton key={index} />
@@ -335,15 +328,24 @@ const ActivityListBase = ({
         </div>
       )}
 
-      {pagination.hasNext || pagination.offset !== 0 ? (
-        <Pagination {...pagination} param={OFFSET_PARAM} />
+      {pagination.hasNext || (pagination.offset ?? 0) > 0 ? (
+        <div className="self-center flex items-center gap-3">
+          <Button
+            disabled={!pagination.offset || isLoading}
+            onClick={pagination.onPrevious}
+            title="previous"
+          >
+            <Icon variant="ArrowLeftIcon" />
+          </Button>
+          <Button
+            disabled={!pagination.hasNext || isLoading || !!error}
+            onClick={pagination.onNext}
+            title="next"
+          >
+            <Icon variant="ArrowRightIcon" />
+          </Button>
+        </div>
       ) : null}
     </div>
   )
 }
-
-export const ActivityListPresenter = (props: IActivityListPresenter) => (
-  <PaginationProvider>
-    <ActivityListBase {...props} />
-  </PaginationProvider>
-)
