@@ -72,14 +72,19 @@ func (s *AdminForgetAccountInstallsTestSuite) SetupSuite() {
 	s.SetDB(s.service.DB)
 }
 
+func (s *AdminForgetAccountInstallsTestSuite) SetupSubTest() {
+	tests.ClearQueueSignals(s.T(), s.service.DB)
+}
+
 func (s *AdminForgetAccountInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.InstallsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -94,9 +99,11 @@ func (s *AdminForgetAccountInstallsTestSuite) setupTestData() {
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	seedOrgQueues(s.T(), s.service.DB, s.testOrg)
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.service.DB, s.testInstall)
 }
 
 func (s *AdminForgetAccountInstallsTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -133,9 +140,11 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 				// Must set account context before creating entities with created_by_id
 				ctx, _ = s.service.Seeder.EnsureAccount(ctx, s.T())
 				ctx, org := s.service.Seeder.EnsureOrg(ctx, s.T())
+				seedOrgQueues(s.T(), s.service.DB, org)
 				testApp := s.service.Seeder.CreateApp(ctx, s.T())
 				s.service.Seeder.CreateAppConfig(ctx, s.T(), testApp.ID)
 				install := s.service.Seeder.CreateInstall(ctx, s.T(), testApp)
+				seedInstallQueues(s.T(), s.service.DB, install)
 
 				// Update the install's AWS account with specific IAMRoleARN
 				testAccountID := "123456789012"

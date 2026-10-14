@@ -11,7 +11,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -77,13 +76,7 @@ func (s *InstallsServiceTestSuite) seedBranchWithPinnedGroupAfterRun() branchWit
 }
 
 func (s *InstallsServiceTestSuite) createInstallWithSignalsQueue() *app.Install {
-	install := s.createTestInstall()
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.Queue{
-		OwnerID:   install.ID,
-		OwnerType: "installs",
-		Name:      helpers.InstallSignalsQueueName,
-	}).Error)
-	return install
+	return s.createTestInstall()
 }
 
 func (s *InstallsServiceTestSuite) activeBranchConnection(installID, branchID string) app.InstallAppBranchConnection {

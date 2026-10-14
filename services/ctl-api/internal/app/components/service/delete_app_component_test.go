@@ -24,7 +24,7 @@ func (s *ComponentsServiceTestSuite) TestDeleteAppComponentSuccess() {
 		// Create a component that is NOT in the current app config's ComponentIDs.
 		// The delete endpoint rejects components that are part of the active config,
 		// so deletion only works for components removed from the config.
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeTerraformModule)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodDelete, path, nil)
@@ -34,15 +34,12 @@ func (s *ComponentsServiceTestSuite) TestDeleteAppComponentSuccess() {
 		}
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
-		// Verify response is true
-		var response bool
-		err := json.Unmarshal(rr.Body.Bytes(), &response)
-		require.NoError(s.T(), err)
-		assert.True(s.T(), response)
+		var response app.EmptyResponse
+		require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
 
 		// Verify component status is set to delete_queued (not actually soft-deleted)
 		var dbComp app.Component
-		err = s.deps.DB.WithContext(s.ctx).First(&dbComp, "id = ?", comp.ID).Error
+		err := s.deps.DB.WithContext(s.ctx).First(&dbComp, "id = ?", comp.ID).Error
 		require.NoError(s.T(), err)
 		assert.Equal(s.T(), app.ComponentStatusDeleteQueued, dbComp.Status)
 		assert.Equal(s.T(), "delete has been queued and waiting", dbComp.StatusDescription)

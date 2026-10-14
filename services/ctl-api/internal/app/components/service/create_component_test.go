@@ -189,7 +189,7 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentValidationErrors() {
 
 func (s *ComponentsServiceTestSuite) TestCreateComponentDuplicateName() {
 	// Seed a component via seeder
-	existingComponent := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
+	existingComponent := s.createComponent(s.testApp.ID, app.ComponentTypeTerraformModule)
 
 	// Try to create component with same name for same app
 	reqBody := CreateComponentRequest{
@@ -211,8 +211,8 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentDuplicateName() {
 
 func (s *ComponentsServiceTestSuite) TestCreateComponentWithDependencies() {
 	// Seed two components
-	comp1 := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
-	comp2 := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
+	comp1 := s.createComponent(s.testApp.ID, app.ComponentTypeTerraformModule)
+	comp2 := s.createComponent(s.testApp.ID, app.ComponentTypeTerraformModule)
 
 	// Create a new component with dependencies
 	reqBody := CreateComponentRequest{
