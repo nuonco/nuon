@@ -18,6 +18,7 @@ RUN curl -sSL -o /tmp/s5cmd.tar.gz https://github.com/peak/s5cmd/releases/downlo
     rm /tmp/s5cmd.tar.gz
 
 FROM tools AS gocache-restore
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG AWS_REGION
 ARG GOCACHE_S3_URI
 ARG GOCACHE_S3_ETAG
@@ -52,13 +53,17 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
       WAIT=$(date +%s); \
       wait; \
       echo "wipe-wait: $(($(date +%s) - WAIT))s"; \
-      [ "$stream_status" -eq 0 ] && \
-      if [ "${GOCACHE_COMPACT}" = "true" ]; then \
-        find /go/pkg/build-cache -mindepth 2 -maxdepth 2 -exec touch -d "@0" {} +; \
-        touch /go/pkg/build-cache/.nuon-compact-since; \
-        date +%s > /go/pkg/build-cache/trim.txt; \
-      fi && \
-      echo "${GOCACHE_S3_ETAG}" > /go/pkg/build-cache/.nuon-s3-etag; \
+      if [ "$stream_status" -ne 0 ]; then \
+        echo "WARNING: Go cache restore failed, this build compiles cold"; \
+        stash /go/pkg/build-cache; stash /go/pkg/mod; wait; \
+      else \
+        if [ "${GOCACHE_COMPACT}" = "true" ]; then \
+          find /go/pkg/build-cache -mindepth 2 -maxdepth 2 -exec touch -d "@0" {} +; \
+          touch /go/pkg/build-cache/.nuon-compact-since; \
+          date +%s > /go/pkg/build-cache/trim.txt; \
+        fi && \
+        echo "${GOCACHE_S3_ETAG}" > /go/pkg/build-cache/.nuon-s3-etag; \
+      fi; \
     elif [ -z "${GOCACHE_S3_URI}" ]; then \
       echo "WARNING: no Go cache seed available, this build compiles cold"; \
     else \
@@ -106,6 +111,7 @@ FROM scratch AS gocache-status-output
 COPY --from=gocache-status /gocache-status /
 
 FROM tools AS gocache-s3
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG AWS_REGION
 ARG GOCACHE_S3_UPLOAD_URI
 ARG GOCACHE_COMPACT
