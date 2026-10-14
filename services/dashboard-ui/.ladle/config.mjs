@@ -5,7 +5,7 @@ export default {
   ],
   port: 61000,
   previewPort: 61001,
-  defaultStory: "playground--fleet--mixed-fleet",
+  defaultStory: "",
   storyOrder: (stories) => {
     const rank = (id) => {
       const root = id.split("--")[0]
