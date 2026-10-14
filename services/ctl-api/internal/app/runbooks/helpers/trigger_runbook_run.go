@@ -182,6 +182,9 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 			return errors.New("trigger dispatch already triggered a different runbook snapshot")
 		}
 		metadata := map[string]string{"install_runbook_id": installRunbook.ID, "install_runbook_run_id": run.ID, "runbook_name": installRunbook.Runbook.Name, "runbook_config_id": req.RunbookConfigID, "install_id": installRunbook.InstallID}
+		if run.CreatedByID != "" {
+			metadata[app.WorkflowMetadataKeyTriggeredByID] = run.CreatedByID
+		}
 		if run.InstallWorkflowID == nil {
 			if err := h.requireLiveInstallRunner(ctx, installRunbook.InstallID); err != nil {
 				return err

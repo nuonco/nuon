@@ -206,7 +206,7 @@ func (s *service) prepareInstallActionWorkflowRun(ctx context.Context, installID
 		}
 		accountID = account.ID
 	}
-	workflowMetadata["triggerred_by_id"] = accountID
+	workflowMetadata[app.WorkflowMetadataKeyTriggeredByID] = accountID
 
 	for k, v := range prependRunEnvVars {
 		workflowMetadata[k] = v
