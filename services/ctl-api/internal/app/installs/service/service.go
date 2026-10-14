@@ -356,6 +356,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			// NOTE(JM): the following endpoints should be removed after workflows/independent runners are rolled out
 			install.POST("/admin-reprovision", s.ReprovisionInstall)
 			install.POST("/admin-forget", s.AdminForgetInstall)
+			install.POST("/admin-unforget", s.AdminUnforgetInstall)
 			install.POST("/admin-update-sandbox", s.AdminUpdateSandbox)
 		}
 	}
@@ -365,6 +366,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	{
 		orgs.POST("/admin-forget-installs", s.ForgetOrgInstalls)
 		orgs.GET("/admin-get-installs", s.AdminGetOrgInstalls)
+		orgs.GET("/admin-get-forgotten-installs", s.AdminGetForgottenInstalls)
 	}
 
 	// install stack version runs

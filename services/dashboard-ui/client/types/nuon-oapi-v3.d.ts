@@ -1997,9 +1997,9 @@ export interface paths {
      *
      * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `resource`, `search`, `created_at_gte`, and `created_at_lte`.
      *
-     * `state=active` returns deployments whose workflow status is pending, queued, in progress, retrying, awaiting approval, approved, or failed pending retry. `state=finished` returns every other status. When `state=active`, `total` counts all matching active deployments, ignoring `limit` and `cursor`.
+     * `state=active` returns deployments whose workflow status is pending, queued, in progress, retrying, awaiting approval, or approved. `state=finished` returns every other status. When `state=active`, `total` counts all matching active deployments, ignoring `limit` and `cursor`.
      *
-     * `sort=attention` orders deployments awaiting approval first, failed pending retry second, then all others. Each group is ordered newest first. The default order is newest first.
+     * `sort=attention` orders running deployments first, then deployments awaiting approval, then the rest. Each group is ordered newest first. The default order is newest first.
      *
      * When `has_more` is true, `next_cursor` is an opaque cursor for the next page. Pass it back as `cursor` with the same `state` and `sort`. A cursor cannot be combined with a non-zero `page` or `offset`. An invalid `state`, `sort`, or `cursor` returns 400.
      */
@@ -2413,6 +2413,23 @@ export interface paths {
   "/v1/installs/{install_id}/telemetry": {
     /** Get an install's telemetry settings */
     get: operations["GetInstallTelemetrySettings"];
+  };
+  "/v1/installs/{install_id}/telemetry/collector": {
+    /**
+     * Get an install's telemetry collector service account
+     * @description Returns managed identity metadata, never credentials.
+     */
+    get: operations["GetInstallTelemetryCollector"];
+    /**
+     * Ensure an install's telemetry collector service account
+     * @description Creates or reconciles a dedicated managed identity with access only to this install's telemetry endpoints. Returns the same account on subsequent calls. Does not enable telemetry or issue credentials; use POST /v1/service-accounts/{account_id}/tokens to create a bootstrap token.
+     */
+    post: operations["EnsureInstallTelemetryCollector"];
+    /**
+     * Remove an install's telemetry collector service account
+     * @description Revokes the collector's API tokens and grants, deletes its private role, and removes the identity. Does not change install telemetry settings or the runner's identity. A missing collector is success.
+     */
+    delete: operations["DeleteInstallTelemetryCollector"];
   };
   "/v1/installs/{install_id}/updates": {
     /**
@@ -5795,6 +5812,19 @@ export interface components {
       updated_at?: string;
       write_token?: string;
     };
+    "app.ManagedServiceAccount": {
+      account_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      instance_key?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      purpose?: components["schemas"]["app.ManagedServiceAccountPurpose"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector";
     "app.Notebook": {
       cell_count?: number;
       cells?: components["schemas"]["app.NotebookCell"][];
@@ -6100,7 +6130,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack" | "telemetry_collector";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -6306,7 +6336,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack" | "telemetry_collector";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -25079,9 +25109,9 @@ export interface operations {
    *
    * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `resource`, `search`, `created_at_gte`, and `created_at_lte`.
    *
-   * `state=active` returns deployments whose workflow status is pending, queued, in progress, retrying, awaiting approval, approved, or failed pending retry. `state=finished` returns every other status. When `state=active`, `total` counts all matching active deployments, ignoring `limit` and `cursor`.
+   * `state=active` returns deployments whose workflow status is pending, queued, in progress, retrying, awaiting approval, or approved. `state=finished` returns every other status. When `state=active`, `total` counts all matching active deployments, ignoring `limit` and `cursor`.
    *
-   * `sort=attention` orders deployments awaiting approval first, failed pending retry second, then all others. Each group is ordered newest first. The default order is newest first.
+   * `sort=attention` orders running deployments first, then deployments awaiting approval, then the rest. Each group is ordered newest first. The default order is newest first.
    *
    * When `has_more` is true, `next_cursor` is an opaque cursor for the next page. Pass it back as `cursor` with the same `state` and `sort`. A cursor cannot be combined with a non-zero `page` or `offset`. An invalid `state`, `sort`, or `cursor` returns 400.
    */
@@ -25098,7 +25128,7 @@ export interface operations {
         cursor?: string;
         /** @description filter by lifecycle state */
         state?: "active" | "finished";
-        /** @description sort order; attention puts approvals and failed retries first */
+        /** @description sort order; attention puts running deployments first */
         sort?: "attention";
         /** @description filter by deployment type (comma-separated) */
         type?: string;
@@ -28368,6 +28398,136 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["service.InstallTelemetrySettings"];
         };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get an install's telemetry collector service account
+   * @description Returns managed identity metadata, never credentials.
+   */
+  GetInstallTelemetryCollector: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ManagedServiceAccount"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Ensure an install's telemetry collector service account
+   * @description Creates or reconciles a dedicated managed identity with access only to this install's telemetry endpoints. Returns the same account on subsequent calls. Does not enable telemetry or issue credentials; use POST /v1/service-accounts/{account_id}/tokens to create a bootstrap token.
+   */
+  EnsureInstallTelemetryCollector: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ManagedServiceAccount"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Remove an install's telemetry collector service account
+   * @description Revokes the collector's API tokens and grants, deletes its private role, and removes the identity. Does not change install telemetry settings or the runner's identity. A missing collector is success.
+   */
+  DeleteInstallTelemetryCollector: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
       };
       /** @description Unauthorized */
       401: {

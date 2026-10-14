@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react'
+import { CompositeError } from '@/components/common/CompositeError'
+import { Link } from '@/components/common/Link'
 import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
@@ -30,10 +32,24 @@ export const InstallGroupPanelBody = ({
   const counted = withQueuedInstalls(group.installs, group.plannedCount)
   const statuses = [...new Set(group.installs.map((install) => install.status))]
   const installs = filterInstalls(group.installs, { query: search, status })
+  const failedInstallId = (
+    group.error?.data as unknown as { install_id?: string } | undefined
+  )?.install_id
+  const failedInstallHref = group.installs.find(
+    (install) => install.id === failedInstallId
+  )?.workflowHref
 
   return (
     <div className="flex flex-col gap-6">
       {approval}
+      {group.error ? (
+        <div className="flex flex-col gap-2">
+          <CompositeError error={group.error} />
+          {failedInstallHref ? (
+            <Link href={failedInstallHref}>View install workflow</Link>
+          ) : null}
+        </div>
+      ) : null}
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Status status={group.status} />
