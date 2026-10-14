@@ -7,6 +7,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RunRunbookButton } from '@/components/runbooks/RunRunbook'
 import type { TInstallRunbook } from '@/lib/ctl-api/installs/runbooks'
+import { RunbookTriggerType } from '../RunbookTriggerType'
 import { runbookStepCount, type TRunbookRow } from './RunbooksTable'
 
 export function parseInstallRunbooksToTableData(
@@ -72,6 +73,21 @@ export function parseInstallRunbooksToTableData(
         <Icon variant="MinusIcon" />
       ),
       steps: runbookStepCount(runbook),
+      triggers: (() => {
+        const triggers = runbook?.configs?.[0]?.triggers
+        if (!triggers?.length) return <Icon variant="MinusIcon" />
+        return (
+          <div className="flex flex-wrap gap-2">
+            {triggers.map((trigger) => (
+              <RunbookTriggerType
+                key={trigger.id}
+                triggerType={trigger.type}
+                cronSchedule={trigger.cron_schedule}
+              />
+            ))}
+          </div>
+        )
+      })(),
       lastRun: latestRun ? (
         <Text flex nowrap className="gap-2">
           <Icon variant="CalendarBlankIcon" />

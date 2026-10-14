@@ -533,6 +533,10 @@ func NewRunbookConfigID() string {
 	return shortid.NewNanoID("rbc")
 }
 
+func NewRunbookTriggerConfigID() string {
+	return shortid.NewNanoID("rbt")
+}
+
 func NewRunbookStepConfigID() string {
 	return shortid.NewNanoID("rbs")
 }
