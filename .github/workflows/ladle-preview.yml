@@ -1,0 +1,67 @@
+---
+name: ladle preview
+"on":
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ladle-preview-dispatch-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  dispatch:
+    name: ladle preview
+    runs-on: ubuntu-latest
+    # Fork PRs cannot read PRIVATE_REPO_DEPLOY_TOKEN; nuonbot's merge-main
+    # updates would redeploy an unchanged Ladle site.
+    if: >-
+      github.event_name == 'push' || (
+        github.event.pull_request.draft != true &&
+        github.triggering_actor != 'nuonbot' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: ci-triggers.yml
+          sparse-checkout-cone-mode: false
+
+      - name: read ci triggers file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: ci_triggers
+        with:
+          config: ci-triggers.yml
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: ${{ steps.ci_triggers.outputs['services'] }}
+
+      - name: Trigger the mono ladle preview workflow
+        if: steps.filter.outputs['dashboard-ui'] == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
+        run: |
+          run_url="$(gh workflow run ladle-preview.yml \
+            --repo nuonco/mono \
+            --field "nuon_ref=${{ github.event.pull_request.head.sha || github.sha }}" \
+            --field "pr_number=${{ github.event.pull_request.number }}" \
+            --field "source_run_id=${{ github.run_id }}")"
+          run_id="${run_url##*/}"
+          [[ "$run_id" =~ ^[0-9]+$ ]]
+          echo "[mono ladle preview run](https://github.com/nuonco/mono/actions/runs/${run_id})" >> "$GITHUB_STEP_SUMMARY"
