@@ -265,7 +265,7 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
     enabled: !!installId,
     refetchInterval: STACK_POLL_MS,
   })
-  const phase = phaseFromStatus(stackStatus(stack), launched)
+  const stackPhase = phaseFromStatus(stackStatus(stack), launched)
 
   // The create response has no workflow ID, so find the install's provision workflow.
   const { data: workflow } = useQuery({
@@ -275,9 +275,15 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
         (res) => res.data?.[0] ?? null
       ),
     enabled: !!installId,
-    refetchInterval: (query) => (query.state.data ? false : STACK_POLL_MS),
+    refetchInterval: stackPhase === 'generating' ? STACK_POLL_MS : false,
   })
   const workflowId = workflow?.id ?? ''
+  // A provision that fails before it creates the stack never moves the stack's
+  // status, so read the failure from the workflow.
+  const provisionStatus = workflow?.status?.status as string | undefined
+  const provisionFailed =
+    stackPhase === 'generating' && !!provisionStatus && ['error', 'failed', 'cancelled'].includes(provisionStatus)
+  const phase: TStackPhase = provisionFailed ? 'error' : stackPhase
   const { data: steps } = useQuery({
     queryKey: ['first-run-provision-steps', orgId, workflowId],
     queryFn: () => getWorkflowSteps({ orgId, workflowId }),
@@ -329,7 +335,11 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
       region={region}
       phase={phase}
       quickLinkUrl={version?.quick_link_url}
-      errorDescription={version?.composite_status?.status_human_description}
+      errorDescription={
+        provisionFailed
+          ? workflow?.status?.status_human_description || 'The deploy workflow stopped.'
+          : version?.composite_status?.status_human_description
+      }
       details={details}
       progress={progress}
       progressSince={progressSince}
