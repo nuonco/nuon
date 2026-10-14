@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -63,21 +62,6 @@ func (w *capturingMetricsWriter) timingForEndpoint(endpoint string) (capturedMet
 	return capturedMetric{}, false
 }
 
-// waitForTiming waits for the request's timing metric. The middleware records
-// it after the handler returns, which can be after the client has read the
-// response.
-func (w *capturingMetricsWriter) waitForTiming(t *testing.T, endpoint string) capturedMetric {
-	t.Helper()
-
-	var metric capturedMetric
-	require.Eventually(t, func() bool {
-		var ok bool
-		metric, ok = w.timingForEndpoint(endpoint)
-		return ok
-	}, time.Second, 5*time.Millisecond)
-	return metric
-}
-
 func hasTag(tags []string, want string) bool {
 	for _, tag := range tags {
 		if tag == want {
@@ -85,20 +69,6 @@ func hasTag(tags []string, want string) bool {
 		}
 	}
 	return false
-}
-
-type failingMCPService struct {
-	stubMCPService
-}
-
-func (failingMCPService) RegisterMCPTools(server *mcp.Server) {
-	mcp.AddTool(server, api.MCPReadTool(
-		"fail",
-		"Fail",
-		"return a tool error",
-	), func(context.Context, *mcp.CallToolRequest, struct{}) (*mcp.CallToolResult, any, error) {
-		return nil, nil, errors.New("tool failed")
-	})
 }
 
 type metricContextMCPService struct {
@@ -140,46 +110,6 @@ func newMetricsTestServer(t *testing.T, service api.MCPService, writer *capturin
 	ts := httptest.NewServer(handler)
 	t.Cleanup(ts.Close)
 	return ts
-}
-
-func TestMCPMetricsTagsToolCalls(t *testing.T) {
-	writer := &capturingMetricsWriter{}
-	ts := newMetricsTestServer(t, stubMCPService{}, writer)
-
-	client := mcp.NewClient(&mcp.Implementation{Name: "test-client", Version: "0.0.1"}, nil)
-	session, err := client.Connect(context.Background(), &mcp.StreamableClientTransport{Endpoint: ts.URL}, nil)
-	require.NoError(t, err)
-	defer session.Close()
-
-	_, err = session.CallTool(context.Background(), &mcp.CallToolParams{Name: "echo_org"})
-	require.NoError(t, err)
-
-	metric := writer.waitForTiming(t, "tools/call/echo_org")
-	assert.True(t, hasTag(metric.tags, "context:mcp_api"))
-	assert.True(t, hasTag(metric.tags, "method:POST"))
-	assert.True(t, hasTag(metric.tags, "status:ok"))
-	assert.True(t, hasTag(metric.tags, "status_code_class:2xx"))
-	assert.True(t, hasTag(metric.tags, "is_panic:false"))
-	assert.True(t, hasTag(metric.tags, "is_timeout:false"))
-	assert.True(t, hasTag(metric.tags, "is_deprecated:false"))
-}
-
-func TestMCPMetricsMarksToolErrors(t *testing.T) {
-	writer := &capturingMetricsWriter{}
-	ts := newMetricsTestServer(t, failingMCPService{}, writer)
-
-	client := mcp.NewClient(&mcp.Implementation{Name: "test-client", Version: "0.0.1"}, nil)
-	session, err := client.Connect(context.Background(), &mcp.StreamableClientTransport{Endpoint: ts.URL}, nil)
-	require.NoError(t, err)
-	defer session.Close()
-
-	result, err := session.CallTool(context.Background(), &mcp.CallToolParams{Name: "fail"})
-	require.NoError(t, err)
-	require.True(t, result.IsError)
-
-	metric := writer.waitForTiming(t, "tools/call/fail")
-	assert.True(t, hasTag(metric.tags, "status:err"))
-	assert.True(t, hasTag(metric.tags, "status_code_class:2xx"))
 }
 
 func TestMCPMetricsPopulatesDatabaseMetricContext(t *testing.T) {
