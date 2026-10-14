@@ -23,6 +23,9 @@ func NewPublicAPI(params Params) (*API, error) {
 	if err := api.registerMiddlewares(); err != nil {
 		return nil, errors.Wrap(err, "unable to register middlewares")
 	}
+	if params.InstallAuth != nil {
+		api.handler.Use(params.InstallAuth.Handler())
+	}
 
 	if err := api.registerServices(); err != nil {
 		return nil, errors.Wrap(err, "unable to register middlewares")
