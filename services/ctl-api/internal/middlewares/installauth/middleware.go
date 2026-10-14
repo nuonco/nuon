@@ -2,7 +2,6 @@ package installauth
 
 import (
 	"errors"
-	"net/http"
 	"strings"
 	"sync"
 
@@ -50,7 +49,7 @@ func (m *Middleware) Name() string {
 
 func (m *Middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if !modifiesInstall(ctx.Request.Method) || cctx.IsGlobal(ctx) || cctx.IsPublic(ctx) {
+		if cctx.IsGlobal(ctx) || cctx.IsPublic(ctx) {
 			ctx.Next()
 			return
 		}
@@ -81,7 +80,7 @@ func (m *Middleware) Handler() gin.HandlerFunc {
 				ctx.Abort()
 				return
 			}
-			m.l.Info("install modification denied",
+			m.l.Info("install access denied",
 				zap.String("install_id", installID),
 				zap.String("org_id", org.ID),
 				zap.Error(err),
@@ -127,15 +126,6 @@ func (m *Middleware) remember(installID, orgID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.orgs[installID] = orgID
-}
-
-func modifiesInstall(method string) bool {
-	switch method {
-	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
-		return true
-	default:
-		return false
-	}
 }
 
 func installIDFromRequest(ctx *gin.Context) string {
