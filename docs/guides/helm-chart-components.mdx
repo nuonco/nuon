@@ -43,6 +43,16 @@ If you include the Helm chart source in the app repo, you must push the entire r
 **The Helm release is named after `chart_name`, not after the component.** Two components that share a `chart_name` and a `namespace` therefore resolve to the same Helm release, and whichever deploys last overwrites the other's resources. Give each component its own `chart_name` (or its own `namespace`) when you deploy the same chart more than once. A `chart_name` must still be a valid DNS label of 5-62 characters, so short names like `api` are rejected at sync time.
 </Warning>
 
+## Release storage drivers
+
+Helm stores each release revision as an object in the release namespace. `storage_driver` picks the object type:
+`configmap` (the default when unset) or `secret`.
+
+The role that deploys the component needs `get`, `list`, `create`, `update`, and `delete` on that object type in the
+release namespace. Installs with cluster-wide roles already have this. If your maintenance or deploy roles are scoped
+to namespaces, grant access to `secrets` in every namespace where a component uses `storage_driver = "secret"`.
+Without it, the deploy fails at plan time when Helm tries to list the release history.
+
 ## Multiple ways to use Helm with components
 
 You can configure Helm components to use either a Helm repository (using a `helm_repo` block), a public repo (using a `public_repo` block), or a private GitHub repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
