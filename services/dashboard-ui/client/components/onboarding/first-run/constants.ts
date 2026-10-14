@@ -400,3 +400,10 @@ export const STACK_RENDER_LABEL: Record<TCloud, string> = {
   gcp: 'Render the Terraform stack',
   azure: 'Render the Bicep template',
 }
+
+// Normal waits on app.nuon.co are about 2 minutes for builds and under a minute
+// for the stack link, so these leave room before calling a wait slow.
+export const DEPLOY_SLOW_MS = 10 * 60_000
+export const STACK_SLOW_MS = 5 * 60_000
+export const DEPLOY_HELP_MESSAGE = 'My first install is stuck while Nuon gets the app config ready.'
+export const STACK_HELP_MESSAGE = 'My first install is stuck while Nuon generates the install stack.'

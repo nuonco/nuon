@@ -50,9 +50,50 @@ export const WaitingForConfig = () => (
 WaitingForConfig.meta = { fullBleed: true }
 
 export const SyncFailed = () => (
-  <Harness phase="waiting-config" syncError="workflow stopped: no such file or directory" />
+  <Harness
+    phase="waiting-config"
+    syncError="workflow stopped: no such file or directory"
+    onRetry={() => {}}
+    onGetHelp={() => {}}
+  />
 )
 SyncFailed.meta = { fullBleed: true }
+
+export const ExampleSyncFailed = () => (
+  <Harness
+    path="example"
+    phase="waiting-config"
+    syncError="Component builds failed."
+    onRetry={() => {}}
+    onGetHelp={() => {}}
+    progressSince={Date.now() - 4 * 60_000}
+    progress={[
+      { label: 'Start a branch run on main', state: 'done' },
+      { label: 'Fetch the latest commit from nuonco/kitchen-sink', state: 'done' },
+      { label: 'Read and validate the app config', state: 'done' },
+      { label: 'Build the components and sandbox', state: 'error' },
+      { label: 'Create the install', state: 'pending' },
+    ]}
+  />
+)
+ExampleSyncFailed.meta = { fullBleed: true }
+
+export const SlowWait = () => (
+  <Harness
+    path="example"
+    phase="waiting-config"
+    onGetHelp={() => {}}
+    progressSince={Date.now() - 11 * 60_000}
+    progress={[
+      { label: 'Start a branch run on main', state: 'done' },
+      { label: 'Fetch the latest commit from nuonco/kitchen-sink', state: 'done' },
+      { label: 'Read and validate the app config', state: 'done' },
+      { label: 'Build the components and sandbox', state: 'active' },
+      { label: 'Create the install', state: 'pending' },
+    ]}
+  />
+)
+SlowWait.meta = { fullBleed: true }
 
 export const MissingInputDefaults = () => <Harness cloud="azure" missingInputs={['db_password', 'api_domain']} />
 MissingInputDefaults.meta = { fullBleed: true }

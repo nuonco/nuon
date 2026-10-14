@@ -57,3 +57,8 @@ export const GenerationFailed = () => (
   <Harness phase="error" errorDescription="Stack template rendering failed: missing input vpc_id." />
 )
 GenerationFailed.meta = { fullBleed: true }
+
+export const AwsProvisionFailed = () => (
+  <Harness phase="error" errorDescription="error while generating steps" />
+)
+AwsProvisionFailed.meta = { fullBleed: true }

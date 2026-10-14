@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useForm } from '@tanstack/react-form'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Code } from '@/components/common/Code'
 import { Icon } from '@/components/common/Icon'
@@ -11,9 +12,10 @@ import { FormToggle } from '@/components/common/form/FormToggle'
 import { Text } from '@/components/common/Text'
 import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
+import { openSupportChat } from '@/lib/pylon-chat'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
-import { getWorkflowSteps } from '@/lib'
+import { getWorkflowSteps, triggerBranchRun } from '@/lib'
 import type { TAPIError } from '@/types'
 import {
   createTestInstall,
@@ -24,6 +26,8 @@ import {
 } from './api'
 import {
   CLOUD_SANDBOX,
+  DEPLOY_HELP_MESSAGE,
+  DEPLOY_SLOW_MS,
   KITCHEN_SINK_VARIANTS,
   KITCHEN_SINK_APP,
   KITCHEN_SINK_LABEL,
@@ -152,6 +156,9 @@ export interface IDeployStepView {
   syncError?: string
   progress?: IWaitItem[]
   progressSince?: number
+  retrying?: boolean
+  onRetry?: () => void
+  onGetHelp?: () => void
   error?: string
   onCreate: (values: DeployValues) => void
   onBack?: () => void
@@ -172,6 +179,9 @@ export const DeployStepView = ({
   syncError,
   progress,
   progressSince,
+  retrying,
+  onRetry,
+  onGetHelp,
   error,
   onCreate,
   onBack,
@@ -252,7 +262,13 @@ export const DeployStepView = ({
 
       {busy && progress ? (
         <>
-          <WaitProgress title="Getting your app config ready" items={progress} since={progressSince} />
+          <WaitProgress
+            title="Getting your app config ready"
+            items={progress}
+            since={progressSince}
+            slowAfterMs={DEPLOY_SLOW_MS}
+            onGetHelp={onGetHelp}
+          />
           <ByocReferences />
         </>
       ) : null}
@@ -269,11 +285,33 @@ export const DeployStepView = ({
       ) : null}
       {phase === 'waiting-config' && syncError ? (
         <Banner theme="warn">
-          <div className="flex flex-col gap-1">
-            <Text weight="strong">The last sync of your app config failed</Text>
-            <Text variant="subtext">
-              {syncError} Push a fix to {TRACKED_GIT_BRANCH}; this page keeps waiting for it.
-            </Text>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <Text weight="strong">
+                {path === 'own'
+                  ? 'The last sync of your app config failed'
+                  : `The ${KITCHEN_SINK_LABEL} app config did not sync`}
+              </Text>
+              <Text variant="subtext">
+                {syncError}{' '}
+                {path === 'own'
+                  ? `Push a fix to ${TRACKED_GIT_BRANCH} and this page picks it up, or run the sync again.`
+                  : 'Nothing in the example app needs fixing on your side. Run the sync again, or get help.'}
+              </Text>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {onRetry ? (
+                <Button variant="secondary" size="sm" onClick={onRetry} disabled={retrying}>
+                  {retrying ? <Icon variant="Loading" size={14} /> : <Icon variant="ArrowClockwiseIcon" size={14} />}{' '}
+                  Run the sync again
+                </Button>
+              ) : null}
+              {onGetHelp ? (
+                <Button variant="ghost" size="sm" onClick={onGetHelp}>
+                  <Icon variant="ChatCircleIcon" size={14} /> Get help
+                </Button>
+              ) : null}
+            </div>
           </div>
         </Banner>
       ) : null}
@@ -306,6 +344,8 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
   const [missingInputs, setMissingInputs] = useState<string[]>([])
   const [error, setError] = useState<string>()
   const creating = useRef(false)
+  const queryClient = useQueryClient()
+  const [retrying, setRetrying] = useState(false)
   const choice = useRef<DeployValues>({ region, autoApprove: true })
 
   const { data: runs } = useQuery({
@@ -331,7 +371,8 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
     queryKey: ['first-run-active-config', orgId, appId, branchId],
     queryFn: () => findActiveAppConfig({ orgId, appId, branchId }).then((c) => c ?? null),
     enabled: phase === 'waiting-config' && !!appId,
-    refetchInterval: (query) => (query.state.data ? false : CONFIG_POLL_MS),
+    // Keep polling: a new run makes a newer config the active one.
+    refetchInterval: CONFIG_POLL_MS,
   })
 
   // A branch-run config pins its builds, and an install provisioned before they
@@ -414,6 +455,32 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
   )
   const progressSince = latestRun?.created_at ? Date.parse(latestRun.created_at) : undefined
 
+  // A forced run rebuilds every component, so a failed build gets a fresh attempt.
+  const retrySync = async () => {
+    setRetrying(true)
+    setError(undefined)
+    try {
+      await triggerBranchRun({ orgId, appId, branchId, request: { force: true } })
+      trackEvent({ event: 'branch_run_trigger', status: 'ok', user, props: { appId, branchId, source: 'onboarding' } })
+      await queryClient.invalidateQueries({ queryKey: ['first-run-branch-runs', orgId, appId, branchId] })
+    } catch (err) {
+      trackEvent({
+        event: 'branch_run_trigger',
+        status: 'error',
+        user,
+        props: { appId, branchId, source: 'onboarding', err: (err as TAPIError)?.error },
+      })
+      setError((err as TAPIError)?.description || 'Unable to run the sync again.')
+    } finally {
+      setRetrying(false)
+    }
+  }
+
+  const getHelp = () => {
+    openSupportChat(DEPLOY_HELP_MESSAGE)
+    trackEvent({ event: 'support_chat_open', status: 'ok', user, props: { source: 'onboarding_deploy' } })
+  }
+
   // Changing a setting after the install exists drops it from the flow, so
   // the button creates a new install with the new settings.
   const clearInstall = () => {
@@ -452,6 +519,9 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
       syncError={syncError}
       progress={progress}
       progressSince={progressSince}
+      retrying={retrying}
+      onRetry={appId && branchId ? () => void retrySync() : undefined}
+      onGetHelp={getHelp}
       error={error}
       onCreate={onCreate}
       onBack={onGoBack}
