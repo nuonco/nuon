@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/types/state"
