@@ -27,7 +27,7 @@ export function WizardStepView() {
   if (!visibleStep) return null
 
   const StepComponent = visibleStep.component
-  const canGoBack = currentStepIndex > 0
+  const canGoBack = currentStepIndex > 0 && !visibleStep.lockPrevious
 
   return (
     <div

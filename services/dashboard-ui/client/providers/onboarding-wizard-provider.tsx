@@ -16,6 +16,7 @@ export interface IWizardStepDef<TData = unknown> {
   navLabel?: string
   description?: ReactNode
   hideTitle?: boolean
+  lockPrevious?: boolean
   component: ComponentType<IWizardStepComponentProps>
   data?: TData
 }
