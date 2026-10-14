@@ -69,6 +69,8 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		Stack:      stack,
 		AppCfg:     appCfg,
 		Run:        run,
+
+		LegacyAzureRoleFallback: p.legacyAzureRoleFallbackEnabled(ctx, l),
 		ResolveState: func() (*state.State, map[string]any, error) {
 			st, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 				InstallID: install.ID,
@@ -161,6 +163,8 @@ type RenderSandboxRunPlanInput struct {
 	// at that position; install-free callers can return precomputed state.
 	ResolveState  func() (*state.State, map[string]any, error)
 	ResolveSource func() (*plantypes.GitSource, *plantypes.OCISource, error)
+
+	LegacyAzureRoleFallback bool
 }
 
 // RenderSandboxRunPlan renders a sandbox run plan from already-loaded inputs
@@ -269,7 +273,7 @@ func (p *Planner) RenderSandboxRunPlan(l *zap.Logger, in *RenderSandboxRunPlanIn
 	}
 
 	l.Info("getting auth with role selection")
-	cloudAuth, roleSelection, err := p.AuthForSandbox(l, stack.InstallStackOutputs, run, appCfg, stack, state)
+	cloudAuth, roleSelection, err := p.AuthForSandbox(l, stack.InstallStackOutputs, run, appCfg, stack, state, in.LegacyAzureRoleFallback)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get sandbox run auth")
 	}
@@ -479,8 +483,9 @@ func (p *Planner) getRoleForSandbox(
 	run *app.InstallSandboxRun,
 	stack *app.InstallStack,
 	installState *state.State,
+	legacyAzureRoleFallback bool,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	return operationroles.GetRoleForSandbox(l, appCfg, run, stack, installState)
+	return operationroles.GetRoleForSandbox(l, appCfg, run, stack, installState, legacyAzureRoleFallback)
 }
 
 func (p *Planner) getAuthForSandbox(
@@ -496,7 +501,7 @@ func (p *Planner) getAuthForSandbox(
 		return nil, nil, err
 	}
 
-	return p.AuthForSandbox(l, outputs, run, appCfg, stack, installState)
+	return p.AuthForSandbox(l, outputs, run, appCfg, stack, installState, p.legacyAzureRoleFallbackEnabled(ctx, l))
 }
 
 // AuthForSandbox is the pure core of getAuthForSandbox, usable outside a
@@ -508,8 +513,9 @@ func (p *Planner) AuthForSandbox(
 	appCfg *app.AppConfig,
 	stack *app.InstallStack,
 	installState *state.State,
+	legacyAzureRoleFallback bool,
 ) (*CloudAuth, *operationroles.RoleSelection, error) {
-	roleSelection, operation, err := p.getRoleForSandbox(l, appCfg, run, stack, installState)
+	roleSelection, operation, err := p.getRoleForSandbox(l, appCfg, run, stack, installState, legacyAzureRoleFallback)
 	if err != nil {
 		return nil, nil, err
 	}

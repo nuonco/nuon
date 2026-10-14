@@ -31,6 +31,8 @@ func TestResolveRoleARN(t *testing.T) {
 		expectedARN   string
 		expectError   bool
 		errorContains string
+
+		legacyAzureRoleFallback bool
 	}{
 		{
 			name:          "nil stack outputs",
@@ -296,6 +298,27 @@ func TestResolveRoleARN(t *testing.T) {
 			installState: installState,
 			expectedARN:  "",
 			expectError:  false,
+
+			legacyAzureRoleFallback: true,
+		},
+		{
+			name:     "legacy azure stack without operation identities errors when fallback is disabled",
+			roleName: "maintenance",
+			appCfg: &app.AppConfig{
+				PermissionsConfig: app.AppPermissionsConfig{
+					ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+					MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+					DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+				},
+			},
+			stackOutputs: &app.InstallStackOutputs{
+				Data:              pgtype.Hstore{"resource_group_id": generics.ToPtr("rg")},
+				AzureStackOutputs: &app.AzureStackOutputs{},
+			},
+			installState:  installState,
+			expectedARN:   "",
+			expectError:   true,
+			errorContains: "role maintenance not found in install stack outputs",
 		},
 		{
 			name:     "azure stack with disabled operation identity",
@@ -318,12 +341,14 @@ func TestResolveRoleARN(t *testing.T) {
 			expectedARN:   "",
 			expectError:   true,
 			errorContains: "role maintenance not found in install stack outputs",
+
+			legacyAzureRoleFallback: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			arn, err := resolveRoleARN(tt.roleName, tt.appCfg, tt.stackOutputs, tt.installState)
+			arn, err := resolveRoleARN(tt.roleName, tt.appCfg, tt.stackOutputs, tt.installState, tt.legacyAzureRoleFallback)
 
 			if tt.expectError {
 				if err == nil {

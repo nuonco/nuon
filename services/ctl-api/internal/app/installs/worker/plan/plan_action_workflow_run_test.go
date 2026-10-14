@@ -448,6 +448,7 @@ func TestGetRoleForAction(t *testing.T) {
 				stack,
 				installState,
 				nil,
+				false,
 			)
 
 			if tt.expectedError != "" {

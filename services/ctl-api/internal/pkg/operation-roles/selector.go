@@ -41,6 +41,8 @@ type SelectionContext struct {
 
 	// Install state for rendering role names with templating
 	InstallState *state.State
+
+	LegacyAzureRoleFallback bool
 }
 
 // RoleSelectionSource represents where a role selection came from
@@ -105,6 +107,7 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		ctx.AppConfig,
 		ctx.StackOutputs,
 		ctx.InstallState,
+		ctx.LegacyAzureRoleFallback,
 	)
 	if err != nil {
 		return nil, &SelectionError{
@@ -132,6 +135,7 @@ func SelectDefaultRole(ctx *SelectionContext) (*RoleSelection, error) {
 		ctx.AppConfig,
 		ctx.StackOutputs,
 		ctx.InstallState,
+		ctx.LegacyAzureRoleFallback,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve role ARN for %q: %w", renderedDefaultRole, err)
@@ -380,6 +384,7 @@ func resolveRoleARN(
 	appCfg *app.AppConfig,
 	installStackOutputs *app.InstallStackOutputs,
 	installState *state.State,
+	legacyAzureRoleFallback bool,
 ) (string, error) {
 	if installStackOutputs == nil {
 		return "", fmt.Errorf("stack outputs are required")
@@ -404,7 +409,7 @@ func resolveRoleARN(
 	roleARN, ok := availableRoles[renderedRoleName]
 	// Legacy Azure stacks have no per-operation identities; an empty ID makes the
 	// operation run as the runner's ambient identity.
-	if ok && roleARN == "" && installStackOutputs.AzureStackOutputs != nil &&
+	if legacyAzureRoleFallback && ok && roleARN == "" && installStackOutputs.AzureStackOutputs != nil &&
 		!installStackOutputs.HasAzureOperationIdentities() {
 		return "", nil
 	}
