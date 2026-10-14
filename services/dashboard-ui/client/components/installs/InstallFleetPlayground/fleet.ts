@@ -12,6 +12,13 @@ export type TFleetHealth =
   | 'progressing'
   | 'unknown'
 
+export type TFleetResource = {
+  id: string
+  name: string
+  kind: string
+  health?: TFleetHealth
+}
+
 export type TFleetInstall = {
   id: string
   name: string
@@ -24,6 +31,7 @@ export type TFleetInstall = {
   componentStatus?: string
   commitsBehind?: number
   configDriftCount: number
+  resources?: TFleetResource[]
 }
 
 export type TFleetRunnerFilter = 'active' | 'inactive'
@@ -74,6 +82,23 @@ export const trackingLabel = (install: TFleetInstall) => {
   if (install.commitsBehind === 0) return 'Up to date'
   return 'Not reported'
 }
+
+export const installResources = (install: TFleetInstall): TFleetResource[] => {
+  if (install.resources?.length) return install.resources
+  const health = install.health
+  return [
+    { id: `${install.id}-stack`, name: 'stack', kind: 'Stack', health },
+    { id: `${install.id}-sandbox`, name: 'sandbox', kind: 'Sandbox', health },
+    { id: `${install.id}-workload`, name: 'api', kind: 'Deployment', health },
+  ]
+}
+
+export const layoutInstallResources = (resources: TFleetResource[]) =>
+  resources.map((resource, index) => ({
+    resource,
+    x: 0,
+    y: index * 112,
+  }))
 
 export const labelPairs = (install: TFleetInstall) =>
   Object.entries(install.labels)

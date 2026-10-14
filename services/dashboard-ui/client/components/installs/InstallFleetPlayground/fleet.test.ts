@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   groupFleetInstalls,
+  installResources,
   labelOptions,
   layoutFleet,
   matchesSearch,
@@ -120,6 +121,23 @@ describe('fleet filters', () => {
     expect(matchesSearch(prod, 'us-east-1')).toBe(true)
     expect(matchesSearch(quiet, 'no runner')).toBe(true)
     expect(matchesSearch(prod, 'staging')).toBe(false)
+  })
+
+  test('uses an install resource list, or a generated stack, sandbox, and workload', () => {
+    expect(
+      installResources(
+        install({
+          id: 'custom',
+          name: 'custom',
+          resources: [{ id: 'pod', name: 'api', kind: 'Pod' }],
+        })
+      ).map((resource) => resource.kind)
+    ).toEqual(['Pod'])
+    expect(
+      installResources(install({ id: 'plain', name: 'plain' })).map(
+        (resource) => resource.kind
+      )
+    ).toEqual(['Stack', 'Sandbox', 'Deployment'])
   })
 
   test('collects label options from the fleet', () => {

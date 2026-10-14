@@ -1,25 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Node, NodeProps } from '@xyflow/react'
 import { GraphCanvas } from '@/components/branches/graph/GraphCanvas'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Icon } from '@/components/common/Icon'
 import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import { SectionHeader } from '@/components/layout/SectionHeader'
+import { useSurfaces } from '@/hooks/use-surfaces'
+import { Modal } from '@/components/surfaces/Modal'
 import { humanize } from '@/utils/string-utils'
 import { cn } from '@/utils/classnames'
 import {
   groupFleetInstalls,
+  installResources,
   labelOptions,
   labelPairs,
   layoutFleet,
+  layoutInstallResources,
   matchesSearch,
   passesFilters,
   trackingLabel,
+  type TFleetResource,
   type TFleetInstall,
   type TFleetRunnerFilter,
 } from './fleet'
@@ -148,48 +152,98 @@ const nodeTypes = {
 }
 const noEdges: [] = []
 
-const Detail = ({
+type TResourceNode = Node<TFleetResource>
+
+const resourceAccent = (health?: TFleetInstall['health']) =>
+  health === 'healthy'
+    ? 'bg-green-500/70 dark:bg-green-500/60'
+    : health === 'unhealthy'
+      ? 'bg-red-500/70 dark:bg-red-500/60'
+      : health === 'progressing' || health === 'degraded'
+        ? 'bg-orange-500/70 dark:bg-orange-500/60'
+        : undefined
+
+const ResourceNode = ({ data }: NodeProps<TResourceNode>) => {
+  const accentClassName = resourceAccent(data.health)
+  return (
+    <div className="relative flex h-24 w-64 flex-col justify-center gap-1 rounded-lg border bg-elevation-2 p-3">
+      {accentClassName ? (
+        <span
+          role="img"
+          aria-label={`Health ${data.health}`}
+          className={cn(
+            'absolute inset-x-3 top-0 h-1 rounded-b',
+            accentClassName
+          )}
+        />
+      ) : null}
+      <Text family="mono" variant="label" theme="neutral">
+        {data.kind}
+      </Text>
+      <Text family="mono" weight="strong" nowrap className="truncate">
+        {data.name}
+      </Text>
+      <Text variant="subtext" theme="neutral">
+        {data.health ? humanize(data.health) : 'Not reported'}
+      </Text>
+    </div>
+  )
+}
+
+const resourceNodeTypes = { resource: ResourceNode }
+
+const trackingValue = (install: TFleetInstall) =>
+  install.commitsBehind === undefined
+    ? 'Not reported'
+    : install.commitsBehind === 0
+      ? 'Up to date'
+      : install.commitsBehind === 1
+        ? '1 commit behind'
+        : `${install.commitsBehind} commits behind`
+
+const driftValue = (install: TFleetInstall) =>
+  install.configDriftCount === 0
+    ? 'None'
+    : install.configDriftCount === 1
+      ? '1 drifted'
+      : `${install.configDriftCount} drifted`
+
+const InstallModal = ({
   install,
   thisBranch,
-  onClose,
 }: {
   install: TFleetInstall
   thisBranch: boolean
-  onClose: () => void
 }) => {
+  const resources = installResources(install)
   const labels = labelPairs(install)
-  const behind =
-    install.commitsBehind === undefined
-      ? 'Not reported'
-      : install.commitsBehind === 0
-        ? 'Up to date'
-        : install.commitsBehind === 1
-          ? '1 commit behind'
-          : `${install.commitsBehind} commits behind`
+  const laidOut = layoutInstallResources(resources)
+  const nodes: Node[] = laidOut.map(({ resource, x, y }) => ({
+    id: resource.id,
+    type: 'resource',
+    position: { x, y },
+    width: 256,
+    height: 96,
+    draggable: false,
+    focusable: false,
+    data: resource,
+  }))
   return (
-    <aside
-      className="flex w-80 shrink-0 flex-col gap-4 overflow-y-auto rounded-lg border bg-elevation-2 p-4"
-      aria-label={`Install ${install.name}`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-col gap-1">
-          <Text family="mono" weight="strong" className="truncate">
-            {install.name}
-          </Text>
+    <div className="flex min-h-[28rem] flex-col gap-4 md:flex-row">
+      <div className="flex w-full shrink-0 flex-col gap-3 md:w-72">
+        <div className="flex flex-wrap items-center gap-2">
           <Text family="mono" variant="subtext" theme="neutral">
             {install.branchName || 'Not tracking'}
           </Text>
+          {thisBranch ? (
+            <Badge size="sm" theme="brand">
+              This branch
+            </Badge>
+          ) : null}
         </div>
-        <Button variant="icon" aria-label="Close" onClick={onClose}>
-          <Icon variant="XIcon" size={14} />
-        </Button>
-      </div>
-      {thisBranch ? (
-        <Badge size="sm" theme="brand" className="w-fit">
-          This branch
-        </Badge>
-      ) : null}
-      <div className="flex flex-col gap-2">
+        <Text variant="label" theme="neutral">
+          Statuses
+        </Text>
         <Field
           label="Health"
           value={install.health ? humanize(install.health) : 'Not reported'}
@@ -209,19 +263,8 @@ const Detail = ({
             install.hasRunner ? humanize(install.runnerStatus) : 'No runner'
           }
         />
-        <Field label="Tracking" value={behind} />
-        <Field
-          label="Config drift"
-          value={
-            install.configDriftCount === 0
-              ? 'None'
-              : install.configDriftCount === 1
-                ? '1 drifted'
-                : `${install.configDriftCount} drifted`
-          }
-        />
-      </div>
-      <div className="flex flex-col gap-2">
+        <Field label="Tracking" value={trackingValue(install)} />
+        <Field label="Config drift" value={driftValue(install)} />
         <Text variant="label" theme="neutral">
           Labels
         </Text>
@@ -239,7 +282,22 @@ const Detail = ({
           </Text>
         )}
       </div>
-    </aside>
+      <div className="min-w-0 flex-1">
+        <Text weight="strong" className="mb-2">
+          Resources
+        </Text>
+        <GraphCanvas
+          nodes={nodes}
+          edges={noEdges}
+          nodeTypes={resourceNodeTypes}
+          height={Math.max(280, resources.length * 112 + 24)}
+          minZoom={0.6}
+          maxZoom={1.5}
+          fitPadding={0.16}
+          alignStart
+        />
+      </div>
+    </div>
   )
 }
 
@@ -255,6 +313,8 @@ export const InstallFleetPlayground = ({
   const [needsUpdate, setNeedsUpdate] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string>()
+  const { addModal, removeModal } = useSurfaces()
+  const modalId = useRef<string | undefined>(undefined)
 
   const filters = { labels, runner, needsUpdate }
   const visible = installs.filter((install) => passesFilters(install, filters))
@@ -272,7 +332,6 @@ export const InstallFleetPlayground = ({
       : []
   )
   const visibleKey = visible.map((install) => install.id).join('\0')
-  const selected = visible.find((install) => install.id === selectedId)
   const options = labelOptions(installs)
   const sections = groupFleetInstalls(visible, currentBranch)
   const layout = layoutFleet(sections)
@@ -280,8 +339,30 @@ export const InstallFleetPlayground = ({
   useEffect(() => {
     if (selectedId && !visibleKey.split('\0').includes(selectedId)) {
       setSelectedId(undefined)
+      if (modalId.current) {
+        removeModal(modalId.current)
+        modalId.current = undefined
+      }
     }
-  }, [selectedId, visibleKey])
+  }, [selectedId, visibleKey, removeModal])
+
+  const openInstall = (install: TFleetInstall) => {
+    if (modalId.current) removeModal(modalId.current)
+    setSelectedId(install.id)
+    modalId.current = addModal(
+      <Modal
+        size="full"
+        showFooter={false}
+        heading={install.name}
+        onClose={() => setSelectedId(undefined)}
+      >
+        <InstallModal
+          install={install}
+          thisBranch={!!currentBranch && install.branchName === currentBranch}
+        />
+      </Modal>
+    )
+  }
 
   const clearFilters = () => {
     setLabels(new Set())
@@ -318,7 +399,7 @@ export const InstallFleetPlayground = ({
           selected: selectedId === card.install.id,
           thisBranch:
             !!currentBranch && card.install.branchName === currentBranch,
-          onInspect: () => setSelectedId(card.install.id),
+          onInspect: () => openInstall(card.install),
         },
       })
     }
@@ -418,31 +499,20 @@ export const InstallFleetPlayground = ({
           }
         />
       ) : (
-        <div className="flex min-h-0 flex-1 gap-4">
-          <div className="min-w-0 flex-1">
-            <GraphCanvas
-              nodes={nodes}
-              edges={noEdges}
-              nodeTypes={nodeTypes}
-              height={720}
-              minZoom={0.35}
-              maxZoom={1.5}
-              fitPadding={0.12}
-              style={{ background: 'var(--elevation-1)' }}
-            />
-            <Text variant="label" theme="neutral" className="mt-2">
-              Pan or zoom the canvas. Select an install to inspect it.
-            </Text>
-          </div>
-          {selected ? (
-            <Detail
-              install={selected}
-              thisBranch={
-                !!currentBranch && selected.branchName === currentBranch
-              }
-              onClose={() => setSelectedId(undefined)}
-            />
-          ) : null}
+        <div className="min-w-0 flex-1">
+          <GraphCanvas
+            nodes={nodes}
+            edges={noEdges}
+            nodeTypes={nodeTypes}
+            height={720}
+            minZoom={0.35}
+            maxZoom={1.5}
+            fitPadding={0.12}
+            style={{ background: 'var(--elevation-1)' }}
+          />
+          <Text variant="label" theme="neutral" className="mt-2">
+            Pan or zoom the canvas. Select an install to inspect it.
+          </Text>
         </div>
       )}
     </div>

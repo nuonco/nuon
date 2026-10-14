@@ -26,6 +26,17 @@ export const mixedFleet: TFleetInstall[] = [
     componentStatus: 'active',
     commitsBehind: 3,
     configDriftCount: 0,
+    resources: [
+      { id: 'eu-ingress', name: 'api', kind: 'Ingress', health: 'healthy' },
+      { id: 'eu-service', name: 'api', kind: 'Service', health: 'healthy' },
+      {
+        id: 'eu-deploy',
+        name: 'api',
+        kind: 'Deployment',
+        health: 'degraded',
+      },
+      { id: 'eu-pod', name: 'api-7f9c', kind: 'Pod', health: 'unhealthy' },
+    ],
   },
   {
     id: 'inst-labs',
