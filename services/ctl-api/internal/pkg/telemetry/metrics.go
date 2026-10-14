@@ -14,6 +14,9 @@ import (
 	"go.uber.org/fx"
 )
 
+const CardinalityLimit = 2000
+const ObservableGaugeCardinalityLimit = 4096
+
 func NewMeterProvider(lc fx.Lifecycle, cfg *Config) (metric.MeterProvider, error) {
 	if cfg.Endpoint == "" {
 		return noop.NewMeterProvider(), nil
@@ -34,8 +37,14 @@ func NewMeterProvider(lc fx.Lifecycle, cfg *Config) (metric.MeterProvider, error
 
 	provider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(cfg.Resource),
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter)),
-		sdkmetric.WithCardinalityLimit(2000),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter,
+			sdkmetric.WithCardinalityLimitSelector(func(kind sdkmetric.InstrumentKind) (int, bool) {
+				if kind == sdkmetric.InstrumentKindObservableGauge {
+					return ObservableGaugeCardinalityLimit, false
+				}
+				return 0, true
+			}))),
+		sdkmetric.WithCardinalityLimit(CardinalityLimit),
 		sdkmetric.WithExemplarFilter(exemplar.AlwaysOffFilter),
 	)
 	lc.Append(fx.Hook{

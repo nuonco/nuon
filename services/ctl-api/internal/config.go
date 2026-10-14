@@ -222,6 +222,8 @@ type Config struct {
 	OTELExporterOTLPEndpoint string   `config:"otel_exporter_otlp_endpoint"`
 	OTELExporterOTLPProtocol string   `config:"otel_exporter_otlp_protocol"`
 
+	StateTelemetryEnabled bool `config:"state_telemetry_enabled"`
+
 	ServiceName       string `config:"service_name" validate:"required"`
 	ServiceType       string `config:"service_type" validate:"required"`
 	ServiceDeployment string `config:"service_deployment"`
