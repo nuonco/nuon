@@ -160,7 +160,8 @@ contents   = "./policies/require-resource-limits.rego"
 | `type` | Yes | Policy type: `container_image`, `helm_chart`, `kubernetes_manifest`, `terraform_module`, `kubernetes_cluster`, or `sandbox` |
 | `engine` | No | Policy engine: `opa` or `kyverno` (default) |
 | `name` | No | Human-readable name. If not specified, derived from the filename |
-| `components` | Yes | List of component names this policy applies to. Use `["*"]` for all components of the specified type |
+| `components` | No | Names of the components this policy applies to. Omit to apply to all components of the specified type. See [Scoping policies to components](/concepts/policies#scoping-policies-to-components) |
+| `apply_on_teardown` | No | Set to `false` to skip this policy when a component is torn down or the sandbox is deprovisioned. Defaults to `true`. See [Skipping policies during teardown](/concepts/policies#skipping-policies-during-teardown) |
 | `contents` | Yes | Inline policy content or path to policy file (e.g., `./policies/require-encryption.rego`) |
 
 The `contents` field supports multiple source types. Relative paths are resolved from the `policies/` directory:
