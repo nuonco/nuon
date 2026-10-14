@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	pkgdiff "github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 )
 
 func preload(db *gorm.DB) *gorm.DB {
@@ -592,8 +593,18 @@ func LatestActiveSandboxBuild(ctx context.Context, db *gorm.DB, appConfigID stri
 	if appConfigID == "" {
 		return nil, nil
 	}
+	var cfg app.AppConfig
+	if err := db.WithContext(ctx).Where(app.AppConfig{ID: appConfigID}).First(&cfg).Error; err != nil {
+		return nil, err
+	}
+	if cfg.BuildsPinned {
+		return buildselection.Sandbox(ctx, db, &cfg)
+	}
 	var build app.AppSandboxBuild
 	err := db.WithContext(ctx).
+		Preload("VCSConnectionCommit").
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
+		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Where(app.AppSandboxBuild{
 			AppConfigID: appConfigID,
 			Status:      app.AppSandboxBuildStatusActive,
@@ -641,6 +652,7 @@ func appSandboxConfigByAppConfigID(ctx context.Context, db *gorm.DB, appConfigID
 func latestActiveSandboxBuildForApp(ctx context.Context, db *gorm.DB, appID string) (*app.AppSandboxBuild, error) {
 	var build app.AppSandboxBuild
 	err := db.WithContext(ctx).
+		Preload("VCSConnectionCommit").
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").

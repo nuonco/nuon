@@ -64,6 +64,10 @@ type AppConfig struct {
 	Checksum   string `json:"checksum,omitzero" temporaljson:"checksum,omitzero,omitempty"`
 	CLIVersion string `json:"cli_version,omitzero" gorm:"default null" temporaljson:"cli_version,omitzero,omitempty"`
 
+	BuildsPinned   bool                `json:"-" gorm:"not null;default:false" temporaljson:"builds_pinned,omitempty"`
+	BuildsLocked   bool                `json:"-" gorm:"not null;default:false" temporaljson:"builds_locked,omitempty"`
+	SandboxBuildID generics.NullString `json:"-" gorm:"type:text" temporaljson:"sandbox_build_id,omitempty"`
+
 	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
 	ActionIDs    pq.StringArray `gorm:"type:text[]" json:"action_ids,omitzero" temporaljson:"action_ids,omitzero,omitempty" swaggertype:"array,string"`
 	RunbookIDs   pq.StringArray `gorm:"type:text[]" json:"runbook_ids,omitzero" temporaljson:"runbook_ids,omitzero,omitempty" swaggertype:"array,string"`

@@ -93,6 +93,14 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		}
 	}
 
+	var appConfig app.AppConfig
+	if err := db.WithContext(ctx).Where(app.AppConfig{ID: appConfigID}).First(&appConfig).Error; err != nil {
+		return err
+	}
+	if appConfig.BuildsLocked {
+		return fmt.Errorf("app config %s build selections are locked", appConfigID)
+	}
+
 	updates := app.Component{
 		Name:    comp.Name,
 		VarName: comp.VarName,
@@ -197,11 +205,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 			ConfigID: ccc.ID,
 			Checksum: comp.Checksum,
 		})
-	} else {
-		// Branch sync always creates a fresh CCC. Pin a reusable Active build
-		// when checksum is unchanged so CheckBuildNeeded can skip. External
-		// images still pre-create a queued build when nothing is reusable so
-		// the builds step can adopt it.
+	} else if !appConfig.BuildsPinned {
 		found, reusableBuildID, err := reusableActiveBuildID(ctx, db, apiComp.ID, ccc)
 		if err != nil {
 			return err

@@ -69,8 +69,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
+	if appConfig.BuildsLocked {
+		return nil
+	}
 
-	if workflow.GetVersion(ctx, reuseSandboxBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if workflow.GetVersion(ctx, reuseSandboxBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
+		(!run.Force || workflow.GetVersion(ctx, "sandbox-build-respect-force-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion) {
 		reused, reuseErr := activities.AwaitFindReusableSandboxBuild(ctx, &activities.FindReusableSandboxBuildInput{
 			AppID:       appConfig.AppID,
 			AppConfigID: run.AppConfigID,

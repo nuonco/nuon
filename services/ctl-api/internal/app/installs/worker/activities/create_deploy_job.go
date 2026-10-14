@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -24,6 +25,9 @@ func (a *Activities) CreateDeployJob(ctx context.Context, req *CreateDeployJobRe
 	deploy, err := a.getDeploy(ctx, req.DeployID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get deploy: %w", err)
+	}
+	if err := buildselection.ValidateDeploy(ctx, a.db, deploy); err != nil {
+		return nil, err
 	}
 
 	ctx = cctx.SetAccountIDContext(ctx, deploy.CreatedByID)
