@@ -96,6 +96,9 @@ func (a *Activities) PublishBundle(ctx context.Context, req *PublishBundleReques
 	if err := appbundles.RewriteEnvelopeForBundle(ctx, a.db, envelope, pins); err != nil {
 		return fmt.Errorf("rewrite plan envelope to pinned bundle members: %w", err)
 	}
+	if err := bundleActionImages(ctx, envelope, &logical, &roots, provenance["build_ids"].(map[string]string)); err != nil {
+		return fmt.Errorf("package action images: %w", err)
+	}
 	logical.Runbooks, err = canonicalRunbookDefinitions(ctx, a.db, cfg, envelope)
 	if err != nil {
 		return fmt.Errorf("canonicalize runbooks: %w", err)
@@ -382,10 +385,6 @@ func (a *Activities) runnerInputs(ctx context.Context, target bundle.Target, run
 		return nil, nil, fmt.Errorf("qualify runner image %s:%s: %w", runtime.RunnerImageURL, runtime.RunnerImageTag, err)
 	}
 	imageArtifact := bundleArtifact(imageDesc)
-	if imageDesc.Platform != nil {
-		imageArtifact.PlatformOS = imageDesc.Platform.OS
-		imageArtifact.PlatformArchitecture = imageDesc.Platform.Architecture
-	}
 	runner.Image = &bundle.Image{Name: "runner", Repository: runtime.RunnerImageURL + ":" + runtime.RunnerImageTag, Artifact: imageArtifact}
 	roots = append(roots, bundle.Root{Descriptor: imageDesc, Source: imageRepo})
 	return roots, runner, nil
@@ -396,28 +395,7 @@ func resolvePlatformImage(ctx context.Context, repo registry.Repository, tag str
 	if err != nil {
 		return ocispec.Descriptor{}, err
 	}
-	if desc.MediaType != ocispec.MediaTypeImageIndex && desc.MediaType != "application/vnd.docker.distribution.manifest.list.v2+json" {
-		return desc, nil
-	}
-	rc, err := repo.Fetch(ctx, desc)
-	if err != nil {
-		return ocispec.Descriptor{}, err
-	}
-	defer rc.Close()
-	body, err := io.ReadAll(io.LimitReader(rc, maxFetchedAsset))
-	if err != nil {
-		return ocispec.Descriptor{}, err
-	}
-	var index ocispec.Index
-	if err := json.Unmarshal(body, &index); err != nil {
-		return ocispec.Descriptor{}, fmt.Errorf("decode image index: %w", err)
-	}
-	for _, m := range index.Manifests {
-		if m.Platform != nil && m.Platform.OS == target.OS && m.Platform.Architecture == target.Architecture {
-			return m, nil
-		}
-	}
-	return ocispec.Descriptor{}, fmt.Errorf("image index has no %s/%s manifest", target.OS, target.Architecture)
+	return selectPlatformImage(ctx, repo, desc, target)
 }
 
 func validateRunnerImageBundleSchema(ctx context.Context, repo registry.Repository, imageDesc ocispec.Descriptor, schemaVersion int) error {
@@ -548,7 +526,7 @@ func canonicalRunbookDefinitions(ctx context.Context, db *gorm.DB, cfg *app.AppC
 	}
 	var configs []app.RunbookConfig
 	if err := db.WithContext(ctx).
-		Preload("Runbook").Preload("Steps").Preload("Inputs").
+		Preload("Runbook").Preload("Triggers").Preload("Steps").Preload("Inputs").
 		Where(app.RunbookConfig{OrgID: cfg.OrgID, AppConfigID: cfg.ID}).Find(&configs).Error; err != nil {
 		return nil, err
 	}

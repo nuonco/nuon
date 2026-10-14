@@ -20,6 +20,10 @@ type CheckNoopPlanRequest struct {
 // @temporal-gen-v2 activity
 // @max-retries 5
 func (a *Activities) CheckNoopPlan(ctx context.Context, req *CheckNoopPlanRequest) (bool, error) {
+	if sandbox, err := a.isSandboxModeJob(ctx, req.StepTargetID); err == nil && sandbox {
+		return false, nil
+	}
+
 	plan, err := a.getApprovalPlan(ctx, req.StepTargetID)
 	if err != nil {
 		a.recordDriftPlanEvaluationForTarget(ctx, req.WorkflowType, req.InstallID, req.ComponentID, false, "load_plan", err)
@@ -29,6 +33,24 @@ func (a *Activities) CheckNoopPlan(ctx context.Context, req *CheckNoopPlanReques
 	isNoop, err := plan.IsNoopPlan()
 	a.recordDriftPlanEvaluationForTarget(ctx, req.WorkflowType, req.InstallID, req.ComponentID, isNoop, "evaluate_plan", err)
 	return isNoop, err
+}
+
+func (a *Activities) isSandboxModeJob(ctx context.Context, stepTargetID string) (bool, error) {
+	runnerJob, err := a.getRunnerJob(ctx, &GetRunnerJobRequest{RunnerJobOwnerID: stepTargetID})
+	if err != nil {
+		return false, err
+	}
+
+	var runner app.Runner
+	res := a.db.WithContext(ctx).
+		Preload("RunnerGroup.Settings").
+		Where(app.Runner{ID: runnerJob.RunnerID}).
+		First(&runner)
+	if res.Error != nil {
+		return false, res.Error
+	}
+
+	return runner.RunnerGroup.Settings.SandboxMode, nil
 }
 
 func (a *Activities) getApprovalPlan(ctx context.Context, stepTargetID string) (*ApprovalPlan, error) {

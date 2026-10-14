@@ -340,6 +340,8 @@ type ClientService interface {
 
 	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
 
+	DeleteInstallTelemetryCollector(params *DeleteInstallTelemetryCollectorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallTelemetryCollectorNoContent, error)
+
 	DeleteNotebook(params *DeleteNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookNoContent, error)
 
 	DeleteNotebookCell(params *DeleteNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookCellNoContent, error)
@@ -367,6 +369,8 @@ type ClientService interface {
 	DeprovisionInstall(params *DeprovisionInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallCreated, error)
 
 	DeprovisionInstallSandbox(params *DeprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallSandboxCreated, error)
+
+	EnsureInstallTelemetryCollector(params *EnsureInstallTelemetryCollectorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EnsureInstallTelemetryCollectorOK, error)
 
 	ExchangeOIDCToken(params *ExchangeOIDCTokenParams, opts ...ClientOption) (*ExchangeOIDCTokenOK, error)
 
@@ -708,6 +712,8 @@ type ClientService interface {
 
 	GetInstallStatus(params *GetInstallStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStatusOK, error)
 
+	GetInstallTelemetryCollector(params *GetInstallTelemetryCollectorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetryCollectorOK, error)
+
 	GetInstallTelemetrySettings(params *GetInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetrySettingsOK, error)
 
 	GetInstallUpdates(params *GetInstallUpdatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallUpdatesOK, error)
@@ -905,6 +911,8 @@ type ClientService interface {
 	ListRunnerJobs(params *ListRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRunnerJobsOK, error)
 
 	ListRunnerProcesses(params *ListRunnerProcessesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRunnerProcessesOK, error)
+
+	ListServiceAccountPurposes(params *ListServiceAccountPurposesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountPurposesOK, error)
 
 	ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountsOK, error)
 
@@ -6289,6 +6297,52 @@ func (a *Client) DeleteInstall(params *DeleteInstallParams, authInfo runtime.Cli
 }
 
 /*
+DeleteInstallTelemetryCollector removes an install s telemetry collector service account
+
+Revokes the collector's API tokens and grants, deletes its private role, and removes the identity. Does not change install telemetry settings or the runner's identity. A missing collector is success.
+*/
+func (a *Client) DeleteInstallTelemetryCollector(params *DeleteInstallTelemetryCollectorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallTelemetryCollectorNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteInstallTelemetryCollectorParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteInstallTelemetryCollector",
+		Method:             "DELETE",
+		PathPattern:        "/v1/installs/{install_id}/telemetry/collector",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteInstallTelemetryCollectorReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteInstallTelemetryCollectorNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteInstallTelemetryCollector: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 DeleteNotebook deletes a notebook
 */
 func (a *Client) DeleteNotebook(params *DeleteNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookNoContent, error) {
@@ -6928,6 +6982,52 @@ func (a *Client) DeprovisionInstallSandbox(params *DeprovisionInstallSandboxPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeprovisionInstallSandbox: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+EnsureInstallTelemetryCollector ensures an install s telemetry collector service account
+
+Creates or reconciles a dedicated managed identity with access only to this install's telemetry endpoints. Returns the same account on subsequent calls. Does not enable telemetry or issue credentials; use POST /v1/service-accounts/{account_id}/tokens to create a bootstrap token.
+*/
+func (a *Client) EnsureInstallTelemetryCollector(params *EnsureInstallTelemetryCollectorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EnsureInstallTelemetryCollectorOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewEnsureInstallTelemetryCollectorParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "EnsureInstallTelemetryCollector",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/telemetry/collector",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &EnsureInstallTelemetryCollectorReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*EnsureInstallTelemetryCollectorOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for EnsureInstallTelemetryCollector: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14899,6 +14999,52 @@ func (a *Client) GetInstallStatus(params *GetInstallStatusParams, authInfo runti
 }
 
 /*
+GetInstallTelemetryCollector gets an install s telemetry collector service account
+
+Returns managed identity metadata, never credentials.
+*/
+func (a *Client) GetInstallTelemetryCollector(params *GetInstallTelemetryCollectorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetryCollectorOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTelemetryCollectorParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTelemetryCollector",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/telemetry/collector",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTelemetryCollectorReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTelemetryCollectorOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTelemetryCollector: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallTelemetrySettings gets an install s telemetry settings
 */
 func (a *Client) GetInstallTelemetrySettings(params *GetInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetrySettingsOK, error) {
@@ -19433,11 +19579,69 @@ func (a *Client) ListRunnerProcesses(params *ListRunnerProcessesParams, authInfo
 }
 
 /*
+	ListServiceAccountPurposes lists the purposes of the current org s service accounts
+
+	List the distinct purposes of the current organization's service accounts,
+
+sorted alphabetically. Use these values with the `purpose` filter on
+`GET /v1/service-accounts`.
+*/
+func (a *Client) ListServiceAccountPurposes(params *ListServiceAccountPurposesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountPurposesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListServiceAccountPurposesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListServiceAccountPurposes",
+		Method:             "GET",
+		PathPattern:        "/v1/service-accounts/purposes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListServiceAccountPurposesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListServiceAccountPurposesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListServiceAccountPurposes: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 	ListServiceAccounts lists service accounts for the current org
 
 	List the service accounts that belong to the current organization, along with
 
 their roles. Supports offset-based pagination.
+
+Each account reports whether it is a system account, its purposes, and, for
+accounts managed by a resource, the owning resource.
+
+  - `management` filters to `user` accounts, `system` accounts, or `all`. When set,
+    it replaces `include_runners` and `include_stacks`.
+  - `purpose` filters to accounts with that exact purpose.
+  - `q` matches a case-insensitive substring of the account name, email, or ID, or
+    of the owning resource's name or ID.
 */
 func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountsOK, error) {
 	// NOTE: parameters are not validated before sending

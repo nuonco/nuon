@@ -70,6 +70,7 @@ func CanonicalActionDefinition(actionConfig app.ActionWorkflowConfig, connection
 		componentNames[connection.ComponentID] = connection.ComponentName
 	}
 	definition := bundle.ActionDefinition{
+		Image:                 actionConfig.Image,
 		TimeoutNanos:          actionConfig.Timeout.Nanoseconds(),
 		Role:                  actionConfig.Role,
 		BreakGlassRoleARN:     actionConfig.BreakGlassRoleARN.ValueString(),
@@ -137,6 +138,14 @@ func CanonicalRunbookDefinition(runbookConfig app.RunbookConfig, actionConfigs [
 	if runbookConfig.Readme != "" {
 		definition.ReadmeDigest = digest.FromString(runbookConfig.Readme).String()
 	}
+	for _, trigger := range runbookConfig.Triggers {
+		if trigger.Type == app.RunbookTriggerTypeManual && trigger.CronSchedule == "" && len(runbookConfig.Triggers) == 1 {
+			continue
+		}
+		definition.Triggers = append(definition.Triggers, bundle.RunbookTriggerDefinition{
+			Type: string(trigger.Type), CronSchedule: trigger.CronSchedule,
+		})
+	}
 	for _, input := range runbookConfig.Inputs {
 		defaultValue := input.Default
 		if input.Sensitive && defaultValue != "" {
@@ -186,6 +195,9 @@ func CanonicalRunbookDefinition(runbookConfig app.RunbookConfig, actionConfigs [
 			return definition.Inputs[i].Name < definition.Inputs[j].Name
 		}
 		return definition.Inputs[i].Index < definition.Inputs[j].Index
+	})
+	sort.Slice(definition.Triggers, func(i, j int) bool {
+		return definition.Triggers[i].Type < definition.Triggers[j].Type
 	})
 	sort.Slice(definition.Steps, func(i, j int) bool {
 		if definition.Steps[i].Index == definition.Steps[j].Index {

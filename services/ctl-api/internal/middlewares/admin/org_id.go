@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -183,6 +185,9 @@ func (m *middleware) setOrgID(ctx *gin.Context) error {
 		db := m.db.WithContext(ctx)
 		orgID, err := fn(db, param.Value)
 		if err != nil {
+			if strings.HasSuffix(ctx.Request.URL.Path, "/admin-unforget") {
+				return nil
+			}
 			return errors.Wrap(err, "middleware failed to find object")
 		}
 

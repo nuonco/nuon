@@ -131,9 +131,9 @@ func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.In
 	)
 	if err != nil {
 		// A stack reports inputs while provisioning, before the runner it is
-		// creating exists. The values are already persisted; there are no
-		// dependents to deploy on a first provision.
-		if errors.Is(err, ErrNoActiveRunner) {
+		// creating exists, or while the runner is disabled. The values are
+		// already persisted and a retry would see no change.
+		if errors.Is(err, ErrNoActiveRunner) || errors.Is(err, ErrRunnerDisabled) {
 			return inputs, nil, nil
 		}
 		return nil, nil, fmt.Errorf("unable to create input update workflow: %w", err)

@@ -26,7 +26,11 @@ import { DetailPage } from '@/components/layout/DetailPage'
 import { ListPage } from '@/components/layout/ListPage'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { DeploymentDetail } from '@/components/installs/DeploymentDetail'
-import { DeploymentRunStatus as PreviewRunStatus } from './DeploymentProgress'
+import { deploymentTabOrder } from './deployment-progress'
+import {
+  DeploymentRunStatus as PreviewRunStatus,
+  ResourceScopeSummary,
+} from './DeploymentProgress'
 import { DeploymentRow } from '@/components/installs/DeploymentsList/DeploymentRow'
 import {
   DEPLOYMENT_TYPE_LABELS,
@@ -166,7 +170,15 @@ const Page = ({
       activeTabIndex={activeTabIndex}
       banners={<ApprovalBanner step={approvalStep} />}
       basePath="/deployments/wf-deploy-1"
-      branchHref="/branches/branch-main"
+      branch={{
+        name: 'main',
+        href: '/branches/branch-main',
+        runHref: '/branches/branch-main/runs/run-main-42',
+        sha: 'abc123def456',
+        message: 'Apply the latest template',
+        author: 'Ada',
+        createdAt: '2026-10-02T15:58:00Z',
+      }}
       deployment={deployment}
       workflow={workflow}
     >
@@ -176,7 +188,7 @@ const Page = ({
 )
 
 export const Changes = () => (
-  <Page activeTabIndex={0}>
+  <Page activeTabIndex={2}>
     <WorkflowChangesSummary
       summaries={summaries}
       renderDetail={(summary) => (
@@ -187,7 +199,7 @@ export const Changes = () => (
 )
 
 export const TemplateUpdates = () => (
-  <Page activeTabIndex={1}>
+  <Page activeTabIndex={0}>
     <AppConfigFilesDiff
       title="Template updates"
       previousVersion="abc123d"
@@ -226,7 +238,7 @@ export const TemplateUpdates = () => (
 )
 
 export const Workflow = () => (
-  <Page activeTabIndex={2}>
+  <Page activeTabIndex={1}>
     <div className="flex flex-col gap-4">
       <SectionHeader
         title="Workflow steps"
@@ -694,16 +706,14 @@ type TPreviewTab = 'template' | 'workflow' | 'changes'
 const previewTabs = {
   template: { path: '/template-updates', text: 'Template updates' },
   workflow: { path: '/workflow', text: 'Workflow' },
-  changes: { path: '/', text: 'Change summary' },
+  changes: { path: '/changes', text: 'Change summary' },
 }
 const tabOrder = (run: TPreviewRun): TPreviewTab[] =>
-  run.status === 'success'
-    ? ['changes', 'workflow', 'template']
-    : ['template', 'workflow', 'changes']
+  deploymentTabOrder(run.type)
 const detailBase = (run: TPreviewRun) =>
   `/org-preview/apps/app-preview/installs/install-preview/deployments/${run.id}`
 const detailHref = (run: TPreviewRun, tab: TPreviewTab) =>
-  `${detailBase(run)}${tab === 'changes' ? '' : previewTabs[tab].path}`
+  `${detailBase(run)}${previewTabs[tab].path}`
 
 const previewStatus = (run: TPreviewRun) =>
   run.status === 'in-progress' &&
@@ -790,7 +800,10 @@ const PreviewTabContent = ({
   if (tab === 'workflow')
     return (
       <div className="flex flex-col gap-4">
-        <SectionHeader title="Workflow steps" description={run.activity} />
+        <SectionHeader
+          title="Workflow steps"
+          description={run.status === 'error' ? undefined : run.activity}
+        />
         {previewStatus(run) === 'awaiting-approval' ? (
           <PreviewApprovalBanner />
         ) : null}
@@ -948,15 +961,15 @@ const PreviewPanel = ({ run, ...props }: IPanel & { run: TPreviewRun }) => (
       <ID>{run.id}</ID>
       <Time time={run.created_at} format="relative" variant="subtext" />
     </div>
-    <Text
-      variant="subtext"
-      theme={run.status === 'error' ? 'error' : 'neutral'}
-    >
-      {run.activity}
-    </Text>
+    {run.activity && run.status !== 'error' ? (
+      <Text variant="subtext" theme="neutral">
+        {run.activity}
+      </Text>
+    ) : null}
+    <ResourceScopeSummary run={run} />
     <Tabs
       naturalHeight
-      initActiveTab={run.status === 'success' ? 'changes' : 'workflow'}
+      initActiveTab={tabOrder(run)[0]}
       tabsClassName="mt-4"
       tabControlsClassName="!gap-2 md:!gap-6 [&>button]:px-1 md:[&>button]:px-3"
       tabLabels={Object.fromEntries(
@@ -966,11 +979,6 @@ const PreviewPanel = ({ run, ...props }: IPanel & { run: TPreviewRun }) => (
         tabOrder(run).map((tab) => [
           tab,
           <div key={tab} className="flex flex-col gap-4">
-            <div className="flex justify-end">
-              <Button href={detailHref(run, tab)} variant="ghost" size="sm">
-                Open full page <Icon variant="ArrowSquareOutIcon" />
-              </Button>
-            </div>
             <PreviewTabContent run={run} tab={tab} />
           </div>,
         ])
@@ -1039,9 +1047,13 @@ export const DeploymentsPreview = ({
   )
   const activeTab: TPreviewTab = pathname.endsWith('/template-updates')
     ? 'template'
-    : pathname.endsWith('/workflow')
-      ? 'workflow'
-      : 'changes'
+    : pathname.endsWith('/changes')
+      ? 'changes'
+      : pathname.endsWith('/workflow')
+        ? 'workflow'
+        : selected
+          ? tabOrder(selected)[0]
+          : 'workflow'
   const since = datePresetQueryParameter(filter.date ?? null)
   const hasActiveFilters =
     !!filter.search ||
@@ -1094,10 +1106,7 @@ export const DeploymentsPreview = ({
           <Button
             variant="ghost"
             size="sm"
-            href={detailHref(
-              directLinkRun,
-              directLinkRun.status === 'success' ? 'changes' : 'workflow'
-            )}
+            href={detailHref(directLinkRun, tabOrder(directLinkRun)[0])}
           >
             Preview an existing full-page link{' '}
             <Icon variant="ArrowSquareOutIcon" />
@@ -1105,35 +1114,34 @@ export const DeploymentsPreview = ({
         ) : null}
       </div>
       {selected ? (
-        <>
-          <Button className="self-start" variant="ghost" href="/">
-            <Icon variant="ArrowLeftIcon" /> Back to deployments
-          </Button>
-          <main aria-label="Deployment full page">
-            <DetailPage
-              className="[&>.tab-nav]:gap-2 md:[&>.tab-nav]:gap-6 [&>.tab-nav>a]:px-1 md:[&>.tab-nav>a]:px-3"
-              header={
-                <DetailHeader
-                  backLink={false}
-                  title={selected.title}
-                  status={<PreviewRunStatus run={selected} />}
-                  id={selected.id}
-                  description={selected.activity}
-                />
-              }
-              tabNav={{
-                basePath: detailBase(selected),
-                tabs: tabOrder(selected).map((tab) => previewTabs[tab]),
-              }}
-            >
-              <PreviewTabContent
-                key={`${selected.id}-${activeTab}`}
-                run={selected}
-                tab={activeTab}
-              />
-            </DetailPage>
-          </main>
-        </>
+        <main aria-label="Deployment full page">
+          <DetailPage
+            className="[&>.tab-nav]:gap-2 md:[&>.tab-nav]:gap-6 [&>.tab-nav>a]:px-1 md:[&>.tab-nav>a]:px-3"
+            header={
+              <DetailHeader
+                backLink={false}
+                title={selected.title}
+                status={<PreviewRunStatus run={selected} />}
+                id={selected.id}
+                description={
+                  selected.status === 'error' ? undefined : selected.activity
+                }
+              >
+                <ResourceScopeSummary run={selected} />
+              </DetailHeader>
+            }
+            tabNav={{
+              basePath: detailBase(selected),
+              tabs: tabOrder(selected).map((tab) => previewTabs[tab]),
+            }}
+          >
+            <PreviewTabContent
+              key={`${selected.id}-${activeTab}`}
+              run={selected}
+              tab={activeTab}
+            />
+          </DetailPage>
+        </main>
       ) : (
         <ListPage
           title="Deployments"

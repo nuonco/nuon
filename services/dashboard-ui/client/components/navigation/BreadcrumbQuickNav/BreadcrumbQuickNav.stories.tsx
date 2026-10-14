@@ -14,6 +14,7 @@ export const Default = () => (
   <BreadcrumbQuickNav
     id="breadcrumb-quick-nav-story"
     label="main"
+    href="#"
     title="Switch branch"
     items={items}
     currentId="branch-1"
@@ -27,6 +28,7 @@ export const Loading = () => (
   <BreadcrumbQuickNav
     id="breadcrumb-quick-nav-loading-story"
     label="production"
+    href="#"
     title="Switch install"
     items={[]}
     currentId="install-1"

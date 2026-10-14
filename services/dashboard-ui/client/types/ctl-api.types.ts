@@ -1544,6 +1544,7 @@ export type TInstallActivityResponse = {
   offset: number
   limit: number
   has_more: boolean
+  next_cursor?: string
 }
 
 export type TInstallOverview =

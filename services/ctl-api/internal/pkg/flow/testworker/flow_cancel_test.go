@@ -10,8 +10,6 @@ import (
 
 // TestCancelStepCallsInnerCancel verifies that cancel-step propagates through
 // all three tiers and invokes the inner signal's Cancel() method.
-// The CancellableTestSignal writes a marker to ResultDirective in its Cancel()
-// method — we check for that marker to prove it ran.
 func (e *FlowTestSuite) TestCancelStepCallsInnerCancel() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -28,7 +26,15 @@ func (e *FlowTestSuite) TestCancelStepCallsInnerCancel() {
 	// cancel that lands before the inner handler accepts updates falls back to
 	// a direct DB status write and never invokes Cancel().
 	stepID := e.waitForStepInProgress(ctx, flw.ID, "cancellable-step")
-	e.waitForQueueSignalStatus(ctx, stepID, "install_workflow_steps", CancellableTestSignalType, app.StatusInProgress)
+	require.Eventually(e.T(), func() bool {
+		var qs app.QueueSignal
+		err := e.service.DB.WithContext(ctx).
+			Where(app.QueueSignal{OwnerID: stepID, OwnerType: "install_workflow_steps", Type: CancellableTestSignalType}).
+			First(&qs).Error
+		_, started := qs.Status.Metadata["execute_started_at"]
+		return err == nil && qs.Status.Status == app.StatusInProgress && started
+	}, pollTimeout, pollInterval, "inner signal should be executing before cancellation")
+	innerSignal := e.getLatestQueueSignal(ctx, stepID, "install_workflow_steps", CancellableTestSignalType)
 
 	// Cancel the step via the flow client
 	_, err := e.service.FlowClient.CancelStep(ctx, &flowclient.CancelStepRequest{
@@ -37,15 +43,18 @@ func (e *FlowTestSuite) TestCancelStepCallsInnerCancel() {
 	})
 	require.Nil(e.T(), err)
 
-	// Wait for the workflow to reach a terminal state
-	e.waitForWorkflowTerminal(ctx, flw.ID)
-
-	// Verify the inner signal's Cancel() was called by checking the marker.
-	// The CancellableTestSignal writes CancelMarker to ResultDirective in Cancel().
-	step := e.getStep(ctx, stepID)
-	require.Equal(e.T(), CancelMarker, step.ResultDirective,
-		"inner signal Cancel() should have written the cancel marker to ResultDirective")
+	require.Eventually(e.T(), func() bool {
+		var qs app.QueueSignal
+		err := e.service.DB.WithContext(ctx).
+			Where(app.QueueSignal{ID: innerSignal.ID}).
+			First(&qs).Error
+		return err == nil && qs.Status.Status == app.StatusCancelled &&
+			qs.Status.StatusHumanDescription == "cancel-callback-invoked"
+	}, pollTimeout, pollInterval, "inner signal Cancel() should complete successfully")
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusCancelled)
+	e.waitForStepStatus(ctx, stepID, app.StatusCancelled)
 	e.assertTemporalDrained(ctx, flw.ID)
+	require.Equal(e.T(), "stop", e.getStep(ctx, stepID).ResultDirective)
 }
 
 // TestCancelWorkflowPropagatesDown verifies that cancel-workflow stops the

@@ -42,6 +42,7 @@ func (s *service) GetRunbookConfigs(ctx *gin.Context) {
 	configs := []*app.RunbookConfig{}
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Preload("Triggers").
 		Preload("Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).

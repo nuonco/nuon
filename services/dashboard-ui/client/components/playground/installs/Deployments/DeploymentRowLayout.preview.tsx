@@ -84,8 +84,6 @@ const emptyFilter: IDeploymentFilter = {
   type: new Set(),
 }
 type TScenario = keyof typeof scenarios
-type TScale = 'auto' | 'comfortable' | 'compact'
-type TResourceShare = '35' | '40' | '45'
 type TLayoutRun = {
   id: string
   title: string
@@ -96,11 +94,6 @@ type TLayoutRun = {
   outcomes: TDeploymentOutcome[]
   steps: TWorkflowStep[]
 }
-interface IPreviewStyle extends CSSProperties {
-  '--workflow-share': string
-  '--resource-share': string
-}
-
 function makeRun(
   scenario: TScenario,
   title: string,
@@ -240,7 +233,7 @@ const LayoutDetails = ({ run, ...props }: IPanel & { run: TLayoutRun }) => (
   </Panel>
 )
 
-const LayoutRow = ({ run, scale }: { run: TLayoutRun; scale: TScale }) => {
+const LayoutRow = ({ run }: { run: TLayoutRun }) => {
   const { addPanel } = useSurfaces()
   return (
     <DeploymentRow
@@ -248,7 +241,6 @@ const LayoutRow = ({ run, scale }: { run: TLayoutRun; scale: TScale }) => {
       title={run.title}
       createdAt={run.created_at}
       href={`/deployments/${run.id}`}
-      scale={scale}
       onViewDetails={() => addPanel(<LayoutDetails run={run} />)}
     />
   )
@@ -258,19 +250,14 @@ export const LayoutControls = () => {
   const [scenario, setScenario] = useState<TScenario>('running')
   const [title, setTitle] = useState('Provisioned install')
   const [activity, setActivity] = useState(scenarios.running.activity)
-  const [count, setCount] = useState('3')
   const [workflowCount, setWorkflowCount] = useState('5')
   const [filter, setFilter] = useState<IDeploymentFilter>(emptyFilter)
   const [width, setWidth] = useState('available')
-  const [resourceShare, setResourceShare] = useState<TResourceShare>('40')
-  const [scale, setScale] = useState<TScale>('auto')
   const [measuredWidth, setMeasuredWidth] = useState(0)
   const preview = useRef<HTMLElement>(null)
   const { preference, setPreference } = useTheme()
-  const previewStyle: IPreviewStyle = {
+  const previewStyle: CSSProperties = {
     width: width === 'available' ? '100%' : Number(width),
-    '--workflow-share': `${100 - Number(resourceShare)}fr`,
-    '--resource-share': `${resourceShare}fr`,
   }
   useEffect(() => {
     const element = preview.current
@@ -289,7 +276,7 @@ export const LayoutControls = () => {
     'success',
   ]
   const allRuns = [
-    makeRun(scenario, title, activity, Number(count)),
+    makeRun(scenario, title, activity, 3),
     ...companionScenarios
       .filter((value) => value !== scenario)
       .map((value) =>
@@ -357,16 +344,6 @@ export const LayoutControls = () => {
           }}
         />
         <Select
-          id="layout-resource-count"
-          labelProps={{ labelText: 'Resource categories' }}
-          value={count}
-          options={['1', '2', '3'].map((value) => ({
-            value,
-            label: `${value} ${value === '1' ? 'category' : 'categories'}`,
-          }))}
-          onChange={setCount}
-        />
-        <Select
           id="layout-workflow-count"
           labelProps={{ labelText: 'Workflow list' }}
           value={workflowCount}
@@ -398,39 +375,6 @@ export const LayoutControls = () => {
           helperText="Wider presets are limited by your browser's available canvas."
         />
         <Select
-          id="layout-column-balance"
-          labelProps={{ labelText: 'Column balance' }}
-          value={resourceShare}
-          options={[
-            { value: '35', label: 'Resources 35% / Workflow 65%' },
-            { value: '40', label: 'Resources 40% / Workflow 60%' },
-            { value: '45', label: 'Resources 45% / Workflow 55%' },
-          ]}
-          onChange={(value) => {
-            if (value === '35' || value === '40' || value === '45')
-              setResourceShare(value)
-          }}
-          helperText="Shares of the space after View details. Resources grow with the row width; the balance stays the same for every workflow."
-        />
-        <Select
-          id="layout-scale"
-          labelProps={{ labelText: 'Outcome sizing' }}
-          value={scale}
-          options={[
-            { value: 'auto', label: 'Automatic (fit each sector)' },
-            { value: 'comfortable', label: 'Comfortable (18px / 22px icons)' },
-            { value: 'compact', label: 'Compact (14px / 14px icons)' },
-          ]}
-          onChange={(value) => {
-            if (
-              value === 'auto' ||
-              value === 'comfortable' ||
-              value === 'compact'
-            )
-              setScale(value)
-          }}
-        />
-        <Select
           id="layout-theme"
           labelProps={{ labelText: 'Theme' }}
           value={preference}
@@ -459,7 +403,7 @@ export const LayoutControls = () => {
             autoResize
             minRows={2}
             maxRows={6}
-            helperText="All workflows use the same column widths. Current and next steps remain visible in every state; long failure reasons wrap without moving the resource column."
+            helperText="Current and next steps remain visible in every state. Long failure reasons wrap inside the workflow."
           />
         </div>
         <Button
@@ -468,12 +412,9 @@ export const LayoutControls = () => {
             setScenario('running')
             setTitle('Provisioned install')
             setActivity(scenarios.running.activity)
-            setCount('3')
             setWorkflowCount('5')
             setFilter(emptyFilter)
             setWidth('available')
-            setResourceShare('40')
-            setScale('auto')
           }}
         >
           Reset preview
@@ -488,10 +429,7 @@ export const LayoutControls = () => {
         <div role="status">
           <Text variant="subtext" theme="neutral">
             Actual preview width: {measuredWidth}px · {runs.length} of{' '}
-            {allRuns.length} workflows ·{' '}
-            {scale === 'auto'
-              ? 'Automatic sizing: 14–18px text, 14–22px icons'
-              : `${scale} sizing`}
+            {allRuns.length} workflows
           </Text>
         </div>
       </div>
@@ -536,7 +474,7 @@ export const LayoutControls = () => {
               groupByDate={false}
               pagination={{ hasNext: false, offset: 0, limit: 20 }}
               getEventKey={(run) => run.id}
-              renderEvent={(run) => <LayoutRow run={run} scale={scale} />}
+              renderEvent={(run) => <LayoutRow run={run} />}
             />
           ) : (
             <EmptyState

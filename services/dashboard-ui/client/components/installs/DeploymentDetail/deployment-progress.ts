@@ -19,14 +19,25 @@ export type TDeploymentOutcome = {
 export const DEPLOYMENT_TABS = {
   template: { path: '/template-updates', text: 'Template updates' },
   workflow: { path: '/workflow', text: 'Workflow' },
-  changes: { path: '/', text: 'Change summary' },
+  changes: { path: '/changes', text: 'Change summary' },
 }
 export type TDeploymentTab = keyof typeof DEPLOYMENT_TABS
 
-export const deploymentTabOrder = (status?: string): TDeploymentTab[] =>
-  status === 'success'
-    ? ['changes', 'workflow', 'template']
-    : ['template', 'workflow', 'changes']
+const BRANCH_RUN_TYPES = new Set([
+  'app_branch_config_update',
+  'app_branches_manual_update',
+  'app_branches_config_repo_update',
+  'app_branches_component_repo_update',
+  'app_branch_update',
+])
+
+export const isBranchRunDeployment = (type?: string) =>
+  !!type && BRANCH_RUN_TYPES.has(type)
+
+export const deploymentTabOrder = (type?: string): TDeploymentTab[] =>
+  isBranchRunDeployment(type)
+    ? ['template', 'workflow', 'changes']
+    : ['workflow', 'changes']
 
 export const ACTIVE_DEPLOYMENT_STATUSES = new Set([
   '',

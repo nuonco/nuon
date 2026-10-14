@@ -8,6 +8,10 @@
   animation: exit-tab var(--duration-fastest) var(--ease-cubic) forwards;
 }
 
+.tabs .tab-content-natural {
+  animation: enter-tab var(--duration-fastest) var(--ease-cubic);
+}
+
 @keyframes enter-tab {
   0% {
     opacity: 0;

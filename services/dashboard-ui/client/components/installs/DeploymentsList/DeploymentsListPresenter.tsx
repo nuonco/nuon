@@ -348,7 +348,11 @@ export const DeploymentsListPresenter = ({
         onDateChange={onDateChange}
         onClearFilters={onClearFilters}
       />
-      {showActive ? (
+      {showActive &&
+      (activeLoading ||
+        activeError ||
+        activeDeployments.length > 0 ||
+        hasActiveFilters) ? (
         <section aria-label="In progress" className="flex flex-col gap-3">
           <SectionHeader
             title={`In progress${activeTotal !== undefined ? ` (${activeTotal})` : ''}`}
@@ -365,9 +369,8 @@ export const DeploymentsListPresenter = ({
             />
           ) : activeDeployments.length === 0 ? (
             <Text variant="subtext" theme="neutral">
-              {hasActiveFilters
-                ? 'No in-progress deployments match these filters. Adjust or clear the filters to see more.'
-                : 'No deployments in progress. Start a deployment to follow its rollout here.'}
+              No in-progress deployments match these filters. Adjust or clear
+              the filters to see more.
             </Text>
           ) : (
             <>

@@ -3,6 +3,7 @@ import type { TCompositeError, TInstallWorkflowStep } from '@/types'
 import {
   buildOverviewLoadingStages,
   fetchCommitReady,
+  groupCompositeError,
   installFailureHref,
   overviewCompositeError,
   preRolloutCompositeError,
@@ -183,6 +184,70 @@ describe('buildOverviewLoadingStages', () => {
         type: 'install_group.install_update_failed',
         message: 'acme-prod failed during deploy',
       } as TCompositeError)
+    ).toBeUndefined()
+  })
+
+  test('gives a failed install group its deploy step error', () => {
+    const steps = [
+      step('deploy install group: canary', 'error', {
+        message: 'acme-prod failed during deploy',
+      }),
+      step('deploy install group: rest', 'success'),
+    ]
+    expect(
+      groupCompositeError(steps, {
+        name: 'canary',
+        status: 'error',
+        installs: [],
+      })?.message
+    ).toBe('acme-prod failed during deploy')
+    expect(
+      groupCompositeError(steps, {
+        name: 'rest',
+        status: 'success',
+        installs: [],
+      })
+    ).toBeUndefined()
+  })
+
+  test('uses the deploy step description when it has no composite error', () => {
+    const failed = {
+      id: 'deploy',
+      name: 'deploy install group: canary',
+      status: {
+        status: 'error',
+        status_human_description: 'unable to read install group run',
+      },
+    } as TInstallWorkflowStep
+    expect(
+      groupCompositeError([failed], {
+        name: 'canary',
+        status: 'error',
+        installs: [],
+      })?.message
+    ).toBe('unable to read install group run')
+  })
+
+  test('falls back to the run error for the group holding the failed install', () => {
+    const runError = {
+      type: 'install_group.install_update_failed',
+      message: 'acme-prod failed during deploy',
+      data: { install_id: 'ins_1', workflow_id: 'wf_1' },
+    } as unknown as TCompositeError
+    const install = { id: 'ins_1', name: 'acme-prod', status: 'error' }
+    expect(
+      groupCompositeError(
+        [],
+        { name: 'canary', status: 'error', installs: [install] },
+        runError
+      )?.message
+    ).toBe('acme-prod failed during deploy')
+    expect(
+      groupCompositeError(
+        [],
+        { name: 'rest', status: 'error', installs: [] },
+        runError
+      )
     ).toBeUndefined()
   })
 

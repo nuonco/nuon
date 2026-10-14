@@ -12,8 +12,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 )
 
@@ -88,22 +86,6 @@ func TestParseSecretRejectsInvalidV1(t *testing.T) {
 				t.Errorf("expected configuration to be rejected: %q", value)
 			}
 		})
-	}
-}
-
-func TestChildEnvironmentOmitsRunnerCredentials(t *testing.T) {
-	t.Setenv("RUNNER_API_TOKEN", "runner-secret")
-	t.Setenv("HTTPS_PROXY", "https://proxy.example.com")
-	environment := childEnvironment([]string{"NUON_TELEMETRY_EXPORT_HEADER_0=customer-secret"})
-	joined := strings.Join(environment, "\n")
-	if strings.Contains(joined, "runner-secret") || strings.Contains(joined, "RUNNER_API_TOKEN") {
-		t.Fatal("collector child inherited the runner API credential")
-	}
-	if !strings.Contains(joined, "HTTPS_PROXY=https://proxy.example.com") {
-		t.Fatal("collector child did not inherit HTTPS proxy configuration")
-	}
-	if !strings.Contains(joined, "NUON_TELEMETRY_EXPORT_HEADER_0=customer-secret") {
-		t.Fatal("collector child did not receive the customer header")
 	}
 }
 
@@ -213,135 +195,7 @@ func TestCollectorConfigOmitsAuditPipelineWhenDisabled(t *testing.T) {
 	}
 }
 
-func TestVendorCollectorConfigBuildsPersistentPipelines(t *testing.T) {
-	contents, err := vendorCollectorConfig("https://relay.example.com", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(contents), "access_token") {
-		t.Fatal("generated collector configuration contains credential material")
-	}
-
-	var generated struct {
-		Extensions map[string]struct {
-			Endpoint  string `yaml:"endpoint"`
-			Directory string `yaml:"directory"`
-			Filename  string `yaml:"filename"`
-		} `yaml:"extensions"`
-		Receivers map[string]struct {
-			Protocols struct {
-				GRPC struct {
-					Endpoint          string `yaml:"endpoint"`
-					MaxReceiveSizeMiB int    `yaml:"max_recv_msg_size_mib"`
-				} `yaml:"grpc"`
-				HTTP struct {
-					Endpoint           string `yaml:"endpoint"`
-					MaxRequestBodySize int    `yaml:"max_request_body_size"`
-				} `yaml:"http"`
-			} `yaml:"protocols"`
-		} `yaml:"receivers"`
-		Exporters map[string]struct {
-			Endpoint string `yaml:"endpoint"`
-			Auth     struct {
-				Authenticator string `yaml:"authenticator"`
-			} `yaml:"auth"`
-			SendingQueue struct {
-				Enabled         bool   `yaml:"enabled"`
-				Sizer           string `yaml:"sizer"`
-				QueueSize       int    `yaml:"queue_size"`
-				NumConsumers    int    `yaml:"num_consumers"`
-				Storage         string `yaml:"storage"`
-				BlockOnOverflow bool   `yaml:"block_on_overflow"`
-			} `yaml:"sending_queue"`
-			Retry struct {
-				Enabled        bool   `yaml:"enabled"`
-				MaxElapsedTime string `yaml:"max_elapsed_time"`
-			} `yaml:"retry_on_failure"`
-		} `yaml:"exporters"`
-		Service struct {
-			Extensions []string       `yaml:"extensions"`
-			Pipelines  map[string]any `yaml:"pipelines"`
-		} `yaml:"service"`
-	}
-	if err := yaml.Unmarshal(contents, &generated); err != nil {
-		t.Fatal(err)
-	}
-
-	vendorStorage := generated.Extensions[vendorFileStorageExtensionID]
-	if vendorStorage.Directory != vendorStorageDir || vendorStorage.Directory == collectorStorageDir {
-		t.Fatalf("vendor storage is not isolated and bounded: %#v", vendorStorage)
-	}
-	if generated.Extensions["health_check"].Endpoint != vendorCollectorHealthAddress {
-		t.Fatalf("vendor health check uses the audit collector address: %#v", generated.Extensions["health_check"])
-	}
-	if generated.Extensions[vendorBearerAuthExtensionID].Filename != vendorTokenPath {
-		t.Fatalf("vendor bearer authenticator does not use the protected token file: %#v", generated.Extensions[vendorBearerAuthExtensionID])
-	}
-	if !slices.Contains(generated.Service.Extensions, vendorFileStorageExtensionID) || !slices.Contains(generated.Service.Extensions, vendorBearerAuthExtensionID) {
-		t.Fatalf("vendor extensions are not enabled: %q", generated.Service.Extensions)
-	}
-	vendorReceiver := generated.Receivers["otlp"]
-	if vendorReceiver.Protocols.GRPC.Endpoint != vendorOTLPGRPCAddress || vendorReceiver.Protocols.GRPC.MaxReceiveSizeMiB != 4 || vendorReceiver.Protocols.HTTP.Endpoint != vendorOTLPHTTPAddress || vendorReceiver.Protocols.HTTP.MaxRequestBodySize != maxOTLPRequestBodySize {
-		t.Fatalf("unexpected vendor receiver: %#v", vendorReceiver)
-	}
-	vendorExporter := generated.Exporters["otlp_http/vendor"]
-	if vendorExporter.Endpoint != "https://relay.example.com" || vendorExporter.Auth.Authenticator != vendorBearerAuthExtensionID || !vendorExporter.SendingQueue.Enabled || vendorExporter.SendingQueue.Sizer != "bytes" || vendorExporter.SendingQueue.QueueSize != vendorQueueSizeBytes || vendorExporter.SendingQueue.NumConsumers != vendorQueueConsumers || vendorExporter.SendingQueue.Storage != vendorFileStorageExtensionID || vendorExporter.SendingQueue.BlockOnOverflow || !vendorExporter.Retry.Enabled || vendorExporter.Retry.MaxElapsedTime != "0s" {
-		t.Fatalf("vendor exporter is not durable and asynchronous: %#v", vendorExporter)
-	}
-	for _, pipeline := range []string{"logs", "metrics", "traces"} {
-		if _, ok := generated.Service.Pipelines[pipeline]; !ok {
-			t.Fatalf("generated configuration lacks pipeline %q", pipeline)
-		}
-	}
-	for _, unexpected := range []string{audit.AsyncRouteAddress, audit.SyncRouteAddress, "logs/audit", "otlp_http/async", "NUON_VENDOR_TELEMETRY_EXPORT_HEADER"} {
-		if strings.Contains(string(contents), unexpected) {
-			t.Fatalf("vendor collector configuration contains audit or static-header component %q", unexpected)
-		}
-	}
-}
-
-func TestVendorCollectorConfigResourceActions(t *testing.T) {
-	for _, attributes := range []map[string]string{nil, {}, {
-		"nuon.install.name":                        "production-eu",
-		"nuon.install.labels.literal-${env:LABEL}": "${env:VALUE}\n$ $$",
-	}} {
-		contents, err := vendorCollectorConfig("https://relay.example.com", attributes)
-		require.NoError(t, err)
-		var generated struct {
-			Processors map[string]struct {
-				Attributes []map[string]any `yaml:"attributes"`
-			} `yaml:"processors"`
-			Service struct {
-				Pipelines map[string]struct {
-					Processors []string `yaml:"processors"`
-				} `yaml:"pipelines"`
-			} `yaml:"service"`
-		}
-		require.NoError(t, yaml.Unmarshal(contents, &generated))
-		wantProcessors := []string{"memory_limiter"}
-		if len(attributes) == 0 {
-			require.NotContains(t, generated.Processors, "resource/install")
-		} else {
-			wantProcessors = append(wantProcessors, "resource/install")
-			require.Equal(t, []map[string]any{
-				{"action": "delete", "pattern": `^nuon\.install\.labels\.`},
-				{"action": "upsert", "key": "nuon.install.labels.literal-$${env:LABEL}", "value": "$${env:VALUE}\n$$ $$$$"},
-				{"action": "upsert", "key": "nuon.install.name", "value": "production-eu"},
-			}, generated.Processors["resource/install"].Attributes)
-		}
-		for _, signal := range []string{"logs", "metrics", "traces"} {
-			require.Equal(t, wantProcessors, generated.Service.Pipelines[signal].Processors, signal)
-		}
-	}
-}
-
-func TestVendorCollectorConfigRejectsInvalidEndpoint(t *testing.T) {
-	if _, err := vendorCollectorConfig("http://relay.example.com", nil); err == nil {
-		t.Fatal("insecure vendor relay endpoint was accepted")
-	}
-}
-
-func TestCollectorConfigsValidate(t *testing.T) {
+func TestAuditCollectorConfigValidates(t *testing.T) {
 	if os.Getenv("INTEGRATION") != "true" {
 		t.Skip("INTEGRATION is not set, skipping")
 	}
@@ -349,26 +203,15 @@ func TestCollectorConfigsValidate(t *testing.T) {
 	if binary == "" {
 		t.Skip("set NUON_TEST_OTELCOL to the built runner Collector binary")
 	}
-	vendor, err := vendorCollectorConfig("https://relay.example.com", map[string]string{
-		"nuon.org.name": "acme", "nuon.app.name": "payments", "nuon.install.name": "production-eu",
-		"nuon.install.labels.tier": "enterprise",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	auditConfig, _, err := collectorConfig(config{AuditLogsEnabled: true, OTLPHTTP: otlpHTTPExporter{Endpoint: "https://audit.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for name, contents := range map[string][]byte{"vendor": vendor, "audit": auditConfig} {
-		t.Run(name, func(t *testing.T) {
-			path := filepath.Join(t.TempDir(), "collector.yaml")
-			if err := os.WriteFile(path, contents, 0o600); err != nil {
-				t.Fatal(err)
-			}
-			if output, err := exec.Command(binary, "validate", "--config", path).CombinedOutput(); err != nil {
-				t.Fatalf("collector configuration is invalid: %v\n%s", err, output)
-			}
-		})
+	path := filepath.Join(t.TempDir(), "collector.yaml")
+	if err := os.WriteFile(path, auditConfig, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if output, err := exec.Command(binary, "validate", "--config", path).CombinedOutput(); err != nil {
+		t.Fatalf("collector configuration is invalid: %v\n%s", err, output)
 	}
 }

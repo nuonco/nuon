@@ -35,7 +35,7 @@ func (a *Activities) CheckFlowRunnerDisabled(ctx context.Context, req CheckFlowR
 		return false, errors.Wrap(res.Error, "unable to get workflow")
 	}
 
-	if flw.OwnerType != "installs" || !flw.Type.RequiresInstallRunner() {
+	if flw.OwnerType != "installs" || !flw.Type.RequiresInstallRunner() || flw.IsInputsOnly() {
 		return false, nil
 	}
 

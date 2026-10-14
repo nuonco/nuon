@@ -64,13 +64,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
+	if appConfig.BuildsLocked {
+		if workflow.GetVersion(ctx, "locked-builds-completed-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return nil
+		}
+		_, err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
+			RunID:           s.RunID,
+			BuildsCompleted: true,
+		})
+		return err
+	}
 
 	l.Info("triggering builds",
 		"app_branch_id", s.AppBranchID,
 		"app_config_id", run.AppConfigID,
 		"component_count", len(appConfig.ComponentIDs))
 
-	if len(appConfig.ComponentIDs) == 0 {
+	if len(appConfig.ComponentIDs) == 0 && workflow.GetVersion(ctx, "sandbox-build-without-components-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 		l.Info("no components to build")
 		_ = s.markBuildsCompleted(ctx, l, true)
 		return nil
@@ -148,7 +158,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.finalizePreview(ctx, l, run, builds, nil)
 	}
 
-	_ = s.markBuildsCompleted(ctx, l, true)
+	if appConfig.BuildsPinned {
+		if _, err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
+			RunID:           s.RunID,
+			BuildsCompleted: true,
+		}); err != nil {
+			if workflow.GetVersion(ctx, "selected-builds-finalize-failure-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+				buildsErr := s.markBuildsCompleted(ctx, l, false)
+				s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
+				if isPreview && run.PRNumber != nil {
+					s.finalizePreview(ctx, l, run, builds, err)
+				}
+			}
+			return fmt.Errorf("unable to finalize selected builds: %w", err)
+		}
+	} else {
+		_ = s.markBuildsCompleted(ctx, l, true)
+	}
 	s.finalizeBuildMetadata(ctx, builds, true, nil)
 	l.Info("all builds completed successfully")
 	return nil

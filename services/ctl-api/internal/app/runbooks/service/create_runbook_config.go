@@ -12,13 +12,20 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
 type CreateRunbookConfigRequest struct {
 	AppConfigID *string                           `json:"app_config_id"`
 	Readme      string                            `json:"readme"`
+	Triggers    []CreateRunbookTriggerRequest     `json:"triggers,omitempty"`
 	Steps       []*CreateRunbookStepConfigRequest `json:"steps" validate:"required"`
 	Inputs      []*CreateRunbookInputRequest      `json:"inputs,omitempty"`
+}
+
+type CreateRunbookTriggerRequest struct {
+	Type         app.RunbookTriggerType `json:"type" validate:"required"`
+	CronSchedule string                 `json:"cron_schedule,omitempty"`
 }
 
 type CreateRunbookInputRequest struct {
@@ -97,6 +104,44 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 	appConfigID := ""
 	if req.AppConfigID != nil {
 		appConfigID = *req.AppConfigID
+	}
+
+	if len(req.Triggers) == 0 {
+		req.Triggers = []CreateRunbookTriggerRequest{{Type: app.RunbookTriggerTypeManual}}
+	}
+	triggers := make([]app.RunbookTriggerConfig, 0, len(req.Triggers))
+	triggerTypes := make(map[app.RunbookTriggerType]struct{}, len(req.Triggers))
+	for _, triggerReq := range req.Triggers {
+		if _, exists := triggerTypes[triggerReq.Type]; exists {
+			ctx.Error(fmt.Errorf("duplicate runbook trigger type %q", triggerReq.Type))
+			return
+		}
+		triggerTypes[triggerReq.Type] = struct{}{}
+		switch triggerReq.Type {
+		case app.RunbookTriggerTypeManual:
+			if triggerReq.CronSchedule != "" {
+				ctx.Error(fmt.Errorf("manual trigger cannot set cron_schedule"))
+				return
+			}
+		case app.RunbookTriggerTypeCron:
+			if triggerReq.CronSchedule == "" {
+				ctx.Error(fmt.Errorf("cron trigger requires cron_schedule"))
+				return
+			}
+			if err := validation.ValidateCronSchedule(triggerReq.CronSchedule); err != nil {
+				ctx.Error(err)
+				return
+			}
+		default:
+			ctx.Error(fmt.Errorf("unsupported runbook trigger type %q", triggerReq.Type))
+			return
+		}
+		triggers = append(triggers, app.RunbookTriggerConfig{
+			AppID:        runbook.AppID,
+			AppConfigID:  appConfigID,
+			Type:         triggerReq.Type,
+			CronSchedule: triggerReq.CronSchedule,
+		})
 	}
 
 	steps := make([]app.RunbookStepConfig, 0, len(req.Steps))
@@ -205,6 +250,7 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		AppConfigID: appConfigID,
 		RunbookID:   runbook.ID,
 		Readme:      req.Readme,
+		Triggers:    triggers,
 		Steps:       steps,
 		Inputs:      inputs,
 	}

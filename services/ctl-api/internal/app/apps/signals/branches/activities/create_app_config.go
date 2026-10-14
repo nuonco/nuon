@@ -40,6 +40,7 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 		OrgID:              req.OrgID,
 		CreatedByID:        req.CreatedByID,
 		AppBranchID:        generics.NewNullString(req.AppBranchID),
+		BuildsPinned:       true,
 		Status:             app.AppConfigStatusPending,
 		StatusDescription:  "pending sync",
 		StatusV2:           pendingStatus,

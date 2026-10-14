@@ -39,7 +39,7 @@ jobs:
   # time.
   service:
     name: all
-    runs-on: ${{ contains(fromJSON('["ctl-api","cli","lsp","runner"]'), inputs.service) && 'build-isolated' || 'build-only' }}
+    runs-on: ${{ contains(fromJSON('["ctl-api","cli","lsp","runner","telemetry-agent"]'), inputs.service) && 'build-isolated' || 'build-only' }}
     timeout-minutes: 30
     env:
       NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
@@ -80,14 +80,14 @@ jobs:
       - name: 😎 Tests
         run: |
           CACHE_ARGS=()
-          if [[ "${{ inputs.service }}" == "ctl-api" || "${{ inputs.service }}" == "cli" || "${{ inputs.service }}" == "lsp" || "${{ inputs.service }}" == "runner" ]] && [[ "${IS_FORK_PR}" != "true" ]]; then
+          if [[ "${{ inputs.service }}" == "ctl-api" || "${{ inputs.service }}" == "cli" || "${{ inputs.service }}" == "lsp" || "${{ inputs.service }}" == "runner" || "${{ inputs.service }}" == "telemetry-agent" ]] && [[ "${IS_FORK_PR}" != "true" ]]; then
             CACHE_ARGS=(--write-cache --max-mode)
           fi
           CI=true nuonctl tests run-all ${{inputs.service}} "${CACHE_ARGS[@]}"
 
-      # nuonctl signs the runner image with this; a pinned download since cosign-installer needs envsubst.
+      # nuonctl signs customer-side images with this; a pinned download since cosign-installer needs envsubst.
       - name: Install cosign
-        if: ${{ inputs.service == 'runner' && github.event_name != 'pull_request' }}
+        if: ${{ contains(fromJSON('["runner", "telemetry-agent"]'), inputs.service) && github.event_name != 'pull_request' }}
         env:
           COSIGN_VERSION: v2.6.5
           COSIGN_SHA256: c3b4f5410e608af03a5eb0aaac84a4313d8da131248e08ff1759ac70c79d1644
@@ -103,7 +103,7 @@ jobs:
       - name: 📦 Build
         run: |
           CACHE_ARGS=()
-          if [[ "${{ inputs.service }}" == "ctl-api" || "${{ inputs.service }}" == "cli" || "${{ inputs.service }}" == "lsp" || "${{ inputs.service }}" == "runner" ]] && [[ "${IS_FORK_PR}" != "true" ]]; then
+          if [[ "${{ inputs.service }}" == "ctl-api" || "${{ inputs.service }}" == "cli" || "${{ inputs.service }}" == "lsp" || "${{ inputs.service }}" == "runner" || "${{ inputs.service }}" == "telemetry-agent" ]] && [[ "${IS_FORK_PR}" != "true" ]]; then
             CACHE_ARGS=(--write-cache --max-mode)
           fi
           CI=true nuonctl builds release \
@@ -118,7 +118,7 @@ jobs:
 
       # Services that need k8s charts deploy via mono repo
       - name: ⬆️ Deploy Stage (k8s services)
-        if: ${{ inputs.stage && !contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
+        if: ${{ inputs.stage && !contains(fromJSON('["runner", "cli", "lsp", "telemetry-agent"]'), inputs.service) }}
         run: |
           gh workflow run deploy-public-services.yml \
             --repo nuonco/mono \
@@ -132,7 +132,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
       - name: 🌎 Deploy Prod (k8s services)
-        if: ${{ inputs.prod && !contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
+        if: ${{ inputs.prod && !contains(fromJSON('["runner", "cli", "lsp", "telemetry-agent"]'), inputs.service) }}
         run: |
           gh workflow run deploy-public-services.yml \
             --repo nuonco/mono \
@@ -145,19 +145,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      # Artifacts (runner, cli, lsp) deploy directly via nuonctl - no k8s needed
+      # Artifacts promote directly via nuonctl; they do not deploy into Nuon's clusters.
       - name: ⬆️ Deploy Stage (artifacts)
-        if: ${{ inputs.stage && contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
+        if: ${{ inputs.stage && contains(fromJSON('["runner", "cli", "lsp", "telemetry-agent"]'), inputs.service) }}
         run: |
           CI=true nuonctl deploys deploy ${{inputs.service}} --env=stage --tag=${{inputs.tag}}
 
       - name: 🌎 Deploy Prod (artifacts)
-        if: ${{ inputs.prod && contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
+        if: ${{ inputs.prod && contains(fromJSON('["runner", "cli", "lsp", "telemetry-agent"]'), inputs.service) }}
         run: |
           CI=true nuonctl deploys deploy ${{inputs.service}} --env=prod --tag=${{inputs.tag}}
 
       - name: 💾 Save cache
-        if: ${{ !contains(fromJSON('["ctl-api","cli","lsp","runner"]'), inputs.service) }}
+        if: ${{ !contains(fromJSON('["ctl-api","cli","lsp","runner","telemetry-agent"]'), inputs.service) }}
         run: |
           CI=true nuonctl builds release ${{inputs.service}} --tag=${{inputs.tag}} --push=false --write-cache --max-mode > /tmp/save-cache-build.log 2>&1 &
           BUILD_PID=$!

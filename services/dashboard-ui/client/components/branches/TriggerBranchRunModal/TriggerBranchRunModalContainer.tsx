@@ -29,15 +29,15 @@ export const TriggerBranchRunModalContainer = ({
   const { addToast } = useToast()
   const { removeModal } = useSurfaces()
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: () =>
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: (force: boolean) =>
       triggerBranchRun({
         appId,
         branchId: branch.id!,
         orgId,
         request: {
           config_id: currentConfig?.id,
-          force: false,
+          force,
           plan_only: planOnly,
         },
       }),
@@ -71,7 +71,8 @@ export const TriggerBranchRunModalContainer = ({
       branchName={branch.name || ''}
       planOnly={planOnly}
       isPending={isPending}
-      onConfirm={() => mutate()}
+      error={error}
+      onConfirm={(force) => mutate(force)}
       {...props}
     />
   )

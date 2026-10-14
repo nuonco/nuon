@@ -59,6 +59,10 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, nil, errors.Wrap(err, "unable to get install state")
 	}
 
+	if err := p.applyBuildInputDefaults(ctx, install, build, installState); err != nil {
+		return nil, nil, err
+	}
+
 	// this is here just to reduce duplicated return values from all component types, we're caling same function within
 	// every component to build cloud auth, its non expensive and deterministic so we can be sure that in both calls
 	// we get same information.

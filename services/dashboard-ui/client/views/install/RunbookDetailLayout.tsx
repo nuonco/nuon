@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation, useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -10,6 +11,7 @@ import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromApp
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { RunbookTriggerType } from '@/components/runbooks/RunbookTriggerType'
 import { useInstallPage } from '@/hooks/use-install-path'
 import { getInstallRunbook, getInstallRunbooks } from '@/lib'
 
@@ -105,6 +107,21 @@ export const RunbookDetailLayout = () => {
                     />
                   ))}
                 </span>
+              ) : null
+            }
+            metadata={
+              latestConfig?.triggers?.length ? (
+                <LabeledValue label="Triggers">
+                  <div className="flex flex-col gap-2">
+                    {latestConfig.triggers.map((trigger) => (
+                      <RunbookTriggerType
+                        key={trigger.id}
+                        triggerType={trigger.type}
+                        cronSchedule={trigger.cron_schedule}
+                      />
+                    ))}
+                  </div>
+                </LabeledValue>
               ) : null
             }
             actions={

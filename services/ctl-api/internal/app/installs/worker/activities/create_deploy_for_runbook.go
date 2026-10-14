@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 )
 
 type CreateDeployForRunbookRequest struct {
@@ -14,42 +15,27 @@ type CreateDeployForRunbookRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) CreateDeployForRunbook(ctx context.Context, req CreateDeployForRunbookRequest) (*app.InstallDeploy, error) {
-	var installComponent app.InstallComponent
-	res := a.db.WithContext(ctx).
-		Where(app.InstallComponent{
-			InstallID:   req.InstallID,
-			ComponentID: req.ComponentID,
-		}).
-		First(&installComponent)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to find install component: %w", res.Error)
+	install, err := a.getInstall(ctx, req.InstallID)
+	if err != nil {
+		return nil, err
 	}
-
-	// Get latest build for this component. ComponentBuild.ComponentID is
-	// gorm:"-" (derived in AfterQuery), so it cannot be used as a query
-	// predicate; join through component_config_connections to filter on the
-	// real component_id column.
-	var build app.ComponentBuild
-	res = a.db.WithContext(ctx).
-		Joins("JOIN component_config_connections ON component_config_connections.id = component_builds.component_config_connection_id").
-		Where("component_config_connections.component_id = ?", req.ComponentID).
-		Order("component_builds.created_at DESC").
-		First(&build)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to find latest build for component: %w", res.Error)
+	var ccc app.ComponentConfigConnection
+	if err := a.db.WithContext(ctx).
+		Where(app.ComponentConfigConnection{AppConfigID: install.AppConfigID, ComponentID: req.ComponentID}).
+		First(&ccc).Error; err != nil {
+		return nil, err
 	}
-
-	deploy := app.InstallDeploy{
-		InstallComponentID: installComponent.ID,
-		ComponentBuildID:   build.ID,
-		ComponentID:        req.ComponentID,
-		Type:               app.InstallDeployTypeApply,
+	build, err := buildselection.Component(ctx, a.db, ccc.ID)
+	if err != nil {
+		return nil, err
 	}
-
-	res = a.db.WithContext(ctx).Create(&deploy)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create deploy: %w", res.Error)
+	if build == nil {
+		return nil, fmt.Errorf("no deployable build for component %s in app config %s", req.ComponentID, install.AppConfigID)
 	}
-
-	return &deploy, nil
+	return a.CreateInstallDeploy(ctx, CreateInstallDeployRequest{
+		InstallID:   req.InstallID,
+		ComponentID: req.ComponentID,
+		BuildID:     build.ID,
+		Type:        app.InstallDeployTypeApply,
+	})
 }
