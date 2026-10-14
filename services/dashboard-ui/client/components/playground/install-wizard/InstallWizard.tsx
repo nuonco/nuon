@@ -211,13 +211,14 @@ const AppOptionDetail = ({ app }: { app: IAppOption }) => (
   <span className="flex min-w-0 items-center gap-1.5">
     <CloudPlatform
       platform={app.platform}
+      colorVariant="color"
       displayVariant="icon-only"
       iconSize="14"
       variant="subtext"
       className="shrink-0"
     />
     <span aria-hidden>·</span>
-    <Icon variant="GithubLogoIcon" size={12} className="shrink-0" />
+    <Icon variant="GitHub" size={12} className="shrink-0" />
     <span className="truncate">{app.source}</span>
     <span aria-hidden>·</span>
     <span className="shrink-0">{app.updatedLabel}</span>
