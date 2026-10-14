@@ -66,12 +66,6 @@ func (s *service) DeleteAppBranch(ctx *gin.Context) {
 			return fmt.Errorf("unable to deactivate install branch connections: %w", err)
 		}
 
-		if err := tx.Model(&app.Install{}).
-			Where("app_branch_id = ?", appBranchID).
-			Update("app_branch_id", nil).Error; err != nil {
-			return fmt.Errorf("unable to release installs from branch: %w", err)
-		}
-
 		if err := tx.Delete(&branch).Error; err != nil {
 			return fmt.Errorf("unable to delete app branch: %w", err)
 		}
