@@ -18,6 +18,17 @@ const workflowDetailSuffix = (suffix: string) =>
     '/deployments/$1$2'
   )
 
+export const installRunActivitySuffix = (
+  nested: boolean,
+  workflowId: string | undefined,
+  fallback: string
+) => {
+  if (!nested) return workflowId ? `/workflows/${workflowId}` : fallback
+  return workflowId
+    ? `/operations?workflow=${encodeURIComponent(workflowId)}`
+    : '/operations'
+}
+
 const IMAGE_COMPONENT_TYPES = new Set(['docker_build', 'external_image'])
 
 export type TInstallStatusPage =

@@ -9,10 +9,12 @@ import { type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallLink } from '@/hooks/use-install-path'
+import { useNewInstallIA } from '@/hooks/use-new-install-ia'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { runRunbook } from '@/lib'
+import { installRunActivitySuffix } from '@/lib/install-path'
 import type {
   TInstallRunbook,
   TRunRunbookBody,
@@ -31,6 +33,7 @@ export const RunRunbookModal = ({
   const { org } = useOrg()
   const { install } = useInstall()
   const installLink = useInstallLink()
+  const newInstallIA = useNewInstallIA()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
@@ -50,18 +53,26 @@ export const RunRunbookModal = ({
     onSuccess: (result) => {
       addToast(
         <Toast heading="Running runbook" theme="info">
-          <Text>Running {runbookName} on {install?.name}.</Text>
+          <Text>
+            Running {runbookName} on {install?.name}.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)
       queryClient.invalidateQueries({ queryKey: ['install-runbook'] })
       queryClient.invalidateQueries({ queryKey: ['install-runbooks'] })
       const workflowId = result?.install_workflow_id
-      if (workflowId) {
-        navigate(installLink({ installId: install!.id, appId: install!.app_id, suffix: `/workflows/${workflowId}` }))
-      } else {
-        navigate(installLink({ installId: install!.id, appId: install!.app_id, suffix: `/runbooks/${runbookId}` }))
-      }
+      navigate(
+        installLink({
+          installId: install!.id,
+          appId: install!.app_id,
+          suffix: installRunActivitySuffix(
+            newInstallIA,
+            workflowId,
+            `/runbooks/${runbookId}`
+          ),
+        })
+      )
     },
   })
 
