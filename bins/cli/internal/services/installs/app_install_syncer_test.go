@@ -2,7 +2,9 @@ package installs
 
 import (
 	"context"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
@@ -117,6 +119,89 @@ func TestInputConfigForNewInstallUsesLatestAppBranchRunConfig(t *testing.T) {
 	if api.appConfigID != "app-config-2" {
 		t.Fatalf("GetAppConfig appConfigID = %q, want app-config-2", api.appConfigID)
 	}
+}
+
+type branchConfigAPI struct {
+	nuon.Client
+	polls    []*models.AppAppBranch
+	runs     []*models.AppWorkflow
+	cfg      *models.AppAppConfig
+	fetches  int
+	runLists int
+}
+
+func (a *branchConfigAPI) GetAppBranch(context.Context, string, string) (*models.AppAppBranch, error) {
+	a.fetches++
+	if a.fetches >= len(a.polls) {
+		return a.polls[len(a.polls)-1], nil
+	}
+	return a.polls[a.fetches], nil
+}
+
+func (a *branchConfigAPI) GetAppBranchRuns(context.Context, string, string) ([]*models.AppWorkflow, error) {
+	a.runLists++
+	return a.runs, nil
+}
+
+func (a *branchConfigAPI) GetAppConfig(context.Context, string, string, *bool) (*models.AppAppConfig, error) {
+	return a.cfg, nil
+}
+
+func TestAwaitBranchConfig(t *testing.T) {
+	origPoll, origTimeout := branchConfigPoll, branchConfigTimeout
+	branchConfigPoll = time.Millisecond
+	branchConfigTimeout = 50 * time.Millisecond
+	t.Cleanup(func() {
+		branchConfigPoll = origPoll
+		branchConfigTimeout = origTimeout
+	})
+
+	t.Run("no app branch", func(t *testing.T) {
+		got, err := (&appInstallSyncer{}).awaitBranchConfig(context.Background(), nil, false)
+		if err != nil || got != nil {
+			t.Fatalf("got (%v, %v), want (nil, nil)", got, err)
+		}
+	})
+
+	t.Run("already ready", func(t *testing.T) {
+		api := &branchConfigAPI{cfg: &models.AppAppConfig{ID: "cfg", Status: models.AppAppConfigStatusActive}}
+		branch := &models.AppAppBranch{ID: "b1", Name: "seed", LatestRun: &models.AppAppBranchRun{AppConfigID: "cfg"}}
+		got, err := (&appInstallSyncer{api: api, appID: "app"}).awaitBranchConfig(context.Background(), branch, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != branch || api.fetches != 0 {
+			t.Fatalf("got branch %v after %d fetches", got, api.fetches)
+		}
+	})
+
+	t.Run("waits while the run is in flight", func(t *testing.T) {
+		ready := &models.AppAppBranch{ID: "b1", Name: "seed", LatestRun: &models.AppAppBranchRun{Status: "running", AppConfigID: "cfg"}}
+		api := &branchConfigAPI{
+			polls: []*models.AppAppBranch{nil, ready},
+			cfg:   &models.AppAppConfig{ID: "cfg", Status: models.AppAppConfigStatusActive},
+		}
+		start := &models.AppAppBranch{ID: "b1", Name: "seed", LatestRun: &models.AppAppBranchRun{Status: "running"}}
+		got, err := (&appInstallSyncer{api: api, appID: "app"}).awaitBranchConfig(context.Background(), start, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != ready || api.fetches != 1 {
+			t.Fatalf("got %v after %d fetches", got, api.fetches)
+		}
+	})
+
+	t.Run("single failed run", func(t *testing.T) {
+		api := &branchConfigAPI{runs: []*models.AppWorkflow{{ID: "run-1"}}}
+		branch := &models.AppAppBranch{ID: "b1", Name: "seed", LatestRun: &models.AppAppBranchRun{Status: "failed"}}
+		_, err := (&appInstallSyncer{api: api, appID: "app"}).awaitBranchConfig(context.Background(), branch, false)
+		if err == nil || !strings.Contains(err.Error(), "run failed") {
+			t.Fatalf("err = %v", err)
+		}
+		if api.fetches != 0 || api.runLists != 1 {
+			t.Fatalf("fetches=%d runLists=%d", api.fetches, api.runLists)
+		}
+	})
 }
 
 func TestResolveRequiredInputs(t *testing.T) {

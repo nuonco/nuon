@@ -27,6 +27,11 @@ const (
 
 const defaultPollDuration = time.Second * 10
 
+var (
+	branchConfigPoll    = 10 * time.Second
+	branchConfigTimeout = 15 * time.Minute
+)
+
 // ErrSyncAborted means an interrupted confirm dialog should stop the whole
 // batch, unlike an explicit "No" which only skips the current install.
 var ErrSyncAborted = errors.New("sync aborted by user")
@@ -88,7 +93,13 @@ func (s *appInstallSyncer) syncInstall(
 }
 
 func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, confirm, wait, dryRun bool) (*models.AppInstall, error) {
-	branch := s.branchesByInstall[installCfg.Name]
+	branch, err := s.awaitBranchConfig(ctx, s.branchesByInstall[installCfg.Name], dryRun)
+	if err != nil {
+		return nil, err
+	}
+	if branch != nil {
+		s.branchesByInstall[installCfg.Name] = branch
+	}
 	appInputCfg, err := s.inputConfigForNewInstall(ctx, branch)
 	if err != nil {
 		return nil, err
@@ -221,12 +232,15 @@ func (s *appInstallSyncer) syncExistingInstall(
 ) (*models.AppInstall, error) {
 	var err error
 
-	branch := s.branchesByInstall[installCfg.Name]
+	branch, err := s.awaitBranchConfig(ctx, s.branchesByInstall[installCfg.Name], dryRun)
+	if err != nil {
+		return nil, err
+	}
+	if branch != nil {
+		s.branchesByInstall[installCfg.Name] = branch
+	}
 	targetAppConfigID := appInstall.AppConfigID
 	if branch != nil {
-		if branch.LatestRun == nil || branch.LatestRun.AppConfigID == "" {
-			return nil, fmt.Errorf("app branch %q has no app config to apply", branch.Name)
-		}
 		targetAppConfigID = branch.LatestRun.AppConfigID
 	}
 	appConfig, err := s.api.GetAppConfig(ctx, appInstall.AppID, targetAppConfigID, generics.ToPtr(true))
@@ -429,6 +443,88 @@ func (s *appInstallSyncer) syncExistingInstall(
 		ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	}
 	return appInstall, nil
+}
+
+// awaitBranchConfig waits until the install's app branch has a config to apply.
+// An install with no app branch skips the wait. A branch whose only run has
+// failed returns immediately. An in-flight run is polled until its config is ready.
+func (s *appInstallSyncer) awaitBranchConfig(ctx context.Context, branch *models.AppAppBranch, dryRun bool) (*models.AppAppBranch, error) {
+	if branch == nil {
+		return nil, nil
+	}
+
+	deadline := time.Now().Add(branchConfigTimeout)
+	current := branch
+	for {
+		ready, err := s.branchConfigReady(ctx, current)
+		if err != nil {
+			return nil, err
+		}
+		if ready {
+			return current, nil
+		}
+		if dryRun || time.Now().After(deadline) {
+			return nil, fmt.Errorf("app branch %q has no app config to apply", current.Name)
+		}
+		if !s.asJSON {
+			ui.PrintLn(fmt.Sprintf("waiting for app branch %s config", current.Name))
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(branchConfigPoll):
+		}
+
+		current, err = s.api.GetAppBranch(ctx, s.appID, branch.ID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting app branch %q: %w", branch.Name, err)
+		}
+		if current == nil {
+			return nil, fmt.Errorf("app branch %q was not found", branch.Name)
+		}
+	}
+}
+
+// branchConfigReady reports whether the branch's latest run has an active app
+// config. A single failed run is terminal.
+func (s *appInstallSyncer) branchConfigReady(ctx context.Context, branch *models.AppAppBranch) (bool, error) {
+	run := branch.LatestRun
+	if run != nil && branchRunFailed(run.Status) && run.AppConfigID == "" {
+		runs, err := s.api.GetAppBranchRuns(ctx, s.appID, branch.ID)
+		if err != nil {
+			return false, fmt.Errorf("error listing runs for app branch %q: %w", branch.Name, err)
+		}
+		if len(runs) <= 1 {
+			return false, fmt.Errorf("app branch %q run failed", branch.Name)
+		}
+	}
+	if run == nil || run.AppConfigID == "" {
+		return false, nil
+	}
+	cfg, err := s.api.GetAppConfig(ctx, s.appID, run.AppConfigID, generics.ToPtr(true))
+	if err != nil {
+		return false, fmt.Errorf("error getting app config for branch %q: %w", branch.Name, err)
+	}
+	if cfg == nil {
+		return false, nil
+	}
+	switch cfg.Status {
+	case models.AppAppConfigStatusActive:
+		return true, nil
+	case models.AppAppConfigStatusError:
+		return false, fmt.Errorf("app branch %q config %s failed to build", branch.Name, cfg.ID)
+	default:
+		return false, nil
+	}
+}
+
+func branchRunFailed(status string) bool {
+	switch status {
+	case "failed", "error", "cancelled":
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *appInstallSyncer) inputConfigForNewInstall(
