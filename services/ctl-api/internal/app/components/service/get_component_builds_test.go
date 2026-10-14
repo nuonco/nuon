@@ -53,7 +53,7 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildsSuccess() {
 func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildsEmpty() {
 	s.Run("returns empty array for component with no builds", func() {
 		// Create a fresh component with a config connection but no builds
-		freshComp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeDockerBuild)
+		freshComp := s.createComponent(s.testApp.ID, app.ComponentTypeDockerBuild)
 		s.deps.Seeder.CreateDockerBuildComponentConfigConnection(s.ctx, s.T(), freshComp.ID, s.testAppConfig.ID)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/builds", s.testApp.ID, freshComp.ID)

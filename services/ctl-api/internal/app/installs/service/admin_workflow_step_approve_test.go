@@ -70,6 +70,10 @@ func (s *AdminWorkflowStepApproveTestSuite) SetupSuite() {
 	s.SetDB(s.service.DB)
 }
 
+func (s *AdminWorkflowStepApproveTestSuite) SetupSubTest() {
+	tests.ClearQueueSignals(s.T(), s.service.DB)
+}
+
 func (s *AdminWorkflowStepApproveTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
@@ -93,9 +97,11 @@ func (s *AdminWorkflowStepApproveTestSuite) setupTestData() {
 
 	s.ctx, s.testAcc = s.service.Seeder.EnsureAccount(s.ctx, s.T())
 	s.ctx, s.testOrg = s.service.Seeder.EnsureOrg(s.ctx, s.T())
+	seedOrgQueues(s.T(), s.service.DB, s.testOrg)
 	s.testApp = s.service.Seeder.CreateApp(s.ctx, s.T())
 	s.service.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.service.DB, s.testInstall)
 }
 
 func (s *AdminWorkflowStepApproveTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -149,7 +155,7 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 					Name:              "test-step",
 					Status:            app.NewCompositeStatus(ctx, app.StatusPending),
 				}
-				err = s.service.DB.WithContext(ctx).Create(step).Error
+				err = s.service.DB.WithContext(ctx).Omit("workflow_step_group_id").Create(step).Error
 				require.NoError(s.T(), err)
 
 				// Create approval
@@ -205,7 +211,7 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 					Name:              "test-step",
 					Status:            app.NewCompositeStatus(ctx, app.StatusPending),
 				}
-				err = s.service.DB.WithContext(ctx).Create(step).Error
+				err = s.service.DB.WithContext(ctx).Omit("workflow_step_group_id").Create(step).Error
 				require.NoError(s.T(), err)
 
 				// Create approval
@@ -268,7 +274,7 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 					Name:              "test-step",
 					Status:            app.NewCompositeStatus(ctx, app.StatusPending),
 				}
-				err = s.service.DB.WithContext(ctx).Create(step).Error
+				err = s.service.DB.WithContext(ctx).Omit("workflow_step_group_id").Create(step).Error
 				require.NoError(s.T(), err)
 
 				s.T().Cleanup(func() {

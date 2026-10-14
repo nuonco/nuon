@@ -16,7 +16,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -61,9 +60,6 @@ func (s *LatestReportTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// Provided locally on purpose: the shared test options leave flowclient
-		// out because its import tree would create a cycle.
-		fx.Provide(flowclient.New),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -83,9 +79,11 @@ func (s *LatestReportTestSuite) SetupTest() {
 	ctx := context.Background()
 	ctx, _ = s.service.Seeder.EnsureAccount(ctx, s.T())
 	ctx, org := s.service.Seeder.EnsureOrg(ctx, s.T())
+	seedOrgQueues(s.T(), s.service.DB, org)
 	testApp := s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), testApp.ID)
 	install := s.service.Seeder.CreateInstall(ctx, s.T(), testApp)
+	seedInstallQueues(s.T(), s.service.DB, install)
 
 	// A fresh install per test: the ClickHouse table has a 7 day TTL and no
 	// per-test truncation, so rows must not be able to leak between runs.

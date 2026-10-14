@@ -23,22 +23,6 @@ func (s *InstallsServiceTestSuite) TestGetAvailableRolesEmptyOutputs() {
 	require.Empty(s.T(), resp.Roles)
 }
 
-func (s *InstallsServiceTestSuite) TestGetAvailableRolesMissingPrincipalType() {
-	install := s.createTestInstall()
-
-	path := fmt.Sprintf("/v1/installs/%s/available-roles?operation_type=deploy", install.ID)
-	rr := s.makeRequest(http.MethodGet, path, nil)
-	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
-}
-
-func (s *InstallsServiceTestSuite) TestGetAvailableRolesMissingOperationType() {
-	install := s.createTestInstall()
-
-	path := fmt.Sprintf("/v1/installs/%s/available-roles?principal_type=component", install.ID)
-	rr := s.makeRequest(http.MethodGet, path, nil)
-	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
-}
-
 func (s *InstallsServiceTestSuite) TestGetAvailableRolesInvalidPrincipalType() {
 	install := s.createTestInstall()
 

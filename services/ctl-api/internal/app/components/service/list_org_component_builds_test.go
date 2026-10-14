@@ -76,9 +76,30 @@ func (s *ComponentsServiceTestSuite) TestListOrgComponentBuildsRejectsInvalidCur
 }
 
 func (s *ComponentsServiceTestSuite) createComponentBuildJob(buildID string, group app.RunnerJobGroup, operation app.RunnerJobOperationType, typ app.RunnerJobType) *app.RunnerJob {
+	runnerGroup := &app.RunnerGroup{
+		OrgID:     s.testOrg.ID,
+		OwnerID:   s.testOrg.ID,
+		OwnerType: "org",
+		Type:      app.RunnerGroupTypeOrg,
+		Platform:  app.AppRunnerTypeAWSEKS,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(runnerGroup).Error)
+	runner := &app.Runner{
+		OrgID:         s.testOrg.ID,
+		Name:          "test-runner",
+		DisplayName:   "Test Runner",
+		Status:        app.RunnerStatusActive,
+		RunnerGroupID: runnerGroup.ID,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(runner).Error)
+	logStream := &app.LogStream{OwnerID: buildID, OwnerType: "component_builds", OrgID: s.testOrg.ID}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(logStream).Error)
+
 	job := &app.RunnerJob{
+		LogStreamID:       &logStream.ID,
 		ID:                domains.NewRunnerJobID(),
 		OrgID:             s.testOrg.ID,
+		RunnerID:          runner.ID,
 		OwnerID:           buildID,
 		OwnerType:         "component_builds",
 		Status:            app.RunnerJobStatusAvailable,

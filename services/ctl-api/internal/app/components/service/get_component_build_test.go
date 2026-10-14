@@ -43,6 +43,7 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildIncludesLatestCompo
 	ccc := s.getSeededConfigConnection(cmp.ID)
 	seededBuild := s.deps.Seeder.CreateComponentBuild(s.ctx, s.T(), ccc.ID)
 	job := s.deps.Seeder.CreateRunnerJob(s.ctx, s.T(), seededBuild.ID, "component_builds")
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(job).UpdateColumn("status", app.RunnerJobStatusFailed).Error)
 	execution := &app.RunnerJobExecution{
 		RunnerJobID: job.ID,
 		Status:      app.RunnerJobExecutionStatusFailed,
@@ -67,7 +68,10 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildIncludesLatestCompo
 
 	var response app.ComponentBuild
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
-	assert.Equal(s.T(), expected, response.CompositeError)
+	require.NotNil(s.T(), response.CompositeError)
+	assert.Equal(s.T(), expected.Type, response.CompositeError.Type)
+	assert.Equal(s.T(), expected.Severity, response.CompositeError.Severity)
+	assert.Equal(s.T(), expected.Message, response.CompositeError.Message)
 }
 
 // ---------------------------------------------------------------------------

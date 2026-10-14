@@ -192,6 +192,7 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsIsolation() {
 
 	ctx2, acc2 := s.deps.Seeder.EnsureAccount(context.Background(), s.T())
 	_, org2 := s.deps.Seeder.EnsureOrg(ctx2, s.T())
+	seedOrgQueues(s.T(), s.deps.DB, org2)
 
 	router2 := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.deps.L,
