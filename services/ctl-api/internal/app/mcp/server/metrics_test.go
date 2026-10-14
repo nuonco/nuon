@@ -63,6 +63,21 @@ func (w *capturingMetricsWriter) timingForEndpoint(endpoint string) (capturedMet
 	return capturedMetric{}, false
 }
 
+// waitForTiming waits for the request's timing metric. The middleware records
+// it after the handler returns, which can be after the client has read the
+// response.
+func (w *capturingMetricsWriter) waitForTiming(t *testing.T, endpoint string) capturedMetric {
+	t.Helper()
+
+	var metric capturedMetric
+	require.Eventually(t, func() bool {
+		var ok bool
+		metric, ok = w.timingForEndpoint(endpoint)
+		return ok
+	}, time.Second, 5*time.Millisecond)
+	return metric
+}
+
 func hasTag(tags []string, want string) bool {
 	for _, tag := range tags {
 		if tag == want {
@@ -139,8 +154,7 @@ func TestMCPMetricsTagsToolCalls(t *testing.T) {
 	_, err = session.CallTool(context.Background(), &mcp.CallToolParams{Name: "echo_org"})
 	require.NoError(t, err)
 
-	metric, ok := writer.timingForEndpoint("tools/call/echo_org")
-	require.True(t, ok)
+	metric := writer.waitForTiming(t, "tools/call/echo_org")
 	assert.True(t, hasTag(metric.tags, "context:mcp_api"))
 	assert.True(t, hasTag(metric.tags, "method:POST"))
 	assert.True(t, hasTag(metric.tags, "status:ok"))
@@ -163,8 +177,7 @@ func TestMCPMetricsMarksToolErrors(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, result.IsError)
 
-	metric, ok := writer.timingForEndpoint("tools/call/fail")
-	require.True(t, ok)
+	metric := writer.waitForTiming(t, "tools/call/fail")
 	assert.True(t, hasTag(metric.tags, "status:err"))
 	assert.True(t, hasTag(metric.tags, "status_code_class:2xx"))
 }
