@@ -126,6 +126,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS unit-test
+COPY probe.sh ./
 
 COPY --from=generated /src/services/${SERVICE}/internal ./internal/
 COPY --from=generated /src/services/${SERVICE}/docs ./docs/
@@ -139,9 +140,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/root/.cache,id=uv-hegel-cache \
     --mount=type=cache,target=/root/.local/share/uv,id=uv-hegel-python \
-    export CGO_ENABLED=0 && \
-    PKGS="$(go list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./...)" && \
-    go test -vet=off ${PKGS} && \
+    bash ./probe.sh && \
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS lint
