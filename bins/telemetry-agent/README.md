@@ -54,24 +54,3 @@ telemetry settings; creating an account or deploying the chart does not enable i
 `SSL_CERT_FILE` supplies additional relay CA trust without replacing system roots;
 Linux also supports `SSL_CERT_DIR`. `--allow-insecure-api` is for trusted local
 development only and never permits an HTTP relay.
-
-## Development and verification
-
-From the repository root:
-
-```sh
-docker build --target test -f bins/telemetry-agent/Dockerfile \
-  --build-arg AGENT_SOURCE=bins/telemetry-agent \
-  --build-arg BUILD_IMAGE=golang:1.25.8-alpine \
-  --build-arg RUNTIME_IMAGE=alpine:3.21 .
-```
-
-The Docker test target builds both binaries and runs end-to-end tests without a
-cluster or cloud account. Use it on macOS as well: combined file/directory CA trust
-is tested on Linux. The [Dockerfile](Dockerfile) is the build recipe, including SDK
-generation and the Collector build configuration.
-
-The `lint` target runs Go vet. The `artifacts` target exports downloadable agent
-and Collector binaries for Linux amd64 and arm64 under `/artifacts`, including
-gzip copies. When running outside the image, download both for the same
-architecture and use `--collector-binary` to point the agent at the Collector.
