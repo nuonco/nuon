@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
+
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
-	"go.temporal.io/sdk/temporal"
 )
 
 type SaveStateRequest struct {
