@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
+import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 import { SectionHeader } from '@/components/layout/SectionHeader'
@@ -57,6 +58,7 @@ const InstallGroupCard = ({
     panels.find((panel) => panel?.key === panelKey && panel.isVisible)?.id ??
     null
   const needsApproval = approval ? '1' : '0'
+  const errorMessage = group.error?.message
 
   useEffect(() => {
     if (!openPanelId) return
@@ -71,7 +73,7 @@ const InstallGroupCard = ({
         />
       </Panel>
     )
-  }, [openPanelId, needsApproval, updatePanel])
+  }, [openPanelId, needsApproval, errorMessage, updatePanel])
 
   return (
     <Panel
@@ -103,7 +105,13 @@ const InstallGroupCard = ({
                     Needs approval
                   </Badge>
                 ) : null}
-                <Status status={group.status} />
+                <StatusWithDescription
+                  statusProps={{ status: group.status, variant: 'default' }}
+                  tooltipProps={{
+                    tipContent: errorMessage,
+                    position: 'top',
+                  }}
+                />
               </span>
             </div>
             <InstallStatusTiles installs={installs} />

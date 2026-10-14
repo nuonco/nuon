@@ -265,6 +265,50 @@ export const BuildFailed = () => (
 )
 BuildFailed.storyName = 'Build failed'
 
+const deployError = {
+  type: 'install_group.install_update_failed',
+  message: 'delta failed during deploy',
+  severity: 'error',
+  data: { install_id: 'ins_delta', workflow_id: 'wf_delta' },
+  sections: [
+    {
+      kind: 'text',
+      heading: 'What happened',
+      body: 'install ins_delta workflow wf_delta: finished as error',
+    },
+  ],
+} as unknown as TCompositeError
+
+export const RolloutFailed = () => (
+  <BranchOverview
+    hasPlan
+    rollout={{ ...rollout, status: 'error', activity: undefined }}
+    changes={changes}
+    groups={groups.map((group) =>
+      group.id === 'primary'
+        ? {
+            ...group,
+            status: 'error',
+            error: deployError,
+            installs: group.installs.map((install) =>
+              install.id === 'ins_delta'
+                ? {
+                    ...install,
+                    status: 'error',
+                    workflowId: 'wf_delta',
+                    workflowHref: '#installs/ins_delta/workflows/wf_delta',
+                  }
+                : install
+            ),
+          }
+        : group
+    )}
+    rolloutHref="#rollout"
+    groupHref={(id) => `#rollout/groups/${id}`}
+  />
+)
+RolloutFailed.storyName = 'Rollout failed'
+
 export const ConfigUnparseable = () => (
   <BranchOverview
     hasPlan
