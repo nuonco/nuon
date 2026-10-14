@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,6 +9,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -32,9 +35,19 @@ import (
 // @Success						200	{array}		app.WorkflowStep
 // @Router						/v1/workflows/{workflow_id}/steps [GET]
 func (s *service) GetWorkflowSteps(ctx *gin.Context) {
-	workflowID := ctx.Param("workflow_id")
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org from context"))
+		return
+	}
 
-	steps, err := s.getWorkflowSteps(ctx, workflowID)
+	workflowID := ctx.Param("workflow_id")
+	if err := s.requireOrgWorkflow(ctx, org.ID, workflowID); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	steps, err := s.getWorkflowSteps(ctx, org.ID, workflowID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get workflow steps"))
 		return
@@ -65,9 +78,19 @@ func (s *service) GetWorkflowSteps(ctx *gin.Context) {
 // @Router						/v1/install-workflows/{install_workflow_id}/steps [GET]
 // @Deprecated
 func (s *service) GetInstallWorkflowSteps(ctx *gin.Context) {
-	workflowID := ctx.Param("install_workflow_id")
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org from context"))
+		return
+	}
 
-	steps, err := s.getWorkflowSteps(ctx, workflowID)
+	workflowID := ctx.Param("install_workflow_id")
+	if err := s.requireOrgWorkflow(ctx, org.ID, workflowID); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	steps, err := s.getWorkflowSteps(ctx, org.ID, workflowID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get install workflow steps"))
 		return
@@ -76,12 +99,31 @@ func (s *service) GetInstallWorkflowSteps(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, steps)
 }
 
-func (s *service) getWorkflowSteps(ctx *gin.Context, workflowID string) ([]app.WorkflowStep, error) {
+func (s *service) requireOrgWorkflow(ctx *gin.Context, orgID, workflowID string) error {
+	var workflow app.Workflow
+	err := s.db.WithContext(ctx).
+		Select("id").
+		Where(&app.Workflow{ID: workflowID, OrgID: orgID}).
+		Take(&workflow).Error
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return stderr.ErrNotFound{
+			Err:         fmt.Errorf("workflow %s not found", workflowID),
+			Description: "workflow not found",
+		}
+	}
+	return fmt.Errorf("unable to get workflow: %w", err)
+}
+
+func (s *service) getWorkflowSteps(ctx *gin.Context, orgID, workflowID string) ([]app.WorkflowStep, error) {
 	var steps []app.WorkflowStep
 
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Where(app.WorkflowStep{
+			OrgID:             orgID,
 			InstallWorkflowID: workflowID,
 		}).
 		Preload("CreatedBy").
