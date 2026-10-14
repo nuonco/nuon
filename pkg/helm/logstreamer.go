@@ -18,7 +18,7 @@ import (
 
 A package for streaming logs from pods managed by resources in a helm release.
 
-Supports Deployments and Statefulsets.
+Supports Deployments, StatefulSets, and ReplicaSets from the rendered chart.
 Does not support initContainers or standalone Pods.
 
 */

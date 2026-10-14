@@ -15,6 +15,7 @@ func HelmUpgradeWithLogStreaming(
 	ctx context.Context,
 	client *action.Upgrade, releaseName string, chart *chart.Chart, values map[string]interface{},
 	kubeCfg *rest.Config,
+	resources []Resource,
 	l *zap.Logger,
 ) (*release.Release, error) {
 	annotationSelectorKey := "meta.helm.sh/release-name"
@@ -39,7 +40,7 @@ func HelmUpgradeWithLogStreaming(
 	streamer := NewLogStreamer(k8sClient, l)
 
 	// the bulk of the work is here
-	go streamLogs(streamCtx, cancelStreaming, streamer, k8sClient, labelSelector, annotationSelectorKey, annotationSelectorValue, l)
+	go streamLogs(streamCtx, cancelStreaming, streamer, k8sClient, podLogTargets(resources, client.Namespace), labelSelector, annotationSelectorKey, annotationSelectorValue, l)
 
 	// execute the upgrade
 	rel, err := client.RunWithContext(ctx, releaseName, chart, values)
