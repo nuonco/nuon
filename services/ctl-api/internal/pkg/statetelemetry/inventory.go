@@ -53,15 +53,17 @@ WITH live_orgs AS (
     JOIN live_components c ON c.id = ic.component_id AND c.org_id = ic.org_id AND c.app_id = i.app_id
     WHERE ic.deleted_at = 0
     UNION ALL
-    SELECT 'runner', COALESCE(NULLIF(r.status_v2->>'status', ''), r.status, ''), rg.type, r.org_id, COALESCE(i.app_id, '')
+    SELECT 'runner', COALESCE(NULLIF(r.status_v2->>'status', ''), r.status, ''), rg.type, r.org_id, ''
     FROM runners r
     JOIN live_orgs o ON o.id = r.org_id
     JOIN runner_groups rg ON rg.id = r.runner_group_id AND rg.org_id = r.org_id AND rg.deleted_at = 0
-    LEFT JOIN live_installs i ON i.id = rg.owner_id AND i.org_id = rg.org_id
-    WHERE r.deleted_at = 0 AND (
-        (rg.type = 'org' AND rg.owner_type = 'orgs' AND rg.owner_id = o.id) OR
-        (rg.type = 'install' AND rg.owner_type = 'installs' AND i.id IS NOT NULL)
-    )
+    WHERE r.deleted_at = 0 AND rg.type = 'org' AND rg.owner_type = 'orgs' AND rg.owner_id = o.id
+    UNION ALL
+    SELECT 'runner', COALESCE(NULLIF(r.status_v2->>'status', ''), r.status, ''), rg.type, r.org_id, i.app_id
+    FROM runners r
+    JOIN runner_groups rg ON rg.id = r.runner_group_id AND rg.org_id = r.org_id AND rg.deleted_at = 0
+    JOIN live_installs i ON i.id = rg.owner_id AND i.org_id = rg.org_id
+    WHERE r.deleted_at = 0 AND rg.type = 'install' AND rg.owner_type = 'installs'
 ), normalized_resources AS (
 SELECT kind,
     CASE WHEN state = '' THEN 'unset'

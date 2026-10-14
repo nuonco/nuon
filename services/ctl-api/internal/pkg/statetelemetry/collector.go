@@ -268,6 +268,7 @@ func (c *collector) release(conn *pgx.Conn) {
 		f.values = snapshot{}
 		f.active = false
 		f.lastAttempt = time.Time{}
+		f.retryDelay = 0
 	}
 	c.mu.Unlock()
 	if wasLeader {

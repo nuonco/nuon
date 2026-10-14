@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
@@ -30,6 +31,7 @@ type family struct {
 	read        func(context.Context, pgx.Tx) (snapshot, error)
 
 	lastAttempt time.Time
+	retryDelay  time.Duration
 	startedAt   time.Time
 	collectedAt time.Time
 	active      bool
@@ -38,7 +40,11 @@ type family struct {
 
 func (c *collector) refreshIfDue(ctx context.Context, conn *pgx.Conn, f *family) error {
 	started := time.Now()
-	if started.Sub(f.lastAttempt) < f.interval {
+	interval := f.interval
+	if f.retryDelay > 0 {
+		interval = f.retryDelay
+	}
+	if started.Sub(f.lastAttempt) < interval {
 		return nil
 	}
 	f.lastAttempt = started
@@ -58,6 +64,13 @@ func (c *collector) refreshIfDue(ctx context.Context, conn *pgx.Conn, f *family)
 		c.mu.Unlock()
 	}
 	completed := time.Now()
+	var pgErr *pgconn.PgError
+	if errors.Is(err, context.DeadlineExceeded) ||
+		(errors.As(err, &pgErr) && (pgErr.Code == "57014" || pgErr.Code == "55P03")) {
+		f.retryDelay = min(max(refreshInterval, f.retryDelay*2), f.interval)
+	} else {
+		f.retryDelay = 0
+	}
 	outcome := "success"
 	if err != nil {
 		outcome = "error"

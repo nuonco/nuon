@@ -36,6 +36,11 @@ control-plane or instance identity on the resolved telemetry resource.
 - Successful refreshes replace the complete family together. Failed refreshes
   retain the previous values only until their TTL expires, measured from read
   start. Expiry or leadership loss stops value export; diagnostic timestamps remain.
+- Statement/lock timeouts and context deadlines retry after 30 seconds, doubling
+  the delay after each consecutive transient failure up to the family's normal
+  refresh interval. Retries run on the 30-second collector tick. Success or
+  leadership loss resets the backoff. Other errors, including cardinality and
+  permission failures, use the normal refresh interval.
 - A family refresh exceeding 4,095 distinct attribute sets in any metric stream
   is rejected, rather than exporting partial totals. This leaves headroom below
   the observable-gauge SDK limit of 4,096. Counter/histogram limits remain 2,000.
@@ -94,9 +99,10 @@ and a family that has never collected data are different states.
 ## Inventory
 
 All inventory metrics are integer gauges with unit `{resource}`. Families refresh
-immediately after acquiring leadership, then every five minutes; successful data
-expires fifteen minutes after read start. Export interval and ingestion delay add
-to the time before a change is visible.
+immediately after acquiring leadership, then every five minutes unless a transient
+failure triggers an earlier retry. Successful data expires fifteen minutes after
+read start. Export interval and ingestion delay add to the time before a change
+is visible.
 
 App/org grouping is enabled with the same global toggle as fleet collection:
 
