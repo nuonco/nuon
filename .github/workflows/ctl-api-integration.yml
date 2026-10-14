@@ -234,6 +234,14 @@ jobs:
         working-directory: mono
         run: printf 'n\n' | nuonctl scripts go-reset-dependencies
 
+      # The untracked temporal-gen wrappers are required to compile the test tree. Run before the dev
+      # stack, which generates into the same checkout on boot.
+      - name: Generate code
+        working-directory: nuon
+        run: |
+          go mod download
+          go generate ./...
+
       - name: Start ctl-api dev stack
         working-directory: mono
         env:
@@ -242,14 +250,6 @@ jobs:
           nohup nuonctl service dev --dev=ctl-api --skip-all --watch=false --webview=false --quiet=false \
             > /tmp/dev.log 2>&1 &
           echo "DEV_PID=$!" >> $GITHUB_ENV
-
-      # The untracked temporal-gen wrappers are required to compile the test tree; codegen overlaps
-      # the dev stack's boot above.
-      - name: Generate code
-        working-directory: nuon
-        run: |
-          go mod download
-          go generate ./...
 
       - name: Wait for ctl-api ready (up to 15m)
         run: |
