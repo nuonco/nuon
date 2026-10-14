@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 )
 
 const maxSnapshotSeries = telemetry.ObservableGaugeCardinalityLimit - 1
