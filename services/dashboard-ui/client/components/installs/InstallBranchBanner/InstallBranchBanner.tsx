@@ -7,19 +7,19 @@ import type { TAPIError } from '@/types'
 export interface IInstallBranchBanner {
   branchHref?: string
   branchName?: string
-  commitsBehind?: number | null
+  runsBehind?: number | null
   error?: TAPIError | null
   onRetry?: () => void
-  onViewCommits?: () => void
+  onViewRuns?: () => void
 }
 
 export const InstallBranchBanner = ({
   branchHref,
   branchName,
-  commitsBehind,
+  runsBehind,
   error,
   onRetry,
-  onViewCommits,
+  onViewRuns,
 }: IInstallBranchBanner) => {
   if (error) {
     return (
@@ -38,7 +38,7 @@ export const InstallBranchBanner = ({
     )
   }
 
-  if (!commitsBehind || commitsBehind < 1) return null
+  if (!runsBehind || runsBehind < 1) return null
 
   const branch = (
     <Text as="span" family="mono" variant="subtext">
@@ -56,13 +56,13 @@ export const InstallBranchBanner = ({
         <Text variant="subtext">
           This install is{' '}
           <strong>
-            {commitsBehind} {commitsBehind === 1 ? 'commit' : 'commits'} behind
+            {runsBehind} app branch {runsBehind === 1 ? 'run' : 'runs'} behind
           </strong>{' '}
           {branchHref ? <Link href={branchHref}>{branch}</Link> : branch}.
         </Text>
-        {onViewCommits ? (
-          <Button size="sm" onClick={onViewCommits}>
-            View commits
+        {onViewRuns ? (
+          <Button size="sm" onClick={onViewRuns}>
+            View runs
           </Button>
         ) : null}
       </div>

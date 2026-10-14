@@ -1,17 +1,17 @@
 import { afterEach, expect, test } from 'bun:test'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { InstallBranchBanner } from './InstallBranchBanner'
-import { PendingCommits } from './PendingCommits'
+import { SuccessfulBranchRuns } from './SuccessfulBranchRuns'
 
 afterEach(cleanup)
 
 test('hides branch lag when current or provenance is unknown', () => {
-  const { rerender } = render(<InstallBranchBanner commitsBehind={3} />)
-  expect(screen.getByText(/3 commits behind/)).toBeTruthy()
-  for (const commitsBehind of [0, undefined, null]) {
-    rerender(<InstallBranchBanner commitsBehind={commitsBehind} />)
-    expect(screen.queryByText(/commits? behind/)).toBeNull()
+  const { rerender } = render(<InstallBranchBanner runsBehind={3} />)
+  expect(screen.getByText(/3 app branch runs behind/)).toBeTruthy()
+  for (const runsBehind of [0, undefined, null]) {
+    rerender(<InstallBranchBanner runsBehind={runsBehind} />)
+    expect(screen.queryByText(/app branch runs? behind/)).toBeNull()
   }
 })
 
@@ -19,13 +19,13 @@ test('shows the count and tracked branch with singular copy', () => {
   render(
     <MemoryRouter>
       <InstallBranchBanner
-        commitsBehind={1}
+        runsBehind={1}
         branchName="release"
         branchHref="/org-1/apps/app-1/branches/br-1"
       />
     </MemoryRouter>
   )
-  expect(screen.getByText('1 commit behind')).toBeTruthy()
+  expect(screen.getByText('1 app branch run behind')).toBeTruthy()
   expect(
     screen.getByRole('link', { name: 'release' }).getAttribute('href')
   ).toBe('/org-1/apps/app-1/branches/br-1')
@@ -34,7 +34,7 @@ test('shows the count and tracked branch with singular copy', () => {
 test('reports a failed refresh rather than showing a stale count', () => {
   render(
     <InstallBranchBanner
-      commitsBehind={3}
+      runsBehind={3}
       error={{ error: 'Unavailable', description: '', user_error: false }}
       onRetry={() => {}}
     />
@@ -43,79 +43,87 @@ test('reports a failed refresh rather than showing a stale count', () => {
     screen.getByText('Unable to load branch tracking for this install.')
   ).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
-  expect(screen.queryByText(/commits behind/)).toBeNull()
+  expect(screen.queryByText(/app branch runs behind/)).toBeNull()
 })
 
-test('defaults to active branch runs and lets the user review terminal history', () => {
-  const commits = [
-    { workflow_id: 'pending', run_status: 'pending' },
-    { workflow_id: 'running', run_status: 'running', awaiting_approval: true },
-    { workflow_id: 'success', run_status: 'success' },
-    { workflow_id: 'failed', run_status: 'failed' },
-    {
-      workflow_id: 'cancelled',
-      run_status: 'cancelled',
-      awaiting_approval: true,
-    },
-    { workflow_id: 'not-attempted', run_status: 'not-attempted' },
-    { workflow_id: 'unknown' },
-  ]
+test('shows each successful run with its commit and keeps repeated commits distinct', () => {
   render(
     <MemoryRouter>
-      <PendingCommits
-        commits={commits}
-        hrefFor={(commit) => `/runs/${commit?.workflow_id}`}
+      <SuccessfulBranchRuns
+        selectedCommit={{ sha: 'abcdef1234', message: 'Selected config' }}
+        repo="acme/payments"
+        runs={[
+          {
+            run_id: 'newer',
+            workflow_id: 'newer',
+            sha: '1234567abc',
+            message: 'Update worker',
+            run_status: 'success',
+            created_at: '2026-10-14T12:00:00Z',
+            metadata: { trigger: 'push' },
+          },
+          {
+            run_id: 'older',
+            workflow_id: 'older',
+            sha: '1234567abc',
+            message: 'Update worker',
+            run_status: 'success',
+            created_at: '2026-10-14T11:00:00Z',
+            metadata: { trigger: 'manual' },
+          },
+        ]}
+        getRunHref={(run) => `/runs/${run?.workflow_id}`}
       />
     </MemoryRouter>
   )
   expect(
     screen
-      .getAllByRole('link', { name: 'View branch run' })
+      .getAllByRole('link', { name: /^(Commit pushed|Manual run)$/ })
       .map((link) => link.getAttribute('href'))
-  ).toEqual(['/runs/pending', '/runs/running'])
-  expect(screen.getAllByText('Awaiting approval')).toHaveLength(1)
+  ).toEqual(['/runs/newer', '/runs/older'])
+  expect(screen.getByText('Selected commit')).toBeTruthy()
+  expect(screen.getAllByText('Update worker')).toHaveLength(2)
+  expect(screen.getAllByText('Completed')).toHaveLength(2)
+  expect(screen.getByText('manual')).toBeTruthy()
   expect(
     screen
-      .getByRole('button', { name: 'Active runs' })
-      .getAttribute('aria-pressed')
-  ).toBe('true')
-
-  fireEvent.click(screen.getByRole('button', { name: 'All commits' }))
+      .getAllByRole('link', { name: 'Update worker' })
+      .map((link) => link.getAttribute('href'))
+  ).toEqual(['/runs/newer', '/runs/older'])
   expect(
     screen
-      .getAllByRole('link', { name: 'View branch run' })
+      .getAllByRole('link', { name: /1234567/ })
       .map((link) => link.getAttribute('href'))
   ).toEqual([
-    '/runs/pending',
-    '/runs/running',
-    '/runs/success',
-    '/runs/failed',
-    '/runs/cancelled',
-    '/runs/not-attempted',
-    '/runs/unknown',
+    'https://github.com/acme/payments/commit/1234567abc',
+    'https://github.com/acme/payments/commit/1234567abc',
   ])
-  fireEvent.click(screen.getByRole('button', { name: 'Active runs' }))
-  expect(screen.getAllByRole('link', { name: 'View branch run' })).toHaveLength(
-    2
-  )
 })
 
-test('explains when no active runs exist in the available commit history', () => {
+test('reports when the successful run history is capped', () => {
   render(
     <MemoryRouter>
-      <PendingCommits
-        commits={[{ workflow_id: 'cancelled', run_status: 'cancelled' }]}
-        commitsBehind={60}
-        hrefFor={(commit) => `/runs/${commit?.workflow_id}`}
+      <SuccessfulBranchRuns
+        runs={[
+          {
+            workflow_id: 'success',
+            run_status: 'success',
+            created_at: '2026-10-14T12:00:00Z',
+          },
+        ]}
+        runsBehind={60}
+        getRunHref={(run) => `/runs/${run?.workflow_id}`}
       />
     </MemoryRouter>
   )
-  expect(screen.getByText('No active runs')).toBeTruthy()
-  expect(screen.getByText(/No active runs in the newest commits/)).toBeTruthy()
-  expect(screen.queryByRole('link', { name: 'View branch run' })).toBeNull()
-  fireEvent.click(screen.getByRole('button', { name: 'All commits' }))
-  expect(screen.queryByText('No active runs')).toBeNull()
   expect(
-    screen.getByRole('link', { name: 'View branch run' }).getAttribute('href')
-  ).toBe('/runs/cancelled')
+    screen.getByText(/Showing the newest 1 of 60 successful app branch runs/)
+  ).toBeTruthy()
+})
+
+test('explains how successful runs appear when history is empty', () => {
+  render(<SuccessfulBranchRuns runs={[]} getRunHref={() => undefined} />)
+  expect(screen.getByText('No successful runs')).toBeTruthy()
+  expect(screen.getByText(/after an app branch run succeeds/)).toBeTruthy()
+  expect(screen.queryByRole('link')).toBeNull()
 })

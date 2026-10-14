@@ -4,7 +4,12 @@ export default {
 }
 
 import { InstallView } from '@/views/install/InstallView'
-import { viewPath, type TFixture } from '@/views/install/install-fixture'
+import { appFixture } from '@/views/app/app-fixtures'
+import {
+  VIEW_APP_ID,
+  viewPath,
+  type TFixture,
+} from '@/views/install/install-fixture'
 import {
   deploymentsFixture,
   resourcesFixture,
@@ -17,7 +22,10 @@ const messages = [
   'Raise the checkout worker retry budget',
 ]
 
-const commit = (index: number): TInstallOverviewCommit => ({
+const runCommit = (
+  index: number,
+  runStatus = 'success'
+): TInstallOverviewCommit => ({
   app_config_id: `cfg-${index + 2}`,
   branch_id: 'br-1',
   workflow_id: `wf-branch-${index}`,
@@ -26,44 +34,49 @@ const commit = (index: number): TInstallOverviewCommit => ({
   message: messages[index % messages.length],
   author: 'Example Developer',
   created_at: new Date(Date.now() - (index + 1) * 3_600_000).toISOString(),
-  run_status:
-    index < 2
-      ? 'running'
-      : index === 2
-        ? 'pending'
-        : ['success', 'failed', 'cancelled', 'not-attempted'][(index - 3) % 4],
-  awaiting_approval: index === 1,
+  run_status: runStatus,
+  metadata:
+    index % 3 === 0
+      ? { trigger: 'push' }
+      : index % 3 === 1
+        ? { trigger: 'manual' }
+        : { trigger: 'tag', tag: 'v2.4.0' },
 })
 
-const page = (count?: number, error = false, hasActiveRuns = true) => {
+const page = (
+  count?: number,
+  error = false,
+  excludedStatuses: string[] = []
+) => {
   const base = resourcesFixture('active')
   const deployments = deploymentsFixture('results')
+  const appRuns = appFixture('runs')
+  const history = [
+    ...excludedStatuses.map((status, index) => runCommit(index, status)),
+    ...Array.from({ length: count ?? 0 }, (_, index) =>
+      runCommit(index + excludedStatuses.length)
+    ),
+  ]
   const tracking: TInstallBranchTracking = {
     branch_id: 'br-1',
     target_branch: 'main',
     repo: 'acme/payments',
     status: 'current',
     selected_commit: {
-      ...commit(3),
+      ...runCommit(3),
+      run_id: 'run-selected',
+      workflow_id: 'wf-selected',
       app_config_id: 'cfg-1',
       sha: 'a1b2c3d4e5f6a7b8',
       message: 'Pin the payments chart',
       created_at: new Date(
-        Date.now() - ((count ?? 0) + 1) * 3_600_000
+        Date.now() - (history.length + 1) * 3_600_000
       ).toISOString(),
     },
-    commits_behind: count,
-    pending_commits: Array.from(
-      { length: Math.min(count ?? 0, 50) },
-      (_, index) =>
-        hasActiveRuns
-          ? commit(index)
-          : {
-              ...commit(index),
-              run_status: 'cancelled',
-              awaiting_approval: false,
-            }
-    ),
+    runs_behind: count,
+    successful_runs: history
+      .filter((run) => run.run_status === 'success')
+      .slice(0, 50),
   }
   const fixture: TFixture = (url, init) => {
     if (url.pathname.endsWith('/overview')) {
@@ -76,6 +89,55 @@ const page = (count?: number, error = false, hasActiveRuns = true) => {
             },
           }
     }
+    if (url.pathname === `/v1/apps/${VIEW_APP_ID}/configs`) {
+      return {
+        paginated: true,
+        body: [{ id: history[0]?.app_config_id ?? 'cfg-1', app_id: VIEW_APP_ID }],
+      }
+    }
+    if (url.pathname === `/v1/apps/${VIEW_APP_ID}/branches/br-1/runs`) {
+      return {
+        paginated: true,
+        body: [...history, tracking.selected_commit!].map((run) => ({
+          id: run.workflow_id,
+          created_at: run.created_at,
+          owner_type: 'app_branches',
+          type: 'app_branches_manual_update',
+          finished: !['pending', 'running'].includes(run.run_status ?? ''),
+          status: {
+            status:
+              run.run_status === 'failed'
+                ? 'error'
+                : run.run_status === 'running'
+                  ? 'in-progress'
+                  : run.run_status,
+          },
+          app_branch_runs: [
+            {
+              id: run.run_id,
+              status: run.run_status,
+              head_sha: run.sha,
+              created_at: run.created_at,
+              app_config_id: run.app_config_id,
+              metadata: run.metadata,
+              app_branch: { id: 'br-1', name: 'main' },
+              vcs_connection_commit: {
+                sha: run.sha,
+                message: run.message,
+                author_name: run.author,
+                created_at: run.created_at,
+              },
+            },
+          ],
+        })),
+      }
+    }
+    if (
+      url.pathname.endsWith('/orgs/current') ||
+      url.pathname.startsWith(`/v1/apps/${VIEW_APP_ID}`)
+    ) {
+      return appRuns(url, init)
+    }
     return base(url, init) ?? deployments(url, init)
   }
   return (
@@ -84,10 +146,13 @@ const page = (count?: number, error = false, hasActiveRuns = true) => {
 }
 
 export const Behind = () => page(3)
-export const OneCommitBehind = () => page(1)
+export const OneRunBehind = () => page(1)
 export const Current = () => page(0)
 export const UnknownProvenance = () => page()
-export const TwentyFiveCommitsBehind = () => page(25)
-export const ManyCommitsBehind = () => page(64)
-export const NoActiveRuns = () => page(3, false, false)
+export const TwentyFiveRunsBehind = () => page(25)
+export const ManyRunsBehind = () => page(64)
+export const FailedAndCanceledRuns = () =>
+  page(3, false, ['failed', 'cancelled', 'running'])
+export const OnlyFailedAndCanceledRuns = () =>
+  page(0, false, ['failed', 'cancelled'])
 export const LoadFailed = () => page(0, true)
