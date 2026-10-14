@@ -95,8 +95,15 @@ type PolicyReport struct {
 	Status CompositeStatus `json:"status,omitzero" gorm:"type:jsonb" temporaljson:"status,omitzero,omitempty"`
 }
 
+const PolicyReportActivityTimeExpression = "COALESCE(NULLIF(evaluated_at, '0001-01-01 00:00:00+00'::timestamptz), created_at)"
+
 func (r *PolicyReport) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
+		{
+			Name:    indexes.Name(db, &PolicyReport{}, "activity"),
+			Columns: []string{"org_id", "install_id", "(" + PolicyReportActivityTimeExpression + ") DESC", "id DESC"},
+			Option:  "WHERE install_id IS NOT NULL AND deleted_at = 0",
+		},
 		{
 			Name: indexes.Name(db, &PolicyReport{}, "org_id"),
 			Columns: []string{
