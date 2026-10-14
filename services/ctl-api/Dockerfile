@@ -134,14 +134,14 @@ COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/
 # Hegel property tests spawn a Python-based hegel-core server via uv; the cache
 # mounts ensure /root/.cache exists (hegel installs uv there) and persist the uv
 # binary, package cache, and managed Python across builds.
-# Only packages with tests: passing the test-less ones too makes go test run ~3x slower.
+# Only packages with tests (test-less ones serialize go test); -p 16 overlaps idle test runs with links.
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/root/.cache,id=uv-hegel-cache \
     --mount=type=cache,target=/root/.local/share/uv,id=uv-hegel-python \
     export CGO_ENABLED=0 && \
     PKGS="$(go list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./...)" && \
-    go test -vet=off ${PKGS} && \
+    go test -vet=off -p 16 ${PKGS} && \
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS lint
