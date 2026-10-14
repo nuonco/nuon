@@ -105,6 +105,11 @@ func (r *InstallRunbookRun) Views(db *gorm.DB) []migrations.View {
 func (r *InstallRunbookRun) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
+			Name:    indexes.Name(db, &InstallRunbookRun{}, "activity"),
+			Columns: []string{"org_id", "install_id", "created_at DESC", "id DESC"},
+			Option:  "WHERE deleted_at = 0",
+		},
+		{
 			Name: indexes.Name(db, &InstallRunbookRun{}, "preload"),
 			Columns: []string{
 				"install_runbook_id",
