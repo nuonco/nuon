@@ -13,7 +13,6 @@ func DefaultInstall(actionCfg *action.Configuration) *action.Install {
 // useful in case we want to configure a client that has already been created
 // NOTE(fd): these default values were yoinked from the runner install code
 func ConfigureDefaultInstall(client *action.Install) *action.Install {
-	client.ClientOnly = false
 	client.DisableHooks = false
 
 	client.DependencyUpdate = true

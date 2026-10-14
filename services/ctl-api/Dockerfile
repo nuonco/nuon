@@ -8,6 +8,7 @@ ARG GOCACHE_S3_ETAG
 ARG GOCACHE_COMPACT=false
 
 FROM ${BUILD_IMAGE} AS gocache-restore
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG AWS_REGION
 ARG GOCACHE_S3_URI
 ARG GOCACHE_S3_ETAG
@@ -44,13 +45,17 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
       WAIT=$(date +%s); \
       wait; \
       echo "wipe-wait: $(($(date +%s) - WAIT))s"; \
-      [ "$stream_status" -eq 0 ] && \
-      if [ "${GOCACHE_COMPACT}" = "true" ]; then \
-        find /go/pkg/build-cache -mindepth 2 -maxdepth 2 -exec touch -d "@0" {} +; \
-        touch /go/pkg/build-cache/.nuon-compact-since; \
-        date +%s > /go/pkg/build-cache/trim.txt; \
-      fi && \
-      echo "${GOCACHE_S3_ETAG}" > /go/pkg/build-cache/.nuon-s3-etag; \
+      if [ "$stream_status" -ne 0 ]; then \
+        echo "WARNING: Go cache restore failed, this build compiles cold"; \
+        stash /go/pkg/build-cache; stash /go/pkg/mod; wait; \
+      else \
+        if [ "${GOCACHE_COMPACT}" = "true" ]; then \
+          find /go/pkg/build-cache -mindepth 2 -maxdepth 2 -exec touch -d "@0" {} +; \
+          touch /go/pkg/build-cache/.nuon-compact-since; \
+          date +%s > /go/pkg/build-cache/trim.txt; \
+        fi && \
+        echo "${GOCACHE_S3_ETAG}" > /go/pkg/build-cache/.nuon-s3-etag; \
+      fi; \
     elif [ -z "${GOCACHE_S3_URI}" ]; then \
       echo "WARNING: no Go cache seed available, this build compiles cold"; \
     else \
@@ -134,11 +139,14 @@ COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/
 # Hegel property tests spawn a Python-based hegel-core server via uv; the cache
 # mounts ensure /root/.cache exists (hegel installs uv there) and persist the uv
 # binary, package cache, and managed Python across builds.
+# Only packages with tests (test-less ones serialize go test); -p 16 overlaps idle test runs with links.
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/root/.cache,id=uv-hegel-cache \
     --mount=type=cache,target=/root/.local/share/uv,id=uv-hegel-python \
-    CGO_ENABLED=0 go test -vet=off ./... && \
+    export CGO_ENABLED=0 && \
+    PKGS="$(go list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./...)" && \
+    go test -vet=off -p 16 ${PKGS} && \
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS lint
@@ -169,6 +177,7 @@ FROM scratch AS gocache-status-output
 COPY --from=gocache-status /gocache-status /
 
 FROM code AS gocache-s3
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG AWS_REGION
 ARG GOCACHE_S3_UPLOAD_URI
 ARG GOCACHE_COMPACT

@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
 	chart "helm.sh/helm/v4/pkg/chart/v2"
+	rcommon "helm.sh/helm/v4/pkg/release/common"
 	release "helm.sh/helm/v4/pkg/release/v1"
 )
 
@@ -22,7 +23,7 @@ func recoverHandler(t *testing.T, revisions ...*release.Release) (*handler, *act
 	return helmHandler(t, nil, revisions...)
 }
 
-func testRevision(version int, status release.Status) *release.Release {
+func testRevision(version int, status rcommon.Status) *release.Release {
 	return &release.Release{
 		Name:      testReleaseName,
 		Namespace: "default",
@@ -38,10 +39,10 @@ func testRevision(version int, status release.Status) *release.Release {
 // The invariant that makes this safe to expose as a button: a healthy release is
 // never touched, no matter how many times the action is run.
 func TestRecoverRelease_LeavesHealthyReleaseAlone(t *testing.T) {
-	for _, status := range []release.Status{
-		release.StatusDeployed,
-		release.StatusFailed,
-		release.StatusSuperseded,
+	for _, status := range []rcommon.Status{
+		rcommon.StatusDeployed,
+		rcommon.StatusFailed,
+		rcommon.StatusSuperseded,
 	} {
 		t.Run(string(status), func(t *testing.T) {
 			h, cfg := recoverHandler(t, testRevision(1, status))
@@ -53,8 +54,8 @@ func TestRecoverRelease_LeavesHealthyReleaseAlone(t *testing.T) {
 
 			history, err := cfg.Releases.History(testReleaseName)
 			require.NoError(t, err)
-			assert.Len(t, history, 1, "no revision should have been added")
-			assert.Equal(t, status, history[0].Info.Status, "status must be untouched")
+			require.Len(t, history, 1, "no revision should have been added")
+			assert.Equal(t, status, history[0].(*release.Release).Info.Status, "status must be untouched")
 		})
 	}
 }
@@ -71,39 +72,40 @@ func TestRecoverRelease_NoReleaseStored(t *testing.T) {
 
 func TestRecoverRelease_RollsBackToLastGoodRevision(t *testing.T) {
 	h, cfg := recoverHandler(t,
-		testRevision(1, release.StatusSuperseded),
-		testRevision(2, release.StatusDeployed),
-		testRevision(3, release.StatusPendingUpgrade),
+		testRevision(1, rcommon.StatusSuperseded),
+		testRevision(2, rcommon.StatusDeployed),
+		testRevision(3, rcommon.StatusPendingUpgrade),
 	)
 
 	res, err := h.recoverRelease(context.Background(), zap.NewNop(), cfg)
 	require.NoError(t, err)
 	assert.Equal(t, recoverActionRollback, res.Action)
 	assert.Equal(t, 2, res.Revision)
-	assert.Equal(t, string(release.StatusPendingUpgrade), res.Before)
+	assert.Equal(t, string(rcommon.StatusPendingUpgrade), res.Before)
 
 	last, err := cfg.Releases.Last(testReleaseName)
 	require.NoError(t, err)
-	assert.Equal(t, release.StatusDeployed, last.Info.Status,
+	stored := last.(*release.Release)
+	assert.Equal(t, rcommon.StatusDeployed, stored.Info.Status,
 		"the release should be usable again after recovery")
-	assert.Equal(t, 4, last.Version, "a rollback records a new revision")
+	assert.Equal(t, 4, stored.Version, "a rollback records a new revision")
 	assert.Contains(t, res.Summary(testReleaseName), "revision 2")
 }
 
 // The most common stuck state: a first install that never rolled out. There is no
 // revision behind it, so rollback cannot help and the release has to go.
 func TestRecoverRelease_UninstallsWhenNoRevisionEverRolledOut(t *testing.T) {
-	h, cfg := recoverHandler(t, testRevision(1, release.StatusPendingInstall))
+	h, cfg := recoverHandler(t, testRevision(1, rcommon.StatusPendingInstall))
 
 	res, err := h.recoverRelease(context.Background(), zap.NewNop(), cfg)
 	require.NoError(t, err)
 	assert.Equal(t, recoverActionUninstall, res.Action)
-	assert.Equal(t, string(release.StatusPendingInstall), res.Before)
+	assert.Equal(t, string(rcommon.StatusPendingInstall), res.Before)
 	assert.Contains(t, res.Summary(testReleaseName), "no revision to roll back to")
 
 	last, err := cfg.Releases.Last(testReleaseName)
 	if err == nil {
-		assert.Equal(t, release.StatusUninstalled, last.Info.Status)
+		assert.Equal(t, rcommon.StatusUninstalled, last.(*release.Release).Info.Status)
 	}
 }
 
@@ -111,8 +113,8 @@ func TestRecoverRelease_UninstallsWhenNoRevisionEverRolledOut(t *testing.T) {
 // failed revisions is removed rather than returned to a broken state.
 func TestRecoverRelease_FailedRevisionsAreNotRollbackTargets(t *testing.T) {
 	h, cfg := recoverHandler(t,
-		testRevision(1, release.StatusFailed),
-		testRevision(2, release.StatusPendingUpgrade),
+		testRevision(1, rcommon.StatusFailed),
+		testRevision(2, rcommon.StatusPendingUpgrade),
 	)
 
 	res, err := h.recoverRelease(context.Background(), zap.NewNop(), cfg)
@@ -122,8 +124,8 @@ func TestRecoverRelease_FailedRevisionsAreNotRollbackTargets(t *testing.T) {
 
 func TestRecoverRelease_IsIdempotent(t *testing.T) {
 	h, cfg := recoverHandler(t,
-		testRevision(1, release.StatusDeployed),
-		testRevision(2, release.StatusPendingUpgrade),
+		testRevision(1, rcommon.StatusDeployed),
+		testRevision(2, rcommon.StatusPendingUpgrade),
 	)
 
 	first, err := h.recoverRelease(context.Background(), zap.NewNop(), cfg)

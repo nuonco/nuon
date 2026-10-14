@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"helm.sh/helm/v4/pkg/action"
+	rcommon "helm.sh/helm/v4/pkg/release/common"
 	release "helm.sh/helm/v4/pkg/release/v1"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -176,7 +177,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		helmPlan.TemplateOutput = templateOutput
 		if prevRel != nil && prevRel.Info != nil {
 			helmPlan.ReleaseStatus = string(prevRel.Info.Status)
-			if len(*contentDiff) == 0 && prevRel.Info.Status != release.StatusDeployed {
+			if len(*contentDiff) == 0 && prevRel.Info.Status != rcommon.StatusDeployed {
 				diffStr = fmt.Sprintf(
 					"no manifest changes, but the release is %s and was never rolled out — re-applying",
 					prevRel.Info.Status,
@@ -270,7 +271,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	// it, which is how a component picks up its kinds without being redeployed.
 	if h.manifestKinds != nil {
 		if manifest := renderedManifest(rel, helmPlan); manifest != "" {
-			h.manifestKinds.Set(h.state.plan.ComponentID, manifest)
+			h.manifestKinds.Set(h.state.plan.ComponentID, manifest, h.state.plan.HelmDeployPlan.Namespace)
 		}
 	}
 
