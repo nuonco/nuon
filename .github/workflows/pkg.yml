@@ -48,16 +48,31 @@ jobs:
     name: 🌏 test
     needs: changes
     if: ${{ needs.changes.outputs.pkg == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: build-only
+    env:
+      NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
+      IS_FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
     steps:
+      - uses: FranzDiebold/github-env-vars-action@v2
+
       - name: Checkout repo
         uses: actions/checkout@v6
 
       - name: Setup nuonctl
         uses: ./actions/setup-nuonctl
 
+      - name: Setup BuildKit
+        if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}
+        run: |
+          CI=true nuonctl builds driver ctl-api && nuonctl builds driver-health ctl-api || docker buildx ls
+
       - name: 🧪 Tests
-        run: CI=true nuonctl tests run-all pkg
+        run: |
+          CACHE_ARGS=()
+          if [[ "${IS_FORK_PR}" != "true" ]]; then
+            CACHE_ARGS=(--write-cache --max-mode)
+          fi
+          CI=true nuonctl tests run-all pkg "${CACHE_ARGS[@]}"
 
   update_status:
     name: update status

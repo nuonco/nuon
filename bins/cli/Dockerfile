@@ -136,9 +136,12 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS test
+# Only packages with tests (test-less ones serialize go test); -p 16 overlaps idle test runs with links.
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
-    CGO_ENABLED=0 go test -vet=off ./... && \
+    export CGO_ENABLED=0 && \
+    PKGS="$(go list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./...)" && \
+    go test -vet=off -p 16 ${PKGS} && \
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS lint
