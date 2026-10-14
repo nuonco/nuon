@@ -14,7 +14,7 @@ import { InstallAppConfigProvider } from '@/providers/install-app-config-provide
 import { InstallProvider } from '@/providers/install-provider'
 import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
-import { getInstallStack, getWorkflow, getWorkflowSteps } from '@/lib'
+import { getInstallStack, getInstallWorkflows, getWorkflowSteps } from '@/lib'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TInstallStack } from '@/types'
@@ -267,13 +267,17 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
   })
   const phase = phaseFromStatus(stackStatus(stack), launched)
 
-  const workflowId = readString(sharedData.workflow_id)
+  // The create response has no workflow ID, so find the install's provision workflow.
   const { data: workflow } = useQuery({
-    queryKey: ['first-run-provision-workflow', orgId, workflowId],
-    queryFn: () => getWorkflow({ orgId, workflowId }),
-    enabled: !!workflowId,
-    staleTime: Infinity,
+    queryKey: ['first-run-provision-workflow', orgId, installId],
+    queryFn: () =>
+      getInstallWorkflows({ orgId, installId, type: 'provision', planonly: false, limit: 1 }).then(
+        (res) => res.data?.[0] ?? null
+      ),
+    enabled: !!installId,
+    refetchInterval: (query) => (query.state.data ? false : STACK_POLL_MS),
   })
+  const workflowId = workflow?.id ?? ''
   const { data: steps } = useQuery({
     queryKey: ['first-run-provision-steps', orgId, workflowId],
     queryFn: () => getWorkflowSteps({ orgId, workflowId }),
