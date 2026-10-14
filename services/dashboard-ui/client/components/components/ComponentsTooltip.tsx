@@ -60,7 +60,8 @@ function getComponentSubtitle(
 export function getContextTooltipItemsFromInstallComponents(
   components: TInstallComponent[],
   pathname: string,
-  lifecycleStatus?: string
+  lifecycleStatus?: string,
+  hrefFor?: (component: TInstallComponent) => string
 ): TContextTooltipItem[] {
   const isDeprovisioning = lifecycleStatus === 'deprovisioning'
   const isDeprovisioned = lifecycleStatus === 'deprovisioned'
@@ -74,7 +75,9 @@ export function getContextTooltipItemsFromInstallComponents(
 
   return components?.map((comp) => ({
     id: comp?.component_id,
-    href: `${pathname}/${comp?.component_id}`,
+    href: hrefFor
+      ? hrefFor(comp)
+      : `${pathname}/${comp?.component_id}`,
     leftContent: (
       <Status
         status={effectiveStatus(comp?.status_v2?.status)}

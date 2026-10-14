@@ -7,6 +7,7 @@ import { toSentenceCase } from './string-utils'
 type TInstallRouteOptions = {
   nested?: boolean
   appId?: string
+  branchId?: string
 }
 
 export type TBadgeCfg = {
@@ -131,14 +132,24 @@ export function getWorkflowHref(
   workflow: TWorkflow,
   options?: TInstallRouteOptions
 ): string {
-  if (workflow?.owner_type === 'app_branches') {
+  if (
+    workflow?.owner_type === 'app_branches' ||
+    workflow?.type?.startsWith('app_branches_')
+  ) {
     const run = workflow?.app_branch_runs?.[0]
-    const appId = run?.app_branch?.app_id
-    const branchId = run?.app_branch?.id ?? workflow?.owner_id
-    if (appId && branchId && workflow?.id) {
-      return `/${orgId}/apps/${appId}/branches/${branchId}/runs/${workflow.id}`
-    }
+    const appId = run?.app_branch?.app_id ?? workflow.metadata?.app_id
+    const branchId =
+      run?.app_branch?.id ?? workflow.metadata?.app_branch_id ?? workflow?.owner_id
+    if (!appId || !branchId || !workflow?.id) return ''
+    return `/${orgId}/apps/${appId}/branches/${branchId}/runs/${workflow.id}`
   }
+
+  const branchRunId = workflow?.metadata?.app_branch_run_id
+  if (branchRunId) {
+    if (!options?.appId || !options.branchId) return ''
+    return `/${orgId}/apps/${options.appId}/branches/${options.branchId}/runs/${branchRunId}`
+  }
+
   return installHref({
     orgId,
     installId: workflow?.owner_id,

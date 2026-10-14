@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test'
 import {
+  installComponentStatusSuffix,
   installHref,
   installPathnameSuffix,
+  installStatusSuffix,
   isNewInstallIAEnabled,
   withAppInstallBreadcrumbs,
 } from './install-path'
@@ -74,6 +76,57 @@ test('workflow detail nests under deployments when the new install IA is on', ()
       suffix: '/history/wf-1',
     })
   ).toBe('/org-1/installs/inst-1/history/wf-1')
+})
+
+test('status links use the new install pages when the new install IA is on', () => {
+  expect(installStatusSuffix('runner', false)).toBe('/runner')
+  expect(installStatusSuffix('sandbox', false)).toBe('/sandbox')
+  expect(installStatusSuffix('stacks', false)).toBe('/stacks')
+  expect(installStatusSuffix('components', false)).toBe('/components')
+  expect(installStatusSuffix('workflows', false)).toBe('/workflows')
+  expect(installStatusSuffix('health', false, 'degraded')).toBe(
+    '/resources?health=degraded'
+  )
+
+  expect(installStatusSuffix('runner', true)).toBe('/operations/runner')
+  expect(installStatusSuffix('sandbox', true)).toBe('/resources/sandbox')
+  expect(installStatusSuffix('stacks', true)).toBe('/resources')
+  expect(installStatusSuffix('components', true)).toBe('/resources/components')
+  expect(installStatusSuffix('workflows', true)).toBe('/deployments')
+  expect(installStatusSuffix('health', true, 'degraded')).toBe('/health')
+
+  expect(
+    installComponentStatusSuffix({
+      nested: false,
+      componentId: 'cmp-1',
+      name: 'api server',
+      type: 'helm_chart',
+    })
+  ).toBe('/components/cmp-1')
+  expect(
+    installComponentStatusSuffix({
+      nested: true,
+      componentId: 'cmp-1',
+      name: 'api server',
+      type: 'helm_chart',
+    })
+  ).toBe('/resources/components?q=api%20server')
+  expect(
+    installComponentStatusSuffix({
+      nested: true,
+      componentId: 'cmp-2',
+      name: 'worker',
+      type: 'docker_build',
+    })
+  ).toBe('/resources/images?q=worker')
+  expect(
+    installComponentStatusSuffix({
+      nested: true,
+      componentId: 'cmp-3',
+      name: 'proxy',
+      type: 'external_image',
+    })
+  ).toBe('/resources/images?q=proxy')
 })
 
 test('install pathname suffix keeps the page after the install id', () => {
