@@ -36,7 +36,7 @@ func (s *service) AdminUpdateSandbox(ctx *gin.Context) {
 		return
 	}
 
-	install, err := s.getInstall(ctx, installID)
+	install, err := s.getInstallCrossOrg(ctx, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return

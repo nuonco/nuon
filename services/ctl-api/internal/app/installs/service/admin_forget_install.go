@@ -34,7 +34,7 @@ type AdminForgetInstallRequest struct{}
 func (s *service) AdminForgetInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
-	install, err := s.getInstall(ctx, installID)
+	install, err := s.getInstallCrossOrg(ctx, installID)
 	if err != nil {
 		ctx.Error(err)
 		return
