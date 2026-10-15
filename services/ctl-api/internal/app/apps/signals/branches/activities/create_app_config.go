@@ -56,8 +56,7 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 		appConfig.SourceConfig.SetContentType("application/json")
 	}
 
-	dbCtx := blobstore.WithBlobService(ctx, a.blobSvc)
-	if res := a.db.WithContext(dbCtx).Create(appConfig); res.Error != nil {
+	if res := a.db.WithContext(ctx).Create(appConfig); res.Error != nil {
 		return nil, fmt.Errorf("unable to create app config: %w", res.Error)
 	}
 

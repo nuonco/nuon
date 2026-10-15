@@ -21,8 +21,7 @@ type GetGithubEventResponse struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) GetGithubEvent(ctx context.Context, req GetGithubEventRequest) (*GetGithubEventResponse, error) {
-	dbCtx := blobstore.WithBlobService(ctx, a.blobSvc)
-	dbCtx = blobstore.WithBlobAutoLoad(dbCtx, true)
+	dbCtx := blobstore.WithBlobAutoLoad(ctx, true)
 
 	var event app.GithubEvent
 	if err := a.db.WithContext(dbCtx).First(&event, "id = ?", req.GithubEventID).Error; err != nil {

@@ -91,8 +91,7 @@ func (s *service) createHelmRelease(ctx *gin.Context, helmChartID, namespace, ke
 	}
 	helmRelease.Body.Set(body)
 
-	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)
-	res := s.db.WithContext(dbCtx).Model(&app.HelmRelease{}).Create(&helmRelease)
+	res := s.db.WithContext(ctx).Model(&app.HelmRelease{}).Create(&helmRelease)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create helm release: %w", res.Error)
 	}

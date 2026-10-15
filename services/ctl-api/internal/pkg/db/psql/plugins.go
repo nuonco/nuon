@@ -3,6 +3,7 @@ package psql
 import (
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/afterquery"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/pagination"
@@ -22,6 +23,12 @@ func (d *database) registerPlugins(db *gorm.DB) error {
 
 	if d.QueryCollector != nil {
 		db.Use(querycollector.NewPlugin(d.QueryCollector, "psql"))
+	}
+
+	if d.blobSvc != nil {
+		if err := db.Use(blobstore.NewPlugin(d.blobSvc)); err != nil {
+			return err
+		}
 	}
 
 	return nil

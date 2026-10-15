@@ -15,7 +15,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 // @ID						GetTerraformWorkspaceStatesJSONByIDV2
@@ -114,7 +113,7 @@ func (s *service) GetTerraformStatesJSONById(ctx *gin.Context, workspaceID strin
 		return nil, fmt.Errorf("unable to get terraform state: %w", res.Error)
 	}
 
-	contents, fromBlob := state.GetContents(blobstore.WithBlobService(ctx, s.blobSvc), s.cfg.BlobReadEnabled)
+	contents, fromBlob := state.GetContents(ctx, s.cfg.BlobReadEnabled)
 	state.Contents = contents
 	if fromBlob {
 		s.l.Debug("read terraform workspace state json contents from blob",
