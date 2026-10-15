@@ -1,0 +1,124 @@
+---
+title: 042 - Clean Deprovisions and a New Dashboard
+description: Offboard a customer without risking their data, and run your fleet from a dashboard organized around your app branches.
+boost: 0.3
+---
+
+_October 15, 2026_
+
+## Clean deprovisions
+
+Offboard a customer and leave their data where it belongs: in their account.
+
+When a contract ends or an install moves, your customer usually wants to keep their databases and buckets. Your
+policies are there to stop exactly those resources from being deleted. Until now that meant deprovisions stalled on
+your own guardrails, and cleaning up took hand-edited state and custom actions.
+
+Mark the stateful resources a component should leave behind:
+
+```toml components/database.toml
+[teardown]
+retain = [
+  "aws_rds_cluster.main",
+  "aws_rds_cluster_instance.main",
+]
+```
+
+Nuon destroys everything else, then hands the retained resources over to your customer. The teardown plan shows
+each one with a **Retain** action, so you can review exactly what stays before anything runs.
+If a retained resource depends on something that would be destroyed, Nuon fails the plan instead of taking the
+data with it.
+
+Policies that protect production on every deploy can now step aside for an intentional teardown:
+
+```toml policies.toml
+[[policy]]
+type              = "terraform_module"
+engine            = "opa"
+contents          = "./protect-rds-cluster.rego"
+apply_on_teardown = false
+```
+
+Deprovisions also show up on the install's deployments page alongside every other operation, and a failed plan
+step can be skipped so one stuck component no longer blocks the rest of the teardown.
+
+Read more at [Retaining resources on teardown](/guides/retaining-resources-on-teardown) and
+[Skipping policies during teardown](/concepts/policies#skipping-policies-during-teardown).
+
+---
+
+## A new dashboard
+
+See what is running in every customer's install, what changed, and who changed it, starting from your app
+branches.
+
+<div style={{
+  backgroundImage: 'url(/images/screenshot-backdrop.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/042-app-branch-overview.png"
+    alt="An app branch overview tracking acme/payments on every push, with the latest run's pipeline and two install groups, staging and customers, both rolled out successfully with manual approval"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+App branches are now the landing page for each app. Install pages show how far each install is behind its tracked
+branch, with the newer commits one click away. Deployment history keeps active work above past runs, and every
+action, runbook, and deployment records who triggered it.
+
+<div style={{
+  backgroundImage: 'url(/images/screenshot-backdrop.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/042-deployment-history.png"
+    alt="An install's deployment history listing deploys, a sandbox reprovision, the initial provision, and a deprovision, each with its status and the stack, sandbox, and components it touched"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+The new dashboard is rolling out now. Ask us in your shared Slack channel to turn it on for your organization.
+
+---
+
+## Other updates in this release
+
+### Scheduled runbooks
+
+Run a [runbook](/guides/runbooks) on a cron schedule, so routine maintenance across your fleet happens without
+anyone kicking it off.
+
+```toml
+[[triggers]]
+type          = "cron"
+cron_schedule = "0 6 * * 1"
+```
+
+### AWS cloud connections
+
+Give Nuon access to an AWS account with short-lived OIDC credentials, so no long-lived access key is ever stored.
+Create a connection once and select it when you create an install. See
+[Cloud connections](/guides/cloud-connections).
