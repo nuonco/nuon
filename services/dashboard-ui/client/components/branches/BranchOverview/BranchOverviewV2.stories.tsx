@@ -6,7 +6,11 @@ export default {
 import { useEffect, useState, type ComponentProps } from 'react'
 import { BranchRunApproval } from '@/components/branches/BranchRunApproval/BranchRunApproval'
 import { PlanDiffPanel } from '@/components/branches/BranchRunApproval/PlanDiffPanel'
-import { TemplateChangesButton } from '@/components/branches/ConfigChanges'
+import {
+  TemplateChangesButton,
+  TemplateChangesContent,
+} from '@/components/branches/ConfigChanges'
+import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import { AppContext } from '@/providers/app-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
@@ -302,23 +306,69 @@ const rollout: TOverviewRollout = {
   },
 }
 
-const changes = (
-  <TemplateChangesButton
-    versionLabel="v6 → v7"
-    previousSha="9f8e7d6c5b4a"
-    sha={rollout.sha}
-    message={rollout.commit?.message}
-    author={rollout.commit?.author}
-    createdAt={rollout.commit?.createdAt}
-    source={rollout.source}
-    sections={[]}
-  />
-)
+const changeSections: DiffSectionData[] = [
+  {
+    name: 'Components',
+    sectionKey: 'components',
+    additions: 1,
+    removals: 0,
+    changed: 1,
+    grouped: true,
+    fields: [],
+    entities: [
+      {
+        name: 'cache',
+        op: 'add',
+        componentType: 'helm_chart',
+        fields: [
+          { key: 'chart_name', op: 'add', diff: "'cache'" },
+          { key: 'namespace', op: 'add', diff: "'acme'" },
+          { key: 'values.replicaCount', op: 'add', diff: "'2'" },
+        ],
+      },
+      {
+        name: 'api',
+        op: 'change',
+        componentType: 'helm_chart',
+        fields: [
+          { key: 'values.replicaCount', op: 'change', diff: "'1' -> '3'" },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Runner',
+    sectionKey: 'runner',
+    additions: 0,
+    removals: 0,
+    changed: 1,
+    grouped: false,
+    entities: [],
+    fields: [
+      { key: 'image.tag', op: 'change', diff: "'1.8.2' -> '1.9.0'" },
+    ],
+  },
+]
+
+const changeProps = {
+  sections: changeSections,
+  versionLabel: 'v6 → v7',
+  previousSha: '9f8e7d6c5b4a',
+  sha: rollout.sha,
+  message: rollout.commit?.message,
+  author: rollout.commit?.author,
+  createdAt: rollout.commit?.createdAt,
+  source: rollout.source,
+}
+
+const changes = <TemplateChangesButton {...changeProps} />
 
 const props = {
   hasPlan: true,
   rollout,
   changes,
+  configChanges: <TemplateChangesContent {...changeProps} />,
+  configChangesKey: 'v6-v7-cache',
   groups,
   versionLabel: 'v6 → v7',
   loadingStages: buildOverviewLoadingStages({
@@ -527,6 +577,65 @@ export const FourGroups = () => (
 )
 FourGroups.storyName = 'Four groups'
 
+const planField = (key: string, op: string, diff: string) => ({
+  key,
+  diff: { op, diff },
+})
+
+const primaryPlanDiff = {
+  key: 'app',
+  children: [
+    {
+      key: 'components',
+      children: [
+        {
+          key: 'cache',
+          children: [
+            planField('type', 'add', "'' -> 'helm_chart'"),
+            planField('chart_name', 'add', "'cache'"),
+            planField('namespace', 'add', "'acme'"),
+          ],
+        },
+        {
+          key: 'api',
+          children: [
+            planField('type', 'change', "'helm_chart' -> 'helm_chart'"),
+            planField('values.replicaCount', 'change', "'1' -> '3'"),
+          ],
+        },
+      ],
+    },
+    {
+      key: 'runner',
+      children: [planField('image.tag', 'change', "'1.8.2' -> '1.9.0'")],
+    },
+  ],
+}
+
+const primaryPlanInstalls = [
+  ['ins_charlie', 'acme-charlie'],
+  ['ins_delta', 'acme-delta'],
+  ['ins_echo', 'acme-echo'],
+] as const
+
+const primaryPlanContents = {
+  install_group: 'Primary region',
+  installs: primaryPlanInstalls.map(([install_id, install_name]) => ({
+    install_id,
+    install_name,
+    install_labels: { env: 'prod' },
+    old_app_config_id: 'cfg-v6',
+    new_app_config_id: 'cfg-v7',
+  })),
+}
+
+const primaryPlanFacts = Object.fromEntries(
+  primaryPlanInstalls.map(([installId]) => [
+    installId,
+    { status: 'pending', region: 'us-east-1', labels: { env: 'prod' } },
+  ])
+)
+
 const primaryPlanStep = {
   id: 'step-plan-primary',
   name: 'plan install group: Primary region',
@@ -556,6 +665,7 @@ const PrimaryPlanApproval = () => {
               <PlanDiffPanel
                 step={primaryPlanStep}
                 workflowId="wf_184"
+                installFacts={primaryPlanFacts}
               />,
               `plan-diff-${primaryPlanStep.id}`
             ),
@@ -609,8 +719,10 @@ const AwaitingApprovalOverview = () => {
           : input instanceof Request
             ? input.url
             : String(input)
+      const method =
+        init?.method ?? (input instanceof Request ? input.method : 'GET')
       if (
-        init?.method === 'POST' &&
+        method === 'POST' &&
         url.includes('/approvals/') &&
         url.endsWith('/response')
       ) {
@@ -618,6 +730,34 @@ const AwaitingApprovalOverview = () => {
         return new Response(JSON.stringify({ id: 'apr-response' }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
+        })
+      }
+      if (method === 'GET' && url.includes('/approvals/') && url.endsWith('/contents')) {
+        return storyJson(primaryPlanContents)
+      }
+      const config = url.match(/\/v1\/apps\/[^/]+\/configs\/(cfg-v\d+)/)
+      if (method === 'GET' && config) {
+        return storyJson({
+          id: config[1],
+          version: Number(config[1].replace('cfg-v', '')),
+        })
+      }
+      if (
+        method === 'GET' &&
+        /\/v1\/installs\/[^/]+\/app-configs\/[^/]+\/diff/.test(url)
+      ) {
+        return storyJson({
+          config_id: 'cfg-v7',
+          old_config_id: 'cfg-v6',
+          diff: primaryPlanDiff,
+          summary: {
+            has_changed: true,
+            added: 1,
+            removed: 0,
+            changed: 2,
+            unchanged: 0,
+          },
+          changed: 'components,runner',
         })
       }
       return original(input as RequestInfo, init)
