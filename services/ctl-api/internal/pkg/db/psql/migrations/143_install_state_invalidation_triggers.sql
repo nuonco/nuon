@@ -113,6 +113,13 @@ BEGIN
     RETURN NULL;
   END IF;
 
+  PERFORM pg_advisory_xact_lock_shared(hashtext('install_state_sources'), hashtext(o.org_id))
+  FROM (
+    SELECT DISTINCT {{if eq .Table "orgs"}}r.id{{else}}r.org_id{{end}} AS org_id
+    FROM unnest(rs) AS r
+  ) o
+  ORDER BY o.org_id;
+
   PERFORM invalidate_install_state_targets(array_agg(t.install_id), array_agg(t.partial))
   FROM (
 {{- range $i, $t := .Targets}}{{if $i}}

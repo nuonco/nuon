@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 
 	"go.temporal.io/sdk/temporal"
 	"gorm.io/gorm"
@@ -86,6 +87,27 @@ func (h *Helpers) getInstallStateHead(ctx context.Context, db *gorm.DB, installI
 type InstallStateBaseline struct {
 	State *state.State
 	Head  *app.InstallStateHead
+}
+
+func (h *Helpers) waitForInstallStateSources(ctx context.Context, orgID string) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	for {
+		var ready bool
+		if err := h.db.WithContext(ctx).Raw(
+			"SELECT pg_try_advisory_xact_lock(hashtext('install_state_sources'), hashtext(?))", orgID,
+		).Scan(&ready).Error; err != nil {
+			return err
+		}
+		if ready {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
 }
 
 func (h *Helpers) GetInstallStateBaseline(ctx context.Context, installID string) (*InstallStateBaseline, error) {

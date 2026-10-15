@@ -210,6 +210,9 @@ func (h *Helpers) RegenerateInstallState(ctx context.Context, req *pkgstate.Exec
 			resp.GeneratedAt = time.Now().UTC()
 			return resp, nil
 		}
+		if err := h.waitForInstallStateSources(ctx, baseline.Head.OrgID); err != nil {
+			return nil, errors.Wrap(err, "unable to wait for install state source transactions")
+		}
 		install, err := h.getStateInstall(ctx, h.db, req.InstallID)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get install")
