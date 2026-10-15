@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/imagesync"
@@ -220,6 +222,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// no op, because no deploys exist
 				return nil
 			}
 
@@ -311,10 +314,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	l.Info("performing component teardown")
+	if err := s.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID); err != nil {
+		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
+		return nil
+	}
+
+	if job.DemandEnabled(ctx) {
+		return s.sequence(ctx, install, installDeploy).Run(ctx)
+	}
+
 	if err := s.doTeardown(ctx, install, installDeploy, s.FlowStepID, s.SandboxMode); err != nil {
-		if job.IsSuspended(err) {
-			return err
-		}
 		return errors.Wrap(err, "unable to perform teardown")
 	}
 
@@ -322,34 +331,111 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) doTeardown(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, flowStepID string, sandboxMode bool) error {
-	err := s.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
-	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
-		return nil
-	}
-
-	if err := s.execSync(ctx, install, installDeploy); err != nil {
-		if job.IsSuspended(err) {
-			return err
-		}
+	if err := s.execSync(ctx, install, installDeploy, sandboxMode); err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "error syncing")
 		return errors.Wrap(err, "unable to execute sync")
 	}
 
 	if err := s.execPlan(ctx, install, installDeploy, flowStepID, sandboxMode); err != nil {
-		if job.IsSuspended(err) {
-			return err
-		}
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "error deploying")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
+	s.finishPlan(ctx, installDeploy)
+	return nil
+}
+
+func (s *Signal) sequence(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) job.Sequence {
+	syncReq := imagesync.RunSyncJobRequest{
+		Install:        install,
+		InstallDeploy:  installDeploy,
+		Status:         s.updateDeployStatusWithoutStatusSync,
+		PlanWorkflowID: fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	}
+	return job.Sequence{
+		Phases: []job.Phase{
+			{
+				Key: checkpointSync,
+				Prepare: func(ctx workflow.Context) (string, error) {
+					jobID, err := imagesync.PrepareSyncJob(ctx, syncReq)
+					if err != nil {
+						return "", err
+					}
+					s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
+					return jobID, nil
+				},
+				Finalize: func(ctx workflow.Context, jobID string) error {
+					err := imagesync.FinalizeSyncJob(ctx, syncReq, jobID)
+					if err != nil {
+						s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, err.Error())
+					}
+					return err
+				},
+			},
+			{
+				Key: checkpointPlan,
+				Prepare: func(ctx workflow.Context) (string, error) {
+					return s.preparePlanPhase(ctx, install, installDeploy)
+				},
+				Finalize: func(ctx workflow.Context, jobID string) error {
+					if err := s.finalizePlanPhase(ctx, install, installDeploy, jobID); err != nil {
+						s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, err.Error())
+						return err
+					}
+					s.finishPlan(ctx, installDeploy)
+					return nil
+				},
+			},
+		},
+		Finish: func(ctx workflow.Context, err error) error {
+			if job.IsRunnerJobFailure(err) {
+				s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "teardown plan job failed"))
+			}
+			return errors.Wrap(err, "unable to perform teardown")
+		},
+	}
+}
+
+func (s *Signal) preparePlanPhase(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) (string, error) {
+	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
+	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	if err != nil {
+		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
+		return "", fmt.Errorf("unable to get build: %w", err)
+	}
+	jobID, retain, err := s.preparePlanJob(ctx, install, installDeploy, build, build.ComponentConfigConnection.Type, s.SandboxMode)
+	if err != nil {
+		return "", err
+	}
+	if err := job.SaveCheckpoint(ctx, checkpointPlanPreparation, planPreparation{Retain: retain}); err != nil {
+		return "", errors.Wrap(err, "unable to checkpoint plan preparation")
+	}
+	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "creating plan")
+	return jobID, nil
+}
+
+func (s *Signal) finalizePlanPhase(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, jobID string) error {
+	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	if err != nil {
+		return fmt.Errorf("unable to get build: %w", err)
+	}
+	comp, err := activities.AwaitGetComponentByComponentID(ctx, build.ComponentID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get component")
+	}
+	var prep planPreparation
+	if _, err := job.LoadCheckpoint(ctx, checkpointPlanPreparation, &prep); err != nil {
+		return errors.Wrap(err, "unable to load plan preparation checkpoint")
+	}
+	return s.finalizePlan(ctx, install, installDeploy, comp, s.FlowStepID, jobID, prep.Retain)
+}
+
+func (s *Signal) finishPlan(ctx workflow.Context, installDeploy *app.InstallDeploy) {
 	_ = activities.AwaitSetDeployPlannedAt(ctx, activities.SetDeployPlannedAtRequest{
 		DeployID: installDeploy.ID,
 	})
 
 	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPendingApproval, "pending-approval")
-	return nil
 }
 
 func (s *Signal) isBuildDeployable(bld *app.ComponentBuild) bool {
@@ -404,54 +490,120 @@ func (s *Signal) pollForDeployableBuild(ctx workflow.Context, installDeployId, c
 	}
 }
 
-func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) error {
-	var cp phaseCheckpoint
-	if _, err := job.LoadCheckpoint(ctx, checkpointSync, &cp); err != nil {
-		return errors.Wrap(err, "unable to load sync checkpoint")
-	}
-	if cp.Finalized {
-		return nil
-	}
-
-	if err := imagesync.RunSyncJob(ctx, imagesync.RunSyncJobRequest{
-		Install:       install,
-		InstallDeploy: installDeploy,
-		Status:        s.updateDeployStatusWithoutStatusSync,
-		OnJobCreated:  func(jobID string) { s.runnerJobID = jobID },
-		JobID:         cp.JobID,
-		OnJobPrepared: func(ctx workflow.Context, jobID string) error {
-			cp.JobID = jobID
-			return job.SaveCheckpoint(ctx, checkpointSync, cp)
-		},
-	}); err != nil {
+func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, sandboxMode bool) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
 		return err
 	}
 
-	cp.Finalized = true
-	if err := job.SaveCheckpoint(ctx, checkpointSync, cp); err != nil {
-		return errors.Wrap(err, "unable to checkpoint sync finalization")
+	l.Info("syncing image into install OCI repository")
+	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating sync plan")
+
+	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	if err != nil {
+		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
+		return fmt.Errorf("unable to get build: %w", err)
+	}
+
+	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
+	if err != nil {
+		return err
+	}
+
+	runnerJob, err := activities.AwaitCreateSyncJob(ctx, &activities.CreateSyncJobRequest{
+		DeployID:    installDeploy.ID,
+		RunnerID:    install.RunnerID,
+		Op:          app.RunnerJobOperationTypeExec,
+		Type:        build.ComponentConfigConnection.Type.SyncJobType(),
+		LogStreamID: logStreamID,
+		Metadata: map[string]string{
+			"install_id":           install.ID,
+			"deploy_id":            installDeploy.ID,
+			"install_component_id": installDeploy.InstallComponentID,
+			"component_id":         build.ComponentConfigConnection.ComponentID,
+			"component_name":       build.ComponentConfigConnection.Component.Name,
+		},
+	})
+	if err != nil {
+		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
+		return fmt.Errorf("unable to create runner job: %w", err)
+	}
+	s.runnerJobID = runnerJob.ID
+
+	// create the plan request
+	runPlan, err := plan.AwaitCreateSyncPlan(ctx, &plan.CreateSyncPlanRequest{
+		InstallID:       install.ID,
+		InstallDeployID: installDeploy.ID,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
+	if err != nil {
+		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
+		return errors.Wrap(err, "unable to create plan")
+	}
+
+	planJSON, err := json.Marshal(runPlan)
+	if err != nil {
+		return errors.Wrap(err, "unable to create json")
+	}
+
+	// Deprecated: for now we dual write both the plan json and the composite plan
+	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+		JobID:    runnerJob.ID,
+		PlanJSON: string(planJSON),
+		CompositePlan: plantypes.CompositePlan{
+			SyncOCIPlan: runPlan,
+		},
+	}); err != nil {
+		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
+		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	// queue job
+	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID: install.RunnerID,
+		JobID:    runnerJob.ID,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("%s-execute-job", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
+	if err != nil {
+		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "teardown sync job failed"))
+		l.Error("error polling sync image job", zap.Error(err))
+		return fmt.Errorf("unable to poll job: %w", err)
+	}
+	l.Info("sync image job was successfully completed")
+
+	// parse outputs and create OCI artifact record
+	job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner job")
+	}
+
+	var ociArtOutputs state.OCIArtifactOutputs
+	if err := mapstructure.Decode(job.ParsedOutputs["image"], &ociArtOutputs); err != nil {
+		l.Error("error parsing oci artifact outputs", zap.Error(err))
+		return errors.Wrap(err, "unable to parse oci artifact outputs")
+	}
+
+	if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
+		OwnerID:   installDeploy.ID,
+		OwnerType: "install_deploys",
+		Outputs:   ociArtOutputs,
+	}); err != nil {
+		return errors.Wrap(err, "unable to create oci artifact")
 	}
 
 	return nil
 }
 
 func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, stepID string, sandboxMode bool) error {
-	var cp phaseCheckpoint
-	if _, err := job.LoadCheckpoint(ctx, checkpointPlan, &cp); err != nil {
-		return errors.Wrap(err, "unable to load plan checkpoint")
-	}
-	if cp.Finalized {
-		return nil
-	}
-
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
 
-	if cp.JobID == "" {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
-	}
+	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
 	l.Info("planning and executing deploy")
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
@@ -465,28 +617,18 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		return errors.Wrap(err, "unable to get component")
 	}
 
-	if cp.JobID == "" {
-		prepared, err := s.preparePlanJob(ctx, install, installDeploy, build, sandboxMode)
-		if err != nil {
-			return err
-		}
-		cp = *prepared
-		if err := job.SaveCheckpoint(ctx, checkpointPlan, cp); err != nil {
-			return errors.Wrap(err, "unable to checkpoint plan job")
-		}
-	}
-	s.runnerJobID = cp.JobID
-
-	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "creating plan")
-	_, err = job.Execute(ctx, &job.ExecuteJobRequest{
-		RunnerID: install.RunnerID,
-		JobID:    cp.JobID,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, cp.JobID),
-	})
-	if job.IsSuspended(err) {
+	jobID, retain, err := s.preparePlanJob(ctx, install, installDeploy, build, comp.Type, sandboxMode)
+	if err != nil {
 		return err
 	}
+
+	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "creating plan")
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID: install.RunnerID,
+		JobID:    jobID,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, jobID),
+	})
 	if err != nil {
 		msg := job.JobErrorMessage(err, "teardown plan job failed")
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, msg)
@@ -494,7 +636,16 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	planJob, err := activities.AwaitGetJobByID(ctx, cp.JobID)
+	return s.finalizePlan(ctx, install, installDeploy, comp, stepID, jobID, retain)
+}
+
+func (s *Signal) finalizePlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, comp *app.Component, stepID, jobID string, retain []string) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	planJob, err := activities.AwaitGetJobByID(ctx, jobID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get job")
 	}
@@ -530,10 +681,10 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		}
 	}
 
-	if len(cp.Retain) > 0 {
+	if len(retain) > 0 {
 		if err := activities.AwaitCheckTeardownPlan(ctx, &activities.CheckTeardownPlanRequest{
 			JobID:  planJob.ID,
-			Retain: cp.Retain,
+			Retain: retain,
 		}); err != nil {
 			s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, err.Error())
 			return err
@@ -553,18 +704,13 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		return errors.Wrap(err, "unable to create approval")
 	}
 
-	cp.Finalized = true
-	if err := job.SaveCheckpoint(ctx, checkpointPlan, cp); err != nil {
-		return errors.Wrap(err, "unable to checkpoint plan finalization")
-	}
-
 	return nil
 }
 
-func (s *Signal) preparePlanJob(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, build *app.ComponentBuild, sandboxMode bool) (*phaseCheckpoint, error) {
+func (s *Signal) preparePlanJob(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, build *app.ComponentBuild, compType app.ComponentType, sandboxMode bool) (string, []string, error) {
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	op := app.RunnerJobOperationTypeCreateTeardownPlan
@@ -591,7 +737,7 @@ func (s *Signal) preparePlanJob(ctx workflow.Context, install *app.Install, inst
 	})
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
-		return nil, fmt.Errorf("unable to create runner job: %w", err)
+		return "", nil, fmt.Errorf("unable to create runner job: %w", err)
 	}
 	s.runnerJobID = runnerJob.ID
 
@@ -618,13 +764,13 @@ func (s *Signal) preparePlanJob(ctx workflow.Context, install *app.Install, inst
 				Detail:          deployerrors.PlanRenderDetail(err),
 			})
 		}
-		return nil, errors.Wrap(err, "unable to create deploy plan")
+		return "", nil, errors.Wrap(err, "unable to create deploy plan")
 	}
 
 	planJSON, err := json.Marshal(deployPlan.Plan)
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
-		return nil, errors.Wrap(err, "unable to create json from plan")
+		return "", nil, errors.Wrap(err, "unable to create json from plan")
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
@@ -635,7 +781,7 @@ func (s *Signal) preparePlanJob(ctx workflow.Context, install *app.Install, inst
 		},
 	}); err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return nil, fmt.Errorf("unable to get install: %w", err)
+		return "", nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
 	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
@@ -644,13 +790,10 @@ func (s *Signal) preparePlanJob(ctx workflow.Context, install *app.Install, inst
 		RoleSelection: deployPlan.RoleSelection,
 	}); err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to record install role usage")
-		return nil, fmt.Errorf("unable to record install role usage: %w", err)
+		return "", nil, fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
-	return &phaseCheckpoint{
-		JobID:  runnerJob.ID,
-		Retain: teardownPlanRetain(deployPlan.Plan, build.ComponentConfigConnection.Type, sandboxMode),
-	}, nil
+	return runnerJob.ID, teardownPlanRetain(deployPlan.Plan, compType, sandboxMode), nil
 }
 
 func (s *Signal) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {

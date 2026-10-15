@@ -223,14 +223,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if err := s.executeActionWorkflowRun(ctx, slimInstall.ID, slimInstall.Metadata, actionWorkflowRunID); err != nil {
-		if job.IsSuspended(err) {
-			return err
-		}
-		return errors.Wrap(err, "unable to execute action workflow run")
-	}
-
-	return nil
+	return errors.Wrap(s.executeActionWorkflowRun(ctx, slimInstall.ID, slimInstall.Metadata, actionWorkflowRunID), "unable to execute action workflow run")
 }
 
 func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
@@ -286,7 +279,7 @@ func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
 	return s.executeActionWorkflowRun(ctx, install.ID, install.Metadata, run.ID)
 }
 
-func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string, metadata pgtype.Hstore, actionWorkflowRunID string) (err error) {
+func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string, metadata pgtype.Hstore, actionWorkflowRunID string) error {
 	l := workflow.GetLogger(ctx)
 
 	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, actionWorkflowRunID)
@@ -336,11 +329,10 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		}
 	}
 
-	defer func(logStreamID string) {
-		if !job.IsSuspended(err) {
-			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
-		}
-	}(ls.ID)
+	if job.DemandEnabled(ctx) {
+		return s.runActionSequence(cctx.SetLogStreamWorkflowContext(ctx, ls), installID, run, ls.ID, preparationCompositeErrorsEnabled)
+	}
+	defer activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
 
@@ -357,9 +349,6 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 
 	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 		if err := s.syncActionImageDeps(ctx, run, ls.ID); err != nil {
-			if job.IsSuspended(err) {
-				return err
-			}
 			if preparationCompositeErrorsEnabled {
 				s.recordPreparationCompositeError(ctx, run.ID, err)
 			}
@@ -368,86 +357,47 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		}
 	}
 
-	var actionCP actionCheckpoint
-	if _, err := job.LoadCheckpoint(ctx, checkpointAction, &actionCP); err != nil {
-		return errors.Wrap(err, "unable to load action checkpoint")
+	jobID, err := s.prepareActionJob(ctx, installID, run, ls.ID, preparationCompositeErrorsEnabled)
+	if err != nil {
+		return err
 	}
-	if actionCP.Finalized {
-		return nil
-	}
-
-	if actionCP.JobID == "" {
-		jobID, err := s.prepareActionJob(ctx, installID, run, ls.ID, &actionCP, preparationCompositeErrorsEnabled)
-		if err != nil {
-			return err
-		}
-		actionCP = actionCheckpoint{JobID: jobID}
-		if err := job.SaveCheckpoint(ctx, checkpointAction, actionCP); err != nil {
-			return errors.Wrap(err, "unable to checkpoint action job")
-		}
-	}
-	s.runnerJobID = actionCP.JobID
 
 	l.Info("executing runner job")
-	_, err = job.Execute(ctx, &job.ExecuteJobRequest{
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID: run.Install.RunnerID,
-		JobID:    actionCP.JobID,
+		JobID:    jobID,
 	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: "actions-install-run-exec-job" + run.ID,
 	})
-	if job.IsSuspended(err) {
-		return err
-	}
 	if err != nil {
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, job.JobErrorMessage(err, "action workflow job failed"))
 		return errors.Wrap(err, "runner job failed")
 	}
 
-	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
+	return s.finalizeActionRun(ctx, installID, run.ID)
+}
+
+func (s *Signal) finalizeActionRun(ctx workflow.Context, installID, runID string) error {
+	s.updateActionRunStatus(ctx, runID, app.InstallActionRunStatusFinished, "finished")
 
 	if s.InstallActionWorkflowID != "" {
 		if err := stategen.HintOrGenerate(ctx, stategen.Request{
 			InstallID:       installID,
 			Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
 			ForceAll:        true,
-			TriggeredByID:   actionWorkflowRunID,
+			TriggeredByID:   runID,
 			TriggeredByType: "install_action_workflow_runs",
 		}); err != nil {
 			return err
 		}
 	}
-
-	actionCP.Finalized = true
-	if err := job.SaveCheckpoint(ctx, checkpointAction, actionCP); err != nil {
-		return errors.Wrap(err, "unable to checkpoint action finalization")
-	}
-
 	return nil
 }
 
-func (s *Signal) prepareActionJob(ctx workflow.Context, installID string, run *app.InstallActionWorkflowRun, logStreamID string, actionCP *actionCheckpoint, preparationCompositeErrorsEnabled bool) (string, error) {
-	l := workflow.GetLogger(ctx)
-
-	planResponse := actionCP.Plan
-	if planResponse == nil {
-		l.Info("creating plan for executing action run")
-		created, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
-			ActionWorkflowRunID: run.ID,
-		}, &workflow.ChildWorkflowOptions{
-			WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
-		})
-		if err != nil {
-			if preparationCompositeErrorsEnabled {
-				s.recordPreparationCompositeError(ctx, run.ID, err)
-			}
-			s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
-			return "", errors.Wrap(err, "unable to create plan")
-		}
-		planResponse = &created
-		actionCP.Plan = planResponse
-		if err := job.SaveCheckpoint(ctx, checkpointAction, actionCP); err != nil {
-			return "", errors.Wrap(err, "unable to checkpoint action plan")
-		}
+func (s *Signal) prepareActionJob(ctx workflow.Context, installID string, run *app.InstallActionWorkflowRun, logStreamID string, preparationCompositeErrorsEnabled bool) (string, error) {
+	planResponse, err := s.createActionPlan(ctx, run, preparationCompositeErrorsEnabled)
+	if err != nil {
+		return "", err
 	}
 
 	// image-backed actions: verify the org and runner can host the container
@@ -461,14 +411,34 @@ func (s *Signal) prepareActionJob(ctx workflow.Context, installID string, run *a
 
 		if planResponse.Plan.ImageDigestRef == "" {
 			if err := s.mirrorActionImage(ctx, run, logStreamID, planResponse.Plan); err != nil {
-				if job.IsSuspended(err) {
-					return "", err
-				}
 				s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, err.Error())
 				return "", errors.Wrap(err, "unable to prepare image-backed action")
 			}
 		}
 	}
+
+	return s.createActionJob(ctx, installID, run, logStreamID, planResponse, preparationCompositeErrorsEnabled)
+}
+
+func (s *Signal) createActionPlan(ctx workflow.Context, run *app.InstallActionWorkflowRun, preparationCompositeErrorsEnabled bool) (*plan.CreateActionPlanResponse, error) {
+	workflow.GetLogger(ctx).Info("creating plan for executing action run")
+	created, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
+		ActionWorkflowRunID: run.ID,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
+	if err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
+		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
+		return nil, errors.Wrap(err, "unable to create plan")
+	}
+	return &created, nil
+}
+
+func (s *Signal) createActionJob(ctx workflow.Context, installID string, run *app.InstallActionWorkflowRun, logStreamID string, planResponse *plan.CreateActionPlanResponse, preparationCompositeErrorsEnabled bool) (string, error) {
+	l := workflow.GetLogger(ctx)
 
 	// execute job
 	l.Info("creating runner job to execute action")
@@ -554,101 +524,102 @@ func (s *Signal) checkImageActionSupported(ctx workflow.Context, run *app.Instal
 // the install registry via an oci-sync job. It pins the plan to the mirrored
 // digest; any error here prevents the action job from being dispatched at all.
 func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionWorkflowRun, logStreamID string, awPlan *plantypes.ActionWorkflowRunPlan) error {
-	l := workflow.GetLogger(ctx)
-
-	var cp imageMirrorCheckpoint
-	if _, err := job.LoadCheckpoint(ctx, checkpointImageMirror, &cp); err != nil {
-		return errors.Wrap(err, "unable to load image mirror checkpoint")
-	}
-	if cp.Finalized {
-		awPlan.ImageDigestRef = cp.DigestRef
-		return nil
-	}
-
-	if cp.JobID == "" {
-		src, srcTag, err := parseActionImageSource(awPlan.SourceImage)
-		if err != nil {
-			return errors.Wrap(err, "unable to parse action image reference")
-		}
-
-		l.Info("mirroring image-backed action image into install registry",
-			zap.String("source_image", awPlan.SourceImage))
-
-		syncJob, err := activities.AwaitCreateActionImageSyncJob(ctx, &activities.CreateActionImageSyncJobRequest{
-			ActionWorkflowRunID: run.ID,
-			RunnerID:            run.Install.RunnerID,
-			LogStreamID:         logStreamID,
-			Metadata: map[string]string{
-				"install_id":             run.InstallID,
-				"action_workflow_run_id": run.ID,
-				"source_image":           awPlan.SourceImage,
-			},
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to create image sync job")
-		}
-
-		syncPlan := &plantypes.SyncOCIPlan{
-			Src:    src,
-			SrcTag: srcTag,
-			Dst:    awPlan.ImageRegistry,
-			DstTag: awPlan.ImageTag,
-		}
-		// A sandboxed sync job reports whatever the plan carries, so it has to carry
-		// a digest-pinned ref: resolveMirroredDigestRef fails closed on a missing or
-		// unpinned one, which would make every image-backed action fail in sandbox
-		// mode rather than exercise the path.
-		if awPlan.SandboxMode != nil {
-			syncPlan.SandboxMode = &plantypes.SandboxMode{
-				Enabled: true,
-				Outputs: plantypes.FakeOCISyncOutputs(
-					strings.TrimSuffix(awPlan.ImageRegistry.LoginServer+"/"+awPlan.ImageRegistry.Repository, "/"),
-					awPlan.ImageTag,
-				),
-			}
-		}
-
-		syncPlanJSON, err := json.Marshal(syncPlan)
-		if err != nil {
-			return errors.Wrap(err, "unable to marshal sync plan")
-		}
-
-		if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-			JobID:         syncJob.ID,
-			PlanJSON:      string(syncPlanJSON),
-			CompositePlan: plantypes.CompositePlan{SyncOCIPlan: syncPlan},
-		}); err != nil {
-			return errors.Wrap(err, "unable to save sync job plan")
-		}
-
-		cp.JobID = syncJob.ID
-		if err := job.SaveCheckpoint(ctx, checkpointImageMirror, cp); err != nil {
-			return errors.Wrap(err, "unable to checkpoint image sync job")
-		}
-	}
-
-	_, err := job.Execute(ctx, &job.ExecuteJobRequest{
-		RunnerID:   run.Install.RunnerID,
-		JobID:      cp.JobID,
-		WorkflowID: "action-image-sync-exec-job-" + run.ID,
-	}, nil)
-	if job.IsSuspended(err) {
+	jobID, err := s.prepareMirrorJob(ctx, run, logStreamID, awPlan)
+	if err != nil {
 		return err
 	}
+
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID:   run.Install.RunnerID,
+		JobID:      jobID,
+		WorkflowID: "action-image-sync-exec-job-" + run.ID,
+	}, nil)
 	if err != nil {
 		return errors.Wrap(err, "image sync job failed")
 	}
+
+	digestRef, err := s.finalizeMirrorJob(ctx, run, jobID)
+	if err != nil {
+		return err
+	}
+	awPlan.ImageDigestRef = digestRef
+
+	return nil
+}
+
+func (s *Signal) prepareMirrorJob(ctx workflow.Context, run *app.InstallActionWorkflowRun, logStreamID string, awPlan *plantypes.ActionWorkflowRunPlan) (string, error) {
+	l := workflow.GetLogger(ctx)
+
+	src, srcTag, err := parseActionImageSource(awPlan.SourceImage)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to parse action image reference")
+	}
+
+	l.Info("mirroring image-backed action image into install registry",
+		zap.String("source_image", awPlan.SourceImage))
+
+	syncJob, err := activities.AwaitCreateActionImageSyncJob(ctx, &activities.CreateActionImageSyncJobRequest{
+		ActionWorkflowRunID: run.ID,
+		RunnerID:            run.Install.RunnerID,
+		LogStreamID:         logStreamID,
+		Metadata: map[string]string{
+			"install_id":             run.InstallID,
+			"action_workflow_run_id": run.ID,
+			"source_image":           awPlan.SourceImage,
+		},
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "unable to create image sync job")
+	}
+
+	syncPlan := &plantypes.SyncOCIPlan{
+		Src:    src,
+		SrcTag: srcTag,
+		Dst:    awPlan.ImageRegistry,
+		DstTag: awPlan.ImageTag,
+	}
+	// A sandboxed sync job reports whatever the plan carries, so it has to carry
+	// a digest-pinned ref: resolveMirroredDigestRef fails closed on a missing or
+	// unpinned one, which would make every image-backed action fail in sandbox
+	// mode rather than exercise the path.
+	if awPlan.SandboxMode != nil {
+		syncPlan.SandboxMode = &plantypes.SandboxMode{
+			Enabled: true,
+			Outputs: plantypes.FakeOCISyncOutputs(
+				strings.TrimSuffix(awPlan.ImageRegistry.LoginServer+"/"+awPlan.ImageRegistry.Repository, "/"),
+				awPlan.ImageTag,
+			),
+		}
+	}
+
+	syncPlanJSON, err := json.Marshal(syncPlan)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to marshal sync plan")
+	}
+
+	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+		JobID:         syncJob.ID,
+		PlanJSON:      string(syncPlanJSON),
+		CompositePlan: plantypes.CompositePlan{SyncOCIPlan: syncPlan},
+	}); err != nil {
+		return "", errors.Wrap(err, "unable to save sync job plan")
+	}
+
+	return syncJob.ID, nil
+}
+
+func (s *Signal) finalizeMirrorJob(ctx workflow.Context, run *app.InstallActionWorkflowRun, jobID string) (string, error) {
+	l := workflow.GetLogger(ctx)
 
 	// Bind execution to the exact manifest just mirrored: read the resolved
 	// digest-pinned ref from the sync job outputs so the runner pulls by digest
 	// rather than the mutable tag. This fails closed. If the digest can't be
 	// resolved and validated we don't dispatch the action job at all, otherwise
 	// the runner would execute whatever the mutable tag points at.
-	digestRef, outputs, err := resolveMirroredDigestRef(ctx, cp.JobID)
+	digestRef, outputs, err := resolveMirroredDigestRef(ctx, jobID)
 	if err != nil {
-		return err
+		return "", err
 	}
-	awPlan.ImageDigestRef = digestRef
 
 	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 		// One attempt: retried runs that re-mirror hit a unique owner key.
@@ -667,13 +638,7 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 	l.Info("bound image-backed action to mirrored manifest",
 		zap.String("image_digest_ref", digestRef))
 
-	cp.DigestRef = digestRef
-	cp.Finalized = true
-	if err := job.SaveCheckpoint(ctx, checkpointImageMirror, cp); err != nil {
-		return errors.Wrap(err, "unable to checkpoint image mirror")
-	}
-
-	return nil
+	return digestRef, nil
 }
 
 // resolveMirroredDigestRef reads the digest-pinned image ref the oci-sync job

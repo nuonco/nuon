@@ -3,8 +3,6 @@ package actionworkflowrun
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/imagesync"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -13,6 +11,7 @@ const (
 	checkpointImageDeps   = "image-deps"
 	checkpointImageMirror = "image-mirror"
 	checkpointAction      = "action"
+	checkpointActionPlan  = "action-plan"
 )
 
 type runCheckpoint struct {
@@ -21,10 +20,13 @@ type runCheckpoint struct {
 }
 
 type imageDepCheckpoint struct {
-	ComponentID        string                   `json:"component_id"`
-	BuildID            string                   `json:"build_id"`
-	InstallComponentID string                   `json:"install_component_id"`
-	Sync               imagesync.SyncCheckpoint `json:"sync"`
+	ComponentID        string `json:"component_id"`
+	BuildID            string `json:"build_id"`
+	InstallComponentID string `json:"install_component_id"`
+}
+
+func (d imageDepCheckpoint) phaseKey() string {
+	return checkpointImageDeps + "-" + d.ComponentID
 }
 
 type imageDepsCheckpoint struct {
@@ -33,25 +35,13 @@ type imageDepsCheckpoint struct {
 	Published bool                 `json:"published,omitempty"`
 }
 
-type imageMirrorCheckpoint struct {
-	JobID     string `json:"job_id,omitempty"`
-	DigestRef string `json:"digest_ref,omitempty"`
-	Finalized bool   `json:"finalized,omitempty"`
-}
-
-type actionCheckpoint struct {
-	Plan      *plan.CreateActionPlanResponse `json:"plan,omitempty"`
-	JobID     string                         `json:"job_id,omitempty"`
-	Finalized bool                           `json:"finalized,omitempty"`
-}
-
 func activeCheckpoint(ctx workflow.Context) (string, string) {
 	var run runCheckpoint
 	if _, err := job.LoadCheckpoint(ctx, checkpointRun, &run); err != nil {
 		return "", ""
 	}
 
-	var action actionCheckpoint
+	var action job.Checkpoint
 	if ok, err := job.LoadCheckpoint(ctx, checkpointAction, &action); err == nil && ok && action.JobID != "" {
 		if action.Finalized {
 			return "", ""
@@ -59,7 +49,7 @@ func activeCheckpoint(ctx workflow.Context) (string, string) {
 		return action.JobID, run.RunID
 	}
 
-	var mirror imageMirrorCheckpoint
+	var mirror job.Checkpoint
 	if ok, err := job.LoadCheckpoint(ctx, checkpointImageMirror, &mirror); err == nil && ok && mirror.JobID != "" && !mirror.Finalized {
 		return mirror.JobID, run.RunID
 	}
@@ -67,8 +57,9 @@ func activeCheckpoint(ctx workflow.Context) (string, string) {
 	var deps imageDepsCheckpoint
 	if ok, err := job.LoadCheckpoint(ctx, checkpointImageDeps, &deps); err == nil && ok {
 		for _, dep := range deps.Deps {
-			if dep.Sync.JobID != "" && !dep.Sync.Finalized {
-				return dep.Sync.JobID, run.RunID
+			var cp job.Checkpoint
+			if _, err := job.LoadCheckpoint(ctx, dep.phaseKey(), &cp); err == nil && cp.JobID != "" && !cp.Finalized {
+				return cp.JobID, run.RunID
 			}
 		}
 	}

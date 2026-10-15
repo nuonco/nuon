@@ -56,7 +56,11 @@ func (a *Activities) PollDemandRunnerJob(ctx context.Context, jobID, executionID
 			default:
 				return nil
 			}
-			if err := tx.Scopes(scopes.WithDisableViews).Model(&job).Updates(map[string]any{"status": status, "status_description": string(status), "finished_at": now, "status_v2": app.NewCompositeStatus(ctx, app.Status(status))}).Error; err != nil {
+			description := string(status)
+			if status != app.RunnerJobStatusFinished && !execution.Status.IsRunning() && execution.StatusV2.StatusHumanDescription != "" {
+				description = execution.StatusV2.StatusHumanDescription
+			}
+			if err := tx.Scopes(scopes.WithDisableViews).Model(&job).Updates(map[string]any{"status": status, "status_description": description, "finished_at": now, "status_v2": app.NewCompositeStatus(ctx, app.Status(status))}).Error; err != nil {
 				return err
 			}
 		}

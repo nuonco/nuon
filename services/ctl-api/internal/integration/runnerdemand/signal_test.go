@@ -6,6 +6,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
@@ -37,7 +38,7 @@ func (s *preparedJobsSignal) Execute(ctx workflow.Context) error {
 		})
 	}
 	err := (job.Sequence{Phases: phases}).Run(ctx)
-	if job.IsSuspended(err) && s.HoldBeforePark {
+	if callback.IsSuspended(err) && s.HoldBeforePark {
 		var release bool
 		workflow.GetSignalChannel(ctx, "allow-park").Receive(ctx, &release)
 	}

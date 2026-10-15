@@ -16,12 +16,15 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/interceptors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/interceptors/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -32,6 +35,7 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
@@ -80,13 +84,152 @@ func TestRunnerDemandActionResume(t *testing.T) {
 		}),
 	)
 	t.Run("completed_action_resume", func(t *testing.T) { testActionFinalizedResume(t, s, namespace) })
+	t.Run("image_dependency_mirror_and_action", func(t *testing.T) { testActionImageSequence(t, s, namespace) })
 	t.Run("cancel_if_unfinished", func(t *testing.T) { testOwnerCancellation(t, s, namespace, legacy, v2) })
-	for name, finalized := range map[string]bool{"prepared_apply_resume": false, "finalized_apply_resume": true} {
-		t.Run(name, func(t *testing.T) { testApplyResume(t, s, namespace, finalized) })
+	for name, failure := range map[string]string{
+		"prepared_apply_resume":               "",
+		"failed_apply_preserves_runner_error": "registry rejected image credentials",
+	} {
+		t.Run(name, func(t *testing.T) { testApplyResume(t, s, namespace, failure) })
 	}
 }
 
-func testApplyResume(t *testing.T, s testServices, namespace string, finalized bool) {
+func testActionImageSequence(t *testing.T, s testServices, namespace string) {
+	f := newFixture(t, s, namespace, 1, time.Minute)
+	run, actionStep := f.prepareAction("#!/bin/sh\nexit 0\n", nil, namespace)
+	s.Seeder.CreateServiceAccount(f.ctx, t, f.log.ID)
+	depLog := &app.LogStream{OwnerID: f.deploy.ID, OwnerType: "install_deploys", Open: true}
+	f.create(depLog)
+	s.Seeder.CreateServiceAccount(f.ctx, t, depLog.ID)
+	require.NoError(t, s.DB.Model(&f.jobs[0]).Updates(map[string]any{
+		"owner_id": f.deploy.ID, "owner_type": "install_deploys", "log_stream_id": depLog.ID,
+		"type": app.RunnerJobTypeOCISync, "group": app.RunnerJobGroupSync,
+	}).Error)
+	var component app.InstallComponent
+	require.NoError(t, s.DB.Where(app.InstallComponent{ID: f.deploy.InstallComponentID}).First(&component).Error)
+	require.NoError(t, s.DB.Model(f.step).Update("queue_signal", &signaldb.SignalData{Signal: &actionworkflowrun.Signal{
+		InstallID: run.InstallID, AdhocActionRunID: run.ID, TriggerType: app.ActionWorkflowTriggerTypeManual,
+	}}).Error)
+	_, err := s.Queues.Create(f.ctx, &queueclient.CreateQueueRequest{
+		OwnerID: run.InstallID, OwnerType: "installs", Namespace: namespace,
+		Name: installhelpers.InstallStateManagerQueueName, MaxInFlight: 1, MaxDepth: 100,
+	})
+	require.NoError(t, err)
+	_, err = s.Queues.Create(f.ctx, &queueclient.CreateQueueRequest{
+		OwnerID: f.runner.ID, OwnerType: "runners", Namespace: namespace,
+		Name: string(app.RunnerJobGroupSync), MaxInFlight: 10, MaxDepth: 100,
+	})
+	require.NoError(t, err)
+	var actionPlan app.RunnerJobPlan
+	require.NoError(t, s.DB.Where(app.RunnerJobPlan{RunnerJobID: f.jobs[0].ID}).First(&actionPlan).Error)
+	var pinned plantypes.ActionWorkflowRunPlan
+	require.NoError(t, json.Unmarshal([]byte(actionPlan.PlanJSON), &pinned))
+	pinned.SourceImage = "docker.io/acme/tools:v1"
+	pinned.ImageRegistry = &configs.OCIRegistryRepository{RegistryType: configs.OCIRegistryTypePublicOCI, LoginServer: "example.com", Repository: "acme/tools"}
+	pinned.ImageTag = "v1"
+	continuation, err := json.Marshal(map[string]any{
+		"run": map[string]string{"run_id": run.ID, "log_stream_id": f.log.ID},
+		"image-deps": map[string]any{"decided": true, "deps": []any{map[string]any{
+			"component_id": component.ComponentID, "build_id": f.deploy.ComponentBuildID, "install_component_id": component.ID,
+		}}},
+		"image-deps-" + component.ComponentID:                  job.Checkpoint{JobID: f.jobs[0].ID},
+		"image-deps-" + component.ComponentID + "-preparation": map[string]string{"deploy_id": f.deploy.ID, "log_stream_id": depLog.ID},
+		"action-plan": &plan.CreateActionPlanResponse{Plan: &pinned},
+	})
+	require.NoError(t, err)
+	callbackName := "test:action-image-sequence-" + f.step.ID
+	require.NoError(t, s.DB.Callback().Create().Before("gorm:before_create").Register(callbackName, func(tx *gorm.DB) {
+		if qs, ok := tx.Statement.Dest.(*app.QueueSignal); ok && qs.OwnerID == f.step.ID && qs.Type == actionworkflowrun.SignalType {
+			qs.Continuation = continuation
+			qs.Workflow.TaskQueue = actionTaskQueue
+		}
+	}))
+	t.Cleanup(func() { require.NoError(t, s.DB.Callback().Create().Remove(callbackName)) })
+	finishJob := func(index int, image map[string]any) {
+		f.awaitAvailable(index)
+		f.awaitWorkflow(app.StatusWaitingForRunner)
+		f.awaitClosedHandlers()
+		var execution app.RunnerJobExecution
+		f.request(http.MethodPost, f.jobURL(index)+"/executions", struct{}{}, http.StatusCreated, &execution)
+		if image != nil {
+			f.request(http.MethodPost, f.jobURL(index)+"/executions/"+execution.ID+"/outputs", map[string]any{
+				"outputs": map[string]any{"image": image},
+			}, http.StatusCreated, nil)
+		}
+		f.complete(index, execution)
+	}
+	nextJob := func(typ app.RunnerJobType) app.RunnerJob {
+		var j app.RunnerJob
+		require.Eventually(t, func() bool {
+			j = app.RunnerJob{}
+			return s.DB.Scopes(scopes.WithDisableViews).Where(app.RunnerJob{
+				OwnerID: run.ID, OwnerType: "install_action_workflow_runs", Type: typ, Status: app.RunnerJobStatusAvailable,
+			}).First(&j).Error == nil
+		}, time.Minute, 100*time.Millisecond)
+		return j
+	}
+	depDigest := "sha256:" + strings.Repeat("a", 64)
+	mirrorDigest := "sha256:" + strings.Repeat("b", 64)
+	ref := "example.com/acme/tools@" + mirrorDigest
+	f.start()
+	finishJob(0, map[string]any{"ref": "example.com/acme/dependency@" + depDigest, "digest": depDigest, "repository": "acme/dependency", "tag": "dependency"})
+	f.jobs = append(f.jobs, nextJob(app.RunnerJobTypeOCISync))
+	var synced app.InstallDeploy
+	require.NoError(t, s.DB.Where(app.InstallDeploy{ID: f.deploy.ID}).First(&synced).Error)
+	require.Equal(t, app.InstallDeployStatusActive, synced.Status)
+	finishJob(1, map[string]any{"ref": ref, "digest": mirrorDigest, "repository": "acme/tools", "tag": "v1"})
+	f.jobs = append(f.jobs, nextJob(app.RunnerJobTypeActionsWorkflowRun))
+	var savedPlan app.RunnerJobPlan
+	require.NoError(t, s.DB.Where(app.RunnerJobPlan{RunnerJobID: f.jobs[2].ID}).First(&savedPlan).Error)
+	var prepared plantypes.ActionWorkflowRunPlan
+	require.NoError(t, json.Unmarshal([]byte(savedPlan.PlanJSON), &prepared))
+	require.Equal(t, ref, prepared.ImageDigestRef)
+	require.Equal(t, pinned.SourceImage, prepared.SourceImage)
+	require.Equal(t, actionStep.ID, prepared.Steps[0].ID)
+	finishJob(2, nil)
+	f.awaitWorkflow(app.StatusSuccess)
+	var qs app.QueueSignal
+	require.NoError(t, s.DB.Where(app.QueueSignal{OwnerID: f.step.ID, Type: actionworkflowrun.SignalType}).First(&qs).Error)
+	awaitHandlerClosed(t, s, qs)
+	var cp struct {
+		Deps struct {
+			Published bool `json:"published"`
+			Deps      []struct {
+				BuildID string `json:"build_id"`
+			} `json:"deps"`
+		} `json:"image-deps"`
+		Mirror job.Checkpoint                 `json:"image-mirror"`
+		Action job.Checkpoint                 `json:"action"`
+		Plan   *plan.CreateActionPlanResponse `json:"action-plan"`
+	}
+	require.NoError(t, json.Unmarshal(qs.Continuation, &cp))
+	require.True(t, cp.Deps.Published)
+	require.Len(t, cp.Deps.Deps, 1)
+	require.Equal(t, f.deploy.ComponentBuildID, cp.Deps.Deps[0].BuildID)
+	var phases map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(qs.Continuation, &phases))
+	var dep job.Checkpoint
+	require.NoError(t, json.Unmarshal(phases["image-deps-"+component.ComponentID], &dep))
+	require.Equal(t, f.jobs[0].ID, dep.JobID)
+	require.True(t, dep.Finalized)
+	require.Equal(t, f.jobs[1].ID, cp.Mirror.JobID)
+	require.True(t, cp.Mirror.Finalized)
+	require.True(t, cp.Action.Finalized)
+	require.Equal(t, pinned.SourceImage, cp.Plan.Plan.SourceImage)
+	var count int64
+	require.NoError(t, s.DB.Model(&app.OCIArtifact{}).Where(app.OCIArtifact{OwnerID: f.deploy.ID, OwnerType: "install_deploys"}).Count(&count).Error)
+	require.EqualValues(t, 1, count)
+	require.NoError(t, s.DB.Scopes(scopes.WithDisableViews).Model(&app.RunnerJob{}).Where(app.RunnerJob{OwnerID: run.ID, OwnerType: "install_action_workflow_runs"}).Count(&count).Error)
+	require.EqualValues(t, 2, count)
+	var closed app.LogStream
+	require.NoError(t, s.DB.Where(app.LogStream{ID: depLog.ID}).First(&closed).Error)
+	require.False(t, closed.Open)
+	closed = app.LogStream{}
+	require.NoError(t, s.DB.Where(app.LogStream{ID: f.log.ID}).First(&closed).Error)
+	require.False(t, closed.Open)
+}
+
+func testApplyResume(t *testing.T, s testServices, namespace, failure string) {
 	f := newFixture(t, s, namespace, 1, time.Minute)
 	s.Seeder.CreateServiceAccount(f.ctx, t, f.log.ID)
 	var component app.InstallComponent
@@ -103,12 +246,8 @@ func testApplyResume(t *testing.T, s testServices, namespace string, finalized b
 		Name: installhelpers.InstallStateManagerQueueName, MaxInFlight: 1, MaxDepth: 100,
 	})
 	require.NoError(t, err)
-	if finalized {
-		require.NoError(t, s.DB.Scopes(scopes.WithDisableViews).Model(&f.jobs[0]).Update("status", app.RunnerJobStatusFinished).Error)
-	}
-	retained := json.RawMessage(`{"build_choice":1234567890123456789}`)
 	continuation, err := json.Marshal(map[string]any{"apply": map[string]any{
-		"job_id": f.jobs[0].ID, "finalized": finalized, "retained": retained,
+		"job_id": f.jobs[0].ID,
 	}})
 	require.NoError(t, err)
 	callbackName := "test:apply-resume-continuation-" + f.step.ID
@@ -120,16 +259,31 @@ func testApplyResume(t *testing.T, s testServices, namespace string, finalized b
 	}))
 	t.Cleanup(func() { require.NoError(t, s.DB.Callback().Create().Remove(callbackName)) })
 	f.start()
-	if !finalized {
-		f.awaitPark(0)
-		var deploy app.InstallDeploy
-		var log app.LogStream
-		require.NoError(t, s.DB.Where(app.InstallDeploy{ID: f.deploy.ID}).First(&deploy).Error)
-		require.NoError(t, s.DB.Where(app.LogStream{ID: f.log.ID}).First(&log).Error)
-		require.Nil(t, deploy.AppliedAt, "waiting must not finalize the deploy")
-		require.True(t, log.Open, "waiting must not close the log stream")
-		f.complete(0, f.claim(0))
+	f.awaitPark(0)
+	var waitingDeploy app.InstallDeploy
+	var waitingLog app.LogStream
+	require.NoError(t, s.DB.Where(app.InstallDeploy{ID: f.deploy.ID}).First(&waitingDeploy).Error)
+	require.NoError(t, s.DB.Where(app.LogStream{ID: f.log.ID}).First(&waitingLog).Error)
+	require.Nil(t, waitingDeploy.AppliedAt, "waiting must not finalize the deploy")
+	require.True(t, waitingLog.Open, "waiting must not close the log stream")
+	execution := f.claim(0)
+	if failure != "" {
+		f.request(http.MethodPatch, f.jobURL(0)+"/executions/"+execution.ID, map[string]any{
+			"status": "failed", "status_description": failure,
+		}, http.StatusOK, nil)
+		f.awaitWorkflow(app.StatusFailedPendingRetry)
+		var failed app.InstallDeploy
+		var closed app.LogStream
+		require.NoError(t, s.DB.Where(app.InstallDeploy{ID: f.deploy.ID}).First(&failed).Error)
+		require.NoError(t, s.DB.Where(app.LogStream{ID: f.log.ID}).First(&closed).Error)
+		require.Equal(t, app.InstallDeployStatusError, failed.Status)
+		require.Contains(t, failed.StatusDescription, failure)
+		require.Contains(t, failed.StatusV2.StatusHumanDescription, failure)
+		require.Nil(t, failed.AppliedAt)
+		require.False(t, closed.Open)
+		return
 	}
+	f.complete(0, execution)
 	f.awaitWorkflow(app.StatusSuccess)
 	var deploy app.InstallDeploy
 	var log app.LogStream
@@ -139,7 +293,7 @@ func testApplyResume(t *testing.T, s testServices, namespace string, finalized b
 	require.NoError(t, s.DB.Where(app.QueueSignal{OwnerID: f.step.ID, Type: componentdeployapplyplan.SignalType}).First(&qs).Error)
 	awaitHandlerClosed(t, s, qs)
 	require.Equal(t, app.InstallDeployStatusActive, deploy.Status)
-	require.NotNil(t, deploy.AppliedAt, "a finalized job phase must still apply the deploy")
+	require.NotNil(t, deploy.AppliedAt, "job completion must apply the deploy")
 	require.False(t, log.Open)
 	require.NoError(t, s.DB.Where(app.InstallComponent{ID: component.ID}).First(&component).Error)
 	require.Equal(t, deploy.ID, component.AppConfigRef.AppliedConfigByID)
@@ -147,19 +301,11 @@ func testApplyResume(t *testing.T, s testServices, namespace string, finalized b
 	require.NoError(t, s.DB.Where(app.InstallState{InstallID: f.workflow.OwnerID, TriggeredByID: deploy.ID}).Find(&states).Error)
 	require.NotEmpty(t, states, "apply finalization must regenerate state")
 	var checkpoint struct {
-		Apply struct {
-			JobID     string          `json:"job_id"`
-			Finalized bool            `json:"finalized"`
-			Retained  json.RawMessage `json:"retained"`
-		} `json:"apply"`
+		Apply job.Checkpoint `json:"apply"`
 	}
 	require.NoError(t, json.Unmarshal(qs.Continuation, &checkpoint))
 	require.Equal(t, f.jobs[0].ID, checkpoint.Apply.JobID)
 	require.True(t, checkpoint.Apply.Finalized)
-	require.JSONEq(t, string(retained), string(checkpoint.Apply.Retained))
-	var retainedFields map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(checkpoint.Apply.Retained, &retainedFields))
-	require.Equal(t, "1234567890123456789", string(retainedFields["build_choice"]))
 	status, err := s.Queues.ResumeRunnerJobSignal(f.ctx, qs.ID)
 	require.NoError(t, err)
 	require.Equal(t, app.StatusSuccess, status)
@@ -198,8 +344,10 @@ func testActionFinalizedResume(t *testing.T, s testServices, namespace string) {
 	}}).Error)
 
 	continuation, err := json.Marshal(map[string]any{
-		"run":    map[string]string{"run_id": run.ID, "log_stream_id": f.log.ID},
-		"action": map[string]string{"job_id": f.jobs[0].ID},
+		"run":          map[string]string{"run_id": run.ID, "log_stream_id": f.log.ID},
+		"image-deps":   map[string]bool{"decided": true, "published": true},
+		"image-mirror": job.Checkpoint{Finalized: true},
+		"action":       job.Checkpoint{JobID: f.jobs[0].ID},
 	})
 	require.NoError(t, err)
 	callbackName := "test:action-resume-continuation-" + f.step.ID

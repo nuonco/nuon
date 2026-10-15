@@ -15,23 +15,26 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
-func (s *Signal) syncActionImageDeps(
-	ctx workflow.Context,
-	run *app.InstallActionWorkflowRun,
-	logStreamID string,
-) error {
+type imageDepInputs struct {
+	depIDs         []string
+	imageRefNames  map[string]bool
+	cccByComponent map[string]*app.ComponentConfigConnection
+	loader         *actionDepLoader
+}
+
+func (s *Signal) imageDepInputs(ctx workflow.Context, run *app.InstallActionWorkflowRun) (*imageDepInputs, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return errors.Wrap(err, "unable to get logger")
+		return nil, errors.Wrap(err, "unable to get logger")
 	}
 
 	if run.ActionWorkflowConfigID.Empty() || run.ActionWorkflowConfig.Image == "" {
-		return nil
+		return nil, nil
 	}
 
 	depIDs := []string(run.ActionWorkflowConfig.ComponentDependencyIDs)
 	if len(depIDs) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	// ComponentDependencyIDs includes step env/script refs; only sync image
@@ -43,17 +46,17 @@ func (s *Signal) syncActionImageDeps(
 		}
 	}
 	if len(imageRefNames) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	if !s.imageActionSupported(run) {
 		l.Info("skipping action image dependency sync, image-backed actions are unavailable on this install")
-		return nil
+		return nil, nil
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, run.Install.AppConfigID)
 	if err != nil {
-		return errors.Wrap(err, "unable to get app config")
+		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
 	cccByComponent := make(map[string]*app.ComponentConfigConnection, len(appCfg.ComponentConfigConnections))
@@ -62,14 +65,32 @@ func (s *Signal) syncActionImageDeps(
 		cccByComponent[ccc.ComponentID] = ccc
 	}
 
-	loader := &actionDepLoader{
-		InstallDeploys: imagesync.InstallDeploys{InstallID: run.InstallID},
+	return &imageDepInputs{
+		depIDs:         depIDs,
+		imageRefNames:  imageRefNames,
 		cccByComponent: cccByComponent,
+		loader: &actionDepLoader{
+			InstallDeploys: imagesync.InstallDeploys{InstallID: run.InstallID},
+			cccByComponent: cccByComponent,
+		},
+	}, nil
+}
+
+func (s *Signal) syncActionImageDeps(
+	ctx workflow.Context,
+	run *app.InstallActionWorkflowRun,
+	logStreamID string,
+) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return errors.Wrap(err, "unable to get logger")
 	}
 
-	if job.DemandEnabled(ctx) {
-		return s.syncCheckpointedActionImageDeps(ctx, run, logStreamID, depIDs, imageRefNames, cccByComponent, loader)
+	in, err := s.imageDepInputs(ctx, run)
+	if err != nil || in == nil {
+		return err
 	}
+	depIDs, imageRefNames, cccByComponent, loader := in.depIDs, in.imageRefNames, in.cccByComponent, in.loader
 
 	syncedTargets := make([]statemanager.PartialTarget, 0)
 	lastDeployID := ""
@@ -146,126 +167,74 @@ func (s *Signal) syncActionImageDeps(
 	return nil
 }
 
-func (s *Signal) syncCheckpointedActionImageDeps(
-	ctx workflow.Context,
-	run *app.InstallActionWorkflowRun,
-	logStreamID string,
-	depIDs []string,
-	imageRefNames map[string]bool,
-	cccByComponent map[string]*app.ComponentConfigConnection,
-	loader imagesync.Loader,
-) error {
+func decideImageDeps(ctx workflow.Context, in *imageDepInputs) ([]imageDepCheckpoint, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return errors.Wrap(err, "unable to get logger")
+		return nil, errors.Wrap(err, "unable to get logger")
 	}
 
-	var cp imageDepsCheckpoint
-	if _, err := job.LoadCheckpoint(ctx, checkpointImageDeps, &cp); err != nil {
-		return errors.Wrap(err, "unable to load image dependency checkpoint")
-	}
-	if cp.Published {
-		return nil
-	}
-
-	if !cp.Decided {
-		for _, depID := range depIDs {
-			ccc, inAppConfig := cccByComponent[depID]
-			if !inAppConfig || ccc == nil || !imageRefNames[ccc.Component.Name] {
-				continue
-			}
-
-			decision, err := imagesync.Decide(ctx, imagesync.Dep{
-				ComponentID: depID,
-				IsImage:     ccc.Component.Type.IsImage(),
-				InAppConfig: true,
-			}, loader)
-			if err != nil {
-				return err
-			}
-			if !decision.NeedsSync {
-				if decision.WorthLogging() {
-					l.Info("action image dependency cannot be synced",
-						zap.String("component_id", depID),
-						zap.String("component_name", ccc.Component.Name),
-						zap.String("reason", string(decision.Skip)))
-					continue
-				}
-				l.Debug("action image dependency needs no sync",
-					zap.String("component_id", depID),
-					zap.String("reason", string(decision.Skip)))
-				continue
-			}
-
-			cp.Deps = append(cp.Deps, imageDepCheckpoint{
-				ComponentID:        depID,
-				BuildID:            decision.BuildID,
-				InstallComponentID: decision.InstallComponentID,
-			})
-		}
-		cp.Decided = true
-		if err := job.SaveCheckpoint(ctx, checkpointImageDeps, cp); err != nil {
-			return errors.Wrap(err, "unable to checkpoint image dependency decisions")
-		}
-	}
-
-	save := func(ctx workflow.Context) error {
-		return job.SaveCheckpoint(ctx, checkpointImageDeps, cp)
-	}
-
-	for i := range cp.Deps {
-		dep := &cp.Deps[i]
-		if dep.Sync.Finalized {
+	var deps []imageDepCheckpoint
+	for _, depID := range in.depIDs {
+		ccc, inAppConfig := in.cccByComponent[depID]
+		if !inAppConfig || ccc == nil || !in.imageRefNames[ccc.Component.Name] {
 			continue
 		}
 
-		l.Info("syncing image dependency before action run",
-			zap.String("component_id", dep.ComponentID),
-			zap.String("build_id", dep.BuildID))
-
-		if _, err := imagesync.Sync(ctx, imagesync.SyncRequest{
-			Install:           &run.Install,
-			ComponentID:       dep.ComponentID,
-			BuildID:           dep.BuildID,
-			FlowID:            s.InstallWorkflowID,
-			ParentLogStreamID: logStreamID,
-			OnJobCreated: func(jobID string) {
-				s.runnerJobID = jobID
-			},
-			WorkflowIDSuffix: "-action-image-dep-" + run.ID + "-" + dep.ComponentID,
-			Checkpoint:       &dep.Sync,
-			SaveCheckpoint:   save,
-		}); err != nil {
-			if job.IsSuspended(err) {
-				return err
+		decision, err := imagesync.Decide(ctx, imagesync.Dep{
+			ComponentID: depID,
+			IsImage:     ccc.Component.Type.IsImage(),
+			InAppConfig: true,
+		}, in.loader)
+		if err != nil {
+			return nil, err
+		}
+		if !decision.NeedsSync {
+			if decision.WorthLogging() {
+				l.Info("action image dependency cannot be synced",
+					zap.String("component_id", depID),
+					zap.String("component_name", ccc.Component.Name),
+					zap.String("reason", string(decision.Skip)))
+				continue
 			}
-			return errors.Wrapf(err, "unable to sync image dependency %s", dep.ComponentID)
-		}
-	}
-
-	if len(cp.Deps) > 0 {
-		syncedTargets := make([]statemanager.PartialTarget, 0, len(cp.Deps))
-		for _, dep := range cp.Deps {
-			syncedTargets = append(syncedTargets,
-				statemanager.TargetsForHint(statemanager.HintDeployCompleted, dep.InstallComponentID)...)
+			l.Debug("action image dependency needs no sync",
+				zap.String("component_id", depID),
+				zap.String("reason", string(decision.Skip)))
+			continue
 		}
 
-		if err := stategen.HintOrGenerate(ctx, stategen.Request{
-			InstallID:       run.InstallID,
-			Targets:         syncedTargets,
-			ForceAll:        true,
-			TriggeredByID:   cp.Deps[len(cp.Deps)-1].Sync.DeployID,
-			TriggeredByType: "install_deploys",
-		}); err != nil {
-			return errors.Wrap(err, "unable to generate state after image dependency sync")
-		}
+		deps = append(deps, imageDepCheckpoint{
+			ComponentID:        depID,
+			BuildID:            decision.BuildID,
+			InstallComponentID: decision.InstallComponentID,
+		})
+	}
+	return deps, nil
+}
+
+func publishImageDeps(ctx workflow.Context, run *app.InstallActionWorkflowRun, deps []imageDepCheckpoint) error {
+	if len(deps) == 0 {
+		return nil
 	}
 
-	cp.Published = true
-	if err := job.SaveCheckpoint(ctx, checkpointImageDeps, cp); err != nil {
-		return errors.Wrap(err, "unable to checkpoint image dependency state publication")
+	syncedTargets := make([]statemanager.PartialTarget, 0, len(deps))
+	for _, dep := range deps {
+		syncedTargets = append(syncedTargets,
+			statemanager.TargetsForHint(statemanager.HintDeployCompleted, dep.InstallComponentID)...)
+	}
+	var prep imagesync.SyncPreparation
+	if _, err := job.LoadCheckpoint(ctx, deps[len(deps)-1].phaseKey()+"-preparation", &prep); err != nil {
+		return err
 	}
 
+	if err := stategen.HintOrGenerate(ctx, stategen.Request{
+		InstallID:       run.InstallID,
+		Targets:         syncedTargets,
+		ForceAll:        true,
+		TriggeredByID:   prep.DeployID,
+		TriggeredByType: "install_deploys",
+	}); err != nil {
+		return errors.Wrap(err, "unable to generate state after image dependency sync")
+	}
 	return nil
 }
 

@@ -178,7 +178,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) Execute(ctx workflow.Context) (err error) {
+func (s *Signal) Execute(ctx workflow.Context) error {
 	install, err := activities.AwaitGetInstallForSandboxBySandboxID(ctx, s.InstallSandboxID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
@@ -207,20 +207,40 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l := workflow.GetLogger(ctx)
 
+	if job.DemandEnabled(ctx) {
+		return (job.Sequence{
+			Phases: []job.Phase{{
+				Key: checkpointApply,
+				Prepare: func(ctx workflow.Context) (string, error) {
+					return s.prepareApplyPhase(ctx, install, installRun, logStream.ID)
+				},
+				Finalize: func(ctx workflow.Context, _ string) error {
+					return s.finishApply(ctx, install, installRun)
+				},
+			}},
+			Finish: func(ctx workflow.Context, err error) error {
+				if job.IsRunnerJobFailure(err) {
+					s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, job.JobErrorMessage(err, "deprovision apply job failed"))
+				}
+				activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+				return errors.Wrap(err, "unable to execute deploy")
+			},
+		}).Run(ctx)
+	}
+
 	defer func() {
-		if !job.IsSuspended(err) {
-			activities.AwaitCloseLogStreamByLogStreamID(ctx, installRun.LogStream.ID)
-		}
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, installRun.LogStream.ID)
 	}()
 
 	l.Info("executing plan")
 	if err := s.executeApplyPlan(ctx, install, installRun, s.FlowStepID, s.SandboxMode, s.cfg.DNSRootDomain); err != nil {
-		if job.IsSuspended(err) {
-			return err
-		}
 		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job did not succeed")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
+	return s.finishApply(ctx, install, installRun)
+}
+
+func (s *Signal) finishApply(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun) error {
 	_ = activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
 		SandboxRunID: installRun.ID,
 	})
@@ -240,15 +260,42 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	return nil
 }
 
-func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, sandboxMode bool, dnsRootDomain string) (err error) {
+func (s *Signal) prepareApplyPhase(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, logStreamID string) (string, error) {
+	s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatus(app.StatusApplying), "applying plan")
+	planJob, err := getPlanJob(ctx, install, installRun)
+	if err != nil {
+		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job did not succeed")
+		return "", err
+	}
+	return s.prepareApplyJob(ctx, install, installRun, s.FlowStepID, s.cfg.DNSRootDomain, logStreamID, planJob)
+}
+
+func getPlanJob(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun) (*app.RunnerJob, error) {
+	operation := app.RunnerJobOperationTypeCreateApplyPlan
+	if installRun.RunType == app.SandboxRunTypeDeprovision {
+		operation = app.RunnerJobOperationTypeCreateTeardownPlan
+	}
+	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
+		OwnerID:   installRun.ID,
+		Operation: operation,
+		Group:     app.RunnerJobGroupSandbox,
+		Type:      install.AppSandboxConfig.JobType(),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get plan runner job for current apply job")
+	}
+	return planJob, nil
+}
+
+func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, sandboxMode bool, dnsRootDomain string) error {
 	l := workflow.GetLogger(ctx)
 	l.Info("executing apply plan")
 
 	s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatus(app.StatusApplying), "applying plan")
 
-	var cp phaseCheckpoint
-	if _, err := job.LoadCheckpoint(ctx, checkpointApply, &cp); err != nil {
-		return errors.Wrap(err, "unable to load apply checkpoint")
+	planJob, err := getPlanJob(ctx, install, installRun)
+	if err != nil {
+		return err
 	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
@@ -257,37 +304,21 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 	}
 
 	defer func() {
-		if !job.IsSuspended(err) {
-			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
-		}
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
 	}()
 
-	if cp.Finalized {
-		return nil
-	}
-
-	if cp.JobID == "" {
-		jobID, err := s.prepareApplyJob(ctx, install, installRun, stepID, dnsRootDomain, logStreamID)
-		if err != nil {
-			return err
-		}
-		cp.JobID = jobID
-		if err := job.SaveCheckpoint(ctx, checkpointApply, cp); err != nil {
-			return errors.Wrap(err, "unable to checkpoint apply job")
-		}
-	}
-	s.runnerJobID = cp.JobID
-
-	l.Info("queued job and waiting on it to be picked up by runner")
-	status, err := job.Execute(ctx, &job.ExecuteJobRequest{
-		JobID:    cp.JobID,
-		RunnerID: install.RunnerID,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, cp.JobID),
-	})
-	if job.IsSuspended(err) {
+	jobID, err := s.prepareApplyJob(ctx, install, installRun, stepID, dnsRootDomain, logStreamID, planJob)
+	if err != nil {
 		return err
 	}
+
+	l.Info("queued job and waiting on it to be picked up by runner")
+	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		JobID:    jobID,
+		RunnerID: install.RunnerID,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, jobID),
+	})
 	if err != nil {
 		msg := job.JobErrorMessage(err, "deprovision apply job failed")
 		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, msg)
@@ -299,31 +330,12 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		return errors.New("job was not successful")
 	}
 
-	cp.Finalized = true
-	if err := job.SaveCheckpoint(ctx, checkpointApply, cp); err != nil {
-		return errors.Wrap(err, "unable to checkpoint apply finalization")
-	}
-
 	return nil
 }
 
-func (s *Signal) prepareApplyJob(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, dnsRootDomain string, logStreamID string) (string, error) {
+func (s *Signal) prepareApplyJob(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, dnsRootDomain string, logStreamID string, planJob *app.RunnerJob) (string, error) {
 	l := workflow.GetLogger(ctx)
-
-	operation := app.RunnerJobOperationTypeCreateApplyPlan
-	if installRun.RunType == app.SandboxRunTypeDeprovision {
-		operation = app.RunnerJobOperationTypeCreateTeardownPlan
-	}
 	jobType := install.AppSandboxConfig.JobType()
-	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
-		OwnerID:   installRun.ID,
-		Operation: operation,
-		Group:     app.RunnerJobGroupSandbox,
-		Type:      jobType,
-	})
-	if err != nil {
-		return "", errors.Wrap(err, "unable to get plan runner job for current apply job")
-	}
 
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
 		InstallID: install.ID,

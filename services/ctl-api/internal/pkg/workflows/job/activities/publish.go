@@ -23,6 +23,7 @@ func (a *Activities) PublishRunnerJob(ctx context.Context, signalID, jobID strin
 	l := temporalzap.GetActivityLogger(ctx).With(zap.String("signal_id", signalID), zap.String("job_id", jobID))
 	l.Info("publishing prepared runner job")
 	var status app.RunnerJobStatus
+	var description string
 	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var qs app.QueueSignal
 		if err := tx.Where(app.QueueSignal{ID: signalID}).First(&qs).Error; err != nil {
@@ -58,6 +59,7 @@ func (a *Activities) PublishRunnerJob(ctx context.Context, signalID, jobID strin
 			return err
 		}
 		status = job.Status
+		description = job.StatusDescription
 		if job.Status.IsTerminal() || job.Status == app.RunnerJobStatusInProgress {
 			return nil
 		}
@@ -110,6 +112,12 @@ func (a *Activities) PublishRunnerJob(ctx context.Context, signalID, jobID strin
 		}
 		return demand.UpdateOwner(ctx, tx, &job, app.StatusWaitingForRunner)
 	})
+	if err == nil && status.IsTerminal() && status != app.RunnerJobStatusFinished {
+		if description == "" {
+			description = string(status)
+		}
+		err = temporal.NewNonRetryableApplicationError("runner job did not succeed: "+description, "RUNNER_JOB_FAILED", nil)
+	}
 	if err != nil {
 		l.Error("unable to publish runner job", zap.Error(err))
 	} else {

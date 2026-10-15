@@ -1,7 +1,6 @@
 package job
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
@@ -13,6 +12,11 @@ type Phase struct {
 	Key      string
 	Prepare  func(workflow.Context) (string, error)
 	Finalize func(workflow.Context, string) error
+}
+
+type Checkpoint struct {
+	JobID     string `json:"job_id"`
+	Finalized bool   `json:"finalized"`
 }
 
 type Sequence struct {
@@ -33,22 +37,9 @@ func (s Sequence) Run(ctx workflow.Context) error {
 
 func (s Sequence) run(ctx workflow.Context) (bool, error) {
 	for _, phase := range s.Phases {
-		var data json.RawMessage
-		if _, err := LoadCheckpoint(ctx, phase.Key, &data); err != nil {
+		var state Checkpoint
+		if _, err := LoadCheckpoint(ctx, phase.Key, &state); err != nil {
 			return false, fmt.Errorf("load %s checkpoint: %w", phase.Key, err)
-		}
-		var state struct {
-			JobID     string `json:"job_id"`
-			Finalized bool   `json:"finalized"`
-		}
-		fields := make(map[string]json.RawMessage)
-		if len(data) > 0 {
-			if err := json.Unmarshal(data, &state); err != nil {
-				return false, err
-			}
-			if err := json.Unmarshal(data, &fields); err != nil {
-				return false, err
-			}
 		}
 		if state.Finalized {
 			continue
@@ -59,9 +50,12 @@ func (s Sequence) run(ctx workflow.Context) (bool, error) {
 				return false, err
 			}
 			state.JobID = jobID
-			fields["job_id"], _ = json.Marshal(jobID)
-			if err := SaveCheckpoint(ctx, phase.Key, fields); err != nil {
+			state.Finalized = jobID == ""
+			if err := SaveCheckpoint(ctx, phase.Key, state); err != nil {
 				return false, fmt.Errorf("checkpoint %s job: %w", phase.Key, err)
+			}
+			if state.Finalized {
+				continue
 			}
 		}
 
@@ -77,8 +71,8 @@ func (s Sequence) run(ctx workflow.Context) (bool, error) {
 				return false, err
 			}
 		}
-		fields["finalized"] = json.RawMessage("true")
-		if err := SaveCheckpoint(ctx, phase.Key, fields); err != nil {
+		state.Finalized = true
+		if err := SaveCheckpoint(ctx, phase.Key, state); err != nil {
 			return false, fmt.Errorf("checkpoint %s finalization: %w", phase.Key, err)
 		}
 	}

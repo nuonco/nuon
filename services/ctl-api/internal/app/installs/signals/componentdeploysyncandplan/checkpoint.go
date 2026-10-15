@@ -17,14 +17,9 @@ type deployCheckpoint struct {
 	LogStreamID string `json:"log_stream_id,omitempty"`
 }
 
-type phaseCheckpoint struct {
-	JobID     string `json:"job_id,omitempty"`
-	Finalized bool   `json:"finalized,omitempty"`
-}
-
 func activeCheckpointJobID(ctx workflow.Context) string {
 	for _, phase := range []string{checkpointPlan, checkpointSync} {
-		var cp phaseCheckpoint
+		var cp job.Checkpoint
 		ok, err := job.LoadCheckpoint(ctx, phase, &cp)
 		if err != nil || !ok {
 			continue

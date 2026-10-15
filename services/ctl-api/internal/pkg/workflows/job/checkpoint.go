@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/continuation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 )
@@ -42,31 +40,9 @@ func SaveCheckpoint(ctx workflow.Context, phase string, state any) error {
 	return workflow.ExecuteActivity(ctx, (*activities.Activities).SaveRunnerJobCheckpoint, continuation.Scope(ctx), phase, data).Get(ctx, nil)
 }
 
-func IsSuspended(err error) bool { return callback.IsSuspended(err) }
-
-func Execute(ctx workflow.Context, req *ExecuteJobRequest, opts *workflow.ChildWorkflowOptions) (app.RunnerJobStatus, error) {
-	if !DemandEnabled(ctx) {
-		return AwaitExecuteJob(ctx, req, opts)
-	}
-	status, err := publish(ctx, req.JobID)
-	if err != nil {
-		return status, err
-	}
-	if !status.IsTerminal() {
-		return status, callback.Suspended()
-	}
-	return status, nil
-}
-
 func publish(ctx workflow.Context, jobID string) (app.RunnerJobStatus, error) {
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
 	var status app.RunnerJobStatus
 	err := workflow.ExecuteActivity(ctx, (*activities.Activities).PublishRunnerJob, continuation.Scope(ctx), jobID).Get(ctx, &status)
-	if err != nil {
-		return status, err
-	}
-	if status.IsTerminal() && status != app.RunnerJobStatusFinished {
-		return status, temporal.NewNonRetryableApplicationError("runner job did not succeed: "+string(status), "RUNNER_JOB_FAILED", nil)
-	}
-	return status, nil
+	return status, err
 }

@@ -8,13 +8,8 @@ import (
 
 const checkpointApply = "apply"
 
-type phaseCheckpoint struct {
-	JobID     string `json:"job_id,omitempty"`
-	Finalized bool   `json:"finalized,omitempty"`
-}
-
 func activeCheckpointJobID(ctx workflow.Context) string {
-	var cp phaseCheckpoint
+	var cp job.Checkpoint
 	ok, err := job.LoadCheckpoint(ctx, checkpointApply, &cp)
 	if err != nil || !ok || cp.Finalized {
 		return ""

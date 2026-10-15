@@ -169,14 +169,37 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}()
 
+	if job.DemandEnabled(ctx) {
+		return (job.Sequence{
+			Phases: []job.Phase{{
+				Key: checkpointRecover,
+				Prepare: func(ctx workflow.Context) (string, error) {
+					return s.prepareRecoverPhase(ctx, install, installDeploy, logStream.ID)
+				},
+				Finalize: func(ctx workflow.Context, _ string) error {
+					s.finishRecover(ctx, installDeploy)
+					return nil
+				},
+			}},
+			Finish: func(ctx workflow.Context, err error) error {
+				if err != nil {
+					s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to recover helm release")
+				}
+				activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+				return errors.Wrap(err, "unable to recover helm release")
+			},
+		}).Run(ctx)
+	}
+
 	if err := s.execRecover(ctx, install, installDeploy); err != nil {
-		if job.IsSuspended(err) {
-			return err
-		}
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to recover helm release")
 		return errors.Wrap(err, "unable to recover helm release")
 	}
+	s.finishRecover(ctx, installDeploy)
+	return nil
+}
 
+func (s *Signal) finishRecover(ctx workflow.Context, installDeploy *app.InstallDeploy) {
 	_ = activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
 		DeployID: installDeploy.ID,
 	})
@@ -184,11 +207,37 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Not inactive: the dashboard reads the newest deploy of any type as the
 	// component's state and treats inactive as torn down.
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "helm release recovered")
-
-	return nil
 }
 
-func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) (err error) {
+func (s *Signal) prepareRecoverPhase(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, logStreamID string) (string, error) {
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "preparing helm release recovery")
+	build, err := getHelmBuild(ctx, installDeploy)
+	if err != nil {
+		return "", err
+	}
+	jobID, err := s.prepareRecoverJob(ctx, install, installDeploy, build, logStreamID)
+	if err != nil {
+		return "", err
+	}
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "recovering helm release")
+	return jobID, nil
+}
+
+func getHelmBuild(ctx workflow.Context, installDeploy *app.InstallDeploy) (*app.ComponentBuild, error) {
+	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get build: %w", err)
+	}
+
+	// Re-checked here: the endpoint's check can go stale before the step runs.
+	if build.ComponentConfigConnection.Type != app.ComponentTypeHelmChart {
+		return nil, fmt.Errorf("component %s is a %s component, not a helm chart",
+			build.ComponentConfigConnection.Component.Name, build.ComponentConfigConnection.Type)
+	}
+	return build, nil
+}
+
+func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
@@ -196,15 +245,9 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "preparing helm release recovery")
 
-	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	build, err := getHelmBuild(ctx, installDeploy)
 	if err != nil {
-		return fmt.Errorf("unable to get build: %w", err)
-	}
-
-	// Re-checked here: the endpoint's check can go stale before the step runs.
-	if build.ComponentConfigConnection.Type != app.ComponentTypeHelmChart {
-		return fmt.Errorf("component %s is a %s component, not a helm chart",
-			build.ComponentConfigConnection.Component.Name, build.ComponentConfigConnection.Type)
+		return err
 	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
@@ -212,49 +255,23 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 		return err
 	}
 	defer func() {
-		if !job.IsSuspended(err) {
-			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
-		}
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
 	}()
 
-	var cp phaseCheckpoint
-	if _, err := job.LoadCheckpoint(ctx, checkpointRecover, &cp); err != nil {
-		return errors.Wrap(err, "unable to load recover checkpoint")
-	}
-	if cp.Finalized {
-		return nil
-	}
-
-	if cp.JobID == "" {
-		jobID, err := s.prepareRecoverJob(ctx, install, installDeploy, build, logStreamID)
-		if err != nil {
-			return err
-		}
-		cp.JobID = jobID
-		if err := job.SaveCheckpoint(ctx, checkpointRecover, cp); err != nil {
-			return errors.Wrap(err, "unable to checkpoint recover job")
-		}
-	}
-	s.runnerJobID = cp.JobID
-
-	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "recovering helm release")
-	_, err = job.Execute(ctx, &job.ExecuteJobRequest{
-		RunnerID: install.RunnerID,
-		JobID:    cp.JobID,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, cp.JobID),
-	})
-	if job.IsSuspended(err) {
+	jobID, err := s.prepareRecoverJob(ctx, install, installDeploy, build, logStreamID)
+	if err != nil {
 		return err
 	}
-	if err != nil {
+
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "recovering helm release")
+	if _, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID: install.RunnerID,
+		JobID:    jobID,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, jobID),
+	}); err != nil {
 		l.Error("helm release recovery job did not succeed", zap.Error(err))
 		return fmt.Errorf("%s", job.JobErrorMessage(err, "helm release recovery job failed"))
-	}
-
-	cp.Finalized = true
-	if err := job.SaveCheckpoint(ctx, checkpointRecover, cp); err != nil {
-		return errors.Wrap(err, "unable to checkpoint recover finalization")
 	}
 
 	return nil
