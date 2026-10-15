@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useRef,
   type ReactElement,
   type ReactNode,
 } from 'react'
@@ -34,6 +35,11 @@ type TSurfacesContext = {
   panels: TPanels
   modals: TModals
   addPanel: (content: TPanelEl, panelKey?: string, panelId?: string) => string
+  addPanelIfEmpty: (
+    content: TPanelEl,
+    panelKey?: string,
+    panelId?: string
+  ) => string | undefined
   updatePanel: (id: string, content: TPanelEl) => void
   clearPanels: () => void
   removePanel: (id: string, panelKey?: string) => void
@@ -47,12 +53,10 @@ export const SurfacesContext = createContext<TSurfacesContext | undefined>(
 
 export function SurfacesProvider({ children }: { children: ReactNode }) {
   const [panels, setPanels] = useState<TPanels>([])
+  const autoOpenPending = useRef(false)
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
-  // Panels are keyed to the route that opened them. A route change drops the
-  // previous route's panels, but not ones a newly mounted child opened for the
-  // route being navigated to — child effects run before this one.
   useEffect(() => {
     setPanels((ps) => ps.filter((p) => p.pathname === pathname))
   }, [pathname])
@@ -80,12 +84,26 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
     [navigate]
   )
 
-  const updatePanel = useCallback(
-    (id: string, content: TPanelEl) => {
-      setPanels((ps) => ps.map((p) => (p.id === id ? { ...p, content } : p)))
+  useEffect(() => {
+    if (panels.length === 0) autoOpenPending.current = false
+  }, [panels.length])
+
+  const addPanelIfEmpty = useCallback(
+    (
+      content: TPanelEl,
+      panelKey?: string,
+      panelId?: string
+    ): string | undefined => {
+      if (panels.length > 0 || autoOpenPending.current) return undefined
+      autoOpenPending.current = true
+      return addPanel(content, panelKey, panelId)
     },
-    []
+    [addPanel, panels.length]
   )
+
+  const updatePanel = useCallback((id: string, content: TPanelEl) => {
+    setPanels((ps) => ps.map((p) => (p.id === id ? { ...p, content } : p)))
+  }, [])
 
   const removePanel = useCallback(
     (id: string, panelKey?: string) => {
@@ -156,6 +174,7 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
         panels,
         modals,
         addPanel,
+        addPanelIfEmpty,
         updatePanel,
         clearPanels,
         removePanel,
