@@ -1,14 +1,14 @@
 {
   "announcements": [
     {
-      "id": "mcp-health-checks-triggers-041",
-      "title": "Nuon MCP, Health Checks, and Triggers",
-      "date": "September 21, 2026",
-      "description": "Making your BYOC deployments actionable whether directed by your agent, or an automatic action triggered by an alert.",
+      "id": "deprovisions-telemetry-dashboard-042",
+      "title": "BYOC Telemetry, Improved UI and Deprovisioning",
+      "date": "October 15, 2026",
+      "description": "OTEL support for BYOC environments, and platform usability improvements",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/041-agents-health-checks-and-triggers",
-      "image": "/images/announcements/nuon-changelog-041.png",
-      "imageDark": "/images/announcements/nuon-changelog-041.png",
+      "ctaUrl": "https://docs.nuon.co/updates/042-deprovisions-and-new-dashboard",
+      "image": "/images/announcements/nuon-changelog-042.png",
+      "imageDark": "/images/announcements/nuon-changelog-042.png",
       "dismissible": false
     },
     {
