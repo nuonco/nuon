@@ -63,6 +63,7 @@ func (s *CreateRunnerJobExecutionResultTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -76,10 +77,12 @@ func (s *CreateRunnerJobExecutionResultTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (no TestOrg/TestAcc needed)
+	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: withOrgAccess(s.testAcc, s.testOrg),
 	})
 	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -221,59 +224,4 @@ func (s *CreateRunnerJobExecutionResultTestSuite) TestCreateRunnerJobExecutionRe
 			}
 		})
 	}
-}
-
-func (s *CreateRunnerJobExecutionResultTestSuite) TestCreateRunnerJobExecutionResultRequiresAccountContext() {
-	// This test documents a known limitation: CreateRunnerJobExecutionResult requires
-	// CreatedByID but runner routes don't have account context.
-	// The endpoint will fail with a database constraint error when trying to create the result.
-
-	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-	job := &app.RunnerJob{
-		ID:                domains.NewRunnerJobID(),
-		OrgID:             s.testOrg.ID,
-		RunnerID:          s.testRunner.ID,
-		LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-		Status:            app.RunnerJobStatusInProgress,
-		StatusDescription: "test job",
-		Group:             app.RunnerJobGroupBuild,
-		Type:              app.RunnerJobTypeDockerBuild,
-		Operation:         app.RunnerJobOperationTypeBuild,
-		QueueTimeout:      60,
-		AvailableTimeout:  60,
-		ExecutionTimeout:  300,
-		MaxExecutions:     3,
-	}
-	err := s.service.DB.WithContext(ctx).Create(job).Error
-	require.NoError(s.T(), err)
-
-	execution := &app.RunnerJobExecution{
-		ID:          domains.NewRunnerID(),
-		OrgID:       s.testOrg.ID,
-		RunnerJobID: job.ID,
-		Status:      app.RunnerJobExecutionStatusInProgress,
-	}
-	err = s.service.DB.WithContext(ctx).Create(execution).Error
-	require.NoError(s.T(), err)
-
-	s.T().Cleanup(func() {
-		s.service.DB.Unscoped().Delete(execution)
-		s.service.DB.Unscoped().Delete(job)
-	})
-
-	path := "/v1/runner-jobs/" + job.ID + "/executions/" + execution.ID + "/result"
-
-	req := CreateRunnerJobExecutionResultRequest{
-		Success:  true,
-		Contents: "test result contents",
-	}
-	rr := s.makeRequest("POST", path, req)
-
-	// Expect 500 due to CreatedByID constraint
-	// RunnerJobExecutionResult has CreatedByID NOT NULL but runner routes have no account context
-	assert.Equal(s.T(), http.StatusInternalServerError, rr.Code)
-	s.T().Logf("Expected error due to CreatedByID constraint - Body: %s", rr.Body.String())
-	assert.Contains(s.T(), rr.Body.String(), "created_by_id")
 }

@@ -12,14 +12,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -43,6 +46,7 @@ type GeneralInternalTestSuite struct {
 	tests.BaseDBTestSuite
 
 	app     *fxtest.App
+	mockTC  *temporal.MockClient
 	service GeneralInternalTestDeps
 	router  *gin.Engine
 	ctx     context.Context
@@ -63,9 +67,15 @@ func (s *GeneralInternalTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
+	s.mockTC = temporal.NewMockClient(gomock.NewController(s.T()))
+	s.mockTC.EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&mockWorkflowRun{}, nil).AnyTimes()
+
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
+			Mocks:           &tests.TestMocks{MockTC: s.mockTC},
 			CustomValidator: true,
 		}),
 		// Service under test
@@ -128,4 +138,13 @@ func (s *GeneralInternalTestSuite) makeRequest(method, path string, body interfa
 	rr := httptest.NewRecorder()
 	s.router.ServeHTTP(rr, req)
 	return rr
+}
+
+type mockWorkflowRun struct{}
+
+func (m *mockWorkflowRun) GetID() string                                       { return "mock-workflow-id" }
+func (m *mockWorkflowRun) GetRunID() string                                    { return "mock-run-id" }
+func (m *mockWorkflowRun) Get(ctx context.Context, valuePtr interface{}) error { return nil }
+func (m *mockWorkflowRun) GetWithOptions(ctx context.Context, valuePtr interface{}, options tclient.WorkflowRunGetOptions) error {
+	return nil
 }

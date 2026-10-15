@@ -21,7 +21,7 @@ import (
 
 func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigSuccess() {
 	s.Run("creates config with image_url and tag", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeExternalImage)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeExternalImage)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/external-image", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateExternalImageComponentConfigRequest{
@@ -46,7 +46,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigSuccess() {
 
 func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigWithAWSECR() {
 	s.Run("creates config with AWS ECR image config", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeExternalImage)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeExternalImage)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/external-image", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateExternalImageComponentConfigRequest{
@@ -78,7 +78,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigWithAWSECR(
 // ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigValidationErrors() {
-	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeExternalImage)
+	comp := s.createComponent(s.testApp.ID, app.ComponentTypeExternalImage)
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/external-image", s.testApp.ID, comp.ID)
 
 	testCases := []struct {
@@ -130,7 +130,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigValidationE
 func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
 
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeExternalImage)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeExternalImage)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/external-image", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateExternalImageComponentConfigRequest{

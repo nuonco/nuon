@@ -65,6 +65,7 @@ func (s *GetRunnerJobPublicTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -238,6 +239,7 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(execution).Error)
 
 				result := &app.RunnerJobExecutionResult{
+					OrgID:                s.testOrg.ID,
 					RunnerJobExecutionID: execution.ID,
 					CompositeError: &compositeerrors.CompositeErrorData{
 						Type: "terraform.error",

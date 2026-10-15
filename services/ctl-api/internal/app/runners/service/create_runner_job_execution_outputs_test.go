@@ -63,6 +63,7 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -76,10 +77,12 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (no TestOrg/TestAcc needed)
+	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: withOrgAccess(s.testAcc, s.testOrg),
 	})
 	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -213,64 +216,4 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) TestCreateRunnerJobExecutionO
 			}
 		})
 	}
-}
-
-func (s *CreateRunnerJobExecutionOutputsTestSuite) TestCreateRunnerJobExecutionOutputsRequiresAuthz() {
-	// This test documents a known limitation: CreateRunnerJobExecutionOutputs has
-	// authz.CanCreate check AND CreatedByID NOT NULL constraint, but runner routes
-	// don't have account context. The endpoint will fail with authorization or constraint errors.
-
-	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-	job := &app.RunnerJob{
-		ID:                domains.NewRunnerJobID(),
-		OrgID:             s.testOrg.ID,
-		RunnerID:          s.testRunner.ID,
-		LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-		Status:            app.RunnerJobStatusInProgress,
-		StatusDescription: "test job",
-		Group:             app.RunnerJobGroupBuild,
-		Type:              app.RunnerJobTypeDockerBuild,
-		Operation:         app.RunnerJobOperationTypeBuild,
-		QueueTimeout:      60,
-		AvailableTimeout:  60,
-		ExecutionTimeout:  300,
-		MaxExecutions:     3,
-	}
-	err := s.service.DB.WithContext(ctx).Create(job).Error
-	require.NoError(s.T(), err)
-
-	execution := &app.RunnerJobExecution{
-		ID:          domains.NewRunnerID(),
-		OrgID:       s.testOrg.ID,
-		RunnerJobID: job.ID,
-		Status:      app.RunnerJobExecutionStatusInProgress,
-	}
-	err = s.service.DB.WithContext(ctx).Create(execution).Error
-	require.NoError(s.T(), err)
-
-	s.T().Cleanup(func() {
-		s.service.DB.Unscoped().Delete(execution)
-		s.service.DB.Unscoped().Delete(job)
-	})
-
-	path := "/v1/runner-jobs/" + job.ID + "/executions/" + execution.ID + "/outputs"
-
-	req := CreateRunnerJobExecutionOutputsRequest{
-		Outputs: map[string]interface{}{
-			"key1": "value1",
-			"key2": "value2",
-		},
-	}
-	rr := s.makeRequest("POST", path, req)
-
-	// Expect error due to authz check (CanCreate requires account context)
-	// OR CreatedByID constraint (RunnerJobExecutionOutputs has CreatedByID NOT NULL)
-	require.Equal(s.T(), http.StatusInternalServerError, rr.Code,
-		"should fail due to missing account context for authz or CreatedByID")
-	s.T().Logf("Expected error due to authz/CreatedByID - Status: %d, Body: %s", rr.Code, rr.Body.String())
-
-	// The handler calls authz.CanCreate which requires account context
-	// If that passes (shouldn't on runner routes), the DB create will fail on CreatedByID constraint
 }

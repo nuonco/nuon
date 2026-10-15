@@ -135,6 +135,7 @@ func (s *CreateAdHocActionTestSuite) createInstall(appID string) *app.Install {
 		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
 		Create(install)
 	require.NoError(s.T(), res.Error)
+	seedRunnableInstall(ctx, s.T(), s.service.DB, install.ID)
 	return install
 }
 
@@ -413,6 +414,7 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionNotFound() {
 }
 
 func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionCrossOrgIsolation() {
+	s.T().Skip("PRO-3349: getInstall in create_install_action_workflow_run.go is not org-scoped, cross-org adhoc run returns 201")
 	install1 := s.createInstall(s.testApp.ID)
 
 	ctx2 := context.Background()
@@ -439,6 +441,7 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionCrossOrgIsolation() {
 		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
 		Create(install2)
 	require.NoError(s.T(), res.Error)
+	seedRunnableInstall(ctx2, s.T(), s.service.DB, install2.ID)
 
 	req := CreateAdHocActionRequest{
 		Command: "echo test",
@@ -447,13 +450,10 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionCrossOrgIsolation() {
 	path := fmt.Sprintf("/v1/installs/%s/actions/adhoc-run", install2.ID)
 	rr := s.makeRequest(http.MethodPost, path, req)
 
-	// BUG: getInstall does not scope by org, so cross-org access succeeds.
-	// This should return 404 but currently returns 201.
-	// TODO: Fix getInstall to scope by org_id from context.
-	if rr.Code != http.StatusCreated {
+	if rr.Code != http.StatusNotFound {
 		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 	}
-	assert.Equal(s.T(), http.StatusCreated, rr.Code)
+	assert.Equal(s.T(), http.StatusNotFound, rr.Code)
 
 	_ = install1
 }

@@ -89,7 +89,7 @@ func (s *DeleteOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -111,6 +111,7 @@ func (s *DeleteOrgTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, s.testOrg.ID)
 }
 
 func (s *DeleteOrgTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -139,7 +140,7 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "default-org",
+					Name:        "default-org-" + domains.NewOrgID(),
 					SandboxMode: true,
 					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
@@ -148,6 +149,7 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -167,7 +169,7 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "integration-org",
+					Name:        "integration-org-" + domains.NewOrgID(),
 					SandboxMode: true,
 					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
@@ -176,6 +178,7 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				// No cleanup needed - hard delete removes it
 
 				return org
@@ -202,7 +205,7 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 			err := s.orgsService.RegisterPublicRoutes(s.router)
 			require.NoError(s.T(), err)
 
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request
 			rr := s.makeRequest(http.MethodDelete, "/v1/orgs/current")

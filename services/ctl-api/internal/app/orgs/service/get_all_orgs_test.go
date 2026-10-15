@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -116,6 +117,7 @@ func (s *GetAllOrgsTestSuite) makeRequest(method, path string) *httptest.Respons
 }
 
 func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
+	uniq := domains.NewOrgID()
 	testCases := []struct {
 		name          string
 		setupFunc     func() []string // Returns org IDs that should be returned
@@ -141,7 +143,7 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 
 				org1 := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "sandbox-org",
+					Name:        "sandbox-org-" + uniq,
 					SandboxMode: true,
 					OrgType:     app.OrgTypeSandbox,
 					NotificationsConfig: app.NotificationsConfig{
@@ -150,7 +152,7 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				}
 				org2 := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "default-org",
+					Name:        "default-org-" + uniq,
 					SandboxMode: true,
 					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
@@ -181,8 +183,8 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				for _, o := range orgs {
 					ids[o.Name] = true
 				}
-				require.True(s.T(), ids["sandbox-org"], "sandbox-org should be in response")
-				require.True(s.T(), ids["default-org"], "default-org should be in response")
+				require.True(s.T(), ids["sandbox-org-"+uniq], "sandbox-org should be in response")
+				require.True(s.T(), ids["default-org-"+uniq], "default-org should be in response")
 			},
 		},
 		{
@@ -256,7 +258,7 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				// Create orgs sequentially
 				org1 := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "oldest-org",
+					Name:        "oldest-org-" + uniq,
 					SandboxMode: true,
 					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
@@ -271,7 +273,7 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 
 				org2 := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "middle-org",
+					Name:        "middle-org-" + uniq,
 					SandboxMode: true,
 					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
@@ -286,7 +288,7 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 
 				org3 := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "newest-org",
+					Name:        "newest-org-" + uniq,
 					SandboxMode: true,
 					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
@@ -302,12 +304,16 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				return []string{org3.ID, org2.ID, org1.ID} // Expect DESC order
 			},
 			queryParams:   "?type=integration",
-			expectedCount: 3,
+			expectedCount: -1,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(orgs []app.Org) {
-				require.Equal(s.T(), "newest-org", orgs[0].Name)
-				require.Equal(s.T(), "middle-org", orgs[1].Name)
-				require.Equal(s.T(), "oldest-org", orgs[2].Name)
+				var names []string
+				for _, o := range orgs {
+					if strings.HasSuffix(o.Name, "-org-"+uniq) {
+						names = append(names, o.Name)
+					}
+				}
+				require.Equal(s.T(), []string{"newest-org-" + uniq, "middle-org-" + uniq, "oldest-org-" + uniq}, names)
 			},
 		},
 		{

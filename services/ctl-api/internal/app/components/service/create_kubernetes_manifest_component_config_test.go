@@ -21,7 +21,7 @@ import (
 
 func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigInlineSuccess() {
 	s.Run("creates config with inline manifest", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeKubernetesManifest)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeKubernetesManifest)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/kubernetes-manifest", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateKubernetesManifestComponentConfigRequest{
@@ -44,7 +44,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigInlineSuccess
 
 func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigWithNamespace() {
 	s.Run("creates config with namespace", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeKubernetesManifest)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeKubernetesManifest)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/kubernetes-manifest", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateKubernetesManifestComponentConfigRequest{
@@ -71,7 +71,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigWithNamespace
 // ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigValidationErrors() {
-	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeKubernetesManifest)
+	comp := s.createComponent(s.testApp.ID, app.ComponentTypeKubernetesManifest)
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/kubernetes-manifest", s.testApp.ID, comp.ID)
 
 	testCases := []struct {
@@ -137,7 +137,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigValidationErr
 func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
 
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeKubernetesManifest)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeKubernetesManifest)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/kubernetes-manifest", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateKubernetesManifestComponentConfigRequest{

@@ -208,6 +208,7 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			actionIdentifier := tc.setupFunc()
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 			rr := s.makeRequest(http.MethodDelete, "/v1/apps/"+s.testApp.ID+"/actions/"+actionIdentifier, nil)
 
 			if rr.Code != tc.expectedCode {
@@ -215,10 +216,8 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			var response bool
-			err := json.Unmarshal(rr.Body.Bytes(), &response)
-			require.NoError(s.T(), err)
-			assert.True(s.T(), response)
+			var response app.EmptyResponse
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
 
 			if tc.validateFunc != nil {
 				tc.validateFunc(actionIdentifier)

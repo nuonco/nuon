@@ -74,8 +74,8 @@ func (s *CreateAppTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-			T: s.T(),
-
+			T:               s.T(),
+			Mocks:           &tests.TestMocks{MockTC: newQueueMockTC(s.T())},
 			CustomValidator: true,
 		}),
 		// service under test
