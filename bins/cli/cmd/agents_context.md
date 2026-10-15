@@ -34,11 +34,11 @@ nuon installs select   # optional
 nuon agents mcp --allow-writes
 ```
 
-The proxy sets `X-Nuon-Org-ID` from the CLI config org. Pass `org_id` on a tool call to send a different org for that request only. The proxy does not store it. There is no `select_org` tool.
+The proxy sets `X-Nuon-Org-ID` from the CLI config org. Pass `x_nuon_org_id` on a tool call to send a different org for that request only. The proxy does not store it. There is no `select_org` tool.
 
 ## Organization for this session
 
-Before the first org-scoped tool call, tell the user the Org ID in the current CLI selection and ask whether this session should use it or a different org, then wait. When that field is `(none selected)`, ask which org this session should use. Do not print the full org list. If the user names an org, resolve it with `list_orgs` and `query`. If they want to browse, show one page and say when `has_more` is true. Do not keep paging unless they ask for everything. After they answer, pass that `org_id` on every later org-scoped call in this conversation, including when it matches the config org. Do not write the choice back to the CLI config. `whoami` and `list_orgs` work without an org.
+Before the first org-scoped tool call, tell the user the Org ID in the current CLI selection and ask whether this session should use it or a different org, then wait. When that field is `(none selected)`, ask which org this session should use. Do not print the full org list. If the user names an org, resolve it with `list_orgs` and `query`. If they want to browse, show one page and say when `has_more` is true. Do not keep paging unless they ask for everything. After they answer, pass that `x_nuon_org_id` on every later org-scoped call in this conversation, including when it matches the config org. Do not write the choice back to the CLI config. `whoami` and `list_orgs` work without an org.
 
 ### Registering the proxy with a client
 

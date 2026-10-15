@@ -45,7 +45,7 @@ control plane MCP server. Tools are discovered from the upstream server
 and forwarded transparently.
 
 Injects Authorization (Bearer) and X-Nuon-Org-ID from the CLI config on
-every upstream request. A tool call can pass org_id to send a different
+every upstream request. A tool call can pass x_nuon_org_id to send a different
 org on that request only. Read-only by default; pass --allow-writes to also expose mutating
 tools (descriptions prefixed with "WRITE OPERATION:").
 

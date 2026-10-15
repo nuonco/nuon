@@ -101,12 +101,12 @@ func TestAuthRoundTripperOrgIDIsPerRequest(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	send(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_apps","arguments":{"org_id":"org_a","app":"app_1"}}}`)
+	send(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_apps","arguments":{"x_nuon_org_id":"org_a","app":"app_1"}}}`)
 	require.Equal(t, "org_a", gotOrg)
-	require.NotContains(t, gotBody, "org_id")
+	require.NotContains(t, gotBody, "x_nuon_org_id")
 	require.Contains(t, gotBody, "app_1")
 
-	send(`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_apps","arguments":{"org_id":"org_b"}}}`)
+	send(`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_apps","arguments":{"x_nuon_org_id":"org_b"}}}`)
 	require.Equal(t, "org_b", gotOrg)
 	require.NotContains(t, gotBody, "org_a")
 

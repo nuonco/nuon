@@ -110,12 +110,12 @@ func TestProxyToolsAcceptSessionOrgID(t *testing.T) {
 	for _, tool := range res.Tools {
 		encoded, err := json.Marshal(tool.InputSchema)
 		require.NoError(t, err)
-		require.Contains(t, string(encoded), `"org_id"`)
+		require.Contains(t, string(encoded), `"x_nuon_org_id"`)
 	}
 
 	instructions := session.InitializeResult().Instructions
 	require.Contains(t, instructions, "The CLI config org is (none selected).")
-	require.Contains(t, instructions, "pass that org_id")
+	require.Contains(t, instructions, "pass that x_nuon_org_id")
 
 	withOrg := connectProxy(t, upstream, false, func(s *Service) {
 		s.cfg = &config.Config{OrgID: "org_config"}

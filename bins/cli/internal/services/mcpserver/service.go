@@ -396,12 +396,12 @@ func orgSessionInstructions(orgID string) string {
 		selected = orgID
 	}
 	return fmt.Sprintf(
-		"The CLI config org is %s. Before the first org-scoped Nuon tool call, tell the user that org and ask whether this session should use it or a different org, then wait. When the CLI config org is (none selected), ask which org this session should use. Do not print the full org list. If the user names an org, resolve it with list_orgs and query. If they want to browse, show one page and say when has_more is true. Do not keep paging unless they ask for everything. After they answer, pass that org_id on every later org-scoped call in this conversation, including when it matches the config org. The proxy sends org_id as X-Nuon-Org-ID for that request only and does not store it. Do not write the choice back to the CLI config. whoami and list_orgs work without an org.",
+		"The CLI config org is %s. Before the first org-scoped Nuon tool call, tell the user that org and ask whether this session should use it or a different org, then wait. When the CLI config org is (none selected), ask which org this session should use. Do not print the full org list. If the user names an org, resolve it with list_orgs and query. If they want to browse, show one page and say when has_more is true. Do not keep paging unless they ask for everything. After they answer, pass that x_nuon_org_id on every later org-scoped call in this conversation, including when it matches the config org. The proxy sends x_nuon_org_id as X-Nuon-Org-ID for that request only and does not store it. Do not write the choice back to the CLI config. whoami and list_orgs work without an org.",
 		selected,
 	)
 }
 
-const orgIDArgument = "org_id"
+const orgIDArgument = "x_nuon_org_id"
 
 func addOrgIDArgument(schema any) any {
 	property := map[string]any{
@@ -437,7 +437,7 @@ func addOrgIDArgument(schema any) any {
 	return decoded
 }
 
-// stripToolCallOrgID removes arguments.org_id from a tools/call JSON-RPC body
+// stripToolCallOrgID removes arguments.x_nuon_org_id from a tools/call JSON-RPC body
 // and returns that value. Other messages are left unchanged.
 func stripToolCallOrgID(body []byte) ([]byte, string, bool) {
 	var msg map[string]json.RawMessage

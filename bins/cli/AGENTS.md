@@ -243,7 +243,7 @@ ctl-api MCP is **stateless** Streamable HTTP (`StreamableHTTPOptions.Stateless: 
   (`WRITE OPERATION:` + `require.Write`), org via per-request `X-Nuon-Org-ID`.
 - **Different:** no durable `Mcp-Session-Id`; POST-only (GET/DELETE → 405); any replica can serve if
   auth is on the request; no server→client RPCs. The server does not store an org. The stdio proxy
-  sends the CLI config org, and a tool call's `org_id` overrides that header for that request only.
+  sends the CLI config org, and a tool call's `x_nuon_org_id` overrides that header for that request only.
 
 stdout is the MCP protocol: handlers and the proxy must never print.
 
