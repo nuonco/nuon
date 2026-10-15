@@ -69,11 +69,7 @@ export const ActivityPins = ({ items, panel }: IActivityPins) => (
                   onClick={item.onRun}
                 >
                   {iconFor(item.kind)}
-                  <Text
-                    variant="body"
-                    weight="stronger"
-                    className="truncate"
-                  >
+                  <Text variant="body" weight="stronger" className="truncate">
                     {item.name}
                   </Text>
                   <Icon

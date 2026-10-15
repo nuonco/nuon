@@ -13,6 +13,9 @@ export type TRunbookRun = {
     status?: string
     status_human_description?: string
   }
+  install_workflow_id?: string | null
+  runbook_inputs?: Record<string, string>
+  step_selections?: { step_id: string; name?: string; enabled: boolean }[]
   created_by_id?: string
   created_by?: {
     email?: string

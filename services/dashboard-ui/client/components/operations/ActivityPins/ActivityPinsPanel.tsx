@@ -61,7 +61,9 @@ const ActivityPinsPanelBody = () => {
   )
 }
 
-export const ActivityPinsPanel = (props: Omit<IPanel, 'children' | 'heading'>) => (
+export const ActivityPinsPanel = (
+  props: Omit<IPanel, 'children' | 'heading'>
+) => (
   <Panel {...props} size="half" heading="Pin shortcuts">
     <ActivityPinsPanelBody />
   </Panel>

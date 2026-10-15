@@ -120,7 +120,10 @@ export const ProcessCard = ({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <Text variant="base" weight="strong">
-              {humanize(process.type || 'unknown')} process
+              {process.type === 'mng'
+                ? 'Management'
+                : humanize(process.type || 'unknown')}{' '}
+              process
             </Text>
             <Status status={process.composite_status?.status} variant="badge" />
             {process.labels?.map((label) => (
@@ -135,9 +138,7 @@ export const ProcessCard = ({
             label="Admin panel"
           />
         </div>
-        <div className="flex items-center gap-2">
-          {managementDropdown}
-        </div>
+        <div className="flex items-center gap-2">{managementDropdown}</div>
       </div>
 
       {warnings.map((warning, i) => (

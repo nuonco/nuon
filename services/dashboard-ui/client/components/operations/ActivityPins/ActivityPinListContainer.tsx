@@ -39,7 +39,14 @@ export const ActivityPinListContainer = ({
 
   const enabled = !!org?.id && !!install?.id
   const runbooks = useQuery({
-    queryKey: ['activity-pin-picker', 'runbook', org?.id, install?.id, offset, q],
+    queryKey: [
+      'activity-pin-picker',
+      'runbook',
+      org?.id,
+      install?.id,
+      offset,
+      q,
+    ],
     queryFn: () =>
       getInstallRunbooks({
         orgId: org!.id,
@@ -52,7 +59,14 @@ export const ActivityPinListContainer = ({
     enabled: enabled && kind === 'runbook',
   })
   const actions = useQuery({
-    queryKey: ['activity-pin-picker', 'action', org?.id, install?.id, offset, q],
+    queryKey: [
+      'activity-pin-picker',
+      'action',
+      org?.id,
+      install?.id,
+      offset,
+      q,
+    ],
     queryFn: () =>
       getInstallActionsLatestRuns({
         orgId: org!.id,
@@ -86,9 +100,10 @@ export const ActivityPinListContainer = ({
         })
       : (actions.data?.data ?? []).flatMap((installAction) => {
           const id = installAction.action_workflow_id ?? installAction.id
-          const isManual = !!installAction.action_workflow?.configs?.[0]?.triggers?.some(
-            (trigger) => trigger.type === 'manual'
-          )
+          const isManual =
+            !!installAction.action_workflow?.configs?.[0]?.triggers?.some(
+              (trigger) => trigger.type === 'manual'
+            )
           if (!id || !isManual) return []
           const pin: TActivityPin = { kind: 'action', id }
           const checked = isPinned(pin)

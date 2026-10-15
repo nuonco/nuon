@@ -3639,6 +3639,13 @@ export interface components {
     };
     /** @enum {string} */
     "app.AccountType": "auth" | "auth0" | "service" | "canary" | "integration";
+    "app.ActionRunTrigger": {
+      actor?: components["schemas"]["app.Account"];
+      parent_id?: string;
+      parent_name?: string;
+      parent_type?: string;
+      type?: string;
+    };
     "app.ActionWorkflow": {
       app_id?: string;
       config_count?: number;
@@ -5125,6 +5132,7 @@ export interface components {
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
+      effective_timeout?: number;
       enable_kube_config?: components["schemas"]["sql.NullBool"];
       /** @description after query */
       execution_time?: number;
@@ -5154,6 +5162,7 @@ export interface components {
       status_v2?: components["schemas"]["app.CompositeStatus"];
       steps?: components["schemas"]["app.InstallActionWorkflowRunStep"][];
       timeout?: number;
+      trigger?: components["schemas"]["app.ActionRunTrigger"];
       trigger_type?: components["schemas"]["app.ActionWorkflowTriggerType"];
       triggered_by_id?: string;
       triggered_by_type?: string;
@@ -9407,6 +9416,7 @@ export interface components {
     };
     "service.InstallActivity": {
       action?: components["schemas"]["service.InstallActivityAction"];
+      actor?: components["schemas"]["app.Account"];
       created_at?: string;
       id?: string;
       policy?: components["schemas"]["service.InstallActivityPolicy"];
@@ -9419,8 +9429,10 @@ export interface components {
     };
     "service.InstallActivityAction": {
       action_workflow_id?: string;
+      adhoc?: boolean;
       name?: string;
       run_id?: string;
+      trigger?: components["schemas"]["app.ActionRunTrigger"];
       trigger_type?: string;
     };
     "service.InstallActivityPolicy": {
@@ -23303,6 +23315,10 @@ export interface operations {
         status?: string;
         /** @description case-insensitive substring match on id or title */
         search?: string;
+        /** @description only include activity triggered by this account ID */
+        actor_id?: string;
+        /** @description exclude cron-triggered action and runbook runs */
+        exclude_cron?: boolean;
         /** @description include activity created at or after this RFC3339 timestamp */
         created_at_gte?: string;
         /** @description include activity created at or before this RFC3339 timestamp */
