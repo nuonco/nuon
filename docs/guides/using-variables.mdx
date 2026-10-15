@@ -70,6 +70,8 @@ Label values re-render automatically as the install state changes.
 - **Nuon Application ID** `{{ .nuon.app.id }}`
   * Unique identifier for the vendor application
 - **Nuon Install ID** `{{ .nuon.install.id }}`
+- **Nuon Runner API URL** `{{ .nuon.runner.api_url }}`
+  * Control-plane runner API base URL configured for this install's runner group, with the deployment's runner API URL as the fallback. Available even when the install runner is stopped; this is not the public API, telemetry relay, or runner instance address.
 - **Nuon Install Sandbox Type** `{{ .nuon.install.sandbox.type }}`
   * Example: `aws-eks`
 - **Nuon Install Sandbox Version** `{{ .nuon.install.sandbox.version }}`
