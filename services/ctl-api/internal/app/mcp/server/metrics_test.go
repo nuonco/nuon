@@ -100,7 +100,6 @@ func newMetricsTestServer(t *testing.T, service api.MCPService, writer *capturin
 		mcpServices:        []api.MCPService{service},
 		schemaCache:        mcp.NewSchemaCache(),
 		implementationName: "nuon-ctl",
-		orgSelections:      make(map[string]*orgSelection),
 	}
 	mcpHandler := s.newMCPHandler()
 	handler := s.metricsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

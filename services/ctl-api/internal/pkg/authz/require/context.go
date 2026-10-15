@@ -10,13 +10,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
-// Org returns the selected org ID from context. Empty org means the caller must
-// select_org or pass X-Nuon-Org-ID. Use for non-Gin callers (MCP tool handlers).
+// Org returns the org ID from context. Empty org means the caller did not pass
+// X-Nuon-Org-ID. Use for non-Gin callers (MCP tool handlers).
 // It does not check permissions; use Read or Write for authorization.
 func Org(ctx context.Context) (string, error) {
 	orgID := keys.OrgIDFromContext(ctx)
 	if orgID == "" {
-		return "", fmt.Errorf("no org selected; call list_orgs then select_org, or pass X-Nuon-Org-ID")
+		return "", fmt.Errorf("X-Nuon-Org-ID is required")
 	}
 	return orgID, nil
 }

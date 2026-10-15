@@ -2,6 +2,7 @@ package mcpserver
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -97,6 +98,29 @@ func TestProxyToolDiscovery(t *testing.T) {
 		names[tool.Name] = true
 	}
 	require.True(t, names["deploy_component"], "write tool should be exposed with --allow-writes")
+}
+
+func TestProxyToolsAcceptSessionOrgID(t *testing.T) {
+	_, upstream := fakeUpstream(t)
+
+	session := connectProxy(t, upstream, false)
+	res, err := session.ListTools(context.Background(), nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, res.Tools)
+	for _, tool := range res.Tools {
+		encoded, err := json.Marshal(tool.InputSchema)
+		require.NoError(t, err)
+		require.Contains(t, string(encoded), `"x_nuon_org_id"`)
+	}
+
+	instructions := session.InitializeResult().Instructions
+	require.Contains(t, instructions, "The CLI config org is (none selected).")
+	require.Contains(t, instructions, "pass that x_nuon_org_id")
+
+	withOrg := connectProxy(t, upstream, false, func(s *Service) {
+		s.cfg = &config.Config{OrgID: "org_config"}
+	})
+	require.Contains(t, withOrg.InitializeResult().Instructions, "The CLI config org is org_config.")
 }
 
 func TestProxyToolForwarding(t *testing.T) {

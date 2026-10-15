@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -51,6 +52,13 @@ func (s *service) mcpListInstalls(ctx context.Context, _ *mcp.CallToolRequest, i
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Preload("App").
+		Preload("AppRunnerConfig").
+		Preload("AppConfig", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "app_id", "app_branch_id")
+		}).
+		Preload("AppConfig.RunnerConfig").
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		Where(app.Install{OrgID: orgID}).
 		Order("name ASC").
 		Limit(limit + 1).
