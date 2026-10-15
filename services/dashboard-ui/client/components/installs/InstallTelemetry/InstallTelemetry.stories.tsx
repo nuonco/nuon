@@ -1,50 +1,160 @@
 import { useState } from 'react'
-import { InstallTelemetry, type IInstallTelemetry } from './InstallTelemetry'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ModalStory } from '@/components/__stories__/helpers'
+import { Text } from '@/components/common/Text'
+import type { IModal } from '@/components/surfaces/Modal'
+import { InstallTelemetry } from './InstallTelemetry'
+import { InstallTelemetryModal } from './InstallTelemetryModal'
+import { CollectorSetupContainer } from './CollectorSetupContainer'
 
 export default { title: 'Features / Installs / Telemetry' }
 
-const Example = (props: Partial<IInstallTelemetry>) => {
-  const [enabled, setEnabled] = useState(props.enabled ?? false)
+const orgId = 'org-acme'
+const install = {
+  id: 'install-acme',
+  name: 'acme-production',
+  app_id: 'app-acme',
+  runner_id: 'runner-acme',
+  runner_status: 'offline',
+}
+
+const SetupModal = ({
+  managed = false,
+  setupRequired = false,
+  member = false,
+  runner = false,
+  ...props
+}: IModal & {
+  managed?: boolean
+  setupRequired?: boolean
+  member?: boolean
+  runner?: boolean
+}) => {
+  const [saved, setSaved] = useState(false)
+  const [client] = useState(() => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { staleTime: Infinity, retry: false } },
+    })
+    client.setQueryData(['account'], {
+      roles: [
+        { org_id: orgId, role_type: member ? 'org_member' : 'org_admin' },
+      ],
+    })
+    client.setQueryData(
+      ['install-telemetry-collector', orgId, install.id],
+      setupRequired || runner ? null : { account_id: 'account-collector' }
+    )
+    client.setQueryData(
+      ['install-components', orgId, install.id, 'telemetry-collector'],
+      {
+        data: runner
+          ? []
+          : [{ component_id: 'component-collector', enabled: !setupRequired }],
+        pagination: { hasNext: false },
+      }
+    )
+    client.setQueryData(
+      ['static-tokens', orgId],
+      [
+        {
+          id: 'token-bootstrap-old',
+          account_id: 'account-collector',
+          expires_at: '2025-01-01T00:00:00Z',
+        },
+      ]
+    )
+    client.setQueryData(['install-stack', orgId, install.id], {
+      install_stack_outputs: {
+        data_contents: {
+          telemetry_endpoint: runner
+            ? 'http://internal-acme-telemetry-1234567890abcdef.us-east-1.elb.amazonaws.com:4318'
+            : '',
+        },
+      },
+    })
+    return client
+  })
   return (
-    <div className="max-w-sm p-6">
-      <InstallTelemetry
-        onRetry={() => {}}
+    <QueryClientProvider client={client}>
+      <InstallTelemetryModal
+        installName={install.name}
+        settings={{
+          enabled: false,
+          override: false,
+          org_default: true,
+          relay_configured: !setupRequired,
+        }}
+        isManagedByConfig={managed}
+        isPending={false}
+        error={null}
         {...props}
-        enabled={enabled}
-        onToggle={setEnabled}
-      />
-    </div>
+        onSubmit={() => setSaved(true)}
+      >
+        {saved ? (
+          <div role="status">
+            <Text>Telemetry settings updated</Text>
+          </div>
+        ) : null}
+        <CollectorSetupContainer
+          install={{ ...install, runner_status: runner ? 'active' : 'offline' }}
+          orgId={orgId}
+          onNavigate={() => {}}
+        />
+      </InstallTelemetryModal>
+    </QueryClientProvider>
   )
 }
 
-export const Disabled = () => <Example />
-export const Enabled = () => <Example enabled />
-export const Inherited = () => <Example enabled isInherited />
-export const Override = () => (
-  <Example isInherited={false} onUseOrgDefault={() => {}} />
+export const Default = () => (
+  <ModalStory>
+    <SetupModal />
+  </ModalStory>
+)
+export const SetupRequired = () => (
+  <ModalStory>
+    <SetupModal setupRequired />
+  </ModalStory>
 )
 export const ConfigManaged = () => (
-  <Example enabled isInherited={false} isManagedByConfig />
+  <ModalStory>
+    <SetupModal managed />
+  </ModalStory>
 )
-export const ResetEndpointPending = () => (
-  <Example enabled isInherited={false} canUseOrgDefault={false} />
+export const Member = () => (
+  <ModalStory>
+    <SetupModal member />
+  </ModalStory>
 )
-export const Saving = () => <Example isPending />
-export const Loading = () => <Example isLoading />
-export const EndpointMissing = () => <Example hasEndpoint={false} />
-export const RunnerOffline = () => <Example isRunnerActive={false} />
-export const SetupRequired = () => (
-  <Example hasEndpoint={false} isRunnerActive={false} />
+export const RunnerCollector = () => (
+  <ModalStory>
+    <SetupModal runner />
+  </ModalStory>
 )
-export const SetupUnavailable = () => (
-  <Example enabled hasEndpoint={false} isRunnerActive={false} />
+export const Summary = () => (
+  <div className="max-w-sm p-6">
+    <InstallTelemetry
+      settings={{
+        enabled: true,
+        override: null,
+        org_default: true,
+        relay_configured: true,
+      }}
+      onManage={() => {}}
+      onRetry={() => {}}
+    />
+  </div>
+)
+export const Loading = () => (
+  <InstallTelemetry isLoading onManage={() => {}} onRetry={() => {}} />
 )
 export const LoadError = () => (
-  <Example
+  <InstallTelemetry
     error={{
-      error: 'Request failed',
-      description: 'Unable to load telemetry settings.',
+      error: 'Telemetry settings load failed',
+      description: 'Retry loading telemetry settings.',
       user_error: false,
     }}
+    onManage={() => {}}
+    onRetry={() => {}}
   />
 )

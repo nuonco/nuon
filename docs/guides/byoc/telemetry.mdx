@@ -66,6 +66,10 @@ Your application will send data to a private endpoint in its own install, not di
 
 ## 3. Check the install endpoint
 
+This section describes **runner-bound** application collection. For collection while the runner is stopped,
+follow [optional in-cluster collector setup](/guides/manage-install-telemetry#set-up-an-optional-in-cluster-collector)
+instead. That path uses a cluster-local OTLP service and does not require private runner telemetry ingress.
+
 Choose a customer install to start with. Current install stacks provision private telemetry ingress by default;
 update older stacks or re-enable ingress if the customer previously disabled it.
 
@@ -121,9 +125,8 @@ Follow [Manage Install Telemetry](/guides/manage-install-telemetry#enable-or-dis
 install from the dashboard or its install config. You can also set an org default when you are ready to enable
 collection more broadly.
 
-<Frame caption="Enable telemetry under the install's Settings → Configuration. Here it is enabled through the org default.">
-  <img src="/images/guides/install-telemetry/install-toggle.png" alt="Telemetry card with Enable telemetry turned on and Using org default beneath it" style={{ maxWidth: '400px', width: '100%' }} />
-</Frame>
+Open **Settings → Configuration → Telemetry → Manage telemetry**, choose **Telemetry forwarding**, then select
+**Save settings**. Saving policy does not create collector access or deploy infrastructure.
 
 With the runner active, allow about a minute for its settings to refresh and the Collector to start. Generate some application
 activity, then find a recent log, metric, or trace in your backend with the install's `nuon.install.id` resource

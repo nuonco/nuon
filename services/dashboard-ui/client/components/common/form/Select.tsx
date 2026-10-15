@@ -398,7 +398,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             'user-invalid:focus:!border-red-500 user-invalid:focus:!ring-red-500',
             sizeClasses[size],
             {
-              '!bg-cool-grey-200 text-cool-grey-500 dark:!bg-dark-grey-600 dark:text-dark-grey-900 cursor-not-allowed':
+              '!bg-cool-grey-200 text-cool-grey-600 dark:!bg-dark-grey-600 dark:text-cool-grey-400 cursor-not-allowed':
                 disabled,
               '!border-cool-grey-300 dark:!border-dark-grey-600': disabled,
               '!shadow-none': disabled,
