@@ -1,6 +1,6 @@
 ---
 title: 042 - Clean Deprovisions, BYOC Telemetry, and a New Dashboard
-description: Offboard a customer without manual cleanup, see every install in your own observability backend, and run your fleet from a dashboard organized around your app branches.
+description: Teardowns that finish, install telemetry in your own backend, and a dashboard built around app branches.
 boost: 0.3
 ---
 
@@ -8,13 +8,14 @@ _October 15, 2026_
 
 ## Clean deprovisions
 
-Offboard a customer in one reviewed teardown, without hand-editing state.
+Teardowns that finish without hand-editing state.
 
-When a contract ends or an install moves, the teardown has to remove everything you deployed and leave the
-databases and buckets your customer is keeping. Your policies exist to stop exactly those deletes. Until now that
-meant deprovisions stalled on your own guardrails, and finishing one took hand-edited state and custom actions.
-
-Mark the stateful resources a component should leave behind:
+- `[teardown] retain` removes listed resources from state and leaves them running
+- The teardown plan marks each retained resource with a **Retain** action
+- The plan fails if a retained resource depends on something being destroyed
+- `apply_on_teardown = false` skips a policy during teardowns and keeps it on for deploys
+- Failed plan steps can be skipped
+- Deprovisions show on the install's deployments page
 
 ```toml components/database.toml
 [teardown]
@@ -24,13 +25,6 @@ retain = [
 ]
 ```
 
-Nuon destroys everything else, then hands the retained resources over to your customer. The teardown plan shows
-each one with a **Retain** action, so you can review exactly what stays before anything runs.
-If a retained resource depends on something that would be destroyed, Nuon fails the plan instead of taking the
-data with it.
-
-Policies that protect production on every deploy can now step aside for an intentional teardown:
-
 ```toml policies.toml
 [[policy]]
 type              = "terraform_module"
@@ -39,9 +33,6 @@ contents          = "./protect-rds-cluster.rego"
 apply_on_teardown = false
 ```
 
-Deprovisions also show up on the install's deployments page alongside every other operation, and a failed plan
-step can be skipped so one stuck component no longer blocks the rest of the teardown.
-
 Read more at [Retaining resources on teardown](/guides/retaining-resources-on-teardown) and
 [Skipping policies during teardown](/concepts/policies#skipping-policies-during-teardown).
 
@@ -49,19 +40,19 @@ Read more at [Retaining resources on teardown](/guides/retaining-resources-on-te
 
 ## BYOC telemetry
 
-See how your application behaves in every customer's cloud, in the observability backend you already use.
+Every install's logs, metrics, and traces in your backend.
 
-Your application emits standard OpenTelemetry logs, metrics, and traces to a private endpoint inside each install:
+- Apps send OpenTelemetry to a private OTLP endpoint in each install
+- The runner forwards it to your relay, which exports to any OTLP backend
+- Records are stamped with verified `nuon.org.id`, `nuon.app.id`, and `nuon.install.id`
+- No backend credentials in customer accounts
+- Customers can disable the endpoint in their stack
+- Org default plus per-install overrides
 
 ```toml
 OTEL_EXPORTER_OTLP_PROTOCOL = "http/protobuf"
 OTEL_EXPORTER_OTLP_ENDPOINT = "{{ .nuon.install_stack.outputs.telemetry_endpoint }}"
 ```
-
-A Collector managed by the install runner forwards the data to a relay you control, which sends it on over OTLP to
-any compatible backend. Nothing extra to install in the customer's cloud, and no backend credentials to place there.
-Each payload arrives stamped with verified `nuon.org.id`, `nuon.app.id`, and `nuon.install.id` attributes, so one
-dashboard covers your whole fleet and filters down to a single customer.
 
 <video
   src="/images/changelog/042-byoc-telemetry.mp4"
@@ -73,9 +64,6 @@ dashboard covers your whole fleet and filters down to a single customer.
   style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
 />
 
-Your customer stays in control: the install stack exposes the private endpoint, and they can turn it off. You
-choose which installs send data with an org default and per-install overrides.
-
 Read more at [Install telemetry](/concepts/install-telemetry) and
 [Set up install telemetry](/guides/byoc/telemetry).
 
@@ -83,8 +71,12 @@ Read more at [Install telemetry](/concepts/install-telemetry) and
 
 ## A new dashboard
 
-See what is running in every customer's install, what changed, and who changed it, starting from your app
-branches.
+Your fleet, organized around app branches.
+
+- App branches are each app's landing page
+- Install pages show commits behind the tracked branch
+- Active deployments listed above history
+- Actions, runbooks, and deployments record who triggered them
 
 <div style={{
   backgroundImage: 'url(/images/screenshot-backdrop.png)',
@@ -108,10 +100,6 @@ branches.
   />
 </div>
 
-App branches are now the landing page for each app. Install pages show how far each install is behind its tracked
-branch, with the newer commits one click away. Deployment history keeps active work above past runs, and every
-action, runbook, and deployment records who triggered it.
-
 <div style={{
   backgroundImage: 'url(/images/screenshot-backdrop.png)',
   backgroundSize: 'cover',
@@ -134,7 +122,7 @@ action, runbook, and deployment records who triggered it.
   />
 </div>
 
-The new dashboard is rolling out now. Ask us in your shared Slack channel to turn it on for your organization.
+Rolling out now. Ask us in your shared Slack channel to turn it on.
 
 ---
 
@@ -142,8 +130,7 @@ The new dashboard is rolling out now. Ask us in your shared Slack channel to tur
 
 ### Scheduled runbooks
 
-Run a [runbook](/guides/runbooks) on a cron schedule, so routine maintenance across your fleet happens without
-anyone kicking it off.
+[Runbooks](/guides/runbooks) can run on a cron schedule.
 
 ```toml
 [[triggers]]
@@ -153,6 +140,4 @@ cron_schedule = "0 6 * * 1"
 
 ### AWS cloud connections
 
-Give Nuon access to an AWS account with short-lived OIDC credentials, so no long-lived access key is ever stored.
-Create a connection once and select it when you create an install. See
-[Cloud connections](/guides/cloud-connections).
+AWS access through short-lived OIDC credentials. Select a connection when creating an install. See [Cloud connections](/guides/cloud-connections).
