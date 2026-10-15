@@ -89,6 +89,8 @@ func (s *service) findInstallActionWorkflowRuns(ctx *gin.Context, orgID, install
 	runs := []*app.InstallActionWorkflowRun{}
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Preload("CreatedBy").
+		Preload("RunnerJob", app.PreloadActionExecutionRunnerJob).
 		Where("org_id = ? AND install_id = ?", orgID, installID).
 		Order("created_at desc").
 		Find(&runs)
@@ -104,6 +106,10 @@ func (s *service) findInstallActionWorkflowRuns(ctx *gin.Context, orgID, install
 	runs, err := db.HandlePaginatedResponse(ctx, runs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install action workflow runs: %w", err)
+	}
+
+	if err := s.resolveRunTriggers(ctx, runs); err != nil {
+		return nil, err
 	}
 
 	return runs, nil

@@ -38,6 +38,9 @@ type AppInstallActionWorkflowRun struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// effective timeout
+	EffectiveTimeout int64 `json:"effective_timeout,omitempty"`
+
 	// enable kube config
 	EnableKubeConfig *SQLNullBool `json:"enable_kube_config,omitempty"`
 
@@ -93,6 +96,9 @@ type AppInstallActionWorkflowRun struct {
 
 	// timeout
 	Timeout int64 `json:"timeout,omitempty"`
+
+	// trigger
+	Trigger *AppActionRunTrigger `json:"trigger,omitempty"`
 
 	// trigger type
 	TriggerType AppActionWorkflowTriggerType `json:"trigger_type,omitempty"`
@@ -150,6 +156,10 @@ func (m *AppInstallActionWorkflowRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSteps(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTrigger(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -381,6 +391,29 @@ func (m *AppInstallActionWorkflowRun) validateSteps(formats strfmt.Registry) err
 	return nil
 }
 
+func (m *AppInstallActionWorkflowRun) validateTrigger(formats strfmt.Registry) error {
+	if swag.IsZero(m.Trigger) { // not required
+		return nil
+	}
+
+	if m.Trigger != nil {
+		if err := m.Trigger.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("trigger")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("trigger")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppInstallActionWorkflowRun) validateTriggerType(formats strfmt.Registry) error {
 	if swag.IsZero(m.TriggerType) { // not required
 		return nil
@@ -462,6 +495,10 @@ func (m *AppInstallActionWorkflowRun) ContextValidate(ctx context.Context, forma
 	}
 
 	if err := m.contextValidateSteps(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTrigger(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -703,6 +740,31 @@ func (m *AppInstallActionWorkflowRun) contextValidateSteps(ctx context.Context, 
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppInstallActionWorkflowRun) contextValidateTrigger(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Trigger != nil {
+
+		if swag.IsZero(m.Trigger) { // not required
+			return nil
+		}
+
+		if err := m.Trigger.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("trigger")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("trigger")
+			}
+
+			return err
+		}
 	}
 
 	return nil

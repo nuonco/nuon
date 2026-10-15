@@ -8,6 +8,7 @@ import {
 } from '@/components/common/CollectionViewToggle'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
+import { LINK_COLOR_CLASSES } from '@/components/common/Link'
 import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -22,14 +23,10 @@ import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import type { TPolicyReport } from '@/types'
 import { cn } from '@/utils/classnames'
 
-const OWNER_TYPE_LABELS: Record<
-  string,
-  { label: string; theme: 'info' | 'brand' | 'neutral' }
-> = {
-  install_deploys: { label: 'Deploy', theme: 'info' },
-  install_sandbox_runs: { label: 'Sandbox', theme: 'brand' },
-  component_builds: { label: 'Build', theme: 'neutral' },
-}
+const TITLE_TRIGGER_CLASS = cn(
+  '!p-0 !h-auto !border-none !rounded-none !bg-transparent hover:!bg-transparent active:!bg-transparent focus:!shadow-none !font-[inherit] !text-[length:inherit] !leading-[inherit]',
+  LINK_COLOR_CLASSES
+)
 
 const ViolationCounts = ({ report }: { report?: TPolicyReport }) => {
   const denyCount = report?.deny_count ?? 0
@@ -120,9 +117,6 @@ export const InstallPolicyReports = ({
           )}
         >
           {items.map(({ key, report, history }) => {
-            const ownerType = report?.owner_type ?? ''
-            const ownerMeta = OWNER_TYPE_LABELS[ownerType]
-
             return (
               <Card
                 key={key}
@@ -144,36 +138,28 @@ export const InstallPolicyReports = ({
                         loading={isLoading}
                         loadingWidth={20}
                       >
-                        {reportSubject(report)}
+                        {isLoading ? (
+                          reportSubject(report)
+                        ) : (
+                          <PolicyReportPanel
+                            report={report}
+                            history={history}
+                            orgId={orgId}
+                            policyNameMap={policyNameMap}
+                            panelKey={`policy-report-${report?.id}`}
+                            triggerButton={{
+                              variant: 'ghost',
+                              className: TITLE_TRIGGER_CLASS,
+                              children: reportSubject(report),
+                            }}
+                          />
+                        )}
                       </Text>
-                      {isLoading ? null : ownerMeta ? (
-                        <Badge size="sm" theme={ownerMeta.theme}>
-                          {ownerMeta.label}
-                        </Badge>
-                      ) : ownerType ? (
-                        <Badge size="sm" theme="neutral">
-                          {ownerType}
-                        </Badge>
-                      ) : null}
                     </div>
                     <ID loading={isLoading} loadingWidth={24}>
                       {report?.id ?? ''}
                     </ID>
                   </div>
-                  {isLoading ? null : (
-                    <PolicyReportPanel
-                      report={report}
-                      history={history}
-                      orgId={orgId}
-                      policyNameMap={policyNameMap}
-                      panelKey={`policy-report-${report?.id}`}
-                      triggerButton={{
-                        variant: 'secondary',
-                        size: 'sm',
-                        children: 'View report',
-                      }}
-                    />
-                  )}
                 </div>
 
                 <div className="flex flex-col gap-4 border-t pt-4">

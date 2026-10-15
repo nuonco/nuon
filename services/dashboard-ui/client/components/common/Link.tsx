@@ -16,7 +16,7 @@ export interface ILink extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href?: string
 }
 
-const LINK_COLOR_CLASSES = [
+export const LINK_COLOR_CLASSES = [
   'text-link',
   'hover:text-link-hover',
   'focus:text-link-hover',
@@ -40,10 +40,9 @@ const VARIANT_CLASSES: Record<TLinkVariant, string> = {
     'text-[14px] h-[36px] leading-[21px] tracking-[-0.2px]',
     'hover:bg-black/5 hover:dark:bg-white/10',
   ].join(' '),
-  breadcrumb: [
-    'whitespace-nowrap break-keep',
-    'hover:text-link-hover',
-  ].join(' '),
+  breadcrumb: ['whitespace-nowrap break-keep', 'hover:text-link-hover'].join(
+    ' '
+  ),
 }
 
 const NAV_ACTIVE =

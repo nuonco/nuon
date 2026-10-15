@@ -17,7 +17,8 @@ export const useActivityPins = () => {
   const { install } = useInstall()
   const userId = user?.sub || user?.email || ''
   const installId = install?.id || ''
-  const key = userId && installId ? activityPinStorageKey(userId, installId) : ''
+  const key =
+    userId && installId ? activityPinStorageKey(userId, installId) : ''
 
   const pins = useSyncExternalStore(
     subscribeActivityPins,

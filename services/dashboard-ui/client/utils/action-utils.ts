@@ -40,3 +40,8 @@ export function hydrateActionRunSteps({
     }
   })
 }
+
+const DEFAULT_ADHOC_NAMES = ['Adhoc command', 'Adhoc script']
+
+export const adhocDisplayName = (name?: string) =>
+  name && !DEFAULT_ADHOC_NAMES.includes(name) ? name : undefined

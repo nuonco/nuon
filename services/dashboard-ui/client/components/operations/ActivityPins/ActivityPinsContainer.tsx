@@ -1,5 +1,6 @@
 import { useQueries } from '@tanstack/react-query'
 import { InstallActionManualRunModal } from '@/components/actions/InstallActionManualRun'
+import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { RunRunbookModal } from '@/components/runbooks/RunRunbook'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
@@ -64,7 +65,8 @@ export const ActivityPinsContainer = () => {
         onRemove: missing ? () => toggle(pin) : undefined,
         onRun:
           installRunbook && !missing
-            ? () => addModal(<RunRunbookModal installRunbook={installRunbook} />)
+            ? () =>
+                addModal(<RunRunbookModal installRunbook={installRunbook} />)
             : undefined,
       }
     }
@@ -100,13 +102,16 @@ export const ActivityPinsContainer = () => {
     <ActivityPins
       items={items}
       panel={
-        <ActivityPinsPanel
-          panelKey="activity-pins"
-          triggerButton={{
-            variant: 'secondary',
-            children: pins.length ? 'Edit pins' : 'Pin shortcuts',
-          }}
-        />
+        <div className="flex items-center gap-3 shrink-0">
+          <RunAdhocActionButton />
+          <ActivityPinsPanel
+            panelKey="activity-pins"
+            triggerButton={{
+              variant: 'secondary',
+              children: pins.length ? 'Edit pins' : 'Pin shortcuts',
+            }}
+          />
+        </div>
       }
     />
   )
