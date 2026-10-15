@@ -173,6 +173,7 @@ Stateless Streamable HTTP MCP at port 8088 (`internal/app/mcp/server/`). Employe
 - Register with `api.MCPReadTool` / `api.MCPWriteTool`
 - No durable session; prefer org header in multi-replica
 - Timestamps: UTC RFC3339 `Z`
+- HTTP API schema: do not read `PublicAPIURL` for this. The CLI proxy points clients at `{APIURL}/oapi/v3`
 
 Adding a tool: [.agents/skills/mcp-api-tool/SKILL.md](../../.agents/skills/mcp-api-tool/SKILL.md). Keep
 `docs/guides/agents/tools.mdx` and the orientation markdown in `bins/cli/cmd/agents_context.md` in sync.

@@ -98,14 +98,15 @@ sees which MCP URL resolves from your config.`,
 var agentsContextDoc string
 
 type agentsContext struct {
-	Authed          string
-	APIURL          string
-	MCPURL          string
-	OrgID           string
-	AppID           string
-	InstallID       string
-	ConfigFile      string
-	CLIInstructions string
+	Authed           string
+	APIURL           string
+	MCPURL           string
+	OrgID            string
+	AppID            string
+	InstallID        string
+	ConfigFile       string
+	CLIInstructions  string
+	OpenAPISchemaURL string
 }
 
 func (c *cli) agentsContextMarkdown() string {
@@ -140,7 +141,8 @@ func (c *cli) agentsContextMarkdown() string {
 		}
 	}
 	data.ConfigFile = mcpserver.CLIConfigFlag(cfg)
-	data.CLIInstructions = mcpserver.CLICommandInstructions(mcpserver.CLIBinary(), data.ConfigFile)
+	data.OpenAPISchemaURL = mcpserver.OpenAPISchemaURL(data.APIURL)
+	data.CLIInstructions = mcpserver.CLICommandInstructions(mcpserver.CLIBinary(), data.ConfigFile, data.APIURL)
 
 	tmpl, err := template.New("agents_context").Parse(agentsContextDoc)
 	if err != nil {

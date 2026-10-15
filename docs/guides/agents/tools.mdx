@@ -44,7 +44,7 @@ The Make an update choice contains a second menu. Its choices prepare an existin
 
 ## Fallback
 
-Use an MCP tool when one covers the operation. When none does, use the Nuon CLI that started this server, including the same `-C` value. When the CLI has no command for it, use `nuon api --raw` if that command is already available. Ask before installing the api extension if missing. Call the HTTP API with curl only as a last resort. The stdio proxy repeats this in its server instructions, with the binary and `-C` filled in.
+When you need the HTTP API calls you can make, fetch the OpenAPI schema at `{api host}/oapi/v3` (for example `https://api.nuon.co/oapi/v3`). Use an MCP tool when one covers the operation. When none does, use the Nuon CLI that started this server, including the same `-C` value. When the CLI has no command for it, use `nuon api --raw` if that command is already available. Ask before installing the api extension if missing. Call the HTTP API with curl only as a last resort. The stdio proxy repeats this in its server instructions, with the binary, `-C`, and schema URL filled in.
 
 ## Writes
 

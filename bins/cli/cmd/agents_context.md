@@ -17,6 +17,12 @@ A person running `nuon agents help` in a normal terminal gets the setup guide in
 {{if .ConfigFile}}| CLI config (`-C`) | `{{.ConfigFile}}` |
 {{end}}
 
+{{if .OpenAPISchemaURL}}
+## HTTP API schema
+
+When you need the HTTP API calls you can make, fetch the OpenAPI schema at `{{.OpenAPISchemaURL}}`.
+
+{{end}}
 If auth or org is missing:
 
 ```bash

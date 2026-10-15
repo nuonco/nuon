@@ -219,12 +219,12 @@ Preferred LLM surface is **`nuon agents`**:
   and `nuon agents --help` print the same instructions (the help subcommand additionally renders the live sign-in,
   org, and resolved MCP URL). When `cfg.Agent` is set, `nuon agents help` prints the orientation markdown instead.
   That document lives in `cmd/agents_context.md`, embedded with `go:embed` and rendered as a `text/template` against
-  the fields of `agentsContext` (`Authed`, `APIURL`, `MCPURL`, `OrgID`, `AppID`, `InstallID`) — edit the markdown,
+  the fields of `agentsContext` (`Authed`, `APIURL`, `MCPURL`, `OrgID`, `AppID`, `InstallID`, `OpenAPISchemaURL`) — edit the markdown,
   not Go string literals. Keep its tool table and timestamp rules in sync with `docs/guides/agents/tools.mdx`, and
   its per-client registration in sync with the setup guide. Both documents state their purpose up top (human vs.
   agent) because that split is what users get confused about. Do not duplicate client setup recipes, sample
   queries, or the deprecated `nuon mcp` alias in the markdown — those live in `docs/guides/agents/` and `cmd/mcp.go`.
-  MCP timestamps are UTC RFC3339 (`…Z`); agents localize before naming a day or clock time. Extend the setup guide,
+  MCP timestamps are UTC RFC3339 (`…Z`); agents localize before naming a day or clock time. When an agent needs HTTP API calls, the orientation and MCP instructions point it at `{APIURL}/oapi/v3`. Extend the setup guide,
   not one of its callers. Document each client on its own (Claude Code, Cursor, Amp, and a catch-all that tells people to check that client's MCP docs). Do not
   present `mcpServers` as a universal schema. Every runnable example carries `--allow-writes`. `--url` is a general
   override when the MCP URL does not follow from the API URL (self-hosted and Nuon BYOC are examples).
