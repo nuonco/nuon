@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"slices"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -78,6 +77,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		zap.String("component_type", string(policyContext.ComponentType)),
 		zap.String("component_name", policyContext.ComponentName),
 		zap.Bool("is_sandbox", policyContext.IsSandbox),
+		zap.Bool("is_teardown", policyContext.IsTeardown),
 	)
 
 	policiesConfig, err := a.appsHelpers.GetPoliciesConfigByAppConfigID(ctx, policyContext.AppConfigID)
@@ -95,6 +95,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		policyContext.ComponentType,
 		policyContext.ComponentName,
 		policyContext.IsSandbox,
+		policyContext.IsTeardown,
 	)
 
 	l.Info("filtered applicable policies", zap.Int("count", len(applicablePolicies)))
@@ -200,6 +201,7 @@ func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID st
 		ComponentType:    deploy.InstallComponent.Component.Type,
 		ComponentName:    deploy.InstallComponent.Component.Name,
 		IsSandbox:        false,
+		IsTeardown:       deploy.Type == app.InstallDeployTypeTeardown,
 		OrgName:          deploy.InstallComponent.Install.App.Org.Name,
 		AppName:          deploy.InstallComponent.Install.App.Name,
 		InstallName:      deploy.InstallComponent.Install.Name,
@@ -226,6 +228,7 @@ func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRun
 		ComponentName:    "",
 		SandboxType:      sandboxRun.AppSandboxConfig.Type,
 		IsSandbox:        true,
+		IsTeardown:       sandboxRun.RunType == app.SandboxRunTypeDeprovision,
 		OrgName:          sandboxRun.Install.App.Org.Name,
 		AppName:          sandboxRun.Install.App.Name,
 		InstallName:      sandboxRun.Install.Name,
@@ -237,11 +240,15 @@ func (a *Activities) filterApplicablePolicies(
 	componentType app.ComponentType,
 	componentName string,
 	isSandbox bool,
+	isTeardown bool,
 ) []app.AppPolicyConfig {
 	var applicable []app.AppPolicyConfig
 
 	for _, policy := range policies {
 		if policy.Engine != config.AppPolicyEngineOPA {
+			continue
+		}
+		if isTeardown && !config.AppliesOnTeardown(policy.ApplyOnTeardown) {
 			continue
 		}
 
@@ -270,8 +277,7 @@ func (a *Activities) appliesForComponent(
 ) bool {
 	return policy.Type != config.AppPolicyTypeSandbox &&
 		policyTypeMatchesComponentType(policy.Type, componentTypeToPolicyType(componentType)) &&
-		len(policy.Components) > 0 &&
-		(slices.Contains(policy.Components, componentName) || slices.Contains(policy.Components, "*"))
+		config.AppliesToComponent(policy.Components, componentName)
 }
 
 func policyTypeMatchesComponentType(policyType config.AppPolicyType, expectedType config.AppPolicyType) bool {

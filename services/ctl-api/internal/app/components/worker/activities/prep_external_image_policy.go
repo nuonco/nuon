@@ -204,15 +204,8 @@ func (a *Activities) filterContainerImagePolicies(
 			continue
 		}
 
-		if len(policy.Components) == 0 {
-			continue
-		}
-
-		for _, comp := range policy.Components {
-			if comp == "*" || comp == componentName {
-				applicable = append(applicable, policy)
-				break
-			}
+		if config.AppliesToComponent(policy.Components, componentName) {
+			applicable = append(applicable, policy)
 		}
 	}
 

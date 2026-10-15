@@ -29,4 +29,5 @@ type PolicyEvaluationContext struct {
 	ComponentType app.ComponentType
 	SandboxType   string
 	IsSandbox     bool
+	IsTeardown    bool
 }

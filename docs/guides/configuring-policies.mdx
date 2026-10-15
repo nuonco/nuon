@@ -93,9 +93,9 @@ warn contains msg if {
 }
 ```
 
-## Add a Helm Chart Policy (Deploy-time)
+## Add a Helm Chart Policy (Build-time and Deploy-time)
 
-Helm chart policies validate rendered Kubernetes manifests. This example requires CPU and memory limits on all containers.
+Helm chart policies validate rendered Kubernetes manifests. They run when the component is built and again when it is deployed to an install. This example requires CPU and memory limits on all containers.
 
 Create `policies/require-resource-limits.rego`:
 
@@ -145,7 +145,7 @@ engine     = "opa"
 components = ["*"]
 contents   = "./policies/require-encryption.rego"
 
-# Helm chart policy - evaluated at deploy time
+# Helm chart policy - evaluated at build time and deploy time
 [[policy]]
 type       = "helm_chart"
 engine     = "opa"
@@ -160,7 +160,8 @@ contents   = "./policies/require-resource-limits.rego"
 | `type` | Yes | Policy type: `container_image`, `helm_chart`, `kubernetes_manifest`, `terraform_module`, `kubernetes_cluster`, or `sandbox` |
 | `engine` | No | Policy engine: `opa` or `kyverno` (default) |
 | `name` | No | Human-readable name. If not specified, derived from the filename |
-| `components` | Yes | List of component names this policy applies to. Use `["*"]` for all components of the specified type |
+| `components` | No | Names of the components this policy applies to. Omit to apply to all components of the specified type. See [Scoping policies to components](/concepts/policies#scoping-policies-to-components) |
+| `apply_on_teardown` | No | Set to `false` to skip this policy when a component is torn down or the sandbox is deprovisioned. Defaults to `true`. See [Skipping policies during teardown](/concepts/policies#skipping-policies-during-teardown) |
 | `contents` | Yes | Inline policy content or path to policy file (e.g., `./policies/require-encryption.rego`) |
 
 The `contents` field supports multiple source types. Relative paths are resolved from the `policies/` directory:
@@ -198,7 +199,7 @@ Syncing app...
 
 ## Observe Build-Time Evaluation
 
-Container image policies are evaluated when you create a build. Trigger a build for your image component:
+Container image and Helm chart policies are evaluated when you create a build. Trigger a build for your image component:
 
 ```sh
 nuon builds create -c api_image
