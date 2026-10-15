@@ -101,6 +101,11 @@ export const PolicyDetail = () => {
                     <Text variant="subtext">{policy.engine}</Text>
                   </LabeledValue>
                 ) : null}
+                {policy?.apply_on_teardown === false ? (
+                  <LabeledValue label="On teardown">
+                    <Text variant="subtext">Skipped</Text>
+                  </LabeledValue>
+                ) : null}
                 {policy?.created_at ? (
                   <LabeledValue label="Created">
                     <Time

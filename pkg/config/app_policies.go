@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/invopop/jsonschema"
@@ -127,12 +128,25 @@ var AllAppPolicyEngines = []AppPolicyEngine{
 	AppPolicyEngineOPA,
 }
 
+// AppliesToComponent reports whether a component-scoped policy runs for a
+// component. The config builder stores an omitted components list as ["*"].
+func AppliesToComponent(components []string, name string) bool {
+	return slices.Contains(components, "*") || slices.Contains(components, name)
+}
+
+// AppliesOnTeardown reports whether a policy runs for a teardown or
+// deprovision. An unset apply_on_teardown applies.
+func AppliesOnTeardown(applyOnTeardown *bool) bool {
+	return applyOnTeardown == nil || *applyOnTeardown
+}
+
 type AppPolicy struct {
-	Type       AppPolicyType   `mapstructure:"type"`
-	Engine     AppPolicyEngine `mapstructure:"engine,omitempty"`
-	Name       string          `mapstructure:"name,omitempty"`
-	Contents   string          `mapstructure:"contents" features:"get,template"`
-	Components []string        `mapstructure:"components,omitempty"`
+	Type            AppPolicyType   `mapstructure:"type"`
+	Engine          AppPolicyEngine `mapstructure:"engine,omitempty"`
+	Name            string          `mapstructure:"name,omitempty"`
+	Contents        string          `mapstructure:"contents" features:"get,template"`
+	Components      []string        `mapstructure:"components,omitempty"`
+	ApplyOnTeardown *bool           `mapstructure:"apply_on_teardown,omitempty"`
 
 	// SourceFile is the file path this policy was parsed from (set during parsing, not serialized)
 	SourceFile string `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
@@ -223,9 +237,11 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("./disallow-ingress-nginx-custom-snippets.yaml").
 		Example("./block-mutable-tags.rego").
 		Field("components").Short("target components").
-		Long("List of component names this policy applies to. Use [\"*\"] to apply to all components of the specified type, or list specific component names. Required for component-scoped policy types - an empty list is rejected. Ignored when type is 'sandbox'.").
-		Example("*").
-		Example("rds_cluster")
+		Long("Names of the components this policy applies to. Omit to apply to all components of the specified type. Ignored when type is 'sandbox'.").
+		Example("rds_cluster").
+		Field("apply_on_teardown").Short("run on teardown").
+		Long("Whether this policy is evaluated when a component is torn down or the sandbox is deprovisioned. Set to false to allow deletes during a teardown that the policy denies during a deploy. Defaults to true. Supported for terraform_module, helm_chart, kubernetes_manifest, pulumi and sandbox policies.").
+		Example("false")
 }
 
 type AppPolicyList struct {

@@ -27,7 +27,7 @@ Nuon supports policies for different component types, each with its own input fo
 | Type | Applies To | Engine | Evaluation Phase | Input Format |
 |------|------------|--------|------------------|--------------|
 | `container_image` | External container images | OPA | Build | Image metadata (SBOM, signatures, attestations) |
-| `helm_chart` | Helm chart components | OPA | Deploy | Kubernetes AdmissionReview |
+| `helm_chart` | Helm chart components | OPA | Build + Deploy | Kubernetes AdmissionReview |
 | `kubernetes_manifest` | Kubernetes manifest components | OPA | Deploy | Kubernetes AdmissionReview |
 | `terraform_module` | Terraform module components | OPA | Deploy | Terraform JSON plan |
 | `kubernetes_cluster` | Kubernetes cluster resources | Kyverno | Deploy | Kubernetes resources |
@@ -136,6 +136,41 @@ Please go through the [Configuring Policies guide](/guides/configuring-policies)
 
 Note that unlike components, policies do not need to be built, they are evaluated directly during build and deploy workflows.
 
+### Scoping policies to components
+
+`components` lists the names of the components a policy runs for.
+
+```toml
+[[policy]]
+type       = "terraform_module"
+engine     = "opa"
+components = ["rds_cluster"]
+contents   = "./policies/protect-stateful.rego"
+```
+
+When a policy omits `components`, it runs for every component of its type. `components = ["*"]` also selects every component of the type. `components` is ignored for `sandbox` and `kubernetes_cluster` policies.
+
+### Skipping policies during teardown
+
+By default a policy also runs when a component is torn down or the sandbox is deprovisioned. Set `apply_on_teardown = false` to skip it then, so a policy that denies deletes during a deploy doesn't block an intentional teardown.
+
+```toml
+[[policy]]
+type              = "terraform_module"
+engine            = "opa"
+components        = ["rds_cluster"]
+apply_on_teardown = false
+contents          = "./policies/no-destructive-changes.rego"
+```
+
+This policy still denies a deploy that would delete or replace a stateful resource, including a deploy that removes the resource from the component's config. It doesn't run when the component is torn down.
+
+`apply_on_teardown` is supported for `terraform_module`, `helm_chart`, `kubernetes_manifest`, `pulumi` and `sandbox` policies, which are the types evaluated against teardown plans.
+
+<Note>
+`apply_on_teardown` requires a CLI version that supports it, because `nuon apps sync` validates your config before uploading it.
+</Note>
+
 ## Policy Reports
 
 ### Build-Time Evaluation
@@ -143,6 +178,7 @@ Note that unlike components, policies do not need to be built, they are evaluate
 Build-time policies are evaluated during the component build process:
 
 - **`container_image`**: Policies evaluate image metadata (SBOM, signatures, attestations) fetched from the registry
+- **`helm_chart`**: The chart is rendered during the build and policies evaluate the resulting Kubernetes AdmissionReview objects. This catches problems before the chart reaches any install.
 
 If a `deny` rule matches during build-time evaluation, the build fails with status `policy_failed`.
 

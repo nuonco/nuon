@@ -204,14 +204,8 @@ func filterHelmPolicies(policies []app.AppPolicyConfig, componentName string) []
 		if policy.Type != config.AppPolicyTypeHelmChart {
 			continue
 		}
-		if len(policy.Components) == 0 {
-			continue
-		}
-		for _, comp := range policy.Components {
-			if comp == "*" || comp == componentName {
-				applicable = append(applicable, policy)
-				break
-			}
+		if config.AppliesToComponent(policy.Components, componentName) {
+			applicable = append(applicable, policy)
 		}
 	}
 	return applicable

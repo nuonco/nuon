@@ -11,12 +11,13 @@ import (
 )
 
 type PolicyInput struct {
-	Type        config.AppPolicyType
-	Engine      config.AppPolicyEngine
-	Name        string
-	Description string
-	Contents    string
-	Components  []string
+	Type            config.AppPolicyType
+	Engine          config.AppPolicyEngine
+	Name            string
+	Description     string
+	Contents        string
+	Components      []string
+	ApplyOnTeardown *bool
 }
 
 // PolicyInputsFromConfig leaves Description empty: it has no config form.
@@ -27,11 +28,12 @@ func PolicyInputsFromConfig(policies *config.PoliciesConfig) []PolicyInput {
 	out := make([]PolicyInput, 0, len(policies.Policies))
 	for _, policy := range policies.Policies {
 		out = append(out, PolicyInput{
-			Type:       policy.Type,
-			Engine:     policy.Engine,
-			Name:       policy.Name,
-			Contents:   policy.Contents,
-			Components: policy.Components,
+			Type:            policy.Type,
+			Engine:          policy.Engine,
+			Name:            policy.Name,
+			Contents:        policy.Contents,
+			Components:      policy.Components,
+			ApplyOnTeardown: policy.ApplyOnTeardown,
 		})
 	}
 	return out
@@ -60,16 +62,25 @@ func PoliciesConfig(policies []PolicyInput, appID, appConfigID string) (*app.App
 		if err := validate.ValidatePolicyComponents(policyName, policy.Type, policy.Components); err != nil {
 			return nil, err
 		}
+		if err := validate.ValidatePolicyApplyOnTeardown(policyName, policy.Type, policy.ApplyOnTeardown); err != nil {
+			return nil, err
+		}
+
+		components := policy.Components
+		if len(components) == 0 && validate.ComponentScopedPolicyType(policy.Type) {
+			components = []string{"*"}
+		}
 
 		objs = append(objs, app.AppPolicyConfig{
-			AppID:       appID,
-			AppConfigID: appConfigID,
-			Type:        policy.Type,
-			Engine:      policy.Engine,
-			Name:        policy.Name,
-			Description: policy.Description,
-			Contents:    policy.Contents,
-			Components:  policy.Components,
+			AppID:           appID,
+			AppConfigID:     appConfigID,
+			Type:            policy.Type,
+			Engine:          policy.Engine,
+			Name:            policy.Name,
+			Description:     policy.Description,
+			Contents:        policy.Contents,
+			Components:      components,
+			ApplyOnTeardown: policy.ApplyOnTeardown,
 		})
 	}
 
