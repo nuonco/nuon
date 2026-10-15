@@ -23,6 +23,7 @@ import {
 } from '@/components/installs/DeploymentDetail/DeploymentProgress'
 import {
   DEPLOYMENT_TABS,
+  type TDeploymentTab,
   deploymentOutcomes,
   deploymentSteps,
   deploymentTabOrder,
@@ -38,6 +39,7 @@ export interface IDeploymentDetailPanel extends IPanel {
   appId: string
   installId: string
   repo?: string
+  initialTab?: TDeploymentTab
 }
 
 const DeploymentPanelContent = ({
@@ -46,6 +48,7 @@ const DeploymentPanelContent = ({
   appId,
   installId,
   repo,
+  initialTab,
   workflow,
 }: IDeploymentDetailPanel & { workflow?: TWorkflow }) => {
   const {
@@ -126,7 +129,7 @@ const DeploymentPanelContent = ({
       {workflow ? <DeploymentAlerts /> : null}
       <Tabs
         naturalHeight
-        initActiveTab={tabOrder[0]}
+        initActiveTab={initialTab ?? tabOrder[0]}
         tabsClassName="mt-4"
         tabControlsClassName="!gap-2 md:!gap-6 [&>button]:px-1 md:[&>button]:px-3"
         tabLabels={Object.fromEntries(
@@ -152,7 +155,7 @@ const WorkflowDeploymentPanelContent = (props: IDeploymentDetailPanel) => {
 
 export type TDeploymentDetailBody = Pick<
   IDeploymentDetailPanel,
-  'deployment' | 'orgId' | 'appId' | 'installId' | 'repo'
+  'deployment' | 'orgId' | 'appId' | 'installId' | 'repo' | 'initialTab'
 >
 
 export const DeploymentDetailBody = (props: TDeploymentDetailBody) => (
@@ -166,6 +169,7 @@ export const DeploymentDetailBody = (props: TDeploymentDetailBody) => (
         id={props.deployment.id}
         status={props.deployment.status}
         workflowType={props.deployment.type}
+        initialTab={props.initialTab}
       />
     }
   >
@@ -174,7 +178,8 @@ export const DeploymentDetailBody = (props: TDeploymentDetailBody) => (
 )
 
 export const DeploymentDetailPanel = (props: IDeploymentDetailPanel) => {
-  const { deployment, orgId, appId, installId, repo, ...panelProps } = props
+  const { deployment, orgId, appId, installId, repo, initialTab, ...panelProps } =
+    props
   return (
     <Panel
       heading={deployment.title}
@@ -188,6 +193,7 @@ export const DeploymentDetailPanel = (props: IDeploymentDetailPanel) => {
         appId={appId}
         installId={installId}
         repo={repo}
+        initialTab={initialTab}
       />
     </Panel>
   )

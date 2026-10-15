@@ -34,6 +34,29 @@ export interface ITemplateChangesButton {
   isError?: boolean
 }
 
+export const TemplateChangesContent = ({
+  isPending,
+  isLoading,
+  isError,
+  ...props
+}: ITemplateChangesButton) =>
+  isError ? (
+    <Text variant="subtext" theme="neutral">
+      Changes could not be loaded.
+    </Text>
+  ) : isPending && props.sections.length === 0 ? (
+    <EmptyState
+      emptyTitle="Calculating config diff"
+      emptyMessage="Changes appear after the app config builds."
+      variant="diagram"
+      size="sm"
+    />
+  ) : isLoading ? (
+    <ConfigChangesLoading />
+  ) : (
+    <ConfigChangesViewer {...props} />
+  )
+
 const TemplateChangesPanel = ({
   sections,
   files,
@@ -51,33 +74,21 @@ const TemplateChangesPanel = ({
   ...props
 }: IPanel & ITemplateChangesButton) => (
   <Panel {...props} size="3/4" heading="Changes">
-    {isError ? (
-      <Text variant="subtext" theme="neutral">
-        Changes could not be loaded.
-      </Text>
-    ) : isPending && sections.length === 0 ? (
-      <EmptyState
-        emptyTitle="Changes pending"
-        emptyMessage="Changes appear after the app config builds."
-        variant="diagram"
-        size="sm"
-      />
-    ) : isLoading ? (
-      <ConfigChangesLoading />
-    ) : (
-      <ConfigChangesViewer
-        sections={sections}
-        files={files}
-        builds={builds}
-        versionLabel={versionLabel}
-        previousSha={previousSha}
-        sha={sha}
-        message={message}
-        author={author}
-        createdAt={createdAt}
-        source={source}
-      />
-    )}
+    <TemplateChangesContent
+      sections={sections}
+      files={files}
+      builds={builds}
+      versionLabel={versionLabel}
+      previousSha={previousSha}
+      sha={sha}
+      message={message}
+      author={author}
+      createdAt={createdAt}
+      source={source}
+      isPending={isPending}
+      isLoading={isLoading}
+      isError={isError}
+    />
   </Panel>
 )
 
@@ -134,6 +145,8 @@ export const TemplateChangesButton = (props: ITemplateChangesButton) => {
     return () => clearTimeout(timer)
   }, [panelParam])
 
+  if (isPending) return null
+
   return (
     <Button
       variant="secondary"
@@ -144,11 +157,7 @@ export const TemplateChangesButton = (props: ITemplateChangesButton) => {
       }}
     >
       Changes
-      {isPending ? (
-        <Text variant="subtext" theme="neutral">
-          Pending
-        </Text>
-      ) : isLoading ? null : (
+      {isLoading ? null : (
         <ChangeCountSummary
           added={summary.create}
           updated={summary.update}

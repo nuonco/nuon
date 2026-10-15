@@ -83,7 +83,7 @@ export const AppConfigDiffCard = ({
         {showPending ? (
           <div className="px-4 py-3 text-center">
             <EmptyState
-              emptyTitle="Changes pending"
+              emptyTitle="Calculating config diff"
               emptyMessage="Changes appear after the app config builds."
               variant="diagram"
               size="sm"

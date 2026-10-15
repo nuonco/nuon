@@ -12,6 +12,7 @@ import type {
 } from '@/components/branches/BranchOverview/RolloutTrack'
 import { CommitRange, type ICommitRange } from './CommitRange'
 import { GroupLabels } from './GroupLabels'
+import { GroupApproveAllButton } from './InstallApprovalActions'
 import { InstallRolloutCard } from './InstallRolloutCard'
 import { InstallStatusCounts } from './InstallStatusCounts'
 import { filterInstalls, withQueuedInstalls } from './install-status'
@@ -21,11 +22,13 @@ export const InstallGroupPanelBody = ({
   commit,
   approval,
   onSelectInstall,
+  installLayout = 'card',
 }: {
   group: TTrackGroup
   commit?: ICommitRange
   approval?: ReactNode
   onSelectInstall?: (install: TTrackInstall) => void
+  installLayout?: 'card' | 'row'
 }) => {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string>()
@@ -51,14 +54,20 @@ export const InstallGroupPanelBody = ({
         </div>
       ) : null}
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Status status={group.status} />
-          {commit ? <CommitRange commit={commit} /> : null}
-          {group.maxParallel != null ? (
-            <Text variant="subtext" theme="neutral">
-              Up to {group.maxParallel} at a time
-            </Text>
-          ) : null}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+            <Status status={group.status} />
+            {commit ? <CommitRange commit={commit} /> : null}
+            {group.maxParallel != null ? (
+              <Text variant="subtext" theme="neutral">
+                Up to {group.maxParallel} at a time
+              </Text>
+            ) : null}
+          </div>
+          <GroupApproveAllButton
+            groupName={group.name}
+            installs={group.installs}
+          />
         </div>
         <GroupLabels match={group.match} />
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -93,6 +102,7 @@ export const InstallGroupPanelBody = ({
                 <InstallRolloutCard
                   install={install}
                   commit={commit}
+                  layout={installLayout}
                   onSelect={onSelectInstall}
                 />
               </li>

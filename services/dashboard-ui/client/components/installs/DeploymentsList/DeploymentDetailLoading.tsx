@@ -6,6 +6,7 @@ import { Time } from '@/components/common/Time'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import {
   DEPLOYMENT_TABS,
+  type TDeploymentTab,
   deploymentTabOrder,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
 import { WorkflowStepsSkeleton } from '@/components/workflows/WorkflowSteps'
@@ -16,12 +17,14 @@ export const DeploymentDetailLoading = ({
   id,
   status,
   workflowType,
+  initialTab,
 }: {
   activity?: string
   createdAt?: string
   id?: string
   status?: string
   workflowType?: string
+  initialTab?: TDeploymentTab
 }) => (
   <>
     <div className="flex flex-wrap items-center gap-3">
@@ -48,7 +51,7 @@ export const DeploymentDetailLoading = ({
     )}
     <Tabs
       naturalHeight
-      initActiveTab={deploymentTabOrder(workflowType)[0]}
+      initActiveTab={initialTab ?? deploymentTabOrder(workflowType)[0]}
       tabsClassName="mt-4"
       tabControlsClassName="!gap-2 md:!gap-6 [&>button]:px-1 md:[&>button]:px-3"
       tabLabels={Object.fromEntries(

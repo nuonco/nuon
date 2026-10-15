@@ -194,6 +194,9 @@ export const preRolloutCompositeError = (
 const failedInstallId = (error?: TCompositeError) =>
   (error?.data as unknown as { install_id?: string } | undefined)?.install_id
 
+const cancelledInstallFinish = (message?: string) =>
+  !!message && /finished as cancelled\b/i.test(message)
+
 export const groupCompositeError = (
   steps: TInstallWorkflowStep[],
   group: Pick<TTrackGroup, 'name' | 'status' | 'installs'>,
@@ -202,11 +205,19 @@ export const groupCompositeError = (
   const deploy = deployStepForGroup(steps, group.name)
   if (deploy && stepStageStatus(deploy) === 'error') {
     const stepError = deploy.status?.composite_error
-    if (stepError?.message || stepError?.type) return stepError
+    if (stepError?.message || stepError?.type) {
+      return cancelledInstallFinish(stepError.message) ? undefined : stepError
+    }
     const description = deploy.status?.status_human_description
-    if (description) return { message: description, severity: 'error' }
+    if (description && !cancelledInstallFinish(description)) {
+      return { message: description, severity: 'error' }
+    }
   }
-  if (groupStageStatus(group.status) !== 'error' || !isRolloutError(runError)) {
+  if (
+    groupStageStatus(group.status) !== 'error' ||
+    !isRolloutError(runError) ||
+    cancelledInstallFinish(runError?.message)
+  ) {
     return undefined
   }
   const installId = failedInstallId(runError)

@@ -210,6 +210,38 @@ describe('buildOverviewLoadingStages', () => {
     ).toBeUndefined()
   })
 
+  test('does not treat a cancelled install workflow as a group error', () => {
+    const message =
+      'install injl53vv7wlu0f6yvetjkvuo0f workflow inw1nb7tdjg9fvo7yu0xud41q8: finished as cancelled'
+    const steps = [
+      step('deploy install group: Default', 'error', { message }),
+    ]
+    expect(
+      groupCompositeError(steps, {
+        name: 'Default',
+        status: 'in-progress',
+        installs: [{ id: 'injl53vv7wlu0f6yvetjkvuo0f', name: 'asdfafd', status: 'in-progress' }],
+      })
+    ).toBeUndefined()
+    expect(
+      groupCompositeError(
+        [],
+        {
+          name: 'Default',
+          status: 'error',
+          installs: [
+            { id: 'injl53vv7wlu0f6yvetjkvuo0f', name: 'asdfafd', status: 'cancelled' },
+          ],
+        },
+        {
+          type: 'install_group.install_update_failed',
+          message,
+          data: { install_id: 'injl53vv7wlu0f6yvetjkvuo0f' },
+        } as unknown as TCompositeError
+      )
+    ).toBeUndefined()
+  })
+
   test('uses the deploy step description when it has no composite error', () => {
     const failed = {
       id: 'deploy',
