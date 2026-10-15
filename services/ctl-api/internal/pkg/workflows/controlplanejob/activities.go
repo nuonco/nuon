@@ -543,7 +543,6 @@ func (a *Activities) CreateJobExecutionOutputs(ctx context.Context, jobID, execu
 	}
 	ctx = cctx.SetOrgIDContext(ctx, job.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, job.CreatedByID)
-	ctx = blobstore.WithBlobService(ctx, a.blobSvc)
 	ctx = blobstore.WithBlobWriteEnabled(ctx, true)
 	byts, err := json.Marshal(req.Outputs)
 	if err != nil {

@@ -15,7 +15,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -53,8 +52,7 @@ func (s *service) GetAppConfigSourceFile(ctx *gin.Context) {
 		return
 	}
 
-	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
-	archive, err := loadAppConfigSourceArchive(blobCtx, s.db, org.ID, appID, configID)
+	archive, err := loadAppConfigSourceArchive(ctx.Request.Context(), s.db, org.ID, appID, configID)
 	if err != nil {
 		ctx.Error(err)
 		return

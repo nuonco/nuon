@@ -36,6 +36,7 @@ type Blob struct {
 	loaded   bool         // Whether value has been loaded from S3
 	dirty    bool         // Whether value has been modified and needs upload
 	s3Prefix string       // Optional custom S3 prefix (bypasses org_id requirement)
+	svc      Service      // Service captured from the gorm DB that loaded this blob
 }
 
 // Scan implements database/sql.Scanner
@@ -139,8 +140,7 @@ func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 		return nil
 	}
 
-	// Get blobstore service from context
-	svc := GetBlobService(tx.Statement.Context)
+	svc := b.resolveService(tx)
 	if svc == nil {
 		return fmt.Errorf("blob service not set in context")
 	}
@@ -188,10 +188,8 @@ func (b *Blob) AfterFind(tx *gorm.DB) error {
 		return nil // Skip auto-load for multi-row queries
 	}
 
-	// Get blobstore service
-	svc := GetBlobService(tx.Statement.Context)
+	svc := b.resolveService(tx)
 	if svc == nil {
-		// No service available - skip silently
 		return nil
 	}
 
@@ -254,7 +252,13 @@ func (b *Blob) Get(ctx context.Context) (string, error) {
 		return "", nil
 	}
 
-	svc := GetBlobService(ctx)
+	var svc Service
+	if ctx != nil {
+		svc = GetBlobService(ctx)
+	}
+	if svc == nil {
+		svc = b.svc
+	}
 	if svc == nil {
 		return "", fmt.Errorf("blob service not set in context")
 	}
@@ -339,4 +343,19 @@ func cctxAccountIDFromContext(ctx context.Context) (string, error) {
 // Format: {org_id}/{blob_id}
 func buildS3Key(orgID, blobID string) string {
 	return fmt.Sprintf("blobs/%s/%s", orgID, blobID)
+}
+
+func (b *Blob) resolveService(tx *gorm.DB) Service {
+	if tx != nil && tx.Statement != nil && tx.Statement.Context != nil {
+		if svc := GetBlobService(tx.Statement.Context); svc != nil {
+			return svc
+		}
+	}
+	if b != nil && b.svc != nil {
+		return b.svc
+	}
+	if tx != nil && tx.DryRun {
+		return nil
+	}
+	return serviceFromDB(tx)
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []componentSource, branchRepo, branchName string, out *ConfigDiffWithSourceOutput, previousSHAs map[string]string) error {
@@ -147,7 +146,7 @@ func (a *Activities) comparisonChangedPaths(ctx context.Context, runID string) (
 		return nil, false, nil
 	}
 
-	raw, err := comparison.GitDiff.Get(blobstore.WithBlobService(ctx, a.blobSvc))
+	raw, err := comparison.GitDiff.Get(ctx)
 	if err != nil {
 		return nil, false, fmt.Errorf("unable to load git diff: %w", err)
 	}

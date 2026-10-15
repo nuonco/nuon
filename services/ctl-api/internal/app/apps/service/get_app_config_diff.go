@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -87,8 +86,7 @@ func (s *service) GetAppConfigDiff(ctx *gin.Context) {
 	}
 
 	if include["source"] {
-		blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
-		source, skipped, err := s.loadSourceArchiveDiff(blobCtx, org.ID, appID, configID, oldConfigID)
+		source, skipped, err := s.loadSourceArchiveDiff(ctx.Request.Context(), org.ID, appID, configID, oldConfigID)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to diff source archives: %w", err))
 			return
@@ -118,8 +116,7 @@ func (s *service) loadIntermediateConfig(ctx *gin.Context, orgID, appID, configI
 		return nil, gorm.ErrRecordNotFound
 	}
 
-	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
-	intermediateJSON, err := appCfg.IntermediateConfig.Get(blobCtx)
+	intermediateJSON, err := appCfg.IntermediateConfig.Get(ctx.Request.Context())
 	if err != nil {
 		return nil, fmt.Errorf("unable to load intermediate config: %w", err)
 	}

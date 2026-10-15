@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -55,8 +54,7 @@ func (s *service) GetInstallConfigVersionDiff(ctx *gin.Context) {
 		return
 	}
 
-	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
-	diffJSON, err := version.Diff.Get(blobCtx)
+	diffJSON, err := version.Diff.Get(ctx.Request.Context())
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to load diff blob: %w", err))
 		return
