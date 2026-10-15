@@ -309,6 +309,22 @@ export const RolloutFailed = () => (
 )
 RolloutFailed.storyName = 'Rollout failed'
 
+const configValidationError = {
+  type: 'app_branch_run.config_validation_failed',
+  message: 'App configuration validation failed',
+  severity: 'error',
+  sections: [
+    {
+      kind: 'code',
+      heading: 'Validation errors',
+      body: [
+        'components/api.toml: unable to parse configuration file: toml: line 4: expected key but found end of file',
+        'components/worker.toml: image is required',
+      ].join('\n'),
+    },
+  ],
+} as TCompositeError
+
 export const ConfigUnparseable = () => (
   <BranchOverview
     hasPlan
@@ -325,6 +341,7 @@ export const ConfigUnparseable = () => (
         shaUrl: 'https://github.com/acme/platform/commit/a1b2c3d4e5f6',
       },
     }}
+    compositeError={configValidationError}
     changes={
       <ConfigParseFailure
         lines={[
