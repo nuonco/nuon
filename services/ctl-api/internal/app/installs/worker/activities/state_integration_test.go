@@ -39,6 +39,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	psqlmigrations "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -293,11 +294,17 @@ func (s *InstallStateIntegrationSuite) TestPartialRefreshPublishesImmutableBlobS
 
 	s.deps.Seeder.CreateInstallInputs(s.ctx, s.T(), s.install.ID, s.inputCfg.ID,
 		map[string]*string{"region": generics.ToPtr("ap-south-1")})
+	saved, err := s.activities.SaveState(s.ctx, &installactivities.SaveStateRequest{
+		State: stored, InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
+		GeneratedBy: app.InstallStateGenerateSourceStateManager, RefreshedPartials: []pkgstate.PartialName{pkgstate.PartialInputs},
+	})
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), saved.ID, s.head().CurrentStateID)
 	for read := 0; read < 2; read++ {
 		snapshot, err := s.deps.Helpers.GetInstallState(readCtx, s.install.ID, true, true)
 		require.NoError(s.T(), err)
 		require.Nil(s.T(), snapshot.StaleAt)
-		require.Equal(s.T(), "ap-south-1", snapshot.Inputs.Inputs["region"])
+		require.Equal(s.T(), "ap-south-1", snapshot.Inputs.Inputs["region"], "legacy SaveState must ignore its cached payload")
 		require.Equal(s.T(), snapshot.Inputs.Inputs, snapshot.Install.Inputs)
 	}
 }
@@ -335,86 +342,75 @@ func (s *InstallStateIntegrationSuite) TestRedactedRefreshPreservesCanonicalInpu
 	require.Equal(s.T(), canonical, s.fresh().Inputs.Inputs)
 }
 
-func (s *InstallStateIntegrationSuite) TestLegacySnapshotsInitializeHeadWithoutBackfill() {
-	for _, tc := range []struct {
-		name  string
-		stale bool
+func (s *InstallStateIntegrationSuite) TestLegacySnapshotsBackfilledBeforeReads() {
+	existing := s.head()
+	for name, tc := range map[string]struct {
+		blobOnly   bool
+		noSnapshot bool
+		deleted    bool
 	}{
-		{name: "inline_with_stale_inputs", stale: true},
-		{name: "blob_and_inline"},
+		"divergent_inline_and_blob":    {},
+		"archived_blob_reads_disabled": {blobOnly: true},
+		"no_snapshot":                  {noSnapshot: true},
+		"deleted_install":              {deleted: true},
 	} {
-		s.Run(tc.name, func() {
-			legacy := &state.State{
-				ID: s.install.ID, Name: "legacy-install", App: &state.AppState{Name: "legacy-app"},
-				Inputs: &state.InputsState{Inputs: map[string]string{"region": "legacy-region"}},
-			}
-			helpers.MapLegacyFields(legacy)
-			row := &app.InstallState{InstallID: s.install.ID, State: legacy, GeneratedBy: app.InstallStateGenerateSourceLegacy}
-			if !tc.stale {
-				encoded, err := json.Marshal(legacy)
+		s.Run(name, func() {
+			install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), &app.App{ID: s.install.AppID})
+			s.deps.Seeder.CreateInstallInputs(s.ctx, s.T(), install.ID, s.inputCfg.ID,
+				map[string]*string{"region": generics.ToPtr("eu-west-1")})
+			row := &app.InstallState{InstallID: install.ID, State: &state.State{
+				ID: install.ID, Name: "legacy-snapshot", Inputs: &state.InputsState{Inputs: map[string]string{"region": "us-east-1"}},
+			}}
+			if !tc.noSnapshot {
+				encoded, err := json.Marshal(row.State)
 				require.NoError(s.T(), err)
 				row.StateBlob = &blobstore.Blob{}
 				row.StateBlob.Set(string(encoded))
-			} else {
-				row.StaleAt = generics.NewNullTime(time.Now())
-				row.StalePartials = []pkgstate.PartialName{pkgstate.PartialInputs}
-			}
-			require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(row).Error)
-			require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallStateHead{InstallID: s.install.ID}).Delete(&app.InstallStateHead{}).Error)
-			before := s.snapshotCount()
-
-			for _, blobRead := range []bool{true, false} {
-				s.deps.Cfg.BlobReadEnabled = blobRead
-				current := s.fresh()
-				require.Equal(s.T(), "legacy-app", current.App.Name)
-				if tc.stale {
-					require.Equal(s.T(), "us-east-1", current.Inputs.Inputs["region"], "the carried legacy marker must refresh inputs")
+				s.create(row)
+				if tc.blobOnly {
+					row.State, row.Archived = nil, true
 				} else {
-					require.Equal(s.T(), "legacy-region", current.Inputs.Inputs["region"])
-					require.Equal(s.T(), "legacy-install", current.Name)
+					row.State.Inputs.Inputs["region"] = "eu-west-1"
 				}
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(row).Select("state", "archived").Updates(row).Error)
+				stored, fromBlob := row.GetState(s.ctx, true)
+				require.True(s.T(), fromBlob)
+				require.Equal(s.T(), "us-east-1", stored.Inputs.Inputs["region"])
+			}
+			if tc.deleted {
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(install).Error)
+			}
+			require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(&app.InstallStateHead{InstallID: install.ID}).Error)
+			migrate := new(psqlmigrations.Migrations).Migration146InstallStateHeads
+			require.NoError(s.T(), migrate(s.ctx, s.deps.DB))
+			baseline, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, install.ID)
+			if tc.deleted {
+				require.ErrorIs(s.T(), err, gorm.ErrRecordNotFound)
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Unscoped().Model(&app.Install{ID: install.ID}).Update("deleted_at", 0).Error)
+				baseline, err = s.deps.Helpers.GetInstallStateBaseline(s.ctx, install.ID)
+			}
+			require.NoError(s.T(), err)
+			require.Equal(s.T(), int64(1), baseline.Head.Revision)
+			require.Equal(s.T(), install.OrgID, baseline.Head.OrgID)
+			require.Empty(s.T(), baseline.Head.CurrentStateID)
+			require.False(s.T(), baseline.Head.StaleAt.Empty())
+			require.Equal(s.T(), pkgstate.AllPartials, baseline.Head.StalePartials)
+			s.deps.Cfg.BlobReadEnabled = !tc.blobOnly
+			for range 2 {
+				snapshot, err := s.deps.Helpers.GetInstallState(s.ctx, install.ID, false, true)
+				require.NoError(s.T(), err)
+				require.Nil(s.T(), snapshot.StaleAt)
+				require.Equal(s.T(), "eu-west-1", snapshot.Inputs.Inputs["region"])
 			}
 			s.deps.Cfg.BlobReadEnabled = true
-			head := s.head()
-			var stored app.InstallState
-			require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallState{ID: row.ID}).First(&stored).Error)
-			require.Equal(s.T(), int64(0), stored.Revision)
-			require.Equal(s.T(), "legacy-region", stored.State.Inputs.Inputs["region"])
-			if tc.stale {
-				require.Equal(s.T(), before+1, s.snapshotCount())
-				require.NotEqual(s.T(), row.ID, head.CurrentStateID)
-				require.Equal(s.T(), int64(2), head.Revision)
-				return
-			}
-			require.Equal(s.T(), before, s.snapshotCount(), "initializing a head must not backfill a snapshot")
-			require.Equal(s.T(), row.ID, head.CurrentStateID)
-			require.Equal(s.T(), int64(1), head.Revision)
-			require.Equal(s.T(), row.StateBlob.BlobID(), stored.StateBlob.BlobID())
-
-			s.updateInput()
-			pending := s.head()
-			require.Contains(s.T(), pending.StalePartials, pkgstate.PartialInputs)
-			saved, err := s.activities.SaveState(s.ctx, &installactivities.SaveStateRequest{
-				State: legacy, InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
-				GeneratedBy: app.InstallStateGenerateSourceStateManager, RefreshedPartials: []pkgstate.PartialName{pkgstate.PartialInputs},
-			})
+			require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.Install{ID: install.ID}).Update("name", "after-"+install.ID).Error)
+			pending, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, install.ID)
 			require.NoError(s.T(), err)
-			published := s.head()
-			require.Equal(s.T(), published.CurrentStateID, saved.ID)
-			require.Equal(s.T(), pending.Revision+1, saved.Revision)
-			require.Equal(s.T(), saved.Revision, published.Revision)
-			require.Empty(s.T(), published.StalePartials)
-			require.Equal(s.T(), before+1, s.snapshotCount())
-			for read := 0; read < 2; read++ {
-				current, fromBlob := s.currentRow().GetState(s.ctx, true)
-				require.True(s.T(), fromBlob)
-				require.Equal(s.T(), "eu-west-1", current.Inputs.Inputs["region"], "a legacy payload must not overwrite current inputs")
-				require.Equal(s.T(), current.Inputs.Inputs, current.Install.Inputs)
-				require.Equal(s.T(), "eu-west-1", s.fresh().Inputs.Inputs["region"])
-			}
-			require.Equal(s.T(), published, s.head())
-			require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallState{ID: row.ID}).First(&stored).Error)
-			require.Equal(s.T(), "legacy-region", stored.State.Inputs.Inputs["region"])
+			require.NoError(s.T(), migrate(s.ctx, s.deps.DB))
+			retried, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, install.ID)
+			require.NoError(s.T(), err)
+			require.Equal(s.T(), pending.Head, retried.Head, "rerunning the migration must preserve advanced heads")
+			require.Equal(s.T(), existing, s.head())
 		})
 	}
 }

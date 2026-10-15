@@ -249,5 +249,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Fn:   m.Migration143ActivityFeedIndexes,
 		},
 	}
-	return append(all, m.installStateInvalidationMigrations()...)
+	all = append(all, m.installStateInvalidationMigrations()...)
+	return append(all, migrations.Migration{
+		Name: "146-install-state-heads",
+		Fn:   m.Migration146InstallStateHeads,
+	})
 }

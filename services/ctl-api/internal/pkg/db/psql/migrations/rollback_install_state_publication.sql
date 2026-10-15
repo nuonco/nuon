@@ -20,9 +20,9 @@ BEGIN
       FROM install_states s
       JOIN installs i ON i.id = s.install_id AND i.deleted_at = 0
       WHERE s.deleted_at = 0
-      ORDER BY s.install_id, s.created_at DESC
+      ORDER BY s.install_id, s.created_at DESC, s.id DESC
     ) latest
-    WHERE latest.state IS NULL
+    WHERE NULLIF(latest.state, 'null'::jsonb) IS NULL
   ) THEN
     RAISE EXCEPTION 'Restore inline JSON for current blob-only snapshots before rollback';
   END IF;
@@ -43,14 +43,13 @@ BEGIN;
 UPDATE install_states
 SET stale_at = now(),
     stale_partials = '["org","app","domain","runner","cloud","actions","inputs","components","sandbox","stack","secrets"]'::jsonb,
-    revision = 0,
-    state_blob = CASE WHEN state IS NOT NULL THEN NULL ELSE state_blob END
-WHERE NOT archived AND deleted_at = 0;
+    state_blob = CASE WHEN NULLIF(state, 'null'::jsonb) IS NOT NULL THEN NULL ELSE state_blob END
+WHERE deleted_at = 0 AND (NOT archived OR NULLIF(state, 'null'::jsonb) IS NOT NULL);
 
 DELETE FROM install_state_heads;
 
 DELETE FROM migrations
-WHERE name IN ('143-install-state-invalidation-triggers', '144-install-state-invalidation-functions')
+WHERE name IN ('143-install-state-invalidation-triggers', '144-install-state-invalidation-functions', '146-install-state-heads')
    OR starts_with(name, '145-install-state-invalidation-');
 COMMIT;
 

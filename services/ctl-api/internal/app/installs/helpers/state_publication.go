@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/temporal"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -27,61 +28,6 @@ const InstallStateConflict = "InstallStateConflict"
 func IsInstallStateConflict(err error) bool {
 	var conflict *temporal.ApplicationError
 	return errors.As(err, &conflict) && conflict.Type() == InstallStateConflict
-}
-
-func (h *Helpers) getInstallStateHead(ctx context.Context, db *gorm.DB, installID string) (*app.InstallStateHead, error) {
-	var head app.InstallStateHead
-	err := db.WithContext(ctx).Where(app.InstallStateHead{InstallID: installID}).First(&head).Error
-	if err == nil && head.CurrentStateID != "" {
-		return &head, nil
-	}
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
-	}
-	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err == gorm.ErrRecordNotFound {
-			var install app.Install
-			if err := tx.Select("id", "org_id").Where(app.Install{ID: installID}).First(&install).Error; err != nil {
-				return err
-			}
-			head = app.InstallStateHead{InstallID: installID, OrgID: install.OrgID, Revision: 1}
-			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&head).Error; err != nil {
-				return err
-			}
-		}
-		if err := tx.Clauses(clause.Locking{Strength: "NO KEY UPDATE"}).Where(app.InstallStateHead{InstallID: installID}).First(&head).Error; err != nil {
-			return err
-		}
-		if head.CurrentStateID != "" {
-			return nil
-		}
-		var legacy app.InstallState
-		err := tx.Scopes(scopes.WithDisableViews).Where(app.InstallState{InstallID: installID}).
-			Where("revision = 0").Order("created_at DESC").First(&legacy).Error
-		if err == gorm.ErrRecordNotFound {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		head.CurrentStateID = legacy.ID
-		if !legacy.StaleAt.Empty() {
-			if head.StaleAt.Empty() {
-				head.StaleAt = legacy.StaleAt
-			}
-			if len(legacy.StalePartials) == 0 {
-				head.StalePartials = slices.Clone(pkgstate.AllPartials)
-			} else {
-				for _, partial := range legacy.StalePartials {
-					if !slices.Contains(head.StalePartials, partial) {
-						head.StalePartials = append(head.StalePartials, partial)
-					}
-				}
-			}
-		}
-		return tx.Model(&head).Select("current_state_id", "stale_at", "stale_partials").Updates(head).Error
-	})
-	return &head, err
 }
 
 type InstallStateBaseline struct {
@@ -119,19 +65,22 @@ func (h *Helpers) waitForInstallStateSources(ctx context.Context, orgID string) 
 
 func (h *Helpers) GetInstallStateBaseline(ctx context.Context, installID string) (*InstallStateBaseline, error) {
 	ctx = routing.WithoutReplica(ctx)
-	head, err := h.getInstallStateHead(ctx, h.db, installID)
-	if err != nil {
+	var row struct {
+		app.InstallStateHead
+		Snapshot app.InstallState `gorm:"embedded;embeddedPrefix:snapshot_"`
+	}
+	if err := h.db.WithContext(ctx).Model(&app.InstallStateHead{}).
+		Select("install_state_heads.*, snapshot.id AS snapshot_id, snapshot.state AS snapshot_state, snapshot.state_blob AS snapshot_state_blob").
+		Joins("LEFT JOIN install_states snapshot ON snapshot.id = install_state_heads.current_state_id AND snapshot.install_id = install_state_heads.install_id AND snapshot.deleted_at = 0").
+		Where(app.InstallStateHead{InstallID: installID}).Take(&row).Error; err != nil {
 		return nil, err
 	}
+	head := &row.InstallStateHead
 	snapshot := state.New()
 	if head.CurrentStateID != "" {
-		var row app.InstallState
-		if err := h.db.WithContext(ctx).Where(app.InstallState{ID: head.CurrentStateID, InstallID: installID}).First(&row).Error; err != nil {
-			return nil, err
-		}
-		snapshot, _ = row.GetState(ctx, h.cfg.BlobReadEnabled)
+		snapshot, _ = row.Snapshot.GetState(ctx, h.cfg.BlobReadEnabled)
 		if snapshot == nil {
-			return nil, fmt.Errorf("install state %s is unavailable", row.ID)
+			return nil, fmt.Errorf("install state %s is unavailable", head.CurrentStateID)
 		}
 	}
 	snapshot.StaleAt = nil
@@ -153,7 +102,6 @@ func (h *Helpers) PublishInstallState(ctx context.Context, obj *app.InstallState
 	if len(remaining) > 0 {
 		staleAt = baseline.StaleAt
 	}
-	obj.Revision = baseline.Revision + 1
 	obj.OrgID = baseline.OrgID
 	obj.State.StaleAt = nil
 	data, err := json.Marshal(obj.State)
@@ -179,17 +127,36 @@ func (h *Helpers) PublishInstallState(ctx context.Context, obj *app.InstallState
 			return err
 		}
 		if current.Revision != baseline.Revision {
-			return temporal.NewNonRetryableApplicationError("install state changed before publication", InstallStateConflict, nil)
+			return temporal.NewApplicationError("install state changed before publication", InstallStateConflict)
 		}
 		if err := tx.Create(obj).Error; err != nil {
 			return err
 		}
 		return tx.Model(&current).Select("current_state_id", "revision", "stale_at", "stale_partials").Updates(app.InstallStateHead{
-			CurrentStateID: obj.ID, Revision: obj.Revision, StaleAt: staleAt, StalePartials: remaining,
+			CurrentStateID: obj.ID, Revision: baseline.Revision + 1, StaleAt: staleAt, StalePartials: remaining,
 		}).Error
 	})
 	if err != nil {
 		return nil, err
 	}
+	if err := h.ArchiveInstallState(ctx, obj.InstallID); err != nil {
+		cctx.GetLogger(ctx, h.l).Warn("unable to archive install state", zap.String("install_id", obj.InstallID), zap.Error(err))
+	}
 	return obj, nil
+}
+
+func (h *Helpers) ArchiveInstallState(ctx context.Context, installID string) error {
+	return h.db.WithContext(routing.WithoutReplica(ctx)).
+		Model(&app.InstallState{}).
+		Scopes(scopes.WithDisableViews).
+		Where(app.InstallState{InstallID: installID}).
+		Where("NOT archived AND id NOT IN (?) AND id NOT IN (?)",
+			h.db.Model(&app.InstallState{}).Scopes(scopes.WithDisableViews).
+				Select("id").Where(app.InstallState{InstallID: installID}).
+				Order("created_at DESC, id DESC").Limit(50),
+			h.db.Model(&app.InstallStateHead{}).
+				Select("current_state_id").Where(app.InstallStateHead{InstallID: installID}),
+		).
+		Select("archived", "state").
+		Updates(map[string]any{"archived": true, "state": nil}).Error
 }

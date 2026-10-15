@@ -185,6 +185,13 @@ func (h *Helpers) RegenerateInstallState(ctx context.Context, req *pkgstate.Exec
 	ctx = blobstore.WithBlobReadEnabled(ctx, h.cfg.BlobReadEnabled)
 	ctx = routing.WithoutReplica(ctx)
 	for attempt := 0; attempt < 5; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(25 * time.Millisecond << (attempt - 1)):
+			}
+		}
 		baseline, err := h.GetInstallStateBaseline(ctx, req.InstallID)
 		if err != nil {
 			return nil, err
@@ -197,7 +204,7 @@ func (h *Helpers) RegenerateInstallState(ctx context.Context, req *pkgstate.Exec
 		for _, partial := range baseline.Head.StalePartials {
 			selected[partial] = true
 		}
-		if is.ID == "" || req.ForceAll || (is.StaleAt != nil && len(baseline.Head.StalePartials) == 0) {
+		if is.ID == "" || req.ForceAll {
 			for _, partial := range pkgstate.AllPartials {
 				selected[partial] = true
 			}
@@ -247,7 +254,7 @@ func (h *Helpers) RegenerateInstallState(ctx context.Context, req *pkgstate.Exec
 		resp.GeneratedAt = time.Now().UTC()
 		return resp, nil
 	}
-	return nil, temporal.NewNonRetryableApplicationError("install state kept changing during refresh", InstallStateConflict, nil)
+	return nil, temporal.NewApplicationError("install state kept changing during refresh", InstallStateConflict)
 }
 
 // RedactStateInputs masks sensitive inputs at read time; persisted state always holds the real values.

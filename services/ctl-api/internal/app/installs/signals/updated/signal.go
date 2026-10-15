@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -49,8 +50,12 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	if workflow.GetVersion(ctx, "install-state-update-invalidation", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		if err := activities.AwaitMarkStateStale(ctx, &activities.MarkStateStaleRequest{InstallID: s.InstallID}); err != nil {
-			return errors.Wrap(err, "unable to mark state stale")
+		if err := activities.AwaitMarkStateStale(ctx, &activities.MarkStateStaleRequest{
+			InstallID: s.InstallID, TriggeredByID: s.InstallID, TriggeredByType: "installs",
+		}); err != nil {
+			if !generics.IsGormErrRecordNotFound(err) {
+				return errors.Wrap(err, "unable to mark state as stale")
+			}
 		}
 	}
 	if err := activities.AwaitRenderInstallLabels(ctx, &activities.RenderInstallLabelsRequest{

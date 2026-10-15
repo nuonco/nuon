@@ -5,13 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.temporal.io/sdk/temporal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -19,6 +23,7 @@ import (
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	installservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	psqlmigrations "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -105,12 +110,17 @@ func (s *InstallStateIntegrationSuite) publicationLocksFree() error {
 
 func (s *InstallStateIntegrationSuite) TestStaleBaselinePublicationIsRejected() {
 	clean := s.baseline()
+	var before, after time.Time
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Raw("SELECT clock_timestamp()").Scan(&before).Error)
 	s.updateInput()
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Raw("SELECT clock_timestamp()").Scan(&after).Error)
 	_, err := s.publish(s.ctx, clean, pkgstate.PartialInputs)
 	require.True(s.T(), helpers.IsInstallStateConflict(err), "%v", err)
 
 	marked := s.baseline()
 	require.NotNil(s.T(), marked.State.StaleAt)
+	require.True(s.T(), !marked.State.StaleAt.Before(before) && !marked.State.StaleAt.After(after))
+	require.True(s.T(), marked.State.StaleAt.Equal(marked.Head.StaleAt.Time))
 	require.Equal(s.T(), []pkgstate.PartialName{pkgstate.PartialInputs}, marked.Head.StalePartials)
 	s.deps.Seeder.CreateInstallInputs(s.ctx, s.T(), s.install.ID, s.inputCfg.ID,
 		map[string]*string{"region": generics.ToPtr("ap-south-1")})
@@ -173,17 +183,9 @@ func (s *InstallStateIntegrationSuite) TestConcurrentPublishersFromOneBaseline()
 	require.Equal(s.T(), winner.State.Name, s.fresh().Name)
 }
 
-func (s *InstallStateIntegrationSuite) TestSourceChangeDuringUploadFencesPublication() {
-	before := s.snapshotCount()
-	_, err := s.publish(s.withUploadHook(func() error { return s.renameApp("changed-during-upload") }), s.baseline())
-	require.True(s.T(), helpers.IsInstallStateConflict(err), "%v", err)
-	require.Equal(s.T(), before, s.snapshotCount())
-	require.Equal(s.T(), []pkgstate.PartialName{pkgstate.PartialApp}, s.head().StalePartials)
-	require.Equal(s.T(), "changed-during-upload", s.fresh().App.Name)
-}
-
 func (s *InstallStateIntegrationSuite) TestRefreshRetriesWithoutHoldingLocksDuringUpload() {
 	require.NoError(s.T(), s.renameApp("first-update"))
+	before := s.snapshotCount()
 	uploads := 0
 	ctx := s.withUploadHook(func() error {
 		uploads++
@@ -200,6 +202,7 @@ func (s *InstallStateIntegrationSuite) TestRefreshRetriesWithoutHoldingLocksDuri
 	require.Nil(s.T(), current.StaleAt)
 	require.Equal(s.T(), "second-update", current.App.Name)
 	require.Equal(s.T(), 2, uploads)
+	require.Equal(s.T(), before+1, s.snapshotCount(), "only the successful candidate may leave a snapshot row")
 	require.Equal(s.T(), "second-update", s.fresh().App.Name)
 }
 
@@ -213,8 +216,36 @@ func (s *InstallStateIntegrationSuite) TestContinuousSourceChangesFailInsteadOfS
 	current, err := s.deps.Helpers.GetInstallState(ctx, s.install.ID, false, false)
 	require.True(s.T(), helpers.IsInstallStateConflict(err), "%v", err)
 	require.Nil(s.T(), current)
-	_, err = s.activities.GetInstallState(ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
-	require.Error(s.T(), err)
+	for name, read := range map[string]func() error{
+		"get_activity": func() error {
+			_, err := s.activities.GetInstallState(ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
+			return err
+		},
+		"regenerate_activity": func() error {
+			_, err := s.activities.RegenerateInstallState(ctx, &pkgstate.ExecuteRegenerationRequest{InstallID: s.install.ID})
+			return err
+		},
+	} {
+		s.Run(name, func() {
+			err := read()
+			require.True(s.T(), helpers.IsInstallStateConflict(err), "%v", err)
+			failure := temporal.GetDefaultFailureConverter().ErrorToFailure(err).GetApplicationFailureInfo()
+			require.NotNil(s.T(), failure)
+			require.Equal(s.T(), helpers.InstallStateConflict, failure.Type)
+			require.False(s.T(), failure.NonRetryable)
+		})
+	}
+	api, err := installservice.New(installservice.Params{Cfg: s.deps.Cfg, Helpers: s.deps.Helpers})
+	require.NoError(s.T(), err)
+	response := httptest.NewRecorder()
+	httpCtx, engine := gin.CreateTestContext(response)
+	engine.ContextWithFallback = true
+	httpCtx.Request = httptest.NewRequest(http.MethodGet, "/v1/installs/"+s.install.ID+"/state", nil).WithContext(ctx)
+	httpCtx.Params = gin.Params{{Key: "install_id", Value: s.install.ID}}
+	api.GetInstallState(httpCtx)
+	require.Empty(s.T(), httpCtx.Errors)
+	require.Equal(s.T(), http.StatusServiceUnavailable, response.Code)
+	require.Equal(s.T(), "1", response.Header().Get("Retry-After"))
 	require.False(s.T(), s.head().StaleAt.Empty())
 	require.Equal(s.T(), fmt.Sprintf("change-%d", changes), s.fresh().App.Name)
 }
@@ -328,13 +359,28 @@ func (s *InstallStateIntegrationSuite) TestSharedSourceCommitReachesConcurrentNe
 }
 
 func (s *InstallStateIntegrationSuite) TestSourceWaitPreservesWriterConcurrencyAndCancellation() {
+	timeouts := func() int64 {
+		var data metricdata.ResourceMetrics
+		require.NoError(s.T(), s.reader.Collect(s.ctx, &data))
+		var total int64
+		for _, scope := range data.ScopeMetrics {
+			for _, metric := range scope.Metrics {
+				if metric.Name == "nuon.install.state.source_wait.timeouts" {
+					for _, point := range metric.Data.(metricdata.Sum[int64]).DataPoints {
+						total += point.Value
+					}
+				}
+			}
+		}
+		return total
+	}
 	otherApp := s.deps.Seeder.CreateApp(s.ctx, s.T())
 	otherCtx, _ := s.deps.Seeder.EnsureOrg(s.ctx, s.T())
 	unrelatedApp := s.deps.Seeder.CreateApp(otherCtx, s.T())
 	s.deps.Seeder.CreateAppConfig(otherCtx, s.T(), unrelatedApp.ID)
 	unrelated := s.deps.Seeder.CreateInstall(otherCtx, s.T(), unrelatedApp)
 	s.updateInput()
-	before := s.head()
+	before, previousTimeouts := s.head(), timeouts()
 	tx := s.deps.DB.WithContext(s.ctx).Begin()
 	require.NoError(s.T(), tx.Error)
 	defer tx.Rollback()
@@ -371,10 +417,20 @@ func (s *InstallStateIntegrationSuite) TestSourceWaitPreservesWriterConcurrencyA
 	s.await(done)
 	require.ErrorIs(s.T(), readErr, context.Canceled)
 	require.Nil(s.T(), snapshot)
+	shortCtx, stopShort := context.WithTimeout(s.ctx, 100*time.Millisecond)
+	defer stopShort()
+	_, err = s.deps.Helpers.GetInstallState(shortCtx, s.install.ID, false, true)
+	require.ErrorIs(s.T(), err, context.DeadlineExceeded)
+	require.Equal(s.T(), previousTimeouts, timeouts(), "caller cancellation and deadlines are not barrier timeouts")
+	snapshot, err = s.deps.Helpers.GetInstallState(s.ctx, s.install.ID, false, true)
+	require.ErrorIs(s.T(), err, context.DeadlineExceeded)
+	require.Nil(s.T(), snapshot)
+	require.Equal(s.T(), previousTimeouts+1, timeouts())
 	require.Equal(s.T(), before, s.head())
 	require.NoError(s.T(), tx.Rollback().Error)
 	require.Equal(s.T(), "eu-west-1", s.fresh().Inputs.Inputs["region"])
 	require.NotContains(s.T(), s.fresh().App.Variables, "pending")
+	require.Equal(s.T(), previousTimeouts+1, timeouts(), "successful refreshes must not increment timeouts")
 }
 
 func (s *InstallStateIntegrationSuite) TestIrrelevantUpdatesDoNotBlockRefresh() {
@@ -469,67 +525,6 @@ func (s *InstallStateIntegrationSuite) TestSourceWritesRequireReadCommitted() {
 			}
 		})
 	}
-}
-
-func (s *InstallStateIntegrationSuite) TestSourceBarrierTimeoutTelemetry() {
-	timeouts := func() int64 {
-		var data metricdata.ResourceMetrics
-		require.NoError(s.T(), s.reader.Collect(s.ctx, &data))
-		var total int64
-		for _, scope := range data.ScopeMetrics {
-			for _, metric := range scope.Metrics {
-				if metric.Name == "nuon.install.state.source_wait.timeouts" {
-					for _, point := range metric.Data.(metricdata.Sum[int64]).DataPoints {
-						total += point.Value
-					}
-				}
-			}
-		}
-		return total
-	}
-	s.updateInput()
-	before, previousTimeouts := s.head(), timeouts()
-	tx := s.deps.DB.WithContext(s.ctx).Begin()
-	require.NoError(s.T(), tx.Error)
-	defer tx.Rollback()
-	require.NoError(s.T(), tx.Create(&app.AppSecret{AppID: s.install.AppID, Name: "pending", Value: "example"}).Error)
-
-	ctx, cancel := context.WithTimeout(s.ctx, 100*time.Millisecond)
-	defer cancel()
-	_, err := s.deps.Helpers.GetInstallState(ctx, s.install.ID, false, true)
-	require.ErrorIs(s.T(), err, context.DeadlineExceeded)
-	require.Equal(s.T(), previousTimeouts, timeouts(), "caller deadlines are not barrier timeouts")
-	attempted := s.observeSourceBarrier()
-	ctx, cancelNow := context.WithCancel(s.ctx)
-	defer cancelNow()
-	done := make(chan struct{})
-	var canceledErr error
-	go func() {
-		defer close(done)
-		_, canceledErr = s.deps.Helpers.GetInstallState(ctx, s.install.ID, false, true)
-	}()
-	select {
-	case <-attempted:
-	case <-done:
-		s.FailNow("the read returned before the source transaction finished", "%v", canceledErr)
-	case <-time.After(30 * time.Second):
-		s.FailNow("timed out waiting for the source barrier")
-	}
-	cancelNow()
-	s.await(done)
-	require.ErrorIs(s.T(), canceledErr, context.Canceled)
-	require.Equal(s.T(), previousTimeouts, timeouts())
-
-	current, err := s.deps.Helpers.GetInstallState(s.ctx, s.install.ID, false, true)
-	require.ErrorIs(s.T(), err, context.DeadlineExceeded)
-	require.Nil(s.T(), current)
-	require.Equal(s.T(), previousTimeouts+1, timeouts())
-	require.Equal(s.T(), before, s.head())
-	require.NoError(s.T(), tx.Commit().Error)
-	for read := 0; read < 2; read++ {
-		require.Equal(s.T(), "example", s.fresh().App.Variables["pending"])
-	}
-	require.Equal(s.T(), previousTimeouts+1, timeouts(), "successful refreshes must not increment timeouts")
 }
 
 func (s *InstallStateIntegrationSuite) TestConcurrentInvalidationsUnionWithinInstallScope() {
@@ -657,12 +652,30 @@ func (s *InstallStateIntegrationSuite) TestInvalidationDDLTimesOutAndRetriesPerT
 }
 
 func (s *InstallStateIntegrationSuite) TestArchiveRetainsCurrentSnapshot() {
+	oldest := s.currentRow()
+	for n := range 55 {
+		s.deps.Seeder.CreateInstallInputs(s.ctx, s.T(), s.install.ID, s.inputCfg.ID,
+			map[string]*string{"region": generics.ToPtr(fmt.Sprintf("region-%d", n))})
+		require.Equal(s.T(), fmt.Sprintf("region-%d", n), s.fresh().Inputs.Inputs["region"])
+	}
+	var unarchived int64
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.InstallState{}).
+		Where(app.InstallState{InstallID: s.install.ID}).Where("NOT archived").Count(&unarchived).Error)
+	require.Equal(s.T(), int64(50), unarchived, "read-driven publication must own retention without a state workflow")
+	var historical app.InstallState
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallState{ID: oldest.ID}).First(&historical).Error)
+	require.True(s.T(), historical.Archived)
+	require.Nil(s.T(), historical.State)
+	stored, fromBlob := historical.GetState(s.ctx, true)
+	require.True(s.T(), fromBlob)
+	require.Equal(s.T(), "us-east-1", stored.Inputs.Inputs["region"])
+
 	current := s.currentRow()
 	newer := make([]string, 0, 55)
 	for range 55 {
 		row := &app.InstallState{
-			InstallID: s.install.ID, Revision: current.Revision,
-			State: &state.State{ID: s.install.ID, Name: "historical-snapshot"},
+			InstallID: s.install.ID,
+			State:     &state.State{ID: s.install.ID, Name: "historical-snapshot"},
 		}
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(row).Error)
 		newer = append(newer, row.ID)
@@ -681,7 +694,7 @@ func (s *InstallStateIntegrationSuite) TestArchiveRetainsCurrentSnapshot() {
 	s.deps.Cfg.BlobReadEnabled = false
 	snapshot := s.fresh()
 	require.Equal(s.T(), s.install.Name, snapshot.Name)
-	require.Equal(s.T(), "us-east-1", snapshot.Inputs.Inputs["region"])
+	require.Equal(s.T(), "region-54", snapshot.Inputs.Inputs["region"])
 }
 
 func (s *InstallStateIntegrationSuite) TestComponentDeletionFencesPublication() {

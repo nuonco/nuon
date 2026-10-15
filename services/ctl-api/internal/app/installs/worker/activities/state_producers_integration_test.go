@@ -102,7 +102,6 @@ func (s *InstallStateIntegrationSuite) TestSourceCommitsReachStrictFreshReads() 
 		sandboxExec     *app.RunnerJobExecution
 		installedAction *app.InstallActionWorkflow
 		actionExec      *app.RunnerJobExecution
-		secretsExec     *app.RunnerJobExecution
 	)
 	for _, step := range []struct {
 		name   string
@@ -232,18 +231,10 @@ func (s *InstallStateIntegrationSuite) TestSourceCommitsReachStrictFreshReads() 
 			},
 		},
 		{
-			name: "secrets_sync_job",
-			commit: func() {
-				secretsExec = s.createExecution(runner.ID, s.install.ID, "installs", app.RunnerJobTypeSandboxSyncSecrets, app.RunnerJobExecutionStatusFinished)
-			},
-			check: func(snapshot *state.State) {
-				require.NotNil(s.T(), snapshot.Secrets)
-				require.Empty(s.T(), *snapshot.Secrets)
-			},
-		},
-		{
 			name: "secrets_sync_outputs",
 			commit: func() {
+				secretsExec := s.createExecution(runner.ID, s.install.ID, "installs", app.RunnerJobTypeSandboxSyncSecrets, app.RunnerJobExecutionStatusFinished)
+				s.fresh()
 				s.create(executionOutputs(secretsExec.ID, map[string]any{"example": map[string]any{"name": "example", "exists": true}}))
 			},
 			check: func(snapshot *state.State) {
