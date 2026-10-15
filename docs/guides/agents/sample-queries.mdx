@@ -101,6 +101,19 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
 ## Debug installs
 
 <AccordionGroup>
+  <Accordion title="Open an install summary">
+    ```
+    Show me the summary for install acme-prod. Lead with the applied commit, then components, health, any failing workflows, and inputs. Then give me Health, Resources, Deployments, or an update. Wait for me to choose.
+    ```
+
+    Variant without a named install:
+
+    ```
+    Show me an install summary. Ask whether to use the currently selected install or pick one from a list, then wait for me to choose.
+    ```
+
+    When the prompt names an install, the agent calls `install_summary` once and renders that page before its `next_actions`. It does not call `get_install` for this flow. When the prompt does not name an install, the agent first asks whether to use the CLI-selected install or pick one from `list_installs`. It should not call every inspection tool. After an inspection, Back returns to the summary and Do nothing ends the flow. Make an update opens a second menu before any write is attempted.
+  </Accordion>
   <Accordion title="Review the status of an install">
     ```
     What's the status of install acme-prod? Include components, recent workflows, and anything unhealthy.
