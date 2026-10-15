@@ -23,7 +23,8 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     --mount=type=secret,id=aws_session_token \
     echo "restore check ${GOCACHE_RESTORE_NONCE}" && \
     if [ -n "${GOCACHE_S3_URI}" ] && \
-       [ "$(cat /go/pkg/build-cache/.nuon-s3-etag 2>/dev/null || true)" != "${GOCACHE_S3_ETAG}" ]; then \
+       { [ "$(cat /go/pkg/build-cache/.nuon-s3-etag 2>/dev/null || true)" != "${GOCACHE_S3_ETAG}" ] || \
+         [ "$(du -sk /go/pkg/build-cache 2>/dev/null | cut -f1)" -lt 51200 ]; }; then \
       export AWS_ACCESS_KEY_ID="$(cat /run/secrets/aws_access_key_id)" && \
       export AWS_SECRET_ACCESS_KEY="$(cat /run/secrets/aws_secret_access_key)" && \
       export AWS_SESSION_TOKEN="$(cat /run/secrets/aws_session_token)" && \
@@ -164,7 +165,9 @@ RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-ctl-api \
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS gocache-status
+ARG GOCACHE_RESTORE_NONCE
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
+    echo "cache status ${GOCACHE_RESTORE_NONCE}" && \
     mkdir -p /gocache-status && \
     if [ -f /go/pkg/build-cache/.nuon-dirty ] && \
        [ "$(du -sk /go/pkg/build-cache | cut -f1)" -ge 51200 ]; then \
@@ -191,10 +194,15 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     export AWS_SECRET_ACCESS_KEY="$(cat /run/secrets/aws_secret_access_key)" && \
     export AWS_SESSION_TOKEN="$(cat /run/secrets/aws_session_token)" && \
     if [ "${GOCACHE_COMPACT}" = "true" ] && [ -f /go/pkg/build-cache/.nuon-compact-since ]; then \
-      BEFORE="$(du -sh /go/pkg/build-cache | cut -f1)"; \
-      find /go/pkg/build-cache -mindepth 2 -maxdepth 2 ! -newer /go/pkg/build-cache/.nuon-compact-since -exec rm -rf {} +; \
-      rm /go/pkg/build-cache/.nuon-compact-since; \
-      echo "compacted Go build cache from ${BEFORE} to $(du -sh /go/pkg/build-cache | cut -f1)"; \
+      KEPT_KB="$(find /go/pkg/build-cache -mindepth 2 -maxdepth 2 -type f -newer /go/pkg/build-cache/.nuon-compact-since -printf '%s\n' | awk '{s+=$1} END {print int(s/1024)}')"; \
+      if [ "${KEPT_KB}" -ge 51200 ]; then \
+        BEFORE="$(du -sh /go/pkg/build-cache | cut -f1)"; \
+        find /go/pkg/build-cache -mindepth 2 -maxdepth 2 ! -newer /go/pkg/build-cache/.nuon-compact-since -exec rm -rf {} +; \
+        rm /go/pkg/build-cache/.nuon-compact-since; \
+        echo "compacted Go build cache from ${BEFORE} to $(du -sh /go/pkg/build-cache | cut -f1)"; \
+      else \
+        echo "skipping compaction, this build used only ${KEPT_KB}KB of the cache"; \
+      fi; \
     fi && \
     if [ "$(du -sk /go/pkg/build-cache | cut -f1)" -lt 51200 ]; then \
       echo "cache mount held <50MB, refusing to upload an empty cache"; \
