@@ -2,6 +2,7 @@ package arm
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -132,10 +133,9 @@ func TestVNetLinkedDeployment_LeavesExpressionDefaultsInPlace(t *testing.T) {
 	}
 }
 
-// A vendor UI that names a parameter with an expression default is collecting that
-// value. The parameter is hoisted without the expression, and the portal value
-// replaces what the nested template would have computed.
-func TestVNetLinkedDeployment_HoistsExpressionDefaultWhenVendorUIBindsIt(t *testing.T) {
+// derivedName's default only reads nuonInstallID, so a vendor text box does not
+// promote it onto the portal form.
+func TestVNetLinkedDeployment_LeavesWhollyDerivedNameWhenVendorUIBindsIt(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, hoistFixture)
 	inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{
@@ -154,18 +154,176 @@ func TestVNetLinkedDeployment_HoistsExpressionDefaultWhenVendorUIBindsIt(t *test
 	if err != nil {
 		t.Fatal(err)
 	}
-	param, ok := hoisted["derivedName"]
+	if _, ok := hoisted["derivedName"]; ok {
+		t.Fatal("hoisted derivedName; its value comes from nuonInstallID")
+	}
+	params := dep["properties"].(map[string]any)["parameters"].(map[string]any)
+	if _, ok := params["derivedName"]; ok {
+		t.Fatal("passed a value for derivedName, overriding the default it computes for itself")
+	}
+}
+
+const referenceDerivedFixture = `{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "nuonInstallID": {"type": "string"},
+    "location": {"type": "string"},
+    "commonTags": {"type": "object"},
+    "resourceGroupName": {"type": "string", "defaultValue": "[format('rg-acme-net-{0}-01', parameters('nuonInstallID'))]"},
+    "virtualNetworkName": {"type": "string", "defaultValue": "[format('{0}-vnet', parameters('nuonInstallID'))]"},
+    "addressSpace": {"type": "string", "defaultValue": "10.100.0.0/22"}
+  },
+  "resources": [],
+  "outputs": {}
+}`
+
+func TestWhollyDerivedParameters_ReferenceNames(t *testing.T) {
+	params := map[string]ARMParameter{
+		"resourceGroupName": {
+			Type:         "string",
+			DefaultValue: "[format('rg-acme-net-{0}-01', parameters('nuonInstallID'))]",
+		},
+		"virtualNetworkName": {
+			Type:         "string",
+			DefaultValue: "[format('{0}-vnet', parameters('nuonInstallID'))]",
+		},
+		"addressSpace": {
+			Type:         "string",
+			DefaultValue: "10.100.0.0/22",
+		},
+		"prefixedSpace": {
+			Type:         "string",
+			DefaultValue: "[format('{0}-net', parameters('addressSpace'))]",
+		},
+	}
+	derived := whollyDerivedParameters(params, vnetReservedParamNames)
+
+	for _, name := range []string{"resourceGroupName", "virtualNetworkName"} {
+		t.Run(name, func(t *testing.T) {
+			if !derived[name] {
+				t.Fatalf("%s was not classified as wholly derived", name)
+			}
+		})
+	}
+	if derived["addressSpace"] {
+		t.Fatal("addressSpace is a literal default and must stay customer-facing")
+	}
+	if derived["prefixedSpace"] {
+		t.Fatal("prefixedSpace reads addressSpace, so the customer can change it")
+	}
+}
+
+func TestVNetLinkedDeployment_HidesWhollyDerivedReferenceParameters(t *testing.T) {
+	for _, name := range []string{"resourceGroupName", "virtualNetworkName"} {
+		t.Run(name, func(t *testing.T) {
+			tmpl := &Templates{cfg: &internal.Config{}}
+			inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, referenceDerivedFixture)
+			inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{
+				Contents: fmt.Sprintf(`{
+				  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+				  "handler": "Microsoft.Azure.CreateUIDef",
+				  "parameters": {
+				    "basics": [{"name": %q, "type": "Microsoft.Common.TextBox", "label": "Name"}],
+				    "steps": [],
+				    "outputs": {%q: "[basics('%s')]"}
+				  }
+				}`, name, name, name),
+			}
+
+			dep, hoisted, _, err := tmpl.getVNetLinkedDeployment(inp, scopeFor(inp))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, ok := hoisted[name]; ok {
+				t.Fatalf("hoisted %s", name)
+			}
+			passed := dep["properties"].(map[string]any)["parameters"].(map[string]any)
+			if _, ok := passed[name]; ok {
+				t.Fatalf("passed a value for %s", name)
+			}
+			if _, ok := hoisted["addressSpace"]; !ok {
+				t.Fatal("addressSpace was not hoisted")
+			}
+
+			_, params := renderUIDef(t, inp)
+			if elementNamed(params["basics"].([]any), name) || elementNamed(params["steps"].([]any), name) {
+				t.Fatalf("%s is on the portal form", name)
+			}
+			if _, ok := params["outputs"].(map[string]any)[name]; ok {
+				t.Fatalf("outputs include %s", name)
+			}
+			if !elementNamed(params["basics"].([]any), "addressSpace") {
+				t.Fatal("addressSpace is missing from the portal form")
+			}
+
+			wrapper := renderWrapper(t, inp)
+			if _, ok := wrapper["parameters"].(map[string]any)[name]; ok {
+				t.Fatalf("wrapper declares %s", name)
+			}
+		})
+	}
+}
+
+func TestVNetLinkedDeployment_HoistsExpressionThatReadsCustomerParameter(t *testing.T) {
+	const body = `{
+	  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+	  "contentVersion": "1.0.0.0",
+	  "parameters": {
+	    "nuonInstallID": {"type": "string"},
+	    "addressSpace": {"type": "string", "defaultValue": "10.100.0.0/22"},
+	    "prefixedSpace": {"type": "string", "defaultValue": "[format('{0}-net', parameters('addressSpace'))]"}
+	  },
+	  "resources": [],
+	  "outputs": {}
+	}`
+	tmpl := &Templates{cfg: &internal.Config{}}
+	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, body)
+	inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{
+		Contents: `{
+		  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+		  "handler": "Microsoft.Azure.CreateUIDef",
+		  "parameters": {
+		    "basics": [{"name": "prefixedSpace", "type": "Microsoft.Common.TextBox", "label": "Prefixed space"}],
+		    "steps": [],
+		    "outputs": {"prefixedSpace": "[basics('prefixedSpace')]"}
+		  }
+		}`,
+	}
+
+	dep, hoisted, _, err := tmpl.getVNetLinkedDeployment(inp, scopeFor(inp))
+	if err != nil {
+		t.Fatal(err)
+	}
+	param, ok := hoisted["prefixedSpace"]
 	if !ok {
-		t.Fatal("derivedName was not hoisted")
+		t.Fatal("prefixedSpace was not hoisted")
 	}
 	if param.DefaultValue != nil {
-		t.Fatalf("derivedName default = %#v, want the expression default dropped", param.DefaultValue)
+		t.Fatalf("prefixedSpace default = %#v, want the expression default dropped", param.DefaultValue)
 	}
-	got := dep["properties"].(map[string]any)["parameters"].(map[string]any)["derivedName"]
-	want := map[string]any{"value": "[parameters('derivedName')]"}
-	if got.(map[string]any)["value"] != want["value"] {
-		t.Fatalf("derivedName passed as %#v, want %#v", got, want)
+	got := dep["properties"].(map[string]any)["parameters"].(map[string]any)["prefixedSpace"]
+	want := "[parameters('prefixedSpace')]"
+	if got.(map[string]any)["value"] != want {
+		t.Fatalf("prefixedSpace passed as %#v, want %s", got, want)
 	}
+}
+
+func elementNamed(nodes []any, want string) bool {
+	for _, node := range nodes {
+		el, ok := node.(map[string]any)
+		if !ok {
+			continue
+		}
+		if el["name"] == want {
+			return true
+		}
+		children, _ := el["elements"].([]any)
+		if elementNamed(children, want) {
+			return true
+		}
+	}
+	return false
 }
 
 // The whole point of hoisting is that the root declares what it references.

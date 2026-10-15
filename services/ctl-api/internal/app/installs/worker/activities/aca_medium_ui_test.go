@@ -101,10 +101,7 @@ func TestAcaMediumUIDefinition(t *testing.T) {
 	steps := indexSteps(params["steps"].([]any))
 	outputs := params["outputs"].(map[string]any)
 
-	require.Equal(t, "Microsoft.Common.TextBox", basics["resourceGroupName"]["type"])
-	require.Equal(t, "Resource group name", basics["resourceGroupName"]["label"])
 	require.Contains(t, steps, "networking")
-	require.Equal(t, "Microsoft.Common.TextBox", steps["networking"]["virtualNetworkName"]["type"])
 	require.Equal(t, "10.100.0.0/22", steps["networking"]["addressSpace"]["defaultValue"])
 	require.Equal(t, "Microsoft.Common.DropDown", steps["networking"]["clusterIngressEndpointType"]["type"])
 	require.Equal(t, "Microsoft.Common.CheckBox", steps["networking"]["enableAzureFirewall"]["type"])
@@ -112,8 +109,6 @@ func TestAcaMediumUIDefinition(t *testing.T) {
 	require.Contains(t, steps, "compute")
 	require.Equal(t, "Microsoft.Common.DropDown", steps["compute"]["availabilityZones"]["type"])
 
-	require.Equal(t, "[basics('resourceGroupName')]", outputs["resourceGroupName"])
-	require.Equal(t, "[steps('networking').virtualNetworkName]", outputs["virtualNetworkName"])
 	require.Equal(t, "[steps('networking').addressSpace]", outputs["addressSpace"])
 	require.Equal(t, "[steps('networking').clusterIngressEndpointType]", outputs["clusterIngressEndpointType"])
 	require.Equal(t, "[steps('compute').availabilityZones]", outputs["availabilityZones"])
@@ -131,7 +126,7 @@ func TestAcaMediumUIDefinition(t *testing.T) {
 	require.NoError(t, json.Unmarshal(armTmpl, &root))
 	rootParams := root["parameters"].(map[string]any)
 	for _, name := range []string{
-		"resourceGroupName", "virtualNetworkName", "addressSpace",
+		"addressSpace",
 		"clusterIngressEndpointType", "enableAzureFirewall", "enableFrontDoor", "availabilityZones",
 	} {
 		require.Contains(t, rootParams, name, "subscription stack is missing hoisted parameter %s", name)
@@ -146,6 +141,17 @@ func TestAcaMediumUIDefinition(t *testing.T) {
 	wrapperParams := wrapperDoc["parameters"].(map[string]any)
 	for name := range rootParams {
 		require.Contains(t, wrapperParams, name)
+	}
+	for _, name := range []string{"resourceGroupName", "virtualNetworkName"} {
+		t.Run(name, func(t *testing.T) {
+			require.NotContains(t, basics, name)
+			for _, elements := range steps {
+				require.NotContains(t, elements, name)
+			}
+			require.NotContains(t, outputs, name)
+			require.NotContains(t, rootParams, name)
+			require.NotContains(t, wrapperParams, name)
+		})
 	}
 	require.Equal(t, "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#", wrapperDoc["$schema"])
 

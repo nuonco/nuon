@@ -2,6 +2,7 @@ package arm
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -48,6 +49,91 @@ func hoistableDefault(def any) bool {
 		return true
 	}
 	return !strings.HasPrefix(s, "[")
+}
+
+// quotedParameterRef matches parameters('name') and parameters("name").
+// parameters(concat(...)) is intentionally not matched: that argument is not a
+// name we can classify.
+var quotedParameterRef = regexp.MustCompile(`parameters\(\s*['"]([^'"]+)['"]\s*\)`)
+
+// expressionParameterRefs returns the parameter names an ARM expression default
+// reads. ok is false when the value is not an expression, or when it calls
+// parameters() with an argument that is not a string literal.
+func expressionParameterRefs(def any) (refs []string, ok bool) {
+	s, isString := def.(string)
+	if !isString || !strings.HasPrefix(strings.TrimSpace(s), "[") {
+		return nil, false
+	}
+	if strings.Contains(quotedParameterRef.ReplaceAllString(s, ""), "parameters(") {
+		return nil, false
+	}
+	matches := quotedParameterRef.FindAllStringSubmatch(s, -1)
+	refs = make([]string, 0, len(matches))
+	for _, match := range matches {
+		refs = append(refs, match[1])
+	}
+	return refs, true
+}
+
+// whollyDerivedParameters reports parameters whose default is an ARM expression
+// that does not depend on a customer-supplied parameter. The portal cannot
+// evaluate that expression, so the parameter stays in the nested template and
+// the form does not ask for it.
+func whollyDerivedParameters(params map[string]ARMParameter, reserved []string) map[string]bool {
+	reservedSet := make(map[string]bool, len(reserved))
+	for _, name := range reserved {
+		reservedSet[name] = true
+	}
+
+	derived := map[string]bool{}
+	notDerived := map[string]bool{}
+	for name, param := range params {
+		if _, ok := expressionParameterRefs(param.DefaultValue); !ok {
+			notDerived[name] = true
+		}
+	}
+
+	progress := true
+	for progress {
+		progress = false
+		for name, param := range params {
+			if derived[name] || notDerived[name] {
+				continue
+			}
+			refs, ok := expressionParameterRefs(param.DefaultValue)
+			if !ok {
+				notDerived[name] = true
+				progress = true
+				continue
+			}
+			wholly := true
+			waiting := false
+			for _, ref := range refs {
+				if reservedSet[ref] || derived[ref] {
+					continue
+				}
+				if notDerived[ref] {
+					wholly = false
+					break
+				}
+				if _, isParam := params[ref]; !isParam {
+					wholly = false
+					break
+				}
+				waiting = true
+			}
+			if waiting && wholly {
+				continue
+			}
+			if wholly {
+				derived[name] = true
+			} else {
+				notDerived[name] = true
+			}
+			progress = true
+		}
+	}
+	return derived
 }
 
 func portalScalarParameter(typ string) bool {
@@ -155,6 +241,13 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 			return deployment, nil, nil, nil
 		}
 		params := defaultVNetCustomerParameters()
+		names, err := t.vendorUINames(inp)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		for name := range names.hidden {
+			delete(params, name)
+		}
 		deploymentParams := deployment["properties"].(map[string]any)["parameters"].(map[string]any)
 		for name := range params {
 			deploymentParams[name] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", name)}
@@ -178,10 +271,11 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 	}
 
 	declared, hoistedParams := extractARMParameters(armTmpl, vnetReservedParamNames)
-	vendorNames, err := t.vendorUIParameterNames(inp)
+	names, err := t.vendorUINames(inp)
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	derived := whollyDerivedParameters(hoistedParams, vnetReservedParamNames)
 
 	deploymentParams := map[string]any{}
 	for paramName, val := range managedParams {
@@ -191,13 +285,20 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 		}
 	}
 	for paramName, param := range hoistedParams {
+		if derived[paramName] || names.hidden[paramName] {
+			// Wholly derived values, and controls the vendor marked visible:false,
+			// stay in the nested template. The portal cannot compute the expression,
+			// and passing a form value would replace it.
+			delete(hoistedParams, paramName)
+			continue
+		}
 		if !hoistableDefault(param.DefaultValue) {
 			// An expression default cannot be lifted: at subscription scope it
 			// rebinds onto parameters the root does not declare. A vendor UI
 			// that names the parameter is asking to collect the value, so the
 			// parameter is hoisted without that default and the portal value
 			// replaces the expression.
-			if !vendorNames[paramName] {
+			if !names.bound[paramName] {
 				delete(hoistedParams, paramName)
 				continue
 			}
