@@ -72,14 +72,19 @@ func (s *AdminGenerateStateTestSuite) SetupSuite() {
 	s.SetDB(s.service.DB)
 }
 
+func (s *AdminGenerateStateTestSuite) SetupSubTest() {
+	tests.ClearQueueSignals(s.T(), s.service.DB)
+}
+
 func (s *AdminGenerateStateTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.InstallsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -94,9 +99,11 @@ func (s *AdminGenerateStateTestSuite) setupTestData() {
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	seedOrgQueues(s.T(), s.service.DB, s.testOrg)
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.service.DB, s.testInstall)
 }
 
 func (s *AdminGenerateStateTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {

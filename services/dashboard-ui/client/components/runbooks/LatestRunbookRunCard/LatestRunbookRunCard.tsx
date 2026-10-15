@@ -1,10 +1,11 @@
 import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
-import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { RunningClock } from '@/components/workflows/RunningClock'
 import type { TInstallRunbookRun } from '@/lib/ctl-api/installs/runbooks'
 
 export interface ILatestRunbookRunCard {
@@ -22,17 +23,15 @@ export const LatestRunbookRunCard = ({
 }: ILatestRunbookRunCard) => {
   if (!isLoading && !run) {
     return (
-      <EmptyState
-        variant="table"
-        size="sm"
-        emptyTitle="No runs yet"
-        emptyMessage="Runs appear here once this runbook is executed."
-      />
+      <Text variant="subtext" theme="neutral">
+        No runs yet
+      </Text>
     )
   }
 
   const Wrapper = flush ? 'div' : Card
-  const status = run?.install_workflow?.status?.status ?? run?.status
+  const workflow = run?.install_workflow
+  const status = workflow?.status?.status ?? run?.status
   const statusDescription =
     run?.install_workflow?.status?.status_human_description ??
     run?.status_description
@@ -53,11 +52,19 @@ export const LatestRunbookRunCard = ({
           <Time variant="subtext" time={run?.created_at} format="relative" />
         </LabeledValue>
         <LabeledValue label="Duration" loading={isLoading}>
-          <Duration
-            variant="subtext"
-            beginTime={run?.created_at}
-            endTime={run?.updated_at}
-          />
+          {workflow?.finished ? (
+            <Duration variant="subtext" nanoseconds={workflow.execution_time} />
+          ) : workflow ? (
+            <RunningClock
+              label=""
+              theme="default"
+              startedAt={workflow.started_at || run?.created_at}
+            />
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              —
+            </Text>
+          )}
         </LabeledValue>
       </div>
       {href ? <Link href={href}>View run</Link> : null}

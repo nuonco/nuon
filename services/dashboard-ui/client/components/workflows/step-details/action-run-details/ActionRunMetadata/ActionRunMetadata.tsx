@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Badge } from '@/components/common/Badge'
+import { RunTiming } from '@/components/actions/RunTiming'
+import { getTriggerLabel } from '@/components/actions/TriggeredBy'
 import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -10,6 +11,7 @@ import { Time } from '@/components/common/Time'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import type { IActionRunMetadata } from '../types'
 import { useInstallLink } from '@/hooks/use-install-path'
+import { adhocDisplayName } from '@/utils/action-utils'
 
 interface IActionRunMetadataPresentation extends IActionRunMetadata {
   orgId: string
@@ -37,10 +39,19 @@ export const ActionRunMetadata = ({
   const isAdhocActionRun = actionRun?.trigger_type === 'adhoc'
   const firstStep = actionRun?.steps?.at(0)
   const adhocConfig = firstStep?.adhoc_config
+  const trigger = actionRun?.trigger
+  const runbookName =
+    trigger?.type === 'runbook' ? trigger.parent_name : undefined
+  const triggeredBy =
+    trigger?.actor?.email ||
+    trigger?.actor?.name ||
+    (isAdhocActionRun ? createdBy?.email : undefined) ||
+    getTriggerLabel(trigger) ||
+    actionRun?.triggered_by_type
 
   return (
     <div className="flex items-start justify-between gap-6">
-      <div className="flex items-start gap-6">
+      <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
         <LabeledStatus
           label="Status"
           statusProps={{
@@ -52,47 +63,68 @@ export const ActionRunMetadata = ({
           }}
         />
 
+        {runbookName ? (
+          <LabeledValue label="Runbook">
+            <Link
+              href={installLink({
+                orgId,
+                installId: step?.owner_id,
+                suffix: `/runbooks/${encodeURIComponent(runbookName)}`,
+              })}
+            >
+              {runbookName}
+            </Link>
+          </LabeledValue>
+        ) : null}
+
         <LabeledValue label="Triggered by">
-          <Badge size="md" variant="code">
-            {isAdhocActionRun && createdBy ? ' ' + createdBy?.email : null}
-
-            {!isAdhocActionRun ? actionRun?.triggered_by_type : null}
-            {actionRun?.run_env_vars?.COMPONENT_ID ? (
-              <Link
-                href={installLink({ orgId: orgId, installId: step?.owner_id, suffix: `/components/${actionRun?.run_env_vars?.COMPONENT_ID}` })}
-                variant="inline"
-              >
-                {actionRun?.run_env_vars?.COMPONENT_NAME}
-              </Link>
-            ) : null}
-          </Badge>
+          <Text variant="subtext">{triggeredBy ?? '—'}</Text>
         </LabeledValue>
-      </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
-        {actionRun?.created_at ? (
-          <Text theme="info" flex className="gap-1">
-            <Icon variant="CalendarBlankIcon" />
-            <Time variant="subtext" time={actionRun.created_at} />
-          </Text>
+        {actionRun?.run_env_vars?.COMPONENT_ID ? (
+          <LabeledValue label="Component">
+            <Link
+              href={installLink({
+                orgId,
+                installId: step?.owner_id,
+                suffix: `/components/${actionRun?.run_env_vars?.COMPONENT_ID}`,
+              })}
+            >
+              {actionRun?.run_env_vars?.COMPONENT_NAME}
+            </Link>
+          </LabeledValue>
         ) : null}
         {actionRun?.created_at ? (
-          <Text theme="info" flex className="gap-1">
-            <Icon variant="TimerIcon" />
+          <LabeledValue label="Started">
+            <Time
+              variant="subtext"
+              time={actionRun.created_at}
+              format="relative"
+            />
+          </LabeledValue>
+        ) : null}
+
+        {actionRun?.created_at ? (
+          <LabeledValue label="Duration">
+            <RunTiming variant="subtext" run={actionRun} />
+          </LabeledValue>
+        ) : null}
+
+        {actionRun?.effective_timeout ? (
+          <LabeledValue label="Timeout">
             <Duration
               variant="subtext"
-              beginTime={actionRun.created_at}
-              endTime={actionRun.updated_at}
+              nanoseconds={actionRun.effective_timeout}
             />
-          </Text>
+          </LabeledValue>
         ) : null}
+
         {actionRun?.runner_job?.install_role_usage?.role_name ? (
-          <Text theme="info" flex className="gap-1">
-            <Icon variant="FileLockIcon" />
+          <LabeledValue label="Role">
             <Text variant="subtext">
               {actionRun.runner_job.install_role_usage.role_name}
             </Text>
-          </Text>
+          </LabeledValue>
         ) : null}
       </div>
 
@@ -100,7 +132,7 @@ export const ActionRunMetadata = ({
         <div className="self-end">
           <RunAdhocActionButton
             initialValues={{
-              name: adhocConfig?.name,
+              name: adhocDisplayName(adhocConfig?.name) ?? '',
               command: adhocConfig?.command,
               inline_contents: adhocConfig?.inline_contents,
               env_vars: adhocConfig?.env_vars,

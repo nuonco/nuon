@@ -4,6 +4,7 @@ import { Text } from '@/components/common/Text'
 import { PolicyCountsBadge } from '@/components/workflows/step-details/PolicyCountsBadge'
 import { StepButtons } from '@/components/workflows/step-details/StepButtons'
 import { StepDetailPanelButton } from '@/components/workflows/step-details/StepDetailPanel'
+import { RunningClock } from '@/components/workflows/RunningClock'
 import { StepTitle } from '@/components/workflows/step-details/StepTitle'
 import type { TWorkflowStep } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -71,6 +72,8 @@ export const WorkflowStepRow = ({
             Completed in{' '}
             <Duration variant="subtext" nanoseconds={step?.execution_time} />
           </Text>
+        ) : step?.status?.status === 'in-progress' && step?.started_at ? (
+          <RunningClock startedAt={step.started_at} />
         ) : null}
       </div>
 

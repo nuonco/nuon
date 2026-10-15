@@ -61,6 +61,7 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -165,7 +166,7 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) TestAdminInvalidateRunner
 				return s.testRunner.ID
 			},
 			requestBody:  nil,
-			expectedCode: http.StatusCreated,
+			expectedCode: http.StatusOK,
 		},
 	}
 

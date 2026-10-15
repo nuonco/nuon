@@ -18,7 +18,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -34,6 +33,8 @@ const (
 	InstallDeploymentTypeImageUpdate         InstallDeploymentType = "image_update"
 	InstallDeploymentTypeStackUpdate         InstallDeploymentType = "stack_update"
 	InstallDeploymentTypeInstallConfigUpdate InstallDeploymentType = "install_config_update"
+	InstallDeploymentTypeDeprovision         InstallDeploymentType = "deprovision"
+	InstallDeploymentTypeSandboxDeprovision  InstallDeploymentType = "sandbox_deprovision"
 )
 
 func workflowTypeToDeploymentType(t app.WorkflowType) InstallDeploymentType {
@@ -63,6 +64,10 @@ func workflowTypeToDeploymentType(t app.WorkflowType) InstallDeploymentType {
 		return InstallDeploymentTypeAppBranchUpdate
 	case app.WorkflowTypeInputUpdate, app.WorkflowTypeSyncSecrets:
 		return InstallDeploymentTypeInstallConfigUpdate
+	case app.WorkflowTypeDeprovision:
+		return InstallDeploymentTypeDeprovision
+	case app.WorkflowTypeDeprovisionSandbox:
+		return InstallDeploymentTypeSandboxDeprovision
 	default:
 		return ""
 	}
@@ -672,7 +677,7 @@ func (s *service) buildInstallDeployments(ctx *gin.Context, orgID, installID str
 			}
 		}
 		var mu sync.Mutex
-		g, gctx := errgroup.WithContext(blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc))
+		g, gctx := errgroup.WithContext(ctx.Request.Context())
 		g.SetLimit(8)
 		for workflowID, version := range versionsByWorkflowID {
 			g.Go(func() error {

@@ -7,7 +7,6 @@ import (
 
 	pkgconfig "github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type GetInstallsVCSConfigOutput struct {
@@ -32,8 +31,7 @@ func (a *Activities) getInstallsVCSConfig(ctx context.Context, appID string) (*G
 		return &GetInstallsVCSConfigOutput{}, nil
 	}
 
-	blobCtx := blobstore.WithBlobService(ctx, a.blobSvc)
-	intermediateJSON, err := latestConfig.IntermediateConfig.Get(blobCtx)
+	intermediateJSON, err := latestConfig.IntermediateConfig.Get(ctx)
 	if err != nil || intermediateJSON == "" {
 		return &GetInstallsVCSConfigOutput{}, nil
 	}

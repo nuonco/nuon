@@ -15,16 +15,28 @@ import (
 	"github.com/google/go-github/v50/github"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
+
+type mockWorkflowRun struct{}
+
+func (m *mockWorkflowRun) GetID() string                                { return "mock-workflow-id" }
+func (m *mockWorkflowRun) GetRunID() string                             { return "mock-run-id" }
+func (m *mockWorkflowRun) Get(ctx context.Context, v interface{}) error { return nil }
+func (m *mockWorkflowRun) GetWithOptions(ctx context.Context, v interface{}, o tclient.WorkflowRunGetOptions) error {
+	return nil
+}
 
 // VCSServiceTestDeps holds all fx-injected dependencies for VCS service tests.
 type VCSServiceTestDeps struct {
@@ -35,6 +47,9 @@ type VCSServiceTestDeps struct {
 	V      *validator.Validate
 	L      *zap.Logger
 	Seeder *testseed.Seeder
+
+	Helpers     *vcshelpers.Helpers
+	QueueClient *queueclient.Client
 }
 
 // VCSServiceTestSuite is the shared testify suite for all VCS service endpoint tests.
@@ -67,12 +82,17 @@ func (s *VCSServiceTestSuite) SetupSuite() {
 	// Create gomock controller and mock GitHub client
 	s.ctrl = gomock.NewController(s.T())
 	s.mockGH = vcshelpers.NewMockGithubClient(s.ctrl)
+	mockTC := temporal.NewMockClient(gomock.NewController(s.T()))
+	mockTC.EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&mockWorkflowRun{}, nil).AnyTimes()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
 			Mocks: &tests.TestMocks{
 				MockGH: s.mockGH,
+				MockTC: mockTC,
 			},
 			CustomValidator: true,
 		}),
@@ -125,10 +145,12 @@ func (s *VCSServiceTestSuite) SetupTest() {
 
 	// Create the VCS service manually with the mock
 	svc := &service{
-		l:        s.service.L,
-		db:       s.service.DB,
-		v:        s.service.V,
-		ghClient: s.mockGH,
+		l:           s.service.L,
+		db:          s.service.DB,
+		v:           s.service.V,
+		ghClient:    s.mockGH,
+		helpers:     s.service.Helpers,
+		queueClient: s.service.QueueClient,
 	}
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{

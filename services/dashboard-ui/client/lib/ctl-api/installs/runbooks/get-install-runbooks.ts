@@ -34,6 +34,10 @@ export type TInstallRunbookRun = {
   install_workflow_id?: string | null
   install_workflow?: {
     id: string
+    started_at?: string
+    finished_at?: string
+    finished?: boolean
+    execution_time?: number
     status?: {
       status?: string
       status_human_description?: string

@@ -12,6 +12,9 @@ import type {
   TPolicyReportOwnerType,
   TPolicyReportStatus,
 } from '@/lib/ctl-api/installs/get-install-policy-reports'
+import { reportSubject } from './report-subject'
+
+export { reportSubject }
 
 export interface IPolicyReportRow {
   key: string
@@ -19,15 +22,11 @@ export interface IPolicyReportRow {
   history: TPolicyReport[]
 }
 
-const OWNER_TYPE_LABELS: Record<string, { label: string; theme: 'info' | 'brand' | 'neutral' }> = {
-  install_deploys: { label: 'Deploy', theme: 'info' },
-  install_sandbox_runs: { label: 'Sandbox', theme: 'brand' },
-  component_builds: { label: 'Build', theme: 'neutral' },
-}
-
 function getGroupKey(report: TPolicyReport): string {
   const ownerType = report?.owner_type ?? 'unknown'
-  return report?.component_id ? `${ownerType}:${report.component_id}` : ownerType
+  return report?.component_id
+    ? `${ownerType}:${report.component_id}`
+    : ownerType
 }
 
 function getReportTime(report: TPolicyReport): number {
@@ -45,15 +44,14 @@ export function groupPolicyReports(
 
   return Array.from(groups.entries())
     .map(([key, items]) => {
-      const sorted = [...items].sort((a, b) => getReportTime(b) - getReportTime(a))
+      const sorted = [...items].sort(
+        (a, b) => getReportTime(b) - getReportTime(a)
+      )
       const [latest, ...history] = sorted
       return { key, report: latest, history }
     })
     .sort((a, b) => getReportTime(b.report) - getReportTime(a.report))
 }
-
-export const reportSubject = (report: TPolicyReport): string =>
-  report?.component_name ? `Component - ${report.component_name}` : 'Sandbox'
 
 export const PolicyReportsTable = ({
   reports,
@@ -78,7 +76,7 @@ export const PolicyReportsTable = ({
       {
         id: 'subject',
         accessorFn: (row) => reportSubject(row.report),
-        header: 'Component',
+        header: 'Subject',
         cell: ({ row }) => (
           <PolicyReportPanel
             report={row.original.report}
@@ -93,24 +91,6 @@ export const PolicyReportsTable = ({
             }}
           />
         ),
-      },
-      {
-        id: 'source',
-        accessorFn: (row) => row.report?.owner_type ?? '',
-        header: 'Source',
-        cell: ({ row }) => {
-          const ownerType = row.original.report?.owner_type ?? ''
-          const meta = OWNER_TYPE_LABELS[ownerType]
-          return meta ? (
-            <Badge size="sm" theme={meta.theme}>
-              {meta.label}
-            </Badge>
-          ) : (
-            <Text variant="subtext" theme="neutral">
-              {ownerType || 'unknown'}
-            </Text>
-          )
-        },
       },
       {
         id: 'status',
@@ -192,7 +172,9 @@ export const PolicyReportsTable = ({
       initialSorting={[{ id: 'evaluated', desc: true }]}
       emptyStateProps={{
         variant: 'policy',
-        emptyTitle: hasActiveFilters ? 'No matching reports' : 'No evaluations yet',
+        emptyTitle: hasActiveFilters
+          ? 'No matching reports'
+          : 'No evaluations yet',
         emptyMessage: hasActiveFilters
           ? 'No reports match the current filters.'
           : 'Evaluations appear here once a deploy or sandbox run triggers a policy check.',

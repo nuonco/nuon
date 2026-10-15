@@ -10,7 +10,7 @@ import { deploymentDetailFixture } from './page-fixtures'
 const page = (state: Parameters<typeof deploymentDetailFixture>[0]) => (
   <InstallView
     fixture={deploymentDetailFixture(state)}
-    path={viewPath('/deployments/wf-deploy-1')}
+    path={viewPath('/deployments/wf-deploy-1/template-updates')}
   />
 )
 

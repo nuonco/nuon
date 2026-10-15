@@ -72,6 +72,7 @@ func (c *lifecycleLogCore) Write(entry zapcore.Entry, fields []zapcore.Field) er
 	event, _ := encoder.Fields["flow_event"].(string)
 	switch event {
 	case "workflow.created", "workflow.started", "workflow.completed", "workflow.failed", "workflow.cancelled",
+		"workflow.awaiting_approval", "workflow.awaiting_retry",
 		"step.started", "step.completed", "step.errored", "step.cancelled", "step.awaiting_retry", "step.awaiting_approval", "step.approval_resolved",
 		"step_group.started", "step_group.completed", "step_group.failed", "step_group.cancelled",
 		"step_generation.started", "step_generation.completed", "step_generation.failed", "step_generation.cancelled",

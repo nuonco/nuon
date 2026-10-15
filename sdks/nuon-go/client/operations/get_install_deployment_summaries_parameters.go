@@ -120,7 +120,7 @@ type GetInstallDeploymentSummariesParams struct {
 
 	/* Sort.
 
-	   sort order; attention puts approvals and failed retries first
+	   sort order; attention puts running deployments first
 	*/
 	Sort *string
 

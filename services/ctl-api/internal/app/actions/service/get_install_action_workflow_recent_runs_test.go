@@ -202,30 +202,22 @@ func (s *GetInstallActionWorkflowRecentRunsTestSuite) TestGetInstallActionRecent
 			},
 		},
 		{
-			name: "returns null for non-existent install",
+			name: "returns 404 for non-existent install",
 			setupFunc: func() (string, string) {
 				action := s.createActionWorkflow(s.testApp.ID, "test-action-notfound-install")
 				return "inst-nonexistent123456789", action.ID
 			},
 			queryParams:  "",
-			expectedCode: http.StatusOK,
-			validateFunc: func(iaw *app.InstallActionWorkflow) {
-				// Handler returns 200 with null on error
-				require.Empty(s.T(), iaw.ID)
-			},
+			expectedCode: http.StatusNotFound,
 		},
 		{
-			name: "returns null for non-existent action",
+			name: "returns 404 for non-existent action",
 			setupFunc: func() (string, string) {
 				install := s.createInstall(s.testApp.ID)
 				return install.ID, "actw-nonexistent123456789"
 			},
 			queryParams:  "",
-			expectedCode: http.StatusOK,
-			validateFunc: func(iaw *app.InstallActionWorkflow) {
-				// Handler returns 200 with null on error
-				require.Empty(s.T(), iaw.ID)
-			},
+			expectedCode: http.StatusNotFound,
 		},
 	}
 

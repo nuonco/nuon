@@ -625,6 +625,16 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		}
 	}
 
+	if retain := teardownPlanRetain(deployPlan.Plan, comp.Type, sandboxMode); len(retain) > 0 {
+		if err := activities.AwaitCheckTeardownPlan(ctx, &activities.CheckTeardownPlanRequest{
+			JobID:  job.ID,
+			Retain: retain,
+		}); err != nil {
+			s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, err.Error())
+			return err
+		}
+	}
+
 	if err := workflowstepapprovalrequest.Dispatch(ctx, &workflowstepapprovalrequest.Signal{
 		InstallID:         install.ID,
 		InstallWorkflowID: s.FlowID,

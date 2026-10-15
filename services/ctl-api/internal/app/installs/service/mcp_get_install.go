@@ -78,7 +78,14 @@ func (s *service) mcpGetInstall(ctx context.Context, _ *mcp.CallToolRequest, in 
 	if err != nil {
 		return nil, nil, err
 	}
+	result, err := s.mcpInstallOverviewFor(ctx, orgID, install)
+	if err != nil {
+		return nil, nil, err
+	}
+	return apiPkg.MCPJSONResult(result)
+}
 
+func (s *service) mcpInstallOverviewFor(ctx context.Context, orgID string, install *app.Install) (mcpInstallOverview, error) {
 	result := mcpInstallOverview{
 		ID:                         install.ID,
 		Name:                       install.Name,
@@ -110,11 +117,10 @@ func (s *service) mcpGetInstall(ctx context.Context, _ *mcp.CallToolRequest, in 
 
 	lastUpdate, err := s.mcpInstallLastUpdate(ctx, orgID, install.ID)
 	if err != nil {
-		return nil, nil, err
+		return mcpInstallOverview{}, err
 	}
 	result.LastUpdate = lastUpdate
-
-	return apiPkg.MCPJSONResult(result)
+	return result, nil
 }
 
 func (s *service) mcpInstallLastUpdate(ctx context.Context, orgID, installID string) (*mcpInstallLastUpdate, error) {

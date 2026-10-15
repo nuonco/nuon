@@ -2242,7 +2242,7 @@ export interface paths {
   "/v1/installs/{install_id}/overview": {
     /**
      * install overview
-     * @description Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+     * @description Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
      */
     get: operations["GetInstallOverview"];
   };
@@ -3639,6 +3639,13 @@ export interface components {
     };
     /** @enum {string} */
     "app.AccountType": "auth" | "auth0" | "service" | "canary" | "integration";
+    "app.ActionRunTrigger": {
+      actor?: components["schemas"]["app.Account"];
+      parent_id?: string;
+      parent_name?: string;
+      parent_type?: string;
+      type?: string;
+    };
     "app.ActionWorkflow": {
       app_id?: string;
       config_count?: number;
@@ -4261,6 +4268,7 @@ export interface components {
       app_config_id?: string;
       app_id?: string;
       app_policies_config?: string;
+      apply_on_teardown?: boolean | null;
       components?: string[];
       contents?: string;
       created_at?: string;
@@ -4704,6 +4712,7 @@ export interface components {
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
       skip_noops?: boolean;
+      teardown?: components["schemas"]["app.ComponentTeardown"];
       terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
       toggleable?: boolean;
       type?: components["schemas"]["app.ComponentType"];
@@ -4755,6 +4764,9 @@ export interface components {
       status?: string;
       status_description?: string;
       updated_at?: string;
+    };
+    "app.ComponentTeardown": {
+      retain?: string[];
     };
     /** @enum {string} */
     "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
@@ -5124,6 +5136,7 @@ export interface components {
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
+      effective_timeout?: number;
       enable_kube_config?: components["schemas"]["sql.NullBool"];
       /** @description after query */
       execution_time?: number;
@@ -5153,6 +5166,7 @@ export interface components {
       status_v2?: components["schemas"]["app.CompositeStatus"];
       steps?: components["schemas"]["app.InstallActionWorkflowRunStep"][];
       timeout?: number;
+      trigger?: components["schemas"]["app.ActionRunTrigger"];
       trigger_type?: components["schemas"]["app.ActionWorkflowTriggerType"];
       triggered_by_id?: string;
       triggered_by_type?: string;
@@ -7861,6 +7875,8 @@ export interface components {
       src_digest?: string;
       src_registry: components["schemas"]["configs.OCIRegistryRepository"];
       src_tag: string;
+      /** @description Teardown is only set on plans for teardown deploys. */
+      teardown?: components["schemas"]["plantypes.TeardownPlan"];
       terraform?: components["schemas"]["plantypes.TerraformDeployPlan"];
     };
     "plantypes.DockerBuildPlan": {
@@ -8128,6 +8144,13 @@ export interface components {
       kubernetes_secrets?: components["schemas"]["plantypes.KubernetesSecretSync"][];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
     };
+    "plantypes.TeardownPlan": {
+      /**
+       * @description Retain holds rendered resource addresses that are removed from state
+       * instead of destroyed.
+       */
+      retain?: string[];
+    };
     "plantypes.TerraformBackend": {
       workspaceID: string;
     };
@@ -8337,6 +8360,7 @@ export interface components {
       policy_name?: string;
     };
     "service.AppPolicyConfig": {
+      apply_on_teardown?: boolean | null;
       components?: string[];
       contents: string;
       description?: string;
@@ -8472,6 +8496,10 @@ export interface components {
       resolved?: boolean;
       resources?: components["schemas"]["app.InstallComponentResourceState"][];
       transition?: components["schemas"]["service.HealthTransitionResponse"];
+    };
+    "service.ComponentTeardownRequest": {
+      /** @description Resource or module addresses removed from state instead of destroyed on teardown. */
+      retain?: string[];
     };
     "service.ConnectedGithubVCSActionWorkflowConfigRequest": {
       branch?: string;
@@ -9269,6 +9297,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
       skip_noops?: boolean;
+      teardown?: components["schemas"]["service.ComponentTeardownRequest"];
       toggleable?: boolean;
       variables: {
         [key: string]: string;
@@ -9405,6 +9434,7 @@ export interface components {
     };
     "service.InstallActivity": {
       action?: components["schemas"]["service.InstallActivityAction"];
+      actor?: components["schemas"]["app.Account"];
       created_at?: string;
       id?: string;
       policy?: components["schemas"]["service.InstallActivityPolicy"];
@@ -9417,8 +9447,10 @@ export interface components {
     };
     "service.InstallActivityAction": {
       action_workflow_id?: string;
+      adhoc?: boolean;
       name?: string;
       run_id?: string;
+      trigger?: components["schemas"]["app.ActionRunTrigger"];
       trigger_type?: string;
     };
     "service.InstallActivityPolicy": {
@@ -9468,8 +9500,10 @@ export interface components {
       git_branch?: string;
       pending_commits?: components["schemas"]["service.InstallOverviewCommit"][];
       repo?: string;
+      runs_behind?: number | null;
       selected_commit?: components["schemas"]["service.InstallOverviewCommit"];
       status?: string;
+      successful_runs?: components["schemas"]["service.InstallOverviewCommit"][];
       target_branch?: string;
     };
     "service.InstallComponentHealthSummary": {
@@ -9655,6 +9689,7 @@ export interface components {
       branch_id?: string;
       created_at?: string;
       message?: string;
+      metadata?: components["schemas"]["app.AppBranchRunMetadata"];
       run_id?: string;
       run_status?: string;
       sha?: string;
@@ -23298,6 +23333,10 @@ export interface operations {
         status?: string;
         /** @description case-insensitive substring match on id or title */
         search?: string;
+        /** @description only include activity triggered by this account ID */
+        actor_id?: string;
+        /** @description exclude cron-triggered action and runbook runs */
+        exclude_cron?: boolean;
         /** @description include activity created at or after this RFC3339 timestamp */
         created_at_gte?: string;
         /** @description include activity created at or before this RFC3339 timestamp */
@@ -26911,7 +26950,7 @@ export interface operations {
   };
   /**
    * install overview
-   * @description Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+   * @description Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
    */
   GetInstallOverview: {
     parameters: {

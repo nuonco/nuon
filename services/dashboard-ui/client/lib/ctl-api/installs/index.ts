@@ -14,6 +14,7 @@ export * from './get-install'
 export * from './get-install-status'
 export * from './get-install-stack'
 export * from './get-install-telemetry-settings'
+export * from './install-telemetry-collector'
 export * from './get-install-app-config-versions'
 export * from './get-install-app-config-version-diff'
 export * from './get-install-app-config-tree-diff'
@@ -30,6 +31,7 @@ export * from './get-install-workflows'
 export * from './get-install-updates'
 
 export * from './get-install-policy-reports'
+export * from './get-policy-report'
 
 export * from './get-install-label-keys'
 

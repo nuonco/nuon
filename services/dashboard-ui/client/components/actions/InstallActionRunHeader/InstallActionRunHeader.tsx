@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
+import { RunTiming, getRunPhase } from '@/components/actions/RunTiming'
+import { TriggeredBy } from '@/components/actions/TriggeredBy'
 import { Button } from '@/components/common/Button'
-import { Duration } from '@/components/common/Duration'
 import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -85,18 +86,19 @@ export const InstallActionRunHeader = ({
               tipContent: installActionRun?.status_v2?.status_human_description,
             }}
           />
-          <LabeledValue label="Total duration">
-            <Duration nanoseconds={installActionRun?.execution_time} />
-          </LabeledValue>
-          <LabeledValue label="Timeout">
-            <Duration nanoseconds={installActionRun?.config?.timeout} />
-          </LabeledValue>
           <LabeledValue
-            label={`Triggered via ${installActionRun?.triggered_by_type}`}
+            label={
+              {
+                queued: 'Queued for',
+                running: 'Running time',
+                done: 'Total duration',
+              }[getRunPhase(installActionRun)]
+            }
           >
-            {installActionRun?.created_by?.email || (
-              <ID theme="default">{installActionRun?.created_by_id}</ID>
-            )}
+            <RunTiming run={installActionRun} hideQueuedLabel />
+          </LabeledValue>
+          <LabeledValue label="Triggered by">
+            <TriggeredBy run={installActionRun} />
           </LabeledValue>
           <LabeledValue label="Execution role">
             {installActionRun?.runner_job?.install_role_usage?.role_name ? (

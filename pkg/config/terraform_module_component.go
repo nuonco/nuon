@@ -36,6 +36,8 @@ type TerraformModuleComponentConfig struct {
 	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
 	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 
+	Teardown *ComponentTeardownConfig `mapstructure:"teardown,omitempty" toml:"teardown,omitempty" nuonhash:"omitempty"`
+
 	// deprecated
 	Variables []TerraformVariable   `mapstructure:"var,omitempty" toml:"var,omitempty"`
 	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
@@ -83,6 +85,8 @@ func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Sche
 		Field("auto_approve_on_policies_passing").Short("Auto-approve the deploy when all policy checks pass. Defaults to false").
 		Default("false").
 		Example("true").
+		Field("teardown").Short("teardown behavior").
+		Long("Controls what happens to the component's resources when it is torn down. Resources listed in retain are removed from Terraform state and left in place instead of being destroyed").
 		Field("var").Short("deprecated: use vars map instead").
 		Long("Deprecated: Array of name/value pairs for Terraform variables. Use the vars map instead").
 		Field("env_var").Short("deprecated: use env_vars map instead").
@@ -102,6 +106,12 @@ func (t *TerraformModuleComponentConfig) Validate() error {
 	if len(t.EnvVars) > 0 {
 		return ErrConfig{
 			Description: "the env_var array is deprecated, please use env_vars instead.",
+		}
+	}
+	if err := t.Teardown.Validate(); err != nil {
+		return ErrConfig{
+			Description: err.Error(),
+			Err:         err,
 		}
 	}
 

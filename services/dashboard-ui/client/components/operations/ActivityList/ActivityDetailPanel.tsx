@@ -1,4 +1,6 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { actorName } from '@/components/actions/TriggeredBy'
 import { Badge } from '@/components/common/Badge'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -6,13 +8,18 @@ import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { PolicyReportDetails } from '@/components/policies/PolicyReportPanel'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import {
   InstallWorkflowPanelContent,
   InstallWorkflowPanelLoading,
 } from '@/components/workflows/InstallWorkflowPanel'
 import { useInstallLink } from '@/hooks/use-install-path'
-import { getInstallActionRun } from '@/lib'
+import {
+  getAppPoliciesConfigs,
+  getInstallActionRun,
+  getPolicyReport,
+} from '@/lib'
 import { WorkflowProvider } from '@/providers/workflow-provider'
 import type { TInstallActivity } from '@/types'
 import { humanize } from '@/utils/string-utils'
@@ -35,18 +42,23 @@ export const ActivityDetailPanel = ({
   installId: string
 } & Partial<IPanel>) => {
   const installLink = useInstallLink()
-  const actionHref = activity.action?.name
-    ? installLink({
-        orgId,
-        installId,
-        suffix: `/operations/actions?q=${encodeURIComponent(activity.action.name)}`,
-      })
-    : undefined
+  const actionHref =
+    activity.action?.name && !activity.action.adhoc
+      ? installLink({
+          orgId,
+          installId,
+          suffix: activity.action.action_workflow_id
+            ? `/actions/${activity.action.action_workflow_id}`
+            : `/operations/actions?q=${encodeURIComponent(activity.action.name)}`,
+        })
+      : undefined
   const runbookHref = activity.runbook?.name
     ? installLink({
         orgId,
         installId,
-        suffix: `/operations/runbooks?q=${encodeURIComponent(activity.runbook.name)}`,
+        suffix: activity.runbook.runbook_id
+          ? `/runbooks/${activity.runbook.runbook_id}`
+          : `/runbooks/${encodeURIComponent(activity.runbook.name)}`,
       })
     : undefined
   const actionRunId = activity.action?.run_id
@@ -85,6 +97,13 @@ export const ActivityDetailPanel = ({
         </WorkflowProvider>
       ) : actionRunLoading ? (
         loading
+      ) : activity.policy?.report_id ? (
+        <PolicyActivityDetails
+          activity={activity}
+          orgId={orgId}
+          actionHref={actionHref}
+          runbookHref={runbookHref}
+        />
       ) : (
         <ActivitySummary
           activity={activity}
@@ -93,6 +112,61 @@ export const ActivityDetailPanel = ({
         />
       )}
     </Panel>
+  )
+}
+
+const PolicyActivityDetails = ({
+  activity,
+  orgId,
+  actionHref,
+  runbookHref,
+}: {
+  activity: TInstallActivity
+  orgId: string
+  actionHref?: string
+  runbookHref?: string
+}) => {
+  const reportId = activity.policy?.report_id
+  const { data: report, isLoading } = useQuery({
+    queryKey: ['policy-report', orgId, reportId],
+    queryFn: () => getPolicyReport({ orgId, reportId: reportId! }),
+    enabled: !!orgId && !!reportId,
+  })
+  const appId = report?.app_id
+  const { data: policiesConfigs } = useQuery({
+    queryKey: ['app-policies-configs', orgId, appId],
+    queryFn: () => getAppPoliciesConfigs({ orgId, appId: appId! }),
+    enabled: !!orgId && !!appId,
+  })
+  const policyNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const config of policiesConfigs ?? []) {
+      for (const policy of config.policies ?? []) {
+        if (policy.id && policy.name) map.set(policy.id, policy.name)
+      }
+    }
+    return map
+  }, [policiesConfigs])
+
+  if (isLoading) {
+    return <Text variant="subtext" loading loadingWidth={24} />
+  }
+  if (!report) {
+    return (
+      <ActivitySummary
+        activity={activity}
+        actionHref={actionHref}
+        runbookHref={runbookHref}
+      />
+    )
+  }
+
+  return (
+    <PolicyReportDetails
+      report={report}
+      orgId={orgId}
+      policyNameMap={policyNameMap}
+    />
   )
 }
 
@@ -142,6 +216,11 @@ const ActivitySummary = ({
           <Text variant="subtext">
             {humanize(activity.action.trigger_type)}
           </Text>
+        </LabeledValue>
+      )}
+      {activity.actor && (
+        <LabeledValue label="Run by">
+          <Text variant="subtext">{actorName(activity.actor)}</Text>
         </LabeledValue>
       )}
       {activity.runbook && (

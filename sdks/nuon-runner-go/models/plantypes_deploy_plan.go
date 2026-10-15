@@ -72,6 +72,11 @@ type PlantypesDeployPlan struct {
 	// Required: true
 	SrcTag *string `json:"src_tag"`
 
+	// Teardown is only set on plans for teardown deploys.
+	Teardown struct {
+		PlantypesTeardownPlan
+	} `json:"teardown,omitempty"`
+
 	// terraform
 	Terraform *PlantypesTerraformDeployPlan `json:"terraform,omitempty"`
 }
@@ -101,6 +106,10 @@ func (m *PlantypesDeployPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSrcTag(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTeardown(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -239,6 +248,14 @@ func (m *PlantypesDeployPlan) validateSrcTag(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *PlantypesDeployPlan) validateTeardown(formats strfmt.Registry) error {
+	if swag.IsZero(m.Teardown) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 func (m *PlantypesDeployPlan) validateTerraform(formats strfmt.Registry) error {
 	if swag.IsZero(m.Terraform) { // not required
 		return nil
@@ -283,6 +300,10 @@ func (m *PlantypesDeployPlan) ContextValidate(ctx context.Context, formats strfm
 	}
 
 	if err := m.contextValidateSrcRegistry(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTeardown(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -413,6 +434,11 @@ func (m *PlantypesDeployPlan) contextValidateSrcRegistry(ctx context.Context, fo
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (m *PlantypesDeployPlan) contextValidateTeardown(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

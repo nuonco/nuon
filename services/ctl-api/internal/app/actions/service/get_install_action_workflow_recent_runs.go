@@ -146,6 +146,7 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 			return db.
 				Scopes(scopes.WithOffsetPagination).
 				Preload("CreatedBy").
+				Preload("RunnerJob", app.PreloadActionExecutionRunnerJob).
 				Order("install_action_workflow_runs.created_at DESC").
 				Limit(limit)
 		}).
@@ -178,6 +179,14 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 	installActionWorkflow.Runs, err = db.HandlePaginatedResponse(ctx, installActionWorkflow.Runs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	runPtrs := make([]*app.InstallActionWorkflowRun, len(installActionWorkflow.Runs))
+	for i := range installActionWorkflow.Runs {
+		runPtrs[i] = &installActionWorkflow.Runs[i]
+	}
+	if err := s.resolveRunTriggers(ctx, runPtrs); err != nil {
+		return nil, err
 	}
 
 	return &installActionWorkflow, nil

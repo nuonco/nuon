@@ -107,7 +107,7 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentNotFound() {
 				app2 := s.deps.Seeder.CreateApp(s.ctx, s.T())
 
 				// Create a component on the second app
-				comp2 := s.deps.Seeder.CreateComponent(s.ctx, s.T(), app2.ID, app.ComponentTypeTerraformModule)
+				comp2 := s.createComponent(app2.ID, app.ComponentTypeTerraformModule)
 
 				// Try to get it using the first app's URL
 				return s.testApp.ID, comp2.ID

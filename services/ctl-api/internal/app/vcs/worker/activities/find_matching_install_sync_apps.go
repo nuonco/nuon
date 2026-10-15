@@ -8,7 +8,6 @@ import (
 
 	pkgconfig "github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type FindMatchingInstallSyncAppsRequest struct {
@@ -82,8 +81,7 @@ func (a *Activities) findMatchesFromAppConfigBlobs(ctx context.Context, req Find
 			continue
 		}
 
-		blobCtx := blobstore.WithBlobService(ctx, a.blobSvc)
-		intermediateJSON, err := latestConfig.IntermediateConfig.Get(blobCtx)
+		intermediateJSON, err := latestConfig.IntermediateConfig.Get(ctx)
 		if err != nil || intermediateJSON == "" {
 			continue
 		}

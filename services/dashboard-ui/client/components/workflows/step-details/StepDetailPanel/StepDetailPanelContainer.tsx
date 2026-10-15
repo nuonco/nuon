@@ -49,9 +49,6 @@ export function getStepPanelDetails(step: TWorkflowStep): ReactNode {
     return <SyncSecretsStepDetails />
   if (step.step_target_type === 'app_branches')
     return <InstallGroupStepDetails />
-  // step_target_type only lands once the runner picks up the step;
-  // hold the panel body with a placeholder until then. The container
-  // fast-polls in this window so the gap is ~1-2s.
   return (
     <EmptyState
       variant="history"
@@ -95,8 +92,6 @@ export const StepDetailPanelContainer = ({
     refetchInterval: (query) => {
       if (!shouldPoll) return false
       if (query.state.data?.finished) return 30_000
-      // Fast-poll while waiting for runner pickup so the holding state
-      // in `getStepPanelDetails` flips to the real detail quickly.
       if (!query.state.data?.step_target_type) return 1_500
       return pollInterval
     },
@@ -129,11 +124,11 @@ const StepPanelButton = ({
   step: TWorkflowStep
   planOnly?: boolean
 }) => {
-  const { addPanel, removePanel, panels } = useSurfaces()
+  const { addPanel, addPanelIfEmpty, removePanel } = useSurfaces()
   const { workflow } = useWorkflow()
   const [searchParams] = useSearchParams()
   const autoOpened = useRef(false)
-  const panelIdRef = useRef<string | null>(null)
+  const autoOpenedPanelIdRef = useRef<string | null>(null)
 
   const panel = (
     <StepDetailPanelContainer
@@ -148,7 +143,7 @@ const StepPanelButton = ({
   )
 
   const handleAddPanel = () => {
-    panelIdRef.current = addPanel(panel, step.id)
+    addPanel(panel, step.id)
   }
 
   const isPendingApproval =
@@ -187,11 +182,10 @@ const StepPanelButton = ({
     if (
       !workflowBlocked &&
       !suppressAutoOpen &&
-      (isPendingApproval || isPendingAwaitStack) &&
-      panels.length === 0
+      (isPendingApproval || isPendingAwaitStack)
     ) {
       autoOpened.current = true
-      handleAddPanel()
+      autoOpenedPanelIdRef.current = addPanelIfEmpty(panel, step.id) ?? null
     }
   }, [
     workflow?.id,
@@ -202,9 +196,9 @@ const StepPanelButton = ({
   ])
 
   useEffect(() => {
-    if (autoOpened.current && panelIdRef.current && step.finished) {
-      removePanel(panelIdRef.current, step.id)
-      panelIdRef.current = null
+    if (autoOpenedPanelIdRef.current && step.finished) {
+      removePanel(autoOpenedPanelIdRef.current, step.id)
+      autoOpenedPanelIdRef.current = null
     }
   }, [step.finished])
 

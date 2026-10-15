@@ -263,6 +263,33 @@ func (s *AppConfigDiffSuite) TestComponentChanges() {
 	s.Require().NotNil(envVars)
 }
 
+func (s *AppConfigDiffSuite) TestTerraformTeardownDiff() {
+	component := func(retain ...string) ComponentList {
+		cfg := &TerraformModuleComponentConfig{TerraformVersion: "1.11.3"}
+		if len(retain) > 0 {
+			cfg.Teardown = &ComponentTeardownConfig{Retain: retain}
+		}
+		return ComponentList{{Name: "storage", Type: TerraformModuleComponentType, TerraformModule: cfg}}
+	}
+
+	old := baseConfig()
+	old.Components = component("aws_rds_cluster.main")
+	new := baseConfig()
+	new.Components = component("aws_rds_cluster.main", "module.buckets")
+
+	storage := findChild(findChild(new.Diff(old), "components"), "component.storage")
+	s.Require().NotNil(storage)
+	teardown := findChild(storage, "teardown")
+	s.Require().NotNil(teardown)
+	retain := findChild(teardown, "retain")
+	s.Require().NotNil(retain)
+	s.Equal(diff.OpChange, retain.Diff.Op)
+
+	unchanged := baseConfig()
+	unchanged.Components = component("aws_rds_cluster.main")
+	s.False(unchanged.Diff(old).Summary().HasChanged)
+}
+
 // --- Test: Helm chart diff ---
 
 func (s *AppConfigDiffSuite) TestHelmChartDiff() {
@@ -989,6 +1016,33 @@ func (s *AppConfigDiffSuite) TestPolicyChanges() {
 
 	contents := findChild(bt, "contents")
 	s.Equal(diff.OpChange, contents.Diff.Op)
+}
+
+func (s *AppConfigDiffSuite) TestPolicyApplyOnTeardownChange() {
+	no := false
+	old := baseConfig()
+	old.Policies = &PoliciesConfig{
+		Policies: []AppPolicy{
+			{Name: "protect-rds", Type: AppPolicyTypeTerraformModule, Engine: AppPolicyEngineOPA, Contents: "c", Components: []string{"rds"}},
+		},
+	}
+	new := baseConfig()
+	new.Policies = &PoliciesConfig{
+		Policies: []AppPolicy{
+			{Name: "protect-rds", Type: AppPolicyTypeTerraformModule, Engine: AppPolicyEngineOPA, Contents: "c", Components: []string{"rds"}, ApplyOnTeardown: &no},
+		},
+	}
+
+	d := new.Diff(old)
+	policies := findChild(d, "policies")
+	s.Require().NotNil(policies)
+
+	pr := findChild(policies, "policy.protect-rds")
+	s.Require().NotNil(pr)
+
+	teardown := findChild(pr, "apply_on_teardown")
+	s.Require().NotNil(teardown)
+	s.NotEqual(diff.OpNoop, teardown.Diff.Op)
 }
 
 // --- Test: Action changes ---

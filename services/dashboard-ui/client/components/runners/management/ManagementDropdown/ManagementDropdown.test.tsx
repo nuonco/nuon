@@ -40,7 +40,9 @@ test('install runner updates open outside the runner provider', () => {
           <OrgContext.Provider
             value={{ org: { id: 'org-1' } as never, refresh: () => {} }}
           >
-            <ToastContext.Provider value={{ addToast: () => {}, removeToast: () => {} }}>
+            <ToastContext.Provider
+              value={{ addToast: () => {}, removeToast: () => {} }}
+            >
               <SurfacesProvider>
                 <ManagementDropdown
                   runner={runner}
@@ -56,7 +58,7 @@ test('install runner updates open outside the runner provider', () => {
   )
 
   for (const [label, placeholder] of [
-    ['Update manager version', 'manager version'],
+    ['Update management version', 'management version'],
     ['Update instance version', 'instance version'],
   ] as const) {
     fireEvent.click(screen.getByRole('button', { name: 'Manage runner' }))

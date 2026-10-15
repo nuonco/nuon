@@ -43,7 +43,7 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestConfigSuccess() {
 func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestConfigNotFound() {
 	s.Run("no configs for fresh component", func() {
 		// Create a fresh component with no config connections
-		freshComp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeDockerBuild)
+		freshComp := s.createComponent(s.testApp.ID, app.ComponentTypeDockerBuild)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/latest", s.testApp.ID, freshComp.ID)
 		rr := s.makeRequest(http.MethodGet, path, nil)

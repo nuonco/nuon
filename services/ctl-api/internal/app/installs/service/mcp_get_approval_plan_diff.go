@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type mcpGetApprovalPlanDiffInput struct {
@@ -58,8 +57,7 @@ func (s *service) mcpGetApprovalPlanDiff(ctx context.Context, _ *mcp.CallToolReq
 		return nil, nil, fmt.Errorf("unable to find approval %q: %w", in.ApprovalID, err)
 	}
 
-	blobCtx := blobstore.WithBlobService(ctx, s.blobSvc)
-	contents, _ := approval.GetContents(blobCtx, s.cfg.BlobReadEnabled)
+	contents, _ := approval.GetContents(ctx, s.cfg.BlobReadEnabled)
 	built, err := buildApprovalPlanDiff(approval.Type, contents, in.Action, in.Search)
 	if err != nil {
 		return nil, nil, err

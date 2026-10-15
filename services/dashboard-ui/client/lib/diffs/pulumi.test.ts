@@ -115,6 +115,7 @@ describe('pulumiPlanDiff', () => {
       replace: 0,
       delete: 0,
       read: 0,
+      forget: 0,
       'no-op': 0,
     })
   })

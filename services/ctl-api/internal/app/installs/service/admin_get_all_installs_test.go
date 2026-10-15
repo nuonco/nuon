@@ -21,7 +21,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -61,9 +60,6 @@ func (s *GetAllInstallsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// flowclient is intentionally not in tests.CtlApiFXOptions (see the note
-		// in tests/testfx.go); the installs service constructor needs it.
-		fx.Provide(flowclient.New),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -73,14 +69,19 @@ func (s *GetAllInstallsTestSuite) SetupSuite() {
 	s.SetDB(s.service.DB)
 }
 
+func (s *GetAllInstallsTestSuite) SetupSubTest() {
+	tests.ClearQueueSignals(s.T(), s.service.DB)
+}
+
 func (s *GetAllInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.InstallsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -95,9 +96,11 @@ func (s *GetAllInstallsTestSuite) setupTestData() {
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	seedOrgQueues(s.T(), s.service.DB, s.testOrg)
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.service.DB, s.testInstall)
 }
 
 func (s *GetAllInstallsTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -155,6 +158,7 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 				// Create 3 more installs
 				for i := 0; i < 3; i++ {
 					install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+					seedInstallQueues(s.T(), s.service.DB, install)
 					s.T().Cleanup(func() {
 						s.service.DB.Unscoped().Delete(install)
 					})
@@ -282,6 +286,7 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstallsResolvesCloudPlatform() {
 				awsRunner := s.createAppRunnerConfig(ctx, staleCfg.ID, app.AppRunnerTypeAWS)
 
 				install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+				seedInstallQueues(s.T(), s.service.DB, install)
 				s.pinInstallConfig(ctx, install.ID, azureCfg.ID, awsRunner.ID)
 				return install
 			},
@@ -297,6 +302,7 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstallsResolvesCloudPlatform() {
 				azureRunner := s.createAppRunnerConfig(ctx, throwawayCfg.ID, app.AppRunnerTypeAzure)
 
 				install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+				seedInstallQueues(s.T(), s.service.DB, install)
 				s.pinInstallConfig(ctx, install.ID, noRunnerCfg.ID, azureRunner.ID)
 				return install
 			},

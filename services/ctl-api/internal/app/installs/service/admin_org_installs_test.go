@@ -70,14 +70,19 @@ func (s *AdminOrgInstallsTestSuite) SetupSuite() {
 	s.SetDB(s.service.DB)
 }
 
+func (s *AdminOrgInstallsTestSuite) SetupSubTest() {
+	tests.ClearQueueSignals(s.T(), s.service.DB)
+}
+
 func (s *AdminOrgInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.InstallsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -92,9 +97,11 @@ func (s *AdminOrgInstallsTestSuite) setupTestData() {
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	seedOrgQueues(s.T(), s.service.DB, s.testOrg)
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.service.DB, s.testInstall)
 }
 
 func (s *AdminOrgInstallsTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -148,6 +155,7 @@ func (s *AdminOrgInstallsTestSuite) TestAdminGetOrgInstalls() {
 				// Create 2 more installs for the same org
 				for i := 0; i < 2; i++ {
 					install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+					seedInstallQueues(s.T(), s.service.DB, install)
 					s.T().Cleanup(func() {
 						s.service.DB.Unscoped().Delete(install)
 					})
@@ -196,9 +204,11 @@ func (s *AdminOrgInstallsTestSuite) TestAdminGetOrgInstalls() {
 
 				// Create another org with installs using seeder helpers
 				ctx, org2 := s.service.Seeder.EnsureOrg(ctx, s.T())
+				seedOrgQueues(s.T(), s.service.DB, org2)
 				app2 := s.service.Seeder.CreateApp(ctx, s.T())
 				s.service.Seeder.CreateAppConfig(ctx, s.T(), app2.ID)
 				install2 := s.service.Seeder.CreateInstall(ctx, s.T(), app2)
+				seedInstallQueues(s.T(), s.service.DB, install2)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(install2)

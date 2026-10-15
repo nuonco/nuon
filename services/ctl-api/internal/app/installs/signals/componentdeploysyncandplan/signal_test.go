@@ -3,6 +3,7 @@ package componentdeploysyncandplan
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -10,6 +11,7 @@ import (
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -33,6 +35,7 @@ func (s *SignalTestSuite) TestExecute() {
 
 func (s *SignalTestSuite) cloneBuildID(sig *Signal) (string, []string) {
 	env := s.NewTestWorkflowEnvironment()
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	env.OnActivity((*activities.Activities).GetDeploy, mock.Anything, mock.Anything, mock.Anything).
 		Return(&app.InstallDeploy{ID: "dpl-requested", ComponentBuildID: "bld-requested"}, nil)
 

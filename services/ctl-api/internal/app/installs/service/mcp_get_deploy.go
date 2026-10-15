@@ -16,16 +16,17 @@ type mcpGetDeployInput struct {
 }
 
 type mcpDeployDetail struct {
-	ID                string `json:"id"`
-	ComponentID       string `json:"component_id,omitempty"`
-	ComponentName     string `json:"component_name,omitempty"`
-	BuildID           string `json:"build_id"`
-	Status            string `json:"status"`
-	StatusDescription string `json:"status_description,omitempty"`
-	LogStreamID       string `json:"log_stream_id,omitempty"`
-	CreatedAt         string `json:"created_at"`
-	PlannedAt         string `json:"planned_at,omitempty"`
-	AppliedAt         string `json:"applied_at,omitempty"`
+	ComponentName     string              `json:"component_name,omitempty"`
+	ComponentType     string              `json:"component_type,omitempty"`
+	Status            string              `json:"status"`
+	StatusDescription string              `json:"status_description,omitempty"`
+	Commit            *mcpDeployCommit    `json:"commit,omitempty"`
+	AppBranchRun      *mcpDeployBranchRun `json:"app_branch_run,omitempty"`
+	CreatedAt         string              `json:"created_at"`
+	PlannedAt         string              `json:"planned_at,omitempty"`
+	AppliedAt         string              `json:"applied_at,omitempty"`
+	NextActions       []mcpNextAction     `json:"next_actions,omitempty"`
+	ID                string              `json:"id"`
 }
 
 func (s *service) mcpGetDeploy(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetDeployInput) (*mcp.CallToolResult, any, error) {
@@ -38,7 +39,10 @@ func (s *service) mcpGetDeploy(ctx context.Context, _ *mcp.CallToolRequest, in m
 	err = s.db.WithContext(ctx).
 		Preload("InstallComponent").
 		Preload("InstallComponent.Component").
-		Preload("LogStream").
+		Preload("ComponentBuild").
+		Preload("ComponentBuild.VCSConnectionCommit").
+		Preload("ComponentBuild.AppBranchRun").
+		Preload("ComponentBuild.AppBranchRun.AppBranch").
 		Where(app.InstallDeploy{OrgID: orgID}).
 		Where("id = ?", in.DeployID).
 		First(&deploy).Error
@@ -46,20 +50,17 @@ func (s *service) mcpGetDeploy(ctx context.Context, _ *mcp.CallToolRequest, in m
 		return nil, nil, fmt.Errorf("unable to find deploy %q: %w", in.DeployID, err)
 	}
 
+	summary := mcpDeploySummaryFrom(deploy.InstallID, deploy)
 	detail := mcpDeployDetail{
-		ID:                deploy.ID,
-		BuildID:           deploy.ComponentBuildID,
-		Status:            string(deploy.Status),
-		StatusDescription: deploy.StatusDescription,
-		CreatedAt:         apiPkg.MCPTime(deploy.CreatedAt),
-	}
-
-	if deploy.InstallComponent.Component.ID != "" {
-		detail.ComponentID = deploy.InstallComponent.Component.ID
-		detail.ComponentName = deploy.InstallComponent.Component.Name
-	}
-	if deploy.LogStream.ID != "" {
-		detail.LogStreamID = deploy.LogStream.ID
+		ComponentName:     summary.ComponentName,
+		ComponentType:     summary.ComponentType,
+		Status:            summary.Status,
+		StatusDescription: summary.StatusDescription,
+		Commit:            summary.Commit,
+		AppBranchRun:      summary.AppBranchRun,
+		CreatedAt:         summary.CreatedAt,
+		NextActions:       summary.NextActions,
+		ID:                summary.ID,
 	}
 	if deploy.PlannedAt != nil {
 		detail.PlannedAt = apiPkg.MCPTimePtr(deploy.PlannedAt)

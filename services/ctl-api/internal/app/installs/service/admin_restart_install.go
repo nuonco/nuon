@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type RestartInstallRequest struct{}
@@ -37,7 +38,7 @@ func (s *service) RestartInstall(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
-	install, err := s.getInstall(ctx, installID)
+	install, err := s.getInstallCrossOrg(ctx, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
@@ -58,8 +59,20 @@ func (s *service) RestartInstall(ctx *gin.Context) {
 }
 
 func (s *service) getInstall(ctx context.Context, installID string) (*app.Install, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+	return s.loadInstall(ctx, installID, &orgID)
+}
+
+func (s *service) getInstallCrossOrg(ctx context.Context, installID string) (*app.Install, error) {
+	return s.loadInstall(ctx, installID, nil)
+}
+
+func (s *service) loadInstall(ctx context.Context, installID string, orgID *string) (*app.Install, error) {
 	install := app.Install{}
-	res := s.db.WithContext(ctx).
+	q := s.db.WithContext(ctx).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
@@ -76,9 +89,12 @@ func (s *service) getInstall(ctx context.Context, installID string) (*app.Instal
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("App.Org").
-		Preload("AppSandboxConfig").
-		Where("name = ?", installID).
-		Or("id = ?", installID).
+		Preload("AppSandboxConfig")
+	if orgID != nil {
+		q = q.Where("org_id = ?", *orgID)
+	}
+	res := q.
+		Where(s.db.Where("name = ?", installID).Or("id = ?", installID)).
 		First(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)

@@ -30,6 +30,7 @@ const DOT_CLASSES: Record<TDiffOperation, string> = {
   replace: 'bg-primary-500',
   delete: 'bg-diff-remove',
   read: 'bg-diff-neutral',
+  forget: 'bg-blue-500',
   'no-op': 'bg-diff-neutral',
 }
 

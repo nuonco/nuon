@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -59,7 +60,16 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 
 	// Verify the app config exists
 	var appConfig app.AppConfig
-	if err := s.db.WithContext(ctx).First(&appConfig, "id = ?", req.AppConfigID).Error; err != nil {
+	if err := s.db.WithContext(ctx).
+		Where(&app.AppConfig{ID: req.AppConfigID, OrgID: install.OrgID, AppID: install.AppID}).
+		First(&appConfig).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.Error(stderr.ErrNotFound{
+				Err:         fmt.Errorf("app config %s not found", req.AppConfigID),
+				Description: "app config not found",
+			})
+			return
+		}
 		ctx.Error(fmt.Errorf("unable to find app config: %w", err))
 		return
 	}

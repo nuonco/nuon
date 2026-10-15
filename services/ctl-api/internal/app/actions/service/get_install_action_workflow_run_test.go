@@ -278,6 +278,10 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunIncludesLa
 	installAction := s.createInstallActionWorkflow(install.ID, action.ID)
 	run := s.createInstallActionWorkflowRun(install.ID, installAction.ID, app.InstallActionRunStatusError)
 	job := s.service.Seeder.CreateRunnerJob(s.ctx, s.T(), run.ID, "install_action_workflow_runs")
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
+		Model(&app.RunnerJob{ID: job.ID}).
+		Select("status").
+		Updates(app.RunnerJob{Status: app.RunnerJobStatusFailed}).Error)
 	execution := &app.RunnerJobExecution{
 		RunnerJobID: job.ID,
 		Status:      app.RunnerJobExecutionStatusFailed,
@@ -302,7 +306,7 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunIncludesLa
 
 	var response app.InstallActionWorkflowRun
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
-	assert.Equal(s.T(), expected, response.CompositeError)
+	assertCompositeError(s.T(), expected, response.CompositeError)
 }
 
 func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunIncludesPreparationCompositeErrorWithoutRunnerJob() {
@@ -327,7 +331,7 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunIncludesPr
 
 	var response app.InstallActionWorkflowRun
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
-	assert.Equal(s.T(), expected, response.CompositeError)
+	assertCompositeError(s.T(), expected, response.CompositeError)
 }
 
 func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunPrefersPreparationCompositeError() {
@@ -364,7 +368,7 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunPrefersPre
 
 	var response app.InstallActionWorkflowRun
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
-	assert.Equal(s.T(), expected, response.CompositeError)
+	assertCompositeError(s.T(), expected, response.CompositeError)
 }
 
 func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunSuppressesStalePreparationCompositeError() {
@@ -422,5 +426,5 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunPreservesC
 
 	var response app.InstallActionWorkflowRun
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
-	assert.Equal(s.T(), expected, response.CompositeError)
+	assertCompositeError(s.T(), expected, response.CompositeError)
 }

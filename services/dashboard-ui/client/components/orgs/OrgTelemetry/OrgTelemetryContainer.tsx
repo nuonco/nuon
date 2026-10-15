@@ -33,7 +33,7 @@ export const OrgTelemetryModalContainer = ({
       queryClient.invalidateQueries({ queryKey: ['runner', org.id] })
       addToast(
         <Toast heading="Telemetry settings updated" theme="success">
-          <Text>Changes apply on the next runner settings refresh.</Text>
+          <Text>Collectors apply changes on their next settings refresh.</Text>
         </Toast>
       )
       removeModal(props.modalId)

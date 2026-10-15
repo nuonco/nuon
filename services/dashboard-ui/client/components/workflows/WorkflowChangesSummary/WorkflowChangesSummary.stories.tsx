@@ -2,8 +2,14 @@ export default {
   title: 'Features / Workflows / Changes summary',
 }
 
-import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
+import type { ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
+import { TerraformDiff } from '@/components/diffs/plan-diff-switch'
+import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
+import {
+  DashboardPreferencesContext,
+  type TDiffViewer,
+} from '@/providers/dashboard-preferences-provider'
 import type { TStepChangeSummary } from '@/types'
 import { WorkflowChangesSummary } from './WorkflowChangesSummary'
 import { PLAN_TYPE_META } from './change-summary-utils'
@@ -28,7 +34,11 @@ const smallTerraformPlan = {
       address: 'aws_s3_bucket.assets',
       type: 'aws_s3_bucket',
       name: 'assets',
-      change: { actions: ['create'], before: null, after: { bucket: 'assets' } },
+      change: {
+        actions: ['create'],
+        before: null,
+        after: { bucket: 'assets' },
+      },
     },
     {
       address: 'aws_instance.web',
@@ -157,6 +167,57 @@ export const MostlyNoOp = () => (
       ),
     ]}
   />
+)
+
+const WithDiffViewer = ({
+  viewer,
+  children,
+}: {
+  viewer: TDiffViewer
+  children: ReactNode
+}) => {
+  const preferences = useDashboardPreferences()
+  return (
+    <DashboardPreferencesContext.Provider
+      value={{ ...preferences, diffViewer: viewer }}
+    >
+      {children}
+    </DashboardPreferencesContext.Provider>
+  )
+}
+
+const newViewerSummaries = [
+  mk({
+    stepId: 'v2-1',
+    stepName: 'Sync and plan api',
+    componentName: 'api',
+    status: 'pending-approval',
+    counts: { create: 1, update: 1, delete: 0, replace: 0, noop: 0 },
+  }),
+  mk({
+    stepId: 'v2-2',
+    stepName: 'Sync and plan monolith',
+    componentName: 'monolith',
+    status: 'pending-approval',
+    counts: { create: 40, update: 40, delete: 40, replace: 0, noop: 0 },
+  }),
+]
+
+export const NewDiffViewer = () => (
+  <WithDiffViewer viewer="v2">
+    <WorkflowChangesSummary
+      renderDetail={(summary) => (
+        <TerraformDiff
+          plan={
+            (summary.stepId === 'v2-2'
+              ? largeTerraformPlan
+              : smallTerraformPlan) as any
+          }
+        />
+      )}
+      summaries={newViewerSummaries}
+    />
+  </WithDiffViewer>
 )
 
 export const LargePlan = () => (
@@ -336,9 +397,21 @@ export const Loading = () => (
     summaries={[]}
     isLoading
     loadingSteps={[
-      { stepName: 'Sync and plan api', componentName: 'api', planType: 'terraform_plan' },
-      { stepName: 'Sync and plan worker', componentName: 'worker', planType: 'helm_approval' },
-      { stepName: 'Sync and plan db', componentName: 'db', planType: 'terraform_plan' },
+      {
+        stepName: 'Sync and plan api',
+        componentName: 'api',
+        planType: 'terraform_plan',
+      },
+      {
+        stepName: 'Sync and plan worker',
+        componentName: 'worker',
+        planType: 'helm_approval',
+      },
+      {
+        stepName: 'Sync and plan db',
+        componentName: 'db',
+        planType: 'terraform_plan',
+      },
     ]}
   />
 )

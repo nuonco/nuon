@@ -244,5 +244,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "142-merge-new-app-ia-features",
 			Fn:   m.Migration142MergeNewAppIAFeatures,
 		},
+		{
+			Name: "143-activity-feed-indexes",
+			Fn:   m.Migration143ActivityFeedIndexes,
+		},
 	}
 }

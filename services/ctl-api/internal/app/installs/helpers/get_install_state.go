@@ -50,10 +50,8 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 			}
 		}
 
-		// Labels are mutable and not persisted in the state snapshot,
-		// so always hydrate them fresh from the database.
-		if err := h.hydrateLabels(ctx, installID, es); err != nil {
-			return nil, errors.Wrap(err, "unable to hydrate labels")
+		if err := h.hydrateInstallMetadata(ctx, installID, es); err != nil {
+			return nil, errors.Wrap(err, "unable to hydrate install metadata")
 		}
 		return es, nil
 	}
@@ -190,7 +188,7 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	is.Actions = h.ToActions(actions)
 	is.InstallStack = h.ToInstallStackState(stack)
 	is.Secrets = secrets
-	is.Labels = map[string]string(install.Labels)
+	h.applyInstallMetadata(install, is)
 	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
 	// the flattened structure
 	is.Install = &state.InstallState{
@@ -221,6 +219,7 @@ func (h *Helpers) getStateInstall(ctx context.Context, installID string) (*app.I
 		Preload("AppRunnerConfig").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
+		Preload("RunnerGroup.Settings").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
 		Preload("AWSAccount").
@@ -298,16 +297,29 @@ func (h *Helpers) ToActionWorkflowState(act app.InstallActionWorkflow) *state.Ac
 	return ToActionWorkflowState(act)
 }
 
-// hydrateLabels fetches install labels and populates the Labels field on the
-// state. Called on both the cached and fresh paths so labels are always current.
-func (h *Helpers) hydrateLabels(ctx context.Context, installID string, is *state.State) error {
+func (h *Helpers) hydrateInstallMetadata(ctx context.Context, installID string, is *state.State) error {
 	var install app.Install
-	if err := h.db.WithContext(ctx).Select("id", "labels").First(&install, "id = ?", installID).Error; err != nil {
-		return errors.Wrap(err, "unable to get install labels")
+	if err := h.db.WithContext(ctx).
+		Select("id", "labels").
+		Preload("RunnerGroup.Settings").
+		Where(app.Install{ID: installID}).
+		First(&install).Error; err != nil {
+		return errors.Wrap(err, "unable to get install metadata")
 	}
 
-	is.Labels = map[string]string(install.Labels)
+	h.applyInstallMetadata(&install, is)
 	return nil
+}
+
+func (h *Helpers) applyInstallMetadata(install *app.Install, is *state.State) {
+	is.Labels = map[string]string(install.Labels)
+	if is.Runner == nil {
+		is.Runner = state.NewRunnerState()
+	}
+	is.Runner.APIURL = install.RunnerGroup.Settings.RunnerAPIURL
+	if is.Runner.APIURL == "" {
+		is.Runner.APIURL = h.cfg.RunnerAPIURL
+	}
 }
 
 func (h *Helpers) getLatestInstallStateRow(ctx context.Context, installID string) (*app.InstallState, error) {

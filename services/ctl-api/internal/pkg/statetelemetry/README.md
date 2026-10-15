@@ -1,211 +1,125 @@
 # State telemetry
 
-This package provides background collection and OTLP export for database-backed
-state metrics and collector diagnostics. Its inventory gauges describe recorded
-lifecycle state, not workload health or successful deployment.
+State telemetry provides periodic snapshots of your Nuon fleet: **inventory, recorded health, reporting coverage and
+current workflow activity**. Metrics are exported over OTLP, including when no operations are running.
 
-## Configuration
+| What you can see | Coverage |
+| --- | --- |
+| Fleet size and lifecycle | Organizations, apps, component definitions, installs, installed components and install-owned runners. |
+| Recorded workload health | Install health summaries and component verdicts, including unknown and unevaluated components. |
+| Health reporting | Recent, older and missing health-report arrivals. |
+| Sandbox state | Provisioning lifecycle and recorded runtime health, shown separately. |
+| Work in progress | Install workflows by operation, status and plan-only mode, including approval/retry waits and oldest creation time. |
+| Collection status | Collection freshness, leadership, refresh failures and series limits. |
 
-Configure [OTLP export](../telemetry/README.md#enable-export), then enable collection:
+State metrics complement [operational metrics and logs](../telemetry/README.md); they are not live probes or
+completed-operation counters.
+
+## Enable collection
+
+Configure [OTLP export](../telemetry/README.md#enable-export), then set:
 
 ```sh
 STATE_TELEMETRY_ENABLED=true
+STATE_TELEMETRY_LEVEL=summary
 ```
 
-The equivalent service configuration is `state_telemetry_enabled: true`.
-This global toggle controls all database-backed state collection and metric export
-in this package, not existing request/operation metrics, logs or traces. Collection
-is disabled by default and requires an OTLP endpoint. When disabled, it creates
-neither a metric callback nor a database connection.
+Collection is **off by default** and runs in internal or all-in-one API processes. It requires an OTLP endpoint and a
+stable `nuon.control_plane.id`. The switch controls state collection only, not operational metrics, logs or health checks.
 
-The collector runs in internal and all-in-one API processes, not in other API or
-worker-only processes. Set a stable `nuon.control_plane.id` resource attribute.
-The exporter generates `service.instance.id` per process; any override must remain
-unique per live process. Enabled fleet collection rejects a missing or empty
-control-plane or instance identity on the resolved telemetry resource.
+### Collection level
 
-## Collection behavior
+`STATE_TELEMETRY_LEVEL` selects the detail and series cost for the whole catalog. The default is `summary`.
 
-- One process per primary database holds a session advisory lock and reads
-  snapshots. Other processes remain on standby. The dedicated connection is
-  separate from request pools, checked every 30 seconds and renewed every ten
-  minutes. Leadership checks expire after 180 seconds without verification.
-- A **family** groups metrics that share a refresh schedule and validity period
-  (TTL). Each family refreshes independently in a bounded, read-only transaction.
-  Metric export reads cached values, never the database.
-- Successful refreshes replace the complete family together. Failed refreshes
-  retain the previous values only until their TTL expires, measured from read
-  start. Expiry or leadership loss stops value export; diagnostic timestamps remain.
-- Statement/lock timeouts and context deadlines retry after 30 seconds, doubling
-  the delay after each consecutive transient failure up to the family's normal
-  refresh interval. Retries run on the 30-second collector tick. Success or
-  leadership loss resets the backoff. Other errors, including cardinality and
-  permission failures, use the normal refresh interval.
-- A family refresh exceeding 4,095 distinct attribute sets in any metric stream
-  is rejected, rather than exporting partial totals. This leaves headroom below
-  the observable-gauge SDK limit of 4,096. Counter/histogram limits remain 2,000.
-  Fleet, app and org inventory refresh independently; scoped overflow does not
-  suppress the fleet snapshot. They are not one database transaction together.
-
-## Diagnostic metrics
-
-All metric names below have the `nuon.fleet.snapshot.` prefix. Family metrics use
-the `nuon.fleet.snapshot.family` dimension and appear only for registered families.
-Diagnostics have no entity-ID dimensions. Timestamp values are Unix seconds.
-
-| Suffix | Type | Meaning/dimensions |
+| Level | Detail | Series cost |
 | --- | --- | --- |
-| `leader` | Gauge | 1 for a recently verified leader session, 0 otherwise |
-| `leader.last_verified` | Gauge, Unix seconds | Last successful session check; absent before first leadership |
-| `leadership.attempts` | Counter | Acquisition attempts; `outcome=acquired\|standby\|error` |
-| `active` | Gauge | Per-family cache validity, including leadership and TTL; 0 before first success |
-| `started_at` | Gauge, Unix seconds | Read start of last successfully published snapshot; absent before first success |
-| `collected_at` | Gauge, Unix seconds | Publication of last successfully published snapshot; absent before first success |
-| `observed_at` | Gauge, Unix seconds | When this family was observed for export; not database freshness |
-| `refresh.attempts` | Counter | Completed attempts per family; `outcome=success\|error\|cancelled\|series_limit` |
-| `refresh.duration` | Histogram, seconds | Refresh time including transaction cleanup; same dimensions as attempts |
+| `fleet` | Fleet totals without entity IDs. | Bounded independently of fleet size. |
+| `summary` | Org counts by org; other counts by org/app. | Grows with orgs, apps and occupied categories. |
+| `detailed` | Adds install IDs to install-owned measurements, plus install information and report timestamps. | Grows with installs and occupied categories. |
 
-Cancellation includes context deadlines. Database statement and lock timeouts
-count as `error`. Session ping failures revoke leadership but are not acquisition
-attempts. Collector leadership does not indicate workload health.
+Metric names stay the same at every level; only their grouping changes. Org, app and component-definition counts keep
+their natural ownership at detailed level. Individual installed-component IDs are not exported.
 
-## Querying snapshot values
+Each metric stream is limited to **4,095 series**. Exceeding a limit does not produce partial totals or automatically
+reduce detail. Database query cost still grows with the retained population at every level.
 
-Snapshots describe database state, not independent contributions from replicas.
-For each control plane and family, select one reporter before aggregating values:
+## Metric reference
 
-1. Require recent samples, `leader=1`, leadership verification age at most 180
-   seconds, `active=1`, and read-start age within the family's TTL.
-2. Select the newest valid `collected_at`, breaking ties by instance ID. Use only
-   that reporter's values; do not sum replicas or deduplicate counts with `max`.
-3. Exclude value samples whose original timestamps precede that reporter's latest
-   `observed_at`. This prevents backend lookback from retaining deleted entities
-   or retired states.
+Names below are OpenTelemetry names, before backend-specific translation. All `.count` metrics are **gauges**:
+they describe the recorded population at a point in time, not cumulative events.
 
-Preserve original OTLP point timestamps and make control-plane and instance
-resource attributes available for joins. Use the provider's single periodic
-reader; do not merge multiple readers under one instance identity. Use
-`observed_at`, not publication time, for the lookback filter because the SDK
-timestamps gauge points after callbacks finish. Backend ingestion can temporarily
-omit values or mix export frames while an export arrives. Timestamp precision
-loss can also invalidate this filter. These steps alone do not establish atomic
-backend totals: validate your backend's timestamp preservation, frame completeness
-and alert hold/no-data behavior before using sums for alerts. Database query
-validation does not prove backend ingestion or alert correctness.
+### Inventory
 
-Missing values are not zero. A successful empty snapshot, an expired snapshot,
-and a family that has never collected data are different states.
+Each inventory count is broken down by `resource.state`.
 
-## Inventory
+| Metric | Counts |
+| --- | --- |
+| `nuon.org.count` | Organizations. |
+| `nuon.app.count` | Apps. |
+| `nuon.component.count` | App-defined components. |
+| `nuon.install.count` | Installs. |
+| `nuon.install.component.count` | Installed component targets. |
+| `nuon.runner.count` | Install-owned runner records, not live processes. |
 
-All inventory metrics are integer gauges with unit `{resource}`. Families refresh
-immediately after acquiring leadership, then every five minutes unless a transient
-failure triggers an earlier retry. Successful data expires fifteen minutes after
-read start. Export interval and ingestion delay add to the time before a change
-is visible.
+Counts include retained resources and exclude soft-deleted records and invalid ownership links. Retained deprovisioned
+resources still count; component definitions and installed targets are distinct populations.
 
-App/org grouping is enabled with the same global toggle as fleet collection:
+### Health, reporting and sandboxes
 
-| Metric | Family | Dimensions | Series per group |
-| --- | --- | --- | --- |
-| `nuon.inventory.current` | `inventory` | `resource.kind`, `resource.state`; runners add `nuon.runner.group.type` | 71 per control plane |
-| `nuon.inventory.install.current` | `inventory.apps` | `nuon.org.id`, `nuon.app.id`, `resource.state` | 7 per app |
-| `nuon.inventory.component.current` | `inventory.apps` | Same | 6 per app |
-| `nuon.inventory.install_component.current` | `inventory.apps` | Same | 15 per app |
-| `nuon.inventory.install_runner.current` | `inventory.apps` | Same, plus `nuon.runner.group.type=install` | 14 per app |
-| `nuon.inventory.org_runner.current` | `inventory.orgs` | `nuon.org.id`, `resource.state`, `nuon.runner.group.type=org` | 14 per org |
-
-Only retained apps/orgs with valid parents become groups. Apps with no installs,
-components or runners and orgs with no org runners still emit zero categories.
-Org/build runners have no unique owning app and are not duplicated across apps.
-Names, customer labels and install/component/runner IDs are not dimensions.
-
-Business-series cost is 71 + 42 per retained app + 14 per retained org, before
-diagnostics and historical instance identities. At 200 apps and 20 orgs this is
-8,751 series. Current bounds accept at most 273 apps and 292 orgs per snapshot;
-one additional group rejects its entire scoped family. Query results and cache
-allocation are bounded before publication. Backend aggregation does not remove
-producer-side limits. Disable the global toggle to stop all snapshot collection.
-
-| Kind | Counting unit | Recorded states (plus `unset` and `other`) |
+| Metric | Breakdown | Meaning |
 | --- | --- | --- |
-| `org` | Organization | `active`, `error`, `provisioning`, `deleting`, `deprovisioning`, `deprovisioned` |
-| `app` | Application definition | `active`, `error`, `provisioning`, `deprovisioning`, `delete_queued` |
-| `install` | Install | `provisioning`, `provisioned`, `deprovisioning`, `deprovisioned`, `reprovisioning` |
-| `component` | App-defined component | `active`, `error`, `deprovisioning`, `delete_queued` |
-| `install_component` | Component target within an install | `deleted`, `delete_failed`, `queued`, `active`, `inactive`, `error`, `noop`, `planning`, `syncing`, `executing`, `unknown`, `pending`, `disabled` |
-| `runner` | Runner record, not a runner process or group | `error`, `active`, `pending`, `provisioning`, `deprovisioning`, `deprovisioned`, `reprovisioning`, `offline`, `awaiting-install-stack-run`, `awaiting-heartbeat`, `disabled`, `unknown` |
+| `nuon.install.health.count` | `nuon.health.status` | Installs by recorded component-health summary. |
+| `nuon.install.component.health.count` | `nuon.health.status` | Installed components by recorded health verdict. |
+| `nuon.install.health.report_age.count` | `nuon.health.report_age` | Installs by age of their last health-report arrival. |
+| `nuon.install.sandbox.lifecycle.count` | `nuon.sandbox.status` | Installs by sandbox lifecycle, including missing sandboxes. |
+| `nuon.install.sandbox.health.count` | `nuon.health.status` | Installs by recorded sandbox runtime health. |
 
-Installs use `lifecycle_phase.phase`. Other kinds prefer nonempty
-`status_v2.status`, falling back to legacy `status`; this explicit precedence also
-applies when runner status columns disagree. Empty/null state becomes `unset`;
-unrecognized values become `other`. Every category emits zero after a successful
-empty read, including categories that became empty since the previous refresh.
+Health has eight values: `healthy`, `progressing`, `degraded`, `unhealthy`, `unknown`, `not-applicable`, `unset`, `other`.
+An install's summary can be healthy while some components remain unevaluated, so read it alongside component coverage.
+`unset` does not mean healthy, and an active sandbox does not establish runtime health.
 
-Membership excludes soft-deleted resources and parents. Apps must belong to a
-retained org; installs and components must belong to a retained app in the same
-org. Installed targets must link an install and component from the same app/org.
-Runners must link a retained group and its matching org/install owner, with
-consistent org IDs. All retained runners count, not only the newest runner in a
-group. Invalid links, unknown group types and mismatched owner types are excluded.
+| Report age | Meaning |
+| --- | --- |
+| `within_5m` | A valid report arrived within five minutes of collection. |
+| `over_5m` | The last valid arrival was older than five minutes. |
+| `never_reported` | No recorded report arrival. |
+| `invalid_time` | The recorded arrival is at/before Unix epoch or in the future. |
 
-Deprovisioned records and lifecycle-deleted component targets remain counted
-until soft deletion. Sandbox, integration/test and ordinary populations all count;
-inventory has no production-only or sandbox-mode dimension. It covers the entire
-configured control-plane database, not one request's org. Route these totals only
-to destinations authorized for that scope. Org/app dimensions support filtering;
-they are not tenant access controls or permission to export another org's data.
+Arrival age is not health-evaluation freshness. Five minutes is a reporting bucket, not a promised reporting cadence.
 
-After applying the reporter/freshness selection above:
+### Workflow activity and waits
 
-- **Fleet size:** filter `resource.kind=install`, then sum across states. For only
-  provisioned installs, also filter `resource.state=provisioned`.
-- **Component footprint:** compare totals for `component` (definitions) with
-  `install_component` (installed targets); they are not interchangeable.
-- **App overview:** filter scoped metrics by `nuon.org.id` and `nuon.app.id`,
-  then group by `resource.state`. Use `inventory.apps` freshness rather than
-  the independent fleet family's freshness. Do not sum scoped and fleet totals.
-- **Runner state:** filter `resource.kind=runner` and group by state and group
-  type. `offline`/`error` are recorded states, not live process checks; disabled,
-  startup and deprovisioned states must not automatically page as outages.
-- **Drill-down:** use the app/org IDs to navigate authenticated resource listings
-  and lifecycle logs. Inventory does not identify individual failed operations;
-  logs provide that context, while traces investigate active execution latency.
-- **Data quality:** chart `unset` and `other` separately rather than treating
-  them as active or healthy.
+| Metric | Meaning |
+| --- | --- |
+| `nuon.workflow.current.count` | Current install-owned workflows, including recorded approval and retry waits. |
+| `nuon.workflow.oldest_created_at` | Earliest creation time among those workflows, in Unix seconds. |
 
-These are snapshot totals: do not apply `rate` or sum across refreshes. For
-inventory alerts, require `inventory` freshness; a missing or expired fleet must
-produce a no-data condition, not a zero-fleet or recovered-health result.
+Both use `nuon.workflow.type`, `nuon.workflow.status` and `nuon.workflow.plan_only` as breakdowns. They cover install
+operations such as provisioning, deployment, configuration changes, actions and teardown; app/branch builds are excluded.
+Retries do not create additional workflow counts. Creation age includes retries and is **not time in the current wait**.
+Empty groups or groups with invalid creation times have no oldest timestamp.
 
-## Troubleshooting
+### Install details
 
-- **No leadership metrics:** check the enable flag, OTLP endpoint, process type
-  and Collector metrics pipeline.
-- **No recently verified leader:** check primary-database connectivity and
-  credentials. Standby processes reporting `leader=0` are normal.
-- **Refresh failures:** inspect process logs and snapshot age. A fresh cached
-  value can remain valid after a failed refresh; failure does not mean an empty fleet.
-- **RLS or permission failures:** inventory requires an authorized database-wide
-  read. Its transaction sets `row_security=off` so PostgreSQL errors if row-level
-  policies would filter the result, rather than publishing partial totals. This
-  does not bypass policies or grant privileges. Check the configured role and
-  deployment's access policy; do not disable tenant security to repair telemetry.
-- **`series_limit`:** reduce the reader's detail cardinality or use lower-cardinality
-  aggregates. Fleet totals remain independent of scoped limits. A rejected
-  refresh does not contain usable partial results, and old scoped data expires.
+The `detailed` level also provides:
 
-## Adding a snapshot reader
+| Metric | Meaning |
+| --- | --- |
+| `nuon.install.info` | One per install, with its resolved boolean `nuon.install.sandbox_mode`. |
+| `nuon.install.health.last_report_at` | Last valid health-report arrival, in Unix seconds; absent when unavailable or invalid. |
 
-Register `family` values with `newCollector` before startup. Create their
-instruments using the collector's `statetelemetry` meter. Readers return immutable
-cached observations and accurate distinct attribute-set counts per instrument.
-Keep aggregate and detail families independent, with no shared instruments.
+Collection diagnostics use the `nuon.fleet.snapshot.*` prefix and describe collection status, not workload health.
 
-Reads use a six-second context deadline, five-second statement timeout,
-100-millisecond lock timeout, 4 MB work memory and no parallel query workers.
-Transactions are read-only and repeatable-read; cleanup is bounded to one second.
-Bound result allocation as well as query time, exclude soft-deleted entities and
-parents, and respect tenant ownership. The connection uses configured database
-credentials without changing role privileges or setting tenant context. Inventory
-uses one projected aggregate query over base tables, not GORM models or views.
+## Reading the metrics
+
+- Sum count contributions at one instant; do not apply counter rates to state gauges. Use MIN for oldest workflow
+  timestamps, never SUM.
+- Collection intervals are five minutes for org/app/component definitions and one minute for install-level state and
+  workflows. Measurements refresh independently. Short workflows can finish between reads; use logs for their history.
+- Missing data is unknown, not zero or recovery. Sparse categories and old samples require care when writing custom
+  queries; successful export alone does not guarantee complete, coherent backend ingestion.
+- These snapshots describe recorded state, not workload availability, uptime or complete operation history.
+  They are intended for observational dashboards, not correctness-dependent aggregate health or recovery alerts.
+
+Collection covers the configured database. Send it only to destinations authorized for that scope; dashboard filters
+and entity labels are not tenant access controls.

@@ -185,6 +185,7 @@ export type TAppPolicyConfig = {
   name?: string
   contents?: string
   components?: string[]
+  apply_on_teardown?: boolean
 }
 
 export type TAppPoliciesConfig = {
@@ -607,6 +608,8 @@ export type TInstallComponentOutputs = Record<string, string>
 export type TInstallConfig = components['schemas']['app.InstallConfig']
 export type TInstallTelemetrySettings =
   components['schemas']['service.InstallTelemetrySettings']
+export type TManagedServiceAccount =
+  components['schemas']['app.ManagedServiceAccount']
 export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
 export type TDriftedObject = components['schemas']['app.DriftedObject']
 export type TInstallResource =
@@ -1374,6 +1377,8 @@ export type TInstallDeploymentRecordType =
   | 'image_update'
   | 'stack_update'
   | 'install_config_update'
+  | 'deprovision'
+  | 'sandbox_deprovision'
 
 export type TInstallDeploymentStatus =
   | 'active'
@@ -1511,6 +1516,7 @@ export type TInstallActivity = {
   created_at: string
   title: string
   summary: string
+  actor?: TAccount
   workflow?: {
     id: string
     type: string
@@ -1521,6 +1527,8 @@ export type TInstallActivity = {
     action_workflow_id?: string
     name?: string
     trigger_type?: string
+    trigger?: TInstallActionRun['trigger']
+    adhoc?: boolean
   }
   runbook?: {
     run_id: string

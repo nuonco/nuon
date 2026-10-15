@@ -13,6 +13,7 @@ const RAIL_CLASSES: Record<TDiffOperation, string> = {
   replace: '!border-l-primary-500',
   delete: '!border-l-diff-remove',
   read: '!border-l-diff-neutral',
+  forget: '!border-l-blue-500',
   'no-op': '!border-l-diff-neutral',
 }
 
@@ -22,6 +23,7 @@ const TINT_CLASSES: Record<TDiffOperation, string> = {
   replace: 'bg-primary-50 dark:bg-primary-950',
   delete: 'bg-diff-remove-section',
   read: 'bg-diff-neutral-section',
+  forget: 'bg-blue-50 dark:bg-blue-950',
   'no-op': 'bg-diff-neutral-section',
 }
 
@@ -31,6 +33,7 @@ const HOVER_CLASSES: Record<TDiffOperation, string> = {
   replace: '',
   delete: 'hover:bg-diff-remove-row!',
   read: 'hover:bg-diff-neutral-row!',
+  forget: '',
   'no-op': 'hover:bg-diff-neutral-row!',
 }
 

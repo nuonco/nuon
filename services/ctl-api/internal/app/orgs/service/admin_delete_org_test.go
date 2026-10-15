@@ -92,7 +92,7 @@ func (s *AdminDeleteOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -114,6 +114,7 @@ func (s *AdminDeleteOrgTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, s.testOrg.ID)
 }
 
 func (s *AdminDeleteOrgTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -165,6 +166,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -199,6 +201,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -233,6 +236,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				// No cleanup needed - hard delete removes it
 
 				return org
@@ -264,6 +268,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				// No cleanup needed - hard delete removes it
 
 				return org
@@ -295,6 +300,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -329,6 +335,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -352,7 +359,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 			// Setup test data
 			org := tc.setupFunc()
 
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", org.ID), tc.requestBody)
@@ -429,7 +436,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgNotFound() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", tc.orgID), tc.requestBody)
@@ -486,11 +493,12 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgRequestParsing() {
 			}
 			err := s.service.DB.WithContext(ctx).Create(org).Error
 			require.NoError(s.T(), err)
+			createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 			s.T().Cleanup(func() {
 				s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 			})
 
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request with raw body
 			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", org.ID), bytes.NewBufferString(tc.requestBody))
@@ -549,11 +557,12 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgByName() {
 			}
 			err := s.service.DB.WithContext(ctx).Create(org).Error
 			require.NoError(s.T(), err)
+			createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 			s.T().Cleanup(func() {
 				s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 			})
 
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request using name instead of ID
 			requestBody := AdminDeleteOrgRequest{Force: false}

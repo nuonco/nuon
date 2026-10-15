@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
+      sha: ${{steps.git_ref.outputs.sha}}
       semver: ${{ inputs.version || steps.semver.outputs.nextStrict }}
     steps:
       - name: Checkout repo
@@ -45,7 +46,10 @@ jobs:
 
       - name: Set git_ref output
         id: git_ref
-        run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          sha=$(git rev-parse HEAD)
+          echo "sha=$sha" >> $GITHUB_OUTPUT
+          echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Determine next version
         id: semver
@@ -54,6 +58,29 @@ jobs:
         with:
           sibling_repo: nuonco/mono
           token: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
+
+  # Prod promotion only ships commits that passed ctl-api integration; waits for the run if it is still going.
+  integration_gate:
+    name: ctl-api integration gate
+    needs:
+      - tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/actions/await-ctl-api-integration
+
+      - name: Await ctl-api integration
+        uses: ./.github/actions/await-ctl-api-integration
+        with:
+          sha: ${{ needs.tag.outputs.sha }}
+          ref: ${{ github.event.inputs.branch }}
+          token: ${{ github.token }}
 
   start_slack_notifications:
     name: Update promotions channel
@@ -81,6 +108,7 @@ jobs:
     name: 🚢 ${{ matrix.service }}
     needs:
       - tag
+      - integration_gate
     strategy:
       fail-fast: false
       matrix:
@@ -99,6 +127,7 @@ jobs:
     name: Bump tag
     needs:
       - tag
+      - integration_gate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

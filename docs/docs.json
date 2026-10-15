@@ -150,6 +150,7 @@
               "guides/managing-components",
               "guides/component-dependencies",
               "guides/toggleable-components",
+              "guides/retaining-resources-on-teardown",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
               "guides/cloud-connections",
@@ -341,6 +342,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/042-deprovisions-and-new-dashboard",
           "updates/041-agents-health-checks-and-triggers",
           "updates/040-app-branches",
           "updates/039-oidc-federation",

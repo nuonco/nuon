@@ -11,6 +11,7 @@ const LABELS: Record<TDiffOperation, string> = {
   replace: 'Replace',
   delete: 'Delete',
   read: 'Read',
+  forget: 'Retain',
   'no-op': 'Unchanged',
 }
 
@@ -20,6 +21,7 @@ const RAIL_CLASSES: Record<TDiffOperation, string> = {
   replace: 'bg-accent',
   delete: 'bg-diff-remove',
   read: 'bg-secondary',
+  forget: 'bg-secondary',
   'no-op': 'bg-tertiary',
 }
 

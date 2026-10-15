@@ -6,24 +6,28 @@ import (
 	"net/http"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (s *InstallsServiceTestSuite) TestGetInstallUpdatesPaginatesMergedFeed() {
 	install := s.createTestInstall()
+	var inputCfg app.AppInputConfig
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.AppInputConfig{AppConfigID: s.testAppConfig.ID}).First(&inputCfg).Error)
 	firstValue := "first"
 	secondValue := "second"
 	s.deps.Seeder.CreateInstallInputs(
 		s.ctx,
 		s.T(),
 		install.ID,
-		s.testAppConfig.InputConfig.ID,
+		inputCfg.ID,
 		map[string]*string{"license": &firstValue},
 	)
 	s.deps.Seeder.CreateInstallInputs(
 		s.ctx,
 		s.T(),
 		install.ID,
-		s.testAppConfig.InputConfig.ID,
+		inputCfg.ID,
 		map[string]*string{"license": &secondValue},
 	)
 

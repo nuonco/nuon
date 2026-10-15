@@ -11,6 +11,7 @@ import {
   deploymentStepContext,
   deploymentSteps,
   deploymentTabOrder,
+  deploymentTemplateScope,
   isAwaitingDeploymentApproval,
   recoveredDeploymentResources,
   stepAffectedResources,
@@ -463,6 +464,34 @@ test('branch config updates open on template updates and other runs open on work
   ])
   for (const type of ['reprovision_sandbox', 'component_deploy', undefined])
     expect(deploymentTabOrder(type)).toEqual(['workflow', 'changes'])
+})
+
+test('template scope covers the resources a deployment touched', () => {
+  expect(
+    deploymentTemplateScope({
+      type: 'app_branch_update',
+      affected_resources: { sandbox: true, components: ['api'] },
+    } as TInstallDeploymentRecord)
+  ).toEqual({
+    sections: ['Sandbox', 'Actions', 'Components'],
+    components: ['api'],
+  })
+  expect(
+    deploymentTemplateScope({
+      type: 'install_config_update',
+      affected_resources: { stack: true },
+    } as TInstallDeploymentRecord)
+  ).toEqual({
+    sections: [
+      'Stack',
+      'Permissions',
+      'Policies',
+      'Actions',
+      'Install inputs',
+      'Secrets',
+    ],
+    components: [],
+  })
 })
 
 test('failed deployment context selects the failed step and only later unstarted work', () => {

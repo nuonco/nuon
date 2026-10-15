@@ -39,6 +39,33 @@ export const deploymentTabOrder = (type?: string): TDeploymentTab[] =>
     ? ['template', 'workflow', 'changes']
     : ['workflow', 'changes']
 
+export const deploymentTemplateScope = (
+  deployment?: TInstallDeploymentRecord,
+  workflow?: TWorkflow
+) => {
+  const resources = deployment?.affected_resources
+  const components = [
+    ...new Set([
+      ...(resources?.components ?? []),
+      ...deploymentOutcomes(deployment, workflow)
+        .filter((outcome) => outcome.category === 'Components')
+        .map((outcome) => outcome.name),
+    ]),
+  ]
+  return {
+    sections: [
+      ...(resources?.stack ? ['Stack', 'Permissions', 'Policies'] : []),
+      ...(resources?.sandbox ? ['Sandbox'] : []),
+      'Actions',
+      ...(components.length ? ['Components'] : []),
+      ...(deployment?.type === 'install_config_update'
+        ? ['Install inputs', 'Secrets']
+        : []),
+    ],
+    components,
+  }
+}
+
 export const ACTIVE_DEPLOYMENT_STATUSES = new Set([
   '',
   'pending',

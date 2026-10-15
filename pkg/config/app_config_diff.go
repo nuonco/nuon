@@ -654,6 +654,7 @@ func diffPolicies(old, new *PoliciesConfig) *diff.Diff {
 				diff.NewDiff(diff.WithKey("engine"), diff.WithStringDiff(string(op.Engine), string(p.Engine))),
 				diff.NewDiff(diff.WithKey("contents"), diff.WithStringDiff(op.Contents, p.Contents)),
 				diff.NewDiff(diff.WithKey("components"), diff.WithStringSliceDiff(op.Components, p.Components)),
+				diff.NewDiff(diff.WithKey("apply_on_teardown"), diff.WithBoolDiff(AppliesOnTeardown(op.ApplyOnTeardown), AppliesOnTeardown(p.ApplyOnTeardown))),
 			),
 		)
 	}
@@ -1001,8 +1002,26 @@ func diffTerraformModule(old, new *TerraformModuleComponentConfig) []*diff.Diff 
 
 	diffs = append(diffs, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
 	diffs = append(diffs, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
+	diffs = append(diffs, diffComponentTeardown("teardown", old.Teardown, new.Teardown)...)
 
 	return diffs
+}
+
+func diffComponentTeardown(key string, old, new *ComponentTeardownConfig) []*diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &ComponentTeardownConfig{}
+	}
+	if new == nil {
+		new = &ComponentTeardownConfig{}
+	}
+	return []*diff.Diff{
+		diff.NewDiff(diff.WithKey(key), diff.WithChildren(
+			diff.NewDiff(diff.WithKey("retain"), diff.WithStringSliceDiff(old.Retain, new.Retain)),
+		)),
+	}
 }
 
 func diffTerraformVariablesFiles(old, new []TerraformVariablesFile) *diff.Diff {

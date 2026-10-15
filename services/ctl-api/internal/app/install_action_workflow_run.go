@@ -90,6 +90,29 @@ type InstallActionWorkflowRun struct {
 	Outputs       map[string]interface{} `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
 	WorkflowID    *string                `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_step_id,omitzero,omitempty"`
 	Workflow      *Workflow              `json:"workflow,omitzero" gorm:"-" temporaljson:"workflow_step,omitzero,omitempty"`
+
+	Trigger          *ActionRunTrigger `json:"trigger,omitempty" gorm:"-" temporaljson:"trigger,omitzero,omitempty"`
+	EffectiveTimeout time.Duration     `json:"effective_timeout,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"effective_timeout,omitzero,omitempty"`
+}
+
+type ActionRunTriggerType string
+
+const (
+	ActionRunTriggerTypeCron     ActionRunTriggerType = "cron"
+	ActionRunTriggerTypeManual   ActionRunTriggerType = "manual"
+	ActionRunTriggerTypeAdhoc    ActionRunTriggerType = "adhoc"
+	ActionRunTriggerTypeRunbook  ActionRunTriggerType = "runbook"
+	ActionRunTriggerTypeDeploy   ActionRunTriggerType = "deploy"
+	ActionRunTriggerTypeWorkflow ActionRunTriggerType = "workflow"
+	ActionRunTriggerTypeSystem   ActionRunTriggerType = "system"
+)
+
+type ActionRunTrigger struct {
+	Type       ActionRunTriggerType `json:"type,omitzero" swaggertype:"string" temporaljson:"type,omitzero,omitempty"`
+	Actor      *Account             `json:"actor,omitempty" temporaljson:"actor,omitzero,omitempty"`
+	ParentType string               `json:"parent_type,omitzero" temporaljson:"parent_type,omitzero,omitempty"`
+	ParentID   string               `json:"parent_id,omitzero" temporaljson:"parent_id,omitzero,omitempty"`
+	ParentName string               `json:"parent_name,omitzero" temporaljson:"parent_name,omitzero,omitempty"`
 }
 
 func (i *InstallActionWorkflowRun) Views(db *gorm.DB) []migrations.View {
