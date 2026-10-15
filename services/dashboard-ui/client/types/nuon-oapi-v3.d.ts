@@ -9630,7 +9630,7 @@ export interface components {
       type?: components["schemas"]["service.InstallDeploymentType"];
     };
     /** @enum {string} */
-    "service.InstallDeploymentType": "provision" | "reprovision" | "sandbox_reprovision" | "app_branch_update" | "component_deploy" | "image_update" | "stack_update" | "install_config_update";
+    "service.InstallDeploymentType": "provision" | "reprovision" | "sandbox_reprovision" | "app_branch_update" | "component_deploy" | "image_update" | "stack_update" | "install_config_update" | "deprovision" | "sandbox_deprovision";
     "service.InstallDeploymentWorkflowRef": {
       id?: string;
       name?: string;

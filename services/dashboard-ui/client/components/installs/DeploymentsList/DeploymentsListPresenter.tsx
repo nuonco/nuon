@@ -57,6 +57,8 @@ export const DEPLOYMENT_TYPE_LABELS: Record<
   image_update: 'Image update',
   stack_update: 'Stack update',
   install_config_update: 'Install config update',
+  deprovision: 'Deprovision',
+  sandbox_deprovision: 'Sandbox deprovision',
 }
 
 export const DEPLOYMENT_FILTER_TYPES = (
