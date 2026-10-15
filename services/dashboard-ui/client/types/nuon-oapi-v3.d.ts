@@ -4268,7 +4268,7 @@ export interface components {
       app_config_id?: string;
       app_id?: string;
       app_policies_config?: string;
-      apply_on_teardown?: boolean;
+      apply_on_teardown?: boolean | null;
       components?: string[];
       contents?: string;
       created_at?: string;
@@ -4712,6 +4712,7 @@ export interface components {
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
       skip_noops?: boolean;
+      teardown?: components["schemas"]["app.ComponentTeardown"];
       terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
       toggleable?: boolean;
       type?: components["schemas"]["app.ComponentType"];
@@ -4763,6 +4764,9 @@ export interface components {
       status?: string;
       status_description?: string;
       updated_at?: string;
+    };
+    "app.ComponentTeardown": {
+      retain?: string[];
     };
     /** @enum {string} */
     "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
@@ -7871,6 +7875,8 @@ export interface components {
       src_digest?: string;
       src_registry: components["schemas"]["configs.OCIRegistryRepository"];
       src_tag: string;
+      /** @description Teardown is only set on plans for teardown deploys. */
+      teardown?: components["schemas"]["plantypes.TeardownPlan"];
       terraform?: components["schemas"]["plantypes.TerraformDeployPlan"];
     };
     "plantypes.DockerBuildPlan": {
@@ -8138,6 +8144,13 @@ export interface components {
       kubernetes_secrets?: components["schemas"]["plantypes.KubernetesSecretSync"][];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
     };
+    "plantypes.TeardownPlan": {
+      /**
+       * @description Retain holds rendered resource addresses that are removed from state
+       * instead of destroyed.
+       */
+      retain?: string[];
+    };
     "plantypes.TerraformBackend": {
       workspaceID: string;
     };
@@ -8347,7 +8360,7 @@ export interface components {
       policy_name?: string;
     };
     "service.AppPolicyConfig": {
-      apply_on_teardown?: boolean;
+      apply_on_teardown?: boolean | null;
       components?: string[];
       contents: string;
       description?: string;
@@ -8483,6 +8496,10 @@ export interface components {
       resolved?: boolean;
       resources?: components["schemas"]["app.InstallComponentResourceState"][];
       transition?: components["schemas"]["service.HealthTransitionResponse"];
+    };
+    "service.ComponentTeardownRequest": {
+      /** @description Resource or module addresses removed from state instead of destroyed on teardown. */
+      retain?: string[];
     };
     "service.ConnectedGithubVCSActionWorkflowConfigRequest": {
       branch?: string;
@@ -9280,6 +9297,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
       skip_noops?: boolean;
+      teardown?: components["schemas"]["service.ComponentTeardownRequest"];
       toggleable?: boolean;
       variables: {
         [key: string]: string;

@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -8,12 +7,14 @@ import {
   isConfigValidationError,
 } from '@/components/branches/BranchRunChangesSummary/config-diagnostics'
 import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummary/ConfigParseFailure'
-import { TemplateChangesButton } from '@/components/branches/ConfigChanges'
+import {
+  TemplateChangesButton,
+  useConfigVersionLabel,
+} from '@/components/branches/ConfigChanges'
 import { InstallDeploymentPanel } from '@/components/installs/InstallDeploymentPanel'
 import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
-import { getAppConfig } from '@/lib'
 import { commitUrl } from './run-source'
 import type { TAPIError } from '@/types'
 import { BranchOverview, type TFailedBuildLink } from './BranchOverview'
@@ -85,29 +86,12 @@ export const BranchOverviewContainer = () => {
     appBranchRunId: branchRunId,
     builds: metaBuilds,
   })
-  const versionQuery = (configId?: string) => ({
-    queryKey: ['app-config-version', orgId, appId, configId],
-    queryFn: () =>
-      getAppConfig({
-        orgId: orgId!,
-        appId: appId!,
-        appConfigId: configId!,
-      }),
-    enabled: !!orgId && !!appId && !!configId,
-    select: (config: { version?: number }) => config.version,
+  const versionLabel = useConfigVersionLabel({
+    orgId,
+    appId,
+    headConfigId: configSections.headConfigId,
+    baseConfigId: configSections.baseConfigId,
   })
-  const { data: nextVersion } = useQuery(
-    versionQuery(configSections.headConfigId)
-  )
-  const { data: previousVersion } = useQuery(
-    versionQuery(configSections.baseConfigId)
-  )
-  const versionLabel =
-    nextVersion == null
-      ? undefined
-      : previousVersion == null || previousVersion === nextVersion
-        ? `v${nextVersion}`
-        : `v${previousVersion} → v${nextVersion}`
   const comparison = configSections.comparison
   const baseSha = configSections.previousSha
   const baseline = previewMode
@@ -141,7 +125,6 @@ export const BranchOverviewContainer = () => {
     branchRun?.composite_error
   )
   const configError = isConfigValidationError(failure) ? failure : undefined
-  const compositeError = configError ? undefined : failure
   const groupsWithErrors = groups.map((group) => {
     const error = groupCompositeError(
       workflowSteps,
@@ -211,7 +194,7 @@ export const BranchOverviewContainer = () => {
         }
         groups={groupsWithErrors}
         loadingStages={loadingStages}
-        compositeError={compositeError}
+        compositeError={failure}
         failedBuilds={failedBuilds}
         rolloutHref={rolloutHref}
         groupHref={groupHref}

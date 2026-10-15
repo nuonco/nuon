@@ -41,7 +41,17 @@ type collector struct {
 }
 
 func Register(lc fx.Lifecycle, cfg *internal.Config, tc *telemetry.Config, provider metric.MeterProvider, l *zap.Logger) error {
-	if !cfg.StateTelemetryEnabled || tc.Endpoint == "" {
+	if !cfg.StateTelemetryEnabled {
+		return nil
+	}
+	level := cfg.StateTelemetryLevel
+	if level == "" {
+		level = "summary"
+	}
+	if level != "fleet" && level != "summary" && level != "detailed" {
+		return fmt.Errorf("invalid STATE_TELEMETRY_LEVEL %q: expected fleet, summary, or detailed", level)
+	}
+	if tc.Endpoint == "" {
 		return nil
 	}
 	for _, key := range []attribute.Key{"nuon.control_plane.id", "service.instance.id"} {
@@ -54,19 +64,11 @@ func Register(lc fx.Lifecycle, cfg *internal.Config, tc *telemetry.Config, provi
 		}
 	}
 	meter := provider.Meter("github.com/nuonco/nuon/services/ctl-api/statetelemetry")
-	inventory, err := newInventoryFamily(meter)
+	families, err := newStateFamilies(meter, level)
 	if err != nil {
 		return err
 	}
-	apps, err := newScopedInventoryFamily(meter, "apps")
-	if err != nil {
-		return err
-	}
-	orgs, err := newScopedInventoryFamily(meter, "orgs")
-	if err != nil {
-		return err
-	}
-	c, err := newCollector(provider, l, inventory, apps, orgs)
+	c, err := newCollector(provider, l, families...)
 	if err != nil {
 		return err
 	}
@@ -100,6 +102,15 @@ func Register(lc fx.Lifecycle, cfg *internal.Config, tc *telemetry.Config, provi
 
 func newCollector(provider metric.MeterProvider, l *zap.Logger, families ...*family) (*collector, error) {
 	c := &collector{l: l, families: families}
+	owners := make(map[string]string)
+	for _, f := range families {
+		for _, name := range f.metrics {
+			if owner, exists := owners[name]; exists {
+				return nil, fmt.Errorf("state metric %s has multiple owners: %s and %s", name, owner, f.name)
+			}
+			owners[name] = f.name
+		}
+	}
 	meter := provider.Meter("github.com/nuonco/nuon/services/ctl-api/statetelemetry")
 	leader, err := meter.Int64ObservableGauge("nuon.fleet.snapshot.leader",
 		metric.WithDescription("1 while this process holds a recently verified snapshot leadership session, otherwise 0."))
@@ -131,6 +142,16 @@ func newCollector(provider metric.MeterProvider, l *zap.Logger, families ...*fam
 	if err != nil {
 		return nil, err
 	}
+	info, err := meter.Int64ObservableGauge("nuon.fleet.snapshot.info", metric.WithUnit("1"),
+		metric.WithDescription("1 per registered family with its collection level and metric contract version; not proof of collection."))
+	if err != nil {
+		return nil, err
+	}
+	series, err := meter.Int64ObservableGauge("nuon.fleet.snapshot.series", metric.WithUnit("{series}"),
+		metric.WithDescription("Expected business points per metric in a valid cached snapshot; not proof of coherent backend ingestion."))
+	if err != nil {
+		return nil, err
+	}
 	c.leadershipAttempts, err = meter.Int64Counter("nuon.fleet.snapshot.leadership.attempts", metric.WithUnit("{attempt}"),
 		metric.WithDescription("Leadership acquisition attempts by outcome: acquired, standby, or error."))
 	if err != nil {
@@ -147,7 +168,7 @@ func newCollector(provider metric.MeterProvider, l *zap.Logger, families ...*fam
 	if err != nil {
 		return nil, err
 	}
-	instruments := []metric.Observable{leader, verified, active, started, collected, observed}
+	instruments := []metric.Observable{leader, verified, active, started, collected, observed, info, series}
 	for _, f := range c.families {
 		instruments = append(instruments, f.instruments...)
 	}
@@ -166,6 +187,10 @@ func newCollector(provider metric.MeterProvider, l *zap.Logger, families ...*fam
 		}
 		for _, f := range c.families {
 			opts := metric.WithAttributes(attribute.String("nuon.fleet.snapshot.family", f.name))
+			o.ObserveInt64(info, 1, metric.WithAttributes(
+				attribute.String("nuon.fleet.snapshot.family", f.name),
+				attribute.String("nuon.state_telemetry.level", f.level),
+				attribute.Int("nuon.state_telemetry.contract.version", 1)))
 			o.ObserveFloat64(observed, float64(now.UnixNano())/1e9, opts)
 			var activeValue int64
 			if isLeader && f.active && now.Sub(f.startedAt) <= f.ttl {
@@ -178,6 +203,10 @@ func newCollector(provider metric.MeterProvider, l *zap.Logger, families ...*fam
 			}
 			if activeValue == 1 && f.values.observe != nil {
 				f.values.observe(o)
+				for _, name := range f.metrics {
+					o.ObserveInt64(series, int64(f.values.series[name]), metric.WithAttributes(
+						attribute.String("nuon.fleet.snapshot.family", f.name), attribute.String("nuon.metric.name", name)))
+				}
 			}
 		}
 		return nil

@@ -15,6 +15,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("http_address", "0.0.0.0")
+	config.RegisterDefault("state_telemetry_level", "summary")
 
 	// ports
 	config.RegisterDefault("http_port", "8081")
@@ -222,7 +223,8 @@ type Config struct {
 	OTELExporterOTLPEndpoint string   `config:"otel_exporter_otlp_endpoint"`
 	OTELExporterOTLPProtocol string   `config:"otel_exporter_otlp_protocol"`
 
-	StateTelemetryEnabled bool `config:"state_telemetry_enabled"`
+	StateTelemetryEnabled bool   `config:"state_telemetry_enabled"`
+	StateTelemetryLevel   string `config:"state_telemetry_level"`
 
 	ServiceName       string `config:"service_name" validate:"required"`
 	ServiceType       string `config:"service_type" validate:"required"`
