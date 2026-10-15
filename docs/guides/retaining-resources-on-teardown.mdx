@@ -1,0 +1,96 @@
+---
+title: 'Retaining Resources on Teardown'
+description: "Leave stateful Terraform resources such as databases and buckets in place when a component is torn down."
+icon: "box-archive"
+keywords: ["teardown", "retain", "terraform state rm", "keep data", "stateful resources", "rds", "s3", "deprovision"]
+---
+
+By default, tearing down a Terraform component destroys every resource it manages. For stateful resources, such as an
+RDS cluster or an S3 bucket, you often want to keep the resource and its data after the component is gone.
+
+The `[teardown]` block on a [Terraform component](/config-ref/terraform#teardown) lists resources to **retain**.
+Retained resources are removed from Terraform state instead of destroyed. They keep running in the customer's
+account, and Nuon no longer manages them.
+
+```toml components/storage.toml
+name              = "storage"
+type              = "terraform_module"
+terraform_version = "1.11.3"
+
+[connected_repo]
+directory = "components/storage"
+repo      = "<your-org>/<your-repo>"
+branch    = "main"
+
+[teardown]
+retain = [
+  "aws_rds_cluster.main",
+  "aws_rds_cluster_instance.main",
+  "module.buckets",
+]
+```
+
+## Addresses
+
+Each entry is a Terraform resource or module address, the same form `terraform state list` prints.
+
+| Entry | Selects |
+| --- | --- |
+| `aws_rds_cluster.main` | the resource, and every instance of it when it uses `count` or `for_each` |
+| `aws_s3_bucket.data["logs"]` | one instance of the resource |
+| `module.buckets` | every resource in the module, including nested modules |
+| `module.storage.aws_s3_bucket.data` | the resource inside the module, in every instance of the module |
+
+Data sources can't be retained. Entries that match nothing in state are logged as a warning and skipped, so a
+resource created with `count = 0` doesn't fail the teardown.
+
+## What happens during teardown
+
+1. **Plan.** Nuon reads the component's state and destroys only the resources that aren't retained. If every
+   resource is retained, the plan destroys nothing.
+2. **Review.** The plan lists retained resources with a **Retain** action, next to the resources that will be
+   deleted.
+3. **Apply.** After the destroy succeeds, the retained resources are removed from state. If the destroy fails,
+   the retained resources stay in state, so you can retry the teardown safely.
+
+You can also use `retain` to unblock a teardown that is failing because a resource can't be destroyed: retain it,
+and Nuon removes it from state instead.
+
+## Retaining dependencies
+
+Terraform destroys any resource that depends on a destroyed resource. If a retained RDS cluster depends on a DB
+subnet group or security group that is not retained, destroying that dependency would destroy the cluster too.
+
+Nuon checks for this and **fails the teardown plan** rather than destroying a retained resource. To fix it, either
+retain the dependencies as well, or put the stateful resources and everything they depend on in their own
+component.
+
+<Note>
+  The same applies across components. A retained resource in one component can block the teardown of another, for
+  example a sandbox VPC that still contains the retained database. Plan your component boundaries with teardown in
+  mind.
+</Note>
+
+## Retaining conditionally
+
+`retain` supports [templating](/guides/using-variables). Entries that render to an empty string are ignored, so you
+can let each install decide whether to keep its data:
+
+```toml
+[teardown]
+retain = [
+  "{{ if eq .nuon.inputs.inputs.retain_data \"true\" }}aws_rds_cluster.main{{ end }}",
+]
+```
+
+Retain settings come from the install's current app config, so you can change them and sync without redeploying the
+component. If the component has been removed from the app config, the settings from its last deploy are used.
+
+## Things to know
+
+- **Retained resources keep costing money.** Once retained, Nuon no longer tracks the resources, so make sure your
+  customers know they need to clean them up.
+- **Addresses depend on how the module is written.** Renaming a resource, or moving it into a module, changes its
+  address. Re-check `retain` when you refactor the module.
+- **Terraform's `removed` block** (Terraform 1.7+) with `lifecycle { destroy = false }` does something similar from
+  inside the module. `[teardown]` lets you choose per app, or per install, without changing module code.

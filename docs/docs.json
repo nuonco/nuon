@@ -150,6 +150,7 @@
               "guides/managing-components",
               "guides/component-dependencies",
               "guides/toggleable-components",
+              "guides/retaining-resources-on-teardown",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
               "guides/cloud-connections",
