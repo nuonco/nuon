@@ -29,7 +29,7 @@ Reference examples: `apps/service/mcp_list_apps.go`, `apps/service/mcp_register.
 - **Do not** skip `require.Write` on write tools — description prefix / annotations alone are not enough.
 - **Do not** skip `require.Read` on org-scoped read tools.
 - **Do not** register tools with bare `&mcp.Tool{Name, Description}` — always use `MCPReadTool` / `MCPWriteTool`.
-- **Do not** key request state on `Mcp-Session-Id` — the server is `Stateless: true`; use bearer token + `X-Nuon-Org-ID` / `select_org`.
+- **Do not** key request state on `Mcp-Session-Id` — the server is `Stateless: true`; use bearer token + per-request `X-Nuon-Org-ID`. Do not store an org on the token.
 - **Do not** print to stdout from tool handlers — MCP protocol owns the stream.
 - **Do not** serialize `time.Time`, add `*_relative` age fields, or render local timestamps — use `MCPTime`; agents convert UTC to local.
 - **Do not** `Find` a collection without `api.MCPListPage` / `Limit(limit+1)` / `MCPClipList`. Return `has_more` and `next_offset`; do not loop until the full set is loaded.

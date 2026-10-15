@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -89,74 +88,27 @@ func TestAccountAllowed(t *testing.T) {
 	assert.False(t, (&Server{requireEmployee: true}).accountAllowed(external))
 }
 
-func newTestServer() *Server {
-	return &Server{orgSelections: make(map[string]*orgSelection)}
-}
-
 func TestResolveOrg(t *testing.T) {
 	multi := &app.Account{ID: "acc1", OrgIDs: []string{"org_a", "org_b"}}
 	single := &app.Account{ID: "acc2", OrgIDs: []string{"org_only"}}
+	s := &Server{}
 
-	t.Run("sole org auto-selected", func(t *testing.T) {
-		s := newTestServer()
-		assert.Equal(t, "org_only", s.resolveOrg(single, "tok1", ""))
-		assert.Equal(t, "org_only", s.orgSelections["tok1"].orgID)
+	t.Run("header org used for this call", func(t *testing.T) {
+		assert.Equal(t, "org_b", s.resolveOrg(multi, "org_b"))
 	})
 
-	t.Run("multi org, none selected -> empty", func(t *testing.T) {
-		s := newTestServer()
-		assert.Equal(t, "", s.resolveOrg(multi, "tok1", ""))
+	t.Run("a later header is independent", func(t *testing.T) {
+		assert.Equal(t, "org_a", s.resolveOrg(multi, "org_a"))
+		assert.Equal(t, "org_b", s.resolveOrg(multi, "org_b"))
 	})
 
-	t.Run("valid header org used and remembered", func(t *testing.T) {
-		s := newTestServer()
-		assert.Equal(t, "org_b", s.resolveOrg(multi, "tok1", "org_b"))
-		assert.Equal(t, "org_b", s.orgSelections["tok1"].orgID)
+	t.Run("empty header stays empty", func(t *testing.T) {
+		assert.Equal(t, "", s.resolveOrg(multi, ""))
+		assert.Equal(t, "", s.resolveOrg(single, ""))
 	})
 
-	t.Run("inaccessible header org ignored", func(t *testing.T) {
-		s := newTestServer()
-		assert.Equal(t, "", s.resolveOrg(multi, "tok1", "org_x"))
+	t.Run("inaccessible header stays empty", func(t *testing.T) {
+		assert.Equal(t, "", s.resolveOrg(multi, "org_x"))
+		assert.Equal(t, "", s.resolveOrg(single, "org_x"))
 	})
-
-	t.Run("prior selection wins over header", func(t *testing.T) {
-		s := newTestServer()
-		s.setOrgSelection("tok1", "org_a")
-		assert.Equal(t, "org_a", s.resolveOrg(multi, "tok1", "org_b"))
-	})
-
-	t.Run("stale selection no longer accessible falls back", func(t *testing.T) {
-		s := newTestServer()
-		s.setOrgSelection("tok1", "org_gone")
-		assert.Equal(t, "org_b", s.resolveOrg(multi, "tok1", "org_b"))
-	})
-
-	t.Run("selections are per token", func(t *testing.T) {
-		s := newTestServer()
-		s.setOrgSelection("tok1", "org_a")
-		assert.Equal(t, "org_a", s.resolveOrg(multi, "tok1", ""))
-		assert.Equal(t, "", s.resolveOrg(multi, "tok2", ""))
-	})
-}
-
-func TestEvictStaleOrgSelections(t *testing.T) {
-	s := newTestServer()
-	s.orgSelections["fresh"] = &orgSelection{orgID: "org_a", lastSeen: time.Now()}
-	s.orgSelections["stale"] = &orgSelection{orgID: "org_b", lastSeen: time.Now().Add(-2 * orgSelectionTTL)}
-
-	s.evictStaleOrgSelections()
-
-	_, freshOK := s.orgSelections["fresh"]
-	_, staleOK := s.orgSelections["stale"]
-	assert.True(t, freshOK, "fresh selection should survive")
-	assert.False(t, staleOK, "stale selection should be evicted")
-}
-
-func TestTouchOrgSelectionKeepsAlive(t *testing.T) {
-	s := newTestServer()
-	s.orgSelections["tok1"] = &orgSelection{orgID: "org_a", lastSeen: time.Now().Add(-2 * orgSelectionTTL)}
-	s.touchOrgSelection("tok1")
-	s.evictStaleOrgSelections()
-	_, ok := s.orgSelections["tok1"]
-	assert.True(t, ok, "touched selection should not be evicted")
 }
