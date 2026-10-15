@@ -28,9 +28,9 @@ For prompts to paste into a client, see [Sample queries](/guides/agents/sample-q
 
 ## Organization
 
-Org-scoped tools read `X-Nuon-Org-ID` on that request. The server does not remember an org. `whoami` and `list_orgs` work without the header. `whoami` returns the account, the org on that request, and an org count. `list_orgs` is paged and accepts `query` to match a name or id.
+Org-scoped tools read `X-Nuon-Org-ID` on that request. `whoami` and `list_orgs` work without the header. `whoami` returns the account, the org on that request, and an org count. `list_orgs` returns only orgs the account belongs to. It is paged and accepts `query` to match a name or id.
 
-The stdio proxy sends the CLI config org as `X-Nuon-Org-ID`. Pass `x_nuon_org_id` on a tool call to use a different org for that request. The proxy removes `x_nuon_org_id` before forwarding and does not store it. Before the first org-scoped call, tell the user the CLI-selected org and ask whether this session should use it or another org, then wait. When none is selected, ask which org to use. Do not print the full org list. Resolve a name with `list_orgs`, or show one page when the user wants to browse. After they answer, pass that `x_nuon_org_id` on every later org-scoped call in the conversation. Do not write the choice back to the CLI config. Direct HTTP clients set `X-Nuon-Org-ID` themselves.
+The stdio proxy sends the CLI config org as `X-Nuon-Org-ID`. Pass `x_nuon_org_id` on a tool call to use a different org for that request. The proxy removes `x_nuon_org_id` before forwarding and does not store it. Direct HTTP clients set `X-Nuon-Org-ID` themselves.
 
 ## Install summary
 
