@@ -1,44 +1,10 @@
 ---
-title: 042 - BYOC Telemetry, Improved UI and Customer Env Deprovisioning
+title: 042 - BYOC Telemetry, Improved UI and Deprovisioning
 description: OTEL support for BYOC environments, and platform usability improvements
 boost: 0.3
 ---
 
 _October 15, 2026_
-
-## Customer env deprovisioning
-
-Choose what stays in the customer's account on teardown.
-
-- `[teardown] retain` removes listed resources from state and leaves them running
-- The teardown plan marks each retained resource with a **Retain** action
-- The plan fails if a retained resource depends on something being destroyed
-- `apply_on_teardown = false` skips a policy during teardowns and keeps it on for deploys
-- Failed plan steps can be skipped
-- Deprovisions show on the install's deployments page
-
-```toml components/database.toml
-[teardown]
-retain = [
-  "aws_rds_cluster.main",
-  "aws_rds_cluster_instance.main",
-]
-```
-
-```toml policies.toml
-[[policy]]
-type              = "terraform_module"
-engine            = "opa"
-contents          = "./protect-rds-cluster.rego"
-apply_on_teardown = false
-```
-
-<CardGroup cols={2}>
-  <Card title="Retaining resources on teardown" icon="box-archive" href="/guides/retaining-resources-on-teardown" horizontal />
-  <Card title="Skipping policies during teardown" icon="shield-check" href="/concepts/policies#skipping-policies-during-teardown" horizontal />
-</CardGroup>
-
----
 
 ## BYOC telemetry
 
@@ -127,6 +93,40 @@ See who changed what, in which install.
 </div>
 
 Rolling out now. Ask us in your shared Slack channel to turn it on.
+
+---
+
+## Deprovisioning
+
+Choose what stays in the customer's account on teardown.
+
+- `[teardown] retain` removes listed resources from state and leaves them running
+- The teardown plan marks each retained resource with a **Retain** action
+- The plan fails if a retained resource depends on something being destroyed
+- `apply_on_teardown = false` skips a policy during teardowns and keeps it on for deploys
+- Failed plan steps can be skipped
+- Deprovisions show on the install's deployments page
+
+```toml components/database.toml
+[teardown]
+retain = [
+  "aws_rds_cluster.main",
+  "aws_rds_cluster_instance.main",
+]
+```
+
+```toml policies.toml
+[[policy]]
+type              = "terraform_module"
+engine            = "opa"
+contents          = "./protect-rds-cluster.rego"
+apply_on_teardown = false
+```
+
+<CardGroup cols={2}>
+  <Card title="Retaining resources on teardown" icon="box-archive" href="/guides/retaining-resources-on-teardown" horizontal />
+  <Card title="Skipping policies during teardown" icon="shield-check" href="/concepts/policies#skipping-policies-during-teardown" horizontal />
+</CardGroup>
 
 ---
 
