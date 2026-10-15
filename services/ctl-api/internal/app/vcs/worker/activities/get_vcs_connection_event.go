@@ -26,8 +26,7 @@ func (a *Activities) GetVCSConnectionEvent(ctx context.Context, req GetVCSConnec
 		return nil, fmt.Errorf("unable to get vcs connection event: %w", err)
 	}
 
-	dbCtx := blobstore.WithBlobService(ctx, a.blobSvc)
-	dbCtx = blobstore.WithBlobAutoLoad(dbCtx, true)
+	dbCtx := blobstore.WithBlobAutoLoad(ctx, true)
 
 	var event app.GithubEvent
 	if err := a.db.WithContext(dbCtx).First(&event, "id = ?", connEvent.GithubEventID).Error; err != nil {

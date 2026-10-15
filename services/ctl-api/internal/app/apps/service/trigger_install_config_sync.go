@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigsync"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -82,8 +81,7 @@ func (s *service) TriggerInstallConfigSync(ctx *gin.Context) {
 		return
 	}
 
-	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
-	intermediateJSON, err := latestAppConfig.IntermediateConfig.Get(blobCtx)
+	intermediateJSON, err := latestAppConfig.IntermediateConfig.Get(ctx.Request.Context())
 	if err != nil || intermediateJSON == "" {
 		ctx.Error(fmt.Errorf("unable to read intermediate config: %w", err))
 		return

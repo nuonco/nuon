@@ -141,6 +141,14 @@ export const States = () => (
         disabled
         helperText="This field is currently disabled"
       />
+
+      <Select
+        options={sampleOptions}
+        defaultValue="option2"
+        labelProps={{ labelText: 'Disabled with value' }}
+        disabled
+        helperText="The selected value stays readable while disabled"
+      />
       
       <Select
         options={sampleOptions}

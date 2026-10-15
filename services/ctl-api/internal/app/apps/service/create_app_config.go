@@ -160,8 +160,7 @@ func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req 
 		inputs.IntermediateConfig.Set(req.IntermediateConfigJSON)
 	}
 
-	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)
-	res := s.db.WithContext(dbCtx).Create(&inputs)
+	res := s.db.WithContext(ctx).Create(&inputs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create app inputs: %w", res.Error)
 	}

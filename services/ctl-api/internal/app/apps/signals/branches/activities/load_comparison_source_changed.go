@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type LoadComparisonSourceChangedInput struct {
@@ -39,8 +38,7 @@ func (a *Activities) LoadComparisonSourceChanged(ctx context.Context, input *Loa
 		return out, nil
 	}
 
-	blobCtx := blobstore.WithBlobService(ctx, a.blobSvc)
-	raw, err := comparison.ConfigDiff.Get(blobCtx)
+	raw, err := comparison.ConfigDiff.Get(ctx)
 	if err != nil || raw == "" {
 		return out, nil
 	}

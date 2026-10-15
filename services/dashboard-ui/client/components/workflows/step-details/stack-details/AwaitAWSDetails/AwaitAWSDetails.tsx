@@ -490,7 +490,7 @@ const AWSTelemetryExportInstructions = ({
       id="telemetry-export"
       heading={
         <Text variant="base" weight="strong">
-          Configure telemetry export (optional)
+          Runner telemetry export (optional)
         </Text>
       }
     >
