@@ -229,7 +229,7 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 	if init := upstream.InitializeResult(); init != nil {
 		instructions = init.Instructions
 	}
-	instructions = appendCLIInstructions(instructions, CLIBinary(), CLIConfigFlag(s.cfg), s.cfg.OrgID)
+	instructions = appendCLIInstructions(instructions, CLIBinary(), CLIConfigFlag(s.cfg), s.cfg.OrgID, s.cfg.APIURL)
 
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    s.serverName(),
@@ -357,7 +357,8 @@ func CLIConfigFlag(cfg *config.Config) string {
 // CLICommandInstructions tells an agent which Nuon binary to use for local CLI
 // work this MCP server asks for, and how to reach the HTTP API when neither MCP
 // nor the CLI has a command. It includes -C only when that flag was passed.
-func CLICommandInstructions(binary, configFlag string) string {
+// apiURL is the configured API host; the OpenAPI schema is {apiURL}/oapi/v3.
+func CLICommandInstructions(binary, configFlag, apiURL string) string {
 	name := commandName(binary)
 	cmd := name
 	intro := fmt.Sprintf("When you run a local Nuon CLI command on behalf of this MCP server, use the %s binary that started it. Do not apply that binary to Nuon CLI commands for other work.", name)
@@ -367,9 +368,29 @@ func CLICommandInstructions(binary, configFlag string) string {
 		intro = fmt.Sprintf("When you run a local Nuon CLI command on behalf of this MCP server, use %s and pass -C %s, matching how this server was started. Do not apply that binary or -C to Nuon CLI commands for other work.", name, quoted)
 	}
 	return fmt.Sprintf(
-		"%s Validate an app config directory with `%s apps validate` from that directory, or pass the directory as the argument. Do not upload config files to validate them. When no MCP tool covers the operation, use that same CLI. When the CLI has no command for it, use `%s api --raw` if that command is already available. Do not install the api extension. Call the HTTP API with curl only as a last resort.",
-		intro, cmd, cmd,
+		"%s Validate an app config directory with `%s apps validate` from that directory, or pass the directory as the argument. Do not upload config files to validate them. When no MCP tool covers the operation, use that same CLI. When the CLI has no command for it, use `%s api --raw` if that command is already available. Do not install the api extension. Call the HTTP API with curl only as a last resort. %s",
+		intro, cmd, cmd, OpenAPISchemaInstructions(apiURL),
 	)
+}
+
+// OpenAPISchemaURL is the public HTTP API spec for apiURL.
+// Empty when apiURL is unset.
+func OpenAPISchemaURL(apiURL string) string {
+	base := strings.TrimRight(strings.TrimSpace(apiURL), "/")
+	if base == "" || base == "(unset)" {
+		return ""
+	}
+	return base + "/oapi/v3"
+}
+
+// OpenAPISchemaInstructions tells an agent to read the public HTTP API schema
+// at {api host}/oapi/v3 before guessing a docs path.
+func OpenAPISchemaInstructions(apiURL string) string {
+	loc := "{api host}/oapi/v3"
+	if url := OpenAPISchemaURL(apiURL); url != "" {
+		loc = url
+	}
+	return "When you need the HTTP API calls you can make, fetch the OpenAPI schema at " + loc + "."
 }
 
 func commandName(binary string) string {
@@ -382,12 +403,38 @@ func commandName(binary string) string {
 	return binary
 }
 
-func appendCLIInstructions(upstream, binary, configFlag, orgID string) string {
-	parts := []string{CLICommandInstructions(binary, configFlag), orgSessionInstructions(orgID)}
-	if strings.TrimSpace(upstream) != "" {
+func appendCLIInstructions(upstream, binary, configFlag, orgID, apiURL string) string {
+	parts := []string{CLICommandInstructions(binary, configFlag, apiURL), orgSessionInstructions(orgID)}
+	if upstream = withoutUpstreamOpenAPISchema(upstream); upstream != "" {
 		parts = append([]string{upstream}, parts...)
 	}
 	return strings.Join(parts, " ")
+}
+
+// withoutUpstreamOpenAPISchema drops a control-plane schema sentence. That
+// sentence is built from PublicAPIURL, which is the phone-home host and is not
+// the API this CLI is configured to call. The proxy states {APIURL}/oapi/v3.
+func withoutUpstreamOpenAPISchema(instructions string) string {
+	const prefix = "When you need the HTTP API calls you can make, fetch the OpenAPI schema at "
+	changed := false
+	for {
+		start := strings.Index(instructions, prefix)
+		if start < 0 {
+			break
+		}
+		changed = true
+		rest := instructions[start+len(prefix):]
+		end := strings.Index(rest, ".")
+		if end < 0 {
+			instructions = instructions[:start]
+			break
+		}
+		instructions = instructions[:start] + rest[end+1:]
+	}
+	if !changed {
+		return strings.TrimSpace(instructions)
+	}
+	return strings.Join(strings.Fields(instructions), " ")
 }
 
 func orgSessionInstructions(orgID string) string {

@@ -3,6 +3,7 @@ package mcpserver
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -247,12 +248,13 @@ func TestProxyInstructionsIncludeCLIConfigOnlyWhenFlagSet(t *testing.T) {
 	require.NotContains(t, instructions, "-C")
 
 	withFlag := connectProxy(t, upstream, false, func(s *Service) {
-		s.cfg = &config.Config{ConfigFlag: "/tmp/acme.nuon"}
+		s.cfg = &config.Config{ConfigFlag: "/tmp/acme.nuon", APIURL: "https://api.acme.example/"}
 	})
 	instructions = withFlag.InitializeResult().Instructions
 	require.Contains(t, instructions, "upstream-instructions")
 	require.Contains(t, instructions, `-C "/tmp/acme.nuon"`)
 	require.Contains(t, instructions, CLIBinary()+" -C \"/tmp/acme.nuon\" apps validate")
+	require.Contains(t, instructions, "fetch the OpenAPI schema at https://api.acme.example/oapi/v3")
 }
 
 func instructionsUpstream(t *testing.T) *mcp.ClientSession {
@@ -273,7 +275,7 @@ func instructionsUpstream(t *testing.T) *mcp.ClientSession {
 func TestCLIConfigFlagEmptyWithoutFlag(t *testing.T) {
 	require.Equal(t, "", CLIConfigFlag(nil))
 	require.Equal(t, "", CLIConfigFlag(&config.Config{}))
-	got := CLICommandInstructions("nuon-dev", "")
+	got := CLICommandInstructions("nuon-dev", "", "")
 	require.NotContains(t, got, "-C")
 	require.Contains(t, got, "on behalf of this MCP server")
 	require.Contains(t, got, "other work")
@@ -283,16 +285,32 @@ func TestCLIConfigFlagEmptyWithoutFlag(t *testing.T) {
 	require.Contains(t, got, "Do not install the api extension")
 	require.NotContains(t, got, "ext install")
 	require.Contains(t, got, "curl only as a last resort")
+	require.Contains(t, got, "fetch the OpenAPI schema at {api host}/oapi/v3")
 	require.NotContains(t, got, "do not call the HTTP API")
+
+	withAPI := CLICommandInstructions("nuon-dev", "", "https://api.acme.example/")
+	require.Contains(t, withAPI, "fetch the OpenAPI schema at https://api.acme.example/oapi/v3")
+	require.NotContains(t, withAPI, "{api host}")
+}
+
+func TestAppendCLIInstructionsDropsUpstreamOpenAPISchema(t *testing.T) {
+	upstream := "Keep this. When you need the HTTP API calls you can make, fetch the OpenAPI schema at https://rb.example.ts.net/api/oapi/v3. Keep that too."
+	got := appendCLIInstructions(upstream, "nuon-dev", "", "org_acme", "http://localhost:8081")
+	require.NotContains(t, got, "rb.example.ts.net")
+	require.Contains(t, got, "Keep this.")
+	require.Contains(t, got, "Keep that too.")
+	require.Contains(t, got, "fetch the OpenAPI schema at http://localhost:8081/oapi/v3")
+	require.Equal(t, 1, strings.Count(got, "fetch the OpenAPI schema at"))
 }
 
 func TestCLIBinaryUsesInvokedCommand(t *testing.T) {
 	require.Equal(t, "nuon-dev", cliBinary([]string{"/usr/local/bin/nuon-dev", "agents", "mcp"}))
 	require.Equal(t, "nuon", cliBinary(nil))
-	got := CLICommandInstructions("nuon-dev", "/tmp/acme.nuon")
+	got := CLICommandInstructions("nuon-dev", "/tmp/acme.nuon", "https://api.acme.example")
 	require.Contains(t, got, "on behalf of this MCP server")
 	require.Contains(t, got, "nuon-dev -C \"/tmp/acme.nuon\" apps validate")
 	require.Contains(t, got, "nuon-dev -C \"/tmp/acme.nuon\" api --raw")
+	require.Contains(t, got, "fetch the OpenAPI schema at https://api.acme.example/oapi/v3")
 	require.Contains(t, got, "Do not install the api extension")
 	require.NotContains(t, got, "ext install")
 }
