@@ -116,6 +116,11 @@ func TestProxyToolsAcceptSessionOrgID(t *testing.T) {
 	instructions := session.InitializeResult().Instructions
 	require.Contains(t, instructions, "The CLI config org is (none selected).")
 	require.Contains(t, instructions, "pass that org_id")
+
+	withOrg := connectProxy(t, upstream, false, func(s *Service) {
+		s.cfg = &config.Config{OrgID: "org_config"}
+	})
+	require.Contains(t, withOrg.InitializeResult().Instructions, "The CLI config org is org_config.")
 }
 
 func TestProxyToolForwarding(t *testing.T) {

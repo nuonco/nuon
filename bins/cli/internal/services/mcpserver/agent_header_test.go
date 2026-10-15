@@ -47,6 +47,33 @@ func TestAuthRoundTripperSetsAgentHeader(t *testing.T) {
 	require.Equal(t, "nuon-cli/1.2.3 (cursor)", gotUserAgent)
 }
 
+func TestAuthRoundTripperUsesStartupOrg(t *testing.T) {
+	var gotOrg, gotBody string
+	transport := &authRoundTripper{
+		orgID: "org_config",
+		base: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			gotOrg = req.Header.Get("X-Nuon-Org-ID")
+			body, err := io.ReadAll(req.Body)
+			if err != nil {
+				return nil, err
+			}
+			gotBody = string(body)
+			return &http.Response{
+				StatusCode: http.StatusNoContent,
+				Body:       io.NopCloser(strings.NewReader("")),
+				Header:     make(http.Header),
+			}, nil
+		}),
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "https://mcp.example.com/mcp", bytes.NewReader([]byte(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"whoami","arguments":{}}}`)))
+	require.NoError(t, err)
+	_, err = transport.RoundTrip(req)
+	require.NoError(t, err)
+	require.Equal(t, "org_config", gotOrg)
+	require.Contains(t, gotBody, "whoami")
+}
+
 func TestAuthRoundTripperOrgIDIsPerRequest(t *testing.T) {
 	var gotOrg, gotBody string
 	transport := &authRoundTripper{
