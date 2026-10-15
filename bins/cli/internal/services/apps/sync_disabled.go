@@ -15,6 +15,7 @@ import (
 	"github.com/pelletier/go-toml/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/bins/cli/internal/paginate"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
@@ -492,6 +493,14 @@ func gitCurrentBranch(ctx context.Context, dir string) string {
 }
 
 func (s *Service) migrateInstallsToBranch(ctx context.Context, appID string, branch *models.AppAppBranch) error {
+	ready, err := installcreate.AwaitBranchConfig(ctx, s.api, appID, branch, false, ui.PrintLn)
+	if err != nil {
+		return err
+	}
+	if ready != nil {
+		branch = ready
+	}
+
 	installs, err := paginate.All(func(offset, limit int) ([]*models.AppInstall, bool, error) {
 		return s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{Offset: offset, Limit: limit})
 	})
