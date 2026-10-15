@@ -5,13 +5,13 @@ export default {
 import { StackStepView, type IStackStepView } from './StackStep'
 import { StoryFrame } from './StoryFrame'
 
-const Harness = (overrides: Partial<IStackStepView>) => {
+const Harness = ({ path = 'own', ...overrides }: Partial<IStackStepView> & { path?: 'own' | 'example' }) => {
   const cloud = overrides.cloud ?? 'aws'
   return (
-    <StoryFrame step="stack" cloud={cloud}>
+    <StoryFrame step="stack" path={path} cloud={cloud}>
       <StackStepView
         cloud={cloud}
-        appName="acme-api"
+        appName={path === 'own' ? 'acme-api' : 'Kitchen Sink'}
         region={cloud === 'gcp' ? 'us-central1' : cloud === 'azure' ? 'eastus' : 'us-east-1'}
         phase="generating"
         quickLinkUrl="https://us-east-1.console.aws.amazon.com/cloudformation/home"
@@ -62,3 +62,36 @@ export const AwsProvisionFailed = () => (
   <Harness phase="error" errorDescription="error while generating steps" />
 )
 AwsProvisionFailed.meta = { fullBleed: true }
+
+export const KitchenSinkAwsGenerating = () => (
+  <Harness
+    path="example"
+    progressSince={since}
+    onGetHelp={() => {}}
+    progress={[
+      { label: 'Create the install', state: 'done' },
+      { label: 'Plan the install workflow', state: 'done' },
+      { label: 'Generate the install state', state: 'done' },
+      { label: "Create the runner's identity", state: 'active' },
+      { label: 'Render the CloudFormation template', state: 'pending' },
+      { label: 'Publish the CloudFormation stack link', state: 'pending' },
+    ]}
+  />
+)
+KitchenSinkAwsGenerating.meta = { fullBleed: true }
+
+export const KitchenSinkAwsReady = () => <Harness path="example" phase="ready" />
+KitchenSinkAwsReady.meta = { fullBleed: true }
+
+export const KitchenSinkAwsLaunched = () => <Harness path="example" phase="launched" />
+KitchenSinkAwsLaunched.meta = { fullBleed: true }
+
+export const KitchenSinkGcpReady = () => (
+  <Harness path="example" cloud="gcp" phase="ready" quickLinkUrl={undefined} />
+)
+KitchenSinkGcpReady.meta = { fullBleed: true }
+
+export const KitchenSinkAwsProvisionFailed = () => (
+  <Harness path="example" phase="error" errorDescription="error while generating steps" />
+)
+KitchenSinkAwsProvisionFailed.meta = { fullBleed: true }

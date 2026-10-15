@@ -97,3 +97,23 @@ SlowWait.meta = { fullBleed: true }
 
 export const MissingInputDefaults = () => <Harness cloud="azure" missingInputs={['db_password', 'api_domain']} />
 MissingInputDefaults.meta = { fullBleed: true }
+
+export const KitchenSinkAws = () => <Harness path="example" />
+KitchenSinkAws.meta = { fullBleed: true }
+
+export const KitchenSinkWaitingForConfig = () => (
+  <Harness
+    path="example"
+    phase="waiting-config"
+    onGetHelp={() => {}}
+    progressSince={Date.now() - 74_000}
+    progress={[
+      { label: 'Start a branch run on main', state: 'done' },
+      { label: 'Fetch the latest commit from nuonco/kitchen-sink', state: 'done' },
+      { label: 'Read and validate the app config', state: 'done' },
+      { label: 'Build the components and sandbox', state: 'active' },
+      { label: 'Create the install', state: 'pending' },
+    ]}
+  />
+)
+KitchenSinkWaitingForConfig.meta = { fullBleed: true }
