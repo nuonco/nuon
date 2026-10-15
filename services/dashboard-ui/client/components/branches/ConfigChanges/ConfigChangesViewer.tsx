@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
 import { changeCounts, type TDiffOperation } from '@/lib/diffs'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
@@ -131,7 +132,10 @@ export const ConfigChangesViewer = ({
 
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [activeId, setActiveId] = useState<string>()
+  const [outlineOpen, setOutlineOpen] = useState(false)
+  const outlineId = useId()
   const listRef = useRef<HTMLDivElement>(null)
+  const outlineLabel = outlineOpen ? 'Hide outline' : 'Show outline'
 
   const setSectionOpen = (id: string, next: boolean) =>
     setOpen((current) =>
@@ -184,48 +188,56 @@ export const ConfigChangesViewer = ({
         />
       </header>
 
-      <div className="grid gap-6 md:min-h-0 md:flex-1 md:grid-cols-[15rem_minmax(0,1fr)]">
-        <nav
-          aria-label="Changes"
-          className="flex flex-col gap-3 md:min-h-0 md:overflow-y-auto md:overscroll-y-contain"
-        >
-          {groups.map(({ group, icon, items }) => (
-            <Expand
-              key={group}
-              id={`changes-nav-${group.toLowerCase().replace(/\W+/g, '-')}`}
-              isOpen
-              isIconBeforeHeading
-              className="rounded-md"
-              headerClassName="rounded-md px-2 py-1.5 text-left"
-              heading={
-                <span className="flex min-w-0 flex-1 items-center gap-2">
-                  <Icon variant={icon} size={16} aria-hidden />
-                  <Text
-                    variant="subtext"
-                    weight="stronger"
-                    className="min-w-0 flex-1 truncate"
-                  >
-                    {group}
-                  </Text>
-                  <Text variant="label" theme="neutral">
-                    {items.length}
-                  </Text>
-                </span>
-              }
-            >
-              <div className="flex flex-col gap-0.5 pt-1 pl-6">
-                {items.map((section) => (
-                  <OutlineItem
-                    key={section.id}
-                    section={section}
-                    active={section.id === activeId}
-                    onSelect={select}
-                  />
-                ))}
-              </div>
-            </Expand>
-          ))}
-        </nav>
+      <div
+        className={cn(
+          'grid gap-6 md:min-h-0 md:flex-1',
+          outlineOpen && 'md:grid-cols-[15rem_minmax(0,1fr)]'
+        )}
+      >
+        {outlineOpen ? (
+          <nav
+            id={outlineId}
+            aria-label="Changes"
+            className="flex flex-col gap-3 md:min-h-0 md:overflow-y-auto md:overscroll-y-contain"
+          >
+            {groups.map(({ group, icon, items }) => (
+              <Expand
+                key={group}
+                id={`changes-nav-${group.toLowerCase().replace(/\W+/g, '-')}`}
+                isOpen
+                isIconBeforeHeading
+                className="rounded-md"
+                headerClassName="rounded-md px-2 py-1.5 text-left"
+                heading={
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    <Icon variant={icon} size={16} aria-hidden />
+                    <Text
+                      variant="subtext"
+                      weight="stronger"
+                      className="min-w-0 flex-1 truncate"
+                    >
+                      {group}
+                    </Text>
+                    <Text variant="label" theme="neutral">
+                      {items.length}
+                    </Text>
+                  </span>
+                }
+              >
+                <div className="flex flex-col gap-0.5 pt-1 pl-6">
+                  {items.map((section) => (
+                    <OutlineItem
+                      key={section.id}
+                      section={section}
+                      active={section.id === activeId}
+                      onSelect={select}
+                    />
+                  ))}
+                </div>
+              </Expand>
+            ))}
+          </nav>
+        ) : null}
 
         <div ref={listRef} className="flex min-w-0 flex-col md:min-h-0">
           <DiffSections
@@ -239,19 +251,32 @@ export const ConfigChangesViewer = ({
               </Card>
             )}
             toolbar={
-              <DiffFilter
-                title="changes"
-                operations={filter.operations}
-                selectedOperations={filter.selectedOperations}
-                selectedCount={filter.selectedCount}
-                totalCount={filter.totalCount}
-                searchValue={filter.searchQuery}
-                searchPlaceholder="Search changes"
-                onSearchChange={filter.setSearchQuery}
-                onOperationToggle={filter.toggleOperation}
-                onOperationOnly={filter.onlyOperation}
-                onReset={filter.reset}
-              />
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0"
+                  aria-expanded={outlineOpen}
+                  aria-controls={outlineId}
+                  onClick={() => setOutlineOpen((current) => !current)}
+                >
+                  <Icon variant="SidebarSimpleIcon" size={14} aria-hidden />
+                  {outlineLabel}
+                </Button>
+                <DiffFilter
+                  title="changes"
+                  operations={filter.operations}
+                  selectedOperations={filter.selectedOperations}
+                  selectedCount={filter.selectedCount}
+                  totalCount={filter.totalCount}
+                  searchValue={filter.searchQuery}
+                  searchPlaceholder="Search changes"
+                  onSearchChange={filter.setSearchQuery}
+                  onOperationToggle={filter.toggleOperation}
+                  onOperationOnly={filter.onlyOperation}
+                  onReset={filter.reset}
+                />
+              </>
             }
           >
             {groups.length ? (

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import type { TDeploymentTab } from '@/components/installs/DeploymentDetail/deployment-progress'
 import {
@@ -23,6 +24,23 @@ const unavailable = (
   <Text variant="subtext" theme="neutral">
     This deployment could not be loaded.
   </Text>
+)
+
+export const PendingInstallPanel = ({
+  title,
+  status,
+}: {
+  title: string
+  status?: string
+}) => (
+  <Panel heading={title} size="3/4" aria-label="Install details">
+    <div className="flex flex-col gap-3">
+      {status ? <Status status={status} /> : null}
+      <Text variant="subtext" theme="neutral">
+        This install has not started in this rollout.
+      </Text>
+    </div>
+  </Panel>
 )
 
 export const InstallDeploymentPanel = ({

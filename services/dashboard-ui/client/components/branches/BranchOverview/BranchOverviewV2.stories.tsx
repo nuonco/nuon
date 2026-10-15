@@ -15,6 +15,9 @@ import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/step
 import { AppContext } from '@/providers/app-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TInstallWorkflowStep } from '@/types'
+import { BuildPanel } from '@/components/builds/BuildPanel'
+import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
+import type { TWorkflow } from '@/types'
 import { InstallDeploymentPanel } from '@/components/installs/InstallDeploymentPanel'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { BranchOverviewV2 } from './BranchOverviewV2'
@@ -191,10 +194,56 @@ const storyDeploymentFetch = (fallback: typeof fetch): typeof fetch =>
       return storyJson({ labels: [], label_colors: {}, default_colors: [] })
     }
 
+    const componentBuild = url.match(
+      /\/v1\/components\/([^/]+)\/builds\/([^/?]+)$/
+    )
+    if (componentBuild) {
+      const componentId = componentBuild[1]
+      const name = componentId === 'cmp-cache' ? 'cache' : 'api'
+      return storyJson({
+        id: componentBuild[2],
+        org_id: 'org-mock-001',
+        component_id: componentId,
+        component_name: name,
+        created_at: '2026-10-15T14:00:00Z',
+        updated_at: '2026-10-15T14:05:00Z',
+        status_description: 'Building the component image.',
+        status_v2: {
+          status: componentId === 'cmp-cache' ? 'pending' : 'in-progress',
+          status_human_description:
+            componentId === 'cmp-cache' ? 'Waiting to start' : 'Building image',
+        },
+        created_by: { email: 'jane@example.com' },
+        vcs_connection_commit: {
+          sha: 'a1b2c3d4e5f67890',
+          message: 'Add cache component',
+          author_name: 'Jane Doe',
+          created_at: '2026-10-15T13:40:00Z',
+        },
+      })
+    }
+
+    const component = url.match(/\/v1\/components\/([^/?]+)$/)
+    if (component) {
+      const componentId = component[1]
+      return storyJson({
+        id: componentId,
+        name: componentId === 'cmp-cache' ? 'cache' : 'api',
+        type: componentId === 'cmp-cache' ? 'helm_chart' : 'docker_build',
+        app_id: 'app-acme',
+      })
+    }
+
     return fallback(input, init)
   }) as typeof fetch
 
-const Overview = (props: ComponentProps<typeof BranchOverviewV2>) => {
+const storyApp = {
+  app: { id: 'app-acme', name: 'acme-app', org_id: 'org-mock-001' } as never,
+  labelColors: {},
+  refresh: () => {},
+}
+
+const OverviewBody = (props: ComponentProps<typeof BranchOverviewV2>) => {
   const { addPanel } = useSurfaces()
   useEffect(() => {
     const original = window.fetch.bind(window)
@@ -219,9 +268,42 @@ const Overview = (props: ComponentProps<typeof BranchOverviewV2>) => {
           />
         )
       }}
+      cancelRollout={
+        <CancelWorkflowButton
+          size="sm"
+          workflow={
+            {
+              id: 'wf_184',
+              name: 'Add cache component',
+              type: 'app_branches_manual_update',
+              status: { status: 'in-progress' },
+            } as unknown as TWorkflow
+          }
+        >
+          Cancel rollout
+        </CancelWorkflowButton>
+      }
+      onSelectBuild={(build) => {
+        if (!build.componentId) return
+        addPanel(
+          <BuildPanel
+            componentId={build.componentId}
+            buildId={build.id}
+            title={build.name}
+          />
+        )
+      }}
     />
   )
 }
+
+const Overview = (props: ComponentProps<typeof BranchOverviewV2>) => (
+  <AppContext.Provider value={storyApp}>
+    <SurfacesProvider>
+      <OverviewBody {...props} />
+    </SurfacesProvider>
+  </AppContext.Provider>
+)
 
 const groups: TTrackGroup[] = [
   {
@@ -363,12 +445,34 @@ const changeProps = {
 
 const changes = <TemplateChangesButton {...changeProps} />
 
+const completedBuilds = [
+  {
+    id: 'build-api',
+    name: 'api',
+    status: 'success',
+    changeReason: 'source_changed',
+    componentId: 'cmp-api',
+    kind: 'component' as const,
+    href: '/org-acme/apps/app-acme/components/cmp-api/builds/build-api',
+  },
+  {
+    id: 'build-cache',
+    name: 'cache',
+    status: 'success',
+    changeReason: 'config_changed',
+    componentId: 'cmp-cache',
+    kind: 'component' as const,
+    href: '/org-acme/apps/app-acme/components/cmp-cache/builds/build-cache',
+  },
+]
+
 const props = {
   hasPlan: true,
   rollout,
   changes,
   configChanges: <TemplateChangesContent {...changeProps} />,
   configChangesKey: 'v6-v7-cache',
+  buildRows: completedBuilds,
   groups,
   versionLabel: 'v6 → v7',
   loadingStages: buildOverviewLoadingStages({
@@ -906,6 +1010,31 @@ const beforeRolloutGroups: TTrackGroup[] = groups.map((group) => ({
   })),
 }))
 
+export const Building = () => (
+  <Overview
+    {...props}
+    groups={beforeRolloutGroups}
+    buildRows={[
+      { ...completedBuilds[0], status: 'in-progress' },
+      { ...completedBuilds[1], status: 'pending' },
+    ]}
+    loadingStages={buildOverviewLoadingStages({
+      steps: [
+        { id: 'fetch', name: 'fetch commit', status: { status: 'success' } },
+        { id: 'config', name: 'sync app config', status: { status: 'success' } },
+        {
+          id: 'build',
+          name: 'build components',
+          status: { status: 'in-progress' },
+        },
+      ],
+      sha: rollout.sha,
+      groupStatuses: beforeRolloutGroups.map((group) => group.status),
+    })}
+  />
+)
+Building.storyName = 'Building'
+
 export const BuildComplete = () => (
   <Overview
     {...props}
@@ -926,3 +1055,72 @@ export const BuildComplete = () => (
   />
 )
 BuildComplete.storyName = 'Build complete'
+
+const pendingGroups = beforeRolloutGroups.map((group) => group.status)
+
+const pendingChanges = (
+  <TemplateChangesButton {...changeProps} sections={[]} isPending />
+)
+const pendingChangeContent = (
+  <TemplateChangesContent {...changeProps} sections={[]} isPending />
+)
+
+const stagesFor = (steps: TInstallWorkflowStep[], sha?: string) =>
+  buildOverviewLoadingStages({
+    steps,
+    sha,
+    groupStatuses: pendingGroups,
+  })
+
+const step = (
+  id: string,
+  name: string,
+  status: string
+): TInstallWorkflowStep =>
+  ({ id, name, status: { status } }) as TInstallWorkflowStep
+
+export const StartingWorkflow = () => (
+  <Overview
+    {...props}
+    groups={beforeRolloutGroups}
+    rollout={{ ...rollout, sha: undefined, commit: undefined }}
+    changes={pendingChanges}
+    configChanges={pendingChangeContent}
+    buildRows={[]}
+    loadingStages={stagesFor([])}
+  />
+)
+StartingWorkflow.storyName = 'Starting workflow'
+
+export const FetchingCommit = () => (
+  <Overview
+    {...props}
+    groups={beforeRolloutGroups}
+    rollout={{ ...rollout, sha: undefined, commit: undefined }}
+    changes={pendingChanges}
+    configChanges={pendingChangeContent}
+    buildRows={[]}
+    loadingStages={stagesFor([
+      step('fetch', 'fetch commit', 'in-progress'),
+    ])}
+  />
+)
+FetchingCommit.storyName = 'Fetching commit'
+
+export const CompilingConfig = () => (
+  <Overview
+    {...props}
+    groups={beforeRolloutGroups}
+    changes={pendingChanges}
+    configChanges={pendingChangeContent}
+    buildRows={[]}
+    loadingStages={stagesFor(
+      [
+        step('fetch', 'fetch commit', 'success'),
+        step('config', 'sync app config', 'in-progress'),
+      ],
+      rollout.sha
+    )}
+  />
+)
+CompilingConfig.storyName = 'Compiling config'

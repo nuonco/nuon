@@ -210,6 +210,343 @@ test('shows the active group above the plan and pending groups as pending', () =
   expect(later?.textContent).not.toContain('Waiting')
 })
 
+test('shows a loader instead of the run source while fetching the commit', () => {
+  renderOverview({
+    loadingStages: [
+      { id: 'starting', label: 'Starting workflow', status: 'success' },
+      { id: 'fetch-commit', label: 'Fetch commit', status: 'in-progress' },
+      {
+        id: 'app-config',
+        label: 'Compile and diff app config',
+        status: 'pending',
+      },
+    ],
+  })
+
+  expect(screen.getByRole('status', { name: 'Waiting on latest commit' })).toBeTruthy()
+  expect(screen.queryByText('Add cache component')).toBeNull()
+  expect(screen.queryByText(/Manual run/)).toBeNull()
+
+  cleanup()
+  renderOverview({
+    rollout: {
+      id: 'wf_184',
+      href: '#run',
+      source: { kind: 'pull-request', number: 482 },
+      title: 'Add cache component',
+      status: 'in-progress',
+    },
+    loadingStages: [
+      { id: 'fetch-commit', label: 'Fetch commit', status: 'in-progress' },
+    ],
+  })
+  expect(
+    screen.getByRole('status', { name: 'Waiting on pull request' })
+  ).toBeTruthy()
+})
+
+test('hides the changes button on the compile step', () => {
+  renderOverview({
+    changes: <button type="button">Changes</button>,
+    rollout: {
+      id: 'wf_184',
+      href: '#run',
+      source: { kind: 'manual' },
+      title: 'Add cache component',
+      sha: 'a1b2c3d4e5f6',
+      status: 'in-progress',
+    },
+    configChanges: <p>Calculating config diff</p>,
+    loadingStages: [
+      {
+        id: 'app-config',
+        label: 'Compile and diff app config',
+        status: 'in-progress',
+      },
+      { id: 'build-components', label: 'Build components', status: 'pending' },
+    ],
+  })
+
+  expect(screen.getByText('Calculating config diff')).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Changes' })).toBeNull()
+})
+
+test('shows the changes button once the diff is ready on another step', () => {
+  renderOverview({
+    changes: <button type="button">Changes</button>,
+    rollout: {
+      id: 'wf_184',
+      href: '#run',
+      source: { kind: 'manual' },
+      title: 'Add cache component',
+      sha: 'a1b2c3d4e5f6',
+      status: 'in-progress',
+    },
+    configChanges: <p>Added cache component</p>,
+    loadingStages: [
+      {
+        id: 'app-config',
+        label: 'Compile and diff app config',
+        status: 'success',
+      },
+      {
+        id: 'build-components',
+        label: 'Build components',
+        status: 'in-progress',
+      },
+    ],
+  })
+
+  expect(screen.getByRole('button', { name: 'Changes' })).toBeTruthy()
+  fireEvent.click(
+    screen.getByRole('button', { name: /Compile and diff app config/ })
+  )
+  expect(screen.queryByRole('button', { name: 'Changes' })).toBeNull()
+  expect(screen.getByText('Added cache component')).toBeTruthy()
+})
+
+test('shows config changes on the compile step', () => {
+  renderOverview({
+    loadingStages: [
+      { id: 'starting', label: 'Starting workflow', status: 'success' },
+      { id: 'fetch-commit', label: 'Fetch commit', status: 'success' },
+      {
+        id: 'app-config',
+        label: 'Compile and diff app config',
+        status: 'in-progress',
+      },
+      { id: 'build-components', label: 'Build components', status: 'pending' },
+      { id: 'rollout', label: 'Rollout', status: 'pending' },
+    ],
+    configChanges: <p>Added cache component</p>,
+  })
+
+  expect(screen.getByText('Added cache component')).toBeTruthy()
+  expect(screen.queryByText(/Group 2 of 3/)).toBeNull()
+  expect(screen.queryByRole('button', { name: /Build components/ })).toBeNull()
+})
+
+test('reopens config changes after the compile step finishes', () => {
+  renderOverview({
+    loadingStages: [
+      {
+        id: 'app-config',
+        label: 'Compile and diff app config',
+        status: 'success',
+      },
+      { id: 'build-components', label: 'Build components', status: 'success' },
+      { id: 'rollout', label: 'Rollout', status: 'in-progress' },
+    ],
+    configChanges: <p>Added cache component</p>,
+  })
+
+  expect(screen.queryByText('Added cache component')).toBeNull()
+  expect(screen.getByText(/Group 2 of 3/)).toBeTruthy()
+
+  fireEvent.click(
+    screen.getByRole('button', { name: /Compile and diff app config/ })
+  )
+  expect(screen.getByText('Added cache component')).toBeTruthy()
+  expect(screen.queryByText(/Group 2 of 3/)).toBeNull()
+
+  fireEvent.click(screen.getByRole('button', { name: /Rollout/ }))
+  expect(screen.queryByText('Added cache component')).toBeNull()
+  expect(screen.getByText(/Group 2 of 3/)).toBeTruthy()
+})
+
+test('shows the commit above the selected step', () => {
+  renderOverview({
+    loadingStages: [
+      {
+        id: 'app-config',
+        label: 'Compile and diff app config',
+        status: 'success',
+      },
+      { id: 'build-components', label: 'Build components', status: 'success' },
+      { id: 'rollout', label: 'Rollout', status: 'in-progress' },
+    ],
+    buildRows: [
+      {
+        id: 'build-api',
+        name: 'api',
+        status: 'success',
+      },
+    ],
+  })
+
+  fireEvent.click(screen.getByRole('button', { name: /Build components/ }))
+  const commit = screen.getByText('Add cache component')
+  const builds = screen.getByText('Component name')
+  expect(
+    commit.compareDocumentPosition(builds) & Node.DOCUMENT_POSITION_FOLLOWING
+  ).toBeTruthy()
+
+  fireEvent.click(screen.getByRole('button', { name: /Rollout/ }))
+  const group = screen.getByText(/Group 2 of 3/)
+  expect(
+    screen.getByText('Add cache component').compareDocumentPosition(group) &
+      Node.DOCUMENT_POSITION_FOLLOWING
+  ).toBeTruthy()
+})
+
+test('shows builds instead of a group while components are building', () => {
+  renderOverview({
+    groups: groups.map((group) => ({
+      ...group,
+      status: 'pending',
+      installs: group.installs.map((install) => ({
+        ...install,
+        status: 'pending',
+      })),
+    })),
+    loadingStages: [
+      { id: 'starting', label: 'Starting workflow', status: 'success' },
+      { id: 'fetch-commit', label: 'Fetch commit', status: 'success' },
+      {
+        id: 'app-config',
+        label: 'Compile and diff app config',
+        status: 'success',
+      },
+      {
+        id: 'build-components',
+        label: 'Build components',
+        status: 'in-progress',
+      },
+      { id: 'rollout', label: 'Rollout', status: 'pending' },
+    ],
+    buildRows: [
+      {
+        id: 'build-api',
+        name: 'api',
+        status: 'in-progress',
+        changeReason: 'source_changed',
+      },
+      {
+        id: 'build-cache',
+        name: 'cache',
+        status: 'pending',
+        changeReason: 'config_changed',
+      },
+    ],
+  })
+
+  expect(screen.getByText('api')).toBeTruthy()
+  expect(screen.getByText('cache')).toBeTruthy()
+  expect(screen.getByText('Source')).toBeTruthy()
+  expect(screen.getByText('Config')).toBeTruthy()
+  expect(screen.getByText('Component name')).toBeTruthy()
+  expect(screen.queryByText(/Group 1 of 3/)).toBeNull()
+})
+
+test('shows cancel rollout on the active group and in its drawer', () => {
+  renderOverview({
+    cancelRollout: <button type="button">Cancel rollout</button>,
+  })
+
+  expect(screen.getAllByRole('button', { name: 'Cancel rollout' })).toHaveLength(1)
+  fireEvent.click(screen.getByRole('button', { name: 'View group details' }))
+  expect(screen.getAllByRole('button', { name: 'Cancel rollout' })).toHaveLength(2)
+})
+
+test('reopens builds after the rollout finishes', () => {
+  renderOverview({
+    groups: groups.map((group) => ({
+      ...group,
+      status: 'success',
+      installs: group.installs.map((install) => ({
+        ...install,
+        status: 'success',
+      })),
+    })),
+    loadingStages: [
+      { id: 'build-components', label: 'Build components', status: 'success' },
+      { id: 'rollout', label: 'Rollout', status: 'success' },
+    ],
+    buildRows: [
+      {
+        id: 'build-api',
+        name: 'api',
+        status: 'success',
+        componentId: 'cmp-api',
+        href: '/org-acme/apps/app-acme/components/cmp-api/builds/build-api',
+      },
+    ],
+  })
+
+  expect(screen.queryByText('Component name')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: /Build components/ }))
+  expect(screen.getByText('Component name')).toBeTruthy()
+  expect(screen.getByText('api')).toBeTruthy()
+})
+
+test('opens a build from the builds table', () => {
+  const onSelectBuild = mock(() => {})
+  renderOverview({
+    loadingStages: [
+      { id: 'build-components', label: 'Build components', status: 'in-progress' },
+    ],
+    onSelectBuild,
+    buildRows: [
+      {
+        id: 'build-api',
+        name: 'api',
+        status: 'in-progress',
+        componentId: 'cmp-api',
+        href: '/org-acme/apps/app-acme/components/cmp-api/builds/build-api',
+      },
+    ],
+  })
+
+  fireEvent.click(screen.getByRole('button', { name: 'View build' }))
+  expect(onSelectBuild).toHaveBeenCalled()
+})
+
+test('defaults to the first group after builds and can reopen build details', () => {
+  renderOverview({
+    groups: groups.map((group) => ({
+      ...group,
+      status: 'pending',
+      installs: group.installs.map((install) => ({
+        ...install,
+        status: 'pending',
+      })),
+    })),
+    loadingStages: [
+      { id: 'starting', label: 'Starting workflow', status: 'success' },
+      { id: 'fetch-commit', label: 'Fetch commit', status: 'success' },
+      {
+        id: 'app-config',
+        label: 'Compile and diff app config',
+        status: 'success',
+      },
+      {
+        id: 'build-components',
+        label: 'Build components',
+        status: 'success',
+      },
+      { id: 'rollout', label: 'Rollout', status: 'pending' },
+    ],
+    buildRows: [
+      {
+        id: 'build-api',
+        name: 'api',
+        status: 'success',
+        changeReason: 'source_changed',
+      },
+    ],
+  })
+
+  expect(screen.getByText(/Group 1 of 3/)).toBeTruthy()
+  expect(screen.queryByText('Component name')).toBeNull()
+
+  fireEvent.click(screen.getByRole('button', { name: /Build components/ }))
+  expect(screen.getByText('Component name')).toBeTruthy()
+  expect(screen.queryByText(/Group 1 of 3/)).toBeNull()
+
+  fireEvent.click(screen.getByRole('button', { name: /Rollout/ }))
+  expect(screen.getByText(/Group 1 of 3/)).toBeTruthy()
+})
+
 test('scrolls to a group when its plan segment is clicked', () => {
   renderOverview()
   const row = document.getElementById('deployment-group-remaining')
@@ -347,5 +684,39 @@ test('links an install name to its page and opens details from the group', () =>
   fireEvent.click(screen.getByRole('button', { name: 'View group details' }))
   expect(screen.getByRole('link', { name: 'acme-delta' }).getAttribute('href')).toBe(
     '/org-acme/installs/ins_delta'
+  )
+})
+
+test('opens install details from the active group segment instead of a link', () => {
+  const onSelectInstall = mock(() => {})
+  renderOverview({
+    onSelectInstall,
+    groups: groups.map((group) =>
+      group.id === 'primary'
+        ? {
+            ...group,
+            installs: [
+              ...group.installs,
+              {
+                id: 'ins_echo',
+                name: 'acme-echo',
+                status: 'pending',
+                overviewHref: '/org-acme/installs/ins_echo',
+              },
+            ],
+          }
+        : group
+    ),
+  })
+
+  expect(screen.queryByRole('link', { name: 'acme-delta: in-progress' })).toBeNull()
+  expect(screen.queryByRole('link', { name: 'acme-echo: pending' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'acme-delta: in-progress' }))
+  fireEvent.click(screen.getByRole('button', { name: 'acme-echo: pending' }))
+  expect(onSelectInstall).toHaveBeenCalledWith(
+    expect.objectContaining({ id: 'ins_delta', workflowId: 'wf_delta' })
+  )
+  expect(onSelectInstall).toHaveBeenCalledWith(
+    expect.objectContaining({ id: 'ins_echo', status: 'pending' })
   )
 })

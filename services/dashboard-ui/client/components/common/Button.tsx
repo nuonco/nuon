@@ -85,7 +85,7 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
     disabled:opacity-50 disabled:hover:bg-white disabled:hover:dark:bg-dark-grey-700
   `,
   tab: `
-    border-b-3 border-transparent bg-transparent dark:bg-transparent text-primary-600 dark:text-primary-400
+    border-b-3 border-transparent bg-transparent dark:bg-transparent text-cool-grey-600 dark:text-white/70 hover:text-foreground
     hover:!border-primary-600/50
     focus:outline-none focus:bg-cool-grey-50/20 dark:focus:bg-dark-grey-500/20
     active:!border-primary-600/80
@@ -124,7 +124,7 @@ export const Button = forwardRef<
       'has-[svg]:flex has-[svg]:items-center has-[svg]:gap-1.5',
       {
         'link-button-secondary': href && variant === 'secondary',
-        '!border-primary-600 !hover:!border-primary-600':
+        '!border-primary-600 !hover:!border-primary-600 !text-foreground':
           isActive && variant === 'tab',
         '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !bg-transparent !border-0 !shadow-none !text-cool-grey-800 dark:!text-white/70 hover:!bg-cool-grey-500/8 dark:hover:!bg-cool-grey-500/8 focus:!bg-cool-grey-500/8 dark:focus:!bg-cool-grey-500/8 focus-visible:[--tw-outline-style:solid] focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80 active:!bg-cool-grey-500/16 dark:active:!bg-cool-grey-500/16':
           isMenuButton && variant !== 'danger',

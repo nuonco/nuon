@@ -517,6 +517,7 @@ export const useRolloutGroups = () => {
     rolloutError,
     branchRunId,
     rollout,
+    rolloutWorkflow: rolloutRun,
     workflowSteps,
     branchRun,
     showLoadingTrack: isLoading || !!rollout,

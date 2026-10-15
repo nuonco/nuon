@@ -44,9 +44,11 @@ export const EmptyState = ({
         <Text variant="subtext" weight="strong">
           {emptyTitle}
         </Text>
-        <Text variant="label" className="text-center" theme="neutral">
-          {emptyMessage}
-        </Text>
+        {emptyMessage ? (
+          <Text variant="label" className="text-center" theme="neutral">
+            {emptyMessage}
+          </Text>
+        ) : null}
       </span>
 
       {action ? <div className="mt-2">{action}</div> : null}

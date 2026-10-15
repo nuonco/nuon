@@ -387,7 +387,7 @@ export const BranchRunChangesSummary = ({
       {showPending ? (
         <div className="px-4 py-6 text-center">
           <EmptyState
-            emptyTitle="Changes pending"
+            emptyTitle="Calculating config diff"
             emptyMessage="Changes appear after the app config builds."
             variant="diagram"
             size="sm"

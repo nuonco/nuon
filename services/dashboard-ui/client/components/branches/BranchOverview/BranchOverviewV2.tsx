@@ -1,4 +1,5 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import type { ColumnDef } from '@tanstack/react-table'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -7,6 +8,7 @@ import { Duration } from '@/components/common/Duration'
 import { Link } from '@/components/common/Link'
 import { Loading } from '@/components/common/Loading'
 import { Status } from '@/components/common/Status'
+import { Table } from '@/components/common/Table'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { DeploymentStageRail } from '@/components/branches/DeploymentStageRail'
@@ -26,14 +28,22 @@ import { Panel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { cn } from '@/utils/classnames'
 import type { IBranchOverview } from './BranchOverview'
+import type { TChangedBuildRow } from './changed-builds'
 import { GroupApprovedVersion } from './GroupApprovedVersion'
 import { OverviewLoadingTrack } from './OverviewLoadingTrack'
 import type { TGroupApprovedVersion } from './group-approved-version'
 import type { IGroupPlanApproval } from './RolloutGroupsCard'
 import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
 import { RunCommitSummary, RunSourceMark } from './RunSourceCard'
+import type { TRunSource } from './run-source'
 
 const groupAnchorId = (groupId: string) => `deployment-group-${groupId}`
+
+const waitingOnSource = (kind: TRunSource['kind']) => {
+  if (kind === 'pull-request') return 'Waiting on pull request'
+  if (kind === 'tag') return 'Waiting on tag'
+  return 'Waiting on latest commit'
+}
 
 const installCountLabel: Record<string, string> = {
   success: 'completed',
@@ -187,22 +197,27 @@ const GroupDrawerBody = ({
   configChanges,
   onSelectInstall,
   onApproveAll,
+  cancelRollout,
 }: {
   group: TTrackGroup
   configChanges?: ReactNode
   onSelectInstall?: (install: TTrackInstall) => void
   onApproveAll?: (groupId: string) => void
+  cancelRollout?: ReactNode
 }) => (
   <Tabs
     className="gap-4"
     naturalHeight
     initActiveTab="installs"
     actions={
-      <GroupApproveAllButton
-        groupName={group.name}
-        installs={group.installs}
-        onApproved={() => onApproveAll?.(group.id)}
-      />
+      <span className="flex items-center gap-2">
+        <GroupApproveAllButton
+          groupName={group.name}
+          installs={group.installs}
+          onApproved={() => onApproveAll?.(group.id)}
+        />
+        {cancelRollout}
+      </span>
     }
     tabs={{
       changes: configChanges ?? (
@@ -223,12 +238,14 @@ const GroupDetails = ({
   configChangesKey,
   onSelectInstall,
   onApproveAll,
+  cancelRollout,
 }: {
   group: TTrackGroup
   configChanges?: ReactNode
   configChangesKey?: string
   onSelectInstall?: (install: TTrackInstall) => void
   onApproveAll?: (groupId: string) => void
+  cancelRollout?: ReactNode
 }) => {
   const { panels, updatePanel } = useSurfaces()
   const panelKey = `install-group-${group.id}`
@@ -246,6 +263,7 @@ const GroupDetails = ({
       configChanges={configChanges}
       onSelectInstall={onSelectInstall}
       onApproveAll={onApproveAll}
+      cancelRollout={cancelRollout}
     />
   )
 
@@ -262,6 +280,7 @@ const GroupDetails = ({
     errorMessage,
     installSignature,
     configChangesKey,
+    cancelRollout != null,
     updatePanel,
   ])
 
@@ -289,6 +308,7 @@ const ActiveGroup = ({
   approval,
   onSelectInstall,
   onApproveAll,
+  cancelRollout,
 }: {
   group: TTrackGroup
   index: number
@@ -296,6 +316,7 @@ const ActiveGroup = ({
   approval?: ReactNode
   onSelectInstall?: (install: TTrackInstall) => void
   onApproveAll?: (groupId: string) => void
+  cancelRollout?: ReactNode
 }) => {
   const installs = withQueuedInstalls(group.installs, group.plannedCount)
   const completed = completedInstalls(group)
@@ -349,10 +370,16 @@ const ActiveGroup = ({
         <InstallStatusTiles
           installs={installs}
           variant="rail"
-          onSelect={(install) => {
-            const match = group.installs.find((item) => item.id === install.id)
-            if (match?.workflowId) onSelectInstall?.(match)
-          }}
+          onSelectInstall={
+            onSelectInstall
+              ? (install) => {
+                  const match = group.installs.find(
+                    (item) => item.id === install.id
+                  )
+                  if (match) onSelectInstall(match)
+                }
+              : undefined
+          }
         />
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <InstallStatusCounts installs={installs} showTotal={false} />
@@ -384,11 +411,93 @@ const ActiveGroup = ({
           >
             View group details
           </Button>
+          {cancelRollout}
         </span>
       </div>
     </Card>
   )
 }
+
+const buildCauseLabel = (reason?: string) => {
+  if (reason === 'config_changed') return 'Config'
+  if (reason === 'source_changed') return 'Source'
+  if (reason === 'source_and_config') return 'Source and config'
+  return ''
+}
+
+const buildColumns = (
+  onSelectBuild?: (build: TChangedBuildRow) => void
+): ColumnDef<TChangedBuildRow>[] => [
+  {
+    accessorKey: 'name',
+    header: 'Component name',
+    cell: (info) =>
+      info.row.original.href ? (
+        <Link href={info.row.original.href} variant="inline">
+          {info.getValue() as string}
+        </Link>
+      ) : (
+        <Text variant="body">{info.getValue() as string}</Text>
+      ),
+  },
+  {
+    id: 'cause',
+    header: 'Cause',
+    cell: (info) => (
+      <Text variant="body">{buildCauseLabel(info.row.original.changeReason)}</Text>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: (info) => <Status status={info.getValue() as string} />,
+  },
+  {
+    id: 'details',
+    header: '',
+    enableSorting: false,
+    meta: { className: 'text-right' },
+    cell: (info) => {
+      const row = info.row.original
+      if (onSelectBuild && row.componentId) {
+        return (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => onSelectBuild(row)}
+          >
+            View build
+          </Button>
+        )
+      }
+      return row.href ? (
+        <Button href={row.href} size="sm" variant="secondary">
+          View build
+        </Button>
+      ) : null
+    },
+  },
+]
+
+const ActiveBuilds = ({
+  rows = [],
+  isLoading,
+  onSelectBuild,
+}: {
+  rows?: TChangedBuildRow[]
+  isLoading?: boolean
+  onSelectBuild?: (build: TChangedBuildRow) => void
+}) => (
+  <Table<TChangedBuildRow>
+    columns={buildColumns(onSelectBuild)}
+    data={rows}
+    isLoading={isLoading && rows.length === 0}
+    enableSearch={false}
+    enableSorting={false}
+    skeletonRows={3}
+    emptyStateProps={{ emptyMessage: 'No builds for this run.' }}
+  />
+)
 
 const GroupColumnHeader = () => (
   <li className={cn('hidden py-2 md:grid', groupColumns)} aria-hidden="true">
@@ -418,6 +527,7 @@ const GroupRow = ({
   configChangesKey,
   onSelectInstall,
   onApproveAll,
+  cancelRollout,
 }: {
   group: TTrackGroup
   current?: boolean
@@ -428,6 +538,7 @@ const GroupRow = ({
   configChangesKey?: string
   onSelectInstall?: (install: TTrackInstall) => void
   onApproveAll?: (groupId: string) => void
+  cancelRollout?: ReactNode
 }) => {
   const installs = withQueuedInstalls(group.installs, group.plannedCount)
 
@@ -481,6 +592,7 @@ const GroupRow = ({
         configChangesKey={configChangesKey}
         onSelectInstall={onSelectInstall}
         onApproveAll={onApproveAll}
+        cancelRollout={current ? cancelRollout : undefined}
       />
     </li>
   )
@@ -497,6 +609,9 @@ export const BranchOverviewV2 = ({
   configChangesKey,
   groups,
   loadingStages,
+  buildRows,
+  buildRowsLoading,
+  onSelectBuild,
   compositeError,
   failedBuilds,
   approvals,
@@ -506,6 +621,7 @@ export const BranchOverviewV2 = ({
   approvedVersionsLoading,
   onSelectInstall,
   onApproveAll,
+  cancelRollout,
 }: IBranchOverview) => {
   const currentIndex = groups.findIndex(
     (group) => stepStatusCategory(group.status) !== 'success'
@@ -519,6 +635,38 @@ export const BranchOverviewV2 = ({
   const total = groups.reduce((sum, group) => sum + installTotal(group), 0)
   const showGroups =
     (showInstalls ?? hasPlan) && !isLoading && groups.length > 0
+  const activeStageId = loadingStages?.find(
+    (stage) => stage.status !== 'success'
+  )?.id
+  const fetchCommitStage = loadingStages?.find(
+    (stage) => stage.id === 'fetch-commit'
+  )
+  const commitLoading =
+    !!fetchCommitStage &&
+    fetchCommitStage.status !== 'success' &&
+    fetchCommitStage.status !== 'error' &&
+    !rollout?.commit?.sha &&
+    !rollout?.sha
+  const appConfigStage = loadingStages?.find(
+    (stage) => stage.id === 'app-config'
+  )
+  const buildStage = loadingStages?.find(
+    (stage) => stage.id === 'build-components'
+  )
+  const buildComplete = !buildStage || buildStage.status === 'success'
+  const [selectedStageId, setSelectedStageId] = useState(activeStageId)
+  useEffect(() => {
+    setSelectedStageId(activeStageId)
+  }, [activeStageId])
+  const showConfigChanges =
+    selectedStageId === 'app-config' && appConfigStage?.status !== 'pending'
+  const showBuilds =
+    selectedStageId === 'build-components' && buildStage?.status !== 'pending'
+  const selectableStageIds = [
+    ...(appConfigStage?.status !== 'pending' ? ['app-config'] : []),
+    ...(buildStage?.status !== 'pending' ? ['build-components'] : []),
+    ...(buildComplete ? ['rollout'] : []),
+  ]
 
   return (
     <div className="flex flex-col gap-8 p-4 md:p-6">
@@ -537,7 +685,12 @@ export const BranchOverviewV2 = ({
                 </Text>
               ) : null}
               {loadingStages?.length ? (
-                <OverviewLoadingTrack stages={loadingStages} />
+                <OverviewLoadingTrack
+                  stages={loadingStages}
+                  activeStageId={selectedStageId}
+                  selectableStageIds={selectableStageIds}
+                  onSelectStage={setSelectedStageId}
+                />
               ) : null}
               {rollout.source ? (
                 <RunSourceMark source={rollout.source} />
@@ -546,11 +699,55 @@ export const BranchOverviewV2 = ({
             </div>
           ) : loadingStages?.length ? (
             <div className="flex items-center justify-between gap-4">
-              <OverviewLoadingTrack stages={loadingStages} />
+              <OverviewLoadingTrack
+                stages={loadingStages}
+                activeStageId={selectedStageId}
+                selectableStageIds={selectableStageIds}
+                onSelectStage={setSelectedStageId}
+              />
               {runHeaderAction}
             </div>
           ) : isLoading ? (
             <Loading />
+          ) : null}
+
+          {rollout ? (
+            <Card
+              elevation="1"
+              className="!flex-row !flex-wrap !items-center !justify-between !gap-4 !p-4"
+            >
+              {commitLoading ? (
+                <div
+                  className="flex min-w-0 flex-1 items-center gap-2"
+                  role="status"
+                  aria-label={waitingOnSource(rollout.source.kind)}
+                >
+                  <Loading size={14} className="shrink-0 text-cool-grey-400" />
+                  <Text variant="subtext" theme="neutral">
+                    {waitingOnSource(rollout.source.kind)}
+                  </Text>
+                </div>
+              ) : (
+                <RunCommitSummary
+                  source={rollout.source}
+                  title={rollout.title}
+                  sha={rollout.sha}
+                  shaUrl={rollout.shaUrl}
+                  author={rollout.author}
+                  status={rollout.status}
+                  commit={rollout.commit}
+                  previewMode={rollout.previewMode}
+                  baseline={rollout.baseline}
+                />
+              )}
+              {showConfigChanges ? null : changes}
+            </Card>
+          ) : !isLoading ? (
+            <Text variant="subtext" theme="neutral">
+              {hasPlan
+                ? 'No runs yet. Push a commit or start a run.'
+                : 'This branch has no install groups yet. Every install updates at once.'}
+            </Text>
           ) : null}
 
           {compositeError ? <CompositeError error={compositeError} /> : null}
@@ -584,33 +781,25 @@ export const BranchOverviewV2 = ({
             </Banner>
           ) : null}
 
-          {rollout ? (
-            <Card
-              elevation="1"
-              className="!flex-row !flex-wrap !items-center !justify-between !gap-4 !p-4"
-            >
-              <RunCommitSummary
-                source={rollout.source}
-                title={rollout.title}
-                sha={rollout.sha}
-                shaUrl={rollout.shaUrl}
-                author={rollout.author}
-                status={rollout.status}
-                commit={rollout.commit}
-                previewMode={rollout.previewMode}
-                baseline={rollout.baseline}
-              />
-              {changes}
-            </Card>
-          ) : !isLoading ? (
-            <Text variant="subtext" theme="neutral">
-              {hasPlan
-                ? 'No runs yet. Push a commit or start a run.'
-                : 'This branch has no install groups yet. Every install updates at once.'}
-            </Text>
+          {showConfigChanges
+            ? (configChanges ?? (
+                <Text variant="subtext" theme="neutral">
+                  No config changes for this run.
+                </Text>
+              ))
+            : null}
+
+          {showBuilds ? (
+            <ActiveBuilds
+              rows={buildRows}
+              isLoading={buildRowsLoading}
+              onSelectBuild={onSelectBuild}
+            />
           ) : null}
         </div>
-        {showGroups && current ? (
+        {showConfigChanges || showBuilds
+          ? null
+          : showGroups && current && buildComplete ? (
           <ActiveGroup
             group={current}
             index={currentIndex}
@@ -618,6 +807,7 @@ export const BranchOverviewV2 = ({
             approval={approvalFor(approvals, current.name)?.banner}
             onSelectInstall={onSelectInstall}
             onApproveAll={onApproveAll}
+            cancelRollout={cancelRollout}
           />
         ) : null}
       </div>
@@ -660,6 +850,7 @@ export const BranchOverviewV2 = ({
                 configChangesKey={configChangesKey}
                 onSelectInstall={onSelectInstall}
                 onApproveAll={onApproveAll}
+                cancelRollout={cancelRollout}
               />
             ))}
           </ul>

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -12,7 +13,12 @@ import {
   TemplateChangesContent,
   useConfigVersionLabel,
 } from '@/components/branches/ConfigChanges'
-import { InstallDeploymentPanel } from '@/components/installs/InstallDeploymentPanel'
+import { BuildPanel } from '@/components/builds/BuildPanel'
+import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
+import {
+  InstallDeploymentPanel,
+  PendingInstallPanel,
+} from '@/components/installs/InstallDeploymentPanel'
 import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
@@ -28,7 +34,11 @@ import {
 import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
 import { useGroupApprovedVersions } from './use-group-approved-versions'
 import { useRolloutGroups } from './use-rollout-groups'
-import { useRunTemplateBuilds } from './use-run-template-builds'
+import { mergedChangedBuildRows } from './changed-builds'
+import {
+  isTerminalRunStatus,
+  useRunTemplateBuilds,
+} from './use-run-template-builds'
 
 export const BranchOverviewContainer = ({
   variant = 'current',
@@ -50,6 +60,7 @@ export const BranchOverviewContainer = ({
     branchRunId,
     branchRun,
     rollout,
+    rolloutWorkflow,
     workflowSteps,
     showLoadingTrack,
     groups,
@@ -77,12 +88,20 @@ export const BranchOverviewContainer = ({
     enabled: variant === 'v2',
   })
 
-  const { builds, metaBuilds, templateBuilds } = useRunTemplateBuilds({
+  const {
+    builds,
+    buildsLoading,
+    metaBuilds,
+    runBuilds,
+    sandboxBuildId,
+    templateBuilds,
+  } = useRunTemplateBuilds({
     orgId,
     appId,
     branchId,
     branchRunId,
     workflowSteps,
+    isRunTerminal: isTerminalRunStatus(rolloutWorkflow?.status?.status),
   })
   const failedBuilds: TFailedBuildLink[] = (builds ?? []).flatMap((build) => {
     const status = build.status_v2?.status || build.status
@@ -101,6 +120,37 @@ export const BranchOverviewContainer = ({
     appBranchRunId: branchRunId,
     builds: metaBuilds,
   })
+  const buildRows = useMemo(
+    () =>
+      mergedChangedBuildRows({
+        metaBuilds,
+        runBuilds,
+        orgId,
+        appId,
+        sandboxBuildId,
+        components: configSections.sections.find(
+          (section) => section.sectionKey === 'components'
+        )?.entities,
+      }),
+    [
+      metaBuilds,
+      runBuilds,
+      orgId,
+      appId,
+      sandboxBuildId,
+      configSections.sections,
+    ]
+  )
+  const configPending =
+    !!orgId &&
+    !!appId &&
+    !!branchId &&
+    !!branchRunId &&
+    configSections.comparison === undefined &&
+    !configSections.isError
+  const buildsPending = !!orgId && !!appId && !!branchRunId && buildsLoading
+  const buildRowsLoading =
+    buildRows.length === 0 && (buildsPending || configPending)
   const versionLabel = useConfigVersionLabel({
     orgId,
     appId,
@@ -224,6 +274,8 @@ export const BranchOverviewContainer = ({
         ].join(':')}
         groups={groupsWithErrors}
         loadingStages={loadingStages}
+        buildRows={buildRows}
+        buildRowsLoading={buildRowsLoading}
         compositeError={failure}
         failedBuilds={failedBuilds}
         rolloutHref={rolloutHref}
@@ -233,20 +285,41 @@ export const BranchOverviewContainer = ({
         previousSha={configSections.previousSha}
         approvedVersions={approvedVersions.versions}
         approvedVersionsLoading={approvedVersions.isLoading}
-        onSelectInstall={(install) =>
-          install.workflowId
+        onSelectInstall={(install) => {
+          if (!install.id || install.id.startsWith('queued-')) return
+          addPanel(
+            install.workflowId ? (
+              <InstallDeploymentPanel
+                orgId={orgId}
+                appId={appId}
+                installId={install.id}
+                workflowId={install.workflowId}
+                title={install.name}
+                repo={repoSlug}
+                initialTab="workflow"
+              />
+            ) : (
+              <PendingInstallPanel title={install.name} status={install.status} />
+            )
+          )
+        }}
+        onSelectBuild={(build) =>
+          build.componentId
             ? addPanel(
-                <InstallDeploymentPanel
-                  orgId={orgId}
-                  appId={appId}
-                  installId={install.id}
-                  workflowId={install.workflowId}
-                  title={install.name}
-                  repo={repoSlug}
-                  initialTab="workflow"
+                <BuildPanel
+                  componentId={build.componentId}
+                  buildId={build.id}
+                  title={build.name}
                 />
               )
             : undefined
+        }
+        cancelRollout={
+          rolloutWorkflow?.id ? (
+            <CancelWorkflowButton workflow={rolloutWorkflow} size="sm">
+              Cancel rollout
+            </CancelWorkflowButton>
+          ) : null
         }
         runHeaderAction={
           rollout?.id ? (

@@ -19,10 +19,14 @@ const StageLabel = ({ stage }: { stage: TOverviewStage }) => (
 export const OverviewLoadingTrack = ({
   stages,
   label = 'Run progress',
+  activeStageId,
+  selectableStageIds,
   onSelectStage,
 }: {
   stages: TOverviewStage[]
   label?: string
+  activeStageId?: string
+  selectableStageIds?: string[]
   onSelectStage?: (stageId: string) => void
 }) => (
   <ol
@@ -30,19 +34,24 @@ export const OverviewLoadingTrack = ({
     className="flex min-w-0 flex-wrap items-center gap-y-2"
   >
     {stages.map((stage, index) => (
-      <li key={stage.id} className="flex items-center">
+      <li key={stage.id} className="flex shrink-0 items-center">
         {index > 0 ? (
           <span
             aria-hidden
             className="mx-2.5 h-px w-3 shrink-0 bg-cool-grey-300 dark:bg-white/20"
           />
         ) : null}
-        {onSelectStage ? (
+        {onSelectStage &&
+        (!selectableStageIds || selectableStageIds.includes(stage.id)) ? (
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={() => onSelectStage(stage.id)}
-            className="!gap-2 !rounded-md !px-1 !font-normal"
+            className={`!h-auto !gap-1.5 !rounded-md !px-1.5 !py-1 !font-normal ${
+              stage.id === activeStageId ? 'bg-cool-grey-500/8' : ''
+            }`}
+            aria-current={stage.id === activeStageId ? 'step' : undefined}
           >
             <StageLabel stage={stage} />
           </Button>
