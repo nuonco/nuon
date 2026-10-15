@@ -67,8 +67,7 @@ export const BranchOverviewContainer = ({
           steps: workflowSteps,
         }
       : undefined,
-    groups,
-    variant === 'v2' ? 'neutral' : undefined
+    groups
   )
   const approvedVersions = useGroupApprovedVersions({
     orgId,

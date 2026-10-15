@@ -3,7 +3,6 @@ import {
   PlanInstallChanges,
   type TPlanInstallFacts,
 } from '@/components/branches/PlanInstallChanges'
-import { type TBannerTheme } from '@/components/common/Banner'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflowStep } from '@/types'
@@ -21,13 +20,11 @@ const awaitingApproval = (step: TInstallWorkflowStep, workflowId?: string) =>
 export const PlanDiffPanel = ({
   step,
   installFacts,
-  theme,
   workflowId,
   ...props
 }: IPanel & {
   step: TInstallWorkflowStep
   installFacts?: TPlanInstallFacts
-  theme?: TBannerTheme
   workflowId?: string
 }) => {
   const { org } = useOrg()
@@ -40,7 +37,6 @@ export const PlanDiffPanel = ({
       <div className="flex flex-col gap-6">
         {showApproval ? (
           <BranchRunApproval
-            theme={theme}
             items={[
               {
                 key: step.id!,

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Banner, type TBannerTheme } from '@/components/common/Banner'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -15,20 +15,15 @@ export interface IBranchRunApprovalItem {
 interface IBranchRunApproval {
   items: IBranchRunApprovalItem[]
   className?: string
-  theme?: TBannerTheme
 }
 
-export const BranchRunApproval = ({
-  items,
-  className,
-  theme = 'warn',
-}: IBranchRunApproval) => {
+export const BranchRunApproval = ({ items, className }: IBranchRunApproval) => {
   if (items.length === 0) return null
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
       {items.map((item) => (
-        <Banner key={item.key} className="@container" theme={theme}>
+        <Banner key={item.key} className="@container" theme="warn">
           <div className="flex flex-col gap-3 @md:flex-row @md:items-center @md:justify-between">
             <div className="flex min-w-0 flex-col">
               <Text weight="strong">

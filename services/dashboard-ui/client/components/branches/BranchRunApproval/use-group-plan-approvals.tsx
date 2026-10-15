@@ -3,7 +3,6 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import type { TTrackGroup } from '@/components/branches/BranchOverview/RolloutTrack'
 import type { TInstallWorkflowStep } from '@/types'
-import { type TBannerTheme } from '@/components/common/Banner'
 import { BranchRunApproval } from './BranchRunApproval'
 import { PlanDiffPanel } from './PlanDiffPanel'
 import { getGroupName } from './use-group-plan-href'
@@ -33,8 +32,7 @@ const factsFor = (group?: TTrackGroup) => {
 
 export const useGroupPlanApprovals = (
   run: TApprovalRun | undefined,
-  groups: TTrackGroup[],
-  theme?: TBannerTheme
+  groups: TTrackGroup[]
 ): IGroupPlanApproval[] => {
   const { org } = useOrg()
   const { addPanel } = useSurfaces()
@@ -57,7 +55,6 @@ export const useGroupPlanApprovals = (
         groupName,
         banner: (
           <BranchRunApproval
-            theme={theme}
             items={[
               {
                 key: `${run.id}-${step.id}`,
@@ -67,7 +64,6 @@ export const useGroupPlanApprovals = (
                     <PlanDiffPanel
                       step={step}
                       installFacts={factsFor(group)}
-                      theme={theme}
                       workflowId={run.id}
                     />,
                     `plan-diff-${step.id}`

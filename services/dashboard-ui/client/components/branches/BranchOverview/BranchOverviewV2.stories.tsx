@@ -547,7 +547,6 @@ const PrimaryPlanApproval = () => {
   }
   return (
     <BranchRunApproval
-      theme="neutral"
       items={[
         {
           key: primaryPlanStep.id!,
@@ -556,7 +555,6 @@ const PrimaryPlanApproval = () => {
             addPanel(
               <PlanDiffPanel
                 step={primaryPlanStep}
-                theme="neutral"
                 workflowId="wf_184"
               />,
               `plan-diff-${primaryPlanStep.id}`
