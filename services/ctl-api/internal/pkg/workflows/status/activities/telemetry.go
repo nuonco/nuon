@@ -61,21 +61,37 @@ func (a *Activities) logStepStatus(ctx context.Context, step app.WorkflowStep, p
 	l.Info("flow telemetry", fields...)
 }
 
-func (a *Activities) logWorkflowError(ctx context.Context, wf app.Workflow, previous, status app.CompositeStatus) {
-	if status.Status != app.StatusError || previous.Status == status.Status {
+func (a *Activities) logWorkflowStatus(ctx context.Context, wf app.Workflow, previous, status app.CompositeStatus) {
+	if previous.Status == status.Status {
+		return
+	}
+	var event string
+	switch status.Status {
+	case app.StatusSuccess:
+		event = "workflow.completed"
+	case app.StatusError:
+		event = "workflow.failed"
+	case app.StatusCancelled:
+		event = "workflow.cancelled"
+	case app.AwaitingApproval:
+		event = "workflow.awaiting_approval"
+	case app.StatusFailedPendingRetry:
+		event = "workflow.awaiting_retry"
+	default:
 		return
 	}
 	telemetry := cctx.WorkflowTelemetryFromContext(ctx)
 	fields := []zap.Field{
-		zap.String("flow_event", "workflow.failed"),
+		zap.String("flow_event", event),
+		zap.String("source", "workflow_status"),
 		zap.String("org_id", wf.OrgID),
 		zap.String("org_name", telemetry.OrgName),
 		zap.String("workflow_id", wf.ID),
 		zap.String("workflow_type", string(wf.Type)),
+		zap.Bool("plan_only", wf.PlanOnly),
 		zap.String("owner_id", wf.OwnerID),
 		zap.String("owner_type", wf.OwnerType),
 		zap.String("status", string(status.Status)),
-		zap.String("error", status.StatusHumanDescription),
 	}
 	if wf.OwnerType == plugins.TableNameOf[app.Install]() {
 		fields = append(fields,
@@ -83,7 +99,12 @@ func (a *Activities) logWorkflowError(ctx context.Context, wf app.Workflow, prev
 			zap.String("install_name", telemetry.InstallName),
 		)
 	}
-	cctx.GetLogger(ctx, a.l).Error("flow telemetry", fields...)
+	l := cctx.GetLogger(ctx, a.l)
+	if status.Status == app.StatusError {
+		l.Error("flow telemetry", append(fields, zap.String("error", status.StatusHumanDescription))...)
+		return
+	}
+	l.Info("flow telemetry", fields...)
 }
 
 func (a *Activities) logRunnerJob(ctx context.Context, job app.RunnerJob, status app.RunnerJobStatus, description string) {

@@ -1,264 +1,116 @@
 package statetelemetry
 
 import (
-	"context"
-	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
 
-var inventoryCategories = []struct {
-	kind   string
-	states []string
-}{
-	{"org", []string{"active", "error", "provisioning", "deleting", "deprovisioning", "deprovisioned", "unset", "other"}},
-	{"app", []string{"active", "error", "provisioning", "deprovisioning", "delete_queued", "unset", "other"}},
-	{"install", []string{"provisioning", "provisioned", "deprovisioning", "deprovisioned", "reprovisioning", "unset", "other"}},
-	{"component", []string{"active", "error", "deprovisioning", "delete_queued", "unset", "other"}},
-	{"install_component", []string{"deleted", "delete_failed", "queued", "active", "inactive", "error", "noop", "planning", "syncing", "executing", "unknown", "pending", "disabled", "unset", "other"}},
-	{"runner", []string{"error", "active", "pending", "provisioning", "deprovisioning", "deprovisioned", "reprovisioning", "offline", "awaiting-install-stack-run", "awaiting-heartbeat", "disabled", "unknown", "unset", "other"}},
-}
+var orgStates = []string{"active", "error", "provisioning", "deleting", "deprovisioning", "deprovisioned", "unset", "other"}
+var appStates = []string{"active", "error", "provisioning", "deprovisioning", "delete_queued", "unset", "other"}
+var installStates = []string{"provisioning", "provisioned", "deprovisioning", "deprovisioned", "reprovisioning", "unset", "other"}
+var componentStates = []string{"active", "error", "deprovisioning", "delete_queued", "unset", "other"}
+var targetStates = []string{"deleted", "delete_failed", "queued", "active", "inactive", "error", "noop", "planning", "syncing", "executing", "unknown", "pending", "disabled", "unset", "other"}
+var runnerStates = []string{"error", "active", "pending", "provisioning", "deprovisioning", "deprovisioned", "reprovisioning", "offline", "awaiting-install-stack-run", "awaiting-heartbeat", "disabled", "unknown", "unset", "other"}
 
-const inventoryResourcesSQL = `
+const retainedResourcesSQL = `
 WITH live_orgs AS (
-    SELECT id, COALESCE(NULLIF(status_v2->>'status', ''), status, '') AS state
+    SELECT id, sandbox_mode, COALESCE(NULLIF(status_v2->>'status', ''), status, '') AS state
     FROM orgs WHERE deleted_at = 0
 ), live_apps AS (
-    SELECT a.id, a.org_id, COALESCE(NULLIF(a.status_v2->>'status', ''), a.status, '') AS state
-    FROM apps a JOIN live_orgs o ON o.id = a.org_id
-    WHERE a.deleted_at = 0
+    SELECT a.id, a.org_id, o.sandbox_mode, COALESCE(NULLIF(a.status_v2->>'status', ''), a.status, '') AS state
+    FROM apps a JOIN live_orgs o ON o.id = a.org_id WHERE a.deleted_at = 0
 ), live_installs AS (
-    SELECT i.id, i.org_id, i.app_id, COALESCE(i.lifecycle_phase->>'phase', '') AS state
-    FROM installs i JOIN live_apps a ON a.id = i.app_id AND a.org_id = i.org_id
-    WHERE i.deleted_at = 0
+    SELECT i.id, i.org_id, i.app_id, i.last_health_report_at,
+        COALESCE(i.sandbox_mode, a.sandbox_mode, false) AS sandbox_mode,
+        COALESCE(i.lifecycle_phase->>'phase', '') AS state,
+        COALESCE(i.sandbox_health_status, '') AS sandbox_health
+    FROM installs i JOIN live_apps a ON a.id = i.app_id AND a.org_id = i.org_id WHERE i.deleted_at = 0
 ), live_components AS (
     SELECT c.id, c.org_id, c.app_id, COALESCE(NULLIF(c.status_v2->>'status', ''), c.status, '') AS state
-    FROM components c JOIN live_apps a ON a.id = c.app_id AND a.org_id = c.org_id
-    WHERE c.deleted_at = 0
-), resources AS (
-    SELECT 'org' AS kind, state, '' AS runner_type, id AS org_id, '' AS app_id FROM live_orgs
-    UNION ALL
-    SELECT 'app', state, '', org_id, id FROM live_apps
-    UNION ALL
-    SELECT 'install', state, '', org_id, app_id FROM live_installs
-    UNION ALL
-    SELECT 'component', state, '', org_id, app_id FROM live_components
-    UNION ALL
-    SELECT 'install_component', COALESCE(NULLIF(ic.status_v2->>'status', ''), ic.status, ''), '', ic.org_id, i.app_id
+    FROM components c JOIN live_apps a ON a.id = c.app_id AND a.org_id = c.org_id WHERE c.deleted_at = 0
+), live_targets AS (
+    SELECT ic.id, ic.org_id, i.app_id, ic.install_id,
+        COALESCE(NULLIF(ic.status_v2->>'status', ''), ic.status, '') AS state,
+        COALESCE(NULLIF(ic.health_status_v2->>'status', ''), ic.health_status, '') AS health
     FROM install_components ic
     JOIN live_installs i ON i.id = ic.install_id AND i.org_id = ic.org_id
     JOIN live_components c ON c.id = ic.component_id AND c.org_id = ic.org_id AND c.app_id = i.app_id
     WHERE ic.deleted_at = 0
-    UNION ALL
-    SELECT 'runner', COALESCE(NULLIF(r.status_v2->>'status', ''), r.status, ''), rg.type, r.org_id, ''
-    FROM runners r
-    JOIN live_orgs o ON o.id = r.org_id
-    JOIN runner_groups rg ON rg.id = r.runner_group_id AND rg.org_id = r.org_id AND rg.deleted_at = 0
-    WHERE r.deleted_at = 0 AND rg.type = 'org' AND rg.owner_type = 'orgs' AND rg.owner_id = o.id
-    UNION ALL
-    SELECT 'runner', COALESCE(NULLIF(r.status_v2->>'status', ''), r.status, ''), rg.type, r.org_id, i.app_id
-    FROM runners r
-    JOIN runner_groups rg ON rg.id = r.runner_group_id AND rg.org_id = r.org_id AND rg.deleted_at = 0
-    JOIN live_installs i ON i.id = rg.owner_id AND i.org_id = rg.org_id
-    WHERE r.deleted_at = 0 AND rg.type = 'install' AND rg.owner_type = 'installs'
-), normalized_resources AS (
-SELECT kind,
-    CASE WHEN state = '' THEN 'unset'
-         WHEN state = ANY(CASE kind
-             WHEN 'org' THEN $1::text[]
-             WHEN 'app' THEN $2::text[]
-             WHEN 'install' THEN $3::text[]
-             WHEN 'component' THEN $4::text[]
-             WHEN 'install_component' THEN $5::text[]
-             WHEN 'runner' THEN $6::text[] END) THEN state
-         ELSE 'other' END AS state,
-    runner_type, org_id, app_id
-FROM resources
 )
 `
 
-const inventorySQL = inventoryResourcesSQL + `
-SELECT kind, state, runner_type, COUNT(*) FROM normalized_resources
-GROUP BY 1, 2, 3
-`
-
-const appInventorySQL = inventoryResourcesSQL + `
-SELECT a.org_id, a.id, COALESCE(r.kind, ''), COALESCE(r.state, ''), COUNT(r.kind)
-FROM (SELECT id, org_id FROM live_apps ORDER BY id LIMIT $7) a
-LEFT JOIN normalized_resources r ON r.app_id = a.id AND r.org_id = a.org_id
-    AND r.kind IN ('install', 'component', 'install_component', 'runner')
-    AND (r.kind <> 'runner' OR r.runner_type = 'install')
-GROUP BY 1, 2, 3, 4
-`
-
-const orgInventorySQL = inventoryResourcesSQL + `
-SELECT o.id, '', COALESCE(r.kind, ''), COALESCE(r.state, ''), COUNT(r.kind)
-FROM (SELECT id FROM live_orgs ORDER BY id LIMIT $7) o
-LEFT JOIN normalized_resources r ON r.org_id = o.id AND r.kind = 'runner' AND r.runner_type = 'org'
-GROUP BY 1, 2, 3, 4
-`
-
-func newInventoryFamily(meter metric.Meter) (*family, error) {
-	gauge, err := meter.Int64ObservableGauge("nuon.inventory.current", metric.WithUnit("{resource}"),
-		metric.WithDescription("Retained resources with live, tenant-consistent parents, by kind and recorded lifecycle state; runners split by group type."))
-	if err != nil {
-		return nil, err
+func newStateFamilies(meter metric.Meter, level string) ([]*family, error) {
+	definitions := []struct {
+		name          string
+		interval, ttl time.Duration
+		metrics       []populationMetric
+	}{
+		{"definitions", 5 * time.Minute, 15 * time.Minute, []populationMetric{
+			{name: "nuon.org.count", unit: "{org}", group: "org", dimension: "resource.state", states: orgStates, empty: "unset",
+				description: "Retained organizations by effective lifecycle state.",
+				source:      "SELECT id AS org_id, '' AS app_id, '' AS install_id, state FROM live_orgs"},
+			{name: "nuon.app.count", unit: "{app}", group: "app", dimension: "resource.state", states: appStates, empty: "unset",
+				description: "Retained applications with matching retained organizations, by effective lifecycle state.",
+				source:      "SELECT org_id, id AS app_id, '' AS install_id, state FROM live_apps"},
+			{name: "nuon.component.count", unit: "{component}", group: "app", dimension: "resource.state", states: componentStates, empty: "unset",
+				description: "Retained app-defined components by effective lifecycle state; not installed targets.",
+				source:      "SELECT org_id, app_id, '' AS install_id, state FROM live_components"},
+		}},
+		{"installs", time.Minute, 3 * time.Minute, []populationMetric{
+			{name: "nuon.install.count", unit: "{install}", group: "install", dimension: "resource.state", states: installStates, empty: "unset",
+				description: "Retained installs with tenant-consistent parents, by lifecycle phase.",
+				source:      "SELECT org_id, app_id, id AS install_id, state FROM live_installs"},
+			{name: "nuon.install.health.count", unit: "{install}", group: "install", dimension: "nuon.health.status", states: healthStates, empty: "unset",
+				description: "Installs by recorded component-health rollup; not live availability or evaluation freshness.", source: installHealthSQL},
+			{name: "nuon.install.health.report_age.count", unit: "{install}", group: "install", dimension: "nuon.health.report_age", states: reportAgeStates, empty: "never_reported",
+				description: "Installs by recorded health-report arrival age at the transaction clock; arrival does not prove successful processing.", source: reportAgeSQL},
+			{name: "nuon.install.info", unit: "1", detail: true, dimension: "nuon.install.sandbox_mode",
+				description: "1 per retained install with resolved sandbox mode; explicit install mode takes precedence over org mode.",
+				source:      "SELECT org_id, app_id, id, sandbox_mode::text, 1::bigint FROM live_installs"},
+			{name: "nuon.install.health.last_report_at", unit: "s", detail: true, timestamp: true,
+				description: "Unix seconds of the recorded health-report arrival; absent when missing, nonpositive or future; not evaluation freshness.",
+				source: `SELECT org_id, app_id, id, '', EXTRACT(EPOCH FROM last_health_report_at)::double precision
+FROM live_installs WHERE last_health_report_at > 'epoch'::timestamptz AND last_health_report_at <= transaction_timestamp()`},
+		}},
+		{"components", time.Minute, 3 * time.Minute, []populationMetric{
+			{name: "nuon.install.component.count", unit: "{component}", group: "install", dimension: "resource.state", states: targetStates, empty: "unset",
+				description: "Retained installed targets with tenant-consistent install and component parents, by effective lifecycle state.",
+				source:      "SELECT org_id, app_id, install_id, state FROM live_targets"},
+			{name: "nuon.install.component.health.count", unit: "{component}", group: "install", dimension: "nuon.health.status", states: healthStates, empty: "unset",
+				description: "Retained installed targets by effective recorded health verdict, including unevaluated targets.",
+				source:      "SELECT org_id, app_id, install_id, health AS state FROM live_targets"},
+		}},
+		{"runners", time.Minute, 3 * time.Minute, []populationMetric{
+			{name: "nuon.runner.count", unit: "{runner}", group: "install", dimension: "resource.state", states: runnerStates, empty: "unset",
+				description: "All retained install-owned runner records by effective state; not live processes or a selected current runner.", source: installRunnersSQL},
+		}},
+		{"sandboxes", time.Minute, 3 * time.Minute, []populationMetric{
+			{name: "nuon.install.sandbox.lifecycle.count", unit: "{install}", group: "install", dimension: "nuon.sandbox.status", states: sandboxStates, empty: "missing",
+				description: "Installs by retained sandbox lifecycle, including missing sandboxes; not runtime health.", source: sandboxLifecycleSQL},
+			{name: "nuon.install.sandbox.health.count", unit: "{install}", group: "install", dimension: "nuon.health.status", states: healthStates, empty: "unset",
+				description: "Installs by recorded sandbox runtime-health field; unset does not mean healthy.",
+				source:      "SELECT org_id, app_id, id AS install_id, sandbox_health AS state FROM live_installs"},
+		}},
 	}
-
-	return &family{
-		name:        "inventory",
-		interval:    5 * time.Minute,
-		ttl:         15 * time.Minute,
-		instruments: []metric.Observable{gauge},
-		read: func(ctx context.Context, tx pgx.Tx) (snapshot, error) {
-			if _, err := tx.Exec(ctx, "SET LOCAL row_security=off"); err != nil {
-				return snapshot{}, err
-			}
-			type bucket struct{ kind, state, runnerType string }
-			counts := make(map[bucket]int64)
-			args := make([]any, len(inventoryCategories))
-			for idx, category := range inventoryCategories {
-				args[idx] = category.states
-				types := []string{""}
-				if category.kind == "runner" {
-					types = []string{"org", "install"}
-				}
-				for _, state := range category.states {
-					for _, runnerType := range types {
-						counts[bucket{category.kind, state, runnerType}] = 0
-					}
-				}
-			}
-			rows, err := tx.Query(ctx, inventorySQL, args...)
-			if err != nil {
-				return snapshot{}, err
-			}
-			defer rows.Close()
-			for rows.Next() {
-				var key bucket
-				var count int64
-				if err := rows.Scan(&key.kind, &key.state, &key.runnerType, &count); err != nil {
-					return snapshot{}, err
-				}
-				counts[key] = count
-			}
-			if err := rows.Err(); err != nil {
-				return snapshot{}, err
-			}
-			return snapshot{
-				series: map[string]int{"nuon.inventory.current": len(counts)},
-				observe: func(o metric.Observer) {
-					for key, count := range counts {
-						attrs := []attribute.KeyValue{
-							attribute.String("resource.kind", key.kind),
-							attribute.String("resource.state", key.state),
-						}
-						if key.kind == "runner" {
-							attrs = append(attrs, attribute.String("nuon.runner.group.type", key.runnerType))
-						}
-						o.ObserveInt64(gauge, count, metric.WithAttributes(attrs...))
-					}
-				},
-			}, nil
-		},
-	}, nil
-}
-
-func newScopedInventoryFamily(meter metric.Meter, scope string) (*family, error) {
-	categories := inventoryCategories[2:]
-	query, runnerType := appInventorySQL, "install"
-	if scope == "orgs" {
-		categories = inventoryCategories[5:]
-		query, runnerType = orgInventorySQL, "org"
-	}
-	gauges := make(map[string]metric.Int64ObservableGauge)
-	names := make(map[string]string)
-	instruments := make([]metric.Observable, 0, len(categories))
-	maxStates := 0
-	for _, category := range categories {
-		name := "nuon.inventory." + category.kind + ".current"
-		if category.kind == "runner" {
-			name = "nuon.inventory." + runnerType + "_runner.current"
-		}
-		gauge, err := meter.Int64ObservableGauge(name, metric.WithUnit("{resource}"),
-			metric.WithDescription("Retained resources with live, tenant-consistent parents, by "+scope+" and recorded lifecycle state."))
+	families := make([]*family, 0, len(definitions))
+	for _, definition := range definitions {
+		f, err := newPopulationFamily(meter, level, definition.name, definition.interval, definition.ttl, definition.metrics...)
 		if err != nil {
 			return nil, err
 		}
-		gauges[category.kind], names[category.kind] = gauge, name
-		instruments = append(instruments, gauge)
-		if len(category.states) > maxStates {
-			maxStates = len(category.states)
-		}
+		families = append(families, f)
 	}
-	groupLimit := maxSnapshotSeries / maxStates
-	return &family{
-		name: "inventory." + scope, interval: 5 * time.Minute, ttl: 15 * time.Minute,
-		instruments: instruments,
-		read: func(ctx context.Context, tx pgx.Tx) (snapshot, error) {
-			if _, err := tx.Exec(ctx, "SET LOCAL row_security=off"); err != nil {
-				return snapshot{}, err
-			}
-			args := make([]any, 0, len(inventoryCategories)+1)
-			for _, category := range inventoryCategories {
-				args = append(args, category.states)
-			}
-			args = append(args, groupLimit+1)
-			rows, err := tx.Query(ctx, query, args...)
-			if err != nil {
-				return snapshot{}, err
-			}
-			defer rows.Close()
-			type bucket struct{ orgID, appID, kind, state string }
-			counts := make(map[bucket]int64)
-			groups := make(map[[2]string]struct{})
-			series := make(map[string]int)
-			for rows.Next() {
-				var key bucket
-				var count int64
-				if err := rows.Scan(&key.orgID, &key.appID, &key.kind, &key.state, &count); err != nil {
-					return snapshot{}, err
-				}
-				group := [2]string{key.orgID, key.appID}
-				if _, ok := groups[group]; !ok {
-					if len(groups) == groupLimit {
-						return snapshot{}, fmt.Errorf("%w: inventory.%s exceeds %d groups", errSeriesLimit, scope, groupLimit)
-					}
-					groups[group] = struct{}{}
-					for _, category := range categories {
-						for _, state := range category.states {
-							counts[bucket{key.orgID, key.appID, category.kind, state}] = 0
-							series[names[category.kind]]++
-						}
-					}
-				}
-				if key.kind != "" {
-					counts[key] = count
-				}
-			}
-			if err := rows.Err(); err != nil {
-				return snapshot{}, err
-			}
-			return snapshot{
-				series: series,
-				observe: func(o metric.Observer) {
-					for key, count := range counts {
-						attrs := []attribute.KeyValue{
-							attribute.String("nuon.org.id", key.orgID), attribute.String("resource.state", key.state),
-						}
-						if scope == "apps" {
-							attrs = append(attrs, attribute.String("nuon.app.id", key.appID))
-						}
-						if key.kind == "runner" {
-							attrs = append(attrs, attribute.String("nuon.runner.group.type", runnerType))
-						}
-						o.ObserveInt64(gauges[key.kind], count, metric.WithAttributes(attrs...))
-					}
-				},
-			}, nil
-		},
-	}, nil
+	workflows, err := newWorkflowFamily(meter, level)
+	if err != nil {
+		return nil, err
+	}
+	return append(families, workflows), nil
 }
+
+const installRunnersSQL = `
+SELECT i.org_id, i.app_id, i.id AS install_id, COALESCE(NULLIF(r.status_v2->>'status', ''), r.status, '') AS state
+FROM live_installs i
+JOIN runner_groups rg ON rg.owner_id = i.id AND rg.owner_type = 'installs' AND rg.type = 'install' AND rg.org_id = i.org_id AND rg.deleted_at = 0
+JOIN runners r ON r.runner_group_id = rg.id AND r.org_id = i.org_id AND r.deleted_at = 0
+`
