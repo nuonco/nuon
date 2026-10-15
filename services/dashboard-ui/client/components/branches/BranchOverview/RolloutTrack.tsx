@@ -46,6 +46,7 @@ export type TTrackGroup = {
   match?: TGroupMatch
   approval?: string
   maxParallel?: number
+  startedAt?: string
   error?: TCompositeError
 }
 

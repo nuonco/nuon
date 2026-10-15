@@ -12,12 +12,23 @@ const isBuildStep = (name?: string) =>
 
 const NO_META_BUILDS: TBuildMeta[] = []
 
+const TERMINAL_RUN_STATUSES = new Set([
+  'success',
+  'failed',
+  'error',
+  'cancelled',
+])
+
+export const isTerminalRunStatus = (status?: string) =>
+  TERMINAL_RUN_STATUSES.has(status ?? '')
+
 interface IRunTemplateBuilds {
   orgId?: string
   appId?: string
   branchId?: string
   branchRunId?: string
   workflowSteps: TInstallWorkflowStep[]
+  isRunTerminal?: boolean
 }
 
 export const useRunTemplateBuilds = ({
@@ -26,9 +37,10 @@ export const useRunTemplateBuilds = ({
   branchId,
   branchRunId,
   workflowSteps,
+  isRunTerminal,
 }: IRunTemplateBuilds) => {
   const { app } = useApp()
-  const { data: builds } = useQuery({
+  const { data: builds, isLoading: buildsLoading } = useQuery({
     queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
     queryFn: () =>
       getBranchRunBuilds({
@@ -39,6 +51,8 @@ export const useRunTemplateBuilds = ({
       }),
     enabled: !!orgId && !!appId && !!branchRunId,
     placeholderData: keepPreviousData,
+    // Undefined means this caller does not follow a live run.
+    refetchInterval: isRunTerminal === false ? 5000 : false,
   })
   const buildStep = workflowSteps.find((step) => isBuildStep(step.name))
   const buildMetadata = (buildStep?.status?.metadata ?? {}) as {
@@ -46,21 +60,27 @@ export const useRunTemplateBuilds = ({
     sandbox_build_id?: string
   }
   const metaBuilds = buildMetadata.builds ?? NO_META_BUILDS
+  const sandboxBuildId = buildMetadata.sandbox_build_id
+  const runBuilds = useMemo(
+    () =>
+      (builds ?? []).map((build) => ({
+        id: build.id,
+        component_id: build.component_id,
+        component_name: build.component_name,
+        status: build.status_v2?.status || build.status,
+      })),
+    [builds]
+  )
   const changedBuilds = useMemo(
     () =>
       changedBuildRows({
         metaBuilds,
-        runBuilds: (builds ?? []).map((build) => ({
-          id: build.id,
-          component_id: build.component_id,
-          component_name: build.component_name,
-          status: build.status_v2?.status || build.status,
-        })),
+        runBuilds,
         orgId,
         appId,
-        sandboxBuildId: buildMetadata.sandbox_build_id,
+        sandboxBuildId,
       }),
-    [metaBuilds, builds, orgId, appId, buildMetadata.sandbox_build_id]
+    [metaBuilds, runBuilds, orgId, appId, sandboxBuildId]
   )
   const { data: sandboxBuild } = useQuery({
     queryKey: ['sandbox-build', orgId, appId, buildMetadata.sandbox_build_id],
@@ -93,5 +113,13 @@ export const useRunTemplateBuilds = ({
     [changedBuilds, sandboxBuild, app?.sandbox_config]
   )
 
-  return { builds, metaBuilds, templateBuilds }
+  return {
+    builds,
+    buildsLoading,
+    changedBuilds,
+    metaBuilds,
+    runBuilds,
+    sandboxBuildId,
+    templateBuilds,
+  }
 }

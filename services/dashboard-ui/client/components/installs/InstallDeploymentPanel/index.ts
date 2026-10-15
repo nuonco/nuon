@@ -1,1 +1,4 @@
-export { InstallDeploymentPanel } from './InstallDeploymentPanel'
+export {
+  InstallDeploymentPanel,
+  PendingInstallPanel,
+} from './InstallDeploymentPanel'

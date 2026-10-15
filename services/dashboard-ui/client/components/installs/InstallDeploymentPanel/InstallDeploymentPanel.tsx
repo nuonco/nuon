@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import type { TDeploymentTab } from '@/components/installs/DeploymentDetail/deployment-progress'
 import {
   DeploymentDetailBody,
   DeploymentDetailLoading,
@@ -15,12 +17,30 @@ export interface IInstallDeploymentPanel extends IPanel {
   workflowId: string
   title: string
   repo?: string
+  initialTab?: TDeploymentTab
 }
 
 const unavailable = (
   <Text variant="subtext" theme="neutral">
     This deployment could not be loaded.
   </Text>
+)
+
+export const PendingInstallPanel = ({
+  title,
+  status,
+}: {
+  title: string
+  status?: string
+}) => (
+  <Panel heading={title} size="3/4" aria-label="Install details">
+    <div className="flex flex-col gap-3">
+      {status ? <Status status={status} /> : null}
+      <Text variant="subtext" theme="neutral">
+        This install has not started in this rollout.
+      </Text>
+    </div>
+  </Panel>
 )
 
 export const InstallDeploymentPanel = ({
@@ -30,6 +50,7 @@ export const InstallDeploymentPanel = ({
   workflowId,
   title,
   repo,
+  initialTab,
   ...panelProps
 }: IInstallDeploymentPanel) => {
   const { data: record, isError } = useQuery({
@@ -47,7 +68,7 @@ export const InstallDeploymentPanel = ({
     >
       <InstallProvider
         installId={installId}
-        loadingElement={<DeploymentDetailLoading />}
+        loadingElement={<DeploymentDetailLoading initialTab={initialTab} />}
         errorElement={unavailable}
       >
         {record ? (
@@ -64,6 +85,7 @@ export const InstallDeploymentPanel = ({
             appId={appId}
             installId={installId}
             repo={repo}
+            initialTab={initialTab}
           />
         ) : isError ? (
           unavailable

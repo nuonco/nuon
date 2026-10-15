@@ -91,6 +91,7 @@ export const ApprovePlanModalContainer = ({
 
 export const ApprovePlanButton = ({
   step,
+  children = 'Approve plan',
   ...props
 }: IApprovePlan & IButtonAsButton) => {
   const { addModal } = useSurfaces()
@@ -101,7 +102,7 @@ export const ApprovePlanButton = ({
 
   return (
     <Button onClick={() => addModal(modal)} {...props}>
-      Approve plan
+      {children}
     </Button>
   )
 }

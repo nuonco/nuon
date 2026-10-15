@@ -12,8 +12,10 @@ import {
 import type { TCompositeError } from '@/types'
 import { OverviewLoadingTrack } from './OverviewLoadingTrack'
 import type { TOverviewStage, TPreviewProgress } from './overview-loading'
+import type { TGroupApprovedVersion } from './group-approved-version'
 import type { IGroupPlanApproval } from './RolloutGroupsCard'
 import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
+import type { TChangedBuildRow } from './changed-builds'
 import {
   RunCommitSummary,
   RunSourceMark,
@@ -53,17 +55,27 @@ export interface IBranchOverview {
   isLoading?: boolean
   rollout?: TOverviewRollout
   changes?: ReactNode
+  configChanges?: ReactNode
+  // Changes when configChanges content changes, so open drawers can refresh.
+  configChangesKey?: string
   groups: TTrackGroup[]
   rolloutHref: string
   groupHref: (groupId: string) => string
   loadingStages?: TOverviewStage[]
+  buildRows?: TChangedBuildRow[]
+  buildRowsLoading?: boolean
   compositeError?: TCompositeError
   failedBuilds?: TFailedBuildLink[]
   approvals?: IGroupPlanApproval[]
   runHeaderAction?: ReactNode
+  cancelRollout?: ReactNode
   versionLabel?: string
   previousSha?: string
   onSelectInstall?: (install: TTrackInstall) => void
+  onSelectBuild?: (build: TChangedBuildRow) => void
+  onApproveAll?: (groupId: string) => void
+  approvedVersions?: Record<string, TGroupApprovedVersion>
+  approvedVersionsLoading?: boolean
 }
 
 export const BranchOverview = ({

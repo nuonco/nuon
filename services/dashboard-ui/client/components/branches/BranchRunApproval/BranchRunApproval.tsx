@@ -8,7 +8,7 @@ import { cn } from '@/utils/classnames'
 export interface IBranchRunApprovalItem {
   key: string
   groupName: string
-  onReview: () => void
+  onReview?: () => void
   actions: ReactNode
 }
 
@@ -35,10 +35,12 @@ export const BranchRunApproval = ({ items, className }: IBranchRunApproval) => {
               </Text>
             </div>
             <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-              <Button variant="secondary" onClick={item.onReview}>
-                <Icon variant="ListChecksIcon" size={16} />
-                Review changes
-              </Button>
+              {item.onReview ? (
+                <Button variant="secondary" onClick={item.onReview}>
+                  <Icon variant="ListChecksIcon" size={16} />
+                  Review changes
+                </Button>
+              ) : null}
               {item.actions}
             </div>
           </div>

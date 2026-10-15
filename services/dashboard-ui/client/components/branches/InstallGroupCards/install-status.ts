@@ -14,6 +14,8 @@ export type TStatusInstall = {
   id: string
   name: string
   status: string
+  overviewHref?: string
+  workflowId?: string
 }
 
 const SLICE_ORDER: { status: string; label: string }[] = [

@@ -64,6 +64,7 @@ export const useGroupPlanApprovals = (
                     <PlanDiffPanel
                       step={step}
                       installFacts={factsFor(group)}
+                      workflowId={run.id}
                     />,
                     `plan-diff-${step.id}`
                   )

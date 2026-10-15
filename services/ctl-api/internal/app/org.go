@@ -77,6 +77,7 @@ const (
 	// per-operation identities run operations as the runner's own identity
 	// instead of failing role selection.
 	OrgFeatureAzureLegacyRoleFallback OrgFeature = "azure-legacy-role-fallback"
+	OrgFeatureBranchOverviewV2        OrgFeature = "branch-overview-v2"
 )
 
 type OrgTelemetrySettings struct {
@@ -236,6 +237,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureAppInstallSyncing:       false,
 		OrgFeatureDisableAppSync:          false,
 		OrgFeatureAzureLegacyRoleFallback: false,
+		OrgFeatureBranchOverviewV2:        false,
 	}
 }
 
@@ -254,6 +256,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureDisableAppSync,
 		OrgFeatureAppBundleExport,
 		OrgFeatureAzureLegacyRoleFallback,
+		OrgFeatureBranchOverviewV2,
 	}
 }
 
@@ -281,6 +284,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureDisableAppSync:          "Block standalone `nuon apps sync`. Config changes ship through config-managed app branches (`nuon branches sync`) instead; on a TTY the CLI offers a wizard that creates a branch config file and moves the app's installs onto it.",
 		OrgFeatureAppBundleExport:         "Enable the app bundle export API: package pinned sandbox and component builds for an app-config version into a portable OCI-layout tar.zst with presigned download grants.",
 		OrgFeatureAzureLegacyRoleFallback: "Let Azure installs whose install stack predates per-operation managed identities run deploys, sandbox runs, and actions as the runner's own identity instead of failing with \"role not found in install stack outputs\".",
+		OrgFeatureBranchOverviewV2:        "Enable the second-generation branch overview with an expanded active install group, navigable deployment plan, and install deployment details.",
 	}
 }
 

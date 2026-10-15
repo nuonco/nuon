@@ -1,7 +1,9 @@
 import { Button } from '@/components/common/Button'
+import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
+import { InstallApprovalButton } from './InstallApprovalActions'
 import { installStatusBucket } from './install-status'
 import { CommitRange, type ICommitRange } from './CommitRange'
 import type { TTrackInstall } from '@/components/branches/BranchOverview/RolloutTrack'
@@ -33,11 +35,44 @@ export const InstallRolloutCard = ({
   install,
   commit,
   onSelect,
+  layout = 'card',
 }: {
   install: TTrackInstall
   commit?: ICommitRange
   onSelect?: (install: TTrackInstall) => void
+  layout?: 'card' | 'row'
 }) => {
+  if (layout === 'row') {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {install.overviewHref ? (
+          <Link href={install.overviewHref} className="min-w-0 truncate font-mono">
+            {install.name}
+          </Link>
+        ) : (
+          <Text family="mono" variant="body" className="min-w-0 truncate">
+            {install.name}
+          </Text>
+        )}
+        <span className="flex items-center gap-3">
+          <Status status={install.status} />
+          {installStatusBucket(install.status) === 'approval-awaiting' ? (
+            <InstallApprovalButton install={install} />
+          ) : null}
+          {onSelect && install.workflowId ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => onSelect(install)}
+            >
+              View details
+            </Button>
+          ) : null}
+        </span>
+      </div>
+    )
+  }
+
   if (installStatusBucket(install.status) === 'pending') {
     return (
       <Tooltip
