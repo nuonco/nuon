@@ -2,7 +2,7 @@
   "announcements": [
     {
       "id": "deprovisions-telemetry-dashboard-042",
-      "title": "BYOC Telemetry, Improved UI and Customer Env Deprovisioning",
+      "title": "BYOC Telemetry, Improved UI and Deprovisioning",
       "date": "October 15, 2026",
       "description": "OTEL support for BYOC environments, and platform usability improvements",
       "ctaText": "Learn more",
