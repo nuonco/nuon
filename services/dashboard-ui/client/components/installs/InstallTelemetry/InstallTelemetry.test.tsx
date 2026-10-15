@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  waitForElementToBeRemoved,
   within,
 } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -436,8 +437,8 @@ test('rotation keeps old tokens and offers a one-time input token without cachin
   const revoke = within(screen.getAllByRole('dialog').at(-1)!)
   expect(writes).toHaveLength(2)
   fireEvent.click(revoke.getByRole('button', { name: 'Revoke credential' }))
-  await waitFor(() =>
-    expect(screen.queryByText('token-old', { exact: true })).toBeNull()
+  await waitForElementToBeRemoved(() =>
+    screen.queryByText('token-old', { exact: true })
   )
   expect(writes.at(-1)).toMatchObject({
     url: '/v1/account/static-tokens/token-old',
