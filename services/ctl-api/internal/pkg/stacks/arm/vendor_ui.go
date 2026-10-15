@@ -25,15 +25,19 @@ func (t *Templates) loadStackUIDefinition(inp *stacks.TemplateInput) ([]byte, er
 	return fetchLimitedBody(ui.SourceURL)
 }
 
-// vendorUIParameterNames returns the element names a vendor createUiDefinition
-// binds. Empty when the stack has no UI file.
-func (t *Templates) vendorUIParameterNames(inp *stacks.TemplateInput) (map[string]bool, error) {
+// vendorUINames is how a vendor createUiDefinition refers to template parameters.
+// bound names are controls the portal should collect. hidden names are controls
+// with static visible:false; those parameters keep the nested template's default.
+type vendorUINames struct {
+	bound  map[string]bool
+	hidden map[string]bool
+}
+
+func (t *Templates) vendorUINames(inp *stacks.TemplateInput) (vendorUINames, error) {
+	names := vendorUINames{bound: map[string]bool{}, hidden: map[string]bool{}}
 	body, err := t.loadStackUIDefinition(inp)
-	if err != nil {
-		return nil, err
-	}
-	if len(body) == 0 {
-		return map[string]bool{}, nil
+	if err != nil || len(body) == 0 {
+		return names, err
 	}
 
 	var doc struct {
@@ -43,17 +47,48 @@ func (t *Templates) vendorUIParameterNames(inp *stacks.TemplateInput) (map[strin
 		} `json:"parameters"`
 	}
 	if err := json.Unmarshal(body, &doc); err != nil {
-		return nil, fmt.Errorf("unable to parse stack ui definition: %w", err)
+		return names, fmt.Errorf("unable to parse stack ui definition: %w", err)
 	}
-
-	names := map[string]bool{}
-	for name := range indexBasicsElementRefs(doc.Parameters.Basics) {
-		names[name] = true
-	}
-	for name := range indexStepElementRefs(doc.Parameters.Steps) {
-		names[name] = true
-	}
+	collectNamedElements(doc.Parameters.Basics, names.bound, names.hidden, false)
+	collectNamedElements(doc.Parameters.Steps, names.bound, names.hidden, false)
 	return names, nil
+}
+
+func collectNamedElements(nodes []any, bound, hidden map[string]bool, forceHidden bool) {
+	for _, node := range nodes {
+		el, ok := node.(map[string]any)
+		if !ok {
+			continue
+		}
+		hiddenEl := forceHidden || staticallyHidden(el)
+		if children, ok := el["elements"].([]any); ok {
+			collectNamedElements(children, bound, hidden, hiddenEl)
+			continue
+		}
+		name, _ := el["name"].(string)
+		if name == "" || displayOnlyUIElement(el) {
+			continue
+		}
+		if hiddenEl {
+			hidden[name] = true
+			continue
+		}
+		bound[name] = true
+	}
+}
+
+func staticallyHidden(el map[string]any) bool {
+	hidden, ok := el["visible"].(bool)
+	return ok && !hidden
+}
+
+func displayOnlyUIElement(el map[string]any) bool {
+	switch el["type"] {
+	case "Microsoft.Common.InfoBox", "Microsoft.Common.TextBlock":
+		return true
+	default:
+		return false
+	}
 }
 
 func fetchLimitedBody(rawURL string) ([]byte, error) {
@@ -121,10 +156,10 @@ func mergeVendorUI(uiDef map[string]any, vendor []byte, wrapperParams map[string
 	}
 
 	params["basics"] = append(
-		filterUIElements(doc.Parameters.Basics, owned),
+		filterVendorControls(doc.Parameters.Basics, owned, wrapperParams),
 		filterUIElements(generatedBasics, bound)...,
 	)
-	params["steps"] = filterUIElements(doc.Parameters.Steps, owned)
+	params["steps"] = filterVendorControls(doc.Parameters.Steps, owned, wrapperParams)
 
 	outputs := maps.Clone(generatedOutputs)
 	for name := range bound {
@@ -178,12 +213,15 @@ func indexBasicsElementRefs(basics []any) map[string]string {
 		if !ok {
 			continue
 		}
+		if staticallyHidden(el) {
+			continue
+		}
 		name, _ := el["name"].(string)
 		if el["type"] == "Microsoft.Common.Section" {
 			children, _ := el["elements"].([]any)
 			for _, childNode := range children {
 				child, ok := childNode.(map[string]any)
-				if !ok {
+				if !ok || staticallyHidden(child) {
 					continue
 				}
 				childName, _ := child["name"].(string)
@@ -207,11 +245,14 @@ func indexStepElementRefs(steps []any) map[string]string {
 		if !ok {
 			continue
 		}
+		if staticallyHidden(step) {
+			continue
+		}
 		stepName, _ := step["name"].(string)
 		elements, _ := step["elements"].([]any)
 		for _, elementNode := range elements {
 			el, ok := elementNode.(map[string]any)
-			if !ok {
+			if !ok || staticallyHidden(el) {
 				continue
 			}
 			name, _ := el["name"].(string)
@@ -219,7 +260,7 @@ func indexStepElementRefs(steps []any) map[string]string {
 				children, _ := el["elements"].([]any)
 				for _, childNode := range children {
 					child, ok := childNode.(map[string]any)
-					if !ok {
+					if !ok || staticallyHidden(child) {
 						continue
 					}
 					childName, _ := child["name"].(string)
@@ -233,6 +274,49 @@ func indexStepElementRefs(steps []any) map[string]string {
 				out[name] = fmt.Sprintf("steps('%s').%s", stepName, name)
 			}
 		}
+	}
+	return out
+}
+
+// filterVendorControls keeps display-only elements and controls for parameters
+// the wrapper declares. A static visible:false control is removed, and so is a
+// text box for a parameter that was not hoisted, so the form does not ask for a
+// value the template already computed.
+func filterVendorControls(nodes []any, drop map[string]bool, wrapperParams map[string]ARMParameter) []any {
+	if len(nodes) == 0 {
+		return []any{}
+	}
+	out := make([]any, 0, len(nodes))
+	for _, node := range nodes {
+		el, ok := node.(map[string]any)
+		if !ok {
+			out = append(out, node)
+			continue
+		}
+		if staticallyHidden(el) {
+			continue
+		}
+		if _, hasElements := el["elements"]; hasElements {
+			children, _ := el["elements"].([]any)
+			filtered := filterVendorControls(children, drop, wrapperParams)
+			if len(filtered) == 0 {
+				continue
+			}
+			cloned := maps.Clone(el)
+			cloned["elements"] = filtered
+			out = append(out, cloned)
+			continue
+		}
+		name, _ := el["name"].(string)
+		if drop[name] {
+			continue
+		}
+		if name != "" && !displayOnlyUIElement(el) {
+			if _, declared := wrapperParams[name]; !declared {
+				continue
+			}
+		}
+		out = append(out, el)
 	}
 	return out
 }

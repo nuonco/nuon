@@ -792,6 +792,53 @@ func TestQuickLinkUIDefinition_MergesVendorUI(t *testing.T) {
 	}
 }
 
+func TestQuickLinkUIDefinition_HiddenVendorControlIsNotBound(t *testing.T) {
+	inp := minimalTemplateInput()
+	inp.DeploymentScope = app.StackDeploymentScopeSubscription
+	inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{
+		Contents: `{
+		  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+		  "handler": "Microsoft.Azure.CreateUIDef",
+		  "version": "0.1.2-preview",
+		  "parameters": {
+		    "basics": [
+		      {"name": "vnetCIDR", "type": "Microsoft.Common.TextBox", "label": "Hidden CIDR", "visible": false}
+		    ],
+		    "steps": [
+		      {
+		        "name": "review",
+		        "label": "Review",
+		        "elements": [
+		          {"name": "note", "type": "Microsoft.Common.InfoBox", "options": {"text": "Check the network."}},
+		          {"name": "hint", "type": "Microsoft.Common.TextBlock", "options": {"text": "Names are generated."}}
+		        ]
+		      }
+		    ],
+		    "outputs": {"vnetCIDR": "[basics('vnetCIDR')]"}
+		  }
+		}`,
+	}
+
+	_, params := renderUIDef(t, inp)
+	if elementNamed(params["basics"].([]any), "vnetCIDR") {
+		t.Fatal("vnetCIDR is on the form despite visible: false")
+	}
+	if _, ok := params["outputs"].(map[string]any)["vnetCIDR"]; ok {
+		t.Fatal("outputs include vnetCIDR")
+	}
+	steps := params["steps"].([]any)
+	if len(steps) != 1 {
+		t.Fatalf("steps = %#v, want the review step", steps)
+	}
+	elements := steps[0].(map[string]any)["elements"].([]any)
+	if !elementNamed(elements, "note") {
+		t.Fatal("InfoBox note was dropped")
+	}
+	if !elementNamed(elements, "hint") {
+		t.Fatal("TextBlock hint was dropped")
+	}
+}
+
 func TestQuickLinkUIDefinition_VendorUIKeepsRoles(t *testing.T) {
 	inp := azureRolesTemplateInput()
 	_, params := renderUIDef(t, inp)
@@ -835,6 +882,7 @@ func TestQuickLinkUIDefinition_FetchesVendorUI(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	inp := minimalTemplateInput()
+	inp.DeploymentScope = app.StackDeploymentScopeSubscription
 	inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{SourceURL: server.URL}
 	_, params := renderUIDef(t, inp)
 	vnet := indexBasicsElements(params["basics"].([]any))["vnetCIDR"]
