@@ -9,30 +9,69 @@ import { cn } from '@/utils/classnames'
 import { PolicyViolations } from './PolicyViolations'
 import type { TWorkflowStep } from '@/types'
 
+const warning = (policyId: string, message: string) => ({
+  policy_id: policyId,
+  message,
+  severity: 'warn' as const,
+})
+
+const rootWarning = (name: string) =>
+  `Deployment '${name}' container '${name}' may run as root. Set securityContext.runAsNonRoot=true at the pod or container level.`
+
 const violationStep = {
   id: 'step-1',
-  policy_results: {
-    results: [
-      {
-        action: 'warn',
-        message:
-          "EKS cluster 'module.eks.aws_eks_cluster.this[0]' allows public API access from 0.0.0.0/0 — restrict public_access_cidrs to known operator/runner IP ranges",
-        policy_id: 'pol-1',
-      },
-      {
-        action: 'warn',
-        message:
-          "EKS cluster 'module.eks.aws_eks_cluster.this[0]' has public endpoint access enabled — ensure this is intentional e.g., an example app or for demonstrating policies in Nuon",
-        policy_id: 'pol-2',
-      },
-    ],
+  status: {
+    status: 'success',
+    metadata: {
+      warn_violations: [
+        warning(
+          'pol-public-api',
+          "EKS cluster 'module.eks.aws_eks_cluster.this[0]' allows public API access from 0.0.0.0/0 — restrict public_access_cidrs to known operator ranges"
+        ),
+        warning(
+          'pol-public-endpoint',
+          "EKS cluster 'module.eks.aws_eks_cluster.this[0]' has public endpoint access enabled — ensure this is intentional for a demo environment"
+        ),
+      ],
+    },
   },
 } as TWorkflowStep
 
 const passedStep = {
   id: 'step-2',
-  policy_results: {
-    results: [{ action: 'allow' }],
+  status: {
+    status: 'success',
+    metadata: {
+      passed_policy_ids: ['pol-tags'],
+    },
+  },
+} as TWorkflowStep
+
+const manyWarningsStep = {
+  id: 'step-many-warnings',
+  name: 'sync and plan payments-api',
+  status: {
+    status: 'success',
+    metadata: {
+      warn_violations: [
+        warning(
+          'pol-auth-domains',
+          'payments-api has AUTH_ALLOW_ALL_USERS="true". Verify ALLOWED_DOMAINS is restricted to the intended domains.'
+        ),
+        ...[
+          'payments-admin',
+          'payments-auth',
+          'payments-dashboard',
+          'payments-public',
+          'payments-runner',
+          'payments-notify',
+          'payments-startup',
+          'payments-worker',
+          'payments-actions',
+          'payments-jobs',
+        ].map((name) => warning(`pol-root-${name}`, rootWarning(name))),
+      ],
+    },
   },
 } as TWorkflowStep
 
@@ -40,10 +79,11 @@ export const WithViolations = () => <PolicyViolations step={violationStep} />
 
 export const AllPassed = () => <PolicyViolations step={passedStep} />
 
-// ---------------------------------------------------------------------------
-// Layout exploration: each story below renders the same two warnings using a
-// different presentation. Pick the one that feels best.
-// ---------------------------------------------------------------------------
+export const ManyWarnings = () => (
+  <div className="max-w-3xl">
+    <PolicyViolations step={manyWarningsStep} />
+  </div>
+)
 
 const messages = [
   "EKS cluster 'module.eks.aws_eks_cluster.this[0]' allows public API access from 0.0.0.0/0 — restrict public_access_cidrs to known operator/runner IP ranges",

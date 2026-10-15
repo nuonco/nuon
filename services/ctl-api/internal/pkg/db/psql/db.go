@@ -16,6 +16,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/poolmetrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
@@ -45,6 +46,7 @@ type database struct {
 
 	MetricsWriter  metrics.Writer `validate:"required"`
 	QueryCollector *querycollector.Collector
+	blobSvc        blobstore.Service
 
 	pool          *pgxpool.Pool
 	poolCtx       context.Context
@@ -93,11 +95,13 @@ func New(v *validator.Validate,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
 	pm poolmetrics.Params,
+	blobSvc blobstore.Service,
 ) (*gorm.DB, error) {
 	primary, err := newDatabase(cfg, l, metricsWriter, qc, cfg.DBHost)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build primary database config: %w", err)
 	}
+	primary.blobSvc = blobSvc
 	primary.Role = "primary"
 	if err := primary.Validate(v); err != nil {
 		return nil, err
@@ -204,11 +208,12 @@ func NewReplica(v *validator.Validate,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
 	pm poolmetrics.Params,
+	blobSvc blobstore.Service,
 ) (*gorm.DB, error) {
 	if cfg.DBReplicaHost == "" {
 		return nil, fmt.Errorf("db_replica_host must be set to use the read replica")
 	}
-	return open(v, l, metricsWriter, lc, cfg, qc, cfg.DBReplicaHost, pm)
+	return open(v, l, metricsWriter, lc, cfg, qc, cfg.DBReplicaHost, pm, blobSvc)
 }
 
 func newDatabase(cfg *internal.Config, l zapgorm2.Logger, metricsWriter metrics.Writer, qc *querycollector.Collector, host string) (*database, error) {
@@ -249,11 +254,13 @@ func open(v *validator.Validate,
 	qc *querycollector.Collector,
 	host string,
 	pm poolmetrics.Params,
+	blobSvc blobstore.Service,
 ) (*gorm.DB, error) {
 	d, err := newDatabase(cfg, l, metricsWriter, qc, host)
 	if err != nil {
 		return nil, err
 	}
+	d.blobSvc = blobSvc
 	if err := d.Validate(v); err != nil {
 		return nil, err
 	}

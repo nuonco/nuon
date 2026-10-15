@@ -1,0 +1,113 @@
+---
+title: 042 - BYOC Telemetry, Improved UI and Deprovisioning
+description: OTEL support for BYOC environments, and platform usability improvements
+boost: 0.3
+---
+
+_October 15, 2026_
+
+## BYOC telemetry
+
+Every install's logs, metrics, and traces in your backend.
+
+- Apps send OpenTelemetry to a private OTLP endpoint in each install
+- The runner forwards it to your relay, which exports to any OTLP backend
+- Records are stamped with verified `nuon.org.id`, `nuon.app.id`, and `nuon.install.id`
+- No backend credentials in customer accounts
+- Customers can disable the endpoint in their stack
+- Org default plus per-install overrides
+
+```toml
+OTEL_EXPORTER_OTLP_PROTOCOL = "http/protobuf"
+OTEL_EXPORTER_OTLP_ENDPOINT = "{{ .nuon.install_stack.outputs.telemetry_endpoint }}"
+```
+
+<video
+  src="/images/changelog/042-byoc-telemetry.mp4"
+  poster="/images/changelog/042-byoc-telemetry.png"
+  autoPlay
+  loop
+  muted
+  playsInline
+  style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
+/>
+
+<CardGroup cols={2}>
+  <Card title="Install telemetry" icon="chart-line" href="/concepts/install-telemetry" horizontal />
+  <Card title="Set up install telemetry" icon="rocket" href="/guides/byoc/telemetry" horizontal />
+</CardGroup>
+
+---
+
+## Improved UI
+
+Track rollouts and changes across every install.
+
+- App branches are each app's landing page
+- Install pages show commits behind the tracked branch
+- Active deployments listed above history
+- Actions, runbooks, and deployments record who triggered them
+
+<img
+  src="/images/changelog/042-improved-ui.png"
+  alt="An app branch overview tracking acme/payments with its latest run, overlaid by an install's deployment history showing its three most recent deployments"
+  style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
+/>
+
+Rolling out now. Ask us in your shared Slack channel to turn it on.
+
+---
+
+## Deprovisioning
+
+Choose what stays in the customer's account on teardown.
+
+- `[teardown] retain` removes listed resources from state and leaves them running
+- The teardown plan marks each retained resource with a **Retain** action
+- The plan fails if a retained resource depends on something being destroyed
+- `apply_on_teardown = false` skips a policy during teardowns and keeps it on for deploys
+- Failed plan steps can be skipped
+- Deprovisions show on the install's deployments page
+
+```toml components/database.toml
+[teardown]
+retain = [
+  "aws_rds_cluster.main",
+  "aws_rds_cluster_instance.main",
+]
+```
+
+```toml policies.toml
+[[policy]]
+type              = "terraform_module"
+engine            = "opa"
+contents          = "./protect-rds-cluster.rego"
+apply_on_teardown = false
+```
+
+<CardGroup cols={2}>
+  <Card title="Retaining resources on teardown" icon="box-archive" href="/guides/retaining-resources-on-teardown" horizontal />
+  <Card title="Skipping policies during teardown" icon="shield-check" href="/concepts/policies#skipping-policies-during-teardown" horizontal />
+</CardGroup>
+
+---
+
+## Other updates in this release
+
+### Scheduled runbooks
+
+Runbooks can run on a cron schedule.
+
+```toml
+[[triggers]]
+type          = "cron"
+cron_schedule = "0 6 * * 1"
+```
+
+<Card title="Runbooks" icon="book" href="/guides/runbooks" horizontal />
+
+### AWS cloud connections
+
+AWS access through short-lived OIDC credentials. Select a connection when creating an install.
+
+<Card title="Cloud connections" icon="cloud" href="/guides/cloud-connections" horizontal />
