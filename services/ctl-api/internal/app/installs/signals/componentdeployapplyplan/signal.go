@@ -225,10 +225,29 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	l.Info("executing plan")
+	if job.DemandEnabled(ctx) && workflow.GetVersion(ctx, "deploy-apply-job-sequence-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		return (job.Sequence{
+			Phases: []job.Phase{{
+				Key: checkpointApply,
+				Prepare: func(ctx workflow.Context) (string, error) {
+					return s.prepareApplyPhase(ctx, install, installDeploy, logStream.ID)
+				},
+			}},
+			Finish: func(ctx workflow.Context, err error) error {
+				activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+				return s.finishApply(ctx, install, installDeploy, err)
+			},
+		}).Run(ctx)
+	}
+
 	err = s.execApplyPlan(ctx, install, installDeploy, s.InstallWorkflowStepID, s.SandboxMode)
 	if job.IsSuspended(err) {
 		return err
 	}
+	return s.finishApply(ctx, install, installDeploy, err)
+}
+
+func (s *Signal) finishApply(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, err error) error {
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
 		return errors.Wrap(err, "unable to execute deploy")
@@ -255,6 +274,34 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// inside this apply.
 
 	return nil
+}
+
+func (s *Signal) prepareApplyPhase(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, logStreamID string) (string, error) {
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
+	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	if err != nil {
+		return "", fmt.Errorf("unable to get build: %w", err)
+	}
+	operation := app.RunnerJobOperationTypeCreateApplyPlan
+	if installDeploy.Type == app.InstallDeployTypeTeardown {
+		operation = app.RunnerJobOperationTypeCreateTeardownPlan
+	}
+	runnerJobType := build.ComponentConfigConnection.Type.DeployJobType()
+	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
+		OwnerID:   installDeploy.ID,
+		Operation: operation,
+		Group:     runnerJobType.Group(),
+		Type:      runnerJobType,
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "unable to plan runner job for current apply job")
+	}
+	jobID, err := s.prepareApplyJob(ctx, install, installDeploy, s.InstallWorkflowStepID, build, planJob, logStreamID)
+	if err != nil {
+		return "", err
+	}
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "executing deploy plan")
+	return jobID, nil
 }
 
 func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, sandboxMode bool) (err error) {

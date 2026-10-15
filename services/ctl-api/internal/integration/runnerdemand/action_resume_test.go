@@ -18,10 +18,15 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/interceptors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/interceptors/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/testworker"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
@@ -39,11 +44,12 @@ func TestRunnerDemandActionResume(t *testing.T) {
 	var v2 *statusactivities.Activities
 	s, namespace := startSuite(t,
 		fx.Provide(cloudconnectionshelpers.New, cloudformation.NewTemplates, secretsmanager.NewService, installactivities.New),
+		fx.Provide(interceptors.AsInterceptor(cctx.New)),
 		fx.Populate(&legacy, &v2),
 		fx.Invoke(fx.Annotate(func(db *gorm.DB) error {
 			t.Cleanup(func() { require.NoError(t, db.Callback().Create().Remove("test:install-task-queue")) })
 			return db.Callback().Create().Before("gorm:before_create").Register("test:install-task-queue", func(tx *gorm.DB) {
-				if q, ok := tx.Statement.Dest.(*app.Queue); ok && q.Name == queuenames.InstallSignalsQueueName {
+				if q, ok := tx.Statement.Dest.(*app.Queue); ok && (q.Name == queuenames.InstallSignalsQueueName || q.Name == installhelpers.InstallStateManagerQueueName) {
 					q.Workflow.TaskQueue = actionTaskQueue
 				}
 			})
@@ -53,7 +59,9 @@ func TestRunnerDemandActionResume(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			w := worker.New(client, actionTaskQueue, worker.Options{DisableRegistrationAliasing: true, WorkflowPanicPolicy: worker.FailWorkflow})
+			w := worker.New(client, actionTaskQueue, worker.Options{
+				DisableRegistrationAliasing: true, WorkflowPanicPolicy: worker.FailWorkflow, Interceptors: p.Interceptors,
+			})
 			for _, shared := range p.SharedActs.AllActivities() {
 				w.RegisterActivity(shared)
 			}
@@ -73,6 +81,94 @@ func TestRunnerDemandActionResume(t *testing.T) {
 	)
 	t.Run("completed_action_resume", func(t *testing.T) { testActionFinalizedResume(t, s, namespace) })
 	t.Run("cancel_if_unfinished", func(t *testing.T) { testOwnerCancellation(t, s, namespace, legacy, v2) })
+	for name, finalized := range map[string]bool{"prepared_apply_resume": false, "finalized_apply_resume": true} {
+		t.Run(name, func(t *testing.T) { testApplyResume(t, s, namespace, finalized) })
+	}
+}
+
+func testApplyResume(t *testing.T, s testServices, namespace string, finalized bool) {
+	f := newFixture(t, s, namespace, 1, time.Minute)
+	s.Seeder.CreateServiceAccount(f.ctx, t, f.log.ID)
+	var component app.InstallComponent
+	require.NoError(t, s.DB.Where(app.InstallComponent{ID: f.deploy.InstallComponentID}).First(&component).Error)
+	require.NoError(t, s.DB.Scopes(scopes.WithDisableViews).Model(f.deploy).Updates(map[string]any{
+		"install_workflow_id": f.workflow.ID, "status": app.InstallDeployStatusExecuting,
+		"status_v2": app.NewCompositeStatus(f.ctx, app.StatusInProgress),
+	}).Error)
+	require.NoError(t, s.DB.Model(f.step).Update("queue_signal", &signaldb.SignalData{Signal: &componentdeployapplyplan.Signal{
+		InstallID: f.workflow.OwnerID, InstallComponentID: component.ID, ComponentID: component.ComponentID, FlowID: f.workflow.ID,
+	}}).Error)
+	_, err := s.Queues.Create(f.ctx, &queueclient.CreateQueueRequest{
+		OwnerID: f.workflow.OwnerID, OwnerType: "installs", Namespace: namespace,
+		Name: installhelpers.InstallStateManagerQueueName, MaxInFlight: 1, MaxDepth: 100,
+	})
+	require.NoError(t, err)
+	if finalized {
+		require.NoError(t, s.DB.Scopes(scopes.WithDisableViews).Model(&f.jobs[0]).Update("status", app.RunnerJobStatusFinished).Error)
+	}
+	retained := json.RawMessage(`{"build_choice":1234567890123456789}`)
+	continuation, err := json.Marshal(map[string]any{"apply": map[string]any{
+		"job_id": f.jobs[0].ID, "finalized": finalized, "retained": retained,
+	}})
+	require.NoError(t, err)
+	callbackName := "test:apply-resume-continuation-" + f.step.ID
+	require.NoError(t, s.DB.Callback().Create().Before("gorm:before_create").Register(callbackName, func(tx *gorm.DB) {
+		if qs, ok := tx.Statement.Dest.(*app.QueueSignal); ok && qs.OwnerID == f.step.ID && qs.Type == componentdeployapplyplan.SignalType {
+			qs.Continuation = continuation
+			qs.Workflow.TaskQueue = actionTaskQueue
+		}
+	}))
+	t.Cleanup(func() { require.NoError(t, s.DB.Callback().Create().Remove(callbackName)) })
+	f.start()
+	if !finalized {
+		f.awaitPark(0)
+		var deploy app.InstallDeploy
+		var log app.LogStream
+		require.NoError(t, s.DB.Where(app.InstallDeploy{ID: f.deploy.ID}).First(&deploy).Error)
+		require.NoError(t, s.DB.Where(app.LogStream{ID: f.log.ID}).First(&log).Error)
+		require.Nil(t, deploy.AppliedAt, "waiting must not finalize the deploy")
+		require.True(t, log.Open, "waiting must not close the log stream")
+		f.complete(0, f.claim(0))
+	}
+	f.awaitWorkflow(app.StatusSuccess)
+	var deploy app.InstallDeploy
+	var log app.LogStream
+	var qs app.QueueSignal
+	require.NoError(t, s.DB.Where(app.InstallDeploy{ID: f.deploy.ID}).First(&deploy).Error)
+	require.NoError(t, s.DB.Where(app.LogStream{ID: f.log.ID}).First(&log).Error)
+	require.NoError(t, s.DB.Where(app.QueueSignal{OwnerID: f.step.ID, Type: componentdeployapplyplan.SignalType}).First(&qs).Error)
+	awaitHandlerClosed(t, s, qs)
+	require.Equal(t, app.InstallDeployStatusActive, deploy.Status)
+	require.NotNil(t, deploy.AppliedAt, "a finalized job phase must still apply the deploy")
+	require.False(t, log.Open)
+	require.NoError(t, s.DB.Where(app.InstallComponent{ID: component.ID}).First(&component).Error)
+	require.Equal(t, deploy.ID, component.AppConfigRef.AppliedConfigByID)
+	var states []app.InstallState
+	require.NoError(t, s.DB.Where(app.InstallState{InstallID: f.workflow.OwnerID, TriggeredByID: deploy.ID}).Find(&states).Error)
+	require.NotEmpty(t, states, "apply finalization must regenerate state")
+	var checkpoint struct {
+		Apply struct {
+			JobID     string          `json:"job_id"`
+			Finalized bool            `json:"finalized"`
+			Retained  json.RawMessage `json:"retained"`
+		} `json:"apply"`
+	}
+	require.NoError(t, json.Unmarshal(qs.Continuation, &checkpoint))
+	require.Equal(t, f.jobs[0].ID, checkpoint.Apply.JobID)
+	require.True(t, checkpoint.Apply.Finalized)
+	require.JSONEq(t, string(retained), string(checkpoint.Apply.Retained))
+	var retainedFields map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(checkpoint.Apply.Retained, &retainedFields))
+	require.Equal(t, "1234567890123456789", string(retainedFields["build_choice"]))
+	status, err := s.Queues.ResumeRunnerJobSignal(f.ctx, qs.ID)
+	require.NoError(t, err)
+	require.Equal(t, app.StatusSuccess, status)
+	var unchanged app.InstallDeploy
+	require.NoError(t, s.DB.Where(app.InstallDeploy{ID: deploy.ID}).First(&unchanged).Error)
+	require.Equal(t, deploy.AppliedAt, unchanged.AppliedAt)
+	var jobs int64
+	require.NoError(t, s.DB.Scopes(scopes.WithDisableViews).Model(&app.RunnerJob{}).Where(app.RunnerJob{OwnerID: deploy.ID, OwnerType: "install_deploys"}).Count(&jobs).Error)
+	require.EqualValues(t, 1, jobs, "resume must reuse the prepared job")
 }
 
 type actionSnapshot struct {

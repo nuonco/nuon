@@ -39,8 +39,8 @@ prints captured runner output on failure.
 duplicate-callback, deadline, and completion/parking race scenarios. No runner
 process or heartbeat is seeded in these cases, so pickup cannot depend on either.
 
-The fixture pre-seeds job plans and uses a test signal that checkpoints successive
-job phases through the production job API. These controlled callbacks use the
+The fixture pre-seeds job plans and uses a test signal that runs successive
+phases through the shared job sequence driver. These controlled callbacks use the
 existing test router's seeded account/org context rather than runner tokens.
 Neither test exercises cloud plan preparation, Helm/Terraform, image pulls,
 or cloud instance provisioning.
@@ -74,7 +74,7 @@ The controlled cases cover:
 Late output data may still be retained after cancellation; outputs alone do not
 change job status or resume a cancelled workflow.
 
-## Production action finalization and owner cancellation
+## Production finalization and owner cancellation
 
 `TestRunnerDemandActionResume` adds a real install task-queue worker and executes
 the production adhoc action signal from a seeded prepared-job checkpoint. Runner
@@ -83,6 +83,12 @@ closes its log stream, and checkpoints finalization. Repeated client resumes and
 a direct update-with-start leave the completed action, step, config timestamps,
 logs, jobs, and executions unchanged. Cloud plan preparation is still outside
 this fixture's scope.
+
+The suite also executes the production deploy-apply signal through the shared
+job sequence driver. Prepared checkpoints park without closing logs or applying
+the deploy; completion applies the config and regenerates state. An older
+`apply.finalized` checkpoint still runs those outer deploy updates. Both cases
+retain additional checkpoint fields and reuse the original job on resume.
 
 The same FX suite exercises legacy and composite-status cancellation activities
 for deploys, sandbox runs, and action runs. Completed owners are preserved even

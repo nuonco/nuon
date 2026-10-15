@@ -48,16 +48,24 @@ func Execute(ctx workflow.Context, req *ExecuteJobRequest, opts *workflow.ChildW
 	if !DemandEnabled(ctx) {
 		return AwaitExecuteJob(ctx, req, opts)
 	}
-	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
-	var status app.RunnerJobStatus
-	err := workflow.ExecuteActivity(ctx, (*activities.Activities).PublishRunnerJob, continuation.Scope(ctx), req.JobID).Get(ctx, &status)
+	status, err := publish(ctx, req.JobID)
 	if err != nil {
 		return status, err
 	}
 	if !status.IsTerminal() {
 		return status, callback.Suspended()
 	}
-	if status != app.RunnerJobStatusFinished {
+	return status, nil
+}
+
+func publish(ctx workflow.Context, jobID string) (app.RunnerJobStatus, error) {
+	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
+	var status app.RunnerJobStatus
+	err := workflow.ExecuteActivity(ctx, (*activities.Activities).PublishRunnerJob, continuation.Scope(ctx), jobID).Get(ctx, &status)
+	if err != nil {
+		return status, err
+	}
+	if status.IsTerminal() && status != app.RunnerJobStatusFinished {
 		return status, temporal.NewNonRetryableApplicationError("runner job did not succeed: "+string(status), "RUNNER_JOB_FAILED", nil)
 	}
 	return status, nil
