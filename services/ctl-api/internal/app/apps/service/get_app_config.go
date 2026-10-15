@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -77,8 +76,7 @@ func (s *service) GetAppConfigV2(ctx *gin.Context) {
 
 	resp := appConfigWithIntermediateResponse{AppConfig: appConfig}
 	if appConfig.IntermediateConfig != nil {
-		blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
-		raw, err := appConfig.IntermediateConfig.Get(blobCtx)
+		raw, err := appConfig.IntermediateConfig.Get(ctx.Request.Context())
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to load intermediate config: %w", err))
 			return

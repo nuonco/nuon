@@ -328,14 +328,13 @@ func (s *service) fillComparisonDetails(ctx context.Context, comparison *app.App
 	if comparison == nil || summary == nil || s.blobSvc == nil {
 		return
 	}
-	blobCtx := blobstore.WithBlobService(ctx, s.blobSvc)
 
 	if comparison.GitDiff != nil && comparison.GitDiff.IsSet() {
 		var git struct {
 			ChangedPaths []string `json:"changed_paths"`
 			FilesChanged int      `json:"files_changed"`
 		}
-		if err := loadBlobInto(blobCtx, comparison.GitDiff, &git); err == nil {
+		if err := loadBlobInto(ctx, comparison.GitDiff, &git); err == nil {
 			summary.GitFilesChanged = git.FilesChanged
 			if summary.GitFilesChanged == 0 {
 				summary.GitFilesChanged = len(git.ChangedPaths)
@@ -361,7 +360,7 @@ func (s *service) fillComparisonDetails(ctx context.Context, comparison *app.App
 				} `json:"entries"`
 			} `json:"sections"`
 		}
-		if err := loadBlobInto(blobCtx, comparison.ConfigDiff, &cfg); err == nil {
+		if err := loadBlobInto(ctx, comparison.ConfigDiff, &cfg); err == nil {
 			summary.ConfigFile = cfg.ConfigFile
 			summary.ConfigAdditions = cfg.Additions
 			summary.ConfigRemovals = cfg.Removals
