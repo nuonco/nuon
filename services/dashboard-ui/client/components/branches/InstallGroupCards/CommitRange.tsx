@@ -30,6 +30,7 @@ export const CommitRange = ({ commit }: { commit: ICommitRange }) => {
   return (
     <Tooltip
       position="top"
+      className="inline-flex items-center"
       tipContentClassName="whitespace-normal max-w-80"
       tipContent={
         <span className="flex flex-col gap-1.5">
@@ -60,7 +61,7 @@ export const CommitRange = ({ commit }: { commit: ICommitRange }) => {
       }
     >
       <Text variant="subtext" theme="neutral" family="mono" flex>
-        <Icon variant="GitCommitIcon" />
+        <Icon variant="GitCommitIcon" size="1em" />
         {label}
       </Text>
     </Tooltip>

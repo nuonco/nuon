@@ -342,7 +342,7 @@ type TPreviewOutcome = {
   detail: string
 }
 
-type TPreviewRun = {
+export type TPreviewRun = {
   id: string
   title: string
   type: TInstallDeploymentRecordType
@@ -949,7 +949,7 @@ const PreviewTabContent = ({
   )
 }
 
-const PreviewPanel = ({ run, ...props }: IPanel & { run: TPreviewRun }) => (
+export const PreviewPanel = ({ run, ...props }: IPanel & { run: TPreviewRun }) => (
   <Panel
     heading={run.title}
     size="3/4"

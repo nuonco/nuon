@@ -21,6 +21,7 @@ interface ITabs extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   tabsClassName?: string
   tabControlsClassName?: string
   naturalHeight?: boolean
+  actions?: ReactNode
 }
 
 export const Tabs = ({
@@ -31,6 +32,7 @@ export const Tabs = ({
   tabLabels,
   tabsClassName,
   naturalHeight = false,
+  actions,
   ...props
 }: ITabs) => {
   const tabKeys = Object.keys(tabs)
@@ -170,6 +172,9 @@ export const Tabs = ({
             {tabLabels?.[tabKey] ?? toSentenceCase(camelToWords(tabKey))}
           </Button>
         ))}
+        {actions ? (
+          <div className="ml-auto flex items-center">{actions}</div>
+        ) : null}
       </div>
       <div
         ref={containerRef}

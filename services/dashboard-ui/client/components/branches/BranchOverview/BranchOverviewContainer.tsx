@@ -9,6 +9,7 @@ import {
 import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummary/ConfigParseFailure'
 import {
   TemplateChangesButton,
+  TemplateChangesContent,
   useConfigVersionLabel,
 } from '@/components/branches/ConfigChanges'
 import { InstallDeploymentPanel } from '@/components/installs/InstallDeploymentPanel'
@@ -18,16 +19,23 @@ import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mo
 import { commitUrl } from './run-source'
 import type { TAPIError } from '@/types'
 import { BranchOverview, type TFailedBuildLink } from './BranchOverview'
+import { BranchOverviewV2 } from './BranchOverviewV2'
 import {
   buildOverviewLoadingStages,
   groupCompositeError,
   preRolloutCompositeError,
 } from './overview-loading'
 import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
+import { useGroupApprovedVersions } from './use-group-approved-versions'
 import { useRolloutGroups } from './use-rollout-groups'
 import { useRunTemplateBuilds } from './use-run-template-builds'
 
-export const BranchOverviewContainer = () => {
+export const BranchOverviewContainer = ({
+  variant = 'current',
+}: {
+  variant?: 'current' | 'v2'
+}) => {
+  const Overview = variant === 'v2' ? BranchOverviewV2 : BranchOverview
   const { addPanel } = useSurfaces()
   const {
     app,
@@ -59,8 +67,16 @@ export const BranchOverviewContainer = () => {
           steps: workflowSteps,
         }
       : undefined,
-    groups
+    groups,
+    variant === 'v2' ? 'neutral' : undefined
   )
+  const approvedVersions = useGroupApprovedVersions({
+    orgId,
+    appId,
+    branchId,
+    repoSlug,
+    enabled: variant === 'v2',
+  })
 
   const { builds, metaBuilds, templateBuilds } = useRunTemplateBuilds({
     orgId,
@@ -125,6 +141,26 @@ export const BranchOverviewContainer = () => {
     branchRun?.composite_error
   )
   const configError = isConfigValidationError(failure) ? failure : undefined
+  const changesProps = {
+    sections: configSections.sections,
+    builds: templateBuilds,
+    versionLabel,
+    previousSha: configSections.previousSha,
+    sha: configSections.sha ?? rollout?.sha,
+    message: rollout?.commit?.message,
+    author: rollout?.commit?.author ?? rollout?.author,
+    createdAt: rollout?.commit?.createdAt,
+    source: rollout?.source,
+    isPending: changesPending,
+    isLoading: configSections.isLoading,
+    isError: configSections.isError,
+  }
+  const configParseFailure = configError ? (
+    <ConfigParseFailure
+      className="w-full"
+      lines={configDiagnosticLines(configError)}
+    />
+  ) : null
   const groupsWithErrors = groups.map((group) => {
     const error = groupCompositeError(
       workflowSteps,
@@ -152,7 +188,7 @@ export const BranchOverviewContainer = () => {
             : [branch?.name, app?.name]
         }
       />
-      <BranchOverview
+      <Overview
         hasPlan={hasPlan}
         showInstalls={showInstalls}
         showRolloutLink={!previewMode}
@@ -170,28 +206,23 @@ export const BranchOverviewContainer = () => {
             : undefined
         }
         changes={
-          configError ? (
-            <ConfigParseFailure
-              className="w-full"
-              lines={configDiagnosticLines(configError)}
-            />
-          ) : branchRunId ? (
-            <TemplateChangesButton
-              sections={configSections.sections}
-              builds={templateBuilds}
-              versionLabel={versionLabel}
-              previousSha={configSections.previousSha}
-              sha={configSections.sha ?? rollout?.sha}
-              message={rollout?.commit?.message}
-              author={rollout?.commit?.author ?? rollout?.author}
-              createdAt={rollout?.commit?.createdAt}
-              source={rollout?.source}
-              isPending={changesPending}
-              isLoading={configSections.isLoading}
-              isError={configSections.isError}
-            />
-          ) : null
+          configParseFailure ??
+          (branchRunId ? <TemplateChangesButton {...changesProps} /> : null)
         }
+        configChanges={
+          configParseFailure ??
+          (branchRunId ? <TemplateChangesContent {...changesProps} /> : null)
+        }
+        configChangesKey={[
+          configError ? 'parse-error' : '',
+          configSections.sections.length,
+          templateBuilds?.length ?? 0,
+          versionLabel,
+          changesProps.sha,
+          changesPending,
+          configSections.isLoading,
+          configSections.isError,
+        ].join(':')}
         groups={groupsWithErrors}
         loadingStages={loadingStages}
         compositeError={failure}
@@ -201,6 +232,8 @@ export const BranchOverviewContainer = () => {
         approvals={approvals}
         versionLabel={versionLabel}
         previousSha={configSections.previousSha}
+        approvedVersions={approvedVersions.versions}
+        approvedVersionsLoading={approvedVersions.isLoading}
         onSelectInstall={(install) =>
           install.workflowId
             ? addPanel(
@@ -211,6 +244,7 @@ export const BranchOverviewContainer = () => {
                   workflowId={install.workflowId}
                   title={install.name}
                   repo={repoSlug}
+                  initialTab="workflow"
                 />
               )
             : undefined

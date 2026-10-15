@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
+import type { TDeploymentTab } from '@/components/installs/DeploymentDetail/deployment-progress'
 import {
   DeploymentDetailBody,
   DeploymentDetailLoading,
@@ -15,6 +16,7 @@ export interface IInstallDeploymentPanel extends IPanel {
   workflowId: string
   title: string
   repo?: string
+  initialTab?: TDeploymentTab
 }
 
 const unavailable = (
@@ -30,6 +32,7 @@ export const InstallDeploymentPanel = ({
   workflowId,
   title,
   repo,
+  initialTab,
   ...panelProps
 }: IInstallDeploymentPanel) => {
   const { data: record, isError } = useQuery({
@@ -47,7 +50,7 @@ export const InstallDeploymentPanel = ({
     >
       <InstallProvider
         installId={installId}
-        loadingElement={<DeploymentDetailLoading />}
+        loadingElement={<DeploymentDetailLoading initialTab={initialTab} />}
         errorElement={unavailable}
       >
         {record ? (
@@ -64,6 +67,7 @@ export const InstallDeploymentPanel = ({
             appId={appId}
             installId={installId}
             repo={repo}
+            initialTab={initialTab}
           />
         ) : isError ? (
           unavailable

@@ -132,6 +132,7 @@ const fromGroupRun = (
     name: groupRun.install_group_name || group?.name || 'Install group',
     status: groupRun.status?.status || 'pending',
     plannedCount: groupRun.total_installs,
+    startedAt: groupRun.started_at,
     match: installGroupMatch(group),
     approval: installGroupApprovalLabel(group),
     maxParallel: group ? (group.max_parallel ?? 1) : undefined,
