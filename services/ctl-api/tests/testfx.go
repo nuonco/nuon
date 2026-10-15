@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/golang/mock/gomock"
 	"github.com/google/go-github/v50/github"
-	temporalmocks "go.temporal.io/sdk/mocks"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
@@ -18,6 +18,7 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
@@ -36,6 +37,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
@@ -182,6 +184,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 			})
 		}),
 		fx.Provide(queueclient.New),
+		fx.Provide(flowclient.New),
 
 		// Queue emitter client (uses mock temporal client)
 		fx.Provide(emitterclient.New),
@@ -196,6 +199,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		fx.Provide(runbookshelpers.New),
 		fx.Provide(installshelpers.New),
 		fx.Provide(orgshelpers.New),
+		fx.Provide(generalhelpers.New),
 
 		// Endpoint audit
 		fx.Provide(api.NewEndpointAudit),
@@ -219,7 +223,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 	if opts.Mocks != nil && opts.Mocks.MockTC != nil {
 		options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockTC, fx.As(new(temporalclient.Client)))))
 	} else if opts.T != nil {
-		mockTC := temporalmocks.NewClient(opts.T)
+		mockTC := temporalclient.NewMockClient(gomock.NewController(opts.T))
 		options = append(options, fx.Supply(fx.Annotate(mockTC, fx.As(new(temporalclient.Client)))))
 	}
 

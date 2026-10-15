@@ -12,7 +12,7 @@ import (
 )
 
 func (s *ComponentsServiceTestSuite) TestCreateAppDockerBuildConfigRejected() {
-	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeDockerBuild)
+	comp := s.createComponent(s.testApp.ID, app.ComponentTypeDockerBuild)
 
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/docker-build", s.testApp.ID, comp.ID)
 	rr := s.makeRequest(http.MethodPost, path, CreateDockerBuildComponentConfigRequest{

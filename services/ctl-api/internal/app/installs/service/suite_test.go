@@ -26,9 +26,9 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -49,12 +49,13 @@ func (m *mockWorkflowRun) GetWithOptions(ctx context.Context, valuePtr interface
 type InstallsTestDeps struct {
 	fx.In
 
-	DB     *gorm.DB `name:"psql"`
-	CHDB   *gorm.DB `name:"ch"`
-	V      *validator.Validate
-	L      *zap.Logger
-	MW     metrics.Writer
-	Seeder *testseed.Seeder
+	DB        *gorm.DB `name:"psql"`
+	CHDB      *gorm.DB `name:"ch"`
+	V         *validator.Validate
+	L         *zap.Logger
+	MW        metrics.Writer
+	Seeder    *testseed.Seeder
+	CCHelpers *cloudconnectionshelpers.Helpers
 }
 
 // InstallsServiceTestSuite is the shared testify suite for all installs service endpoint tests.
@@ -99,10 +100,8 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 			},
 			CustomValidator: true,
 		}),
-		// Service under test. flowclient is provided here rather than in
-		// testfx — see the note in tests/testfx.go about import cycles.
-		fx.Provide(flowclient.New),
 		fx.Provide(New),
+		fx.Provide(cloudconnectionshelpers.New),
 		fx.Populate(&s.deps, &s.installsService),
 	)
 
@@ -115,10 +114,8 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 
 func (s *InstallsServiceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-
-	// Reset mock before each test
-
 	s.setupTestData()
+	tests.ClearQueueSignals(s.T(), s.deps.DB)
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -130,7 +127,7 @@ func (s *InstallsServiceTestSuite) SetupTest() {
 
 	err := s.installsService.RegisterPublicRoutes(s.router)
 	require.NoError(s.T(), err)
-	connections, err := cloudconnectionsservice.New(cloudconnectionsservice.Params{DB: s.deps.DB})
+	connections, err := cloudconnectionsservice.New(cloudconnectionsservice.Params{DB: s.deps.DB, Helpers: s.deps.CCHelpers})
 	require.NoError(s.T(), err)
 	require.NoError(s.T(), connections.RegisterPublicRoutes(s.router))
 }
@@ -159,12 +156,14 @@ func (s *InstallsServiceTestSuite) setupTestData() {
 	s.ctx = context.Background()
 	s.ctx, s.testAcc = s.deps.Seeder.EnsureAccount(s.ctx, s.T())
 	s.ctx, s.testOrg = s.deps.Seeder.EnsureOrg(s.ctx, s.T())
+	seedOrgQueues(s.T(), s.deps.DB, s.testOrg)
 	s.testApp = s.deps.Seeder.CreateApp(s.ctx, s.T())
 	s.testAppConfig = s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
 }
 
 func (s *InstallsServiceTestSuite) createTestInstall() *app.Install {
 	install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.deps.DB, install)
 	return install
 }
 
@@ -178,11 +177,6 @@ func (s *InstallsServiceTestSuite) connectInstallToBranch(install *app.Install, 
 
 func (s *InstallsServiceTestSuite) createTestInstallWithActiveRunner() *app.Install {
 	install := s.createTestInstall()
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.Queue{
-		OwnerID:   install.ID,
-		OwnerType: "installs",
-		Name:      helpers.InstallWorkflowsQueueName,
-	}).Error)
 	group := &app.RunnerGroup{
 		OwnerID:   install.ID,
 		OwnerType: "installs",
@@ -329,6 +323,7 @@ func (s *InstallsServiceTestSuite) cloudPlatformResolutionTestCases() []cloudPla
 				awsRunner := s.createAppRunnerConfig(staleCfg.ID, app.AppRunnerTypeAWS)
 
 				install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+				seedInstallQueues(s.T(), s.deps.DB, install)
 				s.pinInstallConfig(install.ID, azureCfg.ID, awsRunner.ID)
 				return install
 			},
@@ -342,6 +337,7 @@ func (s *InstallsServiceTestSuite) cloudPlatformResolutionTestCases() []cloudPla
 				azureRunner := s.createAppRunnerConfig(s.testAppConfig.ID, app.AppRunnerTypeAzure)
 
 				install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+				seedInstallQueues(s.T(), s.deps.DB, install)
 				s.pinInstallConfig(install.ID, noRunnerCfg.ID, azureRunner.ID)
 				return install
 			},
@@ -358,6 +354,7 @@ func (s *InstallsServiceTestSuite) cloudPlatformResolutionTestCases() []cloudPla
 				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(danglingRunner).Error)
 
 				install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+				seedInstallQueues(s.T(), s.deps.DB, install)
 				s.pinInstallConfig(install.ID, noRunnerCfg.ID, danglingRunner.ID)
 				return install
 			},

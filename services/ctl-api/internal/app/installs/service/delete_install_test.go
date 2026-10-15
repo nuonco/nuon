@@ -11,7 +11,7 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestDeleteInstallSuccess() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	path := fmt.Sprintf("/v1/installs/%s", install.ID)
 	rr := s.makeRequest(http.MethodDelete, path, nil)

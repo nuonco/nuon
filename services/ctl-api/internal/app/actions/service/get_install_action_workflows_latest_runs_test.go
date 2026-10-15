@@ -268,7 +268,7 @@ func (s *GetInstallActionWorkflowsLatestRunsTestSuite) TestGetInstallActionsLate
 			},
 			queryParams:   "",
 			expectedCount: 0,
-			expectedCode:  http.StatusOK,
+			expectedCode:  http.StatusNotFound,
 		},
 	}
 

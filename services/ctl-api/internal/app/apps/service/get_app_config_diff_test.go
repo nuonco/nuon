@@ -13,7 +13,6 @@ import (
 )
 
 func (s *AppConfigsTestSuite) TestGetAppConfigDiffLoadsIntermediateConfigBlob() {
-	s.skipBlobTestsInCI()
 	intermediate, err := json.Marshal(config.AppConfig{
 		Branch: &config.AppBranchConfig{Name: "main"},
 	})

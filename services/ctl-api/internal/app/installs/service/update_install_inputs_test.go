@@ -88,7 +88,7 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallInputsPartialMerge() {
 		Required:         true,
 		Source:           app.AppInputSourceVendor,
 	}
-	require.NoError(s.T(), s.deps.DB.Create(requiredVendor).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(requiredVendor).Error)
 	customerInput := &app.AppInput{
 		AppInputConfigID: inputCfg.ID,
 		AppInputGroupID:  groupID,
@@ -97,7 +97,7 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallInputsPartialMerge() {
 		Type:             app.AppInputTypeString,
 		Source:           app.AppInputSourceCustomer,
 	}
-	require.NoError(s.T(), s.deps.DB.Create(customerInput).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(customerInput).Error)
 
 	// Seed existing inputs covering all three, including the install_stack value.
 	s.deps.Seeder.CreateInstallInputs(s.ctx, s.T(), install.ID, inputCfg.ID, map[string]*string{
@@ -131,7 +131,7 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallInputsPartialMerge() {
 // install_stack (customer) sourced input is rejected, even when it is part of an otherwise
 // valid partial update.
 func (s *InstallsServiceTestSuite) TestUpdateInstallInputsRejectsInstallStackInput() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	var inputCfg app.AppInputConfig
 	require.NoError(s.T(), s.deps.DB.
@@ -150,7 +150,7 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallInputsRejectsInstallStackInp
 		Type:             app.AppInputTypeString,
 		Source:           app.AppInputSourceCustomer,
 	}
-	require.NoError(s.T(), s.deps.DB.Create(customerInput).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(customerInput).Error)
 
 	s.deps.Seeder.CreateInstallInputs(s.ctx, s.T(), install.ID, inputCfg.ID, map[string]*string{
 		"region": strPtr("us-west-2"),
@@ -167,7 +167,7 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallInputsRejectsInstallStackInp
 }
 
 func (s *InstallsServiceTestSuite) TestUpdateInstallInputsNoExistingInputs() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	body := UpdateInstallInputsRequest{
 		Inputs: map[string]*string{

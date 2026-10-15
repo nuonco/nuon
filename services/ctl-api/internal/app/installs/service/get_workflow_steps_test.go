@@ -19,9 +19,9 @@ func (s *InstallsServiceTestSuite) TestGetWorkflowStepsSuccess() {
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 }
 
-func (s *InstallsServiceTestSuite) TestGetWorkflowStepsEmptyForBadID() {
+func (s *InstallsServiceTestSuite) TestGetWorkflowStepsNotFound() {
 	rr := s.makeRequest(http.MethodGet, "/v1/workflows/iwf_nonexistent_00000000/steps", nil)
-	require.Equal(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
 
 func (s *InstallsServiceTestSuite) TestGetWorkflowStepNotFound() {
