@@ -33,8 +33,10 @@ contents          = "./protect-rds-cluster.rego"
 apply_on_teardown = false
 ```
 
-Read more at [Retaining resources on teardown](/guides/retaining-resources-on-teardown) and
-[Skipping policies during teardown](/concepts/policies#skipping-policies-during-teardown).
+<CardGroup cols={2}>
+  <Card title="Retaining resources on teardown" icon="box-archive" href="/guides/retaining-resources-on-teardown" horizontal />
+  <Card title="Skipping policies during teardown" icon="shield-check" href="/concepts/policies#skipping-policies-during-teardown" horizontal />
+</CardGroup>
 
 ---
 
@@ -64,8 +66,10 @@ OTEL_EXPORTER_OTLP_ENDPOINT = "{{ .nuon.install_stack.outputs.telemetry_endpoint
   style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
 />
 
-Read more at [Install telemetry](/concepts/install-telemetry) and
-[Set up install telemetry](/guides/byoc/telemetry).
+<CardGroup cols={2}>
+  <Card title="Install telemetry" icon="chart-line" href="/concepts/install-telemetry" horizontal />
+  <Card title="Set up install telemetry" icon="rocket" href="/guides/byoc/telemetry" horizontal />
+</CardGroup>
 
 ---
 
@@ -130,7 +134,7 @@ Rolling out now. Ask us in your shared Slack channel to turn it on.
 
 ### Scheduled runbooks
 
-[Runbooks](/guides/runbooks) can run on a cron schedule.
+Runbooks can run on a cron schedule.
 
 ```toml
 [[triggers]]
@@ -138,6 +142,10 @@ type          = "cron"
 cron_schedule = "0 6 * * 1"
 ```
 
+<Card title="Runbooks" icon="book" href="/guides/runbooks" horizontal />
+
 ### AWS cloud connections
 
-AWS access through short-lived OIDC credentials. Select a connection when creating an install. See [Cloud connections](/guides/cloud-connections).
+AWS access through short-lived OIDC credentials. Select a connection when creating an install.
+
+<Card title="Cloud connections" icon="cloud" href="/guides/cloud-connections" horizontal />
