@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
@@ -14,20 +15,12 @@ import { OrgContext } from '@/providers/org-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastContext } from '@/providers/toast-provider'
 import { InstallSettingsPanelContent } from '@/components/installs/InstallSettingsPanel/InstallSettingsPanelContent'
-import type { TInstallTelemetrySettings } from '@/types'
+import type { TInstall, TStaticToken } from '@/types'
 import { InstallTelemetryContainer } from './InstallTelemetryContainer'
 
 const orgId = 'org-acme'
 const installId = 'install-acme'
-const endpoint = 'http://10.0.0.4:4318'
 const clients: QueryClient[] = []
-
-const mockFetch = (
-  handler: (...args: Parameters<typeof fetch>) => Promise<Response>
-) =>
-  spyOn(globalThis, 'fetch').mockImplementation(
-    Object.assign(handler, { preconnect: () => {} })
-  )
 
 afterEach(() => {
   cleanup()
@@ -36,20 +29,18 @@ afterEach(() => {
 })
 
 function setup({
-  isByoc = true,
-  isDev = false,
-  telemetryEnabled = false,
-  telemetryOverride = undefined as boolean | null | undefined,
-  orgDefault = false,
+  override = false as boolean | null,
+  orgDefault = true,
   relayConfigured = true,
-  telemetryEndpoint = endpoint as unknown,
-  runnerId = 'runner-acme',
-  runnerStatus = 'active',
-  loadSettings = false,
-  loadStack = false,
+  managed = false,
+  adminOrg = orgId,
+  collectorStatus = 200,
+  collectorExists = true,
+  configId = 'config-acme',
+  writeStatus = 200,
   renderPanel = false,
-  isManagedByConfig = false,
-  installConfigId = 'config-acme' as string | undefined,
+  tokens = [] as TStaticToken[],
+  loadSettings = false,
 } = {}) {
   const client = new QueryClient({
     defaultOptions: {
@@ -58,651 +49,419 @@ function setup({
     },
   })
   clients.push(client)
-  if (!loadStack) {
-    client.setQueryData(['install-stack', orgId, installId], {
-      install_stack_outputs: {
-        data_contents: { telemetry_endpoint: telemetryEndpoint },
-      },
-    })
+  const install: TInstall = {
+    id: installId,
+    name: 'acme-production',
+    app_id: 'app-acme',
+    runner_status: 'offline',
+    install_config: configId ? { id: configId } : undefined,
+    metadata: { managed_by: managed ? 'nuon/cli/install-config' : '' },
   }
-  if (!loadSettings) {
-    client.setQueryData(['install-telemetry', orgId, installId], {
-      enabled: telemetryEnabled,
-      override: telemetryOverride,
-      org_default: orgDefault,
-      relay_configured: relayConfigured,
-    })
-  }
-  const addToast = mock()
-  const tree = (id = installId, status = runnerStatus) => (
-    <QueryClientProvider client={client}>
-      <ConfigContext.Provider
-        value={{ apiUrl: '', appUrl: '', githubAppName: '', isByoc, isDev }}
-      >
-        <OrgContext.Provider
-          value={{ org: { id: orgId, name: 'acme' }, refresh: () => {} }}
-        >
-          <InstallContext.Provider
-            value={{
-              install: {
-                id,
-                runner_id: runnerId,
-                runner_status: status,
-                install_config: installConfigId
-                  ? { id: installConfigId }
-                  : undefined,
-                metadata: {
-                  managed_by: isManagedByConfig
-                    ? 'nuon/cli/install-config'
-                    : '',
-                },
+  const settings = () => ({
+    enabled: override ?? orgDefault,
+    override,
+    org_default: orgDefault,
+    relay_configured: relayConfigured,
+  })
+  if (!loadSettings)
+    client.setQueryData(['install-telemetry', orgId, installId], settings())
+  client.setQueryData(['account'], {
+    roles: [{ org_id: adminOrg, role_type: 'org_admin' }],
+  })
+  const writes: { url: string; options: RequestInit; body: any }[] = []
+  let status = collectorStatus
+  const fetch = spyOn(globalThis, 'fetch').mockImplementation(
+    Object.assign(
+      async (
+        input: Parameters<typeof globalThis.fetch>[0],
+        options: RequestInit = {}
+      ) => {
+        const url = String(input)
+        if (options.method && options.method !== 'GET') {
+          const body = options.body
+            ? JSON.parse(String(options.body))
+            : undefined
+          writes.push({ url, options, body })
+          if (writeStatus !== 200)
+            return Response.json(
+              { error: 'Permission denied' },
+              { status: writeStatus }
+            )
+          if (url.includes('/configs')) {
+            override = body.telemetry.enabled
+            return Response.json({
+              id: configId || 'config-created',
+              telemetry_enabled: override,
+            })
+          }
+          if (url.endsWith('/telemetry/collector')) {
+            collectorExists = options.method !== 'DELETE'
+            return options.method === 'DELETE'
+              ? new Response(null, { status: 204 })
+              : Response.json({ account_id: 'account-collector' })
+          }
+          if (url.endsWith('/tokens')) {
+            tokens = [
+              ...tokens,
+              {
+                id: 'token-new',
+                account_id: 'account-collector',
+                expires_at: '2099-01-01T00:00:00Z',
               },
-              labelColors: {},
-              refresh: () => {},
-            }}
+            ]
+            return Response.json({ token: 'example-one-time-token' })
+          }
+          if (url.includes('/static-tokens/')) {
+            tokens = tokens.filter((token) => !url.endsWith(token.id))
+            return new Response(null, { status: 204 })
+          }
+          throw new Error(`Unexpected write: ${url}`)
+        }
+        if (url.endsWith('/telemetry'))
+          return loadSettings
+            ? Response.json({ error: 'Settings unavailable' }, { status: 503 })
+            : Response.json(settings())
+        if (url.endsWith('/telemetry/collector'))
+          return status !== 200 || !collectorExists
+            ? Response.json(
+                { error: 'Account unavailable' },
+                { status: status !== 200 ? status : 404 }
+              )
+            : Response.json({ account_id: 'account-collector' })
+        if (url.includes('/components?'))
+          return Response.json(
+            new URL(url, 'https://example.com').searchParams.get('labels') ===
+              'nuon.co/telemetry-collector:true'
+              ? [{ component_id: 'component-collector', enabled: false }]
+              : []
+          )
+        if (url.endsWith('/account/static-tokens')) return Response.json(tokens)
+        if (url.endsWith('/account'))
+          return Response.json({
+            roles: [{ org_id: adminOrg, role_type: 'org_admin' }],
+          })
+        throw new Error(`Unexpected read: ${url}`)
+      },
+      { preconnect: () => {} }
+    )
+  )
+  const addToast = mock()
+  const tree = (currentInstall = install) => (
+    <MemoryRouter>
+      <QueryClientProvider client={client}>
+        <ConfigContext.Provider
+          value={{
+            apiUrl: '',
+            runnerApiUrl: 'https://runner-api.example.com',
+            appUrl: '',
+            githubAppName: '',
+            isByoc: false,
+          }}
+        >
+          <OrgContext.Provider
+            value={{ org: { id: orgId, name: 'acme' }, refresh: () => {} }}
           >
-            <ToastContext.Provider value={{ addToast, removeToast: () => {} }}>
-              {renderPanel ? (
-                <MemoryRouter>
-                  <SurfacesProvider>
+            <InstallContext.Provider
+              value={{
+                install: currentInstall,
+                labelColors: {},
+                refresh: () => {},
+              }}
+            >
+              <ToastContext.Provider
+                value={{ addToast, removeToast: () => {} }}
+              >
+                <SurfacesProvider>
+                  {renderPanel ? (
                     <InstallSettingsPanelContent />
-                  </SurfacesProvider>
-                </MemoryRouter>
-              ) : (
-                <InstallTelemetryContainer />
-              )}
-            </ToastContext.Provider>
-          </InstallContext.Provider>
-        </OrgContext.Provider>
-      </ConfigContext.Provider>
-    </QueryClientProvider>
+                  ) : (
+                    <InstallTelemetryContainer />
+                  )}
+                </SurfacesProvider>
+              </ToastContext.Provider>
+            </InstallContext.Provider>
+          </OrgContext.Provider>
+        </ConfigContext.Provider>
+      </QueryClientProvider>
+    </MemoryRouter>
   )
   const view = render(tree())
   return {
     client,
+    writes,
+    fetch,
     addToast,
-    rerenderInstall: (id: string, status = runnerStatus) =>
-      view.rerender(tree(id, status)),
+    fixCollector: () => {
+      status = 200
+    },
+    rerenderInstall: () =>
+      view.rerender(tree({ ...install, id: 'install-other' })),
   }
 }
 
-test.each([
-  { isByoc: false, isDev: false },
-  { isByoc: true, isDev: false },
-  { isByoc: false, isDev: true },
-])(
-  'settings panel shows telemetry with a configured relay in every environment (%p)',
-  ({ isByoc, isDev }) => {
-    setup({ isByoc, isDev, runnerId: '', renderPanel: true })
-    expect(
-      screen.getByText('Configuration', { exact: true })
-    ).toBeInTheDocument()
-    const heading = screen.getByText('Telemetry', { exact: true })
-    const card = heading.closest('.shadow-sm')!
-    expect(card).toContainElement(
-      screen.getByRole('switch', { name: 'Enable telemetry' })
-    )
-    expect(card.querySelector('.shadow-sm')).toBeNull()
-    expect(
-      screen.getByRole('switch', { name: 'Enable telemetry' })
-    ).not.toBeDisabled()
-  }
-)
+async function open() {
+  fireEvent.click(screen.getByRole('button', { name: 'Manage telemetry' }))
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: /In-cluster collector \(optional\)/,
+    })
+  )
+  await screen.findByText('Nuon service account')
+}
+
+async function choose(label: string) {
+  fireEvent.click(
+    screen.getByRole('combobox', { name: 'Telemetry forwarding' })
+  )
+  fireEvent.click(await screen.findByRole('option', { name: label }))
+}
 
 test.each([
-  { isByoc: false, isDev: false },
-  { isByoc: true, isDev: false },
-  { isByoc: false, isDev: true },
+  { option: 'On', expected: true },
+  { option: 'Use org default (On)', expected: null },
 ])(
-  'settings panel hides telemetry without a relay even with an install endpoint (%p)',
-  ({ isByoc, isDev }) => {
-    const fetch = spyOn(globalThis, 'fetch')
-    setup({
-      isByoc,
-      isDev,
-      relayConfigured: false,
-      telemetryEnabled: true,
-      runnerId: '',
-      renderPanel: true,
-    })
-    expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
-    expect(
-      screen.queryByRole('switch', { name: 'Enable telemetry' })
-    ).toBeNull()
-    expect(fetch).not.toHaveBeenCalled()
+  'saves $option without a runner endpoint and without creating access or deploying',
+  async ({ option, expected }) => {
+    const { writes } = setup()
+    await open()
+    expect(writes).toHaveLength(0)
+    await choose(option)
+    fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
+    await screen.findByText(
+      'On · ' + (expected === null ? 'Org default' : 'Install override')
+    )
+    expect(writes).toMatchObject([
+      {
+        url: `/v1/installs/${installId}/configs/config-acme`,
+        options: {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'X-Nuon-Org-ID': orgId },
+        },
+        body: { telemetry: { enabled: expected } },
+      },
+    ])
   }
 )
 
-test('cloud settings show a disabled toggle when the relay exists but the stack endpoint is missing', () => {
-  setup({
-    isByoc: false,
-    telemetryEndpoint: '',
-    runnerId: '',
+test('saving Off keeps collector identity and issued tokens', async () => {
+  const { writes } = setup({
+    override: true,
+    tokens: [{ id: 'token-old', account_id: 'account-collector' }],
+  })
+  await open()
+  await screen.findByText('token-old')
+  await choose('Off')
+  fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
+  await screen.findByText('Off · Install override')
+  expect(writes.map(({ body }) => body)).toEqual([
+    { telemetry: { enabled: false } },
+  ])
+})
+
+test('setup remains visible without relay configuration and failed reads are not absence', async () => {
+  const state = setup({
+    relayConfigured: false,
+    collectorStatus: 403,
     renderPanel: true,
   })
-  expect(screen.getByText('Telemetry', { exact: true })).toBeInTheDocument()
+  expect(screen.getByText('Relay setup required')).toBeInTheDocument()
+  await open()
+  await screen.findByText('Unknown — load failed')
+  expect(screen.queryByText('Not created')).toBeNull()
   expect(
-    screen.getByRole('switch', { name: 'Enable telemetry' })
-  ).toBeDisabled()
-})
-
-test('settings panel waits for relay availability and hides the card after it is removed', async () => {
-  let finish!: (response: Response) => void
-  mockFetch(
-    () =>
-      new Promise<Response>((resolve) => {
-        finish = resolve
-      })
-  )
-  const { client } = setup({
-    isByoc: false,
-    loadSettings: true,
-    runnerId: '',
-    renderPanel: true,
-  })
-  expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
-  finish(
-    Response.json({
-      enabled: false,
-      override: null,
-      org_default: false,
-      relay_configured: true,
-    })
-  )
-  await screen.findByRole('switch', { name: 'Enable telemetry' })
-  client.setQueryData(['install-telemetry', orgId, installId], {
-    enabled: false,
-    relay_configured: false,
-  })
-  await waitFor(() =>
-    expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
-  )
-})
-
-test.each(['', '  ', null, 123])(
-  'shows but blocks enabling telemetry without an endpoint (%p)',
-  (value) => {
-    const fetch = spyOn(globalThis, 'fetch')
-    setup({ telemetryEndpoint: value })
-    const toggle = screen.getByRole('switch')
-    expect(toggle).toBeDisabled()
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
-    expect(screen.getByText(/Update the install stack/)).toBeInTheDocument()
-    expect(screen.queryByText(/runner is not active/)).toBeNull()
-    fireEvent.click(toggle)
-    expect(fetch).not.toHaveBeenCalled()
-  }
-)
-
-test('allows enabling telemetry when the endpoint exists but the runner is missing', async () => {
-  const fetch = mockFetch(() =>
-    Promise.resolve(Response.json({ enabled: true }))
-  )
-  setup({ runnerId: '' })
-  const toggle = screen.getByRole('switch')
-  expect(toggle).not.toBeDisabled()
-  expect(screen.getByText(/runner is not active/)).toBeInTheDocument()
-  expect(screen.queryByText(/Update the install stack/)).toBeNull()
-  fireEvent.click(toggle)
-  await waitFor(() => expect(fetch).toHaveBeenCalled())
-  await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
-})
-
-test.each(['offline', 'awaiting-heartbeat', 'unknown', ''])(
-  'warns without blocking an inactive runner (%p)',
-  async (runnerStatus) => {
-    const fetch = mockFetch(() =>
-      Promise.resolve(Response.json({ enabled: true }))
-    )
-    const { rerenderInstall } = setup({ runnerStatus })
-    const toggle = screen.getByRole('switch')
-    expect(toggle).not.toBeDisabled()
-    expect(screen.getByText(/runner is not active/)).toBeInTheDocument()
-    expect(screen.queryByText(/Update the install stack/)).toBeNull()
-    fireEvent.click(toggle)
-    await waitFor(() => expect(fetch).toHaveBeenCalled())
-    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
-    await waitFor(() => expect(toggle).not.toBeDisabled())
-
-    rerenderInstall(installId, 'active')
-    expect(toggle).not.toBeDisabled()
-    expect(screen.queryByText(/runner is not active/)).toBeNull()
-  }
-)
-
-test('shows both actions when the endpoint is missing and the runner is offline', () => {
-  setup({ telemetryEndpoint: '', runnerStatus: 'offline' })
-  expect(screen.getByText(/Update the install stack/)).toBeInTheDocument()
-  expect(screen.getByText(/runner is not active/)).toBeInTheDocument()
-  expect(screen.getByRole('switch')).toBeDisabled()
-})
-
-test('can disable telemetry with an offline runner without claiming the endpoint is missing while it loads', async () => {
-  mockFetch((url) =>
-    String(url).endsWith('/stack')
-      ? new Promise<Response>(() => {})
-      : Promise.resolve(Response.json({ enabled: false }))
-  )
-  const { client } = setup({
-    telemetryEnabled: true,
-    runnerStatus: 'offline',
-    loadStack: true,
-  })
-  const toggle = screen.getByRole('switch')
-  expect(toggle).not.toBeDisabled()
-  expect(screen.getByText(/runner is not active/)).toBeInTheDocument()
-  expect(screen.queryByText(/Update the install stack/)).toBeNull()
-  fireEvent.click(toggle)
-  await waitFor(() =>
-    expect(
-      client.getQueryData<TInstallTelemetrySettings>([
-        'install-telemetry',
-        orgId,
-        installId,
-      ])
-    ).toEqual({ enabled: false })
-  )
-})
-
-test('shows the saved setting when BYOC, runner, and endpoint are present', () => {
-  setup()
-  expect(
-    screen.getByRole('switch', { name: 'Enable telemetry' })
-  ).toHaveAttribute('aria-checked', 'false')
-  expect(
-    screen.getByRole('link', { name: 'View telemetry setup' })
-  ).toHaveAttribute('href', 'https://docs.nuon.co/guides/byoc/telemetry')
-})
-
-test.each([false, true])(
-  'saves the opposite of %p with scoped credentials and prevents duplicate pending writes',
-  async (initial) => {
-    let finish!: (response: Response) => void
-    const fetch = mockFetch((_url, options) =>
-      options?.method === 'PATCH'
-        ? new Promise<Response>((resolve) => {
-            finish = resolve
-          })
-        : Promise.resolve(Response.json({ enabled: !initial }))
-    )
-    const { client, addToast } = setup({ telemetryEnabled: initial })
-    const toggle = screen.getByRole('switch')
-    fireEvent.click(toggle)
-    await waitFor(() => expect(toggle).toBeDisabled())
-    expect(toggle).toHaveAttribute('aria-checked', String(initial))
-    fireEvent.click(toggle)
-    expect(fetch).toHaveBeenCalledTimes(1)
-    const [url, options] = fetch.mock.calls[0]
-    expect(url).toBe(`/v1/installs/${installId}/configs/config-acme`)
-    expect(options?.headers).toMatchObject({ 'X-Nuon-Org-ID': orgId })
-    expect(options?.credentials).toBe('include')
-    expect(JSON.parse(options?.body as string)).toEqual({
-      telemetry: { enabled: !initial },
-    })
-    finish(Response.json({ id: 'config-acme', telemetry_enabled: !initial }))
-    await waitFor(() =>
-      expect(toggle).toHaveAttribute('aria-checked', String(!initial))
-    )
-    await waitFor(() => expect(toggle).not.toBeDisabled())
-    expect(
-      client.getQueryData<TInstallTelemetrySettings>([
-        'install-telemetry',
-        orgId,
-        installId,
-      ])
-    ).toEqual({ enabled: !initial })
-    expect(addToast.mock.calls[0][0].props.heading).toBe(
-      initial ? 'Telemetry disabled' : 'Telemetry enabled'
-    )
-  }
-)
-
-test('keeps disable available when a previously enabled install loses its endpoint and runner', async () => {
-  mockFetch(() => Promise.resolve(Response.json({ enabled: false })))
-  setup({ telemetryEnabled: true, telemetryEndpoint: '', runnerId: '' })
-  expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
-  expect(
-    screen.getByText(/Forwarding can still be disabled/)
-  ).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('switch'))
-  await waitFor(() =>
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
-  )
-  expect(screen.getByRole('switch')).toBeDisabled()
-  expect(
-    screen.getByRole('link', { name: 'View telemetry setup' })
-  ).toBeInTheDocument()
-})
-
-test('preserves saved state and reports a failed write', async () => {
-  spyOn(globalThis, 'fetch').mockResolvedValue(
-    Response.json({ error: 'Permission denied' }, { status: 403 })
-  )
-  const { addToast } = setup({ telemetryEnabled: true })
-  fireEvent.click(screen.getByRole('switch'))
-  await waitFor(() => expect(addToast).toHaveBeenCalledTimes(1))
-  expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
-  expect(addToast.mock.calls[0][0].props.heading).toBe(
-    'Telemetry update failed'
-  )
-  expect(addToast.mock.calls[0][0].props.children.props.children).toBe(
-    'Permission denied'
-  )
-})
-
-test('does not offer a toggle while loading or after a read error, and can retry', async () => {
-  let finish!: (response: Response) => void
-  const fetch = mockFetch(
-    () =>
-      new Promise<Response>((resolve) => {
-        finish = resolve
-      })
-  )
-  setup({ loadSettings: true })
-  expect(screen.getByText('Loading settings...')).toBeInTheDocument()
-  expect(screen.queryByRole('switch')).toBeNull()
-  finish(Response.json({ error: 'Temporarily unavailable' }, { status: 503 }))
-  await screen.findByRole('alert')
-  expect(screen.queryByRole('switch')).toBeNull()
-  fetch.mockImplementation(
-    Object.assign(
-      (url: string | URL | Request) =>
-        Promise.resolve(
-          Response.json(
-            String(url).endsWith('/stack')
-              ? {
-                  install_stack_outputs: {
-                    data_contents: { telemetry_endpoint: endpoint },
-                  },
-                }
-              : { enabled: true }
-          )
-        ),
-      { preconnect: () => {} }
-    )
-  )
-  fireEvent.click(screen.getByRole('button', { name: 'Retry settings' }))
-  await waitFor(() =>
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
-  )
-})
-
-test('shows loading while checking the endpoint and can retry a failed stack read', async () => {
-  let finish!: (response: Response) => void
-  mockFetch((url) =>
-    String(url).endsWith('/stack')
-      ? new Promise<Response>((resolve) => {
-          finish = resolve
-        })
-      : Promise.resolve(Response.json({ enabled: false }))
-  )
-  setup({ loadStack: true })
-  expect(screen.getByText('Loading settings...')).toBeInTheDocument()
-  expect(screen.queryByRole('switch')).toBeNull()
-  expect(screen.queryByText(/Update the install stack/)).toBeNull()
-  finish(Response.json({ error: 'Stack unavailable' }, { status: 503 }))
-  await screen.findByRole('alert')
-  expect(screen.queryByRole('switch')).toBeNull()
-  fireEvent.click(screen.getByRole('button', { name: 'Retry settings' }))
-  finish(
-    Response.json({
-      install_stack_outputs: {
-        data_contents: { telemetry_endpoint: endpoint },
-      },
-    })
-  )
-  await waitFor(() => expect(screen.getByRole('switch')).not.toBeDisabled())
-  expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
-})
-
-test('resets an explicit disable to the enabled org default', async () => {
-  const fetch = mockFetch(() =>
-    Promise.resolve(
-      Response.json({
-        enabled: true,
-        override: null,
-        org_default: true,
-      })
-    )
-  )
-  setup({
-    telemetryEnabled: false,
-    telemetryOverride: false,
-    orgDefault: true,
-    runnerStatus: 'offline',
-  })
-  fireEvent.click(screen.getByRole('button', { name: 'Use org default' }))
-  await waitFor(() => expect(fetch).toHaveBeenCalled())
-  expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({
-    telemetry: { enabled: null },
-  })
-  await waitFor(() =>
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
-  )
-  expect(screen.getByText('Using org default')).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Use org default' })).toBeNull()
-})
-
-test.each([false, true])(
-  'config-managed installs cannot change telemetry (%p)',
-  (enabled) => {
-    const fetch = spyOn(globalThis, 'fetch')
-    setup({
-      telemetryEnabled: enabled,
-      telemetryOverride: enabled,
-      isManagedByConfig: true,
-    })
-    const toggle = screen.getByRole('switch')
-    const reset = screen.getByRole('button', { name: 'Use org default' })
-    expect(toggle).toBeDisabled()
-    expect(reset).toHaveAttribute('aria-disabled', 'true')
-    fireEvent.click(toggle)
-    fireEvent.click(reset)
-    expect(fetch).not.toHaveBeenCalled()
-  }
-)
-
-test('reset waits for the enabled org default endpoint check while disabling remains available', async () => {
-  let finish!: (response: Response) => void
-  const fetch = mockFetch(
-    () =>
-      new Promise<Response>((resolve) => {
-        finish = resolve
-      })
-  )
-  setup({
-    telemetryEnabled: true,
-    telemetryOverride: true,
-    orgDefault: true,
-    loadStack: true,
-  })
-  const reset = screen.getByRole('button', { name: 'Use org default' })
-  expect(reset).toHaveAttribute('aria-disabled', 'true')
-  expect(screen.getByRole('switch')).not.toBeDisabled()
-  fireEvent.click(reset)
-  expect(
-    fetch.mock.calls.every(([, options]) => options?.method !== 'PATCH')
-  ).toBe(true)
-  finish(
-    Response.json({
-      install_stack_outputs: {
-        data_contents: { telemetry_endpoint: endpoint },
-      },
-    })
-  )
-  await waitFor(() =>
-    expect(
-      screen.getByRole('button', { name: 'Use org default' })
-    ).not.toHaveAttribute('aria-disabled', 'true')
-  )
-  fireEvent.click(screen.getByRole('button', { name: 'Use org default' }))
-  await waitFor(() =>
-    expect(
-      fetch.mock.calls.some(
-        ([, options]) =>
-          options?.method === 'PATCH' &&
-          options.body === JSON.stringify({ telemetry: { enabled: null } })
-      )
-    ).toBe(true)
-  )
-  finish(Response.json({ id: 'config-acme', telemetry_enabled: null }))
-  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(3))
-  finish(Response.json({ enabled: true, override: null, org_default: true }))
-  await screen.findByText('Using org default')
-})
-
-test('an enabled install reports stack failure once in a toast and can retry without blocking disable', async () => {
-  let failStack = true
-  mockFetch(() =>
-    Promise.resolve(
-      failStack
-        ? Response.json({ error: 'Stack unavailable' }, { status: 503 })
-        : Response.json({
-            install_stack_outputs: {
-              data_contents: { telemetry_endpoint: endpoint },
-            },
-          })
-    )
-  )
-  const { addToast, rerenderInstall } = setup({
-    telemetryEnabled: true,
-    telemetryOverride: true,
-    orgDefault: true,
-    loadStack: true,
-  })
-  await waitFor(() => expect(addToast).toHaveBeenCalledTimes(1))
-  expect(screen.queryByRole('alert')).toBeNull()
-  expect(screen.getByRole('switch')).not.toBeDisabled()
-  expect(
-    screen.getByRole('button', { name: 'Use org default' })
+    screen.getByRole('button', { name: 'Create bootstrap credential' })
   ).toHaveAttribute('aria-disabled', 'true')
-  rerenderInstall(installId)
-  expect(addToast).toHaveBeenCalledTimes(1)
-
-  const toast = addToast.mock.calls[0][0]
-  expect(toast.props.heading).toBe('Telemetry endpoint check failed')
-  render(toast)
-  expect(screen.getByText('Stack unavailable')).toBeInTheDocument()
-  failStack = false
-  fireEvent.click(screen.getByRole('button', { name: 'Retry settings' }))
-  await waitFor(() =>
-    expect(
-      screen.getByRole('button', { name: 'Use org default' })
-    ).not.toHaveAttribute('aria-disabled', 'true')
-  )
-  expect(addToast).toHaveBeenCalledTimes(1)
+  state.fixCollector()
+  fireEvent.click(screen.getByRole('button', { name: 'Retry setup details' }))
+  await screen.findByText('Created', { exact: true })
+  expect(state.writes).toHaveLength(0)
 })
 
-test.each([false, true])(
-  'reset without an endpoint respects org default %s',
-  (orgDefault) => {
-    setup({ telemetryOverride: false, orgDefault, telemetryEndpoint: null })
-    const button = screen.getByRole('button', { name: 'Use org default' })
-    if (orgDefault) {
-      const fetch = mockFetch(() => Promise.resolve(Response.json({})))
-      expect(button).toHaveAttribute('aria-disabled', 'true')
-      fireEvent.click(button)
-      expect(fetch).not.toHaveBeenCalled()
-    } else {
-      expect(button).not.toBeDisabled()
-    }
-  }
-)
-
-test('a pending save updates only its original install after navigation', async () => {
-  let finish!: (response: Response) => void
-  const fetch = mockFetch((_url, options) =>
-    options?.method === 'PATCH'
-      ? new Promise<Response>((resolve) => {
-          finish = resolve
-        })
-      : Promise.resolve(Response.json({ enabled: true }))
+test('the first bootstrap credential creates a missing account without a separate setup action', async () => {
+  const { writes } = setup({ collectorExists: false })
+  await open()
+  await screen.findByText('Not created')
+  expect(writes).toHaveLength(0)
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Create bootstrap credential' })
   )
-  const { client, addToast, rerenderInstall } = setup()
-  fireEvent.click(screen.getByRole('switch'))
-  await waitFor(() => expect(screen.getByRole('switch')).toBeDisabled())
-  client.setQueryData(['install-stack', orgId, 'install-other'], {
-    install_stack_outputs: { data_contents: { telemetry_endpoint: endpoint } },
-  })
+  const dialog = within(screen.getAllByRole('dialog').at(-1)!)
+  fireEvent.click(dialog.getByRole('button', { name: 'Create credential' }))
+  await dialog.findByText('example-one-time-token')
+  expect(writes.find(({ url }) => url.endsWith('/tokens'))?.body).toMatchObject(
+    {
+      duration: '8760h',
+      invalidate: false,
+    }
+  )
+  fireEvent.click(dialog.getByRole('button', { name: 'Done' }))
+  await screen.findByText('Created', { exact: true })
+  await screen.findByText('token-new')
+  expect(screen.queryByText('Not created')).toBeNull()
+})
+
+test('config-managed policy is read-only without hiding access management', async () => {
+  const { writes } = setup({ managed: true })
+  await open()
+  expect(
+    screen.getByRole('combobox', { name: 'Telemetry forwarding' })
+  ).toBeDisabled()
+  expect(
+    await screen.findByRole('button', { name: 'Create bootstrap credential' })
+  ).toBeInTheDocument()
+  expect(writes).toHaveLength(0)
+})
+
+test('org admin in a different org cannot manage collector tokens or query org token inventory', async () => {
+  const { fetch } = setup({ adminOrg: 'org-other' })
+  await open()
+  expect(
+    screen.queryByRole('button', { name: 'Create bootstrap credential' })
+  ).toBeNull()
+  expect(
+    fetch.mock.calls.some(([url]) => String(url).includes('static-tokens'))
+  ).toBe(false)
+})
+
+test('a missing install config is created once and subsequent edits use its returned ID', async () => {
+  const { writes } = setup({ configId: '' })
+  await open()
+  await choose('On')
+  fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
+  await screen.findByText('On · Install override')
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  await open()
+  await choose('Off')
+  fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
+  await screen.findByText('Off · Install override')
+  expect(writes).toMatchObject([
+    { url: `/v1/installs/${installId}/configs`, options: { method: 'POST' } },
+    {
+      url: `/v1/installs/${installId}/configs/config-created`,
+      options: { method: 'PATCH' },
+    },
+  ])
+})
+
+test('failed policy writes keep saved settings and report an inline error', async () => {
+  setup({ writeStatus: 403 })
+  await open()
+  await choose('On')
+  fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
+  await screen.findByText('Permission denied')
+  expect(screen.getByText('Off · Install override')).toBeInTheDocument()
+})
+
+test('failed settings reads keep the entry point visible and do not allow policy changes', async () => {
+  setup({ loadSettings: true, renderPanel: true })
+  await screen.findByText('Settings unavailable')
+  expect(
+    screen.getByRole('button', { name: 'Retry settings' })
+  ).toBeInTheDocument()
+  expect(screen.queryByRole('combobox')).toBeNull()
+})
+
+test('a captured modal saves only its original install after navigation', async () => {
+  const { client, writes, rerenderInstall } = setup()
+  await open()
   client.setQueryData(['install-telemetry', orgId, 'install-other'], {
     enabled: false,
+    override: false,
   })
-  rerenderInstall('install-other')
-  finish(Response.json({ id: 'config-acme', telemetry_enabled: true }))
-  await waitFor(() => expect(addToast).toHaveBeenCalledTimes(1))
-  expect(fetch.mock.calls[1][0]).toBe(`/v1/installs/${installId}/telemetry`)
+  rerenderInstall()
+  await choose('On')
+  fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
+  await waitFor(() => expect(writes).toHaveLength(1))
+  expect(writes[0].url).toBe(`/v1/installs/${installId}/configs/config-acme`)
   expect(
-    client.getQueryData<TInstallTelemetrySettings>([
-      'install-telemetry',
-      orgId,
-      installId,
-    ])
-  ).toEqual({
-    enabled: true,
-  })
-  expect(
-    client.getQueryData<TInstallTelemetrySettings>([
-      'install-telemetry',
-      orgId,
-      'install-other',
-    ])
-  ).toEqual({ enabled: false })
-  expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+    client.getQueryData(['install-telemetry', orgId, 'install-other'])
+  ).toMatchObject({ enabled: false })
 })
 
-test('creates a missing config once and uses its ID for subsequent toggles before the install refreshes', async () => {
-  let enabled = false
-  const fetch = mockFetch((_url, options) => {
-    if (options?.method === 'POST' || options?.method === 'PATCH') {
-      enabled = JSON.parse(options.body as string).telemetry.enabled
-      return Promise.resolve(
-        Response.json({ id: 'config-created', telemetry_enabled: enabled })
-      )
-    }
-    return Promise.resolve(
-      Response.json({ enabled, override: enabled, org_default: false })
-    )
+test('rotation keeps old tokens and offers a one-time input token without caching it', async () => {
+  const { writes, client } = setup({
+    tokens: [
+      {
+        id: 'token-old',
+        account_id: 'account-collector',
+      },
+      { id: 'token-unrelated', account_id: 'account-other' },
+    ],
   })
-  setup({ installConfigId: '' })
-  fireEvent.click(screen.getByRole('switch'))
-  await waitFor(() =>
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+  await open()
+  await screen.findByText('token-old')
+  expect(screen.queryByText('token-unrelated')).toBeNull()
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Create bootstrap credential' })
   )
-  await waitFor(() => expect(screen.getByRole('switch')).not.toBeDisabled())
-  fireEvent.click(screen.getByRole('switch'))
-  await waitFor(() =>
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+  const dialog = within(screen.getAllByRole('dialog').at(-1)!)
+  fireEvent.click(dialog.getByRole('combobox', { name: 'Expires after' }))
+  fireEvent.click(await screen.findByRole('option', { name: '90 days' }))
+  fireEvent.click(dialog.getByRole('button', { name: 'Create credential' }))
+  await dialog.findByText('example-one-time-token')
+  expect(writes).toMatchObject([
+    {
+      url: `/v1/installs/${installId}/telemetry/collector`,
+      options: { method: 'POST' },
+    },
+    {
+      url: '/v1/service-accounts/account-collector/tokens',
+      body: { duration: '2160h', invalidate: false },
+    },
+  ])
+  expect(
+    JSON.stringify(
+      client
+        .getQueryCache()
+        .getAll()
+        .map((q) => q.state.data)
+    )
+  ).not.toContain('example-one-time-token')
+  expect(
+    JSON.stringify(
+      client
+        .getMutationCache()
+        .getAll()
+        .map((m) => m.state)
+    )
+  ).not.toContain('example-one-time-token')
+  fireEvent.click(dialog.getByRole('button', { name: 'Done' }))
+  await screen.findByText('token-new')
+  expect(screen.queryByText('example-one-time-token')).toBeNull()
+  expect(screen.getByText('token-old')).toBeInTheDocument()
+  fireEvent.click(
+    screen.getAllByRole('button', { name: 'Revoke credential' })[0]
   )
-  const writes = fetch.mock.calls.filter(
-    ([, options]) => options?.method !== 'GET'
-  )
+  const revoke = within(screen.getAllByRole('dialog').at(-1)!)
   expect(writes).toHaveLength(2)
-  expect(writes[0][0]).toBe(`/v1/installs/${installId}/configs`)
-  expect(writes[0][1]?.method).toBe('POST')
-  expect(JSON.parse(writes[0][1]?.body as string)).toEqual({
-    telemetry: { enabled: true },
-  })
-  expect(writes[1][0]).toBe(`/v1/installs/${installId}/configs/config-created`)
-  expect(writes[1][1]?.method).toBe('PATCH')
-  expect(JSON.parse(writes[1][1]?.body as string)).toEqual({
-    telemetry: { enabled: false },
+  fireEvent.click(revoke.getByRole('button', { name: 'Revoke credential' }))
+  await waitFor(() =>
+    expect(screen.queryByText('token-old', { exact: true })).toBeNull()
+  )
+  expect(writes.at(-1)).toMatchObject({
+    url: '/v1/account/static-tokens/token-old',
+    options: { method: 'DELETE' },
   })
 })
 
-test('a failed settings refresh after saving reports a read error, not a failed write', async () => {
-  mockFetch((_url, options) =>
-    Promise.resolve(
-      options?.method === 'PATCH'
-        ? Response.json({ id: 'config-acme', telemetry_enabled: true })
-        : Response.json({ error: 'Settings unavailable' }, { status: 503 })
-    )
+test('removing collector access requires confirmation and does not alter forwarding or deployments', async () => {
+  const { writes } = setup({ override: true })
+  await open()
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Remove collector access' })
   )
-  const { client, addToast } = setup()
-  fireEvent.click(screen.getByRole('switch'))
-  await screen.findByRole('alert')
-  expect(screen.queryByRole('switch')).toBeNull()
-  expect(addToast).not.toHaveBeenCalled()
-  expect(client.getQueryData(['install', orgId, installId])).toMatchObject({
-    install_config: { id: 'config-acme', telemetry_enabled: true },
-  })
+  const confirmation = within(screen.getAllByRole('dialog').at(-1)!)
+  expect(writes).toHaveLength(0)
+  fireEvent.click(
+    confirmation.getByRole('button', { name: 'Remove collector access' })
+  )
+  await screen.findByText('Not created', { exact: true })
+  expect(screen.getByText('On · Install override')).toBeInTheDocument()
+  expect(writes).toMatchObject([
+    {
+      url: `/v1/installs/${installId}/telemetry/collector`,
+      options: { method: 'DELETE' },
+    },
+  ])
 })
