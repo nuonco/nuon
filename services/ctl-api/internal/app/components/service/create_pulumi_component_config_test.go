@@ -21,7 +21,7 @@ import (
 
 func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigSuccess() {
 	s.Run("creates config with public git VCS", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypePulumi)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypePulumi)
 
 		cfgVal := "bar"
 		envVal := "baz"
@@ -59,7 +59,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigSuccess() {
 // ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigValidationErrors() {
-	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypePulumi)
+	comp := s.createComponent(s.testApp.ID, app.ComponentTypePulumi)
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/pulumi", s.testApp.ID, comp.ID)
 
 	cfgVal := "bar"
@@ -162,7 +162,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigValidationErrors()
 func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
 
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypePulumi)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypePulumi)
 
 		cfgVal := "bar"
 		envVal := "baz"

@@ -1,7 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,6 +18,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
@@ -42,7 +50,9 @@ type testDBParams struct {
 }
 
 func testDependencyOptions() fx.Option {
-	return fx.Options(fx.Replace(githubclient.NewClient(nil)), fx.Decorate(func(cfg *internal.Config) *internal.Config {
+	return fx.Options(fx.Replace(githubclient.NewClient(nil)), fx.Decorate(func(blobstore.Service) blobstore.Service {
+		return &memBlobStore{}
+	}), fx.Decorate(func(cfg *internal.Config) *internal.Config {
 		cfg.HeartbeaterFlushInterval = 50 * time.Millisecond
 		return cfg
 	}), fx.Provide(
@@ -98,4 +108,51 @@ func testDependencyOptions() fx.Option {
 		}})
 		return params.DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&app.QueueSignal{}).Error
 	}))
+}
+
+func withOrgAccess(acc *app.Account, org *app.Org) *app.Account {
+	acc.AllPermissions = permissions.Set{org.ID: permissions.PermissionAll}
+	return acc
+}
+
+type memBlobStore struct {
+	blobs sync.Map
+}
+
+func (m *memBlobStore) Upload(_ context.Context, key string, data []byte) error {
+	m.blobs.Store(key, bytes.Clone(data))
+	return nil
+}
+
+func (m *memBlobStore) Download(_ context.Context, key string) ([]byte, error) {
+	v, ok := m.blobs.Load(key)
+	if !ok {
+		return nil, fmt.Errorf("blob %s not found", key)
+	}
+	return bytes.Clone(v.([]byte)), nil
+}
+
+func (m *memBlobStore) UploadStream(ctx context.Context, key string, reader io.Reader) (string, error) {
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:]), m.Upload(ctx, key, data)
+}
+
+func (m *memBlobStore) DownloadStream(ctx context.Context, key string) (io.ReadCloser, error) {
+	data, err := m.Download(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	return io.NopCloser(bytes.NewReader(data)), nil
+}
+
+func (m *memBlobStore) GetMetadata(ctx context.Context, key string) (int64, string, error) {
+	data, err := m.Download(ctx, key)
+	if err != nil {
+		return 0, "", err
+	}
+	return int64(len(data)), "application/octet-stream", nil
 }

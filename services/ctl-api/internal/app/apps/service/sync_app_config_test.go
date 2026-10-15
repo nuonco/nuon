@@ -18,16 +18,15 @@ import (
 
 // ensureAppQueue gives the test app the queue the sync signal is enqueued onto.
 func (s *AppConfigsTestSuite) ensureAppQueue() *app.Queue {
-	q := &app.Queue{
+	var q app.Queue
+	require.NoError(s.T(), s.service.DB.Where(app.Queue{OwnerID: s.testApp.ID, OwnerType: "apps"}).First(&q).Error)
+	require.NoError(s.T(), s.service.DB.Model(&q).Updates(app.Queue{
 		OrgID:       &s.testOrg.ID,
-		OwnerID:     s.testApp.ID,
-		OwnerType:   "apps",
+		Name:        "app-signals",
 		MaxDepth:    100,
 		MaxInFlight: 1,
-		CreatedByID: s.testAcc.ID,
-	}
-	require.NoError(s.T(), s.service.DB.Create(q).Error)
-	return q
+	}).Error)
+	return &q
 }
 
 func (s *AppConfigsTestSuite) createConfigWithIntermediate() *app.AppConfig {
@@ -45,7 +44,6 @@ func (s *AppConfigsTestSuite) createConfigWithIntermediate() *app.AppConfig {
 }
 
 func (s *AppConfigsTestSuite) TestSyncAppConfigEnqueuesSyncSignal() {
-	s.skipBlobTestsInCI()
 	s.ensureAppQueue()
 	appConfig := s.createConfigWithIntermediate()
 	tests.ClearQueueSignals(s.T(), s.service.DB)
@@ -88,7 +86,6 @@ func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigWithoutIntermediateC
 
 // Two concurrent syncs of the same config would race on the same records.
 func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigAlreadySyncing() {
-	s.skipBlobTestsInCI()
 	s.ensureAppQueue()
 	appConfig := s.createConfigWithIntermediate()
 	require.NoError(s.T(), s.service.DB.
@@ -106,7 +103,6 @@ func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigAlreadySyncing() {
 
 // A config belonging to another app must not be syncable through this app.
 func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigFromAnotherApp() {
-	s.skipBlobTestsInCI()
 	s.ensureAppQueue()
 	appConfig := s.createConfigWithIntermediate()
 

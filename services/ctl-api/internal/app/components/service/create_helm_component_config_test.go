@@ -21,7 +21,7 @@ import (
 
 func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigSuccess() {
 	s.Run("creates config with public git VCS and chart_name", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeHelmChart)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeHelmChart)
 
 		valVal := "bar"
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/helm", s.testApp.ID, comp.ID)
@@ -57,7 +57,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigSuccess() {
 
 func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigWithHelmRepo() {
 	s.Run("creates config with helm_repo_config instead of VCS", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeHelmChart)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeHelmChart)
 
 		valVal := "bar"
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/helm", s.testApp.ID, comp.ID)
@@ -93,7 +93,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigWithHelmRepo() {
 // ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigValidationErrors() {
-	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeHelmChart)
+	comp := s.createComponent(s.testApp.ID, app.ComponentTypeHelmChart)
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/helm", s.testApp.ID, comp.ID)
 
 	valVal := "bar"
@@ -178,7 +178,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigValidationErrors() {
 func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
 
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeHelmChart)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeHelmChart)
 
 		valVal := "bar"
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/helm", s.testApp.ID, comp.ID)

@@ -20,7 +20,7 @@ import (
 
 func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigSuccess() {
 	s.Run("creates config with image_url and tag", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeJob)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeJob)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/job", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateJobComponentConfigRequest{
@@ -45,7 +45,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigSuccess() {
 
 func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigWithOptionalFields() {
 	s.Run("creates config with cmd, args, and env_vars", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeJob)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeJob)
 
 		envVal := "world"
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/job", s.testApp.ID, comp.ID)
@@ -78,7 +78,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigWithOptionalFields() 
 // ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigValidationErrors() {
-	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeJob)
+	comp := s.createComponent(s.testApp.ID, app.ComponentTypeJob)
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/job", s.testApp.ID, comp.ID)
 
 	testCases := []struct {
@@ -120,7 +120,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigValidationErrors() {
 func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
 
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeJob)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeJob)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/job", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateJobComponentConfigRequest{

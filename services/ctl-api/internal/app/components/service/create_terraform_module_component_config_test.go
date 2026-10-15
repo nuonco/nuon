@@ -21,7 +21,7 @@ import (
 
 func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigSuccess() {
 	s.Run("creates config with public git VCS", func() {
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeTerraformModule)
 
 		varVal := "bar"
 		envVal := "baz"
@@ -58,7 +58,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigSuccess()
 // ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigValidationErrors() {
-	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
+	comp := s.createComponent(s.testApp.ID, app.ComponentTypeTerraformModule)
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/terraform-module", s.testApp.ID, comp.ID)
 
 	varVal := "bar"
@@ -131,7 +131,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigValidatio
 func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
 
-		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
+		comp := s.createComponent(s.testApp.ID, app.ComponentTypeTerraformModule)
 
 		varVal := "bar"
 		envVal := "baz"

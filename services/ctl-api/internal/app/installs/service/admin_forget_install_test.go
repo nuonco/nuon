@@ -73,14 +73,19 @@ func (s *AdminForgetInstallTestSuite) SetupSuite() {
 	s.SetDB(s.service.DB)
 }
 
+func (s *AdminForgetInstallTestSuite) SetupSubTest() {
+	tests.ClearQueueSignals(s.T(), s.service.DB)
+}
+
 func (s *AdminForgetInstallTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.InstallsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -95,9 +100,11 @@ func (s *AdminForgetInstallTestSuite) setupTestData() {
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	seedOrgQueues(s.T(), s.service.DB, s.testOrg)
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.service.DB, s.testInstall)
 }
 
 func (s *AdminForgetInstallTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -134,6 +141,7 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
 				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
 				install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+				seedInstallQueues(s.T(), s.service.DB, install)
 				return install.ID
 			},
 			requestBody:    AdminForgetInstallRequest{},
@@ -159,6 +167,7 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
 				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
 				install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+				seedInstallQueues(s.T(), s.service.DB, install)
 				return install.ID
 			},
 			requestBody:    nil,

@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
@@ -44,21 +45,13 @@ func TestAppConfigsSuite(t *testing.T) {
 	suite.Run(t, new(AppConfigsTestSuite))
 }
 
-// skipBlobTestsInCI: these tests upload intermediate configs as blobs to the
-// KMS-encrypted nuon-dev bucket, and the CI runner role lacks
-// kms:GenerateDataKey until the self-hosted-runners KMS policy change is applied.
-func (s *AppConfigsTestSuite) skipBlobTestsInCI() {
-	if os.Getenv("CI") == "true" {
-		s.T().Skip("uploads config blobs to the KMS-encrypted nuon-dev bucket; the CI runner role lacks kms:GenerateDataKey until the self-hosted-runners KMS policy change is applied")
-	}
-}
-
 func (s *AppConfigsTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		fx.Decorate(func(blobstore.Service) blobstore.Service { return newMemBlobstore() }),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)

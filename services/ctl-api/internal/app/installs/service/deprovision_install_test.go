@@ -47,6 +47,7 @@ func (s *InstallsServiceTestSuite) TestDeprovisionInstallPlanOnly() {
 
 func (s *InstallsServiceTestSuite) TestDeprovisionInstallWithoutActiveRunner() {
 	install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.deps.DB, install)
 	path := fmt.Sprintf("/v1/installs/%s/deprovision", install.ID)
 
 	rr := s.makeRequest(http.MethodPost, path, nil)

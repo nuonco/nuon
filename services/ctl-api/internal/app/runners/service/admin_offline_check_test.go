@@ -61,6 +61,7 @@ func (s *AdminOfflineCheckTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -148,35 +149,20 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			},
 		},
 		{
-			name:           "offline check with arbitrary runner ID",
+			name:           "unknown runner ID returns not found",
 			runnerID:       "nonexistent-runner-id-789",
 			requestBody:    AdminOfflineCheckRequest{},
-			expectedCode:   http.StatusCreated,
-			expectedSignal: true,
-			validateFunc: func(runnerID string) {
-				// Handler sends signal directly without validation
-				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
-				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
-			},
-		},
-		{
-			name:           "offline check with empty runner ID",
-			runnerID:       "",
-			requestBody:    AdminOfflineCheckRequest{},
-			expectedCode:   http.StatusCreated,
-			expectedSignal: true,
-			validateFunc: func(runnerID string) {
-				// Even with empty ID, signal is sent
-				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
-				require.Len(s.T(), capturedSignals, 1)
-				// OwnerID may be empty
-			},
+			expectedCode:   http.StatusNotFound,
+			expectedSignal: false,
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetQueueSignals(s.T(), s.service.DB)
+			if tc.expectedSignal {
+				seedRunnerSignalsQueue(s.T(), s.service.DB, tc.runnerID)
+			}
 			rr := s.makeRequest("POST", "/v1/runners/"+tc.runnerID+"/offline-check", tc.requestBody)
 
 			if rr.Code != tc.expectedCode {

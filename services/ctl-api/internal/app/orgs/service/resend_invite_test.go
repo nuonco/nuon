@@ -90,7 +90,7 @@ func (s *ResendOrgInviteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -136,6 +136,7 @@ func (s *ResendOrgInviteTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
+	createOrgSignalsQueue(s.T(), s.service.DB, testAcc, testOrg.ID)
 }
 
 func (s *ResendOrgInviteTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -324,7 +325,7 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Setup test data
 			inviteID := tc.setupFunc()

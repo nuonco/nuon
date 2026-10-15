@@ -93,7 +93,7 @@ func (s *AdminDeprovisionOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	// Create test router with standard middlewares
 	// AdminDeprovisionOrg is an admin endpoint, no org context needed
@@ -115,6 +115,7 @@ func (s *AdminDeprovisionOrgTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, s.testOrg.ID)
 }
 
 func (s *AdminDeprovisionOrgTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -165,6 +166,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -195,6 +197,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -206,7 +209,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 			},
 			expectedCode:   http.StatusOK,
 			validateSignal: true,
-			expectedType:   "org-force-deprovision",
+			expectedType:   string(orgdeprovision.SignalType),
 		},
 		{
 			name: "defaults to force=false when field missing",
@@ -225,6 +228,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -269,6 +273,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -296,6 +301,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -316,7 +322,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 			// Setup test data
 			org := tc.setupFunc()
 
-			// Reset mock before test
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request
 			path := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", org.ID)
@@ -370,9 +376,9 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 			expectedType: string(orgdeprovision.SignalType),
 		},
 		{
-			name:         "force=true sends OperationForceDeprovision",
+			name:         "force=true sends deprovision with Force set",
 			force:        true,
-			expectedType: "org-force-deprovision",
+			expectedType: string(orgdeprovision.SignalType),
 		},
 	}
 
@@ -393,11 +399,12 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 			}
 			err := s.service.DB.WithContext(ctx).Create(org).Error
 			require.NoError(s.T(), err)
+			createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 			s.T().Cleanup(func() {
 				s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 			})
 
-			// Reset mock
+			tests.ClearQueueSignals(s.T(), s.service.DB)
 
 			// Make request
 			path := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", org.ID)
@@ -410,6 +417,9 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			require.Len(s.T(), signals, 1)
 			assert.Equal(s.T(), tc.expectedType, string(signals[0].Type))
+			sig, ok := signals[0].Signal.Signal.(*orgdeprovision.Signal)
+			require.True(s.T(), ok)
+			assert.Equal(s.T(), tc.force, sig.Force)
 		})
 	}
 }
@@ -430,6 +440,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgDoesNotModifyDatab
 	}
 	err := s.service.DB.WithContext(ctx).Create(org).Error
 	require.NoError(s.T(), err)
+	createOrgSignalsQueue(s.T(), s.service.DB, s.testAcc, org.ID)
 	s.T().Cleanup(func() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 	})
@@ -438,7 +449,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgDoesNotModifyDatab
 	originalCreatedAt := org.CreatedAt
 	originalUpdatedAt := org.UpdatedAt
 
-	// Reset mock
+	tests.ClearQueueSignals(s.T(), s.service.DB)
 
 	// Make deprovision request
 	path := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", org.ID)

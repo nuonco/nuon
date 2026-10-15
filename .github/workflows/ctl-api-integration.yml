@@ -4,7 +4,7 @@ name: ctl-api integration
   workflow_dispatch:
     inputs:
       local_nctl:
-        description: "Build nuonctl from this branch instead of pulling :latest"
+        description: "Build nuonctl from mono main instead of pulling :latest"
         type: boolean
         default: false
   pull_request:
@@ -17,93 +17,315 @@ name: ctl-api integration
     branches:
       - main
 
+# PR pushes supersede each other. Main runs one per commit and never cancels: promotion of a
+# commit waits on its own run (.github/actions/await-ctl-api-integration).
 concurrency:
-  group: ctl-api-dispatch-${{ github.event.pull_request.number || github.ref_name }}
-  cancel-in-progress: true
+  group: ctl-api-integration-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Explicit statuses:write — the skip/dispatch steps post commit statuses on the
-# head ref, and the org default is read-only.
 permissions:
   contents: read
-  statuses: write
+  id-token: write
 
 defaults:
   run:
     shell: bash
 
+env:
+  CI: "true"
+  NUON_ROOT: ${{ github.workspace }}
+  NUONCTL_LOCAL: ${{ inputs.local_nctl || false }}
+  NUONCTL_DISABLE_CREDENTIALS: "true"
+  NUONCTL_CLUSTER_ROLE_ARN: arn:aws:iam::676549690856:role/github-actions-role-stage-nuon
+
 jobs:
-  dispatch:
-    name: ctl-api integration
+  changes:
+    name: 🔍 changes
     runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+      reason: ${{ steps.decide.outputs.reason }}
     steps:
-      - name: Checkout repo
-        if: github.event_name != 'workflow_dispatch'
+      - name: Decide whether to run the lanes
+        id: decide
+        run: |
+          run=false
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            run=true
+          elif [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
+            reason="fork PR; runs after merge to main"
+          elif [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-integration') }}" == "true" ]]; then
+            run=true
+          else
+            reason="runs after merge to main and gates promotion; to run it here, add the run-integration label and push, or dispatch the workflow on this branch"
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          echo "run=$run ${reason:+($reason)}"
+
+  # The flow lane boots its own fx app (psql + temporal worker + flow client) in-process, so it
+  # needs only the docker deps and a migrated ctl_api_test, which nuontest prepares.
+  flow-lane:
+    name: flow lane
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: build-run-lane
+    timeout-minutes: 30
+    steps:
+      - name: Checkout nuon
         uses: actions/checkout@v6
         with:
-          sparse-checkout: ci-triggers.yml
-          sparse-checkout-cone-mode: false
+          path: nuon
 
-      - name: read ci triggers file
-        if: github.event_name != 'workflow_dispatch'
-        uses: pietrobolcato/action-read-yaml@1.1.0
-        id: ci_triggers
+      - name: Checkout mono
+        uses: actions/checkout@v6
         with:
-          config: ci-triggers.yml
+          repository: nuonco/mono
+          ref: main
+          path: mono
+          token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
 
-      - uses: dorny/paths-filter@v3
-        if: github.event_name != 'workflow_dispatch'
-        id: filter
+      - name: Setup Go
+        uses: actions/setup-go@v7
         with:
-          filters: ${{ steps.ci_triggers.outputs['services'] }}
+          go-version-file: nuon/go.mod
+          cache-dependency-path: nuon/go.sum
 
-      # The job itself always runs so the check reports success when skipped; only the
-      # trigger step is gated. Keep this true when promoting the check to required,
-      # otherwise docs-only PRs would soft-lock on a never-arriving status.
-      - name: Skip when draft, bot-merge, or ctl-api is unchanged
-        if: github.event_name != 'workflow_dispatch' && (github.event.pull_request.draft == true || github.triggering_actor == 'nuonbot' || steps.filter.outputs['ctl-api'] != 'true')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bring up dependencies (postgres / temporal / clickhouse)
+        working-directory: mono
         run: |
-          if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
-            reason="draft PR; integration run skipped until marked ready for review"
-            echo "draft PR; skipping integration run until marked ready for review"
-          elif [[ "${{ github.triggering_actor }}" == "nuonbot" ]]; then
-            reason="bot merge; the merged result is tested by the main-push run"
-            echo "auto-merge-of-main update from ${{ github.triggering_actor }}; the merged result is tested by the main-push run"
+          nohup sh -c '
+            docker compose down -v --remove-orphans || true
+            CHVER=25.6.2.5 docker compose up -d --build postgres temporal temporal-init clickhouse
+            echo $? > /tmp/deps-up.exit
+          ' > /tmp/deps-up.log 2>&1 &
+
+      # temporal-gen wrappers (*_gen.go) are not tracked in git. The flow lane needs no API docs or
+      # templ output, so only the temporal target runs.
+      - name: Generate code
+        working-directory: nuon
+        env:
+          NUON_GEN_TARGETS: temporal
+        run: |
+          go mod download
+          go generate ./...
+
+      - name: Wait for dependencies
+        run: |
+          for i in $(seq 1 90); do
+            [ -f /tmp/deps-up.exit ] && break
+            sleep 2
+          done
+          tail -n 30 /tmp/deps-up.log || true
+          [ -f /tmp/deps-up.exit ] && [ "$(cat /tmp/deps-up.exit)" = "0" ] || {
+            echo "deps did not come up"
+            exit 1
+          }
+
+      - name: Restore postgres schema snapshot
+        uses: actions/cache@v6
+        with:
+          path: /tmp/schema-dump
+          key: pg-schema-${{ runner.os }}-${{ hashFiles('nuon/services/ctl-api/internal/pkg/db/psql/**', 'nuon/services/ctl-api/internal/app/**/*.go', 'nuon/services/ctl-api/tests/testdb.go') }}
+
+      # build-run pods are single-tenant on m6id.2xlarge (~7.75 allocatable vCPU), so -parallel=8
+      # with DB_MAX_CONNECTIONS=32 (pgx pool for 8 concurrent flow cases) matches the node.
+      - name: Run flow lane
+        working-directory: nuon/services/ctl-api
+        env:
+          DB_REPLICA_ENABLED: "false"
+          DB_MAX_CONNECTIONS: "32"
+          NUON_FLOW_PHASE_LEDGER: "1"
+          NUONTEST_PG_SCHEMA_DIR: /tmp/schema-dump
+        run: |
+          source tests/integration.env
+          go run ./cmd/nuontest -v -timeout=30m -count=1 -parallel=8 \
+            -skip 'TestSuite/TestPin' \
+            ./internal/pkg/flow/testworker/
+
+      - name: Dump deps state on failure
+        if: failure()
+        working-directory: mono
+        run: |
+          echo "::group::docker compose ps"
+          docker compose ps || true
+          echo "::endgroup::"
+          echo "::group::recent ctl-api test logs"
+          tail -n 200 /tmp/nuontest-shard0-tests-*.log 2>/dev/null || true
+          echo "::endgroup::"
+
+      - name: Stop dependencies
+        if: always()
+        working-directory: mono
+        run: docker compose down -v --remove-orphans || true
+
+  integration:
+    name: integration
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: build-run
+    timeout-minutes: 60
+    steps:
+      - name: Checkout nuon
+        uses: actions/checkout@v6
+        with:
+          path: nuon
+
+      - name: Checkout mono
+        uses: actions/checkout@v6
+        with:
+          repository: nuonco/mono
+          ref: main
+          path: mono
+          token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: mono/go.mod
+          cache-dependency-path: |
+            mono/go.sum
+            nuon/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      # The dev stack's ctl-api service runs bins/nuonctl/scripts/bun-install-if-needed on the
+      # host, so bun must be on PATH.
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install nuonctl
+        run: |
+          set -euo pipefail
+          if [[ "${NUONCTL_LOCAL}" == "true" ]]; then
+            (cd mono/bins/nuonctl && CGO_ENABLED=0 go build -o /usr/local/bin/nuonctl .)
           else
-            reason="skipped; no ctl-api changes in this diff"
-            echo "no ctl-api changes in this diff; skipping integration run"
+            base=https://nuon-artifacts.s3.us-west-2.amazonaws.com/nuonctl
+            version="$(curl -sSf "$base/latest.txt")"
+            curl -sSfL "$base/$version/nuonctl_linux_amd64" -o /usr/local/bin/nuonctl
+            chmod +x /usr/local/bin/nuonctl
           fi
-          gh api repos/nuonco/nuon/statuses/${{ github.event.pull_request.head.sha || github.sha }} \
-            -f state=success \
-            -f context="ctl-api integration (mono)" \
-            -f description="$reason" \
-            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          nuonctl version
 
-      - name: Trigger the mono integration workflow
-        if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft != true && github.triggering_actor != 'nuonbot' && steps.filter.outputs['ctl-api'] == 'true')
-        env:
-          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
+      - name: Bring up dependencies (postgres / temporal / clickhouse)
+        working-directory: mono
+        run: printf 'n\n' | nuonctl scripts go-reset-dependencies
+
+      # The untracked temporal-gen wrappers are required to compile the test tree. Run before the dev
+      # stack, which generates into the same checkout on boot.
+      - name: Generate code
+        working-directory: nuon
         run: |
-          # github.token posts the pending status (workflow has statuses:write);
-          # PRIVATE_REPO_DEPLOY_TOKEN only dispatches the mono workflow — it
-          # cannot write statuses here (403).
-          curl -sS -X POST \
-            -H "Authorization: Bearer ${{ github.token }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/nuonco/nuon/statuses/${{ github.event.pull_request.head.sha || github.sha }}" \
-            -d '{"state":"pending","context":"ctl-api integration (mono)","description":"running in nuonco/mono","target_url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' || true
-          run_url="$(gh workflow run ctl-api-integration.yml \
-            --repo nuonco/mono \
-            --field "nuon_ref=${{ github.event.pull_request.head.sha || github.sha }}" \
-            --field "nuon_branch=${{ github.head_ref || github.ref_name }}" \
-            --field "source_run_id=${{ github.run_id }}" \
-            --field "source_actor=${{ github.actor }}" \
-            --field "local_nctl=${{ inputs.local_nctl || false }}")"
-          run_id="${run_url##*/}"
-          [[ "$run_id" =~ ^[0-9]+$ ]]
-          echo "mono integration run: https://github.com/nuonco/mono/actions/runs/${run_id}"
-          echo "[mono integration run](https://github.com/nuonco/mono/actions/runs/${run_id})" >> "$GITHUB_STEP_SUMMARY"
-          # The mono workflow runs async; this check completes once it is dispatched.
-          # No polling here: watch was rate-limiting the shared PAT (gh run watch
-          # defaults to ~3s API polls). The linked mono run holds the actual result.
+          go mod download
+          go generate ./...
+
+      - name: Start ctl-api dev stack
+        working-directory: mono
+        env:
+          NUON_DIR: ${{ github.workspace }}/nuon
+        run: |
+          nohup nuonctl service dev --dev=ctl-api --skip-all --watch=false --webview=false --quiet=false \
+            > /tmp/dev.log 2>&1 &
+          echo "DEV_PID=$!" >> $GITHUB_ENV
+
+      - name: Wait for ctl-api ready (up to 15m)
+        run: |
+          for i in {1..180}; do
+            if curl -sf http://localhost:8081/livez \
+               && curl -sf http://localhost:8082/livez; then
+              echo "ctl-api ready after ${i} attempts ($((i*5))s)"
+              exit 0
+            fi
+            # A dead dev process (e.g. OOM-killed during the ctl-api build) will never serve /livez.
+            if ! kill -0 "$DEV_PID" 2>/dev/null; then
+              echo "ctl-api dev process (pid $DEV_PID) died after $((i*5))s of waiting"
+              break
+            fi
+            if (( i % 12 == 0 )); then
+              echo "--- still waiting (${i} attempts): pid $DEV_PID alive, $(free -m | awk '/Mem:/{print $3"/"$7" MiB used/avail"}'), last dev.log line:"
+              tail -n 1 /tmp/dev.log || true
+            fi
+            sleep 5
+          done
+          echo "ctl-api never came up"
+          echo "::group::ctl-api boot diagnostics"
+          if kill -0 "$DEV_PID" 2>/dev/null; then
+            ps -p "$DEV_PID" -o pid,ppid,stat,rss,etime,cmd || true
+            pgrep -lP "$DEV_PID" || true
+          else
+            echo "dev process (pid $DEV_PID) is dead — crashed silently or was OOM-killed"
+          fi
+          free -m || true
+          tail -n 30 /tmp/dev.log || true
+          echo "::endgroup::"
+          exit 1
+
+      - name: Run integration tests
+        working-directory: nuon/services/ctl-api
+        env:
+          INTEGRATION: "true"
+          INTEGRATION_API_URL: http://localhost:8081
+          INTEGRATION_INTERNAL_API_URL: http://localhost:8082
+          INTEGRATION_NO_CLEANUP: "1"
+          DB_REPLICA_ENABLED: "false"
+        run: |
+          source tests/integration.env
+          # flow/testworker runs in the flow lane. grep, not rg: build-run runners have no rg, and an
+          # empty package list makes nuontest pass without running anything.
+          mapfile -t packages < <(
+            grep -rl --include='*_test.go' 'INTEGRATION' . \
+              | xargs -r -n1 dirname \
+              | sort -u \
+              | grep -vx './internal/pkg/flow/testworker'
+          )
+          if (( ${#packages[@]} == 0 )); then
+            echo "no integration test packages found"
+            exit 1
+          fi
+          printf 'testing %s\n' "${packages[@]}"
+          go run ./cmd/nuontest -v -timeout=40m -count=1 -p=1 \
+            -skip 'TestSuite/TestPin' "${packages[@]}"
+
+      - name: Dump dev logs on failure
+        if: failure()
+        working-directory: mono
+        run: |
+          echo "::group::nuonctl service dev (/tmp/dev.log)"
+          tail -n 500 /tmp/dev.log || true
+          echo "::endgroup::"
+          echo "::group::docker compose ps"
+          docker compose ps || true
+          echo "::endgroup::"
+
+      - name: Stop dev stack
+        if: always()
+        working-directory: mono
+        run: |
+          [ -n "${DEV_PID:-}" ] && kill "$DEV_PID" 2>/dev/null || true
+          docker compose down -v || true
+
+  # Required check on main (infra/github/repos_nuon.tf in mono). Always runs so skipped lanes
+  # report success instead of leaving the check missing.
+  result:
+    name: ctl-api integration (mono)
+    needs: [changes, flow-lane, integration]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report
+        run: |
+          if [[ "${{ needs.changes.result }}" != "success" ]]; then
+            echo "change detection ${{ needs.changes.result }}"
+            exit 1
+          fi
+          if [[ "${{ needs.changes.outputs.run }}" != "true" ]]; then
+            echo "skipped: ${{ needs.changes.outputs.reason }}"
+            exit 0
+          fi
+          echo "flow lane: ${{ needs.flow-lane.result }}, integration: ${{ needs.integration.result }}"
+          [[ "${{ needs.flow-lane.result }}" == "success" && "${{ needs.integration.result }}" == "success" ]]

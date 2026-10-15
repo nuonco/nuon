@@ -63,6 +63,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -148,6 +149,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) createRunnerHeartBeat(runner
 	heartBeat := &app.RunnerHeartBeat{
 		ID:        domains.NewRunnerHeartBeatID(),
 		RunnerID:  runnerID,
+		ProcessID: "prc-" + string(process),
 		Process:   process,
 		AliveTime: aliveTime,
 		Version:   version,

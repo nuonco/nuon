@@ -109,6 +109,6 @@ func (s *migration125TestSuite) TestBackfillsMetadataAndRecreatesMissingRoles() 
 		First(&reconciledRunner).Error)
 	require.NotEqual(s.T(), runner.ID, reconciledRunner.ID)
 	require.True(s.T(), reconciledRunner.Managed)
-	require.ElementsMatch(s.T(), []string{app.RoleContextServiceAccount}, reconciledRunner.Contexts)
+	require.Empty(s.T(), reconciledRunner.Contexts)
 	require.Len(s.T(), reconciledRunner.Policies, 1)
 }

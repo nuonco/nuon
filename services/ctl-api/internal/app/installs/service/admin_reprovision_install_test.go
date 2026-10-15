@@ -72,6 +72,10 @@ func (s *ReprovisionInstallTestSuite) SetupSuite() {
 	s.SetDB(s.service.DB)
 }
 
+func (s *ReprovisionInstallTestSuite) SetupSubTest() {
+	tests.ClearQueueSignals(s.T(), s.service.DB)
+}
+
 func (s *ReprovisionInstallTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
@@ -96,9 +100,11 @@ func (s *ReprovisionInstallTestSuite) setupTestData() {
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	seedOrgQueues(s.T(), s.service.DB, s.testOrg)
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.service.DB, s.testInstall)
 }
 
 func (s *ReprovisionInstallTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {

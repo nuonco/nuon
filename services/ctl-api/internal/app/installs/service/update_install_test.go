@@ -30,11 +30,11 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallName() {
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Equal(s.T(), "updated-name", resp.Name)
 
-	captured := tests.GetQueueSignals(s.T(), s.deps.DB)
-	require.Len(s.T(), captured, 1)
-	_ = captured[0] // signal type check via .Type
-
-	assert.Equal(s.T(), "Updated-type", string(captured[0].Type))
+	var signalTypes []string
+	for _, c := range tests.GetQueueSignals(s.T(), s.deps.DB) {
+		signalTypes = append(signalTypes, string(c.Type))
+	}
+	assert.ElementsMatch(s.T(), []string{"updated", "appconfig-updated"}, signalTypes)
 }
 
 func (s *InstallsServiceTestSuite) TestUpdateInstallNotFound() {

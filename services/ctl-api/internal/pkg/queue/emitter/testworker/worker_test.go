@@ -43,6 +43,7 @@ import (
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
@@ -88,6 +89,7 @@ func (e *EmitterTestSuite) SetupSuite() {
 		fx.Provide(internal.NewConfig),
 
 		// various dependencies
+		fx.Provide(telemetry.NewConfig),
 		fx.Provide(log.New),
 		fx.Provide(dblog.New),
 		fx.Provide(loops.New),

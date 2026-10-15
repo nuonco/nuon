@@ -69,6 +69,7 @@ func (s *RunnerOtelWriteTracesTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -88,7 +89,7 @@ func (s *RunnerOtelWriteTracesTestSuite) SetupTest() {
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestOrg: s.testOrg,
-		TestAcc: s.testAcc,
+		TestAcc: withOrgAccess(s.testAcc, s.testOrg),
 	})
 	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)
