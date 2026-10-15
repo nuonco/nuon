@@ -1,6 +1,6 @@
 ---
-title: 042 - Clean Deprovisions and a New Dashboard
-description: Offboard a customer without risking their data, and run your fleet from a dashboard organized around your app branches.
+title: 042 - Clean Deprovisions, Install Telemetry, and a New Dashboard
+description: Offboard a customer without risking their data, see every install in your own observability backend, and run your fleet from a dashboard organized around your app branches.
 boost: 0.3
 ---
 
@@ -44,6 +44,30 @@ step can be skipped so one stuck component no longer blocks the rest of the tear
 
 Read more at [Retaining resources on teardown](/guides/retaining-resources-on-teardown) and
 [Skipping policies during teardown](/concepts/policies#skipping-policies-during-teardown).
+
+---
+
+## Install telemetry
+
+See how your application behaves in every customer's cloud, in the observability backend you already use.
+
+Your application emits standard OpenTelemetry logs, metrics, and traces to a private endpoint inside each install:
+
+```toml
+OTEL_EXPORTER_OTLP_PROTOCOL = "http/protobuf"
+OTEL_EXPORTER_OTLP_ENDPOINT = "{{ .nuon.install_stack.outputs.telemetry_endpoint }}"
+```
+
+A Collector managed by the install runner forwards the data to a relay you control, which sends it on over OTLP to
+any compatible backend. There is no proprietary agent to install and no backend credentials to place in a customer
+account. Each payload arrives stamped with verified `nuon.org.id`, `nuon.app.id`, and `nuon.install.id` attributes,
+so one dashboard covers your whole fleet and filters down to a single customer.
+
+Your customer stays in control: the install stack exposes the private endpoint, and they can turn it off. You
+choose which installs send data with an org default and per-install overrides.
+
+Read more at [Install telemetry](/concepts/install-telemetry) and
+[Set up install telemetry](/guides/byoc/telemetry).
 
 ---
 
