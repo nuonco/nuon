@@ -14133,7 +14133,7 @@ func (a *Client) GetInstallLatestDeploy(params *GetInstallLatestDeployParams, au
 /*
 GetInstallOverview installs overview
 
-Returns branch tracking and config drift for an install. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
 */
 func (a *Client) GetInstallOverview(params *GetInstallOverviewParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOverviewOK, error) {
 	// NOTE: parameters are not validated before sending

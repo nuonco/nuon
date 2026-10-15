@@ -14,9 +14,21 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	), s.mcpListInstalls)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"install_summary",
+		"Install summary",
+		"Install summary for one install, laid out like the install detail page. Use this tool when the user asks for an install summary. Do not call get_install for that request. "+
+			"If the user did not name an install, ask whether to use the CLI-selected install or pick one from list_installs, and wait before calling this tool. When none is selected, call list_installs and let them pick. A named install skips that question. "+
+			"Render the page in this order: identity, then version.applied_commit (sha, message, author, and version.expected_commit when it differs), then each components entry (name, type, status), then health (runner, sandbox, components, and health when present), then every failing_workflows entry when that list is present. Call out failing workflows in the page, not only in the menu. Then inputs, grouped by group, using display_name and the redacted value; say unset when set is false. Do not lead with a flat status table that puts the commit or inputs last. "+
+			"The commit is already in version. Do not ask the user to choose a version action to see it. "+
+			"After that page, present next_actions and wait. Health, Resources, and Deployments match the detail-page tabs. For make_update, present its nested next_actions and wait again. Inspect failing workflow is present only when failing_workflows is non-empty. "+
+			"After an inspection finishes, offer Back to install summary or Do nothing. Back calls install_summary with the same install. "+
+			"An update choice starts a preparation flow: collect required values and role selection, then ask before calling the corresponding write tool.",
+	), s.mcpInstallSummary)
+
+	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_install",
 		"Get install",
-		"Get a compact overview of an install by name or ID, including app and branch identity, deployment and health rollups, input names, and the workflow or app-branch run that most recently updated it.",
+		"Get a compact overview of an install by name or ID, including app and branch identity, deployment and health rollups, input names, and the workflow or app-branch run that most recently updated it. For an install summary menu, call install_summary instead.",
 	), s.mcpGetInstall)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
@@ -34,8 +46,15 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_install_health",
 		"Get install health",
-		"Get the current health rollup for an install and each component, including health descriptions, last report time, and cluster access errors.",
+		"Get install health as separate statuses, resource observations, and runner processes. Show statuses.runner, statuses.sandbox, statuses.components, and statuses.health separately; omit health when it is absent. Do not collapse them into one health value. Then list each resource with its own health and status fields. If resources_omitted is set, say how many were left out and use list_install_resources for the rest. Then show each runner process separately: status, connectivity, started_at, last_heartbeat, configured_version, and reported_version.",
 	), s.mcpGetInstallHealth)
+
+	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"list_install_resources",
+		"List install resources",
+		"List live resources managed by an install, with optional component, kind, namespace, health, and provider filters. "+
+			"Use next_offset while has_more is true. After showing the requested resources, present next_actions for Back to install summary or Do nothing."+apiPkg.MCPListToolHint,
+	), s.mcpListInstallResources)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_workflows",
@@ -96,13 +115,13 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_deploys",
 		"List deploys",
-		"List the 20 most recent deploys for an install. Returns deploy ID, component, build, status, and timestamp.",
+		"List the 20 most recent deploys for an install. Present each deploy's fields in payload order and do not lead with ids. Then present that deploy's next_actions and wait.",
 	), s.mcpListDeploys)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_deploy",
 		"Get deploy",
-		"Get deploy details by ID including component info, build, status, and log stream ID for log fetching.",
+		"Get one deploy. Present fields in payload order and do not lead with ids. Then present next_actions and wait.",
 	), s.mcpGetDeploy)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(

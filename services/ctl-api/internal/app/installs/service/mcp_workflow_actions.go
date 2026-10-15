@@ -11,10 +11,11 @@ import (
 )
 
 type mcpNextAction struct {
-	Action    string         `json:"action"`
-	Label     string         `json:"label"`
-	Tool      string         `json:"tool,omitempty"`
-	Arguments map[string]any `json:"arguments,omitempty"`
+	Action      string          `json:"action"`
+	Label       string          `json:"label"`
+	Tool        string          `json:"tool,omitempty"`
+	Arguments   map[string]any  `json:"arguments,omitempty"`
+	NextActions []mcpNextAction `json:"next_actions,omitempty"`
 }
 
 // mcpWorkflowAllowsApproveAll matches the dashboard Approve all button.

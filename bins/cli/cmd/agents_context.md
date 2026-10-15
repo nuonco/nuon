@@ -96,6 +96,12 @@ The upstream URL (`{{.MCPURL}}`) is derived from `api_url` in the CLI config, tu
 4. Do not invent IDs; resolve names via `list_*` / `get_*` tools first.
 5. Keep responses trimmed; MCP tools already return compact JSON.
 
+## Install summary flow
+
+Use `install_summary` as the entry point for investigating or updating one install. Do not call `get_install` for an install summary. If the user did not name an install, ask whether to use the Install ID in the current CLI selection or pick one from `list_installs`, and wait for the answer. When that field is `(none selected)`, skip the current-install choice, call `list_installs`, and let them pick. A named install skips this question. Render the summary like the install detail page, in this order: identity, applied commit (and the expected commit when it differs), each component, health, any failing workflows, then inputs grouped by name with their redacted values. The commit is already in the page. Then present `next_actions` and wait: Health, Resources, Deployments, an update, a failing workflow only when one is listed, or no action. Do not chain every inspection automatically.
+
+The Make an update choice has nested `next_actions`. Present those choices and wait again. They prepare existing write flows by loading current inputs or available IAM roles; opening either menu does not mutate the install. After an inspection, offer Back to install summary or Do nothing. Back calls `install_summary` again with the same install.
+
 ## Timestamps
 
 Tool JSON timestamps are UTC (Zulu) RFC3339 and always end in `Z`, for example `2026-09-04T04:23:00Z`. The `Z` means UTC, not the user's local clock.
@@ -130,7 +136,7 @@ Writes are hidden from the stdio proxy unless `--allow-writes` is set. Descripti
 | Orgs | `whoami`, `list_orgs`, `select_org` | |
 | Apps | `list_apps`, `get_app`, `get_app_config_schema`, `list_app_branches`, `get_app_branch`, `list_app_branch_runs`, `get_app_branch_run`, `list_app_branch_preview_sources` | `preview_app_branch` |
 | Components | `list_components`, `get_component`, `list_builds`, `get_build` | |
-| Installs | `list_installs`, `get_install`, `get_install_readme`, `get_install_health`, `list_install_components`, `get_install_inputs`, `list_available_roles`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `get_approval_plan_diff`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `approve_all`, `reject_step`, `retry_step`, `skip_step`, `cancel_workflow` |
+| Installs | `list_installs`, `install_summary`, `get_install`, `get_install_readme`, `get_install_health`, `list_install_resources`, `list_install_components`, `get_install_inputs`, `list_available_roles`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `get_approval_plan_diff`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `approve_all`, `reject_step`, `retry_step`, `skip_step`, `cancel_workflow` |
 | Actions | `list_install_actions`, `get_action` | `run_action` |
 | Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |
 | Runbooks | `list_runbooks`, `get_runbook` | `run_runbook` |
