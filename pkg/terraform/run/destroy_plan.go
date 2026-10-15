@@ -67,12 +67,35 @@ func (r *run) getDestroyPlanPipeline() (*pipeline.Pipeline, error) {
 		ExecFn:     execmappers.MapInitLog(r.Workspace.Init),
 		CallbackFn: callbackmappers.Noop,
 	})
+	planCb, err := r.localFileCallback("plan.json", true)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create plan callback: %w", err)
+	}
+
+	if len(r.teardownRetain) > 0 {
+		pipe.AddStep(&pipeline.Step{
+			Name:       "resolve retained resources",
+			ExecFn:     execmappers.MapInitLog(r.resolveTeardown),
+			CallbackFn: callbackmappers.Noop,
+		})
+		pipe.AddStep(&pipeline.Step{
+			Name:       "plan destroy",
+			ExecFn:     execmappers.MapBytesLog(r.planTeardown),
+			CallbackFn: callbackmappers.Noop,
+		})
+		pipe.AddStep(&pipeline.Step{
+			Name:       "show plan",
+			ExecFn:     execmappers.MapTerraformPlan(r.showTeardownPlan),
+			CallbackFn: planCb,
+		})
+		return pipe, nil
+	}
+
 	pipe.AddStep(&pipeline.Step{
 		Name:       "plan destroy",
 		ExecFn:     execmappers.MapBytesLog(r.Workspace.PlanDestroy),
 		CallbackFn: callbackmappers.Noop,
 	})
-	planCb, err := r.localFileCallback("plan.json", true)
 	pipe.AddStep(&pipeline.Step{
 		Name:       "show plan",
 		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.ShowPlan),

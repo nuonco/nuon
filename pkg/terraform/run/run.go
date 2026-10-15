@@ -47,6 +47,9 @@ type run struct {
 	OutputSettings *OutputSettings     `validate:"required"`
 
 	prePlanHook PrePlanHook
+
+	teardownRetain []string
+	teardown       *teardownResolution
 }
 
 type runOption func(*run) error

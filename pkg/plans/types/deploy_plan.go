@@ -33,4 +33,13 @@ type DeployPlan struct {
 	ApplyPlanDisplay string `json:"apply_plan_display"`
 
 	SandboxMode *SandboxMode `json:"sandbox_mode,omitzero,omitempty"`
+
+	// Teardown is only set on plans for teardown deploys.
+	Teardown *TeardownPlan `json:"teardown,omitzero,omitempty"`
+}
+
+type TeardownPlan struct {
+	// Retain holds rendered resource addresses that are removed from state
+	// instead of destroyed.
+	Retain []string `json:"retain,omitempty"`
 }

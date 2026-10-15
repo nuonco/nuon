@@ -85,6 +85,7 @@ type ComponentConfigConnection struct {
 	HealthBlockDeploy                 *bool                              `json:"health_block_deploy,omitempty" gorm:"default:null" temporaljson:"health_block_deploy,omitzero,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 	HealthProbes                      ComponentHealthProbes              `json:"health_probes,omitempty" gorm:"type:jsonb" temporaljson:"health_probes,omitzero,omitempty"`
 	HealthRequiredChecks              ComponentHealthRequiredChecks      `json:"health_required_checks,omitempty" gorm:"type:jsonb" temporaljson:"health_required_checks,omitzero,omitempty"`
+	Teardown                          *ComponentTeardown                 `json:"teardown,omitempty" gorm:"type:jsonb" temporaljson:"teardown,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
@@ -179,6 +180,47 @@ func (c ComponentHealthRequiredChecks) Value() (driver.Value, error) {
 
 func (ComponentHealthRequiredChecks) GormDataType() string {
 	return "jsonb"
+}
+
+// ComponentTeardown configures how a component's resources are handled when it
+// is torn down. Retain entries may be templated and are rendered at teardown.
+type ComponentTeardown struct {
+	Retain []string `json:"retain,omitempty"`
+}
+
+// Scan implements the database/sql.Scanner interface.
+func (c *ComponentTeardown) Scan(v interface{}) error {
+	switch v := v.(type) {
+	case nil:
+		return nil
+	case []byte:
+		if len(v) == 0 {
+			return nil
+		}
+		if err := json.Unmarshal(v, c); err != nil {
+			return errors.Wrap(err, "unable to scan component teardown")
+		}
+	}
+	return nil
+}
+
+// Value implements the driver.Valuer interface.
+func (c *ComponentTeardown) Value() (driver.Value, error) {
+	if c == nil {
+		return nil, nil
+	}
+	return json.Marshal(c)
+}
+
+func (ComponentTeardown) GormDataType() string {
+	return "jsonb"
+}
+
+func (c *ComponentConfigConnection) GetTeardownRetain() []string {
+	if c.Teardown == nil {
+		return nil
+	}
+	return c.Teardown.Retain
 }
 
 func (c *ComponentConfigConnection) UseView() bool {

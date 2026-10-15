@@ -34,6 +34,8 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	DefaultEnabled               *bool              `json:"default_enabled,omitempty"`
 	AutoApproveOnPoliciesPassing *bool              `json:"auto_approve_on_policies_passing,omitempty"`
 
+	Teardown *ComponentTeardownRequest `json:"teardown,omitempty"`
+
 	AppConfigID string `json:"app_config_id"`
 
 	Dependencies      []string                      `json:"dependencies"`
@@ -42,6 +44,18 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	DriftSchedule     *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
 	OperationRoles    map[app.OperationType]*string `json:"operation_roles,omitempty"`
 	KubernetesContext string                        `json:"kubernetes_context,omitempty"`
+}
+
+type ComponentTeardownRequest struct {
+	// Resource or module addresses removed from state instead of destroyed on teardown.
+	Retain []string `json:"retain,omitempty"`
+}
+
+func (c *ComponentTeardownRequest) toConfig() *config.ComponentTeardownConfig {
+	if c == nil {
+		return nil
+	}
+	return &config.ComponentTeardownConfig{Retain: c.Retain}
 }
 
 const MinTerraformVersion = "1.8.0"
@@ -76,6 +90,7 @@ func (c *CreateTerraformModuleComponentConfigRequest) buildInput(componentID str
 		DriftSchedule:                c.DriftSchedule,
 		OperationRoles:               toConfigOperationRoles(c.OperationRoles),
 		KubernetesContextName:        c.KubernetesContext,
+		Teardown:                     c.Teardown.toConfig(),
 	}
 }
 
