@@ -62,7 +62,12 @@ const deployment = (
   createdAt: string,
   title: string,
   summary: string,
-  resources: { components: string[]; images: string[]; stack?: boolean; sandbox?: boolean },
+  resources: {
+    components: string[]
+    images: string[]
+    stack?: boolean
+    sandbox?: boolean
+  },
   extra: { component_name?: string; image?: Record<string, string> } = {}
 ) => ({
   id,
@@ -89,7 +94,11 @@ const deployments = [
     { components: ['api'], images: ['ghcr.io/acme/api'] },
     {
       component_name: 'api',
-      image: { repository: 'ghcr.io/acme/api', previous_tag: 'v1.2.3', next_tag: 'v1.3.0' },
+      image: {
+        repository: 'ghcr.io/acme/api',
+        previous_tag: 'v1.2.3',
+        next_tag: 'v1.3.0',
+      },
     }
   ),
   deployment(
@@ -102,7 +111,11 @@ const deployments = [
     { components: ['worker'], images: ['ghcr.io/acme/worker'] },
     {
       component_name: 'worker',
-      image: { repository: 'ghcr.io/acme/worker', previous_tag: 'v2.3.1', next_tag: 'v2.4.0' },
+      image: {
+        repository: 'ghcr.io/acme/worker',
+        previous_tag: 'v2.3.1',
+        next_tag: 'v2.4.0',
+      },
     }
   ),
   deployment(
@@ -142,7 +155,12 @@ const deployments = [
     '2026-09-28T16:00:00Z',
     'Initial provision',
     'Provision the stack, sandbox, and every component.',
-    { stack: true, sandbox: true, components: ['api', 'worker', 'ledger'], images: [] }
+    {
+      stack: true,
+      sandbox: true,
+      components: ['api', 'worker', 'ledger'],
+      images: [],
+    }
   ),
   deployment(
     'dep-sandbox',
@@ -171,12 +189,34 @@ const deploymentSummary = (record: {
   created_at: string
   title: string
   summary: string
-  affected_resources: { components: string[]; stack?: boolean; sandbox?: boolean }
+  affected_resources: {
+    components: string[]
+    stack?: boolean
+    sandbox?: boolean
+  }
 }) => {
   const resources = record.affected_resources
-  const targets: { name: string; step_target_type: string; component_name?: string }[] = [
-    ...(resources.stack ? [{ name: 'await install stack', step_target_type: 'install_stack_versions' }] : []),
-    ...(resources.sandbox ? [{ name: 'provision sandbox apply plan', step_target_type: 'install_sandbox_runs' }] : []),
+  const targets: {
+    name: string
+    step_target_type: string
+    component_name?: string
+  }[] = [
+    ...(resources.stack
+      ? [
+          {
+            name: 'await install stack',
+            step_target_type: 'install_stack_versions',
+          },
+        ]
+      : []),
+    ...(resources.sandbox
+      ? [
+          {
+            name: 'provision sandbox apply plan',
+            step_target_type: 'install_sandbox_runs',
+          },
+        ]
+      : []),
     ...resources.components.map((component) => ({
       name: `apply ${component}`,
       step_target_type: 'install_deploys',
@@ -196,7 +236,10 @@ const deploymentSummary = (record: {
       id: `${record.id}-step-${index}`,
       group_idx: index + 1,
       execution_type: 'system',
-      status: record.status === 'success' || index < targets.length - 1 ? 'success' : record.status,
+      status:
+        record.status === 'success' || index < targets.length - 1
+          ? 'success'
+          : record.status,
     })),
   }
 }
@@ -241,7 +284,8 @@ export const deploymentsFixture = (
         })),
       })
     }
-    if (url.pathname.endsWith('/deployments')) return deploymentPage(deployments)
+    if (url.pathname.endsWith('/deployments'))
+      return deploymentPage(deployments)
     if (!url.pathname.endsWith('/deployment-summaries')) return undefined
     if (state === 'loading') return pendingReply()
     if (state === 'empty') return deploymentPage([])
@@ -464,7 +508,12 @@ const componentCatalog = [
   ['cmp-api-image', 'api', 'external_image', 'ghcr.io/acme/api:1.3.0'],
   ['cmp-worker-image', 'worker', 'docker_build', 'ghcr.io/acme/worker:2.4.0'],
   ['cmp-ledger-image', 'ledger', 'external_image', 'ghcr.io/acme/ledger:0.9.1'],
-  ['cmp-webhooks-image', 'webhooks', 'external_image', 'ghcr.io/acme/webhooks:1.1.0'],
+  [
+    'cmp-webhooks-image',
+    'webhooks',
+    'external_image',
+    'ghcr.io/acme/webhooks:1.1.0',
+  ],
 ] as const
 
 const degradedIds = new Set([
@@ -474,7 +523,13 @@ const degradedIds = new Set([
   'cmp-ledger-image',
 ])
 
-const installComponent = (id: string, name: string, type: string, status: string, image: string) => ({
+const installComponent = (
+  id: string,
+  name: string,
+  type: string,
+  status: string,
+  image: string
+) => ({
   id: `ic-${id}`,
   component_id: id,
   enabled: true,
@@ -531,7 +586,10 @@ const resourceConfig = (state: 'empty' | 'active' | 'degraded') => ({
     state === 'empty'
       ? []
       : componentCatalog
-          .filter(([, , type, image]) => image && (type === 'external_image' || type === 'docker_build'))
+          .filter(
+            ([, , type, image]) =>
+              image && (type === 'external_image' || type === 'docker_build')
+          )
           .map(([id, , , image]) => ({
             component_id: id,
             external_image: { image_url: image },
@@ -610,7 +668,8 @@ export const resourcesFixture = (
       const query = (url.searchParams.get('q') ?? '').toLowerCase()
       return ok(
         rows.filter((row) => {
-          if (types && !types.split(',').includes(row.component.type)) return false
+          if (types && !types.split(',').includes(row.component.type))
+            return false
           if (query && !row.component.name.includes(query)) return false
           return true
         }),
@@ -619,9 +678,9 @@ export const resourcesFixture = (
     }
     if (path === '/v1/builds') {
       const id = url.searchParams.get('component_id')
-      const row = resourceComponents(state === 'degraded' ? 'degraded' : 'active').find(
-        (item) => item.component_id === id
-      )
+      const row = resourceComponents(
+        state === 'degraded' ? 'degraded' : 'active'
+      ).find((item) => item.component_id === id)
       const build = row?.install_deploys[0].component_build
       return ok(build ? [build] : [], true)
     }
@@ -814,7 +873,11 @@ export const configurationFixture = (
 ): TFixture => {
   const install = viewInstall(
     state === 'unset'
-      ? { app_branch: undefined, app_branch_id: undefined, app_config_id: undefined }
+      ? {
+          app_branch: undefined,
+          app_branch_id: undefined,
+          app_config_id: undefined,
+        }
       : {
           install_components: configuredComponents,
           ...(state === 'managed'
@@ -867,7 +930,13 @@ const planStep = (
   status: string,
   planType: string,
   componentName: string,
-  counts: { create: number; update: number; delete: number; replace: number; noop: number },
+  counts: {
+    create: number
+    update: number
+    delete: number
+    replace: number
+    noop: number
+  },
   countsState = 'ok'
 ) => ({
   id,
@@ -938,7 +1007,9 @@ const counts = {
   api: { create: 0, update: 2, delete: 0, replace: 0, noop: 5 },
 }
 
-const deploymentWorkflow = (state: 'in-progress' | 'awaiting' | 'succeeded' | 'failed') => {
+const deploymentWorkflow = (
+  state: 'in-progress' | 'awaiting' | 'succeeded' | 'failed'
+) => {
   const status =
     state === 'in-progress'
       ? 'in-progress'
@@ -1025,6 +1096,137 @@ const deploymentWorkflow = (state: 'in-progress' | 'awaiting' | 'succeeded' | 'f
   }
 }
 
+const templateComparison = {
+  head_sha: 'abc123def456',
+  base_sha: 'fedcba654321',
+  head_run: {
+    id: 'run-main-42',
+    created_at: '2026-10-02T16:00:00Z',
+    app_config_id: 'cfg-12',
+    vcs_connection_commit: {
+      sha: 'abc123def456',
+      message: 'Bump the api chart and add a worker queue',
+      author_name: 'Avery Chen',
+    },
+  },
+  base_run: {
+    id: 'run-main-41',
+    app_config_id: 'cfg-11',
+    vcs_connection_commit: { sha: 'fedcba654321' },
+  },
+  config_diff_content: {
+    additions: 1,
+    removals: 0,
+    changed: 2,
+    sections: [
+      {
+        name: 'Stack',
+        additions: 0,
+        removals: 0,
+        changed: 1,
+        entries: [
+          {
+            op: 'change',
+            name: 'region',
+            description: "'us-east-1' -> 'us-west-2'",
+          },
+        ],
+      },
+      {
+        name: 'Components',
+        additions: 1,
+        removals: 0,
+        changed: 1,
+        entries: [
+          { op: 'change', name: 'api', description: 'Chart updated' },
+          { op: 'add', name: 'worker', description: 'Queue worker added' },
+        ],
+      },
+    ],
+  },
+}
+
+const templateConfigDiff = {
+  config_id: 'cfg-12',
+  old_config_id: 'cfg-11',
+  summary: {
+    has_changed: true,
+    added: 1,
+    removed: 0,
+    changed: 2,
+    unchanged: 4,
+  },
+  changed: 'stack, components',
+  diff: {
+    key: 'app_config',
+    children: [
+      {
+        key: 'stack',
+        diff: {
+          op: 'change',
+          diff: 'stack.toml',
+          before: 'name = "payments"\nregion = "us-east-1"\n',
+          after: 'name = "payments"\nregion = "us-west-2"\n',
+        },
+        children: [
+          {
+            key: 'region',
+            diff: { op: 'change', diff: "'us-east-1' -> 'us-west-2'" },
+          },
+        ],
+      },
+      {
+        key: 'components',
+        children: [
+          {
+            key: 'component.api',
+            children: [
+              {
+                key: 'type',
+                diff: { op: 'noop', diff: "'helm_chart' -> 'helm_chart'" },
+              },
+              {
+                key: 'chart_version',
+                diff: { op: 'change', diff: "'1.2.0' -> '1.4.0'" },
+              },
+              {
+                key: 'values.yaml',
+                diff: {
+                  op: 'change',
+                  diff: 'values.yaml',
+                  before: 'replicaCount: 2\nimage:\n  tag: "1.2.0"\n',
+                  after: 'replicaCount: 3\nimage:\n  tag: "1.4.0"\n',
+                },
+              },
+            ],
+          },
+          {
+            key: 'component.worker',
+            children: [
+              {
+                key: 'type',
+                diff: {
+                  op: 'add',
+                  diff: "'' -> 'terraform_module'",
+                },
+              },
+              {
+                key: 'worker.tf',
+                diff: {
+                  op: 'add',
+                  diff: 'worker.tf',
+                  after:
+                    'resource "aws_sqs_queue" "jobs" {\n  name = "payments-jobs"\n}\n',
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+}
+
 export const deploymentDetailFixture = (
   state: 'in-progress' | 'awaiting' | 'succeeded' | 'failed'
 ): TFixture =>
@@ -1060,11 +1262,45 @@ export const deploymentDetailFixture = (
     }
     if (path === '/v1/workflows/wf-deploy-1')
       return ok(deploymentWorkflow(state))
-    if (path.includes('/comparison')) {
+    if (path.includes('/comparison')) return ok(templateComparison)
+    if (path.includes('/configs/') && path.endsWith('/diff'))
+      return ok(templateConfigDiff)
+    if (path.endsWith('/configs/cfg-12'))
+      return ok({ id: 'cfg-12', version: 12 })
+    if (path.endsWith('/configs/cfg-11'))
+      return ok({ id: 'cfg-11', version: 11 })
+    if (path.endsWith('/runs/run-main-42/builds'))
+      return ok([
+        {
+          id: 'bld-api',
+          component_id: 'cmp-api',
+          component_name: 'api',
+          status: 'success',
+          change_reason: 'config_changed',
+        },
+      ])
+    if (path.endsWith('/runs/run-main-42'))
       return ok({
-        config_diff_content: '',
-        source_diff_content: { files: [] },
+        id: 'run-main-42',
+        steps: [
+          {
+            name: 'Build components',
+            status: {
+              status: 'success',
+              metadata: {
+                builds: [
+                  {
+                    component_id: 'cmp-api',
+                    component_name: 'api',
+                    component_type: 'helm_chart',
+                    status: 'success',
+                    change_reason: 'config_changed',
+                  },
+                ],
+              },
+            },
+          },
+        ],
       })
-    }
     return undefined
   })

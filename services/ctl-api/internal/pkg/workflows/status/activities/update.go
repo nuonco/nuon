@@ -63,7 +63,7 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, r
 	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
 		return err
 	}
-	a.logWorkflowError(ctx, loaded, loaded.Status, req.Status)
+	a.logWorkflowStatus(ctx, loaded, loaded.Status, req.Status)
 	return nil
 }
 
@@ -237,7 +237,7 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 		a.notifier.FlowStatusUpdated(ctx, req)
 	}
 
-	a.logWorkflowError(ctx, loaded, loaded.Status, req.Status)
+	a.logWorkflowStatus(ctx, loaded, loaded.Status, req.Status)
 	return nil
 }
 

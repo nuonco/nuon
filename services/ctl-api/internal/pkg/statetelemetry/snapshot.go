@@ -25,6 +25,8 @@ type snapshot struct {
 
 type family struct {
 	name        string
+	level       string
+	metrics     []string
 	interval    time.Duration
 	ttl         time.Duration
 	instruments []metric.Observable
@@ -96,7 +98,7 @@ func readSnapshot(ctx context.Context, conn *pgx.Conn, read func(context.Context
 		defer cancel()
 		_ = tx.Rollback(cleanup)
 	}()
-	if _, err := tx.Exec(ctx, `SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='100ms';
+	if _, err := tx.Exec(ctx, `SET LOCAL row_security=off; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='100ms';
 SET LOCAL work_mem='4MB'; SET LOCAL max_parallel_workers_per_gather=0`); err != nil {
 		return snapshot{}, err
 	}

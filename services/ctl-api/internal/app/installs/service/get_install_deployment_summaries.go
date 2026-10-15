@@ -33,6 +33,8 @@ const (
 	InstallDeploymentTypeImageUpdate         InstallDeploymentType = "image_update"
 	InstallDeploymentTypeStackUpdate         InstallDeploymentType = "stack_update"
 	InstallDeploymentTypeInstallConfigUpdate InstallDeploymentType = "install_config_update"
+	InstallDeploymentTypeDeprovision         InstallDeploymentType = "deprovision"
+	InstallDeploymentTypeSandboxDeprovision  InstallDeploymentType = "sandbox_deprovision"
 )
 
 func workflowTypeToDeploymentType(t app.WorkflowType) InstallDeploymentType {
@@ -62,6 +64,10 @@ func workflowTypeToDeploymentType(t app.WorkflowType) InstallDeploymentType {
 		return InstallDeploymentTypeAppBranchUpdate
 	case app.WorkflowTypeInputUpdate, app.WorkflowTypeSyncSecrets:
 		return InstallDeploymentTypeInstallConfigUpdate
+	case app.WorkflowTypeDeprovision:
+		return InstallDeploymentTypeDeprovision
+	case app.WorkflowTypeDeprovisionSandbox:
+		return InstallDeploymentTypeSandboxDeprovision
 	default:
 		return ""
 	}
