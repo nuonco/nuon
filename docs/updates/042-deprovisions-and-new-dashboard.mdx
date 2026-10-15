@@ -1,6 +1,6 @@
 ---
 title: 042 - Clean Deprovisions, BYOC Telemetry, and a New Dashboard
-description: Offboard a customer without risking their data, see every install in your own observability backend, and run your fleet from a dashboard organized around your app branches.
+description: Offboard a customer without manual cleanup, see every install in your own observability backend, and run your fleet from a dashboard organized around your app branches.
 boost: 0.3
 ---
 
@@ -8,11 +8,11 @@ _October 15, 2026_
 
 ## Clean deprovisions
 
-Offboard a customer and leave their data where it belongs: in their account.
+Offboard a customer in one reviewed teardown, without hand-editing state.
 
-When a contract ends or an install moves, your customer usually wants to keep their databases and buckets. Your
-policies are there to stop exactly those resources from being deleted. Until now that meant deprovisions stalled on
-your own guardrails, and cleaning up took hand-edited state and custom actions.
+When a contract ends or an install moves, the teardown has to remove everything you deployed and leave the
+databases and buckets your customer is keeping. Your policies exist to stop exactly those deletes. Until now that
+meant deprovisions stalled on your own guardrails, and finishing one took hand-edited state and custom actions.
 
 Mark the stateful resources a component should leave behind:
 
