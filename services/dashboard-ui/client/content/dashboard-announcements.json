@@ -2,9 +2,9 @@
   "announcements": [
     {
       "id": "deprovisions-telemetry-dashboard-042",
-      "title": "Clean Deprovisions, BYOC Telemetry, and a New Dashboard",
+      "title": "BYOC Telemetry, Improved UI and Customer Env Deprovisioning",
       "date": "October 15, 2026",
-      "description": "Teardowns that finish, install telemetry in your own backend, and a dashboard built around app branches.",
+      "description": "OTEL support for BYOC environments, and platform usability improvements",
       "ctaText": "Learn more",
       "ctaUrl": "https://docs.nuon.co/updates/042-deprovisions-and-new-dashboard",
       "image": "/images/announcements/nuon-changelog-042.png",
