@@ -647,9 +647,6 @@ export const BranchOverviewV2 = ({
     fetchCommitStage.status !== 'error' &&
     !rollout?.commit?.sha &&
     !rollout?.sha
-  const appConfigStage = loadingStages?.find(
-    (stage) => stage.id === 'app-config'
-  )
   const buildStage = loadingStages?.find(
     (stage) => stage.id === 'build-components'
   )
@@ -658,15 +655,20 @@ export const BranchOverviewV2 = ({
   useEffect(() => {
     setSelectedStageId(activeStageId)
   }, [activeStageId])
+  const stageStatus = (id: string) =>
+    loadingStages?.find((stage) => stage.id === id)?.status
+  const isSelectableStage = (id: string) => {
+    const status = stageStatus(id)
+    return status != null && status !== 'pending'
+  }
   const showConfigChanges =
-    selectedStageId === 'app-config' && appConfigStage?.status !== 'pending'
+    selectedStageId === 'app-config' && isSelectableStage('app-config')
   const showBuilds =
-    selectedStageId === 'build-components' && buildStage?.status !== 'pending'
-  const selectableStageIds = [
-    ...(appConfigStage?.status !== 'pending' ? ['app-config'] : []),
-    ...(buildStage?.status !== 'pending' ? ['build-components'] : []),
-    ...(buildComplete ? ['rollout'] : []),
-  ]
+    selectedStageId === 'build-components' &&
+    isSelectableStage('build-components')
+  const selectableStageIds = (
+    ['app-config', 'build-components', 'rollout'] as const
+  ).filter(isSelectableStage)
 
   return (
     <div className="flex flex-col gap-8 p-4 md:p-6">
@@ -799,7 +801,9 @@ export const BranchOverviewV2 = ({
         </div>
         {showConfigChanges || showBuilds
           ? null
-          : showGroups && current && buildComplete ? (
+          : showGroups &&
+              current &&
+              (buildComplete || isSelectableStage('rollout')) ? (
           <ActiveGroup
             group={current}
             index={currentIndex}

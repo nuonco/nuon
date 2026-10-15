@@ -324,6 +324,7 @@ test('shows config changes on the compile step', () => {
   expect(screen.getByText('Added cache component')).toBeTruthy()
   expect(screen.queryByText(/Group 2 of 3/)).toBeNull()
   expect(screen.queryByRole('button', { name: /Build components/ })).toBeNull()
+  expect(screen.queryByRole('button', { name: /^Rollout/ })).toBeNull()
 })
 
 test('reopens config changes after the compile step finishes', () => {
@@ -436,6 +437,16 @@ test('shows builds instead of a group while components are building', () => {
   expect(screen.getByText('Config')).toBeTruthy()
   expect(screen.getByText('Component name')).toBeTruthy()
   expect(screen.queryByText(/Group 1 of 3/)).toBeNull()
+  expect(screen.queryByRole('button', { name: /^Rollout/ })).toBeNull()
+
+  fireEvent.click(
+    screen.getByRole('button', { name: /Compile and diff app config/ })
+  )
+  expect(screen.queryByText('Component name')).toBeNull()
+
+  fireEvent.click(screen.getByRole('button', { name: /Build components/ }))
+  expect(screen.getByText('Component name')).toBeTruthy()
+  expect(screen.getByText('api')).toBeTruthy()
 })
 
 test('shows cancel rollout on the active group and in its drawer', () => {
@@ -524,7 +535,7 @@ test('defaults to the first group after builds and can reopen build details', ()
         label: 'Build components',
         status: 'success',
       },
-      { id: 'rollout', label: 'Rollout', status: 'pending' },
+      { id: 'rollout', label: 'Rollout', status: 'in-progress' },
     ],
     buildRows: [
       {
@@ -534,6 +545,7 @@ test('defaults to the first group after builds and can reopen build details', ()
         changeReason: 'source_changed',
       },
     ],
+    configChanges: <p>Added cache component</p>,
   })
 
   expect(screen.getByText(/Group 1 of 3/)).toBeTruthy()
@@ -543,8 +555,19 @@ test('defaults to the first group after builds and can reopen build details', ()
   expect(screen.getByText('Component name')).toBeTruthy()
   expect(screen.queryByText(/Group 1 of 3/)).toBeNull()
 
-  fireEvent.click(screen.getByRole('button', { name: /Rollout/ }))
+  fireEvent.click(
+    screen.getByRole('button', { name: /Compile and diff app config/ })
+  )
+  expect(screen.getByText('Added cache component')).toBeTruthy()
+  expect(screen.queryByText('Component name')).toBeNull()
+
+  fireEvent.click(screen.getByRole('button', { name: /Build components/ }))
+  expect(screen.getByText('Component name')).toBeTruthy()
+  expect(screen.queryByText('Added cache component')).toBeNull()
+
+  fireEvent.click(screen.getByRole('button', { name: /^Rollout/ }))
   expect(screen.getByText(/Group 1 of 3/)).toBeTruthy()
+  expect(screen.queryByText('Component name')).toBeNull()
 })
 
 test('scrolls to a group when its plan segment is clicked', () => {
