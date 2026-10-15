@@ -19,14 +19,18 @@ import type {
   TInstallRunbook,
   TRunRunbookBody,
 } from '@/lib/ctl-api/installs/runbooks'
-import { RunRunbookForm } from './RunRunbookForm'
+import { RunRunbookForm, type TRunbookRerunValues } from './RunRunbookForm'
 
 interface IRunRunbookModal extends IModal {
   installRunbook: TInstallRunbook
+  initialValues?: TRunbookRerunValues
+  initialRole?: string
 }
 
 export const RunRunbookModal = ({
   installRunbook,
+  initialValues,
+  initialRole,
   ...props
 }: IRunRunbookModal) => {
   const navigate = useNavigate()
@@ -37,7 +41,7 @@ export const RunRunbookModal = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
-  const [selectedRole, setSelectedRole] = useState('')
+  const [selectedRole, setSelectedRole] = useState(initialRole ?? '')
 
   const runbookName = installRunbook.runbook?.name ?? 'runbook'
   const runbookId = installRunbook.runbook_id ?? installRunbook.id
@@ -79,6 +83,7 @@ export const RunRunbookModal = ({
   return (
     <RunRunbookForm
       installRunbook={installRunbook}
+      initialValues={initialValues}
       isPending={isPending}
       error={error}
       onRun={(body) =>
@@ -101,13 +106,23 @@ export const RunRunbookModal = ({
 
 export const RunRunbookButton = ({
   installRunbook,
+  initialValues,
+  initialRole,
   children = 'Run runbook',
   ...props
 }: {
   installRunbook: TInstallRunbook
+  initialValues?: TRunbookRerunValues
+  initialRole?: string
 } & IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <RunRunbookModal installRunbook={installRunbook} />
+  const modal = (
+    <RunRunbookModal
+      installRunbook={installRunbook}
+      initialValues={initialValues}
+      initialRole={initialRole}
+    />
+  )
 
   return (
     <Button onClick={() => addModal(modal)} {...props}>

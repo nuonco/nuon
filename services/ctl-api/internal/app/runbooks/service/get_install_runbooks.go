@@ -91,6 +91,9 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 		Preload("Runs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Scopes(scopes.WithOverrideTable("install_runbook_runs_latest_view_v1"))
 		}).
+		Preload("Runs.InstallWorkflow", func(tx *gorm.DB) *gorm.DB {
+			return tx.Select("id", "status", "created_at", "started_at", "finished_at")
+		}).
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
 		Where(appConfigRunbookFilter(synced)).
 		Order("install_runbooks.created_at DESC")

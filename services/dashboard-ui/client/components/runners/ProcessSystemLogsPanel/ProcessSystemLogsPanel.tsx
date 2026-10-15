@@ -51,7 +51,8 @@ export const ProcessSystemLogsPanel = ({
     <RunnerProvider runnerId={runnerId!}>
       <PageHeader>
         <Text variant="h3" weight="strong" level={1}>
-          System logs — {process.type} process
+          System logs — {process.type === 'mng' ? 'management' : process.type}{' '}
+          process
         </Text>
       </PageHeader>
       <PageSection>

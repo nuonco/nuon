@@ -41,6 +41,7 @@ func (s *service) GetInstallRunbookRuns(ctx *gin.Context) {
 
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Preload("CreatedBy").
 		Preload("InstallRunbook").
 		Preload("InstallRunbook.Runbook").
 		Preload("InstallWorkflow").
@@ -97,6 +98,7 @@ func (s *service) GetInstallRunbookRun(ctx *gin.Context) {
 
 	var run app.InstallRunbookRun
 	res := s.db.WithContext(ctx).
+		Preload("CreatedBy").
 		Preload("InstallRunbook").
 		Preload("InstallRunbook.Runbook").
 		Preload("RunbookConfig").

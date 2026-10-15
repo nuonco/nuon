@@ -66,6 +66,7 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 		Preload("Runs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("created_at DESC").Limit(10)
 		}).
+		Preload("Runs.CreatedBy").
 		Preload("Runs.InstallWorkflow").
 		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).

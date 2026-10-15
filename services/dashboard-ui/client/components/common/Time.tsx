@@ -31,6 +31,7 @@ const TIME_ONLY_FORMAT: DateTimeFormatOptions = {
 }
 
 const LOG_DATETIME_FORMAT_STRING = 'M/d/yyyy, h:mm:ss.SSSs a ZZZZ'
+const ISO_DATETIME_FORMAT_STRING = 'yyyy-MM-dd h:mm a'
 
 export interface ITime extends Omit<IText, 'role'> {
   format?:
@@ -39,6 +40,7 @@ export interface ITime extends Omit<IText, 'role'> {
     | 'relative'
     | 'time-only'
     | 'log-datetime'
+    | 'iso-datetime'
   time?: string
   seconds?: number
   tooltipProps?: ITooltip
@@ -91,6 +93,9 @@ export const Time = ({
 
       case 'log-datetime':
         return datetime.toFormat(LOG_DATETIME_FORMAT_STRING)
+
+      case 'iso-datetime':
+        return datetime.toFormat(ISO_DATETIME_FORMAT_STRING)
 
       case 'short-datetime':
       default:

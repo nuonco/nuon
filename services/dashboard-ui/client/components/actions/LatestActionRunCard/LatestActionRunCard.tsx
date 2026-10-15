@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
 import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
-import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TInstallActionRun } from '@/types'
 
@@ -25,12 +25,9 @@ export const LatestActionRunCard = ({
 }: ILatestActionRunCard) => {
   if (!isLoading && !run) {
     return (
-      <EmptyState
-        variant="table"
-        size="sm"
-        emptyTitle="No runs yet"
-        emptyMessage="Runs appear here once this action is triggered."
-      />
+      <Text variant="subtext" theme="neutral">
+        No runs yet
+      </Text>
     )
   }
 

@@ -13,6 +13,10 @@ const run: TInstallRunbookRun = {
   install_workflow_id: 'wf-1',
   install_workflow: {
     id: 'wf-1',
+    started_at: '2026-09-22T14:00:05Z',
+    finished_at: '2026-09-22T14:08:00Z',
+    finished: true,
+    execution_time: 475_000_000_000,
     status: {
       status: 'success',
       status_human_description: 'Runbook finished.',
@@ -21,10 +25,7 @@ const run: TInstallRunbookRun = {
 }
 
 export const Default = () => (
-  <LatestRunbookRunCard
-    run={run}
-    href="/org-1/installs/inst-1/history/wf-1"
-  />
+  <LatestRunbookRunCard run={run} href="/org-1/installs/inst-1/history/wf-1" />
 )
 
 export const Flush = () => (
@@ -57,7 +58,7 @@ export const Failed = () => (
     run={{
       ...run,
       install_workflow: {
-        id: 'wf-1',
+        ...run.install_workflow!,
         status: {
           status: 'error',
           status_human_description: 'Runbook failed.',

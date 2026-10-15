@@ -3,10 +3,7 @@ export default {
 }
 
 import { SearchInput } from '@/components/common/SearchInput'
-import {
-  ActivityPinList,
-  type TActivityPinListItem,
-} from './ActivityPinList'
+import { ActivityPinList, type TActivityPinListItem } from './ActivityPinList'
 
 const search = (
   <SearchInput

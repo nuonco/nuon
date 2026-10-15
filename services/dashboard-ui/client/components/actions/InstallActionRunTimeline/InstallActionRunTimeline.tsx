@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
+import { RunTiming } from '@/components/actions/RunTiming'
+import { TriggeredBy } from '@/components/actions/TriggeredBy'
 import { Badge } from '@/components/common/Badge'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
@@ -75,8 +77,13 @@ export const InstallActionRunTimeline = ({
                 componentPath={`${basePath}/components/${run?.run_env_vars?.COMPONENT_ID}`}
                 size="sm"
               />
-              <Text variant="label" theme="neutral">
-                Run by: {run?.created_by?.email}
+              <Text variant="label" theme="neutral" className="flex gap-1">
+                Triggered by:
+                <TriggeredBy run={run} variant="label" theme="neutral" />
+              </Text>
+              <Text variant="label" theme="neutral" className="flex gap-1">
+                Duration:
+                <RunTiming run={run} variant="label" theme="neutral" />
               </Text>
             </div>
           }

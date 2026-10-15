@@ -25,6 +25,7 @@ const PARAM_BODY = 'q'
 const PARAM_SYSTEM_LOGS = 'system_logs'
 const PARAM_SORT = 'sort'
 const PARAM_VIEW = 'view'
+const VIEW_MODE_STORAGE_KEY = 'nuon:log-view-mode'
 // Span / trace cross-link from the trace tab. trace_id is an exact server-side
 // match; span_id stays client-side because the UI expands a parent span into
 // its descendants before filtering, which the server can't do.
@@ -373,6 +374,9 @@ export const useLogFilters = <T extends TOTELLog>(
   )
   const handleViewModeChange = useCallback(
     (mode: ViewMode) => {
+      try {
+        localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode)
+      } catch {}
       updateParams((next) => {
         if (mode === 'raw') {
           next.set(PARAM_VIEW, 'raw')
@@ -387,6 +391,15 @@ export const useLogFilters = <T extends TOTELLog>(
     },
     [updateParams]
   )
+
+  useEffect(() => {
+    if (searchParams.has(PARAM_VIEW)) return
+    let stored: string | null = null
+    try {
+      stored = localStorage.getItem(VIEW_MODE_STORAGE_KEY)
+    } catch {}
+    if (stored === 'raw') handleViewModeChange('raw')
+  }, [])
 
   const handleSystemLogsToggle = useCallback(() => {
     updateParams((next) => {
