@@ -319,7 +319,9 @@ const ActiveGroup = ({
               ? 'Waiting for approval'
               : category === 'error'
                 ? 'Rollout failed'
-                : 'Deploying'}
+                : category === 'pending'
+                  ? 'Not started'
+                  : 'Deploying'}
             <Text as="span" variant="subtext" theme="neutral">
               {' '}
               · Group {index + 1} of {total}

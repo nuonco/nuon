@@ -895,3 +895,34 @@ export const ManyGroups = () => (
   <Overview {...props} groups={longGroups} />
 )
 ManyGroups.storyName = 'Many groups'
+
+const beforeRolloutGroups: TTrackGroup[] = groups.map((group) => ({
+  ...group,
+  status: 'pending',
+  startedAt: undefined,
+  installs: group.installs.map(({ workflowId: _workflowId, ...install }) => ({
+    ...install,
+    status: 'pending',
+  })),
+}))
+
+export const BuildComplete = () => (
+  <Overview
+    {...props}
+    groups={beforeRolloutGroups}
+    loadingStages={buildOverviewLoadingStages({
+      steps: [
+        { id: 'fetch', name: 'fetch commit', status: { status: 'success' } },
+        { id: 'config', name: 'sync app config', status: { status: 'success' } },
+        {
+          id: 'build',
+          name: 'build components',
+          status: { status: 'success' },
+        },
+      ],
+      sha: rollout.sha,
+      groupStatuses: beforeRolloutGroups.map((group) => group.status),
+    })}
+  />
+)
+BuildComplete.storyName = 'Build complete'
