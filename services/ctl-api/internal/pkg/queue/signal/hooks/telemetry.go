@@ -122,20 +122,13 @@ func (h *TelemetrySignalLifecycleHook) AfterPhase(ctx context.Context, event sig
 
 	if event.Phase == signal.SignalPhaseCancel {
 		switch kind {
-		case telemetryKindWorkflow, telemetryKindStep, telemetryKindStepGroup, telemetryKindStepGeneration:
+		case telemetryKindStep, telemetryKindStepGroup, telemetryKindStepGeneration:
 			h.emit(ctx, kind+".cancelled", event, &outcome)
 		}
 		return nil
 	}
 
 	switch kind {
-	case telemetryKindWorkflow:
-		// Terminal error comes from the status-update activity: a workflow can
-		// fail while its execute signal is still parked, so the outcome here is
-		// not a reliable error source.
-		if !errored {
-			h.emit(ctx, "workflow.completed", event, &outcome)
-		}
 	case telemetryKindStepGeneration:
 		h.emit(ctx, terminalEvent("step_generation", errored), event, &outcome)
 	case telemetryKindStepGroup:
