@@ -14,7 +14,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -138,10 +137,9 @@ func (s *service) getInstallUpdates(ctx *gin.Context, orgID, installID string, p
 		Find(&appVersions).Error; err != nil {
 		return nil, err
 	}
-	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
 	for i := range appVersions {
 		version := &appVersions[i]
-		diff, err := loadInstallConfigDiff(blobCtx, version)
+		diff, err := loadInstallConfigDiff(ctx.Request.Context(), version)
 		if err != nil {
 			return nil, err
 		}

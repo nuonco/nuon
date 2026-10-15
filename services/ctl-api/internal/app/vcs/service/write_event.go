@@ -22,8 +22,6 @@ func (s *service) createGithubEvent(ctx context.Context, githubInstallID, eventT
 	payload.SetContentType("application/json")
 	payload.SetS3Prefix("blobs/github_events")
 
-	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)
-
 	event := &app.GithubEvent{
 		GithubInstallID: githubInstallID,
 		EventType:       eventType,
@@ -35,7 +33,7 @@ func (s *service) createGithubEvent(ctx context.Context, githubInstallID, eventT
 		},
 	}
 
-	if err := s.db.WithContext(dbCtx).Create(event).Error; err != nil {
+	if err := s.db.WithContext(ctx).Create(event).Error; err != nil {
 		return nil, fmt.Errorf("unable to store github event: %w", err)
 	}
 

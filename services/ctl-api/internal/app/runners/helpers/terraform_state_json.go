@@ -27,7 +27,7 @@ func (s *Helpers) GetTerraformStateJSON(ctx context.Context, workspaceID string)
 		return nil, res.Error
 	}
 
-	contents, fromBlob := tfs.GetContents(blobstore.WithBlobService(ctx, s.blobSvc), s.cfg.BlobReadEnabled)
+	contents, fromBlob := tfs.GetContents(ctx, s.cfg.BlobReadEnabled)
 	if fromBlob {
 		s.l.Debug("read terraform workspace state json contents from blob",
 			zap.String("workspace_id", workspaceID),
@@ -55,7 +55,6 @@ func (s *Helpers) CreateStateJSON(ctx context.Context, workspaceID string, jobID
 	}
 	tfs.ContentsBlob.Set(string(contents))
 
-	ctx = blobstore.WithBlobService(ctx, s.blobSvc)
 	if keys.OrgIDFromContext(ctx) == "" {
 		ctx = cctx.SetOrgIDContext(ctx, workspace.OrgID)
 	}

@@ -85,8 +85,7 @@ func (s *service) updateHelmRelease(ctx *gin.Context, helmChartID, namespace, ke
 	}
 	helmRelease.Body.Set(body)
 
-	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)
-	res := s.db.WithContext(dbCtx).Model(&app.HelmRelease{}).
+	res := s.db.WithContext(ctx).Model(&app.HelmRelease{}).
 		Where("helm_chart_id = ? and namespace = ? and key = ?", helmChartID, namespace, key).
 		Updates(&helmRelease)
 	if res.Error != nil {

@@ -129,9 +129,8 @@ func (s *service) GetAppBranchRunComparison(ctx *gin.Context) {
 
 	include := parseIncludeDiff(ctx.Query("include_diff"))
 	if len(include) > 0 {
-		blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
 		if include["git"] && comparison.GitDiff != nil {
-			content, err := loadBlobJSONContent(blobCtx, comparison.GitDiff)
+			content, err := loadBlobJSONContent(ctx.Request.Context(), comparison.GitDiff)
 			if err != nil {
 				ctx.Error(fmt.Errorf("unable to load git diff: %w", err))
 				return
@@ -139,7 +138,7 @@ func (s *service) GetAppBranchRunComparison(ctx *gin.Context) {
 			resp.GitDiffContent = content
 		}
 		if include["full"] && comparison.FullDiff != nil {
-			content, err := loadBlobJSONContent(blobCtx, comparison.FullDiff)
+			content, err := loadBlobJSONContent(ctx.Request.Context(), comparison.FullDiff)
 			if err != nil {
 				ctx.Error(fmt.Errorf("unable to load full diff: %w", err))
 				return
@@ -147,7 +146,7 @@ func (s *service) GetAppBranchRunComparison(ctx *gin.Context) {
 			resp.FullDiffContent = content
 		}
 		if include["config"] && comparison.ConfigDiff != nil {
-			content, err := loadBlobJSONContent(blobCtx, comparison.ConfigDiff)
+			content, err := loadBlobJSONContent(ctx.Request.Context(), comparison.ConfigDiff)
 			if err != nil {
 				ctx.Error(fmt.Errorf("unable to load config diff: %w", err))
 				return
@@ -155,7 +154,7 @@ func (s *service) GetAppBranchRunComparison(ctx *gin.Context) {
 			resp.ConfigDiffContent = content
 		}
 		if include["source"] && comparison.SourceDiff != nil {
-			content, err := loadBlobJSONContent(blobCtx, comparison.SourceDiff)
+			content, err := loadBlobJSONContent(ctx.Request.Context(), comparison.SourceDiff)
 			if err != nil {
 				ctx.Error(fmt.Errorf("unable to load source diff: %w", err))
 				return
