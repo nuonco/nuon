@@ -33,10 +33,12 @@ type InstallActivityWorkflowRef struct {
 }
 
 type InstallActivityAction struct {
-	RunID            string `json:"run_id"`
-	ActionWorkflowID string `json:"action_workflow_id,omitempty"`
-	Name             string `json:"name,omitempty"`
-	TriggerType      string `json:"trigger_type,omitempty"`
+	RunID            string                `json:"run_id"`
+	ActionWorkflowID string                `json:"action_workflow_id,omitempty"`
+	Name             string                `json:"name,omitempty"`
+	TriggerType      string                `json:"trigger_type,omitempty"`
+	Trigger          *app.ActionRunTrigger `json:"trigger,omitempty"`
+	Adhoc            bool                  `json:"adhoc,omitempty"`
 }
 
 type InstallActivityRunbook struct {
@@ -62,6 +64,9 @@ type InstallActivity struct {
 	CreatedAt time.Time           `json:"created_at"`
 	Title     string              `json:"title"`
 	Summary   string              `json:"summary"`
+	Actor     *app.Account        `json:"actor,omitempty"`
+
+	actorID string
 
 	Workflow *InstallActivityWorkflowRef `json:"workflow,omitempty"`
 	Action   *InstallActivityAction      `json:"action,omitempty"`
@@ -118,6 +123,8 @@ func decodeInstallActivityCursor(raw string) (*installActivityCursor, error) {
 // @Param                 type            query  string  false  "filter by activity type (comma-separated: action_run, runbook_run, policy_check)"
 // @Param                 status          query  string  false  "filter by source status (comma-separated)"
 // @Param                 search          query  string  false  "case-insensitive substring match on id or title"
+// @Param                 actor_id        query  string  false  "only include activity triggered by this account ID"
+// @Param                 exclude_cron    query  bool    false  "exclude cron-triggered action and runbook runs"
 // @Param                 created_at_gte  query  string  false  "include activity created at or after this RFC3339 timestamp"
 // @Param                 created_at_lte  query  string  false  "include activity created at or before this RFC3339 timestamp"
 // @Tags                  installs
@@ -195,6 +202,8 @@ func (s *service) GetInstallActivity(ctx *gin.Context) {
 		parseCommaSeparated(ctx.Query("type")),
 		parseCommaSeparated(ctx.Query("status")),
 		ctx.Query("search"),
+		ctx.Query("actor_id"),
+		ctx.Query("exclude_cron") == "true",
 		createdAtGte,
 		createdAtLte,
 		cursor,
@@ -212,7 +221,8 @@ func (s *service) getInstallActivity(
 	orgID, installID string,
 	page, offset, limit int,
 	filterTypes, filterStatuses []string,
-	search string,
+	search, actorID string,
+	excludeCron bool,
 	createdAtGte, createdAtLte *time.Time,
 	cursor *installActivityCursor,
 ) (*GetInstallActivityResponse, error) {
@@ -223,6 +233,9 @@ func (s *service) getInstallActivity(
 		Offset:   offset,
 		Limit:    limit,
 	}
+	if actorID != "" {
+		delete(selected, InstallActivityTypePolicyCheck)
+	}
 	if len(selected) == 0 {
 		return empty, nil
 	}
@@ -231,7 +244,7 @@ func (s *service) getInstallActivity(
 	activity := make([]InstallActivity, 0)
 
 	if selected[InstallActivityTypeActionRun] {
-		runs, err := s.listActivityActionRuns(ctx, orgID, installID, fetchLimit, filterStatuses, search, createdAtGte, createdAtLte, cursor)
+		runs, err := s.listActivityActionRuns(ctx, orgID, installID, fetchLimit, filterStatuses, search, actorID, excludeCron, createdAtGte, createdAtLte, cursor)
 		if err != nil {
 			return nil, err
 		}
@@ -241,7 +254,7 @@ func (s *service) getInstallActivity(
 	}
 
 	if selected[InstallActivityTypeRunbookRun] {
-		runs, err := s.listActivityRunbookRuns(ctx, orgID, installID, fetchLimit, filterStatuses, search, createdAtGte, createdAtLte, cursor)
+		runs, err := s.listActivityRunbookRuns(ctx, orgID, installID, fetchLimit, filterStatuses, search, actorID, excludeCron, createdAtGte, createdAtLte, cursor)
 		if err != nil {
 			return nil, err
 		}
@@ -290,8 +303,16 @@ func (s *service) getInstallActivity(
 		nextCursor = base64.RawURLEncoding.EncodeToString(data)
 	}
 
+	pageItems := activity[start:end]
+	if err := s.attachActivityActors(ctx, pageItems); err != nil {
+		return nil, err
+	}
+	if err := s.attachActivityAdhocNames(ctx, pageItems); err != nil {
+		return nil, err
+	}
+
 	return &GetInstallActivityResponse{
-		Activity:   activity[start:end],
+		Activity:   pageItems,
 		Page:       page,
 		Offset:     offset,
 		Limit:      limit,
@@ -305,12 +326,13 @@ func (s *service) listActivityActionRuns(
 	orgID, installID string,
 	fetchLimit int,
 	filterStatuses []string,
-	search string,
+	search, actorID string,
+	excludeCron bool,
 	createdAtGte, createdAtLte *time.Time,
 	cursor *installActivityCursor,
 ) ([]app.InstallActionWorkflowRun, error) {
 	query := s.db.WithContext(ctx).
-		Select("id", "created_at", "install_action_workflow_id", "install_workflow_id", "status", "status_description", "status_v2", "composite_error", "trigger_type").
+		Select("id", "created_at", "install_action_workflow_id", "install_workflow_id", "status", "status_description", "status_v2", "composite_error", "trigger_type", "triggered_by_id", "triggered_by_type", "created_by_id").
 		Preload("InstallActionWorkflow", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "action_workflow_id")
 		}).
@@ -329,6 +351,17 @@ func (s *service) listActivityActionRuns(
 	query = applyActivityCursor(query, "install_action_workflow_runs.created_at", "install_action_workflow_runs.id", InstallActivityTypeActionRun, cursor)
 	query = applyActivityStatusFilter(query, "install_action_workflow_runs.status", filterStatuses)
 	query = applyActivityTimeFilter(query, "install_action_workflow_runs.created_at", createdAtGte, createdAtLte)
+	if excludeCron || actorID != "" {
+		query = query.Where("install_action_workflow_runs.trigger_type <> 'cron'")
+	}
+	if actorID != "" {
+		query = query.
+			Where(`CASE
+				WHEN install_action_workflow_runs.triggered_by_type = ? AND install_action_workflow_runs.triggered_by_id <> ''
+				THEN install_action_workflow_runs.triggered_by_id
+				ELSE install_action_workflow_runs.created_by_id
+			END = ?`, app.ActionWorkflowTriggerTypeManual, actorID)
+	}
 	for _, token := range strings.Fields(search) {
 		like := "%" + token + "%"
 		query = query.Where(`install_action_workflow_runs.id ILIKE ? OR EXISTS (
@@ -353,12 +386,13 @@ func (s *service) listActivityRunbookRuns(
 	orgID, installID string,
 	fetchLimit int,
 	filterStatuses []string,
-	search string,
+	search, actorID string,
+	excludeCron bool,
 	createdAtGte, createdAtLte *time.Time,
 	cursor *installActivityCursor,
 ) ([]app.InstallRunbookRun, error) {
 	query := s.db.WithContext(ctx).
-		Select("id", "created_at", "install_runbook_id", "install_workflow_id", "status", "status_description", "status_v2").
+		Select("id", "created_at", "install_runbook_id", "install_workflow_id", runbookRunActivityStatusExpression+" AS status", runbookRunActivityStatusDescriptionExpression+" AS status_description", "created_by_id", "idempotency_key").
 		Preload("InstallRunbook", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "runbook_id")
 		}).
@@ -369,8 +403,14 @@ func (s *service) listActivityRunbookRuns(
 		Order("created_at DESC, id DESC").
 		Limit(fetchLimit)
 	query = applyActivityCursor(query, "created_at", "id", InstallActivityTypeRunbookRun, cursor)
-	query = applyActivityStatusFilter(query, "status", filterStatuses)
+	query = applyActivityStatusFilter(query, runbookRunActivityStatusExpression, filterStatuses)
 	query = applyActivityTimeFilter(query, "created_at", createdAtGte, createdAtLte)
+	if excludeCron || actorID != "" {
+		query = query.Where("install_runbook_runs.idempotency_key IS NULL OR install_runbook_runs.idempotency_key NOT LIKE ?", runbookCronIdempotencyPrefix+"%")
+	}
+	if actorID != "" {
+		query = query.Where(app.InstallRunbookRun{CreatedByID: actorID})
+	}
 	for _, token := range strings.Fields(search) {
 		like := "%" + token + "%"
 		query = query.Where(`install_runbook_runs.id ILIKE ? OR EXISTS (
@@ -420,6 +460,108 @@ func (s *service) listActivityPolicyReports(
 		return nil, fmt.Errorf("unable to query policy reports: %w", err)
 	}
 	return reports, nil
+}
+
+const runbookCronIdempotencyPrefix = "runbook-cron:"
+
+const runbookRunActivityStatusExpression = `COALESCE(
+	NULLIF(install_runbook_runs.status_v2->>'status', ''),
+	(
+		SELECT CASE w.status->>'status' WHEN 'success' THEN 'finished' ELSE NULLIF(w.status->>'status', '') END
+		FROM install_workflows w
+		WHERE w.id = install_runbook_runs.install_workflow_id
+	),
+	install_runbook_runs.status
+)`
+
+const runbookRunActivityStatusDescriptionExpression = `COALESCE(
+	NULLIF(install_runbook_runs.status_v2->>'status_human_description', ''),
+	(
+		SELECT NULLIF(w.status->>'status_human_description', '')
+		FROM install_workflows w
+		WHERE w.id = install_runbook_runs.install_workflow_id
+	),
+	install_runbook_runs.status_description
+)`
+
+func (s *service) attachActivityAdhocNames(ctx *gin.Context, activity []InstallActivity) error {
+	runIDs := make([]string, 0)
+	for _, item := range activity {
+		if item.Action != nil && item.Action.Adhoc {
+			runIDs = append(runIDs, item.Action.RunID)
+		}
+	}
+	if len(runIDs) == 0 {
+		return nil
+	}
+
+	var steps []app.InstallActionWorkflowRunStep
+	if err := s.db.WithContext(ctx).
+		Select("InstallActionWorkflowRunID", "AdHocConfig").
+		Where("install_action_workflow_run_id IN ?", runIDs).
+		Find(&steps).Error; err != nil {
+		return fmt.Errorf("unable to get adhoc action names: %w", err)
+	}
+	names := make(map[string]string, len(steps))
+	for _, step := range steps {
+		if step.AdHocConfig != nil && step.AdHocConfig.Name != "" {
+			names[step.InstallActionWorkflowRunID] = step.AdHocConfig.Name
+		}
+	}
+
+	for i := range activity {
+		action := activity[i].Action
+		if action == nil || !action.Adhoc {
+			continue
+		}
+		if name, ok := names[action.RunID]; ok {
+			action.Name = name
+			activity[i].Title = name
+		}
+	}
+	return nil
+}
+
+func (s *service) attachActivityActors(ctx *gin.Context, activity []InstallActivity) error {
+	ids := make([]string, 0, len(activity))
+	seen := make(map[string]struct{}, len(activity))
+	for _, item := range activity {
+		if item.actorID == "" {
+			continue
+		}
+		if _, ok := seen[item.actorID]; ok {
+			continue
+		}
+		seen[item.actorID] = struct{}{}
+		ids = append(ids, item.actorID)
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	var accounts []app.Account
+	if err := s.db.WithContext(ctx).
+		Select("id", "email", "name", "account_type").
+		Where("id IN ?", ids).
+		Find(&accounts).Error; err != nil {
+		return fmt.Errorf("unable to get activity actors: %w", err)
+	}
+	byID := make(map[string]*app.Account, len(accounts))
+	for i := range accounts {
+		byID[accounts[i].ID] = &accounts[i]
+	}
+
+	for i := range activity {
+		actor, ok := byID[activity[i].actorID]
+		if !ok {
+			continue
+		}
+		activity[i].Actor = actor
+		if activity[i].Action != nil && activity[i].Action.Trigger != nil {
+			activity[i].Action.Trigger.Actor = actor
+		}
+	}
+	return nil
 }
 
 func applyActivityCursor(query *gorm.DB, timeColumn, idColumn string, activityType InstallActivityType, cursor *installActivityCursor) *gorm.DB {
@@ -492,6 +634,17 @@ func actionRunActivity(run *app.InstallActionWorkflowRun) InstallActivity {
 		summary = "Action run"
 	}
 
+	trigger := &app.ActionRunTrigger{Type: app.ActionRunTriggerTypeFor(run)}
+	actorID := ""
+	switch {
+	case run.TriggerType == app.ActionWorkflowTriggerTypeCron:
+		trigger.Type = app.ActionRunTriggerTypeCron
+	case run.TriggeredByID != "" && run.TriggeredByType == string(app.ActionWorkflowTriggerTypeManual):
+		actorID = run.TriggeredByID
+	default:
+		actorID = run.CreatedByID
+	}
+
 	item := InstallActivity{
 		ID:        run.ID,
 		Type:      InstallActivityTypeActionRun,
@@ -505,7 +658,10 @@ func actionRunActivity(run *app.InstallActionWorkflowRun) InstallActivity {
 			ActionWorkflowID: run.InstallActionWorkflow.ActionWorkflowID,
 			Name:             name,
 			TriggerType:      string(run.TriggerType),
+			Trigger:          trigger,
+			Adhoc:            run.TriggerType == app.ActionWorkflowTriggerTypeAdHoc,
 		},
+		actorID: actorID,
 	}
 	return item
 }
@@ -551,7 +707,15 @@ func runbookRunActivity(run *app.InstallRunbookRun) InstallActivity {
 			RunbookID: run.InstallRunbook.RunbookID,
 			Name:      name,
 		},
+		actorID: runbookRunActorID(run),
 	}
+}
+
+func runbookRunActorID(run *app.InstallRunbookRun) string {
+	if run.IdempotencyKey != nil && strings.HasPrefix(*run.IdempotencyKey, runbookCronIdempotencyPrefix) {
+		return ""
+	}
+	return run.CreatedByID
 }
 
 func policyReportActivity(report *app.PolicyReport) InstallActivity {
@@ -561,7 +725,12 @@ func policyReportActivity(report *app.PolicyReport) InstallActivity {
 	}
 	title := componentName
 	if title == "" {
-		title = "Policy check"
+		switch report.OwnerType {
+		case app.PolicyReportOwnerTypeInstallSandboxRun:
+			title = "Sandbox"
+		default:
+			title = "Policy check"
+		}
 	}
 	summary := report.Status.StatusHumanDescription
 	if summary == "" {

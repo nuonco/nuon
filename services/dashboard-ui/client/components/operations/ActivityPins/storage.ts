@@ -7,7 +7,10 @@ export type TActivityPin = {
 
 const empty: TActivityPin[] = []
 
-const snapshots = new Map<string, { raw: string | null; pins: TActivityPin[] }>()
+const snapshots = new Map<
+  string,
+  { raw: string | null; pins: TActivityPin[] }
+>()
 const listeners = new Set<() => void>()
 
 const isPin = (value: unknown): value is TActivityPin => {

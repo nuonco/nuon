@@ -10,6 +10,8 @@ export const getInstallActivity = ({
   limit = 20,
   status,
   type,
+  actorId,
+  excludeCron,
   createdAtGte,
   search,
 }: {
@@ -20,6 +22,8 @@ export const getInstallActivity = ({
   limit?: number
   status?: string
   type?: string
+  actorId?: string
+  excludeCron?: boolean
   createdAtGte?: string
   search?: string
 }) =>
@@ -30,6 +34,8 @@ export const getInstallActivity = ({
       limit,
       status: status || undefined,
       type: type || undefined,
+      actor_id: actorId || undefined,
+      exclude_cron: excludeCron || undefined,
       created_at_gte: createdAtGte || undefined,
       search: search || undefined,
     })}`,

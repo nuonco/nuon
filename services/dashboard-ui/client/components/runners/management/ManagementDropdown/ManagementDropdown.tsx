@@ -20,7 +20,8 @@ export const ManagementDropdown = ({
       id={`runner-${runner.id}-mgmt`}
       buttonText={
         <>
-          <Icon variant="SlidersHorizontalIcon" /> {isInstallRunner ? 'Manage runner' : 'Manage build runner'}
+          <Icon variant="SlidersHorizontalIcon" />{' '}
+          {isInstallRunner ? 'Manage runner' : 'Manage build runner'}
         </>
       }
       alignment="right"
@@ -45,11 +46,11 @@ export const ManagementDropdown = ({
               runner={runner}
               settings={settings}
               field="binary_version"
-              label="Update manager version"
-              modalHeading="Update manager version"
-              inputLabel="Enter the manager version you'd like to update to."
-              inputPlaceholder="manager version"
-              submitLabel="Update manager version"
+              label="Update management version"
+              modalHeading="Update management version"
+              inputLabel="Enter the management version you'd like to update to."
+              inputPlaceholder="management version"
+              submitLabel="Update management version"
               isMenuButton
             />
             <UpdateRunnerButton

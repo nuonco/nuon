@@ -8,26 +8,12 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { reportSubject } from '@/components/policies/report-subject'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { panelTriggerClass } from '@/components/surfaces/panel-trigger'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { cn } from '@/utils/classnames'
 import type { TPolicyReport, TPolicyResult, TPolicyViolation } from '@/types'
-
-function formatOwnerType(ownerType: string): {
-  label: string
-  theme: 'info' | 'brand' | 'neutral'
-} {
-  switch (ownerType) {
-    case 'install_deploys':
-      return { label: 'Deploy', theme: 'info' }
-    case 'install_sandbox_runs':
-      return { label: 'Sandbox', theme: 'brand' }
-    case 'component_builds':
-      return { label: 'Build', theme: 'neutral' }
-    default:
-      return { label: ownerType, theme: 'neutral' }
-  }
-}
 
 function getPolicyStatusBadge(policy: TPolicyResult) {
   if (policy.status === 'deny') {
@@ -54,23 +40,47 @@ function getPolicyStatusBadge(policy: TPolicyResult) {
   )
 }
 
-export interface IPolicyReportPanel extends IPanel {
+export interface IPolicyReportDetails {
   report: TPolicyReport
   orgId: string
   policyNameMap: Map<string, string>
-  history?: TPolicyReport[]
 }
 
-export const PolicyReportPanel = ({
+export const PolicyReportDetails = ({
   report,
   orgId,
   policyNameMap,
-  history,
-  ...props
-}: IPolicyReportPanel) => {
-  const { label: ownerTypeLabel, theme: ownerTypeTheme } = formatOwnerType(
-    report.owner_type || ''
-  )
+}: IPolicyReportDetails) => {
+  const installLink = useInstallLink()
+  const isDeploy = report.owner_type === 'install_deploys'
+  const isSandbox = report.owner_type === 'install_sandbox_runs'
+  const reportLink = (suffix: string) =>
+    report.install_id
+      ? installLink({ orgId, installId: report.install_id, suffix })
+      : undefined
+  const subjectLink =
+    isDeploy && report.component_id
+      ? {
+          href: reportLink(`/components/${report.component_id}`),
+          label: 'View component',
+        }
+      : isSandbox
+        ? { href: reportLink('/sandbox'), label: 'View sandbox' }
+        : undefined
+  const ownerLink =
+    isDeploy && report.component_id && report.owner_id
+      ? {
+          href: reportLink(
+            `/components/${report.component_id}/deploys/${report.owner_id}`
+          ),
+          label: 'View deploy',
+        }
+      : isSandbox && report.owner_id
+        ? {
+            href: reportLink(`/sandbox/runs/${report.owner_id}`),
+            label: 'View sandbox run',
+          }
+        : undefined
 
   const policies = report.policies || []
   const deniedPolicies = policies.filter(
@@ -93,7 +103,7 @@ export const PolicyReportPanel = ({
     []
 
   return (
-    <Panel heading={report.component_name ? `Component - ${report.component_name}` : 'Sandbox'} size="half" {...props}>
+    <>
       <div className="grid grid-cols-3 gap-4 text-center">
         <div className="flex flex-col gap-1 p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
           <Text
@@ -133,14 +143,9 @@ export const PolicyReportPanel = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 items-start">
+      <div className="flex flex-wrap items-start gap-x-8 gap-y-3">
         <LabeledValue label="Report ID">
           <ID>{report.id || ''}</ID>
-        </LabeledValue>
-        <LabeledValue label="Type">
-          <Badge theme={ownerTypeTheme} size="sm">
-            {ownerTypeLabel}
-          </Badge>
         </LabeledValue>
         <LabeledValue label="Evaluated">
           <Time
@@ -149,6 +154,14 @@ export const PolicyReportPanel = ({
             format="relative"
           />
         </LabeledValue>
+        <div className="ml-auto flex items-center gap-4">
+          {subjectLink?.href ? (
+            <Link href={subjectLink.href}>{subjectLink.label}</Link>
+          ) : null}
+          {ownerLink?.href ? (
+            <Link href={ownerLink.href}>{ownerLink.label}</Link>
+          ) : null}
+        </div>
       </div>
 
       {report.policies && report.policies.length > 0 ? (
@@ -226,7 +239,9 @@ export const PolicyReportPanel = ({
                                 )}
                               >
                                 <Icon
-                                  variant={isDeny ? 'XCircleIcon' : 'WarningIcon'}
+                                  variant={
+                                    isDeny ? 'XCircleIcon' : 'WarningIcon'
+                                  }
                                   size={14}
                                   className="mt-0.5 shrink-0"
                                 />
@@ -313,25 +328,48 @@ export const PolicyReportPanel = ({
           </div>
         </Card>
       )}
-
-      {history?.length ? (
-        <>
-          <Divider dividerWord="Evaluation history" />
-          <div className="flex flex-col divide-y">
-            {history.map((olderReport) => (
-              <PolicyReportHistoryRow
-                key={olderReport.id}
-                report={olderReport}
-                orgId={orgId}
-                policyNameMap={policyNameMap}
-              />
-            ))}
-          </div>
-        </>
-      ) : null}
-    </Panel>
+    </>
   )
 }
+
+export interface IPolicyReportPanel extends IPanel {
+  report: TPolicyReport
+  orgId: string
+  policyNameMap: Map<string, string>
+  history?: TPolicyReport[]
+}
+
+export const PolicyReportPanel = ({
+  report,
+  orgId,
+  policyNameMap,
+  history,
+  ...props
+}: IPolicyReportPanel) => (
+  <Panel heading={reportSubject(report)} size="half" {...props}>
+    <PolicyReportDetails
+      report={report}
+      orgId={orgId}
+      policyNameMap={policyNameMap}
+    />
+
+    {history?.length ? (
+      <>
+        <Divider dividerWord="Evaluation history" />
+        <div className="flex flex-col divide-y">
+          {history.map((olderReport) => (
+            <PolicyReportHistoryRow
+              key={olderReport.id}
+              report={olderReport}
+              orgId={orgId}
+              policyNameMap={policyNameMap}
+            />
+          ))}
+        </div>
+      </>
+    ) : null}
+  </Panel>
+)
 
 const PolicyReportHistoryRow = ({
   report,

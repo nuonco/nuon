@@ -69,6 +69,7 @@ const DEFAULT_FILTER: IActivityFilter = {
   search: '',
   status: new Set(),
   type: new Set(),
+  trigger: new Set(),
 }
 
 const presenterProps = {
@@ -79,6 +80,7 @@ const presenterProps = {
   onSearchChange: () => {},
   onStatusChange: () => {},
   onTypeChange: () => {},
+  onTriggerChange: () => {},
   onDateChange: () => {},
   onClearFilters: () => {},
 }

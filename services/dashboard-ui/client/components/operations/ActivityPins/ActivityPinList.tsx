@@ -108,7 +108,11 @@ export const ActivityPinList = ({
                   {item.name}
                 </Text>
                 {item.description ? (
-                  <Text variant="subtext" theme="neutral" className="line-clamp-2">
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="line-clamp-2"
+                  >
                     {item.description}
                   </Text>
                 ) : item.loading ? (

@@ -17,9 +17,18 @@ const ALL_COMPONENT_ACTION_TRIGGERS: TActionConfigTriggerType[] = [
   'post-teardown-all-components',
 ]
 
-const TRIGGER_LABELS: Partial<Record<TActionConfigTriggerType, string>> = {
+const TRIGGER_LABELS: Record<string, string> = {
   manual: 'Manual',
   cron: 'Cron',
+  adhoc: 'Ad hoc',
+  runbook: 'Runbook',
+  install_deploys: 'Deploy',
+  install_sandbox_runs: 'Sandbox run',
+  install_stack_version_runs: 'Stack update',
+  runners: 'Runner',
+  runner_jobs: 'Runner job',
+  installs: 'Install',
+  account: 'Manual',
   'pre-deploy-component': 'Pre-deploy',
   'pre-teardown-component': 'Pre-teardown',
   'pre-deploy-all-components': 'Pre-deploy',

@@ -1512,6 +1512,7 @@ export type TInstallActivity = {
   created_at: string
   title: string
   summary: string
+  actor?: TAccount
   workflow?: {
     id: string
     type: string
@@ -1522,6 +1523,8 @@ export type TInstallActivity = {
     action_workflow_id?: string
     name?: string
     trigger_type?: string
+    trigger?: TInstallActionRun['trigger']
+    adhoc?: boolean
   }
   runbook?: {
     run_id: string
