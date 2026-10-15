@@ -1,5 +1,4 @@
-DROP FUNCTION IF EXISTS install_state_runner_job_targets(runner_jobs[], boolean);
-
+{{define "core"}}
 CREATE OR REPLACE FUNCTION invalidate_install_state_targets(target_install_ids text[], target_partials text[]) RETURNS void AS $$
 DECLARE
   known CONSTANT text[] := {{array .AllPartials}};
@@ -19,12 +18,6 @@ BEGIN
   IF FOUND THEN
     RAISE EXCEPTION 'unknown install state partial: %', coalesce(invalid, '<null>');
   END IF;
-
-  PERFORM 1
-  FROM install_state_heads h
-  WHERE h.install_id = ANY(target_install_ids)
-  ORDER BY h.install_id
-  FOR NO KEY UPDATE OF h;
 
   INSERT INTO install_state_heads AS h (install_id, org_id, revision, current_state_id, stale_at, stale_partials)
   SELECT i.id, i.org_id, 1, '', now(), t.partials
@@ -65,7 +58,9 @@ BEGIN
   CROSS JOIN jsonb_array_elements_text(partials) AS p(partial);
 END;
 $$ LANGUAGE plpgsql;
+{{end}}
 
+{{define "installs"}}
 CREATE OR REPLACE FUNCTION install_state_invalidate_installs() RETURNS trigger AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
@@ -92,54 +87,73 @@ DROP TRIGGER IF EXISTS install_state_invalidate_installs_upd ON installs;
 DROP TRIGGER IF EXISTS install_state_invalidate_installs_del ON installs;
 CREATE TRIGGER install_state_invalidate_installs_ins AFTER INSERT ON installs REFERENCING NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION install_state_invalidate_installs();
 CREATE TRIGGER install_state_invalidate_installs_upd AFTER UPDATE ON installs REFERENCING OLD TABLE AS old_rows NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION install_state_invalidate_installs();
-{{range $s := .Sources}}
-CREATE OR REPLACE FUNCTION install_state_invalidate_{{.Table}}() RETURNS trigger AS $$
-DECLARE
-  rs {{.Table}}[];
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    SELECT array_agg(n) INTO rs FROM new_rows n;
-  ELSIF TG_OP = 'DELETE' THEN
-    SELECT array_agg(o) INTO rs FROM old_rows o;
-  ELSE
-    SELECT array_agg(v.r) INTO rs
-    FROM old_rows o
-    FULL JOIN new_rows n ON n.id = o.id
-    CROSS JOIN LATERAL (VALUES (o::{{.Table}}), (n::{{.Table}})) AS v(r)
-    WHERE (v.r).id IS NOT NULL
-      AND (o.id IS NULL OR n.id IS NULL OR ROW({{columns "o" .Columns}}) IS DISTINCT FROM ROW({{columns "n" .Columns}}));
-  END IF;
-  IF rs IS NULL THEN
-    RETURN NULL;
-  END IF;
+{{end}}
 
-  PERFORM pg_advisory_xact_lock_shared(hashtext('install_state_sources'), hashtext(o.org_id))
-  FROM (
-    SELECT DISTINCT {{if eq .Table "orgs"}}r.id{{else}}r.org_id{{end}} AS org_id
-    FROM unnest(rs) AS r
-  ) o
-  ORDER BY o.org_id;
-
-  PERFORM invalidate_install_state_targets(array_agg(t.install_id), array_agg(t.partial))
-  FROM (
-{{- range $i, $t := .Targets}}{{if $i}}
+{{define "targets"}}{{$s := .Source}}
+{{- range $i, $t := $s.Targets}}{{if $i}}
     UNION ALL{{end}}
     SELECT {{$t.InstallID}}, p.partial
-    FROM unnest(rs) AS {{$s.Alias}}{{if $t.Joins}}
+    FROM changed_rows AS {{$s.Alias}}{{if $t.Joins}}
     {{$t.Joins}}{{end}}
     CROSS JOIN unnest({{array $t.Partials}}) AS p(partial)
 {{- if $t.Where}}
     WHERE {{$t.Where}}{{end}}
 {{- end}}
-  ) AS t(install_id, partial);
+{{end}}
+
+{{define "source"}}{{$s := .Source}}
+CREATE OR REPLACE FUNCTION install_state_invalidate_{{$s.Table}}() RETURNS trigger AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    PERFORM pg_advisory_xact_lock_shared(hashtext('install_state_sources'), hashtext(o.org_id))
+    FROM (SELECT DISTINCT n.{{.OrgColumn}} AS org_id FROM new_rows n) o
+    ORDER BY o.org_id;
+
+    PERFORM invalidate_install_state_targets(array_agg(t.install_id), array_agg(t.partial))
+    FROM (
+      WITH changed_rows AS MATERIALIZED (SELECT {{columns "n" .Projection}} FROM new_rows n)
+      {{template "targets" .}}
+    ) AS t(install_id, partial);
+  ELSIF TG_OP = 'DELETE' THEN
+    PERFORM pg_advisory_xact_lock_shared(hashtext('install_state_sources'), hashtext(o.org_id))
+    FROM (SELECT DISTINCT r.{{.OrgColumn}} AS org_id FROM old_rows r) o
+    ORDER BY o.org_id;
+
+    PERFORM invalidate_install_state_targets(array_agg(t.install_id), array_agg(t.partial))
+    FROM (
+      WITH changed_rows AS MATERIALIZED (SELECT {{columns "o" .Projection}} FROM old_rows o)
+      {{template "targets" .}}
+    ) AS t(install_id, partial);
+  ELSE
+    PERFORM pg_advisory_xact_lock_shared(hashtext('install_state_sources'), hashtext(o.org_id))
+    FROM (
+      SELECT {{.OrgColumn}} AS org_id FROM old_rows
+      UNION
+      SELECT {{.OrgColumn}} AS org_id FROM new_rows
+    ) o
+    ORDER BY o.org_id;
+
+    PERFORM invalidate_install_state_targets(array_agg(t.install_id), array_agg(t.partial))
+    FROM (
+      WITH changed_rows AS MATERIALIZED (
+        SELECT v.*
+        FROM old_rows o
+        FULL JOIN new_rows n ON n.id = o.id
+        CROSS JOIN LATERAL (VALUES ({{columns "o" .Projection}}), ({{columns "n" .Projection}})) AS v({{columns "" .Projection}})
+        WHERE v.id IS NOT NULL
+          AND (o.id IS NULL OR n.id IS NULL OR ROW({{columns "o" $s.Columns}}) IS DISTINCT FROM ROW({{columns "n" $s.Columns}}))
+      )
+      {{template "targets" .}}
+    ) AS t(install_id, partial);
+  END IF;
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS install_state_invalidate_{{.Table}}_ins ON {{.Table}};
-DROP TRIGGER IF EXISTS install_state_invalidate_{{.Table}}_upd ON {{.Table}};
-DROP TRIGGER IF EXISTS install_state_invalidate_{{.Table}}_del ON {{.Table}};
-CREATE TRIGGER install_state_invalidate_{{.Table}}_ins AFTER INSERT ON {{.Table}} REFERENCING NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION install_state_invalidate_{{.Table}}();
-CREATE TRIGGER install_state_invalidate_{{.Table}}_upd AFTER UPDATE ON {{.Table}} REFERENCING OLD TABLE AS old_rows NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION install_state_invalidate_{{.Table}}();
-CREATE TRIGGER install_state_invalidate_{{.Table}}_del AFTER DELETE ON {{.Table}} REFERENCING OLD TABLE AS old_rows FOR EACH STATEMENT EXECUTE FUNCTION install_state_invalidate_{{.Table}}();
+DROP TRIGGER IF EXISTS install_state_invalidate_{{$s.Table}}_ins ON {{$s.Table}};
+DROP TRIGGER IF EXISTS install_state_invalidate_{{$s.Table}}_upd ON {{$s.Table}};
+DROP TRIGGER IF EXISTS install_state_invalidate_{{$s.Table}}_del ON {{$s.Table}};
+CREATE TRIGGER install_state_invalidate_{{$s.Table}}_ins AFTER INSERT ON {{$s.Table}} REFERENCING NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION install_state_invalidate_{{$s.Table}}();
+CREATE TRIGGER install_state_invalidate_{{$s.Table}}_upd AFTER UPDATE ON {{$s.Table}} REFERENCING OLD TABLE AS old_rows NEW TABLE AS new_rows FOR EACH STATEMENT EXECUTE FUNCTION install_state_invalidate_{{$s.Table}}();
+CREATE TRIGGER install_state_invalidate_{{$s.Table}}_del AFTER DELETE ON {{$s.Table}} REFERENCING OLD TABLE AS old_rows FOR EACH STATEMENT EXECUTE FUNCTION install_state_invalidate_{{$s.Table}}();
 {{end}}

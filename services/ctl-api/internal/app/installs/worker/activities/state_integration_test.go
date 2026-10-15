@@ -333,8 +333,8 @@ func (s *InstallStateIntegrationSuite) TestLegacySnapshotsInitializeHeadWithoutB
 		name  string
 		stale bool
 	}{
-		{name: "blob_and_inline"},
 		{name: "inline_with_stale_inputs", stale: true},
+		{name: "blob_and_inline"},
 	} {
 		s.Run(tc.name, func() {
 			legacy := &state.State{
@@ -384,12 +384,30 @@ func (s *InstallStateIntegrationSuite) TestLegacySnapshotsInitializeHeadWithoutB
 			require.Equal(s.T(), int64(1), head.Revision)
 			require.Equal(s.T(), row.StateBlob.BlobID(), stored.StateBlob.BlobID())
 
-			_, err := s.activities.SaveState(s.ctx, &installactivities.SaveStateRequest{
+			s.updateInput()
+			pending := s.head()
+			require.Contains(s.T(), pending.StalePartials, pkgstate.PartialInputs)
+			saved, err := s.activities.SaveState(s.ctx, &installactivities.SaveStateRequest{
 				State: legacy, InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
-				GeneratedBy: app.InstallStateGenerateSourceStateManager,
+				GeneratedBy: app.InstallStateGenerateSourceStateManager, RefreshedPartials: []pkgstate.PartialName{pkgstate.PartialInputs},
 			})
-			require.True(s.T(), helpers.IsInstallStateConflict(err), "revisionless legacy writers must fail safely: %v", err)
-			require.Equal(s.T(), head, s.head())
+			require.NoError(s.T(), err)
+			published := s.head()
+			require.Equal(s.T(), published.CurrentStateID, saved.ID)
+			require.Equal(s.T(), pending.Revision+1, saved.Revision)
+			require.Equal(s.T(), saved.Revision, published.Revision)
+			require.Empty(s.T(), published.StalePartials)
+			require.Equal(s.T(), before+1, s.snapshotCount())
+			for read := 0; read < 2; read++ {
+				current, fromBlob := s.currentRow().GetState(s.ctx, true)
+				require.True(s.T(), fromBlob)
+				require.Equal(s.T(), "eu-west-1", current.Inputs.Inputs["region"], "a legacy payload must not overwrite current inputs")
+				require.Equal(s.T(), current.Inputs.Inputs, current.Install.Inputs)
+				require.Equal(s.T(), "eu-west-1", s.fresh().Inputs.Inputs["region"])
+			}
+			require.Equal(s.T(), published, s.head())
+			require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallState{ID: row.ID}).First(&stored).Error)
+			require.Equal(s.T(), "legacy-region", stored.State.Inputs.Inputs["region"])
 		})
 	}
 }
@@ -409,6 +427,13 @@ func (s *InstallStateIntegrationSuite) TestFailedPublicationLeavesHeadStale() {
 			require.Error(s.T(), err)
 			require.Equal(s.T(), pending, s.head())
 			require.Equal(s.T(), before, s.snapshotCount(), "a failed publication must not leave a snapshot row")
+			_, err = s.activities.SaveState(ctx, &installactivities.SaveStateRequest{
+				State: s.baseline().State, InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
+				GeneratedBy: app.InstallStateGenerateSourceStateManager, RefreshedPartials: []pkgstate.PartialName{pkgstate.PartialInputs},
+			})
+			require.Error(s.T(), err)
+			require.Equal(s.T(), pending, s.head())
+			require.Equal(s.T(), before, s.snapshotCount())
 			require.Equal(s.T(), "us-east-1", s.baseline().State.Inputs.Inputs["region"])
 		})
 	}

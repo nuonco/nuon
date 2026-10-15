@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	psqlmigrations "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
@@ -428,6 +429,73 @@ func (s *InstallStateIntegrationSuite) TestConcurrentInvalidationsUnionWithinIns
 	var untouched app.InstallStateHead
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallStateHead{InstallID: unrelated.ID}).First(&untouched).Error)
 	require.Equal(s.T(), heads[unrelated.ID], untouched)
+}
+
+func (s *InstallStateIntegrationSuite) TestMixedMissingAndExistingHeadsDoNotDeadlock() {
+	var application app.App
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.App{ID: s.install.AppID}).First(&application).Error)
+	sibling := s.deps.Seeder.CreateInstall(s.ctx, s.T(), &application)
+	low, high := s.install.ID, sibling.ID
+	if low > high {
+		low, high = high, low
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallStateHead{InstallID: low}).Delete(&app.InstallStateHead{}).Error)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 15*time.Second)
+	defer cancel()
+	tx := s.deps.DB.WithContext(ctx).Begin()
+	require.NoError(s.T(), tx.Error)
+	defer tx.Rollback()
+	require.NoError(s.T(), s.deps.Helpers.MarkInstallStatePartialsStale(ctx, tx, low, pkgstate.PartialInputs))
+	pid := s.backendPID(tx)
+	done := make(chan struct{})
+	var fanoutErr error
+	go func() {
+		defer close(done)
+		fanoutErr = s.deps.DB.WithContext(ctx).Exec(
+			`SELECT invalidate_install_state(ARRAY[?, ?]::text[], '["app"]'::jsonb)`, high, low,
+		).Error
+	}()
+	require.True(s.T(), s.blockedBy(pid, done), "fan-out must wait for the lower, newly created head")
+	require.NoError(s.T(), tx.Exec(
+		`SELECT invalidate_install_state(ARRAY[?, ?]::text[], '["cloud"]'::jsonb)`, high, low,
+	).Error, "fan-out must not lock the existing higher head before the missing lower head")
+	require.NoError(s.T(), tx.Commit().Error)
+	s.await(done)
+	require.NoError(s.T(), fanoutErr)
+
+	for _, installID := range []string{low, high} {
+		var head app.InstallStateHead
+		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallStateHead{InstallID: installID}).First(&head).Error)
+		require.Contains(s.T(), head.StalePartials, pkgstate.PartialApp)
+		require.Contains(s.T(), head.StalePartials, pkgstate.PartialCloud)
+	}
+}
+
+func (s *InstallStateIntegrationSuite) TestInvalidationDDLTimesOutAndRetriesPerTable() {
+	var blockedStage, freeStage func(context.Context, *gorm.DB) error
+	for _, stage := range new(psqlmigrations.Migrations).All() {
+		switch stage.Name {
+		case "145-install-state-invalidation-runner_jobs":
+			blockedStage = stage.Fn
+		case "145-install-state-invalidation-install_inputs":
+			freeStage = stage.Fn
+		}
+	}
+	require.NotNil(s.T(), blockedStage)
+	require.NotNil(s.T(), freeStage)
+	ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
+	defer cancel()
+	tx := s.deps.DB.WithContext(ctx).Begin()
+	require.NoError(s.T(), tx.Error)
+	defer tx.Rollback()
+	require.NoError(s.T(), tx.Exec("LOCK TABLE runner_jobs IN ROW EXCLUSIVE MODE").Error)
+	require.ErrorContains(s.T(), blockedStage(ctx, s.deps.DB), "lock timeout")
+	require.NoError(s.T(), freeStage(ctx, s.deps.DB), "a blocked runner table must not prevent another table's DDL from committing")
+	require.NoError(s.T(), tx.Rollback().Error)
+	require.NoError(s.T(), blockedStage(ctx, s.deps.DB))
+	s.updateInput()
+	require.Equal(s.T(), "eu-west-1", s.fresh().Inputs.Inputs["region"])
 }
 
 func (s *InstallStateIntegrationSuite) TestArchiveRetainsCurrentSnapshot() {

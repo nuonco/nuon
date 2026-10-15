@@ -2,6 +2,7 @@ package activities_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
+	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -340,39 +342,307 @@ func (s *InstallStateIntegrationSuite) TestOutputRacesInvalidateAfterBothCommits
 }
 
 func (s *InstallStateIntegrationSuite) TestRegenerateWorkflowRepublishesFromCurrentHead() {
-	require.NoError(s.T(), s.renameApp("before-upload"))
-	var once sync.Once
-	ctx := s.withUploadHook(func() error {
-		var err error
-		once.Do(func() { err = s.renameApp("during-upload") })
-		return err
-	})
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	env.SetTestTimeout(time.Minute)
-	env.SetDataConverter(converter.NewCompositeDataConverter(
-		converter.NewNilPayloadConverter(),
-		converter.NewByteSlicePayloadConverter(),
-		pkgdataconverter.NewJSONConverter(),
-	))
-	env.SetWorkerOptions(worker.Options{BackgroundActivityContext: ctx, DeadlockDetectionTimeout: time.Minute})
-	env.RegisterActivityWithOptions(s.activities, activity.RegisterOptions{SkipInvalidStructFunctions: true})
-	env.ExecuteWorkflow(statesignals.Regenerate, &pkgstate.ExecuteRegenerationRequest{
-		InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
-		Targets: []pkgstate.PartialTarget{{Name: pkgstate.PartialInputs}},
-	})
-	require.True(s.T(), env.IsWorkflowCompleted())
-	require.NoError(s.T(), env.GetWorkflowError())
-	var result pkgstate.ExecuteRegenerationResponse
-	require.NoError(s.T(), env.GetWorkflowResult(&result))
-	require.Equal(s.T(), "during-upload", result.State.App.Name)
-	require.Contains(s.T(), result.UpdatedPartials, pkgstate.PartialApp)
+	for _, legacy := range []bool{false, true} {
+		s.Run(fmt.Sprintf("legacy_%t", legacy), func() {
+			require.NoError(s.T(), s.renameApp("before-upload"))
+			var once sync.Once
+			ctx := s.withUploadHook(func() error {
+				var err error
+				once.Do(func() { err = s.renameApp("during-upload") })
+				return err
+			})
+			var workflowSuite testsuite.WorkflowTestSuite
+			env := workflowSuite.NewTestWorkflowEnvironment()
+			env.SetTestTimeout(time.Minute)
+			env.SetDataConverter(converter.NewCompositeDataConverter(
+				converter.NewNilPayloadConverter(),
+				converter.NewByteSlicePayloadConverter(),
+				pkgdataconverter.NewJSONConverter(),
+			))
+			env.SetWorkerOptions(worker.Options{BackgroundActivityContext: ctx, DeadlockDetectionTimeout: time.Minute})
+			env.RegisterActivityWithOptions(s.activities, activity.RegisterOptions{SkipInvalidStructFunctions: true})
+			if legacy {
+				env.OnGetVersion("install-state-publication", workflow.DefaultVersion, 1).Return(workflow.DefaultVersion)
+			}
+			env.ExecuteWorkflow(statesignals.Regenerate, &pkgstate.ExecuteRegenerationRequest{
+				InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
+				Targets: []pkgstate.PartialTarget{{Name: pkgstate.PartialInputs}},
+			})
+			require.True(s.T(), env.IsWorkflowCompleted())
+			require.NoError(s.T(), env.GetWorkflowError())
+			var result pkgstate.ExecuteRegenerationResponse
+			require.NoError(s.T(), env.GetWorkflowResult(&result))
+			if !legacy {
+				require.Equal(s.T(), "during-upload", result.State.App.Name)
+				require.Contains(s.T(), result.UpdatedPartials, pkgstate.PartialApp)
+			}
 
+			head := s.head()
+			require.True(s.T(), head.StaleAt.Empty())
+			stored, fromBlob := s.currentRow().GetState(s.ctx, true)
+			require.True(s.T(), fromBlob)
+			require.Equal(s.T(), "during-upload", stored.App.Name)
+			require.Equal(s.T(), "during-upload", s.fresh().App.Name)
+			require.Equal(s.T(), head, s.head(), "a strict read of the published head must not republish")
+		})
+	}
+}
+
+func (s *InstallStateIntegrationSuite) cleanHead() app.InstallStateHead {
+	s.T().Helper()
+	s.fresh()
 	head := s.head()
 	require.True(s.T(), head.StaleAt.Empty())
-	stored, fromBlob := s.currentRow().GetState(s.ctx, true)
-	require.True(s.T(), fromBlob)
-	require.Equal(s.T(), "during-upload", stored.App.Name)
-	require.Equal(s.T(), "during-upload", s.fresh().App.Name)
-	require.Equal(s.T(), head, s.head(), "a strict read of the published head must not republish")
+	require.Empty(s.T(), head.StalePartials)
+	return head
+}
+
+func (s *InstallStateIntegrationSuite) requireHeadUnchanged(before app.InstallStateHead, regression string) {
+	s.T().Helper()
+	require.Equal(s.T(), before, s.head(), regression)
+}
+
+func (s *InstallStateIntegrationSuite) requireHeadDirty(before app.InstallStateHead, partials ...pkgstate.PartialName) {
+	s.T().Helper()
+	head := s.head()
+	require.Greater(s.T(), head.Revision, before.Revision)
+	require.False(s.T(), head.StaleAt.Empty())
+	require.Equal(s.T(), partials, head.StalePartials)
+}
+
+func (s *InstallStateIntegrationSuite) setColumn(model any, column string, value any) {
+	s.T().Helper()
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(model).Update(column, value).Error)
+}
+
+func secretOutputs(arn string) map[string]any {
+	return map[string]any{"example": map[string]any{"name": "example", "arn": arn, "exists": true}}
+}
+
+func secretARN(snapshot *state.State) any {
+	return (*snapshot.Secrets)["example"].ARN
+}
+
+func (s *InstallStateIntegrationSuite) TestRunnerJobNoiseDoesNotInvalidateState() {
+	connection := s.componentConnection()
+	runner := s.createRunner(app.RunnerStatusActive)
+	installed := s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), s.install.ID, connection.ComponentID)
+	deploy := s.createDeploy(installed.ID, connection.ID, app.InstallDeployStatusActive)
+	deployExec := s.createExecution(runner.ID, deploy.ID, "install_deploys", app.RunnerJobTypeTerraformDeploy, app.RunnerJobExecutionStatusFinished)
+	s.create(executionOutputs(deployExec.ID, map[string]any{"endpoint": "api.example.com"}))
+	secretsExec := s.createExecution(runner.ID, s.install.ID, "installs", app.RunnerJobTypeSandboxSyncSecrets, app.RunnerJobExecutionStatusFinished)
+	s.create(executionOutputs(secretsExec.ID, secretOutputs("current")))
+	requireObserved := func() {
+		for range 2 {
+			snapshot := s.fresh()
+			component := componentState(s.T(), snapshot, connection.Component.Name)
+			require.Equal(s.T(), map[string]any{"endpoint": "api.example.com"}, component["outputs"])
+			require.Equal(s.T(), "current", secretARN(snapshot))
+		}
+	}
+
+	for _, tc := range []struct {
+		name       string
+		regression string
+		commit     func()
+	}{
+		{
+			name:       "unrelated_job_on_install_runner",
+			regression: "every job on an install runner must not dirty secrets",
+			commit: func() {
+				healthCheck := s.createExecution(runner.ID, runner.ID, "runners", app.RunnerJobTypeHealthCheck, app.RunnerJobExecutionStatusFinished)
+				s.create(executionOutputs(healthCheck.ID, map[string]any{"healthy": true}))
+			},
+		},
+		{
+			name:       "runner_job_status_only",
+			regression: "runner job status churn must not dirty owner or secrets partials",
+			commit: func() {
+				for _, execution := range []*app.RunnerJobExecution{deployExec, secretsExec} {
+					s.setColumn(&app.RunnerJob{ID: execution.RunnerJobID}, "status", app.RunnerJobStatusInProgress)
+					s.setColumn(&app.RunnerJob{ID: execution.RunnerJobID}, "status", app.RunnerJobStatusFinished)
+				}
+			},
+		},
+	} {
+		s.Run(tc.name, func() {
+			before := s.cleanHead()
+			requireObserved()
+			tc.commit()
+			s.requireHeadUnchanged(before, tc.regression)
+			requireObserved()
+		})
+	}
+
+	s.Run("owner_job_on_install_runner_skips_secrets", func() {
+		before := s.cleanHead()
+		s.createExecution(runner.ID, deploy.ID, "install_deploys", app.RunnerJobTypeTerraformDeploy, app.RunnerJobExecutionStatusFinished)
+		s.requireHeadDirty(before, pkgstate.PartialComponents)
+		require.Equal(s.T(), "current", secretARN(s.fresh()))
+	})
+}
+
+func (s *InstallStateIntegrationSuite) TestExecutionTransitionsInvalidateOnlyOutputPriorityChanges() {
+	connection := s.componentConnection()
+	runner := s.createRunner(app.RunnerStatusActive)
+	installed := s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), s.install.ID, connection.ComponentID)
+	for _, tc := range []struct {
+		name    string
+		partial pkgstate.PartialName
+		job     func() (string, string, app.RunnerJobType)
+		outputs func(string) map[string]any
+		observe func(*state.State) any
+	}{
+		{
+			name:    "component_deploy",
+			partial: pkgstate.PartialComponents,
+			job: func() (string, string, app.RunnerJobType) {
+				deploy := s.createDeploy(installed.ID, connection.ID, app.InstallDeployStatusActive)
+				return deploy.ID, "install_deploys", app.RunnerJobTypeTerraformDeploy
+			},
+			outputs: func(endpoint string) map[string]any { return map[string]any{"endpoint": endpoint} },
+			observe: func(snapshot *state.State) any {
+				outputs, _ := componentState(s.T(), snapshot, connection.Component.Name)["outputs"].(map[string]any)
+				return outputs["endpoint"]
+			},
+		},
+		{
+			name:    "secrets_sync",
+			partial: pkgstate.PartialSecrets,
+			job: func() (string, string, app.RunnerJobType) {
+				return s.install.ID, "installs", app.RunnerJobTypeSandboxSyncSecrets
+			},
+			outputs: secretOutputs,
+			observe: secretARN,
+		},
+	} {
+		s.Run(tc.name, func() {
+			ownerID, ownerType, jobType := tc.job()
+			previous := s.createExecution(runner.ID, ownerID, ownerType, jobType, app.RunnerJobExecutionStatusFinished)
+			s.create(executionOutputs(previous.ID, tc.outputs("previous")))
+			next := &app.RunnerJobExecution{RunnerJobID: previous.RunnerJobID, Status: app.RunnerJobExecutionStatusPending}
+			s.create(next)
+			s.create(executionOutputs(next.ID, tc.outputs("next")))
+
+			before := s.cleanHead()
+			require.Equal(s.T(), "previous", tc.observe(s.fresh()))
+			for _, status := range []app.RunnerJobExecutionStatus{
+				app.RunnerJobExecutionStatusInProgress,
+				app.RunnerJobExecutionStatusFailed,
+			} {
+				s.setColumn(next, "status", status)
+				s.requireHeadUnchanged(before, "non-finished execution transitions must not dirty "+string(tc.partial))
+			}
+
+			for _, step := range []struct {
+				status app.RunnerJobExecutionStatus
+				want   string
+			}{
+				{status: app.RunnerJobExecutionStatusFinished, want: "next"},
+				{status: app.RunnerJobExecutionStatusFailed, want: "previous"},
+			} {
+				s.setColumn(next, "status", step.status)
+				s.requireHeadDirty(before, tc.partial)
+				for range 2 {
+					require.Equal(s.T(), step.want, tc.observe(s.fresh()))
+				}
+				before = s.cleanHead()
+			}
+		})
+	}
+}
+
+func (s *InstallStateIntegrationSuite) TestRunnerJobTypeChangeInvalidatesOldAndNewSecretsMembership() {
+	runner := s.createRunner(app.RunnerStatusActive)
+	current := s.createExecution(runner.ID, s.install.ID, "installs", app.RunnerJobTypeSandboxSyncSecrets, app.RunnerJobExecutionStatusFinished)
+	s.create(executionOutputs(current.ID, secretOutputs("current")))
+	candidate := s.createExecution(runner.ID, s.install.ID, "installs", app.RunnerJobTypeHealthCheck, app.RunnerJobExecutionStatusFinished)
+	s.create(executionOutputs(candidate.ID, secretOutputs("candidate")))
+
+	before := s.cleanHead()
+	require.Equal(s.T(), "current", secretARN(s.fresh()))
+	for _, step := range []struct {
+		name    string
+		jobType app.RunnerJobType
+		want    string
+	}{
+		{name: "joins_secrets_membership", jobType: app.RunnerJobTypeSandboxSyncSecrets, want: "candidate"},
+		{name: "leaves_secrets_membership", jobType: app.RunnerJobTypeHealthCheck, want: "current"},
+	} {
+		s.Run(step.name, func() {
+			s.setColumn(&app.RunnerJob{ID: candidate.RunnerJobID}, "type", step.jobType)
+			s.requireHeadDirty(before, pkgstate.PartialSecrets)
+			for range 2 {
+				require.Equal(s.T(), step.want, secretARN(s.fresh()))
+			}
+			before = s.cleanHead()
+		})
+	}
+}
+
+func (s *InstallStateIntegrationSuite) TestSecretsTypeChangeWaitsForEarlierUnmatchedOutputs() {
+	runner := s.createRunner(app.RunnerStatusActive)
+	current := s.createExecution(runner.ID, s.install.ID, "installs", app.RunnerJobTypeSandboxSyncSecrets, app.RunnerJobExecutionStatusFinished)
+	s.create(executionOutputs(current.ID, secretOutputs("current")))
+	candidate := s.createExecution(runner.ID, s.install.ID, "installs", app.RunnerJobTypeHealthCheck, app.RunnerJobExecutionStatusFinished)
+	before := s.cleanHead()
+
+	tx := s.deps.DB.WithContext(s.ctx).Begin()
+	require.NoError(s.T(), tx.Error)
+	defer tx.Rollback()
+	require.NoError(s.T(), tx.Create(executionOutputs(candidate.ID, secretOutputs("candidate"))).Error)
+	s.requireHeadUnchanged(before, "the output transaction still sees a non-secrets job")
+	s.setColumn(&app.RunnerJob{ID: candidate.RunnerJobID}, "type", app.RunnerJobTypeSandboxSyncSecrets)
+	s.requireHeadDirty(before, pkgstate.PartialSecrets)
+
+	attempted := s.observeSourceBarrier()
+	done := make(chan struct{})
+	var snapshot *state.State
+	var readErr error
+	go func() {
+		defer close(done)
+		snapshot, readErr = s.deps.Helpers.GetInstallState(s.ctx, s.install.ID, false, true)
+	}()
+	select {
+	case <-attempted:
+	case <-done:
+		s.FailNow("state must wait for outputs whose eligibility changed in another transaction", "%v", readErr)
+	case <-time.After(30 * time.Second):
+		s.FailNow("timed out waiting for the source barrier")
+	}
+	require.NoError(s.T(), tx.Commit().Error)
+	s.await(done)
+	require.NoError(s.T(), readErr)
+	require.Equal(s.T(), "candidate", secretARN(snapshot))
+	require.Equal(s.T(), "candidate", secretARN(s.fresh()))
+}
+
+func (s *InstallStateIntegrationSuite) TestActionRunStatusChangesReachStrictFreshReads() {
+	definition := s.deps.Seeder.CreateActionWorkflow(s.ctx, s.T(), s.install.AppID)
+	s.deps.Seeder.CreateActionWorkflowConfig(s.ctx, s.T(), s.install.AppID, s.install.AppConfigID, definition.ID)
+	installed := &app.InstallActionWorkflow{InstallID: s.install.ID, ActionWorkflowID: definition.ID}
+	s.create(installed)
+	run := &app.InstallActionWorkflowRun{
+		InstallID: s.install.ID, InstallActionWorkflowID: generics.NewNullString(installed.ID),
+		Status: app.InstallActionRunStatusQueued, StatusDescription: "queued",
+		TriggerType: app.ActionWorkflowTriggerTypeManual,
+	}
+	s.create(run)
+
+	before := s.cleanHead()
+	require.Equal(s.T(), string(app.InstallActionRunStatusQueued), s.fresh().Actions.Workflows[definition.Name].Status)
+	for _, status := range []app.InstallActionWorkflowRunStatus{
+		app.InstallActionRunStatusInProgress,
+		app.InstallActionRunStatusError,
+		app.InstallActionRunStatusFinished,
+	} {
+		s.Run(string(status), func() {
+			s.setColumn(run, "status", status)
+			s.requireHeadDirty(before, pkgstate.PartialActions)
+			for range 2 {
+				require.Equal(s.T(), string(status), s.fresh().Actions.Workflows[definition.Name].Status)
+			}
+			before = s.cleanHead()
+		})
+	}
 }
