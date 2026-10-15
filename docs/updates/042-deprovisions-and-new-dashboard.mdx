@@ -1,5 +1,5 @@
 ---
-title: 042 - Clean Deprovisions, Install Telemetry, and a New Dashboard
+title: 042 - Clean Deprovisions, BYOC Telemetry, and a New Dashboard
 description: Offboard a customer without risking their data, see every install in your own observability backend, and run your fleet from a dashboard organized around your app branches.
 boost: 0.3
 ---
@@ -47,7 +47,7 @@ Read more at [Retaining resources on teardown](/guides/retaining-resources-on-te
 
 ---
 
-## Install telemetry
+## BYOC telemetry
 
 See how your application behaves in every customer's cloud, in the observability backend you already use.
 
@@ -59,9 +59,15 @@ OTEL_EXPORTER_OTLP_ENDPOINT = "{{ .nuon.install_stack.outputs.telemetry_endpoint
 ```
 
 A Collector managed by the install runner forwards the data to a relay you control, which sends it on over OTLP to
-any compatible backend. There is no proprietary agent to install and no backend credentials to place in a customer
-account. Each payload arrives stamped with verified `nuon.org.id`, `nuon.app.id`, and `nuon.install.id` attributes,
-so one dashboard covers your whole fleet and filters down to a single customer.
+any compatible backend. Nothing extra to install in the customer's cloud, and no backend credentials to place there.
+Each payload arrives stamped with verified `nuon.org.id`, `nuon.app.id`, and `nuon.install.id` attributes, so one
+dashboard covers your whole fleet and filters down to a single customer.
+
+<img
+  src="/images/changelog/042-byoc-telemetry.png"
+  alt="Diagram of BYOC telemetry: applications in three customer installs on AWS, GCP, and Azure send OpenTelemetry data to a runner Collector, which forwards it over HTTPS to a telemetry relay that stamps verified org, app, and install IDs and exports over OTLP to a fleet dashboard filtered to one install. One install has telemetry turned off by the customer."
+  style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
+/>
 
 Your customer stays in control: the install stack exposes the private endpoint, and they can turn it off. You
 choose which installs send data with an org default and per-install overrides.
