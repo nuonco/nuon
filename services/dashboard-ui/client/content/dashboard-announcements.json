@@ -4,7 +4,7 @@
       "id": "deprovisions-telemetry-dashboard-042",
       "title": "Clean Deprovisions, BYOC Telemetry, and a New Dashboard",
       "date": "October 15, 2026",
-      "description": "Offboard a customer without risking their data, see every install in your own observability backend, and run your fleet from a dashboard organized around your app branches.",
+      "description": "Offboard a customer without manual cleanup, see every install in your own observability backend, and run your fleet from a dashboard organized around your app branches.",
       "ctaText": "Learn more",
       "ctaUrl": "https://docs.nuon.co/updates/042-deprovisions-and-new-dashboard",
       "image": "/images/announcements/nuon-changelog-042.png",
