@@ -57,6 +57,7 @@ jobs:
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     outputs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
+      sha: ${{steps.git_ref.outputs.sha}}
       semver: ${{ steps.semver.outputs.nextStrict }}
     steps:
       - name: Checkout repo
@@ -67,7 +68,14 @@ jobs:
 
       - name: Set git_ref output
         id: git_ref
-        run: echo "git_ref=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            sha=$(git rev-parse HEAD)
+          else
+            sha="${GITHUB_SHA}"
+          fi
+          echo "sha=$sha" >> $GITHUB_OUTPUT
+          echo "git_ref=${sha::7}" >> $GITHUB_OUTPUT
 
       - name: Determine next version
         id: semver
@@ -81,7 +89,8 @@ jobs:
     name: ctl-api integration gate
     needs:
       - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+      - tag
+    if: ${{ needs.merged_pr.outputs.promote == 'true' && needs.tag.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 75
     permissions:
@@ -96,8 +105,8 @@ jobs:
       - name: Await ctl-api integration
         uses: ./.github/actions/await-ctl-api-integration
         with:
-          sha: ${{ github.sha }}
-          ref: ${{ github.ref_name }}
+          sha: ${{ needs.tag.outputs.sha }}
+          ref: ${{ inputs.branch || github.ref_name }}
           token: ${{ github.token }}
 
   start_slack_notifications:

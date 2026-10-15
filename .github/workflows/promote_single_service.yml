@@ -47,6 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       git_ref: ${{ steps.git_ref.outputs.git_ref }}
+      sha: ${{ steps.git_ref.outputs.sha }}
       semver: ${{ steps.semver.outputs.nextStrict }}
     steps:
       - name: Checkout repo
@@ -57,7 +58,10 @@ jobs:
 
       - name: Set git_ref output
         id: git_ref
-        run: echo "git_ref=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        run: |
+          sha=$(git rev-parse HEAD)
+          echo "sha=$sha" >> $GITHUB_OUTPUT
+          echo "git_ref=${sha::7}" >> $GITHUB_OUTPUT
 
       - name: Determine next version
         id: semver
@@ -69,6 +73,8 @@ jobs:
   # Prod promotion only ships commits that passed ctl-api integration; waits for the run if it is still going.
   integration_gate:
     name: ctl-api integration gate
+    needs:
+      - tag
     runs-on: ubuntu-latest
     timeout-minutes: 75
     permissions:
@@ -83,8 +89,8 @@ jobs:
       - name: Await ctl-api integration
         uses: ./.github/actions/await-ctl-api-integration
         with:
-          sha: ${{ github.sha }}
-          ref: ${{ github.ref_name }}
+          sha: ${{ needs.tag.outputs.sha }}
+          ref: ${{ github.event.inputs.branch }}
           token: ${{ github.token }}
 
   start_slack_notifications:
