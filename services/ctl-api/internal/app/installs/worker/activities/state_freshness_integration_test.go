@@ -1,8 +1,10 @@
 package activities_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -58,8 +60,31 @@ func (s *InstallStateIntegrationSuite) await(done <-chan struct{}) {
 	}
 }
 
+func (s *InstallStateIntegrationSuite) observeSourceBarrier() <-chan struct{} {
+	s.T().Helper()
+	attempted := make(chan struct{}, 1)
+	require.NoError(s.T(), s.deps.DB.Callback().Row().After("gorm:row").Register("test:source_barrier", func(tx *gorm.DB) {
+		if strings.Contains(tx.Statement.SQL.String(), "pg_try_advisory_xact_lock") {
+			select {
+			case attempted <- struct{}{}:
+			default:
+			}
+		}
+	}))
+	s.T().Cleanup(func() { _ = s.deps.DB.Callback().Row().Remove("test:source_barrier") })
+	return attempted
+}
+
 func (s *InstallStateIntegrationSuite) publicationLocksFree() error {
 	return s.deps.DB.WithContext(s.ctx).Transaction(func(tx *gorm.DB) error {
+		var available bool
+		if err := tx.Raw("SELECT pg_try_advisory_xact_lock(hashtext('install_state_sources'), hashtext(?))", s.install.OrgID).
+			Scan(&available).Error; err != nil {
+			return err
+		}
+		if !available {
+			return fmt.Errorf("source coordination lock held during upload")
+		}
 		var head app.InstallStateHead
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "NOWAIT"}).
 			Where(app.InstallStateHead{InstallID: s.install.ID}).First(&head).Error; err != nil {
@@ -213,6 +238,139 @@ func (s *InstallStateIntegrationSuite) TestSourceRollbackDiscardsInvalidation() 
 	require.NotEqual(s.T(), "uncommitted", s.fresh().App.Name)
 	_, err = s.publish(s.ctx, s.baseline())
 	require.NoError(s.T(), err)
+}
+
+func (s *InstallStateIntegrationSuite) TestSharedSourceCommitReachesConcurrentNewInstall() {
+	for name, tc := range map[string]struct {
+		mutate func(*gorm.DB) error
+		value  func(*state.State) string
+		want   string
+	}{
+		"app_variable": {
+			mutate: func(tx *gorm.DB) error {
+				return tx.Create(&app.AppSecret{AppID: s.install.AppID, Name: "external_api_key", Value: "example-value"}).Error
+			},
+			value: func(snapshot *state.State) string { return snapshot.App.Variables["external_api_key"] },
+			want:  "example-value",
+		},
+		"app_metadata": {
+			mutate: func(tx *gorm.DB) error {
+				return tx.Model(&app.App{ID: s.install.AppID}).Update("status", app.AppStatusError).Error
+			},
+			value: func(snapshot *state.State) string { return snapshot.App.Status },
+			want:  string(app.AppStatusError),
+		},
+		"org_metadata": {
+			mutate: func(tx *gorm.DB) error {
+				return tx.Model(&app.Org{ID: s.install.OrgID}).Update("status", app.OrgStatusError).Error
+			},
+			value: func(snapshot *state.State) string { return snapshot.Org.Status },
+			want:  string(app.OrgStatusError),
+		},
+		"input_default": {
+			mutate: func(tx *gorm.DB) error {
+				return tx.Model(&app.AppInput{}).Where(app.AppInput{AppInputConfigID: s.inputCfg.ID, Name: "region"}).
+					Update("default", "ap-south-1").Error
+			},
+			value: func(snapshot *state.State) string { return snapshot.Inputs.Inputs["region"] },
+			want:  "ap-south-1",
+		},
+	} {
+		s.Run(name, func() {
+			tx := s.deps.DB.WithContext(s.ctx).Begin()
+			require.NoError(s.T(), tx.Error)
+			defer tx.Rollback()
+			require.NoError(s.T(), tc.mutate(tx))
+
+			created := &app.Install{
+				Name: "concurrent-" + name, AppID: s.install.AppID, AppConfigID: s.install.AppConfigID,
+				AppRunnerConfigID: s.install.AppRunnerConfigID, AppSandboxConfigID: s.install.AppSandboxConfigID,
+				AWSAccount: &app.AWSAccount{Region: "us-east-1"},
+				InstallInputs: []app.InstallInputs{{
+					AppInputConfigID: s.inputCfg.ID, Values: pgtype.Hstore{"region": generics.ToPtr("")},
+				}},
+			}
+			attempted := s.observeSourceBarrier()
+			done := make(chan struct{})
+			var createErr error
+			go func() {
+				defer close(done)
+				if createErr = s.deps.DB.WithContext(s.ctx).Create(created).Error; createErr == nil {
+					_, createErr = s.deps.Helpers.GetInstallState(s.ctx, created.ID, false, true)
+				}
+			}()
+			select {
+			case <-done:
+			case <-attempted:
+			case <-time.After(30 * time.Second):
+				s.FailNow("timed out waiting for the concurrent state read")
+			}
+			require.NoError(s.T(), tx.Commit().Error)
+			s.await(done)
+			require.NoError(s.T(), createErr)
+
+			for read := 0; read < 2; read++ {
+				var head app.InstallStateHead
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallStateHead{InstallID: created.ID}).First(&head).Error)
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.InstallState{}).
+					Where(app.InstallState{ID: head.CurrentStateID}).Select("state").Updates(map[string]any{"state": nil}).Error)
+				snapshot, err := s.deps.Helpers.GetInstallState(s.ctx, created.ID, false, true)
+				require.NoError(s.T(), err)
+				require.Nil(s.T(), snapshot.StaleAt)
+				s.Equal(tc.want, tc.value(snapshot), "read %d must observe the committed source", read+1)
+			}
+		})
+	}
+}
+
+func (s *InstallStateIntegrationSuite) TestSourceWaitPreservesWriterConcurrencyAndCancellation() {
+	otherApp := s.deps.Seeder.CreateApp(s.ctx, s.T())
+	otherCtx, _ := s.deps.Seeder.EnsureOrg(s.ctx, s.T())
+	unrelatedApp := s.deps.Seeder.CreateApp(otherCtx, s.T())
+	s.deps.Seeder.CreateAppConfig(otherCtx, s.T(), unrelatedApp.ID)
+	unrelated := s.deps.Seeder.CreateInstall(otherCtx, s.T(), unrelatedApp)
+	s.updateInput()
+	before := s.head()
+	tx := s.deps.DB.WithContext(s.ctx).Begin()
+	require.NoError(s.T(), tx.Error)
+	defer tx.Rollback()
+	require.NoError(s.T(), tx.Create(&app.AppSecret{AppID: s.install.AppID, Name: "pending", Value: "example"}).Error)
+
+	attempted := s.observeSourceBarrier()
+	ctx, cancel := context.WithCancel(s.ctx)
+	defer cancel()
+	done := make(chan struct{})
+	var snapshot *state.State
+	var readErr error
+	go func() {
+		defer close(done)
+		snapshot, readErr = s.deps.Helpers.GetInstallState(ctx, s.install.ID, false, true)
+	}()
+	select {
+	case <-attempted:
+	case <-done:
+		s.FailNow("the read returned before the pending source transaction finished", "%v", readErr)
+	case <-time.After(30 * time.Second):
+		s.FailNow("timed out waiting for the source barrier")
+	}
+
+	writeCtx, stop := context.WithTimeout(s.ctx, time.Second)
+	defer stop()
+	require.NoError(s.T(), s.deps.DB.WithContext(writeCtx).Create(&app.AppSecret{AppID: otherApp.ID, Name: "concurrent", Value: "example"}).Error)
+	require.NoError(s.T(), tx.Create(&app.AppSecret{AppID: otherApp.ID, Name: "second-statement", Value: "example"}).Error)
+	unrelatedCtx, stopUnrelated := context.WithTimeout(otherCtx, time.Second)
+	defer stopUnrelated()
+	unrelatedState, err := s.deps.Helpers.GetInstallState(unrelatedCtx, unrelated.ID, false, true)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), unrelatedApp.ID, unrelatedState.App.ID)
+	cancel()
+	s.await(done)
+	require.ErrorIs(s.T(), readErr, context.Canceled)
+	require.Nil(s.T(), snapshot)
+	require.Equal(s.T(), before, s.head())
+	require.NoError(s.T(), tx.Rollback().Error)
+	require.Equal(s.T(), "eu-west-1", s.fresh().Inputs.Inputs["region"])
+	require.NotContains(s.T(), s.fresh().App.Variables, "pending")
 }
 
 func (s *InstallStateIntegrationSuite) TestConcurrentInvalidationsUnionWithinInstallScope() {
