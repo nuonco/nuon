@@ -214,6 +214,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				accountRole1 := &app.AccountRole{
 					AccountID: acc1.ID,
 					RoleID:    adminRole.ID,
+					OrgID:     adminRole.OrgID,
 				}
 				err = s.service.DB.Create(accountRole1).Error
 				require.NoError(s.T(), err)
@@ -221,6 +222,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				accountRole2 := &app.AccountRole{
 					AccountID: acc2.ID,
 					RoleID:    adminRole.ID,
+					OrgID:     adminRole.OrgID,
 				}
 				err = s.service.DB.Create(accountRole2).Error
 				require.NoError(s.T(), err)
@@ -267,6 +269,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 					accountRole := &app.AccountRole{
 						AccountID: acc.ID,
 						RoleID:    adminRole.ID,
+						OrgID:     adminRole.OrgID,
 					}
 					err = s.service.DB.Create(accountRole).Error
 					require.NoError(s.T(), err)
@@ -317,6 +320,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 					accountRole := &app.AccountRole{
 						AccountID: acc.ID,
 						RoleID:    adminRole.ID,
+						OrgID:     adminRole.OrgID,
 					}
 					err = s.service.DB.Create(accountRole).Error
 					require.NoError(s.T(), err)
@@ -400,6 +404,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				accountRole1 := &app.AccountRole{
 					AccountID: acc1.ID,
 					RoleID:    adminRole.ID,
+					OrgID:     adminRole.OrgID,
 				}
 				err = s.service.DB.Create(accountRole1).Error
 				require.NoError(s.T(), err)
@@ -407,6 +412,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				accountRole2 := &app.AccountRole{
 					AccountID: acc2.ID,
 					RoleID:    adminRole.ID,
+					OrgID:     adminRole.OrgID,
 				}
 				err = s.service.DB.Create(accountRole2).Error
 				require.NoError(s.T(), err)
@@ -485,6 +491,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				accountRole1 := &app.AccountRole{
 					AccountID: acc1.ID,
 					RoleID:    adminRole.ID,
+					OrgID:     adminRole.OrgID,
 				}
 				err = s.service.DB.Create(accountRole1).Error
 				require.NoError(s.T(), err)
@@ -492,6 +499,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				accountRole2 := &app.AccountRole{
 					AccountID: acc2.ID,
 					RoleID:    adminRole.ID,
+					OrgID:     adminRole.OrgID,
 				}
 				err = s.service.DB.Create(accountRole2).Error
 				require.NoError(s.T(), err)
@@ -597,6 +605,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				accountRole1 := &app.AccountRole{
 					AccountID: acc1.ID,
 					RoleID:    adminRole1.ID,
+					OrgID:     adminRole1.OrgID,
 				}
 				err = s.service.DB.Create(accountRole1).Error
 				require.NoError(s.T(), err)
@@ -604,6 +613,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				accountRole2 := &app.AccountRole{
 					AccountID: acc2.ID,
 					RoleID:    adminRole2.ID,
+					OrgID:     adminRole2.OrgID,
 				}
 				err = s.service.DB.Create(accountRole2).Error
 				require.NoError(s.T(), err)

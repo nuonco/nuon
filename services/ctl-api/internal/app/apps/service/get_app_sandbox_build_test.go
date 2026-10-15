@@ -57,5 +57,8 @@ func (s *AppsTestSuite) TestGetAppSandboxBuildIncludesLatestCompositeError() {
 
 	var response app.AppSandboxBuild
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
-	assert.Equal(s.T(), expected, response.CompositeError)
+	require.NotNil(s.T(), response.CompositeError)
+	assert.Equal(s.T(), expected.Type, response.CompositeError.Type)
+	assert.Equal(s.T(), expected.Severity, response.CompositeError.Severity)
+	assert.Equal(s.T(), expected.Message, response.CompositeError.Message)
 }

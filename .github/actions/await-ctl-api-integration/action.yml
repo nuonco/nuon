@@ -1,0 +1,71 @@
+---
+name: await-ctl-api-integration
+description: |
+  Blocks until the ctl-api integration workflow has passed for a commit, dispatching it when no run exists.
+inputs:
+  sha:
+    description: Commit being promoted
+    required: true
+  ref:
+    description: Branch whose head is the commit, used when a run has to be dispatched
+    required: true
+  token:
+    description: Token with actions:write
+    required: true
+  timeout-minutes:
+    description: How long to wait for the run to finish
+    required: false
+    default: "70"
+
+runs:
+  using: composite
+  steps:
+    - name: Await ctl-api integration
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        SHA: ${{ inputs.sha }}
+        REF: ${{ inputs.ref }}
+        TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        REPO: ${{ github.repository }}
+        WORKFLOW: ctl-api-integration.yml
+      run: |
+        set -euo pipefail
+        deadline=$(( $(date +%s) + TIMEOUT_MINUTES * 60 ))
+        dispatched=false
+
+        while true; do
+          runs="$(gh api "repos/${REPO}/actions/workflows/${WORKFLOW}/runs?head_sha=${SHA}&per_page=50" \
+            --jq '[.workflow_runs[] | select(.event == "push" or .event == "workflow_dispatch") | {id, status, conclusion, html_url}]')"
+
+          passed="$(jq -r '[.[] | select(.conclusion == "success")][0].html_url // empty' <<<"$runs")"
+          if [[ -n "$passed" ]]; then
+            echo "ctl-api integration passed for ${SHA}: ${passed}"
+            exit 0
+          fi
+
+          pending="$(jq '[.[] | select(.status != "completed")] | length' <<<"$runs")"
+          if (( pending == 0 )); then
+            failed="$(jq -r '[.[] | select(.status == "completed")][0].html_url // empty' <<<"$runs")"
+            if [[ -n "$failed" ]]; then
+              echo "::error::ctl-api integration did not pass for ${SHA}: ${failed}"
+              exit 1
+            fi
+            if [[ "$dispatched" == "false" ]]; then
+              head="$(gh api "repos/${REPO}/commits/${REF}" --jq .sha)"
+              if [[ "$head" != "$SHA" ]]; then
+                echo "::error::no ctl-api integration run for ${SHA}, and ${REF} has moved on to ${head}"
+                exit 1
+              fi
+              echo "no ctl-api integration run for ${SHA}; dispatching one on ${REF}"
+              gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$REF"
+              dispatched=true
+            fi
+          fi
+
+          if (( $(date +%s) >= deadline )); then
+            echo "::error::timed out after ${TIMEOUT_MINUTES}m waiting for ctl-api integration on ${SHA}"
+            exit 1
+          fi
+          sleep 60
+        done

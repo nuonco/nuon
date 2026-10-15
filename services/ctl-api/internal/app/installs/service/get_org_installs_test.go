@@ -59,7 +59,7 @@ func (s *InstallsServiceTestSuite) TestCloudConnectionLiveInstallReferences() {
 			var stored app.CloudConnection
 			require.NoError(s.T(), s.deps.DB.Unscoped().First(&stored, "id = ?", connection.ID).Error)
 			if tt.liveInstalls > 0 {
-				require.Contains(s.T(), rr.Body.String(), "it is referenced by installs (1)")
+				require.Contains(s.T(), rr.Body.String(), "This connection is used by 1 install")
 				require.Zero(s.T(), stored.DeletedAt)
 			} else {
 				require.NotZero(s.T(), stored.DeletedAt)

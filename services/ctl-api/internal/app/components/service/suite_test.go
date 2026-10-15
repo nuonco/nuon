@@ -23,6 +23,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -49,6 +50,7 @@ type ComponentsTestDeps struct {
 	L      *zap.Logger
 	MW     metrics.Writer
 	Seeder *testseed.Seeder
+	CH     *componenthelpers.Helpers
 }
 
 // ComponentsServiceTestSuite is the shared testify suite for all components service endpoint tests.
@@ -138,6 +140,22 @@ func (s *ComponentsServiceTestSuite) setupTestData() {
 	s.ctx, s.testOrg = s.deps.Seeder.EnsureOrg(s.ctx, s.T())
 	s.testApp = s.deps.Seeder.CreateApp(s.ctx, s.T())
 	s.testAppConfig = s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
+	for _, ccc := range s.testAppConfig.ComponentConfigConnections {
+		s.ensureComponentQueues(ccc.ComponentID)
+	}
+	tests.ClearQueueSignals(s.T(), s.deps.DB)
+}
+
+func (s *ComponentsServiceTestSuite) createComponent(appID string, typ app.ComponentType) *app.Component {
+	cmp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), appID, typ)
+	s.ensureComponentQueues(cmp.ID)
+	tests.ClearQueueSignals(s.T(), s.deps.DB)
+	return cmp
+}
+
+func (s *ComponentsServiceTestSuite) ensureComponentQueues(componentID string) {
+	_, err := s.deps.CH.EnsureComponentQueues(s.ctx, componentID)
+	require.NoError(s.T(), err)
 }
 
 // makeRequest sends an HTTP request through the test router and returns the recorder.

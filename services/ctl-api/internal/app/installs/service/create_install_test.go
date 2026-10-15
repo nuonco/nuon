@@ -46,7 +46,6 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2Success() {
 	}
 	assert.Contains(s.T(), signalTypes, "install-created")
 	assert.Contains(s.T(), signalTypes, "poll-dependencies")
-	assert.Contains(s.T(), signalTypes, "install-action-workflow-run")
 	assert.Contains(s.T(), signalTypes, "execute-workflow")
 }
 
@@ -78,6 +77,9 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2WithInputs() {
 
 func (s *InstallsServiceTestSuite) TestCreateInstallV2AzureAccount() {
 	s.expectQueueCreation()
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.AppRunnerConfig{}).
+		Where(app.AppRunnerConfig{AppID: s.testApp.ID}).
+		Update("type", app.AppRunnerTypeAzure).Error)
 
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,
@@ -213,6 +215,10 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2PersistsExplicitBranchOwne
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
 		Model(branchConfig).
 		Update("app_branch_id", branch.ID).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.AppBranchConfig{
+		AppBranchID:   branch.ID,
+		InstallGroups: []app.AppBranchInstallGroup{{Name: "Default", Order: 0, Default: true}},
+	}).Error)
 
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,

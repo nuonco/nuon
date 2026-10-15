@@ -32,7 +32,7 @@ func (s *InstallsServiceTestSuite) TestDeployInstallComponentsSuccess() {
 }
 
 func (s *InstallsServiceTestSuite) TestDeployInstallComponentsPlanOnly() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	body := DeployInstallComponentsRequest{PlanOnly: true}
 	path := fmt.Sprintf("/v1/installs/%s/components/deploy-all", install.ID)

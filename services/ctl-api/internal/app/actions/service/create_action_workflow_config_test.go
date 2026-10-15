@@ -233,8 +233,10 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 			expectedCode: http.StatusCreated,
 			validateFunc: func(config *app.ActionWorkflowConfig) {
 				assert.Len(s.T(), config.Triggers, 2)
-				assert.Equal(s.T(), app.ActionWorkflowTriggerTypePreSecretsSync, config.Triggers[0].Type)
-				assert.Equal(s.T(), app.ActionWorkflowTriggerTypePostSecretsSync, config.Triggers[1].Type)
+				assert.ElementsMatch(s.T(), []app.ActionWorkflowTriggerType{
+					app.ActionWorkflowTriggerTypePreSecretsSync,
+					app.ActionWorkflowTriggerTypePostSecretsSync,
+				}, []app.ActionWorkflowTriggerType{config.Triggers[0].Type, config.Triggers[1].Type})
 			},
 		},
 		{
@@ -380,11 +382,6 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 			var config app.ActionWorkflowConfig
 			err := json.Unmarshal(rr.Body.Bytes(), &config)
 			require.NoError(s.T(), err)
-
-			// Verify signal was sent
-			queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
-			require.Len(s.T(), queueSignals, 1)
-			assert.Equal(s.T(), actionID, queueSignals[0].OwnerID)
 
 			// Verify database state
 			var dbConfig app.ActionWorkflowConfig

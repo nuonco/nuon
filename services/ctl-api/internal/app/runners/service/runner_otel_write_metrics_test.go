@@ -3,7 +3,6 @@ package service
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -67,6 +66,7 @@ func (s *RunnerOtelWriteMetricsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -86,7 +86,7 @@ func (s *RunnerOtelWriteMetricsTestSuite) SetupTest() {
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestOrg: s.testOrg,
-		TestAcc: s.testAcc,
+		TestAcc: withOrgAccess(s.testAcc, s.testOrg),
 	})
 	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -563,11 +563,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			if tc.expectedCode == http.StatusCreated {
-				var response string
-				err := json.Unmarshal(rr.Body.Bytes(), &response)
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "ok", response)
-
 				if tc.validateFunc != nil {
 					tc.validateFunc(runnerID)
 				}

@@ -66,6 +66,7 @@ func (s *AdminForceDeleteTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -267,6 +268,7 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetQueueSignals(s.T(), s.service.DB)
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/force-delete", AdminForceDeleteRunnerRequest{})
 
