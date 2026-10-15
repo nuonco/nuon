@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { Card } from '@/components/common/Card'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -8,8 +7,6 @@ import { AutoApproveToggle } from '@/components/installs/management/EnableAutoAp
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
 import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
-import { getInstallTelemetrySettings } from '@/lib/ctl-api/installs/get-install-telemetry-settings'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction/RunAdhocActionContainer'
 import { AuditHistoryButton } from '@/components/installs/management/AuditHistory'
@@ -63,15 +60,7 @@ const ActionCard = ({
 
 const InstallSettingsPanelContentInner = () => {
   const { install } = useInstall()
-  const { org } = useOrg()
   const canRenameInstall = true
-  const { data: telemetry } = useQuery({
-    queryKey: ['install-telemetry', org?.id, install?.id],
-    queryFn: () =>
-      getInstallTelemetrySettings({ orgId: org!.id, installId: install!.id }),
-    enabled: !!org?.id && !!install?.id,
-    retry: false,
-  })
 
   return (
     <div className="@container flex flex-col gap-6">
@@ -100,14 +89,12 @@ const InstallSettingsPanelContentInner = () => {
         >
           <GenerateInstallConfigButton />
         </ActionCard>
-        {telemetry?.relay_configured ? (
-          <ActionCard
-            title="Telemetry"
-            description="Forward application logs, metrics, and traces through the telemetry relay."
-          >
-            <InstallTelemetry />
-          </ActionCard>
-        ) : null}
+        <ActionCard
+          title="Telemetry"
+          description="Forward application telemetry to your org's configured backend."
+        >
+          <InstallTelemetry />
+        </ActionCard>
         <ActionCard
           title="Auto approval"
           description="Approve all workflow changes for this install without manual review."

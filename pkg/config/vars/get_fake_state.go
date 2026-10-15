@@ -108,6 +108,7 @@ func (v *varsValidator) getFakeRunnerState() *state.RunnerState {
 	fakeRunner.Status = "active"
 	fakeRunner.ID = domains.NewRunnerID()
 	fakeRunner.RunnerGroupID = domains.NewRunnerGroupID()
+	fakeRunner.APIURL = "https://runner-api.example.com"
 	return &fakeRunner
 }
 

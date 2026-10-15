@@ -10,4 +10,5 @@ type RunnerState struct {
 	ID            string `json:"id"`
 	RunnerGroupID string `json:"runner_group_id"`
 	Status        string `json:"status"`
+	APIURL        string `json:"api_url"`
 }
