@@ -14,6 +14,7 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
@@ -178,6 +179,10 @@ func (h *Helpers) applyInstallMetadata(install *app.Install, is *state.State) {
 }
 
 func (h *Helpers) RegenerateInstallState(ctx context.Context, req *pkgstate.ExecuteRegenerationRequest, skipVersionCheck bool) (*pkgstate.ExecuteRegenerationResponse, error) {
+	if blobstore.GetBlobService(ctx) == nil {
+		ctx = blobstore.WithBlobService(ctx, h.blobSvc)
+	}
+	ctx = blobstore.WithBlobReadEnabled(ctx, h.cfg.BlobReadEnabled)
 	ctx = routing.WithoutReplica(ctx)
 	for attempt := 0; attempt < 5; attempt++ {
 		baseline, err := h.GetInstallStateBaseline(ctx, req.InstallID)

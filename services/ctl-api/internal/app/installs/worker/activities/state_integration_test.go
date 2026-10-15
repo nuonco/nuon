@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -34,6 +36,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -264,6 +267,32 @@ func (s *InstallStateIntegrationSuite) TestPartialRefreshPublishesImmutableBlobS
 		Where(app.InstallState{ID: refreshed.CurrentStateID}).Select("state").
 		Updates(map[string]any{"state": nil}).Error)
 	require.Equal(s.T(), "eu-west-1", s.fresh().Inputs.Inputs["region"], "the refreshed snapshot must be readable from its blob alone")
+
+	readCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	readCtx.Request = httptest.NewRequest("GET", "/v1/installs/"+s.install.ID+"/state", nil).WithContext(s.ctx)
+	orgID, err := cctx.OrgIDFromContext(s.ctx)
+	require.NoError(s.T(), err)
+	cctx.SetOrgIDGinContext(readCtx, orgID)
+	accountID, err := cctx.AccountIDFromContext(s.ctx)
+	require.NoError(s.T(), err)
+	cctx.SetAccountIDGinContext(readCtx, accountID)
+	for read := 0; read < 2; read++ {
+		snapshot, err := s.deps.Helpers.GetInstallState(readCtx, s.install.ID, true, true)
+		require.NoError(s.T(), err)
+		require.Equal(s.T(), "eu-west-1", snapshot.Inputs.Inputs["region"])
+		require.Equal(s.T(), snapshot.Inputs.Inputs, snapshot.Install.Inputs)
+	}
+	require.Equal(s.T(), refreshed, s.head())
+
+	s.deps.Seeder.CreateInstallInputs(s.ctx, s.T(), s.install.ID, s.inputCfg.ID,
+		map[string]*string{"region": generics.ToPtr("ap-south-1")})
+	for read := 0; read < 2; read++ {
+		snapshot, err := s.deps.Helpers.GetInstallState(readCtx, s.install.ID, true, true)
+		require.NoError(s.T(), err)
+		require.Nil(s.T(), snapshot.StaleAt)
+		require.Equal(s.T(), "ap-south-1", snapshot.Inputs.Inputs["region"])
+		require.Equal(s.T(), snapshot.Inputs.Inputs, snapshot.Install.Inputs)
+	}
 }
 
 func (s *InstallStateIntegrationSuite) TestRedactedRefreshPreservesCanonicalInputsAndDefaults() {
