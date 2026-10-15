@@ -6,9 +6,9 @@ boost: 0.3
 
 _October 15, 2026_
 
-## Clean deprovisions
+## Customer env deprovisioning
 
-Teardowns that finish without hand-editing state.
+Choose what stays in the customer's account on teardown.
 
 - `[teardown] retain` removes listed resources from state and leaves them running
 - The teardown plan marks each retained resource with a **Retain** action
@@ -73,9 +73,9 @@ OTEL_EXPORTER_OTLP_ENDPOINT = "{{ .nuon.install_stack.outputs.telemetry_endpoint
 
 ---
 
-## A new dashboard
+## Improved UI
 
-Your fleet, organized around app branches.
+See who changed what, in which install.
 
 - App branches are each app's landing page
 - Install pages show commits behind the tracked branch
