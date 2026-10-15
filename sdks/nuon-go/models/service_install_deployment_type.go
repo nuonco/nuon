@@ -53,6 +53,12 @@ const (
 
 	// ServiceInstallDeploymentTypeInstallConfigUpdate captures enum value "install_config_update"
 	ServiceInstallDeploymentTypeInstallConfigUpdate ServiceInstallDeploymentType = "install_config_update"
+
+	// ServiceInstallDeploymentTypeDeprovision captures enum value "deprovision"
+	ServiceInstallDeploymentTypeDeprovision ServiceInstallDeploymentType = "deprovision"
+
+	// ServiceInstallDeploymentTypeSandboxDeprovision captures enum value "sandbox_deprovision"
+	ServiceInstallDeploymentTypeSandboxDeprovision ServiceInstallDeploymentType = "sandbox_deprovision"
 )
 
 // for schema
@@ -60,7 +66,7 @@ var serviceInstallDeploymentTypeEnum []any
 
 func init() {
 	var res []ServiceInstallDeploymentType
-	if err := json.Unmarshal([]byte(`["provision","reprovision","sandbox_reprovision","app_branch_update","component_deploy","image_update","stack_update","install_config_update"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["provision","reprovision","sandbox_reprovision","app_branch_update","component_deploy","image_update","stack_update","install_config_update","deprovision","sandbox_deprovision"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

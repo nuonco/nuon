@@ -1375,6 +1375,8 @@ export type TInstallDeploymentRecordType =
   | 'image_update'
   | 'stack_update'
   | 'install_config_update'
+  | 'deprovision'
+  | 'sandbox_deprovision'
 
 export type TInstallDeploymentStatus =
   | 'active'
