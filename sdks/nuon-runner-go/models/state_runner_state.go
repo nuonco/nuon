@@ -17,6 +17,9 @@ import (
 // swagger:model state.RunnerState
 type StateRunnerState struct {
 
+	// api url
+	APIURL string `json:"api_url,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
