@@ -109,3 +109,59 @@ func TestPrepareKubernetesManifestDeletePolicyInputs(t *testing.T) {
 func ptrString(value string) *string {
 	return &value
 }
+
+func TestFilterApplicablePoliciesOnTeardown(t *testing.T) {
+	yes, no := true, false
+	tfPolicy := func(name string, applyOnTeardown *bool) app.AppPolicyConfig {
+		return app.AppPolicyConfig{
+			Name:            name,
+			Type:            config.AppPolicyTypeTerraformModule,
+			Engine:          config.AppPolicyEngineOPA,
+			Components:      []string{"*"},
+			ApplyOnTeardown: applyOnTeardown,
+		}
+	}
+	sandboxPolicy := func(name string, applyOnTeardown *bool) app.AppPolicyConfig {
+		return app.AppPolicyConfig{
+			Name:            name,
+			Type:            config.AppPolicyTypeSandbox,
+			Engine:          config.AppPolicyEngineOPA,
+			ApplyOnTeardown: applyOnTeardown,
+		}
+	}
+
+	policies := []app.AppPolicyConfig{
+		tfPolicy("unset", nil),
+		tfPolicy("teardown", &yes),
+		tfPolicy("no-teardown", &no),
+		sandboxPolicy("sandbox-unset", nil),
+		sandboxPolicy("sandbox-no-teardown", &no),
+	}
+
+	names := func(ps []app.AppPolicyConfig) []string {
+		out := make([]string, 0, len(ps))
+		for _, p := range ps {
+			out = append(out, p.Name)
+		}
+		return out
+	}
+
+	tests := map[string]struct {
+		isSandbox  bool
+		isTeardown bool
+		want       []string
+	}{
+		"component deploy":    {false, false, []string{"unset", "teardown", "no-teardown"}},
+		"component teardown":  {false, true, []string{"unset", "teardown"}},
+		"sandbox provision":   {true, false, []string{"sandbox-unset", "sandbox-no-teardown"}},
+		"sandbox deprovision": {true, true, []string{"sandbox-unset"}},
+	}
+
+	acts := &Activities{}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := acts.filterApplicablePolicies(policies, app.ComponentTypeTerraformModule, "rds", tt.isSandbox, tt.isTeardown)
+			assert.Equal(t, tt.want, names(got))
+		})
+	}
+}

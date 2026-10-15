@@ -991,6 +991,33 @@ func (s *AppConfigDiffSuite) TestPolicyChanges() {
 	s.Equal(diff.OpChange, contents.Diff.Op)
 }
 
+func (s *AppConfigDiffSuite) TestPolicyApplyOnTeardownChange() {
+	no := false
+	old := baseConfig()
+	old.Policies = &PoliciesConfig{
+		Policies: []AppPolicy{
+			{Name: "protect-rds", Type: AppPolicyTypeTerraformModule, Engine: AppPolicyEngineOPA, Contents: "c", Components: []string{"rds"}},
+		},
+	}
+	new := baseConfig()
+	new.Policies = &PoliciesConfig{
+		Policies: []AppPolicy{
+			{Name: "protect-rds", Type: AppPolicyTypeTerraformModule, Engine: AppPolicyEngineOPA, Contents: "c", Components: []string{"rds"}, ApplyOnTeardown: &no},
+		},
+	}
+
+	d := new.Diff(old)
+	policies := findChild(d, "policies")
+	s.Require().NotNil(policies)
+
+	pr := findChild(policies, "policy.protect-rds")
+	s.Require().NotNil(pr)
+
+	teardown := findChild(pr, "apply_on_teardown")
+	s.Require().NotNil(teardown)
+	s.NotEqual(diff.OpNoop, teardown.Diff.Op)
+}
+
 // --- Test: Action changes ---
 
 func (s *AppConfigDiffSuite) TestActionChanges() {

@@ -28,6 +28,9 @@ type AppAppPolicyConfig struct {
 	// app policies config
 	AppPoliciesConfig string `json:"app_policies_config,omitempty"`
 
+	// apply on teardown
+	ApplyOnTeardown *bool `json:"apply_on_teardown,omitempty"`
+
 	// components
 	Components []string `json:"components"`
 

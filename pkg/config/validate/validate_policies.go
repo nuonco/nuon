@@ -89,6 +89,10 @@ func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 			policyLogger.Error("invalid policy components", zap.Error(err), zap.String("policy_name", policyName), zap.Strings("components", policy.Components))
 			return err
 		}
+		if err := ValidatePolicyApplyOnTeardown(policyName, policy.Type, policy.ApplyOnTeardown); err != nil {
+			policyLogger.Error("invalid policy apply_on_teardown", zap.Error(err), zap.String("policy_name", policyName))
+			return err
+		}
 
 		policyLogger.Debug("policy validation passed")
 	}
@@ -185,10 +189,10 @@ func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engi
 	return nil
 }
 
-// componentScopedPolicyType reports whether a policy type is evaluated per
-// component and therefore requires a non-empty components list. Sandbox and
-// kubernetes_cluster policies are not component-scoped and ignore components.
-func componentScopedPolicyType(policyType config.AppPolicyType) bool {
+// ComponentScopedPolicyType reports whether a policy type is evaluated per
+// component. Sandbox and kubernetes_cluster policies are not component-scoped
+// and ignore components.
+func ComponentScopedPolicyType(policyType config.AppPolicyType) bool {
 	switch policyType {
 	case config.AppPolicyTypeTerraformModule,
 		config.AppPolicyTypeHelmChart,
@@ -206,31 +210,44 @@ func componentScopedPolicyType(policyType config.AppPolicyType) bool {
 // It is shared by config validation (nuon CLI sync) and the ctl-api create
 // endpoint so both enforce the same rules.
 func ValidatePolicyComponents(policyName string, policyType config.AppPolicyType, components []string) error {
-	if len(components) == 0 {
-		// Component-scoped policies with an empty components list never run,
-		// which silently disables them. Require an explicit target (["*"] for
-		// all components of the type, or specific component names).
-		if componentScopedPolicyType(policyType) {
-			return fmt.Errorf("policy %q (type %s) requires a non-empty components list; use [\"*\"] to apply to all components of this type or list specific component names", policyName, policyType)
-		}
-		return nil
-	}
-
-	// Check for invalid wildcard usage
 	hasWildcard := false
 	for _, c := range components {
+		if c == "" {
+			return fmt.Errorf("policy %q has an empty component name in its components list", policyName)
+		}
 		if c == "*" {
 			hasWildcard = true
 		}
-		if c == "" {
-			return fmt.Errorf("empty component name in components list")
-		}
 	}
 
-	// If wildcard is present, it should be the only element
 	if hasWildcard && len(components) > 1 {
-		return fmt.Errorf("wildcard \"*\" cannot be combined with other component names")
+		return fmt.Errorf("policy %q (type %s) combines wildcard \"*\" with other component names", policyName, policyType)
 	}
 
+	return nil
+}
+
+// teardownEvaluatedPolicyType reports whether a policy type is evaluated
+// against teardown and deprovision plans.
+func teardownEvaluatedPolicyType(policyType config.AppPolicyType) bool {
+	switch policyType {
+	case config.AppPolicyTypeTerraformModule,
+		config.AppPolicyTypeHelmChart,
+		config.AppPolicyTypeKubernetesManifest,
+		config.AppPolicyTypePulumi,
+		config.AppPolicyTypeSandbox:
+		return true
+	default:
+		return false
+	}
+}
+
+// ValidatePolicyApplyOnTeardown validates apply_on_teardown for a single policy.
+// It is shared by config validation (nuon CLI sync) and the ctl-api create
+// endpoint so both enforce the same rules.
+func ValidatePolicyApplyOnTeardown(policyName string, policyType config.AppPolicyType, applyOnTeardown *bool) error {
+	if applyOnTeardown != nil && !teardownEvaluatedPolicyType(policyType) {
+		return fmt.Errorf("policy %q (type %s) does not support apply_on_teardown; it is not evaluated on teardown", policyName, policyType)
+	}
 	return nil
 }

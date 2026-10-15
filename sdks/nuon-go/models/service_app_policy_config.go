@@ -20,6 +20,9 @@ import (
 // swagger:model service.AppPolicyConfig
 type ServiceAppPolicyConfig struct {
 
+	// apply on teardown
+	ApplyOnTeardown *bool `json:"apply_on_teardown,omitempty"`
+
 	// components
 	Components []string `json:"components"`
 

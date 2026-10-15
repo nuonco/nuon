@@ -189,14 +189,11 @@ func TestValidatePolicyComponents(t *testing.T) {
 		components []string
 		expected   bool
 	}{
-		// component-scoped types must declare components - empty silently disables them
-		"terraform_empty_error":     {config.AppPolicyTypeTerraformModule, []string{}, true},
-		"terraform_nil_error":       {config.AppPolicyTypeTerraformModule, nil, true},
-		"helm_empty_error":          {config.AppPolicyTypeHelmChart, []string{}, true},
-		"container_image_empty_err": {config.AppPolicyTypeContainerImage, []string{}, true},
-		// non component-scoped types ignore components and may be empty
-		"sandbox_empty_ok":            {config.AppPolicyTypeSandbox, []string{}, false},
-		"kubernetes_cluster_empty_ok": {config.AppPolicyTypeKubernetesCluster, []string{}, false},
+		// an omitted list applies to all components of the type
+		"terraform_empty_ok":       {config.AppPolicyTypeTerraformModule, []string{}, false},
+		"terraform_nil_ok":         {config.AppPolicyTypeTerraformModule, nil, false},
+		"container_image_empty_ok": {config.AppPolicyTypeContainerImage, []string{}, false},
+		"sandbox_empty_ok":         {config.AppPolicyTypeSandbox, []string{}, false},
 		// populated lists validate the same regardless of type
 		"single_component":     {config.AppPolicyTypeTerraformModule, []string{"rds_cluster"}, false},
 		"multiple_components":  {config.AppPolicyTypeTerraformModule, []string{"rds_cluster", "vpc"}, false},
@@ -209,6 +206,33 @@ func TestValidatePolicyComponents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := ValidatePolicyComponents(name, test.policyType, test.components)
 			assert.Equal(t, (err != nil), test.expected, "Expected error: %v, got: %v", test.expected, err)
+		})
+	}
+}
+
+func TestValidatePolicyApplyOnTeardown(t *testing.T) {
+	no := false
+
+	tests := map[string]struct {
+		policyType      config.AppPolicyType
+		applyOnTeardown *bool
+		expected        bool
+	}{
+		"terraform_unset_ok":       {config.AppPolicyTypeTerraformModule, nil, false},
+		"terraform_false_ok":       {config.AppPolicyTypeTerraformModule, &no, false},
+		"helm_false_ok":            {config.AppPolicyTypeHelmChart, &no, false},
+		"sandbox_false_ok":         {config.AppPolicyTypeSandbox, &no, false},
+		"container_image_unset_ok": {config.AppPolicyTypeContainerImage, nil, false},
+		// types never evaluated on teardown
+		"container_image_err":    {config.AppPolicyTypeContainerImage, &no, true},
+		"docker_build_err":       {config.AppPolicyTypeDockerBuild, &no, true},
+		"kubernetes_cluster_err": {config.AppPolicyTypeKubernetesCluster, &no, true},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := ValidatePolicyApplyOnTeardown(name, test.policyType, test.applyOnTeardown)
+			assert.Equal(t, test.expected, err != nil, "Expected error: %v, got: %v", test.expected, err)
 		})
 	}
 }
