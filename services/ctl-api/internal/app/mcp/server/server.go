@@ -6,8 +6,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"sync"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -56,15 +54,6 @@ type NuonctlParams struct {
 	Services    []api.MCPService `group:"nuonctl_mcp_services"`
 }
 
-// orgSelectionTTL bounds how long an idle org selection is retained.
-const orgSelectionTTL = 30 * time.Minute
-
-// orgSelection is the active org chosen for a token via select_org.
-type orgSelection struct {
-	orgID    string
-	lastSeen time.Time
-}
-
 type Server struct {
 	db          *gorm.DB
 	l           *zap.Logger
@@ -82,10 +71,6 @@ type Server struct {
 	requireEmployee    bool
 	serverPurpose      string
 	orgInstructions    string
-
-	mu            sync.RWMutex
-	orgSelections map[string]*orgSelection
-	stopJanitor   chan struct{}
 }
 
 func New(params Params) *Server {
@@ -110,7 +95,7 @@ func New(params Params) *Server {
 		"nuon-ctl",
 		false,
 		"Nuon control plane MCP server.",
-		"If no org is selected, call list_orgs then select_org.",
+		"Org-scoped calls require the X-Nuon-Org-ID header on that request. whoami and list_orgs do not. There is no stored org.",
 	)
 }
 
@@ -129,7 +114,7 @@ func NewNuonctl(params NuonctlParams) *Server {
 		"nuonctl",
 		true,
 		"Nuon employee-only nuonctl MCP server.",
-		"If no org is selected, run nuon orgs select and reconnect.",
+		"Org-scoped calls require the X-Nuon-Org-ID header on that request. Run nuon orgs select so the CLI sends it, or set the header on each request.",
 	)
 }
 
@@ -161,8 +146,6 @@ func newServer(
 		requireEmployee:    requireEmployee,
 		serverPurpose:      serverPurpose,
 		orgInstructions:    orgInstructions,
-		orgSelections:      make(map[string]*orgSelection),
-		stopJanitor:        make(chan struct{}),
 	}
 
 	if ph := analyticsClient.PostHog(); ph != nil && !requireEmployee {
@@ -192,12 +175,10 @@ func newServer(
 					_ = shutdowner.Shutdown()
 				}
 			}()
-			go s.runSelectionJanitor()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
 			s.l.Info("stopping MCP server")
-			close(s.stopJanitor)
 			return s.httpServer.Shutdown(ctx)
 		},
 	})
@@ -207,8 +188,8 @@ func newServer(
 
 // newMCPHandler builds the streamable-HTTP handler. The server is stateless: it
 // neither reads nor sets Mcp-Session-Id, and each request gets a temporary
-// session. Everything a request needs is carried by its bearer token, so any
-// replica can serve any request.
+// session. Everything a request needs is carried by its bearer token and
+// X-Nuon-Org-ID, so any replica can serve any request.
 func (s *Server) newMCPHandler() http.Handler {
 	return mcp.NewStreamableHTTPHandler(
 		s.getServerForRequest,
@@ -251,85 +232,14 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 	return server
 }
 
-// resolveOrg determines the active org for a request: a previously selected org
-// for this token wins; otherwise fall back to a valid X-Nuon-Org-ID header, or
-// auto-select the account's only org. The resolved default is remembered so it
-// sticks across requests. Returns "" when the account has multiple orgs and none
-// has been selected yet.
-//
-// Selections are keyed by token rather than by Mcp-Session-Id because a
-// stateless server has no session identifier to key on.
-func (s *Server) resolveOrg(acct *app.Account, tokenID, headerOrg string) string {
-	if tokenID != "" {
-		s.mu.RLock()
-		sel, ok := s.orgSelections[tokenID]
-		s.mu.RUnlock()
-		if ok && sel.orgID != "" && accountHasOrgAccess(acct, sel.orgID) {
-			return sel.orgID
-		}
+// resolveOrg returns the request org from X-Nuon-Org-ID when the account can
+// access it. An empty or inaccessible header leaves the org empty. Nothing is
+// stored on the token.
+func (s *Server) resolveOrg(acct *app.Account, headerOrg string) string {
+	if headerOrg != "" && accountHasOrgAccess(acct, headerOrg) {
+		return headerOrg
 	}
-
-	var orgID string
-	switch {
-	case headerOrg != "" && accountHasOrgAccess(acct, headerOrg):
-		orgID = headerOrg
-	case len(acct.OrgIDs) == 1:
-		orgID = acct.OrgIDs[0]
-	}
-
-	if orgID != "" {
-		s.setOrgSelection(tokenID, orgID)
-	}
-	return orgID
-}
-
-// setOrgSelection records the active org for a token.
-func (s *Server) setOrgSelection(tokenID, orgID string) {
-	if tokenID == "" {
-		return
-	}
-	s.mu.Lock()
-	s.orgSelections[tokenID] = &orgSelection{orgID: orgID, lastSeen: time.Now()}
-	s.mu.Unlock()
-}
-
-// touchOrgSelection refreshes a selection's last-seen time so tokens in active
-// use aren't evicted by the janitor.
-func (s *Server) touchOrgSelection(tokenID string) {
-	if tokenID == "" {
-		return
-	}
-	s.mu.Lock()
-	if sel, ok := s.orgSelections[tokenID]; ok {
-		sel.lastSeen = time.Now()
-	}
-	s.mu.Unlock()
-}
-
-// runSelectionJanitor periodically evicts idle selections so the map stays
-// bounded.
-func (s *Server) runSelectionJanitor() {
-	ticker := time.NewTicker(orgSelectionTTL / 3)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-s.stopJanitor:
-			return
-		case <-ticker.C:
-			s.evictStaleOrgSelections()
-		}
-	}
-}
-
-func (s *Server) evictStaleOrgSelections() {
-	cutoff := time.Now().Add(-orgSelectionTTL)
-	s.mu.Lock()
-	for id, sel := range s.orgSelections {
-		if sel.lastSeen.Before(cutoff) {
-			delete(s.orgSelections, id)
-		}
-	}
-	s.mu.Unlock()
+	return ""
 }
 
 const traceIDHeaderKey = "X-Nuon-Trace-ID"
@@ -360,16 +270,11 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		orgID := s.resolveOrg(acct, tok.ID, r.Header.Get("X-Nuon-Org-ID"))
-		s.touchOrgSelection(tok.ID)
+		orgID := s.resolveOrg(acct, r.Header.Get("X-Nuon-Org-ID"))
 
 		ctx = cctx.SetAccountContext(ctx, acct)
 		ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
 		ctx = keys.WithTokenRole(ctx, tok.Role)
-		// Let the select_org tool change the active org for this token.
-		ctx = keys.WithOrgSelector(ctx, func(newOrgID string) {
-			s.setOrgSelection(tok.ID, newOrgID)
-		})
 		ctx = context.WithValue(ctx, mcpHTTPRequestKey{}, mcpHTTPRequest{
 			method: r.Method,
 			path:   r.URL.Path,

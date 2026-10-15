@@ -169,7 +169,7 @@ Never use `fmt.Println`. See [conventions/logging.md](/conventions/logging.md).
 
 Stateless Streamable HTTP MCP at port 8088 (`internal/app/mcp/server/`). Employee-only nuonctl MCP is a second listener in the same `api` process on port 8091 (`NewNuonctl`). Standalone: `go run . api-mcp` and `go run . nuonctl-mcp-api`.
 
-- Auth: Bearer, `require.Read` / `require.Write`, org via `X-Nuon-Org-ID` / `select_org`
+- Auth: Bearer, `require.Read` / `require.Write`, org via per-request `X-Nuon-Org-ID`
 - Register with `api.MCPReadTool` / `api.MCPWriteTool`
 - No durable session; prefer org header in multi-replica
 - Timestamps: UTC RFC3339 `Z`

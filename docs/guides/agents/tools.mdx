@@ -17,7 +17,7 @@ For prompts to paste into a client, see [Sample queries](/guides/agents/sample-q
 
 | Domain | Read | Write |
 | --- | --- | --- |
-| Orgs | `whoami`, `list_orgs`, `select_org` | |
+| Orgs | `whoami`, `list_orgs` | |
 | Skills | `list_skills`, `load_skill` | |
 | Apps | `list_apps`, `get_app`, `get_app_config_schema`, `list_app_branches`, `get_app_branch`, `list_app_branch_runs`, `get_app_branch_run`, `list_app_branch_preview_sources` | `preview_app_branch` |
 | Components | `list_components`, `get_component`, `list_builds`, `get_build` | |
@@ -25,6 +25,12 @@ For prompts to paste into a client, see [Sample queries](/guides/agents/sample-q
 | Actions | `list_install_actions`, `get_action` | `run_action` |
 | Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |
 | Runbooks | `list_runbooks`, `get_runbook` | `run_runbook` |
+
+## Organization
+
+Org-scoped tools read `X-Nuon-Org-ID` on that request. The server does not remember an org. `whoami` and `list_orgs` work without the header. `whoami` returns the account, the org on that request, and an org count. `list_orgs` is paged and accepts `query` to match a name or id.
+
+The stdio proxy sends the CLI config org as `X-Nuon-Org-ID`. Pass `org_id` on a tool call to use a different org for that request. The proxy removes `org_id` before forwarding and does not store it. Before the first org-scoped call, tell the user the CLI-selected org and ask whether this session should use it or another org, then wait. When none is selected, ask which org to use. Do not print the full org list. Resolve a name with `list_orgs`, or show one page when the user wants to browse. After they answer, pass that `org_id` on every later org-scoped call in the conversation. Do not write the choice back to the CLI config. Direct HTTP clients set `X-Nuon-Org-ID` themselves.
 
 ## Install summary
 

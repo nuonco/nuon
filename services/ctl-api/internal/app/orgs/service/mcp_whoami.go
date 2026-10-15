@@ -24,14 +24,9 @@ func (s *service) mcpWhoami(ctx context.Context, _ *mcp.CallToolRequest, _ mcpWh
 		return nil, nil, fmt.Errorf("unable to fetch account: %w", res.Error)
 	}
 
-	orgs := make([]map[string]string, 0, len(acct.Orgs))
-	for _, o := range acct.Orgs {
-		orgs = append(orgs, map[string]string{"id": o.ID, "name": o.Name})
-	}
-
 	out := map[string]any{
 		"account":     map[string]string{"id": acct.ID, "email": acct.Email},
-		"orgs":        orgs,
+		"org_count":   len(accountOrgs(acct)),
 		"current_org": nil,
 	}
 
@@ -41,8 +36,8 @@ func (s *service) mcpWhoami(ctx context.Context, _ *mcp.CallToolRequest, _ mcpWh
 			return nil, nil, err
 		}
 		out["current_org"] = map[string]string{"id": org.ID, "name": org.Name}
-	} else if len(orgs) > 1 {
-		out["hint"] = "No org selected. Call select_org with one of the org IDs above."
+	} else {
+		out["hint"] = "No org on this request. Org-scoped tools need the X-Nuon-Org-ID header."
 	}
 
 	return apiPkg.MCPJSONResult(out)

@@ -1,8 +1,11 @@
 package mcpserver
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -226,7 +229,7 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 	if init := upstream.InitializeResult(); init != nil {
 		instructions = init.Instructions
 	}
-	instructions = appendCLIInstructions(instructions, CLIBinary(), CLIConfigFlag(s.cfg))
+	instructions = appendCLIInstructions(instructions, CLIBinary(), CLIConfigFlag(s.cfg), s.cfg.OrgID)
 
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    s.serverName(),
@@ -247,6 +250,7 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 		}
 
 		toolCopy := *tool
+		toolCopy.InputSchema = addOrgIDArgument(tool.InputSchema)
 		mcp.AddTool(server, &toolCopy, func(ctx context.Context, req *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
 			if req != nil {
 				s.noteClient(req.ClientInfo())
@@ -378,12 +382,117 @@ func commandName(binary string) string {
 	return binary
 }
 
-func appendCLIInstructions(upstream, binary, configFlag string) string {
-	cli := CLICommandInstructions(binary, configFlag)
-	if strings.TrimSpace(upstream) == "" {
-		return cli
+func appendCLIInstructions(upstream, binary, configFlag, orgID string) string {
+	parts := []string{CLICommandInstructions(binary, configFlag), orgSessionInstructions(orgID)}
+	if strings.TrimSpace(upstream) != "" {
+		parts = append([]string{upstream}, parts...)
 	}
-	return upstream + " " + cli
+	return strings.Join(parts, " ")
+}
+
+func orgSessionInstructions(orgID string) string {
+	selected := "(none selected)"
+	if strings.TrimSpace(orgID) != "" {
+		selected = orgID
+	}
+	return fmt.Sprintf(
+		"The CLI config org is %s. Before the first org-scoped Nuon tool call, tell the user that org and ask whether this session should use it or a different org, then wait. When the CLI config org is (none selected), ask which org this session should use. Do not print the full org list. If the user names an org, resolve it with list_orgs and query. If they want to browse, show one page and say when has_more is true. Do not keep paging unless they ask for everything. After they answer, pass that org_id on every later org-scoped call in this conversation, including when it matches the config org. The proxy sends org_id as X-Nuon-Org-ID for that request only and does not store it. Do not write the choice back to the CLI config. whoami and list_orgs work without an org.",
+		selected,
+	)
+}
+
+const orgIDArgument = "org_id"
+
+func addOrgIDArgument(schema any) any {
+	property := map[string]any{
+		"type":        "string",
+		"description": "Organization for this call. The proxy sends it as X-Nuon-Org-ID and does not forward it. Omit to use the CLI config org.",
+	}
+	if schema == nil {
+		return map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				orgIDArgument: property,
+			},
+		}
+	}
+
+	encoded, err := json.Marshal(schema)
+	if err != nil {
+		return schema
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil || decoded == nil {
+		return schema
+	}
+	properties, _ := decoded["properties"].(map[string]any)
+	if properties == nil {
+		properties = map[string]any{}
+	}
+	properties[orgIDArgument] = property
+	decoded["properties"] = properties
+	if _, ok := decoded["type"]; !ok {
+		decoded["type"] = "object"
+	}
+	return decoded
+}
+
+// stripToolCallOrgID removes arguments.org_id from a tools/call JSON-RPC body
+// and returns that value. Other messages are left unchanged.
+func stripToolCallOrgID(body []byte) ([]byte, string, bool) {
+	var msg map[string]json.RawMessage
+	if err := json.Unmarshal(body, &msg); err != nil {
+		return body, "", false
+	}
+	methodRaw, ok := msg["method"]
+	if !ok {
+		return body, "", false
+	}
+	var method string
+	if err := json.Unmarshal(methodRaw, &method); err != nil || method != "tools/call" {
+		return body, "", false
+	}
+	paramsRaw, ok := msg["params"]
+	if !ok {
+		return body, "", false
+	}
+	var params map[string]json.RawMessage
+	if err := json.Unmarshal(paramsRaw, &params); err != nil {
+		return body, "", false
+	}
+	argsRaw, ok := params["arguments"]
+	if !ok || string(argsRaw) == "null" {
+		return body, "", false
+	}
+	var args map[string]json.RawMessage
+	if err := json.Unmarshal(argsRaw, &args); err != nil {
+		return body, "", false
+	}
+	orgRaw, ok := args[orgIDArgument]
+	if !ok {
+		return body, "", false
+	}
+	var orgID string
+	if err := json.Unmarshal(orgRaw, &orgID); err != nil {
+		return body, "", false
+	}
+	delete(args, orgIDArgument)
+
+	rewrittenArgs, err := json.Marshal(args)
+	if err != nil {
+		return body, "", false
+	}
+	params["arguments"] = rewrittenArgs
+	rewrittenParams, err := json.Marshal(params)
+	if err != nil {
+		return body, "", false
+	}
+	msg["params"] = rewrittenParams
+	rewritten, err := json.Marshal(msg)
+	if err != nil {
+		return body, "", false
+	}
+	return rewritten, orgID, true
 }
 
 // noteClient fills attribution from the stdio client's clientInfo.name.
@@ -431,11 +540,30 @@ func (a *authRoundTripper) setAgent(agent, userAgent, command string) {
 
 func (a *authRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	req = req.Clone(req.Context())
+	orgID := a.orgID
+	if req.Body != nil {
+		body, err := io.ReadAll(req.Body)
+		_ = req.Body.Close()
+		if err != nil {
+			return nil, err
+		}
+		if rewritten, callOrg, ok := stripToolCallOrgID(body); ok {
+			body = rewritten
+			if callOrg != "" {
+				orgID = callOrg
+			}
+		}
+		req.Body = io.NopCloser(bytes.NewReader(body))
+		req.ContentLength = int64(len(body))
+		req.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader(body)), nil
+		}
+	}
 	if a.token != "" {
 		req.Header.Set("Authorization", "Bearer "+a.token)
 	}
-	if a.orgID != "" {
-		req.Header.Set("X-Nuon-Org-ID", a.orgID)
+	if orgID != "" {
+		req.Header.Set("X-Nuon-Org-ID", orgID)
 	}
 	a.mu.Lock()
 	agent, userAgent, command := a.agent, a.userAgent, a.command

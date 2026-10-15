@@ -34,7 +34,11 @@ nuon installs select   # optional
 nuon agents mcp --allow-writes
 ```
 
-The proxy sets `X-Nuon-Org-ID`. Do not call `select_org` unless that header is missing.
+The proxy sets `X-Nuon-Org-ID` from the CLI config org. Pass `org_id` on a tool call to send a different org for that request only. The proxy does not store it. There is no `select_org` tool.
+
+## Organization for this session
+
+Before the first org-scoped tool call, tell the user the Org ID in the current CLI selection and ask whether this session should use it or a different org, then wait. When that field is `(none selected)`, ask which org this session should use. Do not print the full org list. If the user names an org, resolve it with `list_orgs` and `query`. If they want to browse, show one page and say when `has_more` is true. Do not keep paging unless they ask for everything. After they answer, pass that `org_id` on every later org-scoped call in this conversation, including when it matches the config org. Do not write the choice back to the CLI config. `whoami` and `list_orgs` work without an org.
 
 ### Registering the proxy with a client
 
@@ -87,7 +91,7 @@ The upstream URL (`{{.MCPURL}}`) is derived from `api_url` in the CLI config, tu
 
 ## Creating something new (starter checklist)
 
-1. Confirm org/app context from the table above, or call `whoami`.
+1. Confirm the session org from the table above. `whoami` reports the org on that request and an org count. Use `list_orgs` to find a different org.
 2. Prefer MCP tools for reads; use `--allow-writes` (or a write-scoped token) only when mutating.
 3. Typical create flow:
    - App config in a local directory → `nuon apps sync` (or ask the user to sync).
@@ -133,7 +137,7 @@ Writes are hidden from the stdio proxy unless `--allow-writes` is set. Descripti
 
 | Domain | Read | Write |
 | --- | --- | --- |
-| Orgs | `whoami`, `list_orgs`, `select_org` | |
+| Orgs | `whoami`, `list_orgs` | |
 | Apps | `list_apps`, `get_app`, `get_app_config_schema`, `list_app_branches`, `get_app_branch`, `list_app_branch_runs`, `get_app_branch_run`, `list_app_branch_preview_sources` | `preview_app_branch` |
 | Components | `list_components`, `get_component`, `list_builds`, `get_build` | |
 | Installs | `list_installs`, `install_summary`, `get_install`, `get_install_readme`, `get_install_health`, `list_install_resources`, `list_install_components`, `get_install_inputs`, `list_available_roles`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `get_approval_plan_diff`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `approve_all`, `reject_step`, `retry_step`, `skip_step`, `cancel_workflow` |

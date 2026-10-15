@@ -34,7 +34,6 @@ const (
 	FlowInstallIDCtxKey     string = "flow_install_id"
 	WorkflowTelemetryCtxKey string = "workflow_telemetry"
 	QueueIDCtxKey           string = "queue_id"
-	OrgSelectorCtxKey       string = "mcp_org_selector"
 	TokenRoleCtxKey         string = "token_role"
 )
 
@@ -81,23 +80,6 @@ func (t WorkflowTelemetry) Merge(overlay WorkflowTelemetry) WorkflowTelemetry {
 		t.InstallName = overlay.InstallName
 	}
 	return t
-}
-
-// OrgSelectFunc persists the selected org for the authenticated MCP token. It is
-// injected by the MCP server so leaf tool handlers (in other packages) can
-// change the active org without importing the server package.
-type OrgSelectFunc func(orgID string)
-
-// WithOrgSelector attaches an org-selector to the context.
-func WithOrgSelector(ctx context.Context, fn OrgSelectFunc) context.Context {
-	return context.WithValue(ctx, OrgSelectorCtxKey, fn)
-}
-
-// OrgSelectorFromContext returns the org-selector, or nil if none is set (e.g.
-// outside the MCP server).
-func OrgSelectorFromContext(ctx context.Context) OrgSelectFunc {
-	fn, _ := ctx.Value(OrgSelectorCtxKey).(OrgSelectFunc)
-	return fn
 }
 
 // WithTokenRole attaches the authenticating token's org role/scope to the
