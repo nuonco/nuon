@@ -69,6 +69,9 @@ type ServiceCreateTerraformModuleComponentConfigRequest struct {
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
 
+	// teardown
+	Teardown *ServiceComponentTeardownRequest `json:"teardown,omitempty"`
+
 	// toggleable
 	Toggleable bool `json:"toggleable,omitempty"`
 
@@ -96,6 +99,10 @@ func (m *ServiceCreateTerraformModuleComponentConfigRequest) Validate(formats st
 	}
 
 	if err := m.validatePublicGitVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTeardown(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -164,6 +171,29 @@ func (m *ServiceCreateTerraformModuleComponentConfigRequest) validatePublicGitVc
 	return nil
 }
 
+func (m *ServiceCreateTerraformModuleComponentConfigRequest) validateTeardown(formats strfmt.Registry) error {
+	if swag.IsZero(m.Teardown) { // not required
+		return nil
+	}
+
+	if m.Teardown != nil {
+		if err := m.Teardown.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("teardown")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("teardown")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *ServiceCreateTerraformModuleComponentConfigRequest) validateVariables(formats strfmt.Registry) error {
 
 	if err := validate.Required("variables", "body", m.Variables); err != nil {
@@ -182,6 +212,10 @@ func (m *ServiceCreateTerraformModuleComponentConfigRequest) ContextValidate(ctx
 	}
 
 	if err := m.contextValidatePublicGitVcsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTeardown(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -232,6 +266,31 @@ func (m *ServiceCreateTerraformModuleComponentConfigRequest) contextValidatePubl
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("public_git_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateTerraformModuleComponentConfigRequest) contextValidateTeardown(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Teardown != nil {
+
+		if swag.IsZero(m.Teardown) { // not required
+			return nil
+		}
+
+		if err := m.Teardown.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("teardown")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("teardown")
 			}
 
 			return err

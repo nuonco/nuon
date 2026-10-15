@@ -6,6 +6,7 @@ export const DIFF_OPERATIONS = [
   'replace',
   'delete',
   'read',
+  'forget',
   'no-op',
 ] as const
 
@@ -72,6 +73,7 @@ const OPERATION_ALIASES: Record<string, TDiffOperation> = {
   removed: 'delete',
   read: 'read',
   refresh: 'read',
+  forget: 'forget',
   same: 'no-op',
   unchanged: 'no-op',
   'no-op': 'no-op',
@@ -89,6 +91,7 @@ export const emptyDiffSummary = (): IPlanDiffSummary => ({
   replace: 0,
   delete: 0,
   read: 0,
+  forget: 0,
   'no-op': 0,
 })
 

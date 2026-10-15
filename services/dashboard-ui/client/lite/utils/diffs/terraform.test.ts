@@ -104,7 +104,44 @@ describe('terraformPlanDiff', () => {
       'update',
       'replace',
       'delete',
+      'forget',
     ])
+  })
+
+  test('explains resources retained on teardown instead of diffing them', () => {
+    const { resources } = terraformPlanDiff({
+      resource_changes: [
+        {
+          address: 'aws_db_subnet_group.main',
+          type: 'aws_db_subnet_group',
+          name: 'main',
+          change: { actions: ['delete'], before: { name: 'acme-db' } },
+        },
+        {
+          address: 'aws_rds_cluster.main',
+          type: 'aws_rds_cluster',
+          name: 'main',
+          change: {
+            actions: ['forget'],
+            before: { cluster_identifier: 'acme-db' },
+          },
+        },
+      ],
+    } as TTerraformPlan)
+
+    expect(
+      resources.sections.map(({ operation, title }) => [operation, title])
+    ).toEqual([
+      ['delete', 'aws_db_subnet_group.main'],
+      ['forget', 'aws_rds_cluster.main'],
+    ])
+    expect(resources.summary).toMatchObject({ delete: 1, forget: 1 })
+    expect(resources.sections[1]).toMatchObject({
+      before: '',
+      after: '',
+      note: 'This resource is retained on teardown. It will be removed from Terraform state and left in place, and Nuon will no longer manage it.',
+    })
+    expect(resources.sections[1]?.error).toBeUndefined()
   })
 
   test('keeps real drift next to planned resource changes', () => {
