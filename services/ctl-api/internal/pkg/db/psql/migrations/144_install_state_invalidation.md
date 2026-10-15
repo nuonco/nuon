@@ -12,8 +12,11 @@ Do not run old and new state writers together.
 2. Run migrations from one new-binary process before starting the remaining processes.
    Source writers must use PostgreSQL's default `READ COMMITTED` isolation; the
    source barrier relies on fresh snapshots for the trigger's target lookup.
-   Check `SHOW default_transaction_isolation` and do not enable repeatable-read
-   source transactions with this protocol.
+   Check `SHOW default_transaction_isolation`. The invalidation function rejects
+   writes at any other isolation level with SQLSTATE `25000`, rolling back both
+   the source mutation and its invalidation. This also covers explicit transaction
+   overrides and writes that currently map to no install. Read-only transactions
+   are unaffected; do not enable repeatable-read source transactions.
    Migration 144 installs the coordination functions. Each 145 migration installs
    one table's triggers in its own transaction with `lock_timeout = '2s'`.
    Successful stages remain committed; a blocked stage rolls back and fails startup.
@@ -30,8 +33,21 @@ Do not run old and new state writers together.
 Runner-job status is not an invalidation input. Execution status only invalidates
 when finished/non-finished priority changes. Actions expose their run status, so
 those status changes must invalidate. Secrets targets match only secrets-sync jobs.
+UPDATE barriers lock only orgs whose rows changed a listed source column, including
+both old and new row identities. This changed-row filter uses only the transition
+tables. Target lookup must remain a separate statement **after** the barrier lock,
+even when no install currently matches the source row.
 Transition tables still contain PostgreSQL's row images, but our materialized
 projection carries IDs/FKs and eligibility fields, not output or template payloads.
+
+With OTLP metrics enabled, monitor `nuon.install.state.source_wait.timeouts`.
+Alert on any increase over five minutes during rollout: each increment is a state
+refresh that exhausted its five-second source barrier wait. Caller cancellation
+and shorter caller deadlines do not increment this counter. Inspect long-running
+source transactions in the affected database before retrying; do not bypass the
+barrier. `nuon.install.state.operations` and
+`nuon.install.state.operation.duration` with `operation=source_wait` also expose
+wait counts, errors and duration. Alert configuration is a separate rollout step.
 
 Head invalidation uses one sorted upsert pass for both missing and existing rows.
 It does not guarantee deadlock freedom for arbitrary multi-statement transactions

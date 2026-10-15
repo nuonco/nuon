@@ -89,12 +89,19 @@ type InstallStateBaseline struct {
 	Head  *app.InstallStateHead
 }
 
-func (h *Helpers) waitForInstallStateSources(ctx context.Context, orgID string) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+func (h *Helpers) waitForInstallStateSources(ctx context.Context, orgID string) (err error) {
+	started := time.Now()
+	waitCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
+	defer func() {
+		h.stateMetrics.Record(ctx, "source_wait", started, err)
+		if err != nil && errors.Is(waitCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {
+			h.stateMetrics.RecordSourceWaitTimeout(ctx)
+		}
+	}()
 	for {
 		var ready bool
-		if err := h.db.WithContext(ctx).Raw(
+		if err := h.db.WithContext(waitCtx).Raw(
 			"SELECT pg_try_advisory_xact_lock(hashtext('install_state_sources'), hashtext(?))", orgID,
 		).Scan(&ready).Error; err != nil {
 			return err
@@ -103,8 +110,8 @@ func (h *Helpers) waitForInstallStateSources(ctx context.Context, orgID string) 
 			return nil
 		}
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-waitCtx.Done():
+			return waitCtx.Err()
 		case <-time.After(10 * time.Millisecond):
 		}
 	}

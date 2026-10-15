@@ -19,6 +19,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.opentelemetry.io/otel/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"gorm.io/gorm"
@@ -68,6 +70,7 @@ type InstallStateIntegrationSuite struct {
 	ctx        context.Context
 	install    *app.Install
 	inputCfg   *app.AppInputConfig
+	reader     *sdkmetric.ManualReader
 }
 
 type failHeadUpdate struct{}
@@ -92,10 +95,14 @@ func (s *InstallStateIntegrationSuite) SetupSuite() {
 
 	s.bucket = "nuon-state-repro-" + domains.NewBlobID()
 	mockTC := temporal.NewMockClient(gomock.NewController(s.T()))
+	s.reader = sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(s.reader))
+	s.T().Cleanup(func() { require.NoError(s.T(), provider.Shutdown(context.Background())) })
 	opts := append(tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 		T: s.T(), CustomValidator: true,
 		Mocks: &tests.TestMocks{MockTC: mockTC},
 	}),
+		fx.Provide(func() metric.MeterProvider { return provider }),
 		fx.Decorate(func(cfg *internal.Config) *internal.Config {
 			require.Contains(s.T(), []string{"127.0.0.1", "localhost", "::1"}, cfg.DBHost)
 			require.NotEqual(s.T(), "ctl_api", cfg.DBName)

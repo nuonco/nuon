@@ -2,13 +2,16 @@ package activities_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -372,6 +375,161 @@ func (s *InstallStateIntegrationSuite) TestSourceWaitPreservesWriterConcurrencyA
 	require.NoError(s.T(), tx.Rollback().Error)
 	require.Equal(s.T(), "eu-west-1", s.fresh().Inputs.Inputs["region"])
 	require.NotContains(s.T(), s.fresh().App.Variables, "pending")
+}
+
+func (s *InstallStateIntegrationSuite) TestIrrelevantUpdatesDoNotBlockRefresh() {
+	otherCtx, _ := s.deps.Seeder.EnsureOrg(s.ctx, s.T())
+	otherApp := s.deps.Seeder.CreateApp(otherCtx, s.T())
+	s.deps.Seeder.CreateAppConfig(otherCtx, s.T(), otherApp.ID)
+	otherInstall := s.deps.Seeder.CreateInstall(otherCtx, s.T(), otherApp)
+
+	for name, mixed := range map[string]bool{"noise_only": false, "mixed_orgs": true} {
+		s.Run(name, func() {
+			s.updateInput()
+			before := s.head()
+			tx := s.deps.DB.WithContext(s.ctx).Begin()
+			require.NoError(s.T(), tx.Error)
+			defer tx.Rollback()
+			if mixed {
+				require.NoError(s.T(), tx.Exec(`UPDATE apps SET updated_at = now(),
+                    name = CASE WHEN id = ? THEN 'changed-app' ELSE name END WHERE id IN (?, ?)`,
+					otherApp.ID, s.install.AppID, otherApp.ID).Error)
+			} else {
+				require.NoError(s.T(), tx.Model(&app.App{ID: s.install.AppID}).Update("updated_at", time.Now()).Error)
+			}
+
+			ctx, cancel := context.WithTimeout(s.ctx, time.Second)
+			defer cancel()
+			current, err := s.deps.Helpers.GetInstallState(ctx, s.install.ID, false, true)
+			require.NoError(s.T(), err)
+			require.Equal(s.T(), "eu-west-1", current.Inputs.Inputs["region"])
+			published := s.head()
+			require.Equal(s.T(), before.Revision+1, published.Revision)
+
+			if mixed {
+				ctx, cancel := context.WithTimeout(otherCtx, 100*time.Millisecond)
+				defer cancel()
+				_, err := s.deps.Helpers.GetInstallState(ctx, otherInstall.ID, false, true)
+				require.ErrorIs(s.T(), err, context.DeadlineExceeded, "the org with a relevant change must still wait")
+			}
+			require.NoError(s.T(), tx.Commit().Error)
+			require.Equal(s.T(), published, s.head(), "noise must not invalidate the refreshed install")
+			if mixed {
+				current, err := s.deps.Helpers.GetInstallState(otherCtx, otherInstall.ID, false, true)
+				require.NoError(s.T(), err)
+				require.Equal(s.T(), "changed-app", current.App.Name)
+			}
+		})
+	}
+}
+
+func (s *InstallStateIntegrationSuite) TestSourceWritesRequireReadCommitted() {
+	otherApp := s.deps.Seeder.CreateApp(s.ctx, s.T())
+	for name, isolation := range map[string]sql.IsolationLevel{
+		"read_committed":  sql.LevelReadCommitted,
+		"repeatable_read": sql.LevelRepeatableRead,
+		"serializable":    sql.LevelSerializable,
+	} {
+		s.Run(name, func() {
+			before := s.head()
+			secret := &app.AppSecret{AppID: otherApp.ID, Name: name, Value: "example"}
+			err := s.deps.DB.WithContext(s.ctx).Transaction(func(tx *gorm.DB) error {
+				return tx.Create(secret).Error
+			}, &sql.TxOptions{Isolation: isolation})
+			if isolation == sql.LevelReadCommitted {
+				require.NoError(s.T(), err)
+			} else {
+				var pgErr *pgconn.PgError
+				require.ErrorAs(s.T(), err, &pgErr)
+				require.Equal(s.T(), "25000", pgErr.Code)
+				require.Contains(s.T(), pgErr.Message, "require READ COMMITTED")
+			}
+			require.Equal(s.T(), before, s.head(), "even an unmapped source must enforce isolation")
+			var count int64
+			require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.AppSecret{}).Where(app.AppSecret{ID: secret.ID}).Count(&count).Error)
+			if isolation == sql.LevelReadCommitted {
+				require.EqualValues(s.T(), 1, count)
+			} else {
+				require.Zero(s.T(), count)
+			}
+
+			err = s.deps.DB.WithContext(s.ctx).Transaction(func(tx *gorm.DB) error {
+				return tx.Model(&app.App{ID: s.install.AppID}).Update("name", name).Error
+			}, &sql.TxOptions{Isolation: isolation})
+			if isolation == sql.LevelReadCommitted {
+				require.NoError(s.T(), err)
+				require.Equal(s.T(), before.Revision+1, s.head().Revision)
+				require.Equal(s.T(), name, s.fresh().App.Name)
+			} else {
+				var pgErr *pgconn.PgError
+				require.ErrorAs(s.T(), err, &pgErr)
+				require.Equal(s.T(), "25000", pgErr.Code)
+				require.Equal(s.T(), before, s.head())
+				require.NotEqual(s.T(), name, s.fresh().App.Name)
+			}
+		})
+	}
+}
+
+func (s *InstallStateIntegrationSuite) TestSourceBarrierTimeoutTelemetry() {
+	timeouts := func() int64 {
+		var data metricdata.ResourceMetrics
+		require.NoError(s.T(), s.reader.Collect(s.ctx, &data))
+		var total int64
+		for _, scope := range data.ScopeMetrics {
+			for _, metric := range scope.Metrics {
+				if metric.Name == "nuon.install.state.source_wait.timeouts" {
+					for _, point := range metric.Data.(metricdata.Sum[int64]).DataPoints {
+						total += point.Value
+					}
+				}
+			}
+		}
+		return total
+	}
+	s.updateInput()
+	before, previousTimeouts := s.head(), timeouts()
+	tx := s.deps.DB.WithContext(s.ctx).Begin()
+	require.NoError(s.T(), tx.Error)
+	defer tx.Rollback()
+	require.NoError(s.T(), tx.Create(&app.AppSecret{AppID: s.install.AppID, Name: "pending", Value: "example"}).Error)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 100*time.Millisecond)
+	defer cancel()
+	_, err := s.deps.Helpers.GetInstallState(ctx, s.install.ID, false, true)
+	require.ErrorIs(s.T(), err, context.DeadlineExceeded)
+	require.Equal(s.T(), previousTimeouts, timeouts(), "caller deadlines are not barrier timeouts")
+	attempted := s.observeSourceBarrier()
+	ctx, cancelNow := context.WithCancel(s.ctx)
+	defer cancelNow()
+	done := make(chan struct{})
+	var canceledErr error
+	go func() {
+		defer close(done)
+		_, canceledErr = s.deps.Helpers.GetInstallState(ctx, s.install.ID, false, true)
+	}()
+	select {
+	case <-attempted:
+	case <-done:
+		s.FailNow("the read returned before the source transaction finished", "%v", canceledErr)
+	case <-time.After(30 * time.Second):
+		s.FailNow("timed out waiting for the source barrier")
+	}
+	cancelNow()
+	s.await(done)
+	require.ErrorIs(s.T(), canceledErr, context.Canceled)
+	require.Equal(s.T(), previousTimeouts, timeouts())
+
+	current, err := s.deps.Helpers.GetInstallState(s.ctx, s.install.ID, false, true)
+	require.ErrorIs(s.T(), err, context.DeadlineExceeded)
+	require.Nil(s.T(), current)
+	require.Equal(s.T(), previousTimeouts+1, timeouts())
+	require.Equal(s.T(), before, s.head())
+	require.NoError(s.T(), tx.Commit().Error)
+	for read := 0; read < 2; read++ {
+		require.Equal(s.T(), "example", s.fresh().App.Variables["pending"])
+	}
+	require.Equal(s.T(), previousTimeouts+1, timeouts(), "successful refreshes must not increment timeouts")
 }
 
 func (s *InstallStateIntegrationSuite) TestConcurrentInvalidationsUnionWithinInstallScope() {

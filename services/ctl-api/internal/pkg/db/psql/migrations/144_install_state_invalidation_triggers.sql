@@ -4,6 +4,11 @@ DECLARE
   known CONSTANT text[] := {{array .AllPartials}};
   invalid text;
 BEGIN
+  IF current_setting('transaction_isolation') <> 'read committed' THEN
+    RAISE EXCEPTION 'install state source writes require READ COMMITTED isolation'
+      USING ERRCODE = '25000';
+  END IF;
+
   IF cardinality(target_install_ids) IS DISTINCT FROM cardinality(target_partials) THEN
     RAISE EXCEPTION 'install state invalidation targets and partials must have the same length';
   END IF;
@@ -127,9 +132,12 @@ BEGIN
   ELSE
     PERFORM pg_advisory_xact_lock_shared(hashtext('install_state_sources'), hashtext(o.org_id))
     FROM (
-      SELECT {{.OrgColumn}} AS org_id FROM old_rows
-      UNION
-      SELECT {{.OrgColumn}} AS org_id FROM new_rows
+      SELECT DISTINCT v.org_id
+      FROM old_rows o
+      FULL JOIN new_rows n ON n.id = o.id
+      CROSS JOIN LATERAL (VALUES (o.{{.OrgColumn}}), (n.{{.OrgColumn}})) AS v(org_id)
+      WHERE v.org_id IS NOT NULL
+        AND (o.id IS NULL OR n.id IS NULL OR ROW({{columns "o" $s.Columns}}) IS DISTINCT FROM ROW({{columns "n" $s.Columns}}))
     ) o
     ORDER BY o.org_id;
 
