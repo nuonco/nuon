@@ -13,17 +13,21 @@ import (
 )
 
 // getInstallActionWorkflows reads action workflows DB.
-func (h *Helpers) getInstallActionWorkflows(ctx context.Context, installID string) ([]app.InstallActionWorkflow, error) {
+func (h *Helpers) getInstallActionWorkflows(ctx context.Context, installID string, withRunnerJobOutputs bool) ([]app.InstallActionWorkflow, error) {
 	var acts []app.InstallActionWorkflow
-	res := h.db.WithContext(ctx).
+	query := h.db.WithContext(ctx).
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(
 				scopes.WithOverrideTable(views.CustomViewName(db, &app.InstallActionWorkflowRun{}, "state_view_v1")),
 			)
 		}).
-		Preload("Runs.RunnerJob").
-		Preload("ActionWorkflow").
-		Find(&acts, "install_id = ?", installID)
+		Preload("ActionWorkflow")
+	if withRunnerJobOutputs {
+		query = query.Preload("Runs.RunnerJob", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "owner_id", "owner_type", "type", "outputs")
+		})
+	}
+	res := query.Find(&acts, "install_id = ?", installID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install components")
 	}

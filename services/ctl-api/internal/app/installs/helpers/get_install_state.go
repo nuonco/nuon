@@ -355,7 +355,7 @@ func (h *Helpers) regenerateStalePartial(ctx context.Context, db *gorm.DB, insta
 			is.Components[name] = cMap
 		}
 	case pkgstate.PartialActions:
-		actions, err := h.getInstallActionWorkflows(ctx, install.ID)
+		actions, err := h.getInstallActionWorkflows(ctx, install.ID, true)
 		if err != nil {
 			return errors.Wrap(err, "unable to get actions")
 		}
