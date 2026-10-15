@@ -125,7 +125,6 @@ export const BranchOverviewContainer = () => {
     branchRun?.composite_error
   )
   const configError = isConfigValidationError(failure) ? failure : undefined
-  const compositeError = configError ? undefined : failure
   const groupsWithErrors = groups.map((group) => {
     const error = groupCompositeError(
       workflowSteps,
@@ -195,7 +194,7 @@ export const BranchOverviewContainer = () => {
         }
         groups={groupsWithErrors}
         loadingStages={loadingStages}
-        compositeError={compositeError}
+        compositeError={failure}
         failedBuilds={failedBuilds}
         rolloutHref={rolloutHref}
         groupHref={groupHref}
