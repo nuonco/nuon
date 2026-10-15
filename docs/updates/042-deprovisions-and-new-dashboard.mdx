@@ -63,9 +63,13 @@ any compatible backend. Nothing extra to install in the customer's cloud, and no
 Each payload arrives stamped with verified `nuon.org.id`, `nuon.app.id`, and `nuon.install.id` attributes, so one
 dashboard covers your whole fleet and filters down to a single customer.
 
-<img
-  src="/images/changelog/042-byoc-telemetry.png"
-  alt="Diagram of BYOC telemetry: applications in three customer installs on AWS, GCP, and Azure send OpenTelemetry data to a runner Collector, which forwards it over HTTPS to a telemetry relay that stamps verified org, app, and install IDs and exports over OTLP to a fleet dashboard filtered to one install. One install has telemetry turned off by the customer."
+<video
+  src="/images/changelog/042-byoc-telemetry.mp4"
+  poster="/images/changelog/042-byoc-telemetry.png"
+  autoPlay
+  loop
+  muted
+  playsInline
   style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
 />
 
@@ -86,7 +90,7 @@ branches.
   backgroundImage: 'url(/images/screenshot-backdrop.png)',
   backgroundSize: 'cover',
   backgroundPosition: 'center',
-  padding: '48px 24px',
+  padding: '20px',
   borderRadius: '12px',
   display: 'flex',
   justifyContent: 'center',
@@ -94,10 +98,10 @@ branches.
 }}>
   <img
     src="/images/changelog/042-app-branch-overview.png"
-    alt="An app branch overview tracking acme/payments on every push, with the latest run's pipeline and two install groups, staging and customers, both rolled out successfully with manual approval"
+    alt="An app branch overview tracking acme/payments on every push, with the latest run's pipeline and its staging install group rolled out with manual approval"
     style={{
       width: '100%',
-      maxWidth: '820px',
+      maxWidth: '100%',
       borderRadius: '8px',
       boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
     }}
@@ -112,7 +116,7 @@ action, runbook, and deployment records who triggered it.
   backgroundImage: 'url(/images/screenshot-backdrop.png)',
   backgroundSize: 'cover',
   backgroundPosition: 'center',
-  padding: '48px 24px',
+  padding: '20px',
   borderRadius: '12px',
   display: 'flex',
   justifyContent: 'center',
@@ -123,7 +127,7 @@ action, runbook, and deployment records who triggered it.
     alt="An install's deployment history listing deploys, a sandbox reprovision, the initial provision, and a deprovision, each with its status and the stack, sandbox, and components it touched"
     style={{
       width: '100%',
-      maxWidth: '820px',
+      maxWidth: '100%',
       borderRadius: '8px',
       boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
     }}
