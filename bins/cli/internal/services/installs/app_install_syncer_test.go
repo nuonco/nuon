@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -148,12 +149,12 @@ func (a *branchConfigAPI) GetAppConfig(context.Context, string, string, *bool) (
 }
 
 func TestAwaitBranchConfig(t *testing.T) {
-	origPoll, origTimeout := branchConfigPoll, branchConfigTimeout
-	branchConfigPoll = time.Millisecond
-	branchConfigTimeout = 50 * time.Millisecond
+	origPoll, origTimeout := installcreate.BranchConfigPoll, installcreate.BranchConfigTimeout
+	installcreate.BranchConfigPoll = time.Millisecond
+	installcreate.BranchConfigTimeout = 50 * time.Millisecond
 	t.Cleanup(func() {
-		branchConfigPoll = origPoll
-		branchConfigTimeout = origTimeout
+		installcreate.BranchConfigPoll = origPoll
+		installcreate.BranchConfigTimeout = origTimeout
 	})
 
 	t.Run("no app branch", func(t *testing.T) {
