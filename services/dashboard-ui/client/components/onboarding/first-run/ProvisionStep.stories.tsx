@@ -32,3 +32,17 @@ export const Gcp = () => (
   </StoryFrame>
 )
 Gcp.meta = { fullBleed: true }
+
+export const KitchenSinkAws = () => (
+  <StoryFrame step="provision" path="example" cloud="aws">
+    <ProvisionStepView
+      cloud="aws"
+      appName="Kitchen Sink"
+      region="us-east-1"
+      installId="inlk3x9q2m7v4w8p1z6r5t0y2c"
+      onFinish={() => {}}
+      onBack={() => {}}
+    />
+  </StoryFrame>
+)
+KitchenSinkAws.meta = { fullBleed: true }
