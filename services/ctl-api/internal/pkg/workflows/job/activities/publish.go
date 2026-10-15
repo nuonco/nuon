@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"

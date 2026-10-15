@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

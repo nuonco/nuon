@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
