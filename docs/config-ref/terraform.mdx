@@ -32,6 +32,7 @@ title: 'Terraform'
 | **`max_auto_retries`**<br/>integer | maximum automatic retry attempts on deploy failure Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled) | **Optional**<br/>Default: `"0"` | `"3"`, `"5"` |
 | **`skip_noops`**<br/>boolean | Skip the deploy step when the plan has no changes (a no-op). Defaults to false | **Optional**<br/>Default: `"false"` | `"true"` |
 | **`auto_approve_on_policies_passing`**<br/>boolean | Auto-approve the deploy when all policy checks pass. Defaults to false | **Optional**<br/>Default: `"false"` | `"true"` |
+| **`teardown`**<br/>[ComponentTeardownConfig](#teardown) | teardown behavior Controls what happens to the component's resources when it is torn down. Resources listed in retain are removed from Terraform state and left in place instead of being destroyed | **Optional** | - |
 | **`var`**<br/>[array](#var) | deprecated: use vars map instead Deprecated: Array of name/value pairs for Terraform variables. Use the vars map instead | **Optional** | - |
 | **`env_var`**<br/>[array](#env_var) | deprecated: use env_vars map instead Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead | **Optional** | - |
 
@@ -63,6 +64,12 @@ title: 'Terraform'
 | **`repo`**<br/>string | repository identifier Identifier of the connected repository configured in the Nuon platform | **✅ Required** | `"my-repo"`, `"production-infrastructure"` |
 | **`directory`**<br/>string | directory path Path within the repository to the configuration files | **✅ Required** | `"terraform"`, `"infra/terraform"` |
 | **`branch`**<br/>string | Git branch Git branch to checkout and use for deployments | **✅ Required** | `"main"`, `"develop"`, `"production"` |
+
+### `teardown`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`retain`**<br/>array | resources to leave in place on teardown Terraform resource or module addresses that are removed from state instead of destroyed when the component is torn down. An address without an index selects ... | **Optional** | `["aws_rds_cluster.main","aws_s3_bucket.data[\"logs\"]","module.buckets"]` |
 
 ### `var`
 

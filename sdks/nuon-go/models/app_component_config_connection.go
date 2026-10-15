@@ -119,6 +119,9 @@ type AppComponentConfigConnection struct {
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
 
+	// teardown
+	Teardown *AppComponentTeardown `json:"teardown,omitempty"`
+
 	// terraform module
 	TerraformModule *AppTerraformModuleComponentConfig `json:"terraform_module,omitempty"`
 
@@ -168,6 +171,10 @@ func (m *AppComponentConfigConnection) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRefs(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTeardown(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -383,6 +390,29 @@ func (m *AppComponentConfigConnection) validateRefs(formats strfmt.Registry) err
 	return nil
 }
 
+func (m *AppComponentConfigConnection) validateTeardown(formats strfmt.Registry) error {
+	if swag.IsZero(m.Teardown) { // not required
+		return nil
+	}
+
+	if m.Teardown != nil {
+		if err := m.Teardown.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("teardown")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("teardown")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppComponentConfigConnection) validateTerraformModule(formats strfmt.Registry) error {
 	if swag.IsZero(m.TerraformModule) { // not required
 		return nil
@@ -460,6 +490,10 @@ func (m *AppComponentConfigConnection) ContextValidate(ctx context.Context, form
 	}
 
 	if err := m.contextValidateRefs(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTeardown(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -680,6 +714,31 @@ func (m *AppComponentConfigConnection) contextValidateRefs(ctx context.Context, 
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppComponentConfigConnection) contextValidateTeardown(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Teardown != nil {
+
+		if swag.IsZero(m.Teardown) { // not required
+			return nil
+		}
+
+		if err := m.Teardown.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("teardown")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("teardown")
+			}
+
+			return err
+		}
 	}
 
 	return nil

@@ -12,6 +12,7 @@ const LABELS: Record<TDiffOperation, string> = {
   replace: 'to replace',
   delete: 'to delete',
   read: 'to read',
+  forget: 'to retain',
   'no-op': 'unchanged',
 }
 
@@ -21,6 +22,7 @@ const COUNT_CLASSES: Record<TDiffOperation, string> = {
   replace: 'text-primary-600 dark:text-primary-400',
   delete: 'text-diff-remove',
   read: 'text-cool-grey-800 dark:text-white/70',
+  forget: 'text-blue-700 dark:text-blue-400',
   'no-op': 'text-cool-grey-600 dark:text-white/70',
 }
 

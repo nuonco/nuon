@@ -85,11 +85,18 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 	}
 
+	var teardownRetain []string
+	if p.state.plan.Teardown != nil {
+		teardownRetain = p.state.plan.Teardown.Retain
+		l.Info("teardown will retain resources", zap.Strings("tf.teardown.retain", teardownRetain))
+	}
+
 	tfRun, err := run.New(p.v, run.WithWorkspace(wkspace),
 		run.WithLogger(hclog),
 		run.WithOutputSettings(&run.OutputSettings{
 			Ignore: true,
 		}),
+		run.WithTeardownRetain(teardownRetain),
 	)
 	if err != nil {
 		p.writeErrorResult(ctx, "create terraform run", err)

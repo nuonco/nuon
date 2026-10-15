@@ -38,6 +38,8 @@ type ComponentConnectionInput struct {
 	HealthProbes              []config.ComponentHealthProbeConfig
 	HealthRequiredChecks      []string
 
+	Teardown *config.ComponentTeardownConfig
+
 	OperationRoles        []config.EntityOperationRole
 	KubernetesContextName string
 }
@@ -76,6 +78,9 @@ func ComponentConnection(in ComponentConnectionInput) (*app.ComponentConfigConne
 	if err := validation.ValidateRequiredChecks(in.HealthRequiredChecks); err != nil {
 		return nil, err
 	}
+	if err := validation.ValidateTeardown(in.Teardown); err != nil {
+		return nil, err
+	}
 	if err := ValidateOperationRoles(in.OperationRoles); err != nil {
 		return nil, err
 	}
@@ -98,6 +103,7 @@ func ComponentConnection(in ComponentConnectionInput) (*app.ComponentConfigConne
 		HealthBlockDeploy:            in.HealthBlockDeploy,
 		HealthProbes:                 validation.ToAppHealthProbesFromList(in.HealthProbes),
 		HealthRequiredChecks:         validation.ToAppRequiredChecks(in.HealthRequiredChecks),
+		Teardown:                     validation.ToAppTeardown(in.Teardown),
 		OperationRoles:               OperationRoles(in.OperationRoles),
 		KubernetesContextName:        in.KubernetesContextName,
 	}
@@ -163,6 +169,7 @@ func ComponentConnectionInputFromConfig(comp *config.Component, componentID, app
 		in.SkipNoops = obj.SkipNoops
 		in.AutoApproveOnPoliciesPassing = obj.AutoApproveOnPoliciesPassing
 		in.DriftSchedule = obj.DriftSchedule
+		in.Teardown = obj.Teardown
 	case comp.KubernetesManifest != nil:
 		obj := comp.KubernetesManifest
 		in.BuildTimeout = obj.BuildTimeout

@@ -1,4 +1,5 @@
 import { InstallActionRunOutputs } from '@/components/actions/InstallActionRunOutputs/InstallActionRunOutputs'
+import { RunTiming } from '@/components/actions/RunTiming'
 import { TerraformOutputs } from '@/components/terraform-outputs/TerraformOutputs'
 import { Card } from '@/components/common/Card'
 import { Code } from '@/components/common/Code'
@@ -113,11 +114,16 @@ export const RunbookStepCard = ({
             {step.name}
           </Text>
         </div>
-        <Link href={`${workflowUrl}?panel=${step.id}`}>
-          <Text variant="subtext" className="!inline-flex gap-1 items-center">
-            View workflow
-          </Text>
-        </Link>
+        <div className="flex items-center gap-4">
+          {actionRun ? (
+            <RunTiming run={actionRun} variant="subtext" theme="neutral" />
+          ) : null}
+          <Link href={`${workflowUrl}?panel=${step.id}`}>
+            <Text variant="subtext" className="!inline-flex gap-1 items-center">
+              View workflow
+            </Text>
+          </Link>
+        </div>
       </div>
 
       {compositeError && canShowCompositeError ? (

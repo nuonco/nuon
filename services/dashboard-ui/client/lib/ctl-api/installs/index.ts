@@ -30,6 +30,7 @@ export * from './get-install-workflows'
 export * from './get-install-updates'
 
 export * from './get-install-policy-reports'
+export * from './get-policy-report'
 
 export * from './get-install-label-keys'
 

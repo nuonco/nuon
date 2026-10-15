@@ -25,8 +25,14 @@ import {
   type RunbookFormValues,
 } from './schema'
 
+export type TRunbookRerunValues = {
+  inputs?: Record<string, string>
+  steps?: { step_id: string; name?: string; enabled: boolean }[]
+}
+
 interface IRunRunbookForm extends Omit<IModal, 'onSubmit'> {
   installRunbook: TInstallRunbook
+  initialValues?: TRunbookRerunValues
   isPending: boolean
   error: TAPIError | null
   onRun: (body: TRunRunbookBody) => void
@@ -112,6 +118,7 @@ const RunbookInputField = ({
 
 export const RunRunbookForm = ({
   installRunbook,
+  initialValues,
   isPending,
   error,
   onRun,
@@ -122,11 +129,15 @@ export const RunRunbookForm = ({
   const config = installRunbook.runbook?.configs?.[0]
 
   const steps = useMemo(
-    () => (config?.steps ?? []).slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
+    () =>
+      (config?.steps ?? []).slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
     [config]
   )
   const inputs = useMemo(
-    () => (config?.inputs ?? []).slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
+    () =>
+      (config?.inputs ?? [])
+        .slice()
+        .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
     [config]
   )
   const hasInputs = inputs.length > 0
@@ -136,18 +147,31 @@ export const RunRunbookForm = ({
   const defaultValues = useMemo<RunbookFormValues>(
     () => ({
       inputs: Object.fromEntries(
-        inputs.map((input) => [
-          input.name,
-          isBooleanInput(input) ? input.default === 'true' : (input.default ?? ''),
-        ])
+        inputs.map((input) => {
+          const previous = input.sensitive
+            ? undefined
+            : initialValues?.inputs?.[input.name]
+          const value = previous ?? input.default
+          return [
+            input.name,
+            isBooleanInput(input) ? value === 'true' : (value ?? ''),
+          ]
+        })
       ),
     }),
-    [inputs]
+    [inputs, initialValues]
   )
 
   const [page, setPage] = useState<0 | 1 | 2>(0)
   const [stepEnabled, setStepEnabled] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(steps.map((s) => [s.id ?? '', true]))
+    Object.fromEntries(
+      steps.map((s) => {
+        const previous = initialValues?.steps?.find(
+          (sel) => sel.step_id === s.id || (!!sel.name && sel.name === s.name)
+        )
+        return [s.id ?? '', previous?.enabled ?? true]
+      })
+    )
   )
   const isStepEnabled = (id?: string) => stepEnabled[id ?? ''] ?? true
   const enabledCount = steps.filter((s) => isStepEnabled(s.id)).length
@@ -220,7 +244,10 @@ export const RunRunbookForm = ({
       {...props}
     >
       <div className="flex flex-col gap-4">
-        <FormErrorBanner error={error} fallback={`Unable to run ${runbookName}`} />
+        <FormErrorBanner
+          error={error}
+          fallback={`Unable to run ${runbookName}`}
+        />
 
         {hasInputs ? (
           <WizardNavComponent
@@ -230,7 +257,9 @@ export const RunRunbookForm = ({
               { id: 'confirm', title: 'Confirm' },
             ]}
             currentStepIndex={page}
-            completedSteps={new Set(['inputs', 'steps'].slice(0, page) as string[])}
+            completedSteps={
+              new Set(['inputs', 'steps'].slice(0, page) as string[])
+            }
             onGoToStep={(index) => {
               if (index <= page) setPage(index as 0 | 1 | 2)
             }}
@@ -307,7 +336,8 @@ export const RunRunbookForm = ({
               <dl className="flex flex-col gap-2 p-2">
                 {inputs.map((input) => {
                   const raw = values.inputs?.[input.name]
-                  const value = typeof raw === 'boolean' ? String(raw) : (raw ?? '')
+                  const value =
+                    typeof raw === 'boolean' ? String(raw) : (raw ?? '')
                   return (
                     <div
                       key={input.id ?? input.name}
