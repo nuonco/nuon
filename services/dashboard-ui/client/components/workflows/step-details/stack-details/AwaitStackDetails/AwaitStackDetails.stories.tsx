@@ -3,6 +3,20 @@ export default {
 }
 
 import { AwaitStackDetails } from './AwaitStackDetails'
+import { InstallTelemetry } from '@/components/installs/InstallTelemetry/InstallTelemetry'
+
+const applicationTelemetry = (
+  <InstallTelemetry
+    settings={{
+      enabled: true,
+      override: null,
+      org_default: true,
+      relay_configured: true,
+    }}
+    onManage={() => {}}
+    onRetry={() => {}}
+  />
+)
 
 const appliedVersion = {
   id: 'ist-applied',
@@ -59,19 +73,34 @@ const reprovisioningStack = {
 
 export const AWS = () => (
   <div className="max-w-2xl p-4">
-    <AwaitStackDetails stack={mockStack} step={mockStep} runnerType="aws" />
+    <AwaitStackDetails
+      stack={mockStack}
+      step={mockStep}
+      runnerType="aws"
+      applicationTelemetry={applicationTelemetry}
+    />
   </div>
 )
 
 export const GCP = () => (
   <div className="max-w-2xl p-4">
-    <AwaitStackDetails stack={mockStack} step={mockStep} runnerType="gcp" />
+    <AwaitStackDetails
+      stack={mockStack}
+      step={mockStep}
+      runnerType="gcp"
+      applicationTelemetry={applicationTelemetry}
+    />
   </div>
 )
 
 export const Azure = () => (
   <div className="max-w-2xl p-4">
-    <AwaitStackDetails stack={mockStack} step={mockStep} runnerType="azure" />
+    <AwaitStackDetails
+      stack={mockStack}
+      step={mockStep}
+      runnerType="azure"
+      applicationTelemetry={applicationTelemetry}
+    />
   </div>
 )
 

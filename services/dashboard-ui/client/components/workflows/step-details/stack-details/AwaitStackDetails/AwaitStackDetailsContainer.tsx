@@ -1,4 +1,5 @@
 import { useInstall } from '@/hooks/use-install'
+import { InstallTelemetry } from '@/components/installs/InstallTelemetry'
 import { AwaitStackDetails } from './AwaitStackDetails'
 import type { IStackDetails } from '../types'
 
@@ -9,6 +10,7 @@ export const AwaitStackDetailsContainer = (props: IStackDetails) => {
     <AwaitStackDetails
       runnerType={install?.app_runner_config?.app_runner_type}
       spaceliftEnabled={spaceliftEnabled}
+      applicationTelemetry={<InstallTelemetry />}
       {...props}
     />
   )

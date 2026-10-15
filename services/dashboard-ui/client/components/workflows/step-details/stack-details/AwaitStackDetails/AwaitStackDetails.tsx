@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { Card } from '@/components/common/Card'
 import {
   KeyValueList,
@@ -17,6 +17,7 @@ import type { IStackDetails } from '../types'
 interface IAwaitStackDetails extends IStackDetails {
   runnerType?: string
   spaceliftEnabled?: boolean
+  applicationTelemetry?: ReactNode
 }
 
 export const AwaitStackDetails = ({
@@ -24,6 +25,7 @@ export const AwaitStackDetails = ({
   step,
   runnerType,
   spaceliftEnabled,
+  applicationTelemetry,
   loading,
   ...props
 }: IAwaitStackDetails) => {
@@ -104,6 +106,24 @@ export const AwaitStackDetails = ({
       </Card>
 
       {cloudDetails}
+
+      {applicationTelemetry ? (
+        <Card>
+          <Text weight="strong">Application telemetry (optional)</Text>
+          <Text variant="subtext">
+            Manage forwarding and collector setup for this install. An
+            in-cluster collector does not require runner telemetry ingress.
+            Finish its setup after cluster access is available; telemetry setup
+            does not block stack provisioning.
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            These are current install settings, not the state recorded by this
+            stack version. Runner telemetry export above is a separate feature
+            for runner audit logs and telemetry.
+          </Text>
+          {applicationTelemetry}
+        </Card>
+      ) : null}
 
       <Card>
         <Text>Stack outputs</Text>

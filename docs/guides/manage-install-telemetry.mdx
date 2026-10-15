@@ -30,17 +30,19 @@ set to enabled.
 <Tab title="Using Nuon Dashboard">
 
 1. Open the install and select **Settings**.
-2. Under **Configuration**, find **Telemetry**.
-3. Turn **Enable telemetry** on or off and wait for the save to complete.
+2. Under **Configuration**, find **Telemetry** and select **Manage telemetry**.
+3. Set **Telemetry forwarding** to **On**, **Off**, or **Use org default (On/Off)**, then select **Save settings**.
 
-<Frame caption="The Telemetry card is under Settings → Configuration. This install inherits an enabled org default.">
-  <img src="/images/guides/install-telemetry/install-settings.png" alt="Install Settings panel with the Configuration section and Telemetry card showing Enable telemetry turned on and Using org default" />
-</Frame>
+The card shows the effective forwarding policy and whether it comes from the org default or an install override.
+The modal also shows collector access, issued credential metadata for org admins, app-declared collector
+configuration, and runner-specific prerequisites. These are configuration details, not delivery health.
 
-To remove an install-specific override, select **Use org default**. The card shows **Using org default** when the
-install follows the org setting.
+The stack provisioning step's **Application telemetry (optional)** section opens the same modal. Its settings
+describe the current install, not the historical stack version. **Runner telemetry export (optional)** is separate:
+it exports runner audit logs and telemetry using a cloud secret, not an application collector bootstrap Secret.
 
-If the install is managed by a config file, these controls are read-only. Change its install config instead.
+If forwarding is managed by an install config file, its policy control is read-only. Change and sync the install
+config instead. Credential lifecycle actions remain separate from forwarding policy.
 
 </Tab>
 <Tab title="Using Install Config Files">
@@ -63,25 +65,95 @@ restore the org default.
 </Tab>
 </Tabs>
 
-The runner checks settings every 15 seconds and applies changes without a runner restart. If the runner is down,
-you can still save the setting, but it cannot apply the change or forward data until it is running again.
+Collectors apply settings on their next refresh, without restarting the runner. An in-cluster collector refreshes
+settings and renews relay access directly with the Nuon control plane, even while the runner is stopped. A
+runner-bound collector cannot forward data while its runner is down. Already-issued relay credentials can remain
+valid for up to ten minutes after forwarding is disabled or collector access is revoked.
 
 If your app uses a [toggleable component](/guides/toggleable-components) to collect telemetry, that component must
 also be enabled. The install telemetry setting controls forwarding, not component deployment.
 
+## Set up an optional in-cluster collector
+
+Do this for one install at a time. Saving forwarding policy never creates credentials, deploys a component, or
+changes producer routing automatically.
+
+1. **Prepare and sync the app.** Add Nuon's
+   [telemetry-agent Helm chart](https://github.com/nuonco/charts/tree/main/charts/telemetry-agent) as an optional
+   app component. Configure its cluster target, namespace, control-plane runner API URL, install ID, image,
+   durable queue, and network access. Add an optional string install input with `sensitive = true` and pass
+   its value to the chart's `bootstrapToken` value. The chart creates and mounts the Kubernetes Secret.
+   Label exactly one collector component so the dashboard can discover it without guessing its name:
+
+   ```toml
+   [labels]
+   "nuon.co/telemetry-collector" = "true"
+   ```
+
+   The label identifies the component only. It does not prove deployment or supply its cluster/Secret settings.
+   Run `nuon apps sync` from the app config directory to publish the component, label, and input. This does not
+   deploy existing installs. The dashboard links to the component's existing enable/deploy workflow.
+
+2. **Create access.** In **Manage telemetry**, expand **In-cluster collector (optional)** and, as an org admin,
+   select **Create bootstrap credential**. The default expiry is one year, matching Nuon's service-account
+   token default and longest dashboard option. Non-expiring credentials are not supported; plan rotation
+   before expiry, allowing time to bring the runner online.
+   This ensures an install-scoped Nuon service account and issues a credential; it does not create a Kubernetes
+   ServiceAccount or require a Kubernetes API-token mount.
+
+3. **Save the sensitive input.** Copy the one-time token into the app's designated collector input for this
+   install. For config-managed installs, use a protected local install config and sync it; do not commit the
+   token. Sensitive inputs are stored by Nuon and masked in the input UI. A Helm component that creates the
+   Secret also stores the token in rendered values and release history, so restrict access to those resources,
+   plans, and outputs. Never put it in shared logs, messages, or command arguments. No Secret download or manual
+   Kubernetes apply is needed. The chart uses the control-plane runner API configured in the app, not a customer
+   runner process.
+
+4. **Deploy and route.** With the runner available, apply the synced app config and enable/deploy the declared
+   component through its native workflow and approvals. Update application exporters using the app's supported routing controls. For apps
+   that derive an in-cluster OTLP service address when the component is enabled, no separate endpoint input is
+   needed. Do not duplicate the same signals through both runner and in-cluster collectors.
+
+5. **Enable forwarding and verify.** Set the install policy to **On** (or inherit an enabled org default).
+   Generate activity and check fresh data in the destination backend for each intended signal. Verify collection
+   and credential renewal during the runner-off window before relying on this mode. A Ready pod, created account,
+   issued token, or enabled component is not evidence of delivery.
+
+The dashboard cannot verify the customer cluster's Secret, PVC, network policy, mesh, or egress. It shows
+**Cluster prerequisites: Not verified** rather than inferring readiness from account or component configuration.
+Independent collector connection/delivery reporting is not currently provided.
+
+### Rotate or remove collector access
+
+Before expiry, create a replacement credential through the same action. Existing credentials stay valid.
+Bring the runner online, update the sensitive input, and deploy the collector change. Wait for Secret projection
+and verify the collector uses the replacement before selecting **Revoke credential** for the old token. Do not
+mount the Secret with `subPath`, which prevents normal Secret projection. Issuing or revoking access does not
+require the runner, but deploying an input update does. Ongoing collection and short-lived relay-token renewal
+remain independent of the runner. Revoke superseded tokens even when old Helm revisions still contain them.
+
+Issued-token expiry is metadata, not proof that a credential is mounted or in use. Assign a rotation owner before
+stopping the runner. If issuance fails, review issued-token metadata before retrying: the server may have created
+a credential even if the response was lost. A lost credential cannot be retrieved; revoke it and issue another.
+
+**Remove collector access** revokes all bootstrap tokens and grants and removes the managed Nuon collector account.
+It does not change forwarding policy, affect the runner's identity, uninstall the collector, or delete queue storage.
+Uninstall/reroute through the app workflow separately, with the runner available. Keep customer-owned queue storage
+retention/deletion an explicit decision.
+
 ## Check collection
 
 Generate some application activity and look for recent data in your backend, filtered by the install's
-`nuon.install.id` resource attribute. The dashboard toggle shows the configured setting, not delivery health.
+`nuon.install.id` resource attribute. The dashboard shows configured forwarding and setup metadata, not delivery health.
 
 For the complete set of identity attributes and delivery behavior, see
 [Install Telemetry](/concepts/install-telemetry).
 
 ## Stop collection
 
-Disable the install using either method above. Stop or reconfigure its application exporters too, so they do not
-keep sending to an unavailable Collector. Disabling telemetry does not remove private ingress infrastructure or
-delete data already stored in your backend.
+Set forwarding to **Off** using either method above. Stop or reconfigure application exporters too, so they do not
+keep sending to an unavailable collector. Disabling forwarding keeps collector access, deployment, private ingress,
+and queue storage in place; it does not delete data already stored in the backend.
 
 Before shutting down the central relay, disable telemetry on the installs using it, including any explicit
 overrides. Then coordinate with Nuon to disable the relay. For credential rotation, see
@@ -91,24 +163,26 @@ overrides. Then coordinate with Nuon to disable the relay. For credential rotati
 
 ### I cannot change the install setting
 
-If the card says **Managed by config**, edit the install config. Otherwise, check for a missing private telemetry
-endpoint: the dashboard requires a nonempty `telemetry_endpoint` stack output to enable forwarding. Update the
-stack or re-enable its ingress using the [setup guide](/guides/byoc/telemetry#3-check-the-install-endpoint).
-An already-enabled install can still be disabled when its endpoint is missing.
+If the modal says **Managed by install config**, edit and sync the install config. Otherwise, retry failed settings
+reads or check install permissions. A missing runner or private endpoint does not block saving forwarding policy.
+For runner-bound collection only, update the stack or re-enable its ingress using the
+[setup guide](/guides/byoc/telemetry#3-check-the-install-endpoint). In-cluster collection does not need that ingress.
 
 ### Telemetry is enabled, but no data appears
 
-Check that the runner is active, your application is emitting data, and its exporter uses the install's private
-endpoint. Allow time for settings refresh and Collector startup. Confirm that Nuon has enabled the relay and that
-your backend accepts the signals you are sending.
+First identify the collection path. For the runner path, check that the runner is active and the exporter uses the
+install's private endpoint. For the in-cluster path, check the collector deployment, bootstrap credential expiry,
+Secret mount, durable queue, and egress to the control plane and relay; runner availability is not required.
+For either path, check that the application is emitting data, allow time for settings refresh and collector startup,
+and confirm that Nuon has configured the relay and the backend accepts the intended signals.
 
 For connection timeouts, check network access to the private endpoint. For backend authentication failures, check
 the BYOC backend secrets with Nuon; do not add backend credentials to workloads.
 
 ### I cannot find the telemetry controls
 
-Use an up-to-date Nuon BYOC dashboard. Org-level **Manage telemetry** is visible only to org admins. Install
-telemetry controls are not shown in Nuon Cloud.
+Use an up-to-date dashboard. Org-level **Manage telemetry** and collector credential actions require an org admin.
+Install settings still show setup-required and load-error states when relay configuration is unavailable.
 
 If you need help, send Nuon the install ID, signal type, sample timestamp, and sanitized error details. Do not send
 credentials or sensitive telemetry payloads.
