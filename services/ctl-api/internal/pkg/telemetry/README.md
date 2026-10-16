@@ -12,6 +12,7 @@ performance and failures in your observability backend.
 | Queues and notifications | Temporal dispatch, local channel pressure, webhook/Slack delivery and lifecycle hooks. |
 | Policies and storage | Policy decisions, install-state operations and blob-storage outcomes. |
 | Workflow history | Workflow/step lifecycle events, approvals, retries and related resource IDs in logs. |
+| Health investigation | Component verdict changes and evaluator failures, with affected install/component IDs and observation context. |
 | Fleet state | Inventory, recorded health and current workflows through the optional [state telemetry collector](../statetelemetry/README.md). |
 
 Metrics describe activity and recorded outcomes; logs provide context for individual workflows and installs.
@@ -125,7 +126,7 @@ The following counters carry resource IDs when available; their duration histogr
 
 | Counter | Additional dimensions |
 | --- | --- |
-| `nuon.install.component.health.evaluation.attempts` | `nuon.install.id` |
+| `nuon.install.component.health.evaluation.attempts` | `nuon.install.id`, plus `nuon.org.id` and `nuon.app.id` after the install loads |
 | `nuon.install.drift.plan.evaluation.attempts` | `nuon.install.id`, plus `nuon.component.id` for component checks |
 | `nuon.runner.job.execution.results` | `nuon.install.id` |
 | `nuon.runner.job.lifecycle.failures` | `nuon.install.id` |
@@ -150,6 +151,17 @@ IDs remain JSON fields rather than indexed Loki stream labels.
 Workflow completion, failure, cancellation, approval and retry-wait transitions carry `source=workflow_status`.
 They describe recorded status changes, not immutable final outcomes: an errored workflow can later retry.
 Logs are diagnostic observations, not an exactly-once transition ledger or a source of exact workflow totals.
+
+Health investigation events carry `source=component_health_evaluator`:
+
+| Event | What it shows |
+| --- | --- |
+| `component.health_verdict_changed` | A recorded component verdict changed: previous/new health, lifecycle, cluster visibility and latest input observation time/validity when available. |
+| `install.health_evaluation_failed` | An evaluation failed or was cancelled: outcome, stage, duration and known resource IDs. Earlier component verdicts may already have been written. |
+
+Unchanged verdicts emit no verdict-change event. An observation timestamp is not evaluation-completion time;
+report arrivals, custom-check validity and recorded workload health are separate signals. Missing events do not
+establish health or recovery. Org/app IDs are absent when an evaluation fails before the install loads.
 
 Raw errors, status descriptions, arbitrary metadata, account emails, stack traces and general process logs are not
 included in this OTLP lifecycle stream. Existing stderr logging, audit and product log-stream destinations are unchanged.

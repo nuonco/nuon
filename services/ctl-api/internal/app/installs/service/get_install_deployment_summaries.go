@@ -38,39 +38,7 @@ const (
 )
 
 func workflowTypeToDeploymentType(t app.WorkflowType) InstallDeploymentType {
-	switch t {
-	case app.WorkflowTypeProvision:
-		return InstallDeploymentTypeProvision
-	case app.WorkflowTypeManualDeploy,
-		app.WorkflowTypeDriftRun,
-		app.WorkflowTypeDeployComponents,
-		app.WorkflowTypeTeardownComponent,
-		app.WorkflowTypeTeardownComponents,
-		app.WorkflowTypeComponentEnabled,
-		app.WorkflowTypeComponentDisabled,
-		app.WorkflowTypeRecoverHelmRelease:
-		return InstallDeploymentTypeComponentDeploy
-	case app.WorkflowTypeReprovisionSandbox, app.WorkflowTypeDriftRunReprovisionSandbox:
-		return InstallDeploymentTypeSandboxReprovision
-	case app.WorkflowTypeReprovision:
-		return InstallDeploymentTypeReprovision
-	case app.WorkflowTypeReprovisionStack:
-		return InstallDeploymentTypeStackUpdate
-	case app.WorkflowTypeAppBranchConfigUpdate,
-		app.WorkflowTypeAppBranchesRun,
-		app.WorkflowTypeAppBranchesConfigRepoUpdate,
-		app.WorkflowTypeAppBranchesComponentRepoUpdate,
-		app.WorkflowTypeAppInstallSync:
-		return InstallDeploymentTypeAppBranchUpdate
-	case app.WorkflowTypeInputUpdate, app.WorkflowTypeSyncSecrets:
-		return InstallDeploymentTypeInstallConfigUpdate
-	case app.WorkflowTypeDeprovision:
-		return InstallDeploymentTypeDeprovision
-	case app.WorkflowTypeDeprovisionSandbox:
-		return InstallDeploymentTypeSandboxDeprovision
-	default:
-		return ""
-	}
+	return InstallDeploymentType(t.DeploymentType())
 }
 
 // InstallDeploymentWorkflowRef is a lightweight reference to the backing workflow.
