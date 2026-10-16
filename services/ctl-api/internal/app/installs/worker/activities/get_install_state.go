@@ -3,8 +3,6 @@ package activities
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/nuonco/nuon/pkg/types/state"
 )
 
@@ -14,12 +12,7 @@ type GetInstallStateRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field InstallID
-// @start-to-close-timeout 10s
+// @start-to-close-timeout 5m
 func (a *Activities) GetInstallState(ctx context.Context, req *GetInstallStateRequest) (*state.State, error) {
-	state, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
-	}
-
-	return state, nil
+	return a.helpers.GetInstallState(ctx, req.InstallID, false, false)
 }

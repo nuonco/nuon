@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // SetInstallInputsFromStack persists the input values a stack reported as the
@@ -105,9 +104,7 @@ func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.In
 		if err := tx.WithContext(ctx).Create(inputs).Error; err != nil {
 			return fmt.Errorf("unable to create install inputs: %w", err)
 		}
-		// stale_at alone is inert: the partial has to be named or state serves the
-		// old inputs
-		return h.MarkInstallStatePartialsStale(ctx, tx, install.ID, pkgstate.PartialInputs)
+		return nil
 	}); err != nil {
 		return nil, nil, err
 	}

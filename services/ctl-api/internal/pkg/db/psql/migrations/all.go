@@ -3,7 +3,7 @@ package migrations
 import "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 
 func (m *Migrations) All() []migrations.Migration {
-	return []migrations.Migration{
+	all := []migrations.Migration{
 		{
 			Name: "01-create-internal-accounts",
 			Fn:   m.migration01InternalAccounts,
@@ -249,4 +249,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Fn:   m.Migration143ActivityFeedIndexes,
 		},
 	}
+	all = append(all, m.installStateInvalidationMigrations()...)
+	return append(all, migrations.Migration{
+		Name: "146-install-state-heads",
+		Fn:   m.Migration146InstallStateHeads,
+	})
 }
