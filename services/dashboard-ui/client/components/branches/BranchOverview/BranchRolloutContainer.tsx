@@ -9,6 +9,7 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { type TOverviewRollout } from './BranchOverview'
 import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
+import { WarmPlanInstallChanges } from '@/components/branches/PlanInstallChanges/WarmPlanInstallChanges'
 import { RolloutGroupsCard } from './RolloutGroupsCard'
 import { useRolloutGroups } from './use-rollout-groups'
 
@@ -77,6 +78,7 @@ export const BranchRolloutContainer = () => {
 
   return (
     <div className="flex flex-col gap-3 p-4 md:p-6">
+      <WarmPlanInstallChanges steps={workflowSteps} />
       <PageTitle segments={['Rollout', branch?.name, app?.name]} />
       <SectionHeader
         title="Rollout"
