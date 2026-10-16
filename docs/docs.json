@@ -231,7 +231,7 @@
               "guides/cli-extensions",
               "guides/external-image-policies",
               "guides/terraform-cli",
-              "guides/migrating-to-app-branches-and-deployment-groups"
+              "guides/app-branch-migration"
             ]
           }
         ]
