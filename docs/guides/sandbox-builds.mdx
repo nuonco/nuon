@@ -2,24 +2,19 @@
 title: "Sandbox Builds"
 description: "Provision from an immutable artifact instead of cloning Git at apply time. Reproducible reprovisions, no VCS dependency in your customer's account, failures caught before they touch infrastructure."
 icon: "box-archive"
-keywords: ["sandbox builds", "sandbox build", "sandbox artifact", "sandbox OCI artifact", "sandbox-oci-artifacts", "build sandbox", "immutable sandbox", "pin sandbox version", "reproducible provision", "air-gapped sandbox", "provider mirror", "vendored providers"]
+keywords: ["sandbox builds", "sandbox build", "sandbox artifact", "sandbox OCI artifact", "build sandbox", "immutable sandbox", "pin sandbox version", "reproducible provision", "air-gapped sandbox", "provider mirror", "vendored providers"]
 ---
 
 A customer's install provisioned cleanly in March. It's November, and you need to reprovision it.
 
 By default, that reprovision clones your sandbox repo *right then* and applies whatever is at the
 configured branch today. Eight months of module changes, a bumped provider constraint, a repo that
-someone renamed — all of it lands on infrastructure that has been running fine, and none of it is
+someone renamed: all of it lands on infrastructure that has been running fine, and none of it is
 what the install was built with.
 
-Sandbox builds close that gap. Nuon packages your sandbox into an **immutable OCI artifact** — the
-same mechanism already behind [component builds](/guides/app-install-life-cycle#sync-and-build) —
+Sandbox builds close that gap. Nuon packages your sandbox into an **immutable OCI artifact**, the
+same mechanism already behind [component builds](/guides/app-install-life-cycle#sync-and-build),
 and installs provision from the artifact instead of reaching for Git.
-
-<Note>
-  Sandbox builds are behind the `sandbox-oci-artifacts` org feature flag and are off by default.
-  [Reach out to Nuon](https://nuon.co/demo-request) to enable it for your org.
-</Note>
 
 <CardGroup cols={2}>
   <Card title="Reprovision what you provisioned" icon="lock">
@@ -31,8 +26,8 @@ and installs provision from the artifact instead of reaching for Git.
     from. Nothing in your customer's account reaches GitHub or holds a Git credential.
   </Card>
   <Card title="No Terraform Registry either" icon="download">
-    With the provider mirror on, providers ship inside the artifact, so a provision doesn't depend on
-    `registry.terraform.io` being reachable.
+    Providers ship inside the artifact, so a provision doesn't depend on `registry.terraform.io`
+    being reachable.
   </Card>
   <Card title="Break it on your own time" icon="triangle-exclamation">
     A bad sandbox fails at build time, in your branch run, instead of part-way through a customer's
@@ -40,13 +35,9 @@ and installs provision from the artifact instead of reaching for Git.
   </Card>
 </CardGroup>
 
-## Turn it on
+## Get a sandbox build
 
 <Steps>
-  <Step title="Ask Nuon to enable it">
-    Sandbox builds are behind the `sandbox-oci-artifacts` org feature. Ask us to switch it on — there
-    is nothing to install and no change to your `sandbox.toml`.
-  </Step>
   <Step title="Build the sandbox once">
     If your app uses [app branches](/concepts/app-branches), the next push builds it automatically.
     Otherwise hit **Build sandbox** on the app's **Sandbox** tab.
@@ -64,7 +55,7 @@ something you have to set up.
 
 ## How the source is resolved
 
-Every sandbox run — provision, reprovision, deprovision — resolves where to get the code from before
+Every sandbox run (provision, reprovision, or deprovision) resolves where to get the code from before
 it runs anything:
 
 ```mermaid
@@ -78,14 +69,14 @@ flowchart TD
 
 **The lookup is per install, not per app.** It keys off the app config version *that install is
 pinned to*, so two installs on different versions of your app provision from two different sandbox
-artifacts — each one the sandbox that shipped with its version.
+artifacts, each one the sandbox that shipped with its version.
 
 **A missing artifact is never a failure.** No build for that version, or an artifact that can't be
-resolved, falls back to cloning Git exactly as before. That's what makes turning the flag on safe:
-installs that predate your first sandbox build keep working untouched, and adoption happens
-install-by-install as each one moves onto a version that has a build behind it.
+resolved, falls back to cloning Git exactly as before. Installs that predate your first sandbox
+build keep working untouched, and each install picks up an artifact as it moves onto a version that
+has a build behind it.
 
-This applies to Terraform and Pulumi sandboxes alike — the runner unpacks the artifact and works in
+This applies to Terraform and Pulumi sandboxes alike. The runner unpacks the artifact and works in
 that directory instead of a clone, and everything downstream is unchanged.
 
 ## Where builds come from
@@ -93,7 +84,7 @@ that directory instead of a clone, and everything downstream is unchanged.
 A sandbox build is a record tied to one app config version and one sandbox config, executed by the
 [Control Plane](/architecture/platform#builds). It moves through
 `queued` → `planning` → `building` → `active`, or `error`, and streams logs the whole way. The
-artifact is pushed to your app's OCI repository — the same one your component builds are pushed to —
+artifact is pushed to your app's OCI repository (the same one your component builds are pushed to),
 tagged with the build's ID.
 
 ### On every app branch run
@@ -112,8 +103,6 @@ flowchart LR
     sbx --> plan
 ```
 
-With the flag off, that step still runs — it just builds components only.
-
 **Which ref gets built:** if your sandbox lives in the same repo as the app config being built, the
 build is pinned to that run's commit SHA, so the sandbox and the components come from one commit. If
 the sandbox lives elsewhere, it uses the ref from your sandbox config.
@@ -131,19 +120,12 @@ curl -X POST "https://api.nuon.co/v1/apps/$APP_ID/sandbox/builds" \
 
 Useful for validating a sandbox change before you push it, and for apps that don't use app branches.
 
-<Note>
-Building doesn't require the feature flag — the tab and the endpoint work either way. What the flag
-controls is whether installs **use** the result. Turning it on for an org that has been building all
-along changes nothing until the next sandbox run.
-</Note>
-
 ## Vendoring Terraform providers
 
-Sandbox builds are what make provider vendoring possible for a sandbox at all — there's no build step
-to vendor into otherwise. With the `terraform-provider-mirror` feature also enabled, the build runs
-`terraform providers mirror` and ships the resulting filesystem mirror inside the artifact. The
-install runner finds it on unpack and initializes against it, so provisioning needs no Terraform
-Registry access.
+Sandbox builds are what make provider vendoring possible for a sandbox at all. There's no build step
+to vendor into otherwise. The build runs `terraform providers mirror` and ships the resulting
+filesystem mirror inside the artifact. The install runner finds it on unpack and initializes against
+it, so provisioning needs no Terraform Registry access.
 
 Pin `terraform_version` in your `sandbox.toml` so the build mirrors providers for the version that
 will actually run:
@@ -158,9 +140,9 @@ branch    = "main"
 ```
 
 <Tip>
-Together, these two features take a provision from "needs GitHub *and* `registry.terraform.io`" to
-"pulls one more artifact from the registry it already pulls component artifacts from" — a much
-smaller ask of a customer with a restricted egress policy.
+Together, the sandbox artifact and vendored providers take a provision from "needs GitHub *and*
+`registry.terraform.io`" to "pulls one more artifact from the registry it already pulls component
+artifacts from." That is a much smaller ask of a customer with a restricted egress policy.
 </Tip>
 
 ## Troubleshooting
@@ -168,29 +150,30 @@ smaller ask of a customer with a restricted egress policy.
 <AccordionGroup>
   <Accordion title="An install still cloned Git">
     There's no `active` build for the app config version *that install* is pinned to. An install on
-    an older version has no artifact behind it until it moves to a version that does — check the
+    an older version has no artifact behind it until it moves to a version that does. Check the
     app's **Sandbox** tab for which versions have builds, and the sandbox run's logs for which source
     it chose.
   </Accordion>
   <Accordion title="No sandbox build appeared on a branch run">
-    Three reasons it's skipped: the flag is off, the app has no sandbox config, or the run had no
-    config changes and wasn't forced — a run with nothing to build doesn't build anything, sandbox
-    included. Re-trigger the run with force, or build once from the **Sandbox** tab.
+    Two reasons it's skipped: the app has no sandbox config, or the run had no config changes and
+    wasn't forced. A run with nothing to build doesn't build anything, sandbox included. Re-trigger
+    the run with force, or build once from the **Sandbox** tab.
   </Accordion>
   <Accordion title="The sandbox build failed">
     Open it from the **Sandbox** tab or from the branch run's build step and read its logs. These are
-    the same failures you'd otherwise hit mid-provision — an unresolvable module, a provider
-    constraint that can't be satisfied, invalid Terraform — which is the point of catching them here.
+    the same failures you'd otherwise hit mid-provision: an unresolvable module, a provider
+    constraint that can't be satisfied, or invalid Terraform. That is the point of catching them here.
   </Accordion>
   <Accordion title="Provisioning still reaches out to the Terraform Registry">
-    Vendoring is a second feature. Ask us to enable `terraform-provider-mirror` as well, and set
-    `terraform_version` in your `sandbox.toml` so the mirror matches the version that runs.
+    Confirm the install is using an artifact (not a Git fallback), and that `terraform_version` in
+    your `sandbox.toml` matches the version that runs so the mirror was built for the right CLI.
+    Rebuild after setting or changing it.
   </Accordion>
 </AccordionGroup>
 
 ## See also
 
-- [Sandboxes](/concepts/sandboxes) — what a sandbox is and what it provisions
-- [Configuring Sandboxes](/guides/configuring-sandboxes) — the `sandbox.toml` reference
-- [App Branches](/concepts/app-branches) — the workflow that builds sandboxes on every push
-- [App and Install Life Cycle](/guides/app-install-life-cycle) — how builds and deploys fit together
+- [Sandboxes](/concepts/sandboxes): what a sandbox is and what it provisions
+- [Configuring Sandboxes](/guides/configuring-sandboxes): the `sandbox.toml` reference
+- [App Branches](/concepts/app-branches): the workflow that builds sandboxes on every push
+- [App and Install Life Cycle](/guides/app-install-life-cycle): how builds and deploys fit together
