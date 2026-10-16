@@ -51,6 +51,10 @@ func Register(lc fx.Lifecycle, cfg *internal.Config, tc *telemetry.Config, provi
 	if level != "fleet" && level != "summary" && level != "detailed" {
 		return fmt.Errorf("invalid STATE_TELEMETRY_LEVEL %q: expected fleet, summary, or detailed", level)
 	}
+	labelKeys, err := installLabelKeys(cfg.TelemetryInstallLabels)
+	if err != nil {
+		return err
+	}
 	if tc.Endpoint == "" {
 		return nil
 	}
@@ -64,7 +68,7 @@ func Register(lc fx.Lifecycle, cfg *internal.Config, tc *telemetry.Config, provi
 		}
 	}
 	meter := provider.Meter("github.com/nuonco/nuon/services/ctl-api/statetelemetry")
-	families, err := newStateFamilies(meter, level)
+	families, err := newStateFamilies(meter, level, labelKeys)
 	if err != nil {
 		return err
 	}

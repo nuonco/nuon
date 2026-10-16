@@ -5,7 +5,9 @@ current workflow activity**. Metrics are exported over OTLP, including when no o
 
 | What you can see | Coverage |
 | --- | --- |
-| Fleet size and lifecycle | Organizations, apps, component definitions, installs, installed components and install-owned runners. |
+| Fleet size and lifecycle | Organizations, apps, component definitions, installs and installed components. |
+| Install identity | Install and tracked app-branch names, sandbox mode and opt-in vendor labels at detailed level. |
+| Install runner | Recorded current-runner status, with missing and unknown states shown explicitly. |
 | Recorded workload health | Install health summaries and component verdicts, including unknown and unevaluated components. |
 | Health reporting | Recent, older and missing health-report arrivals. |
 | Sandbox state | Provisioning lifecycle and recorded runtime health, shown separately. |
@@ -59,10 +61,21 @@ Each inventory count is broken down by `resource.state`.
 | `nuon.component.count` | App-defined components. |
 | `nuon.install.count` | Installs. |
 | `nuon.install.component.count` | Installed component targets. |
-| `nuon.runner.count` | Install-owned runner records, not live processes. |
 
 Counts include retained resources and exclude soft-deleted records and invalid ownership links. Retained deprovisioned
 resources still count; component definitions and installed targets are distinct populations.
+
+### Install runner
+
+`nuon.install.runner.count` counts **installs**, broken down by `nuon.runner.status`. Each retained install contributes
+once: its runner's recorded status when exactly one retained install-owned group and runner identify it, or `missing`
+when no runner exists. `unknown` covers both a recorded unknown status and multiple groups or runners preventing a
+unique selection.
+
+Deleted and invalid ownership links are excluded. Neither runner name, creation time nor an active status resolves
+ambiguity. Disabled and deprovisioned runners keep their recorded status; a missing runner is not deprovisioned.
+This is not a live-process count or proof that jobs can execute. Detailed collection uses one series per install,
+regardless of how many runner records are retained.
 
 ### Health, reporting and sandboxes
 
@@ -105,8 +118,33 @@ The `detailed` level also provides:
 
 | Metric | Meaning |
 | --- | --- |
-| `nuon.install.info` | One per install, with its resolved boolean `nuon.install.sandbox_mode`. |
+| `nuon.install.info` | Value 1 per install, with its name, tracked app-branch ID/name, resolved sandbox mode and optional vendor labels. |
 | `nuon.install.health.last_report_at` | Last valid health-report arrival, in Unix seconds; absent when unavailable or invalid. |
+
+Install info uses `nuon.install.name`, `nuon.app_branch.id`, `nuon.app_branch.name` and boolean
+`nuon.install.sandbox_mode`, alongside org/app/install IDs. Branch metadata describes the newest active connection,
+not the configuration successfully deployed. Unavailable branch metadata is omitted without removing the install.
+
+To correlate installs with your own customer/account identifiers, explicitly allow selected stored install labels:
+
+```sh
+STATE_TELEMETRY_LEVEL=detailed
+TELEMETRY_INSTALL_LABELS=customer_id,tier
+```
+
+No install labels are exported by default. Selected values appear only on `nuon.install.info` as
+`nuon.install.label.customer_id`, for example; other state metrics do not gain these dimensions. Names and labels can
+contain sensitive data: allow only nonsecret identifiers approved for your telemetry destination.
+
+The allowlist accepts at most eight distinct keys, each 1–64 ASCII characters, starting with a letter and containing
+only letters, digits, `_`, `.` or `-`. Reserved `nuon`, `otel` and `service` prefixes and keys colliding after Prometheus
+normalization are rejected. Metadata values must fit 256 UTF-8 bytes without control characters. Invalid/oversized
+values are omitted, never truncated or logged; `nuon.install.metadata.status=omitted` signals this. `complete` means
+no invalid values were withheld, not that every optional label or branch exists.
+
+There is still one current info point per install. Renames, branch moves and label changes create historical backend
+series. Use fresh info with one unambiguous entry per org/app/install before joining by those IDs; do not join raw
+retained info series or attach metadata to every measurement.
 
 Collection diagnostics use the `nuon.fleet.snapshot.*` prefix and describe collection status, not workload health.
 
