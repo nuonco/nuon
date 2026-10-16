@@ -2,6 +2,7 @@ package demand
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -19,6 +21,8 @@ const SignalKey = "runner_demand_signal_id"
 const StepKey = "runner_demand_step_id"
 const AwaitRunner = "await-runner"
 
+var ErrJobChanged = errors.New("runner job workflow identity changed")
+
 func SignalID(job *app.RunnerJob) string { return generics.HstoreValue(job.Metadata, SignalKey) }
 func StepID(job *app.RunnerJob) string   { return generics.HstoreValue(job.Metadata, StepKey) }
 
@@ -27,10 +31,54 @@ func LockWorkflow(ctx context.Context, tx *gorm.DB, workflowID string) (*app.Wor
 	if err := tx.WithContext(ctx).Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Workflow{ID: workflowID}).First(&flw).Error; err != nil {
 		return nil, err
 	}
-	if flw.Status.Status == app.StatusCancelled || flw.Status.Metadata["cancel_requested_at"] != nil {
-		return nil, temporal.NewNonRetryableApplicationError(fmt.Sprintf("workflow %s is cancelled", workflowID), "CANCELLED", nil)
-	}
 	return &flw, nil
+}
+
+func RequireActiveWorkflow(flw *app.Workflow) error {
+	if flw == nil {
+		return nil
+	}
+	if flw.Status.Status == app.StatusCancelled || flw.Status.Metadata["cancel_requested_at"] != nil {
+		return temporal.NewNonRetryableApplicationError(fmt.Sprintf("workflow %s is cancelled", flw.ID), "CANCELLED", nil)
+	}
+	return nil
+}
+
+func LockJob(ctx context.Context, tx *gorm.DB, job *app.RunnerJob) (*app.Workflow, error) {
+	var flw *app.Workflow
+	if SignalID(job) != "" {
+		var err error
+		flw, err = LockWorkflow(ctx, tx, job.FlowWorkflowID())
+		if err != nil {
+			return nil, err
+		}
+	}
+	var locked app.RunnerJob
+	if err := tx.WithContext(ctx).Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJob{ID: job.ID}).First(&locked).Error; err != nil {
+		return nil, err
+	}
+	if SignalID(&locked) != SignalID(job) || locked.FlowWorkflowID() != job.FlowWorkflowID() || StepID(&locked) != StepID(job) {
+		return nil, ErrJobChanged
+	}
+	*job = locked
+	return flw, nil
+}
+
+func CancelJob(ctx context.Context, tx *gorm.DB, job *app.RunnerJob, compositeError *compositeerrors.CompositeErrorData) (bool, error) {
+	if job.Status.IsTerminal() {
+		return false, nil
+	}
+	job.Status, job.FinishedAt, job.CompositeError = app.RunnerJobStatusCancelled, time.Now(), compositeError
+	job.StatusV2 = app.NewCompositeStatus(ctx, app.StatusCancelled)
+	if err := tx.WithContext(ctx).Scopes(scopes.WithDisableViews).Model(job).Updates(map[string]any{
+		"status": job.Status, "status_v2": job.StatusV2, "finished_at": job.FinishedAt, "composite_error": compositeError,
+	}).Error; err != nil {
+		return false, err
+	}
+	err := tx.WithContext(ctx).Model(&app.RunnerJobExecution{}).Where(app.RunnerJobExecution{RunnerJobID: job.ID}).
+		Where("status IN ?", []app.RunnerJobExecutionStatus{app.RunnerJobExecutionStatusPending, app.RunnerJobExecutionStatusInitializing, app.RunnerJobExecutionStatusInProgress, app.RunnerJobExecutionStatusCleaningUp}).
+		Updates(map[string]any{"status": app.RunnerJobExecutionStatusCancelled, "status_v2": job.StatusV2}).Error
+	return err == nil, err
 }
 
 func UpdateOwner(ctx context.Context, tx *gorm.DB, job *app.RunnerJob, status app.Status) error {

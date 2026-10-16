@@ -39,7 +39,11 @@ func (a *Activities) PublishRunnerJob(ctx context.Context, signalID, jobID strin
 		if err := tx.Where(app.WorkflowStep{ID: qs.OwnerID}).First(&step).Error; err != nil {
 			return err
 		}
-		if _, err := demand.LockWorkflow(ctx, tx, step.InstallWorkflowID); err != nil {
+		flw, err := demand.LockWorkflow(ctx, tx, step.InstallWorkflowID)
+		if err != nil {
+			return temporal.NewNonRetryableApplicationError("workflow is unavailable", "CANCELLED", err)
+		}
+		if err := demand.RequireActiveWorkflow(flw); err != nil {
 			return temporal.NewNonRetryableApplicationError("workflow is unavailable", "CANCELLED", err)
 		}
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.QueueSignal{ID: signalID}).First(&qs).Error; err != nil {

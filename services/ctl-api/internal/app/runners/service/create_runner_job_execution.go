@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/demand"
@@ -99,11 +98,12 @@ func (s *service) claimRunnerJob(ctx context.Context, runnerJobID, clientVersion
 		}
 		isDemand := demand.SignalID(&job) != ""
 		if isDemand {
-			if _, err := demand.LockWorkflow(ctx, tx, job.FlowWorkflowID()); err != nil {
-				return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
-			}
-			if err := tx.Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJob{ID: runnerJobID}).First(&job).Error; err != nil {
+			flw, err := demand.LockJob(ctx, tx, &job)
+			if err != nil {
 				return err
+			}
+			if err := demand.RequireActiveWorkflow(flw); err != nil {
+				return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
 			}
 			var count int64
 			if err := tx.Model(&app.RunnerJobExecution{}).Where(app.RunnerJobExecution{RunnerJobID: runnerJobID}).Count(&count).Error; err != nil {

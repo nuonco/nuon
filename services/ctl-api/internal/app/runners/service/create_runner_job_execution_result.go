@@ -22,7 +22,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type CreateRunnerJobExecutionResultRequest struct {
@@ -403,11 +402,12 @@ func (s *service) persistRunnerJobExecutionResult(ctx context.Context, job *app.
 	var persisted *app.RunnerJobExecutionResult
 	var created bool
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if _, err := demand.LockWorkflow(ctx, tx, job.FlowWorkflowID()); err != nil {
-			return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
-		}
-		if err := tx.Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJob{ID: job.ID}).First(job).Error; err != nil {
+		flw, err := demand.LockJob(ctx, tx, job)
+		if err != nil {
 			return err
+		}
+		if err := demand.RequireActiveWorkflow(flw); err != nil {
+			return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
 		}
 		var execution app.RunnerJobExecution
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJobExecution{ID: result.RunnerJobExecutionID, RunnerJobID: job.ID}).First(&execution).Error; err != nil {
@@ -423,7 +423,6 @@ func (s *service) persistRunnerJobExecutionResult(ctx context.Context, job *app.
 		if job.Status.IsTerminal() || (!execution.Status.IsRunning() && execution.Status != app.RunnerJobExecutionStatusFinished) || !time.Now().Before(execution.CreatedAt.Add(job.ExecutionTimeout)) {
 			return stderr.ErrConflict{Err: fmt.Errorf("job is terminal or expired"), Description: "job is terminal or expired"}
 		}
-		var err error
 		persisted, created, err = helpers.CreateJobExecutionResultIfAbsent(ctx, tx, result)
 		return err
 	})

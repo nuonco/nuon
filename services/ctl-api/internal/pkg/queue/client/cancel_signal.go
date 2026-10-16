@@ -7,7 +7,6 @@ import (
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/demand"
@@ -33,8 +32,7 @@ func (c *Client) CancelSignal(ctx context.Context, queueSignalID string) (*handl
 			if err := tx.Where(app.WorkflowStep{ID: q.OwnerID}).First(&step).Error; err != nil {
 				return err
 			}
-			var flw app.Workflow
-			if err := tx.Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Workflow{ID: step.InstallWorkflowID}).First(&flw).Error; err != nil {
+			if _, err := demand.LockWorkflow(ctx, tx, step.InstallWorkflowID); err != nil {
 				return err
 			}
 			return tx.Model(&app.QueueSignal{}).Where(app.QueueSignal{ID: queueSignalID}).Update("status", app.NewCompositeStatus(ctx, app.StatusCancelled)).Error

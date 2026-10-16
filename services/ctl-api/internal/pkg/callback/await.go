@@ -57,6 +57,7 @@ type Result struct {
 // steps the user asked to stop.
 const CancelledErrType = "SIGNAL_CANCELLED"
 
+// SuspendedErrType lets the Temporal run finish while the Nuon workflow waits for a runner job.
 const SuspendedErrType = "SIGNAL_SUSPENDED"
 
 func Suspended() error {

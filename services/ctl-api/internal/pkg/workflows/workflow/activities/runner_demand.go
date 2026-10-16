@@ -32,6 +32,9 @@ func (a *Activities) PauseForRunner(ctx context.Context, workflowID, groupID str
 		if err != nil {
 			return err
 		}
+		if err := demand.RequireActiveWorkflow(flw); err != nil {
+			return err
+		}
 		var steps []app.WorkflowStep
 		query := tx.Where(app.WorkflowStep{InstallWorkflowID: workflowID})
 		if groupID != "" {
@@ -61,7 +64,11 @@ func (a *Activities) PrepareRunnerJobResume(ctx context.Context, workflowID, job
 	l.Info("preparing workflow resume")
 	var stepID string
 	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if _, err := demand.LockWorkflow(ctx, tx, workflowID); err != nil {
+		flw, err := demand.LockWorkflow(ctx, tx, workflowID)
+		if err != nil {
+			return err
+		}
+		if err := demand.RequireActiveWorkflow(flw); err != nil {
 			return err
 		}
 		var job app.RunnerJob
@@ -113,8 +120,8 @@ func (a *Activities) CancelRunnerDemandWorkflow(ctx context.Context, workflowID 
 		}
 	}()
 	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var flw app.Workflow
-		if err := tx.Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Workflow{ID: workflowID}).First(&flw).Error; err != nil {
+		flw, err := demand.LockWorkflow(ctx, tx, workflowID)
+		if err != nil {
 			return err
 		}
 		flw.Status.Status = app.StatusCancelled
@@ -122,7 +129,7 @@ func (a *Activities) CancelRunnerDemandWorkflow(ctx context.Context, workflowID 
 			flw.Status.Metadata = map[string]any{}
 		}
 		flw.Status.Metadata["cancel_requested_at"] = time.Now().Unix()
-		if err := tx.Scopes(scopes.WithDisableViews).Model(&flw).Update("status", flw.Status).Error; err != nil {
+		if err := tx.Scopes(scopes.WithDisableViews).Model(flw).Update("status", flw.Status).Error; err != nil {
 			return err
 		}
 		var jobs []app.RunnerJob
@@ -130,13 +137,8 @@ func (a *Activities) CancelRunnerDemandWorkflow(ctx context.Context, workflowID 
 			return err
 		}
 		for _, job := range jobs {
-			if !job.Status.IsTerminal() {
-				if err := tx.Scopes(scopes.WithDisableViews).Model(&job).Updates(map[string]any{"status": app.RunnerJobStatusCancelled, "status_v2": app.NewCompositeStatus(ctx, app.StatusCancelled), "finished_at": time.Now()}).Error; err != nil {
-					return err
-				}
-				if err := tx.Model(&app.RunnerJobExecution{}).Where(app.RunnerJobExecution{RunnerJobID: job.ID}).Where("status IN ?", []app.RunnerJobExecutionStatus{app.RunnerJobExecutionStatusPending, app.RunnerJobExecutionStatusInitializing, app.RunnerJobExecutionStatusInProgress, app.RunnerJobExecutionStatusCleaningUp}).Updates(map[string]any{"status": app.RunnerJobExecutionStatusCancelled, "status_v2": app.NewCompositeStatus(ctx, app.StatusCancelled)}).Error; err != nil {
-					return err
-				}
+			if _, err := demand.CancelJob(ctx, tx, &job, job.CompositeError); err != nil {
+				return err
 			}
 			var qs app.QueueSignal
 			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.QueueSignal{ID: demand.SignalID(&job)}).First(&qs).Error; err != nil {

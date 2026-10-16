@@ -76,11 +76,12 @@ func (s *service) updateRunnerJobExecution(ctx context.Context, runnerJobID, run
 	if demand.SignalID(&job) != "" {
 		var execution app.RunnerJobExecution
 		err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			if _, err := demand.LockWorkflow(ctx, tx, job.FlowWorkflowID()); err != nil {
-				return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
-			}
-			if err := tx.Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJob{ID: runnerJobID}).First(&job).Error; err != nil {
+			flw, err := demand.LockJob(ctx, tx, &job)
+			if err != nil {
 				return err
+			}
+			if err := demand.RequireActiveWorkflow(flw); err != nil {
+				return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
 			}
 			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJobExecution{ID: runnerJobExecutionID, RunnerJobID: runnerJobID}).First(&execution).Error; err != nil {
 				return err

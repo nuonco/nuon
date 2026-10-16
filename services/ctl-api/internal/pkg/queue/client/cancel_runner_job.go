@@ -3,10 +3,8 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/demand"
@@ -22,22 +20,11 @@ func (c *Client) CancelDemandRunnerJob(ctx context.Context, jobID string, compos
 		if err := tx.Scopes(scopes.WithDisableViews).Where(app.RunnerJob{ID: jobID}).First(&job).Error; err != nil {
 			return err
 		}
-		var flw app.Workflow
-		if err := tx.Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Workflow{ID: job.FlowWorkflowID()}).First(&flw).Error; err != nil {
+		if _, err := demand.LockJob(ctx, tx, &job); err != nil {
 			return err
 		}
-		if err := tx.Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJob{ID: jobID}).First(&job).Error; err != nil {
-			return err
-		}
-		if job.Status.IsTerminal() {
-			return nil
-		}
-		job.Status, job.FinishedAt, job.CompositeError = app.RunnerJobStatusCancelled, time.Now(), compositeError
-		job.StatusV2 = app.NewCompositeStatus(ctx, app.StatusCancelled)
-		if err := tx.Scopes(scopes.WithDisableViews).Model(&job).Updates(map[string]any{"status": job.Status, "status_v2": job.StatusV2, "finished_at": job.FinishedAt, "composite_error": compositeError}).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&app.RunnerJobExecution{}).Where(app.RunnerJobExecution{RunnerJobID: jobID}).Where("status IN ?", []app.RunnerJobExecutionStatus{app.RunnerJobExecutionStatusPending, app.RunnerJobExecutionStatusInitializing, app.RunnerJobExecutionStatusInProgress, app.RunnerJobExecutionStatusCleaningUp}).Updates(map[string]any{"status": app.RunnerJobExecutionStatusCancelled, "status_v2": job.StatusV2}).Error; err != nil {
+		changed, err := demand.CancelJob(ctx, tx, &job, compositeError)
+		if err != nil || !changed {
 			return err
 		}
 		if err := demand.UpdateOwner(ctx, tx, &job, app.StatusCancelled); err != nil {
