@@ -11,7 +11,7 @@ var appStates = []string{"active", "error", "provisioning", "deprovisioning", "d
 var installStates = []string{"provisioning", "provisioned", "deprovisioning", "deprovisioned", "reprovisioning", "unset", "other"}
 var componentStates = []string{"active", "error", "deprovisioning", "delete_queued", "unset", "other"}
 var targetStates = []string{"deleted", "delete_failed", "queued", "active", "inactive", "error", "noop", "planning", "syncing", "executing", "unknown", "pending", "disabled", "unset", "other"}
-var runnerStates = []string{"error", "active", "pending", "provisioning", "deprovisioning", "deprovisioned", "reprovisioning", "offline", "awaiting-install-stack-run", "awaiting-heartbeat", "disabled", "unknown", "unset", "other"}
+var runnerStates = []string{"error", "active", "pending", "provisioning", "deprovisioning", "deprovisioned", "reprovisioning", "offline", "awaiting-install-stack-run", "awaiting-heartbeat", "disabled", "unknown", "unset", "other", "missing"}
 
 const retainedResourcesSQL = `
 WITH live_orgs AS (
@@ -40,7 +40,7 @@ WITH live_orgs AS (
 )
 `
 
-func newStateFamilies(meter metric.Meter, level string) ([]*family, error) {
+func newStateFamilies(meter metric.Meter, level string, labelKeys []string) ([]*family, error) {
 	definitions := []struct {
 		name          string
 		interval, ttl time.Duration
@@ -65,9 +65,7 @@ func newStateFamilies(meter metric.Meter, level string) ([]*family, error) {
 				description: "Installs by recorded component-health rollup; not live availability or evaluation freshness.", source: installHealthSQL},
 			{name: "nuon.install.health.report_age.count", unit: "{install}", group: "install", dimension: "nuon.health.report_age", states: reportAgeStates, empty: "never_reported",
 				description: "Installs by recorded health-report arrival age at the transaction clock; arrival does not prove successful processing.", source: reportAgeSQL},
-			{name: "nuon.install.info", unit: "1", detail: true, dimension: "nuon.install.sandbox_mode",
-				description: "1 per retained install with resolved sandbox mode; explicit install mode takes precedence over org mode.",
-				source:      "SELECT org_id, app_id, id, sandbox_mode::text, 1::bigint FROM live_installs"},
+			installInfoMetric(labelKeys),
 			{name: "nuon.install.health.last_report_at", unit: "s", detail: true, timestamp: true,
 				description: "Unix seconds of the recorded health-report arrival; absent when missing, nonpositive or future; not evaluation freshness.",
 				source: `SELECT org_id, app_id, id, '', EXTRACT(EPOCH FROM last_health_report_at)::double precision
@@ -82,8 +80,8 @@ FROM live_installs WHERE last_health_report_at > 'epoch'::timestamptz AND last_h
 				source:      "SELECT org_id, app_id, install_id, health AS state FROM live_targets"},
 		}},
 		{"runners", time.Minute, 3 * time.Minute, []populationMetric{
-			{name: "nuon.runner.count", unit: "{runner}", group: "install", dimension: "resource.state", states: runnerStates, empty: "unset",
-				description: "All retained install-owned runner records by effective state; not live processes or a selected current runner.", source: installRunnersSQL},
+			{name: "nuon.install.runner.count", unit: "{install}", group: "install", dimension: "nuon.runner.status", states: runnerStates, empty: "missing",
+				description: "Installs by their runner's recorded status, missing when absent, or unknown when no unique runner can be identified; not process liveness.", source: installRunnerSQL},
 		}},
 		{"sandboxes", time.Minute, 3 * time.Minute, []populationMetric{
 			{name: "nuon.install.sandbox.lifecycle.count", unit: "{install}", group: "install", dimension: "nuon.sandbox.status", states: sandboxStates, empty: "missing",
@@ -105,12 +103,30 @@ FROM live_installs WHERE last_health_report_at > 'epoch'::timestamptz AND last_h
 	if err != nil {
 		return nil, err
 	}
-	return append(families, workflows), nil
+	deployments, err := newDeploymentFamily(meter, level)
+	if err != nil {
+		return nil, err
+	}
+	families = append(families, workflows, deployments)
+	if level != "fleet" {
+		configurations, err := newConfigurationFamily(meter, level)
+		if err != nil {
+			return nil, err
+		}
+		families = append(families, configurations)
+	}
+	return families, nil
 }
 
-const installRunnersSQL = `
-SELECT i.org_id, i.app_id, i.id AS install_id, COALESCE(NULLIF(r.status_v2->>'status', ''), r.status, '') AS state
+const installRunnerSQL = `
+SELECT i.org_id, i.app_id, i.id AS install_id,
+    CASE
+        WHEN COUNT(DISTINCT rg.id) > 1 OR COUNT(r.id) > 1 THEN 'unknown'
+        WHEN COUNT(r.id) = 0 THEN 'missing'
+        ELSE MAX(COALESCE(NULLIF(r.status_v2->>'status', ''), r.status, ''))
+    END AS state
 FROM live_installs i
-JOIN runner_groups rg ON rg.owner_id = i.id AND rg.owner_type = 'installs' AND rg.type = 'install' AND rg.org_id = i.org_id AND rg.deleted_at = 0
-JOIN runners r ON r.runner_group_id = rg.id AND r.org_id = i.org_id AND r.deleted_at = 0
+LEFT JOIN runner_groups rg ON rg.owner_id = i.id AND rg.owner_type = 'installs' AND rg.type = 'install' AND rg.org_id = i.org_id AND rg.deleted_at = 0
+LEFT JOIN runners r ON r.runner_group_id = rg.id AND r.org_id = i.org_id AND r.deleted_at = 0
+GROUP BY i.org_id, i.app_id, i.id
 `

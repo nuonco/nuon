@@ -78,6 +78,7 @@ func (c *lifecycleLogCore) Write(entry zapcore.Entry, fields []zapcore.Field) er
 		"step_generation.started", "step_generation.completed", "step_generation.failed", "step_generation.cancelled",
 		"drift.detected", "app_config.synced", "install.config_updated", "install.config_update_failed",
 		"component.unhealthy", "component.recovered", "install.degraded", "install.recovered",
+		"component.health_verdict_changed", "install.health_evaluation_failed",
 		"runner_job.queued", "runner_job.available", "runner_job.in-progress", "runner_job.finished", "runner_job.failed", "runner_job.timed-out", "runner_job.cancelled", "runner_job.not-attempted", "runner_job.unknown":
 	default:
 		return nil
@@ -104,18 +105,19 @@ func lifecycleFields(fields []zapcore.Field) []zapcore.Field {
 			"step_id", "step_name", "step_group_id", "queue_id", "queue_signal_id",
 			"runner_job_id", "runner_id", "deploy_id", "build_id", "app_config_id",
 			"owner_id", "owner_type", "operation", "stage", "signal_type", "phase", "status",
-			"job_type", "job_operation", "health", "previous_health", "install_health", "install_previous_health":
+			"job_type", "job_operation", "health", "previous_health", "install_health", "install_previous_health",
+			"install_component_id", "component_status", "observation_at", "observation_health", "outcome":
 			if field.Type != zapcore.StringType || len(field.String) > 512 {
 				continue
 			}
 		case "step_idx", "group_idx", "group_retry_idx", "retry_index", "max_retries",
-			"unhealthy_component_count", "degraded_component_count", "duration_ms", "signal_duration_ms":
+			"unhealthy_component_count", "degraded_component_count", "duration_ms", "signal_duration_ms", "observation_valid_for_seconds":
 			switch field.Type {
 			case zapcore.Int64Type, zapcore.Int32Type, zapcore.Int16Type, zapcore.Int8Type:
 			default:
 				continue
 			}
-		case "plan_only":
+		case "plan_only", "cluster_seen", "cluster_blind":
 			if field.Type != zapcore.BoolType {
 				continue
 			}
