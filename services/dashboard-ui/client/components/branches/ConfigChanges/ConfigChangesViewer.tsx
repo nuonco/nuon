@@ -198,7 +198,7 @@ export const ConfigChangesViewer = ({
           <nav
             id={outlineId}
             aria-label="Changes"
-            className="flex flex-col gap-3 md:min-h-0 md:overflow-y-auto md:overscroll-y-contain"
+            className="flex flex-col gap-3 md:min-h-0 md:overflow-y-auto"
           >
             {groups.map(({ group, icon, items }) => (
               <Expand
@@ -245,7 +245,7 @@ export const ConfigChangesViewer = ({
             renderBody={(body) => (
               <Card
                 elevation="0"
-                className="gap-1 bg-elevation-0 p-0 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-y-contain"
+                className="gap-1 bg-elevation-0 p-0 md:min-h-0 md:flex-1 md:overflow-y-auto"
               >
                 {body}
               </Card>
