@@ -105,6 +105,7 @@ func AllModels() []any {
 		&app.AzureAccount{},
 		&app.GCPAccount{},
 		&app.Install{},
+		&app.InstallStateHead{},
 		&app.InstallState{},
 		&app.InstallEvent{},
 		&app.InstallInputs{},

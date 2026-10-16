@@ -49,22 +49,15 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Mark state as stale (copied from worker/updated.go)
-	if err := activities.AwaitMarkStateStale(ctx, &activities.MarkStateStaleRequest{
-		InstallID:       s.InstallID,
-		TriggeredByID:   s.InstallID,
-		TriggeredByType: "installs",
-	}); err != nil {
-		if !generics.IsGormErrRecordNotFound(err) {
-			return errors.Wrap(err, "unable to mark state as stale")
+	if workflow.GetVersion(ctx, "install-state-update-invalidation", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		if err := activities.AwaitMarkStateStale(ctx, &activities.MarkStateStaleRequest{
+			InstallID: s.InstallID, TriggeredByID: s.InstallID, TriggeredByType: "installs",
+		}); err != nil {
+			if !generics.IsGormErrRecordNotFound(err) {
+				return errors.Wrap(err, "unable to mark state as stale")
+			}
 		}
 	}
-
-	// Dynamic labels are materialized from install state; nothing else regenerates
-	// state on this path (input/install updates only mark it stale), so render here
-	// or templated values sit stale until an unrelated deploy. The render reads
-	// state through GetInstallState, which regenerates the partials the enqueueing
-	// endpoint marked stale. Best-effort: label rendering must not fail the update.
 	if err := activities.AwaitRenderInstallLabels(ctx, &activities.RenderInstallLabelsRequest{
 		InstallID: s.InstallID,
 	}); err != nil {

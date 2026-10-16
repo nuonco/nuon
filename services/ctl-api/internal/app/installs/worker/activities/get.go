@@ -10,12 +10,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
 )
 
 // @temporal-gen-v2 activity
 // @as-wrapper
 // @by-field installID
 func (a *Activities) get(ctx context.Context, installID string) (*app.Install, error) {
+	ctx = routing.WithoutReplica(ctx)
 	install := app.Install{}
 	res := a.db.WithContext(ctx).
 		Preload("CreatedBy").

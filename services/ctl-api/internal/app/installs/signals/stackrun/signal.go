@@ -141,9 +141,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.handleProvisionComplete(ctx, install, version, l)
 		s.propagateToNewerVersion(ctx, install, version, l)
 	} else {
-		installState, err := activities.AwaitGetLatestInstallState(ctx, &activities.GetLatestInstallStateRequest{
-			InstallID: install.ID,
-		})
+		var installState *pkgstate.State
+		var err error
+		if workflow.GetVersion(ctx, "stackrun-fresh-install-state", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			installState, err = activities.AwaitGetLatestInstallStateByInstallID(ctx, install.ID)
+		} else {
+			installState, err = activities.AwaitGetInstallStateByInstallID(ctx, install.ID)
+			if err != nil {
+				return errors.Wrap(err, "unable to get fresh install state for role name rendering")
+			}
+		}
 		if err != nil {
 			l.Warn("unable to get install state for role name rendering", zap.Error(err))
 		}

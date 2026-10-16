@@ -31,10 +31,6 @@ func (s *StackOutputInputsTestSuite) TestConfigSyncMergesAndPinsInputs() {
 		"from_a_stack": ptrTo("also-keep-me"),
 	})
 
-	s.Require().NoError(s.deps.DB.WithContext(ctx).
-		Model(&app.InstallState{}).
-		Create(&app.InstallState{InstallID: install.ID}).Error)
-
 	installCfg := &config.Install{
 		Name:           install.Name,
 		ApprovalOption: config.InstallApprovalOptionApproveAll,
@@ -61,10 +57,9 @@ func (s *StackOutputInputsTestSuite) TestConfigSyncMergesAndPinsInputs() {
 	s.Equal("keep-me", *newest.Values["set_by_hand"])
 	s.Require().NotNil(newest.Values["from_a_stack"], "customer stack output was dropped")
 
-	var st app.InstallState
+	var st app.InstallStateHead
 	s.Require().NoError(s.deps.DB.WithContext(ctx).
-		Where(app.InstallState{InstallID: install.ID}).
-		Order("created_at DESC").
+		Where(app.InstallStateHead{InstallID: install.ID}).
 		First(&st).Error)
 	s.Contains(st.StalePartials, pkgstate.PartialInputs, "state was not invalidated, so the install keeps the old inputs")
 }

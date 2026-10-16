@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -19,6 +20,9 @@ func (a *Activities) GetSecretsSyncJob(ctx context.Context, req GetSecretsSyncJo
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
+	}
+	if install.RunnerID == "" {
+		return nil, generics.TemporalGormError(gorm.ErrRecordNotFound, "install has no runner")
 	}
 
 	job := app.RunnerJob{}
