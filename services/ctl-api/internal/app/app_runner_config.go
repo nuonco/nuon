@@ -104,6 +104,10 @@ type AppRunnerConfig struct {
 	// InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform.
 	InstanceType string `json:"instance_type,omitzero" gorm:"default null" temporaljson:"instance_type,omitzero,omitempty"`
 
+	ImageAutoUpdate bool `json:"image_auto_update,omitzero" gorm:"default null" temporaljson:"image_auto_update,omitzero,omitempty"`
+
+	ImageID string `json:"image_id,omitzero" gorm:"default null" temporaljson:"image_id,omitzero,omitempty"`
+
 	// RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config.
 	RunnerAPIURL string `json:"runner_api_url,omitzero" gorm:"default null" temporaljson:"runner_api_url,omitzero,omitempty"`
 
