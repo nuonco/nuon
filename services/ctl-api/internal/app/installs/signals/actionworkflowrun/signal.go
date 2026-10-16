@@ -68,6 +68,13 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	defer cancel()
 	if s.runnerJobID != "" {
 		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+		return nil
+	}
+	if jobID, runID := activeCheckpoint(cancelCtx); jobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, jobID)
+		if runID != "" {
+			s.updateActionRunStatus(cancelCtx, runID, app.InstallActionRunStatusCancelled, "action workflow run cancelled")
+		}
 	}
 	return nil
 }
@@ -153,35 +160,48 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	found, err := activities.AwaitActionWorkflowInAppConfig(ctx, activities.ActionWorkflowInAppConfigRequest{
-		AppConfigID:      slimInstall.AppConfigID,
-		ActionWorkflowID: installActionWorkflow.ActionWorkflowID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to check action workflow in app config")
+	var prep runCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, checkpointRun, &prep); err != nil {
+		return errors.Wrap(err, "unable to load action run checkpoint")
 	}
 
-	if !found {
-		return fmt.Errorf("action workflow %s is not part of install's current app config", installActionWorkflow.ActionWorkflowID)
-	}
+	actionWorkflowRunID := prep.RunID
+	if actionWorkflowRunID == "" {
+		found, err := activities.AwaitActionWorkflowInAppConfig(ctx, activities.ActionWorkflowInAppConfigRequest{
+			AppConfigID:      slimInstall.AppConfigID,
+			ActionWorkflowID: installActionWorkflow.ActionWorkflowID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to check action workflow in app config")
+		}
 
-	actionWorkflowRun, err := activities.AwaitCreateActionWorkflowRun(ctx, &activities.CreateActionWorkflowRunRequest{
-		InstallActionWorkflowID: installActionWorkflow.ID,
-		ActionWorkflowID:        installActionWorkflow.ActionWorkflowID,
-		InstallID:               installActionWorkflow.InstallID,
-		InstallWorkflowID:       s.InstallWorkflowID,
-		TriggerType:             s.TriggerType,
-		TriggeredByID:           s.TriggeredByID,
-		TriggeredByType:         s.TriggeredByType,
-		RunEnvVars:              generics.ToPtrStringMap(s.RunEnvVars),
-		Role:                    s.Role,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to create action workflow run")
-	}
-	if s.TriggeredByType == "runbook" && workflow.GetVersion(ctx, runbookEventOutputsVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		if err := activities.AwaitRenderRunbookActionEventOutputs(ctx, activities.RenderRunbookActionEventOutputsRequest{ActionWorkflowRunID: actionWorkflowRun.ID}); err != nil {
-			return errors.Wrap(err, "unable to render runbook event outputs")
+		if !found {
+			return fmt.Errorf("action workflow %s is not part of install's current app config", installActionWorkflow.ActionWorkflowID)
+		}
+
+		actionWorkflowRun, err := activities.AwaitCreateActionWorkflowRun(ctx, &activities.CreateActionWorkflowRunRequest{
+			InstallActionWorkflowID: installActionWorkflow.ID,
+			ActionWorkflowID:        installActionWorkflow.ActionWorkflowID,
+			InstallID:               installActionWorkflow.InstallID,
+			InstallWorkflowID:       s.InstallWorkflowID,
+			TriggerType:             s.TriggerType,
+			TriggeredByID:           s.TriggeredByID,
+			TriggeredByType:         s.TriggeredByType,
+			RunEnvVars:              generics.ToPtrStringMap(s.RunEnvVars),
+			Role:                    s.Role,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create action workflow run")
+		}
+		actionWorkflowRunID = actionWorkflowRun.ID
+		prep.RunID = actionWorkflowRunID
+		if err := job.SaveCheckpoint(ctx, checkpointRun, prep); err != nil {
+			return errors.Wrap(err, "unable to checkpoint action workflow run")
+		}
+		if s.TriggeredByType == "runbook" && workflow.GetVersion(ctx, runbookEventOutputsVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			if err := activities.AwaitRenderRunbookActionEventOutputs(ctx, activities.RenderRunbookActionEventOutputsRequest{ActionWorkflowRunID: actionWorkflowRunID}); err != nil {
+				return errors.Wrap(err, "unable to render runbook event outputs")
+			}
 		}
 	}
 
@@ -189,25 +209,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
 			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer updateCtxCancel()
-			s.updateActionRunStatus(updateCtx, actionWorkflowRun.ID, app.InstallActionRunStatusCancelled, "action workflow run cancelled")
+			s.updateActionRunStatus(updateCtx, actionWorkflowRunID, app.InstallActionRunStatusCancelled, "action workflow run cancelled")
 		}
 	}()
 
 	if s.WorkflowStepID != "" {
 		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 			StepID:         s.WorkflowStepID,
-			StepTargetID:   actionWorkflowRun.ID,
+			StepTargetID:   actionWorkflowRunID,
 			StepTargetType: "install_action_workflow_runs", // plugins.TableName would require db instance
 		}); err != nil {
 			return errors.Wrap(err, "unable to update install action workflow")
 		}
 	}
 
-	if err := s.executeActionWorkflowRun(ctx, slimInstall.ID, slimInstall.Metadata, actionWorkflowRun.ID); err != nil {
-		return errors.Wrap(err, "unable to execute action workflow run")
-	}
-
-	return nil
+	return errors.Wrap(s.executeActionWorkflowRun(ctx, slimInstall.ID, slimInstall.Metadata, actionWorkflowRunID), "unable to execute action workflow run")
 }
 
 func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
@@ -215,9 +231,20 @@ func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
 	l.Info("executing adhoc action workflow run signal",
 		zap.String("adhoc_action_run_id", s.AdhocActionRunID))
 
-	if s.TriggeredByType == "runbook" && workflow.GetVersion(ctx, runbookEventOutputsVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		if err := activities.AwaitRenderRunbookActionEventOutputs(ctx, activities.RenderRunbookActionEventOutputsRequest{ActionWorkflowRunID: s.AdhocActionRunID}); err != nil {
-			return errors.Wrap(err, "unable to render runbook event outputs")
+	var prep runCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, checkpointRun, &prep); err != nil {
+		return errors.Wrap(err, "unable to load action run checkpoint")
+	}
+
+	if prep.RunID == "" {
+		if s.TriggeredByType == "runbook" && workflow.GetVersion(ctx, runbookEventOutputsVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			if err := activities.AwaitRenderRunbookActionEventOutputs(ctx, activities.RenderRunbookActionEventOutputsRequest{ActionWorkflowRunID: s.AdhocActionRunID}); err != nil {
+				return errors.Wrap(err, "unable to render runbook event outputs")
+			}
+		}
+		prep.RunID = s.AdhocActionRunID
+		if err := job.SaveCheckpoint(ctx, checkpointRun, prep); err != nil {
+			return errors.Wrap(err, "unable to checkpoint action workflow run")
 		}
 	}
 
@@ -268,6 +295,11 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		}
 	}
 
+	var prep runCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, checkpointRun, &prep); err != nil {
+		return errors.Wrap(err, "unable to load action run checkpoint")
+	}
+
 	parentLS, _ := cctx.GetLogStreamWorkflow(ctx)
 
 	lsReq := activities.CreateLogStreamRequest{
@@ -279,14 +311,28 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusInProgress, "in-progress")
 
-	ls, err := activities.AwaitCreateLogStream(ctx, lsReq)
-	if err != nil {
-		return errors.Wrap(err, "unable to create log stream")
+	var ls *app.LogStream
+	if prep.LogStreamID != "" {
+		ls, err = activities.AwaitGetLogStreamByLogStreamID(ctx, prep.LogStreamID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get log stream")
+		}
+	} else {
+		ls, err = activities.AwaitCreateLogStream(ctx, lsReq)
+		if err != nil {
+			return errors.Wrap(err, "unable to create log stream")
+		}
+		prep.RunID = actionWorkflowRunID
+		prep.LogStreamID = ls.ID
+		if err := job.SaveCheckpoint(ctx, checkpointRun, prep); err != nil {
+			return errors.Wrap(err, "unable to checkpoint log stream")
+		}
 	}
 
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
-	}()
+	if job.DemandEnabled(ctx) {
+		return s.runActionSequence(cctx.SetLogStreamWorkflowContext(ctx, ls), installID, run, ls.ID, preparationCompositeErrorsEnabled)
+	}
+	defer activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
 
@@ -311,18 +357,47 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		}
 	}
 
-	l.Info("creating plan for executing action run")
-	planResponse, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
-		ActionWorkflowRunID: actionWorkflowRunID,
+	jobID, err := s.prepareActionJob(ctx, installID, run, ls.ID, preparationCompositeErrorsEnabled)
+	if err != nil {
+		return err
+	}
+
+	l.Info("executing runner job")
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID: run.Install.RunnerID,
+		JobID:    jobID,
 	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		WorkflowID: "actions-install-run-exec-job" + run.ID,
 	})
 	if err != nil {
-		if preparationCompositeErrorsEnabled {
-			s.recordPreparationCompositeError(ctx, run.ID, err)
+		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, job.JobErrorMessage(err, "action workflow job failed"))
+		return errors.Wrap(err, "runner job failed")
+	}
+
+	return s.finalizeActionRun(ctx, installID, run.ID)
+}
+
+func (s *Signal) finalizeActionRun(ctx workflow.Context, installID, runID string) error {
+	s.updateActionRunStatus(ctx, runID, app.InstallActionRunStatusFinished, "finished")
+
+	if s.InstallActionWorkflowID != "" {
+		if err := stategen.HintOrGenerate(ctx, stategen.Request{
+			InstallID:       installID,
+			Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
+			ForceAll:        true,
+			TriggeredByID:   runID,
+			TriggeredByType: "install_action_workflow_runs",
+		}); err != nil {
+			return err
 		}
-		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
-		return errors.Wrap(err, "unable to create plan")
+	}
+	return nil
+}
+
+func (s *Signal) prepareActionJob(ctx workflow.Context, installID string, run *app.InstallActionWorkflowRun, logStreamID string, preparationCompositeErrorsEnabled bool) (string, error) {
+	planResponse, err := s.createActionPlan(ctx, run, preparationCompositeErrorsEnabled)
+	if err != nil {
+		return "", err
 	}
 
 	// image-backed actions: verify the org and runner can host the container
@@ -331,23 +406,46 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	if planResponse.Plan.SourceImage != "" {
 		if err := s.checkImageActionSupported(ctx, run); err != nil {
 			s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, err.Error())
-			return errors.Wrap(err, "unable to prepare image-backed action")
+			return "", errors.Wrap(err, "unable to prepare image-backed action")
 		}
 
 		if planResponse.Plan.ImageDigestRef == "" {
-			if err := s.mirrorActionImage(ctx, run, ls.ID, planResponse.Plan); err != nil {
+			if err := s.mirrorActionImage(ctx, run, logStreamID, planResponse.Plan); err != nil {
 				s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, err.Error())
-				return errors.Wrap(err, "unable to prepare image-backed action")
+				return "", errors.Wrap(err, "unable to prepare image-backed action")
 			}
 		}
 	}
 
+	return s.createActionJob(ctx, installID, run, logStreamID, planResponse, preparationCompositeErrorsEnabled)
+}
+
+func (s *Signal) createActionPlan(ctx workflow.Context, run *app.InstallActionWorkflowRun, preparationCompositeErrorsEnabled bool) (*plan.CreateActionPlanResponse, error) {
+	workflow.GetLogger(ctx).Info("creating plan for executing action run")
+	created, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
+		ActionWorkflowRunID: run.ID,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
+	if err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
+		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
+		return nil, errors.Wrap(err, "unable to create plan")
+	}
+	return &created, nil
+}
+
+func (s *Signal) createActionJob(ctx workflow.Context, installID string, run *app.InstallActionWorkflowRun, logStreamID string, planResponse *plan.CreateActionPlanResponse, preparationCompositeErrorsEnabled bool) (string, error) {
+	l := workflow.GetLogger(ctx)
+
 	// execute job
 	l.Info("creating runner job to execute action")
 	runnerJob, err := activities.AwaitCreateActionWorkflowRunRunnerJob(ctx, &activities.CreateActionWorkflowRunRunnerJob{
-		ActionWorkflowRunID: actionWorkflowRunID,
+		ActionWorkflowRunID: run.ID,
 		RunnerID:            run.Install.RunnerID,
-		LogStreamID:         ls.ID,
+		LogStreamID:         logStreamID,
 		Metadata: map[string]string{
 			"install_id":             installID,
 			"action_workflow_name":   run.ActionWorkflowConfig.ActionWorkflow.Name,
@@ -360,7 +458,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 			s.recordPreparationCompositeError(ctx, run.ID, err)
 		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
-		return errors.Wrap(err, "unable to create runner job")
+		return "", errors.Wrap(err, "unable to create runner job")
 	}
 	s.runnerJobID = runnerJob.ID
 
@@ -371,7 +469,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 			s.recordPreparationCompositeError(ctx, run.ID, err)
 		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
-		return errors.Wrap(err, "unable to convert plan to json")
+		return "", errors.Wrap(err, "unable to convert plan to json")
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
@@ -383,7 +481,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 			s.recordPreparationCompositeError(ctx, run.ID, err)
 		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
-		return errors.Wrap(err, "unable to save runner job plan")
+		return "", errors.Wrap(err, "unable to save runner job plan")
 	}
 
 	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
@@ -395,40 +493,10 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 			s.recordPreparationCompositeError(ctx, run.ID, err)
 		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to record install role usage")
-		return errors.Wrap(err, "unable to record install role usage")
+		return "", errors.Wrap(err, "unable to record install role usage")
 	}
 
-	planJSON = nil
-
-	// now queue and execute the job
-	l.Info("executing runner job")
-	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID: run.Install.RunnerID,
-		JobID:    runnerJob.ID,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: "actions-install-run-exec-job" + run.ID,
-	})
-	if err != nil {
-		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, job.JobErrorMessage(err, "action workflow job failed"))
-		return errors.Wrap(err, "runner job failed")
-	}
-
-	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
-
-	// this is empty for adhoc actions, for adhoc actions we dont need to generate states post completion
-	if s.InstallActionWorkflowID != "" {
-		if err := stategen.HintOrGenerate(ctx, stategen.Request{
-			InstallID:       installID,
-			Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
-			ForceAll:        true,
-			TriggeredByID:   actionWorkflowRunID,
-			TriggeredByType: "install_action_workflow_runs",
-		}); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return runnerJob.ID, nil
 }
 
 func (s *Signal) recordPreparationCompositeError(ctx workflow.Context, runID string, runErr error) {
@@ -456,11 +524,35 @@ func (s *Signal) checkImageActionSupported(ctx workflow.Context, run *app.Instal
 // the install registry via an oci-sync job. It pins the plan to the mirrored
 // digest; any error here prevents the action job from being dispatched at all.
 func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionWorkflowRun, logStreamID string, awPlan *plantypes.ActionWorkflowRunPlan) error {
+	jobID, err := s.prepareMirrorJob(ctx, run, logStreamID, awPlan)
+	if err != nil {
+		return err
+	}
+
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID:   run.Install.RunnerID,
+		JobID:      jobID,
+		WorkflowID: "action-image-sync-exec-job-" + run.ID,
+	}, nil)
+	if err != nil {
+		return errors.Wrap(err, "image sync job failed")
+	}
+
+	digestRef, err := s.finalizeMirrorJob(ctx, run, jobID)
+	if err != nil {
+		return err
+	}
+	awPlan.ImageDigestRef = digestRef
+
+	return nil
+}
+
+func (s *Signal) prepareMirrorJob(ctx workflow.Context, run *app.InstallActionWorkflowRun, logStreamID string, awPlan *plantypes.ActionWorkflowRunPlan) (string, error) {
 	l := workflow.GetLogger(ctx)
 
 	src, srcTag, err := parseActionImageSource(awPlan.SourceImage)
 	if err != nil {
-		return errors.Wrap(err, "unable to parse action image reference")
+		return "", errors.Wrap(err, "unable to parse action image reference")
 	}
 
 	l.Info("mirroring image-backed action image into install registry",
@@ -477,7 +569,7 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 		},
 	})
 	if err != nil {
-		return errors.Wrap(err, "unable to create image sync job")
+		return "", errors.Wrap(err, "unable to create image sync job")
 	}
 
 	syncPlan := &plantypes.SyncOCIPlan{
@@ -502,7 +594,7 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 
 	syncPlanJSON, err := json.Marshal(syncPlan)
 	if err != nil {
-		return errors.Wrap(err, "unable to marshal sync plan")
+		return "", errors.Wrap(err, "unable to marshal sync plan")
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
@@ -510,34 +602,32 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 		PlanJSON:      string(syncPlanJSON),
 		CompositePlan: plantypes.CompositePlan{SyncOCIPlan: syncPlan},
 	}); err != nil {
-		return errors.Wrap(err, "unable to save sync job plan")
+		return "", errors.Wrap(err, "unable to save sync job plan")
 	}
 
-	if _, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   run.Install.RunnerID,
-		JobID:      syncJob.ID,
-		WorkflowID: "action-image-sync-exec-job-" + run.ID,
-	}); err != nil {
-		return errors.Wrap(err, "image sync job failed")
-	}
+	return syncJob.ID, nil
+}
+
+func (s *Signal) finalizeMirrorJob(ctx workflow.Context, run *app.InstallActionWorkflowRun, jobID string) (string, error) {
+	l := workflow.GetLogger(ctx)
 
 	// Bind execution to the exact manifest just mirrored: read the resolved
 	// digest-pinned ref from the sync job outputs so the runner pulls by digest
 	// rather than the mutable tag. This fails closed. If the digest can't be
 	// resolved and validated we don't dispatch the action job at all, otherwise
 	// the runner would execute whatever the mutable tag points at.
-	digestRef, outputs, err := resolveMirroredDigestRef(ctx, syncJob.ID)
+	digestRef, outputs, err := resolveMirroredDigestRef(ctx, jobID)
 	if err != nil {
-		return err
+		return "", err
 	}
-	awPlan.ImageDigestRef = digestRef
 
 	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 		// One attempt: retried runs that re-mirror hit a unique owner key.
 		if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
-			OwnerID:   run.ID,
-			OwnerType: "install_action_workflow_runs",
-			Outputs:   outputs,
+			OwnerID:       run.ID,
+			OwnerType:     "install_action_workflow_runs",
+			Outputs:       outputs,
+			ReuseExisting: job.DemandEnabled(ctx),
 		}, &workflow.ActivityOptions{
 			RetryPolicy: &temporal.RetryPolicy{MaximumAttempts: 1},
 		}); err != nil {
@@ -548,7 +638,7 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 	l.Info("bound image-backed action to mirrored manifest",
 		zap.String("image_digest_ref", digestRef))
 
-	return nil
+	return digestRef, nil
 }
 
 // resolveMirroredDigestRef reads the digest-pinned image ref the oci-sync job

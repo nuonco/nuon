@@ -2,8 +2,10 @@ package executeworkflowstep
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -84,7 +86,11 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return nil
 	}
 
+	suspended := false
 	defer func() {
+		if suspended {
+			return
+		}
 		activityCtx := ctx
 		if ctx.Err() != nil {
 			var cancel workflow.CancelFunc
@@ -111,6 +117,10 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	// Execute the inner signal
 	stepErr := s.executeInnerSignal(ctx, step)
 	if stepErr != nil {
+		if callback.IsSuspended(stepErr) && !s.canceled {
+			suspended = true
+			return nil
+		}
 		if ctx.Err() != nil {
 			// If Cancel() was called (via the cancel update handler), it already
 			// wrote DirectiveStop and updated status — nothing more to do.
@@ -200,6 +210,25 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 // It updates step status, then enqueues the inner signal to the install-signals
 // queue and awaits completion.
 func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep) error {
+	if s.ResidentFlow && step.RunnerJobSignalID != nil && workflow.GetVersion(ctx, "runner-demand-step-resume-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		s.innerQueueSignalID = *step.RunnerJobSignalID
+		resumeCtx := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
+		var status app.Status
+		if err := workflow.ExecuteActivity(resumeCtx, (*client.Client).ResumeRunnerJobSignal, s.innerQueueSignalID).Get(ctx, &status); err != nil {
+			return err
+		}
+		if status == app.StatusWaitingForRunner {
+			return callback.Suspended()
+		}
+		if status == app.StatusCancelled {
+			return temporal.NewNonRetryableApplicationError("runner job continuation was cancelled", callback.CancelledErrType, nil)
+		}
+		if status != app.StatusSuccess {
+			return errors.Errorf("runner job continuation returned %s", status)
+		}
+		return nil
+	}
+
 	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepStartedAtByID(ctx, step.ID); err != nil {
 		return err
 	}
@@ -267,6 +296,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 	// whose ID nobody ever learns (failed TestCancelWorkflowPropagatesDown).
 	dispatchCtx, dispatchCancel := workflow.NewDisconnectedContext(ctx)
 	defer dispatchCancel()
+	runnerDemand := s.ResidentFlow && workflow.GetVersion(ctx, "runner-demand-step-dispatch-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(dispatchCtx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
@@ -277,6 +307,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		SignalOwnerType: "install_workflow_steps",
 		Callback:        cb,
 		DedupeKey:       &dedupeKey,
+		RunnerDemand:    runnerDemand,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)

@@ -103,15 +103,17 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	// A stack change recycles the runner, so gating on the outgoing one would
 	// block the apply that brings its replacement up.
 	if !stackChanged && (sandboxChanged || len(deployComponentIDs) > 0) {
-		sg.nextGroupEager()
-		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-			InstallID: installID,
-			Mode:      awaitrunnerhealthy.ModeRequireActive,
-		}, flw.PlanOnly)
-		if err != nil {
-			return nil, err
+		if sg.keepRunnerHealthGate(ctx) {
+			sg.nextGroupEager()
+			step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+				InstallID: installID,
+				Mode:      awaitrunnerhealthy.ModeRequireActive,
+			}, flw.PlanOnly)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, step)
 		}
-		steps = append(steps, step)
 	}
 
 	if stackChanged {
@@ -121,15 +123,17 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		}
 		steps = append(steps, stackSteps...)
 
-		sg.nextGroup()
-		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-			InstallID: installID,
-			Mode:      awaitrunnerhealthy.ModeStartup,
-		}, flw.PlanOnly)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create post-stack runner health step")
+		if sg.keepRunnerHealthGate(ctx) {
+			sg.nextGroup()
+			step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+				InstallID: installID,
+				Mode:      awaitrunnerhealthy.ModeStartup,
+			}, flw.PlanOnly)
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to create post-stack runner health step")
+			}
+			steps = append(steps, step)
 		}
-		steps = append(steps, step)
 	}
 
 	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))

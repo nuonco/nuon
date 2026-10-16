@@ -52,7 +52,11 @@ export const DeployStepDetails = ({
             </Text>
             {deploy?.component_id ? (
               <Link
-                href={installLink({ orgId: orgId, installId: step?.owner_id, suffix: `/components/${deploy.component_id}` })}
+                href={installLink({
+                  orgId: orgId,
+                  installId: step?.owner_id,
+                  suffix: `/components/${deploy.component_id}`,
+                })}
               >
                 View component
               </Link>
@@ -60,7 +64,11 @@ export const DeployStepDetails = ({
 
             {deploy?.component_id && deploy?.id ? (
               <Link
-                href={installLink({ orgId: orgId, installId: step?.owner_id, suffix: `/components/${deploy.component_id}/deploys/${deploy.id}` })}
+                href={installLink({
+                  orgId: orgId,
+                  installId: step?.owner_id,
+                  suffix: `/components/${deploy.component_id}/deploys/${deploy.id}`,
+                })}
               >
                 View deploy logs
               </Link>
@@ -75,12 +83,15 @@ export const DeployStepDetails = ({
             <Time variant="subtext" time={deploy.created_at} />
           </Text>
         ) : null}
-        {deploy?.created_at ? (
+        {deploy?.created_at &&
+        step?.status?.status !== 'waiting-for-runner' &&
+        (!step?.finished || step.execution_time > 0) ? (
           <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
             <Duration
               variant="subtext"
-              beginTime={deploy.created_at}
+              nanoseconds={step?.finished ? step.execution_time : undefined}
+              beginTime={step?.started_at ?? deploy.created_at}
               endTime={deploy.updated_at}
             />
           </Text>

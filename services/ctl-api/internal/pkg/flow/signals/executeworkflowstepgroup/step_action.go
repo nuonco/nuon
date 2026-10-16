@@ -17,6 +17,7 @@ const (
 	actionSkipGroup
 	actionAwaitApproval
 	actionAwaitRetry
+	actionAwaitRunner
 )
 
 // resolveStepAction maps a completed step's directive to the group's next
@@ -25,6 +26,8 @@ const (
 // step whose domain outcome cannot be read never lets the group carry on.
 func resolveStepAction(d directive.Step, residentFlow, manualRetry bool) stepAction {
 	switch d {
+	case directive.StepAwaitRunner:
+		return actionAwaitRunner
 	case directive.StepContinue:
 		return actionAdvance
 

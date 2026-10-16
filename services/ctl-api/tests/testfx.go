@@ -46,6 +46,7 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/registryauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
@@ -140,6 +141,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 
 		// Blob storage service
 		fx.Provide(blobstore.NewService),
+		fx.Provide(registryauth.New),
 
 		// Slack helpers (needed transitively by orgshelpers)
 		fx.Provide(func() *slackclient.Client { return slackclient.New() }),

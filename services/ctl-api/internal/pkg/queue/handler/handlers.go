@@ -3,7 +3,33 @@ package handler
 import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 )
+
+const ResumeRunnerJobUpdateName = "resume-runner-job"
+
+func (h *handler) resumeRunnerJob(ctx workflow.Context) (app.Status, error) {
+	if h.finished {
+		if isTerminalQueueStatus(h.finishedStatus) &&
+			workflow.GetVersion(ctx, handlerTerminalDemandVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			return h.finishedStatus, nil
+		}
+		return "", errors.New("handler already finished")
+	}
+	if h.executing {
+		return "", errors.New("handler is executing")
+	}
+	if h.queueSignal == nil || !h.queueSignal.RunnerDemand {
+		return "", errors.New("signal does not support runner demand")
+	}
+	_, err := h.executeHandler(ctx, callback.Ref{})
+	if h.finished {
+		return h.finishedStatus, nil
+	}
+	return h.finishedStatus, err
+}
 
 type handlerType string
 
@@ -25,6 +51,7 @@ func (h *handler) registerHandlers(ctx workflow.Context) error {
 		{ReadyHandlerName, handlerTypeUpdate, h.readyHandler, nil},
 		{ValidateUpdateName, handlerTypeUpdate, h.validateHandler, nil},
 		{ExecuteUpdateName, handlerTypeUpdate, h.executeHandler, nil},
+		{ResumeRunnerJobUpdateName, handlerTypeUpdate, h.resumeRunnerJob, nil},
 		{CancelUpdateName, handlerTypeUpdate, h.cancelHandler, nil},
 		{FinishedHandlerName, handlerTypeUpdate, h.finishedHandler, nil},
 	}

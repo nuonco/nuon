@@ -11,6 +11,8 @@ import (
 // runnerHealthyStepName gates a phase on the install's runner reporting healthy.
 const runnerHealthyStepName = app.RunnerHealthyStepName
 
+const runnerHealthGateRemovedVersion = "install-workflows-runner-health-gate-removed-v1"
+
 type stepGroup struct {
 	idx          int
 	groups       []*app.WorkflowStepGroup
@@ -21,6 +23,8 @@ type stepGroup struct {
 	// signal.SignalWithMutableLifecycleContext, removing the need for a
 	// runtime DB lookup in the queue handler.
 	flw *app.Workflow
+
+	groupEagerDeferred bool
 }
 
 func newStepGroup(flw *app.Workflow) *stepGroup {
@@ -45,6 +49,7 @@ func (s *stepGroup) nextGroupNamed(name string) {
 }
 
 func (s *stepGroup) nextGroupWithOpts(name string, parallel bool) {
+	s.groupEagerDeferred = false
 	s.idx++
 	g := &app.WorkflowStepGroup{
 		GroupIdx: s.idx,
@@ -67,7 +72,18 @@ func (s *stepGroup) Result(steps []*app.WorkflowStep) *app.GenerateStepsResult {
 	}
 }
 
+func (s *stepGroup) keepRunnerHealthGate(ctx workflow.Context) bool {
+	return workflow.GetVersion(ctx, runnerHealthGateRemovedVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion
+}
+
+func (s *stepGroup) deferGroupEager() {
+	s.groupEagerDeferred = true
+}
+
 func (s *stepGroup) installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, sig signal.Signal, planOnly bool, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
+	if s.groupEagerDeferred {
+		s.nextGroupEager()
+	}
 	opts = append(opts, WithGroupIdx(s.idx))
 
 	// Stamp install workflow identity onto the signal so the queue handler can

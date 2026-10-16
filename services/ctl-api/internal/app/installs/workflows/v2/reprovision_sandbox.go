@@ -58,16 +58,17 @@ func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.I
 	steps := make([]*app.WorkflowStep, 0)
 
 	if gateRunnerHealthy {
-		dg.sg.nextGroupEager()
-
-		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-			InstallID: dg.installID,
-			Mode:      awaitrunnerhealthy.ModeRequireActive,
-		}, dg.flw.PlanOnly)
-		if err != nil {
-			return nil, err
+		if dg.sg.keepRunnerHealthGate(ctx) {
+			dg.sg.nextGroupEager()
+			step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+				InstallID: dg.installID,
+				Mode:      awaitrunnerhealthy.ModeRequireActive,
+			}, dg.flw.PlanOnly)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, step)
 		}
-		steps = append(steps, step)
 	}
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreReprovisionSandbox)

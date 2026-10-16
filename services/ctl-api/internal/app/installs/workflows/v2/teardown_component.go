@@ -39,21 +39,24 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	dg := newGenCtx(sg, flw, installID, appCfg, awData)
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroupEager()
-
 	componentID, ok := flw.Metadata["component_id"]
 	if !ok {
 		return nil, errors.New("component id is not set on the install workflow for a manual deploy")
 	}
 
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
+	if sg.keepRunnerHealthGate(ctx) {
+		sg.nextGroupEager()
+		step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	} else {
+		sg.deferGroupEager()
 	}
-	steps = append(steps, step)
 
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, generics.FromPtrStr(componentID))
 	if err != nil {

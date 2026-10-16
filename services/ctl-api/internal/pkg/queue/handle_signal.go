@@ -38,7 +38,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	}
 
 	// skip signals that were already processed (e.g. via direct-execute)
-	if generics.SliceContains(queueSignal.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled}) {
+	if generics.SliceContains(queueSignal.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled, app.StatusWaitingForRunner}) {
 		l.Info("queue signal already in terminal state, skipping",
 			zap.String("queue-signal-id", queueSignal.ID),
 			zap.String("status", string(queueSignal.Status.Status)))
@@ -77,6 +77,9 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	var signalErr error
 	signalErr = q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
+		if callback.IsSuspended(signalErr) {
+			return nil
+		}
 		// Cancellation is a domain outcome, not a dispatch failure — the
 		// cancel handler already persisted StatusCancelled; never stamp
 		// error over it.
@@ -93,7 +96,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		shouldWriteError := true
 		if workflow.GetVersion(ctx, queueSignalErrorStatusGuardVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 			fresh, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, queueRef.ID)
-			shouldWriteError = err != nil || !generics.SliceContains(fresh.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled})
+			shouldWriteError = err != nil || !generics.SliceContains(fresh.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled, app.StatusWaitingForRunner})
 		}
 		if shouldWriteError {
 			if statusErr := statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{

@@ -10,6 +10,7 @@ export type TFixtureReply = {
   paginated?: boolean
   status?: number
   pending?: boolean
+  events?: Array<{ name: string; data: unknown; delay?: number }>
 }
 
 export type TFixture = (
@@ -31,31 +32,53 @@ const json = (body: unknown, paginated = false, status = 200) => {
   return new Response(JSON.stringify(body), { status, headers })
 }
 
-class StoryEventSource {
+class StoryEventSource extends EventTarget {
   static CONNECTING = 0
   static OPEN = 1
   static CLOSED = 2
+  static instances = new Set<StoryEventSource>()
   readyState = StoryEventSource.OPEN
   onopen: ((event: Event) => void) | null = null
   onerror: ((event: Event) => void) | null = null
   onmessage: ((event: MessageEvent) => void) | null = null
   url: string
+  timers: ReturnType<typeof setTimeout>[] = []
 
   constructor(url: string) {
+    super()
     this.url = url
+    StoryEventSource.instances.add(this)
     queueMicrotask(() => {
+      if (this.readyState === StoryEventSource.CLOSED) return
       this.onopen?.(new Event('open'))
+      this.refresh()
     })
   }
 
-  addEventListener() {}
-  removeEventListener() {}
+  refresh() {
+    this.timers.forEach(clearTimeout)
+    const reply = current?.(new URL(this.url, window.location.origin), undefined)
+    this.timers = (reply?.events ?? []).map(({ name, data, delay = 0 }) =>
+      setTimeout(() => {
+        if (this.readyState === StoryEventSource.CLOSED) return
+        const event = new MessageEvent(name, {
+          data: typeof data === 'string' ? data : JSON.stringify(data),
+        })
+        if (name === 'message') this.onmessage?.(event)
+        this.dispatchEvent(event)
+      }, delay)
+    )
+  }
+
   close() {
+    this.timers.forEach(clearTimeout)
     this.readyState = StoryEventSource.CLOSED
+    StoryEventSource.instances.delete(this)
   }
-  dispatchEvent() {
-    return true
-  }
+}
+
+export const refreshInstallFixture = () => {
+  StoryEventSource.instances.forEach((source) => source.refresh())
 }
 
 let restoreFetch: typeof window.fetch | null = null
@@ -98,6 +121,7 @@ export const beginInstallFixture = (fixture: TFixture) => {
 export const endInstallFixture = (mine: number) => {
   if (mine !== generation) return
   current = null
+  StoryEventSource.instances.forEach((source) => source.close())
   if (restoreFetch) {
     window.fetch = restoreFetch
     restoreFetch = null

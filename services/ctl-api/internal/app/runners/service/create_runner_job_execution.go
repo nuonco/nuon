@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -12,10 +14,12 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/demand"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type CreateRunnerJobExecutionRequest struct{}
@@ -50,16 +54,6 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 	}
 	cctx.SetOrgIDGinContext(ctx, runnerJob.OrgID)
 
-	if runnerJob.ExecutionCount >= runnerJob.MaxExecutions {
-		if _, err := s.cancelRunnerJob(ctx, runnerJobID, joberrors.CancellationReasonAttemptsExhausted); err != nil {
-			ctx.Error(errors.Wrap(err, "unable to cancel runner job"))
-			return
-		}
-
-		ctx.Error(fmt.Errorf("runner job has exceeded max executions"))
-		return
-	}
-
 	execution, err := s.claimRunnerJob(ctx, runnerJobID, clientVersion)
 	if err != nil {
 		ctx.Error(err)
@@ -86,31 +80,89 @@ func (s *service) claimRunnerJob(ctx context.Context, runnerJobID, clientVersion
 		})
 	}
 
+	var processSignalID string
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		res := tx.Model(&app.RunnerJob{}).
-			Where(app.RunnerJob{ID: runnerJobID, Status: app.RunnerJobStatusAvailable}).
-			Updates(app.RunnerJob{
-				Status:            app.RunnerJobStatusInProgress,
-				StatusDescription: "in-progress",
-			})
-		if res.Error != nil {
-			return errors.Wrap(res.Error, "unable to claim runner job")
+		var job app.RunnerJob
+		if err := tx.Scopes(scopes.WithDisableViews).Where(app.RunnerJob{ID: runnerJobID}).First(&job).Error; err != nil {
+			return err
 		}
-		if res.RowsAffected == 0 {
+		flw, err := demand.LockJob(ctx, tx, &job)
+		if err != nil {
+			if errors.Is(err, demand.ErrJobChanged) {
+				return stderr.ErrConflict{Err: err, Description: "runner job changed; retry the claim"}
+			}
+			return err
+		}
+		if err := demand.RequireActiveWorkflow(flw); err != nil {
+			return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
+		}
+		if job.Status != app.RunnerJobStatusAvailable {
 			return stderr.ErrConflict{
 				Err:         fmt.Errorf("runner job %s is not available", runnerJobID),
 				Description: "runner job was already claimed",
 			}
 		}
+		var count int64
+		if err := tx.Unscoped().Model(&app.RunnerJobExecution{}).Where(app.RunnerJobExecution{RunnerJobID: runnerJobID}).Count(&count).Error; err != nil {
+			return err
+		}
+		if count >= int64(job.MaxExecutions) {
+			return stderr.ErrConflict{Err: fmt.Errorf("runner job has exceeded max executions"), Description: "runner job has exceeded max executions"}
+		}
+		isDemand := demand.SignalID(&job) != ""
+		if isDemand {
+			var qs app.QueueSignal
+			if err := tx.Where(app.QueueSignal{ID: demand.SignalID(&job)}).First(&qs).Error; err != nil {
+				return err
+			}
+			if qs.Status.Status == app.StatusCancelled {
+				return stderr.ErrConflict{Err: fmt.Errorf("signal is cancelled"), Description: "signal is cancelled"}
+			}
+		}
+		if err := tx.Scopes(scopes.WithDisableViews).Model(&job).Updates(app.RunnerJob{
+			Status:            app.RunnerJobStatusInProgress,
+			StatusDescription: "in-progress",
+		}).Error; err != nil {
+			return errors.Wrap(err, "unable to claim runner job")
+		}
 
 		if err := tx.Create(&runnerJobExecution).Error; err != nil {
 			return errors.Wrap(err, "unable to create runner job execution")
 		}
+		if isDemand {
+			now := runnerJobExecution.CreatedAt
+			if now.IsZero() {
+				now = time.Now()
+			}
+			if err := tx.Scopes(scopes.WithDisableViews).Model(&job).Updates(map[string]any{"started_at": now, "status_v2": app.NewCompositeStatus(ctx, app.StatusInProgress)}).Error; err != nil {
+				return err
+			}
+			if err := demand.Pickup(ctx, tx, &job, now); err != nil {
+				return stderr.ErrConflict{Err: err, Description: "step is no longer executable"}
+			}
+			var runner app.Runner
+			if err := tx.Preload("Queues").Where(app.Runner{ID: job.RunnerID}).First(&runner).Error; err != nil {
+				return err
+			}
+			q := runner.GetQueueForGroup(job.Group)
+			if q == nil {
+				return fmt.Errorf("runner job queue is missing")
+			}
+			resp, err := s.queueClient.EnqueueSignalInTransaction(ctx, tx, &queueclient.EnqueueSignalRequest{
+				QueueID: q.ID, OwnerID: job.ID, OwnerType: "runner_jobs", IdempotencyKey: "runner-demand-claimed:" + runnerJobExecution.ID,
+				Signal: &processjob.Signal{RunnerID: job.RunnerID, JobID: job.ID, ExecutionID: runnerJobExecution.ID, Demand: true},
+			})
+			if err != nil {
+				return err
+			}
+			processSignalID = resp.ID
+		}
 		return nil
-	})
+	}, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, err
 	}
 
+	s.queueClient.DispatchSignal(processSignalID)
 	return &runnerJobExecution, nil
 }

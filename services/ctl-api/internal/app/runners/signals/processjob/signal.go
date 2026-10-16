@@ -81,8 +81,11 @@ func PickupSignalName(jobID string) string   { return callback.SignalName(jobID 
 func TerminalSignalName(jobID string) string { return callback.SignalName(jobID + "-terminal") }
 
 type Signal struct {
-	RunnerID string `json:"runner_id"`
-	JobID    string `json:"job_id"`
+	RunnerID    string `json:"runner_id"`
+	JobID       string `json:"job_id"`
+	Demand      bool   `json:"demand,omitempty"`
+	ExecutionID string `json:"execution_id,omitempty"`
+	Resume      bool   `json:"resume,omitempty"`
 
 	cfg *internal.Config
 	mw  tmetrics.Writer
@@ -129,6 +132,9 @@ func (s *Signal) InlineValidate() bool {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
+	if s.Demand {
+		return s.executeDemand(ctx)
+	}
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

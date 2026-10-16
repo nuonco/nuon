@@ -46,17 +46,69 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 	}
 
 	l.Info("syncing image into install OCI repository")
+	jobID, err := PrepareSyncJob(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	status(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID:   install.RunnerID,
+		JobID:      jobID,
+		WorkflowID: req.JobWorkflowID,
+	})
+	if err != nil {
+		status(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "sync image job failed"))
+		l.Error("error polling sync image job", zap.Error(err))
+		return fmt.Errorf("unable to poll job: %w", err)
+	}
+	l.Info("sync image job was successfully completed")
+	return FinalizeSyncJob(ctx, req, jobID)
+}
+
+func FinalizeSyncJob(ctx workflow.Context, req RunSyncJobRequest, jobID string) error {
+	l := workflow.GetLogger(ctx)
+
+	syncedJob, err := activities.AwaitGetJobByID(ctx, jobID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner job")
+	}
+
+	var ociArtOutputs state.OCIArtifactOutputs
+	if err := mapstructure.Decode(syncedJob.ParsedOutputs["image"], &ociArtOutputs); err != nil {
+		l.Error("error parsing oci artifact outputs", zap.Error(err))
+		return errors.Wrap(err, "unable to parse oci artifact outputs")
+	}
+
+	if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
+		OwnerID:       req.InstallDeploy.ID,
+		OwnerType:     "install_deploys",
+		Outputs:       ociArtOutputs,
+		ReuseExisting: job.DemandEnabled(ctx),
+	}); err != nil {
+		return errors.Wrap(err, "unable to create oci artifact")
+	}
+
+	return nil
+}
+
+func PrepareSyncJob(ctx workflow.Context, req RunSyncJobRequest) (string, error) {
+	install, installDeploy := req.Install, req.InstallDeploy
+	status := req.Status
+	if status == nil {
+		status = func(workflow.Context, string, app.InstallDeployStatus, string) {}
+	}
 	status(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating sync plan")
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
 		status(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
-		return fmt.Errorf("unable to get build: %w", err)
+		return "", fmt.Errorf("unable to get build: %w", err)
 	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	runnerJob, err := activities.AwaitCreateSyncJob(ctx, &activities.CreateSyncJobRequest{
@@ -75,13 +127,12 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 	})
 	if err != nil {
 		status(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
-		return fmt.Errorf("unable to create runner job: %w", err)
+		return "", fmt.Errorf("unable to create runner job: %w", err)
 	}
 	if req.OnJobCreated != nil {
 		req.OnJobCreated(runnerJob.ID)
 	}
 
-	// create the plan request
 	runPlan, err := plan.AwaitCreateSyncPlan(ctx, &plan.CreateSyncPlanRequest{
 		InstallID:       install.ID,
 		InstallDeployID: installDeploy.ID,
@@ -89,12 +140,12 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 	})
 	if err != nil {
 		status(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return errors.Wrap(err, "unable to create plan")
+		return "", errors.Wrap(err, "unable to create plan")
 	}
 
 	planJSON, err := json.Marshal(runPlan)
 	if err != nil {
-		return errors.Wrap(err, "unable to create json")
+		return "", errors.Wrap(err, "unable to create json")
 	}
 
 	// Deprecated: for now we dual write both the plan json and the composite plan
@@ -106,43 +157,15 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 		},
 	}); err != nil {
 		status(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return fmt.Errorf("unable to save runner job plan: %w", err)
+		return "", fmt.Errorf("unable to save runner job plan: %w", err)
 	}
 
-	// queue job
-	status(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
-	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   install.RunnerID,
-		JobID:      runnerJob.ID,
-		WorkflowID: req.JobWorkflowID,
-	})
-	if err != nil {
-		status(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "sync image job failed"))
-		l.Error("error polling sync image job", zap.Error(err))
-		return fmt.Errorf("unable to poll job: %w", err)
-	}
-	l.Info("sync image job was successfully completed")
+	return runnerJob.ID, nil
+}
 
-	syncedJob, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get runner job")
-	}
-
-	var ociArtOutputs state.OCIArtifactOutputs
-	if err := mapstructure.Decode(syncedJob.ParsedOutputs["image"], &ociArtOutputs); err != nil {
-		l.Error("error parsing oci artifact outputs", zap.Error(err))
-		return errors.Wrap(err, "unable to parse oci artifact outputs")
-	}
-
-	if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
-		OwnerID:   installDeploy.ID,
-		OwnerType: "install_deploys",
-		Outputs:   ociArtOutputs,
-	}); err != nil {
-		return errors.Wrap(err, "unable to create oci artifact")
-	}
-
-	return nil
+type SyncPreparation struct {
+	DeployID    string `json:"deploy_id,omitempty"`
+	LogStreamID string `json:"log_stream_id,omitempty"`
 }
 
 type SyncRequest struct {
@@ -156,6 +179,65 @@ type SyncRequest struct {
 }
 
 func Sync(ctx workflow.Context, req SyncRequest) (*app.InstallDeploy, error) {
+	installDeploy, logStream, err := prepareSync(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+	}()
+
+	syncCtx := cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	if err := RunSyncJob(syncCtx, syncJobRequest(ctx, req, installDeploy)); err != nil {
+		updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync", false)
+		return nil, err
+	}
+
+	updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished", false)
+	return installDeploy, nil
+}
+
+func PrepareSync(ctx workflow.Context, req SyncRequest) (SyncPreparation, string, error) {
+	installDeploy, logStream, err := prepareSync(ctx, req)
+	if err != nil {
+		return SyncPreparation{}, "", err
+	}
+	prep := SyncPreparation{DeployID: installDeploy.ID, LogStreamID: logStream.ID}
+
+	syncCtx := cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	runReq := syncJobRequest(ctx, req, installDeploy)
+	jobID, err := PrepareSyncJob(syncCtx, runReq)
+	if err != nil {
+		FailSync(ctx, prep)
+		return prep, "", err
+	}
+	runReq.Status(syncCtx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
+	return prep, jobID, nil
+}
+
+func FinalizeSync(ctx workflow.Context, prep SyncPreparation, jobID string) error {
+	if err := FinalizeSyncJob(ctx, RunSyncJobRequest{
+		InstallDeploy: &app.InstallDeploy{ID: prep.DeployID},
+	}, jobID); err != nil {
+		FailSync(ctx, prep)
+		return err
+	}
+
+	updateDeployStatus(ctx, prep.DeployID, app.InstallDeployStatusActive, "finished", false)
+	activities.AwaitCloseLogStreamByLogStreamID(ctx, prep.LogStreamID)
+	return nil
+}
+
+func FailSync(ctx workflow.Context, prep SyncPreparation) {
+	if prep.DeployID != "" {
+		updateDeployStatus(ctx, prep.DeployID, app.InstallDeployStatusError, "unable to sync", false)
+	}
+	if prep.LogStreamID != "" {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, prep.LogStreamID)
+	}
+}
+
+func prepareSync(ctx workflow.Context, req SyncRequest) (*app.InstallDeploy, *app.LogStream, error) {
 	installDeploy, err := activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
 		InstallID:   req.Install.ID,
 		ComponentID: req.ComponentID,
@@ -166,7 +248,7 @@ func Sync(ctx workflow.Context, req SyncRequest) (*app.InstallDeploy, error) {
 		// an action's role is often not a valid deploy role for the image.
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create install deploy")
+		return nil, nil, errors.Wrap(err, "unable to create install deploy")
 	}
 
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
@@ -174,15 +256,13 @@ func Sync(ctx workflow.Context, req SyncRequest) (*app.InstallDeploy, error) {
 		ParentLogStreamID: req.ParentLogStreamID,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create log stream")
+		return nil, nil, errors.Wrap(err, "unable to create log stream")
 	}
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
-	}()
+	return installDeploy, logStream, nil
+}
 
-	syncCtx := cctx.SetLogStreamWorkflowContext(ctx, logStream)
-
-	if err := RunSyncJob(syncCtx, RunSyncJobRequest{
+func syncJobRequest(ctx workflow.Context, req SyncRequest, installDeploy *app.InstallDeploy) RunSyncJobRequest {
+	return RunSyncJobRequest{
 		Install:       req.Install,
 		InstallDeploy: installDeploy,
 		Status: func(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
@@ -191,14 +271,7 @@ func Sync(ctx workflow.Context, req SyncRequest) (*app.InstallDeploy, error) {
 		OnJobCreated:   req.OnJobCreated,
 		PlanWorkflowID: fmt.Sprintf("%s-create-oci-sync-plan%s", workflow.GetInfo(ctx).WorkflowExecution.ID, req.WorkflowIDSuffix),
 		JobWorkflowID:  fmt.Sprintf("%s-execute-job%s", workflow.GetInfo(ctx).WorkflowExecution.ID, req.WorkflowIDSuffix),
-	}); err != nil {
-		updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync", false)
-		return nil, err
 	}
-
-	updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished", false)
-
-	return installDeploy, nil
 }
 
 func updateDeployStatus(
