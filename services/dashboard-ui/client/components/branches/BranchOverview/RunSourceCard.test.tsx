@@ -24,8 +24,8 @@ test('collapses a long commit message until it is expanded', () => {
   const message = [
     'feat: map preview install configs onto branch groups',
     '',
-    '* rename the ramp config to Customer A',
-    '* rename the sony config to Customer B',
+    '* rename the first config to Customer A',
+    '* rename the second config to Customer B',
     '* add Customer C install config',
     '* add Customer D install config',
     '* move prod install configs under install-configs/prod',
@@ -42,14 +42,38 @@ test('collapses a long commit message until it is expanded', () => {
   )
 
   const clip = screen.getByText(/map preview install configs/).parentElement
-  expect(clip?.className).toContain('max-h-32')
+  expect(clip?.className).toContain('max-h-16')
+  expect(clip?.className).toContain('mask-image')
 
   fireEvent.click(screen.getByRole('button', { name: 'Show more' }))
 
-  expect(clip?.className).not.toContain('max-h-32')
+  expect(clip?.className).not.toContain('max-h-16')
+  expect(clip?.className).not.toContain('mask-image')
   expect(screen.getByRole('button', { name: 'Show less' })).toBeTruthy()
 
   fireEvent.click(screen.getByRole('button', { name: 'Show less' }))
 
-  expect(clip?.className).toContain('max-h-32')
+  expect(clip?.className).toContain('max-h-16')
+})
+
+test('collapses a short commit body with a co-author line', () => {
+  const message = [
+    'chore: bump dependencies',
+    '',
+    '* chore: update lockfile',
+    'Co-authored-by: Example Dev <dev@example.com>',
+  ].join('\n')
+
+  render(
+    <RunSourceCard
+      source={source}
+      title="Manual run"
+      status="success"
+      commit={{ message }}
+    />
+  )
+
+  const clip = screen.getByText(/chore: bump dependencies/).parentElement
+  expect(clip?.className).toContain('max-h-16')
+  expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy()
 })

@@ -623,6 +623,7 @@ test('counts installs by status on each group', () => {
         installs: [
           { id: 'ins_e', name: 'acme-e', status: 'in-progress' },
           { id: 'ins_f', name: 'acme-f', status: 'pending' },
+          { id: 'ins_g', name: 'acme-g', status: 'pending_customer' },
         ],
       },
       {
@@ -643,6 +644,7 @@ test('counts installs by status on each group', () => {
   const primary = document.getElementById('deployment-group-primary')
   expect(primary?.textContent).toContain('1 in progress')
   expect(primary?.textContent).toContain('1 pending')
+  expect(primary?.textContent).toContain('1 pending customer')
 
   const remaining = document.getElementById('deployment-group-remaining')
   expect(remaining?.textContent).toContain('None')
