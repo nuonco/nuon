@@ -7,6 +7,9 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type componentHealthEvaluationMetrics struct {
@@ -35,8 +38,8 @@ func newComponentHealthEvaluationMetrics(provider metric.MeterProvider) *compone
 	return &componentHealthEvaluationMetrics{attempts: attempts, duration: duration}
 }
 
-func (m *componentHealthEvaluationMetrics) recordForInstall(ctx context.Context, started time.Time, installID, reason string, result *EvaluateComponentHealthResponse, err error) {
-	if m == nil || (result == nil && err == nil) {
+func (a *Activities) recordComponentHealthEvaluation(ctx context.Context, started time.Time, install *app.Install, failedComponent *app.InstallComponent, reason string, result *EvaluateComponentHealthResponse, err error) {
+	if result == nil && err == nil {
 		return
 	}
 	outcome := "success"
@@ -51,12 +54,62 @@ func (m *componentHealthEvaluationMetrics) recordForInstall(ctx context.Context,
 	default:
 		reason = "none"
 	}
+	elapsed := time.Since(started)
+	orgID, appID := install.OrgID, install.AppID
+	if reason == "load_install" || reason == "install_missing" {
+		orgID, appID = "", ""
+	}
 	attrs := []attribute.KeyValue{attribute.String("outcome", outcome), attribute.String("reason", reason)}
-	if installID != "" {
-		attrs = append(attrs, attribute.String("nuon.install.id", installID))
+	fields := []zap.Field{
+		zap.String("source", "component_health_evaluator"),
+		zap.String("flow_event", "install.health_evaluation_failed"),
+		zap.String("outcome", outcome),
+		zap.String("stage", reason),
+		zap.Int64("duration_ms", elapsed.Milliseconds()),
+	}
+	for _, id := range []struct{ name, value string }{{"org", orgID}, {"app", appID}, {"install", install.ID}} {
+		if id.value != "" {
+			attrs = append(attrs, attribute.String("nuon."+id.name+".id", id.value))
+			fields = append(fields, zap.String(id.name+"_id", id.value))
+		}
+	}
+	if err != nil {
+		if failedComponent != nil {
+			fields = append(fields, zap.String("component_id", failedComponent.ComponentID), zap.String("install_component_id", failedComponent.ID))
+		}
+		a.l.Info("flow telemetry", fields...)
+	}
+	m := a.healthMetrics
+	if m == nil {
+		return
 	}
 	m.attempts.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if outcome != "skipped" {
-		m.duration.Record(ctx, time.Since(started).Seconds(), metric.WithAttributes(attribute.String("outcome", outcome)))
+		m.duration.Record(ctx, elapsed.Seconds(), metric.WithAttributes(attribute.String("outcome", outcome)))
 	}
+}
+
+func (a *Activities) logComponentHealthChange(install *app.Install, e *componentEval) {
+	fields := []zap.Field{
+		zap.String("flow_event", "component.health_verdict_changed"),
+		zap.String("source", "component_health_evaluator"),
+		zap.String("org_id", install.OrgID),
+		zap.String("app_id", install.AppID),
+		zap.String("install_id", install.ID),
+		zap.String("component_id", e.ic.ComponentID),
+		zap.String("install_component_id", e.ic.ID),
+		zap.String("health", string(e.verdict)),
+		zap.String("previous_health", string(e.prior)),
+		zap.String("component_status", string(e.ic.Status)),
+		zap.Bool("cluster_seen", componentClusterSeen(e.ic) || e.clusterEvidence),
+		zap.Bool("cluster_blind", e.clusterBlind),
+	}
+	if e.latest != nil {
+		fields = append(fields,
+			zap.String("observation_at", e.latest.ObservedAt.UTC().Format(time.RFC3339)),
+			zap.String("observation_health", string(e.latest.Health)),
+			zap.Int64("observation_valid_for_seconds", int64(e.latest.validFor()/time.Second)),
+		)
+	}
+	a.l.Info("flow telemetry", fields...)
 }
