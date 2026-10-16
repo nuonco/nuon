@@ -20,6 +20,9 @@ func ApplyInstallStackOverrides(install *Install, stackCfg *AppStackConfig) {
 	if ic.RunnerNestedTemplateURL != nil && *ic.RunnerNestedTemplateURL != "" {
 		stackCfg.RunnerNestedTemplateURL = *ic.RunnerNestedTemplateURL
 	}
+	if ic.UIDefinition != nil && ic.UIDefinition.Path != "" {
+		stackCfg.UIDefinition = ic.UIDefinition
+	}
 
 	if len(ic.CustomNestedStacks) == 0 {
 		return

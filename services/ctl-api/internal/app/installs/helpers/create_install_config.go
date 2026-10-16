@@ -18,6 +18,8 @@ type CreateInstallConfigParams struct {
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty"`
+	// Set by the config syncer after upload. Not part of the create API.
+	UIDefinition *config.UploadedUIDefinition `json:"-"`
 }
 
 // ValidateStackOverrides validates per-install stack template override fields.
@@ -72,6 +74,7 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 		VPCNestedTemplateURL:    req.VPCNestedTemplateURL,
 		RunnerNestedTemplateURL: req.RunnerNestedTemplateURL,
 		CustomNestedStacks:      req.CustomNestedStacks,
+		UIDefinition:            req.UIDefinition,
 		Labeled:                 labels.Labeled{Labels: labels.Labels(req.Labels)},
 	}
 	if req.Telemetry != nil {
@@ -82,4 +85,8 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 		return nil, fmt.Errorf("unable to create install config: %w", err)
 	}
 	return installConfig, nil
+}
+
+func (h *Helpers) UploadUIDefinition(ctx context.Context, orgID, appID string, ui *config.UploadedUIDefinition) error {
+	return h.appsHelpers.UploadUIDefinition(ctx, orgID, appID, ui)
 }

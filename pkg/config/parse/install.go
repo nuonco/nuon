@@ -1,14 +1,17 @@
 package parse
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pelletier/go-toml/v2"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/parse/get"
 )
 
 func ParseInstallConfig(r io.Reader, v *validator.Validate) (*config.Install, error) {
@@ -40,4 +43,21 @@ func ParseInstallConfig(r io.Reader, v *validator.Validate) (*config.Install, er
 	}
 
 	return &cfg, nil
+}
+
+// LoadInstallUIDefinition fetches an install override's ui_definition into
+// UIDefinitionContents. An unset path is a no-op. The config syncer uploads
+// whatever this leaves in the field.
+func LoadInstallUIDefinition(ctx context.Context, cfg *config.Install, rootDir string) error {
+	if cfg == nil || cfg.StackOverrides == nil || strings.TrimSpace(cfg.StackOverrides.UIDefinition) == "" {
+		return nil
+	}
+	cfg.StackOverrides.UIDefinitionContents = cfg.StackOverrides.UIDefinition
+	if err := get.Parse(ctx, cfg.StackOverrides, &get.Options{
+		FieldTimeout: defaultFieldGetTimeout,
+		RootDir:      rootDir,
+	}); err != nil {
+		return fmt.Errorf("ui_definition: %w", err)
+	}
+	return nil
 }

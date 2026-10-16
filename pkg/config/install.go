@@ -139,6 +139,11 @@ type InstallStackOverrides struct {
 	VPCNestedTemplateURL    string              `mapstructure:"vpc_nested_template_url,omitempty" toml:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL string              `mapstructure:"runner_nested_template_url,omitempty" toml:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []CustomNestedStack `mapstructure:"custom_nested_stacks,omitempty" toml:"custom_nested_stacks,omitempty"`
+
+	// UIDefinition replaces the app-level Azure portal form for this install.
+	// UIDefinitionContents is the fetched body and is not part of the toml.
+	UIDefinition         string `mapstructure:"ui_definition,omitempty" toml:"ui_definition,omitempty"`
+	UIDefinitionContents string `mapstructure:"-" toml:"-" json:"ui_definition_contents,omitempty" jsonschema:"-" features:"get"`
 }
 
 func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -151,12 +156,15 @@ func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml").
 		Field("custom_nested_stacks").Short("Custom nested stack overrides").
 		Long("Per-install overrides for custom install stacks. Entries with the same name as app-level stacks replace them; new names are appended. Supports AWS CloudFormation, Azure ARM, and curated GCP modules.").
-		Nullable()
+		Nullable().
+		Field("ui_definition").Short("Azure portal UI definition override").
+		Long("Per-install override for the Azure createUiDefinition. Replaces the app-level ui_definition from stack.toml. Only supported for azure-bicep apps.").
+		Example("./arm/ui.json")
 }
 
 // HasOverrides returns true when any override field is set.
 func (s *InstallStackOverrides) HasOverrides() bool {
-	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || len(s.CustomNestedStacks) > 0)
+	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || len(s.CustomNestedStacks) > 0 || s.UIDefinition != "")
 }
 
 // Install is a flattened configuration type that allows us to define installs for an app.
@@ -417,6 +425,12 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 			stackDiffs = append(stackDiffs, diff.NewDiff(
 				diff.WithKey("runner_nested_template_url"),
 				diff.WithStringDiff(upstream.RunnerNestedTemplateURL, curr.RunnerNestedTemplateURL),
+			))
+		}
+		if curr.UIDefinition != "" || upstream.UIDefinition != "" {
+			stackDiffs = append(stackDiffs, diff.NewDiff(
+				diff.WithKey("ui_definition"),
+				diff.WithStringDiff(upstream.UIDefinition, curr.UIDefinition),
 			))
 		}
 
