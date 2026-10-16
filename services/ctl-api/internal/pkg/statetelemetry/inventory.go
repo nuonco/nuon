@@ -107,7 +107,15 @@ FROM live_installs WHERE last_health_report_at > 'epoch'::timestamptz AND last_h
 	if err != nil {
 		return nil, err
 	}
-	return append(families, workflows, deployments), nil
+	families = append(families, workflows, deployments)
+	if level != "fleet" {
+		configurations, err := newConfigurationFamily(meter, level)
+		if err != nil {
+			return nil, err
+		}
+		families = append(families, configurations)
+	}
+	return families, nil
 }
 
 const installRunnerSQL = `

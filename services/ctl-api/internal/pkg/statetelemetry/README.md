@@ -13,6 +13,7 @@ deployment/workflow state**. Metrics are exported over OTLP, including when no o
 | Sandbox state | Provisioning lifecycle and recorded runtime health, shown separately. |
 | Work in progress | Install workflows by operation, status and plan-only mode, including approval/retry waits and oldest creation time. |
 | Latest deployment | Each install's most recent non-plan deployment attempt and recorded status, including installs with no eligible history. |
+| Configuration position | Selected install versions and newest-created branch versions/times—not applied versions or deployability. |
 | Collection status | Collection freshness, leadership, refresh failures and series limits. |
 
 State metrics complement [operational metrics and logs](../telemetry/README.md); they are not live probes or
@@ -42,6 +43,8 @@ stable `nuon.control_plane.id`. The switch controls state collection only, not o
 
 Metric names stay the same at every level; only their grouping changes. Org, app and component-definition counts keep
 their natural ownership at detailed level. Individual installed-component IDs are not exported.
+Branch configuration versions/times are available at summary and detailed levels; selected install versions require
+detailed collection. Configuration positions are absent at fleet level: version numbers cannot meaningfully be summed.
 
 Each metric stream is limited to **4,095 series**. Exceeding a limit does not produce partial totals or automatically
 reduce detail. Database query cost still grows with the retained population at every level.
@@ -127,6 +130,27 @@ actions, runbooks and app-owned workflows are excluded. Actual deployments to pr
 The newest creation time wins, with ID as a tie-breaker—not the newest success or finish time. Recorded approval/retry
 statuses are preserved; a finish timestamp alone proves neither success nor terminality. Missing or unrecognized
 statuses appear as `unset` or `other` rather than success.
+
+### Configuration position
+
+| Metric | Meaning | Level |
+| --- | --- | --- |
+| `nuon.install.config.selected.ordinal` | App-wide version ordinal of the install's selected config—not necessarily applied. | Detailed |
+| `nuon.app_branch.config.latest_created.ordinal` | App-wide ordinal of the newest retained config created on each branch, including branches without installs. | Summary/detailed |
+| `nuon.app_branch.config.latest_created.created_at` | Valid creation time of that same branch config, in Unix seconds. | Summary/detailed |
+
+Ordinals include deleted configuration history and are app-wide, not branch-local run counts. Equal creation times
+can make ordinals ambiguous; unresolved ordinals are omitted, never reported as zero. A non-unique newest branch config
+has neither measurement. Missing/deleted configs and invalid ownership are excluded; invalid creation clocks are omitted.
+
+`nuon.app_branch.id` identifies the **configuration's branch**, which can differ from the install's tracked branch.
+Unbranched selections have no branch attribute. `nuon.config.status` describes config sync (`active`, `pending`,
+`syncing`, `error`, `outdated`, `unset`, `other`), not build readiness; `nuon.config.source` reports a bounded recorded
+source (`git-run`, `manual-run`, `git-preview-run`, `unset`, `other`). Newest-created can be a preview, failed or
+incomplete configuration. It is not the latest deployable release, a drift verdict or proof of a completed rollout.
+
+These streams cost at most one selected point per install and two points per branch. They refresh independently of
+install metadata; read positions as observations, not an atomic convergence result.
 
 ### Install details
 
