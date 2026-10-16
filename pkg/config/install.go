@@ -139,6 +139,11 @@ type InstallStackOverrides struct {
 	VPCNestedTemplateURL    string              `mapstructure:"vpc_nested_template_url,omitempty" toml:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL string              `mapstructure:"runner_nested_template_url,omitempty" toml:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []CustomNestedStack `mapstructure:"custom_nested_stacks,omitempty" toml:"custom_nested_stacks,omitempty"`
+
+	// RunnerImageAutoUpdate overrides the app's runner.toml image_auto_update for this install.
+	RunnerImageAutoUpdate *bool `mapstructure:"runner_image_auto_update,omitempty" toml:"runner_image_auto_update,omitempty"`
+	// RunnerImageID overrides the app's runner.toml image_id for this install.
+	RunnerImageID string `mapstructure:"runner_image_id,omitempty" toml:"runner_image_id,omitempty"`
 }
 
 func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -151,12 +156,19 @@ func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml").
 		Field("custom_nested_stacks").Short("Custom nested stack overrides").
 		Long("Per-install overrides for custom install stacks. Entries with the same name as app-level stacks replace them; new names are appended. Supports AWS CloudFormation, Azure ARM, and curated GCP modules.").
-		Nullable()
+		Nullable().
+		Field("runner_image_auto_update").Short("Runner image auto-update override").
+		Long("Per-install override for runner.toml image_auto_update. Set true to resolve the latest runner image at every launch for this install only, or false to turn it off when the app turns it on. Only applies to aws runners whose runner template supports it.").
+		Example("true").
+		Field("runner_image_id").Short("Runner image pin override").
+		Long("Per-install override for runner.toml image_id. Pins this install's runner host to a specific image (an AMI ID for aws), overriding auto-update. Only applies to aws runners whose runner template supports it.").
+		Example("ami-0abcdef1234567890")
 }
 
 // HasOverrides returns true when any override field is set.
 func (s *InstallStackOverrides) HasOverrides() bool {
-	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || len(s.CustomNestedStacks) > 0)
+	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || len(s.CustomNestedStacks) > 0 ||
+		s.RunnerImageAutoUpdate != nil || s.RunnerImageID != "")
 }
 
 // Install is a flattened configuration type that allows us to define installs for an app.
@@ -272,6 +284,12 @@ func (i *Install) Validate() error {
 	if i.AppBranchGroup != "" && i.AppBranch == "" {
 		return ErrConfig{
 			Description: fmt.Sprintf("install %q: app_branch_group requires app_branch", i.Name),
+		}
+	}
+
+	if i.StackOverrides != nil && i.GCPAccount == nil && i.AzureAccount == nil {
+		if err := ValidateAWSImageID("stack_overrides.runner_image_id", i.StackOverrides.RunnerImageID); err != nil {
+			return err
 		}
 	}
 
@@ -417,6 +435,18 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 			stackDiffs = append(stackDiffs, diff.NewDiff(
 				diff.WithKey("runner_nested_template_url"),
 				diff.WithStringDiff(upstream.RunnerNestedTemplateURL, curr.RunnerNestedTemplateURL),
+			))
+		}
+		if curr.RunnerImageAutoUpdate != nil || upstream.RunnerImageAutoUpdate != nil {
+			stackDiffs = append(stackDiffs, diff.NewDiff(
+				diff.WithKey("runner_image_auto_update"),
+				diff.WithOptionalBoolDiff(upstream.RunnerImageAutoUpdate, curr.RunnerImageAutoUpdate),
+			))
+		}
+		if curr.RunnerImageID != "" || upstream.RunnerImageID != "" {
+			stackDiffs = append(stackDiffs, diff.NewDiff(
+				diff.WithKey("runner_image_id"),
+				diff.WithStringDiff(upstream.RunnerImageID, curr.RunnerImageID),
 			))
 		}
 

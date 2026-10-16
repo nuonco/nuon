@@ -42,6 +42,8 @@ type InstallConfig struct {
 	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty" gorm:"column:runner_nested_template_url" temporaljson:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"custom_nested_stacks,omitempty"`
 	ComponentToggles        map[string]bool            `json:"component_toggles,omitempty" gorm:"type:jsonb;serializer:json;default:'{}'" temporaljson:"component_toggles,omitempty"`
+	RunnerImageAutoUpdate   *bool                      `json:"runner_image_auto_update,omitempty" gorm:"default null" temporaljson:"runner_image_auto_update,omitempty"`
+	RunnerImageID           *string                    `json:"runner_image_id,omitempty" gorm:"default null" temporaljson:"runner_image_id,omitempty"`
 	labels.Labeled
 }
 

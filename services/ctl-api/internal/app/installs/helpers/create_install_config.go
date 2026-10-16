@@ -18,6 +18,8 @@ type CreateInstallConfigParams struct {
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty"`
+	RunnerImageAutoUpdate   *bool                      `json:"runner_image_auto_update,omitempty"`
+	RunnerImageID           *string                    `json:"runner_image_id,omitempty"`
 }
 
 // ValidateStackOverrides validates per-install stack template override fields.
@@ -72,6 +74,8 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 		VPCNestedTemplateURL:    req.VPCNestedTemplateURL,
 		RunnerNestedTemplateURL: req.RunnerNestedTemplateURL,
 		CustomNestedStacks:      req.CustomNestedStacks,
+		RunnerImageAutoUpdate:   req.RunnerImageAutoUpdate,
+		RunnerImageID:           req.RunnerImageID,
 		Labeled:                 labels.Labeled{Labels: labels.Labels(req.Labels)},
 	}
 	if req.Telemetry != nil {

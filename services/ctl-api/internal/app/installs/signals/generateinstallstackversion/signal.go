@@ -143,6 +143,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Apply per-install stack template overrides before rendering so
 	// template variables in override URLs get expanded.
 	app.ApplyInstallStackOverrides(install, &cfg.StackConfig)
+	app.ApplyInstallRunnerImageOverrides(install, &cfg.RunnerConfig)
 
 	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
 		return s.failStackConfigRender(ctx, install, stack, cfg, region, platform, err, "stack config render failed", "unable to render stack config")

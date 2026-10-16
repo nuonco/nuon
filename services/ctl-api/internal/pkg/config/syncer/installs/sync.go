@@ -214,6 +214,11 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 			if len(installCfg.StackOverrides.CustomNestedStacks) > 0 {
 				icParams.CustomNestedStacks = installCfg.StackOverrides.CustomNestedStacks
 			}
+			icParams.RunnerImageAutoUpdate = installCfg.StackOverrides.RunnerImageAutoUpdate
+			if installCfg.StackOverrides.RunnerImageID != "" {
+				imageID := installCfg.StackOverrides.RunnerImageID
+				icParams.RunnerImageID = &imageID
+			}
 		}
 		req.InstallConfig = icParams
 	}
@@ -302,6 +307,12 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 				}
 				updates["custom_nested_stacks"] = string(b)
 			}
+			if installCfg.StackOverrides.RunnerImageAutoUpdate != nil {
+				updates["runner_image_auto_update"] = *installCfg.StackOverrides.RunnerImageAutoUpdate
+			}
+			if installCfg.StackOverrides.RunnerImageID != "" {
+				updates["runner_image_id"] = installCfg.StackOverrides.RunnerImageID
+			}
 		}
 
 		if len(updates) > 0 && existing.InstallConfig != nil {
@@ -314,6 +325,22 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 			icParams := &installhelpers.CreateInstallConfigParams{
 				ApprovalOption: app.InstallApprovalOption(installCfg.ApprovalOption),
 				Telemetry:      installCfg.Telemetry,
+			}
+			if so := installCfg.StackOverrides; so != nil {
+				if so.VPCNestedTemplateURL != "" {
+					url := so.VPCNestedTemplateURL
+					icParams.VPCNestedTemplateURL = &url
+				}
+				if so.RunnerNestedTemplateURL != "" {
+					url := so.RunnerNestedTemplateURL
+					icParams.RunnerNestedTemplateURL = &url
+				}
+				icParams.CustomNestedStacks = so.CustomNestedStacks
+				icParams.RunnerImageAutoUpdate = so.RunnerImageAutoUpdate
+				if so.RunnerImageID != "" {
+					imageID := so.RunnerImageID
+					icParams.RunnerImageID = &imageID
+				}
 			}
 			if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, icParams); err != nil {
 				return nil, fmt.Errorf("unable to create config for install %s: %w", installCfg.Name, err)
@@ -530,7 +557,9 @@ func existingToConfig(install *app.Install) *config.Install {
 		}
 		if install.InstallConfig.VPCNestedTemplateURL != nil ||
 			install.InstallConfig.RunnerNestedTemplateURL != nil ||
-			len(install.InstallConfig.CustomNestedStacks) > 0 {
+			len(install.InstallConfig.CustomNestedStacks) > 0 ||
+			install.InstallConfig.RunnerImageAutoUpdate != nil ||
+			install.InstallConfig.RunnerImageID != nil {
 			cfg.StackOverrides = &config.InstallStackOverrides{}
 			if install.InstallConfig.VPCNestedTemplateURL != nil {
 				cfg.StackOverrides.VPCNestedTemplateURL = *install.InstallConfig.VPCNestedTemplateURL
@@ -539,6 +568,10 @@ func existingToConfig(install *app.Install) *config.Install {
 				cfg.StackOverrides.RunnerNestedTemplateURL = *install.InstallConfig.RunnerNestedTemplateURL
 			}
 			cfg.StackOverrides.CustomNestedStacks = install.InstallConfig.CustomNestedStacks
+			cfg.StackOverrides.RunnerImageAutoUpdate = install.InstallConfig.RunnerImageAutoUpdate
+			if install.InstallConfig.RunnerImageID != nil {
+				cfg.StackOverrides.RunnerImageID = *install.InstallConfig.RunnerImageID
+			}
 		}
 		cfg.ComponentToggles = install.InstallConfig.ComponentToggles
 	}
