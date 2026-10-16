@@ -15,12 +15,17 @@ import {
   getAppConfigs,
   getApps,
   getBranchConfigs,
+  getBranchWorkflowRuns,
   getComponents,
   getInstall,
 } from '@/lib'
 import type { TApp, TAppBranch, TComponent } from '@/types'
 import { useToast } from '../../../hooks/use-toast'
 import { useOrg } from '../../../providers/org-provider'
+import {
+  BRANCH_CONFIG_POLL_MS,
+  branchConfigWaitState,
+} from '@/lib/branch-config-wait'
 import { appSourceFromApp } from '../../molecules/AppSource'
 import type { IAppSelectItem } from '../AppSelect'
 import { installSetupHref } from '../../../utils/hrefs'
@@ -198,6 +203,44 @@ export const InstallSetupContainer = () => {
     return resolved ? [resolved] : []
   })
 
+  const branchRunsKey = [
+    'app-branch-runs',
+    orgId,
+    selectedAppId,
+    selectedBranchId,
+    'install-setup',
+  ]
+  const { data: branchRuns } = useQuery({
+    queryKey: branchRunsKey,
+    queryFn: () =>
+      getBranchWorkflowRuns({
+        orgId: orgId!,
+        appId: selectedAppId,
+        branchId: selectedBranchId,
+        limit: 20,
+      }).then((res) => res.data ?? []),
+    enabled: !!orgId && !!selectedAppId && !!selectedBranchId && !installId,
+    refetchInterval: (query) => {
+      const configs = queryClient.getQueryData<
+        Parameters<typeof resolveInstallConfig>[0]
+      >([
+        'app-branch-app-configs',
+        orgId,
+        selectedAppId,
+        selectedBranchId,
+        'install-setup',
+      ])
+      const hasActive = !!resolveInstallConfig(configs, selectedBranchId).config
+      return branchConfigWaitState({
+        hasBranch: true,
+        hasActiveConfig: hasActive,
+        runs: query.state.data,
+      }).phase === 'waiting'
+        ? BRANCH_CONFIG_POLL_MS
+        : false
+    },
+  })
+
   const { data: configList, isLoading: configsLoading } = useQuery({
     queryKey: [
       selectedBranchId ? 'app-branch-app-configs' : 'app-configs',
@@ -221,9 +264,28 @@ export const InstallSetupContainer = () => {
             offset: 0,
           }),
     enabled: !!orgId && !!selectedAppId && !installId,
+    refetchInterval: (query) => {
+      if (!selectedBranchId) return false
+      const hasActive = !!resolveInstallConfig(
+        query.state.data,
+        selectedBranchId
+      ).config
+      return branchConfigWaitState({
+        hasBranch: true,
+        hasActiveConfig: hasActive,
+        runs: queryClient.getQueryData(branchRunsKey),
+      }).phase === 'waiting'
+        ? BRANCH_CONFIG_POLL_MS
+        : false
+    },
   })
   const { config: selectedConfig, branchId: effectiveBranchId } =
     resolveInstallConfig(configList, selectedBranchId)
+  const branchWait = branchConfigWaitState({
+    hasBranch: !!selectedBranchId && !installId,
+    hasActiveConfig: !!selectedConfig,
+    runs: branchRuns,
+  })
   const { data: config, isLoading: configLoading } = useQuery({
     queryKey: [
       'app-config',
@@ -297,6 +359,23 @@ export const InstallSetupContainer = () => {
       configurationKey={config?.id}
       configurationLoading={configsLoading || configLoading}
       configurationReady={!!config}
+      configurationNotice={
+        branchWait.phase === 'waiting'
+          ? {
+              theme: 'default',
+              heading: 'Waiting for app config',
+              body: "Waiting for this branch's app config.",
+            }
+          : branchWait.phase === 'failed'
+            ? {
+                theme: 'error',
+                heading: 'Branch run failed',
+                body:
+                  branchWait.message ||
+                  'This branch run failed before an app config was created.',
+              }
+            : undefined
+      }
       requireTargetAccount={!!org?.features?.['phone-home-auth']}
       pending={mutation.isPending}
       error={mutation.error}

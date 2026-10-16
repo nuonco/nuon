@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/pkg/config"
@@ -88,7 +89,13 @@ func (s *appInstallSyncer) syncInstall(
 }
 
 func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, confirm, wait, dryRun bool) (*models.AppInstall, error) {
-	branch := s.branchesByInstall[installCfg.Name]
+	branch, err := s.awaitBranchConfig(ctx, s.branchesByInstall[installCfg.Name], dryRun)
+	if err != nil {
+		return nil, err
+	}
+	if branch != nil {
+		s.branchesByInstall[installCfg.Name] = branch
+	}
 	appInputCfg, err := s.inputConfigForNewInstall(ctx, branch)
 	if err != nil {
 		return nil, err
@@ -221,12 +228,15 @@ func (s *appInstallSyncer) syncExistingInstall(
 ) (*models.AppInstall, error) {
 	var err error
 
-	branch := s.branchesByInstall[installCfg.Name]
+	branch, err := s.awaitBranchConfig(ctx, s.branchesByInstall[installCfg.Name], dryRun)
+	if err != nil {
+		return nil, err
+	}
+	if branch != nil {
+		s.branchesByInstall[installCfg.Name] = branch
+	}
 	targetAppConfigID := appInstall.AppConfigID
 	if branch != nil {
-		if branch.LatestRun == nil || branch.LatestRun.AppConfigID == "" {
-			return nil, fmt.Errorf("app branch %q has no app config to apply", branch.Name)
-		}
 		targetAppConfigID = branch.LatestRun.AppConfigID
 	}
 	appConfig, err := s.api.GetAppConfig(ctx, appInstall.AppID, targetAppConfigID, generics.ToPtr(true))
@@ -429,6 +439,15 @@ func (s *appInstallSyncer) syncExistingInstall(
 		ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	}
 	return appInstall, nil
+}
+
+// awaitBranchConfig waits until the install's app branch has a config to apply.
+func (s *appInstallSyncer) awaitBranchConfig(ctx context.Context, branch *models.AppAppBranch, dryRun bool) (*models.AppAppBranch, error) {
+	return installcreate.AwaitBranchConfig(ctx, s.api, s.appID, branch, dryRun, func(msg string) {
+		if !s.asJSON {
+			ui.PrintLn(msg)
+		}
+	})
 }
 
 func (s *appInstallSyncer) inputConfigForNewInstall(
