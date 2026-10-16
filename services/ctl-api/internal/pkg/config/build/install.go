@@ -16,6 +16,8 @@ type InstallConfigInput struct {
 	CustomNestedStacks       []config.CustomNestedStack            `json:"custom_nested_stacks,omitempty"`
 	AWSStackParameters       map[string]string                     `json:"-"`
 	AWSNestedStackParameters map[string]config.CloudFormationStack `json:"-"`
+	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty"`
+	RunnerImageID            *string                               `json:"runner_image_id,omitempty"`
 }
 
 func InstallConfigInputFromConfig(install *config.Install) InstallConfigInput {
@@ -31,6 +33,10 @@ func InstallConfigInputFromConfig(install *config.Install) InstallConfigInput {
 			in.RunnerNestedTemplateURL = generics.ToPtr(overrides.RunnerNestedTemplateURL)
 		}
 		in.CustomNestedStacks = overrides.CustomNestedStacks
+		in.RunnerImageAutoUpdate = overrides.RunnerImageAutoUpdate
+		if overrides.RunnerImageID != "" {
+			in.RunnerImageID = generics.ToPtr(overrides.RunnerImageID)
+		}
 	}
 	if overrides := install.CloudFormation; overrides != nil {
 		in.AWSStackParameters = overrides.Root.Parameters
@@ -48,6 +54,8 @@ func InstallConfig(in InstallConfigInput, installID string) *app.InstallConfig {
 		CustomNestedStacks:       in.CustomNestedStacks,
 		AWSStackParameters:       in.AWSStackParameters,
 		AWSNestedStackParameters: in.AWSNestedStackParameters,
+		RunnerImageAutoUpdate:    in.RunnerImageAutoUpdate,
+		RunnerImageID:            in.RunnerImageID,
 		Labeled:                  labels.Labeled{Labels: labels.Labels(in.Labels)},
 	}
 	if in.Telemetry != nil {
