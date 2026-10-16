@@ -24,6 +24,7 @@ const SLICE_ORDER: { status: string; label: string }[] = [
   { status: 'in-progress', label: 'in progress' },
   { status: 'approval-awaiting', label: 'awaiting approval' },
   { status: 'cancelled', label: 'cancelled' },
+  { status: 'pending-customer', label: 'pending customer' },
   { status: 'pending', label: 'pending' },
 ]
 
@@ -35,7 +36,11 @@ const CATEGORY_ORDER: TStepStatusCategory[] = [
   'pending',
 ]
 
+const isPendingCustomer = (status?: string) =>
+  status?.toLowerCase().replace(/[\s_]+/g, '-') === 'pending-customer'
+
 export const installStatusBucket = (status?: string) => {
+  if (isPendingCustomer(status)) return 'pending-customer'
   if (!status || status === 'cancelled' || status.endsWith('skipped')) {
     return status?.endsWith('skipped') ? 'cancelled' : status || 'pending'
   }

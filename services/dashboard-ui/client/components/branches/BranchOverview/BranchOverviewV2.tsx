@@ -50,6 +50,7 @@ const installCountLabel: Record<string, string> = {
   error: 'errored',
   'in-progress': 'in progress',
   cancelled: 'cancelled',
+  'pending-customer': 'pending customer',
   pending: 'pending',
   'approval-awaiting': 'awaiting approval',
 }
