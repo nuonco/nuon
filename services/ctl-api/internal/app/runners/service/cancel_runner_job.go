@@ -49,7 +49,7 @@ func (s *service) CancelRunnerJob(ctx *gin.Context) {
 		return
 	}
 
-	runnerJob, err := s.cancelRunnerJob(ctx, runnerJobID, joberrors.CancellationReasonAPI)
+	runnerJob, err := s.cancelRunnerJob(ctx, runnerJobID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to cancel runner job: %w", err))
 		return
@@ -58,9 +58,9 @@ func (s *service) CancelRunnerJob(ctx *gin.Context) {
 	ctx.JSON(http.StatusAccepted, runnerJob)
 }
 
-func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string, reason joberrors.CancellationReason) (*app.RunnerJob, error) {
+func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string) (*app.RunnerJob, error) {
 	compositeError, err := compositeerrors.New(
-		&joberrors.CancellationError{Reason: reason},
+		&joberrors.CancellationError{Reason: joberrors.CancellationReasonAPI},
 		compositeerrors.WithSource("runner_jobs", runnerJobID),
 	)
 	if err != nil {
@@ -94,10 +94,6 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string, reaso
 		return nil, fmt.Errorf("unable to get runner job: %w", err)
 	}
 
-	auditSource := "cancel_api"
-	if reason == joberrors.CancellationReasonAttemptsExhausted {
-		auditSource = "runner_api"
-	}
 	for _, execution := range job.Executions {
 		if !execution.Status.IsRunning() {
 			continue
@@ -111,7 +107,7 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string, reaso
 		if res.Error != nil {
 			return nil, fmt.Errorf("unable to cancel job execution: %w", res.Error)
 		}
-		helpers.AuditJobExecutionResult(ctx, s.db, s.mw, execution.ID, app.RunnerJobExecutionStatusCancelled, auditSource)
+		helpers.AuditJobExecutionResult(ctx, s.db, s.mw, execution.ID, app.RunnerJobExecutionStatusCancelled, "cancel_api")
 
 	}
 

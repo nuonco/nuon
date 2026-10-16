@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/demand"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -54,16 +54,6 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 	}
 	cctx.SetOrgIDGinContext(ctx, runnerJob.OrgID)
 
-	if demand.SignalID(runnerJob) == "" && runnerJob.ExecutionCount >= runnerJob.MaxExecutions {
-		if _, err := s.cancelRunnerJob(ctx, runnerJobID, joberrors.CancellationReasonAttemptsExhausted); err != nil {
-			ctx.Error(errors.Wrap(err, "unable to cancel runner job"))
-			return
-		}
-
-		ctx.Error(fmt.Errorf("runner job has exceeded max executions"))
-		return
-	}
-
 	execution, err := s.claimRunnerJob(ctx, runnerJobID, clientVersion)
 	if err != nil {
 		ctx.Error(err)
@@ -96,22 +86,31 @@ func (s *service) claimRunnerJob(ctx context.Context, runnerJobID, clientVersion
 		if err := tx.Scopes(scopes.WithDisableViews).Where(app.RunnerJob{ID: runnerJobID}).First(&job).Error; err != nil {
 			return err
 		}
+		flw, err := demand.LockJob(ctx, tx, &job)
+		if err != nil {
+			if errors.Is(err, demand.ErrJobChanged) {
+				return stderr.ErrConflict{Err: err, Description: "runner job changed; retry the claim"}
+			}
+			return err
+		}
+		if err := demand.RequireActiveWorkflow(flw); err != nil {
+			return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
+		}
+		if job.Status != app.RunnerJobStatusAvailable {
+			return stderr.ErrConflict{
+				Err:         fmt.Errorf("runner job %s is not available", runnerJobID),
+				Description: "runner job was already claimed",
+			}
+		}
+		var count int64
+		if err := tx.Unscoped().Model(&app.RunnerJobExecution{}).Where(app.RunnerJobExecution{RunnerJobID: runnerJobID}).Count(&count).Error; err != nil {
+			return err
+		}
+		if count >= int64(job.MaxExecutions) {
+			return stderr.ErrConflict{Err: fmt.Errorf("runner job has exceeded max executions"), Description: "runner job has exceeded max executions"}
+		}
 		isDemand := demand.SignalID(&job) != ""
 		if isDemand {
-			flw, err := demand.LockJob(ctx, tx, &job)
-			if err != nil {
-				return err
-			}
-			if err := demand.RequireActiveWorkflow(flw); err != nil {
-				return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
-			}
-			var count int64
-			if err := tx.Model(&app.RunnerJobExecution{}).Where(app.RunnerJobExecution{RunnerJobID: runnerJobID}).Count(&count).Error; err != nil {
-				return err
-			}
-			if count >= int64(job.MaxExecutions) {
-				return stderr.ErrConflict{Err: fmt.Errorf("runner job has exceeded max executions"), Description: "runner job has exceeded max executions"}
-			}
 			var qs app.QueueSignal
 			if err := tx.Where(app.QueueSignal{ID: demand.SignalID(&job)}).First(&qs).Error; err != nil {
 				return err
@@ -120,20 +119,11 @@ func (s *service) claimRunnerJob(ctx context.Context, runnerJobID, clientVersion
 				return stderr.ErrConflict{Err: fmt.Errorf("signal is cancelled"), Description: "signal is cancelled"}
 			}
 		}
-		res := tx.Model(&app.RunnerJob{}).
-			Where(app.RunnerJob{ID: runnerJobID, Status: app.RunnerJobStatusAvailable}).
-			Updates(app.RunnerJob{
-				Status:            app.RunnerJobStatusInProgress,
-				StatusDescription: "in-progress",
-			})
-		if res.Error != nil {
-			return errors.Wrap(res.Error, "unable to claim runner job")
-		}
-		if res.RowsAffected == 0 {
-			return stderr.ErrConflict{
-				Err:         fmt.Errorf("runner job %s is not available", runnerJobID),
-				Description: "runner job was already claimed",
-			}
+		if err := tx.Scopes(scopes.WithDisableViews).Model(&job).Updates(app.RunnerJob{
+			Status:            app.RunnerJobStatusInProgress,
+			StatusDescription: "in-progress",
+		}).Error; err != nil {
+			return errors.Wrap(err, "unable to claim runner job")
 		}
 
 		if err := tx.Create(&runnerJobExecution).Error; err != nil {
@@ -168,7 +158,7 @@ func (s *service) claimRunnerJob(ctx context.Context, runnerJobID, clientVersion
 			processSignalID = resp.ID
 		}
 		return nil
-	})
+	}, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, err
 	}

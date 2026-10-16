@@ -22,7 +22,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -169,7 +168,7 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 			expectedNotFound: true,
 		},
 		{
-			name: "max executions exceeded returns error",
+			name: "max executions including deleted attempts returns conflict without cancelling",
 			setupFunc: func() string {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -202,6 +201,7 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 					}
 					require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(&executions[i]).Error)
 				}
+				require.NoError(s.T(), s.service.DB.WithContext(ctx).Delete(&executions[0]).Error)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Where(app.RunnerJobExecution{RunnerJobID: job.ID}).Delete(&app.RunnerJobExecution{})
@@ -210,18 +210,14 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 
 				return job.ID
 			},
-			expectedCode:     http.StatusInternalServerError,
+			expectedCode:     http.StatusConflict,
 			expectedNotFound: true,
 			validateFunc: func(jobID string) {
 				var job app.RunnerJob
 				require.NoError(s.T(), s.service.DB.First(&job, "id = ?", jobID).Error)
-				assert.Equal(s.T(), app.RunnerJobStatusCancelled, job.Status)
-				require.NotNil(s.T(), job.CompositeError)
-				assert.Equal(s.T(), joberrors.CancellationErrorType, job.CompositeError.Type)
-
-				var cancellationError joberrors.CancellationError
-				require.NoError(s.T(), json.Unmarshal(job.CompositeError.Data, &cancellationError))
-				assert.Equal(s.T(), joberrors.CancellationReasonAttemptsExhausted, cancellationError.Reason)
+				assert.Equal(s.T(), app.RunnerJobStatusAvailable, job.Status)
+				assert.Equal(s.T(), 3, job.ExecutionCount)
+				assert.Nil(s.T(), job.CompositeError)
 			},
 		},
 		{
@@ -281,7 +277,7 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 					QueueTimeout:      60,
 					AvailableTimeout:  60,
 					ExecutionTimeout:  300,
-					MaxExecutions:     3,
+					MaxExecutions:     1,
 				}
 				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(job).Error)
 
@@ -304,6 +300,12 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 
 				rr := s.makeRequest("POST", "/v1/runner-jobs/"+jobID+"/executions", CreateRunnerJobExecutionRequest{})
 				assert.Equal(s.T(), http.StatusConflict, rr.Code)
+				require.NoError(s.T(), s.service.DB.Scopes(scopes.WithDisableViews).First(&job, "id = ?", jobID).Error)
+				assert.Equal(s.T(), app.RunnerJobStatusInProgress, job.Status)
+				assert.Nil(s.T(), job.CompositeError)
+				var execution app.RunnerJobExecution
+				require.NoError(s.T(), s.service.DB.Where(app.RunnerJobExecution{RunnerJobID: jobID}).First(&execution).Error)
+				assert.Equal(s.T(), app.RunnerJobExecutionStatusPending, execution.Status)
 			},
 		},
 	}
