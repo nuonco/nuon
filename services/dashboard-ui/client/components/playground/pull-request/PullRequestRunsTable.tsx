@@ -26,7 +26,7 @@ const MODE_THEME: Record<TAppBranchRunPreviewMode, 'brand' | 'info' | 'neutral'>
     'build-only': 'neutral',
   }
 
-const ImpactCell = ({ run }: { run: TPlaygroundPullRequestRun }) => {
+export const ImpactCell = ({ run }: { run: TPlaygroundPullRequestRun }) => {
   if (run.mode === 'build-only') {
     return (
       <Text variant="subtext" theme="neutral">
@@ -60,7 +60,7 @@ const ImpactCell = ({ run }: { run: TPlaygroundPullRequestRun }) => {
 
 // A factory, not a component: SurfacesProvider clones whatever it is handed to
 // inject isVisible, so the Panel has to be the outermost element.
-const runDetailPanel = (
+export const pullRequestRunPanel = (
   pullRequest: TPlaygroundPullRequest,
   run: TPlaygroundPullRequestRun
 ) => (
@@ -153,7 +153,9 @@ export const PullRequestRunsTable = ({
             variant="ghost"
             size="sm"
             className="!px-1.5"
-            onClick={() => addPanel(runDetailPanel(pullRequest, row.original))}
+            onClick={() =>
+              addPanel(pullRequestRunPanel(pullRequest, row.original))
+            }
           >
             <span className="flex items-center gap-1.5 whitespace-nowrap">
               <Status variant="default" status={row.original.status} />
