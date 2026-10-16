@@ -7,12 +7,6 @@ export const PR_ORG_ID = 'org-pr-scope-demo'
 export const PR_APP_ID = 'app-acme-platform'
 export const PR_BRANCH_ID = 'brnch-main'
 
-/**
- * Mirrors the proposed AppBranchPullRequest model in
- * specs/app-branch-pull-requests.md. The PR is scoped to
- * (app_branch_id, number) and owns the preview override that every run on the
- * PR resolves against.
- */
 export type TPullRequestState = 'open' | 'closed' | 'merged'
 
 export type TPullRequestConfigStatus =
@@ -67,7 +61,6 @@ export type TPlaygroundPullRequestRun = {
   completed_at?: string
   error_message?: string
 
-  /** Counts from the run's comparison, rendered as the impact summary. */
   added: number
   changed: number
   removed: number
@@ -113,10 +106,6 @@ export const installCandidates: TPlaygroundInstallCandidate[] = [
   },
 ]
 
-/**
- * Branch defaults that fail AppBranchPreviewConfig.Validate() — a non
- * build-only mode with no install target. Drives config_status 'needs-input'.
- */
 export const incompleteBranchPreviewConfig: TAppBranchPreviewConfig = {
   mode: 'plan-only',
   set_statuses: true,
@@ -124,7 +113,6 @@ export const incompleteBranchPreviewConfig: TAppBranchPreviewConfig = {
   ignore_drafts: true,
 }
 
-/** Branch defaults that already name an install, so runs just work. */
 export const completeBranchPreviewConfig: TAppBranchPreviewConfig = {
   ...incompleteBranchPreviewConfig,
   install_id: 'instb2c3d4e5f6g7h8i9j0k1l2',
@@ -150,23 +138,22 @@ const basePullRequest = {
   opened_at: '2026-09-21T14:02:00Z',
 }
 
-/** First visit: branch defaults are incomplete, so the PR needs an install. */
 export const needsInputPullRequest: TPlaygroundPullRequest = {
   ...basePullRequest,
+  head_sha: 'e71ba3c0d8492f5617ae3c2b90d4f8a15c6e0d33',
   config_status: 'needs-input',
   branch_preview_config: incompleteBranchPreviewConfig,
   resolved_preview_config: incompleteBranchPreviewConfig,
 }
 
-/** First visit: branch defaults already resolve, so the run just ran. */
 export const readyFromDefaultsPullRequest: TPlaygroundPullRequest = {
   ...basePullRequest,
+  head_sha: 'e71ba3c0d8492f5617ae3c2b90d4f8a15c6e0d33',
   config_status: 'ready-from-defaults',
   branch_preview_config: completeBranchPreviewConfig,
   resolved_preview_config: completeBranchPreviewConfig,
 }
 
-/** Return visit: someone saved a PR-scoped override. */
 export const configuredPullRequest: TPlaygroundPullRequest = {
   ...basePullRequest,
   config_status: 'configured',
@@ -204,17 +191,12 @@ export const draftPullRequest: TPlaygroundPullRequest = {
   },
 }
 
-/**
- * Five preview runs across three commits — the history requirement. The first
- * two ran build-only because the PR had no install yet; the rest ran at the
- * mode chosen on the PR, which is why each run keeps its own resolved mode.
- */
 export const previewRuns: TPlaygroundPullRequestRun[] = [
   {
     id: 'abrun5f6g7h8i9j0k1l2m3n4o5',
     run_number: 5,
     status: 'success',
-    trigger: 'pull_request',
+    trigger: 'manual',
     mode: 'apply',
     install_id: 'insta1b2c3d4e5f6g7h8i9j0k1',
     install_name: 'acme-preview',
@@ -232,7 +214,7 @@ export const previewRuns: TPlaygroundPullRequestRun[] = [
     id: 'abrun4e5f6g7h8i9j0k1l2m3n4',
     run_number: 4,
     status: 'failed',
-    trigger: 'pull_request',
+    trigger: 'push',
     mode: 'apply',
     install_id: 'insta1b2c3d4e5f6g7h8i9j0k1',
     install_name: 'acme-preview',
@@ -252,7 +234,7 @@ export const previewRuns: TPlaygroundPullRequestRun[] = [
     id: 'abrun3d4e5f6g7h8i9j0k1l2m3',
     run_number: 3,
     status: 'success',
-    trigger: 'pull_request',
+    trigger: 'manual',
     mode: 'plan-only',
     install_id: 'insta1b2c3d4e5f6g7h8i9j0k1',
     install_name: 'acme-preview',
@@ -270,7 +252,7 @@ export const previewRuns: TPlaygroundPullRequestRun[] = [
     id: 'abrun2c3d4e5f6g7h8i9j0k1l2',
     run_number: 2,
     status: 'success',
-    trigger: 'pull_request',
+    trigger: 'push',
     mode: 'build-only',
     head_sha: '4c8de91b2a7f60d3e5c1908baf27d46e0b39a5c2',
     commit_message: 'Pin the node base image to 22.7-alpine',
@@ -300,7 +282,6 @@ export const previewRuns: TPlaygroundPullRequestRun[] = [
   },
 ]
 
-/** The single run that fires from branch defaults before anyone configures. */
 export const firstRunOnly: TPlaygroundPullRequestRun[] = [previewRuns[4]]
 
 export const runningRun: TPlaygroundPullRequestRun = {
