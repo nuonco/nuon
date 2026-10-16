@@ -17,6 +17,8 @@ type populationMetric struct {
 	empty                   string
 	source                  string
 	detail, timestamp       bool
+	args                    []any
+	attributes              func(string) ([]attribute.KeyValue, error)
 }
 
 func (m populationMetric) query(level string) string {
@@ -88,7 +90,7 @@ func newPopulationFamily(meter metric.Meter, level, name string, interval, ttl t
 			seen := make(map[string]bool)
 			args := []any{m.states}
 			if m.detail {
-				args = nil
+				args = m.args
 			} else if level != "fleet" {
 				args = append(args, m.empty)
 			}
@@ -119,15 +121,20 @@ func newPopulationFamily(meter metric.Meter, level, name string, interval, ttl t
 					}
 				}
 				if m.dimension != "" {
-					if m.dimension == "nuon.install.sandbox_mode" {
-						attrs = append(attrs, attribute.Bool(m.dimension, state == "true"))
-					} else {
-						attrs = append(attrs, attribute.String(m.dimension, state))
+					attrs = append(attrs, attribute.String(m.dimension, state))
+				}
+				if m.attributes != nil {
+					metadata, err := m.attributes(state)
+					if err != nil {
+						return snapshot{}, err
 					}
+					attrs = append(attrs, metadata...)
 				}
 				p.options = metric.WithAttributes(attrs...)
 				points = append(points, p)
-				seen[state] = true
+				if level == "fleet" {
+					seen[state] = true
+				}
 			}
 			if err := rows.Err(); err != nil {
 				return snapshot{}, err

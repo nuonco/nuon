@@ -94,6 +94,42 @@ func AllWorkflowTypes() []WorkflowType {
 	}
 }
 
+func (i WorkflowType) DeploymentType() string {
+	switch i {
+	case WorkflowTypeProvision:
+		return "provision"
+	case WorkflowTypeManualDeploy,
+		WorkflowTypeDriftRun,
+		WorkflowTypeDeployComponents,
+		WorkflowTypeTeardownComponent,
+		WorkflowTypeTeardownComponents,
+		WorkflowTypeComponentEnabled,
+		WorkflowTypeComponentDisabled,
+		WorkflowTypeRecoverHelmRelease:
+		return "component_deploy"
+	case WorkflowTypeReprovisionSandbox, WorkflowTypeDriftRunReprovisionSandbox:
+		return "sandbox_reprovision"
+	case WorkflowTypeReprovision:
+		return "reprovision"
+	case WorkflowTypeReprovisionStack:
+		return "stack_update"
+	case WorkflowTypeAppBranchConfigUpdate,
+		WorkflowTypeAppBranchesRun,
+		WorkflowTypeAppBranchesConfigRepoUpdate,
+		WorkflowTypeAppBranchesComponentRepoUpdate,
+		WorkflowTypeAppInstallSync:
+		return "app_branch_update"
+	case WorkflowTypeInputUpdate, WorkflowTypeSyncSecrets:
+		return "install_config_update"
+	case WorkflowTypeDeprovision:
+		return "deprovision"
+	case WorkflowTypeDeprovisionSandbox:
+		return "sandbox_deprovision"
+	default:
+		return ""
+	}
+}
+
 // RequiresLiveInstallRunner reports whether creation must reject the workflow
 // while the install runner is offline. App branch config updates are exempt:
 // their "runner healthy" step checks the runner once the workflow runs, so an

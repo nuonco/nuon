@@ -66,11 +66,14 @@ type EvaluateComponentHealthResponse struct {
 // @by-field InstallID
 func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateComponentHealthRequest) (result *EvaluateComponentHealthResponse, err error) {
 	started := time.Now()
+	install := app.Install{ID: req.InstallID}
+	var failedComponent *app.InstallComponent
 	reason := "load_install"
-	defer func() { a.healthMetrics.recordForInstall(ctx, started, req.InstallID, reason, result, err) }()
+	defer func() {
+		a.recordComponentHealthEvaluation(ctx, started, &install, failedComponent, reason, result, err)
+	}()
 	resp := &EvaluateComponentHealthResponse{}
 
-	var install app.Install
 	if err := a.db.WithContext(ctx).Where(app.Install{ID: req.InstallID}).First(&install).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			reason = "install_missing"
@@ -150,9 +153,11 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 			continue
 		}
 
+		failedComponent = e.ic
 		if err := a.writeComponentHealth(ctx, e.ic, e.verdict, description, e.downstreamOf, flags, e.latest, now); err != nil {
 			return nil, errors.Wrapf(err, "unable to update health for install component %s", e.ic.ID)
 		}
+		failedComponent = nil
 		resp.Updated++
 
 		if fire {
@@ -163,6 +168,7 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 			continue
 		}
 
+		a.logComponentHealthChange(&install, e)
 		transitions = append(transitions, newComponentHealthTransition(e.ic, e.verdict, e.latest, now))
 	}
 

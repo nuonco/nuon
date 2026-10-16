@@ -222,6 +222,7 @@ type Config struct {
 	DisableMetrics           bool     `config:"disable_metrics"`
 	OTELExporterOTLPEndpoint string   `config:"otel_exporter_otlp_endpoint"`
 	OTELExporterOTLPProtocol string   `config:"otel_exporter_otlp_protocol"`
+	TelemetryInstallLabels   string   `config:"telemetry_install_labels"`
 
 	StateTelemetryEnabled bool   `config:"state_telemetry_enabled"`
 	StateTelemetryLevel   string `config:"state_telemetry_level"`
