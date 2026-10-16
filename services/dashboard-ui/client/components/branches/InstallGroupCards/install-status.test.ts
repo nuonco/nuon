@@ -11,6 +11,8 @@ describe('install status', () => {
     expect(installStatusBucket('succeeded')).toBe('success')
     expect(installStatusBucket('failed')).toBe('error')
     expect(installStatusBucket('approval-awaiting')).toBe('approval-awaiting')
+    expect(installStatusBucket('pending_customer')).toBe('pending-customer')
+    expect(installStatusBucket('pending-customer')).toBe('pending-customer')
     expect(installStatusBucket('user-skipped')).toBe('cancelled')
     expect(installStatusBucket(undefined)).toBe('pending')
   })
@@ -22,11 +24,13 @@ describe('install status', () => {
         { status: 'success' },
         { status: 'success' },
         { status: 'in-progress' },
-      ]).map((slice) => [slice.status, slice.count])
+        { status: 'pending_customer' },
+      ]).map((slice) => [slice.status, slice.label, slice.count])
     ).toEqual([
-      ['success', 2],
-      ['in-progress', 1],
-      ['pending', 1],
+      ['success', 'success', 2],
+      ['in-progress', 'in progress', 1],
+      ['pending-customer', 'pending customer', 1],
+      ['pending', 'pending', 1],
     ])
   })
 
