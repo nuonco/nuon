@@ -115,7 +115,7 @@ export const usePlanGroupInstalls = (
         offset: 0,
       }),
     enabled: !!orgId && !!appId && !!branchId && configIds.length > 0,
-    ...PLAN_DIFF_CACHE,
+    staleTime: 30_000,
   })
   const commitByConfigId = new Map<
     string,
