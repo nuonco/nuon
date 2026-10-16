@@ -103,7 +103,11 @@ FROM live_installs WHERE last_health_report_at > 'epoch'::timestamptz AND last_h
 	if err != nil {
 		return nil, err
 	}
-	return append(families, workflows), nil
+	deployments, err := newDeploymentFamily(meter, level)
+	if err != nil {
+		return nil, err
+	}
+	return append(families, workflows, deployments), nil
 }
 
 const installRunnerSQL = `

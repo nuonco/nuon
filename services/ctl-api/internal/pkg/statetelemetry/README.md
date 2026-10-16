@@ -1,7 +1,7 @@
 # State telemetry
 
 State telemetry provides periodic snapshots of your Nuon fleet: **inventory, recorded health, reporting coverage and
-current workflow activity**. Metrics are exported over OTLP, including when no operations are running.
+deployment/workflow state**. Metrics are exported over OTLP, including when no operations are running.
 
 | What you can see | Coverage |
 | --- | --- |
@@ -12,6 +12,7 @@ current workflow activity**. Metrics are exported over OTLP, including when no o
 | Health reporting | Recent, older and missing health-report arrivals. |
 | Sandbox state | Provisioning lifecycle and recorded runtime health, shown separately. |
 | Work in progress | Install workflows by operation, status and plan-only mode, including approval/retry waits and oldest creation time. |
+| Latest deployment | Each install's most recent non-plan deployment attempt and recorded status, including installs with no eligible history. |
 | Collection status | Collection freshness, leadership, refresh failures and series limits. |
 
 State metrics complement [operational metrics and logs](../telemetry/README.md); they are not live probes or
@@ -112,6 +113,21 @@ operations such as provisioning, deployment, configuration changes, actions and 
 Retries do not create additional workflow counts. Creation age includes retries and is **not time in the current wait**.
 Empty groups or groups with invalid creation times have no oldest timestamp.
 
+### Latest deployment
+
+`nuon.install.deploy.latest.count` counts installs by their latest eligible deployment's `nuon.workflow.type` and
+`nuon.workflow.status`. Each install contributes once; `type=none`, `status=never_deployed` means no eligible retained
+history, not a failed read. Results remain visible when workflows finish. This is not a completion counter or success rate.
+
+Deployment eligibility follows the install deployment feed: provisioning/reprovisioning, stack/sandbox changes,
+component deployments and teardown, component enablement/recovery, app-branch/install sync, input/secret changes
+and deprovisioning. Configuration-only changes can qualify without rolling out workloads. Plan-only workflows,
+actions, runbooks and app-owned workflows are excluded. Actual deployments to preview installs still qualify.
+
+The newest creation time wins, with ID as a tie-breaker—not the newest success or finish time. Recorded approval/retry
+statuses are preserved; a finish timestamp alone proves neither success nor terminality. Missing or unrecognized
+statuses appear as `unset` or `other` rather than success.
+
 ### Install details
 
 The `detailed` level also provides:
@@ -120,6 +136,12 @@ The `detailed` level also provides:
 | --- | --- |
 | `nuon.install.info` | Value 1 per install, with its name, tracked app-branch ID/name, resolved sandbox mode and optional vendor labels. |
 | `nuon.install.health.last_report_at` | Last valid health-report arrival, in Unix seconds; absent when unavailable or invalid. |
+| `nuon.install.deploy.latest.created_at` | Creation time of the selected latest deployment, in Unix seconds. |
+| `nuon.install.deploy.latest.finished_at` | Recorded finish time of that same deployment, in Unix seconds; not proof of success. |
+
+Deployment timestamps use the count's workflow type/status dimensions. Missing, nonpositive and future timestamps
+are omitted; an older deployment's timestamps are never substituted. Detailed deployment telemetry costs at most
+three points per install across its count and two timestamp streams.
 
 Install info uses `nuon.install.name`, `nuon.app_branch.id`, `nuon.app_branch.name` and boolean
 `nuon.install.sandbox_mode`, alongside org/app/install IDs. Branch metadata describes the newest active connection,
