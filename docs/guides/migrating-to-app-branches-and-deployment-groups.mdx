@@ -1,1 +1,64 @@
-# Migrating to App Branches & Deployment Groups
+This guide walks you through migrating your Nuon application from CLI-driven syncs to App Branches and Deployment Groups.
+
+### Control Plane Syncing via App Branches
+Previously, running `nuon apps sync` built, validated, and synced your config directly from your local CLI. This frequently led to version mismatches and compatibility issues between your CLI version and the control plane.
+
+With App Branches, Nuon directly fetches your config repo and executes the sync from the control plane. This unlocks features like automated previews and complex rollouts.
+
+### Deployment Groups
+Rollouts were previously managed on an install-by-install basis. With Deployment Groups, you can define multi-install deployment plans and orchestrate the update sequence across installs using labels or version pinning.
+
+### Native Automation & Triggers
+You can now natively trigger updates to your installs using:
+* Git pushes
+* Git tags
+* Pull Request (PR) labels
+* Manual runs
+
+Automate these triggers using a GitHub Webhook or the Nuon GitHub Action (GHA).
+
+### Previews
+Validate changes before merging to production. When you open a pull request or create a feature branch, you can preview changes in three distinct modes:
+1. Build and Validate: Compiles and validates your config syntax.
+2. Plan Only: Previews deploys and updates against a single install without applying changes.
+3. Apply: Runs and executes changes on a single test install.
+
+## Step 1: Create Your First App Branch
+
+Create an app branch using one of the two methods below:
+
+### Option A: Via the CLI
+Run `nuon apps sync` with the feature flag enabled (we'll do this). Nuon will guide you through initializing an app branch from your local repo and attaching your existing installs to it.
+
+```bash
+nuon apps sync
+```
+
+### Option B: Via TOML Config
+Alternatively, define your app branch directly inside your application's TOML file:
+
+```
+fill this in
+fill this in
+fill this in
+```
+
+## Step 2: Verify Your First Run
+
+After creating your app branch, verify that the it can build and sync your application:
+
+1. Trigger a test run for your app branch.
+2. Confirm that the run builds successfully and that your installs sync correctly.
+
+## Step 3: Update Installs to App Branches
+
+1. Execute a run to update your initial set of installs.
+2. Update remaining install configs to target your newly created app branch.
+
+## Next Steps & Advanced Setup
+
+Now that your base migration is complete, expand your setup with these advanced features:
+
+* Set up GitHub Actions for Branch Syncing — Automate app branch syncs directly within your existing CI/CD pipelines using the Nuon GHA.
+* Configure Advanced Rollout Strategies — Set up automated deployment group rollouts triggered by git pushes, git tags, or PR labels.
+* Configure Previews for Pull Requests — Enable automated `build-and-validate`, `plan-only`, or `apply` preview checks on PRs.
