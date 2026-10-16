@@ -16,8 +16,8 @@ import { Time } from '@/components/common/Time'
 import { cn } from '@/utils/classnames'
 import type { TRunSource } from './run-source'
 
-const COLLAPSED_LINES = 6
-const COLLAPSED_CHARS = 480
+const COLLAPSED_LINES = 3
+const COLLAPSED_CHARS = 180
 
 const messageOverflows = (text: string) =>
   text.split('\n').length > COLLAPSED_LINES || text.length > COLLAPSED_CHARS
@@ -33,7 +33,7 @@ const CommitMessage = ({ text }: { text: string }) => {
         <div
           className={cn(
             collapsed &&
-              'max-h-32 overflow-hidden [mask-image:linear-gradient(to_bottom,black_65%,transparent)]'
+              'max-h-16 overflow-hidden [mask-image:linear-gradient(to_bottom,black_65%,transparent)]'
           )}
         >
           <Text
