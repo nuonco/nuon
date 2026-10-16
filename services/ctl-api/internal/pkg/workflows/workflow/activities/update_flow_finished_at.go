@@ -43,37 +43,5 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowFinishedAt(ctx context.Context, r
 }
 
 func (a *Activities) installLifecycleTransition(wf *app.Workflow) *lifecyclephase.LifecyclePhase {
-	failed := wf.Status.Status == app.StatusError || wf.Status.Status == app.StatusCancelled
-
-	switch wf.Type {
-	case app.WorkflowTypeProvision:
-		phase := lifecyclephase.Provisioned
-		description := "Provision workflow completed"
-		if failed {
-			description = "Provision workflow failed"
-		}
-		// A stack-only provision deliberately leaves the sandbox and components
-		// unprovisioned, so it must not read as fully provisioned.
-		if wf.IsStackOnly() && !failed {
-			phase = lifecyclephase.Provisioning
-			description = "Stack and runner ready, waiting to provision the sandbox and components"
-		}
-		return &lifecyclephase.LifecyclePhase{Phase: phase, Description: description}
-	case app.WorkflowTypeReprovision:
-		if wf.PlanOnly {
-			return nil
-		}
-		description := "Reprovision workflow completed"
-		if failed {
-			description = "Reprovision workflow failed"
-		}
-		return &lifecyclephase.LifecyclePhase{Phase: lifecyclephase.Provisioned, Description: description}
-	case app.WorkflowTypeDeprovision:
-		description := "Deprovision workflow completed"
-		if failed {
-			description = "Deprovision workflow failed"
-		}
-		return &lifecyclephase.LifecyclePhase{Phase: lifecyclephase.Deprovisioned, Description: description}
-	}
-	return nil
+	return wf.InstallLifecyclePhase()
 }
