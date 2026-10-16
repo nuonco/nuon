@@ -2,6 +2,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TInstallWorkflow } from '@/types'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { WarmPlanInstallChanges } from '@/components/branches/PlanInstallChanges/WarmPlanInstallChanges'
 import {
   BranchRunApproval,
   type IBranchRunApprovalItem,
@@ -60,5 +61,10 @@ export const BranchPendingApprovalsContainer = ({
       }
     })
 
-  return <BranchRunApproval items={items} className={className} />
+  return (
+    <>
+      <WarmPlanInstallChanges steps={run.steps} />
+      <BranchRunApproval items={items} className={className} />
+    </>
+  )
 }

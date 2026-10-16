@@ -15,6 +15,12 @@ import {
 import type { TInstallWorkflowStep } from '@/types'
 import type { PlanInstallDiff } from './PlanGroupStep'
 
+// An approval's plan and config diff stay the same for that approval id.
+const PLAN_DIFF_CACHE = {
+  staleTime: Number.POSITIVE_INFINITY,
+  refetchOnWindowFocus: false,
+} as const
+
 const commitOf = (run: TAppBranchRun) => {
   const commit = run.vcs_connection_commit
   const sha = commit?.sha || run.head_sha || run.metadata?.head_sha
@@ -50,6 +56,7 @@ export const usePlanGroupInstalls = (
       return res.json()
     },
     enabled: !!orgId && !!step.id && !!step.install_workflow_id && !!approvalId,
+    ...PLAN_DIFF_CACHE,
   })
 
   const rawInstalls = (plan?.installs || metadata.installs || []) as any[]
@@ -73,6 +80,7 @@ export const usePlanGroupInstalls = (
           configId: inst.new_app_config_id,
         }),
       enabled: !!orgId && !!inst.install_id && !!inst.new_app_config_id,
+      ...PLAN_DIFF_CACHE,
     })),
   })
 
@@ -89,7 +97,7 @@ export const usePlanGroupInstalls = (
       queryFn: () =>
         getAppConfig({ orgId, appId: appId!, appConfigId: configId }),
       enabled: !!orgId && !!appId,
-      staleTime: Infinity,
+      ...PLAN_DIFF_CACHE,
     })),
   })
   const configsById = new Map(
@@ -107,7 +115,7 @@ export const usePlanGroupInstalls = (
         offset: 0,
       }),
     enabled: !!orgId && !!appId && !!branchId && configIds.length > 0,
-    staleTime: 30_000,
+    ...PLAN_DIFF_CACHE,
   })
   const commitByConfigId = new Map<
     string,
