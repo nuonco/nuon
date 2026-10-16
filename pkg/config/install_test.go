@@ -856,3 +856,62 @@ func TestInstallValidate_Labels(t *testing.T) {
 		require.NoError(t, install.Validate())
 	})
 }
+
+func TestInstallValidate_RunnerImageOverrides(t *testing.T) {
+	enabled := true
+
+	tests := map[string]struct {
+		install Install
+		wantErr bool
+	}{
+		"auto-update only": {
+			install: Install{Name: "prod", StackOverrides: &InstallStackOverrides{RunnerImageAutoUpdate: &enabled}},
+		},
+		"valid ami pin": {
+			install: Install{Name: "prod", StackOverrides: &InstallStackOverrides{RunnerImageID: "ami-0abc123"}},
+		},
+		"malformed ami pin": {
+			install: Install{Name: "prod", StackOverrides: &InstallStackOverrides{RunnerImageID: "ami-bogus!"}},
+			wantErr: true,
+		},
+		"non-ami pin on a gcp install": {
+			install: Install{
+				Name:           "prod",
+				GCPAccount:     &GCPAccount{ProjectID: "acme", Region: "us-central1"},
+				StackOverrides: &InstallStackOverrides{RunnerImageID: "projects/acme/global/images/runner"},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := tc.install.Validate()
+
+			if tc.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestInstallStackOverrides_HasOverrides_RunnerImage(t *testing.T) {
+	disabled := false
+
+	tests := map[string]struct {
+		overrides *InstallStackOverrides
+		want      bool
+	}{
+		"nil":                  {overrides: nil, want: false},
+		"empty":                {overrides: &InstallStackOverrides{}, want: false},
+		"auto-update disabled": {overrides: &InstallStackOverrides{RunnerImageAutoUpdate: &disabled}, want: true},
+		"image pin":            {overrides: &InstallStackOverrides{RunnerImageID: "ami-0abc123"}, want: true},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, tc.overrides.HasOverrides())
+		})
+	}
+}
