@@ -96,6 +96,7 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 	if !generics.SliceContains(wf.Status.Status, []app.Status{
 		app.StatusInProgress,
 		app.StatusPending,
+		app.StatusWaitingForRunner,
 		app.AwaitingApproval,
 		app.Status("awaiting-approval"),
 		app.StatusFailedPendingRetry,
