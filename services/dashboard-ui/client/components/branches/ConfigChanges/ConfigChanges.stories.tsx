@@ -124,6 +124,55 @@ export const Button = () => (
   />
 )
 
+const manySections: DiffSectionData[] = [
+  {
+    name: 'Components',
+    sectionKey: 'components',
+    additions: 0,
+    removals: 0,
+    changed: 24,
+    grouped: true,
+    fields: [],
+    entities: Array.from({ length: 24 }, (_, index) => ({
+      name: `service-${String(index + 1).padStart(2, '0')}`,
+      op: 'change' as const,
+      componentType: 'helm_chart',
+      fields: [
+        {
+          key: 'chart_version',
+          op: 'change' as const,
+          diff: `'1.${index}.0' -> '1.${index + 1}.0'`,
+        },
+        {
+          key: 'namespace',
+          op: 'change' as const,
+          diff: "'acme' -> 'acme-prod'",
+        },
+      ],
+    })),
+  },
+]
+
+export const ManyChanges = () => (
+  <ConfigChangesViewer
+    sections={manySections}
+    versionLabel="v13 → v14"
+    previousSha="9f8e7d6c5b4a"
+    sha="a1b2c3d4e5f6"
+  />
+)
+ManyChanges.storyName = 'Many changes'
+
+export const ManyChangesPanel = () => (
+  <TemplateChangesButton
+    sections={manySections}
+    versionLabel="v13 → v14"
+    previousSha="9f8e7d6c5b4a"
+    sha="a1b2c3d4e5f6"
+  />
+)
+ManyChangesPanel.storyName = 'Many changes panel'
+
 export const NoChanges = () => <ConfigChangesViewer sections={[]} />
 NoChanges.storyName = 'No changes'
 
