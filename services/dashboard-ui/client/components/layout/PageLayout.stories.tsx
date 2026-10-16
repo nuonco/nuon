@@ -3,6 +3,7 @@ export default {
 }
 
 import type { ReactNode } from 'react'
+import { Button } from '@/components/common/Button'
 import { BreadcrumbContext } from '@/providers/breadcrumb-provider'
 import { SidebarContext } from '@/providers/sidebar-provider'
 import { NotificationContext } from '@/providers/notification-provider'
@@ -37,7 +38,13 @@ const mockNotifications = {
   toggleMute: () => {},
 }
 
-const Providers = ({ children, breadcrumb = mockBreadcrumb }: { children: ReactNode; breadcrumb?: typeof mockBreadcrumb }) => (
+const Providers = ({
+  children,
+  breadcrumb = mockBreadcrumb,
+}: {
+  children: ReactNode
+  breadcrumb?: typeof mockBreadcrumb
+}) => (
   <NotificationContext.Provider value={mockNotifications}>
     <BreadcrumbContext.Provider value={breadcrumb}>
       <SidebarContext.Provider value={mockSidebar}>
@@ -92,5 +99,24 @@ export const SinglePage = () => (
         </PageSection>
       </PageContent>
     </PageLayout>
+  </Providers>
+)
+
+export const BottomActions = () => (
+  <Providers>
+    <div className="flex h-screen w-full">
+      <PageLayout>
+        <PageContent>
+          <PageSection>
+            <div className="h-[90rem] rounded-md bg-cool-grey-100 dark:bg-dark-grey-800" />
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary">View details</Button>
+              <Button>Save changes</Button>
+            </div>
+            <div className="h-12" />
+          </PageSection>
+        </PageContent>
+      </PageLayout>
+    </div>
   </Providers>
 )
