@@ -225,6 +225,24 @@ jobs:
         working-directory: mono
         run: printf 'n\n' | nuonctl scripts go-reset-dependencies
 
+      - name: Configure local blob storage
+        working-directory: mono
+        run: |
+          docker compose up -d seaweedfs
+          curl --fail --max-time 10 --retry 30 --retry-all-errors --retry-delay 2 \
+            --request PUT http://127.0.0.1:8333/ctl-api-integration-test
+          cat > "$HOME/.nuonctl-env.yml" <<'YAML'
+          ctl-api:
+            AWS_ENDPOINT_URL_S3: http://127.0.0.1:8333
+            AWS_ACCESS_KEY_ID: test
+            AWS_SECRET_ACCESS_KEY: test
+            AWS_SESSION_TOKEN: ""
+            AWS_EC2_METADATA_DISABLED: "true"
+            BLOB_STORAGE_PROVIDER: s3
+            BLOB_STORAGE_BUCKET: ctl-api-integration-test
+            BLOB_STORAGE_REGION: us-east-1
+          YAML
+
       # The untracked temporal-gen wrappers are required to compile the test tree. Run before the dev
       # stack, which generates into the same checkout on boot.
       - name: Generate code
@@ -282,6 +300,14 @@ jobs:
           INTEGRATION_INTERNAL_API_URL: http://localhost:8082
           INTEGRATION_NO_CLEANUP: "1"
           DB_REPLICA_ENABLED: "false"
+          AWS_ENDPOINT_URL_S3: http://127.0.0.1:8333
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_SESSION_TOKEN: ""
+          AWS_EC2_METADATA_DISABLED: "true"
+          BLOB_STORAGE_PROVIDER: s3
+          BLOB_STORAGE_BUCKET: ctl-api-integration-test
+          BLOB_STORAGE_REGION: us-east-1
         run: |
           source tests/integration.env
           # flow/testworker runs in the flow lane. grep, not rg: build-run runners have no rg, and an
