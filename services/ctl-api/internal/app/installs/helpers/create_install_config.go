@@ -5,20 +5,13 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/config"
-	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-type CreateInstallConfigParams struct {
-	ApprovalOption          app.InstallApprovalOption  `json:"approval_option"`
-	Telemetry               *config.InstallTelemetry   `json:"telemetry,omitempty"`
-	Labels                  map[string]string          `json:"labels,omitempty"`
-	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty"`
-	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty"`
-	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty"`
-}
+type CreateInstallConfigParams = build.InstallConfigInput
 
 // ValidateStackOverrides validates per-install stack template override fields.
 func ValidateStackOverrides(vpcURL, runnerURL *string, stacks []config.CustomNestedStack) error {
@@ -66,18 +59,7 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 		return nil, fmt.Errorf("get install for config creation: %w", err)
 	}
 
-	installConfig := &app.InstallConfig{
-		InstallID:               installID,
-		ApprovalOption:          req.ApprovalOption,
-		VPCNestedTemplateURL:    req.VPCNestedTemplateURL,
-		RunnerNestedTemplateURL: req.RunnerNestedTemplateURL,
-		CustomNestedStacks:      req.CustomNestedStacks,
-		Labeled:                 labels.Labeled{Labels: labels.Labels(req.Labels)},
-	}
-	if req.Telemetry != nil {
-		installConfig.TelemetryEnabled = req.Telemetry.Enabled
-	}
-
+	installConfig := build.InstallConfig(*req, installID)
 	if err := h.db.WithContext(ctx).Create(installConfig).Error; err != nil {
 		return nil, fmt.Errorf("unable to create install config: %w", err)
 	}

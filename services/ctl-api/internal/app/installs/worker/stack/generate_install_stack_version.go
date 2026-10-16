@@ -269,6 +269,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 
 		tmplByts = renderedTemplate.RAWJson
 		checksum = renderedTemplate.Checksum
+		stackVersion.AWSStackParameters = renderedTemplate.AWSStackParameters
 
 		// Render the Terraform tfvars envelope alongside the CloudFormation
 		// template so the dashboard can offer both during the await step.
@@ -330,9 +331,10 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 	}
 
 	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
-		ID:       stackVersion.ID,
-		Template: tmplByts,
-		Checksum: checksum,
+		ID:                 stackVersion.ID,
+		Template:           tmplByts,
+		Checksum:           checksum,
+		AWSStackParameters: stackVersion.AWSStackParameters,
 	}); err != nil {
 		return errors.Wrap(err, "unable to save cloudformation stack")
 	}

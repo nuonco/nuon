@@ -90,6 +90,19 @@ func (c CustomNestedStack) GCPModuleName() string {
 	return name
 }
 
+func ValidateCloudFormationCustomNestedStacks(stackType string, stacks []CustomNestedStack) error {
+	if stackType != "aws-cloudformation" {
+		return nil
+	}
+	for _, stack := range stacks {
+		if stack.Name == "VPC" || stack.Name == "RunnerAutoScalingGroup" {
+			msg := fmt.Sprintf("custom nested stack name %q conflicts with a built-in stack", stack.Name)
+			return ErrConfig{Description: msg, Err: fmt.Errorf("%s", msg)}
+		}
+	}
+	return nil
+}
+
 // ValidateGCPCustomNestedStacks validates requirements that are known before
 // Terraform runs in the customer's project.
 func ValidateGCPCustomNestedStacks(stackType string, stacks []CustomNestedStack) error {
@@ -321,6 +334,9 @@ func isS3URL(u *url.URL) bool {
 
 func (a *StackConfig) parse() error {
 	if err := ValidateDeploymentScope(a.DeploymentScope, a.Type); err != nil {
+		return err
+	}
+	if err := ValidateCloudFormationCustomNestedStacks(a.Type, a.CustomNestedStacks); err != nil {
 		return err
 	}
 	if a.Type == "aws-cloudformation" {

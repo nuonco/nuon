@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -54,6 +55,12 @@ func (i *InstallConfigVersion) Indexes(db *gorm.DB) []migrations.Index {
 		{
 			Name:    indexes.Name(db, &InstallConfigVersion{}, "install_id"),
 			Columns: []string{"install_id"},
+		},
+		{
+			Name:        indexes.Name(db, &InstallConfigVersion{}, "install_config_sync_id_install_name"),
+			Columns:     []string{"install_config_sync_id", "install_name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE metadata->>'request_hash' IS NOT NULL",
 		},
 	}
 }

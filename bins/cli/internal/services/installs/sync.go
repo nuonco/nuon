@@ -30,6 +30,13 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, conf
 	if err != nil {
 		return ui.PrintError(err)
 	}
+	for _, installCfg := range installCfgs {
+		if installCfg.CloudFormation != nil {
+			return ui.PrintError(&ui.CLIUserError{
+				Msg: fmt.Sprintf("install config %q: cloudformation is only supported by Git-backed install config sync; commit this config to its app branch instead of using nuon installs sync", installCfg.Name),
+			})
+		}
+	}
 
 	appID, err = lookup.AppID(ctx, s.api, appID)
 	if err != nil {

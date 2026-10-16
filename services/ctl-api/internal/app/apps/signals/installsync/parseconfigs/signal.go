@@ -1,12 +1,14 @@
 package parseconfigs
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -51,30 +53,28 @@ func (s *Signal) OnApprove(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get step: %w", err)
 	}
 
-	rawNames, ok := step.Status.Metadata["proposed_install_names"]
+	rawProposals, ok := step.Status.Metadata["proposed_installs"]
 	if !ok {
-		return fmt.Errorf("proposed_install_names not found in step metadata")
+		return fmt.Errorf("proposed_installs not found in step metadata")
 	}
 
-	namesSlice, ok := rawNames.([]interface{})
-	if !ok {
-		return fmt.Errorf("proposed_install_names is not an array")
+	data, err := json.Marshal(rawProposals)
+	if err != nil {
+		return fmt.Errorf("unable to encode proposed installs: %w", err)
+	}
+	var proposals []app.ProposedInstall
+	if err := json.Unmarshal(data, &proposals); err != nil {
+		return fmt.Errorf("unable to decode proposed installs: %w", err)
 	}
 
-	names := make([]string, 0, len(namesSlice))
-	for _, n := range namesSlice {
-		if name, ok := n.(string); ok {
-			names = append(names, name)
-		}
-	}
-
-	if len(names) == 0 {
+	if len(proposals) == 0 {
 		return nil
 	}
 
 	_, err = branchactivities.AwaitCreateProposedInstalls(ctx, &branchactivities.CreateProposedInstallsInput{
-		AppID: s.AppID,
-		Names: names,
+		AppID: s.AppID, AppInstallConfigSyncID: s.AppInstallConfigSyncID,
+		InstallConfigSyncID: "ics" + s.AppInstallConfigSyncID[3:],
+		Installs:            proposals,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create proposed installs: %w", err)
