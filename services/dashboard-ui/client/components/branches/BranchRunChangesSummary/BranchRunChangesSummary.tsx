@@ -293,6 +293,8 @@ export const useBranchConfigSections = ({
       }),
     enabled: !!org?.id && !!app?.id && !!headConfigId,
     retry: 1,
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: false,
   })
 
   const sections = useMemo(() => {

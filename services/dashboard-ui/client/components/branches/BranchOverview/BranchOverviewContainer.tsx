@@ -32,6 +32,7 @@ import {
   preRolloutCompositeError,
 } from './overview-loading'
 import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
+import { WarmPlanInstallChanges } from '@/components/branches/PlanInstallChanges/WarmPlanInstallChanges'
 import { useGroupApprovedVersions } from './use-group-approved-versions'
 import { useRolloutGroups } from './use-rollout-groups'
 import { mergedChangedBuildRows } from './changed-builds'
@@ -230,6 +231,7 @@ export const BranchOverviewContainer = ({
 
   return (
     <>
+      <WarmPlanInstallChanges steps={workflowSteps} />
       <PageTitle
         segments={
           pinnedWorkflowId
