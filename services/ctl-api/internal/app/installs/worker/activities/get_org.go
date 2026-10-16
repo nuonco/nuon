@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
 )
 
 type GetOrgRequest struct {
@@ -18,6 +19,7 @@ func (a *Activities) GetOrg(ctx context.Context, req GetOrgRequest) (*app.Org, e
 }
 
 func (a *Activities) getInstallOrg(ctx context.Context, installID string) (*app.Org, error) {
+	ctx = routing.WithoutReplica(ctx)
 	install := app.Install{}
 	res := a.db.WithContext(ctx).
 		Preload("CreatedBy").

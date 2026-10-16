@@ -19,7 +19,6 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 const ManagedByGitInstallConfig = "nuon/git/install-config"
@@ -622,11 +621,6 @@ func syncInstallInputs(
 			AppInputConfigID: pinned.ID,
 			Values:           merged,
 		}
-		if err := tx.WithContext(ctx).Create(&installInputs).Error; err != nil {
-			return err
-		}
-
-		// nothing else on this path invalidates state
-		return installHelpers.MarkInstallStatePartialsStale(ctx, tx, existing.ID, pkgstate.PartialInputs)
+		return tx.WithContext(ctx).Create(&installInputs).Error
 	})
 }

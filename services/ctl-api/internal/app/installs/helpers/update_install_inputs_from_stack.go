@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func (h *Helpers) UpdateInstallInputsFromStackOutputs(
@@ -123,7 +122,7 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 			if err := tx.WithContext(ctx).Create(&newInputs).Error; err != nil {
 				return errors.Wrap(err, "unable to create install inputs")
 			}
-			return h.MarkInstallStatePartialsStale(ctx, tx, installID, pkgstate.PartialInputs)
+			return nil
 		}
 
 		if err := tx.WithContext(ctx).
@@ -132,7 +131,7 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 			Update("values", installInputs.Values).Error; err != nil {
 			return errors.Wrap(err, "unable to update install inputs")
 		}
-		return h.MarkInstallStatePartialsStale(ctx, tx, installID, pkgstate.PartialInputs)
+		return nil
 	}); err != nil {
 		return nil, err
 	}

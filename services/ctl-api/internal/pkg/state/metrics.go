@@ -9,8 +9,9 @@ import (
 )
 
 type Metrics struct {
-	operations metric.Int64Counter
-	duration   metric.Float64Histogram
+	operations         metric.Int64Counter
+	duration           metric.Float64Histogram
+	sourceWaitTimeouts metric.Int64Counter
 }
 
 func NewMetrics(provider metric.MeterProvider) *Metrics {
@@ -27,7 +28,17 @@ func NewMetrics(provider metric.MeterProvider) *Metrics {
 	if err != nil {
 		return nil
 	}
-	return &Metrics{operations: operations, duration: duration}
+	timeouts, err := meter.Int64Counter("nuon.install.state.source_wait.timeouts", metric.WithUnit("{timeout}"))
+	if err != nil {
+		return nil
+	}
+	return &Metrics{operations: operations, duration: duration, sourceWaitTimeouts: timeouts}
+}
+
+func (m *Metrics) RecordSourceWaitTimeout(ctx context.Context) {
+	if m != nil {
+		m.sourceWaitTimeouts.Add(ctx, 1)
+	}
 }
 
 func (m *Metrics) Record(ctx context.Context, operation string, started time.Time, err error) {

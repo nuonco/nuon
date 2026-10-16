@@ -16,6 +16,27 @@ import (
 )
 
 func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*state.ExecuteRegenerationResponse, error) {
+	if workflow.GetVersion(ctx, "install-state-publication", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return regenerateLegacy(ctx, req)
+	}
+	activityReq := *req
+	activityReq.CachedState, activityReq.MetricsWriter = nil, nil
+	resp, err := installactivities.AwaitRegenerateInstallState(ctx, &activityReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to regenerate install state")
+	}
+	if len(resp.UpdatedPartials) > 0 {
+		if err := installactivities.AwaitArchiveState(ctx, &installactivities.ArchiveStateRequest{InstallID: req.InstallID}); err != nil {
+			return nil, errors.Wrap(err, "error while archiving state")
+		}
+		if err := installactivities.AwaitRenderInstallLabels(ctx, &installactivities.RenderInstallLabelsRequest{InstallID: req.InstallID}); err != nil {
+			workflow.GetLogger(ctx).Warn("unable to render install label templates", "install_id", req.InstallID, "error", err)
+		}
+	}
+	return resp, nil
+}
+
+func regenerateLegacy(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*state.ExecuteRegenerationResponse, error) {
 	refreshStartedAt := workflow.Now(ctx)
 	lastModifiedAt := make(map[state.PartialName]time.Time, len(req.LastModifiedAt))
 	for k, v := range req.LastModifiedAt {
