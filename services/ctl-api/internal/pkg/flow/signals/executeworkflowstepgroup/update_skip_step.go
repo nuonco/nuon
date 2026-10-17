@@ -65,7 +65,8 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	// Send skip-step to the step signal to unblock its Execute() cleanly
 	// without going through Cancel (which would overwrite the skip status).
 	activities.AwaitForwardSkipStep(ctx, activities.ForwardSkipStepRequest{
-		StepID: req.StepID,
+		StepID:    req.StepID,
+		Directive: string(skipDirective),
 	})
 
 	resp := &SkipStepResponse{Skippable: true}
