@@ -432,8 +432,14 @@ func CompositeComponentHealthStatus(statuses []InstallComponentHealthStatus) (In
 	counts := map[InstallComponentHealthStatus]int{}
 	total := 0
 	for _, hs := range statuses {
-		if hs == InstallComponentHealthStatusUnset || hs == InstallComponentHealthStatusNotApplicable {
+		switch hs {
+		case InstallComponentHealthStatusUnset, "unset", InstallComponentHealthStatusNotApplicable:
 			continue
+		case InstallComponentHealthStatusHealthy, InstallComponentHealthStatusProgressing,
+			InstallComponentHealthStatusUnknown, InstallComponentHealthStatusDegraded,
+			InstallComponentHealthStatusUnhealthy:
+		default:
+			hs = InstallComponentHealthStatusOther
 		}
 		counts[hs]++
 		total++
@@ -454,6 +460,8 @@ func CompositeComponentHealthStatus(statuses []InstallComponentHealthStatus) (In
 		return InstallComponentHealthStatusUnhealthy, describe(counts[InstallComponentHealthStatusUnhealthy], "unhealthy")
 	case counts[InstallComponentHealthStatusDegraded] > 0:
 		return InstallComponentHealthStatusDegraded, describe(counts[InstallComponentHealthStatusDegraded], "degraded")
+	case counts[InstallComponentHealthStatusOther] > 0:
+		return InstallComponentHealthStatusOther, describe(counts[InstallComponentHealthStatusOther], "in an unsupported health state")
 	case counts[InstallComponentHealthStatusUnknown] > 0:
 		return InstallComponentHealthStatusUnknown, describe(counts[InstallComponentHealthStatusUnknown], "in an unknown health state")
 	case counts[InstallComponentHealthStatusProgressing] > 0:

@@ -8,7 +8,8 @@ SELECT
         WHERE ic.deleted_at = 0 AND ic.install_id = i.id
     ) AS component_statuses,
     (
-        SELECT hstore(array_agg(ic.component_id), array_agg(ic.health_status))
+        SELECT hstore(array_agg(ic.component_id),
+                      array_agg(COALESCE(NULLIF(ic.health_status_v2->>'status', ''), ic.health_status)))
         FROM install_components ic
         WHERE ic.deleted_at = 0 AND ic.install_id = i.id
     ) AS component_health_statuses,
