@@ -8,7 +8,7 @@ keywords: ["component overrides", "install overrides", "per-install overrides", 
 Component overrides let you customize a single install's [Helm](/guides/helm-chart-components) values or
 [Terraform](/guides/terraform-components) variables without touching your app config. They're defined per-install, so one
 customer can get a different chart configuration or a different set of Terraform variables while every other install
-keeps the app defaults.
+keeps the app template's defaults.
 
 Use them for one-off customizations that don't belong in your app config, such as bumping a replica count for a customer
 under load, pinning a region for a specific install, or applying a temporary support tweak, where authoring a new input

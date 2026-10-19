@@ -313,7 +313,7 @@ control plane, but your customer can override it with the module's `roles` map:
 
 An entry set here wins over the control plane in both directions, so your customer can turn a role off or switch one
 on ahead of the next apply. Keys are role names — either the full served name or the name without its leading
-`<install-id>-` prefix. A `roles` key naming a role the app does not declare fails the plan, with an error listing
+`<install-id>-` prefix. A `roles` key naming a role the app config does not declare fails the plan, with an error listing
 the valid keys.
 
 The `roles` map also accepts three reserved keys — `provision`, `maintenance`, and `deprovision` — to disable an

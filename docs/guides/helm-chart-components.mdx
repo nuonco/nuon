@@ -33,10 +33,10 @@ image:
 source = "./values.yaml"
 ```
 
-You can also put the Helm chart source inside of the same repo as the app, and point to it.
+You can also put the Helm chart source inside of the same repo as the app config, and point to it.
 
 <Note>
-If you include the Helm chart source in the app repo, you must push the entire repo and do a manual build of the component in the dashboard or CLI. The CLI's `nuon apps sync` will not recognize that the component has changed so will not do the build.
+If you include the Helm chart source in the app config repo, you must push the entire repo and do a manual build of the component in the dashboard or CLI. The CLI's `nuon apps sync` will not recognize that the component has changed so will not do the build.
 </Note>
 
 <Warning>
@@ -84,7 +84,7 @@ You can find public Helm charts on [Artifact Hub](https://artifacthub.io/), whic
 
 ## Open Source and Private Charts
 
-Nuon supports any Helm chart that can be accessed using git. It is common for apps to have both a combination of public,
+Nuon supports any Helm chart that can be accessed using git. It is common for app templates to have both a combination of public,
 open source helm charts for deploying standard components and private helm charts for application specific
 configuration.
 
@@ -125,7 +125,7 @@ internal_root_domain = "{{.nuon.sandbox.outputs.nuon_dns.internal_domain.name}}"
 
 ## Using a Helm Values File
 
-You can add a values file and locate it in the app repository.
+You can add a values file and locate it in the app config repository.
 
 ```toml components/grafana.toml
 # helm

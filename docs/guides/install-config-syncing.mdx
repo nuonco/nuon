@@ -1,11 +1,11 @@
 ---
 title: "Syncing Install Configs from Git"
-description: "Connect a Git repo of install config files to your app so pushes keep every install's config in sync"
+description: "Connect a Git repo of install config files to your app template so pushes keep every install's config in sync"
 icon: "arrows-rotate"
 keywords: ["install config syncing", "installs.toml", "installs_config", "connected_repo", "git sync installs", "automated installs", "install config sync", "VCS installs", "declarative installs"]
 ---
 
-Point your app at a Git repository that holds one config file per install, and Nuon keeps those installs in sync with the repo. When you push a change, every install's config is updated to match; when you add a file for an install that doesn't exist yet, Nuon proposes creating it and waits for your approval.
+Point your app template at a Git repository that holds one config file per install, and Nuon keeps those installs in sync with the repo. When you push a change, every install's config is updated to match; when you add a file for an install that doesn't exist yet, Nuon proposes creating it and waits for your approval.
 
 This is the app-wide counterpart to [creating installs from config files](/guides/install-configs) by hand — the same file format, applied continuously from a repo instead of one command at a time.
 

@@ -42,10 +42,10 @@ You can configure Pulumi components to use either a public repo (using a
 `public_repo` block) or a private GitHub repo (using a `connected_repo` block).
 Read more about VCS configuration [here](/guides/vcs).
 
-You can also put the Pulumi source inside of the same repo as the app, and point to it.
+You can also put the Pulumi source inside of the same repo as your app config, and point to it.
 
 <Note>
-If you include the Pulumi source in the app repo, you must push the entire repo and do a manual build of the component in the dashboard or CLI. The CLI's `nuon apps sync` will not recognize that the component has changed so will not do the build.
+If you include the Pulumi source in the app config repo, you must push the entire repo and do a manual build of the component in the dashboard or CLI. The CLI's `nuon apps sync` will not recognize that the component has changed so will not do the build.
 </Note>
 
 By default Nuon uses the latest Pulumi CLI. To pin a specific version, set

@@ -1,10 +1,10 @@
 ---
-title: "Create An AWS EC2 App"
+title: "Create An AWS EC2 App Template"
 description: "Learn how to package and install a Cloud Development Environment (CDE) on AWS EC2."
 ---
 
 <Note>
-	This [app](/concepts/apps) can be found in the [cde directory](https://github.com/nuonco/example-app-configs/tree/main/cde) of the example-app-configs repository.
+	This [app template](/concepts/apps) can be found in the [cde directory](https://github.com/nuonco/example-app-configs/tree/main/cde) of the example-app-configs repository.
 </Note>
 
 The CDE app is a straightforward EC2 VM, but it is a good example of how much Nuon can do beyond
@@ -35,7 +35,7 @@ their cloud. It also demonstrates several platform features working together:
 
 This tutorial will walk you through creating the following:
 
-- An [app](/concepts/apps)
+- An [app template](/concepts/apps)
 - A Terraform [component](/concepts/components) to provision the EC2 instance, Elastic IP, DNS record, and security group
 - [Actions](/concepts/actions) for post-provision setup and day-2 operations (start/stop VM, healthchecks)
 - An [install](/concepts/installs), using our
@@ -46,7 +46,7 @@ This tutorial will walk you through creating the following:
 	repository](https://github.com/nuonco/example-app-configs) which includes the
 	`cde` app versus creating each config file manually. This guide is
 	meant to explain the concepts behind the config files, so you can
-	create your own apps in the future.
+	create your own app templates in the future.
 </Note>
 
 ## Configure App
@@ -500,5 +500,5 @@ A few suggestions for where to go next:
   [example-app-configs repository](https://github.com/nuonco/example-app-configs)
   to see how to deploy a more complex app.
 
-- Dig into our [app](/concepts/apps) guide to learn how to configure more
+- Dig into our [app template](/concepts/apps) guide to learn how to configure more
   complex apps.

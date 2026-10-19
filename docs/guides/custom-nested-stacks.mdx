@@ -20,7 +20,7 @@ implemented and reviewed in the selected install-stack repository's `gcp/modules
 ## Backward compatibility
 
 Existing valid AWS `stack.toml` files require no changes. The `name`, `template_url`, `index`, and `parameters` fields
-retain their original behavior. Azure and GCP support is additive, and apps without `custom_nested_stacks` continue to
+retain their original behavior. Azure and GCP support is additive, and app templates without `custom_nested_stacks` continue to
 produce the same install stack. Configurations with duplicate names or indices now fail during sync instead of
 producing ambiguous resources.
 

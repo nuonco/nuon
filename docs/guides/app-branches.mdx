@@ -1,17 +1,17 @@
 ---
 title: "Configure app branches"
-description: "Connect a git branch to your app, group your installs, and roll changes out across your fleet from a git push."
+description: "Connect a git branch to your app template, group your installs, and roll changes out across your fleet from a git push."
 icon: "code-branch"
 keywords: ["configure app branches", "branch.toml", "install_groups", "deployment groups", "label installs", "nuon installs labels set", "nuon apps branches trigger", "nuon sync --branch", "PR preview setup", "staged rollout setup"]
 ---
 
-This guide walks through setting up an [app branch](/concepts/app-branches) on an existing app: writing the branch
+This guide walks through setting up an [app branch](/concepts/app-branches) on an existing app template: writing the branch
 config, sorting your installs into deployment groups, triggering runs, and approving
 them.
 
 ## Prerequisites
 
-- An [app](/concepts/apps) already synced to Nuon, with at least one install.
+- An [app template](/concepts/apps) already synced to Nuon, with at least one install.
 - The [Nuon CLI](/cli) installed and authenticated (`nuon auth login`).
 - For pull request previews, the **Nuon GitHub App connected in your org for the repository's owner**. See
   [connecting a repository](/guides/vcs).

@@ -2,7 +2,7 @@
 title: "App Branches"
 icon: "code-branch"
 description:
-  "App branches connect a git branch to your app, so a push rolls the change out across your fleet of customer installs
+  "App branches connect a git branch to your app template, so a push rolls the change out across your fleet of customer installs
   through ordered deployment groups with a plan and an approval at every step."
 boost: 4
 keywords: ["app branches", "app branch", "what are app branches", "continuous delivery", "git push deploy", "gitops", "deployment groups", "install groups", "install_groups", "label selector", "staged rollout", "progressive rollout", "canary", "plan and approve", "PR preview", "pull request preview", "branch run", "git-run", "git-preview-run", "manual-run", "install version history", "app config version", "fleet deployment", "roll out to many installs"]
@@ -10,7 +10,7 @@ keywords: ["app branches", "app branch", "what are app branches", "continuous de
 
 ## What is an App Branch?
 
-An app branch connects one git branch to your [app](/concepts/apps). When you push to that branch, Nuon fetches the
+An app branch connects one git branch to your [app template](/concepts/apps). When you push to that branch, Nuon fetches the
 config at that commit, builds whatever changed, and then rolls the new version out across your customer
 [installs](/guides/app-install-life-cycle), in an order you define, with a plan and an approval gate in front of
 every step.
@@ -20,7 +20,7 @@ an API token, then driving each install yourself. An app branch makes the git pu
 a single reviewable workflow instead of a sequence of manual steps.
 
 <Note>
-  If you are new to Nuon, read [apps](/concepts/apps) and the [app and install life
+  If you are new to Nuon, read [app templates](/concepts/apps) and the [app and install life
   cycle](/guides/app-install-life-cycle) first.
 </Note>
 
@@ -215,7 +215,7 @@ Know these constraints before you design your branch layout:
     Write a branch config, label your installs, trigger runs, and set up pull request previews.
   </Card>
   <Card title="Walkthrough" icon="rocket" href="/get-started/app-branches-walkthrough">
-    Add an app branch to the `eks-simple` example app end to end.
+    Add an app branch to the `eks-simple` example app template end to end.
   </Card>
   <Card title="Branch config reference" icon="file" href="/config-ref/branch">
     Every field on `branch.toml`.
