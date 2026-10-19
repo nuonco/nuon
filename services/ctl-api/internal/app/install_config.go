@@ -45,7 +45,7 @@ type InstallConfig struct {
 	AWSStackParameters       map[string]string                     `json:"-" gorm:"type:jsonb;serializer:json" temporaljson:"aws_stack_parameters,omitempty"`
 	AWSNestedStackParameters map[string]config.CloudFormationStack `json:"-" gorm:"type:jsonb;serializer:json" temporaljson:"aws_nested_stack_parameters,omitempty"`
 	ComponentToggles         map[string]bool                       `json:"component_toggles,omitempty" gorm:"type:jsonb;serializer:json;default:'{}'" temporaljson:"component_toggles,omitempty"`
-	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty" gorm:"default null" temporaljson:"runner_image_auto_update,omitempty"`
+	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty" gorm:"default null" temporaljson:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID            *string                               `json:"runner_image_id,omitempty" gorm:"default null" temporaljson:"runner_image_id,omitempty"`
 	labels.Labeled
 }

@@ -16,7 +16,7 @@ type InstallConfigInput struct {
 	CustomNestedStacks       []config.CustomNestedStack            `json:"custom_nested_stacks,omitempty"`
 	AWSStackParameters       map[string]string                     `json:"-"`
 	AWSNestedStackParameters map[string]config.CloudFormationStack `json:"-"`
-	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty"`
+	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID            *string                               `json:"runner_image_id,omitempty"`
 }
 

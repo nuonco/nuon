@@ -26,7 +26,7 @@ type UpdateInstallConfigRequest struct {
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty"`
-	RunnerImageAutoUpdate   *bool                      `json:"runner_image_auto_update,omitempty"`
+	RunnerImageAutoUpdate   *bool                      `json:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID           *string                    `json:"runner_image_id,omitempty"`
 }
 
