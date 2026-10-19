@@ -13,5 +13,6 @@ export {
   emptyCounts,
   hasChanges,
   sumCounts,
+  aggregateNoun,
   formatAggregate,
 } from './change-summary-utils'
