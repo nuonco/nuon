@@ -393,8 +393,7 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionNotFound() {
 					Command: "echo test",
 				}
 			},
-			// Handler wraps not-found in stderr.ErrUser which returns 400
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusNotFound,
 		},
 	}
 
@@ -414,7 +413,6 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionNotFound() {
 }
 
 func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionCrossOrgIsolation() {
-	s.T().Skip("PRO-3349: getInstall in create_install_action_workflow_run.go is not org-scoped, cross-org adhoc run returns 201")
 	install1 := s.createInstall(s.testApp.ID)
 
 	ctx2 := context.Background()
