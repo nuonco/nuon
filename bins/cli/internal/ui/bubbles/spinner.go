@@ -170,6 +170,11 @@ func (v *SpinnerView) stop() {
 	v.wg.Wait()
 }
 
+// Stop lets streamed output take over the spinner's line.
+func (v *SpinnerView) Stop() {
+	v.stop()
+}
+
 // Success completes the spinner with a success message.
 func (v *SpinnerView) Success(text string) {
 	if v.json {

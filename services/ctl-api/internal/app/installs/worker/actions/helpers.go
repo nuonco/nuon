@@ -128,13 +128,14 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	l.Info("executing runner job")
-	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+	jobStatus, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID:   run.Install.RunnerID,
 		JobID:      runnerJob.ID,
 		WorkflowID: "actions-install-run-exec-job" + run.ID,
 	})
 	if err != nil {
-		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "job failed")
+		status, description := actionRunFailureStatus(jobStatus, run)
+		w.updateActionRunStatus(ctx, run.ID, status, description)
 		return errors.Wrap(err, "runner job failed")
 	}
 
@@ -154,4 +155,16 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	})
 
 	return nil
+}
+
+func actionRunFailureStatus(jobStatus app.RunnerJobStatus, run *app.InstallActionWorkflowRun) (app.InstallActionWorkflowRunStatus, string) {
+	if jobStatus != app.RunnerJobStatusTimedOut {
+		return app.InstallActionRunStatusError, "job failed"
+	}
+
+	timeout := run.ActionWorkflowConfig.Timeout
+	if timeout == 0 {
+		timeout = run.Timeout
+	}
+	return app.InstallActionRunStatusTimedOut, fmt.Sprintf("action timed out after %s", timeout)
 }

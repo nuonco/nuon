@@ -368,6 +368,7 @@ type Client interface {
 	GetInstallActionWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallActionWorkflow, bool, error)
 	GetInstallActionWorkflowRecentRuns(ctx context.Context, installID, actionWorkflowID string, query *models.GetPaginatedQuery) (*models.AppInstallActionWorkflow, bool, error)
 	CreateInstallActionWorkflowRun(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) error
+	CreateInstallActionWorkflowRunWithResponse(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) (*models.AppWorkflowResponse, error)
 	CreateAdHocAction(ctx context.Context, installID string, req *models.ServiceCreateAdHocActionRequest) (*models.ServiceCreateAdHocActionResponse, error)
 	GetInstallActionWorkflowRun(ctx context.Context, installID, runID string) (*models.AppInstallActionWorkflowRun, error)
 	GetInstallActionWorkflowOutputs(ctx context.Context, installID, actionID string) (any, error)
