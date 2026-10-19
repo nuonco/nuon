@@ -164,8 +164,17 @@ func (c *client) GetInstallActionWorkflowRecentRuns(ctx context.Context, install
 }
 
 func (c *client) CreateInstallActionWorkflowRun(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) error {
+	_, err := c.CreateInstallActionWorkflowRunWithResponse(ctx, installID, req)
+	return err
+}
+
+func (c *client) CreateInstallActionWorkflowRunWithResponse(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) (*models.AppWorkflowResponse, error) {
 	path := fmt.Sprintf("%s/v1/installs/%s/action-workflows/runs", c.APIURL, url.PathEscape(installID))
-	return c.triggerRequest(ctx, http.MethodPost, path, req, http.StatusCreated, nil)
+	var resp models.AppWorkflowResponse
+	if err := c.triggerRequest(ctx, http.MethodPost, path, req, http.StatusCreated, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
 }
 
 func (c *client) CreateAdHocAction(ctx context.Context, installID string, req *models.ServiceCreateAdHocActionRequest) (*models.ServiceCreateAdHocActionResponse, error) {
