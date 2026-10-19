@@ -13,7 +13,6 @@ import (
 )
 
 func TestCopyWithReferrers(t *testing.T) {
-	t.Setenv(tagIndexChildrenEnv, "true")
 	ctx := context.Background()
 	src := memory.New()
 	dst := memory.New()
@@ -67,7 +66,7 @@ func TestCopyWithReferrers(t *testing.T) {
 		legacyArtifacts[tag] = desc
 	}
 
-	got, err := copyWithReferrers(ctx, src, "latest", dst, "copied", oras.DefaultCopyGraphOptions)
+	got, err := copyWithReferrers(ctx, src, "latest", dst, "copied", oras.DefaultCopyGraphOptions, true)
 	require.NoError(t, err)
 	require.Equal(t, image, got)
 
