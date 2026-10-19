@@ -1,4 +1,4 @@
-import { useMemo, type HTMLAttributes } from 'react'
+import { useMemo, useState, type HTMLAttributes } from 'react'
 import type { TTerraformPlan } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
@@ -6,7 +6,8 @@ import {
   TERRAFORM_DIFF_OPERATIONS,
   terraformPlanDiff,
 } from '@/lib/diffs/terraform'
-import type { IPlanDiffGroup } from '@/lib/diffs'
+import { terraformActionSelected } from '@/lib/diffs/noop-visibility'
+import type { IPlanDiffGroup, IPlanDiffSection } from '@/lib/diffs'
 import { Card } from '@/components/common/Card'
 import { Text } from '@/components/common/Text'
 import { usePlanDiffFilter } from './use-plan-diff-filter'
@@ -15,6 +16,15 @@ import { DiffFilter } from './DiffFilter'
 import { DiffSection } from './DiffSection'
 import { DiffSections } from './DiffSections'
 import { DiffEmptyState } from './DiffEmptyState'
+import { ShowNoopsToggle } from './ShowNoopsToggle'
+
+const FILTER_OPERATIONS = TERRAFORM_DIFF_OPERATIONS.filter(
+  (operation) => operation !== 'no-op'
+)
+
+const sectionMatches = (section: IPlanDiffSection, query: string) =>
+  !query ||
+  section.searchable.some((value) => value.toLowerCase().includes(query))
 
 export interface ITerraformDiff
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -30,17 +40,31 @@ const GROUP_TITLES: Record<string, string> = {
 const TerraformDiffGroup = ({
   group,
   defaultOpen,
+  showNoops,
 }: {
   group: IPlanDiffGroup
   defaultOpen?: boolean
+  showNoops: boolean
 }) => {
   const filter = usePlanDiffFilter(
     group.sections,
-    TERRAFORM_DIFF_OPERATIONS,
+    FILTER_OPERATIONS,
     TERRAFORM_DEFAULT_DIFF_OPERATIONS
   )
+  const query = filter.searchQuery.trim().toLowerCase()
+  const visibleSections = group.sections.filter(
+    (section) =>
+      terraformActionSelected(
+        section.operation,
+        filter.selectedOperations,
+        showNoops
+      ) && sectionMatches(section, query)
+  )
+  const totalCount = group.sections.filter(
+    (section) => showNoops || section.operation !== 'no-op'
+  ).length
 
-  if (!group.sections.length) return null
+  if (!totalCount) return null
 
   return (
     <Card className="flex flex-col gap-3">
@@ -61,8 +85,8 @@ const TerraformDiffGroup = ({
             title={GROUP_TITLES[group.id] ?? 'resources'}
             operations={filter.operations}
             selectedOperations={filter.selectedOperations}
-            selectedCount={filter.selectedCount}
-            totalCount={filter.totalCount}
+            selectedCount={visibleSections.length}
+            totalCount={totalCount}
             searchValue={filter.searchQuery}
             searchPlaceholder={group.searchPlaceholder}
             onSearchChange={filter.setSearchQuery}
@@ -72,8 +96,8 @@ const TerraformDiffGroup = ({
           />
         }
       >
-        {filter.filteredSections.length ? (
-          filter.filteredSections.map((section) => (
+        {visibleSections.length ? (
+          visibleSections.map((section) => (
             <DiffSection
               key={section.id}
               title={section.title}
@@ -103,6 +127,10 @@ export const TerraformDiff = ({
 }: ITerraformDiff) => {
   const groups = useMemo(() => terraformPlanDiff(plan), [plan])
   const visible = [groups.drift, groups.resources, groups.outputs]
+  const [showNoops, setShowNoops] = useState(false)
+  const hasNoops = visible.some((group) =>
+    group.sections.some((section) => section.operation === 'no-op')
+  )
 
   if (!plan) {
     return (
@@ -127,11 +155,17 @@ export const TerraformDiff = ({
 
   return (
     <div className={cn('flex flex-col gap-3', className)} {...props}>
+      {hasNoops ? (
+        <div className="flex justify-end">
+          <ShowNoopsToggle checked={showNoops} onChange={setShowNoops} />
+        </div>
+      ) : null}
       {visible.map((group) => (
         <TerraformDiffGroup
           key={group.id}
           group={group}
           defaultOpen={defaultOpen}
+          showNoops={showNoops}
         />
       ))}
     </div>

@@ -26,7 +26,6 @@ const TERRAFORM_ACTIONS: {
   { value: 'delete', label: 'Delete' },
   { value: 'replace', label: 'Replace' },
   { value: 'read', label: 'Read' },
-  { value: 'no-op', label: 'No-op' },
 ]
 
 const HELM_DIFF_ACTIONS: {

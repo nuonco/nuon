@@ -12,6 +12,7 @@ import type {
 import { parseTerraformPlan } from '@/utils/terraform-utils'
 import { useTerraformResourceFilter } from '@/hooks/use-terraform-plan-resource-filter'
 import { useTerraformOutputFilter } from '@/hooks/use-terraform-plan-output-filter'
+import { ShowNoopsToggle } from '@/components/diffs/ShowNoopsToggle'
 import { DiffFilter } from '../DiffFilter'
 import { WrapLinesProvider } from '../wrap-lines-context'
 import { TerraformSummary } from './TerraformSummary'
@@ -55,15 +56,24 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
     }
   }, [plan])
 
+  const [showNoops, setShowNoops] = useState(false)
   const driftFilter = useTerraformResourceFilter<TTerraformResourceChange>(
-    drift.changes
+    drift.changes,
+    showNoops
   )
   const resourceFilter = useTerraformResourceFilter<TTerraformResourceChange>(
-    resources.changes
+    resources.changes,
+    showNoops
   )
   const outputFilter = useTerraformOutputFilter<TTerraformOutputChange>(
-    outputs.changes
+    outputs.changes,
+    showNoops
   )
+  const hasNoops = [drift.changes, resources.changes, outputs.changes].some(
+    (changes) => changes.some((change) => change.action === 'no-op')
+  )
+  const shown = (changes: { action: string }[]) =>
+    changes.some((change) => showNoops || change.action !== 'no-op')
 
   const [driftExpanded, setDriftExpanded] = useState(true)
   const [resourcesExpanded, setResourcesExpanded] = useState(true)
@@ -84,31 +94,35 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
   return (
     <WrapLinesProvider>
     <div className="flex flex-col gap-6">
-      <Modal
-        heading={
-          <Text flex className="gap-4" variant="h3" weight="strong">
-            <Icon variant="NetworkXIcon" size="24" /> Plan graph
-          </Text>
-        }
-        triggerButton={{
-          className: 'self-end',
-          children: (
-            <>
-              View plan graph <Icon variant="NetworkXIcon" />
-            </>
-          ),
-          variant: 'secondary',
-        }}
-        size="xl"
-      >
-        <TerraformPlanGraph
-          resources={resources.changes}
-          drift={drift.changes}
-          outputs={outputs.changes}
-        />
-      </Modal>
+      <div className="flex items-center justify-end gap-4">
+        {hasNoops ? (
+          <ShowNoopsToggle checked={showNoops} onChange={setShowNoops} />
+        ) : null}
+        <Modal
+          heading={
+            <Text flex className="gap-4" variant="h3" weight="strong">
+              <Icon variant="NetworkXIcon" size="24" /> Plan graph
+            </Text>
+          }
+          triggerButton={{
+            children: (
+              <>
+                View plan graph <Icon variant="NetworkXIcon" />
+              </>
+            ),
+            variant: 'secondary',
+          }}
+          size="xl"
+        >
+          <TerraformPlanGraph
+            resources={resources.changes}
+            drift={drift.changes}
+            outputs={outputs.changes}
+          />
+        </Modal>
+      </div>
 
-      {drift?.changes?.length ? (
+      {shown(drift.changes) ? (
         <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
           <div className="px-4 sm:px-6 py-4 border-b">
             <Text variant="base" weight="strong">
@@ -140,7 +154,7 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
         </Card>
       ) : null}
 
-      {resources?.changes?.length ? (
+      {shown(resources.changes) ? (
         <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
           <div className="px-4 sm:px-6 py-4 border-b">
             <Text variant="base" weight="strong">
@@ -172,7 +186,7 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
         </Card>
       ) : null}
 
-      {outputs?.changes?.length ? (
+      {shown(outputs.changes) ? (
         <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
           <div className="px-4 sm:px-6 py-4 border-b">
             <Text variant="base" weight="strong">

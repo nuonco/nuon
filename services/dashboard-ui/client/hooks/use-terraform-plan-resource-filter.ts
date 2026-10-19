@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
+import { terraformActionSelected } from '@/lib/diffs/noop-visibility'
 
-// Default selected actions (all except read)
 const DEFAULT_SELECTED_ACTIONS = new Set([
   'create',
   'update',
   'delete',
   'replace',
-  'no-op',
 ])
 
 export interface TerraformResourceFilterableItem {
@@ -19,7 +18,8 @@ export interface TerraformResourceFilterableItem {
 export const useTerraformResourceFilter = <
   T extends TerraformResourceFilterableItem,
 >(
-  items: T[]
+  items: T[],
+  showNoops = false
 ) => {
   const [selectedActions, setSelectedActions] = useState<Set<string>>(
     new Set(DEFAULT_SELECTED_ACTIONS)
@@ -27,7 +27,9 @@ export const useTerraformResourceFilter = <
   const [searchQuery, setSearchQuery] = useState<string>('')
 
   const filteredItems = useMemo(() => {
-    let filtered = items.filter((item) => selectedActions.has(item.action))
+    let filtered = items.filter((item) =>
+      terraformActionSelected(item.action, selectedActions, showNoops)
+    )
 
     if (searchQuery.trim()) {
       const searchLower = searchQuery.toLowerCase().trim()
@@ -40,7 +42,7 @@ export const useTerraformResourceFilter = <
     }
 
     return filtered
-  }, [items, selectedActions, searchQuery])
+  }, [items, selectedActions, searchQuery, showNoops])
 
   const handleInputToggle = (action: string) => {
     setSelectedActions((prev) => {
@@ -81,7 +83,9 @@ export const useTerraformResourceFilter = <
     handleSearchChange,
     filterStats: {
       selectedCount: filteredItems.length,
-      totalCount: items.length,
+      totalCount: items.filter(
+        (item) => showNoops || item.action !== 'no-op'
+      ).length,
     },
   }
 }
