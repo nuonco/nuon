@@ -124,7 +124,14 @@ Actions can be triggered in several ways:
 To run an action manually with the CLI:
 
 ```sh
-nuon actions create-run -w <action-workflow-id> -i <install-id>
+nuon actions create-run -i <install-id-or-name> -w <action-id-or-name>
+```
+
+Pass `--env KEY=VALUE` (repeatable) or `--env-file <path>` to set environment variables for the run, and `--wait` to
+wait for completion and print the action's logs:
+
+```sh
+nuon actions create-run -i customer1 -w pg_status --env DEBUG=true --wait
 ```
 
 ## Action Triggers
@@ -210,13 +217,13 @@ You can view the history of action runs using the dashboard:
 You can view the history of action runs using the CLI:
 
 ```sh
-nuon actions list-runs -w <action-workflow-id> -i <install-id>
+nuon actions recent-runs -i <install-id-or-name> -w <action-id-or-name>
 ```
 
 Or get details about a specific run:
 
 ```sh
-nuon actions get-run -r <run-id> -i <install-id>
+nuon actions get-run -i <install-id-or-name> -r <run-id>
 ```
 
 ## Action Permissions
