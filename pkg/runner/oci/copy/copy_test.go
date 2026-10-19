@@ -13,6 +13,7 @@ import (
 )
 
 func TestCopyWithReferrers(t *testing.T) {
+	t.Setenv(tagIndexChildrenEnv, "true")
 	ctx := context.Background()
 	src := memory.New()
 	dst := memory.New()

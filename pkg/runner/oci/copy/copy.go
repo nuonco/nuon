@@ -3,6 +3,7 @@ package ocicopy
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +27,8 @@ const (
 )
 
 var legacyCosignTagSuffixes = [...]string{".sig", ".att", ".sbom"}
+
+const tagIndexChildrenEnv = "NUON_TAG_OCI_INDEX_CHILDREN"
 
 func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (_ *ocispec.Descriptor, retErr error) {
 	opCtx, end := op.Tool(ctx, "oci", "copy")
@@ -111,8 +114,10 @@ func copyWithReferrers(ctx context.Context, src oras.ReadOnlyGraphTarget, srcRef
 	if err := copyLegacyCosignArtifacts(ctx, src, dst, root, opts); err != nil {
 		return ocispec.Descriptor{}, err
 	}
-	if err := tagIndexChildren(ctx, dst, root, dstRef); err != nil {
-		return ocispec.Descriptor{}, err
+	if os.Getenv(tagIndexChildrenEnv) == "true" {
+		if err := tagIndexChildren(ctx, dst, root, dstRef); err != nil {
+			return ocispec.Descriptor{}, err
+		}
 	}
 
 	return root, nil

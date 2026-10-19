@@ -47,7 +47,6 @@ func TestChildVersionTag(t *testing.T) {
 }
 
 func TestTagIndexChildrenLeavesConflictingTag(t *testing.T) {
-	t.Parallel()
 	ctx := context.Background()
 	dst := memory.New()
 
@@ -76,7 +75,6 @@ func TestTagIndexChildrenLeavesConflictingTag(t *testing.T) {
 }
 
 func TestTagIndexChildrenSkipsDigestReference(t *testing.T) {
-	t.Parallel()
 	ctx := context.Background()
 	dst := memory.New()
 
