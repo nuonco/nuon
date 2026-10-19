@@ -171,9 +171,13 @@ func (w *Workflows) updateActionRunStatus(ctx workflow.Context, runID string, st
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
+	statusV2 := status
+	if status == app.InstallActionRunStatusTimedOut {
+		statusV2 = app.InstallActionRunStatusError
+	}
 	if err := statusactivities.AwaitUpdateInstallWorkflowRunStatusV2(ctx, statusactivities.UpdateInstallWorkflowRunStatusV2Request{
 		RunID:             runID,
-		Status:            status,
+		Status:            statusV2,
 		StatusDescription: statusDescription,
 	}); err != nil {
 		l.Error("unable to update run status v2",
