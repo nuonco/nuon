@@ -26,6 +26,8 @@ type UpdateInstallConfigRequest struct {
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty"`
+	RunnerImageAutoUpdate   *bool                      `json:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
+	RunnerImageID           *string                    `json:"runner_image_id,omitempty"`
 }
 
 func (c *UpdateInstallConfigRequest) Validate(v *validator.Validate) error {
@@ -101,6 +103,12 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 	}
 	if req.RunnerNestedTemplateURL != nil {
 		updates["runner_nested_template_url"] = *req.RunnerNestedTemplateURL
+	}
+	if req.RunnerImageAutoUpdate != nil {
+		updates["runner_image_auto_update"] = *req.RunnerImageAutoUpdate
+	}
+	if req.RunnerImageID != nil {
+		updates["runner_image_id"] = *req.RunnerImageID
 	}
 	if req.CustomNestedStacks != nil {
 		// Pre-serialize to JSON so the raw map-based update stores a valid

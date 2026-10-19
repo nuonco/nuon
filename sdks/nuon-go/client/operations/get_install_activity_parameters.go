@@ -62,6 +62,12 @@ GetInstallActivityParams contains all the parameters to send to the API endpoint
 */
 type GetInstallActivityParams struct {
 
+	/* ActorID.
+
+	   only include activity triggered by this account ID
+	*/
+	ActorID *string
+
 	/* CreatedAtGte.
 
 	   include activity created at or after this RFC3339 timestamp
@@ -73,6 +79,18 @@ type GetInstallActivityParams struct {
 	   include activity created at or before this RFC3339 timestamp
 	*/
 	CreatedAtLte *string
+
+	/* Cursor.
+
+	   opaque cursor from next_cursor; replaces page and offset
+	*/
+	Cursor *string
+
+	/* ExcludeCron.
+
+	   exclude cron-triggered action and runbook runs
+	*/
+	ExcludeCron *bool
 
 	/* InstallID.
 
@@ -188,6 +206,17 @@ func (o *GetInstallActivityParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithActorID adds the actorID to the get install activity params
+func (o *GetInstallActivityParams) WithActorID(actorID *string) *GetInstallActivityParams {
+	o.SetActorID(actorID)
+	return o
+}
+
+// SetActorID adds the actorId to the get install activity params
+func (o *GetInstallActivityParams) SetActorID(actorID *string) {
+	o.ActorID = actorID
+}
+
 // WithCreatedAtGte adds the createdAtGte to the get install activity params
 func (o *GetInstallActivityParams) WithCreatedAtGte(createdAtGte *string) *GetInstallActivityParams {
 	o.SetCreatedAtGte(createdAtGte)
@@ -208,6 +237,28 @@ func (o *GetInstallActivityParams) WithCreatedAtLte(createdAtLte *string) *GetIn
 // SetCreatedAtLte adds the createdAtLte to the get install activity params
 func (o *GetInstallActivityParams) SetCreatedAtLte(createdAtLte *string) {
 	o.CreatedAtLte = createdAtLte
+}
+
+// WithCursor adds the cursor to the get install activity params
+func (o *GetInstallActivityParams) WithCursor(cursor *string) *GetInstallActivityParams {
+	o.SetCursor(cursor)
+	return o
+}
+
+// SetCursor adds the cursor to the get install activity params
+func (o *GetInstallActivityParams) SetCursor(cursor *string) {
+	o.Cursor = cursor
+}
+
+// WithExcludeCron adds the excludeCron to the get install activity params
+func (o *GetInstallActivityParams) WithExcludeCron(excludeCron *bool) *GetInstallActivityParams {
+	o.SetExcludeCron(excludeCron)
+	return o
+}
+
+// SetExcludeCron adds the excludeCron to the get install activity params
+func (o *GetInstallActivityParams) SetExcludeCron(excludeCron *bool) {
+	o.ExcludeCron = excludeCron
 }
 
 // WithInstallID adds the installID to the get install activity params
@@ -295,6 +346,23 @@ func (o *GetInstallActivityParams) WriteToRequest(r runtime.ClientRequest, reg s
 	}
 	var res []error
 
+	if o.ActorID != nil {
+
+		// query param actor_id
+		var qrActorID string
+
+		if o.ActorID != nil {
+			qrActorID = *o.ActorID
+		}
+		qActorID := qrActorID
+		if qActorID != "" {
+
+			if err := r.SetQueryParam("actor_id", qActorID); err != nil {
+				return err
+			}
+		}
+	}
+
 	if o.CreatedAtGte != nil {
 
 		// query param created_at_gte
@@ -324,6 +392,40 @@ func (o *GetInstallActivityParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if qCreatedAtLte != "" {
 
 			if err := r.SetQueryParam("created_at_lte", qCreatedAtLte); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Cursor != nil {
+
+		// query param cursor
+		var qrCursor string
+
+		if o.Cursor != nil {
+			qrCursor = *o.Cursor
+		}
+		qCursor := qrCursor
+		if qCursor != "" {
+
+			if err := r.SetQueryParam("cursor", qCursor); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.ExcludeCron != nil {
+
+		// query param exclude_cron
+		var qrExcludeCron bool
+
+		if o.ExcludeCron != nil {
+			qrExcludeCron = *o.ExcludeCron
+		}
+		qExcludeCron := swag.FormatBool(qrExcludeCron)
+		if qExcludeCron != "" {
+
+			if err := r.SetQueryParam("exclude_cron", qExcludeCron); err != nil {
 				return err
 			}
 		}
