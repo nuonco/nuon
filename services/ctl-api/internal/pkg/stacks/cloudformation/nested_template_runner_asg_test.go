@@ -1,13 +1,16 @@
 package cloudformation
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -146,4 +149,121 @@ func TestGetRunnerParameters_NestedTemplateDefaults(t *testing.T) {
 		assert.Equal(t, "250", rootVolume.Default)
 		assert.Equal(t, 250.0, *rootVolume.MaxValue)
 	})
+}
+
+var runnerTemplateWithImageParams = strings.Replace(mockRunnerASGTemplateYAML, "Resources:\n", `  RunnerAmiAutoUpdate:
+    Type: String
+    Default: "false"
+  RunnerAmiId:
+    Type: String
+    Default: ""
+Resources:
+`, 1)
+
+func renderRunnerASGTemplate(t *testing.T, runnerTemplate string, runnerCfg app.AppRunnerConfig) (string, map[string]any) {
+	t.Helper()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/vpc.yaml" {
+			_, _ = w.Write([]byte(mockVPCTemplateYAML))
+			return
+		}
+		_, _ = w.Write([]byte(runnerTemplate))
+	}))
+	t.Cleanup(server.Close)
+
+	tpl := &Templates{cfg: &internal.Config{}}
+	tmpl, err := tpl.getAWSTemplate(&stacks.TemplateInput{
+		Install:                    &app.Install{ID: "inl123", AppID: "app123", OrgID: "org123"},
+		Runner:                     &app.Runner{ID: "run123"},
+		Settings:                   &app.RunnerGroupSettings{},
+		CloudFormationStackVersion: &app.InstallStackVersion{PhoneHomeURL: "https://example.com/phone-home"},
+		PhonehomeScript:            "print('phone home')",
+		AppCfg: &app.AppConfig{
+			RunnerConfig: runnerCfg,
+			StackConfig: app.AppStackConfig{
+				VPCNestedTemplateURL:    server.URL + "/vpc.yaml",
+				RunnerNestedTemplateURL: server.URL + "/runner.yaml",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	raw, err := tmpl.JSON()
+	require.NoError(t, err)
+	var rendered map[string]any
+	require.NoError(t, json.Unmarshal(raw, &rendered))
+	params := rendered["Resources"].(map[string]any)["RunnerAutoScalingGroup"].(map[string]any)["Properties"].(map[string]any)["Parameters"].(map[string]any)
+	return strings.ReplaceAll(string(raw), server.URL, "https://templates.example.com"), params
+}
+
+func TestGetRunnerASGNestedStack_ImageParameters(t *testing.T) {
+	tests := map[string]struct {
+		runnerTemplate string
+		runnerCfg      app.AppRunnerConfig
+		wantAutoUpdate any
+		wantImageID    any
+	}{
+		"older template ignores both fields": {
+			runnerTemplate: mockRunnerASGTemplateYAML,
+			runnerCfg:      app.AppRunnerConfig{ImageAutoUpdate: true, ImageID: "ami-0abc123"},
+		},
+		"template missing one parameter ignores both fields": {
+			runnerTemplate: strings.Replace(runnerTemplateWithImageParams, "RunnerAmiId:", "OtherAmiId:", 1),
+			runnerCfg:      app.AppRunnerConfig{ImageAutoUpdate: true, ImageID: "ami-0abc123"},
+		},
+		"unset fields leave the template defaults": {
+			runnerTemplate: runnerTemplateWithImageParams,
+		},
+		"auto-update only": {
+			runnerTemplate: runnerTemplateWithImageParams,
+			runnerCfg:      app.AppRunnerConfig{ImageAutoUpdate: true},
+			wantAutoUpdate: "true",
+		},
+		"pinned image only": {
+			runnerTemplate: runnerTemplateWithImageParams,
+			runnerCfg:      app.AppRunnerConfig{ImageID: "ami-0abc123"},
+			wantImageID:    "ami-0abc123",
+		},
+		"auto-update and pinned image": {
+			runnerTemplate: runnerTemplateWithImageParams,
+			runnerCfg:      app.AppRunnerConfig{ImageAutoUpdate: true, ImageID: "ami-0abc123"},
+			wantAutoUpdate: "true",
+			wantImageID:    "ami-0abc123",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, params := renderRunnerASGTemplate(t, tc.runnerTemplate, tc.runnerCfg)
+
+			assert.Equal(t, tc.wantAutoUpdate, params["RunnerAmiAutoUpdate"])
+			assert.Equal(t, tc.wantImageID, params["RunnerAmiId"])
+		})
+	}
+}
+
+func TestGetAWSTemplate_ImageParametersPreserveExistingOutput(t *testing.T) {
+	baseline, _ := renderRunnerASGTemplate(t, mockRunnerASGTemplateYAML, app.AppRunnerConfig{})
+
+	tests := map[string]struct {
+		runnerTemplate string
+		runnerCfg      app.AppRunnerConfig
+	}{
+		"older template with fields set": {
+			runnerTemplate: mockRunnerASGTemplateYAML,
+			runnerCfg:      app.AppRunnerConfig{ImageAutoUpdate: true, ImageID: "ami-0abc123"},
+		},
+		"newer template with fields unset": {
+			runnerTemplate: runnerTemplateWithImageParams,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			rendered, _ := renderRunnerASGTemplate(t, tc.runnerTemplate, tc.runnerCfg)
+
+			assert.Equal(t, baseline, rendered)
+		})
+	}
 }
