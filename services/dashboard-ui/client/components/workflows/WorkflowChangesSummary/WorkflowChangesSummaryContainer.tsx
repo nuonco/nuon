@@ -1,4 +1,5 @@
 import { PlanContainer } from '@/components/approvals/Plan/PlanContainer'
+import { WorkflowInputChanges } from '@/components/workflows/WorkflowInputChanges'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { useWorkflowChangeSummaries } from '@/hooks/use-workflow-change-summaries'
 import type { TStepChangeSummary, TWorkflowStep } from '@/types'
@@ -13,6 +14,9 @@ export const WorkflowChangesSummaryContainer = () => {
   )
 
   const renderDetail = (summary: TStepChangeSummary) => {
+    if (summary.planType === 'install_input') {
+      return <WorkflowInputChanges workflow={workflow} />
+    }
     const step = stepsById.get(summary.stepId)
     if (!step) return null
     return <PlanContainer step={step} />

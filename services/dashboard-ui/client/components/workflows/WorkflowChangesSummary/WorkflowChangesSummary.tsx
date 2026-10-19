@@ -7,6 +7,7 @@ import { cn } from '@/utils/classnames'
 import type { TStepChangePlanType, TStepChangeSummary } from '@/types'
 import {
   PLAN_TYPE_META,
+  aggregateNoun,
   formatAggregate,
   hasChanges,
   isUnsummarized,
@@ -34,14 +35,12 @@ const isActionable = (summary: TStepChangeSummary): boolean =>
   summary.countsState === 'unknown' ||
   (summary.countsState === 'unsupported' && summary.hasDetail)
 
-const ChangesHeader = ({
-  summaries,
-}: {
-  summaries: TStepChangeSummary[]
-}) => {
+const ChangesHeader = ({ summaries }: { summaries: TStepChangeSummary[] }) => {
   const totals = sumCounts(summaries)
   const changedSteps = summaries.filter((s) => hasChanges(s.counts))
   const unsummarized = summaries.filter(isUnsummarized)
+  const noun = aggregateNoun(summaries)
+  const unit = noun === 'input' ? 'input' : 'step'
 
   if (changedSteps.length === 0) {
     return (
@@ -61,10 +60,10 @@ const ChangesHeader = ({
   return (
     <div className="flex flex-col gap-1">
       <Text variant="base" weight="strong">
-        {formatAggregate(totals, changedSteps.length)}
+        {formatAggregate(totals, changedSteps.length, noun)}
       </Text>
       <Text variant="subtext" theme="neutral">
-        {summaries.length} {summaries.length === 1 ? 'step' : 'steps'} in this
+        {summaries.length} {summaries.length === 1 ? unit : `${unit}s`} in this
         workflow
         {unsummarized.length > 0
           ? `, ${unsummarized.length} couldn't be summarized`
@@ -78,7 +77,11 @@ const LoadingRow = ({ step }: { step: IWorkflowChangesSummaryLoadingStep }) => (
   <div className="flex items-center justify-between gap-4 px-4 py-3 border-b last:border-b-0">
     <div className="flex items-center gap-3 min-w-0 flex-1">
       <span className="w-4 shrink-0" />
-      <Icon variant={PLAN_TYPE_META[step.planType].icon} size={18} className="shrink-0" />
+      <Icon
+        variant={PLAN_TYPE_META[step.planType].icon}
+        size={18}
+        className="shrink-0"
+      />
       <div className="flex flex-col min-w-0">
         <Text variant="base" weight="strong" nowrap className="truncate">
           {step.stepName}
