@@ -23,11 +23,7 @@ const (
 	maxTagLength                = 128
 )
 
-// tagIndexChildren gives each manifest inside an image index its own tag derived
-// from the destination tag. Registries store those children by digest, so they
-// otherwise show up as untagged even though the tagged index still references
-// them. An existing tag that names a different digest is left alone: moving it
-// would replace another image on a mutable registry and fail on an immutable one.
+// tagIndexChildren tags each child manifest of an image index.
 func tagIndexChildren(ctx context.Context, dst oras.Target, root ocispec.Descriptor, dstRef string) error {
 	if !isImageIndex(root.MediaType) || !validTag(dstRef) {
 		return nil
