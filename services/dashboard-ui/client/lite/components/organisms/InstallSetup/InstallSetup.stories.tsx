@@ -136,6 +136,12 @@ export const Overview = () => (
         description: 'Allows install creation.',
       },
       {
+        name: 'configurationNotice',
+        type: "{ theme: 'default' | 'error'; heading: string; body: string }",
+        description:
+          'Waiting or failed state while the selected branch config is not ready.',
+      },
+      {
         name: 'appsLoading',
         type: 'boolean',
         default: 'false',
