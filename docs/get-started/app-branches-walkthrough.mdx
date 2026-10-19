@@ -1,7 +1,7 @@
 ---
 title: "Roll out a change"
 description: "Sync the eks-simple example app's built-in branch config, then plan and deploy a change across its installs."
-keywords: ["app branches walkthrough", "eks-simple", "branch.toml example", "first branch run", "deployment groups tutorial", "label installs", "staged rollout example", "plan and approve", "trigger branch run", "git push deploy tutorial"]
+keywords: ["app branches walkthrough", "eks-simple", "branch.toml example", "first branch run", "install groups tutorial", "label installs", "staged rollout example", "plan and approve", "trigger branch run", "git push deploy tutorial"]
 ---
 
 <Note>
@@ -10,8 +10,10 @@ keywords: ["app branches walkthrough", "eks-simple", "branch.toml example", "fir
 </Note>
 
 [App branches](/concepts/app-branches) turn a change to your app config into a single, reviewable rollout across your
-installs. `eks-simple` already ships its branch config. This walkthrough syncs it into your org and takes a change
-through it end to end: preview the diff, plan each deployment group, approve, deploy.
+installs. `eks-simple` already ships its branch config. This walkthrough syncs it into your org and rolls a change
+out: plan each install group, approve, deploy. You can run a **manual** plan-only
+[preview](/guides/app-branches#previews) (or later a PR preview) before the fleet run; that is separate from the
+rollout and not required.
 
 ## Prerequisites
 
@@ -24,17 +26,18 @@ through it end to end: preview the diff, plan each deployment group, approve, de
 
 - An [app branch](/concepts/app-branches) named `main` **in your org**, created by syncing the branch config that
   ships in the `eks-simple` directory of the example repository.
-- Two [deployment groups](/concepts/app-branches#deployment-groups) named `stage` and `production`, which select
+- Two [install groups](/concepts/app-branches#install-groups) named `stage` and `production`, which select
   their installs by label.
-- A labeled install, so it lands in the `stage` group.
-- A plan-only preview run, and then a real run you approve group by group.
+- A labeled install, so it lands in the `stage` install group.
+- A real fleet run you approve install group by install group (optionally a separate plan-only
+  [preview](/guides/app-branches#previews) first via CLI, or later via PR).
 
 ## Review the Branch Config
 
 ### `branch.toml`
 
 The branch config is a single file at the root of the app config directory, alongside `metadata.toml`. `eks-simple`
-already includes it — open
+already includes it. Open
 [`eks-simple/branch.toml`](https://github.com/nuonco/example-app-configs/blob/main/eks-simple/branch.toml) in your
 clone and read it against what follows:
 
@@ -54,8 +57,9 @@ order = 1
 env = "stage"
 
 [[install_groups]]
-name  = "production"
-order = 2
+name         = "production"
+order        = 2
+default      = true
 
 [install_groups.label_selector]
 env = "prod"
@@ -64,24 +68,19 @@ env = "prod"
 Reading it top to bottom:
 
 - **`name = "main"`** is the branch's name in Nuon. It comes from this key, not from the filename, and it is what you
-  pass to `nuon sync --branch`.
+  pass as `--branch-id` to `nuon branches` commands.
 - **`[public_repo]`** is the repository the branch tracks. `directory` is the path to the app config inside that repo,
   so `eks-simple` here rather than `"."`. All three fields are required.
-- **Two `[[install_groups]]`** — `stage` first (`order = 1`), then `production` (`order = 2`). Lower `order` deploys
-  first, and each group's plan waits for your approval before its deploy runs.
-- **`[install_groups.label_selector]`** picks each group's installs by label. An install labeled `env = "stage"` is in
-  the `stage` group; one labeled `env = "prod"` is in `production`. Nothing is hard-coded to a particular install, so
-  adding a customer to a group is a matter of labeling it.
-
-<Note>
-	Both groups use `label_selector` rather than `install_names` on purpose. Names are resolved to install IDs when you
-	sync and an unknown name fails the whole sync, so a name-based group breaks in any org where that install does not
-	exist. Label selectors re-evaluate on every run.
-</Note>
+- **Two `[[install_groups]]`**: `stage` first (`order = 1`), then `production` (`order = 2`). Lower `order` deploys
+  first, and each install group's plan waits for your approval before its deploy runs. Exactly one install group must
+  set `default = true` (here, `production`); that install group catches installs that match no other selector.
+- **`[install_groups.label_selector]`** picks each install group's installs by label. An install labeled
+  `env = "stage"` is in the `stage` install group; one labeled `env = "prod"` is in `production`. Nothing is
+  hard-coded to a particular install, so adding a customer to an install group is a matter of labeling it.
 
 ### Label your install
 
-The `stage` group is empty until an install carries `env = "stage"`. Label the install you provisioned earlier:
+The `stage` install group is empty until an install carries `env = "stage"`. Label the install you provisioned earlier:
 
 ```sh
 nuon installs labels set --install-id <your-install-name-or-id> env=stage
@@ -113,49 +112,52 @@ domain = "nuon.run"
 sub_domain = "whoami"
 ```
 
-Either route sets the same label. Install config files have their own sync command, separate from `nuon apps sync`:
+Either route sets the same label. Install config files have their own sync command, separate from app or branch sync:
 
 ```sh
 nuon installs sync -a <your-app-id> -d installs/
 ```
 
-Managing labels in the files means group membership is version-controlled along with everything else about the
+Managing labels in the files means install group membership is version-controlled along with everything else about the
 install.
 
-### Sync the app
+### Sync the branch
 
 From the `eks-simple` directory (start in the directory where you cloned `example-app-configs`):
 
 ```sh
 cd example-app-configs/eks-simple
 nuon apps select                 # no flags: pick eks-simple from the list
-nuon apps sync
+nuon branches sync --file branch.toml --confirm
 ```
 
-The sync creates the branch and its two deployment groups. Check what Nuon now has:
-
-```sh
-nuon apps list                   # prints each app's name and ID
-nuon apps branches list --app-id <your-app-id>
-```
+This creates the `main` branch in your org with the stage and production install groups. The first sync also starts
+an app branch run that fetches the tracked ref, syncs the app config, and builds OCI artifacts for components and
+the sandbox (when configured). With no installs on the branch yet, that run stops after the build. Later syncs only
+update branch settings; shipping config through install groups is a [fleet run](#deploy-the-change) from a push or
+`nuon branches trigger` (below).
 
 <Note>
-	Branch commands take the app **ID** (`app...`) — copy it from `nuon apps list`. Selecting the app with
-	`nuon apps select` (no flags, pick from the list) stores it once, which is what lets the rest of this walkthrough
-	drop `--app-id` from `trigger` and `runs`.
+	New apps use app branches. `nuon branches sync` is how you create and update branch settings.
+	`nuon apps sync` still works for apps that are not on app branches yet, and will be deprecated.
 </Note>
 
-You should see one branch, `main`. In the dashboard, the app now has a **Branches** view showing the branch and its
-**Deployment plan**: `stage`, then `production`.
+Check what Nuon now has. You already selected the app, so branch commands do not need `--app-id`:
 
-<Frame caption="The main branch's deployment plan after the sync: stage first, then production, each selecting installs by label.">
-  <img src="/images/concepts/app-branches/deployment-plan-graph.png" alt="The eks-simple branch's deployment plan in the Nuon dashboard: a stage group selecting env=stage installs flowing into a production group selecting env=prod" />
-</Frame>
+```sh
+nuon apps list
+nuon branches list
+```
+
+You should see one branch, `main`. In the dashboard, open the app and you will see the branch there too.
 
 ## Preview a Change
 
-Before deploying anything, see what a change would do. Edit the `sub_domain` input default in `inputs.toml` (this is
-an excerpt — leave the rest of the file as it is):
+Optional but recommended: preview a change before it merges into the tracked branch. A preview run is separate from
+the fleet rollout: start one manually with the CLI (below), or later from a pull request that uses `[preview]`
+defaults. You can skip to [Deploy the Change](#deploy-the-change) and use `nuon branches trigger` instead.
+
+Edit the `sub_domain` input default in `inputs.toml` (this is an excerpt; leave the rest of the file as it is):
 
 ```toml inputs.toml (excerpt)
 [[input]]
@@ -173,88 +175,68 @@ group        = "dns"
 	install first.
 </Note>
 
-Then run a plan-only preview against your local files:
+Branch runs always use a **git-reachable** config. Commit and push the change to a repository Nuon tracks, then
+preview that ref. With the stock `public_repo` pointing at `nuonco/example-app-configs`, you cannot push your edit
+there. Fork (or copy) the config into a repo you control, update the repo block, and sync (see [Trigger From a Git
+Push](#trigger-from-a-git-push)). Once the commit is on a tracked repo:
 
 ```sh
-nuon sync --branch main --preview
+nuon branches preview --branch-id main --git-ref <sha-or-branch> --mode plan-only
 ```
 
-This syncs the config in the current directory and triggers a **plan-only** run for it. Nothing is applied to any
-install. The command prints the run's ID and returns; watch the run in the dashboard, or with
-`nuon apps branches runs --app-id <your-app-id> --branch-id main`, which opens the workflow TUI.
+Nothing is applied to any install. The command prints the run's ID and returns; watch the run in the dashboard, or
+with `nuon branches runs --branch-id main`, which opens the workflow TUI.
 
 <Note>
-	A manual plan-only run still walks the deployment groups: it creates each group's `plan install group` and
-	`deploy install group` step, but each approval gate **auto-approves** ("Auto-approved in plan-only mode") and
-	nothing is applied, so the run finishes on its own. Read the per-install diffs from the completed run. (A pull
-	request preview behaves differently and never creates the group steps at all.)
+	A preview run (CLI or pull request) does not create install group plan/deploy steps. It builds and plans against
+	the preview target only (or build-only with no install). Fleet install groups run later from push, trigger, or
+	another non-preview start.
 </Note>
-
-<Tip>
-	`nuon sync --branch` runs against your local working directory, including uncommitted edits. That makes it the fast
-	way to iterate on a change before you commit it. Note the flag lives on `nuon sync`, not `nuon apps sync`.
-</Tip>
 
 ## Deploy the Change
 
-Drop the `--preview` and the same command becomes a real rollout:
+After the change is on the tracked branch (merge or push to `main`), start a real rollout:
 
 ```sh
-nuon sync --branch main
+nuon branches trigger --branch-id main
 ```
 
-Or trigger a run from the branch's committed config, with no local sync at all:
+If the branch's `[run]` mode includes push (the default), a push to the tracked branch starts the same kind of run
+without a CLI step.
 
-```sh
-nuon apps branches trigger --branch-id main
-```
+A real run walks these steps:
 
-Both walk the same deployment groups, but their first two steps differ, because `nuon sync --branch` hands Nuon a
-config it already built from your working directory while `trigger` fetches one from git:
-
-| Step | `nuon sync --branch main` | `nuon apps branches trigger` |
-| --- | --- | --- |
-| 1 | `fetch commit (skipped)` | `fetch commit` |
-| 2 | `fetch app config (skipped)` | `fetch app config` |
-| 3 | `building components and sandbox` | `building components and sandbox` |
-| 4 | `plan install group: stage` | `plan install group: stage` |
-| 5 | `deploy install group: stage` | `deploy install group: stage` |
-| 6 | `plan install group: production` | `plan install group: production` |
-| 7 | `deploy install group: production` | `deploy install group: production` |
-
-From step 3 on they are identical:
-
-- `building components and sandbox` rebuilds only what changed. The sandbox half of it needs
-  [sandbox builds](/guides/sandbox-builds) enabled for your org; without it, components only.
-- each `plan install group` computes the diff for every install in the group and then **waits** for you.
-- each `deploy install group` runs once you approve the plan before it.
+1. `fetch commit`: clone the repo at the run's SHA
+2. `fetch app config`: parse and sync the app config from that commit
+3. `building components and sandbox`: rebuilds only what changed. The sandbox half needs
+   [sandbox builds](/guides/sandbox-builds) for your org; without it, components only.
+4. `plan install group: stage`: computes the diff for every install in the install group, then **waits** for you
+5. `deploy install group: stage`: runs once you approve
+6. `plan install group: production`: same for production
+7. `deploy install group: production`: runs once you approve
 
 ### Approve the plan
 
 The run pauses at `plan install group: stage`. In the diff, installs that inherit the default show `sub_domain`
 moving from `whoami` to `hello`; installs that pin `sub_domain` explicitly show no change for it (see the note in
-Preview a Change). Approve the plan and the group deploys.
+Preview a Change). Approve the plan and the install group deploys.
 
-The run then stops at `plan install group: production`. A group with no matching installs still pauses; **Skip
-install group** moves the run past it.
-
-<Note>
-	Every group's plan waits for an approval, from the dashboard or an API caller. There is no setting that
-	auto-approves a deployment group.
-</Note>
+The run then stops at `plan install group: production`. An install group with no matching installs still pauses;
+**Skip install group** moves the run past it. By default the plan waits for approval. Set
+`auto_approve_on_policies_passing = true` on an install group to approve automatically when policy checks pass.
 
 ### Watch runs from the CLI
 
 ```sh
-nuon apps branches runs --branch-id main
+nuon branches runs --branch-id main
 ```
 
 This lists the branch's runs and opens the one you pick in the workflow TUI.
 
 ## Trigger From a Git Push
 
-So far every run has been triggered by hand, because `branch.toml` tracks `nuonco/example-app-configs`, a repository
-you cannot push to. To get the push-triggered behavior, point the branch at a repository of your own.
+So far the stock `branch.toml` tracks `nuonco/example-app-configs`, a repository you cannot push to. To preview your
+own edits and get push-triggered runs, point the branch at a repository of your own.
 
 <Steps>
   <Step title="Push the config to your own repository">
@@ -284,8 +266,9 @@ you cannot push to. To get the push-triggered behavior, point the branch at a re
     env = "stage"
 
     [[install_groups]]
-    name  = "production"
-    order = 2
+    name         = "production"
+    order        = 2
+    default      = true
 
     [install_groups.label_selector]
     env = "prod"
@@ -293,7 +276,7 @@ you cannot push to. To get the push-triggered behavior, point the branch at a re
   </Step>
   <Step title="Sync, then push">
     ```sh
-    nuon apps sync
+    nuon branches sync --file branch.toml --confirm
     git commit -am "point app branch at my repo"
     git push origin main
     ```
@@ -301,18 +284,21 @@ you cannot push to. To get the push-triggered behavior, point the branch at a re
     The push starts a run on its own. From here on, a commit to `main` is the trigger, with no CLI step in between.
   </Step>
   <Step title="Open a pull request">
-    Open a pull request against `main` with a config change in it. Nuon runs a plan-only preview and posts a comment
-    headed `## Nuon Preview — main` (the branch's `name`, not the app's) with a table of what changed, plus a commit
-    status named `nuon/<org>/<app>/main preview (plan-only)` linked to the preview run. Push another commit and the same comment is
-    updated in place.
+    Stock `eks-simple` has no `[preview]` block. Add one with a preview target (for example
+    `label_selector` or `install_name`), sync the branch, then open a pull request against `main` with a config
+    change. Nuon starts a preview from those defaults (usually `plan-only`) and posts a comment headed
+    `## Nuon Preview` plus the branch's `name` (not the app's), with a table of what changed, plus a commit status
+    named `nuon/<org>/<app>/main preview (plan-only)` linked to the preview run. Push another commit and the same
+    comment is updated in place. Without a preview target, automatic PR previews are skipped; use
+    `nuon branches preview` instead (see [Previews](/guides/app-branches#previews)).
   </Step>
 </Steps>
 
 ## Inspect the History
 
-Every config change to an install is recorded as an app config version. Open the install in the dashboard and look at
-its **Versions** view, or list them over the API (create an API token in the dashboard's org settings; the install ID
-comes from `nuon installs list`):
+Every config change to an install is recorded as an app config version. There is no dedicated CLI command for
+versions, diffs, or re-apply: on the install, open **Configuration → App branch → Applied config history**, or use
+the API (create an API token in the dashboard's org settings; the install ID comes from `nuon installs list`):
 
 ```sh
 curl -H "Authorization: Bearer $NUON_API_TOKEN" \
@@ -326,7 +312,7 @@ Any earlier version can be applied again, which is the path back if a change tur
 ## Next Steps
 
 You now have a git branch wired to a fleet: a change to the config produces a build, a diff per install, and an
-approval gate in front of each group.
+approval gate in front of each install group.
 
 Where to go next:
 

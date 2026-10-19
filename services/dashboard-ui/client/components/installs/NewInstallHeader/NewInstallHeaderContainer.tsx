@@ -5,7 +5,9 @@ import { Icon } from '@/components/common/Icon'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { InstallStatusSummary } from '@/components/installs/InstallStatusSummary'
 import { useOpenInstallSettings } from '@/components/installs/InstallSettingsPanel'
+import { installAppBranchGroup } from '@/components/branches/active-app-branch-connection'
 import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
+import { ChangeInstallGroupButton } from '@/components/installs/management/ChangeInstallGroup'
 import { useCurrentAppBranchRun } from '@/hooks/use-current-app-branch-run'
 import { useInstallHref } from '@/hooks/use-install-path'
 import { useInstall } from '@/hooks/use-install'
@@ -97,6 +99,18 @@ export const NewInstallHeaderContainer = () => {
       orgId={org?.id}
       branchAction={
         <ChangeAppBranchButton iconOnly install={install} onSuccess={refresh} />
+      }
+      groupName={
+        install.app_branch ? installAppBranchGroup(install) : undefined
+      }
+      groupAction={
+        install.app_branch ? (
+          <ChangeInstallGroupButton
+            iconOnly
+            install={install}
+            onSuccess={refresh}
+          />
+        ) : undefined
       }
       settingsAction={
         <Button

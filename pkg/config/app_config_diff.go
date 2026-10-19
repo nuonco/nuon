@@ -315,6 +315,8 @@ func diffRunner(old, new *AppRunnerConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("helm_driver"), diff.WithStringDiff(old.HelmDriver, new.HelmDriver)),
 		diff.NewDiff(diff.WithKey("init_script_url"), diff.WithStringDiff(old.InitScriptURL, new.InitScriptURL)),
 		diff.NewDiff(diff.WithKey("phone_home_script_url"), diff.WithStringDiff(old.PhoneHomeScriptURL, new.PhoneHomeScriptURL)),
+		diff.NewDiff(diff.WithKey("image_auto_update"), diff.WithBoolDiff(old.ImageAutoUpdate, new.ImageAutoUpdate)),
+		diff.NewDiff(diff.WithKey("image_id"), diff.WithStringDiff(old.ImageID, new.ImageID)),
 	}
 	if d := diff.MapDiff("env_vars", old.EnvVarMap, new.EnvVarMap); d != nil {
 		children = append(children, d)
@@ -345,6 +347,7 @@ func diffStack(old, new *StackConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("vpc_nested_template_url"), diff.WithStringDiff(old.VPCNestedTemplateURL, new.VPCNestedTemplateURL)),
 		diff.NewDiff(diff.WithKey("runner_nested_template_url"), diff.WithStringDiff(old.RunnerNestedTemplateURL, new.RunnerNestedTemplateURL)),
 		diff.NewDiff(diff.WithKey("deployment_scope"), diff.WithStringDiff(old.DeploymentScope, new.DeploymentScope)),
+		diff.NewDiff(diff.WithKey("ui_definition"), diff.WithStringDiff(old.UIDefinition, new.UIDefinition)),
 	}
 
 	// Custom nested stacks matched by name

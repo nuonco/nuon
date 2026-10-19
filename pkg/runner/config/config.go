@@ -20,6 +20,7 @@ func init() {
 	config.RegisterDefault("sandbox_control_port", "9095")
 	config.RegisterDefault("health_port", "9999")
 	config.RegisterDefault("git_ref", "dev")
+	config.RegisterDefault("tag_oci_index_children", false)
 }
 
 type Config struct {
@@ -68,6 +69,9 @@ type Config struct {
 	// on a different platform than the build runner (heterogeneous
 	// orgs, cross-arch dev/test).
 	TerraformMirrorPlatforms []string `config:"terraform_mirror_platforms"`
+
+	// TagOCIIndexChildren tags each child manifest of a copied image index.
+	TagOCIIndexChildren bool `config:"tag_oci_index_children"`
 }
 
 func NewConfig() (*Config, error) {
