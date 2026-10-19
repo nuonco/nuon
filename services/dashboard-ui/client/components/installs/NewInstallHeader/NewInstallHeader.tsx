@@ -16,6 +16,8 @@ import type { TCloudPlatform, TInstall } from '@/types'
 
 export interface INewInstallHeader {
   branchAction?: ReactNode
+  groupAction?: ReactNode
+  groupName?: string
   install: TInstall
   labelColors?: Record<string, string>
   latestCommit?: ReactNode
@@ -29,6 +31,8 @@ export interface INewInstallHeader {
 
 export const NewInstallHeader = ({
   branchAction,
+  groupAction,
+  groupName,
   install,
   labelColors,
   latestCommit,
@@ -142,6 +146,22 @@ export const NewInstallHeader = ({
                 {branchAction}
               </span>
             </LabeledValue>
+
+            {groupName || groupAction ? (
+              <LabeledValue label="Install group">
+                <span className="flex items-center gap-1.5 h-[17px]">
+                  <Text
+                    as="span"
+                    variant="subtext"
+                    family="mono"
+                    theme={groupName ? undefined : 'neutral'}
+                  >
+                    {groupName || 'None'}
+                  </Text>
+                  {groupAction}
+                </span>
+              </LabeledValue>
+            ) : null}
 
             <LabeledValue label="Managed by">
               {isManagedByConfig ? (
