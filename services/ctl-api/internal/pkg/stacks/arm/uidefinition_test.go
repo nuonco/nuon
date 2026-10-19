@@ -3,9 +3,12 @@ package arm
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -712,5 +715,178 @@ func TestQuickLinkUIDefinition_ChecksumIsDeterministic(t *testing.T) {
 	}
 	if first != second {
 		t.Errorf("checksum is not deterministic: %q vs %q", first, second)
+	}
+}
+
+func TestQuickLinkUIDefinition_MergesVendorUI(t *testing.T) {
+	inp := minimalTemplateInput()
+	inp.DeploymentScope = app.StackDeploymentScopeSubscription
+	inp.AppCfg.SecretsConfig.Secrets = []app.AppSecretConfig{
+		{Name: "db_password", DisplayName: "Database password", Description: "Password for the app database.", Required: true},
+	}
+	inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{
+		Contents: `{
+		  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+		  "handler": "Microsoft.Azure.CreateUIDef",
+		  "version": "0.1.2-preview",
+		  "parameters": {
+		    "basics": [
+		      {"name": "vnetCIDR", "type": "Microsoft.Common.TextBox", "label": "Network CIDR"},
+		      {"name": "secretDbPassword", "type": "Microsoft.Common.TextBox", "label": "Stolen secret"}
+		    ],
+		    "steps": [
+		      {
+		        "name": "review",
+		        "label": "Review",
+		        "elements": [
+		          {"name": "note", "type": "Microsoft.Common.InfoBox", "visible": true, "options": {"text": "Check the network."}}
+		        ]
+		      }
+		    ],
+		    "outputs": {"vnetCIDR": "[concat('cidr:', basics('vnetCIDR'))]"}
+		  }
+		}`,
+	}
+
+	tmpl := &Templates{cfg: &internal.Config{}}
+	_, plainChecksum, err := tmpl.QuickLinkUIDefinition(minimalTemplateInput())
+	if err != nil {
+		t.Fatalf("QuickLinkUIDefinition returned error: %v", err)
+	}
+	_, checksum, err := tmpl.QuickLinkUIDefinition(inp)
+	if err != nil {
+		t.Fatalf("QuickLinkUIDefinition returned error: %v", err)
+	}
+	if checksum == plainChecksum {
+		t.Fatal("vendor ui definition did not change the checksum")
+	}
+
+	_, params := renderUIDef(t, inp)
+	basics := params["config"].(map[string]any)["basics"].(map[string]any)
+	location := basics["location"].(map[string]any)
+	allowed := location["allowedValues"].([]any)
+	if len(allowed) != 1 || allowed[0] != "eastus" {
+		t.Errorf("location.allowedValues = %v, want [eastus]", location["allowedValues"])
+	}
+
+	byName := indexBasicsElements(params["basics"].([]any))
+	vnet, ok := byName["vnetCIDR"]
+	if !ok || vnet.element["label"] != "Network CIDR" || vnet.sectionLabel != "" {
+		t.Fatalf("vnetCIDR = %#v, want the vendor text box on the basics step", vnet)
+	}
+	runner, ok := byName[runnerVmSizeParamName]
+	if !ok || runner.sectionLabel != "Runner" {
+		t.Fatalf("runnerVmSize = %#v, want the generated Runner control", runner)
+	}
+	secret, ok := byName["secretDbPassword"]
+	if !ok || secret.sectionLabel != "Secrets" || secret.element["type"] != "Microsoft.Common.PasswordBox" {
+		t.Fatalf("secretDbPassword = %#v, want the generated password box", secret)
+	}
+	if got := params["outputs"].(map[string]any)["vnetCIDR"]; got != "[concat('cidr:', basics('vnetCIDR'))]" {
+		t.Errorf("outputs[vnetCIDR] = %v, want the vendor expression", got)
+	}
+
+	steps := params["steps"].([]any)
+	if len(steps) != 1 || steps[0].(map[string]any)["name"] != "review" {
+		t.Fatalf("steps = %#v, want the vendor review step", steps)
+	}
+}
+
+func TestQuickLinkUIDefinition_HiddenVendorControlIsNotBound(t *testing.T) {
+	inp := minimalTemplateInput()
+	inp.DeploymentScope = app.StackDeploymentScopeSubscription
+	inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{
+		Contents: `{
+		  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+		  "handler": "Microsoft.Azure.CreateUIDef",
+		  "version": "0.1.2-preview",
+		  "parameters": {
+		    "basics": [
+		      {"name": "vnetCIDR", "type": "Microsoft.Common.TextBox", "label": "Hidden CIDR", "visible": false}
+		    ],
+		    "steps": [
+		      {
+		        "name": "review",
+		        "label": "Review",
+		        "elements": [
+		          {"name": "note", "type": "Microsoft.Common.InfoBox", "options": {"text": "Check the network."}},
+		          {"name": "hint", "type": "Microsoft.Common.TextBlock", "options": {"text": "Names are generated."}}
+		        ]
+		      }
+		    ],
+		    "outputs": {"vnetCIDR": "[basics('vnetCIDR')]"}
+		  }
+		}`,
+	}
+
+	_, params := renderUIDef(t, inp)
+	if elementNamed(params["basics"].([]any), "vnetCIDR") {
+		t.Fatal("vnetCIDR is on the form despite visible: false")
+	}
+	if _, ok := params["outputs"].(map[string]any)["vnetCIDR"]; ok {
+		t.Fatal("outputs include vnetCIDR")
+	}
+	steps := params["steps"].([]any)
+	if len(steps) != 1 {
+		t.Fatalf("steps = %#v, want the review step", steps)
+	}
+	elements := steps[0].(map[string]any)["elements"].([]any)
+	if !elementNamed(elements, "note") {
+		t.Fatal("InfoBox note was dropped")
+	}
+	if !elementNamed(elements, "hint") {
+		t.Fatal("TextBlock hint was dropped")
+	}
+}
+
+func TestQuickLinkUIDefinition_VendorUIKeepsRoles(t *testing.T) {
+	inp := azureRolesTemplateInput()
+	_, params := renderUIDef(t, inp)
+	var roleName string
+	for name, el := range indexBasicsElements(params["basics"].([]any)) {
+		if el.sectionLabel == "Roles" {
+			roleName = name
+			break
+		}
+	}
+	if roleName == "" {
+		t.Fatal("expected a generated role toggle")
+	}
+
+	inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{
+		Contents: fmt.Sprintf(`{
+		  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+		  "handler": "Microsoft.Azure.CreateUIDef",
+		  "version": "0.1.2-preview",
+		  "parameters": {"basics": [{"name": %q, "type": "Microsoft.Common.TextBox", "label": "Nope"}], "steps": []}
+		}`, roleName),
+	}
+
+	_, params = renderUIDef(t, inp)
+	got := indexBasicsElements(params["basics"].([]any))[roleName]
+	if got.sectionLabel != "Roles" || got.element["type"] != "Microsoft.Common.CheckBox" {
+		t.Fatalf("%s = %#v, want the generated role checkbox", roleName, got)
+	}
+}
+
+func TestQuickLinkUIDefinition_FetchesVendorUI(t *testing.T) {
+	body := []byte(`{
+	  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+	  "handler": "Microsoft.Azure.CreateUIDef",
+	  "version": "0.1.2-preview",
+	  "parameters": {"basics": [{"name": "vnetCIDR", "type": "Microsoft.Common.TextBox", "label": "Fetched CIDR"}], "steps": []}
+	}`)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(body)
+	}))
+	t.Cleanup(server.Close)
+
+	inp := minimalTemplateInput()
+	inp.DeploymentScope = app.StackDeploymentScopeSubscription
+	inp.AppCfg.StackConfig.UIDefinition = &config.UploadedUIDefinition{SourceURL: server.URL}
+	_, params := renderUIDef(t, inp)
+	vnet := indexBasicsElements(params["basics"].([]any))["vnetCIDR"]
+	if vnet.element["label"] != "Fetched CIDR" {
+		t.Fatalf("vnetCIDR label = %v, want the fetched definition", vnet.element["label"])
 	}
 }
