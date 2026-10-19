@@ -30,7 +30,7 @@ type AdHocParams struct {
 }
 
 // Kafka-backed log ingestion can trail stream closure by up to five seconds.
-const adHocClosedLogDrainPolls = 4
+const closedLogDrainPolls = 4
 
 func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON bool) error {
 	view := ui.NewGetView()
@@ -57,7 +57,7 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 		return view.Error(err)
 	}
 
-	envVars, err := parseAdHocEnv(params.EnvFile, params.Env)
+	envVars, err := parseRunEnv(params.EnvFile, params.Env)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -86,9 +86,9 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 		if asJSON {
 			logWriter = os.Stderr
 		}
-		completedRun, err := s.waitForAdHocRun(ctx, installID, run.ID, logWriter)
+		completedRun, err := s.waitForRun(ctx, installID, run.ID, logWriter)
 		if err != nil {
-			return printAdHocWaitError(err, asJSON)
+			return printWaitError(err, asJSON)
 		}
 
 		run.Status = models.AppInstallActionWorkflowRunStatus(completedRun.Status)
@@ -98,7 +98,7 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 			if completedRun.StatusDescription != "" {
 				message += ": " + completedRun.StatusDescription
 			}
-			return printAdHocWaitError(&ui.CLIUserError{
+			return printWaitError(&ui.CLIUserError{
 				Msg: message,
 			}, asJSON)
 		}
@@ -143,48 +143,48 @@ func validateRole(requested string, roles []*models.ServiceAvailableRole) error 
 	return fmt.Errorf("role %q is not available; available roles: %s", requested, strings.Join(available, ", "))
 }
 
-func (s *Service) waitForAdHocRun(ctx context.Context, installID, runID string, writer io.Writer) (*models.AppInstallActionWorkflowRun, error) {
+func (s *Service) waitForRun(ctx context.Context, installID, runID string, writer io.Writer) (*models.AppInstallActionWorkflowRun, error) {
 	streamedLogs := false
 	for {
 		run, err := s.api.GetInstallActionWorkflowRun(ctx, installID, runID)
 		if err != nil {
-			return nil, fmt.Errorf("get ad-hoc action run: %w", err)
+			return nil, fmt.Errorf("get action run: %w", err)
 		}
 
 		if !streamedLogs && run.RunnerJob != nil && run.RunnerJob.LogStreamID != "" {
-			if err := s.streamRawAdHocLogs(ctx, run.RunnerJob.LogStreamID, writer); err != nil {
+			if err := s.streamRawRunLogs(ctx, run.RunnerJob.LogStreamID, writer); err != nil {
 				return nil, err
 			}
 			streamedLogs = true
 		}
 
-		if isTerminalAdHocStatus(run.Status) {
+		if isTerminalRunStatus(run.Status) {
 			return run, nil
 		}
-		if err := waitForAdHocPoll(ctx); err != nil {
+		if err := waitForRunPoll(ctx); err != nil {
 			return nil, err
 		}
 	}
 }
 
-func (s *Service) streamRawAdHocLogs(ctx context.Context, logStreamID string, writer io.Writer) error {
+func (s *Service) streamRawRunLogs(ctx context.Context, logStreamID string, writer io.Writer) error {
 	cursor := ""
 	closedEmptyPolls := 0
 	for {
 		response, err := s.api.LogStreamTailLogs(ctx, logStreamID, cursor, "2s", nil)
 		if err != nil {
-			return fmt.Errorf("read ad-hoc action logs: %w", err)
+			return fmt.Errorf("read action run logs: %w", err)
 		}
 		for _, record := range response.Logs {
 			if record.LogAttributes["nuon.command_output"] != "true" {
 				continue
 			}
 			if _, err := io.WriteString(writer, record.Body); err != nil {
-				return fmt.Errorf("write ad-hoc action logs: %w", err)
+				return fmt.Errorf("write action run logs: %w", err)
 			}
 			if !strings.HasSuffix(record.Body, "\n") {
 				if _, err := io.WriteString(writer, "\n"); err != nil {
-					return fmt.Errorf("write ad-hoc action logs: %w", err)
+					return fmt.Errorf("write action run logs: %w", err)
 				}
 			}
 		}
@@ -197,7 +197,7 @@ func (s *Service) streamRawAdHocLogs(ctx context.Context, logStreamID string, wr
 
 		logStream, err := s.api.GetLogStream(ctx, logStreamID)
 		if err != nil {
-			return fmt.Errorf("get ad-hoc action log stream: %w", err)
+			return fmt.Errorf("get action run log stream: %w", err)
 		}
 		if logStream.Open || len(response.Logs) > 0 {
 			closedEmptyPolls = 0
@@ -205,13 +205,13 @@ func (s *Service) streamRawAdHocLogs(ctx context.Context, logStreamID string, wr
 		}
 
 		closedEmptyPolls++
-		if closedEmptyPolls >= adHocClosedLogDrainPolls {
+		if closedEmptyPolls >= closedLogDrainPolls {
 			return nil
 		}
 	}
 }
 
-func isTerminalAdHocStatus(status string) bool {
+func isTerminalRunStatus(status string) bool {
 	switch models.AppInstallActionWorkflowRunStatus(status) {
 	case models.AppInstallActionWorkflowRunStatusFinished,
 		models.AppInstallActionWorkflowRunStatusError,
@@ -224,16 +224,19 @@ func isTerminalAdHocStatus(status string) bool {
 	}
 }
 
-func waitForAdHocPoll(ctx context.Context) error {
+// runPollInterval is a var so tests can shorten it.
+var runPollInterval = time.Second
+
+func waitForRunPoll(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-time.After(time.Second):
+	case <-time.After(runPollInterval):
 		return nil
 	}
 }
 
-func printAdHocWaitError(err error, asJSON bool) error {
+func printWaitError(err error, asJSON bool) error {
 	if asJSON {
 		return ui.PrintError(err)
 	}
@@ -262,7 +265,7 @@ func readAdHocInput(command, scriptPath string) (string, error) {
 	return string(contents), nil
 }
 
-func parseAdHocEnv(envFile string, values []string) (map[string]string, error) {
+func parseRunEnv(envFile string, values []string) (map[string]string, error) {
 	env := make(map[string]string)
 	if envFile != "" {
 		file, err := os.Open(envFile)

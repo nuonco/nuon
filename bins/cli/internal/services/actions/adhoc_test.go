@@ -144,11 +144,11 @@ func TestCreateAdHocRunRejectsUnknownRole(t *testing.T) {
 	require.Nil(t, api.request)
 }
 
-func TestParseAdHocEnvMergesFileAndFlags(t *testing.T) {
+func TestParseRunEnvMergesFileAndFlags(t *testing.T) {
 	envPath := filepath.Join(t.TempDir(), ".env")
 	require.NoError(t, os.WriteFile(envPath, []byte("# defaults\nFROM_FILE='value'\nexport SHARED=file\nEMPTY=\n"), 0o600))
 
-	env, err := parseAdHocEnv(envPath, []string{"SHARED=flag", "WITH_EQUALS=one=two"})
+	env, err := parseRunEnv(envPath, []string{"SHARED=flag", "WITH_EQUALS=one=two"})
 	require.NoError(t, err)
 	require.Equal(t, map[string]string{
 		"FROM_FILE":   "value",
@@ -166,7 +166,7 @@ func TestReadAdHocInputRequiresOneSource(t *testing.T) {
 	require.EqualError(t, err, "either --command or --script is required")
 }
 
-func TestWaitForAdHocRunStreamsRawPaginatedLogs(t *testing.T) {
+func TestWaitForRunStreamsRawPaginatedLogs(t *testing.T) {
 	api := &adHocAPI{
 		runs: []*models.AppInstallActionWorkflowRun{{
 			ID:     "run_123",
@@ -196,14 +196,14 @@ func TestWaitForAdHocRunStreamsRawPaginatedLogs(t *testing.T) {
 	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
 	var output bytes.Buffer
 
-	run, err := service.waitForAdHocRun(context.Background(), "inst_123", "run_123", &output)
+	run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &output)
 	require.NoError(t, err)
 	require.Equal(t, string(models.AppInstallActionWorkflowRunStatusFinished), run.Status)
 	require.Equal(t, "first line\nsecond line\nthird line\n", output.String())
 	require.Equal(t, []string{"", "next-page", "next-page", "next-page", "next-page", "next-page"}, api.logCursors)
 }
 
-func TestWaitForAdHocRunReturnsFailedTerminalStatus(t *testing.T) {
+func TestWaitForRunReturnsFailedTerminalStatus(t *testing.T) {
 	api := &adHocAPI{runs: []*models.AppInstallActionWorkflowRun{{
 		ID:                "run_123",
 		Status:            string(models.AppInstallActionWorkflowRunStatusError),
@@ -211,13 +211,13 @@ func TestWaitForAdHocRunReturnsFailedTerminalStatus(t *testing.T) {
 	}}}
 	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
 
-	run, err := service.waitForAdHocRun(context.Background(), "inst_123", "run_123", &bytes.Buffer{})
+	run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &bytes.Buffer{})
 	require.NoError(t, err)
 	require.Equal(t, string(models.AppInstallActionWorkflowRunStatusError), run.Status)
 	require.Equal(t, "command failed", run.StatusDescription)
 }
 
-func TestWaitForAdHocRunHonorsCancellation(t *testing.T) {
+func TestWaitForRunHonorsCancellation(t *testing.T) {
 	api := &adHocAPI{runs: []*models.AppInstallActionWorkflowRun{{
 		ID:     "run_123",
 		Status: string(models.AppInstallActionWorkflowRunStatusQueued),
@@ -226,11 +226,11 @@ func TestWaitForAdHocRunHonorsCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := service.waitForAdHocRun(ctx, "inst_123", "run_123", &bytes.Buffer{})
+	_, err := service.waitForRun(ctx, "inst_123", "run_123", &bytes.Buffer{})
 	require.ErrorIs(t, err, context.Canceled)
 }
 
 func TestUnknownAdHocStatusIsNotTerminal(t *testing.T) {
-	require.False(t, isTerminalAdHocStatus(string(models.AppInstallActionWorkflowRunStatusUnknown)))
-	require.True(t, isTerminalAdHocStatus(string(models.AppInstallActionWorkflowRunStatusTimedDashOut)))
+	require.False(t, isTerminalRunStatus(string(models.AppInstallActionWorkflowRunStatusUnknown)))
+	require.True(t, isTerminalRunStatus(string(models.AppInstallActionWorkflowRunStatusTimedDashOut)))
 }
