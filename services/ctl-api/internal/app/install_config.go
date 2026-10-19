@@ -40,6 +40,7 @@ type InstallConfig struct {
 	// Per-install stack template overrides (nil = use app config default)
 	VPCNestedTemplateURL     *string                               `json:"vpc_nested_template_url,omitempty" gorm:"column:vpc_nested_template_url" temporaljson:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL  *string                               `json:"runner_nested_template_url,omitempty" gorm:"column:runner_nested_template_url" temporaljson:"runner_nested_template_url,omitempty"`
+	UIDefinition             *config.UploadedUIDefinition          `json:"ui_definition,omitempty" gorm:"column:uidefinition;type:jsonb;serializer:json" temporaljson:"ui_definition,omitzero,omitempty"`
 	CustomNestedStacks       []config.CustomNestedStack            `json:"custom_nested_stacks,omitempty" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"custom_nested_stacks,omitempty"`
 	AWSStackParameters       map[string]string                     `json:"-" gorm:"type:jsonb;serializer:json" temporaljson:"aws_stack_parameters,omitempty"`
 	AWSNestedStackParameters map[string]config.CloudFormationStack `json:"-" gorm:"type:jsonb;serializer:json" temporaljson:"aws_nested_stack_parameters,omitempty"`

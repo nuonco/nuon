@@ -19,6 +19,10 @@ type BlobUploader interface {
 // rewrites the slice in place with the resulting hash, source URL, and ready status.
 // Keys are content addressed, so repeating a partially completed run is safe.
 func UploadCustomNestedStackTemplates(ctx context.Context, uploader BlobUploader, baseURL string, stackConfig *app.AppStackConfig) error {
+	if err := UploadUIDefinition(ctx, uploader, baseURL, stackConfig.OrgID, stackConfig.AppID, stackConfig.UIDefinition); err != nil {
+		return err
+	}
+
 	sourceURL := func(contentsHash, templateURL string) string {
 		if baseURL == "" {
 			return ""
@@ -53,5 +57,32 @@ func UploadCustomNestedStackTemplates(ctx context.Context, uploader BlobUploader
 		stackConfig.CustomNestedStacks[i].TemplateSourceURL = sourceURL(contentsHash, stack.TemplateURL)
 	}
 
+	return nil
+}
+
+func UploadUIDefinition(ctx context.Context, uploader BlobUploader, baseURL, orgID, appID string, ui *config.UploadedUIDefinition) error {
+	if ui == nil {
+		return nil
+	}
+	sourceURL := UIDefinitionSourceURL(baseURL, orgID, appID, ui.ContentsHash)
+	if ui.Contents == "" {
+		if ui.ContentsHash != "" {
+			ui.Status = config.CustomNestedStackStatusReady
+			ui.SourceURL = sourceURL
+		}
+		return nil
+	}
+
+	hash := sha256.Sum256([]byte(ui.Contents))
+	contentsHash := hex.EncodeToString(hash[:])
+	if err := uploader.UploadBlob(ctx, []byte(ui.Contents), UIDefinitionS3Key(orgID, appID, contentsHash)); err != nil {
+		ui.Status = config.CustomNestedStackStatusError
+		return fmt.Errorf("unable to upload stack ui definition: %w", err)
+	}
+
+	ui.ContentsHash = contentsHash
+	ui.Contents = ""
+	ui.Status = config.CustomNestedStackStatusReady
+	ui.SourceURL = UIDefinitionSourceURL(baseURL, orgID, appID, contentsHash)
 	return nil
 }

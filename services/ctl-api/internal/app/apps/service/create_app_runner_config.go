@@ -15,13 +15,15 @@ import (
 )
 
 type CreateAppRunnerConfigRequest struct {
-	Type          app.AppRunnerType                 `json:"type" validate:"required"`
-	EnvVars       map[string]*string                `json:"env_vars"`
-	HelmDriver    app.AppRunnerConfigHelmDriverType `json:"helm_driver"`
-	InitScriptURL string                            `json:"init_script_url"`
-	InstanceType  string                            `json:"instance_type"`
-	RunnerAPIURL  string                            `json:"runner_api_url"`
-	PublicAPIURL  string                            `json:"public_api_url"`
+	Type            app.AppRunnerType                 `json:"type" validate:"required"`
+	EnvVars         map[string]*string                `json:"env_vars"`
+	HelmDriver      app.AppRunnerConfigHelmDriverType `json:"helm_driver"`
+	InitScriptURL   string                            `json:"init_script_url"`
+	InstanceType    string                            `json:"instance_type"`
+	RunnerAPIURL    string                            `json:"runner_api_url"`
+	PublicAPIURL    string                            `json:"public_api_url"`
+	ImageAutoUpdate bool                              `json:"image_auto_update"`
+	ImageID         string                            `json:"image_id"`
 	// PhoneHomeScriptURL overrides the phone-home Lambda source for this app.
 	PhoneHomeScriptURL string `json:"phone_home_script_url"`
 
@@ -86,6 +88,9 @@ func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *
 		InstanceType:  req.InstanceType,
 		RunnerAPIURL:  req.RunnerAPIURL,
 		PublicAPIURL:  req.PublicAPIURL,
+
+		ImageAutoUpdate: req.ImageAutoUpdate,
+		ImageID:         req.ImageID,
 
 		PhoneHomeScriptURL: req.PhoneHomeScriptURL,
 	})

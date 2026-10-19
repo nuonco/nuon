@@ -78,6 +78,7 @@ const (
 	// instead of failing role selection.
 	OrgFeatureAzureLegacyRoleFallback OrgFeature = "azure-legacy-role-fallback"
 	OrgFeatureBranchOverviewV2        OrgFeature = "branch-overview-v2"
+	OrgFeatureInstallUIWizards        OrgFeature = "install-ui-wizards"
 )
 
 type OrgTelemetrySettings struct {
@@ -238,6 +239,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureDisableAppSync:          false,
 		OrgFeatureAzureLegacyRoleFallback: false,
 		OrgFeatureBranchOverviewV2:        false,
+		OrgFeatureInstallUIWizards:        false,
 	}
 }
 
@@ -257,6 +259,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureAppBundleExport,
 		OrgFeatureAzureLegacyRoleFallback,
 		OrgFeatureBranchOverviewV2,
+		OrgFeatureInstallUIWizards,
 	}
 }
 
@@ -285,6 +288,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureAppBundleExport:         "Enable the app bundle export API: package pinned sandbox and component builds for an app-config version into a portable OCI-layout tar.zst with presigned download grants.",
 		OrgFeatureAzureLegacyRoleFallback: "Let Azure installs whose install stack predates per-operation managed identities run deploys, sandbox runs, and actions as the runner's own identity instead of failing with \"role not found in install stack outputs\".",
 		OrgFeatureBranchOverviewV2:        "Enable the second-generation branch overview with an expanded active install group, navigable deployment plan, and install deployment details.",
+		OrgFeatureInstallUIWizards:        "Enable the install create and teardown wizards in the dashboard.",
 	}
 }
 
