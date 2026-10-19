@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -86,7 +87,10 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 		if asJSON {
 			logWriter = os.Stderr
 		}
-		completedRun, err := s.waitForRun(ctx, installID, run.ID, logWriter)
+		spinner := bubbles.NewSpinnerView(asJSON, s.cfg.Interactive)
+		spinner.Start(fmt.Sprintf("waiting for ad-hoc action %s to start", run.ID))
+		completedRun, err := s.waitForRun(ctx, installID, run.ID, logWriter, spinner)
+		spinner.Stop()
 		if err != nil {
 			return printWaitError(err, asJSON)
 		}
@@ -104,7 +108,10 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 		}
 		if asJSON {
 			ui.PrintJSON(run)
+			return nil
 		}
+		spinner.Success(fmt.Sprintf("ad-hoc action %s finished", completedRun.ID))
+		renderCompletedRun(completedRun)
 		return nil
 	}
 
@@ -143,7 +150,7 @@ func validateRole(requested string, roles []*models.ServiceAvailableRole) error 
 	return fmt.Errorf("role %q is not available; available roles: %s", requested, strings.Join(available, ", "))
 }
 
-func (s *Service) waitForRun(ctx context.Context, installID, runID string, writer io.Writer) (*models.AppInstallActionWorkflowRun, error) {
+func (s *Service) waitForRun(ctx context.Context, installID, runID string, writer io.Writer, spinner *bubbles.SpinnerView) (*models.AppInstallActionWorkflowRun, error) {
 	streamedLogs := false
 	for {
 		run, err := s.api.GetInstallActionWorkflowRun(ctx, installID, runID)
@@ -152,14 +159,21 @@ func (s *Service) waitForRun(ctx context.Context, installID, runID string, write
 		}
 
 		if !streamedLogs && run.RunnerJob != nil && run.RunnerJob.LogStreamID != "" {
+			spinner.Stop()
 			if err := s.streamRawRunLogs(ctx, run.RunnerJob.LogStreamID, writer); err != nil {
 				return nil, err
 			}
 			streamedLogs = true
+			if !isTerminalRunStatus(run.Status) {
+				spinner.Start(fmt.Sprintf("waiting for action run %s to finish", runID))
+			}
 		}
 
 		if isTerminalRunStatus(run.Status) {
 			return run, nil
+		}
+		if !streamedLogs {
+			spinner.Update(fmt.Sprintf("waiting for action run %s to start (status: %s)", runID, run.Status))
 		}
 		if err := waitForRunPoll(ctx); err != nil {
 			return nil, err
@@ -234,6 +248,14 @@ func waitForRunPoll(ctx context.Context) error {
 	case <-time.After(runPollInterval):
 		return nil
 	}
+}
+
+func renderCompletedRun(run *models.AppInstallActionWorkflowRun) {
+	ui.NewGetView().Render([][]string{
+		{"run id", run.ID},
+		{"status", run.Status},
+		{"execution time", time.Duration(run.ExecutionTime).String()},
+	})
 }
 
 func printWaitError(err error, asJSON bool) error {

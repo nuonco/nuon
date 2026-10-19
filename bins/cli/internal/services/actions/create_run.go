@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -86,11 +87,15 @@ func (s *Service) CreateRun(ctx context.Context, params CreateRunParams, asJSON 
 			logWriter = os.Stderr
 		}
 
-		runID, err := s.waitForWorkflowRun(ctx, installID, actionWorkflowID, resp.WorkflowID)
+		spinner := bubbles.NewSpinnerView(asJSON, s.cfg.Interactive)
+		spinner.Start("waiting for action run to be created")
+		runID, err := s.waitForWorkflowRun(ctx, installID, actionWorkflowID, resp.WorkflowID, spinner)
 		if err != nil {
+			spinner.Stop()
 			return printWaitError(err, asJSON)
 		}
-		completedRun, err := s.waitForRun(ctx, installID, runID, logWriter)
+		completedRun, err := s.waitForRun(ctx, installID, runID, logWriter, spinner)
+		spinner.Stop()
 		if err != nil {
 			return printWaitError(err, asJSON)
 		}
@@ -103,7 +108,10 @@ func (s *Service) CreateRun(ctx context.Context, params CreateRunParams, asJSON 
 		}
 		if asJSON {
 			ui.PrintJSON(completedRun)
+			return nil
 		}
+		spinner.Success(fmt.Sprintf("action run %s finished", completedRun.ID))
+		renderCompletedRun(completedRun)
 		return nil
 	}
 
@@ -124,7 +132,7 @@ func (s *Service) CreateRun(ctx context.Context, params CreateRunParams, asJSON 
 
 // waitForWorkflowRun polls until the run created by the install workflow
 // appears, since the run row is written asynchronously.
-func (s *Service) waitForWorkflowRun(ctx context.Context, installID, actionWorkflowID, workflowID string) (string, error) {
+func (s *Service) waitForWorkflowRun(ctx context.Context, installID, actionWorkflowID, workflowID string, spinner *bubbles.SpinnerView) (string, error) {
 	for {
 		runID, err := s.findWorkflowRun(ctx, installID, actionWorkflowID, workflowID)
 		if err != nil || runID != "" {
@@ -144,6 +152,9 @@ func (s *Service) waitForWorkflowRun(ctx context.Context, installID, actionWorkf
 			return "", &ui.CLIUserError{
 				Msg: fmt.Sprintf("action workflow %s ended with status %s before a run was created", workflowID, workflow.Status.Status),
 			}
+		}
+		if workflow.Status != nil && workflow.Status.Status != "" {
+			spinner.Update(fmt.Sprintf("waiting for action run to be created (workflow status: %s)", workflow.Status.Status))
 		}
 
 		if err := waitForRunPoll(ctx); err != nil {

@@ -247,7 +247,7 @@ func TestCreateRunWaitStreamsOnlyCommandOutput(t *testing.T) {
 	service := newCreateRunService(api, "inst_1")
 
 	var out bytes.Buffer
-	run, err := service.waitForRun(context.Background(), "inst_resolved", "run_1", &out)
+	run, err := service.waitForRun(context.Background(), "inst_resolved", "run_1", &out, quietSpinner())
 	require.NoError(t, err)
 	require.Equal(t, "finished", run.Status)
 	require.Equal(t, "hello\n", out.String())

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -79,6 +80,10 @@ func (a *adHocAPI) LogStreamTailLogs(_ context.Context, _ string, cursor string,
 
 func (a *adHocAPI) GetLogStream(_ context.Context, _ string) (*models.AppLogStream, error) {
 	return &models.AppLogStream{Open: a.logStreamOpen}, nil
+}
+
+func quietSpinner() *bubbles.SpinnerView {
+	return bubbles.NewSpinnerView(true, false)
 }
 
 func TestCreateAdHocRunUsesSelectedInstallAndBuildsRequest(t *testing.T) {
@@ -196,7 +201,7 @@ func TestWaitForRunStreamsRawPaginatedLogs(t *testing.T) {
 	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
 	var output bytes.Buffer
 
-	run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &output)
+	run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &output, quietSpinner())
 	require.NoError(t, err)
 	require.Equal(t, string(models.AppInstallActionWorkflowRunStatusFinished), run.Status)
 	require.Equal(t, "first line\nsecond line\nthird line\n", output.String())
@@ -211,7 +216,7 @@ func TestWaitForRunReturnsFailedTerminalStatus(t *testing.T) {
 	}}}
 	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
 
-	run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &bytes.Buffer{})
+	run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &bytes.Buffer{}, quietSpinner())
 	require.NoError(t, err)
 	require.Equal(t, string(models.AppInstallActionWorkflowRunStatusError), run.Status)
 	require.Equal(t, "command failed", run.StatusDescription)
@@ -226,7 +231,7 @@ func TestWaitForRunHonorsCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := service.waitForRun(ctx, "inst_123", "run_123", &bytes.Buffer{})
+	_, err := service.waitForRun(ctx, "inst_123", "run_123", &bytes.Buffer{}, quietSpinner())
 	require.ErrorIs(t, err, context.Canceled)
 }
 
