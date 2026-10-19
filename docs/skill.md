@@ -1,6 +1,6 @@
 ---
 name: nuon
-description: Use when building, shipping, or troubleshooting a Nuon app (BYOC delivery of Terraform, Helm, Kubernetes manifests, and container images into customer AWS, Azure, or GCP accounts). Covers where to look up how Nuon works, how app config ships through app branches, and where agent-only troubleshooting detail lives.
+description: Use when building, shipping, or troubleshooting a Nuon app. Nuon deploys a vendor's software (Terraform, Helm charts, Kubernetes manifests, container images) into their customers' own AWS, Azure, or GCP accounts.
 ---
 
 # Nuon
