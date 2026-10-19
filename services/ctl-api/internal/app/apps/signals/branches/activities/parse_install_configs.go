@@ -42,7 +42,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 	}
 
 	if req.InstallName != "" {
-		return a.parseSingleInstall(installsPath, req.InstallName)
+		return a.parseSingleInstall(ctx, installsPath, req.InstallName)
 	}
 
 	changedSet := make(map[string]bool, len(req.ChangedFiles))
@@ -69,7 +69,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 		}
 
 		fullPath := filepath.Join(installsPath, entry.Name())
-		installCfg, err := parseInstallTOML(fullPath)
+		installCfg, err := parseInstallTOML(ctx, fullPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse %s: %w", relPath, err)
 		}
@@ -83,7 +83,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 	return &ParseInstallConfigsResponse{Installs: result}, nil
 }
 
-func (a *Activities) parseSingleInstall(installsPath, installName string) (*ParseInstallConfigsResponse, error) {
+func (a *Activities) parseSingleInstall(ctx context.Context, installsPath, installName string) (*ParseInstallConfigsResponse, error) {
 	fileName := installName + ".toml"
 	fullPath := filepath.Join(installsPath, fileName)
 
@@ -91,7 +91,7 @@ func (a *Activities) parseSingleInstall(installsPath, installName string) (*Pars
 		return &ParseInstallConfigsResponse{}, nil
 	}
 
-	installCfg, err := parseInstallTOML(fullPath)
+	installCfg, err := parseInstallTOML(ctx, fullPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse %s: %w", fileName, err)
 	}
@@ -103,7 +103,7 @@ func (a *Activities) parseSingleInstall(installsPath, installName string) (*Pars
 	}, nil
 }
 
-func parseInstallTOML(filePath string) (*config.Install, error) {
+func parseInstallTOML(ctx context.Context, filePath string) (*config.Install, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open %s: %w", filePath, err)
@@ -113,6 +113,9 @@ func parseInstallTOML(filePath string) (*config.Install, error) {
 	cfg, err := configparse.ParseInstallConfig(f, validator.New())
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse install config: %w", err)
+	}
+	if err := configparse.LoadInstallUIDefinition(ctx, cfg, filepath.Dir(filePath)); err != nil {
+		return nil, err
 	}
 
 	return cfg, nil

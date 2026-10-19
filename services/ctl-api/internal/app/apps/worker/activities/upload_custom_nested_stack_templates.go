@@ -40,9 +40,20 @@ func (a *Activities) UploadCustomNestedStackTemplates(ctx context.Context, req *
 		return err
 	}
 
+	columns := []string{}
+	if len(stackConfig.CustomNestedStacks) > 0 {
+		columns = append(columns, "custom_nested_stacks")
+	}
+	if stackConfig.UIDefinition != nil {
+		columns = append(columns, "uidefinition")
+	}
+	if len(columns) == 0 {
+		return nil
+	}
+
 	res = a.db.WithContext(ctx).
 		Model(&stackConfig).
-		Select("custom_nested_stacks").
+		Select(columns).
 		Updates(&stackConfig)
 	if res.Error != nil {
 		return fmt.Errorf("unable to update app stack config: %w", res.Error)
