@@ -24,6 +24,7 @@ export type TStepChangePlanType =
   | 'kubernetes_manifest_approval'
   | 'app_branch_plan'
   | 'install_creation'
+  | 'install_input'
 
 export type TStepChangeStatus =
   | 'pending-approval'

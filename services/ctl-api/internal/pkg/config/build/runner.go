@@ -15,7 +15,10 @@ type RunnerInput struct {
 	InitScriptURL string
 	InstanceType  string
 	RunnerAPIURL  string
-	PublicAPIURL  string
+
+	ImageAutoUpdate bool
+	ImageID         string
+	PublicAPIURL    string
 
 	PhoneHomeScriptURL string
 }
@@ -32,6 +35,9 @@ func RunnerInputFromConfig(runner config.AppRunnerConfig, appID, appConfigID str
 		RunnerAPIURL:  runner.RunnerAPIURL,
 		PublicAPIURL:  runner.PublicAPIURL,
 
+		ImageAutoUpdate: runner.ImageAutoUpdate,
+		ImageID:         runner.ImageID,
+
 		PhoneHomeScriptURL: runner.PhoneHomeScriptURL,
 	}
 }
@@ -47,6 +53,9 @@ func RunnerConfig(in RunnerInput) *app.AppRunnerConfig {
 		InstanceType:  in.InstanceType,
 		RunnerAPIURL:  in.RunnerAPIURL,
 		PublicAPIURL:  in.PublicAPIURL,
+
+		ImageAutoUpdate: in.ImageAutoUpdate,
+		ImageID:         in.ImageID,
 
 		PhoneHomeScriptURL: in.PhoneHomeScriptURL,
 	}

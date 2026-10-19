@@ -1,26 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Card } from '@/components/common/Card'
-import { ClickToCopy } from '@/components/common/ClickToCopy'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
-import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
 import { Modal } from '@/components/surfaces/Modal'
 import { humanize } from '@/utils/string-utils'
-import { getInputDisplayName } from '@/utils/install-utils'
 import { getAccountDisplayName } from '@/utils/workflow-utils'
 import type { TWorkflow, TInstall } from '@/types'
+import { WorkflowInputChanges } from '../../WorkflowInputChanges'
 import { WorkflowMetadata } from '../WorkflowMetadata'
-
-type ChangedInput = {
-  name: string
-  old: string
-  new: string
-}
 
 interface IWorkflowDetailsSection {
   workflow: TWorkflow
@@ -33,29 +25,6 @@ export const WorkflowDetailsSection = ({
   orgId,
   install,
 }: IWorkflowDetailsSection) => {
-  const changedInputs = useMemo<ChangedInput[]>(() => {
-    if (
-      workflow?.type !== 'input_update' ||
-      !workflow?.metadata?.changed_input_values
-    ) {
-      return []
-    }
-    try {
-      const parsed = JSON.parse(
-        workflow.metadata.changed_input_values
-      ) as Record<string, { old: string; new: string }>
-      return Object.entries(parsed).map(
-        ([name, { old: oldVal, new: newVal }]) => ({
-          name: getInputDisplayName(name),
-          old: oldVal || '(empty)',
-          new: newVal || '(empty)',
-        })
-      )
-    } catch {
-      return []
-    }
-  }, [workflow?.type, workflow?.metadata?.changed_input_values])
-
   const [expanded, setExpanded] = useState(true)
   const toggleExpanded = () => setExpanded((prev) => !prev)
   const createdByName = getAccountDisplayName(workflow?.created_by)
@@ -153,50 +122,7 @@ export const WorkflowDetailsSection = ({
         </>
       )}
 
-      {expanded && changedInputs.length > 0 && (
-        <>
-          <hr className="-mx-4" />
-
-          <PropertyGrid
-            values={changedInputs}
-            columns={[
-              { key: 'name', header: 'Name' },
-              {
-                key: 'old',
-                header: 'Old value',
-                render: (value) => (
-                  <Text theme="neutral">
-                    <ClickToCopy>
-                      <Text
-                        className="line-through"
-                        variant="subtext"
-                        theme="error"
-                        family="mono"
-                      >
-                        {String(value)}
-                      </Text>
-                    </ClickToCopy>
-                  </Text>
-                ),
-              },
-              {
-                key: 'new',
-                header: 'New value',
-                render: (value) => (
-                  <Text theme="neutral">
-                    <ClickToCopy className="self-start">
-                      <Text variant="subtext" theme="success" family="mono">
-                        {String(value)}
-                      </Text>
-                    </ClickToCopy>
-                  </Text>
-                ),
-              },
-            ]}
-            gridTemplate="auto 1fr 1fr"
-          />
-        </>
-      )}
+      {expanded ? <WorkflowInputChanges divider workflow={workflow} /> : null}
     </Card>
   )
 }
