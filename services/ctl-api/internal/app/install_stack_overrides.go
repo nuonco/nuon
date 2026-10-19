@@ -1,6 +1,8 @@
 package app
 
 import (
+	"maps"
+
 	"github.com/nuonco/nuon/pkg/config"
 )
 
@@ -21,7 +23,7 @@ func ApplyInstallStackOverrides(install *Install, stackCfg *AppStackConfig) {
 		stackCfg.RunnerNestedTemplateURL = *ic.RunnerNestedTemplateURL
 	}
 
-	if len(ic.CustomNestedStacks) == 0 {
+	if len(ic.CustomNestedStacks) == 0 && len(ic.AWSNestedStackParameters) == 0 {
 		return
 	}
 
@@ -48,6 +50,17 @@ func ApplyInstallStackOverrides(install *Install, stackCfg *AppStackConfig) {
 	for _, s := range ic.CustomNestedStacks {
 		if !seen[s.Name] {
 			result = append(result, s)
+		}
+	}
+
+	if stackCfg.Type == StackTypeAWS {
+		for i := range result {
+			if override, ok := ic.AWSNestedStackParameters[result[i].Name]; ok {
+				parameters := make(map[string]string, len(result[i].Parameters)+len(override.Parameters))
+				maps.Copy(parameters, result[i].Parameters)
+				maps.Copy(parameters, override.Parameters)
+				result[i].Parameters = parameters
+			}
 		}
 	}
 

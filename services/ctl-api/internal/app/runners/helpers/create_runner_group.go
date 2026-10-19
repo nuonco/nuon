@@ -2,15 +2,19 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/sagikazarmark/slog-shim"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 const (
@@ -104,17 +108,35 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		},
 	}
 
-	res := h.db.WithContext(ctx).Create(&runnerGroup)
-	if res.Error != nil {
-		return nil, res.Error
+	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var owner app.Install
+		if err := tx.Scopes(scopes.WithDisableViews).Select("id").Clauses(clause.Locking{Strength: "NO KEY UPDATE"}).
+			Where(app.Install{ID: install.ID, OrgID: install.OrgID}).First(&owner).Error; err != nil {
+			return err
+		}
+		var existing app.RunnerGroup
+		err := tx.Preload("Runners").Preload("Settings").
+			Where(app.RunnerGroup{OwnerID: install.ID, OwnerType: "installs", OrgID: install.OrgID}).First(&existing).Error
+		if err == nil {
+			runnerGroup = existing
+			return nil
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		return tx.Create(&runnerGroup).Error
+	}); err != nil {
+		return nil, err
 	}
 
-	if err := h.EnsureRunnerSignalsQueue(ctx, runnerGroup.Runners[0].ID); err != nil {
-		return nil, fmt.Errorf("unable to create runner signals queue: %w", err)
-	}
-
-	if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
-		return nil, fmt.Errorf("unable to create runner queues: %w", err)
+	for i := range runnerGroup.Runners {
+		runner := &runnerGroup.Runners[i]
+		if err := h.EnsureRunnerSignalsQueue(ctx, runner.ID); err != nil {
+			return nil, fmt.Errorf("unable to create runner signals queue: %w", err)
+		}
+		if err := h.CreateRunnerQueues(ctx, runner, &runnerGroup.Settings); err != nil {
+			return nil, fmt.Errorf("unable to create runner queues: %w", err)
+		}
 	}
 
 	return &runnerGroup, nil

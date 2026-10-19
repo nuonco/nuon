@@ -163,6 +163,12 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		if so.HasOverrides() {
 			installCfg.StackOverrides = so
 		}
+		if len(installConfig.AWSStackParameters) > 0 || len(installConfig.AWSNestedStackParameters) > 0 {
+			installCfg.CloudFormation = &config.CloudFormation{
+				Root:         config.CloudFormationStack{Parameters: installConfig.AWSStackParameters},
+				NestedStacks: installConfig.AWSNestedStackParameters,
+			}
+		}
 	}
 
 	appInputCfg, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)

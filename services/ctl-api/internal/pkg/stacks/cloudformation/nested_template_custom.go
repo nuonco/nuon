@@ -372,6 +372,10 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		}
 	}
 
+	if err := tpl.applyNestedStackParameters(inp, stack.Name, templateURL, parameters, defaultParameters); err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
 	nestedStack := &nestedcloudformation.Stack{
 		Parameters: parameters,
 		TemplateURL: cloudformation.Join("", []any{

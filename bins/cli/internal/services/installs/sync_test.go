@@ -2,6 +2,10 @@ package installs
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -9,6 +13,40 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
+
+func TestSyncRejectsCloudFormation(t *testing.T) {
+	for name, block := range map[string]string{
+		"root parameters":   "[cloudformation.root.parameters]\nRunnerRootVolumeSize = '60'",
+		"nested parameters": "[cloudformation.nested_stacks.VPC.parameters]\nVpcCIDR = '10.42.0.0/16'",
+		"empty overrides":   "[cloudformation.root.parameters]\n[cloudformation.nested_stacks]",
+	} {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Errorf("unsupported config must be rejected before contacting the API: %s %s", r.Method, r.URL.Path)
+				w.WriteHeader(http.StatusInternalServerError)
+			}))
+			defer server.Close()
+			api, err := nuon.New(nuon.WithURL(server.URL))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			dir := t.TempDir()
+			if err := os.WriteFile(filepath.Join(dir, "a-legacy.toml"), []byte("name = 'legacy'"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			raw := "name = 'acme-production'\ncloud_connection = 'acme-aws'\n" + block
+			if err := os.WriteFile(filepath.Join(dir, "b-cloudformation.toml"), []byte(raw), 0o600); err != nil {
+				t.Fatal(err)
+			}
+
+			err = New(api, nil).Sync(context.Background(), dir, "app-1", true, false, false, false, false)
+			if err == nil || !strings.Contains(err.Error(), "cloudformation is only supported by Git-backed install config sync") || !strings.Contains(err.Error(), "acme-production") {
+				t.Fatalf("expected actionable cloudformation error identifying the install, got: %v", err)
+			}
+		})
+	}
+}
 
 // TestParseInstallConfig_RejectsMalformedOverride proves the CLI parse path
 // validates component-override syntax (Parse + Validate) before any API call,

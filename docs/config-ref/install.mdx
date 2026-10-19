@@ -22,7 +22,8 @@ title: 'Install'
 | **`azure_account`**<br/>[AzureAccount](#azure_account) | Azure account configuration Azure-specific settings for this install, including the deployment location | **Optional** | - |
 | **`cloud_connection`**<br/>string | cloud connection name or ID AWS cloud connection this install uses for provisioning, by name or ID. The connection must exist in the organization and be verified. When omitted, the install falls ba... | **Optional** | `"demo-aws"` |
 | **`inputs`**<br/>array | input values Array of input groups with key-value pairs for customer inputs provided during installation | **Optional** | - |
-| **`stack_overrides`**<br/>[InstallStackOverrides](#stack_overrides) | Stack template overrides Per-install overrides for the app-level stack template configuration. Overrides take precedence over app-level defaults. | **Optional** | - |
+| **`stack_overrides`**<br/>[InstallStackOverrides](#stack_overrides) | Stack template overrides Per-install overrides for the app-level stack template configuration. For cloud-connected installs, Git config creation provisions the managed stack; changes reprovision it... | **Optional** | - |
+| **`cloudformation`**<br/>[CloudFormation](#cloudformation) | Per-install CloudFormation configuration Root and nested stack parameters supported by Git-backed install config sync only, not nuon installs sync. Requires an AWS cloud_connection. Values merge ov... | **Optional** | - |
 | **`component_toggles`**<br/>object | - | **Optional** | - |
 | **`components`**<br/>object | - | **Optional** | - |
 
@@ -60,4 +61,11 @@ title: 'Install'
 | **`vpc_nested_template_url`**<br/>string | VPC nested template URL override Per-install override for the VPC nested CloudFormation template URL. Overrides the app-level default from stack.toml. | **Optional** | `"https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-vpc.yaml"` |
 | **`runner_nested_template_url`**<br/>string | Runner nested template URL override Per-install override for the runner nested CloudFormation template URL. Overrides the app-level default from stack.toml. | **Optional** | `"https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml"` |
 | **`custom_nested_stacks`**<br/>object | Custom nested stack overrides Per-install overrides for custom install stacks. Entries with the same name as app-level stacks replace them; new names are appended. Supports AWS CloudFormation, Azur... | **Optional** | - |
+
+### `cloudformation`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`root`**<br/>CloudFormationStack | Root CloudFormation stack Parameters passed on root stack creation and update, not embedded as template defaults. Omit parameters to preserve saved overrides; an empty parameters table clears them. | **Optional** | - |
+| **`nested_stacks`**<br/>object | Nested CloudFormation parameters Stack configurations keyed by custom stack name, or VPC / RunnerAutoScalingGroup for built-in stacks. Override individual parameters without repeating template URLs... | **Optional** | - |
 
