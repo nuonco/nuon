@@ -2,7 +2,7 @@
 title: "Configure app branches"
 description: "Connect a git branch to your app template, group your installs, and roll changes out across your fleet from a git push."
 icon: "code-branch"
-keywords: ["configure app branches", "branch.toml", "install_groups", "deployment groups", "label installs", "nuon installs labels set", "nuon apps branches trigger", "nuon sync --branch", "PR preview setup", "staged rollout setup"]
+keywords: ["configure app branches", "branch.toml", "install_groups", "deployment groups", "label installs", "nuon installs labels set", "nuon branches sync", "nuon branches trigger", "nuon branches preview", "migrate from nuon apps sync", "PR preview setup", "staged rollout setup"]
 ---
 
 This guide walks through setting up an [app branch](/concepts/app-branches) on an existing app template: writing the branch
@@ -11,7 +11,8 @@ them.
 
 ## Prerequisites
 
-- An [app template](/concepts/apps) already synced to Nuon, with at least one install.
+- An [app template](/concepts/apps) created in Nuon with `nuon apps create`, and its app config committed to a GitHub
+  repository.
 - The [Nuon CLI](/cli) installed and authenticated (`nuon auth login`).
 - For pull request previews, the **Nuon GitHub App connected in your org for the repository's owner**. See
   [connecting a repository](/guides/vcs).
@@ -23,10 +24,10 @@ them.
 
 ## Write a branch config
 
-Add a `branch.toml` file to the root of your app config directory, next to `metadata.toml`. It declares the branch
-name, the repo and branch to track, and the deployment groups the rollout moves through.
+Add a file to a `branches/` directory in your app config directory, next to `metadata.toml`, one file per app branch.
+It declares the branch name, the repo and git branch to track, and the deployment groups the rollout moves through.
 
-```toml branch.toml
+```toml branches/main.toml
 name = "main"
 
 [connected_repo]
@@ -51,9 +52,10 @@ Three things to get right:
 
 - **The repo block.** Use `[connected_repo]` for a repository connected through the Nuon GitHub App, or
   `[public_repo]` for a public one. Exactly one of the two, and `repo`, `directory`, and `branch` are all required.
-  `directory` is the path to your app config within the repo, or `"."` if it is at the root.
-- **`name`** is the branch's name in Nuon, and it comes from this key, not from the filename. It is what you pass to
-  `nuon sync --branch`.
+  `directory` is the path to your app config within the repo, or `"."` if it is at the root. It can be any
+  directory, with any name.
+- **`name`** is the branch's name in Nuon. It comes from this key, and the filename has no effect on it. Commands that
+  take `--branch-id` accept this name.
 - **Group order.** `order` decides which group deploys first, lowest first. List your groups in the order you want
   them to run.
 
@@ -62,7 +64,8 @@ Three things to get right:
   against.
 </Note>
 
-Every field is documented in the [branch config reference](/config-ref/branch).
+Branch runs skip the `branches/` directory when they read your app config, so the branch file can live in the same
+repo and directory it points at. Every field is documented in the [branch config reference](/config-ref/branch).
 
 An install config can also assign its branch by name:
 
@@ -138,11 +141,13 @@ install_ids = ["inlbmky2fz8qvrxp3d7twahjc9"]
 
 ### One branch or several
 
-Two layouts are supported, and they are mutually exclusive:
+Most apps need one branch, `branches/main.toml`, and the rest of this guide assumes that. To track several branches of
+the same repo (a `staging` branch and a `main` branch, for example), add one file per branch under `branches/`. The
+`name` key inside each file sets the branch name.
 
-- **`branch.toml`**: a single branch. This is what most apps want, and what the rest of this guide assumes.
-- **`branches/*.toml`**: one file per branch, for tracking several branches of the same repo (a `staging` branch and
-  a `main` branch, for example). The `name` key inside each file sets the branch name; the filename does not.
+Older app configs may have a single `branch.toml` at the root of the config directory. `nuon branches sync` reads it
+the same way. Keep one layout per config directory: the app config parser rejects a `branch.toml` and a `branches/`
+directory side by side.
 
 ## Label your installs
 
@@ -177,30 +182,40 @@ fleet of more than 20 installs, pass `--limit` at least your install count to li
 
 ## Sync the branch config
 
-Syncing your app config creates or updates the branch, along with its deployment groups:
+Select the app once, then sync the branch file to create the branch and its deployment groups:
 
 ```sh
-nuon apps sync
+nuon apps select                                      # no flags: pick the app from the list
+nuon branches sync --file branches/main.toml --dry-run
+nuon branches sync --file branches/main.toml
 ```
 
-Branches are upserted by name and are never pruned. Removing a branch from your config does not delete it in Nuon.
-Use `nuon apps branches delete` for that.
+`--dry-run` prints the plan and changes nothing. Without it, the command shows the same plan and asks before applying
+it. Pass `--confirm` to apply without the prompt, which a non-interactive shell such as CI requires.
+
+You run this once to create the branch, and again whenever you edit a branch file. Branch runs never read the branch
+files, so a change to `branches/main.toml` takes effect only when you sync it. Every other change to your app config
+ships by pushing to the tracked branch.
+
+To sync every branch at once, pass the directory:
+
+```sh
+nuon branches sync --file branches/
+```
+
+Directory mode also proposes deleting any config-managed branch that no longer has a file. Syncing a single file only
+touches the branch it names. A branch created by hand with `nuon branches create` is managed manually, and
+`nuon branches sync` refuses to take it over.
 
 Confirm what Nuon now has:
 
 ```sh
-nuon apps list                                   # find your app's ID
-nuon apps branches list --app-id <your-app-id>
-nuon apps branches get --app-id <your-app-id> --branch-id <branch-id>
+nuon branches list
+nuon branches get --branch-id main
 ```
 
-`list` prints each branch's name and ID; `get` takes the branch ID and returns the full branch, deployment groups
-included.
-
-<Note>
-  The `nuon apps branches` subcommands take the app **ID** (`app...`), which `nuon apps list` prints. Or select the
-  app once with `nuon apps select` (no flags, pick from the list) and omit `--app-id` wherever it is optional.
-</Note>
+`list` prints each branch's name and ID. `get` returns the full branch, deployment groups included. Both default to
+the app you selected with `nuon apps select`. Pass `--app-id` to target another app.
 
 ## Trigger a run
 
@@ -211,61 +226,42 @@ git commit -am "bump chart version"
 git push origin main
 ```
 
-Nuon receives the push, and the run appears in the dashboard and in `nuon apps branches runs`.
+Nuon receives the push, and the run appears in the dashboard and in `nuon branches runs`.
 
-You do not have to wait for a push, though. Two other ways to start a run, both using the app you selected with
-`nuon apps select`:
+You do not have to wait for a push. `nuon branches trigger` runs the tracked branch's latest commit:
 
-<CodeGroup>
-
-```sh Trigger the committed config
+```sh
 # Runs against the tracked branch's latest commit.
-nuon apps branches trigger --branch-id main
+nuon branches trigger --branch-id main
 
-# Plan only — plans every group, applies nothing.
-nuon apps branches trigger --branch-id main --preview
-
-# Rebuild every component instead of only what changed.
-nuon apps branches trigger --branch-id main --force
+# Rebuild every component, including ones whose config did not change.
+nuon branches trigger --branch-id main --force
 ```
 
-```sh Sync local files, then run
-# Syncs the config in the current directory, then triggers a run for that config.
-nuon sync --branch main
-
-# Same, but plan-only.
-nuon sync --branch main --preview
-
-# Pick the branch interactively.
-nuon sync --app-branch
-```
-
-</CodeGroup>
+A run builds a component when its config changed since the last run. If you changed only a component's source files
+and left its config alone, use `--force` so the run rebuilds it.
 
 Anything that can run the CLI or call the API can start the same run, which is how a CI job drives a rollout without
 a webhook. The [GitHub Actions guide](/guides/github-actions) shows a workflow that triggers a run once your tests
 pass.
 
-<Note>
-  `--preview` on a manual run suppresses the **apply**, not the workflow. The run still creates
-  `plan install group: <name>` and `deploy install group: <name>` for every group, but each approval gate
-  auto-approves ("Auto-approved in plan-only mode") and nothing is applied — the run finishes on its own, and you read
-  the per-install diffs from the completed run. This differs from a pull request preview, which never creates the
-  group steps at all.
-</Note>
+`nuon branches trigger` and `nuon branches runs` open the full-screen workflow TUI, so you can watch steps and approve
+from the terminal. Pass `--no-wait` to `trigger` to return as soon as the run starts. See the [TUI reference](/tui).
 
-<Note>
-  `nuon sync --branch` runs against your **local, uncommitted files**, not the tracked branch's commit — the right
-  tool for iterating on a change before pushing it. The `--branch`, `--app-branch`, and `--preview` flags live on
-  `nuon sync` (not `nuon apps sync`), and `--preview` takes effect alongside `--branch` or `--app-branch`.
-</Note>
+### Preview a change before you roll it out
 
-Because `nuon sync --branch` hands Nuon a config it already built locally, that run's first two steps appear as
-`fetch commit (skipped)` and `fetch app config (skipped)`. A run started from a push or from
-`nuon apps branches trigger` fetches from git and shows both steps running.
+To see what a change would do before it reaches the tracked branch, push it to another git branch and run a
+plan-only preview against one install:
 
-`nuon apps branches trigger` and `nuon apps branches runs` open the full-screen workflow TUI, so you can watch steps
-and approve from the terminal. See the [TUI reference](/tui).
+```sh
+git push origin my-change
+nuon branches preview --branch-id main --git-ref my-change --mode plan-only --install-id <install-id>
+```
+
+The preview builds the config from `my-change`, plans it against that install, and applies nothing. Use
+`--pr-number` in place of `--git-ref` to preview an open pull request. Run `nuon branches preview` with no flags to
+pick the branch, source, mode, and install interactively. A `[preview]` block in the branch file sets the default
+mode and install, so the command can omit them.
 
 ## Approve or skip a deployment group
 
@@ -310,14 +306,11 @@ org has connected `acmeco`.
 
 <Note>
   Previews start posting as soon as your org has the GitHub App connection for the repository's owner. If they have
-  not appeared yet, check that connection rather than your `branch.toml`.
+  not appeared yet, check that connection before you change the branch file.
 </Note>
 
-To reproduce a preview locally before opening the pull request:
-
-```sh
-nuon sync --branch main --preview
-```
+To run the same plan from the CLI before you open the pull request, push your git branch and use
+[`nuon branches preview`](#preview-a-change-before-you-roll-it-out).
 
 ## Roll back a change
 
@@ -329,23 +322,45 @@ to one install or to a whole deployment group, with a plan in front of it. The
 
 | Command | What it does |
 | --- | --- |
-| `nuon apps branches list --app-id <app-id>` | List an app's branches. Alias: `nuon apps br`. |
-| `nuon apps branches get --app-id <app-id> --branch-id <branch-id>` | Show a branch's details, including its deployment groups. Takes an ID, not a name. |
-| `nuon apps branches create --app-id <app-id> --name <name>` | Create a branch without syncing a config file. |
-| `nuon apps branches trigger --branch-id <branch>` | Trigger a run. `--preview` for plan-only, `--force` to rebuild everything. |
-| `nuon apps branches runs --branch-id <branch>` | List runs and open one in the workflow TUI. |
-| `nuon apps branches delete --app-id <app-id> --branch-id <branch> --confirm` | Delete a branch. |
-| `nuon sync --branch <name>` | Sync the current directory, then trigger a run for it. Add `--preview` for plan-only. |
-| `nuon sync --app-branch` | Same, choosing the branch interactively. |
+| `nuon branches sync --file <file-or-dir>` | Create or update branches from branch files. `--dry-run` prints the plan, `--confirm` skips the prompt. |
+| `nuon branches list` | List the selected app's branches. Alias: `nuon br`. |
+| `nuon branches get --branch-id <branch>` | Show a branch's details, including its deployment groups. |
+| `nuon branches trigger --branch-id <branch>` | Run the tracked branch's latest commit. `--force` rebuilds everything, `--no-wait` skips the TUI. |
+| `nuon branches preview` | Run a preview against a pushed git branch (`--git-ref`) or pull request (`--pr-number`). `--mode plan-only` applies nothing. |
+| `nuon branches runs --branch-id <branch>` | List runs and open one in the workflow TUI. |
+| `nuon branches create --name <name>` | Create a manually managed branch with no branch file. |
+| `nuon branches delete --branch-id <branch> --confirm` | Delete a branch. |
+| `nuon apps validate [dir]` | Check an app config directory before you push it. It looks up the app by the directory's name. |
 | `nuon installs labels set --install-id <install> k=v ...` | Set labels used by group selectors. |
 | `nuon installs labels list --install-id <install>` | List an install's labels. |
 | `nuon installs labels unset --install-id <install> <key> ...` | Remove labels. |
 | `nuon installs list --labels k=v` | Preview which installs a selector matches. |
 
+Every `nuon branches` command defaults to the app selected with `nuon apps select` and takes `--app-id` to target
+another. `nuon apps branches` still works as a deprecated alias.
+
+## Migrating from `nuon apps sync`
+
+`nuon apps sync` and `nuon sync` are deprecated: app config now ships through app branches. Once they are turned off
+for your org, running `nuon apps sync` in an interactive terminal from your app config directory offers to migrate
+you. The migration:
+
+1. Reads the GitHub remote, the current git branch, and the config directory's path from your git checkout.
+2. Writes `branches/<git-branch>.toml`, using `[connected_repo]` when your org has connected the repository and
+   `[public_repo]` otherwise.
+3. Syncs the new branch file, then offers to move your existing installs onto the branch.
+
+Commit and push the new branch file to finish. To migrate by hand, write the branch file yourself and run
+`nuon branches sync --file branches/<name>.toml`. Then move each install with `app_branch` in its install config, as
+shown in [Write a branch config](#write-a-branch-config).
+
 ## Troubleshooting
 
-**The branch synced but has no deployment groups.** The branch config is missing its `[connected_repo]` /
-`[public_repo]` block. Add one and sync again.
+**The branch synced but has no deployment groups.** The branch file is missing its `[connected_repo]` or
+`[public_repo]` block. Add one and run `nuon branches sync` again.
+
+**`nuon branches sync` says the branch is managed manually.** The branch was created with `nuon branches create` or in
+the dashboard, and a branch file cannot take it over. Delete the branch, or give the file a different `name`.
 
 **A push did not start a run.** Branch matching is on the exact repository and branch name. Check that the branch's
 `branch` value matches the ref you pushed and that the repo is the one Nuon has connected. There are no path filters,
@@ -374,7 +389,7 @@ into. Switch the group to a `label_selector`, or create the install first.
     Re-apply a previous config version to an install or a whole group.
   </Card>
   <Card title="Branch config reference" icon="file" href="/config-ref/branch">
-    Every field on `branch.toml`.
+    Every field in a branch file.
   </Card>
   <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
     React to branch runs from your own systems.

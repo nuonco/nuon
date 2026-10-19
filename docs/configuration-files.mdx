@@ -4,33 +4,49 @@ description: "Configure app templates using TOML configuration files"
 keywords: ["TOML config", "app directory structure", "metadata.toml", "sandbox.toml", "inputs.toml", "components directory", "config file reference", "TOML configuration", "app.toml", "config files", "app config", "configuration overview"]
 ---
 
-Config files allow you to define an app template using TOML files. Under
-the hood, Nuon will handle keeping your configuration in sync.
+Config files allow you to define an app template using TOML files. You keep
+them in git, and Nuon reads them from there each time your app branch runs.
 
-## Create an app
+## Create an app template
 
-**Create a local App directory** - Create a directory and name it after your
-app. This directory will contain your app's configuration files.
+**Create a directory for your app config** in a GitHub repository. It can be the repository root or any directory
+inside it, with any name. It will contain your app's configuration files.
 
 ```sh nuon
 mkdir your-app
 cd your-app
 ```
 
-Config files are used to sync the configuration for a single app. The app name
-must be the same as the directory you created above.
+Create the app template in Nuon:
 
 ```sh nuon
 nuon apps create --name=your-app
 ```
 
-## Sync an App
+## Ship your config
 
-To sync an app, and it's configuration run:
+Config ships through an [app branch](/guides/app-branches). Add a branch file that points at the repository, the
+config directory, and the git branch to track:
+
+```toml branches/main.toml
+name = "main"
+
+[connected_repo]
+repo      = "your-org/your-repo"
+directory = "your-app"
+branch    = "main"
+```
+
+Sync the branch file once to create the app branch, then push:
 
 ```sh nuon
-nuon apps sync
+nuon branches sync --file branches/main.toml
+git push origin main
 ```
+
+From then on, every push to the tracked git branch starts a run that rolls the change out. To check the config
+before you push, run `nuon apps validate`. It looks up the app by the directory's name, so it works when the
+directory and the app share a name.
 
 ## Language Server Protocol (LSP)
 

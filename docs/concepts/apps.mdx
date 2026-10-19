@@ -5,7 +5,7 @@ description:
   "Package your existing application code and infrastructure to create Bring
   Your Own Cloud installable versions of your product."
 boost: 10
-keywords: ["config", "configuration", "app config", "app configuration", "configure an app", "how to configure an app", "how do you configure an app", "apps", "what is an app", "application packaging", "nuon apps sync", "app directory", "lift and shift", "multi-cloud deployment", "metadata.toml", "connect github", "private repository", "nuon orgs connect-github"]
+keywords: ["config", "configuration", "app config", "app configuration", "configure an app", "how to configure an app", "how do you configure an app", "apps", "what is an app", "application packaging", "nuon branches sync", "app directory", "lift and shift", "multi-cloud deployment", "metadata.toml", "connect github", "private repository", "nuon orgs connect-github"]
 ---
 
 An app template is what you build in Nuon to deliver your product into customer
@@ -149,17 +149,17 @@ To see all available commands, run: `nuon apps --help`.
 
 Commands for creating, deleting, and viewing apps.
 
-**Create a local app directory** - Create a directory and name it after your
-app. This directory will contain your App's configuration files.
+**Create a local app directory** - Create a directory for your app's
+configuration files, in a GitHub repository. It can have any name; the app
+branch's `directory` setting tells Nuon where to find it.
 
 ```sh
-nuon mkdir your-app
+mkdir your-app
 cd your-app
 ```
 
 **Create an app template** - `.toml` config files are used to represent a configuration for a single
-app. For consistency, the app name must be the same name as the directory you
-created above.
+app.
 
 ```sh
 nuon apps create --name=your-app
@@ -204,25 +204,23 @@ nuon apps rename --name=new-name
 
 ### Configuration
 
-You can view various configs for an app and sync configuration files using the
-[CLI](/cli).
+You can view various configs for an app using the [CLI](/cli). Config itself ships through
+[app branches](/concepts/app-branches).
 
-**Sync** - Sync config files to the Nuon control and data plane
+**Ship config** - Push to the git branch your app branch tracks
 
-Sync is a critical step as you iterate and update your app configuration. Syncing performs syntax
-validation, uploads your configuration to the Nuon control plane, and triggers builds for any components. e.g., Terraform module, Helm chart, Kubernetes manifest, container image.
+Each push to the tracked git branch starts a branch run. The run fetches your config at that commit, validates it,
+uploads it to the Nuon control plane, and builds components such as Terraform modules, Helm charts, Kubernetes
+manifests, and container images.
 
-If any component TOML files have changed, or any related files such as Helm `values.yaml` files, a new build will be triggered during sync.
+A run builds a component when its TOML file, or a related file such as a Helm `values.yaml`, has changed. If only a
+component's source files changed, rebuild with `nuon branches trigger --branch-id <branch> --force`.
 
-If component source files have changed, you must push those changes to your git repo, then manually build the component using the dashboard or CLI.
-
-Sync all config files in the current directory:
+Create the app branch once by syncing its branch file:
 
 ```sh
-nuon apps sync
+nuon branches sync --file branches/main.toml
 ```
-
-![Apps sync](../images/concepts/apps/cli-build.png)
 
 
 **Configs** - List all config versions for an app

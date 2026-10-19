@@ -8,7 +8,7 @@ The [CLI](/cli) is the primary interface for managing app templates. The dashboa
 
 ## Creating an App
 
-Create a directory for your app config files, then create the app template:
+Create a directory for your app config files in a GitHub repository, then create the app template:
 
 ```sh
 mkdir your-app
@@ -16,7 +16,7 @@ cd your-app
 nuon apps create --name=your-app
 ```
 
-The app name should match the directory name.
+The directory can have any name. The app branch's `directory` setting tells Nuon where to find it.
 
 ## Pinning an App
 
@@ -37,15 +37,26 @@ nuon apps get               # get info about the pinned app
 nuon apps rename --name=new-name  # rename an app
 ```
 
-## Syncing Configuration
+## Shipping Configuration
 
-Sync uploads your TOML config files to the Nuon control plane and triggers builds for any changed components:
+App config ships through an [app branch](/guides/app-branches). Add a branch file such as `branches/main.toml` that
+points at your repository, config directory, and git branch, then sync it once:
 
 ```sh
-nuon apps sync
+nuon branches sync --file branches/main.toml
 ```
 
-If component TOML files or related files (e.g., Helm `values.yaml`) have changed, a new build is triggered during sync. If component source files have changed, push those changes to your git repo first, then build the component manually using the dashboard or CLI.
+After that, pushing to the tracked git branch starts a run, which fetches your config and builds any component whose
+config changed (including related files such as a Helm `values.yaml`). To start a run without a push, or to rebuild
+components whose source changed while their config did not:
+
+```sh
+nuon branches trigger --branch-id main          # run the latest commit
+nuon branches trigger --branch-id main --force  # rebuild every component
+```
+
+To check a config directory before you push, run `nuon apps validate`. It looks up the app by the directory's name,
+so it works when the directory and the app share a name.
 
 ## Viewing Configuration
 
@@ -83,7 +94,7 @@ region   = "#33FF57"
 customer = "#3357FF"
 ```
 
-The colors apply wherever those label keys appear in the dashboard — on apps, installs, and components. You can also set label colors directly in the dashboard; either source can be updated later, and a sync will reconcile the values from your config.
+The colors apply wherever those label keys appear in the dashboard: on apps, installs, and components. You can also set label colors directly in the dashboard; either source can be updated later, and the next run of your app branch will reconcile the values from your config.
 
 ### Default labels
 

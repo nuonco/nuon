@@ -18,11 +18,11 @@ nuon components get -c <component_id or name>         # get a component
 nuon components latest-config -c <component_id or name>  # print latest config
 ```
 
-To delete a component, remove its TOML file from the app directory and run `nuon apps sync` rather than using the CLI.
+To delete a component, remove its TOML file from the app directory, then commit and push to the git branch your [app branch](/guides/app-branches) tracks. The next branch run removes it.
 
 ## Builds
 
-All components must be built before creating or updating an install. `nuon apps sync` triggers builds automatically when component TOML files or related files (e.g., Helm `values.yaml`) change.
+All components must be built before creating or updating an install. A branch run builds automatically when component TOML files or related files (e.g., Helm `values.yaml`) change. To rebuild every component, run `nuon branches trigger --branch-id <branch> --force`.
 
 If component source files change in git, push those changes first, then build manually:
 

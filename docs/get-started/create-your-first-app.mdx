@@ -25,14 +25,28 @@ Estimated times above include creating the initial VPC, Subnets, Nat Gateway, AS
 
 cde and aws-lambda are less resource and cost intensive than eks-simple which provisions a Kubernetes cluster with 3 nodes.
 
-For these and other examples, clone the [example-app-configs repository](https://github.com/nuonco/example-app-configs) and run:
+For these and other examples, clone the [example-app-configs repository](https://github.com/nuonco/example-app-configs).
+Each example ships through an [app branch](/concepts/app-branches). If the example's directory has no branch file
+(`branch.toml` or `branches/main.toml`), add `branches/main.toml`:
+
+```toml branches/main.toml
+name = "main"
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "<app directory>"
+branch    = "main"
+```
+
+Then run:
 
 ```sh
 brew install nuonco/tap/nuon
 nuon auth login
 cd example-app-configs/<app directory>
 nuon apps create --name <app directory>
-nuon apps sync
+nuon branches sync --file branches/main.toml   # or: --file branch.toml
+nuon branches trigger --branch-id main
 nuon installs create --name <install-name> --region <region>
 ```
 

@@ -131,7 +131,7 @@ There are two ways a sync starts:
 - **Manual** — the **Sync now** button on the app's **Install configs** tab, or a `POST` to `/v1/apps/{app_id}/install-syncs`.
 
 <Note>
-`nuon apps sync` does not trigger an install config sync. It registers the `installs_config` block from your app config so pushes and manual syncs can use it — the first sync still comes from a push or from **Sync now**.
+An [app branch](/guides/app-branches) run does not trigger an install config sync. It registers the `installs_config` block from your app config so pushes and manual syncs can use it. The first sync still comes from a push or from **Sync now**.
 </Note>
 
 ## Syncing Config Files Directly

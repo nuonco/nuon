@@ -2,7 +2,7 @@
 title: 'Quickstart'
 description: "Install your first app template with Nuon in a few minutes by shipping an example Kubernetes app into an AWS account."
 boost: 5
-keywords: ["getting started", "first deployment", "example app", "try Nuon", "deploy example app", "test account", "install guide", "nuon apps sync", "nuon installs create", "nuon auth login"]
+keywords: ["getting started", "first deployment", "example app", "try Nuon", "deploy example app", "test account", "install guide", "nuon branches sync", "nuon branches trigger", "nuon installs create", "nuon auth login"]
 ---
 
 <Note>
@@ -23,10 +23,11 @@ nuon auth login
 # 3. Clone Nuon's example apps repo 
 git clone https://github.com/nuonco/example-app-configs
 
-# 4. Create the app and sync it with Nuon Cloud. (Kubernetes on AWS shown here)
+# 4. Create the app, sync its app branch, and run it. (Kubernetes on AWS shown here)
 cd example-app-configs/eks-simple
 nuon apps create --name eks-simple
-nuon apps sync
+nuon branches sync --file branch.toml
+nuon branches trigger --branch-id main
 
 # 5. Install the app in your AWS account
 nuon installs create --name <install-name> --region <region>
@@ -56,19 +57,40 @@ Nuon maintains a [example apps](https://github.com/nuonco/example-app-configs) r
 git clone https://github.com/nuonco/example-app-configs
 ```
 
-## Create and Sync the Example App
+## Create the Example App and Run Its Branch
 
-For the Quickstart, we're using an AWS EKS (Kubernetes) app called eks-simple with a whoami Helm component, an ACM certificate, and an Application Load Balancer to access the whoami service. View the app configuration in the [example apps repo](https://github.com/nuonco/example-app-configs/tree/main/eks-simple) or with your IDE and the cloned repo.
+For the Quickstart, we're using an AWS EKS (Kubernetes) app template called eks-simple with a whoami Helm component,
+an ACM certificate, and an Application Load Balancer to access the whoami service. View the app configuration in the
+[example apps repo](https://github.com/nuonco/example-app-configs/tree/main/eks-simple) or with your IDE and the cloned
+repo.
 
-Use the Nuon CLI to create the app then sync its contents into Nuon Cloud. The sync triggers the app's components (e.g., images, Helm, Kubernetes manifests, Terraform) to be built into OCI artifacts that are stored in your org's container registry. Nuon will use these artifacts when installing your app.
+Create the app in Nuon, then sync its [app branch](/concepts/app-branches). The branch file, `branch.toml`, tells Nuon
+which repository, directory, and git branch hold the app config:
 
-The app name should match the directory name.
+```toml branch.toml (excerpt)
+name = "main"
+
+[public_repo]
+directory = "eks-simple"
+repo      = "nuonco/example-app-configs"
+branch    = "main"
+```
 
 ```sh
 cd example-app-configs/eks-simple
 nuon apps create --name eks-simple
-nuon apps sync
+nuon branches sync --file branch.toml
 ```
+
+The sync shows the branch it will create and asks you to confirm. Then start a run of the branch:
+
+```sh
+nuon branches trigger --branch-id main
+```
+
+The run fetches the config from the example repo and builds the app's components (e.g., images, Helm, Kubernetes
+manifests, Terraform) into OCI artifacts stored in your org's container registry. Nuon uses these artifacts when
+installing your app. Wait for the build step to finish before you create an install.
 
 ## Install the Example App in AWS
 
@@ -81,6 +103,9 @@ nuon installs create --name <install-name> --region <region>
 - `--name` (`-n`) names this install.
 - `--region` (`-r`) is the AWS region to provision into, for example `us-east-1`.
 
+The CLI asks which app branch owns the install. Pick `main`. In a script, pass `--app-branch-id` with the branch ID
+that `nuon branches list` prints.
+
 
 ## Guided Walkthroughs
 
@@ -88,6 +113,8 @@ For guided walkthroughs including this eks-simple app and EC2 and serverless app
 
 ## Deploy Your Own App
 
-When you're ready to package your own software, wrap your existing Terraform, Helm, Kubernetes manifest, and container image assets into a Nuon app template. The commands are the same (`nuon apps create`, `nuon apps sync`, then `nuon installs create`).
+When you're ready to package your own software, wrap your existing Terraform, Helm, Kubernetes manifest, and container image assets into a Nuon app template. Commit the app config to your own GitHub repository, add a branch file that points at it, and the commands are the
+same (`nuon apps create`, `nuon branches sync`, then `nuon installs create`). After that, pushing to the tracked git
+branch rolls changes out. See [Configure app branches](/guides/app-branches).
 
 Use agents like Claude Code to build your app template by learning from Nuon's example apps. See our [AI and App Template Building docs](/guides/agents/ai-and-apps) for more info.
