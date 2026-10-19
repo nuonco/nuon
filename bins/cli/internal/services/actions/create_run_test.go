@@ -63,7 +63,7 @@ func (a *createRunAPI) GetActionWorkflowLatestConfig(_ context.Context, id strin
 	return &models.AppActionWorkflowConfig{ID: "awc_123"}, nil
 }
 
-func (a *createRunAPI) CreateInstallActionWorkflowRun(_ context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) (*models.AppWorkflowResponse, error) {
+func (a *createRunAPI) CreateInstallActionWorkflowRunWithResponse(_ context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) (*models.AppWorkflowResponse, error) {
 	a.createdInstall = installID
 	a.request = req
 	return &models.AppWorkflowResponse{WorkflowID: "wkf_1"}, nil

@@ -163,7 +163,12 @@ func (c *client) GetInstallActionWorkflowRecentRuns(ctx context.Context, install
 	return resp.Payload, hasNextPage(hr), nil
 }
 
-func (c *client) CreateInstallActionWorkflowRun(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) (*models.AppWorkflowResponse, error) {
+func (c *client) CreateInstallActionWorkflowRun(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) error {
+	_, err := c.CreateInstallActionWorkflowRunWithResponse(ctx, installID, req)
+	return err
+}
+
+func (c *client) CreateInstallActionWorkflowRunWithResponse(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) (*models.AppWorkflowResponse, error) {
 	path := fmt.Sprintf("%s/v1/installs/%s/action-workflows/runs", c.APIURL, url.PathEscape(installID))
 	var resp models.AppWorkflowResponse
 	if err := c.triggerRequest(ctx, http.MethodPost, path, req, http.StatusCreated, &resp); err != nil {

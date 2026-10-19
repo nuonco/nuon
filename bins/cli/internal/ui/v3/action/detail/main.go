@@ -303,7 +303,7 @@ func (m *Model) submitExecuteForm() tea.Cmd {
 		}
 
 		// Call the API
-		_, err := m.api.CreateInstallActionWorkflowRun(m.ctx, m.installID, req)
+		err := m.api.CreateInstallActionWorkflowRun(m.ctx, m.installID, req)
 		if err != nil {
 			return executeFormSubmittedMsg{err: err}
 		}

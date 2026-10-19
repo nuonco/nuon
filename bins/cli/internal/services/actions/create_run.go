@@ -71,7 +71,7 @@ func (s *Service) CreateRun(ctx context.Context, params CreateRunParams, asJSON 
 		req.RunEnvVars = envVars
 	}
 
-	resp, err := s.api.CreateInstallActionWorkflowRun(ctx, installID, req)
+	resp, err := s.api.CreateInstallActionWorkflowRunWithResponse(ctx, installID, req)
 	if err != nil {
 		return view.Error(fmt.Errorf("error creating action workflow run: %w", err))
 	}
