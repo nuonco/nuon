@@ -6,7 +6,7 @@ description: Use when building, shipping, or troubleshooting a Nuon app. Nuon de
 # Nuon
 
 Nuon is a BYOC (bring your own cloud) platform for software vendors. It packages Terraform, Helm, Kubernetes manifests,
-and container images into an app, then installs and operates that app in customer cloud accounts through a runner in
+and container images into an app template, then installs and operates that app in customer cloud accounts through a runner in
 each account.
 
 ## Where to look
