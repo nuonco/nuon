@@ -3,6 +3,7 @@ package actions
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	nuon "github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -32,6 +34,9 @@ type AdHocParams struct {
 
 // Kafka-backed log ingestion can trail stream closure by up to five seconds.
 const closedLogDrainPolls = 4
+
+// errLogStreamNotReady means the runner job lists a log stream the API cannot serve yet.
+var errLogStreamNotReady = errors.New("log stream is not ready")
 
 func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON bool) error {
 	view := ui.NewGetView()
@@ -152,6 +157,7 @@ func validateRole(requested string, roles []*models.ServiceAvailableRole) error 
 
 func (s *Service) waitForRun(ctx context.Context, installID, runID string, writer io.Writer, spinner *bubbles.SpinnerView) (*models.AppInstallActionWorkflowRun, error) {
 	streamedLogs := false
+	streamPending := false
 	for {
 		run, err := s.api.GetInstallActionWorkflowRun(ctx, installID, runID)
 		if err != nil {
@@ -160,16 +166,26 @@ func (s *Service) waitForRun(ctx context.Context, installID, runID string, write
 
 		if !streamedLogs && run.RunnerJob != nil && run.RunnerJob.LogStreamID != "" {
 			spinner.Update(fmt.Sprintf("action run %s is running", runID))
-			if err := s.streamRawRunLogs(ctx, run.RunnerJob.LogStreamID, writer, spinner); err != nil {
+			err := s.streamRawRunLogs(ctx, run.RunnerJob.LogStreamID, writer, spinner)
+			switch {
+			case errors.Is(err, errLogStreamNotReady):
+				streamPending = true
+			case err != nil:
 				return nil, err
-			}
-			streamedLogs = true
-			if !isTerminalRunStatus(run.Status) {
-				spinner.Start(fmt.Sprintf("waiting for action run %s to finish", runID))
+			default:
+				streamedLogs = true
+				streamPending = false
+				if !isTerminalRunStatus(run.Status) {
+					spinner.Start(fmt.Sprintf("waiting for action run %s to finish", runID))
+				}
 			}
 		}
 
 		if isTerminalRunStatus(run.Status) {
+			if streamPending {
+				spinner.Stop()
+				fmt.Fprintf(os.Stderr, "logs for action run %s are not available yet; view them with nuon actions get-run\n", runID)
+			}
 			return run, nil
 		}
 		if !streamedLogs {
@@ -184,10 +200,17 @@ func (s *Service) waitForRun(ctx context.Context, installID, runID string, write
 func (s *Service) streamRawRunLogs(ctx context.Context, logStreamID string, writer io.Writer, spinner *bubbles.SpinnerView) error {
 	cursor := ""
 	closedEmptyPolls := 0
+	receivedLogs := false
 	for {
 		response, err := s.api.LogStreamTailLogs(ctx, logStreamID, cursor, "2s", nil)
 		if err != nil {
+			if !receivedLogs && nuon.IsNotFound(err) {
+				return errLogStreamNotReady
+			}
 			return fmt.Errorf("read action run logs: %w", err)
+		}
+		if len(response.Logs) > 0 || response.Next != "" {
+			receivedLogs = true
 		}
 		for _, record := range response.Logs {
 			if record.LogAttributes["nuon.command_output"] != "true" {
@@ -212,6 +235,9 @@ func (s *Service) streamRawRunLogs(ctx context.Context, logStreamID string, writ
 
 		logStream, err := s.api.GetLogStream(ctx, logStreamID)
 		if err != nil {
+			if !receivedLogs && nuon.IsNotFound(err) {
+				return errLogStreamNotReady
+			}
 			return fmt.Errorf("get action run log stream: %w", err)
 		}
 		if logStream.Open || len(response.Logs) > 0 {
