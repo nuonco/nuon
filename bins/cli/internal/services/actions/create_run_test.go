@@ -217,7 +217,7 @@ func TestCreateRunUnknownActionIsUserError(t *testing.T) {
 
 	var userErr *ui.CLIUserError
 	require.ErrorAs(t, err, &userErr)
-	require.Equal(t, `action "nope" not found in app app_1`, userErr.Msg)
+	require.Equal(t, `action "nope" not found in app "app_1"`, userErr.Msg)
 	require.Nil(t, api.request)
 }
 

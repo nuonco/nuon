@@ -19,7 +19,7 @@ func ActionWorkflowID(ctx context.Context, apiClient nuon.Client, appID, actionI
 	action, err := apiClient.GetAppActionWorkflow(ctx, appID, actionIDOrName)
 	if nuon.IsNotFound(err) {
 		return "", &ui.CLIUserError{
-			Msg: fmt.Sprintf("action %q not found in app %s", actionIDOrName, appID),
+			Msg: fmt.Sprintf("action %q not found in app %q", actionIDOrName, appID),
 		}
 	}
 	if err != nil {
