@@ -29,6 +29,9 @@ type ServiceGetInstallActivityResponse struct {
 	// limit
 	Limit int64 `json:"limit,omitempty"`
 
+	// next cursor
+	NextCursor string `json:"next_cursor,omitempty"`
+
 	// offset
 	Offset int64 `json:"offset,omitempty"`
 

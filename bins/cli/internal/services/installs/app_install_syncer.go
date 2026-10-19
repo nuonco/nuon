@@ -203,6 +203,8 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			if len(so.CustomNestedStacks) > 0 {
 				icParams.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
 			}
+			icParams.RunnerImageAutoUpdate = so.RunnerImageAutoUpdate
+			icParams.RunnerImageID = so.RunnerImageID
 		}
 		req.InstallConfig = icParams
 	}
@@ -337,6 +339,8 @@ func (s *appInstallSyncer) syncExistingInstall(
 			if len(so.CustomNestedStacks) > 0 {
 				createReq.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
 			}
+			createReq.RunnerImageAutoUpdate = so.RunnerImageAutoUpdate
+			createReq.RunnerImageID = so.RunnerImageID
 			appInstall.InstallConfig, err = s.api.CreateInstallConfig(ctx, appInstall.ID, createReq)
 			if err != nil {
 				return nil, err
@@ -366,6 +370,14 @@ func (s *appInstallSyncer) syncExistingInstall(
 			}
 			if installCfg.StackOverrides != nil && !customNestedStacksEqual(so.CustomNestedStacks, appInstall.InstallConfig.CustomNestedStacks) {
 				updateReq.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
+				needsUpdate = true
+			}
+			if so.RunnerImageAutoUpdate != nil && !boolPtrEqual(so.RunnerImageAutoUpdate, appInstall.InstallConfig.RunnerImageAutoUpdate) {
+				updateReq.RunnerImageAutoUpdate = so.RunnerImageAutoUpdate
+				needsUpdate = true
+			}
+			if so.RunnerImageID != "" && so.RunnerImageID != appInstall.InstallConfig.RunnerImageID {
+				updateReq.RunnerImageID = so.RunnerImageID
 				needsUpdate = true
 			}
 
@@ -605,6 +617,13 @@ func toAPICustomNestedStacks(stacks []config.CustomNestedStack) []*models.Config
 		}
 	}
 	return result
+}
+
+func boolPtrEqual(a, b *bool) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
 }
 
 func customNestedStacksEqual(local []config.CustomNestedStack, remote []*models.ConfigCustomNestedStack) bool {

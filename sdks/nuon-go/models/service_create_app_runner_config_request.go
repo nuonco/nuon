@@ -29,6 +29,12 @@ type ServiceCreateAppRunnerConfigRequest struct {
 	// helm driver
 	HelmDriver AppAppRunnerConfigHelmDriverType `json:"helm_driver,omitempty"`
 
+	// image auto update
+	ImageAutoUpdate bool `json:"image_auto_update,omitempty"`
+
+	// image id
+	ImageID string `json:"image_id,omitempty"`
+
 	// init script url
 	InitScriptURL string `json:"init_script_url,omitempty"`
 

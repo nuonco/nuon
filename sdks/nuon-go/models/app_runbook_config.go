@@ -47,6 +47,9 @@ type AppRunbookConfig struct {
 	// steps
 	Steps []*AppRunbookStepConfig `json:"steps"`
 
+	// triggers
+	Triggers []*AppRunbookTriggerConfig `json:"triggers"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }
@@ -60,6 +63,10 @@ func (m *AppRunbookConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSteps(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTriggers(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -129,6 +136,36 @@ func (m *AppRunbookConfig) validateSteps(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppRunbookConfig) validateTriggers(formats strfmt.Registry) error {
+	if swag.IsZero(m.Triggers) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Triggers); i++ {
+		if swag.IsZero(m.Triggers[i]) { // not required
+			continue
+		}
+
+		if m.Triggers[i] != nil {
+			if err := m.Triggers[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("triggers" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("triggers" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app runbook config based on the context it is used
 func (m *AppRunbookConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -138,6 +175,10 @@ func (m *AppRunbookConfig) ContextValidate(ctx context.Context, formats strfmt.R
 	}
 
 	if err := m.contextValidateSteps(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTriggers(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -194,6 +235,35 @@ func (m *AppRunbookConfig) contextValidateSteps(ctx context.Context, formats str
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("steps" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppRunbookConfig) contextValidateTriggers(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Triggers); i++ {
+
+		if m.Triggers[i] != nil {
+
+			if swag.IsZero(m.Triggers[i]) { // not required
+				return nil
+			}
+
+			if err := m.Triggers[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("triggers" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("triggers" + "." + strconv.Itoa(i))
 				}
 
 				return err

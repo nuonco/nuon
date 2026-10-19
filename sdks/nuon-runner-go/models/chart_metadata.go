@@ -34,7 +34,7 @@ type ChartMetadata struct {
 	Condition string `json:"condition,omitempty"`
 
 	// Dependencies are a list of dependencies for a chart.
-	Dependencies []*ChartDependency `json:"dependencies"`
+	Dependencies []*HelmShHelmV3PkgChartDependency `json:"dependencies"`
 
 	// Whether or not this chart is deprecated
 	Deprecated bool `json:"deprecated,omitempty"`

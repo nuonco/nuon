@@ -60,8 +60,10 @@ title: 'Install'
 |----------|----------|----------|----------|
 | **`vpc_nested_template_url`**<br/>string | VPC nested template URL override Per-install override for the VPC nested CloudFormation template URL. Overrides the app-level default from stack.toml. | **Optional** | `"https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-vpc.yaml"` |
 | **`runner_nested_template_url`**<br/>string | Runner nested template URL override Per-install override for the runner nested CloudFormation template URL. Overrides the app-level default from stack.toml. | **Optional** | `"https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml"` |
+| **`ui_definition`**<br/>string | Azure createUiDefinition override Per-install override for the Azure createUiDefinition path. Only supported when the app stack type is azure-bicep. | **Optional** | `"./arm/ui.json"` |
 | **`custom_nested_stacks`**<br/>object | Custom nested stack overrides Per-install overrides for custom install stacks. Entries with the same name as app-level stacks replace them; new names are appended. Supports AWS CloudFormation, Azur... | **Optional** | - |
-| **`ui_definition`**<br/>string | Azure portal UI definition override Per-install override for the Azure createUiDefinition. Replaces the app-level ui_definition from stack.toml. Only supported for azure-bicep apps. | **Optional** | `"./arm/ui.json"` |
+| **`runner_image_auto_update`**<br/>boolean | Runner image auto-update override Per-install override for runner.toml image_auto_update. Set true to resolve the latest runner image at every launch for this install only, or false to turn it off ... | **Optional** | `"true"` |
+| **`runner_image_id`**<br/>string | Runner image pin override Per-install override for runner.toml image_id. Pins this install's runner host to a specific image (an AMI ID for aws), overriding auto-update. Only applies to aws runners... | **Optional** | `"ami-0abcdef1234567890"` |
 
 ### `cloudformation`
 
