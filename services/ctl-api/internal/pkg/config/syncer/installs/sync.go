@@ -2,7 +2,6 @@ package installs
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -19,16 +18,20 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 )
 
 const ManagedByGitInstallConfig = "nuon/git/install-config"
 
-func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, appID string, install *config.Install) (*sync.InstallSyncResult, error) {
+func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, appID string, install *config.Install, beforeApply ...func(*gorm.DB, *sync.InstallSyncResult) error) (*sync.InstallSyncResult, error) {
 	if install == nil {
 		return nil, fmt.Errorf("install config is nil")
 	}
 	if install.Name == "" {
 		return nil, fmt.Errorf("install config name is required")
+	}
+	if err := install.Validate(); err != nil {
+		return nil, err
 	}
 
 	var application app.App
@@ -49,8 +52,27 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 		Preload("GCPAccount").
 		Preload("AzureAccount").
 		Preload("CloudConnection").
+		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at DESC, id DESC").Limit(1)
+		}).
 		Where(app.Install{AppID: appID, Name: install.Name}).
 		First(&existing).Error
+
+	var cloudConnectionID string
+	if install.CloudConnection != "" {
+		connection, resolveErr := resolveCloudConnection(ctx, db, application.OrgID, install)
+		if resolveErr != nil {
+			return nil, resolveErr
+		}
+		if install.CloudFormation != nil && connection.Platform != app.CloudPlatformAWS {
+			return nil, fmt.Errorf("install %q: cloudformation requires an AWS cloud_connection", install.Name)
+		}
+		if existing.CloudConnectionID != nil && *existing.CloudConnectionID != connection.ID {
+			return nil, fmt.Errorf("refusing to change cloud_connection on existing install %q: the cloud connection is immutable after creation", install.Name)
+		}
+		install.CloudConnection = connection.Name
+		cloudConnectionID = connection.ID
+	}
 
 	var appBranchID string
 	if install.AppBranch != "" {
@@ -66,13 +88,13 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 	}
 
 	if err == gorm.ErrRecordNotFound {
-		return createInstall(ctx, db, installHelpers, application.OrgID, appID, install, appBranchID)
+		return createInstall(ctx, installHelpers, appID, install, appBranchID, cloudConnectionID, beforeApply)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to look up install %s: %w", install.Name, err)
 	}
 
-	return updateInstall(ctx, db, installHelpers, &existing, install, appBranchID)
+	return updateInstall(ctx, db, installHelpers, &existing, install, appBranchID, cloudConnectionID, beforeApply)
 }
 
 // resolveCloudConnection resolves a cloud_connection reference from an install
@@ -148,7 +170,7 @@ func validateAppBranchGroup(ctx context.Context, db *gorm.DB, branchID, group st
 	return fmt.Errorf("app branch group %q was not found on branch %s", group, branchID)
 }
 
-func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, orgID, appID string, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
+func createInstall(ctx context.Context, installHelpers *installhelpers.Helpers, appID string, installCfg *config.Install, appBranchID, cloudConnectionID string, beforeApply []func(*gorm.DB, *sync.InstallSyncResult) error) (*sync.InstallSyncResult, error) {
 	inputs := make(map[string]*string)
 	for k, v := range installCfg.FlattenedInputs() {
 		val := v
@@ -156,14 +178,25 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}
 
 	req := &installhelpers.CreateInstallParams{
-		Name:   installCfg.Name,
-		Inputs: inputs,
-		Labels: installCfg.Labels,
+		Name:              installCfg.Name,
+		Inputs:            inputs,
+		Labels:            installCfg.Labels,
+		CloudConnectionID: cloudConnectionID,
 		Metadata: installhelpers.InstallMetadata{
 			ManagedBy: ManagedByGitInstallConfig,
 		},
 		AppBranchID:    appBranchID,
 		AppBranchGroup: installCfg.AppBranchGroup,
+		AfterCreate: func(tx *gorm.DB, install *app.Install) error {
+			for _, hook := range beforeApply {
+				if err := hook(tx, &sync.InstallSyncResult{
+					InstallID: install.ID, InstallName: install.Name, Created: true, Changed: true,
+				}); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
 	}
 
 	if installCfg.AWSAccount != nil {
@@ -171,13 +204,6 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 			Region:    installCfg.AWSAccount.Region,
 			AccountID: installCfg.AWSAccount.AccountID,
 		}
-	}
-	if installCfg.CloudConnection != "" {
-		connection, err := resolveCloudConnection(ctx, db, orgID, installCfg)
-		if err != nil {
-			return nil, err
-		}
-		req.CloudConnectionID = connection.ID
 	}
 	if installCfg.GCPAccount != nil {
 		req.GCPAccount = &installhelpers.CreateInstallGCPAccountParams{
@@ -194,28 +220,10 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() ||
+		installCfg.CloudFormation != nil ||
 		len(installCfg.ComponentToggles) > 0 || installCfg.Telemetry != nil {
-		icParams := &installhelpers.CreateInstallConfigParams{}
-		if installCfg.Telemetry != nil {
-			icParams.Telemetry = installCfg.Telemetry
-		}
-		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
-			icParams.ApprovalOption = app.InstallApprovalOption(installCfg.ApprovalOption)
-		}
-		if installCfg.StackOverrides != nil {
-			if installCfg.StackOverrides.VPCNestedTemplateURL != "" {
-				url := installCfg.StackOverrides.VPCNestedTemplateURL
-				icParams.VPCNestedTemplateURL = &url
-			}
-			if installCfg.StackOverrides.RunnerNestedTemplateURL != "" {
-				url := installCfg.StackOverrides.RunnerNestedTemplateURL
-				icParams.RunnerNestedTemplateURL = &url
-			}
-			if len(installCfg.StackOverrides.CustomNestedStacks) > 0 {
-				icParams.CustomNestedStacks = installCfg.StackOverrides.CustomNestedStacks
-			}
-		}
-		req.InstallConfig = icParams
+		params := build.InstallConfigInputFromConfig(installCfg)
+		req.InstallConfig = &params
 	}
 
 	created, err := installHelpers.CreateInstall(ctx, appID, req)
@@ -234,8 +242,29 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}, nil
 }
 
-func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
+func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, installCfg *config.Install, appBranchID, cloudConnectionID string, beforeApply []func(*gorm.DB, *sync.InstallSyncResult) error) (*sync.InstallSyncResult, error) {
 	upstream := existingToConfig(existing)
+	for key := range upstream.Labels {
+		if _, declared := installCfg.Labels[key]; !declared && existing.LabelTemplates[key] == "" {
+			delete(upstream.Labels, key)
+		}
+	}
+	if installCfg.CloudConnection == "" {
+		upstream.CloudConnection = ""
+	}
+	if installCfg.StackOverrides == nil {
+		upstream.StackOverrides = nil
+	} else if upstream.StackOverrides != nil {
+		if installCfg.StackOverrides.VPCNestedTemplateURL == "" {
+			upstream.StackOverrides.VPCNestedTemplateURL = ""
+		}
+		if installCfg.StackOverrides.RunnerNestedTemplateURL == "" {
+			upstream.StackOverrides.RunnerNestedTemplateURL = ""
+		}
+		if len(installCfg.StackOverrides.CustomNestedStacks) == 0 {
+			upstream.StackOverrides.CustomNestedStacks = nil
+		}
+	}
 
 	// Refused rather than ignored: nothing below writes the account, so without this
 	// a changed identifier would diff forever and never converge. Shared with the CLI
@@ -259,6 +288,17 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		}, nil
 	}
 
+	for _, hook := range beforeApply {
+		if err := hook(db, &sync.InstallSyncResult{
+			InstallID: existing.ID, InstallName: existing.Name, Changed: true, Diff: d,
+			AppBranchID: appBranchID,
+			AppBranchChanged: appBranchID != "" && (!existing.AppBranchID.Valid || existing.AppBranchID.String != appBranchID ||
+				(installCfg.AppBranchGroup != "" && existing.AppBranchGroup != installCfg.AppBranchGroup)),
+		}); err != nil {
+			return nil, err
+		}
+	}
+
 	definedInputs := installCfg.FlattenedInputs()
 	if len(definedInputs) > 0 {
 		if err := syncInstallInputs(ctx, db, installHelpers, existing, definedInputs); err != nil {
@@ -273,49 +313,39 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		}
 	}
 
-	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides() ||
-		len(installCfg.ComponentToggles) > 0 ||
-		(installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil)
-
-	if hasConfigFields {
-		updates := map[string]any{}
-		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
-			updates["approval_option"] = string(installCfg.ApprovalOption)
-		}
-		if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil {
-			updates["telemetry_enabled"] = installCfg.Telemetry.Enabled
-		}
-		if installCfg.StackOverrides != nil {
-			if installCfg.StackOverrides.VPCNestedTemplateURL != "" {
-				url := installCfg.StackOverrides.VPCNestedTemplateURL
-				updates["vpc_nested_template_url"] = &url
-			}
-			if installCfg.StackOverrides.RunnerNestedTemplateURL != "" {
-				url := installCfg.StackOverrides.RunnerNestedTemplateURL
-				updates["runner_nested_template_url"] = &url
-			}
-			if len(installCfg.StackOverrides.CustomNestedStacks) > 0 {
-				b, err := json.Marshal(installCfg.StackOverrides.CustomNestedStacks)
-				if err != nil {
-					return nil, fmt.Errorf("unable to marshal custom_nested_stacks: %w", err)
-				}
-				updates["custom_nested_stacks"] = string(b)
-			}
-		}
-
-		if len(updates) > 0 && existing.InstallConfig != nil {
+	params := build.InstallConfigInputFromConfig(installCfg)
+	installConfig := build.InstallConfig(params, existing.ID)
+	var fields []string
+	if installConfig.ApprovalOption != "" {
+		fields = append(fields, "approval_option")
+	}
+	if installConfig.TelemetryEnabled != nil {
+		fields = append(fields, "telemetry_enabled")
+	}
+	if installConfig.VPCNestedTemplateURL != nil {
+		fields = append(fields, "vpc_nested_template_url")
+	}
+	if installConfig.RunnerNestedTemplateURL != nil {
+		fields = append(fields, "runner_nested_template_url")
+	}
+	if len(installConfig.CustomNestedStacks) > 0 {
+		fields = append(fields, "custom_nested_stacks")
+	}
+	if installConfig.AWSStackParameters != nil {
+		fields = append(fields, "aws_stack_parameters")
+	}
+	if installConfig.AWSNestedStackParameters != nil {
+		fields = append(fields, "aws_nested_stack_parameters")
+	}
+	if len(fields) > 0 {
+		if existing.InstallConfig != nil {
 			if err := db.WithContext(ctx).Model(&app.InstallConfig{}).
 				Where(app.InstallConfig{ID: existing.InstallConfig.ID, InstallID: existing.ID, OrgID: existing.OrgID}).
-				Updates(updates).Error; err != nil {
+				Select(fields).Updates(installConfig).Error; err != nil {
 				return nil, fmt.Errorf("unable to update config for install %s: %w", installCfg.Name, err)
 			}
-		} else if len(updates) > 0 {
-			icParams := &installhelpers.CreateInstallConfigParams{
-				ApprovalOption: app.InstallApprovalOption(installCfg.ApprovalOption),
-				Telemetry:      installCfg.Telemetry,
-			}
-			if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, icParams); err != nil {
+		} else {
+			if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, &params); err != nil {
 				return nil, fmt.Errorf("unable to create config for install %s: %w", installCfg.Name, err)
 			}
 		}
@@ -327,32 +357,13 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		}
 	}
 
-	if installCfg.CloudConnection != "" {
-		connection, err := resolveCloudConnection(ctx, db, existing.OrgID, installCfg)
-		if err != nil {
-			return nil, err
+	if cloudConnectionID != "" && existing.CloudConnectionID == nil {
+		if err := db.WithContext(ctx).Model(&app.Install{}).
+			Where(app.Install{ID: existing.ID, OrgID: existing.OrgID}).
+			Update("cloud_connection_id", cloudConnectionID).Error; err != nil {
+			return nil, fmt.Errorf("unable to update cloud connection for install %s: %w", installCfg.Name, err)
 		}
-		// The connection is immutable after creation, like the target account:
-		// refused rather than ignored, so a changed reference never converges
-		// silently. An install created before the field existed may still
-		// attach one.
-		if existing.CloudConnectionID != nil && *existing.CloudConnectionID != connection.ID {
-			existingName := ""
-			if existing.CloudConnection != nil {
-				existingName = existing.CloudConnection.Name
-			}
-			return nil, fmt.Errorf(
-				"refusing to change cloud_connection on existing install %q from %q to %q: the cloud connection is immutable after creation",
-				installCfg.Name, existingName, installCfg.CloudConnection)
-		}
-		if existing.CloudConnectionID == nil {
-			if err := db.WithContext(ctx).Model(&app.Install{}).
-				Where(app.Install{ID: existing.ID, OrgID: existing.OrgID}).
-				Update("cloud_connection_id", connection.ID).Error; err != nil {
-				return nil, fmt.Errorf("unable to update cloud connection for install %s: %w", installCfg.Name, err)
-			}
-			existing.CloudConnectionID = &connection.ID
-		}
+		existing.CloudConnectionID = &cloudConnectionID
 	}
 
 	appBranchChanged := appBranchID != "" && (!existing.AppBranchID.Valid || existing.AppBranchID.String != appBranchID)
@@ -483,10 +494,21 @@ func existingToConfig(install *app.Install) *config.Install {
 		appBranchName = install.AppBranch.Name
 	}
 	cfg := &config.Install{
-		Name:           install.Name,
-		AppBranch:      appBranchName,
-		AppBranchGroup: install.AppBranchGroup,
-		Labels:         upstreamLabels(install),
+		Name:      install.Name,
+		AppBranch: appBranchName,
+		Labels:    maps.Clone(upstreamLabels(install)),
+	}
+	if install.AppBranchGroupAssignmentSource == app.InstallAppBranchGroupAssignmentSourceExplicit {
+		cfg.AppBranchGroup = install.AppBranchGroup
+	}
+	if install.CurrentInstallInputs != nil {
+		values := make(map[string]string, len(install.CurrentInstallInputs.Values))
+		for key, value := range install.CurrentInstallInputs.Values {
+			if value != nil {
+				values[key] = *value
+			}
+		}
+		cfg.InputGroups = []config.InputGroup{{Inputs: values}}
 	}
 	if install.CloudConnection != nil {
 		cfg.CloudConnection = install.CloudConnection.Name
@@ -540,6 +562,10 @@ func existingToConfig(install *app.Install) *config.Install {
 			}
 			cfg.StackOverrides.CustomNestedStacks = install.InstallConfig.CustomNestedStacks
 		}
+		cfg.CloudFormation = &config.CloudFormation{
+			Root:         config.CloudFormationStack{Parameters: install.InstallConfig.AWSStackParameters},
+			NestedStacks: install.InstallConfig.AWSNestedStackParameters,
+		}
 		cfg.ComponentToggles = install.InstallConfig.ComponentToggles
 	}
 
@@ -575,7 +601,7 @@ func firstNonEmpty(vals ...string) string {
 	return ""
 }
 
-var _ func(ctx context.Context, db *gorm.DB, h *installhelpers.Helpers, appID string, i *config.Install) (*sync.InstallSyncResult, error) = SyncInstall
+var _ func(ctx context.Context, db *gorm.DB, h *installhelpers.Helpers, appID string, i *config.Install, hooks ...func(*gorm.DB, *sync.InstallSyncResult) error) (*sync.InstallSyncResult, error) = SyncInstall
 
 // syncInstallInputs merges rather than replaces so values set out of band survive a sync.
 func syncInstallInputs(

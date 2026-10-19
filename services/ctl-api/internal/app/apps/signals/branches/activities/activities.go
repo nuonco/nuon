@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
@@ -28,69 +29,72 @@ import (
 type Params struct {
 	fx.In
 
-	V                *validator.Validate
-	Helpers          *helpers.Helpers
-	DB               *gorm.DB `name:"psql"`
-	BlobService      blobstore.Service
-	AcctClient       *account.Client
-	AuthzClient      *authz.Client
-	Cfg              *internal.Config
-	L                *zap.Logger
-	RunnerHelpers    *runnerhelpers.Helpers
-	VCSHelpers       *vcshelpers.Helpers
-	ComponentHelpers *componenthelpers.Helpers
-	ActionsHelpers   *actionshelpers.Helpers
-	RunbooksHelpers  *runbookshelpers.Helpers
-	InstallHelpers   *installhelpers.Helpers
-	QueueClient      *queueclient.Client
-	FlowsClient      *flowclient.Client
-	TfClient         terraform.Client
-	Features         *features.Features
-	MeterProvider    metric.MeterProvider `optional:"true"`
+	V                 *validator.Validate
+	Helpers           *helpers.Helpers
+	DB                *gorm.DB `name:"psql"`
+	BlobService       blobstore.Service
+	AcctClient        *account.Client
+	AuthzClient       *authz.Client
+	Cfg               *internal.Config
+	L                 *zap.Logger
+	RunnerHelpers     *runnerhelpers.Helpers
+	VCSHelpers        *vcshelpers.Helpers
+	ComponentHelpers  *componenthelpers.Helpers
+	ActionsHelpers    *actionshelpers.Helpers
+	RunbooksHelpers   *runbookshelpers.Helpers
+	InstallHelpers    *installhelpers.Helpers
+	InstallActivities *installactivities.Activities
+	QueueClient       *queueclient.Client
+	FlowsClient       *flowclient.Client
+	TfClient          terraform.Client
+	Features          *features.Features
+	MeterProvider     metric.MeterProvider `optional:"true"`
 }
 
 type Activities struct {
-	v                *validator.Validate
-	db               *gorm.DB
-	helpers          *helpers.Helpers
-	blobSvc          blobstore.Service
-	acctClient       *account.Client
-	authzClient      *authz.Client
-	cfg              *internal.Config
-	l                *zap.Logger
-	runnerHelpers    *runnerhelpers.Helpers
-	vcsHelpers       *vcshelpers.Helpers
-	componentHelpers *componenthelpers.Helpers
-	actionsHelpers   *actionshelpers.Helpers
-	runbooksHelpers  *runbookshelpers.Helpers
-	installHelpers   *installhelpers.Helpers
-	queueClient      *queueclient.Client
-	flowsClient      *flowclient.Client
-	tfClient         terraform.Client
-	features         *features.Features
-	syncMetrics      *syncer.Metrics
+	v                 *validator.Validate
+	db                *gorm.DB
+	helpers           *helpers.Helpers
+	blobSvc           blobstore.Service
+	acctClient        *account.Client
+	authzClient       *authz.Client
+	cfg               *internal.Config
+	l                 *zap.Logger
+	runnerHelpers     *runnerhelpers.Helpers
+	vcsHelpers        *vcshelpers.Helpers
+	componentHelpers  *componenthelpers.Helpers
+	actionsHelpers    *actionshelpers.Helpers
+	runbooksHelpers   *runbookshelpers.Helpers
+	installHelpers    *installhelpers.Helpers
+	installActivities *installactivities.Activities
+	queueClient       *queueclient.Client
+	flowsClient       *flowclient.Client
+	tfClient          terraform.Client
+	features          *features.Features
+	syncMetrics       *syncer.Metrics
 }
 
 func New(params Params) (*Activities, error) {
 	return &Activities{
-		v:                params.V,
-		db:               params.DB,
-		helpers:          params.Helpers,
-		blobSvc:          params.BlobService,
-		acctClient:       params.AcctClient,
-		authzClient:      params.AuthzClient,
-		cfg:              params.Cfg,
-		l:                params.L,
-		runnerHelpers:    params.RunnerHelpers,
-		vcsHelpers:       params.VCSHelpers,
-		componentHelpers: params.ComponentHelpers,
-		actionsHelpers:   params.ActionsHelpers,
-		runbooksHelpers:  params.RunbooksHelpers,
-		installHelpers:   params.InstallHelpers,
-		queueClient:      params.QueueClient,
-		flowsClient:      params.FlowsClient,
-		tfClient:         params.TfClient,
-		features:         params.Features,
-		syncMetrics:      syncer.NewMetrics(params.MeterProvider),
+		v:                 params.V,
+		db:                params.DB,
+		helpers:           params.Helpers,
+		blobSvc:           params.BlobService,
+		acctClient:        params.AcctClient,
+		authzClient:       params.AuthzClient,
+		cfg:               params.Cfg,
+		l:                 params.L,
+		runnerHelpers:     params.RunnerHelpers,
+		vcsHelpers:        params.VCSHelpers,
+		componentHelpers:  params.ComponentHelpers,
+		actionsHelpers:    params.ActionsHelpers,
+		runbooksHelpers:   params.RunbooksHelpers,
+		installHelpers:    params.InstallHelpers,
+		installActivities: params.InstallActivities,
+		queueClient:       params.QueueClient,
+		flowsClient:       params.FlowsClient,
+		tfClient:          params.TfClient,
+		features:          params.Features,
+		syncMetrics:       syncer.NewMetrics(params.MeterProvider),
 	}, nil
 }

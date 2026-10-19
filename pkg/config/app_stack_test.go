@@ -31,17 +31,30 @@ func TestStackConfig_Parse_EmptyCustomNestedStacks(t *testing.T) {
 }
 
 func TestStackConfig_Parse_ValidCustomNestedStacks(t *testing.T) {
-	cfg := &StackConfig{
-		Type:                    "aws-cloudformation",
-		Name:                    "my-stack",
-		Description:             "test stack",
-		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
-		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
-		CustomNestedStacks: []CustomNestedStack{
-			{Name: "k8s_namespaces", TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml", Index: 0},
-		},
+	for name, wantErr := range map[string]bool{
+		"k8s_namespaces":         false,
+		"VPC":                    true,
+		"RunnerAutoScalingGroup": true,
+	} {
+		t.Run(name, func(t *testing.T) {
+			cfg := &StackConfig{
+				Type:                    "aws-cloudformation",
+				Name:                    "my-stack",
+				Description:             "test stack",
+				VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+				RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
+				CustomNestedStacks: []CustomNestedStack{
+					{Name: name, TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml", Index: 0},
+				},
+			}
+			err := cfg.parse()
+			if wantErr {
+				require.ErrorContains(t, err, "conflicts with a built-in stack")
+			} else {
+				require.NoError(t, err)
+			}
+		})
 	}
-	require.NoError(t, cfg.parse())
 }
 
 func TestStackConfig_Parse_DuplicateIndex(t *testing.T) {
