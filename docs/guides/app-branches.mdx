@@ -67,15 +67,15 @@ Three things to get right:
 Branch runs skip the `branches/` directory when they read your app config, so the branch file can live in the same
 repo and directory it points at. Every field is documented in the [branch config reference](/config-ref/branch).
 
-An install config can also assign its branch by name:
+Each [install config](/guides/install-configs) names the branch that owns the install, by name or ID. `app_branch` is
+required:
 
 ```toml
 name = "customer-acme"
 app_branch = "main"
 ```
 
-Changing `app_branch` moves the install and applies the branch's latest non-preview run. Omitting it leaves the
-install's current branch unchanged.
+Changing `app_branch` moves the install and applies the branch's latest non-preview run.
 
 ### Control when the branch runs
 
