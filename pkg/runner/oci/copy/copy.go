@@ -111,6 +111,9 @@ func copyWithReferrers(ctx context.Context, src oras.ReadOnlyGraphTarget, srcRef
 	if err := copyLegacyCosignArtifacts(ctx, src, dst, root, opts); err != nil {
 		return ocispec.Descriptor{}, err
 	}
+	if err := tagIndexChildren(ctx, dst, root, dstRef); err != nil {
+		return ocispec.Descriptor{}, err
+	}
 
 	return root, nil
 }

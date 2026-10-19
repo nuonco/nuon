@@ -19,6 +19,7 @@ func TestCopyWithReferrers(t *testing.T) {
 
 	platformImage, err := oras.PackManifest(ctx, src, oras.PackManifestVersion1_1, "application/vnd.oci.image.config.v1+json", oras.PackManifestOptions{})
 	require.NoError(t, err)
+	platformImage.Platform = &ocispec.Platform{OS: "linux", Architecture: "amd64"}
 	embeddedAttestation, err := oras.PackManifest(ctx, src, oras.PackManifestVersion1_1, "application/vnd.in-toto+json", oras.PackManifestOptions{})
 	require.NoError(t, err)
 	embeddedAttestation.Platform = &ocispec.Platform{OS: "unknown", Architecture: "unknown"}
@@ -68,6 +69,16 @@ func TestCopyWithReferrers(t *testing.T) {
 	got, err := copyWithReferrers(ctx, src, "latest", dst, "copied", oras.DefaultCopyGraphOptions)
 	require.NoError(t, err)
 	require.Equal(t, image, got)
+
+	taggedRoot, err := dst.Resolve(ctx, "copied")
+	require.NoError(t, err)
+	require.Equal(t, image.Digest, taggedRoot.Digest)
+	taggedPlatform, err := dst.Resolve(ctx, "copied--linux-amd64")
+	require.NoError(t, err)
+	require.Equal(t, platformImage.Digest, taggedPlatform.Digest)
+	taggedAttestation, err := dst.Resolve(ctx, "copied--attestation")
+	require.NoError(t, err)
+	require.Equal(t, embeddedAttestation.Digest, taggedAttestation.Digest)
 
 	for _, artifact := range []struct {
 		name string
