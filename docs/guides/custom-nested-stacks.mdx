@@ -27,6 +27,10 @@ producing ambiguous resources.
 Per-install overrides also keep the existing merge behavior: an override with the same `name` replaces the app-level
 entry, while a new name is appended.
 
+For AWS parameter-only customization, use `cloudformation.nested_stacks.<name>.parameters` in the install config instead.
+It merges parameter values without replacing the template or index; see
+[AWS Cloud-Connection Stack Parameters](/guides/configuring-inputs-and-secrets#aws-cloud-connection-stack-parameters).
+
 ### Capabilities
 
 | Capability | AWS | Azure | GCP |

@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type CreateManagedAWSCloudFormationStackRequest struct {
@@ -23,12 +25,13 @@ type cloudFormationCreateStackAPI interface {
 	DescribeStackEvents(context.Context, *cloudformation.DescribeStackEventsInput, ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error)
 }
 
-func managedCreateStackInput(stackName, templateURL, requestToken string) *cloudformation.CreateStackInput {
+func managedCreateStackInput(stackName, templateURL, requestToken string, parameters ...cloudformationtypes.Parameter) *cloudformation.CreateStackInput {
 	return &cloudformation.CreateStackInput{
 		StackName:          aws.String(stackName),
 		TemplateURL:        aws.String(templateURL),
 		ClientRequestToken: aws.String(requestToken),
 		Capabilities:       []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityNamedIam},
+		Parameters:         parameters,
 	}
 }
 
@@ -42,6 +45,7 @@ func createManagedStack(ctx context.Context, client cloudFormationCreateStackAPI
 				TemplateURL:        input.TemplateURL,
 				ClientRequestToken: input.ClientRequestToken,
 				Capabilities:       input.Capabilities,
+				Parameters:         input.Parameters,
 			})
 			if updateErr != nil && !strings.Contains(updateErr.Error(), "No updates are to be performed") {
 				return updateErr
@@ -78,7 +82,14 @@ func (a *Activities) CreateManagedAWSCloudFormationStack(ctx context.Context, re
 	if version.StackName == "" {
 		return fmt.Errorf("install stack version %s has no stack name", version.ID)
 	}
-	if err := createManagedStack(ctx, cloudformation.NewFromConfig(awsConfig), managedCreateStackInput(version.StackName, version.TemplateURL, version.ID)); err != nil {
+	parameters := make([]cloudformationtypes.Parameter, 0, len(version.AWSStackParameters))
+	for _, name := range generics.SortedMapToKeys(version.AWSStackParameters) {
+		parameters = append(parameters, cloudformationtypes.Parameter{
+			ParameterKey:   aws.String(name),
+			ParameterValue: aws.String(version.AWSStackParameters[name]),
+		})
+	}
+	if err := createManagedStack(ctx, cloudformation.NewFromConfig(awsConfig), managedCreateStackInput(version.StackName, version.TemplateURL, version.ID, parameters...)); err != nil {
 		return fmt.Errorf("create or update cloudformation stack %q: %w", version.StackName, err)
 	}
 	return nil

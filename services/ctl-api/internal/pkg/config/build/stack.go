@@ -24,6 +24,9 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 	if err := config.ValidateDeploymentScope(stack.DeploymentScope, stack.Type); err != nil {
 		return nil, err
 	}
+	if err := config.ValidateCloudFormationCustomNestedStacks(stack.Type, stack.CustomNestedStacks); err != nil {
+		return nil, err
+	}
 	if err := config.ValidateAzureCustomNestedStacks(stack.Type, stack.CustomNestedStacks); err != nil {
 		return nil, err
 	}
