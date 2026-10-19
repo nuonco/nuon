@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { Link } from '@/components/common/Link'
 import type { IPanel } from '@/components/surfaces/Panel'
 import { useInstallLink, useInstallNested } from '@/hooks/use-install-path'
+import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useWorkflow } from '@/hooks/use-workflow'
 import {
@@ -155,7 +156,9 @@ const StepPanelButton = ({
           suffix: workflowPageSuffix(workflowId, nested, step.id),
         })
       : ''
-  const onWorkflowPage = isWorkflowPath(pathname, workflowId)
+  const opensInPlace =
+    isWorkflowPath(pathname, workflowId) ||
+    (!!params.installId && params.installId === installId)
   const autoOpened = useRef(false)
   const autoOpenedPanelIdRef = useRef<string | null>(null)
 
@@ -236,7 +239,7 @@ const StepPanelButton = ({
       <Link
         href={href}
         onClick={(event) => {
-          if (!onWorkflowPage) return
+          if (!opensInPlace) return
           if (
             event.metaKey ||
             event.ctrlKey ||

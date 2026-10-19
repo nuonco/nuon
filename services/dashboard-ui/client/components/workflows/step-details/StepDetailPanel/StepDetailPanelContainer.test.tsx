@@ -156,3 +156,32 @@ test('view details links to the workflow step from another page', () => {
     screen.getByRole('link', { name: 'View details' }).getAttribute('href')
   ).toBe('/org/installs/ins/workflows/wf-1?panel=step-1')
 })
+
+test('view details opens the step panel in place on the same install', () => {
+  render(
+    <MemoryRouter initialEntries={['/org/apps/app/installs/ins/deployments']}>
+      <Routes>
+        <Route
+          path="/:orgId/apps/:appId/installs/:installId/deployments"
+          element={
+            <OrgContext.Provider
+              value={{ org: { id: 'org' } as never, refresh: () => {} }}
+            >
+              <WorkflowInstallContext.Provider value="ins">
+                <WorkflowContext.Provider value={workflowContext}>
+                  <MockSurfaces>
+                    <PanelCount />
+                    <StepDetailPanelButton step={runningStep} />
+                  </MockSurfaces>
+                </WorkflowContext.Provider>
+              </WorkflowInstallContext.Provider>
+            </OrgContext.Provider>
+          }
+        />
+      </Routes>
+    </MemoryRouter>
+  )
+
+  fireEvent.click(screen.getByRole('link', { name: 'View details' }))
+  expect(screen.getByTestId('panel-count')).toHaveTextContent('1')
+})
