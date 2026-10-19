@@ -49,6 +49,7 @@ import { BranchActions } from './branches/scoped/BranchActions'
 import { BranchRunbooks } from './branches/scoped/BranchRunbooks'
 import { BranchInstalls } from './branches/scoped/BranchInstalls'
 import { BranchRunDetail } from './branches/BranchRunDetail'
+import { CreateInstallWizardPage } from './branches/CreateInstallWizardPage'
 
 const legacy = (element: ReactNode, subPath?: (params: Params) => string) => (
   <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
@@ -150,6 +151,10 @@ export const appRoutes: RouteObject[] = [
         element: legacy(<PolicyDetail />, (p) => `policies/${p.policyId}`),
       },
       { path: ':orgId/apps/:appId/branches', element: legacy(<Branches />) },
+      {
+        path: ':orgId/apps/:appId/branches/:branchId/installs/new',
+        element: <CreateInstallWizardPage />,
+      },
       {
         path: ':orgId/apps/:appId/branches/:branchId',
         loader: ({ request, params }) => {

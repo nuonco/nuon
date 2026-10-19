@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import type { TAppBranchInstallGroup } from '@/types'
-import { appBranchGroupFromSelection } from './GroupStep'
+import {
+  appBranchGroupFromSelection,
+  labelsFromGroupSelection,
+} from './GroupStep'
 
 describe('appBranchGroupFromSelection', () => {
   test('returns the selected group name for the app branch connection', () => {
@@ -25,5 +28,19 @@ describe('appBranchGroupFromSelection', () => {
     expect(
       appBranchGroupFromSelection({ mode: 'default', group })
     ).toBeUndefined()
+  })
+
+  test('does not copy wildcard selectors into install labels', () => {
+    const group = {
+      id: 'group-regions',
+      name: 'regions',
+      label_selector: {
+        match_labels: { environment: 'production', region: '*' },
+      },
+    } as TAppBranchInstallGroup
+
+    expect(labelsFromGroupSelection({ mode: 'labels', group })).toEqual({
+      environment: 'production',
+    })
   })
 })
