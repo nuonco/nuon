@@ -1,7 +1,16 @@
 import type { TFixture, TFixtureReply } from './install-fixture'
-import { VIEW_APP_ID } from './install-fixture'
+import { VIEW_APP_ID, VIEW_INSTALL_ID } from './install-fixture'
 import { ACTIVE_DEPLOYMENT_STATUSES } from '@/components/installs/DeploymentDetail/deployment-progress'
 import { healthPreviewFixture } from '@/components/installs/InstallHealth/health-preview-fixtures'
+import {
+  alignmentResource,
+  inputUpdateResource,
+  installOverview,
+  openDeploymentResource,
+  stateDriftResource,
+  unappliedResource,
+} from '@/components/__fixtures__/install-alignment'
+import { securityGroupUpdatePlan } from '@/lib/fixtures/plan-diffs/terraform'
 import {
   APP_CONFIG_ID,
   pendingReply,
@@ -505,12 +514,22 @@ const componentCatalog = [
   ['cmp-webhooks', 'webhooks', 'kubernetes_manifest', ''],
   ['cmp-scheduler', 'scheduler', 'pulumi', ''],
   ['cmp-migrate', 'migrate', 'job', ''],
-  ['cmp-api-image', 'api', 'external_image', 'ghcr.io/acme/api:1.3.0'],
-  ['cmp-worker-image', 'worker', 'docker_build', 'ghcr.io/acme/worker:2.4.0'],
-  ['cmp-ledger-image', 'ledger', 'external_image', 'ghcr.io/acme/ledger:0.9.1'],
+  ['cmp-api-image', 'api-image', 'external_image', 'ghcr.io/acme/api:1.3.0'],
+  [
+    'cmp-worker-image',
+    'worker-image',
+    'external_image',
+    'ghcr.io/acme/worker:2.4.0',
+  ],
+  [
+    'cmp-ledger-image',
+    'ledger-image',
+    'external_image',
+    'ghcr.io/acme/ledger:0.9.1',
+  ],
   [
     'cmp-webhooks-image',
-    'webhooks',
+    'webhooks-image',
     'external_image',
     'ghcr.io/acme/webhooks:1.1.0',
   ],
@@ -585,15 +604,27 @@ const resourceConfig = (state: 'empty' | 'active' | 'degraded') => ({
   component_config_connections:
     state === 'empty'
       ? []
-      : componentCatalog
-          .filter(
-            ([, , type, image]) =>
-              image && (type === 'external_image' || type === 'docker_build')
-          )
-          .map(([id, , , image]) => ({
-            component_id: id,
-            external_image: { image_url: image },
-          })),
+      : componentCatalog.map(([id, name, type, image]) => ({
+          component_id: id,
+          component_name: name,
+          type,
+          external_image:
+            type === 'external_image' ? { image_url: image } : undefined,
+          references:
+            (
+              {
+                'cmp-api': ['api-image'],
+                'cmp-worker': ['worker-image'],
+                'cmp-ledger': ['api-image', 'ledger-image'],
+                'cmp-webhooks': ['api-image', 'webhooks-image'],
+              } as Record<string, string[]>
+            )[id]?.map(
+              (name) =>
+                `component|${name}|image.repository|nuon.components.${name}.outputs.image.repository`
+            ) ?? [],
+          component_dependency_ids:
+            id === 'cmp-scheduler' ? ['cmp-api-image'] : [],
+        })),
 })
 
 const resourceComponents = (state: 'empty' | 'active' | 'degraded') =>
@@ -609,36 +640,437 @@ const resourceComponents = (state: 'empty' | 'active' | 'degraded') =>
         )
       )
 
-export const resourcesFixture = (
-  state: 'empty' | 'provisioning' | 'active' | 'degraded'
-): TFixture => {
-  const install = viewInstall(
-    state === 'active' || state === 'degraded'
-      ? {
-          sandbox: {
-            id: 'sbx-1',
-            status: state === 'degraded' ? 'error' : 'active',
-            status_v2: { status: state === 'degraded' ? 'error' : 'active' },
-          },
-          install_sandbox_runs: [
-            {
-              id: 'srun-1',
-              created_at: '2026-10-04T12:00:00Z',
-              run_type: 'provision',
-            },
-          ],
-        }
-      : { sandbox_status: undefined }
+export type TResourcesAlignment =
+  | 'in-sync'
+  | 'drifted'
+  | 'ongoing'
+  | 'image-sync-cancelled'
+  | 'input-updates'
+  | 'torn-down'
+  | 'error'
+
+const driftedAlignment = (inputUpdatesOnly = false) => {
+  const component = (id: string, name: string, type: string) => ({
+    id: `ic-${id}`,
+    name,
+    component_id: id,
+    component_type: type,
+  })
+  const resources = [
+    alignmentResource({
+      id: 'stack-1',
+      kind: 'stack',
+      name: 'stack',
+      component_id: undefined,
+      component_type: undefined,
+    }),
+    unappliedResource({
+      id: 'sbx-1',
+      kind: 'sandbox',
+      name: 'sandbox',
+      component_id: undefined,
+      component_type: undefined,
+      reason: 'Sandbox configuration changes haven’t been applied.',
+      plan: {
+        ...unappliedResource().plan!,
+        workflow_id: 'wf-plan-sbx-1',
+        step_id: 'step-plan-sbx-1',
+        approval_id: 'apr-sbx-1',
+        owner_type: 'install_sandbox_runs',
+      },
+    }),
+    unappliedResource(component('cmp-api', 'api', 'helm_chart')),
+    openDeploymentResource({
+      ...component('cmp-worker', 'worker', 'helm_chart'),
+      open_deployment: {
+        id: 'wf-open-ic-cmp-worker',
+        status: 'approval-awaiting',
+        type: 'input_update',
+        created_at: new Date(Date.now() - 1_800_000).toISOString(),
+      },
+      explanation: {
+        summary: 'These changes are waiting for approval.',
+        status: 'approval-awaiting',
+        workflow_id: 'wf-open-ic-cmp-worker',
+      },
+    }),
+    stateDriftResource(component('cmp-ledger', 'ledger', 'terraform_module')),
+    inputUpdateResource({
+      ...component('cmp-webhooks', 'webhooks', 'kubernetes_manifest'),
+      expected_build_id: 'bld-cmp-webhooks',
+      applied_build_id: 'bld-cmp-webhooks',
+      expected_config_id: APP_CONFIG_ID,
+      applied_config_id: APP_CONFIG_ID,
+    }),
+    inputUpdateResource({
+      ...component('cmp-search', 'search', 'helm_chart'),
+      status: 'inactive',
+      reason: 'This component is enabled, but hasn’t been deployed.',
+      expected_build_id: 'bld-cmp-search',
+      expected_config_id: APP_CONFIG_ID,
+      applied_build_id: undefined,
+      applied_config_id: undefined,
+      last_attempt: {
+        id: 'wf-input-enable-search',
+        workflow_id: 'wf-input-enable-search',
+        type: 'component_enabled',
+        status: 'cancelled',
+        created_at: new Date(Date.now() - 3_600_000).toISOString(),
+      },
+      explanation: {
+        summary:
+          'Enabling this component was cancelled. It hasn’t been deployed.',
+        status: 'cancelled',
+        workflow_id: 'wf-input-enable-search',
+      },
+    }),
+    alignmentResource(component('cmp-scheduler', 'scheduler', 'pulumi')),
+    openDeploymentResource({
+      ...component('cmp-migrate', 'migrate', 'job'),
+      open_deployment: {
+        id: 'wf-open-ic-cmp-migrate',
+        status: 'in-progress',
+        created_at: new Date(Date.now() - 900_000).toISOString(),
+      },
+      explanation: {
+        summary:
+          'The deployment is in progress. These changes haven’t taken effect yet.',
+        status: 'in-progress',
+        workflow_id: 'wf-open-ic-cmp-migrate',
+      },
+    }),
+    alignmentResource({
+      ...component('cmp-reports', 'reports', 'helm_chart'),
+      category: 'disabled',
+      status: 'disabled',
+    }),
+    alignmentResource({
+      ...component('cmp-retired-worker', 'retired-worker', 'helm_chart'),
+      category: 'torn-down',
+      status: 'inactive',
+      applied_build_id: undefined,
+      applied_config_id: undefined,
+      plan: undefined,
+    }),
+    unappliedResource({
+      ...component('cmp-api-image', 'api-image', 'external_image'),
+      kind: 'image',
+      reason: 'This image version hasn’t been synced.',
+      plan: undefined,
+      explanation: {
+        summary:
+          'This install’s configuration specifies an image version that hasn’t been copied to its registry. The latest image sync failed.',
+        status: 'error',
+        workflow_id: 'wf-attempt-ic-cmp-api-image',
+      },
+    }),
+    alignmentResource({
+      ...component('cmp-worker-image', 'worker-image', 'external_image'),
+      kind: 'image',
+    }),
+    alignmentResource({
+      ...component('cmp-ledger-image', 'ledger-image', 'external_image'),
+      kind: 'image',
+      category: 'unknown',
+      reason: 'The last successful image sync could not be determined.',
+    }),
+    alignmentResource({
+      ...component('cmp-webhooks-image', 'webhooks-image', 'external_image'),
+      kind: 'image',
+    }),
+  ]
+  return installOverview(
+    inputUpdatesOnly
+      ? resources.filter((resource) =>
+          [
+            'cmp-search',
+            'cmp-webhooks',
+            'cmp-scheduler',
+            'cmp-reports',
+            'cmp-retired-worker',
+          ].includes(resource.component_id ?? '')
+        )
+      : resources,
+    inputUpdatesOnly
+      ? { status: 'current', commits_behind: 0, pending_commits: [] }
+      : {}
   )
+}
+
+const inSyncAlignment = () =>
+  installOverview(
+    [
+      alignmentResource({
+        id: 'stack-1',
+        kind: 'stack',
+        name: 'stack',
+        component_id: undefined,
+        component_type: undefined,
+      }),
+      alignmentResource({
+        id: 'sbx-1',
+        kind: 'sandbox',
+        name: 'sandbox',
+        component_id: undefined,
+        component_type: undefined,
+      }),
+      ...componentCatalog.map(([id, name, type]) =>
+        alignmentResource({
+          id: `ic-${id}`,
+          name,
+          component_id: id,
+          component_type: type,
+          kind: type === 'external_image' ? 'image' : 'component',
+        })
+      ),
+    ],
+    { commits_behind: 0, pending_commits: [] }
+  )
+
+export const resourcesFixture = (
+  state: 'empty' | 'provisioning' | 'active' | 'degraded',
+  alignment: TResourcesAlignment = 'in-sync',
+  managedByConfig = false
+): TFixture => {
+  const hasDrift =
+    alignment === 'drifted' ||
+    alignment === 'input-updates' ||
+    alignment === 'image-sync-cancelled' ||
+    alignment === 'ongoing'
+  const overview = hasDrift
+    ? driftedAlignment(alignment === 'input-updates')
+    : inSyncAlignment()
+  if (alignment === 'image-sync-cancelled') {
+    const image = overview.alignment?.resources?.find(
+      (resource) => resource.id === 'ic-cmp-api-image'
+    )
+    if (image) {
+      image.status = 'cancelled'
+      image.last_attempt = { ...image.last_attempt!, status: 'cancelled' }
+      image.explanation = {
+        summary:
+          'The image sync was cancelled before this version was copied to the install’s registry.',
+        status: 'cancelled',
+        workflow_id: image.last_attempt.workflow_id,
+      }
+    }
+  }
+  if (alignment === 'ongoing') {
+    for (const resource of overview.alignment?.resources ?? []) {
+      if (
+        ['ic-cmp-scheduler', 'ic-cmp-worker-image', 'sbx-1'].includes(
+          resource.id ?? ''
+        )
+      ) {
+        resource.open_deployment = {
+          id: `wf-open-${resource.id}`,
+          status: 'queued',
+          created_at: new Date(Date.now() - 600_000).toISOString(),
+        }
+        resource.explanation = {
+          summary:
+            resource.kind === 'image'
+              ? 'The image sync is queued and hasn’t started yet.'
+              : 'The deployment is queued and hasn’t started yet.',
+          workflow_id: `wf-open-${resource.id}`,
+          status: 'queued',
+        }
+      }
+    }
+  }
+  const components = resourceComponents(
+    state === 'empty' ? 'empty' : state === 'provisioning' ? 'active' : state
+  )
+  const config = resourceConfig(state === 'empty' ? 'empty' : 'active')
+  if (hasDrift) {
+    components.push({
+      ...installComponent(
+        'cmp-retired-worker',
+        'retired-worker',
+        'helm_chart',
+        'inactive',
+        ''
+      ),
+      enabled: true,
+      install_deploys: [],
+    })
+    components.push({
+      ...installComponent(
+        'cmp-reports',
+        'reports',
+        'helm_chart',
+        'disabled',
+        ''
+      ),
+      enabled: false,
+      install_deploys: [],
+    })
+    components.push({
+      ...installComponent('cmp-search', 'search', 'helm_chart', 'inactive', ''),
+      enabled: true,
+      install_deploys: [],
+    })
+  }
+  if (alignment === 'torn-down') {
+    for (const resource of overview.alignment?.resources ?? []) {
+      if (resource.component_id === 'cmp-scheduler') {
+        resource.category = 'torn-down'
+        resource.status = 'inactive'
+      }
+    }
+    for (const component of components) {
+      if (component.component_id === 'cmp-scheduler') {
+        component.status = 'inactive'
+        component.status_v2.status = 'inactive'
+        component.install_deploys = []
+      }
+    }
+  }
+  const install = {
+    ...viewInstall(
+      state === 'active' || state === 'degraded'
+        ? {
+            sandbox: {
+              id: 'sbx-1',
+              status: state === 'degraded' ? 'error' : 'active',
+              status_v2: { status: state === 'degraded' ? 'error' : 'active' },
+            },
+            install_sandbox_runs: [
+              {
+                id: 'srun-1',
+                created_at: '2026-10-04T12:00:00Z',
+                run_type: 'provision',
+              },
+            ],
+          }
+        : { sandbox_status: undefined }
+    ),
+    ...(managedByConfig
+      ? { metadata: { managed_by: 'nuon/cli/install-config' } }
+      : {}),
+  }
 
   return withChrome(install, (url) => {
     const path = url.pathname
+    if (path === `/v1/installs/${VIEW_INSTALL_ID}/overview`) {
+      if (alignment === 'error') return fail('unable to get install overview')
+      return ok(overview)
+    }
+    const inputAttemptId = path.match(
+      /\/(?:workflows|deployments)\/(wf-input-(?:ic-cmp-webhooks|enable-search))$/
+    )?.[1]
+    if (inputAttemptId) {
+      const enabling = inputAttemptId === 'wf-input-enable-search'
+      const title = enabling ? 'Enable search' : 'Update webhook inputs'
+      const type = enabling ? 'component_enabled' : 'input_update'
+      const summary = enabling
+        ? 'Enablement was cancelled before search was deployed.'
+        : 'Input changes were saved but the deployment was cancelled.'
+      if (path.includes('/deployments/')) {
+        return ok({
+          id: inputAttemptId,
+          type,
+          title,
+          summary,
+          status: 'cancelled',
+          workflow: { id: inputAttemptId, name: title, type },
+          affected_resources: {
+            components: [enabling ? 'search' : 'webhooks'],
+            images: [],
+          },
+          change_groups: [],
+        })
+      }
+      return ok({
+        id: inputAttemptId,
+        name: title,
+        type,
+        status: {
+          status: 'cancelled',
+          status_human_description: summary,
+        },
+        finished: true,
+        created_at: new Date(Date.now() - 3_600_000).toISOString(),
+        steps: [],
+      })
+    }
+    if (
+      path === `/v1/installs/${VIEW_INSTALL_ID}/components/cmp-reports/toggle`
+    ) {
+      return { status: 201, body: { workflow_id: 'wf-open-enable-reports' } }
+    }
+    if (
+      path === `/v1/installs/${VIEW_INSTALL_ID}/components/cmp-reports/deploys`
+    ) {
+      return ok([], true)
+    }
+    const openWorkflowId = path.match(
+      /\/(?:deployments|workflows)\/(wf-open-[^/]+)$/
+    )?.[1]
+    if (openWorkflowId) {
+      if (path.startsWith('/v1/workflows/')) {
+        return ok({ ...deploymentWorkflow('in-progress'), id: openWorkflowId })
+      }
+      return ok({ ...deploymentRecord('in-progress'), id: openWorkflowId })
+    }
+    if (path.includes('/approvals/') && path.endsWith('/contents')) {
+      return { body: securityGroupUpdatePlan, delayMs: 800 }
+    }
     if (path.includes('/configs/') && path.includes('/apps/')) {
       if (state === 'provisioning') return pendingReply()
       if (state === 'degraded') {
         return fail('The stack config could not be read from the app branch.')
       }
-      return ok(resourceConfig(state === 'empty' ? 'empty' : 'active'))
+      return ok({
+        ...config,
+        input: {
+          inputs: hasDrift
+            ? [
+                {
+                  id: 'input-reports-enabled',
+                  name: overrideName('enabled', 'reports'),
+                  default: 'false',
+                  index: 0,
+                },
+              ]
+            : [],
+        },
+        component_config_connections: [
+          ...config.component_config_connections,
+          ...(hasDrift
+            ? [
+                {
+                  id: 'ccc-reports',
+                  version: 1,
+                  component_id: 'cmp-reports',
+                  type: 'helm_chart',
+                  toggleable: true,
+                  default_enabled: false,
+                  helm: {
+                    chart_name: 'reports',
+                    chart_version: '1.0.0',
+                    release_name: 'reports',
+                    namespace: 'payments',
+                  },
+                },
+                {
+                  id: 'ccc-search',
+                  version: 1,
+                  component_id: 'cmp-search',
+                  type: 'helm_chart',
+                  toggleable: true,
+                  default_enabled: false,
+                  helm: {
+                    chart_name: 'search',
+                    chart_version: '1.0.0',
+                    release_name: 'search',
+                    namespace: 'payments',
+                  },
+                },
+              ]
+            : []),
+        ],
+      })
     }
     if (path.endsWith('/stack')) {
       if (state === 'provisioning') return pendingReply()
@@ -661,20 +1093,24 @@ export const resourcesFixture = (
     }
     if (path.endsWith('/components') || /\/components\/[^/]+$/.test(path)) {
       if (state === 'provisioning') return pendingReply()
-      const rows = resourceComponents(state === 'empty' ? 'empty' : state)
       const id = path.split('/components/')[1]
-      if (id) return ok(rows.find((row) => row.component_id === id) ?? {})
+      if (id) return ok(components.find((row) => row.component_id === id) ?? {})
       const types = url.searchParams.get('types') ?? ''
       const query = (url.searchParams.get('q') ?? '').toLowerCase()
-      return ok(
-        rows.filter((row) => {
-          if (types && !types.split(',').includes(row.component.type))
-            return false
-          if (query && !row.component.name.includes(query)) return false
-          return true
-        }),
-        true
-      )
+      const ids = url.searchParams.get('ids')?.split(',')
+      const filtered = components.filter((row) => {
+        if (ids && !ids.includes(row.id)) return false
+        if (types && !types.split(',').includes(row.component.type))
+          return false
+        if (query && !row.component.name.includes(query)) return false
+        return true
+      })
+      const offset = Number(url.searchParams.get('offset') ?? 0)
+      const limit = Number(url.searchParams.get('limit') ?? 10)
+      return {
+        body: filtered.slice(offset, offset + limit),
+        paginated: { hasNext: filtered.length > offset + limit, offset, limit },
+      }
     }
     if (path === '/v1/builds') {
       const id = url.searchParams.get('component_id')

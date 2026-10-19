@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type SaveRunnerJobPlanRequest struct {
@@ -25,5 +28,39 @@ func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPl
 		return fmt.Errorf("unable to write job plan: %w", err)
 	}
 
+	digest := ""
+	if req.CompositePlan.DeployPlan != nil {
+		digest = req.CompositePlan.DeployPlan.InputsDigest
+	} else if req.CompositePlan.SandboxRunPlan != nil {
+		digest = req.CompositePlan.SandboxRunPlan.InputsDigest
+	}
+	if digest == "" {
+		return nil
+	}
+	var job app.RunnerJob
+	if err := a.db.WithContext(ctx).Select("id", "owner_id", "owner_type", "operation").
+		Where(app.RunnerJob{ID: req.JobID}).First(&job).Error; err != nil {
+		return fmt.Errorf("unable to get runner job for input evidence: %w", err)
+	}
+	var model any
+	switch job.OwnerType {
+	case "install_deploys":
+		model = &app.InstallDeploy{}
+	case "install_sandbox_runs":
+		model = &app.InstallSandboxRun{}
+	default:
+		return nil
+	}
+	query := a.db.WithContext(ctx).Model(model).Where("id = ?", job.OwnerID)
+	var err error
+	switch job.Operation {
+	case app.RunnerJobOperationTypeCreateApplyPlan, app.RunnerJobOperationTypeCreateTeardownPlan:
+		err = query.Update("planned_inputs_digest", digest).Error
+	case app.RunnerJobOperationTypeApplyPlan:
+		err = query.Update("applied_inputs_digest", gorm.Expr("CASE WHEN planned_inputs_digest = ? THEN ? ELSE '' END", digest, digest)).Error
+	}
+	if err != nil {
+		return fmt.Errorf("unable to save runner job input evidence: %w", err)
+	}
 	return nil
 }

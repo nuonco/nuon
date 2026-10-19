@@ -67,11 +67,12 @@ type InstallConfigDrift struct {
 type InstallOverviewResponse struct {
 	BranchTracking InstallBranchTracking `json:"branch_tracking"`
 	ConfigDrift    InstallConfigDrift    `json:"config_drift"`
+	Alignment      InstallAlignment      `json:"alignment"`
 }
 
 // @ID						GetInstallOverview
 // @Summary				install overview
-// @Description			Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+// @Description			Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json
@@ -118,9 +119,17 @@ func (s *service) getInstallOverview(ctx context.Context, orgID, installID strin
 	}
 	tracking.CommitsBehind = tracking.RunsBehind
 	tracking.PendingCommits = tracking.SuccessfulRuns
+	alignment, err := s.installAlignment(ctx, &install)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.alignmentBranchRunCounts(ctx, &install, tracking.BranchID, alignment); err != nil {
+		return nil, err
+	}
 	return &InstallOverviewResponse{
 		BranchTracking: tracking,
 		ConfigDrift:    drift,
+		Alignment:      *alignment,
 	}, nil
 }
 

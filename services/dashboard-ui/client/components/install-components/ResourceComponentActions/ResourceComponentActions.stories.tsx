@@ -15,7 +15,6 @@ const component = {
 export const Component = () => (
   <ResourceComponentActions
     component={component}
-    currentBuildId="bld-1"
     currentDeployStatus="active"
   />
 )
@@ -28,7 +27,6 @@ export const Image = () => (
       name: 'api-image',
       type: 'external_image',
     }}
-    currentBuildId="bld-image-1"
     currentDeployStatus="active"
     variant="image"
   />

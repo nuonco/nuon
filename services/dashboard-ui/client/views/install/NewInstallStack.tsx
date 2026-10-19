@@ -1,4 +1,5 @@
 import { InstallStack } from '@/components/stacks/InstallStack'
+import { ResourceAlignment } from '@/components/install-alignment/ResourceAlignment'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 
@@ -8,6 +9,7 @@ export const NewInstallStack = () => {
   return (
     <>
       <PageTitle segments={['Stack', install?.name]} />
+      <ResourceAlignment kind="stack" />
       <InstallStack />
     </>
   )

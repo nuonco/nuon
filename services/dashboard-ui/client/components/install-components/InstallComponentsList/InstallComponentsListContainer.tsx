@@ -7,9 +7,16 @@ import {
   ComponentTypeFilterDropdown,
   type TComponentConfigTypeText,
 } from '@/components/components/ComponentTypeFilter'
+import { DriftedResources } from '@/components/install-alignment/DriftedResources'
+import {
+  hasOngoingDeployment,
+  isDrifted,
+  resourcesOfKinds,
+} from '@/components/install-alignment/alignment-utils'
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 import { ResourceComponentActions } from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -57,6 +64,17 @@ export const InstallComponentsListContainer = () => {
   const installLink = useInstallLink()
   const [searchParams, setSearchParams] = useSearchParams()
   const showHealth = !!org?.features?.['component-health']
+  const { data: overview, isPlaceholderData } = useInstallOverview()
+  const alignmentById = useMemo(
+    () =>
+      new Map(
+        (overview?.alignment?.resources ?? []).map((resource) => [
+          resource.id,
+          resource,
+        ])
+      ),
+    [overview]
+  )
 
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
@@ -68,6 +86,21 @@ export const InstallComponentsListContainer = () => {
   const types = (selectedTypes.length ? selectedTypes : COMPONENT_TYPES).join(
     ','
   )
+  const ids = overview?.alignment
+    ? resourcesOfKinds(overview.alignment.resources, ['component'])
+        .filter(
+          (resource) =>
+            !isDrifted(resource) &&
+            !hasOngoingDeployment(resource) &&
+            resource.category !== 'torn-down' &&
+            (enabledFilter !== 'disabled' ||
+              resource.category === 'disabled') &&
+            (enabledFilter !== 'enabled' || resource.category !== 'disabled')
+        )
+        .map((resource) => resource.id)
+        .sort()
+        .join(',') || 'none'
+    : undefined
 
   const { data: result, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -78,6 +111,7 @@ export const InstallComponentsListContainer = () => {
       offset,
       q,
       types,
+      ids,
     ],
     queryFn: () =>
       getInstallComponents({
@@ -87,6 +121,7 @@ export const InstallComponentsListContainer = () => {
         offset,
         q,
         types,
+        ids,
       }),
     refetchInterval: 20000,
     enabled: !!org?.id && !!install?.id,
@@ -100,16 +135,14 @@ export const InstallComponentsListContainer = () => {
       const componentId = component?.id ?? installComponent.component_id ?? ''
       const latestDeploy = installComponent.install_deploys?.[0]
       const appliedConfigId = installComponent.app_config_ref?.applied_config_id
-      const behind =
-        !!appliedConfigId &&
-        !!install?.app_config_id &&
-        appliedConfigId !== install.app_config_id
 
       return {
         id: componentId || (installComponent.id ?? ''),
         name: component?.name ?? 'Component',
         type: component?.type,
-        behind,
+        alignment: installComponent.id
+          ? alignmentById.get(installComponent.id)?.category
+          : undefined,
         enabled: installComponent.enabled,
         status: installComponent.status_v2?.status ?? installComponent.status,
         href: componentId
@@ -125,6 +158,7 @@ export const InstallComponentsListContainer = () => {
               addPanel(
                 <InstallComponentDetailPanel
                   componentId={componentId}
+                  disabled={installComponent.enabled === false}
                   name={component.name}
                 />,
                 `install-component-${componentId}`
@@ -132,7 +166,7 @@ export const InstallComponentsListContainer = () => {
             }
             appliedConfigId={appliedConfigId}
             component={component}
-            currentBuildId={latestDeploy?.build_id}
+            enabled={installComponent.enabled}
             currentDeployStatus={
               latestDeploy?.status_v2?.status ?? latestDeploy?.status
             }
@@ -147,7 +181,11 @@ export const InstallComponentsListContainer = () => {
       }
     }
 
-    const items = (result?.data ?? []).map(toListItem)
+    const items = (result?.data ?? [])
+      .filter(
+        (component) => !hasOngoingDeployment(alignmentById.get(component.id))
+      )
+      .map(toListItem)
     const filtered =
       enabledFilter === 'enabled'
         ? items.filter((item) => item.enabled !== false)
@@ -164,15 +202,59 @@ export const InstallComponentsListContainer = () => {
     org?.id,
     install?.id,
     install?.app_id,
-    install?.app_config_id,
     showHealth,
     addPanel,
     installLink,
+    alignmentById,
   ])
+
+  const tornDown: TInstallComponentListItem[] = resourcesOfKinds(
+    overview?.alignment?.resources,
+    ['component']
+  )
+    .filter(
+      (resource) =>
+        resource.category === 'torn-down' &&
+        !hasOngoingDeployment(resource) &&
+        enabledFilter !== 'disabled' &&
+        (!selectedTypes.length ||
+          selectedTypes.includes(
+            resource.component_type as TComponentConfigTypeText
+          )) &&
+        (!q ||
+          [resource.name, resource.id, resource.component_id].some((value) =>
+            value?.toLowerCase().includes(q.toLowerCase())
+          ))
+    )
+    .map((resource) => ({
+      id: resource.id!,
+      name: resource.name ?? 'Component',
+      type: resource.component_type as TComponentType,
+      alignment: 'torn-down',
+      latestDeploy: null,
+      href: resource.component_id
+        ? installLink({
+            installId: install?.id,
+            appId: install?.app_id,
+            suffix: `/components/${resource.component_id}`,
+          })
+        : undefined,
+    }))
 
   return (
     <InstallComponentsList
-      components={components}
+      components={[...components, ...tornDown]}
+      aligned={!!overview && !isPlaceholderData}
+      drifted={(view) => (
+        <DriftedResources
+          kinds={['component']}
+          noun="components"
+          search={q}
+          types={selectedTypes}
+          enabled={enabledFilter}
+          view={view}
+        />
+      )}
       loading={isLoading}
       filtered={!!q || !!selectedTypes.length || !!enabledFilter}
       pagination={{

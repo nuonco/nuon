@@ -2242,7 +2242,7 @@ export interface paths {
   "/v1/installs/{install_id}/overview": {
     /**
      * install overview
-     * @description Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+     * @description Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
      */
     get: operations["GetInstallOverview"];
   };
@@ -7859,6 +7859,7 @@ export interface components {
       component_id?: string;
       component_name?: string;
       helm?: components["schemas"]["plantypes.HelmDeployPlan"];
+      inputs_digest?: string;
       install_id?: string;
       kubernetes_manifest?: components["schemas"]["plantypes.KubernetesManifestDeployPlan"];
       noop?: components["schemas"]["plantypes.NoopDeployPlan"];
@@ -8113,6 +8114,7 @@ export interface components {
       gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       git_source?: components["schemas"]["plantypes.GitSource"];
       hooks?: components["schemas"]["plantypes.TerraformDeployHooks"];
+      inputs_digest?: string;
       install_id?: string;
       kyverno_policies_dir?: string;
       local_archive?: components["schemas"]["plantypes.TerraformLocalArchive"];
@@ -9474,6 +9476,67 @@ export interface components {
       name?: string;
       type?: components["schemas"]["app.WorkflowType"];
     };
+    "service.InstallAlignment": {
+      resources?: components["schemas"]["service.InstallAlignmentResource"][];
+    };
+    "service.InstallAlignmentAttempt": {
+      branch_run?: components["schemas"]["service.InstallOverviewCommit"];
+      created_at?: string;
+      id?: string;
+      status?: string;
+      type?: components["schemas"]["app.WorkflowType"];
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "service.InstallAlignmentCategory": "changes-not-applied" | "state-drift-detected" | "in-sync" | "unknown" | "disabled" | "torn-down";
+    "service.InstallAlignmentExplanation": {
+      status?: string;
+      step_id?: string;
+      summary?: string;
+      workflow_id?: string;
+    };
+    "service.InstallAlignmentOpenDeployment": {
+      created_at?: string;
+      id?: string;
+      status?: string;
+      type?: components["schemas"]["app.WorkflowType"];
+    };
+    "service.InstallAlignmentPlan": {
+      approval_id?: string;
+      changes_create?: number;
+      changes_delete?: number;
+      changes_noop?: number;
+      changes_replace?: number;
+      changes_update?: number;
+      created_at?: string;
+      owner_id?: string;
+      owner_type?: string;
+      plan_only?: boolean;
+      step_id?: string;
+      type?: components["schemas"]["app.WorkflowStepApprovalType"];
+      workflow_id?: string;
+    };
+    "service.InstallAlignmentResource": {
+      applied_build_id?: string;
+      applied_config_id?: string;
+      category?: components["schemas"]["service.InstallAlignmentCategory"];
+      component_id?: string;
+      component_type?: string;
+      expected_build_id?: string;
+      expected_config_id?: string;
+      explanation?: components["schemas"]["service.InstallAlignmentExplanation"];
+      id?: string;
+      kind?: components["schemas"]["service.InstallAlignmentResourceKind"];
+      last_attempt?: components["schemas"]["service.InstallAlignmentAttempt"];
+      name?: string;
+      newer_branch_runs?: number | null;
+      open_deployment?: components["schemas"]["service.InstallAlignmentOpenDeployment"];
+      plan?: components["schemas"]["service.InstallAlignmentPlan"];
+      reason?: string;
+      status?: string;
+    };
+    /** @enum {string} */
+    "service.InstallAlignmentResourceKind": "component" | "image" | "sandbox" | "stack";
     "service.InstallAppConfigTreeDiffResponse": {
       changed?: string;
       config_id?: string;
@@ -9696,6 +9759,7 @@ export interface components {
       workflow_id?: string;
     };
     "service.InstallOverviewResponse": {
+      alignment?: components["schemas"]["service.InstallAlignment"];
       branch_tracking?: components["schemas"]["service.InstallBranchTracking"];
       config_drift?: components["schemas"]["service.InstallConfigDrift"];
     };
@@ -23847,6 +23911,8 @@ export interface operations {
       query?: {
         /** @description component types to filter by */
         types?: string;
+        /** @description comma-separated install component IDs to include */
+        ids?: string;
         /** @description search query for component name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
@@ -26951,7 +27017,7 @@ export interface operations {
   };
   /**
    * install overview
-   * @description Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+   * @description Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
    */
   GetInstallOverview: {
     parameters: {
