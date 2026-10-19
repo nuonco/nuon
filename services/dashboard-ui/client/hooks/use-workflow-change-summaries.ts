@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { inputChangeSummaries } from '@/components/workflows/WorkflowInputChanges'
 import type {
   TStepChangePlanType,
   TStepChangeState,
@@ -66,8 +67,9 @@ export const toChangeSummary = (
 export function useWorkflowChangeSummaries(workflow?: TWorkflow) {
   return useMemo(() => {
     const steps = workflow?.steps ?? []
-    return steps
+    const planSummaries = steps
       .map(toChangeSummary)
       .filter((summary): summary is TStepChangeSummary => summary !== null)
-  }, [workflow?.steps])
+    return [...planSummaries, ...inputChangeSummaries(workflow)]
+  }, [workflow])
 }
