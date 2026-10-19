@@ -1,12 +1,19 @@
-import { useSearchParams } from 'react-router'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useLocation, useParams, useSearchParams } from 'react-router'
+import { useContext, useEffect, useRef, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Link } from '@/components/common/Link'
 import type { IPanel } from '@/components/surfaces/Panel'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallLink, useInstallNested } from '@/hooks/use-install-path'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useWorkflow } from '@/hooks/use-workflow'
+import {
+  isWorkflowPath,
+  WorkflowInstallContext,
+  workflowPageSuffix,
+} from '@/lib/workflow-href'
+import { OrgContext } from '@/providers/org-provider'
 import { getWorkflowStep } from '@/lib'
 import type { TWorkflowStep } from '@/types'
 import { ActionRunStepDetails } from '../action-run-details/ActionRunStepDetails'
@@ -126,7 +133,29 @@ const StepPanelButton = ({
 }) => {
   const { addPanel, addPanelIfEmpty, removePanel } = useSurfaces()
   const { workflow } = useWorkflow()
+  const org = useContext(OrgContext)?.org
+  const params = useParams()
+  const { pathname } = useLocation()
+  const installLink = useInstallLink()
+  const nested = useInstallNested()
+  const scopedInstallId = useContext(WorkflowInstallContext)
   const [searchParams] = useSearchParams()
+  const workflowId = step.install_workflow_id || workflow?.id
+  const installId =
+    scopedInstallId ||
+    params.installId ||
+    workflow?.metadata?.install_id ||
+    workflow?.owner_id
+  const href =
+    org?.id && installId && workflowId && step.id
+      ? installLink({
+          orgId: org.id,
+          appId: params.appId,
+          installId,
+          suffix: workflowPageSuffix(workflowId, nested, step.id),
+        })
+      : ''
+  const onWorkflowPage = isWorkflowPath(pathname, workflowId)
   const autoOpened = useRef(false)
   const autoOpenedPanelIdRef = useRef<string | null>(null)
 
@@ -201,6 +230,30 @@ const StepPanelButton = ({
       autoOpenedPanelIdRef.current = null
     }
   }, [step.finished])
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        onClick={(event) => {
+          if (!onWorkflowPage) return
+          if (
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey ||
+            event.button !== 0
+          ) {
+            return
+          }
+          event.preventDefault()
+          handleAddPanel()
+        }}
+      >
+        View details
+      </Link>
+    )
+  }
 
   return (
     <Button

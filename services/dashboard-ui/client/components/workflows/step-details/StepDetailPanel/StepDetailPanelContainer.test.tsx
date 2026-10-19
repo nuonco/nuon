@@ -7,9 +7,11 @@ import {
   waitFor,
 } from '@testing-library/react'
 import { useState, type ReactNode } from 'react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { SurfacesContext } from '@/providers/surfaces-provider'
+import { WorkflowInstallContext } from '@/lib/workflow-href'
+import { OrgContext } from '@/providers/org-provider'
 import { WorkflowContext } from '@/providers/workflow-provider'
 import type { TWorkflow, TWorkflowStep } from '@/types'
 import { StepDetailPanelButton } from './StepDetailPanelContainer'
@@ -124,4 +126,33 @@ test('an approval transition does not close a manually opened step panel', async
   await waitFor(() =>
     expect(screen.getByTestId('panel-count')).toHaveTextContent('1')
   )
+})
+
+test('view details links to the workflow step from another page', () => {
+  render(
+    <MemoryRouter initialEntries={['/org/apps/app/branches/br']}>
+      <Routes>
+        <Route
+          path="/:orgId/apps/:appId/branches/:branchId"
+          element={
+            <OrgContext.Provider
+              value={{ org: { id: 'org' } as never, refresh: () => {} }}
+            >
+              <WorkflowInstallContext.Provider value="ins">
+                <WorkflowContext.Provider value={workflowContext}>
+                  <MockSurfaces>
+                    <StepDetailPanelButton step={runningStep} />
+                  </MockSurfaces>
+                </WorkflowContext.Provider>
+              </WorkflowInstallContext.Provider>
+            </OrgContext.Provider>
+          }
+        />
+      </Routes>
+    </MemoryRouter>
+  )
+
+  expect(
+    screen.getByRole('link', { name: 'View details' }).getAttribute('href')
+  ).toBe('/org/installs/ins/workflows/wf-1?panel=step-1')
 })
