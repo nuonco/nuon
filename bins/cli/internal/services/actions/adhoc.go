@@ -159,8 +159,8 @@ func (s *Service) waitForRun(ctx context.Context, installID, runID string, write
 		}
 
 		if !streamedLogs && run.RunnerJob != nil && run.RunnerJob.LogStreamID != "" {
-			spinner.Stop()
-			if err := s.streamRawRunLogs(ctx, run.RunnerJob.LogStreamID, writer); err != nil {
+			spinner.Update(fmt.Sprintf("action run %s is running", runID))
+			if err := s.streamRawRunLogs(ctx, run.RunnerJob.LogStreamID, writer, spinner); err != nil {
 				return nil, err
 			}
 			streamedLogs = true
@@ -181,7 +181,7 @@ func (s *Service) waitForRun(ctx context.Context, installID, runID string, write
 	}
 }
 
-func (s *Service) streamRawRunLogs(ctx context.Context, logStreamID string, writer io.Writer) error {
+func (s *Service) streamRawRunLogs(ctx context.Context, logStreamID string, writer io.Writer, spinner *bubbles.SpinnerView) error {
 	cursor := ""
 	closedEmptyPolls := 0
 	for {
@@ -193,6 +193,7 @@ func (s *Service) streamRawRunLogs(ctx context.Context, logStreamID string, writ
 			if record.LogAttributes["nuon.command_output"] != "true" {
 				continue
 			}
+			spinner.Stop()
 			if _, err := io.WriteString(writer, record.Body); err != nil {
 				return fmt.Errorf("write action run logs: %w", err)
 			}
