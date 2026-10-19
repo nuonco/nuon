@@ -134,6 +134,8 @@ wait for completion and print the action's logs:
 nuon actions create-run -i customer1 -w pg_status --env DEBUG=true --wait
 ```
 
+With `--wait`, the command exits non-zero if the run does not finish successfully, including when it times out.
+
 ## Action Triggers
 
 Actions can run manually, on a cron schedule, or in response to install
