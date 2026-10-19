@@ -45,6 +45,17 @@ const branchAction = (
   </Button>
 )
 
+const groupAction = (
+  <Button
+    variant="icon"
+    size="xs"
+    aria-label="Change install group"
+    tooltipProps={{ tipContent: 'Change install group' }}
+  >
+    <Icon variant="PencilSimpleLineIcon" size={12} />
+  </Button>
+)
+
 const settingsAction = (
   <Button variant="secondary" aria-label="Install settings">
     <Icon variant="GearIcon" size={16} />
@@ -55,6 +66,8 @@ export const Default = () => (
   <NewInstallHeader
     install={mockInstall}
     orgId={orgId}
+    groupName="default"
+    groupAction={groupAction}
     branchAction={branchAction}
     latestCommit={
       <BranchRunCommit
@@ -75,7 +88,10 @@ export const Default = () => (
             status: 'active',
             status_human_description: 'All deployed',
           },
-          resources: { status: 'healthy', status_human_description: 'All healthy' },
+          resources: {
+            status: 'healthy',
+            status_human_description: 'All healthy',
+          },
           health_checks: {
             status: 'healthy',
             status_human_description: 'All healthy',
@@ -90,6 +106,8 @@ export const UnappliedBranchRun = () => (
   <NewInstallHeader
     install={mockInstall}
     orgId={orgId}
+    groupName="default"
+    groupAction={groupAction}
     branchAction={branchAction}
     latestCommit={
       <BranchRunCommit
@@ -111,7 +129,10 @@ export const UnappliedBranchRun = () => (
             status: 'active',
             status_human_description: 'All deployed',
           },
-          resources: { status: 'healthy', status_human_description: 'All healthy' },
+          resources: {
+            status: 'healthy',
+            status_human_description: 'All healthy',
+          },
           health_checks: {
             status: 'healthy',
             status_human_description: 'All healthy',
@@ -126,6 +147,8 @@ export const CommitLoading = () => (
   <NewInstallHeader
     install={mockInstall}
     orgId={orgId}
+    groupName="default"
+    groupAction={groupAction}
     branchAction={branchAction}
     latestCommitLoading
     settingsAction={settingsAction}
@@ -136,7 +159,10 @@ export const CommitLoading = () => (
             status: 'active',
             status_human_description: 'All deployed',
           },
-          resources: { status: 'healthy', status_human_description: 'All healthy' },
+          resources: {
+            status: 'healthy',
+            status_human_description: 'All healthy',
+          },
           health_checks: {
             status: 'healthy',
             status_human_description: 'All healthy',
@@ -151,6 +177,8 @@ export const ManagedByDashboard = () => (
   <NewInstallHeader
     install={{ ...mockInstall, metadata: { managed_by: 'nuon/dashboard' } }}
     orgId={orgId}
+    groupName="default"
+    groupAction={groupAction}
     branchAction={branchAction}
     settingsAction={settingsAction}
     statuses={
@@ -160,7 +188,10 @@ export const ManagedByDashboard = () => (
             status: 'active',
             status_human_description: 'All deployed',
           },
-          resources: { status: 'healthy', status_human_description: 'All healthy' },
+          resources: {
+            status: 'healthy',
+            status_human_description: 'All healthy',
+          },
           health_checks: {
             status: 'healthy',
             status_human_description: 'All healthy',
@@ -191,6 +222,8 @@ export const WithDriftAndNoLabels = () => {
     <NewInstallHeader
       install={install}
       orgId={orgId}
+      groupName="default"
+      groupAction={groupAction}
       branchAction={branchAction}
       settingsAction={settingsAction}
       statuses={
@@ -200,7 +233,10 @@ export const WithDriftAndNoLabels = () => {
               status: 'error',
               status_human_description: '1 deployment failed',
             },
-            resources: { status: 'healthy', status_human_description: 'All healthy' },
+            resources: {
+              status: 'healthy',
+              status_human_description: 'All healthy',
+            },
             health_checks: {
               status: 'degraded',
               status_human_description: 'Degraded',
