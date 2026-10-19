@@ -8,8 +8,8 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
+import { PullRequestActivity } from './PullRequestActivity'
 import { PullRequestHeader } from './PullRequestHeader'
-import { PullRequestRunsTable } from './PullRequestRunsTable'
 import {
   previewRuns,
   type TPlaygroundPullRequest,
@@ -153,15 +153,10 @@ export const PullRequestDetail = ({
         </Card>
 
         <SectionHeader
-          title="Preview runs"
-          description={`Every preview run on pull request #${pullRequest.number}, newest first.`}
-          status={
-            <Badge size="sm" theme="neutral">
-              {runs.length}
-            </Badge>
-          }
+          title="Activity"
+          description="Pushes on this pull request, and the preview runs each one started."
         />
-        <PullRequestRunsTable
+        <PullRequestActivity
           pullRequest={pullRequest}
           runs={runs}
           isLoading={isLoading}

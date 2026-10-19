@@ -15,18 +15,6 @@ import {
 
 export type TPullRequestStep = 'comment' | 'configure' | 'detail'
 
-/**
- * Walks the whole PR scope flow in one story:
- *
- *   1. the sticky GitHub comment posted when the PR opens
- *   2. the configure screen it links into, where you pick install + mode
- *   3. the detail screen every later visit lands on, showing run + commit
- *      history for the PR
- *
- * Saving on step 2 promotes the PR to config_status 'configured' and appends a
- * re-run, which is what the real PATCH .../preview-config + POST .../runs pair
- * would do.
- */
 export interface IPullRequestScope {
   pullRequest?: TPlaygroundPullRequest
   runs?: TPlaygroundPullRequestRun[]
@@ -44,6 +32,7 @@ export const PullRequestScope = ({
 
   const appendRun = (resolved: TAppBranchPreviewConfig) => {
     const previous = runs[0]
+    const onHead = runs.find((run) => run.head_sha === pullRequest.head_sha)
     const next: TPlaygroundPullRequestRun = {
       id: `abrun-rerun-${runs.length + 1}`,
       run_number: (previous?.run_number ?? 0) + 1,
@@ -53,7 +42,10 @@ export const PullRequestScope = ({
       install_id: resolved.install_id,
       install_name: resolved.install_name,
       head_sha: pullRequest.head_sha,
-      commit_message: previous?.commit_message ?? 'Latest commit on this PR',
+      commit_message:
+        onHead?.commit_message ??
+        previous?.commit_message ??
+        'Latest commit on this PR',
       commit_author: pullRequest.author_login,
       started_at: new Date().toISOString(),
       added: 0,
