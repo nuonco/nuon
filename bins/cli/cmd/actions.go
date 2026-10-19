@@ -51,9 +51,8 @@ func (c *cli) actionsCmd() *cobra.Command {
 			return svc.GetRecentRuns(cmd.Context(), installID, actionWorkflowID, offset, limit, PrintJSON)
 		}),
 	}
-	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
-	recentRunsCmd.MarkFlagRequired("install-id")
-	recentRunsCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")
+	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID or name of the install (defaults to the selected install)")
+	recentRunsCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID or name of the action")
 	recentRunsCmd.MarkFlagRequired("action-workflow-id")
 	recentRunsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	recentRunsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
@@ -82,8 +81,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 			return svc.GetRun(cmd.Context(), installID, runID, PrintJSON)
 		}),
 	}
-	getRunCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
-	getRunCmd.MarkFlagRequired("install-id")
+	getRunCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID or name of the install (defaults to the selected install)")
 	getRunCmd.Flags().StringVarP(&runID, "run-id", "r", "", "The ID of the run you want to view")
 	getRunCmd.MarkFlagRequired("run-id")
 	actionsCmd.AddCommand(getRunCmd)

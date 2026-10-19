@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -11,7 +12,16 @@ import (
 func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
-	response, hasMore, err := s.getRecentRuns(ctx, installID, actionWorkflowID, offset, limit)
+	install, err := s.getInstall(ctx, installID)
+	if err != nil {
+		return view.Error(err)
+	}
+	actionWorkflowID, err = lookup.ActionWorkflowID(ctx, s.api, install.AppID, actionWorkflowID)
+	if err != nil {
+		return view.Error(err)
+	}
+
+	response, hasMore, err := s.getRecentRuns(ctx, install.ID, actionWorkflowID, offset, limit)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -54,4 +64,17 @@ func (s *Service) getRecentRuns(ctx context.Context, installID, actionWorkflowID
 		return nil, hasMore, err
 	}
 	return iaw, hasMore, nil
+}
+
+// getInstall resolves an install ID or name, defaulting to the selected
+// install, and returns the full install so callers can also use its app.
+func (s *Service) getInstall(ctx context.Context, installIDOrName string) (*models.AppInstall, error) {
+	if installIDOrName == "" {
+		installIDOrName = s.cfg.GetString("install_id")
+	}
+	if installIDOrName == "" {
+		_, err := lookup.InstallID(ctx, s.api, "") // returns the "install not set" user error
+		return nil, err
+	}
+	return s.api.GetInstall(ctx, installIDOrName)
 }

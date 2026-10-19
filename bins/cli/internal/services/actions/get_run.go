@@ -14,7 +14,12 @@ func (s *Service) GetRun(ctx context.Context, installID, runID string, asJSON bo
 
 	view := ui.NewGetView()
 
-	run, err := s.api.GetInstallActionWorkflowRun(ctx, installID, runID)
+	install, err := s.getInstall(ctx, installID)
+	if err != nil {
+		return view.Error(err)
+	}
+
+	run, err := s.api.GetInstallActionWorkflowRun(ctx, install.ID, runID)
 	if err != nil {
 		return view.Error(err)
 	}
