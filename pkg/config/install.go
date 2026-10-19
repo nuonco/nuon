@@ -144,6 +144,8 @@ func (ig InputGroup) TOMLComment() string {
 type InstallStackOverrides struct {
 	VPCNestedTemplateURL    string              `mapstructure:"vpc_nested_template_url,omitempty" toml:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL string              `mapstructure:"runner_nested_template_url,omitempty" toml:"runner_nested_template_url,omitempty"`
+	UIDefinition            string              `mapstructure:"ui_definition,omitempty" toml:"ui_definition,omitempty" json:"ui_definition,omitempty"`
+	UIDefinitionContents    string              `mapstructure:"-" toml:"-" json:"ui_definition_contents,omitempty" jsonschema:"-" features:"get"`
 	CustomNestedStacks      []CustomNestedStack `mapstructure:"custom_nested_stacks,omitempty" toml:"custom_nested_stacks,omitempty"`
 }
 
@@ -155,6 +157,9 @@ func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("runner_nested_template_url").Short("Runner nested template URL override").
 		Long("Per-install override for the runner nested CloudFormation template URL. Overrides the app-level default from stack.toml.").
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml").
+		Field("ui_definition").Short("Azure createUiDefinition override").
+		Long("Per-install override for the Azure createUiDefinition path. Only supported when the app stack type is azure-bicep.").
+		Example("./arm/ui.json").
 		Field("custom_nested_stacks").Short("Custom nested stack overrides").
 		Long("Per-install overrides for custom install stacks. Entries with the same name as app-level stacks replace them; new names are appended. Supports AWS CloudFormation, Azure ARM, and curated GCP modules.").
 		Nullable()
@@ -162,7 +167,7 @@ func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 // HasOverrides returns true when any override field is set.
 func (s *InstallStackOverrides) HasOverrides() bool {
-	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || len(s.CustomNestedStacks) > 0)
+	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || s.UIDefinition != "" || len(s.CustomNestedStacks) > 0)
 }
 
 type CloudFormation struct {
@@ -484,6 +489,12 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 			stackDiffs = append(stackDiffs, diff.NewDiff(
 				diff.WithKey("runner_nested_template_url"),
 				diff.WithStringDiff(upstream.RunnerNestedTemplateURL, curr.RunnerNestedTemplateURL),
+			))
+		}
+		if curr.UIDefinition != "" || upstream.UIDefinition != "" {
+			stackDiffs = append(stackDiffs, diff.NewDiff(
+				diff.WithKey("ui_definition"),
+				diff.WithStringDiff(upstream.UIDefinition, curr.UIDefinition),
 			))
 		}
 		// Diff custom nested stacks by name.

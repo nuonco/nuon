@@ -47,28 +47,26 @@ These work on every command.
 
 ## App branches
 
-App config ships through [app branches](/guides/app-branches): a branch file points Nuon at a repository, directory,
-and git branch, and a push to that git branch starts a run. Every `nuon branches` command defaults to the app you
-selected with `nuon apps select` and takes `--app-id` (an app ID or name) to target another. `--branch-id` takes a
-branch ID or name.
+These subcommands operate on the selected app. Use `nuon apps select` to choose it; commands that accept `--app-id`
+can use the ID from `nuon apps list` when you do not want to rely on the selected app. `nuon apps branches` is a
+deprecated alias; use `nuon branches`.
 
 | Command | What it does |
 |---------|--------------|
-| `nuon branches sync --file <file-or-dir>` | Create or update app branches from branch files such as `branches/main.toml`. `--dry-run` prints the plan, `--confirm` applies it without a prompt. Passing a directory also proposes deleting config-managed branches that have no file. |
-| `nuon branches list` | List the app's branches. Alias: `nuon br`. |
-| `nuon branches get --branch-id <branch>` | Show a branch and its deployment groups. |
-| `nuon branches trigger --branch-id <branch>` | Run the tracked git branch's latest commit. `--force` rebuilds every component, `--no-wait` returns without opening the workflow TUI. |
-| `nuon branches preview` | Preview a pushed git branch (`--git-ref`) or pull request (`--pr-number`) against one install (`--install-id`). `--mode plan-only` applies nothing. With no flags it asks for each choice. |
-| `nuon branches runs --branch-id <branch>` | List the branch's runs and open one in the workflow TUI. |
-| `nuon branches create --name <name>` | Create a manually managed branch with no branch file. |
-| `nuon branches delete --branch-id <branch> --confirm` | Delete a branch. |
+| `nuon branches sync --file <path>` | Reconcile branch settings from a TOML file or directory. Directory mode can propose deleting remote branches missing locally; a single file never deletes others. |
+| `nuon branches list` | List the selected app's branches. |
+| `nuon branches get --branch-id <branch-id>` | Show a branch and its install groups. |
+| `nuon branches create --name <name>` | Create a branch without syncing a config file. |
+| `nuon branches trigger --branch-id <branch-id>` | Start a real branch run. Add `--force` to rebuild every component. Add `--run-type` (`pr`, `tag`, or `commit`) and `--run-ref` to deploy a specific source. |
+| `nuon branches preview --branch-id <branch-id> --git-ref <ref> --mode plan-only` | Preview a committed Git ref. Use `--pr-number` for a pull request; `--mode` also accepts `apply` or `build-only`. |
+| `nuon branches runs --branch-id <branch-id>` | List the selected app's branch runs and open one in the workflow TUI. |
+| `nuon branches delete --branch-id <branch-id> --confirm` | Delete a branch. |
 
 <Note>
-  `nuon apps sync` and `nuon sync` are deprecated. Once they are turned off for your org, running `nuon apps sync` in
-  an interactive terminal offers to migrate: it writes a branch file, syncs it, and offers to move your installs onto
-  the branch. See
-  [Migrating from `nuon apps sync`](/guides/app-branches#migrating-from-nuon-apps-sync). `nuon apps branches` is a
-  deprecated alias for `nuon branches`.
+  `nuon apps sync` and `nuon sync` are deprecated: app config ships through a branch file synced once with
+  `nuon branches sync`, then a push to the tracked git branch. Once they are turned off for your org, running
+  `nuon apps sync` in an interactive terminal offers to migrate: it writes a branch file, syncs it, and offers to move
+  your installs onto the branch. See [Migrating from `nuon apps sync`](/guides/app-branches#migrating-from-nuon-apps-sync).
 </Note>
 
 ## Installs
@@ -78,7 +76,7 @@ branch ID or name.
 | `nuon installs create` | Create an install of the selected app. |
 | `nuon installs list` | List installs. Add `--labels k=v` (repeatable) to filter; all labels must match. |
 | `nuon installs get` | Show an install's details. |
-| `nuon installs labels set --install-id <install> k=v ...` | Set labels on an install. Deployment group [label selectors](/guides/app-branches#selecting-installs-for-a-group) match on these. |
+| `nuon installs labels set --install-id <install> k=v ...` | Set labels on an install. Install group [label selectors](/guides/app-branches) match on these. |
 | `nuon installs labels list --install-id <install>` | List an install's labels. |
 | `nuon installs labels unset --install-id <install> <key> ...` | Remove labels from an install. |
 | `nuon installs components deploy-all` | Deploy all components to an install. |

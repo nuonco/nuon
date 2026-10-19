@@ -927,6 +927,8 @@ func runnerConfigContent(c app.AppRunnerConfig) any {
 		InstanceType       string `json:"instance_type"`
 		RunnerAPIURL       string `json:"runner_api_url"`
 		PublicAPIURL       string `json:"public_api_url"`
+		ImageAutoUpdate    bool   `json:"image_auto_update,omitempty"`
+		ImageID            string `json:"image_id,omitempty"`
 	}{
 		EnvVars:            c.EnvVars,
 		Type:               string(c.Type),
@@ -935,6 +937,8 @@ func runnerConfigContent(c app.AppRunnerConfig) any {
 		InstanceType:       c.InstanceType,
 		RunnerAPIURL:       c.RunnerAPIURL,
 		PublicAPIURL:       c.PublicAPIURL,
+		ImageAutoUpdate:    c.ImageAutoUpdate,
+		ImageID:            c.ImageID,
 	}
 }
 

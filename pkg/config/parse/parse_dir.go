@@ -142,6 +142,15 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		for i := range appCfg.Stack.CustomNestedStacks {
 			appCfg.Stack.CustomNestedStacks[i].Contents = appCfg.Stack.CustomNestedStacks[i].TemplateURL
 		}
+		if appCfg.Stack.UIDefinition != "" {
+			appCfg.Stack.UIDefinitionContents = appCfg.Stack.UIDefinition
+		}
+	}
+	for _, install := range appCfg.Installs {
+		if install == nil || install.StackOverrides == nil || install.StackOverrides.UIDefinition == "" {
+			continue
+		}
+		install.StackOverrides.UIDefinitionContents = install.StackOverrides.UIDefinition
 	}
 
 	fieldTimeout := defaultFieldGetTimeout

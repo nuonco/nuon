@@ -37,11 +37,10 @@ directory = "your-app"
 branch    = "main"
 ```
 
-Sync the branch file once to create the app branch, then push:
+Sync the branch file once to create the app branch, which also starts its first run:
 
 ```sh nuon
 nuon branches sync --file branches/main.toml
-git push origin main
 ```
 
 From then on, every push to the tracked git branch starts a run that rolls the change out. To check the config

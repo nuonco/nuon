@@ -23,11 +23,10 @@ nuon auth login
 # 3. Clone Nuon's example apps repo 
 git clone https://github.com/nuonco/example-app-configs
 
-# 4. Create the app, sync its app branch, and run it. (Kubernetes on AWS shown here)
+# 4. Create the app and sync its app branch, which starts the first run. (Kubernetes on AWS shown here)
 cd example-app-configs/eks-simple
 nuon apps create --name eks-simple
 nuon branches sync --file branch.toml
-nuon branches trigger --branch-id main
 
 # 5. Install the app in your AWS account
 nuon installs create --name <install-name> --region <region>
@@ -82,15 +81,11 @@ nuon apps create --name eks-simple
 nuon branches sync --file branch.toml
 ```
 
-The sync shows the branch it will create and asks you to confirm. Then start a run of the branch:
-
-```sh
-nuon branches trigger --branch-id main
-```
-
-The run fetches the config from the example repo and builds the app's components (e.g., images, Helm, Kubernetes
+The sync shows the branch it will create and asks you to confirm. Creating the branch also starts its first run. The
+run fetches the config from the example repo and builds the app's components (e.g., images, Helm, Kubernetes
 manifests, Terraform) into OCI artifacts stored in your org's container registry. Nuon uses these artifacts when
-installing your app. Wait for the build step to finish before you create an install.
+installing your app. With no installs on the branch yet, the run stops after the build. Watch it with
+`nuon branches runs --branch-id main`, and wait for the build to finish before you create an install.
 
 ## Install the Example App in AWS
 

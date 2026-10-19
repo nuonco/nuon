@@ -45,8 +45,7 @@ brew install nuonco/tap/nuon
 nuon auth login
 cd example-app-configs/<app directory>
 nuon apps create --name <app directory>
-nuon branches sync --file branches/main.toml   # or: --file branch.toml
-nuon branches trigger --branch-id main
+nuon branches sync --file branches/main.toml   # or: --file branch.toml; starts the first run
 nuon installs create --name <install-name> --region <region>
 ```
 

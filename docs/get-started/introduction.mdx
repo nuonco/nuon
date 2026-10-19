@@ -109,7 +109,7 @@ export const FeatureTile = ({ src, eyebrow, title, description, href, reverse })
       Run `git clone https://github.com/nuonco/example-app-configs`, then `cd example-app-configs/eks-simple`.
     </Step>
     <Step title="Define and deploy it">
-      Run `nuon apps create --name eks-simple`, then `nuon branches sync --file branch.toml` and `nuon branches trigger --branch-id main`, then `nuon installs create --name <install-name> --region <region>`.
+      Run `nuon apps create --name eks-simple`, then `nuon branches sync --file branch.toml` (which starts the first run), then `nuon installs create --name <install-name> --region <region>`.
     </Step>
   </Steps>
 

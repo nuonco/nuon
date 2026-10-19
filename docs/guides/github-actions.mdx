@@ -93,17 +93,14 @@ jobs:
 
 ### Variations
 
-For a plan-only check, run `branches preview` from a workflow triggered by `pull_request`. It plans the pull
-request's config against one install and applies nothing:
+For a **preview** run (not a fleet rollout through install groups), use `branches preview` — for example against a
+committed ref or PR number:
 
 ```yaml
-command: "branches preview --branch-id main --pr-number ${{ github.event.pull_request.number }} --mode plan-only --install-id <install-id> --no-wait"
+command: "branches preview --branch-id main --git-ref my-feature --mode plan-only --no-wait"
 ```
 
-With the Nuon GitHub App connected for your repository's owner, pull requests get a preview automatically, so you only
-need this step to gate a workflow on it.
-
-`--force` rebuilds every component instead of only what changed since the previous run:
+`--force` on `branches trigger` rebuilds every component instead of only what changed since the previous run:
 
 ```yaml
 command: "branches trigger --branch-id main --no-wait --force"

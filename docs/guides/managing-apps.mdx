@@ -40,7 +40,8 @@ nuon apps rename --name=new-name  # rename an app
 ## Shipping Configuration
 
 App config ships through an [app branch](/guides/app-branches). Add a branch file such as `branches/main.toml` that
-points at your repository, config directory, and git branch, then sync it once:
+points at your repository, config directory, and git branch, then sync it once. Creating the branch also starts its
+first run:
 
 ```sh
 nuon branches sync --file branches/main.toml

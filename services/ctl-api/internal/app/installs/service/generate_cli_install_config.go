@@ -160,6 +160,9 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		if len(installConfig.CustomNestedStacks) > 0 {
 			so.CustomNestedStacks = installConfig.CustomNestedStacks
 		}
+		if installConfig.UIDefinition != nil {
+			so.UIDefinition = installConfig.UIDefinition.Path
+		}
 		if so.HasOverrides() {
 			installCfg.StackOverrides = so
 		}

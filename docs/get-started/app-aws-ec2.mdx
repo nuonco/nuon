@@ -347,14 +347,13 @@ directory = "cde"
 branch    = "main"
 ```
 
-From the `cde` directory, sync the branch file, then start a run:
+From the `cde` directory, sync the branch file:
 
 ```sh
 nuon branches sync --file branches/main.toml
-nuon branches trigger --branch-id main
 ```
 
-The sync creates the branch. The run fetches the app config from the example repo at the latest commit on `main` and
+The sync creates the branch and starts its first run. The run fetches the app config from the example repo at the latest commit on `main` and
 builds its components. Because the branch tracks the example repo, local edits to your clone do not ship. To ship your
 own changes, push the config to a repository you control and point the branch file at it, as described in
 [Configure app branches](/guides/app-branches).
