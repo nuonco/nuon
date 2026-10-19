@@ -159,6 +159,7 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 			ManagedBy: req.Metadata.ManagedBy,
 		}
 	}
+	pinOnboardingBranch(installParams, onboarding)
 
 	// Create install synchronously
 	install, err := s.installsHelpers.CreateInstall(ctx, *onboarding.AppID, installParams)
@@ -263,4 +264,13 @@ func (s *service) resolveCloudPlatform(ctx context.Context, appID string, cloudP
 
 	// AfterQuery hook on AppRunnerConfig sets CloudPlatform automatically
 	return runnerConfig.CloudPlatform
+}
+
+// pinOnboardingBranch copies the branch the onboarding flow already waited on
+// onto the install. An empty branch leaves the install unbranched.
+func pinOnboardingBranch(params *helpers.CreateInstallParams, onboarding *app.Onboarding) {
+	if params == nil || onboarding == nil || onboarding.AppBranchID == nil || *onboarding.AppBranchID == "" {
+		return
+	}
+	params.AppBranchID = *onboarding.AppBranchID
 }

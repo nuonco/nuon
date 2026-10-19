@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -16,6 +17,14 @@ const branchConfigPageSize = 100
 func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID string) (*models.AppAppInputConfig, error) {
 	if appBranchID == "" {
 		return api.GetAppInputLatestConfig(ctx, appID)
+	}
+
+	branch, err := api.GetAppBranch(ctx, appID, appBranchID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app branch %s: %w", appBranchID, err)
+	}
+	if _, err := AwaitBranchConfig(ctx, api, appID, branch, false, ui.PrintLn); err != nil {
+		return nil, err
 	}
 
 	var selected *models.AppAppConfig
