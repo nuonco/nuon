@@ -12,7 +12,7 @@ import (
 func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
-	install, err := s.getInstall(ctx, installID)
+	install, err := s.installOrSelected(ctx, installID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -64,17 +64,4 @@ func (s *Service) getRecentRuns(ctx context.Context, installID, actionWorkflowID
 		return nil, hasMore, err
 	}
 	return iaw, hasMore, nil
-}
-
-// getInstall resolves an install ID or name, defaulting to the selected
-// install, and returns the full install so callers can also use its app.
-func (s *Service) getInstall(ctx context.Context, installIDOrName string) (*models.AppInstall, error) {
-	if installIDOrName == "" {
-		installIDOrName = s.cfg.GetString("install_id")
-	}
-	if installIDOrName == "" {
-		_, err := lookup.InstallID(ctx, s.api, "") // returns the "install not set" user error
-		return nil, err
-	}
-	return s.api.GetInstall(ctx, installIDOrName)
 }

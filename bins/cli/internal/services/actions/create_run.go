@@ -31,7 +31,7 @@ type createRunResult struct {
 func (s *Service) CreateRun(ctx context.Context, params CreateRunParams, asJSON bool) error {
 	view := ui.NewGetView()
 
-	install, err := s.getInstall(ctx, params.InstallID)
+	install, err := s.installOrSelected(ctx, params.InstallID)
 	if err != nil {
 		return view.Error(err)
 	}

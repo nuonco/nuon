@@ -14,7 +14,7 @@ func (s *Service) GetRun(ctx context.Context, installID, runID string, asJSON bo
 
 	view := ui.NewGetView()
 
-	install, err := s.getInstall(ctx, installID)
+	install, err := s.installOrSelected(ctx, installID)
 	if err != nil {
 		return view.Error(err)
 	}
