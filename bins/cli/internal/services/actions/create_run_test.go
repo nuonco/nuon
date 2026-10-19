@@ -277,6 +277,22 @@ func TestCreateRunWaitErrorsWhenWorkflowEndsWithoutRun(t *testing.T) {
 	require.Equal(t, "action workflow wkf_1 ended with status error before a run was created", userErr.Msg)
 }
 
+func TestCreateRunWaitRechecksRunsWhenWorkflowEnds(t *testing.T) {
+	fastPolls(t)
+	api := &createRunAPI{
+		emptyPolls:     1,
+		workflowStatus: models.AppStatusSuccess,
+		runStatuses:    []string{"finished"},
+	}
+	service := newCreateRunService(api, "inst_1")
+
+	err := service.CreateRun(context.Background(), CreateRunParams{ActionWorkflowID: "pg_status", Wait: true}, true)
+
+	require.NoError(t, err)
+	require.Equal(t, 2, api.polls)
+	require.Equal(t, "inst_resolved", api.getRunInstall)
+}
+
 func TestCreateRunWaitHonorsCancellation(t *testing.T) {
 	fastPolls(t)
 	api := &createRunAPI{emptyPolls: 1 << 30, workflowStatus: models.AppStatusInDashProgress}
