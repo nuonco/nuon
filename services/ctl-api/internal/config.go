@@ -26,6 +26,7 @@ func init() {
 	config.RegisterDefault("slack_http_port", "8089")
 	config.RegisterDefault("mcp_http_port", "8088")
 	config.RegisterDefault("nuonctl_mcp_http_port", "8091")
+	config.RegisterDefault("docs_mcp_url", "https://docs.nuon.co/mcp")
 	// Slack secrets: dev-only insecure defaults so the slack-libs FX module
 	// (statejwt.New) and signing.Middleware construction don't fail boot
 	// when no SLACK_* env is set. Prod overrides via env. Same pattern as
@@ -242,6 +243,7 @@ type Config struct {
 	SlackHTTPPort          string `config:"slack_http_port" validate:"required"`
 	MCPHTTPPort            string `config:"mcp_http_port"`
 	NuonctlMCPHTTPPort     string `config:"nuonctl_mcp_http_port"`
+	DocsMCPURL             string `config:"docs_mcp_url"`
 
 	WorkerHealthcheckPort    string `config:"worker_healthcheck_port"`
 	WorkerHealthcheckEnabled bool   `config:"worker_healthcheck_enabled"`
