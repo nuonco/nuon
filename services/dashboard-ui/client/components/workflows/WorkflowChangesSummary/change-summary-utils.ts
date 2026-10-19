@@ -17,6 +17,7 @@ export const PLAN_TYPE_META: Record<
   kubernetes_manifest_approval: { icon: 'Kubernetes', label: 'Kubernetes' },
   app_branch_plan: { icon: 'GitBranchIcon', label: 'App branch' },
   install_creation: { icon: 'CubeIcon', label: 'Install' },
+  install_input: { icon: 'ListBulletsIcon', label: 'Input' },
 }
 
 export const STATUS_META: Record<TStepChangeStatus, TBadgeCfg> = {
@@ -45,9 +46,7 @@ export const isSummarized = (summary: TStepChangeSummary): boolean =>
 export const isUnsummarized = (summary: TStepChangeSummary): boolean =>
   summary.countsState === 'unknown'
 
-export const sumCounts = (
-  summaries: TStepChangeSummary[]
-): TStepChangeCounts =>
+export const sumCounts = (summaries: TStepChangeSummary[]): TStepChangeCounts =>
   summaries.reduce(
     (acc, summary) => ({
       create: acc.create + summary.counts.create,
@@ -62,9 +61,16 @@ export const sumCounts = (
 const pluralize = (count: number, word: string): string =>
   `${count} ${count === 1 ? word : `${word}s`}`
 
+export const aggregateNoun = (summaries: TStepChangeSummary[]): string =>
+  summaries.length > 0 &&
+  summaries.every((summary) => summary.planType === 'install_input')
+    ? 'input'
+    : 'component'
+
 export const formatAggregate = (
   counts: TStepChangeCounts,
-  changedStepCount: number
+  changedStepCount: number,
+  noun = 'component'
 ): string => {
   const parts: string[] = []
   if (counts.create > 0) parts.push(pluralize(counts.create, 'create'))
@@ -72,6 +78,6 @@ export const formatAggregate = (
   if (counts.delete > 0) parts.push(pluralize(counts.delete, 'delete'))
   if (counts.replace > 0) parts.push(pluralize(counts.replace, 'replace'))
 
-  const scope = pluralize(changedStepCount, 'component')
+  const scope = pluralize(changedStepCount, noun)
   return `${parts.join(' · ')} across ${scope}`
 }

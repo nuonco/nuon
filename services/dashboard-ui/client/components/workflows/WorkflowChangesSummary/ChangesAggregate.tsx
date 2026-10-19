@@ -2,6 +2,7 @@ import { Text } from '@/components/common/Text'
 import type { TStepChangeSummary } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
+  aggregateNoun,
   formatAggregate,
   hasChanges,
   isSummarized,
@@ -21,12 +22,7 @@ export const ChangesAggregate = ({
 }: IChangesAggregate) => {
   if (loading) {
     return (
-      <Text
-        variant="subtext"
-        loading
-        loadingWidth={40}
-        className={className}
-      />
+      <Text variant="subtext" loading loadingWidth={40} className={className} />
     )
   }
 
@@ -49,7 +45,7 @@ export const ChangesAggregate = ({
 
   return (
     <Text variant="subtext" family="mono" className={className}>
-      {formatAggregate(totals, changedSteps.length)}
+      {formatAggregate(totals, changedSteps.length, aggregateNoun(summaries))}
     </Text>
   )
 }

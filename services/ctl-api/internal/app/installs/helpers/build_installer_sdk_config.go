@@ -39,6 +39,7 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		}).
 		Preload("RunnerGroup.Runners").
 		Preload("RunnerGroup.Settings").
+		Preload("InstallConfig").
 		Where("id = ?", installID).
 		First(&install); res.Error != nil {
 		return nil, fmt.Errorf("load install: %w", res.Error)

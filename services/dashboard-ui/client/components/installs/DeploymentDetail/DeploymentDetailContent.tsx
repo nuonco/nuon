@@ -16,6 +16,7 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Text } from '@/components/common/Text'
 import { WorkflowChangesSummaryContainer } from '@/components/workflows/WorkflowChangesSummary'
 import { WorkflowAlertBanners } from '@/components/workflows/WorkflowDetails'
+import { WorkflowInputChanges } from '@/components/workflows/WorkflowInputChanges'
 import { WorkflowSteps } from '@/components/workflows/WorkflowSteps'
 import { PolicyViolations } from '@/components/workflows/step-details/PolicyViolations'
 import { WorkflowActionButtons } from '@/components/workflows/workflow-details/WorkflowActionButtons'
@@ -243,6 +244,7 @@ export const DeploymentWorkflowContent = ({
         })
       : ''
   const onWorkflowPage = isWorkflowPath(pathname, workflow.id)
+  const hasInputChanges = !!workflow.metadata?.changed_input_values
 
   return (
     <WorkflowInstallContext.Provider value={installId}>
@@ -251,6 +253,15 @@ export const DeploymentWorkflowContent = ({
           <Link href={href} textVariant="base">
             {name}
           </Link>
+        ) : null}
+        {hasInputChanges ? (
+          <>
+            <SectionHeader
+              title="Input changes"
+              description="Values changed by this update."
+            />
+            <WorkflowInputChanges workflow={workflow} empty />
+          </>
         ) : null}
         <SectionHeader
           title="Workflow steps"
