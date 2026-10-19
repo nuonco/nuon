@@ -70,7 +70,8 @@ func TestRunnerDependentWorkflowErrorsIncludeResponseDescription(t *testing.T) {
 			return err
 		},
 		"action workflow run": func() error {
-			return client.CreateInstallActionWorkflowRun(context.Background(), "install-1", &models.ServiceCreateInstallActionWorkflowRunRequest{})
+			_, err := client.CreateInstallActionWorkflowRun(context.Background(), "install-1", &models.ServiceCreateInstallActionWorkflowRunRequest{})
+			return err
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

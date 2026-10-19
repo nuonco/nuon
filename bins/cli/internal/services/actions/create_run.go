@@ -34,7 +34,7 @@ func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID str
 		RequestID:              requestID,
 	}
 
-	err = s.api.CreateInstallActionWorkflowRun(ctx, installID, req)
+	_, err = s.api.CreateInstallActionWorkflowRun(ctx, installID, req)
 	if err != nil {
 		ui.PrintError(fmt.Errorf("error creating action workflow run: %w", err))
 		return err

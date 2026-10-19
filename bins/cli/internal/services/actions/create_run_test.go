@@ -27,9 +27,9 @@ func (a *createRunAPI) GetActionWorkflowLatestConfig(_ context.Context, _ string
 	return &models.AppActionWorkflowConfig{ID: "awc_123"}, nil
 }
 
-func (a *createRunAPI) CreateInstallActionWorkflowRun(_ context.Context, _ string, req *models.ServiceCreateInstallActionWorkflowRunRequest) error {
+func (a *createRunAPI) CreateInstallActionWorkflowRun(_ context.Context, _ string, req *models.ServiceCreateInstallActionWorkflowRunRequest) (*models.AppWorkflowResponse, error) {
 	a.request = req
-	return nil
+	return &models.AppWorkflowResponse{}, nil
 }
 
 func TestCreateRunRejectsUnknownRole(t *testing.T) {
