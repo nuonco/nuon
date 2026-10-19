@@ -45,6 +45,31 @@ func TestRunnerConfigKeepsPhoneHomeScriptURL(t *testing.T) {
 	assert.Equal(t, scriptURL, obj.PhoneHomeScriptURL)
 }
 
+func TestRunnerConfigKeepsImageSettings(t *testing.T) {
+	tests := map[string]struct {
+		autoUpdate bool
+		imageID    string
+	}{
+		"unset":           {},
+		"auto-update":     {autoUpdate: true},
+		"pinned image":    {imageID: "ami-0abc123"},
+		"both configured": {autoUpdate: true, imageID: "ami-0abc123"},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			obj := RunnerConfig(RunnerInputFromConfig(config.AppRunnerConfig{
+				RunnerType:      string(app.AppRunnerTypeAWS),
+				ImageAutoUpdate: tc.autoUpdate,
+				ImageID:         tc.imageID,
+			}, "app1", "cfg1"))
+
+			assert.Equal(t, tc.autoUpdate, obj.ImageAutoUpdate)
+			assert.Equal(t, tc.imageID, obj.ImageID)
+		})
+	}
+}
+
 func TestPermissionsConfigKeepsCustomAndBreakGlassRoles(t *testing.T) {
 	obj, err := PermissionsConfig(PermissionsInput{
 		AppID:       "app1",
