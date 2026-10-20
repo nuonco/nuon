@@ -9,29 +9,33 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 )
 
 type Params struct {
 	fx.In
 
-	DB          *gorm.DB `name:"psql"`
-	AcctClient  *account.Client
-	AuthzClient *authz.Client
+	DB               *gorm.DB `name:"psql"`
+	AcctClient       *account.Client
+	AuthzClient      *authz.Client
+	ProductAnalytics *productanalytics.Client
 }
 
 type service struct {
-	db          *gorm.DB
-	acctClient  *account.Client
-	authzClient *authz.Client
+	db               *gorm.DB
+	acctClient       *account.Client
+	authzClient      *authz.Client
+	productAnalytics *productanalytics.Client
 }
 
 var _ api.Service = (*service)(nil)
 
 func New(params Params) *service {
 	return &service{
-		db:          params.DB,
-		acctClient:  params.AcctClient,
-		authzClient: params.AuthzClient,
+		db:               params.DB,
+		acctClient:       params.AcctClient,
+		authzClient:      params.AuthzClient,
+		productAnalytics: params.ProductAnalytics,
 	}
 }
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
