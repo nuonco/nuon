@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -104,17 +105,20 @@ func TestVerifyOIDCToken(t *testing.T) {
 
 	t.Run("valid token", func(t *testing.T) {
 		token := idp.signToken(t, jwt.MapClaims{"sub": "repo:acme/app:ref:refs/heads/main"})
-		require.NoError(t, svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test"))
+		_, err := svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test")
+		require.NoError(t, err)
 	})
 
 	t.Run("wrong audience", func(t *testing.T) {
 		token := idp.signToken(t, jwt.MapClaims{"aud": "someone-else"})
-		require.Error(t, svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test"))
+		_, err := svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test")
+		require.Error(t, err)
 	})
 
 	t.Run("wrong issuer claim", func(t *testing.T) {
 		token := idp.signToken(t, jwt.MapClaims{"iss": "https://evil.example.com"})
-		require.Error(t, svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test"))
+		_, err := svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test")
+		require.Error(t, err)
 	})
 
 	t.Run("expired token", func(t *testing.T) {
@@ -122,13 +126,15 @@ func TestVerifyOIDCToken(t *testing.T) {
 			"iat": time.Now().Add(-10 * time.Minute).Unix(),
 			"exp": time.Now().Add(-5 * time.Minute).Unix(),
 		})
-		require.Error(t, svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test"))
+		_, err := svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test")
+		require.Error(t, err)
 	})
 
 	t.Run("token signed by a different key", func(t *testing.T) {
 		otherIDP := newFakeIDP(t)
 		token := otherIDP.signToken(t, jwt.MapClaims{"iss": idp.issuer()})
-		require.Error(t, svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test"))
+		_, err := svc.verifyOIDCToken(ctx, token, idp.issuer(), "nuon-test")
+		require.Error(t, err)
 	})
 }
 
@@ -154,16 +160,110 @@ func TestParseUnverifiedIssuer(t *testing.T) {
 	})
 }
 
-func TestParseTokenClaims(t *testing.T) {
+func TestVerifyOIDCTokenReturnsVerifiedClaims(t *testing.T) {
 	idp := newFakeIDP(t)
+	svc := newVerifyTestService()
 
 	token := idp.signToken(t, jwt.MapClaims{
 		"sub":              "repo:acme/app:ref:refs/heads/main",
 		"repository_owner": "acme",
 	})
 
-	claims, err := parseTokenClaims(token)
+	claims, err := svc.verifyOIDCToken(context.Background(), token, idp.issuer(), "nuon-test")
 	require.NoError(t, err)
 	require.Equal(t, "repo:acme/app:ref:refs/heads/main", claims["sub"])
 	require.Equal(t, "acme", claims["repository_owner"])
+}
+
+func toJSONSerialization(t *testing.T, compact string, extra map[string]string) string {
+	t.Helper()
+
+	parts := strings.Split(compact, ".")
+	require.Len(t, parts, 3)
+
+	fields := map[string]string{
+		"protected": parts[0],
+		"payload":   parts[1],
+		"signature": parts[2],
+	}
+	for k, v := range extra {
+		fields[k] = v
+	}
+
+	out, err := json.Marshal(fields)
+	require.NoError(t, err)
+	return string(out)
+}
+
+func TestCompactJWSOnly(t *testing.T) {
+	idp := newFakeIDP(t)
+	svc := newVerifyTestService()
+	ctx := context.Background()
+
+	compact := idp.signToken(t, jwt.MapClaims{"sub": "repo:attacker/app:ref:refs/heads/main"})
+	parts := strings.Split(compact, ".")
+
+	unsigned, err := json.Marshal(map[string]any{
+		"iss": idp.issuer(),
+		"aud": "nuon-test",
+		"sub": "repo:acme/app:ref:refs/heads/main",
+		"exp": time.Now().Add(5 * time.Minute).Unix(),
+	})
+	require.NoError(t, err)
+	dotted := "." + base64.RawURLEncoding.EncodeToString(unsigned) + "."
+
+	tests := map[string]struct {
+		token   string
+		wantErr bool
+	}{
+		"compact token": {
+			token: compact,
+		},
+		"flattened JSON serialization": {
+			token:   toJSONSerialization(t, compact, nil),
+			wantErr: true,
+		},
+		"flattened JSON with dotted unknown property": {
+			token:   toJSONSerialization(t, compact, map[string]string{"extra": dotted}),
+			wantErr: true,
+		},
+		"too many parts": {
+			token:   compact + ".extra",
+			wantErr: true,
+		},
+		"too few parts": {
+			token:   parts[0] + "." + parts[1],
+			wantErr: true,
+		},
+		"empty signature": {
+			token:   parts[0] + "." + parts[1] + ".",
+			wantErr: true,
+		},
+		"non-base64url characters": {
+			token:   parts[0] + "." + parts[1] + "." + parts[2] + "+/=",
+			wantErr: true,
+		},
+		"trailing newline": {
+			token:   compact + "\n",
+			wantErr: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, issuerErr := parseUnverifiedIssuer(tc.token)
+			claims, verifyErr := svc.verifyOIDCToken(ctx, tc.token, idp.issuer(), "nuon-test")
+
+			if tc.wantErr {
+				require.Error(t, issuerErr)
+				require.Error(t, verifyErr)
+				require.Nil(t, claims)
+				return
+			}
+
+			require.NoError(t, issuerErr)
+			require.NoError(t, verifyErr)
+			require.Equal(t, "repo:attacker/app:ref:refs/heads/main", claims["sub"])
+		})
+	}
 }
