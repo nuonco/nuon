@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"bytes"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -69,8 +70,16 @@ func VerifyIIDSignature(certStore *IIDCertStore, region string, document []byte,
 
 	p7.Certificates = []*x509.Certificate{cert}
 
+	if len(p7.Content) == 0 {
+		p7.Content = document
+	}
+
 	if err := p7.Verify(); err != nil {
 		return fmt.Errorf("PKCS7 signature verification failed: %w", err)
+	}
+
+	if !bytes.Equal(bytes.TrimSpace(p7.Content), bytes.TrimSpace(document)) {
+		return fmt.Errorf("identity document does not match signed content")
 	}
 
 	return nil
