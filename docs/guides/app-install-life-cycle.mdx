@@ -30,7 +30,7 @@ import { FlowSteps } from "/snippets/flow-steps.jsx";
 
 Package your app template as a set of TOML files in a git repository. These files define the app's sandbox (for example VPC, networking and Kubernetes infrastructure), components, inputs, variables and other configuration. Components can point to your existing Terraform modules, Helm charts, Kubernetes manifests or other infrastructure-as-code. For examples, see the [example app templates on GitHub](https://github.com/nuonco/example-app-configs).
 
-By default Nuon creates a new VPC, network and Kubernetes cluster for each install. You can also package your app template to reuse ones the customer already has.
+The [sandbox](/concepts/sandboxes) sets the base infrastructure each install gets: networking, permissions, and compute such as a Kubernetes cluster when your app needs one. Some sandboxes, like AWS Min, create no cluster at all. A sandbox can also reuse infrastructure the customer already has, such as an existing VPC or cluster.
 
 ## Sync and build
 
