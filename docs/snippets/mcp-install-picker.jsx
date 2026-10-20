@@ -20,6 +20,15 @@ export const McpInstallPicker = () => {
       ],
     },
     {
+      id: "codex",
+      label: "Codex",
+      blocks: [
+        {
+          code: `codex mcp add nuon -- nuon agents mcp --allow-writes`,
+        },
+      ],
+    },
+    {
       id: "cursor",
       label: "Cursor",
       blocks: [
