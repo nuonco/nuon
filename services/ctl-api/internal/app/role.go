@@ -33,7 +33,10 @@ const (
 	// granting only that install's stack endpoints.
 	RoleTypeStack              RoleType = "stack"
 	RoleTypeTelemetryCollector RoleType = "telemetry_collector"
-	RoleTypePhoneHome          RoleType = "phone_home"
+	RoleTypePhoneHome RoleType = "phone_home"
+	// RoleTypeLogStream is per stream: one role per log-stream service account,
+	// granting only writes to that stream.
+	RoleTypeLogStream RoleType = "log_stream"
 )
 
 // Role contexts name the assignment surfaces a role may be offered on. A role

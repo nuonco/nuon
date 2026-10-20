@@ -46,7 +46,9 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 		return nil, errors.Wrap(err, "unable to get org id from context")
 	}
 
-	a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, orgID, svcAcct.ID)
+	if err := a.authzClient.EnsureLogStreamWriteRole(ctx, orgID, ls.ID, svcAcct.ID); err != nil {
+		return nil, errors.Wrap(err, "unable to scope log stream service account")
+	}
 
 	token, err := a.acctClient.CreateToken(ctx, svcAcct.Email, defaultLogStreamTokenDuration)
 	if err != nil {
