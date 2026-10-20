@@ -114,11 +114,6 @@ export const KITCHEN_SINK_VARIANTS: Record<
 export const KITCHEN_SINK_REPO = 'nuonco/kitchen-sink'
 export const KITCHEN_SINK_URL = `https://github.com/${KITCHEN_SINK_REPO}`
 export const KITCHEN_SINK_LABEL = 'Kitchen Sink'
-export const EXAMPLE_APP_FACTS = [
-  'Helm chart: API, UI, and worker pods',
-  'Pulumi S3 bucket and CI-built images',
-  'Actions, policies, runbooks, app branches',
-]
 
 export const DEFAULT_BRANCH_NAME = 'default'
 export const TRACKED_GIT_BRANCH = 'main'

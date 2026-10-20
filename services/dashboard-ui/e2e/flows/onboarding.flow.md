@@ -22,7 +22,7 @@ Specs: `specs/onboarding/example-app.spec.ts`, `own-app.spec.ts`, `skip.spec.ts`
 ### Example app (example-app.spec.ts, AWS and GCP)
 - expect: 4 stepper dots
 - action: click | button "Deploy to AWS" (or "Deploy to GCP")
-- expect: visible | heading "Your app is ready for BYOC"
+- expect: visible | heading "Test install of Kitchen Sink demo app"
 
 ### Own app (own-app.spec.ts, per cloud)
 - setup: create the VCS connection with `POST /v1/vcs/connection-callback`
@@ -62,7 +62,7 @@ Specs: `specs/onboarding/example-app.spec.ts`, `own-app.spec.ts`, `skip.spec.ts`
 ### Resume (resume.spec.ts)
 - action: click | button "Deploy to AWS"
 - action: reload
-- expect: visible | heading "Your app is ready for BYOC" with nuonco/kitchen-sink and nuonco/aws-eks-auto-sandbox
+- expect: visible | heading "Test install of Kitchen Sink demo app" with nuonco/kitchen-sink and nuonco/aws-eks-sandbox
 - action: click | button "Back"
 - expect: visible | heading "Create your first app template"
 - expect: start complete, deploy not complete

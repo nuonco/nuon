@@ -27,7 +27,6 @@ import {
   CLI_SETUP,
   CLOUD_ICON,
   CLOUD_LABEL,
-  EXAMPLE_APP_FACTS,
   EXAMPLE_CLOUDS,
   KITCHEN_SINK_REPO,
   KITCHEN_SINK_URL,
@@ -53,69 +52,6 @@ export const pickConfigRepo = (repos: TVCSConnectionRepo[] | undefined, appName:
 export type TGithubTile =
   | { status: 'disconnected'; error?: boolean }
   | { status: 'connected'; owner?: string; repoCount?: number }
-
-const ExampleAppDrawer = () => {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="flex flex-col rounded-md border border-dashed">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls="example-app-drawer"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900"
-      >
-        <span className="flex items-center gap-2">
-          <Icon variant="GithubLogoIcon" size={16} theme="neutral" />
-          <Text variant="subtext" weight="strong">
-            See the example app repo
-          </Text>
-          <Code variant="inline">{KITCHEN_SINK_REPO}</Code>
-        </span>
-        <span className={cn('flex transition-transform duration-300', open && 'rotate-180')} aria-hidden>
-          <Icon variant="CaretDownIcon" size={14} weight="bold" theme="neutral" />
-        </span>
-      </button>
-      <div
-        id="example-app-drawer"
-        className={cn(
-          'grid transition-[grid-template-rows,opacity,visibility] duration-300 ease-out',
-          open ? 'visible grid-rows-[1fr] opacity-100' : 'invisible grid-rows-[0fr] opacity-0'
-        )}
-        aria-hidden={!open}
-      >
-        <div className="overflow-hidden">
-          <div className="flex flex-col gap-3 border-t border-dashed px-4 py-3 md:flex-row md:items-start md:justify-between">
-            <div className="flex flex-col gap-1.5">
-              <Text variant="body" weight="strong">
-                Kitchen Sink
-              </Text>
-              <ul className="flex flex-col gap-1">
-                {EXAMPLE_APP_FACTS.map((fact) => (
-                  <li key={fact} className="flex items-start gap-2">
-                    <Icon
-                      variant="CheckCircleIcon"
-                      size={14}
-                      weight="fill"
-                      theme="success"
-                      className="mt-0.5 shrink-0"
-                    />
-                    <Text variant="subtext" theme="neutral">
-                      {fact}
-                    </Text>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <Button variant="secondary" size="sm" href={KITCHEN_SINK_URL} target="_blank" rel="noreferrer">
-              <Icon variant="GithubLogoIcon" size={14} /> View on GitHub
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 const ExampleEscapeHatch = ({ onExit }: { onExit: () => void }) => (
   <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed px-4 py-3">
@@ -403,17 +339,16 @@ export const StartStepView = ({
           </div>
         </Card>
         <Card className="!gap-4">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Icon variant="TireIcon" size={20} theme="neutral" />
               <Text variant="h3" role="heading" level={3}>
-                Or kick the tires with our example app first
+                Deploy an example app
               </Text>
             </div>
-            <Text variant="body" theme="neutral">
-              Pre-wired with Terraform, Helm, images, manifests. Deploy it to your cloud account just like
-              your customers would deploy your app.
-            </Text>
+            <Button variant="secondary" size="sm" href={KITCHEN_SINK_URL} target="_blank" rel="noreferrer">
+              <Icon variant="GithubLogoIcon" size={14} /> View on GitHub
+            </Button>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {EXAMPLE_CLOUDS.map((option) => (
@@ -434,7 +369,6 @@ export const StartStepView = ({
               </Button>
             ))}
           </div>
-          <ExampleAppDrawer />
         </Card>
       </>
     )

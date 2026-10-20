@@ -1013,7 +1013,7 @@ const FileStubRows = ({ appName, cloud }: { appName: string; cloud: TCloud }) =>
 
 const EXAMPLE_APP_FACTS = [
   'Helm chart: API, UI, and worker pods',
-  'Pulumi S3 bucket and CI-built images',
+  'S3 bucket and CI-built images',
   'Actions, policies, runbooks, app branches',
 ]
 const ExampleAppDrawer = () => {
