@@ -167,6 +167,9 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   line-height: 1.5;
 }
 .nuon-ask-agent-note a {
+  display: block;
+  margin-top: 0.25rem;
+  font-weight: 500;
   color: var(--ask-accent);
   text-decoration: underline;
 }
@@ -184,17 +187,6 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
     flex: 1;
     text-align: center;
   }
-}
-.nuon-ask-agent-link {
-  display: inline-block;
-  margin: 0 0 0.5rem;
-  color: var(--ask-accent);
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-decoration: none;
-}
-.nuon-ask-agent-link:hover {
-  text-decoration: underline;
 }
 .nuon-ask-agent + .nuon-ask-agent {
   margin-top: -1.125rem;

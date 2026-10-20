@@ -9,8 +9,6 @@ export const AskYourAgent = ({ title, prompt, tools = [] }) => {
     });
   };
 
-  const cursorHref = `https://cursor.com/link/prompt?text=${encodeURIComponent(prompt)}`;
-
   return (
     <div className="not-prose nuon-ask-agent" data-open={open}>
       <div className="nuon-ask-agent-row">
@@ -49,20 +47,16 @@ export const AskYourAgent = ({ title, prompt, tools = [] }) => {
       {open && (
         <div className="nuon-ask-agent-body">
           <pre className="nuon-ask-agent-prompt">{prompt}</pre>
-          <a className="nuon-ask-agent-link" href={cursorHref} target="_blank" rel="noreferrer">
-            Open in Cursor
-          </a>
           <p className="nuon-ask-agent-note">
-            Needs the <a href="/guides/agents/setup">Nuon MCP server</a>. Read-only: the agent
-            calls{" "}
+            Read-only: the agent calls{" "}
             {tools.map((t, i) => (
               <span key={t}>
                 {i > 0 && (i === tools.length - 1 ? " and " : ", ")}
                 <code>{t}</code>
               </span>
             ))}
-            . Not connected? Run <code>nuon auth login</code>, then{" "}
-            <code>claude mcp add --transport stdio nuon -- nuon agents mcp</code>.
+            .
+            <a href="/guides/agents/setup">Set up the Nuon MCP server →</a>
           </p>
         </div>
       )}
