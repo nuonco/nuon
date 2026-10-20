@@ -42,7 +42,7 @@ import {
 } from './constants'
 import { waitItems, type IWaitItem } from './progress'
 import { deploySchema, type DeployValues } from './schema'
-import { MiniArch, NextButton, RepoChip } from './shared'
+import { NextButton, RepoChip } from './shared'
 import { ByocReferences, WaitProgress } from './WaitProgress'
 
 const CONFIG_POLL_MS = 2000
@@ -129,12 +129,6 @@ const InstallSummaryCard = ({
           </div>
         ))}
       </dl>
-      <div className="flex flex-col gap-2">
-        <Text variant="subtext" theme="neutral">
-          What lands in the customer&apos;s account
-        </Text>
-        <MiniArch />
-      </div>
     </Card>
   )
 }
