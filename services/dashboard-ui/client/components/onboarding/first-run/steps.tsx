@@ -35,7 +35,7 @@ const CONNECT_STEP: TFirstRunStepDef = {
   description: (
     <>
       <InlineLink href={DOCS_APPS} textVariant="body">
-        App configs
+        App templates
       </InlineLink>{' '}
       are how Nuon installs and upgrades your app in every customer&apos;s cloud.
     </>

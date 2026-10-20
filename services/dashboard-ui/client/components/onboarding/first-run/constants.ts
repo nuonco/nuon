@@ -129,7 +129,7 @@ export const INSTALL_NAME_ATTEMPTS = 3
 export const PROMPT_URL = 'https://nuon.co/loop.md'
 
 export const DEMO_REQUEST = 'https://nuon.co/demo-request'
-export const CONTACT_MESSAGE = 'I would like help writing the app config for my first install.'
+export const CONTACT_MESSAGE = 'I would like help writing the app template for my first install.'
 
 export const DOCS_URL = 'https://docs.nuon.co'
 export const DOCS_MCP = 'https://docs.nuon.co/guides/agents/setup'
@@ -151,7 +151,7 @@ export const CLI_LOGIN = 'nuon login'
 export const CLI_SETUP = `${CLI_INSTALL}\n${CLI_LOGIN}`
 export const MCP_ADD_CLAUDE =
   'claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes'
-export const GIT_PUSH = 'git add .\ngit commit -m "Add Nuon app config"\ngit push origin main'
+export const GIT_PUSH = 'git add .\ngit commit -m "Add Nuon app template"\ngit push origin main'
 export const watchCommand = (installId: string) => `nuon installs workflows watch -i ${installId}`
 export const watchPrompt = (appName: string) =>
   `Watch my ${appName} test install on Nuon while it provisions. Tell me as each step finishes, and if a step fails, pull its logs and explain what went wrong.`
@@ -369,5 +369,5 @@ export const STACK_RENDER_LABEL: Record<TCloud, string> = {
 // for the stack link, so these leave room before calling a wait slow.
 export const DEPLOY_SLOW_MS = 10 * 60_000
 export const STACK_SLOW_MS = 5 * 60_000
-export const DEPLOY_HELP_MESSAGE = 'My first install is stuck while Nuon gets the app config ready.'
+export const DEPLOY_HELP_MESSAGE = 'My first install is stuck while Nuon gets the app template ready.'
 export const STACK_HELP_MESSAGE = 'My first install is stuck while Nuon generates the install stack.'

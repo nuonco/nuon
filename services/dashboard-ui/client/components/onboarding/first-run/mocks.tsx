@@ -251,7 +251,7 @@ const MockConnect = (nav: TNav, seed: IMockScenario | undefined, mock: TMock, me
         onContinueAnyway={onAdvance}
         onKeepWaiting={() => setConfirmSkip(false)}
         onExampleExit={() => nav.choose('example', 'aws', 'start')}
-        onGetHelp={() => notice('opens support chat with a message about the app config.')}
+        onGetHelp={() => notice('opens support chat with a message about the app template.')}
         onCopyPrompt={() => notice('the prompt is copied for your coding agent.')}
         onBack={onGoBack}
       />
@@ -276,7 +276,7 @@ const MockDeploy = (seed: IMockScenario | undefined, mock: TMock, memory: TMemor
     const labels = [
       'Start a branch run on main',
       `Fetch the latest commit from ${repoFor(mock)}`,
-      'Read and validate the app config',
+      'Read and validate the app template',
       'Build the components and sandbox',
       'Create the install',
     ]
@@ -318,7 +318,7 @@ const MockDeploy = (seed: IMockScenario | undefined, mock: TMock, memory: TMemor
             setDone(buildsIndex)
           }, 900)
         }}
-        onGetHelp={() => notice('opens support chat about the stuck app config.')}
+        onGetHelp={() => notice('opens support chat about the stuck app template.')}
         onCreate={() => {
           if (installCreated) {
             onAdvance()

@@ -97,7 +97,7 @@ test('deploy submits the region and auto-approve choice', async () => {
   })
 })
 
-test('deploy shows live progress and a BYOC reference while waiting for the app config', () => {
+test('deploy shows live progress and a BYOC reference while waiting for the app template', () => {
   render(
     <DeployStepView
       path="example"
@@ -111,13 +111,13 @@ test('deploy shows live progress and a BYOC reference while waiting for the app 
       progressSince={Date.now() - 5_000}
       progress={[
         { label: 'Start a branch run on main', state: 'done' },
-        { label: 'Read and validate the app config', state: 'active' },
+        { label: 'Read and validate the app template', state: 'active' },
       ]}
       onCreate={() => {}}
     />
   )
   expect(screen.getByText('Setting up your test install')).toBeInTheDocument()
-  expect(screen.getByText('Read and validate the app config')).toBeInTheDocument()
+  expect(screen.getByText('Read and validate the app template')).toBeInTheDocument()
   expect(screen.getByText('0:05')).toBeInTheDocument()
   expect(screen.getByText('Datadog')).toBeInTheDocument()
   expect(screen.getByText('See all on Awesome BYOC')).toBeInTheDocument()
@@ -142,7 +142,7 @@ test('a failed Kitchen Sink sync offers a retry and help instead of a push', () 
       onCreate={() => {}}
     />
   )
-  expect(screen.getByText('The Kitchen Sink app config did not sync')).toBeInTheDocument()
+  expect(screen.getByText('The Kitchen Sink app template did not sync')).toBeInTheDocument()
   expect(screen.queryByText(/Push a fix/)).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: /Run the sync again/ }))
   fireEvent.click(screen.getByRole('button', { name: /Get help/ }))

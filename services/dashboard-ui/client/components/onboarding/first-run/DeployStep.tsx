@@ -190,7 +190,7 @@ export const DeployStepView = ({
   const label = installCreated
     ? 'Continue'
     : phase === 'waiting-config'
-      ? 'Waiting for your app config...'
+      ? 'Creating the Nuon App Template...'
       : phase === 'creating'
         ? 'Creating install...'
         : 'Create install'
@@ -270,9 +270,9 @@ export const DeployStepView = ({
       {missingInputs.length ? (
         <Banner theme="error">
           <div className="flex flex-col gap-1">
-            <Text weight="strong">Your app config has required inputs with no default</Text>
+            <Text weight="strong">Your app template has required inputs with no default</Text>
             <Text variant="subtext">
-              Add a default to {missingInputs.join(', ')} in your app config, push, then try again.
+              Add a default to {missingInputs.join(', ')} in your app template, push, then try again.
             </Text>
           </div>
         </Banner>
@@ -283,8 +283,8 @@ export const DeployStepView = ({
             <div className="flex flex-col gap-1">
               <Text weight="strong">
                 {path === 'own'
-                  ? 'The last sync of your app config failed'
-                  : `The ${KITCHEN_SINK_LABEL} app config did not sync`}
+                  ? 'The last sync of your app template failed'
+                  : `The ${KITCHEN_SINK_LABEL} app template did not sync`}
               </Text>
               <Text variant="subtext">
                 {syncError}{' '}
@@ -441,7 +441,7 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
     [
       { label: `Start a branch run on ${TRACKED_GIT_BRANCH}`, done: !!latestRun },
       { label: `Fetch the latest commit from ${repo}`, step: 'fetch commit' },
-      { label: 'Read and validate the app config', step: 'fetch app config', done: !!activeConfig },
+      { label: 'Read and validate the app template', step: 'fetch app config', done: !!activeConfig },
       { label: 'Build the components and sandbox', step: BUILDS_STEP, done: buildsReady },
       { label: 'Create the install', done: false },
     ],
