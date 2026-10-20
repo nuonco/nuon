@@ -69,7 +69,7 @@ const DEFAULT_FILTER: IActivityFilter = {
   search: '',
   status: new Set(),
   type: new Set(),
-  trigger: new Set(),
+  hideCron: false,
 }
 
 const presenterProps = {
@@ -80,7 +80,8 @@ const presenterProps = {
   onSearchChange: () => {},
   onStatusChange: () => {},
   onTypeChange: () => {},
-  onTriggerChange: () => {},
+  onActorChange: () => {},
+  onHideCronChange: () => {},
   onDateChange: () => {},
   onClearFilters: () => {},
 }
