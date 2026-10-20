@@ -23,7 +23,7 @@ A workflow represents the complete lifecycle of deploying, updating or tearing d
 If new to Nuon, familiarize yourself with the [app and install life cycle](../guides/app-install-life-cycle) first.
 </Note>
 
-![Workflows List](../images/concepts/workflows/workflows-list.png)
+Each install has a **Workflows** tab that lists its workflows newest first, with each workflow's status and how long ago it ran. Open a workflow to see its steps in order, its pending approvals and how many steps have completed.
 
 ## Workflow Types
 
@@ -31,19 +31,13 @@ If new to Nuon, familiarize yourself with the [app and install life cycle](../gu
 
 An install workflow covers all of the steps required to install an app from scratch. This includes creating the install stack, creating the virtual machine and starting the Nuon runner, provisioning the sandbox, syncing secrets, deploying the components of the app with Terraform, Helm or Kubernetes manifests e.g., databases, applications, certificates, application load balancers, and executing actions which are bash scripts to perform additional configurations like initializing a database or performing a health check.
 
-![Install Workflow](../images/concepts/workflows/install-workflow.png)
-
 ### Component
 
 A component workflow deploys a component. If there are dependent components, the user can instruct Nuon to deploy those components as well.
 
-![Component Workflow](../images/concepts/workflows/component-workflow.png)
-
 ### Action
 
 An action workflow executes the script associated with an action. e.g., initialize a database, run a health check on a component, make a one-off configuration change.
-
-![Action Workflow](../images/concepts/workflows/action-workflow.png)
 
 ## Workflow States
 
@@ -55,26 +49,22 @@ An action workflow executes the script associated with an action. e.g., initiali
 
 **In-progress (brown circle pulsing or clockwise spinning blue circle)**: A component or action is underway
 
-![Workflow States](../images/concepts/workflows/workflow-states.png)
-
 ## Workflow Approvals
 
 Components using Terraform, Helm and Kubernetes manifests run a plan step which requires the user to approve or reject the step before proceeding to the apply or deploying of the sandbox and components.
 
-![Workflow Approvals](../images/concepts/workflows/approval-sandbox.png)
+A plan step waiting on you shows **Awaiting approval** in the step list. Open it to see each resource the plan will create, update, delete or read, then choose **Approve plan**, **Deny plan** or **Retry plan**.
 
-At the install-level and at the individual workflow-level, the user can opt to Approve All plan steps.
-
-![Component Workflow](../images/concepts/workflows/install-approve-all.png)
+You can approve plan steps in bulk at two levels. To approve every plan step on an install automatically, turn on auto approval in the install's settings. To approve the remaining plan steps in one workflow, click **Approve all** on that workflow.
 
 ## Workflow Diffs
 
 If a component using Terraform, Helm or a Kubernetes manifest has been changed by the user, re-synced to an app and therefore re-built, the plan step will visually show the diff, aka the before and after proposed change, and require the user to approve or reject/deny the change. Learn more about [Understanding diffs](../updates/012-approval-diffs-plan-only).
 
-![Workflow Diffs](../images/concepts/workflows/approval-step-helm.png)
+A Helm plan, for example, opens with how many resources it will add, change and destroy, then shows the diff of each manifest.
 
 ## Drift Detection
 
 [Drift Detection](../updates/023-drift-workflow-improvements) allows you to automatically identify discrepancies between your defined infrastructure in Nuon and what’s actually running. You can schedule periodic drift checks or manual drift scans from the dashboard. Drilling into the relevant Workflow will show the drift.
 
-![Drift Detection](../images/concepts/workflows/drift-in-workflow.png)
+To see drift scans in an install's workflow list, turn on the **Drift scan** filter. A scan's plan step lists each drifted resource under **Resource drift**, with its expected and actual values.
