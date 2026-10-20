@@ -250,8 +250,14 @@ func (m *Migrations) All() []migrations.Migration {
 		},
 	}
 	all = append(all, m.installStateInvalidationMigrations()...)
-	return append(all, migrations.Migration{
-		Name: "146-install-state-heads",
-		Fn:   m.Migration146InstallStateHeads,
-	})
+	return append(all,
+		migrations.Migration{
+			Name: "146-install-state-heads",
+			Fn:   m.Migration146InstallStateHeads,
+		},
+		migrations.Migration{
+			Name: "147-scope-log-stream-accounts",
+			Fn:   m.Migration147ScopeLogStreamAccounts,
+		},
+	)
 }
