@@ -1,3 +1,4 @@
+import { useDeepLinkedPanels } from '@/hooks/use-deep-linked-panels'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TInstallWorkflow } from '@/types'
@@ -22,44 +23,49 @@ export const BranchPendingApprovalsContainer = ({
   const { org } = useOrg()
   const { addPanel } = useSurfaces()
   const orgId = org?.id ?? ''
+  const cancelled = !run || run.status?.status === 'cancelled'
+  const approvalSteps = cancelled
+    ? []
+    : (run.steps ?? []).filter(
+        (step) =>
+          step.execution_type === 'approval' &&
+          step.status?.status === 'approval-awaiting' &&
+          !step.approval?.response &&
+          !!step.approval?.id
+      )
 
-  if (!run) return null
+  useDeepLinkedPanels(
+    approvalSteps.map((step) => ({
+      key: `plan-diff-${step.id}`,
+      build: () => <PlanDiffPanel step={step} />,
+    }))
+  )
 
-  if (run.status?.status === 'cancelled') {
-    return null
-  }
+  if (!run || cancelled) return null
 
-  const items: IBranchRunApprovalItem[] = (run.steps ?? [])
-    .filter(
-      (step) =>
-        step.execution_type === 'approval' &&
-        step.status?.status === 'approval-awaiting' &&
-        !step.approval?.response &&
-        !!step.approval?.id
-    )
-    .map((step) => {
-      const groupName = getGroupName(step.name)
+  const items: IBranchRunApprovalItem[] = approvalSteps.map((step) => {
+    const groupName = getGroupName(step.name)
 
-      return {
-        key: step.id ?? step.approval!.id!,
-        groupName,
-        onReview: () => {
-          addPanel(<PlanDiffPanel step={step} />, `plan-diff-${step.id}`)
-        },
-        actions: (
-          <GroupActionButton
-            action="approve"
-            target={{
-              orgId,
-              workflowId: step.install_workflow_id ?? run.id ?? '',
-              stepId: step.id ?? '',
-              approvalId: step.approval!.id!,
-              groupName,
-            }}
-          />
-        ),
-      }
-    })
+    return {
+      key: step.id ?? step.approval!.id!,
+      groupName,
+      onReview: () => {
+        addPanel(<PlanDiffPanel step={step} />, `plan-diff-${step.id}`)
+      },
+      actions: (
+        <GroupActionButton
+          action="approve"
+          target={{
+            orgId,
+            workflowId: step.install_workflow_id ?? run.id ?? '',
+            stepId: step.id ?? '',
+            approvalId: step.approval!.id!,
+            groupName,
+          }}
+        />
+      ),
+    }
+  })
 
   return (
     <>
