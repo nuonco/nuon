@@ -11,6 +11,7 @@ import { useWorkflow } from '@/hooks/use-workflow'
 import { getWorkflowStep } from '@/lib'
 import { InstallAppConfigContext, InstallAppConfigProvider } from '@/providers/install-app-config-provider'
 import { InstallContext, InstallProvider } from '@/providers/install-provider'
+import { hasPanelKey } from '@/providers/surfaces-provider'
 import type { TWorkflowStep } from '@/types'
 import { ActionRunStepDetails } from '../action-run-details/ActionRunStepDetails'
 import { DeployStepDetails } from '../deploy-details/DeployStepDetails'
@@ -240,7 +241,7 @@ const StepPanelButton = ({
     if (
       !suppressAutoOpen &&
       step.id &&
-      step.id === searchParams?.get('panel') &&
+      hasPanelKey(searchParams, step.id) &&
       !panels.some((p) => p.key === step.id)
     ) {
       handleAddPanel()
