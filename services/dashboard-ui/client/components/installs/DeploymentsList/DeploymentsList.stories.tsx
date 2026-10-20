@@ -86,6 +86,7 @@ const DEFAULT_FILTER: IDeploymentFilter = {
 }
 
 const MOCK_DEPLOYMENTS = [DEPLOYMENT_PROVISION, DEPLOYMENT_CONFIG_UPDATE]
+const INSTALL_COMPONENTS = ['api', 'worker']
 
 const ACTIVE_DEPLOYMENTS: TInstallDeploymentSummary[] = [
   {
@@ -164,6 +165,7 @@ export const Default = () => {
         orgId={ORG_ID}
         appId={APP_ID}
         installId={INSTALL_ID}
+        installComponents={INSTALL_COMPONENTS}
         search=""
         filter={DEFAULT_FILTER}
         onSearchChange={() => {}}
@@ -188,6 +190,7 @@ export const Loading = () => (
       orgId={ORG_ID}
       appId={APP_ID}
       installId={INSTALL_ID}
+      installComponents={INSTALL_COMPONENTS}
       search=""
       filter={DEFAULT_FILTER}
       onSearchChange={() => {}}
@@ -210,6 +213,7 @@ export const Empty = () => (
       orgId={ORG_ID}
       appId={APP_ID}
       installId={INSTALL_ID}
+      installComponents={INSTALL_COMPONENTS}
       search=""
       filter={DEFAULT_FILTER}
       onSearchChange={() => {}}
@@ -232,6 +236,7 @@ export const EmptyFiltered = () => (
       orgId={ORG_ID}
       appId={APP_ID}
       installId={INSTALL_ID}
+      installComponents={INSTALL_COMPONENTS}
       search=""
       filter={{ ...DEFAULT_FILTER, status: new Set(['failed']) }}
       onSearchChange={() => {}}
@@ -254,6 +259,7 @@ export const WithPagination = () => (
       orgId={ORG_ID}
       appId={APP_ID}
       installId={INSTALL_ID}
+      installComponents={INSTALL_COMPONENTS}
       search=""
       filter={DEFAULT_FILTER}
       onSearchChange={() => {}}
