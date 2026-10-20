@@ -1,5 +1,5 @@
 ---
-title: 'Add BYOC installation to your app'
+title: 'Add BYOC installation to your product'
 description: 'Enable customers to manage their installs through your UI'
 icon: "plug"
 keywords: ["embed Nuon", "white label", "API integration", "product integration", "SDK integration", "custom UI", "BYOC installation", "embed BYOC in your product", "white-label install flow", "customer install dashboard in your UI", "embedded BYOC", "API-first BYOC"]
@@ -13,7 +13,7 @@ At a high-level, provisioning a new install consists of 3 steps:
 
 1. Creating the install in the Nuon control plane.
 1. Installing the runner in the customer's cloud account.
-1. Approving the provision of the app components into the customer's cloud account.
+1. Approving the provision of the app template's components into the customer's cloud account.
 
 ### Create an Install
 
@@ -112,7 +112,7 @@ Endpoints that create a workflow accept an optional `request_id` so a lost respo
 
 Even though the goal of using Nuon it to provide a SaaS-like experience, where you can maintain the install for your customer, there are still a few things they will need to be able to do themselves. Common use cases are:
 
-- Accepting a new version of the app
+- Accepting a new version of your product
 - Allowing you to break glass to triage an issue
 - Updating an input value that was incorrect
 - Updating a secret that was incorrect
@@ -169,7 +169,7 @@ curl -X POST https://api.nuon.co/v1/installs/$INSTALL_ID/sync-secrets \
 
 ## Delete an Install
 
-Uninstalling an app requires performing the same operations as a provision, but in reverse.
+Uninstalling your product requires performing the same operations as a provision, but in reverse.
 
 1. Deprovision the app resources from your customer's cloud account.
 1. Uninstall the runner.

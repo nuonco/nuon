@@ -1,6 +1,6 @@
 ---
 title: "Configuring Policies"
-description: "Step-by-step guide to adding compliance and security policies to your Nuon app."
+description: "Step-by-step guide to adding compliance and security policies to your Nuon app template."
 icon: "shield-check"
 keywords: ["policies", "policies guide", "how to add policies", "policies.toml setup", "OPA setup", "policy configuration guide", "add compliance rules"]
 ---
@@ -13,7 +13,7 @@ keywords: ["policies", "policies guide", "how to add policies", "policies.toml s
 
 Before starting, ensure you have:
 
-- An existing Nuon app with at least one component (terraform, helm, or container_image)
+- An existing Nuon app template with at least one component (terraform, helm, or container_image)
 - The [Nuon CLI](/cli) installed and authenticated
 - Basic familiarity with [OPA Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) syntax
 
@@ -180,22 +180,18 @@ contents = "git::https://github.com/org/policies//terraform/encryption.rego"
 contents = "git::https://github.com/org/policies//terraform/encryption.rego?ref=v1.2.3"
 ```
 
-## Sync Your App
+## Ship Your Policies
 
-Upload your policies by syncing your app:
+Policies ship with the rest of your app config. Commit them and push to the git branch your
+[app branch](/guides/app-branches) tracks:
 
 ```sh
-nuon apps sync
+git add policies.toml policies/
+git commit -m "add policies"
+git push origin main
 ```
 
-Policies are synced along with components and other configuration. You should see output confirming the policies were uploaded:
-
-```
-Syncing app...
-✓ Synced 3 policies
-✓ Synced 3 components
-✓ App sync complete
-```
+The push starts a branch run, which parses and uploads your policies along with components and other configuration.
 
 ## Observe Build-Time Evaluation
 
@@ -326,11 +322,12 @@ containers:
         memory: "128Mi"
 ```
 
-After making changes, sync and redeploy:
+After making changes, push them to the tracked git branch. The push starts a branch run that plans and deploys the
+change, one deployment group at a time:
 
 ```sh
-nuon apps sync
-nuon installs deploy -i <install-id>
+git commit -am "fix policy violations"
+git push origin main
 ```
 
 Confirm the policies now pass:

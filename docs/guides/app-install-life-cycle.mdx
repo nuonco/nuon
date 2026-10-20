@@ -1,11 +1,11 @@
 ---
 title: "App and Install Life Cycle"
-description: "Understand the life cycle of apps and installs in Nuon."
+description: "Understand the life cycle of app templates and installs in Nuon."
 icon: "arrow-right-arrow-left"
 keywords: ["installs", "install guide", "lifecycle", "provision flow", "deprovision flow", "reprovision", "teardown", "install stages", "how installs work", "manage multiple customers", "multi-tenant BYOC", "deprovisioning a customer", "cleanup on uninstall", "customer offboarding", "install status dashboard", "how many installs can I run"]
 ---
 
-[Apps](../concepts/apps) and [installs](../concepts/installs) in Nuon follow a defined lifecycle. You'll start by packaging your app and syncing it to build OCI artifacts. Then you can create one or many customer-specific installations, which you'll update with change controls and monitor over time.
+[App templates](../concepts/apps) and [installs](../concepts/installs) in Nuon follow a defined lifecycle. You'll start by packaging your app template and syncing it to build OCI artifacts. Then you can create one or many customer-specific installations, which you'll update with change controls and monitor over time.
 
 Understanding this life cycle is crucial to effectively using Nuon to manage
 your apps and installs.
@@ -14,35 +14,33 @@ your apps and installs.
 
 ## Package your app
 
-The first step in the app life cycle is to package your app as a set of TOML
+The first step in the app life cycle is to package your app template as a set of TOML
 files in a git-backed repository. These files define the app's sandbox (e.g.,
 VPC, networking, and Kubernetes infrastructure), components, inputs, variables,
 and other configuration details. These configurations can point to your existing
 Terraform modules, Helm charts, Kubernetes manifests, or other
-infrastructure-as-code resources. For examples of packaged apps, see our [public GitHub repository](https://github.com/nuonco/example-app-configs).
+infrastructure-as-code resources. For example app templates, see our [public GitHub repository](https://github.com/nuonco/example-app-configs).
 
-Packaging your app can be customized to re-use existing VPCs, networking, or
+Packaging your app template can be customized to re-use existing VPCs, networking, or
 Kubernetes clusters, or by default Nuon creates new ones for each install.
 
 ## Sync and Build
 
-When an app is initially created and synced to the Nuon control plane with the
-[Nuon CLI](../cli), a build occurs for each component in the app.
+When an app's [app branch](/guides/app-branches) first runs, Nuon syncs the app config to the control plane
+and builds each component in the app.
 
 Builds create an OCI artifact for each component and the Nuon control plane
 stores them in the container registry like AWS ECR.
 
-**Important:** After the initial sync, component changes require rebuilding. `nuon apps sync` will automatically rebuild when it detects changes to TOML files or referenced files like Helm values.
+**Important:** After the initial build, component changes require rebuilding. An [app branch](/guides/app-branches) run rebuilds automatically when it detects changes to TOML files or referenced files like Helm values.
 
-![CLI Build](/images/guides/app-install-life-cycle/cli-build.png)
-
-However, you must manually rebuild in the dashboard when:
+However, you must rebuild yourself, with `nuon branches trigger --branch-id <branch> --force` or in the dashboard, when:
   - Git repository source code changes (e.g., Terraform modules or Helm charts)
-  - Source code in your app repository changes (push your branch first, then rebuild)
+  - Source code in your app repository changes while its config does not (push your branch first, then rebuild)
 
 **Tip:** Double-check your branch name in the component TOML file when source is included in your app repo—this is a common oversight.
 
-Remember to run `nuon apps sync` whenever anything in your TOML files changes.
+Commit and push to the tracked git branch whenever anything in your TOML files changes. The push starts a branch run.
 
 ![Rebuild components](/images/guides/app-install-life-cycle/component-build.png)
 
@@ -50,7 +48,7 @@ Remember to run `nuon apps sync` whenever anything in your TOML files changes.
 
 ## Installs, defined for your customers
 
-Installs into customer cloud accounts are created from apps and inherit the
+Installs into customer cloud accounts are created from app templates and inherit the
 infrastructure and components defined in the app. When an install is created, it
 uses the latest built version of each component.
 
@@ -59,7 +57,7 @@ define the steps to deploy, update, manage, and tear down the install.
 
 ![Workflows](/images/guides/app-install-life-cycle/workflow-history.png)
 
-Creating an install starts by providing any inputs defined by the app, such as API keys, cloud region, node instance type, or app release version. This is how you customize installs for each customer.
+Creating an install starts by providing any inputs defined by the app, such as API keys, cloud region, node instance type, or product release version. This is how you customize installs for each customer.
 
 ![Inputs](/images/guides/app-install-life-cycle/inputs.png)
 
@@ -69,8 +67,8 @@ Install workflows deploy the sandbox, components, and actions from your app in s
 
 ## Update, with change controls
 
-Because apps are git-backed, you can update individual or multiple installs to
-the latest release of your app or upgrade components or even infrastructure.
+Because app templates are git-backed, you can update individual or multiple installs to
+the latest release of your product or upgrade components or even infrastructure.
 e.g., Kubernetes version.
 
 Updates have approval gates by default to ensure changes are reviewed before
