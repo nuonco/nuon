@@ -252,7 +252,7 @@ export const DeployStepView = ({
         </form.Field>
       </Card>
 
-      <InstallSummaryCard path={path} appName={appName} repo={repo} cloud={cloud} />
+      {path === 'own' ? <InstallSummaryCard path={path} appName={appName} repo={repo} cloud={cloud} /> : null}
 
       {busy && progress ? (
         <>

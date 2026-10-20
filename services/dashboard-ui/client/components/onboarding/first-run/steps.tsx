@@ -56,7 +56,7 @@ const EXAMPLE_DEPLOY_STEP: TFirstRunStepDef = {
   title: `Test install of ${KITCHEN_SINK_LABEL} demo app`,
   description: (
     <>
-      Here we just give you a region picker. We support a{' '}
+      In this example, there is a region picker. We support a{' '}
       <InlineLink href={DOCS_APP_INPUTS} textVariant="body">
         range of configurable inputs
       </InlineLink>
