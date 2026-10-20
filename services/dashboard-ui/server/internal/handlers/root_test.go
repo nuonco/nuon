@@ -22,10 +22,12 @@ func TestRootHandle(t *testing.T) {
 		firstRun  bool
 		orgCookie string
 		orgs      string
+		orgsSeq   []string
 		account   func(http.ResponseWriter, *http.Request)
 		want      string
 	}{
 		{name: "new sign-up with no org", orgs: `[]`, want: "/onboarding"},
+		{name: "invite accepted on the first read", orgsSeq: []string{`[]`, oneOrg}, want: "/orgabc123"},
 		{name: "flag off ignores an open first_run", orgs: oneOrg, account: jsonResponse(http.StatusOK, accountFirstRunOpen), want: "/orgabc123"},
 		{name: "flag off trusts the org cookie", orgCookie: "orgabc123", want: "/orgabc123"},
 		{name: "open first_run still lands on the org", firstRun: true, orgs: oneOrg, account: jsonResponse(http.StatusOK, accountFirstRunOpen), want: "/orgabc123"},
@@ -39,7 +41,16 @@ func TestRootHandle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fake := &fakeCtlAPI{account: tt.account}
-			if tt.orgs != "" {
+			if len(tt.orgsSeq) > 0 {
+				var n int
+				fake.orgs = func(w http.ResponseWriter, r *http.Request) {
+					body := tt.orgsSeq[n]
+					if n < len(tt.orgsSeq)-1 {
+						n++
+					}
+					jsonResponse(http.StatusOK, body)(w, r)
+				}
+			} else if tt.orgs != "" {
 				fake.orgs = jsonResponse(http.StatusOK, tt.orgs)
 			}
 			api := fake.start(t)
