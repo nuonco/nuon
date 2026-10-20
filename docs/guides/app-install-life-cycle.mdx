@@ -5,100 +5,121 @@ icon: "arrow-right-arrow-left"
 keywords: ["installs", "install guide", "lifecycle", "provision flow", "deprovision flow", "reprovision", "teardown", "install stages", "how installs work", "manage multiple customers", "multi-tenant BYOC", "deprovisioning a customer", "cleanup on uninstall", "customer offboarding", "install status dashboard", "how many installs can I run"]
 ---
 
-[App templates](../concepts/apps) and [installs](../concepts/installs) in Nuon follow a defined lifecycle. You'll start by packaging your app template and syncing it to build OCI artifacts. Then you can create one or many customer-specific installations, which you'll update with change controls and monitor over time.
+import { FlowSteps } from "/snippets/flow-steps.jsx";
 
-Understanding this life cycle is crucial to effectively using Nuon to manage
-your apps and installs.
+[App templates](../concepts/apps) and [installs](../concepts/installs) in Nuon follow a defined life cycle. You package your app template in git, and Nuon builds an artifact for each component. From that template you create one install per customer, roll updates out to them with approvals, and operate them over time.
 
-# App Life Cycle
+<FlowSteps
+  groups={[
+    { label: "App template", from: 0, to: 1 },
+    { label: "Each install", from: 2, to: 4 },
+  ]}
+  steps={[
+    { title: "Package", detail: "TOML files in a git repository" },
+    { title: "Build", detail: "An OCI artifact for each component" },
+    { title: "Create", detail: "Inputs set for each customer" },
+    { title: "Deploy", detail: "The install workflow provisions it" },
+    { title: "Operate", detail: "Health checks, actions and runbooks" },
+  ]}
+  loop="To ship a change, push it to the tracked branch. The branch run rebuilds and rolls it out."
+/>
+
+# App life cycle
 
 ## Package your app
 
-The first step in the app life cycle is to package your app template as a set of TOML
-files in a git-backed repository. These files define the app's sandbox (e.g.,
-VPC, networking, and Kubernetes infrastructure), components, inputs, variables,
-and other configuration details. These configurations can point to your existing
-Terraform modules, Helm charts, Kubernetes manifests, or other
-infrastructure-as-code resources. For example app templates, see our [public GitHub repository](https://github.com/nuonco/example-app-configs).
+Package your app template as a set of TOML files in a git repository. These files define the app's sandbox (for example VPC, networking and Kubernetes infrastructure), components, inputs, variables and other configuration. Components can point to your existing Terraform modules, Helm charts, Kubernetes manifests or other infrastructure-as-code. For examples, see the [example app templates on GitHub](https://github.com/nuonco/example-app-configs).
 
-Packaging your app template can be customized to re-use existing VPCs, networking, or
-Kubernetes clusters, or by default Nuon creates new ones for each install.
+The [sandbox](/concepts/sandboxes) sets the base infrastructure each install gets: networking, permissions, and compute such as a Kubernetes cluster when your app needs one. Some sandboxes, like AWS Min, create no cluster at all. A sandbox can also reuse infrastructure the customer already has, such as an existing VPC or cluster.
 
-## Sync and Build
+## Sync and build
 
-When an app's [app branch](/guides/app-branches) first runs, Nuon syncs the app config to the control plane
-and builds each component in the app.
+When an app's [app branch](/guides/app-branches) first runs, Nuon syncs the app config to the control plane and builds each component. Each build produces an OCI artifact, which the control plane stores in a container registry such as AWS ECR.
 
-Builds create an OCI artifact for each component and the Nuon control plane
-stores them in the container registry like AWS ECR.
+After that, every push to the tracked git branch starts a branch run that rebuilds what changed. Some changes live outside the files Nuon watches, so a branch run can't see them:
 
-**Important:** After the initial build, component changes require rebuilding. An [app branch](/guides/app-branches) run rebuilds automatically when it detects changes to TOML files or referenced files like Helm values.
+| What changed | What rebuilds it |
+| --- | --- |
+| TOML files, or files they reference such as Helm values | The next branch run, automatically |
+| Source in another git repository, such as a Terraform module or Helm chart | A forced rebuild |
+| Source in your app repository whose config did not change | A forced rebuild, after you push the branch |
 
-However, you must rebuild yourself, with `nuon branches trigger --branch-id <branch> --force` or in the dashboard, when:
-  - Git repository source code changes (e.g., Terraform modules or Helm charts)
-  - Source code in your app repository changes while its config does not (push your branch first, then rebuild)
+To force a rebuild of every component, run `nuon branches trigger --branch-id <branch> --force`, or trigger the branch from the dashboard.
 
-**Tip:** Double-check your branch name in the component TOML file when source is included in your app repo—this is a common oversight.
+<Tip>
+When a component's source lives in your app repository, set its `branch` to the branch your
+[branch file](/guides/app-branches#write-a-branch-config) tracks. Each branch run then builds the
+component from that run's commit. With a different `branch`, the component builds from the latest
+commit on that branch instead.
+</Tip>
 
-Commit and push to the tracked git branch whenever anything in your TOML files changes. The push starts a branch run.
+<CodeGroup>
+```toml branches/main.toml
+[connected_repo]
+repo      = "acmeco/my-app"
+directory = "."
+branch    = "main"
+```
 
-![Rebuild components](/images/guides/app-install-life-cycle/component-build.png)
+```toml components/api.toml
+[connected_repo]
+repo      = "acmeco/my-app"
+directory = "api"
+branch    = "main"   # same branch as branches/main.toml
+```
+</CodeGroup>
 
-# Install Life Cycle
+# Install life cycle
 
-## Installs, defined for your customers
+## Create an install
 
-Installs into customer cloud accounts are created from app templates and inherit the
-infrastructure and components defined in the app. When an install is created, it
-uses the latest built version of each component.
+An install is one deployment of your app template into a customer's cloud account. It inherits the sandbox and components defined in the app template and deploys the latest build of each component.
 
-An install's life cycle is managed by [workflows](../concepts/workflows) that
-define the steps to deploy, update, manage, and tear down the install.
+Each install starts with the inputs your app template defines, such as API keys, cloud region, node instance size or the product release to run. Inputs are how you tailor an install to each customer. You fill them in when you create the install in the dashboard, or set them in an [install config](/guides/install-configs) when you create installs at scale.
 
-![Workflows](/images/guides/app-install-life-cycle/workflow-history.png)
+## Deploy it
 
-Creating an install starts by providing any inputs defined by the app, such as API keys, cloud region, node instance type, or product release version. This is how you customize installs for each customer.
+An install's life cycle is managed by [workflows](../concepts/workflows). The first one, the install workflow, provisions everything in order:
 
-![Inputs](/images/guides/app-install-life-cycle/inputs.png)
+<FlowSteps
+  steps={[
+    { title: "Install stack", detail: "The customer applies it in their cloud account" },
+    { title: "Runner", detail: "Starts in the customer's cloud" },
+    { title: "Sandbox", detail: "Plan, approve, apply" },
+    { title: "Components", detail: "Plan, approve, deploy" },
+    { title: "Actions", detail: "Post-provision scripts run" },
+  ]}
+/>
 
-Install workflows deploy the sandbox, components, and actions from your app in sequence.
+The customer applies the install stack in their own cloud account, which creates the roles and starts the Nuon runner. The runner then provisions the sandbox, syncs secrets and deploys each component. Terraform, Helm and Kubernetes manifest steps pause on a plan for your approval before they apply.
 
-![Workflow approvals](/images/guides/app-install-life-cycle/approval-sandbox.png)
+## Update with change controls
 
-## Update, with change controls
+Because app templates live in git, an update is a push. A push to the tracked branch starts a branch run that builds what changed, then plans and deploys it across your installs one [install group](/concepts/app-branches#install-groups) at a time. An update can be a new release of your product, a component upgrade or an infrastructure change such as a new Kubernetes version.
 
-Because app templates are git-backed, you can update individual or multiple installs to
-the latest release of your product or upgrade components or even infrastructure.
-e.g., Kubernetes version.
+Every install group waits on a plan approval by default, so you review the diff, such as a Terraform plan or a Helm diff, before anything reaches a customer. You can [auto-approve plans](/concepts/workflows#workflow-approvals) on an install, or let a group's plan approve itself when every policy check passes.
 
-Updates have approval gates by default to ensure changes are reviewed before
-being applied to customer installs. e.g., Helm diffs, Terraform plan outputs.
-The user can optionally Accept All approvals to streamline the update process.
+[Policies](/concepts/policies) written in OPA Rego or Kyverno validate changes before they deploy. For example, a policy can block a new Ingress or a change to container resource requests and limits.
 
-![Component update approvals](/images/guides/app-install-life-cycle/approval-step-helm.png)
+## Operate and remediate
 
-Kyverno policies can also be applied to installs to enforce security and
-compliance during updates. e.g., creating ingress resources or tampering with
-container resources requests/limits.
+Once an install is running, these tools keep it healthy:
 
-**Critical step:** When you rebuild a component for an app with existing installs, you must manually redeploy that component through the dashboard or the CLI. The install won't receive the changes automatically—this is a common step that gets overlooked.
+<CardGroup cols={2}>
+  <Card title="Health checks" icon="heart-pulse" href="/guides/health-checks">
+    Live health for every component, with alerts to Slack and webhooks.
+  </Card>
+  <Card title="Actions" icon="play" href="/guides/actions">
+    Scripts that run on a schedule, around a deploy or by hand, such as checking load balancer health.
+  </Card>
+  <Card title="Runbooks" icon="list-check" href="/guides/runbooks">
+    Multi-step procedures you run on demand, such as a restart followed by a check.
+  </Card>
+  <Card title="Operation roles" icon="user-lock" href="/concepts/operation-roles">
+    Scoped permissions per operation, with elevated roles the customer turns on when needed.
+  </Card>
+</CardGroup>
 
-![Redeploy component](/images/guides/app-install-life-cycle/component-redeploy.png)
+Actions can also remediate what monitoring finds, either automatically or when someone runs them from the dashboard. Each run records its logs step by step.
 
-## Monitor and Remediate
-
-Once deployed, installs can be monitored for health and performance metrics with
-actions, bash scripts included in the app. e.g., checking pod status, disk
-space, ALB availability, etc.
-
-![Action healthcheck](/images/guides/app-install-life-cycle/action-healthcheck.png)
-
-Actions can also perform remediation tasks automatically or manually through the
-dashboard to resolve issues detected during monitoring.
-
-![Action remediation](/images/guides/app-install-life-cycle/action-remediation.png)
-
-If elevated permissions are required, the user maintaining the install can
-request a break glass role with elevated permissions for a limited time to
-perform necessary tasks. The end customer approves the request by re-applying
-the stack, which updates the permissions in the install's runner.
+When a task needs more access than the runner normally has, use an [elevated role](/concepts/operation-roles#elevated-access-and-break-glass-operations). The role ships in the install stack disabled. The customer turns it on for the task, then turns it off again, and every use shows up in their audit logs.
