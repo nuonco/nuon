@@ -12,6 +12,16 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
+var analyticsForwardedRequestHeaders = map[string]struct{}{
+	"accept":       {},
+	"content-type": {},
+	"user-agent":   {},
+}
+
+var analyticsForwardedResponseHeaders = map[string]struct{}{
+	"content-type": {},
+}
+
 type PostHogProxyHandler struct {
 	l      *zap.Logger
 	host   string
