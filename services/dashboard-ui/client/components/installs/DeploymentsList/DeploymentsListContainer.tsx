@@ -55,6 +55,17 @@ export const DeploymentsListContainer = ({
   const { org } = useOrg()
   const { install } = useInstall()
   const [searchParams, setSearchParams] = useSearchParams()
+  const installComponents = useMemo(
+    () =>
+      [
+        ...new Set(
+          (install?.install_components ?? [])
+            .map((installComponent) => installComponent.component?.name)
+            .filter((name): name is string => !!name)
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [install?.install_components]
+  )
   const branchId = install?.app_branch?.id
   const { data: branch } = useQuery({
     placeholderData: keepPreviousData,
@@ -164,6 +175,7 @@ export const DeploymentsListContainer = ({
         appId: install?.app_id ?? '',
         installId: install?.id ?? '',
         repo,
+        installComponents,
         search,
         filter,
         onSearchChange: handleSearchChange,

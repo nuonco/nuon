@@ -58,6 +58,8 @@ const activityStatusParameter = (
     [...selected].flatMap((option) => {
       const values = [...(WORKFLOW_STATUS_GROUPS[option] ?? [])]
       if (option === 'succeeded') values.push('finished')
+      if (option === 'failed') values.push('timed-out')
+      if (option === 'running') values.push('retried')
       return values
     })
   )
