@@ -25,11 +25,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { getBranchWorkflowRun } from '@/lib'
-import {
-  isWorkflowPath,
-  WorkflowInstallContext,
-  workflowPageSuffix,
-} from '@/lib/workflow-href'
+import { isWorkflowPath, workflowPageSuffix } from '@/lib/workflow-href'
 import { AppProvider } from '@/providers/app-provider'
 import type { TInstallDeploymentRecord, TWorkflow } from '@/types'
 import { getPolicyViolationCounts } from '@/utils/workflow-utils'
@@ -247,37 +243,35 @@ export const DeploymentWorkflowContent = ({
   const hasInputChanges = !!workflow.metadata?.changed_input_values
 
   return (
-    <WorkflowInstallContext.Provider value={installId}>
-      <div className="flex flex-col gap-4">
-        {!onWorkflowPage && href ? (
-          <Link href={href} textVariant="base">
-            {name}
-          </Link>
-        ) : null}
-        {hasInputChanges ? (
-          <>
-            <SectionHeader
-              title="Input changes"
-              description="Values changed by this update."
-            />
-            <WorkflowInputChanges workflow={workflow} empty />
-          </>
-        ) : null}
-        <SectionHeader
-          title="Workflow steps"
-          description={
-            workflow.status?.status === 'error'
-              ? undefined
-              : workflow.status?.status_human_description
-          }
-          actions={<WorkflowActionButtons />}
-        />
-        <WorkflowSteps
-          approvalPrompt={workflow.approval_option === 'prompt'}
-          planOnly={workflow.plan_only}
-        />
-      </div>
-    </WorkflowInstallContext.Provider>
+    <div className="flex flex-col gap-4">
+      {!onWorkflowPage && href ? (
+        <Link href={href} textVariant="base">
+          {name}
+        </Link>
+      ) : null}
+      {hasInputChanges ? (
+        <>
+          <SectionHeader
+            title="Input changes"
+            description="Values changed by this update."
+          />
+          <WorkflowInputChanges workflow={workflow} empty />
+        </>
+      ) : null}
+      <SectionHeader
+        title="Workflow steps"
+        description={
+          workflow.status?.status === 'error'
+            ? undefined
+            : workflow.status?.status_human_description
+        }
+        actions={<WorkflowActionButtons />}
+      />
+      <WorkflowSteps
+        approvalPrompt={workflow.approval_option === 'prompt'}
+        planOnly={workflow.plan_only}
+      />
+    </div>
   )
 }
 
