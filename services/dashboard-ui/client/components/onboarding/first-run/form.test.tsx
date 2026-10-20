@@ -116,7 +116,7 @@ test('deploy shows live progress and a BYOC reference while waiting for the app 
       onCreate={() => {}}
     />
   )
-  expect(screen.getByText('Getting your app config ready')).toBeInTheDocument()
+  expect(screen.getByText('Setting up your test install')).toBeInTheDocument()
   expect(screen.getByText('Read and validate the app config')).toBeInTheDocument()
   expect(screen.getByText('0:05')).toBeInTheDocument()
   expect(screen.getByText('Datadog')).toBeInTheDocument()

@@ -257,7 +257,7 @@ export const DeployStepView = ({
       {busy && progress ? (
         <>
           <WaitProgress
-            title="Getting your app config ready"
+            title="Setting up your test install"
             items={progress}
             since={progressSince}
             slowAfterMs={DEPLOY_SLOW_MS}
