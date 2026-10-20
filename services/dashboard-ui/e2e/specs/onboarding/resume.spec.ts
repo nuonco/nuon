@@ -10,14 +10,14 @@ test.describe("Onboarding: resume", () => {
 
     await startOnboarding(page);
     await page.getByRole("button", { name: "Deploy to AWS" }).click();
-    const deploy = page.getByRole("heading", { name: "Your app is ready for BYOC" });
+    const deploy = page.getByRole("heading", { name: "Test install of Kitchen Sink demo app" });
     await expect(deploy).toBeVisible({ timeout: 60000 });
 
     await page.reload();
     await page.waitForLoadState("domcontentloaded");
     await expect(deploy).toBeVisible({ timeout: 30000 });
     await expect(page.getByText("nuonco/kitchen-sink")).toBeVisible();
-    await expect(page.getByText("nuonco/aws-eks-auto-sandbox")).toBeVisible();
+    await expect(page.getByText("nuonco/aws-eks-sandbox")).toBeVisible();
 
     await page.getByRole("button", { name: /Back/ }).click();
     await expect(page.getByRole("heading", { name: "Create your first app template" })).toBeVisible();
