@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Status } from '@/components/common/Status'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
-import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { AwaitAzureDetails } from '@/components/workflows/step-details/stack-details/AwaitAzureDetails'
 import { AwaitGCPDetails } from '@/components/workflows/step-details/stack-details/AwaitGCPDetails'
@@ -22,11 +20,8 @@ import type { TInstallStack } from '@/types'
 import {
   CLOUD_CONNECT,
   CLOUD_ICON,
-  CLOUD_LABEL,
-  DOCS_STACKS,
   KITCHEN_SINK_LABEL,
   STACK_HELP_MESSAGE,
-  STACK_METHODS,
   STACK_SLOW_MS,
   STACK_RENDER_LABEL,
   defaultRegion,
@@ -83,7 +78,6 @@ export const StackStepView = ({
   onBack,
 }: IStackStepView) => {
   const connect = CLOUD_CONNECT[cloud]
-  const methods = STACK_METHODS[cloud]
   const generating = phase === 'generating'
   const ready = phase === 'ready'
   const launched = phase === 'launched'
@@ -157,54 +151,20 @@ export const StackStepView = ({
         </>
       ) : null}
 
-      <Card className="!gap-5">
-        <div className="flex flex-col gap-1">
-          <Text variant="h3" role="heading" level={3}>
-            How your customers create this install
-          </Text>
-          <Text variant="body" theme="neutral">
-            {cloud === 'gcp'
-              ? 'On Google Cloud, Nuon renders the install stack in Terraform.'
-              : `Nuon renders the install stack in Terraform and in ${CLOUD_LABEL[cloud]}'s native format.`}{' '}
-            Your customer creates it with their own credentials; that is how access is granted. You are about
-            to do it the way they would.
+      {generating && progress ? null : (
+        <div className="flex items-center gap-2">
+          {failed ? (
+            <Icon variant="WarningCircleIcon" size={16} theme="error" weight="fill" />
+          ) : ready || done ? (
+            <Icon variant="CheckCircleIcon" size={16} theme="success" weight="fill" />
+          ) : (
+            <Icon variant="Loading" size={16} />
+          )}
+          <Text variant="subtext" theme={statusTheme}>
+            {status}
           </Text>
         </div>
-        <ul className="flex flex-col divide-y rounded-md border">
-          {methods.map((method, index) => (
-            <li key={method.name} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-3">
-              <Text variant="body" weight="strong">
-                {method.name}
-              </Text>
-              {index === 0 ? (
-                <Badge size="sm" theme="brand">
-                  This install
-                </Badge>
-              ) : null}
-              <Text variant="subtext" theme="neutral">
-                {method.how}
-              </Text>
-            </li>
-          ))}
-        </ul>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            {failed ? (
-              <Icon variant="WarningCircleIcon" size={16} theme="error" weight="fill" />
-            ) : ready || done ? (
-              <Icon variant="CheckCircleIcon" size={16} theme="success" weight="fill" />
-            ) : (
-              <Icon variant="Loading" size={16} />
-            )}
-            <Text variant="subtext" theme={statusTheme}>
-              {status}
-            </Text>
-          </div>
-          <Link href={DOCS_STACKS} isExternal textVariant="subtext">
-            All formats and CLI snippets
-          </Link>
-        </div>
-      </Card>
+      )}
 
       {failed && errorDescription ? <Banner theme="error">{errorDescription}</Banner> : null}
 
