@@ -30,6 +30,7 @@ const (
 	PolicyNameHostedInstaller    PolicyName = "hosted_installer"
 	PolicyNameStack              PolicyName = "stack"
 	PolicyNameTelemetryCollector PolicyName = "telemetry_collector"
+	PolicyNameLogStream          PolicyName = "log_stream"
 )
 
 type Policy struct {

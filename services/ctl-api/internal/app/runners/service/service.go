@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
@@ -382,8 +383,10 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	org.PUT(helmReleasePath+":namespace/:key", s.UpdateHelmRelease)
 	org.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
 
-	// TODO(jm): these will be moved to the otel namespace
-	org.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
+	// Scoped to this stream, not the org. A log-stream write token must not inherit
+	// the runner role's org-wide access.
+	require.Route(api, permissions.KindLogStream, permissions.PermissionCreate, "log_stream_id").
+		POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
 	// installs
 	installs := org.Group("/v1/installs")

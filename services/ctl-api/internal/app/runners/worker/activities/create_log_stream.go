@@ -39,6 +39,13 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 		return nil, errors.Wrap(err, "unable to create service account")
 	}
 
+	if ls.OrgID == "" {
+		return nil, errors.New("log stream has no org")
+	}
+	if err := a.authzClient.EnsureLogStreamWriteRole(ctx, ls.OrgID, ls.ID, svcAcct.ID); err != nil {
+		return nil, errors.Wrap(err, "unable to scope log stream service account")
+	}
+
 	token, err := a.acctClient.CreateToken(ctx, svcAcct.Email, defaultLogStreamTokenDuration)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create token")
