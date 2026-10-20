@@ -33,7 +33,7 @@ import type { TNavItem } from '@/types'
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import { InstallProvider } from '@/providers/install-provider'
 import { InstallAppConfigProvider } from '@/providers/install-app-config-provider'
-import { SurfacesProvider } from '@/providers/surfaces-provider'
+import { SurfacesProvider, hasPanelKey } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 
 export const InstallLayout = () => {
@@ -118,8 +118,7 @@ const InstallTemplate = () => {
   const installBasePath = href()
   const openSettings = useOpenInstallSettings()
   const [searchParams] = useSearchParams()
-  const isSettingsOpen =
-    searchParams.get('panel') === INSTALL_SETTINGS_PANEL_KEY
+  const isSettingsOpen = hasPanelKey(searchParams, INSTALL_SETTINGS_PANEL_KEY)
 
   const navLinks: TNavItem[] = hasNewInstallIA
     ? NEW_INSTALL_NAV_LINKS

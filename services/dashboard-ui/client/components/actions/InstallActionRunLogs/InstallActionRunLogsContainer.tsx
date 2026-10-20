@@ -2,6 +2,7 @@ import { useContext, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { useLogStreamData, useLogViewer } from '@/hooks/use-logs'
 import { InstallActionRunContext } from '@/providers/install-action-run-provider'
+import { panelKeyStack } from '@/providers/surfaces-provider'
 import type { TActionConfig, TInstallActionRunStep } from '@/types'
 import { InstallActionRunLogs } from './InstallActionRunLogs'
 
@@ -44,7 +45,7 @@ export const InstallActionRunLogsContainer = ({
       activeLog={activeLog}
       handleActiveLog={handleActiveLog}
       filters={filters}
-      searchParamPanel={searchParams.get('panel')}
+      searchParamPanelKeys={panelKeyStack(searchParams)}
       stepStatuses={stepStatuses}
     />
   )

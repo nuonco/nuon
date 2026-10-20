@@ -46,3 +46,323 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   filter: blur(5px);
   padding-top: 56.25%;
 }
+
+/* Ask your agent: per-page MCP prompt bar (snippets/ask-your-agent.jsx) */
+.nuon-ask-agent,
+.nuon-mcp-picker,
+.nuon-flow {
+  --ask-accent: #256a7f;
+  --ask-accent-soft: rgba(37, 106, 127, 0.08);
+  --ask-border: rgba(37, 106, 127, 0.28);
+  --ask-text: #1f2937;
+  --ask-muted: #6b7280;
+  --ask-bg: linear-gradient(90deg, rgba(76, 201, 240, 0.10), rgba(37, 106, 127, 0.04) 60%, transparent);
+  margin: 0 0 1.75rem;
+  border: 1px solid var(--ask-border);
+  border-radius: 12px;
+  background: var(--ask-bg);
+  font-size: 0.875rem;
+  color: var(--ask-text);
+}
+.dark .nuon-ask-agent,
+.dark .nuon-mcp-picker,
+.dark .nuon-flow {
+  --ask-accent: #4cc9f0;
+  --ask-accent-soft: rgba(76, 201, 240, 0.12);
+  --ask-border: rgba(76, 201, 240, 0.3);
+  --ask-text: #e5e7eb;
+  --ask-muted: #9ca3af;
+  --ask-bg: linear-gradient(90deg, rgba(76, 201, 240, 0.10), rgba(76, 201, 240, 0.02) 60%, transparent);
+}
+.nuon-ask-agent-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+}
+.nuon-ask-agent-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.nuon-ask-agent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--ask-accent-soft);
+  color: var(--ask-accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.nuon-ask-agent-title {
+  min-width: 0;
+  line-height: 1.3;
+}
+.nuon-ask-agent-chevron {
+  flex-shrink: 0;
+  color: var(--ask-muted);
+  transition: transform 0.15s;
+}
+.nuon-ask-agent[data-open="true"] .nuon-ask-agent-chevron {
+  transform: rotate(180deg);
+}
+.nuon-ask-agent-actions {
+  display: flex;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+.nuon-ask-agent-btn {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--ask-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ask-text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nuon-ask-agent-btn:hover {
+  background: var(--ask-accent-soft);
+}
+.nuon-ask-agent-primary {
+  border-color: var(--ask-accent);
+  background: var(--ask-accent);
+  color: #fff;
+}
+.dark .nuon-ask-agent-primary {
+  color: #0b1d24;
+}
+.nuon-ask-agent-primary:hover {
+  background: var(--ask-accent);
+  opacity: 0.9;
+}
+.nuon-ask-agent-body {
+  padding: 0 0.75rem 0.75rem;
+}
+.nuon-ask-agent-prompt {
+  margin: 0 0 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  background: var(--ask-accent-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.nuon-ask-agent-note {
+  margin: 0;
+  color: var(--ask-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.nuon-ask-agent-note a {
+  display: block;
+  margin-top: 0.25rem;
+  font-weight: 500;
+  color: var(--ask-accent);
+  text-decoration: underline;
+}
+.nuon-ask-agent-note code {
+  font-size: 0.75rem;
+}
+@media (max-width: 640px) {
+  .nuon-ask-agent-row {
+    flex-wrap: wrap;
+  }
+  .nuon-ask-agent-actions {
+    width: 100%;
+  }
+  .nuon-ask-agent-btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+.nuon-ask-agent + .nuon-ask-agent {
+  margin-top: -1.125rem;
+}
+
+/* MCP install picker (snippets/mcp-install-picker.jsx) */
+.nuon-mcp-picker {
+  margin: 1rem 0 2rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ask-border);
+  border-radius: 12px;
+  background: var(--ask-bg);
+  color: var(--ask-text);
+  font-size: 0.875rem;
+}
+.nuon-mcp-picker-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+.nuon-mcp-picker-tab {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--ask-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.nuon-mcp-picker-tab:hover {
+  color: var(--ask-text);
+}
+.nuon-mcp-picker-tab[aria-selected="true"] {
+  border-color: var(--ask-border);
+  background: var(--ask-accent-soft);
+  color: var(--ask-accent);
+}
+.nuon-mcp-picker-block + .nuon-mcp-picker-block {
+  margin-top: 0.625rem;
+}
+.nuon-mcp-picker-caption {
+  margin: 0 0 0.3rem;
+  color: var(--ask-muted);
+  font-size: 0.78rem;
+}
+.nuon-mcp-picker-code {
+  position: relative;
+  border-radius: 8px;
+  background: #0f1d22;
+}
+.nuon-mcp-picker-code pre {
+  margin: 0;
+  padding: 0.75rem 5rem 0.75rem 0.875rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #e5e7eb;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.dark .nuon-mcp-picker-code {
+  background: rgba(0, 0, 0, 0.45);
+}
+.nuon-mcp-picker-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+.nuon-mcp-picker-foot {
+  margin: 0.625rem 0 0;
+  font-size: 0.78rem;
+}
+.nuon-mcp-picker-foot a {
+  color: var(--ask-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+.nuon-mcp-picker-foot a:hover {
+  text-decoration: underline;
+}
+
+/* Flow steps diagram (snippets/flow-steps.jsx) */
+.nuon-flow {
+  margin: 1.5rem 0 2rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--ask-border);
+  border-radius: 12px;
+  background: var(--ask-bg);
+  color: var(--ask-text);
+}
+.nuon-flow-track {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nuon-flow-step {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0.875rem;
+}
+.nuon-flow-step:last-child {
+  padding-bottom: 0;
+}
+.nuon-flow-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 0.6875rem;
+  top: 1.5rem;
+  bottom: 0;
+  border-left: 1.5px solid var(--ask-border);
+}
+.nuon-flow-group {
+  display: block;
+  margin: 0.25rem 0 0.5rem 2.25rem;
+  color: var(--ask-accent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.nuon-flow-step:first-child .nuon-flow-group {
+  margin-top: 0;
+}
+.nuon-flow-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.nuon-flow-num {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 999px;
+  background: var(--ask-accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.dark .nuon-flow-num {
+  color: #0b1d24;
+}
+.nuon-flow-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  padding-top: 0.1rem;
+  line-height: 1.35;
+}
+.nuon-flow-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.nuon-flow-detail {
+  color: var(--ask-muted);
+  font-size: 0.82rem;
+}
+.nuon-flow-loop {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.875rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--ask-border);
+  color: var(--ask-muted);
+  font-size: 0.8rem;
+}
+.nuon-flow-loop svg {
+  flex-shrink: 0;
+  color: var(--ask-accent);
+}

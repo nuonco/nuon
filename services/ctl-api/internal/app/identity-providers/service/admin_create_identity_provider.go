@@ -69,7 +69,7 @@ func (r *AdminCreateIdentityProviderRequest) Validate(v *validator.Validate) err
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	app.IdentityProvider
+// @Success				201	{object}	AdminIdentityProviderSummary
 // @Router					/v1/auth/identity-providers [POST]
 func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 	var req AdminCreateIdentityProviderRequest
@@ -151,7 +151,7 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 		zap.String("provider_type", req.ProviderType),
 		zap.Bool("enabled", ip.Enabled))
 
-	ctx.JSON(http.StatusCreated, ip)
+	ctx.JSON(http.StatusCreated, s.identityProviderSummary(ip))
 }
 
 // findDuplicateProvider reports an existing global provider registered against the same
