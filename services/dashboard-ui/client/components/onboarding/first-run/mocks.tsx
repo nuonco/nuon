@@ -303,12 +303,9 @@ const MockStack = (seed: IMockScenario | undefined, mock: TMock) =>
     const [since] = useState(() => Date.now() - (scenario === 'generating' ? 8_000 : 50_000))
     const [launched, setLaunched] = useState(scenario === 'launched')
     const labels = [
-      'Create the install',
-      'Plan the install workflow',
-      'Generate the install state',
-      "Create the runner's identity",
+      'Create your test install',
       STACK_RENDER_LABEL[mock.cloud],
-      `Publish the ${CLOUD_CONNECT[mock.cloud].artifactNoun}`,
+      `${CLOUD_CONNECT[mock.cloud].artifactNoun} ready`,
     ]
     const ready = scenario !== 'generating'
     const [done] = useTicker(labels.length, scenario === 'generating', ready ? labels.length : 1)

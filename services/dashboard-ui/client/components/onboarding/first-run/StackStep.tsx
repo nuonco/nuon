@@ -94,10 +94,7 @@ export const StackStepView = ({
       Generating the {connect.artifactNoun} for {regionName}. Usually under a minute.
     </>
   ) : ready ? (
-    <>
-      {connect.artifactNoun} ready for {regionName}. From launch to a healthy runner is about 11 minutes. This
-      page updates on its own.
-    </>
+    `${connect.artifactNoun} ready`
   ) : launched ? (
     `${connect.waitingHint} This page updates on its own.`
   ) : failed ? (
@@ -263,12 +260,9 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
   })
   const progress = waitItems(
     [
-      { label: 'Create the install', done: true },
-      { label: 'Plan the install workflow', done: !!steps?.length },
-      { label: 'Generate the install state', step: 'generate install state' },
-      { label: "Create the runner's identity", step: 'provision runner service account' },
+      { label: 'Create your test install', done: !!steps?.length },
       { label: STACK_RENDER_LABEL[cloud], step: 'generate install stack' },
-      { label: `Publish the ${CLOUD_CONNECT[cloud].artifactNoun}`, done: phase !== 'generating' },
+      { label: `${CLOUD_CONNECT[cloud].artifactNoun} ready`, done: phase !== 'generating' },
     ],
     steps
   )
