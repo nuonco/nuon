@@ -133,6 +133,7 @@ export const CONTACT_MESSAGE = 'I would like help writing the app template for m
 
 export const DOCS_URL = 'https://docs.nuon.co'
 export const DOCS_MCP = 'https://docs.nuon.co/guides/agents/setup'
+export const DOCS_CLI = 'https://docs.nuon.co/cli'
 export const DOCS_APPS = 'https://docs.nuon.co/concepts/apps'
 export const DOCS_APP_INPUTS = 'https://docs.nuon.co/concepts/app-inputs'
 export const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'

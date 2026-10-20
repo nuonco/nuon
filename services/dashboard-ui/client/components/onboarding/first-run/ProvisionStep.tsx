@@ -1,9 +1,8 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { Banner } from '@/components/common/Banner'
-import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import { Code } from '@/components/common/Code'
 import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
@@ -12,10 +11,9 @@ import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-pr
 import type { TAPIError } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
-  CLI_INSTALL,
-  CLI_LOGIN,
   CLOUD_CONNECT,
   CLOUD_ICON,
+  DOCS_CLI,
   DOCS_MCP,
   KITCHEN_SINK_LABEL,
   SANDBOX_PARTS,
@@ -29,7 +27,7 @@ import {
   type TStageId,
 } from './constants'
 import { clearFirstRunSession } from './session'
-import { CopyTextButton, FirstRunCloudRegion, NextButton } from './shared'
+import { CopyBlock, FirstRunCloudRegion, NextButton } from './shared'
 
 const ProvisionAccountView = ({
   stages,
@@ -194,19 +192,17 @@ export const ProvisionStepView = ({
             <Text variant="body" weight="strong" flex className="items-center gap-2">
               <Icon variant="TerminalWindowIcon" size={16} /> Watch it from the CLI
             </Text>
-            <Text variant="subtext" theme="neutral" flex className="flex-wrap">
-              Needs the Nuon CLI:
-              <Code variant="inline">{CLI_INSTALL}</Code>
-              then
-              <Code variant="inline">{CLI_LOGIN}</Code>
+            <Text variant="subtext" theme="neutral">
+              Streams each step of the install to your terminal.
             </Text>
           </div>
-          <div className="flex items-start gap-2">
-            <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
-              {command}
-            </Code>
-            <CopyTextButton text={command} label="Copy" size="sm" />
-          </div>
+          <CopyBlock text={command} label="Copy command" mono />
+          <Text variant="subtext" theme="neutral" flex className="mt-auto flex-wrap items-center gap-x-1.5 gap-y-1">
+            Needs the Nuon CLI:
+            <Link href={DOCS_CLI} isExternal textVariant="subtext">
+              Install it
+            </Link>
+          </Text>
         </Card>
         <Card className="!gap-3 !p-4">
           <div className="flex flex-col gap-1">
@@ -217,17 +213,13 @@ export const ProvisionStepView = ({
               Your agent follows the install step by step and explains any failure from its logs.
             </Text>
           </div>
-          <div className="flex items-start gap-2">
-            <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
-              {watchPrompt(appName)}
-            </Code>
-            <CopyTextButton text={watchPrompt(appName)} label="Copy" size="sm" />
-          </div>
-          <div>
-            <Button variant="secondary" size="sm" href={DOCS_MCP} target="_blank" rel="noreferrer">
-              Set up the Nuon MCP server <Icon variant="ArrowSquareOutIcon" size={14} />
-            </Button>
-          </div>
+          <CopyBlock text={watchPrompt(appName)} label="Copy prompt" />
+          <Text variant="subtext" theme="neutral" flex className="mt-auto flex-wrap items-center gap-x-1.5 gap-y-1">
+            Needs the Nuon MCP server:
+            <Link href={DOCS_MCP} isExternal textVariant="subtext">
+              Set it up
+            </Link>
+          </Text>
         </Card>
       </div>
       <Card className="!gap-0 !p-0">
