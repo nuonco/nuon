@@ -5,6 +5,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/admin"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/apisurface"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/auth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/blob"
@@ -22,6 +23,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/panicker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/public"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/runnerguard"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/size"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/timeout"
@@ -39,6 +41,8 @@ var MiddlewaresModule = fx.Module("middlewares",
 	fx.Provide(middlewares.AsMiddleware(auth.New)),
 	fx.Provide(middlewares.AsMiddleware(org.New)),
 	fx.Provide(installauth.New),
+	fx.Provide(apisurface.New),
+	fx.Provide(runnerguard.New),
 	fx.Provide(middlewares.AsMiddleware(org.NewRunner)),
 	fx.Provide(middlewares.AsMiddleware(public.New)),
 	fx.Provide(middlewares.AsMiddleware(pagination.New)),

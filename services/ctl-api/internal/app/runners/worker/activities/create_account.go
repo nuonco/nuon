@@ -27,6 +27,9 @@ func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest
 		// NOTE(jm): each runner needs to be reprovisioned to properly create their roles, and then this should
 		// be removed.
 		a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, orgID, acct.ID)
+		if err := a.ensureRunnerInstallRole(ctx, orgID, req.RunnerID, acct.ID); err != nil {
+			return nil, err
+		}
 		return acct, nil
 	}
 
@@ -36,5 +39,22 @@ func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest
 	}
 
 	a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, orgID, acct.ID)
+	if err := a.ensureRunnerInstallRole(ctx, orgID, req.RunnerID, acct.ID); err != nil {
+		return nil, err
+	}
 	return acct, nil
+}
+
+func (a *Activities) ensureRunnerInstallRole(ctx context.Context, orgID, runnerID, accountID string) error {
+	var runner app.Runner
+	if err := a.db.WithContext(ctx).Preload("RunnerGroup").Where(app.Runner{ID: runnerID}).Take(&runner).Error; err != nil {
+		return nil
+	}
+	if runner.RunnerGroup.Type != app.RunnerGroupTypeInstall || runner.RunnerGroup.OwnerID == "" {
+		return nil
+	}
+	if err := a.authzClient.EnsureRunnerInstallRole(ctx, orgID, runner.RunnerGroup.OwnerID, accountID); err != nil {
+		return fmt.Errorf("unable to ensure runner install role: %w", err)
+	}
+	return nil
 }

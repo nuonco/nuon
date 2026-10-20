@@ -1,0 +1,238 @@
+package runnerguard
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/pkg/shortid"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+)
+
+const (
+	runnerPrefix = "run"
+	jobPrefix    = "job"
+)
+
+type Middleware struct {
+	db *gorm.DB
+}
+
+type Params struct {
+	fx.In
+
+	DB *gorm.DB `name:"psql"`
+}
+
+func New(params Params) *Middleware {
+	return &Middleware{db: params.DB}
+}
+
+func (m *Middleware) JobHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if cctx.IsGlobal(ctx) || cctx.IsPublic(ctx) {
+			ctx.Next()
+			return
+		}
+		acct, err := cctx.AccountFromGinContext(ctx)
+		if err != nil {
+			ctx.Next()
+			return
+		}
+		prefix, prefixErr := shortid.GetPrefix(acct.Subject)
+		jobAccount := prefixErr == nil && prefix == jobPrefix
+		method := ctx.Request.Method
+		path := ctx.FullPath()
+		if isJobTokenExchange(method, path) {
+			if jobAccount {
+				deny(ctx, "job token cannot claim a job")
+				return
+			}
+			ctx.Next()
+			return
+		}
+		if isJobWrite(method, path) {
+			jobID := jobIDFromPath(ctx)
+			if !jobAccount || acct.Subject != jobID {
+				deny(ctx, "job writes require the job token")
+				return
+			}
+			ctx.Next()
+			return
+		}
+		if jobAccount {
+			deny(ctx, "job token cannot call this route")
+			return
+		}
+		ctx.Next()
+	}
+}
+
+func (m *Middleware) InstallHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if cctx.IsGlobal(ctx) || cctx.IsPublic(ctx) {
+			ctx.Next()
+			return
+		}
+		acct, err := cctx.AccountFromGinContext(ctx)
+		if err != nil {
+			ctx.Next()
+			return
+		}
+		prefix, prefixErr := shortid.GetPrefix(acct.Subject)
+		if prefixErr != nil || prefix != runnerPrefix {
+			ctx.Next()
+			return
+		}
+
+		var runner app.Runner
+		if err := m.db.WithContext(ctx.Request.Context()).Preload("RunnerGroup").
+			Where(app.Runner{ID: acct.Subject}).Take(&runner).Error; err != nil {
+			notFound(ctx, err)
+			return
+		}
+		installID := ""
+		if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
+			installID = runner.RunnerGroup.OwnerID
+		}
+
+		if id := ctx.Param("runner_id"); id != "" && id != runner.ID {
+			notFound(ctx, fmt.Errorf("runner %s", id))
+			return
+		}
+		if id := ctx.Param("install_id"); id != "" && (installID == "" || id != installID) {
+			notFound(ctx, fmt.Errorf("install %s", id))
+			return
+		}
+		for _, param := range []string{"job_id", "runner_job_id"} {
+			id := ctx.Param(param)
+			if id == "" {
+				continue
+			}
+			var job app.RunnerJob
+			if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
+				Where(app.RunnerJob{ID: id}).Take(&job).Error; err != nil || job.RunnerID != runner.ID {
+				notFound(ctx, fmt.Errorf("job %s", id))
+				return
+			}
+		}
+		if err := m.authorizeOwnedResource(ctx, runner.OrgID, installID); err != nil {
+			notFound(ctx, err)
+			return
+		}
+		ctx.Next()
+	}
+}
+
+func (m *Middleware) authorizeOwnedResource(ctx *gin.Context, orgID, installID string) error {
+	if id := ctx.Param("workspace_id"); id != "" {
+		return m.ownerMatchesInstall(ctx, orgID, installID, &app.TerraformWorkspace{}, id)
+	}
+	if id := ctx.Param("helm_chart_id"); id != "" {
+		return m.ownerMatchesInstall(ctx, orgID, installID, &app.HelmChart{}, id)
+	}
+	if id := ctx.Param("log_stream_id"); id != "" {
+		return m.ownerMatchesInstall(ctx, orgID, installID, &app.LogStream{}, id)
+	}
+	return nil
+}
+
+func (m *Middleware) ownerMatchesInstall(ctx *gin.Context, orgID, installID string, model interface{}, id string) error {
+	var row struct {
+		OrgID     string
+		OwnerID   string
+		OwnerType string
+	}
+	err := m.db.WithContext(ctx.Request.Context()).Model(model).
+		Select("org_id", "owner_id", "owner_type").
+		Where("id = ?", id).
+		Take(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	if err != nil {
+		return nil
+	}
+	if row.OrgID != "" && row.OrgID != orgID {
+		return fmt.Errorf("resource %s is outside the runner org", id)
+	}
+	resolved, ok := m.installFromOwner(ctx, row.OwnerType, row.OwnerID)
+	if !ok {
+		return nil
+	}
+	if installID == "" || resolved != installID {
+		return fmt.Errorf("resource %s belongs to install %s", id, resolved)
+	}
+	return nil
+}
+
+func (m *Middleware) installFromOwner(ctx *gin.Context, ownerType, ownerID string) (string, bool) {
+	if ownerType == "" || ownerID == "" {
+		return "", false
+	}
+	if ownerType == "installs" {
+		return ownerID, true
+	}
+	var row struct {
+		InstallID string
+	}
+	err := m.db.WithContext(ctx.Request.Context()).Table(ownerType).
+		Select("install_id").Where("id = ?", ownerID).Take(&row).Error
+	if err != nil || row.InstallID == "" {
+		return "", false
+	}
+	return row.InstallID, true
+}
+
+func deny(ctx *gin.Context, description string) {
+	ctx.Error(stderr.ErrAuthorization{
+		Err:         errors.New(description),
+		Description: description,
+	})
+	ctx.Abort()
+}
+
+func notFound(ctx *gin.Context, err error) {
+	cctx.GetLogger(ctx, zap.NewNop()).Info("runner install authorization denied",
+		zap.String("route", ctx.FullPath()),
+		zap.Error(err),
+	)
+	ctx.Error(stderr.ErrNotFound{Err: errors.New("not found"), Description: "not found"})
+	ctx.Abort()
+}
+
+func jobIDFromPath(ctx *gin.Context) string {
+	if id := ctx.Param("job_id"); id != "" {
+		return id
+	}
+	return ctx.Param("runner_job_id")
+}
+
+func isJobTokenExchange(method, path string) bool {
+	return method == http.MethodPost && path == "/v1/runners/:runner_id/jobs/:job_id/token"
+}
+
+func isJobWrite(method, path string) bool {
+	switch path {
+	case "/v1/runners/:runner_id/jobs/:job_id":
+		return method == http.MethodPatch
+	case "/v1/runner-jobs/:runner_job_id":
+		return method == http.MethodPatch
+	case "/v1/runner-jobs/:runner_job_id/executions":
+		return method == http.MethodPost
+	case "/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id":
+		return method == http.MethodPatch
+	case "/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/result",
+		"/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/outputs":
+		return method == http.MethodPost
+	default:
+		return false
+	}
+}

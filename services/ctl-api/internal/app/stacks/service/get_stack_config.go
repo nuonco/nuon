@@ -74,8 +74,12 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 	}
 
 	// The authenticated report route. CloudFormation and ARM keep the capability URL.
+	phoneHomeBase := cfg.RunnerAPIURL
+	if s.cfg != nil && s.cfg.StackAPIURL != "" {
+		phoneHomeBase = s.cfg.StackAPIURL
+	}
 	cfg.PhoneHomeURL = fmt.Sprintf("%s/v1/stacks/%s/phone-home",
-		strings.TrimSuffix(cfg.RunnerAPIURL, "/"), install.ID)
+		strings.TrimSuffix(phoneHomeBase, "/"), install.ID)
 
 	ctx.JSON(http.StatusOK, StackConfigResponse{Config: cfg})
 }

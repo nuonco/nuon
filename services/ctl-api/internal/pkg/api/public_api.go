@@ -2,6 +2,8 @@ package api
 
 import (
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 func NewPublicAPI(params Params) (*API, error) {
@@ -25,6 +27,9 @@ func NewPublicAPI(params Params) (*API, error) {
 	}
 	if params.InstallAuth != nil {
 		api.handler.Use(params.InstallAuth.Handler())
+	}
+	if params.APISurface != nil {
+		api.handler.Use(params.APISurface.Handler(permissions.APICtl))
 	}
 
 	if err := api.registerServices(); err != nil {

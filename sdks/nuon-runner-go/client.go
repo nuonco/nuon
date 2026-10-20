@@ -63,6 +63,9 @@ func newDefaultTransport() *http.Transport {
 type Client interface {
 	SetRunnerID(runnerID string)
 	SetAuthToken(token string)
+	SetJobToken(jobID, token string)
+	ClearJobToken(jobID string)
+	ClaimJobToken(ctx context.Context, jobID string) (string, error)
 
 	GetSettings(ctx context.Context) (*models.AppRunnerGroupSettings, error)
 	GetInstallTelemetryCollectorSettings(ctx context.Context, installID string) (*models.ServiceInstallTelemetryCollectorSettings, error)

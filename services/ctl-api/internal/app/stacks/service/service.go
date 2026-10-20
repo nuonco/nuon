@@ -47,14 +47,21 @@ type service struct {
 
 var _ api.Service = (*service)(nil)
 
-func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
-	// Per-route: reporting is a write, and the declared verb is authoritative.
+func registerStackRoutes(s *service, ge *gin.Engine) {
 	stacks := ge.Group("/v1/stacks/:install_id")
 	{
 		require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id").GET("/config", s.GetStackConfig)
 		require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id").POST("/phone-home", s.PostStackPhoneHome)
 	}
+}
 
+func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
+	registerStackRoutes(s, ge)
+	return nil
+}
+
+func (s *service) RegisterStackRoutes(ge *gin.Engine) error {
+	registerStackRoutes(s, ge)
 	return nil
 }
 

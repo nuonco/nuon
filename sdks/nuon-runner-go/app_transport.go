@@ -5,7 +5,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
+	"sync"
 )
 
 // appTransport is a transport that injects our authentication token and org id into the api request
@@ -16,6 +18,7 @@ type appTransport struct {
 	clientVersion string
 
 	transport http.RoundTripper
+	jobTokens sync.Map
 }
 
 func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -35,6 +38,13 @@ func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			return nil, fmt.Errorf("auth token file contains an invalid credential")
 		}
 	}
+	if jobID, ok := jobWriteID(req.Method, req.URL.Path); ok {
+		if override, found := t.jobTokens.Load(jobID); found {
+			if jobToken, _ := override.(string); jobToken != "" {
+				token = jobToken
+			}
+		}
+	}
 	req = req.Clone(req.Context())
 	req.Header.Set("Authorization", "Bearer "+token)
 	if t.orgID != "" {
@@ -45,6 +55,43 @@ func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	return t.transport.RoundTrip(req)
+}
+
+func (c *client) SetJobToken(jobID, token string) {
+	c.appTransport.jobTokens.Store(jobID, token)
+}
+
+func (c *client) ClearJobToken(jobID string) {
+	c.appTransport.jobTokens.Delete(jobID)
+}
+
+var jobWritePatterns = []*regexp.Regexp{
+	regexp.MustCompile(`^/v1/runners/[^/]+/jobs/([^/]+)$`),
+	regexp.MustCompile(`^/v1/runner-jobs/([^/]+)$`),
+	regexp.MustCompile(`^/v1/runner-jobs/([^/]+)/executions$`),
+	regexp.MustCompile(`^/v1/runner-jobs/([^/]+)/executions/[^/]+$`),
+	regexp.MustCompile(`^/v1/runner-jobs/([^/]+)/executions/[^/]+/result$`),
+	regexp.MustCompile(`^/v1/runner-jobs/([^/]+)/executions/[^/]+/outputs$`),
+}
+
+func jobWriteID(method, path string) (string, bool) {
+	switch method {
+	case http.MethodPatch, http.MethodPost:
+	default:
+		return "", false
+	}
+	if strings.HasSuffix(path, "/token") || strings.Contains(path, "/plan") {
+		return "", false
+	}
+	for _, pattern := range jobWritePatterns {
+		if match := pattern.FindStringSubmatch(path); len(match) == 2 {
+			if method == http.MethodPost && (strings.HasSuffix(path, "/jobs/"+match[1]) || path == "/v1/runner-jobs/"+match[1]) {
+				return "", false
+			}
+			return match[1], true
+		}
+	}
+	return "", false
 }
 
 func (c *client) SetOrgID(orgID string) {

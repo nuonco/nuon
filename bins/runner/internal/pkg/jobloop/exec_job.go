@@ -58,6 +58,14 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	l = l.With(zap.String("runner_job.type", string(job.Type)))
 	l = l.With(zap.String("log_stream.id", job.LogStreamID))
 
+	l.Info("claiming job token")
+	jobToken, err := j.apiClient.ClaimJobToken(ctx, job.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to claim job token")
+	}
+	j.apiClient.SetJobToken(job.ID, jobToken)
+	defer j.apiClient.ClearJobToken(job.ID)
+
 	// create an execution in the API
 	l.Info("creating job execution")
 	execution, err := j.apiClient.CreateJobExecution(ctx, job.ID, new(models.ServiceCreateRunnerJobExecutionRequest))

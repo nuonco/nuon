@@ -13,6 +13,7 @@ import (
 func (h *Client) AddAccountOrgRole(ctx context.Context, roleType app.RoleType, orgID, accountID string) error {
 	var role app.Role
 	res := h.db.WithContext(ctx).
+		Preload("Policies").
 		Where(app.Role{
 			OrgID:    generics.NewNullString(orgID),
 			RoleType: roleType,
@@ -20,6 +21,9 @@ func (h *Client) AddAccountOrgRole(ctx context.Context, roleType app.RoleType, o
 		First(&role)
 	if res.Error != nil {
 		return fmt.Errorf("unable to find role: %w", res.Error)
+	}
+	if err := assertRoleAPICompatible(h.db.WithContext(ctx), accountID, &role); err != nil {
+		return err
 	}
 
 	acctRole := &app.AccountRole{
