@@ -39,7 +39,7 @@ const INDICATOR_THEME_CLASSES: Record<
     error: 'bg-red-600 dark:bg-red-500',
     warn: 'bg-orange-600 dark:bg-orange-500',
     info: 'bg-blue-600 dark:bg-blue-500',
-    brand: 'bg-primary-600 dark:bg-primary-400',
+    brand: 'bg-status-brand',
   },
   badge: {
     default: 'bg-cool-grey-600 dark:bg-white/70',
@@ -48,7 +48,7 @@ const INDICATOR_THEME_CLASSES: Record<
     error: 'bg-red-600 dark:bg-red-500',
     warn: 'bg-orange-600 dark:bg-orange-500',
     info: 'bg-blue-600 dark:bg-blue-500',
-    brand: 'bg-primary-600 dark:bg-primary-400',
+    brand: 'bg-status-brand',
   },
   timeline: {
     default: 'bg-cool-grey-200 dark:bg-cool-grey-800 dark:text-cool-grey-400',
@@ -58,8 +58,7 @@ const INDICATOR_THEME_CLASSES: Record<
     error: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400',
     warn: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-400',
     info: 'bg-blue-300 text-blue-900 dark:bg-blue-950 dark:text-blue-300',
-    brand:
-      'bg-primary-200 text-primary-800 dark:bg-primary-950 dark:text-primary-400',
+    brand: 'bg-primary-200 text-status-brand-ink dark:bg-primary-950',
   },
 }
 

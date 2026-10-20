@@ -18,7 +18,7 @@ const SQUARE_THEME_CLASSES: Record<TStatusTheme, string> = {
   error: 'bg-red-600 dark:bg-red-500',
   warn: 'bg-orange-600 dark:bg-orange-500',
   info: 'bg-blue-600 dark:bg-blue-500',
-  brand: 'bg-primary-600 dark:bg-primary-400',
+  brand: 'bg-status-brand',
   neutral: 'bg-cool-grey-300 dark:bg-dark-grey-600',
 }
 
