@@ -121,14 +121,18 @@ var awsAMIIDPattern = regexp.MustCompile(`^ami-[0-9a-f]+$`)
 
 // Only aws image IDs are checked: other clouds use their own formats and don't consume image_id yet.
 func (a *AppRunnerConfig) validateImageID() error {
-	if a.ImageID == "" || !strings.HasPrefix(a.RunnerType, "aws") {
+	if !strings.HasPrefix(a.RunnerType, "aws") {
 		return nil
 	}
+	return ValidateAWSImageID("image_id", a.ImageID)
+}
 
-	if !awsAMIIDPattern.MatchString(a.ImageID) {
-		return ErrConfig{
-			Description: fmt.Sprintf("image_id %q is not a valid AMI ID (expected ami- followed by hex characters)", a.ImageID),
-		}
+// ValidateAWSImageID checks that a non-empty runner image ID is an AMI ID.
+func ValidateAWSImageID(field, imageID string) error {
+	if imageID == "" || awsAMIIDPattern.MatchString(imageID) {
+		return nil
 	}
-	return nil
+	return ErrConfig{
+		Description: fmt.Sprintf("%s %q is not a valid AMI ID (expected ami- followed by hex characters)", field, imageID),
+	}
 }

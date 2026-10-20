@@ -232,6 +232,8 @@ type ClientService interface {
 
 	CreateAppTerraformModuleComponentConfig(params *CreateAppTerraformModuleComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppTerraformModuleComponentConfigCreated, error)
 
+	CreateCLIEvent(params *CreateCLIEventParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCLIEventAccepted, error)
+
 	CreateCloudConnection(params *CreateCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCloudConnectionCreated, error)
 
 	CreateComponent(params *CreateComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentCreated, error)
@@ -3821,6 +3823,52 @@ func (a *Client) CreateAppTerraformModuleComponentConfig(params *CreateAppTerraf
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateAppTerraformModuleComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateCLIEvent records a c l i command run for product analytics
+
+Records one CLI command run (command path without arguments, CLI version, outcome, duration, OS and architecture) for product analytics. The CLI skips this call when telemetry is disabled with `DO_NOT_TRACK=1`, `NUON_DISABLE_TELEMETRY=true` or `disable_telemetry: true` in the CLI config. The event is dropped when the control plane has no analytics key configured.
+*/
+func (a *Client) CreateCLIEvent(params *CreateCLIEventParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCLIEventAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateCLIEventParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateCLIEvent",
+		Method:             "POST",
+		PathPattern:        "/v1/general/cli-events",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateCLIEventReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateCLIEventAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateCLIEvent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -12637,7 +12685,9 @@ Each record is a top-level operation that ran against the install rather than a 
 
 Records include a `type` (`action_run`, `runbook_run`, or `policy_check`), a `status` taken from that source, a human-readable `title` and `summary`, and a type-specific payload (`action`, `runbook`, or `policy`). Action and runbook records include a `workflow` reference when the run has one.
 
-Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`. `status` matches each source's own status string. Action and runbook runs use values such as `queued`, `in-progress`, `finished`, and `error`. Policy checks use `success`, `warning`, and `error`.
+For efficient pagination, request the first page with `limit`, then pass the returned `next_cursor` as `cursor` to fetch the next page. Keep filters unchanged while paging; restart without a cursor when changing filters. Records sort by timestamp, type, and ID descending. `has_more` indicates another page is available. Legacy `page`/`offset` pagination remains supported, but cannot be combined with a cursor and reads preceding records on deep pages.
+
+Supports filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`. `status` matches each source's own stored status string. Action and runbook runs use values such as `queued`, `in-progress`, `finished`, and `error`. Policy checks use `success`, `warning`, and `error`.
 */
 func (a *Client) GetInstallActivity(params *GetInstallActivityParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActivityOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -14133,7 +14183,7 @@ func (a *Client) GetInstallLatestDeploy(params *GetInstallLatestDeployParams, au
 /*
 GetInstallOverview installs overview
 
-Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
 */
 func (a *Client) GetInstallOverview(params *GetInstallOverviewParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOverviewOK, error) {
 	// NOTE: parameters are not validated before sending

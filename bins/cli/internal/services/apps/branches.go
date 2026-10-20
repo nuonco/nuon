@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -152,6 +153,7 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 	}
 
 	workflow.WorkflowApp(ctx, s.cfg, s.api, "", run.WorkflowID, false)
+	s.printBranchRunDetails(ctx, appID, branchID, run.WorkflowID)
 	return nil
 }
 
@@ -178,7 +180,7 @@ func branchRunSource(runType, runRef string) (models.ServiceTriggerAppBranchRunS
 	}
 }
 
-func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, asJSON bool) error {
+func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID, workflowID string, asJSON bool) error {
 	view := ui.NewListView()
 
 	appID, err := s.resolveAppID(ctx, appID)
@@ -189,6 +191,20 @@ func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, as
 	branchID, err = s.selectBranchID(ctx, appID, branchID)
 	if err != nil {
 		return view.Error(err)
+	}
+
+	if workflowID != "" {
+		if asJSON {
+			wf, err := s.api.GetWorkflow(ctx, workflowID)
+			if err != nil {
+				return view.Error(err)
+			}
+			ui.PrintJSON(wf)
+			return nil
+		}
+
+		workflow.WorkflowApp(ctx, s.cfg, s.api, "", workflowID, false)
+		return nil
 	}
 
 	workflows, err := s.api.GetAppBranchRuns(ctx, appID, branchID)
@@ -227,6 +243,25 @@ func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, as
 
 	workflow.WorkflowApp(ctx, s.cfg, s.api, "", selectedID, false)
 	return nil
+}
+
+func (s *Service) printBranchRunDetails(ctx context.Context, appID, branchID, workflowID string) {
+	ui.Println()
+	ui.Println("Run details:")
+	ui.Printf("  View again: nuon branches runs --app-id %s --branch-id %s --workflow-id %s\n", appID, branchID, workflowID)
+
+	cfg, err := s.api.GetCLIConfig(ctx)
+	if err != nil || cfg == nil || cfg.DashboardURL == "" {
+		return
+	}
+	ui.Printf(
+		"  Dashboard: %s/%s/apps/%s/branches/%s/runs/%s\n",
+		strings.TrimRight(cfg.DashboardURL, "/"),
+		s.cfg.OrgID,
+		appID,
+		branchID,
+		workflowID,
+	)
 }
 
 func (s *Service) DeleteBranch(ctx context.Context, appID, branchID string, asJSON bool) error {

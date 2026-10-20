@@ -27,6 +27,7 @@ import {
   getAppConfig,
   getAppBranches,
   getBranchConfigs,
+  getBranchWorkflowRuns,
   createAppInstall,
   getCloudConnections,
   getComponents,
@@ -38,6 +39,10 @@ import type {
   TAppConfig,
   TCloudConnectionSummary,
 } from '@/types'
+import {
+  BRANCH_CONFIG_POLL_MS,
+  branchConfigWaitState,
+} from '@/lib/branch-config-wait'
 import { shouldDefaultStackOnly } from './app-install-readiness'
 import { BranchStep } from './BranchStep'
 import {
@@ -172,6 +177,44 @@ export const CreateInstallFromAppContainer = ({
     enabled: !!org?.id && phase === 'form' && !selectedBranch,
   })
 
+  const branchRunsKey = [
+    'app-branch-runs',
+    org?.id,
+    app.id,
+    selectedBranch?.id,
+    'create-install',
+  ]
+  const { data: branchRuns } = useQuery({
+    queryKey: branchRunsKey,
+    queryFn: () =>
+      getBranchWorkflowRuns({
+        orgId: org.id,
+        appId: app.id,
+        branchId: selectedBranch!.id,
+        limit: 20,
+      }).then((res) => res.data ?? []),
+    enabled: !!org?.id && !!selectedBranch?.id && phase === 'form',
+    refetchInterval: (query) => {
+      const configs = queryClient.getQueryData<TAppConfig[]>([
+        'app-branch-app-configs',
+        org?.id,
+        app.id,
+        selectedBranch?.id,
+      ])
+      const hasActive = !!pickCreateInstallConfig(configs, {
+        requireActive: true,
+        fallbackToFirst: false,
+      })
+      return branchConfigWaitState({
+        hasBranch: true,
+        hasActiveConfig: hasActive,
+        runs: query.state.data,
+      }).phase === 'waiting'
+        ? BRANCH_CONFIG_POLL_MS
+        : false
+    },
+  })
+
   const {
     data: branchConfigs,
     isLoading: branchConfigsLoading,
@@ -187,6 +230,19 @@ export const CreateInstallFromAppContainer = ({
         limit: 100,
       }),
     enabled: !!org?.id && !!selectedBranch?.id && phase === 'form',
+    refetchInterval: (query) => {
+      const hasActive = !!pickCreateInstallConfig(query.state.data, {
+        requireActive: true,
+        fallbackToFirst: false,
+      })
+      return branchConfigWaitState({
+        hasBranch: !!selectedBranch,
+        hasActiveConfig: hasActive,
+        runs: queryClient.getQueryData(branchRunsKey),
+      }).phase === 'waiting'
+        ? BRANCH_CONFIG_POLL_MS
+        : false
+    },
   })
 
   const configId = selectedBranch
@@ -199,6 +255,12 @@ export const CreateInstallFromAppContainer = ({
         requireActive: true,
         fallbackToFirst: false,
       })?.id
+
+  const branchWait = branchConfigWaitState({
+    hasBranch: phase === 'form' && !!selectedBranch,
+    hasActiveConfig: !!configId,
+    runs: branchRuns,
+  })
 
   const {
     data: config,
@@ -322,12 +384,8 @@ export const CreateInstallFromAppContainer = ({
     (cloudConnectionsEnabled && cloudConnectionsLoading)
 
   const missingBranchConfigError =
-    phase === 'form' &&
-    !!selectedBranch &&
-    !branchConfigsLoading &&
-    !branchConfigsError &&
-    !configId
-      ? { error: 'This branch has no active app config.' }
+    branchWait.phase === 'failed'
+      ? { error: branchWait.message || 'This branch run failed.' }
       : undefined
   const missingUnbranchedConfigError =
     phase === 'form' &&
@@ -540,6 +598,13 @@ export const CreateInstallFromAppContainer = ({
         <Banner theme="error">
           {(loadError as any)?.error || 'Unable to load app configuration'}
         </Banner>
+      ) : branchWait.phase === 'waiting' ? (
+        <>
+          <Banner theme="default">
+            Waiting for this branch&apos;s app config.
+          </Banner>
+          <FormSkeleton />
+        </>
       ) : isFormLoading || !inputConfig ? (
         <FormSkeleton />
       ) : (

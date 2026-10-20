@@ -49,6 +49,10 @@ func shouldSkipNamespace(ns string) bool {
 }
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
+	fx.New(c.workerProviders()...).Run()
+}
+
+func (c *cli) workerProviders() []fx.Option {
 	providers := []fx.Option{}
 	providers = append(providers, c.providers()...)
 
@@ -74,7 +78,8 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers, fxmodules.OrgsWorkerModule)
 	}
 
-	if (namespace == "all" || namespace == "apps") && !shouldSkipNamespace("apps") {
+	runApps := (namespace == "all" || namespace == "apps") && !shouldSkipNamespace("apps")
+	if runApps {
 		providers = append(providers, fxmodules.AppsWorkerModule)
 	}
 
@@ -84,7 +89,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 
 	runInstalls := (namespace == "all" || namespace == "installs") && !shouldSkipNamespace("installs")
 	runInstallCrons := (namespace == "all" || namespace == "install-crons") && !shouldSkipNamespace("install-crons")
-	if runInstalls || runInstallCrons {
+	if runInstalls || runInstallCrons || runApps {
 		providers = append(providers, fxmodules.InstallWorkerProvidersModule)
 	}
 	if runInstalls {
@@ -144,5 +149,5 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),
 	)
 
-	fx.New(providers...).Run()
+	return providers
 }

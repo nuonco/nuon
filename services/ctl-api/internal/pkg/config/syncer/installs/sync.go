@@ -337,6 +337,12 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	if installConfig.AWSNestedStackParameters != nil {
 		fields = append(fields, "aws_nested_stack_parameters")
 	}
+	if installConfig.RunnerImageAutoUpdate != nil {
+		fields = append(fields, "runner_image_auto_update")
+	}
+	if installConfig.RunnerImageID != nil {
+		fields = append(fields, "runner_image_id")
+	}
 	if len(fields) > 0 {
 		if existing.InstallConfig != nil {
 			if err := db.WithContext(ctx).Model(&app.InstallConfig{}).
@@ -552,7 +558,9 @@ func existingToConfig(install *app.Install) *config.Install {
 		}
 		if install.InstallConfig.VPCNestedTemplateURL != nil ||
 			install.InstallConfig.RunnerNestedTemplateURL != nil ||
-			len(install.InstallConfig.CustomNestedStacks) > 0 {
+			len(install.InstallConfig.CustomNestedStacks) > 0 ||
+			install.InstallConfig.RunnerImageAutoUpdate != nil ||
+			install.InstallConfig.RunnerImageID != nil {
 			cfg.StackOverrides = &config.InstallStackOverrides{}
 			if install.InstallConfig.VPCNestedTemplateURL != nil {
 				cfg.StackOverrides.VPCNestedTemplateURL = *install.InstallConfig.VPCNestedTemplateURL
@@ -561,6 +569,10 @@ func existingToConfig(install *app.Install) *config.Install {
 				cfg.StackOverrides.RunnerNestedTemplateURL = *install.InstallConfig.RunnerNestedTemplateURL
 			}
 			cfg.StackOverrides.CustomNestedStacks = install.InstallConfig.CustomNestedStacks
+			cfg.StackOverrides.RunnerImageAutoUpdate = install.InstallConfig.RunnerImageAutoUpdate
+			if install.InstallConfig.RunnerImageID != nil {
+				cfg.StackOverrides.RunnerImageID = *install.InstallConfig.RunnerImageID
+			}
 		}
 		cfg.CloudFormation = &config.CloudFormation{
 			Root:         config.CloudFormationStack{Parameters: install.InstallConfig.AWSStackParameters},

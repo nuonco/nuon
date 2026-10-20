@@ -14,8 +14,9 @@ func (c *cli) branchesCmd() *cobra.Command {
 
 func (c *cli) newBranchesCmd(deprecatedAlias bool) *cobra.Command {
 	var (
-		appID    string
-		branchID string
+		appID            string
+		branchID         string
+		branchWorkflowID string
 	)
 
 	branchesCmd := &cobra.Command{
@@ -170,11 +171,12 @@ and installation. Use flags with --output json or --output agent for scripting.`
 		Short:       "List branch runs and monitor a selected workflow",
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			return c.apps.ListBranchRuns(cmd.Context(), appID, branchID, PrintJSON)
+			return c.apps.ListBranchRuns(cmd.Context(), appID, branchID, branchWorkflowID, PrintJSON)
 		}),
 	}
 	runsCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app. Defaults to the selected app.")
 	runsCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
+	runsCmd.Flags().StringVarP(&branchWorkflowID, "workflow-id", "w", "", "The workflow ID of a specific branch run to view")
 	branchesCmd.AddCommand(runsCmd)
 
 	var (

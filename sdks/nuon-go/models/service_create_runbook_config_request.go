@@ -33,6 +33,9 @@ type ServiceCreateRunbookConfigRequest struct {
 	// steps
 	// Required: true
 	Steps []*ServiceCreateRunbookStepConfigRequest `json:"steps"`
+
+	// triggers
+	Triggers []*ServiceCreateRunbookTriggerRequest `json:"triggers"`
 }
 
 // Validate validates this service create runbook config request
@@ -44,6 +47,10 @@ func (m *ServiceCreateRunbookConfigRequest) Validate(formats strfmt.Registry) er
 	}
 
 	if err := m.validateSteps(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTriggers(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -114,6 +121,36 @@ func (m *ServiceCreateRunbookConfigRequest) validateSteps(formats strfmt.Registr
 	return nil
 }
 
+func (m *ServiceCreateRunbookConfigRequest) validateTriggers(formats strfmt.Registry) error {
+	if swag.IsZero(m.Triggers) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Triggers); i++ {
+		if swag.IsZero(m.Triggers[i]) { // not required
+			continue
+		}
+
+		if m.Triggers[i] != nil {
+			if err := m.Triggers[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("triggers" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("triggers" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service create runbook config request based on the context it is used
 func (m *ServiceCreateRunbookConfigRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -123,6 +160,10 @@ func (m *ServiceCreateRunbookConfigRequest) ContextValidate(ctx context.Context,
 	}
 
 	if err := m.contextValidateSteps(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTriggers(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -179,6 +220,35 @@ func (m *ServiceCreateRunbookConfigRequest) contextValidateSteps(ctx context.Con
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("steps" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateRunbookConfigRequest) contextValidateTriggers(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Triggers); i++ {
+
+		if m.Triggers[i] != nil {
+
+			if swag.IsZero(m.Triggers[i]) { // not required
+				return nil
+			}
+
+			if err := m.Triggers[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("triggers" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("triggers" + "." + strconv.Itoa(i))
 				}
 
 				return err

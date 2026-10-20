@@ -6,6 +6,18 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
+func ApplyInstallRunnerImageOverrides(install *Install, runnerCfg *AppRunnerConfig) {
+	if install.InstallConfig == nil {
+		return
+	}
+	if install.InstallConfig.RunnerImageAutoUpdate != nil {
+		runnerCfg.ImageAutoUpdate = *install.InstallConfig.RunnerImageAutoUpdate
+	}
+	if install.InstallConfig.RunnerImageID != nil && *install.InstallConfig.RunnerImageID != "" {
+		runnerCfg.ImageID = *install.InstallConfig.RunnerImageID
+	}
+}
+
 // ApplyInstallStackOverrides applies per-install stack overrides from
 // InstallConfig onto the app-level AppStackConfig, taking precedence over
 // app-level defaults. CustomNestedStacks entries matching by Name replace

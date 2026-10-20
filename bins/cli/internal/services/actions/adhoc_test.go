@@ -13,7 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -28,6 +30,11 @@ type adHocAPI struct {
 	logPageIndex  int
 	logCursors    []string
 	logStreamOpen bool
+	// tailNotFound is how many tail calls return 404 before logs; negative means always.
+	tailNotFound int
+	// tailNotFoundAfterLogs makes the tail return 404 after the first page is served.
+	tailNotFoundAfterLogs bool
+	tailCalls             int
 }
 
 type adHocLogPage struct {
@@ -66,6 +73,13 @@ func (a *adHocAPI) GetInstallActionWorkflowRun(_ context.Context, _, _ string) (
 
 func (a *adHocAPI) LogStreamTailLogs(_ context.Context, _ string, cursor string, _ string, _ *nuon.LogStreamLogFilters) (*models.ServiceLogStreamTailLogsResponse, error) {
 	a.logCursors = append(a.logCursors, cursor)
+	a.tailCalls++
+	if a.tailNotFound < 0 || a.tailCalls <= a.tailNotFound {
+		return nil, operations.NewLogStreamTailLogsNotFound()
+	}
+	if a.tailNotFoundAfterLogs && a.logPageIndex > 0 {
+		return nil, operations.NewLogStreamTailLogsNotFound()
+	}
 	page := a.logPages[a.logPageIndex]
 	if a.logPageIndex < len(a.logPages)-1 {
 		a.logPageIndex++
@@ -79,6 +93,10 @@ func (a *adHocAPI) LogStreamTailLogs(_ context.Context, _ string, cursor string,
 
 func (a *adHocAPI) GetLogStream(_ context.Context, _ string) (*models.AppLogStream, error) {
 	return &models.AppLogStream{Open: a.logStreamOpen}, nil
+}
+
+func quietSpinner() *bubbles.SpinnerView {
+	return bubbles.NewSpinnerView(true, false)
 }
 
 func TestCreateAdHocRunUsesSelectedInstallAndBuildsRequest(t *testing.T) {
@@ -144,11 +162,11 @@ func TestCreateAdHocRunRejectsUnknownRole(t *testing.T) {
 	require.Nil(t, api.request)
 }
 
-func TestParseAdHocEnvMergesFileAndFlags(t *testing.T) {
+func TestParseRunEnvMergesFileAndFlags(t *testing.T) {
 	envPath := filepath.Join(t.TempDir(), ".env")
 	require.NoError(t, os.WriteFile(envPath, []byte("# defaults\nFROM_FILE='value'\nexport SHARED=file\nEMPTY=\n"), 0o600))
 
-	env, err := parseAdHocEnv(envPath, []string{"SHARED=flag", "WITH_EQUALS=one=two"})
+	env, err := parseRunEnv(envPath, []string{"SHARED=flag", "WITH_EQUALS=one=two"})
 	require.NoError(t, err)
 	require.Equal(t, map[string]string{
 		"FROM_FILE":   "value",
@@ -166,7 +184,7 @@ func TestReadAdHocInputRequiresOneSource(t *testing.T) {
 	require.EqualError(t, err, "either --command or --script is required")
 }
 
-func TestWaitForAdHocRunStreamsRawPaginatedLogs(t *testing.T) {
+func TestWaitForRunStreamsRawPaginatedLogs(t *testing.T) {
 	api := &adHocAPI{
 		runs: []*models.AppInstallActionWorkflowRun{{
 			ID:     "run_123",
@@ -196,14 +214,14 @@ func TestWaitForAdHocRunStreamsRawPaginatedLogs(t *testing.T) {
 	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
 	var output bytes.Buffer
 
-	run, err := service.waitForAdHocRun(context.Background(), "inst_123", "run_123", &output)
+	run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &output, quietSpinner())
 	require.NoError(t, err)
 	require.Equal(t, string(models.AppInstallActionWorkflowRunStatusFinished), run.Status)
 	require.Equal(t, "first line\nsecond line\nthird line\n", output.String())
 	require.Equal(t, []string{"", "next-page", "next-page", "next-page", "next-page", "next-page"}, api.logCursors)
 }
 
-func TestWaitForAdHocRunReturnsFailedTerminalStatus(t *testing.T) {
+func TestWaitForRunReturnsFailedTerminalStatus(t *testing.T) {
 	api := &adHocAPI{runs: []*models.AppInstallActionWorkflowRun{{
 		ID:                "run_123",
 		Status:            string(models.AppInstallActionWorkflowRunStatusError),
@@ -211,13 +229,13 @@ func TestWaitForAdHocRunReturnsFailedTerminalStatus(t *testing.T) {
 	}}}
 	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
 
-	run, err := service.waitForAdHocRun(context.Background(), "inst_123", "run_123", &bytes.Buffer{})
+	run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &bytes.Buffer{}, quietSpinner())
 	require.NoError(t, err)
 	require.Equal(t, string(models.AppInstallActionWorkflowRunStatusError), run.Status)
 	require.Equal(t, "command failed", run.StatusDescription)
 }
 
-func TestWaitForAdHocRunHonorsCancellation(t *testing.T) {
+func TestWaitForRunHonorsCancellation(t *testing.T) {
 	api := &adHocAPI{runs: []*models.AppInstallActionWorkflowRun{{
 		ID:     "run_123",
 		Status: string(models.AppInstallActionWorkflowRunStatusQueued),
@@ -226,11 +244,107 @@ func TestWaitForAdHocRunHonorsCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := service.waitForAdHocRun(ctx, "inst_123", "run_123", &bytes.Buffer{})
+	_, err := service.waitForRun(ctx, "inst_123", "run_123", &bytes.Buffer{}, quietSpinner())
 	require.ErrorIs(t, err, context.Canceled)
 }
 
 func TestUnknownAdHocStatusIsNotTerminal(t *testing.T) {
-	require.False(t, isTerminalAdHocStatus(string(models.AppInstallActionWorkflowRunStatusUnknown)))
-	require.True(t, isTerminalAdHocStatus(string(models.AppInstallActionWorkflowRunStatusTimedDashOut)))
+	require.False(t, isTerminalRunStatus(string(models.AppInstallActionWorkflowRunStatusUnknown)))
+	require.True(t, isTerminalRunStatus(string(models.AppInstallActionWorkflowRunStatusTimedDashOut)))
+}
+
+func logStreamRun(status models.AppInstallActionWorkflowRunStatus) *models.AppInstallActionWorkflowRun {
+	return &models.AppInstallActionWorkflowRun{
+		ID:        "run_123",
+		Status:    string(status),
+		RunnerJob: &models.AppRunnerJob{ID: "job_123", LogStreamID: "logs_123"},
+	}
+}
+
+func commandOutput(body string) *models.AppOtelLogRecord {
+	return &models.AppOtelLogRecord{Body: body, LogAttributes: map[string]string{"nuon.command_output": "true"}}
+}
+
+func TestWaitForRunRetriesLogTailUntilStreamExists(t *testing.T) {
+	prev := runPollInterval
+	runPollInterval = time.Millisecond
+	t.Cleanup(func() { runPollInterval = prev })
+
+	api := &adHocAPI{
+		runs: []*models.AppInstallActionWorkflowRun{
+			logStreamRun(models.AppInstallActionWorkflowRunStatusInDashProgress),
+			logStreamRun(models.AppInstallActionWorkflowRunStatusInDashProgress),
+			logStreamRun(models.AppInstallActionWorkflowRunStatusFinished),
+		},
+		tailNotFound: 2,
+		logPages: []adHocLogPage{
+			{records: []*models.AppOtelLogRecord{commandOutput("hello")}},
+			{},
+		},
+	}
+	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
+	var output bytes.Buffer
+
+	run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &output, quietSpinner())
+	require.NoError(t, err)
+	require.Equal(t, string(models.AppInstallActionWorkflowRunStatusFinished), run.Status)
+	require.Equal(t, "hello\n", output.String())
+}
+
+func TestWaitForRunReturnsRunWhenLogStreamNeverAppears(t *testing.T) {
+	prev := runPollInterval
+	runPollInterval = time.Millisecond
+	t.Cleanup(func() { runPollInterval = prev })
+
+	api := &adHocAPI{
+		runs: []*models.AppInstallActionWorkflowRun{
+			logStreamRun(models.AppInstallActionWorkflowRunStatusInDashProgress),
+			logStreamRun(models.AppInstallActionWorkflowRunStatusFinished),
+		},
+		tailNotFound: -1,
+	}
+	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
+	var output bytes.Buffer
+
+	stderr := captureStderr(t, func() {
+		run, err := service.waitForRun(context.Background(), "inst_123", "run_123", &output, quietSpinner())
+		require.NoError(t, err)
+		require.Equal(t, string(models.AppInstallActionWorkflowRunStatusFinished), run.Status)
+	})
+	require.Empty(t, output.String())
+	require.Contains(t, stderr, "logs for action run run_123 are not available yet; view them with nuon actions get-run")
+}
+
+func TestWaitForRunFailsWhenLogTailNotFoundAfterLogs(t *testing.T) {
+	api := &adHocAPI{
+		runs: []*models.AppInstallActionWorkflowRun{logStreamRun(models.AppInstallActionWorkflowRunStatusInDashProgress)},
+		logPages: []adHocLogPage{
+			{records: []*models.AppOtelLogRecord{commandOutput("hello")}, next: "next-page", hasMore: true},
+			{},
+		},
+		tailNotFoundAfterLogs: true,
+	}
+	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
+	var output bytes.Buffer
+
+	_, err := service.waitForRun(context.Background(), "inst_123", "run_123", &output, quietSpinner())
+	require.ErrorContains(t, err, "read action run logs")
+	require.NotErrorIs(t, err, errLogStreamNotReady)
+	require.Equal(t, "hello\n", output.String())
+}
+
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+	reader, writer, err := os.Pipe()
+	require.NoError(t, err)
+	prev := os.Stderr
+	os.Stderr = writer
+	defer func() { os.Stderr = prev }()
+
+	fn()
+	require.NoError(t, writer.Close())
+	var buf bytes.Buffer
+	_, err = buf.ReadFrom(reader)
+	require.NoError(t, err)
+	return buf.String()
 }

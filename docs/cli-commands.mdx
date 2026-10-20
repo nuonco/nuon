@@ -18,6 +18,16 @@ These work on every command.
 | `--read-only` | Block any command that modifies state. Can also be set with `NUON_READ_ONLY=1`. |
 | `--debug` | Print per-request API timing to stderr. |
 
+## Names and defaults
+
+Flags that take an app, install, component, action, runbook, or branch ID generally accept the resource's name as well.
+The `-i` (install) and `-a` (app) flags default to the install or app you last selected, so you can usually leave them
+off.
+
+```sh
+nuon actions create-run -i customer1 -w pg_status
+```
+
 ## Authenticate
 
 | Command | What it does |
