@@ -108,8 +108,7 @@ const PROVISION_STEP: TFirstRunStepDef = {
   id: 'provision',
   title: 'Your first BYOC install is deploying',
   navLabel: 'Provision',
-  description:
-    'What Nuon builds in your test account, in order. To watch it live, go to the deploy workflow.',
+  description: 'Follow it live from the CLI, your agent, or the deploy workflow.',
   component: ProvisionStep,
 }
 

@@ -185,52 +185,76 @@ export const ProvisionStepView = ({
   onBack,
 }: IProvisionStepView) => {
   const command = watchCommand(installId)
+  const [showBuild, setShowBuild] = useState(false)
   return (
     <div className="flex flex-col gap-6">
-      <Card className="!gap-5">
-        <ProvisionAccountView stages={buildStages(cloud, appName)} cloud={cloud} region={region} />
-        <div className="grid gap-4 border-t pt-5 sm:grid-cols-2">
-          <div className="flex flex-col gap-3 rounded-md border p-4">
-            <div className="flex flex-col gap-1">
-              <Text variant="body" weight="strong" flex className="items-center gap-2">
-                <Icon variant="TerminalWindowIcon" size={16} /> Watch it from the CLI
-              </Text>
-              <Text variant="subtext" theme="neutral" flex className="flex-wrap">
-                Needs the Nuon CLI:
-                <Code variant="inline">{CLI_INSTALL}</Code>
-                then
-                <Code variant="inline">{CLI_LOGIN}</Code>
-              </Text>
-            </div>
-            <div className="flex items-start gap-2">
-              <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
-                {command}
-              </Code>
-              <CopyTextButton text={command} label="Copy" size="sm" />
-            </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card className="!gap-3 !p-4">
+          <div className="flex flex-col gap-1">
+            <Text variant="body" weight="strong" flex className="items-center gap-2">
+              <Icon variant="TerminalWindowIcon" size={16} /> Watch it from the CLI
+            </Text>
+            <Text variant="subtext" theme="neutral" flex className="flex-wrap">
+              Needs the Nuon CLI:
+              <Code variant="inline">{CLI_INSTALL}</Code>
+              then
+              <Code variant="inline">{CLI_LOGIN}</Code>
+            </Text>
           </div>
-          <div className="flex flex-col gap-3 rounded-md border p-4">
-            <div className="flex flex-col gap-1">
-              <Text variant="body" weight="strong" flex className="items-center gap-2">
-                <Icon variant="RobotIcon" size={16} /> Watch it from your agent
-              </Text>
-              <Text variant="subtext" theme="neutral">
-                Your agent follows the install step by step and explains any failure from its logs.
-              </Text>
-            </div>
-            <div className="flex items-start gap-2">
-              <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
-                {watchPrompt(appName)}
-              </Code>
-              <CopyTextButton text={watchPrompt(appName)} label="Copy" size="sm" />
-            </div>
-            <div>
-              <Button variant="secondary" size="sm" href={DOCS_MCP} target="_blank" rel="noreferrer">
-                Set up the Nuon MCP server <Icon variant="ArrowSquareOutIcon" size={14} />
-              </Button>
-            </div>
+          <div className="flex items-start gap-2">
+            <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
+              {command}
+            </Code>
+            <CopyTextButton text={command} label="Copy" size="sm" />
           </div>
-        </div>
+        </Card>
+        <Card className="!gap-3 !p-4">
+          <div className="flex flex-col gap-1">
+            <Text variant="body" weight="strong" flex className="items-center gap-2">
+              <Icon variant="RobotIcon" size={16} /> Watch it from your agent
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              Your agent follows the install step by step and explains any failure from its logs.
+            </Text>
+          </div>
+          <div className="flex items-start gap-2">
+            <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
+              {watchPrompt(appName)}
+            </Code>
+            <CopyTextButton text={watchPrompt(appName)} label="Copy" size="sm" />
+          </div>
+          <div>
+            <Button variant="secondary" size="sm" href={DOCS_MCP} target="_blank" rel="noreferrer">
+              Set up the Nuon MCP server <Icon variant="ArrowSquareOutIcon" size={14} />
+            </Button>
+          </div>
+        </Card>
+      </div>
+      <Card className="!gap-0 !p-0">
+        <button
+          type="button"
+          aria-expanded={showBuild}
+          aria-controls="provision-build-order"
+          onClick={() => setShowBuild((open) => !open)}
+          className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-md px-5 py-4 text-left hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600 dark:hover:bg-neutral-900"
+        >
+          <span className="flex flex-col">
+            <Text variant="body" weight="strong">
+              What Nuon builds in your test {CLOUD_CONNECT[cloud].accountNoun}
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              The runner, then the sandbox, then your components.
+            </Text>
+          </span>
+          <span className={cn('flex transition-transform duration-300', showBuild && 'rotate-180')} aria-hidden>
+            <Icon variant="CaretDownIcon" size={14} weight="bold" theme="neutral" />
+          </span>
+        </button>
+        {showBuild ? (
+          <div id="provision-build-order" className="border-t p-5">
+            <ProvisionAccountView stages={buildStages(cloud, appName)} cloud={cloud} region={region} />
+          </div>
+        ) : null}
       </Card>
       {error ? <Banner theme="error">{error}</Banner> : null}
       <NextButton label="Go to deploy workflow" onClick={onFinish} onBack={onBack} loading={finishing} />
