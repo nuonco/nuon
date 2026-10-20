@@ -93,4 +93,4 @@ component. If the component has been removed from the app config, the settings f
 - **Addresses depend on how the module is written.** Renaming a resource, or moving it into a module, changes its
   address. Re-check `retain` when you refactor the module.
 - **Terraform's `removed` block** (Terraform 1.7+) with `lifecycle { destroy = false }` does something similar from
-  inside the module. `[teardown]` lets you choose per app, or per install, without changing module code.
+  inside the module. `[teardown]` lets you choose per app template, or per install, without changing module code.

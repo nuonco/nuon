@@ -42,7 +42,7 @@ flowchart TD
 1. The application sends data to the install's private OTLP/HTTP endpoint.
 2. A Collector managed by the install runner queues the data and forwards it to the relay over HTTPS. The runner
    obtains and automatically renews short-lived credentials for that connection.
-3. The relay authenticates the sender and attaches verified org, app, and install IDs.
+3. The relay authenticates the sender and attaches verified org, app template, and install IDs.
 4. The relay forwards the data to the configured OTLP/HTTP backend using credentials stored in the BYOC deployment.
 
 All enabled installs using a relay share its backend destination. Applications do not need backend credentials,
@@ -86,7 +86,7 @@ The relay attaches these **verified resource attributes** using the authenticate
 | Attribute | Identifies |
 | --- | --- |
 | `nuon.org.id` | Nuon organization |
-| `nuon.app.id` | Application |
+| `nuon.app.id` | Nuon app template |
 | `nuon.install.id` | Customer install |
 
 Caller-supplied copies of these IDs are removed throughout the payload before the relay stamps the resource.

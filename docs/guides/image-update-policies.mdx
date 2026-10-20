@@ -15,7 +15,7 @@ Update policies are evaluated **at build time**. There is no background schedule
 
 ## Scenario
 
-You have an app with two components:
+You have an app template with two components:
 
 * `img_whoami` — a `container_image` component pulling from Docker Hub.
 * `whoami` — a `helm_chart` component that consumes `img_whoami` in its pod spec.

@@ -1,5 +1,5 @@
 ---
-title: "Nuon Apps"
+title: "Nuon App Templates"
 icon: "window-maximize"
 description:
   "Package your existing application code and infrastructure to create Bring
@@ -8,24 +8,27 @@ boost: 10
 keywords: ["config", "configuration", "app config", "app configuration", "configure an app", "how to configure an app", "how do you configure an app", "apps", "what is an app", "application packaging", "nuon apps sync", "app directory", "lift and shift", "multi-cloud deployment", "metadata.toml", "connect github", "private repository", "nuon orgs connect-github"]
 ---
 
-Apps are versions of your application code and infrastructure that can be
-deployed into a customer cloud account.
+An app template is what you build in Nuon to deliver your product into customer
+cloud accounts: the sandbox, components, inputs, and actions that point to the
+Terraform, Helm charts, manifests, and images behind your product. Each install
+is one deployment of an app template in a customer account.
 
 Nuon is designed so you can lift and shift your _existing_ application and
 infrastructure into new deployment options. Most Nuon users will create multiple
-apps to offer different "flavors" of BYOC to their customers. e.g., AWS, Azure
+app templates to offer different "flavors" of BYOC to their customers. e.g., AWS, Azure
 versions, dev, prod environment versions, create a VPC, re-use a VPC versions,
 etc.
 
 ## What Is An App?
 
 When you first set up Nuon, you will map your existing product into one or more
-apps. An App is a fully configured version of your product that can be installed
-into your customer's cloud account.
+app templates. An app template points to the code and artifacts that make up
+your product and describes how to install them into your customer's cloud
+account.
 
 ## How do you configure an App?
 
-Each app is represented as multiple configuration TOML files.
+Each app template is represented as multiple configuration TOML files, called the app config.
 
 <Tip>
 New to app config? [Configuration Files](/configuration-files) walks through the files an app needs and how to sync them.
@@ -35,7 +38,7 @@ Each app consists of the following parts:
 
 - `Sandbox` - The base infrastructure layer e.g., AWS EKS, Azure AKS
 - `Runner` - The Nuon service that manages the install
-- `Inputs` - Customer-provided input values specific to each install e.g., app
+- `Inputs` - Customer-provided input values specific to each install e.g., product
   release, domain name
 - `Components` - Your application e.g., Helm, manifests, load balancers,
   certificates, Terraform
@@ -56,7 +59,7 @@ You can also connect from the dashboard: click your organization name in the top
 
 ## Sandbox
 
-The sandbox sets up your application's base **compute** environment, such as a Kubernetes (EKS, AKS, GKE) or ECS cluster. It gives your app a consistent, isolated place to run across every install. In a shared-responsibility model, the sandbox can also build on infrastructure a customer already provides, such as an existing cluster.
+The sandbox sets up your application's base **compute** environment, such as a Kubernetes (EKS, AKS, GKE) or ECS cluster. It gives your application a consistent, isolated place to run across every install. In a shared-responsibility model, the sandbox can also build on infrastructure a customer already provides, such as an existing cluster.
 
 Read more about the [Sandbox](/concepts/sandboxes) concept, or follow the [Configuring Sandboxes](/guides/configuring-sandboxes) guide to set one up.
 
@@ -66,8 +69,8 @@ Networking is provisioned by the install [Stack](/concepts/stacks): the Terrafor
 
 The Stack creates:
 
-- The network the app runs in (a VPC on AWS, a VNet on Azure)
-- The [Runner](/concepts/runners) that deploys and operates your app
+- The network your application runs in (a VPC on AWS, a VNet on Azure)
+- The [Runner](/concepts/runners) that deploys and operates your application
 - The [permissions](/concepts/operation-roles) the Runner needs
 
 The sandbox then runs inside this network. The Stack can create a fresh network or reuse resources the customer already has. See [Stacks](/concepts/stacks) for the available patterns.
@@ -81,7 +84,7 @@ to control your application.
 Inputs are commonly used to:
 
 - Allow users to select regions and provide access to an account
-- Customize app & infrastructure versions, such as pinning a Kubernetes cluster
+- Customize application & infrastructure versions, such as pinning a Kubernetes cluster
   version
 - Re-use existing infrastructure, such as providing a `vpc_id` that has been
   granted access
@@ -91,7 +94,7 @@ Read more about [Inputs](/concepts/app-inputs), and see [Configuring Inputs & Se
 ## Components
 
 Components are used to connect your existing application and infrastructure code
-to your app.
+to your app template.
 
 Components allow you to:
 
@@ -102,7 +105,7 @@ Components allow you to:
 - Deploy Terraform code
 
 Common components include certificates, load balancers, Kubernetes operators or
-Helm to deploy an app or database, etc.
+Helm to deploy an application or database, etc.
 
 Apps allow you to create [dependencies between components](/guides/component-dependencies) and expose a rich
 configuration language to share outputs between components for configuration.
@@ -121,8 +124,8 @@ Read more about the [Components](/concepts/components) concept, or get hands-on 
 
 ## READMEs
 
-When running an app in an [Install](/concepts/installs), you often need to
-document important info. e.g., the app's access URL, the install state, links to
+When running your application in an [Install](/concepts/installs), you often need to
+document important info. e.g., its access URL, the install state, links to
 documentation.
 
 It can also be nice to have some level of programmability, such being able to
@@ -140,7 +143,7 @@ See the [Using READMEs](/guides/using-readmes) guide for more details.
 
 ## App Management
 
-The [CLI](/cli) exposes many operational commands to manage apps. The dashboard can also provide limited app management functionality. See the [Managing Apps](/guides/managing-apps) guide for common workflows.
+The [CLI](/cli) exposes many operational commands to manage apps. The dashboard can also provide limited app management functionality. See the [Managing App Templates](/guides/managing-apps) guide for common workflows.
 
 To see all available commands, run: `nuon apps --help`.
 
@@ -154,7 +157,7 @@ nuon mkdir your-app
 cd your-app
 ```
 
-**Create an app** - `.toml` config files are used to represent a configuration for a single
+**Create an app template** - `.toml` config files are used to represent a configuration for a single
 app. For consistency, the app name must be the same name as the directory you
 created above.
 
@@ -206,7 +209,7 @@ You can view various configs for an app and sync configuration files using the
 
 **Sync** - Sync config files to the Nuon control and data plane
 
-Sync is a critical step as you iterate and update you app configuration. Syncing performs syntax
+Sync is a critical step as you iterate and update your app configuration. Syncing performs syntax
 validation, uploads your configuration to the Nuon control plane, and triggers builds for any components. e.g., Terraform module, Helm chart, Kubernetes manifest, container image.
 
 If any component TOML files have changed, or any related files such as Helm `values.yaml` files, a new build will be triggered during sync.

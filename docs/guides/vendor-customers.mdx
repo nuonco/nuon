@@ -29,7 +29,7 @@ One of Nuon's concepts is an [action](/concepts/actions), which are vendor-defin
 
 ### Customer Inputs
 
-[Inputs](/concepts/app-inputs) are dynamic values specific to an install that are entered and then referenced into the install provision workflow. With Nuon, inputs can be configured to be vendor-entered or customer-entered. Vendor inputs may be the Kubernetes and vendor app release versions or the compute node size. Customer inputs could be an AI or vendor license key.
+[Inputs](/concepts/app-inputs) are dynamic values specific to an install that are entered and then referenced into the install provision workflow. With Nuon, inputs can be configured to be vendor-entered or customer-entered. Vendor inputs may be the Kubernetes and vendor product release versions or the compute node size. Customer inputs could be an AI or vendor license key.
 
 Customers enter inputs in the customer dashboard and can be updated over time. Vendors conversely enter their inputs either in the vendor dashboard or with the Nuon CLI.
 
@@ -43,7 +43,7 @@ For emergency access, break-glass permissions work the same way. Customers grant
 
 ### Nuon Deployment Options
 
-Nuon Cloud is our SaaS offering primarily targeted for free trials and smaller customers. Vendors' apps, installs, and logs are stored in an encrypted PostgreSQL database and securely accessed by the vendors and customers using TLS for encryption of data in transit and Auth0 for authentication.
+Nuon Cloud is our SaaS offering primarily targeted for free trials and smaller customers. Vendors' app templates, installs, and logs are stored in an encrypted PostgreSQL database and securely accessed by the vendors and customers using TLS for encryption of data in transit and Auth0 for authentication.
 
 For vendors and their customers concerned about data residency and multiple SaaS 3rd parties in the loop, Nuon supports self-hosting Nuon's control plane in the vendor's AWS cloud. Nuon uses its BYOC product to provision and update Nuon. In this deployment scenario, the metadata and logs about customer installs are stored encrypted in PostgreSQL RDS in the vendor's AWS cloud. The vendor can cut off access of the Nuon Runner to the Nuon control plane except as required during maintenance windows to upgrade the Nuon control plane. This offering is called Nuon BYOC.
 
