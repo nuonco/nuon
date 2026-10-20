@@ -244,40 +244,6 @@ export const appFileStubs = ({
   },
 ]
 
-export const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
-  aws: [
-    {
-      name: 'CloudFormation quick-create',
-      how: 'One pre-filled link. Your customer creates the stack in their console.',
-    },
-    { name: 'AWS CLI', how: 'The same CloudFormation template, from a terminal.' },
-    {
-      name: 'Terraform',
-      how: 'Generated tfvars for the install-stacks/aws module, applied with terraform.',
-    },
-  ],
-  gcp: [
-    {
-      name: 'Terraform',
-      how: 'Generated tfvars for the install-stacks/gcp module. gcloud auth, then terraform apply. GCP is Terraform only.',
-    },
-  ],
-  azure: [
-    {
-      name: 'Azure CLI (Bicep)',
-      how: 'Create a resource group and Key Vault, then deploy the template with az. Nuon fills in the commands.',
-    },
-    {
-      name: 'Terraform',
-      how: 'Generated tfvars for the install-stacks/azure module, applied with terraform.',
-    },
-    {
-      name: 'Deploy to Azure',
-      how: 'A pre-filled portal link. Only when stack.toml sets deployment_scope = "subscription".',
-    },
-  ],
-}
-
 export const testAccountLabel = (cloud: TCloud) => `your test ${CLOUD_CONNECT[cloud].accountNoun}`
 
 export type TStageId = 'runner' | 'sandbox' | 'components'
