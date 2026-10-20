@@ -5,27 +5,13 @@ icon: "list-check"
 keywords: ["runbooks", "runbook", "runbook TOML", "configure runbooks", "runbook steps", "deploy step", "action step", "operational procedures", "version upgrade", "database migration", "nuon runbooks"]
 ---
 
-<div style={{
-  backgroundImage: 'url(/images/changelog/035-runbooks-bg.png)',
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  padding: '48px 24px',
-  borderRadius: '12px',
-  display: 'flex',
-  justifyContent: 'center',
-  margin: '24px 0'
-}}>
-  <img
-    src="/images/changelog/035-runbook-detail.png"
-    alt="A runbook's detail page in the Nuon dashboard, showing its steps"
-    style={{
-      width: '100%',
-      maxWidth: '720px',
-      borderRadius: '8px',
-      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
-    }}
-  />
-</div>
+import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
+
+<AskYourAgent
+  title="List install runbooks"
+  tools={["list_runbooks", "get_runbook"]}
+  prompt={`List the runbooks available on my Nuon install and summarize the inputs and steps of each one.`}
+/>
 
 Runbooks turn a multi-step operational procedure into a single, repeatable artifact you run against an install on demand. Define the sequence once; run it consistently across every install instead of doing it by hand each time.
 

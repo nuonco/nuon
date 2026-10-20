@@ -5,6 +5,14 @@ icon: "heart-pulse"
 keywords: ["health checks", "health check", "healthcheck", "healthchecks", "health-check", "health checking", "component health", "component health check", "kubernetes health check", "helm health check", "terraform health check", "install health", "liveness", "readiness", "probe", "probes", "http probe", "tcp probe", "exec probe", "custom health check", "required checks", "verified deploys", "deploy gate", "block_deploy", "stabilization window", "uptime", "uptime monitoring", "canary", "bake period", "degraded", "unhealthy", "monitoring", "alerting", "resource explorer"]
 ---
 
+import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
+
+<AskYourAgent
+  title="Check install health"
+  tools={["get_install_health"]}
+  prompt={`Check the health of my Nuon install. List every component that isn't healthy and why, tell me when health was last reported, and tell me if Nuon can't reach the cluster.`}
+/>
+
 Nuon checks the components running on each install regularly, so you can see their live status.
 
 <CardGroup cols={2}>
@@ -300,16 +308,14 @@ single per-resource flag:
   need this too. When a component's failure is what moved the install, the component alert reports
   both in one message.
 
-The example below shows a component degrading, then recovering a couple of minutes later. Each alert
-includes the failing resource and the reason.
+Each alert names the component and its health, the health it had before, the failing resource, the
+reason (for example, a readiness probe whose connection was refused), the install and the org, with
+an **Open in Nuon** link. The recovery message follows the same layout and confirms how many
+resources are healthy again.
 
 Each message covers both the component and the install. When a component's change is what moved the
 install rollup, the headline says `install degraded` and an **Install health** field shows
 `healthy → degraded`. You don't get a separate install message.
-
-<Frame caption="A component degrading and recovering, delivered to Slack.">
-  <img src="/images/guides/health-checks/slack-alert.png" alt="Two Slack messages from Nuon Cloud. The first is titled Component degraded, install degraded, ctl_api, and shows the component, its previous healthy status, the failing Deployment and a readiness probe connection-refused error. The second is titled Component recovered, install recovered, and shows all 52 resources healthy." />
-</Frame>
 
 Nuon limits alerts in three ways:
 
@@ -393,11 +399,8 @@ uptime percentage, drawn as status-page-style daily bars.
 
 The badge shows current health, and the percentage covers the last 90 days. A component showing
 `Healthy` at 97.57% is fine now but had problems earlier. An install is degraded whenever any of its
-components is, so in the example below that component sets the install's uptime.
-
-<Frame caption="90-day health for an install, with per-component uptime.">
-  <img src="/images/guides/health-checks/90-day-health.png" alt="A 90-day health card showing 97.57% uptime, a row of daily status bars, and a list of components each with a Healthy badge and its own uptime percentage. One component, nginx_gateway, reads 97.57% while the rest read 100%." />
-</Frame>
+components is, so if one component reads 97.57% and the rest read 100%, the install also reads
+97.57%.
 
 Time in `unknown` is excluded from uptime and counts as neither up nor down. An install with no
 observations reports zero observed time instead of 100%.
