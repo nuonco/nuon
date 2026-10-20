@@ -12,6 +12,7 @@ import (
 const (
 	journeyStepCompleteEvent = "journey_step_complete"
 	journeyCompleteEvent     = "journey_complete"
+	journeyPathChosenEvent   = "journey_path_chosen"
 )
 
 var journeyAnalyticsMetadataKeys = []string{"path", "cloud"}
