@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -64,22 +65,7 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 
 	authed := e.Group("/", h.requireAuth())
 	nuonOnly := authed.Group("/", h.requireNuonEmail())
-	adminAPITarget, _ := url.Parse(h.cfg.AdminAPIUrl)
-	adminAPIProxy := &httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			token, _ := req.Cookie(authCookie)
-			req.URL.Scheme = adminAPITarget.Scheme
-			req.URL.Host = adminAPITarget.Host
-			req.URL.Path = strings.TrimPrefix(req.URL.Path, "/admin")
-			req.Host = adminAPITarget.Host
-			req.Header.Del("Cookie")
-			req.Header.Del("Accept-Encoding")
-			if token != nil && token.Value != "" {
-				req.Header.Set("Authorization", "Bearer "+token.Value)
-			}
-		},
-		ErrorLog: zap.NewStdLog(h.l),
-	}
+	adminAPIProxy := h.newAdminAPIProxy(h.cfg.AdminAPIUrl)
 
 	adminDashboardProxy := h.newAdminDashboardProxy(h.cfg.AdminDashboardUrl)
 
@@ -92,10 +78,74 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 		authed.Any("/admin/grafana", gin.WrapH(grafanaUIProxy))
 		authed.Any("/admin/grafana/*path", gin.WrapH(grafanaUIProxy))
 	}
-	nuonOnly.Any("/admin/v1/*path", gin.WrapH(adminAPIProxy))
+	nuonOnly.Any("/admin/v1/*path", func(c *gin.Context) {
+		if h.rejectMismatchedAdminEmail(c) {
+			return
+		}
+		adminAPIProxy.ServeHTTP(c.Writer, c.Request)
+	})
 	nuonOnly.Any("/admin/dashboard/*path", gin.WrapH(adminDashboardProxy))
 
 	return nil
+}
+
+const adminEmailHeader = "X-Nuon-Admin-Email"
+
+// verifiedEmailContextKey carries the email requireNuonEmail accepted for this
+// session. The admin API treats X-Nuon-Admin-Email as the acting account and
+// does not compare it to the bearer token.
+type verifiedEmailContextKey struct{}
+
+func withVerifiedEmail(req *http.Request, email string) *http.Request {
+	return req.WithContext(context.WithValue(req.Context(), verifiedEmailContextKey{}, email))
+}
+
+func verifiedEmailFrom(req *http.Request) string {
+	email, _ := req.Context().Value(verifiedEmailContextKey{}).(string)
+	return email
+}
+
+// rejectMismatchedAdminEmail reports a client-supplied admin email that is not
+// the verified session. An omitted header is allowed; admin reads do not send one.
+func (h *ProxyHandler) rejectMismatchedAdminEmail(c *gin.Context) bool {
+	verified := verifiedEmailFrom(c.Request)
+	clientEmail := c.GetHeader(adminEmailHeader)
+	if clientEmail == "" || clientEmail == verified {
+		return false
+	}
+	h.l.Warn("admin proxy client email does not match verified session",
+		zap.String("client_email", clientEmail),
+		zap.String("verified_email", verified),
+		zap.String("method", c.Request.Method),
+		zap.String("path", c.Request.URL.Path),
+	)
+	c.AbortWithStatus(http.StatusForbidden)
+	return true
+}
+
+func (h *ProxyHandler) newAdminAPIProxy(upstreamBase string) *httputil.ReverseProxy {
+	target, _ := url.Parse(upstreamBase)
+	return &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			token, _ := req.Cookie(authCookie)
+			req.URL.Scheme = target.Scheme
+			req.URL.Host = target.Host
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, "/admin")
+			req.Host = target.Host
+			req.Header.Del("Cookie")
+			req.Header.Del("Accept-Encoding")
+			req.Header.Del(adminEmailHeader)
+			if token != nil && token.Value != "" {
+				req.Header.Set("Authorization", "Bearer "+token.Value)
+			}
+			if email := verifiedEmailFrom(req); email != "" {
+				req.Header.Set(adminEmailHeader, email)
+			} else if token != nil && token.Value != "" {
+				h.l.Warn("admin proxy has no verified email for session")
+			}
+		},
+		ErrorLog: zap.NewStdLog(h.l),
+	}
 }
 
 func (h *ProxyHandler) newProxy(upstreamBase, stripPrefix, addPrefix string) *httputil.ReverseProxy {
@@ -416,6 +466,7 @@ func (h *ProxyHandler) requireNuonEmail() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
+		c.Request = withVerifiedEmail(c.Request, email)
 		c.Next()
 	}
 }
