@@ -47,8 +47,27 @@ After that, every push to the tracked git branch starts a branch run that rebuil
 To force a rebuild of every component, run `nuon branches trigger --branch-id <branch> --force`, or trigger the branch from the dashboard.
 
 <Tip>
-When a component's source lives in your app repository, check the branch name in its TOML file.
+When a component's source lives in your app repository, set its `branch` to the branch your
+[branch file](/guides/app-branches#write-a-branch-config) tracks. Each branch run then builds the
+component from that run's commit. With a different `branch`, the component builds from the latest
+commit on that branch instead.
 </Tip>
+
+<CodeGroup>
+```toml branches/main.toml
+[connected_repo]
+repo      = "acmeco/my-app"
+directory = "."
+branch    = "main"
+```
+
+```toml components/api.toml
+[connected_repo]
+repo      = "acmeco/my-app"
+directory = "api"
+branch    = "main"   # same branch as branches/main.toml
+```
+</CodeGroup>
 
 # Install life cycle
 
