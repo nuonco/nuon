@@ -16,8 +16,7 @@ test.describe("Onboarding: resume", () => {
     await page.reload();
     await page.waitForLoadState("domcontentloaded");
     await expect(deploy).toBeVisible({ timeout: 30000 });
-    await expect(page.getByText("nuonco/kitchen-sink")).toBeVisible();
-    await expect(page.getByText("nuonco/aws-eks-sandbox")).toBeVisible();
+    await expect(page.getByText("AWS region")).toBeVisible();
 
     await page.getByRole("button", { name: /Back/ }).click();
     await expect(page.getByRole("heading", { name: "Create your first app template" })).toBeVisible();

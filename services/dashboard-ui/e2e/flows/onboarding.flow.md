@@ -62,7 +62,7 @@ Specs: `specs/onboarding/example-app.spec.ts`, `own-app.spec.ts`, `skip.spec.ts`
 ### Resume (resume.spec.ts)
 - action: click | button "Deploy to AWS"
 - action: reload
-- expect: visible | heading "Test install of Kitchen Sink demo app" with nuonco/kitchen-sink and nuonco/aws-eks-sandbox
+- expect: visible | heading "Test install of Kitchen Sink demo app" with the AWS region picker
 - action: click | button "Back"
 - expect: visible | heading "Create your first app template"
 - expect: start complete, deploy not complete

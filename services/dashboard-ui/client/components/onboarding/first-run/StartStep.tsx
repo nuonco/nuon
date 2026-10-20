@@ -28,15 +28,18 @@ import {
   CLOUD_ICON,
   CLOUD_LABEL,
   EXAMPLE_CLOUDS,
+  KITCHEN_SINK_LABEL,
   KITCHEN_SINK_REPO,
   KITCHEN_SINK_URL,
+  KITCHEN_SINK_VARIANTS,
+  TRACKED_GIT_BRANCH,
   defaultRegion,
   isCloud,
   type TCloud,
   type TExampleCloud,
 } from './constants'
 import { startSchema, type StartValues } from './schema'
-import { NextButton, TestCloudPicker } from './shared'
+import { NextButton, RepoChip, TestCloudPicker } from './shared'
 
 const OWN_APP_STEPS = [
   { icon: 'GitHub', title: 'Connect GitHub' },
@@ -52,6 +55,71 @@ export const pickConfigRepo = (repos: TVCSConnectionRepo[] | undefined, appName:
 export type TGithubTile =
   | { status: 'disconnected'; error?: boolean }
   | { status: 'connected'; owner?: string; repoCount?: number }
+
+const ExampleAppDrawer = () => {
+  const [open, setOpen] = useState(false)
+  const facts: { label: string; value: ReactNode }[] = [
+    {
+      label: 'Source',
+      value: (
+        <>
+          <RepoChip repo={KITCHEN_SINK_REPO} />
+          <Code variant="inline">{TRACKED_GIT_BRANCH}</Code>
+        </>
+      ),
+    },
+    {
+      label: 'Nuon sandbox',
+      value: EXAMPLE_CLOUDS.map((option) => (
+        <RepoChip key={option} repo={KITCHEN_SINK_VARIANTS[option].sandbox} />
+      )),
+    },
+    { label: 'Components', value: 'Terraform modules, Helm charts, container images' },
+  ]
+  return (
+    <div className="flex flex-col rounded-md border border-dashed">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="example-app-drawer"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-md px-4 py-2.5 text-left hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600 dark:hover:bg-neutral-900"
+      >
+        <Text variant="subtext" weight="strong">
+          What&apos;s in the {KITCHEN_SINK_LABEL} app
+        </Text>
+        <span className={cn('flex transition-transform duration-300', open && 'rotate-180')} aria-hidden>
+          <Icon variant="CaretDownIcon" size={14} weight="bold" theme="neutral" />
+        </span>
+      </button>
+      <div
+        id="example-app-drawer"
+        className={cn(
+          'grid transition-[grid-template-rows,opacity,visibility] duration-300 ease-out',
+          open ? 'visible grid-rows-[1fr] opacity-100' : 'invisible grid-rows-[0fr] opacity-0'
+        )}
+        aria-hidden={!open}
+      >
+        <div className="overflow-hidden">
+          <dl className="grid gap-3 border-t border-dashed px-4 py-3 sm:grid-cols-3">
+            {facts.map((fact) => (
+              <div key={fact.label} className="flex flex-col gap-1.5">
+                <dt>
+                  <Text variant="subtext" theme="neutral">
+                    {fact.label}
+                  </Text>
+                </dt>
+                <dd className="flex flex-wrap items-center gap-1.5">
+                  {typeof fact.value === 'string' ? <Text variant="body">{fact.value}</Text> : fact.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const ExampleEscapeHatch = ({ onExit }: { onExit: () => void }) => (
   <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed px-4 py-3">
@@ -369,6 +437,7 @@ export const StartStepView = ({
               </Button>
             ))}
           </div>
+          <ExampleAppDrawer />
         </Card>
       </>
     )
