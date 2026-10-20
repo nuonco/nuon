@@ -3,6 +3,7 @@ import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { Code } from '@/components/common/Code'
 import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
@@ -15,12 +16,15 @@ import {
   CLI_LOGIN,
   CLOUD_CONNECT,
   CLOUD_ICON,
+  DOCS_MCP,
   KITCHEN_SINK_LABEL,
+  MCP_ADD_CLAUDE,
   SANDBOX_PARTS,
   buildStages,
   defaultRegion,
   isCloud,
   watchCommand,
+  watchPrompt,
   type IBuildStage,
   type TCloud,
   type TStageId,
@@ -186,21 +190,47 @@ export const ProvisionStepView = ({
     <div className="flex flex-col gap-6">
       <Card className="!gap-5">
         <ProvisionAccountView stages={buildStages(cloud, appName)} cloud={cloud} region={region} />
-        <div className="flex flex-col gap-3 border-t pt-5">
-          <div className="flex flex-col gap-1">
-            <Text variant="body" weight="strong">
-              See it in action in the CLI
-            </Text>
-            <Text variant="subtext" theme="neutral" flex className="flex-wrap">
-              Needs the Nuon CLI:
-              <Code variant="inline">{CLI_INSTALL}</Code>
-              then
-              <Code variant="inline">{CLI_LOGIN}</Code>
-            </Text>
+        <div className="grid gap-4 border-t pt-5 sm:grid-cols-2">
+          <div className="flex flex-col gap-3 rounded-md border p-4">
+            <div className="flex flex-col gap-1">
+              <Text variant="body" weight="strong" flex className="items-center gap-2">
+                <Icon variant="TerminalWindowIcon" size={16} /> Watch it from the CLI
+              </Text>
+              <Text variant="subtext" theme="neutral" flex className="flex-wrap">
+                Needs the Nuon CLI:
+                <Code variant="inline">{CLI_INSTALL}</Code>
+                then
+                <Code variant="inline">{CLI_LOGIN}</Code>
+              </Text>
+            </div>
+            <div className="flex items-start gap-2">
+              <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
+                {command}
+              </Code>
+              <CopyTextButton text={command} label="Copy" size="sm" />
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Code variant="inline">{command}</Code>
-            <CopyTextButton text={command} label="Copy" size="sm" />
+          <div className="flex flex-col gap-3 rounded-md border p-4">
+            <div className="flex flex-col gap-1">
+              <Text variant="body" weight="strong" flex className="items-center gap-2">
+                <Icon variant="RobotIcon" size={16} /> Watch it from your agent
+              </Text>
+              <Text variant="subtext" theme="neutral">
+                Your agent follows the install step by step and explains any failure from its logs.
+              </Text>
+            </div>
+            <div className="flex items-start gap-2">
+              <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
+                {MCP_ADD_CLAUDE}
+              </Code>
+              <CopyTextButton text={MCP_ADD_CLAUDE} label="Copy" size="sm" />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Link href={DOCS_MCP} isExternal textVariant="subtext">
+                Other clients
+              </Link>
+              <CopyTextButton text={watchPrompt(appName)} label="Copy prompt" size="sm" variant="primary" />
+            </div>
           </div>
         </div>
       </Card>

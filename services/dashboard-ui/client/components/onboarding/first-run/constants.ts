@@ -158,6 +158,8 @@ export const MCP_ADD_CLAUDE =
   'claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes'
 export const GIT_PUSH = 'git add .\ngit commit -m "Add Nuon app config"\ngit push origin main'
 export const watchCommand = (installId: string) => `nuon installs workflows watch -i ${installId}`
+export const watchPrompt = (appName: string) =>
+  `Watch my ${appName} test install on Nuon while it provisions. Tell me as each step finishes, and if a step fails, pull its logs and explain what went wrong.`
 
 export interface IAppFileStub {
   name: string
