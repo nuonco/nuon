@@ -3,6 +3,7 @@ package actions
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	nuon "github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -30,7 +33,10 @@ type AdHocParams struct {
 }
 
 // Kafka-backed log ingestion can trail stream closure by up to five seconds.
-const adHocClosedLogDrainPolls = 4
+const closedLogDrainPolls = 4
+
+// errLogStreamNotReady means the runner job lists a log stream the API cannot serve yet.
+var errLogStreamNotReady = errors.New("log stream is not ready")
 
 func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON bool) error {
 	view := ui.NewGetView()
@@ -57,7 +63,7 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 		return view.Error(err)
 	}
 
-	envVars, err := parseAdHocEnv(params.EnvFile, params.Env)
+	envVars, err := parseRunEnv(params.EnvFile, params.Env)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -86,9 +92,12 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 		if asJSON {
 			logWriter = os.Stderr
 		}
-		completedRun, err := s.waitForAdHocRun(ctx, installID, run.ID, logWriter)
+		spinner := bubbles.NewSpinnerView(asJSON, s.cfg.Interactive)
+		spinner.Start(fmt.Sprintf("waiting for ad-hoc action %s to start", run.ID))
+		completedRun, err := s.waitForRun(ctx, installID, run.ID, logWriter, spinner)
+		spinner.Stop()
 		if err != nil {
-			return printAdHocWaitError(err, asJSON)
+			return printWaitError(err, asJSON)
 		}
 
 		run.Status = models.AppInstallActionWorkflowRunStatus(completedRun.Status)
@@ -98,13 +107,16 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 			if completedRun.StatusDescription != "" {
 				message += ": " + completedRun.StatusDescription
 			}
-			return printAdHocWaitError(&ui.CLIUserError{
+			return printWaitError(&ui.CLIUserError{
 				Msg: message,
 			}, asJSON)
 		}
 		if asJSON {
 			ui.PrintJSON(run)
+			return nil
 		}
+		spinner.Success(fmt.Sprintf("ad-hoc action %s finished", completedRun.ID))
+		renderCompletedRun(completedRun)
 		return nil
 	}
 
@@ -143,48 +155,74 @@ func validateRole(requested string, roles []*models.ServiceAvailableRole) error 
 	return fmt.Errorf("role %q is not available; available roles: %s", requested, strings.Join(available, ", "))
 }
 
-func (s *Service) waitForAdHocRun(ctx context.Context, installID, runID string, writer io.Writer) (*models.AppInstallActionWorkflowRun, error) {
+func (s *Service) waitForRun(ctx context.Context, installID, runID string, writer io.Writer, spinner *bubbles.SpinnerView) (*models.AppInstallActionWorkflowRun, error) {
 	streamedLogs := false
+	streamPending := false
 	for {
 		run, err := s.api.GetInstallActionWorkflowRun(ctx, installID, runID)
 		if err != nil {
-			return nil, fmt.Errorf("get ad-hoc action run: %w", err)
+			return nil, fmt.Errorf("get action run: %w", err)
 		}
 
 		if !streamedLogs && run.RunnerJob != nil && run.RunnerJob.LogStreamID != "" {
-			if err := s.streamRawAdHocLogs(ctx, run.RunnerJob.LogStreamID, writer); err != nil {
+			spinner.Update(fmt.Sprintf("action run %s is running", runID))
+			err := s.streamRawRunLogs(ctx, run.RunnerJob.LogStreamID, writer, spinner)
+			switch {
+			case errors.Is(err, errLogStreamNotReady):
+				streamPending = true
+			case err != nil:
 				return nil, err
+			default:
+				streamedLogs = true
+				streamPending = false
+				if !isTerminalRunStatus(run.Status) {
+					spinner.Start(fmt.Sprintf("waiting for action run %s to finish", runID))
+				}
 			}
-			streamedLogs = true
 		}
 
-		if isTerminalAdHocStatus(run.Status) {
+		if isTerminalRunStatus(run.Status) {
+			if streamPending {
+				spinner.Stop()
+				fmt.Fprintf(os.Stderr, "logs for action run %s are not available yet; view them with nuon actions get-run\n", runID)
+			}
 			return run, nil
 		}
-		if err := waitForAdHocPoll(ctx); err != nil {
+		if !streamedLogs {
+			spinner.Update(fmt.Sprintf("waiting for action run %s to start (status: %s)", runID, run.Status))
+		}
+		if err := waitForRunPoll(ctx); err != nil {
 			return nil, err
 		}
 	}
 }
 
-func (s *Service) streamRawAdHocLogs(ctx context.Context, logStreamID string, writer io.Writer) error {
+func (s *Service) streamRawRunLogs(ctx context.Context, logStreamID string, writer io.Writer, spinner *bubbles.SpinnerView) error {
 	cursor := ""
 	closedEmptyPolls := 0
+	receivedLogs := false
 	for {
 		response, err := s.api.LogStreamTailLogs(ctx, logStreamID, cursor, "2s", nil)
 		if err != nil {
-			return fmt.Errorf("read ad-hoc action logs: %w", err)
+			if !receivedLogs && nuon.IsNotFound(err) {
+				return errLogStreamNotReady
+			}
+			return fmt.Errorf("read action run logs: %w", err)
+		}
+		if len(response.Logs) > 0 || response.Next != "" {
+			receivedLogs = true
 		}
 		for _, record := range response.Logs {
 			if record.LogAttributes["nuon.command_output"] != "true" {
 				continue
 			}
+			spinner.Stop()
 			if _, err := io.WriteString(writer, record.Body); err != nil {
-				return fmt.Errorf("write ad-hoc action logs: %w", err)
+				return fmt.Errorf("write action run logs: %w", err)
 			}
 			if !strings.HasSuffix(record.Body, "\n") {
 				if _, err := io.WriteString(writer, "\n"); err != nil {
-					return fmt.Errorf("write ad-hoc action logs: %w", err)
+					return fmt.Errorf("write action run logs: %w", err)
 				}
 			}
 		}
@@ -197,7 +235,10 @@ func (s *Service) streamRawAdHocLogs(ctx context.Context, logStreamID string, wr
 
 		logStream, err := s.api.GetLogStream(ctx, logStreamID)
 		if err != nil {
-			return fmt.Errorf("get ad-hoc action log stream: %w", err)
+			if !receivedLogs && nuon.IsNotFound(err) {
+				return errLogStreamNotReady
+			}
+			return fmt.Errorf("get action run log stream: %w", err)
 		}
 		if logStream.Open || len(response.Logs) > 0 {
 			closedEmptyPolls = 0
@@ -205,13 +246,13 @@ func (s *Service) streamRawAdHocLogs(ctx context.Context, logStreamID string, wr
 		}
 
 		closedEmptyPolls++
-		if closedEmptyPolls >= adHocClosedLogDrainPolls {
+		if closedEmptyPolls >= closedLogDrainPolls {
 			return nil
 		}
 	}
 }
 
-func isTerminalAdHocStatus(status string) bool {
+func isTerminalRunStatus(status string) bool {
 	switch models.AppInstallActionWorkflowRunStatus(status) {
 	case models.AppInstallActionWorkflowRunStatusFinished,
 		models.AppInstallActionWorkflowRunStatusError,
@@ -224,16 +265,27 @@ func isTerminalAdHocStatus(status string) bool {
 	}
 }
 
-func waitForAdHocPoll(ctx context.Context) error {
+// runPollInterval is a var so tests can shorten it.
+var runPollInterval = time.Second
+
+func waitForRunPoll(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-time.After(time.Second):
+	case <-time.After(runPollInterval):
 		return nil
 	}
 }
 
-func printAdHocWaitError(err error, asJSON bool) error {
+func renderCompletedRun(run *models.AppInstallActionWorkflowRun) {
+	ui.NewGetView().Render([][]string{
+		{"run id", run.ID},
+		{"status", run.Status},
+		{"execution time", time.Duration(run.ExecutionTime).String()},
+	})
+}
+
+func printWaitError(err error, asJSON bool) error {
 	if asJSON {
 		return ui.PrintError(err)
 	}
@@ -262,7 +314,7 @@ func readAdHocInput(command, scriptPath string) (string, error) {
 	return string(contents), nil
 }
 
-func parseAdHocEnv(envFile string, values []string) (map[string]string, error) {
+func parseRunEnv(envFile string, values []string) (map[string]string, error) {
 	env := make(map[string]string)
 	if envFile != "" {
 		file, err := os.Open(envFile)

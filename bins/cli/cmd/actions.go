@@ -40,8 +40,6 @@ func (c *cli) actionsCmd() *cobra.Command {
 
 	installID := ""
 	actionWorkflowID := ""
-	roleName := ""
-	requestID := ""
 	recentRunsCmd := &cobra.Command{
 		Use:   "recent-runs",
 		Short: "Get action's most recent runs",
@@ -51,9 +49,8 @@ func (c *cli) actionsCmd() *cobra.Command {
 			return svc.GetRecentRuns(cmd.Context(), installID, actionWorkflowID, offset, limit, PrintJSON)
 		}),
 	}
-	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
-	recentRunsCmd.MarkFlagRequired("install-id")
-	recentRunsCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")
+	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID or name of the install (defaults to the selected install)")
+	recentRunsCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID or name of the action")
 	recentRunsCmd.MarkFlagRequired("action-workflow-id")
 	recentRunsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	recentRunsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
@@ -82,28 +79,33 @@ func (c *cli) actionsCmd() *cobra.Command {
 			return svc.GetRun(cmd.Context(), installID, runID, PrintJSON)
 		}),
 	}
-	getRunCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
-	getRunCmd.MarkFlagRequired("install-id")
+	getRunCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID or name of the install (defaults to the selected install)")
 	getRunCmd.Flags().StringVarP(&runID, "run-id", "r", "", "The ID of the run you want to view")
 	getRunCmd.MarkFlagRequired("run-id")
 	actionsCmd.AddCommand(getRunCmd)
 
+	var createRunParams actions.CreateRunParams
 	runCmd := &cobra.Command{
-		Use:   "create-run",
-		Short: "Run an action",
-		Long:  "Run an action by Install ID and Action Workflow ID",
+		Use:         "create-run",
+		Short:       "Run an action",
+		Long:        "Run an action by install ID or name and action ID or name",
+		Args:        cobra.NoArgs,
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Example: `  nuon actions create-run -i customer1 -w pg_status
+  nuon actions create-run -i customer1 -w pg_status --env DEBUG=true --wait`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := c.actions
-			return svc.CreateRun(cmd.Context(), installID, actionWorkflowID, roleName, requestID, PrintJSON)
+			return c.actions.CreateRun(cmd.Context(), createRunParams, PrintJSON)
 		}),
 	}
 
-	runCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
-	runCmd.MarkFlagRequired("install-id")
-	runCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")
+	runCmd.Flags().StringVarP(&createRunParams.InstallID, "install-id", "i", "", "The ID or name of the install (defaults to the selected install)")
+	runCmd.Flags().StringVarP(&createRunParams.ActionWorkflowID, "action-workflow-id", "w", "", "The ID or name of the action")
 	runCmd.MarkFlagRequired("action-workflow-id")
-	runCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for action workflow")
-	addRequestIDFlag(runCmd, &requestID)
+	runCmd.Flags().StringVar(&createRunParams.Role, "role-name", "", "IAM role name to use for action workflow")
+	runCmd.Flags().StringArrayVar(&createRunParams.Env, "env", nil, "Environment variable as KEY=VALUE (repeatable)")
+	runCmd.Flags().StringVar(&createRunParams.EnvFile, "env-file", "", "Path to a dotenv-style environment file")
+	runCmd.Flags().BoolVar(&createRunParams.Wait, "wait", false, "Wait for completion and print raw action logs")
+	addRequestIDFlag(runCmd, &createRunParams.RequestID)
 	actionsCmd.AddCommand(runCmd)
 
 	var adhocParams actions.AdHocParams

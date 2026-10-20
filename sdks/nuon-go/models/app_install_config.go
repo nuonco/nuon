@@ -47,11 +47,20 @@ type AppInstallConfig struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// runner image auto update
+	RunnerImageAutoUpdate *bool `json:"runner_image_auto_update,omitempty"`
+
+	// runner image id
+	RunnerImageID string `json:"runner_image_id,omitempty"`
+
 	// runner nested template url
 	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
 	// telemetry enabled
 	TelemetryEnabled *bool `json:"telemetry_enabled,omitempty"`
+
+	// ui definition
+	UIDefinition *ConfigUploadedUIDefinition `json:"ui_definition,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
@@ -73,6 +82,10 @@ func (m *AppInstallConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLabels(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUIDefinition(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -156,6 +169,29 @@ func (m *AppInstallConfig) validateLabels(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstallConfig) validateUIDefinition(formats strfmt.Registry) error {
+	if swag.IsZero(m.UIDefinition) { // not required
+		return nil
+	}
+
+	if m.UIDefinition != nil {
+		if err := m.UIDefinition.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("ui_definition")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("ui_definition")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app install config based on the context it is used
 func (m *AppInstallConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -169,6 +205,10 @@ func (m *AppInstallConfig) ContextValidate(ctx context.Context, formats strfmt.R
 	}
 
 	if err := m.contextValidateLabels(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateUIDefinition(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -246,6 +286,31 @@ func (m *AppInstallConfig) contextValidateLabels(ctx context.Context, formats st
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppInstallConfig) contextValidateUIDefinition(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.UIDefinition != nil {
+
+		if swag.IsZero(m.UIDefinition) { // not required
+			return nil
+		}
+
+		if err := m.UIDefinition.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("ui_definition")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("ui_definition")
+			}
+
+			return err
+		}
 	}
 
 	return nil

@@ -46,6 +46,12 @@ type AppAppRunnerConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// image auto update
+	ImageAutoUpdate bool `json:"image_auto_update,omitempty"`
+
+	// image id
+	ImageID string `json:"image_id,omitempty"`
+
 	// takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent.
 	InitScript string `json:"init_script,omitempty"`
 

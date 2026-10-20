@@ -29,6 +29,12 @@ type HelpersCreateInstallConfigParams struct {
 	// labels
 	Labels map[string]string `json:"labels,omitempty"`
 
+	// runner image auto update
+	RunnerImageAutoUpdate *bool `json:"runner_image_auto_update,omitempty"`
+
+	// runner image id
+	RunnerImageID string `json:"runner_image_id,omitempty"`
+
 	// runner nested template url
 	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
