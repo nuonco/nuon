@@ -168,7 +168,7 @@ export const StackStepView = ({
       {details}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {onBack && (generating || ready) ? (
+        {onBack && (generating || ready || done) ? (
           <Button variant="secondary" size="lg" onClick={onBack}>
             <Icon variant="CaretLeftIcon" weight="bold" /> Back
           </Button>
@@ -181,7 +181,11 @@ export const StackStepView = ({
               Continue <Icon variant="CaretRightIcon" weight="bold" />
             </Button>
           ) : null}
-          {linkLaunch && ready ? (
+          {done ? (
+            <Button variant="primary" size="lg" onClick={onContinue}>
+              Continue <Icon variant="CaretRightIcon" weight="bold" />
+            </Button>
+          ) : linkLaunch && ready ? (
             <Button
               variant="primary"
               size="lg"
@@ -216,7 +220,7 @@ export const StackStepView = ({
 
 const readString = (value: unknown) => (typeof value === 'string' ? value : '')
 
-export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
+export const StackStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const { orgId, journey } = useFirstRun()
   const { user } = useAuth()
   const cloud: TCloud = isCloud(sharedData.cloud) ? sharedData.cloud : 'aws'
@@ -273,13 +277,15 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
     if (advanced.current) return
     advanced.current = true
     journey.saveStep('stack', {}, { complete: true }).catch(() => {})
+    setSharedData('stack_done', true)
     onAdvance()
   }
   const advanceRef = useRef(advance)
   advanceRef.current = advance
 
   useEffect(() => {
-    if (phase === 'done') advanceRef.current()
+    // Only the first completion moves on by itself; coming back with Back stays here.
+    if (phase === 'done' && !sharedData.stack_done) advanceRef.current()
   }, [phase])
 
   const showDetails = !!stack && (phase === 'launched' || phase === 'ready') && cloud !== 'aws'

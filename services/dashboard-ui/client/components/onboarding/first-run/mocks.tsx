@@ -68,6 +68,20 @@ export interface IMockFlowStart {
 
 type TMock = { path: TPath; cloud: TCloud }
 
+// What the user already did, so Back then Next returns to the same state
+// instead of replaying it. Progress past Start is kept per path and cloud.
+type TStartMemory = { appName?: string; testCloud?: TCloud; github?: TGithubTile; expanded?: boolean }
+type TRunMemory = { detected?: boolean; installCreated?: boolean; stackDone?: boolean }
+type TFlowMemory = { start: TStartMemory; runs: Record<string, TRunMemory> }
+type TMemory = {
+  start: () => TStartMemory
+  run: (mock: TMock) => TRunMemory
+  setStart: (patch: TStartMemory) => void
+  setRun: (mock: TMock, patch: TRunMemory) => void
+}
+const emptyMemory = (): TFlowMemory => ({ start: {}, runs: {} })
+const runKeyFor = ({ path, cloud }: TMock) => `${path}.${cloud}`
+
 const appNameFor = ({ path }: TMock) => (path === 'own' ? OWN_APP : 'kitchen-sink')
 const repoFor = ({ path }: TMock) => (path === 'own' ? OWN_REPO : KITCHEN_SINK_REPO)
 const labelFor = ({ path }: TMock) => (path === 'own' ? OWN_APP : KITCHEN_SINK_LABEL)
@@ -119,15 +133,36 @@ type TNav = {
   finish: () => void
 }
 
-const MockStart = (nav: TNav, seed: IMockScenario | undefined, mock: TMock) =>
+const MockStart = (nav: TNav, seed: IMockScenario | undefined, mock: TMock, memory: TMemory) =>
   function MockStartStep() {
     const notice = useNotice()
-    // Reached by clicking, Start opens on the path choice like the product; a
-    // story opened on the own-app form starts expanded.
-    const [expanded, setExpanded] = useState(seed ? (seed.expanded ?? mock.path === 'own') : false)
-    const [appName, setAppName] = useState(seed?.appName ?? '')
-    const [cloud, setCloud] = useState<TCloud | undefined>(seed?.testCloud)
-    const [github, setGithub] = useState<TGithubTile>(seed?.github ?? { status: 'disconnected' })
+    const kept = seed ? {} : memory.start()
+    // Reached by clicking, Start opens on the path choice like the product, or
+    // on the form you left; a story opened on the own-app form starts expanded.
+    const [expanded, setExpandedState] = useState(
+      seed ? (seed.expanded ?? mock.path === 'own') : (kept.expanded ?? false)
+    )
+    const [appName, setAppNameState] = useState(seed?.appName ?? kept.appName ?? '')
+    const [cloud, setCloudState] = useState<TCloud | undefined>(seed?.testCloud ?? kept.testCloud)
+    const [github, setGithubState] = useState<TGithubTile>(
+      seed?.github ?? kept.github ?? { status: 'disconnected' }
+    )
+    const setExpanded = (value: boolean) => {
+      setExpandedState(value)
+      memory.setStart({ expanded: value })
+    }
+    const setAppName = (value: string) => {
+      setAppNameState(value)
+      memory.setStart({ appName: value })
+    }
+    const setCloud = (value: TCloud) => {
+      setCloudState(value)
+      memory.setStart({ testCloud: value })
+    }
+    const setGithub = (value: TGithubTile) => {
+      setGithubState(value)
+      memory.setStart({ github: value })
+    }
     const [connecting, setConnecting] = useState(false)
     const [showErrors, setShowErrors] = useState(seed?.showErrors ?? false)
     const [appNameError, setAppNameError] = useState(seed?.appNameError)
@@ -189,14 +224,17 @@ const MockStart = (nav: TNav, seed: IMockScenario | undefined, mock: TMock) =>
     )
   }
 
-const MockConnect = (nav: TNav, seed: IMockScenario | undefined, mock: TMock) =>
+const MockConnect = (nav: TNav, seed: IMockScenario | undefined, mock: TMock, memory: TMemory) =>
   function MockConnectStep({ onAdvance, onGoBack }: IWizardStepComponentProps) {
     const notice = useNotice()
-    const [detected, setDetected] = useState(seed?.detected ?? false)
+    const [detected, setDetected] = useState(seed?.detected ?? (!seed && !!memory.run(mock).detected))
     const [confirmSkip, setConfirmSkip] = useState(seed?.confirmSkip ?? false)
     useEffect(() => {
       if (detected) return
-      const timer = setTimeout(() => setDetected(true), 10_000)
+      const timer = setTimeout(() => {
+        setDetected(true)
+        memory.setRun(mock, { detected: true })
+      }, 10_000)
       return () => clearTimeout(timer)
     }, [detected])
     return (
@@ -220,11 +258,12 @@ const MockConnect = (nav: TNav, seed: IMockScenario | undefined, mock: TMock) =>
     )
   }
 
-const MockDeploy = (seed: IMockScenario | undefined, mock: TMock) =>
+const MockDeploy = (seed: IMockScenario | undefined, mock: TMock, memory: TMemory) =>
   function MockDeployStep({ onAdvance, onGoBack, sharedData, setSharedData }: IWizardStepComponentProps) {
     const notice = useNotice()
     const scenario = seed?.deploy ?? 'idle'
-    const installCreated = sharedData.install_id === 'created'
+    const installCreated =
+      sharedData.install_id === 'created' || (!seed && !!memory.run(mock).installCreated)
     const [phase, setPhase] = useState<TDeployPhase>(
       scenario === 'idle' || scenario === 'missing-inputs' ? 'idle' : 'waiting-config'
     )
@@ -253,6 +292,7 @@ const MockDeploy = (seed: IMockScenario | undefined, mock: TMock) =>
       if (phase !== 'waiting-config' || done < labels.length || advanced.current) return
       advanced.current = true
       setSharedData('install_id', 'created')
+      memory.setRun(mock, { installCreated: true })
       onAdvance()
     }, [phase, done, labels.length, onAdvance, setSharedData])
 
@@ -296,12 +336,20 @@ const MockDeploy = (seed: IMockScenario | undefined, mock: TMock) =>
     )
   }
 
-const MockStack = (seed: IMockScenario | undefined, mock: TMock) =>
+const MockStack = (seed: IMockScenario | undefined, mock: TMock, memory: TMemory) =>
   function MockStackStep({ onAdvance, onGoBack }: IWizardStepComponentProps) {
     const notice = useNotice()
-    const scenario = seed?.stack ?? 'generating'
-    const [since] = useState(() => Date.now() - (scenario === 'generating' ? 8_000 : 50_000))
+    const stackDone = !seed && !!memory.run(mock).stackDone
+    const scenario = seed?.stack ?? (stackDone ? 'ready' : 'generating')
+    // Stories opened mid-wait show time already spent; reached by clicking, the clock starts now.
+    const [since] = useState(() =>
+      seed ? Date.now() - (scenario === 'generating' ? 8_000 : 50_000) : Date.now()
+    )
     const [launched, setLaunched] = useState(scenario === 'launched')
+    const advance = () => {
+      memory.setRun(mock, { stackDone: true })
+      onAdvance()
+    }
     const labels = [
       'Create your test install',
       STACK_RENDER_LABEL[mock.cloud],
@@ -317,17 +365,19 @@ const MockStack = (seed: IMockScenario | undefined, mock: TMock) =>
           : undefined
     const phase: TStackPhase = failed
       ? 'error'
-      : done < labels.length
-        ? 'generating'
-        : launched
-          ? 'launched'
-          : 'ready'
+      : stackDone
+        ? 'done'
+        : done < labels.length
+          ? 'generating'
+          : launched
+            ? 'launched'
+            : 'ready'
 
     useEffect(() => {
       if (phase !== 'launched') return
-      const timer = setTimeout(onAdvance, 8000)
+      const timer = setTimeout(advance, 8000)
       return () => clearTimeout(timer)
-    }, [phase, onAdvance])
+    }, [phase])
 
     return (
       <StackStepView
@@ -348,7 +398,7 @@ const MockStack = (seed: IMockScenario | undefined, mock: TMock) =>
               : 'you apply the stack from your terminal. This mock moves on about 8 seconds after launch.'
           )
         }}
-        onContinue={onAdvance}
+        onContinue={advance}
         onBack={onGoBack}
       />
     )
@@ -394,24 +444,29 @@ type TFlowState = { step: TMockStep; path: TPath; cloud: TCloud; seeded: boolean
 
 const FLOW_KEY = 'first-run-clickable-flow'
 
+type TStored = { state: TFlowState; memory: TFlowMemory }
+
 // Ladle rewrites its own URL and remounts the story, so a persisted flow keeps
-// its place in session storage.
-const readStored = (): TFlowState | undefined => {
+// its place and what you did in session storage.
+const readStored = (): TStored | undefined => {
   try {
-    const [step, path, cloud] = (sessionStorage.getItem(FLOW_KEY) ?? '').split('.')
+    const parsed = JSON.parse(sessionStorage.getItem(FLOW_KEY) ?? 'null')
+    const { step, path, cloud } = parsed?.state ?? {}
     if ((path === 'own' || path === 'example') && isCloud(cloud) && step) {
-      return { step: step as TMockStep, path, cloud, seeded: false }
+      return {
+        state: { step, path, cloud, seeded: false },
+        memory: { ...emptyMemory(), ...parsed.memory },
+      }
     }
   } catch {
-    // Storage blocked: start fresh.
+    // Storage blocked or an older format: start fresh.
   }
   return undefined
 }
 
-const store = (state: TFlowState | undefined) => {
+const store = (stored: TStored) => {
   try {
-    if (state) sessionStorage.setItem(FLOW_KEY, `${state.step}.${state.path}.${state.cloud}`)
-    else sessionStorage.removeItem(FLOW_KEY)
+    sessionStorage.setItem(FLOW_KEY, JSON.stringify(stored))
   } catch {
     // Storage blocked: the flow restarts on reload.
   }
@@ -433,13 +488,36 @@ export const MockFlow = ({ start, persist = false }: { start: IMockFlowStart; pe
     cloud: start.cloud ?? 'aws',
     seeded: true,
   }
-  const [state, setState] = useState<TFlowState>(() => (persist ? readStored() : undefined) ?? initial)
+  const [stored] = useState(() => (persist ? readStored() : undefined))
+  const [state, setState] = useState<TFlowState>(stored?.state ?? initial)
   const [runKey, setRunKey] = useState(0)
+  const memoryRef = useRef<TFlowMemory>(stored?.memory ?? emptyMemory())
+  const stateRef = useRef(state)
 
   const update = (next: TFlowState) => {
+    stateRef.current = next
     setState(next)
-    if (persist) store(next)
+    if (persist) store({ state: next, memory: memoryRef.current })
   }
+
+  const memory = useMemo<TMemory>(() => {
+    const save = () => {
+      if (persist) store({ state: stateRef.current, memory: memoryRef.current })
+    }
+    return {
+      start: () => memoryRef.current.start,
+      run: (mock) => memoryRef.current.runs[runKeyFor(mock)] ?? {},
+      setStart: (patch) => {
+        memoryRef.current.start = { ...memoryRef.current.start, ...patch }
+        save()
+      },
+      setRun: (mock, patch) => {
+        const key = runKeyFor(mock)
+        memoryRef.current.runs[key] = { ...memoryRef.current.runs[key], ...patch }
+        save()
+      },
+    }
+  }, [persist])
 
   const nav: TNav = {
     choose: (path, cloud, step) => {
@@ -468,13 +546,13 @@ export const MockFlow = ({ start, persist = false }: { start: IMockFlowStart; pe
       ...def,
       component:
         def.id === 'start'
-          ? MockStart(stableNav, seedFor('start'), mock)
+          ? MockStart(stableNav, seedFor('start'), mock, memory)
           : def.id === 'connect'
-            ? MockConnect(stableNav, seedFor('connect'), mock)
+            ? MockConnect(stableNav, seedFor('connect'), mock, memory)
             : def.id === 'deploy'
-              ? MockDeploy(seedFor('deploy'), mock)
+              ? MockDeploy(seedFor('deploy'), mock, memory)
               : def.id === 'stack'
-                ? MockStack(seedFor('stack'), mock)
+                ? MockStack(seedFor('stack'), mock, memory)
                 : MockProvision(stableNav, mock),
     }))
     // Rebuilt only when the run changes, never while a step is on screen.
@@ -489,6 +567,7 @@ export const MockFlow = ({ start, persist = false }: { start: IMockFlowStart; pe
     return (
       <FlowDone
         onRestart={() => {
+          memoryRef.current = emptyMemory()
           setRunKey((k) => k + 1)
           update({ ...initial, step: 'intro', seeded: false })
         }}
