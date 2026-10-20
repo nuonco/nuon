@@ -6,27 +6,13 @@ keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
 ---
 
 import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
-
-<Note>
-**AI agent** here means an LLM client (Claude Code, Cursor, etc.) driving the control plane. This is not the [install runner](/concepts/runners) in customer clouds.
-</Note>
+import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
 
 Use an LLM client to read and operate orgs, app templates, installs, and workflows, or to scaffold app config from example repos.
 
-<CardGroup cols={2}>
-  <Card title="Setup" icon="gear" href="/guides/agents/setup">
-    Sign in and register the MCP server with your client.
-  </Card>
-  <Card title="Tools" icon="wrench" href="/guides/agents/tools">
-    Read and write tools exposed on the control plane.
-  </Card>
-  <Card title="Skills" icon="graduation-cap" href="/guides/agents/skills">
-    Guidance for writing READMEs and policies.
-  </Card>
-  <Card title="AI and app building" icon="code" href="/guides/agents/ai-and-apps">
-    Generate Nuon app config with Claude Code, Gemini, Amp, and skills.
-  </Card>
-</CardGroup>
+## Connect your client
+
+<McpInstallPicker />
 
 ## Try these first
 
@@ -63,3 +49,18 @@ Once the MCP server is connected, paste one of these into your client. Each one 
 />
 
 <Card title="More sample queries" icon="comments" href="/guides/agents/sample-queries" horizontal />
+
+<CardGroup cols={2}>
+  <Card title="Setup" icon="gear" href="/guides/agents/setup">
+    Sign in and register the MCP server with your client.
+  </Card>
+  <Card title="Tools" icon="wrench" href="/guides/agents/tools">
+    Read and write tools exposed on the control plane.
+  </Card>
+  <Card title="Skills" icon="graduation-cap" href="/guides/agents/skills">
+    Guidance for writing READMEs and policies.
+  </Card>
+  <Card title="AI and app building" icon="code" href="/guides/agents/ai-and-apps">
+    Generate Nuon app config with Claude Code, Gemini, Amp, and skills.
+  </Card>
+</CardGroup>

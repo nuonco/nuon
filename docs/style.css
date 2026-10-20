@@ -48,7 +48,8 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 
 /* Ask your agent: per-page MCP prompt bar (snippets/ask-your-agent.jsx) */
-.nuon-ask-agent {
+.nuon-ask-agent,
+.nuon-mcp-picker {
   --ask-accent: #256a7f;
   --ask-accent-soft: rgba(37, 106, 127, 0.08);
   --ask-border: rgba(37, 106, 127, 0.28);
@@ -62,7 +63,8 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   font-size: 0.875rem;
   color: var(--ask-text);
 }
-.dark .nuon-ask-agent {
+.dark .nuon-ask-agent,
+.dark .nuon-mcp-picker {
   --ask-accent: #4cc9f0;
   --ask-accent-soft: rgba(76, 201, 240, 0.12);
   --ask-border: rgba(76, 201, 240, 0.3);
@@ -190,4 +192,81 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-ask-agent + .nuon-ask-agent {
   margin-top: -1.125rem;
+}
+
+/* MCP install picker (snippets/mcp-install-picker.jsx) */
+.nuon-mcp-picker {
+  margin: 1rem 0 2rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ask-border);
+  border-radius: 12px;
+  background: var(--ask-bg);
+  color: var(--ask-text);
+  font-size: 0.875rem;
+}
+.nuon-mcp-picker-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+.nuon-mcp-picker-tab {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--ask-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.nuon-mcp-picker-tab:hover {
+  color: var(--ask-text);
+}
+.nuon-mcp-picker-tab[aria-selected="true"] {
+  border-color: var(--ask-border);
+  background: var(--ask-accent-soft);
+  color: var(--ask-accent);
+}
+.nuon-mcp-picker-block + .nuon-mcp-picker-block {
+  margin-top: 0.625rem;
+}
+.nuon-mcp-picker-caption {
+  margin: 0 0 0.3rem;
+  color: var(--ask-muted);
+  font-size: 0.78rem;
+}
+.nuon-mcp-picker-code {
+  position: relative;
+  border-radius: 8px;
+  background: #0f1d22;
+}
+.nuon-mcp-picker-code pre {
+  margin: 0;
+  padding: 0.75rem 5rem 0.75rem 0.875rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #e5e7eb;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.dark .nuon-mcp-picker-code {
+  background: rgba(0, 0, 0, 0.45);
+}
+.nuon-mcp-picker-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+.nuon-mcp-picker-foot {
+  margin: 0.625rem 0 0;
+  font-size: 0.78rem;
+}
+.nuon-mcp-picker-foot a {
+  color: var(--ask-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+.nuon-mcp-picker-foot a:hover {
+  text-decoration: underline;
 }
