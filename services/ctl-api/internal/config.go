@@ -210,6 +210,8 @@ func init() {
 	// orgs with USE_LEGACY_MAINTENANCE_ROLE_DEFAULT=true. Overrides and sandbox
 	// operation defaults are unaffected.
 	config.RegisterDefault("use_legacy_maintenance_role_default", false)
+
+	config.RegisterDefault("cors_allow_all_origins", false)
 }
 
 type Config struct {
@@ -338,6 +340,8 @@ type Config struct {
 	AuthMiddlewares           []string `config:"auth_middlewares"`
 	AdminDashboardMiddlewares []string `config:"admin_dashboard_middlewares"`
 	SlackMiddlewares          []string `config:"slack_middlewares"`
+	// Reflect any Origin and still send Allow-Credentials. Default false restricts Origin to app_url.
+	CORSAllowAllOrigins bool `config:"cors_allow_all_origins"`
 
 	// Slack app configuration (Phase 0–4 of slackbot integration).
 	// Tokens are stored plaintext in DB; these env-var-driven values back

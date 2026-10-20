@@ -15,10 +15,11 @@ func TestCORSAllowsConfiguredOriginOnly(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cases := []struct {
-		name   string
-		appURL string
-		origin string
-		want   string
+		name     string
+		appURL   string
+		origin   string
+		allowAll bool
+		want     string
 	}{
 		{
 			name:   "configured origin",
@@ -40,11 +41,18 @@ func TestCORSAllowsConfiguredOriginOnly(t *testing.T) {
 			name:   "missing app url",
 			origin: "https://app.byoc.example.com",
 		},
+		{
+			name:     "allow all origins",
+			appURL:   "https://app.byoc.example.com",
+			origin:   "https://app.other.example",
+			allowAll: true,
+			want:     "https://app.other.example",
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			m := New(nil, zap.NewNop(), &internal.Config{AppURL: tc.appURL})
+			m := New(nil, zap.NewNop(), &internal.Config{AppURL: tc.appURL, CORSAllowAllOrigins: tc.allowAll})
 			e := gin.New()
 			e.Use(m.Handler())
 			e.GET("/v1/orgs", func(c *gin.Context) { c.Status(http.StatusOK) })

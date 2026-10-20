@@ -23,13 +23,18 @@ func (m *middleware) Name() string {
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
-	allowed := ""
+	appURL := ""
+	allowAll := false
 	if m.cfg != nil {
-		allowed = originOf(m.cfg.AppURL)
+		appURL = m.cfg.AppURL
+		allowAll = m.cfg.CORSAllowAllOrigins
+	}
+	if allowAll && m.l != nil {
+		m.l.Warn("cors_allow_all_origins is set; any origin is reflected with credentials")
 	}
 	return cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			return allowed != "" && originOf(origin) == allowed
+			return isAllowedOrigin(appURL, origin, allowAll)
 		},
 		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "OPTIONS"},
 		AllowHeaders: []string{
@@ -65,6 +70,14 @@ func New(writer metrics.Writer, l *zap.Logger, cfg *internal.Config) *middleware
 		l:   l,
 		cfg: cfg,
 	}
+}
+
+func isAllowedOrigin(appURL, origin string, allowAll bool) bool {
+	if allowAll {
+		return true
+	}
+	allowed := originOf(appURL)
+	return allowed != "" && originOf(origin) == allowed
 }
 
 // originOf returns scheme://host for a URL or Origin header. A path is ignored.
