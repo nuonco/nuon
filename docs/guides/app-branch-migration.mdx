@@ -1,4 +1,9 @@
-This guide walks you through migrating your Nuon application from CLI-driven syncs to App Branches and Deployment Groups.
+---
+title: "App branch migration"
+description: "Migrate your Nuon application from CLI-driven syncs to App Branches and Install Groups."
+icon: "code-branch"
+keywords: ["app branch migration", "migrate to app branches", "install groups", "deployment groups", "control plane sync", "branch.toml", "PR previews"]
+---
 
 ### Control Plane Syncing via App Branches
 Previously, running `nuon apps sync` built, validated, and synced your config directly from your CLI. This frequently led to version mismatches and compatibility issues between your CLI version and the control plane.
@@ -23,6 +28,10 @@ Validate changes before merging to production. When you open a pull request or c
 2. Plan Only: Previews deploys and updates against a single install without applying changes.
 3. Apply: Runs and executes changes on a single test install.
 
+<Note>
+  For setup details, see our [docs on previews](/guides/app-branches#previews).
+</Note>
+
 ## Step 1: Create Your First App Branch
 
 Create an app branch using one of the two methods below:
@@ -35,13 +44,11 @@ nuon apps sync
 ```
 
 ### Option B: Via TOML Config
-Alternatively, define your app branch directly inside your application's TOML file:
+Alternatively, define your app branch in a `branch.toml`.
 
-```
-fill this in
-fill this in
-fill this in
-```
+<Note>
+  See [examples and layouts](/guides/app-branches#write-a-branch-config).
+</Note>
 
 ## Step 2: Verify Your First Run
 
@@ -59,6 +66,6 @@ After creating your app branch, verify that the it can sync and build your appli
 
 Now that your base migration is complete, expand your setup with these advanced features:
 
-* Set up GitHub Actions for Branch Syncing
+* Set up [GitHub Actions](/guides/github-actions#trigger-a-branch-run-from-your-workflow) for Branch Syncing
 * Automate deployment group rollouts with git pushes, tags, or PR labels
-* Set up pull request previews that comment and set checks on your PRs
+* Set up [pull request previews](/guides/app-branches#previews) that comment and set checks on your PRs
