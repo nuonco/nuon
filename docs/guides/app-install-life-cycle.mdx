@@ -26,23 +26,21 @@ Kubernetes clusters, or by default Nuon creates new ones for each install.
 
 ## Sync and Build
 
-When an app is initially created and synced to the Nuon control plane with the
-[Nuon CLI](../cli), a build occurs for each component in the app.
+When an app's [app branch](/guides/app-branches) first runs, Nuon syncs the app config to the control plane
+and builds each component in the app.
 
 Builds create an OCI artifact for each component and the Nuon control plane
 stores them in the container registry like AWS ECR.
 
-**Important:** After the initial sync, component changes require rebuilding. `nuon apps sync` will automatically rebuild when it detects changes to TOML files or referenced files like Helm values.
+**Important:** After the initial build, component changes require rebuilding. An [app branch](/guides/app-branches) run rebuilds automatically when it detects changes to TOML files or referenced files like Helm values.
 
-![CLI Build](/images/guides/app-install-life-cycle/cli-build.png)
-
-However, you must manually rebuild in the dashboard when:
+However, you must rebuild yourself, with `nuon branches trigger --branch-id <branch> --force` or in the dashboard, when:
   - Git repository source code changes (e.g., Terraform modules or Helm charts)
-  - Source code in your app repository changes (push your branch first, then rebuild)
+  - Source code in your app repository changes while its config does not (push your branch first, then rebuild)
 
 **Tip:** Double-check your branch name in the component TOML file when source is included in your app repo—this is a common oversight.
 
-Remember to run `nuon apps sync` whenever anything in your TOML files changes.
+Commit and push to the tracked git branch whenever anything in your TOML files changes. The push starts a branch run.
 
 ![Rebuild components](/images/guides/app-install-life-cycle/component-build.png)
 

@@ -17,8 +17,8 @@ rollout and not required.
 
 ## Prerequisites
 
-- Finish [Create an AWS EKS App Template](/get-started/app-aws-k8s) first, or otherwise have the `eks-simple` app template synced to
-  Nuon with **at least one install** that has finished provisioning.
+- Finish [Create an AWS EKS App Template](/get-started/app-aws-k8s) first, or otherwise have the `eks-simple` app
+  template in Nuon with **at least one install** on its `main` branch that has finished provisioning.
 - The [Nuon CLI](/cli), authenticated with `nuon auth login` and pointed at your org with `nuon orgs select`.
 - A clone of [`example-app-configs`](https://github.com/nuonco/example-app-configs).
 
@@ -98,6 +98,7 @@ The example app also declares its CI installs as tracked config files, and sets 
 #:schema https://api.nuon.co/v1/general/config-schema?type=install
 
 name = "eks-simple-ci-stage"
+app_branch = "main"
 
 [labels]
 env = "stage"
@@ -139,7 +140,7 @@ update branch settings; shipping config through install groups is a [fleet run](
 
 <Note>
 	New apps use app branches. `nuon branches sync` is how you create and update branch settings.
-	`nuon apps sync` still works for apps that are not on app branches yet, and will be deprecated.
+	`nuon apps sync` still works for apps that are not on app branches yet, and is deprecated.
 </Note>
 
 Check what Nuon now has. You already selected the app, so branch commands do not need `--app-id`:
@@ -244,8 +245,9 @@ own edits and get push-triggered runs, point the branch at a repository of your 
   </Step>
   <Step title="Connect it to Nuon">
     Connect the Nuon GitHub App for your repository's owner (see [connecting a repository](/guides/vcs)). This is what
-    makes pull request previews possible. It is an org-level connection keyed on the owner, so it enables previews for
-    any branch tracking a repo under that owner, whether the branch config uses `[connected_repo]` or `[public_repo]`.
+    makes pushes start runs and pull requests get previews. It is an org-level connection keyed on the owner, so it
+    covers any branch tracking a repo under that owner, whether the branch config uses `[connected_repo]` or
+    `[public_repo]`.
   </Step>
   <Step title="Update the repo block">
     Swap `[public_repo]` for `[connected_repo]`, pointing at your repository and the directory the config lives in:
@@ -274,7 +276,7 @@ own edits and get push-triggered runs, point the branch at a repository of your 
     env = "prod"
     ```
   </Step>
-  <Step title="Sync, then push">
+  <Step title="Sync the branch file, then push it">
     ```sh
     nuon branches sync --file branch.toml --confirm
     git commit -am "point app branch at my repo"
@@ -324,7 +326,7 @@ Where to go next:
     Run types, previews, and version history in depth.
   </Card>
   <Card title="Branch config reference" icon="file" href="/config-ref/branch">
-    Every field on `branch.toml`.
+    Every field in a branch file.
   </Card>
   <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
     Have your own systems react to branch runs.

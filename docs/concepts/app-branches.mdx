@@ -102,7 +102,7 @@ You declare them on the branch config as `[[install_groups]]`. Each install grou
 `label_selector` (all listed labels must match). Prefer keeping those labels in install config files and applying them
 with `nuon installs sync`.
 
-```toml branch.toml
+```toml branches/main.toml
 name = "main"
 
 [connected_repo]
@@ -173,7 +173,7 @@ Know these constraints before you design your branch layout:
     Add an app branch to the `eks-simple` example app template end to end.
   </Card>
   <Card title="Branch config reference" icon="file" href="/config-ref/branch">
-    Every field on `branch.toml`.
+    Every field in a branch file.
   </Card>
   <Card title="Workflows" icon="circle-nodes" href="/concepts/workflows">
     How plans, approvals, and diffs work for an individual install.

@@ -21,7 +21,7 @@ approving them.
 Add a `branch.toml` at the root of your app config directory (next to `metadata.toml`), **or** put one file per branch
 under `branches/` (for example `branches/main.toml`). You cannot use both layouts in the same app directory.
 
-```toml branch.toml
+```toml branches/main.toml
 name = "main"
 
 [connected_repo]
@@ -189,7 +189,8 @@ nuon branches get --branch-id main
 
 <Note>
   New apps use app branches. `nuon branches sync` is how you create and update branch settings.
-  `nuon apps sync` still works for apps that are not on app branches yet, and will be deprecated. If the app
+  `nuon apps sync` still works for apps that are not on app branches yet, and is deprecated (see
+  [Migrating from `nuon apps sync`](#migrating-from-nuon-apps-sync)). If the app
   directory contains `branch.toml` or `branches/`, the CLI steers you to `nuon branches sync` instead.
   `nuon apps branches` is a deprecated alias of `nuon branches`.
 </Note>
@@ -402,6 +403,20 @@ to one install or to a whole install group, with a plan in front of it. The
 
 `nuon apps branches` is a deprecated alias of `nuon branches`.
 
+## Migrating from `nuon apps sync`
+
+`nuon apps sync` and `nuon sync` are deprecated: app config now ships through app branches. Once they are turned off
+for your org, running `nuon apps sync` in an interactive terminal from your app config directory offers to migrate
+you. The migration:
+
+1. Reads the GitHub remote, the current git branch, and the config directory's path from your git checkout.
+2. Writes `branches/<git-branch>.toml`, using `[connected_repo]` when your org has connected the repository and
+   `[public_repo]` otherwise.
+3. Syncs the new branch file, then offers to move your existing installs onto the branch.
+
+Commit and push the new branch file to finish. To migrate by hand, write the branch file yourself, run
+`nuon branches sync --file branches/<name>.toml`, and set `app_branch` in each [install config](/guides/install-configs).
+
 ## Troubleshooting
 
 **Sync failed: one install group must be default.** When `install_groups` is non-empty, set `default = true` on
@@ -437,7 +452,7 @@ exactly one install group.
     Re-apply a previous config version to an install or a whole install group.
   </Card>
   <Card title="Branch config reference" icon="file" href="/config-ref/branch">
-    Every field on `branch.toml`.
+    Every field in a branch file.
   </Card>
   <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
     React to branch runs from your own systems.
