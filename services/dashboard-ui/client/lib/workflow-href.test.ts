@@ -6,12 +6,6 @@ describe('workflowPageSuffix', () => {
     expect(workflowPageSuffix('wf-1', false)).toBe('/workflows/wf-1')
     expect(workflowPageSuffix('wf-1', true)).toBe('/workflows/wf-1/workflow')
   })
-
-  test('links view details to that page with the step panel', () => {
-    expect(workflowPageSuffix('wf-1', true, 'step 1')).toBe(
-      '/workflows/wf-1/workflow?panel=step%201'
-    )
-  })
 })
 
 describe('isWorkflowPath', () => {

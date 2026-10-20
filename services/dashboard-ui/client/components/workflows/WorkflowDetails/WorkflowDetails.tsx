@@ -4,13 +4,8 @@ import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { useDismissedStepBanners } from '@/hooks/use-dismissed-step-banners'
-import { useSurfaces } from '@/hooks/use-surfaces'
 import { StepBanner } from '../step-details/StepBanner'
-import {
-  StepDetailPanel,
-  getStepPanelSize,
-  getStepPanelDetails,
-} from '../step-details/StepDetailPanel'
+import { useStepDetailPanel } from '../step-details/StepDetailPanel'
 import { WorkflowHeaderContainer } from '../workflow-details/WorkflowHeader'
 import { WorkflowMetricsContainer } from '../workflow-details/WorkflowMetrics'
 import { WorkflowStatusSectionContainer } from '../workflow-details/WorkflowStatusSection'
@@ -111,18 +106,6 @@ export const WorkflowDetails = ({
   )
 }
 
-const stepDetailPanel = (step: TWorkflowStep) => (
-  <StepDetailPanel
-    panelKey={step.id}
-    initStep={step}
-    size={getStepPanelSize(step)}
-    shouldPoll
-    planOnly
-  >
-    {getStepPanelDetails(step)}
-  </StepDetailPanel>
-)
-
 const StoppedStepLink = ({
   stepName,
   step,
@@ -130,7 +113,7 @@ const StoppedStepLink = ({
   stepName: string
   step?: TWorkflowStep
 }) => {
-  const { addPanel } = useSurfaces()
+  const { openPanel } = useStepDetailPanel()
 
   if (!step) {
     return <Text variant="subtext">Stopped at step {stepName}</Text>
@@ -141,7 +124,7 @@ const StoppedStepLink = ({
       Stopped at step
       <Link
         isATag
-        onClick={() => addPanel(stepDetailPanel(step), step.id)}
+        onClick={() => openPanel(step, true)}
         className="cursor-pointer"
       >
         {stepName}
@@ -153,7 +136,7 @@ const StoppedStepLink = ({
 const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
   const [expanded, setExpanded] = useState(false)
   const { isDismissed, dismiss } = useDismissedStepBanners()
-  const { addPanel } = useSurfaces()
+  const { openPanel } = useStepDetailPanel()
 
   const visibleSteps = steps.filter((s) => !isDismissed(s.id))
 
@@ -161,10 +144,6 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
 
   const isRetried = (step: TWorkflowStep) =>
     step?.status?.metadata?.auto_retried || step?.status?.metadata?.retried
-
-  const openPanel = (step: TWorkflowStep) => {
-    addPanel(stepDetailPanel(step), step.id)
-  }
 
   if (visibleSteps.length === 1) {
     const step = visibleSteps[0]
@@ -174,7 +153,7 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
           step={step}
           planOnly
           onDismiss={isRetried(step) ? () => dismiss(step.id) : undefined}
-          onViewDetails={() => openPanel(step)}
+          onViewDetails={() => openPanel(step, true)}
         />
       </div>
     )
@@ -231,7 +210,7 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
           onDismiss={
             isRetried(mostRecent) ? () => dismiss(mostRecent.id) : undefined
           }
-          onViewDetails={() => openPanel(mostRecent)}
+          onViewDetails={() => openPanel(mostRecent, true)}
         />
       </div>
 
@@ -242,7 +221,7 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
               step={step}
               planOnly
               onDismiss={isRetried(step) ? () => dismiss(step.id) : undefined}
-              onViewDetails={() => openPanel(step)}
+              onViewDetails={() => openPanel(step, true)}
             />
           </div>
         ))}
