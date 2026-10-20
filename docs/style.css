@@ -49,7 +49,8 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 
 /* Ask your agent: per-page MCP prompt bar (snippets/ask-your-agent.jsx) */
 .nuon-ask-agent,
-.nuon-mcp-picker {
+.nuon-mcp-picker,
+.nuon-flow {
   --ask-accent: #256a7f;
   --ask-accent-soft: rgba(37, 106, 127, 0.08);
   --ask-border: rgba(37, 106, 127, 0.28);
@@ -64,7 +65,8 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   color: var(--ask-text);
 }
 .dark .nuon-ask-agent,
-.dark .nuon-mcp-picker {
+.dark .nuon-mcp-picker,
+.dark .nuon-flow {
   --ask-accent: #4cc9f0;
   --ask-accent-soft: rgba(76, 201, 240, 0.12);
   --ask-border: rgba(76, 201, 240, 0.3);
@@ -269,4 +271,98 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-mcp-picker-foot a:hover {
   text-decoration: underline;
+}
+
+/* Flow steps diagram (snippets/flow-steps.jsx) */
+.nuon-flow {
+  margin: 1.5rem 0 2rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--ask-border);
+  border-radius: 12px;
+  background: var(--ask-bg);
+  color: var(--ask-text);
+}
+.nuon-flow-track {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nuon-flow-step {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0.875rem;
+}
+.nuon-flow-step:last-child {
+  padding-bottom: 0;
+}
+.nuon-flow-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 0.6875rem;
+  top: 1.5rem;
+  bottom: 0;
+  border-left: 1.5px solid var(--ask-border);
+}
+.nuon-flow-group {
+  display: block;
+  margin: 0.25rem 0 0.5rem 2.25rem;
+  color: var(--ask-accent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.nuon-flow-step:first-child .nuon-flow-group {
+  margin-top: 0;
+}
+.nuon-flow-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.nuon-flow-num {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 999px;
+  background: var(--ask-accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.dark .nuon-flow-num {
+  color: #0b1d24;
+}
+.nuon-flow-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  padding-top: 0.1rem;
+  line-height: 1.35;
+}
+.nuon-flow-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.nuon-flow-detail {
+  color: var(--ask-muted);
+  font-size: 0.82rem;
+}
+.nuon-flow-loop {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.875rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--ask-border);
+  color: var(--ask-muted);
+  font-size: 0.8rem;
+}
+.nuon-flow-loop svg {
+  flex-shrink: 0;
+  color: var(--ask-accent);
 }
