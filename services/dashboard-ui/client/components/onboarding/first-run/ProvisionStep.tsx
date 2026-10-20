@@ -1,9 +1,9 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Code } from '@/components/common/Code'
 import { Icon } from '@/components/common/Icon'
-import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
@@ -217,18 +217,17 @@ export const ProvisionStepView = ({
               <Text variant="subtext" theme="neutral">
                 Your agent follows the install step by step and explains any failure from its logs.
               </Text>
-              <Text variant="subtext" theme="neutral" flex className="flex-wrap">
-                Needs the Nuon MCP server:
-                <Link href={DOCS_MCP} isExternal textVariant="subtext">
-                  setup guide
-                </Link>
-              </Text>
             </div>
             <div className="flex items-start gap-2">
               <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
                 {watchPrompt(appName)}
               </Code>
               <CopyTextButton text={watchPrompt(appName)} label="Copy" size="sm" />
+            </div>
+            <div>
+              <Button variant="secondary" size="sm" href={DOCS_MCP} target="_blank" rel="noreferrer">
+                Set up the Nuon MCP server <Icon variant="ArrowSquareOutIcon" size={14} />
+              </Button>
             </div>
           </div>
         </div>
