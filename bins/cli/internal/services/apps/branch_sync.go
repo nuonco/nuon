@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/pkg/config/parse"
@@ -134,7 +136,7 @@ func (s *Service) SyncBranches(ctx context.Context, opts SyncBranchesOptions) er
 		if !s.cfg.Interactive {
 			return ui.PrintError(&ui.CLIUserError{Msg: "use --confirm to apply"})
 		}
-		ok, err := bubbles.ShowConfirmDialog(fmt.Sprintf("apply %d changes to app %s?", changeCount, appID), s.cfg.Interactive)
+		ok, err := bubbles.ShowConfirmDialog(s.branchSyncConfirmPrompt(ctx, changeCount, appID), s.cfg.Interactive)
 		if err != nil {
 			return ui.PrintError(err)
 		}
@@ -152,6 +154,13 @@ func (s *Service) SyncBranches(ctx context.Context, opts SyncBranchesOptions) er
 
 	result.Applied = true
 	return printBranchSyncResult(result, opts.PrintJSON, false)
+}
+
+func (s *Service) branchSyncConfirmPrompt(ctx context.Context, changeCount int, appID string) string {
+	if app, err := s.api.GetApp(ctx, appID); err == nil && app != nil && app.Name != "" {
+		return fmt.Sprintf("apply %d changes to app %s (%s)?", changeCount, app.Name, appID)
+	}
+	return fmt.Sprintf("apply %d changes to app %s?", changeCount, appID)
 }
 
 func (s *Service) latestBranchConfig(ctx context.Context, appID, branchID string) (*models.AppAppBranchConfig, error) {
@@ -216,23 +225,7 @@ func printBranchSyncResult(result BranchSyncResult, asJSON, dryRun bool) error {
 
 func printBranchPlan(plan []branchPlanItem) {
 	ui.PrintLn("[branch plan]")
-	for _, item := range plan {
-		switch item.Op {
-		case branchOpCreate:
-			ui.PrintRaw(bubbles.Green(fmt.Sprintf("+ create   %s\n", item.Name)))
-			ui.PrintRaw(branchDiffToString(item.Diff, "    "))
-		case branchOpUpdate:
-			ui.PrintRaw(bubbles.Yellow(fmt.Sprintf("~ update   %s\n", item.Name)))
-			ui.PrintRaw(branchDiffToString(item.Diff, "    "))
-		case branchOpDelete:
-			ui.PrintRaw(bubbles.Red(fmt.Sprintf("- delete   %s\n", item.Name)))
-			if item.ManagedBy != "" {
-				ui.PrintRaw(bubbles.Red(fmt.Sprintf("    managed_by   %s\n", item.ManagedBy)))
-			}
-		default:
-			ui.PrintRaw(fmt.Sprintf("  unchanged  %s\n", item.Name))
-		}
-	}
+	ui.PrintRaw(formatBranchPlan(plan))
 
 	var created, updated, deleted, unchanged int
 	for _, item := range plan {
@@ -250,31 +243,118 @@ func printBranchPlan(plan []branchPlanItem) {
 	ui.PrintLn(fmt.Sprintf("(create %d, update %d, delete %d, unchanged %d)", created, updated, deleted, unchanged))
 }
 
-func branchDiffToString(d *diff.Diff, indent string) string {
+const branchHeaderMinWidth = 40
+
+// formatBranchPlan renders one header row per branch, then that branch's diff
+// set off by a left-hand rail. A blank line under each diff separates branches.
+func formatBranchPlan(plan []branchPlanItem) string {
+	nameWidth := 0
+	for _, item := range plan {
+		if n := utf8.RuneCountInString(item.Name); n > nameWidth {
+			nameWidth = n
+		}
+	}
+	rule := branchHeaderRule(nameWidth)
+
+	var b strings.Builder
+	for _, item := range plan {
+		changed := item.Op != branchOpUnchanged
+		b.WriteString(formatBranchHeader(item.Name, nameWidth, changed))
+		b.WriteByte('\n')
+		b.WriteString(rule)
+		b.WriteByte('\n')
+		if !changed {
+			continue
+		}
+		switch item.Op {
+		case branchOpCreate:
+			writeBranchDiffLine(&b, "+ create", '+')
+			writeBranchDiffBody(&b, item.Diff)
+		case branchOpUpdate:
+			writeBranchDiffLine(&b, "~ update", '~')
+			writeBranchDiffBody(&b, item.Diff)
+		case branchOpDelete:
+			writeBranchDiffLine(&b, "- delete", '-')
+			if item.ManagedBy != "" {
+				writeBranchDiffLine(&b, fmt.Sprintf("    managed_by   %s", item.ManagedBy), '-')
+			}
+		}
+		b.WriteByte('\n')
+	}
+	return b.String()
+}
+
+func formatBranchHeader(name string, nameWidth int, changed bool) string {
+	status := "unchanged"
+	statusText := styles.TextSubtle.Render(status)
+	if changed {
+		status = "changed"
+		statusText = styles.TextWarning.Render(status)
+	}
+	bar := styles.TextSubtle.Render("|")
+	nameCell := styles.TextBold.Render(name) + strings.Repeat(" ", nameWidth-utf8.RuneCountInString(name))
+	return fmt.Sprintf("%s name: %s %s %s", bar, nameCell, bar, statusText)
+}
+
+func branchHeaderRule(nameWidth int) string {
+	width := utf8.RuneCountInString("| name: ") + nameWidth + utf8.RuneCountInString(" | ") + len("unchanged")
+	if width < branchHeaderMinWidth {
+		width = branchHeaderMinWidth
+	}
+	return styles.TextSubtle.Render(strings.Repeat("─", width))
+}
+
+func writeBranchDiffBody(b *strings.Builder, d *diff.Diff) {
 	if d == nil {
-		return ""
+		return
 	}
 	changed := d.FormatChanged("")
 	if changed == "" {
-		return ""
+		return
 	}
-	var b strings.Builder
 	for _, line := range strings.Split(strings.TrimSuffix(changed, "\n"), "\n") {
 		if line == "" {
 			continue
 		}
-		colored := line
-		switch {
-		case strings.HasPrefix(strings.TrimLeft(line, " \t"), "+"):
-			colored = bubbles.Green(line)
-		case strings.HasPrefix(strings.TrimLeft(line, " \t"), "-"):
-			colored = bubbles.Red(line)
-		case strings.HasPrefix(strings.TrimLeft(line, " \t"), "~"):
-			colored = bubbles.Yellow(line)
-		}
-		b.WriteString(indent)
-		b.WriteString(colored)
-		b.WriteByte('\n')
+		// Nest the field diff under the operation line. FormatChanged puts the
+		// +/-/~ marker before its own indent, so keep a fixed gutter here.
+		writeBranchDiffLine(b, "    "+line, 0)
 	}
-	return b.String()
+}
+
+func writeBranchDiffLine(b *strings.Builder, plain string, kind rune) {
+	plain = strings.ReplaceAll(plain, "\t", "  ")
+	if kind == 0 {
+		kind = diffLineKind(plain)
+	}
+	gutter := styles.TextSubtle.Render("│")
+	content := plain
+	switch kind {
+	case '+':
+		gutter = styles.TextSuccess.Render("│")
+		content = styles.TextSuccess.Render(plain)
+	case '-':
+		gutter = styles.TextError.Render("│")
+		content = styles.TextError.Render(plain)
+	case '~':
+		gutter = styles.TextWarning.Render("│")
+		content = styles.TextWarning.Render(plain)
+	}
+	b.WriteString(gutter)
+	b.WriteByte(' ')
+	b.WriteString(content)
+	b.WriteByte('\n')
+}
+
+func diffLineKind(line string) rune {
+	trimmed := strings.TrimLeft(line, " \t")
+	if trimmed == "" {
+		return 0
+	}
+	switch trimmed[0] {
+	case '+', '-', '~':
+		return rune(trimmed[0])
+	default:
+		return 0
+	}
 }
