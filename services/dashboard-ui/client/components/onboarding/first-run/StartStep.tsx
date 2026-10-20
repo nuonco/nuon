@@ -465,6 +465,7 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
     const cloud = testCloud ?? 'aws'
     setOwn({ path: 'own', expandOwn: true })
     choosePath('own', cloud)
+    journey.saveStep('start', { path: 'own' }).catch(() => {})
     requestAnimationFrame(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
@@ -560,6 +561,7 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
     setError(undefined)
     setExamplePending(cloud)
     choosePath('example', cloud)
+    await journey.saveStep('start', { path: 'example', cloud }).catch(() => {})
     try {
       const { appId, appName: exampleName, branchId } = await setUpKitchenSink({ orgId, cloud })
       const values = {
