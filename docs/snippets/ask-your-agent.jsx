@@ -1,4 +1,4 @@
-export const AskYourAgent = ({ title, prompt, tool }) => {
+export const AskYourAgent = ({ title, prompt, tools = [] }) => {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -54,7 +54,14 @@ export const AskYourAgent = ({ title, prompt, tool }) => {
           </a>
           <p className="nuon-ask-agent-note">
             Needs the <a href="/guides/agents/setup">Nuon MCP server</a>. Read-only: the agent
-            calls <code>{tool}</code>. Not connected? Run <code>nuon auth login</code>, then{" "}
+            calls{" "}
+            {tools.map((t, i) => (
+              <span key={t}>
+                {i > 0 && (i === tools.length - 1 ? " and " : ", ")}
+                <code>{t}</code>
+              </span>
+            ))}
+            . Not connected? Run <code>nuon auth login</code>, then{" "}
             <code>claude mcp add --transport stdio nuon -- nuon agents mcp</code>.
           </p>
         </div>

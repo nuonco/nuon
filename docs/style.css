@@ -104,9 +104,8 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   text-transform: uppercase;
 }
 .nuon-ask-agent-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  line-height: 1.3;
 }
 .nuon-ask-agent-chevron {
   flex-shrink: 0;

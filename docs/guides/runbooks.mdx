@@ -5,6 +5,14 @@ icon: "list-check"
 keywords: ["runbooks", "runbook", "runbook TOML", "configure runbooks", "runbook steps", "deploy step", "action step", "operational procedures", "version upgrade", "database migration", "nuon runbooks"]
 ---
 
+import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
+
+<AskYourAgent
+  title="List install runbooks"
+  tools={["list_runbooks", "get_runbook"]}
+  prompt={`List the runbooks available on my Nuon install and summarize the inputs and steps of each one.`}
+/>
+
 <div style={{
   backgroundImage: 'url(/images/changelog/035-runbooks-bg.png)',
   backgroundSize: 'cover',
