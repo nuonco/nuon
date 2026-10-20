@@ -47,8 +47,7 @@ const DEPLOY_STEP: TFirstRunStepDef = {
   id: 'deploy',
   title: 'Your app is ready for BYOC',
   navLabel: 'Deploy',
-  description:
-    'Now you can test the flow your customer will see. Pick a cloud account you want to test with.',
+  description: 'Now you can test the flow your customer will see.',
   component: DeployStep,
 }
 
