@@ -12,6 +12,8 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
 import { TEXT_VARIANT_CLASSES, Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Toggle } from '@/components/common/form/Toggle'
+import { ActorFilter } from '@/components/operations/ActorFilter'
 import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { adhocDisplayName } from '@/utils/action-utils'
@@ -31,13 +33,6 @@ export const ACTIVITY_TYPE_LABELS: Record<TInstallActivityType, string> = {
   runbook_run: 'Runbook run',
   policy_check: 'Policy check',
 }
-
-export const ACTIVITY_TRIGGER_LABELS = {
-  mine: 'Triggered by me',
-  hide_cron: 'Hide cron runs',
-} as const
-
-export type TActivityTriggerFilter = keyof typeof ACTIVITY_TRIGGER_LABELS
 
 export const ACTIVITY_STATUS_OPTIONS = [
   'running',
@@ -253,7 +248,8 @@ export interface IActivityFilter {
   search: string
   status: Set<TWorkflowStatusOption>
   type: Set<TInstallActivityType>
-  trigger: Set<TActivityTriggerFilter>
+  actorId?: string
+  hideCron: boolean
   date?: TWorkflowDatePreset
 }
 
@@ -272,7 +268,8 @@ export interface IActivityListPresenter {
   onSearchChange: (value: string) => void
   onStatusChange: (value: Set<TWorkflowStatusOption>) => void
   onTypeChange: (value: Set<TInstallActivityType>) => void
-  onTriggerChange: (value: Set<TActivityTriggerFilter>) => void
+  onActorChange: (accountId?: string) => void
+  onHideCronChange: (hideCron: boolean) => void
   onDateChange: (value?: string) => void
   onClearFilters: () => void
 }
@@ -289,7 +286,8 @@ export const ActivityListPresenter = ({
   onSearchChange,
   onStatusChange,
   onTypeChange,
-  onTriggerChange,
+  onActorChange,
+  onHideCronChange,
   onDateChange,
   onClearFilters,
 }: IActivityListPresenter) => {
@@ -299,7 +297,8 @@ export const ActivityListPresenter = ({
     filter.search !== '' ||
     filter.status.size > 0 ||
     filter.type.size > 0 ||
-    filter.trigger.size > 0 ||
+    !!filter.actorId ||
+    filter.hideCron ||
     !!filter.date
 
   return (
@@ -336,19 +335,10 @@ export const ActivityListPresenter = ({
           selected={filter.type}
           onChange={(value) => onTypeChange(value as Set<TInstallActivityType>)}
         />
-        <CheckboxFilterDropdown
-          id="activity-filter-trigger"
-          label="Trigger"
-          options={(
-            Object.keys(ACTIVITY_TRIGGER_LABELS) as TActivityTriggerFilter[]
-          ).map((value) => ({
-            value,
-            label: ACTIVITY_TRIGGER_LABELS[value],
-          }))}
-          selected={filter.trigger}
-          onChange={(value) =>
-            onTriggerChange(value as Set<TActivityTriggerFilter>)
-          }
+        <ActorFilter
+          orgId={orgId}
+          selected={filter.actorId}
+          onChange={onActorChange}
         />
         <RadioFilterDropdown
           id="activity-filter-date"
@@ -361,6 +351,12 @@ export const ActivityListPresenter = ({
           }))}
           selected={filter.date}
           onChange={onDateChange}
+        />
+        <Toggle
+          checked={!filter.hideCron}
+          onChange={(checked) => onHideCronChange(!checked)}
+          label="Show cron runs"
+          className="px-2"
         />
         {hasActiveFilters && (
           <Button variant="ghost" onClick={onClearFilters}>
