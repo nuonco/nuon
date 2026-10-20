@@ -10,7 +10,7 @@ import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
 <AskYourAgent
   title="Check install health"
   tools={["get_install_health"]}
-  prompt={`Check the health of my Nuon install. List every component that isn't healthy, with its health description and when it last reported, and tell me about any cluster access errors.`}
+  prompt={`Check the health of my Nuon install. List every component that isn't healthy and why, tell me when health was last reported, and tell me if Nuon can't reach the cluster.`}
 />
 
 Nuon checks the components running on each install regularly, so you can see their live status.
