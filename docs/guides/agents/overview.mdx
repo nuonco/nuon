@@ -14,9 +14,23 @@ Use an LLM client to read and operate orgs, app templates, installs, and workflo
 
 <McpInstallPicker />
 
-## Try these first
+## Understanding your Nuon App Template
 
 Once the MCP server is connected, paste one of these into your client. Each one only reads from Nuon.
+
+<AskYourAgent
+  title="Summarize my app template"
+  tools={["get_app", "list_app_branches", "get_app_config_schema"]}
+  prompt={`Summarize my Nuon app template: its sandbox, each component and its type, and the app branches that deploy it. For each component type, use the app config schema to explain the settings that matter most.`}
+/>
+
+<AskYourAgent
+  title="Check the latest run"
+  tools={["list_app_branches", "get_app_branch_run"]}
+  prompt={`Show me the latest run of my Nuon app template's default branch: what changed, whether it succeeded, and how far it has rolled out across installs.`}
+/>
+
+## Once you have an install
 
 <AskYourAgent
   title="Summarize an install"
@@ -34,18 +48,6 @@ Once the MCP server is connected, paste one of these into your client. Each one 
   title="Find failing workflows"
   tools={["list_workflows", "get_pending_approvals", "get_workflow_step_logs"]}
   prompt={`Check my Nuon install for workflows that failed or are waiting on an approval. For any failed step, pull its logs and explain what went wrong.`}
-/>
-
-<AskYourAgent
-  title="Check the latest run"
-  tools={["list_app_branches", "get_app_branch_run"]}
-  prompt={`Show me the latest run of my Nuon app template's default branch: what changed, whether it succeeded, and how far it has rolled out across installs.`}
-/>
-
-<AskYourAgent
-  title="List install runbooks"
-  tools={["list_runbooks", "get_runbook"]}
-  prompt={`List the runbooks available on my Nuon install and summarize the inputs and steps of each one.`}
 />
 
 <Card title="More sample queries" icon="comments" href="/guides/agents/sample-queries" horizontal />
