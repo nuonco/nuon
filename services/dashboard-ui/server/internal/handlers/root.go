@@ -134,6 +134,18 @@ func (h *RootHandler) Handle(c *gin.Context) {
 		return
 	}
 
+	// Accepting a pending invite happens on this request, but GetOrgs still
+	// lists orgs from the account loaded before that write. A second read sees it.
+	if len(orgs) == 0 {
+		h.l.Info("root: no orgs on first read, refetching")
+		refetched, _, refetchErr := client.GetOrgs(c.Request.Context(), &models.GetPaginatedQuery{Limit: 1})
+		if refetchErr != nil {
+			h.l.Warn("root: org refetch failed", zap.Error(refetchErr))
+		} else {
+			orgs = refetched
+		}
+	}
+
 	if len(orgs) > 0 {
 		dest := orgLandingPath(orgs[0])
 		h.l.Info("root: redirecting to org",
