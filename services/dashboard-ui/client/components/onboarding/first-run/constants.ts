@@ -363,9 +363,9 @@ export const BYOC_REFERENCES: { name: string; category: string; blurb: string; h
 ]
 
 export const STACK_RENDER_LABEL: Record<TCloud, string> = {
-  aws: 'Render the CloudFormation template',
-  gcp: 'Render the Terraform stack',
-  azure: 'Render the Bicep template',
+  aws: 'Build the CloudFormation template',
+  gcp: 'Build the Terraform stack',
+  azure: 'Build the Bicep template',
 }
 
 // Normal waits on app.nuon.co are about 2 minutes for builds and under a minute
