@@ -55,6 +55,14 @@ func (c *Client) InvalidateTokens(ctx context.Context, subjectOrEmail string) er
 	})
 }
 
+func (c *Client) InvalidateLogStreamTokens(ctx context.Context, logStreamID string) error {
+	err := c.InvalidateTokens(ctx, ServiceAccountEmail(logStreamID))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	return err
+}
+
 func (c *Client) InvalidateOldTokens(ctx context.Context, subjectOrEmail string) (int64, error) {
 	acct, err := c.FindAccount(ctx, subjectOrEmail)
 	if err != nil {
