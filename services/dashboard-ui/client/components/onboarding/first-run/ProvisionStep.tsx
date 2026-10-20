@@ -18,7 +18,6 @@ import {
   CLOUD_ICON,
   DOCS_MCP,
   KITCHEN_SINK_LABEL,
-  MCP_ADD_CLAUDE,
   SANDBOX_PARTS,
   buildStages,
   defaultRegion,
@@ -218,18 +217,18 @@ export const ProvisionStepView = ({
               <Text variant="subtext" theme="neutral">
                 Your agent follows the install step by step and explains any failure from its logs.
               </Text>
+              <Text variant="subtext" theme="neutral" flex className="flex-wrap">
+                Needs the Nuon MCP server:
+                <Link href={DOCS_MCP} isExternal textVariant="subtext">
+                  setup guide
+                </Link>
+              </Text>
             </div>
             <div className="flex items-start gap-2">
               <Code className="!min-h-0 min-w-0 flex-1 !px-2 !py-1.5 leading-5 !break-normal [overflow-wrap:anywhere]">
-                {MCP_ADD_CLAUDE}
+                {watchPrompt(appName)}
               </Code>
-              <CopyTextButton text={MCP_ADD_CLAUDE} label="Copy" size="sm" />
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Link href={DOCS_MCP} isExternal textVariant="subtext">
-                Other clients
-              </Link>
-              <CopyTextButton text={watchPrompt(appName)} label="Copy prompt" size="sm" variant="primary" />
+              <CopyTextButton text={watchPrompt(appName)} label="Copy" size="sm" />
             </div>
           </div>
         </div>
