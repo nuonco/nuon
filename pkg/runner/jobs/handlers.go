@@ -5,6 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
@@ -26,6 +27,12 @@ type JobHandler interface {
 	Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error
 	GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error
 	Outputs(ctx context.Context) (map[string]interface{}, error)
+}
+
+// APIClientSetter lets the job loop swap in a job-token client for one execution.
+// Handlers run at most one job at a time.
+type APIClientSetter interface {
+	SetAPIClient(nuonrunner.Client) nuonrunner.Client
 }
 
 type StatefulJobHandler interface {

@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/signing"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/statejwt"
@@ -73,7 +74,7 @@ func New(params Params) *service {
 // reachable, end-user-authenticated API surface" (vs. the runner / internal /
 // auth listeners). It is NOT unauthenticated.
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
-	orgs := ge.Group("/v1/orgs/:org_id/slack")
+	orgs := ge.Group("/v1/orgs/:org_id/slack", require.PathOrgMatches())
 	{
 		orgs.GET("/install-url", s.GetInstallURL)
 		orgs.GET("/installations", s.ListInstallations)

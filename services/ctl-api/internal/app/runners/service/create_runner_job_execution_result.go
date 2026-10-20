@@ -313,6 +313,9 @@ func (s *service) refreshOwnerCompositeError(ctx context.Context, runnerJob *app
 }
 
 func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, bool, error) {
+	if _, err := s.getRunnerJobExecution(ctx, runnerJobID, runnerJobExecutionID); err != nil {
+		return nil, false, err
+	}
 	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {
 		return nil, false, err
@@ -354,6 +357,9 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 }
 
 func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, bool, error) {
+	if _, err := s.getRunnerJobExecution(ctx, runnerJobID, runnerJobExecutionID); err != nil {
+		return nil, false, err
+	}
 	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {
 		return nil, false, err

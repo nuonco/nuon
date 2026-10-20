@@ -48,6 +48,15 @@ func (s *service) CreateRunnerProcess(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
+	switch req.Type {
+	case app.RunnerProcessTypeMng, app.RunnerProcessTypeInstall, app.RunnerProcessTypeBuild:
+	default:
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unsupported runner process type %q", req.Type),
+			Description: "runner process type must be one of mng, install, build",
+		})
+		return
+	}
 
 	var process *app.RunnerProcess
 	err := traceRunnerRequestOperation(ctx, "runner.process.persist", func(ctx context.Context) error {
@@ -141,6 +150,13 @@ func (s *service) createRunnerProcess(ctx context.Context, runnerID string, req 
 
 	if res := s.db.WithContext(ctx).Create(&process); res.Error != nil {
 		return nil, fmt.Errorf("unable to create runner process: %w", res.Error)
+	}
+
+	// Bind the stream to the process so runnerguard can authorize OTLP writes
+	// from the parent process token against owner_type=runner_processes.
+	if res := s.db.WithContext(ctx).Model(&app.LogStream{ID: logStream.ID}).
+		Update("owner_id", process.ID); res.Error != nil {
+		return nil, fmt.Errorf("unable to bind log stream owner: %w", res.Error)
 	}
 
 	return &process, nil

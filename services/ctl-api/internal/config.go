@@ -21,6 +21,7 @@ func init() {
 	config.RegisterDefault("http_port", "8081")
 	config.RegisterDefault("internal_http_port", "8082")
 	config.RegisterDefault("runner_http_port", "8083")
+	config.RegisterDefault("stack_http_port", "8093")
 	config.RegisterDefault("auth_http_port", "8084")
 	config.RegisterDefault("admin_dashboard_http_port", "8087")
 	config.RegisterDefault("slack_http_port", "8089")
@@ -110,6 +111,7 @@ func init() {
 	config.RegisterDefault("runner_container_image_signature_issuer", "https://token.actions.githubusercontent.com")
 	config.RegisterDefault("runner_container_image_signature_identity_regexp", `^https://github\.com/nuonco/nuon/\.github/workflows/service\.yml@refs/heads/main$`)
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
+	config.RegisterDefault("stack_api_url", "http://localhost:8093")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
 	config.RegisterDefault("telemetry_jwks", "")
@@ -244,6 +246,7 @@ type Config struct {
 	HTTPPort               string `config:"http_port" validate:"required"`
 	InternalHTTPPort       string `config:"internal_http_port" validate:"required"`
 	RunnerHTTPPort         string `config:"runner_http_port" validate:"required"`
+	StackHTTPPort          string `config:"stack_http_port" validate:"required"`
 	AuthHTTPPort           string `config:"auth_http_port" validate:"required"`
 	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
 	AdminDashboardDistDir  string `config:"admin_dashboard_dist_dir"`
@@ -343,6 +346,7 @@ type Config struct {
 	Middlewares               []string `config:"middlewares"`
 	InternalMiddlewares       []string `config:"internal_middlewares"`
 	RunnerMiddlewares         []string `config:"runner_middlewares"`
+	StackMiddlewares          []string `config:"stack_middlewares"`
 	AuthMiddlewares           []string `config:"auth_middlewares"`
 	AdminDashboardMiddlewares []string `config:"admin_dashboard_middlewares"`
 	SlackMiddlewares          []string `config:"slack_middlewares"`
@@ -397,6 +401,7 @@ type Config struct {
 	// links
 	AppURL        string `config:"app_url" validate:"required"`
 	RunnerAPIURL  string `config:"runner_api_url" validate:"required"`
+	StackAPIURL   string `config:"stack_api_url"`
 	PublicAPIURL  string `config:"public_api_url" validate:"required"`
 	AdminAPIURL   string `config:"admin_api_url" validate:"required"`
 	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`

@@ -30,10 +30,11 @@ import (
 // @Success				200	{object}	app.RunnerProcessShutdown
 // @Router					/v1/runners/{runner_id}/processes/{process_id}/shutdowns/{shutdown_id}/complete [POST]
 func (s *service) CompleteRunnerProcessShutdown(ctx *gin.Context) {
+	runnerID := ctx.Param("runner_id")
 	processID := ctx.Param("process_id")
 	shutdownID := ctx.Param("shutdown_id")
 
-	shutdown, err := s.completeRunnerProcessShutdown(ctx, processID, shutdownID)
+	shutdown, err := s.completeRunnerProcessShutdown(ctx, runnerID, processID, shutdownID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to complete runner process shutdown: %w", err))
 		return
@@ -42,7 +43,10 @@ func (s *service) CompleteRunnerProcessShutdown(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, shutdown)
 }
 
-func (s *service) completeRunnerProcessShutdown(ctx context.Context, processID, shutdownID string) (*app.RunnerProcessShutdown, error) {
+func (s *service) completeRunnerProcessShutdown(ctx context.Context, runnerID, processID, shutdownID string) (*app.RunnerProcessShutdown, error) {
+	if _, err := s.getRunnerProcessForRunner(ctx, runnerID, processID); err != nil {
+		return nil, err
+	}
 	var shutdown app.RunnerProcessShutdown
 	if res := s.db.WithContext(ctx).First(&shutdown, "id = ? AND runner_process_id = ?", shutdownID, processID); res.Error != nil {
 		return nil, fmt.Errorf("unable to find shutdown: %w", res.Error)

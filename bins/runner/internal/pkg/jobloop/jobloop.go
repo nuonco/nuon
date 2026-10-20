@@ -91,6 +91,15 @@ func WithIdleHook(fn func(context.Context)) Option {
 	}
 }
 
+// client prefers the job-scoped client (same type, job token) when one was
+// attached after ClaimJobToken; otherwise the root runner client.
+func (j *jobLoop) client(ctx context.Context) nuonrunner.Client {
+	if scoped, ok := nuonrunner.ClientFromContext(ctx); ok {
+		return scoped
+	}
+	return j.apiClient
+}
+
 func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params BaseParams, opts ...Option) *jobLoop {
 	pollCtx, pollCancel := context.WithCancel(context.Background())
 	jobCtx, jobCancel := context.WithCancel(context.Background())
