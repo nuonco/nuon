@@ -10543,6 +10543,7 @@ export interface components {
     /** @enum {string} */
     "state.PartialName": "org" | "app" | "domain" | "runner" | "cloud" | "actions" | "inputs" | "components" | "sandbox" | "stack" | "secrets";
     "state.RunnerState": {
+      api_url?: string;
       id?: string;
       populated?: boolean;
       runner_group_id?: string;
@@ -28284,6 +28285,12 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

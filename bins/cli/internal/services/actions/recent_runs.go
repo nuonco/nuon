@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -11,7 +12,16 @@ import (
 func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
-	response, hasMore, err := s.getRecentRuns(ctx, installID, actionWorkflowID, offset, limit)
+	install, err := s.installOrSelected(ctx, installID)
+	if err != nil {
+		return view.Error(err)
+	}
+	actionWorkflowID, err = lookup.ActionWorkflowID(ctx, s.api, install.AppID, actionWorkflowID)
+	if err != nil {
+		return view.Error(err)
+	}
+
+	response, hasMore, err := s.getRecentRuns(ctx, install.ID, actionWorkflowID, offset, limit)
 	if err != nil {
 		return view.Error(err)
 	}

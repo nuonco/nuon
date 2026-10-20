@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -20,11 +22,17 @@ type ServiceInstallActivityAction struct {
 	// action workflow id
 	ActionWorkflowID string `json:"action_workflow_id,omitempty"`
 
+	// adhoc
+	Adhoc bool `json:"adhoc,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
 	// run id
 	RunID string `json:"run_id,omitempty"`
+
+	// trigger
+	Trigger *AppActionRunTrigger `json:"trigger,omitempty"`
 
 	// trigger type
 	TriggerType string `json:"trigger_type,omitempty"`
@@ -32,11 +40,77 @@ type ServiceInstallActivityAction struct {
 
 // Validate validates this service install activity action
 func (m *ServiceInstallActivityAction) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateTrigger(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this service install activity action based on context it is used
+func (m *ServiceInstallActivityAction) validateTrigger(formats strfmt.Registry) error {
+	if swag.IsZero(m.Trigger) { // not required
+		return nil
+	}
+
+	if m.Trigger != nil {
+		if err := m.Trigger.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("trigger")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("trigger")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this service install activity action based on the context it is used
 func (m *ServiceInstallActivityAction) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateTrigger(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceInstallActivityAction) contextValidateTrigger(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Trigger != nil {
+
+		if swag.IsZero(m.Trigger) { // not required
+			return nil
+		}
+
+		if err := m.Trigger.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("trigger")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("trigger")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

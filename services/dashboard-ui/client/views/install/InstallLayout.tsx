@@ -14,7 +14,9 @@ import { PageSection } from '@/components/layout/PageSection'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { NewInstallHeader } from '@/components/installs/NewInstallHeader'
 import { InstallBranchBanner } from '@/components/installs/InstallBranchBanner'
+import { installAppBranchGroup } from '@/components/branches/active-app-branch-connection'
 import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
+import { ChangeInstallGroupButton } from '@/components/installs/management/ChangeInstallGroup'
 import {
   InstallSettingsPanel,
   useOpenInstallSettings,
@@ -332,6 +334,28 @@ const InstallTemplate = () => {
                         />
                       </span>
                     </LabeledValue>
+                    {install.app_branch_id ? (
+                      <LabeledValue label="Install group">
+                        <span className="flex items-center gap-2">
+                          <Text
+                            variant="subtext"
+                            family="mono"
+                            theme={
+                              installAppBranchGroup(install)
+                                ? undefined
+                                : 'neutral'
+                            }
+                          >
+                            {installAppBranchGroup(install) || 'None'}
+                          </Text>
+                          <ChangeInstallGroupButton
+                            compact
+                            install={install}
+                            onSuccess={refresh}
+                          />
+                        </span>
+                      </LabeledValue>
+                    ) : null}
                     <LabeledValue label="App">
                       <Link href={`/${org.id}/apps/${install.app_id}`}>
                         {install?.app?.name}

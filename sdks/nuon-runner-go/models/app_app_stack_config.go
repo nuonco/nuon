@@ -56,6 +56,12 @@ type AppAppStackConfig struct {
 	// type
 	Type AppStackType `json:"type,omitempty"`
 
+	// Column name matches GORM's default for this field. "UI" is treated as one
+	// word, so the column is uidefinition rather than ui_definition.
+	UIDefinition struct {
+		ConfigUploadedUIDefinition
+	} `json:"ui_definition,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
@@ -76,6 +82,10 @@ func (m *AppAppStackConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUIDefinition(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -157,6 +167,14 @@ func (m *AppAppStackConfig) validateType(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppStackConfig) validateUIDefinition(formats strfmt.Registry) error {
+	if swag.IsZero(m.UIDefinition) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app app stack config based on the context it is used
 func (m *AppAppStackConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -170,6 +188,10 @@ func (m *AppAppStackConfig) ContextValidate(ctx context.Context, formats strfmt.
 	}
 
 	if err := m.contextValidateType(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateUIDefinition(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -248,6 +270,11 @@ func (m *AppAppStackConfig) contextValidateType(ctx context.Context, formats str
 
 		return err
 	}
+
+	return nil
+}
+
+func (m *AppAppStackConfig) contextValidateUIDefinition(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

@@ -96,7 +96,11 @@ const DeploymentPanelContent = ({
         onRetry={() => refetchRecord()}
       />
     ),
-    workflow: workflow ? <DeploymentWorkflowContent /> : noWorkflow,
+    workflow: workflow ? (
+      <DeploymentWorkflowContent installId={installId} />
+    ) : (
+      noWorkflow
+    ),
     changes: workflow ? (
       <DeploymentChangesContent deployment={record} />
     ) : (

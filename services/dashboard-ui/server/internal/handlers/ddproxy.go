@@ -3,6 +3,7 @@ package handlers
 import (
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -11,6 +12,13 @@ import (
 )
 
 const ddIntakeURL = "https://browser-intake-us5-datadoghq.com"
+
+// ddIntakePaths are the only intake endpoints the browser SDK posts to.
+var ddIntakePaths = map[string]struct{}{
+	"/api/v2/rum":    {},
+	"/api/v2/logs":   {},
+	"/api/v2/replay": {},
+}
 
 var analyticsForwardedRequestHeaders = map[string]struct{}{
 	"accept":       {},
@@ -23,22 +31,56 @@ var analyticsForwardedResponseHeaders = map[string]struct{}{
 }
 
 type DDProxyHandler struct {
-	l      *zap.Logger
-	client *http.Client
+	l         *zap.Logger
+	intakeURL *url.URL
+	client    *http.Client
 }
 
 func NewDDProxyHandler(l *zap.Logger) *DDProxyHandler {
+	return newDDProxyHandler(l, ddIntakeURL)
+}
+
+func newDDProxyHandler(l *zap.Logger, intake string) *DDProxyHandler {
+	intakeURL, err := url.Parse(intake)
+	if err != nil {
+		panic(err)
+	}
 	return &DDProxyHandler{
-		l: l,
+		l:         l,
+		intakeURL: intakeURL,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
+			// A followed redirect would let the intake response steer this
+			// unauthenticated route at cluster-internal hosts.
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
 		},
 	}
 }
 
 func (h *DDProxyHandler) RegisterRoutes(e *gin.Engine) error {
-	e.Any("/api/ddp", h.Handle)
+	e.POST("/api/ddp", h.Handle)
 	return nil
+}
+
+// upstreamURL accepts ddforward only as a relative reference to a known intake
+// path. Concatenating it onto the intake host let values like ".evil.com/" or
+// "@evil.com/" rewrite the host.
+func (h *DDProxyHandler) upstreamURL(ddforward string) (*url.URL, bool) {
+	fwd, err := url.Parse(ddforward)
+	if err != nil || fwd.Scheme != "" || fwd.Host != "" || fwd.User != nil || fwd.Opaque != "" {
+		return nil, false
+	}
+	if _, ok := ddIntakePaths[fwd.Path]; !ok {
+		return nil, false
+	}
+	return &url.URL{
+		Scheme:   h.intakeURL.Scheme,
+		Host:     h.intakeURL.Host,
+		Path:     fwd.Path,
+		RawQuery: fwd.RawQuery,
+	}, true
 }
 
 func (h *DDProxyHandler) Handle(c *gin.Context) {
@@ -48,9 +90,14 @@ func (h *DDProxyHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	upstreamURL := ddIntakeURL + ddforward
+	upstream, ok := h.upstreamURL(ddforward)
+	if !ok {
+		h.l.Warn("rejected ddforward parameter", zap.String("ddforward", ddforward))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ddforward parameter"})
+		return
+	}
 
-	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, upstreamURL, c.Request.Body)
+	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, upstream.String(), c.Request.Body)
 	if err != nil {
 		h.l.Error("failed to create upstream request", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create upstream request"})

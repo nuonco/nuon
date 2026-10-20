@@ -38,7 +38,7 @@ type V1Info struct {
 
 	// Status is the current state of the release
 	Status struct {
-		HelmShHelmV4PkgReleaseV1Status
+		CommonStatus
 	} `json:"status,omitempty"`
 }
 

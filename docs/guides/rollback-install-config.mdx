@@ -1,6 +1,6 @@
 ---
 title: "Roll back an install"
-description: "Re-apply a previous app config version to one install, or to a whole deployment group, with a plan in front of it."
+description: "Re-apply a previous app config version to one install, or to a whole install group, with a plan in front of it."
 icon: "clock-rotate-left"
 keywords: ["rollback", "roll back install", "revert config", "previous version", "app config version", "config version history", "undo deploy", "re-apply version", "recover from bad deploy", "version diff"]
 ---
@@ -21,10 +21,12 @@ You will need an API token (create one in the dashboard's org settings), your or
       "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-versions"
     ```
 
-    Each entry carries the app config it pinned. The install's **Versions** view in the dashboard shows the same
-    history.
+    Each entry carries the app config it pinned. On the install, **Configuration → App branch → Applied config
+    history** shows the same list.
   </Step>
   <Step title="Confirm what changed">
+    The diff for a `VERSION_ID` is the component change recorded for that version:
+
     ```sh
     curl -H "Authorization: Bearer $NUON_API_TOKEN" \
       -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
@@ -45,9 +47,9 @@ You will need an API token (create one in the dashboard's org settings), your or
   </Step>
 </Steps>
 
-## Roll back a deployment group
+## Roll back an install group
 
-To move a whole deployment group back rather than one install, trigger a branch run against the older app config and
+To move a whole install group back rather than one install, trigger a branch run against the older app config and
 skip the build step, since the artifacts for that config already exist:
 
 ```sh

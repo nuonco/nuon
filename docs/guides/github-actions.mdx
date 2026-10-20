@@ -9,7 +9,7 @@ keywords:
     "actions-nuon",
     "CI/CD",
     "trigger app branch run",
-    "nuon apps branches trigger",
+    "nuon branches trigger",
     "automate rollout",
     "continuous deployment Nuon",
     "OIDC",
@@ -84,7 +84,7 @@ jobs:
         with:
           org_id: ${{ vars.nuon_org_id }}
           app_id: ${{ vars.nuon_app_id }}
-          command: "apps branches trigger --branch-id main --no-wait"
+          command: "branches trigger --branch-id main --no-wait"
 ```
 
 <Note>
@@ -93,17 +93,17 @@ jobs:
 
 ### Variations
 
-`--preview` makes the run plan-only: every group is planned, nothing is applied, and you read the per-install diffs
-from the completed run:
+For a **preview** run (not a fleet rollout through install groups), use `branches preview` — for example against a
+committed ref or PR number:
 
 ```yaml
-command: "apps branches trigger --branch-id main --no-wait --preview"
+command: "branches preview --branch-id main --git-ref my-feature --mode plan-only --no-wait"
 ```
 
-`--force` rebuilds every component instead of only what changed since the previous run:
+`--force` on `branches trigger` rebuilds every component instead of only what changed since the previous run:
 
 ```yaml
-command: "apps branches trigger --branch-id main --no-wait --force"
+command: "branches trigger --branch-id main --no-wait --force"
 ```
 
 ### Further usage
@@ -152,7 +152,7 @@ The `id-token: write` permission is not required if you are using a token.
     api_token: ${{ secrets.NUON_API_TOKEN }}
     org_id: ${{ vars.nuon_org_id }}
     app_id: ${{ vars.nuon_app_id }}
-    command: "apps branches trigger --branch-id main --no-wait"
+    command: "branches trigger --branch-id main --no-wait"
 ```
 
 <Note>

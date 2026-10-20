@@ -186,6 +186,16 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 		},
 	}
 
+	vendor, err := t.loadStackUIDefinition(inp)
+	if err != nil {
+		return nil, "", err
+	}
+	if len(vendor) > 0 {
+		if err := mergeVendorUI(uiDef, vendor, wrapperParams); err != nil {
+			return nil, "", err
+		}
+	}
+
 	uiDefBytes, err := json.MarshalIndent(uiDef, "", "  ")
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to marshal quick link UI definition: %w", err)

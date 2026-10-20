@@ -20,13 +20,19 @@ export const labelsFromGroupSelection = (
   selection: TGroupStepSelection
 ): Record<string, string> =>
   selection.mode === 'labels'
-    ? (selection.group.label_selector?.match_labels ?? {})
+    ? Object.fromEntries(
+        Object.entries(selection.group.label_selector?.match_labels ?? {}).filter(
+          ([, value]) => value !== '*'
+        )
+      )
     : {}
 
 interface IGroupStep {
   config: TAppBranchConfig
   selected: TGroupStepSelection
   onSelect: (group: TGroupStepSelection) => void
+  disableExplicit?: boolean
+  explicitDisabledReason?: string
 }
 
 interface IGroupRowProps {
@@ -35,6 +41,8 @@ interface IGroupRowProps {
   selectedMode?: TGroupStepSelection['mode']
   onSelectGroup: (group: TAppBranchInstallGroup) => void
   onSelectMode: (selection: TGroupStepSelection) => void
+  disableExplicit?: boolean
+  explicitDisabledReason?: string
 }
 
 const GroupRow = ({
@@ -43,8 +51,12 @@ const GroupRow = ({
   selectedMode,
   onSelectGroup,
   onSelectMode,
+  disableExplicit,
+  explicitDisabledReason,
 }: IGroupRowProps) => {
   const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
+  const canAssignLabels =
+    labelEntries.length > 0 && labelEntries.every(([, value]) => value !== '*')
 
   return (
     <div className="flex flex-col gap-3">
@@ -87,11 +99,17 @@ const GroupRow = ({
             <Button
               variant={selectedMode === 'explicit' ? 'primary' : 'secondary'}
               size="sm"
+              disabled={disableExplicit}
+              tooltipProps={
+                disableExplicit && explicitDisabledReason
+                  ? { tipContent: explicitDisabledReason }
+                  : undefined
+              }
               onClick={() => onSelectMode({ mode: 'explicit', group })}
             >
               Pin to group
             </Button>
-            {labelEntries.length > 0 && (
+            {canAssignLabels && (
               <Button
                 variant={selectedMode === 'labels' ? 'primary' : 'secondary'}
                 size="sm"
@@ -107,7 +125,13 @@ const GroupRow = ({
   )
 }
 
-export const GroupStep = ({ config, selected, onSelect }: IGroupStep) => {
+export const GroupStep = ({
+  config,
+  selected,
+  onSelect,
+  disableExplicit,
+  explicitDisabledReason,
+}: IGroupStep) => {
   const groups = config.install_groups ?? []
 
   if (groups.length === 0) {
@@ -136,6 +160,8 @@ export const GroupStep = ({ config, selected, onSelect }: IGroupStep) => {
               group={group}
               selected={isSelected}
               selectedMode={isSelected ? selected.mode : undefined}
+              disableExplicit={isSelected && disableExplicit}
+              explicitDisabledReason={explicitDisabledReason}
               onSelectGroup={(nextGroup) =>
                 onSelect(
                   nextGroup.default
