@@ -5,6 +5,8 @@ icon: "robot"
 keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
 ---
 
+import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
+
 <Note>
 **AI agent** here means an LLM client (Claude Code, Cursor, etc.) driving the control plane. This is not the [install runner](/concepts/runners) in customer clouds.
 </Note>
@@ -28,3 +30,39 @@ Use an LLM client to read and operate orgs, app templates, installs, and workflo
     Generate Nuon app config with Claude Code, Gemini, Amp, and skills.
   </Card>
 </CardGroup>
+
+## Try these first
+
+Once the MCP server is connected, paste one of these into your client. Each one only reads from Nuon.
+
+<AskYourAgent
+  title="Summarize an install"
+  tools={["install_summary"]}
+  prompt={`Give me a summary of my Nuon install: what's deployed, which commit it's on, its health, and any failing workflows.`}
+/>
+
+<AskYourAgent
+  title="Check install health"
+  tools={["get_install_health"]}
+  prompt={`Check the health of my Nuon install. List every component that isn't healthy, with its health description and when it last reported, and tell me about any cluster access errors.`}
+/>
+
+<AskYourAgent
+  title="Find failing workflows"
+  tools={["list_workflows", "get_pending_approvals", "get_workflow_step_logs"]}
+  prompt={`Check my Nuon install for workflows that failed or are waiting on an approval. For any failed step, pull its logs and explain what went wrong.`}
+/>
+
+<AskYourAgent
+  title="Check the latest run"
+  tools={["list_app_branches", "get_app_branch_run"]}
+  prompt={`Show me the latest run of my Nuon app template's default branch: what changed, whether it succeeded, and how far it has rolled out across installs.`}
+/>
+
+<AskYourAgent
+  title="List install runbooks"
+  tools={["list_runbooks", "get_runbook"]}
+  prompt={`List the runbooks available on my Nuon install and summarize the inputs and steps of each one.`}
+/>
+
+For more prompts, including ones that deploy and approve changes, see [Sample queries](/guides/agents/sample-queries).

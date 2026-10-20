@@ -196,3 +196,6 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 .nuon-ask-agent-link:hover {
   text-decoration: underline;
 }
+.nuon-ask-agent + .nuon-ask-agent {
+  margin-top: -1.125rem;
+}
