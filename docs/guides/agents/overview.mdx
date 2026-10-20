@@ -25,9 +25,9 @@ Once the MCP server is connected, paste one of these into your client. Each one 
 />
 
 <AskYourAgent
-  title="Check the latest run"
-  tools={["list_app_branches", "get_app_branch_run"]}
-  prompt={`Show me the latest run of my Nuon app template's default branch: what changed, whether it succeeded, and how far it has rolled out across installs.`}
+  title="Check my config sync"
+  tools={["list_app_branches", "get_app_branch_run", "get_build_logs", "get_workflow_step_logs"]}
+  prompt={`I'm setting up my Nuon app template. Check whether it has an app branch, then look at the latest branch run: did the app config sync, and did every component build? If a step failed, pull its logs, explain the error, and tell me what to change in my config. If there is no app branch yet, walk me through creating one.`}
 />
 
 ## Once you have an install
