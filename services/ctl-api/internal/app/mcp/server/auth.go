@@ -68,6 +68,13 @@ func accountHasOrgAccess(acct *app.Account, orgID string) bool {
 }
 
 func (s *Server) accountAllowed(acct *app.Account) bool {
+	if acct.AccountType == app.AccountTypeService {
+		for _, role := range acct.Roles {
+			if role.RoleType == app.RoleTypeRunner {
+				return false
+			}
+		}
+	}
 	return !s.requireEmployee || acct.IsEmployee
 }
 

@@ -2,6 +2,8 @@ package api
 
 import (
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/runnerscope"
 )
 
 func NewPublicAPI(params Params) (*API, error) {
@@ -23,6 +25,7 @@ func NewPublicAPI(params Params) (*API, error) {
 	if err := api.registerMiddlewares(); err != nil {
 		return nil, errors.Wrap(err, "unable to register middlewares")
 	}
+	api.handler.Use(runnerscope.New().Handler())
 	if params.InstallAuth != nil {
 		api.handler.Use(params.InstallAuth.Handler())
 	}
