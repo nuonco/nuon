@@ -4,9 +4,11 @@ import type { TFirstRunStep } from '@/hooks/use-first-run-journey'
 import { ConnectStep } from './ConnectStep'
 import {
   AWS_QUICK_CREATE_DOCS,
+  DOCS_APP_INPUTS,
   DOCS_APPS,
   DOCS_STACKS,
   GCP_INFRA_MANAGER_DOCS,
+  KITCHEN_SINK_LABEL,
   type TCloud,
   type TPath,
 } from './constants'
@@ -48,6 +50,20 @@ const DEPLOY_STEP: TFirstRunStepDef = {
   description:
     'Now you can test the flow your customer will see. Pick a cloud account you want to test with.',
   component: DeployStep,
+}
+
+const EXAMPLE_DEPLOY_STEP: TFirstRunStepDef = {
+  ...DEPLOY_STEP,
+  title: `Test install of ${KITCHEN_SINK_LABEL} demo app`,
+  description: (
+    <>
+      Here we just give you a region picker. We support a{' '}
+      <InlineLink href={DOCS_APP_INPUTS} textVariant="body">
+        range of configurable inputs
+      </InlineLink>
+      .
+    </>
+  ),
 }
 
 const STACK_STEP_INTRO: Record<TCloud, ReactNode> = {
@@ -101,7 +117,7 @@ const PROVISION_STEP: TFirstRunStepDef = {
 export const buildFirstRunSteps = (path: TPath, cloud: TCloud): TFirstRunStepDef[] =>
   path === 'own'
     ? [START_STEP, CONNECT_STEP, DEPLOY_STEP, stackStep(cloud), PROVISION_STEP]
-    : [START_STEP, DEPLOY_STEP, stackStep(cloud), PROVISION_STEP]
+    : [START_STEP, EXAMPLE_DEPLOY_STEP, stackStep(cloud), PROVISION_STEP]
 
 export const stepIndexFor = (steps: TFirstRunStepDef[], step: TFirstRunStep) => {
   const order: TFirstRunStep[] = ['start', 'connect', 'deploy', 'stack', 'provision']
