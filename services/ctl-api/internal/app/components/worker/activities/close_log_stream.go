@@ -27,5 +27,9 @@ func (a *Activities) CloseLogStream(ctx context.Context, req CloseLogStreamReque
 		return errors.Wrap(res.Error, "unable to update")
 	}
 
+	if err := a.acctClient.InvalidateLogStreamTokens(ctx, req.LogStreamID); err != nil {
+		return errors.Wrap(err, "unable to revoke log stream tokens")
+	}
+
 	return nil
 }
