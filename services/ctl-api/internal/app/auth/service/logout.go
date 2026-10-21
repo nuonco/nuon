@@ -19,10 +19,9 @@ func (s *service) Logout(c *gin.Context) {
 	// to store the ID token or retrieve it from session storage.
 	// For now, we just clear our local session/cookie.
 
-	// Soft delete the token from the database
 	if tokenValue := s.findToken(c); tokenValue != "" {
-		if err := s.deleteToken(tokenValue); err != nil {
-			s.l.Warn("failed to delete token", zap.Error(err))
+		if err := s.revokeSessionToken(c.Request.Context(), tokenValue); err != nil {
+			s.l.Warn("failed to revoke session", zap.Error(err))
 		}
 	}
 

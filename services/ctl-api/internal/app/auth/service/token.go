@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -63,7 +64,7 @@ func tokenSource(sourceTokenID string) (app.TokenSourceType, string) {
 	return app.TokenSourceTypeToken, sourceTokenID
 }
 
-func lockGrantSource(tx *gorm.DB, accountID, tokenID string, historical bool) error {
+func lockGrantSource(tx *gorm.DB, accountID, tokenID string) error {
 	var account app.Account
 	err := tx.Clauses(clause.Locking{Strength: "KEY SHARE"}).
 		Select("id").
@@ -78,9 +79,6 @@ func lockGrantSource(tx *gorm.DB, accountID, tokenID string, historical bool) er
 
 	if tokenID == "" {
 		return nil
-	}
-	if historical {
-		tx = tx.Unscoped()
 	}
 
 	var token app.Token
@@ -161,13 +159,22 @@ func (s *service) findToken(c *gin.Context) string {
 	return ""
 }
 
-// deleteToken soft deletes a token from the database.
-func (s *service) deleteToken(tokenValue string) error {
+func (s *service) revokeSessionToken(ctx context.Context, tokenValue string) error {
 	if tokenValue == "" {
 		return nil
 	}
 
-	return s.db.
+	var token app.Token
+	err := s.db.WithContext(ctx).
+		Select("id").
 		Where(&app.Token{Token: tokenValue}).
-		Delete(&app.Token{}).Error
+		First(&token).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to lookup token: %w", err)
+	}
+
+	return s.acctClient.RevokeToken(ctx, token.ID)
 }

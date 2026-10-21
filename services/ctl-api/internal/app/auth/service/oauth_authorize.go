@@ -167,7 +167,7 @@ func (s *service) OAuthConsent(c *gin.Context) {
 	authCode.Scope = scope
 	authCode.SourceTokenID = tokenInfo.TokenID
 	err = s.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := lockGrantSource(tx, tokenInfo.AccountID, tokenInfo.TokenID, false); err != nil {
+		if err := lockGrantSource(tx, tokenInfo.AccountID, tokenInfo.TokenID); err != nil {
 			return err
 		}
 		res := tx.Model(&authCode).
