@@ -137,7 +137,7 @@ func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
 		return
 	}
 
-	if err := validateClaimConditions(req.ClaimConditions); err != nil {
+	if err := validateClaimConditions(req.IssuerURL, req.ClaimConditions); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
@@ -296,11 +296,13 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 		policy.Audience = req.Audience
 	}
 	if req.ClaimConditions != nil {
-		if err := validateClaimConditions(req.ClaimConditions); err != nil {
+		policy.ClaimConditions = req.ClaimConditions
+	}
+	if req.IssuerURL != "" || req.ClaimConditions != nil {
+		if err := validateClaimConditions(policy.IssuerURL, policy.ClaimConditions); err != nil {
 			ctx.Error(stderr.NewInvalidRequest(err))
 			return
 		}
-		policy.ClaimConditions = req.ClaimConditions
 	}
 	if req.TokenDurationSeconds != 0 {
 		duration, err := parseTrustPolicyTokenDuration(req.TokenDurationSeconds)

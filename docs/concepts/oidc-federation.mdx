@@ -46,6 +46,12 @@ Values support glob patterns. The `*` wildcard does not cross `:` segment bounda
 | `repo:acme/app:*` | Any subject for the `acme/app` repo |
 | `repo:acme/*:ref:refs/heads/main` | The `main` ref of any repo in `acme` |
 
+Policies whose `sub` pattern matches unrelated identities are rejected as too broad, for every issuer. For example, `*` and `**` are never accepted.
+
+<Warning>
+  GitHub's issuer (`https://token.actions.githubusercontent.com`) is shared by every GitHub account, so a policy for it must be pinned to your own owner. Either start the `sub` condition with a literal owner, such as `repo:acme/` or `repo:acme@123/` (no wildcards in the owner; wildcards after it are fine), or add a `repository_owner_id` condition set to the literal numeric ID of your owner.
+</Warning>
+
 ## Managing trust policies
 
 You can manage trust policies in the Dashboard under **Settings → OIDC federation**, or with the CLI.
