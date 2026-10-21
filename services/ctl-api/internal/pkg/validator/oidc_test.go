@@ -1,4 +1,4 @@
-package oidc_test
+package validator_test
 
 import (
 	"strings"
@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
-func TestValidateConditions(t *testing.T) {
+func TestOIDCConditions(t *testing.T) {
 	v := validator.New()
 	providers := oidc.NewProviders(github.Provider{})
 
@@ -137,16 +137,26 @@ func TestValidateConditions(t *testing.T) {
 		"github wildcard owner id": {
 			issuer:     github.IssuerURL,
 			conditions: map[string]string{"sub": "repo:*/app:**", "repository_owner_id": "12*"},
-			wantErr:    "must pin an owner",
+			wantErr:    `claim "repository_owner_id" must be a number`,
 		},
 		"github negative owner id": {
 			issuer:     github.IssuerURL,
 			conditions: map[string]string{"sub": "repo:*/app:**", "repository_owner_id": "-1"},
-			wantErr:    "must pin an owner",
+			wantErr:    `claim "repository_owner_id" must be a number`,
 		},
 		"github non-numeric owner id": {
 			issuer:     github.IssuerURL,
 			conditions: map[string]string{"sub": "repo:*/app:**", "repository_owner_id": "acme"},
+			wantErr:    `claim "repository_owner_id" must be a number`,
+		},
+		"github non-numeric owner id with pinned owner": {
+			issuer:     github.IssuerURL,
+			conditions: map[string]string{"sub": "repo:acme/app:**", "repository_owner_id": "acme"},
+			wantErr:    `claim "repository_owner_id" must be a number`,
+		},
+		"github literal backslash owner": {
+			issuer:     github.IssuerURL,
+			conditions: map[string]string{"sub": `repo:ac\me/app:**`},
 			wantErr:    "must pin an owner",
 		},
 		"github unknown claim rejected": {
@@ -167,13 +177,14 @@ func TestValidateConditions(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := oidc.ValidateConditions(v, providers, tt.issuer, tt.conditions)
+			err := validator.OIDCConditions(v, providers, tt.issuer, tt.conditions)
 			if tt.wantErr == "" {
 				require.NoError(t, err)
 				return
 			}
 
-			require.ErrorContains(t, validator.FormatValidationError(err), tt.wantErr)
+			require.ErrorContains(t, err, tt.wantErr)
+			require.NotContains(t, err.Error(), "Key:")
 		})
 	}
 }
@@ -196,24 +207,9 @@ func TestAcceptedOwnerPinnedPatternsNeverMatchForeignOwner(t *testing.T) {
 
 	for _, pattern := range patterns {
 		t.Run(pattern, func(t *testing.T) {
-			require.NoError(t, oidc.ValidateConditions(v, providers, github.IssuerURL, map[string]string{"sub": pattern}))
+			require.NoError(t, validator.OIDCConditions(v, providers, github.IssuerURL, map[string]string{"sub": pattern}))
 			require.False(t, oidc.MatchPattern(pattern, foreign.String()))
 			require.False(t, oidc.MatchPattern(pattern, foreignIDs.String()))
 		})
 	}
-}
-
-func TestClaimNames(t *testing.T) {
-	names := oidc.ClaimNames(github.Claims{})
-
-	for _, want := range []string{
-		"sub", "aud", "iss", "exp", "iat", "nbf", "jti", "actor", "actor_id", "base_ref", "environment",
-		"environment_node_id", "event_name", "head_ref", "job_workflow_ref", "job_workflow_sha", "ref",
-		"ref_protected", "ref_type", "repository", "repository_id", "repository_owner", "repository_owner_id",
-		"repository_visibility", "run_attempt", "run_id", "run_number", "runner_environment", "sha", "workflow",
-		"workflow_ref", "workflow_sha", "enterprise", "enterprise_id",
-	} {
-		require.Contains(t, names, want)
-	}
-	require.NotContains(t, names, "")
 }

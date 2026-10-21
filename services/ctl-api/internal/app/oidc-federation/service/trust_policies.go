@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -82,7 +81,7 @@ func parseTrustPolicyTokenDuration(raw int) (int, error) {
 }
 
 func (s *service) validateClaimConditions(issuerURL string, conditions map[string]string) error {
-	return validator.FormatValidationError(oidc.ValidateConditions(s.v, s.providers, issuerURL, conditions))
+	return validator.OIDCConditions(s.v, s.providers, issuerURL, conditions)
 }
 
 func (s *service) validateIssuerURL(raw string) error {
@@ -315,7 +314,7 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 
 	// Validate the effective state, so a policy that no longer passes validation
 	// can only be disabled.
-	if policy.Enabled {
+	if policy.Enabled || req.IssuerURL != "" || req.ClaimConditions != nil {
 		if err := s.validateClaimConditions(policy.IssuerURL, policy.ClaimConditions); err != nil {
 			ctx.Error(stderr.NewInvalidRequest(err))
 			return

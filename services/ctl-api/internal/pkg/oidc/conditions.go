@@ -7,10 +7,6 @@ type Conditions struct {
 	Extra map[string]string `validate:"dive,keys,oidc_claim_name,endkeys,required,max=512,oidc_pattern"`
 }
 
-// ConditionsStruct is the validator struct name of Conditions, which prefixes
-// its field namespaces.
-const ConditionsStruct = "Conditions"
-
 // ParseConditions splits a claim-name to pattern map into typed conditions.
 func ParseConditions(raw map[string]string) Conditions {
 	c := Conditions{Sub: raw["sub"]}

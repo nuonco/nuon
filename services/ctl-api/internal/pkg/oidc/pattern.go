@@ -11,7 +11,7 @@ const MaxPatternLength = 512
 
 // globMetaChars is the single set of characters that make a pattern a glob
 // rather than an exact string.
-const globMetaChars = "*?[]{}\\"
+const globMetaChars = "*?[{"
 
 // IsGlob reports whether pattern contains glob metacharacters.
 func IsGlob(pattern string) bool {

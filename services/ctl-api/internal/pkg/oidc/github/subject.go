@@ -2,11 +2,12 @@ package github
 
 import (
 	"strings"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
 )
 
-const subjectRepoPrefix = "repo:"
+const (
+	subjectRepoPrefix   = "repo:"
+	ownerForbiddenChars = "*?[]{}\\:"
+)
 
 // Subject is the `sub` claim of a GitHub Actions token:
 // `repo:<owner>/<repo>:<context>`. When the repository has immutable
@@ -108,7 +109,7 @@ func ParseSubjectOwner(pattern string) (string, bool) {
 		return "", false
 	}
 
-	if oidc.IsGlob(ownerPart) || strings.Contains(ownerPart, ":") {
+	if strings.ContainsAny(ownerPart, ownerForbiddenChars) {
 		return "", false
 	}
 

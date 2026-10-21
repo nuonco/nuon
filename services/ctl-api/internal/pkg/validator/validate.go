@@ -15,10 +15,6 @@ func FormatValidationError(err error) error {
 		var errMsg string
 		for _, e := range errs {
 			var fieldErr string
-			if msg, ok := oidcFieldError(e); ok {
-				errMsg += msg + "\n"
-				continue
-			}
 			switch e.Tag() {
 			case "interpolated_name":
 				fieldErr = fmt.Sprintf("%s: Name must contain only lowercase letters, numbers, underscores, dots, and curly braces (for interpolation)", e.Field())

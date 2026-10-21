@@ -17,6 +17,8 @@ const IssuerURL = "https://token.actions.githubusercontent.com"
 var errOwnerNotPinned = errors.New("GitHub Actions tokens can come from any account, so the `sub` must pin an owner: " +
 	"start it with a literal owner like `repo:acme/`, or add a numeric `repository_owner_id` condition")
 
+var errOwnerIDNotNumber = errors.New(`claim "repository_owner_id" must be a number`)
+
 var claimNames = oidc.ClaimNames(Claims{})
 
 // Provider implements oidc.Provider for GitHub Actions.
@@ -54,11 +56,12 @@ func (Provider) ValidateConditions(v *validator.Validate, c oidc.Conditions) err
 		}
 	}
 
-	if _, ok := ParseSubjectOwner(c.Sub); ok {
-		return nil
+	ownerID, hasOwnerID := c.Extra["repository_owner_id"]
+	if hasOwnerID && v.Var(ownerID, "number") != nil {
+		return errOwnerIDNotNumber
 	}
 
-	if id, ok := c.Extra["repository_owner_id"]; ok && v.Var(id, "number") == nil {
+	if _, ok := ParseSubjectOwner(c.Sub); ok || hasOwnerID {
 		return nil
 	}
 
