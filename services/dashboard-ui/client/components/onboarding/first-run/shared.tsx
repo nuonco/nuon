@@ -112,7 +112,50 @@ export const CopyTextButton = ({
   )
 }
 
-export const NuonMark = ({ className }: { className?: string }) => (
+export const CopyBlock = ({
+  text,
+  label,
+  mono = false,
+}: {
+  text: string
+  label: string
+  mono?: boolean
+}) => {
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!copied) return
+    const timer = setTimeout(() => setCopied(false), 2000)
+    return () => clearTimeout(timer)
+  }, [copied])
+
+  return (
+    <div className="relative rounded-md border bg-code py-2.5 pl-3 pr-11">
+      <Text
+        variant="subtext"
+        family={mono ? 'mono' : 'sans'}
+        className={cn('!block !leading-5 [overflow-wrap:anywhere]', mono && 'text-blue-800 dark:text-blue-500')}
+      >
+        {text}
+      </Text>
+      <Button
+        variant="ghost"
+        size="xs"
+        className="absolute right-1.5 top-1.5"
+        aria-label={copied ? 'Copied' : label}
+        tooltipProps={{ tipContent: copied ? 'Copied' : label }}
+        onClick={() => {
+          navigator.clipboard?.writeText(text).catch(() => {})
+          setCopied(true)
+        }}
+      >
+        <Icon variant={copied ? 'CheckIcon' : 'CopyIcon'} size={14} theme={copied ? 'success' : undefined} />
+      </Button>
+    </div>
+  )
+}
+
+export const NuonMark =({ className }: { className?: string }) => (
   <svg viewBox="0 0 23.119 32" fill="none" className={className} role="img" aria-label="Nuon">
     <path
       fill="currentColor"
