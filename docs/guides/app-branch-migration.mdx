@@ -48,7 +48,8 @@ nuon apps sync
 ```
 
 ### Option B: Via TOML Config
-Alternatively, define your app branch in a `branch.toml`.
+1. Add a `branch.toml` to your app template.
+2. Sync it to the Nuon control plane with `nuon branches sync`.
 
 <Note>
   See [examples and layouts](/guides/app-branches#write-a-branch-config).
@@ -56,15 +57,12 @@ Alternatively, define your app branch in a `branch.toml`.
 
 ## Step 2: Verify Your First Run
 
-After creating your app branch, verify that the it can sync and build your application:
-
-1. Trigger a run on your app branch, this will validate your config can load and your components can build successfully.
+Nuon automatically starts the first branch run on sync, which pulls the app template and builds the sandbox and components. Confirm that run succeeds.
 
 ## Step 3: Update Installs to App Branches
 
-1. Add installs to your app branch.
-2. Execute a run to update your installs.
-3. Update your install configs to point at your new app branches.
+1. Add [labels](/guides/install-configs#labeling-installs) to your installs or [install configs](/guides/install-configs#install-configs) so they join an install group on the app branch.
+2. Push to the app branch’s tracked git branch to roll the update out to those installs.
 
 ## Next Steps & Advanced Setup
 
