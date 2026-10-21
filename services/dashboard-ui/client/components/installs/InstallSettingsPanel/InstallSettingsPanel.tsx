@@ -4,6 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Panel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { hasPanelKey, withPanelKey } from '@/providers/surfaces-provider'
 import { InstallSettingsPanelContent } from './InstallSettingsPanelContent'
 
 export const INSTALL_SETTINGS_PANEL_KEY = 'settings'
@@ -11,20 +12,21 @@ export const INSTALL_SETTINGS_PANEL_KEY = 'settings'
 export const useOpenInstallSettings = () => {
   const [, setSearchParams] = useSearchParams()
   return useCallback(() => {
-    const params = new URLSearchParams(window.location.search)
-    params.set('panel', INSTALL_SETTINGS_PANEL_KEY)
-    setSearchParams(params, { replace: true })
+    setSearchParams(
+      (prev) => withPanelKey(new URLSearchParams(prev), INSTALL_SETTINGS_PANEL_KEY),
+      { replace: true }
+    )
   }, [setSearchParams])
 }
 
 export const InstallSettingsPanel = () => {
   const { addPanel } = useSurfaces()
   const [searchParams] = useSearchParams()
-  const panelParam = searchParams.get('panel')
+  const isDeepLinked = hasPanelKey(searchParams, INSTALL_SETTINGS_PANEL_KEY)
   const openIdRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (panelParam !== INSTALL_SETTINGS_PANEL_KEY) {
+    if (!isDeepLinked) {
       openIdRef.current = null
       return
     }
@@ -51,7 +53,7 @@ export const InstallSettingsPanel = () => {
       )
     }, 0)
     return () => clearTimeout(timer)
-  }, [panelParam, addPanel])
+  }, [isDeepLinked, addPanel])
 
   return null
 }

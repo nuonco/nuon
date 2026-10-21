@@ -3,6 +3,8 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -115,6 +117,10 @@ func (ig InputGroup) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ig.Inputs)
 }
 
+func (ig *InputGroup) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, &ig.Inputs)
+}
+
 func (ig *InputGroup) UnmarshalTOML(data []byte) error {
 	// First unmarshal the TOML data into a map
 	var m map[string]string
@@ -138,7 +144,14 @@ func (ig InputGroup) TOMLComment() string {
 type InstallStackOverrides struct {
 	VPCNestedTemplateURL    string              `mapstructure:"vpc_nested_template_url,omitempty" toml:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL string              `mapstructure:"runner_nested_template_url,omitempty" toml:"runner_nested_template_url,omitempty"`
+	UIDefinition            string              `mapstructure:"ui_definition,omitempty" toml:"ui_definition,omitempty" json:"ui_definition,omitempty"`
+	UIDefinitionContents    string              `mapstructure:"-" toml:"-" json:"ui_definition_contents,omitempty" jsonschema:"-" features:"get"`
 	CustomNestedStacks      []CustomNestedStack `mapstructure:"custom_nested_stacks,omitempty" toml:"custom_nested_stacks,omitempty"`
+
+	// RunnerImageAutoUpdate overrides the app's runner.toml image_auto_update for this install.
+	RunnerImageAutoUpdate *bool `mapstructure:"runner_image_auto_update,omitempty" toml:"runner_image_auto_update,omitempty"`
+	// RunnerImageID overrides the app's runner.toml image_id for this install.
+	RunnerImageID string `mapstructure:"runner_image_id,omitempty" toml:"runner_image_id,omitempty"`
 }
 
 func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -149,14 +162,50 @@ func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("runner_nested_template_url").Short("Runner nested template URL override").
 		Long("Per-install override for the runner nested CloudFormation template URL. Overrides the app-level default from stack.toml.").
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml").
+		Field("ui_definition").Short("Azure createUiDefinition override").
+		Long("Per-install override for the Azure createUiDefinition path. Only supported when the app stack type is azure-bicep.").
+		Example("./arm/ui.json").
 		Field("custom_nested_stacks").Short("Custom nested stack overrides").
 		Long("Per-install overrides for custom install stacks. Entries with the same name as app-level stacks replace them; new names are appended. Supports AWS CloudFormation, Azure ARM, and curated GCP modules.").
-		Nullable()
+		Nullable().
+		Field("runner_image_auto_update").Short("Runner image auto-update override").
+		Long("Per-install override for runner.toml image_auto_update. Set true to resolve the latest runner image at every launch for this install only, or false to turn it off when the app turns it on. Only applies to aws runners whose runner template supports it.").
+		Example("true").
+		Field("runner_image_id").Short("Runner image pin override").
+		Long("Per-install override for runner.toml image_id. Pins this install's runner host to a specific image (an AMI ID for aws), overriding auto-update. Only applies to aws runners whose runner template supports it.").
+		Example("ami-0abcdef1234567890")
 }
 
 // HasOverrides returns true when any override field is set.
 func (s *InstallStackOverrides) HasOverrides() bool {
-	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || len(s.CustomNestedStacks) > 0)
+	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || s.UIDefinition != "" || len(s.CustomNestedStacks) > 0 ||
+		s.RunnerImageAutoUpdate != nil || s.RunnerImageID != "")
+}
+
+type CloudFormation struct {
+	Root         CloudFormationStack            `mapstructure:"root" toml:"root" json:"root"`
+	NestedStacks map[string]CloudFormationStack `mapstructure:"nested_stacks" toml:"nested_stacks" json:"nested_stacks,omitzero"`
+}
+
+func (o CloudFormation) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("root").Short("Root CloudFormation stack").
+		Long("Parameters passed on root stack creation and update, not embedded as template defaults. Omit parameters to preserve saved overrides; an empty parameters table clears them.").
+		Field("nested_stacks").Short("Nested CloudFormation parameters").
+		Long("Stack configurations keyed by custom stack name, or VPC / RunnerAutoScalingGroup for built-in stacks. Override individual parameters without repeating template URLs, indices, or other parameters. Values win over app configuration and generated wiring. Omit nested_stacks to preserve saved overrides; an empty table clears them.")
+}
+
+type CloudFormationStack struct {
+	Parameters map[string]string `mapstructure:"parameters" toml:"parameters" json:"parameters,omitzero"`
+}
+
+var cloudFormationParameterName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+
+func (o CloudFormationStack) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("parameters").Short("CloudFormation parameter values").
+		Long("Declared parameter names to literal or templated string values. No Nuon input declaration is needed. Unspecified keys retain the app-configured or generated values.").
+		Example(map[string]string{"InstanceClass": "db.t4g.small"})
 }
 
 // Install is a flattened configuration type that allows us to define installs for an app.
@@ -174,6 +223,7 @@ type Install struct {
 	InputGroups     []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 
 	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
+	CloudFormation *CloudFormation        `mapstructure:"cloudformation,omitempty" toml:"cloudformation,omitempty"`
 
 	// ComponentToggles controls which toggleable components are enabled or disabled
 	// for this install, keyed by component name. true = enabled, false = disabled.
@@ -250,7 +300,9 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Array of input groups with key-value pairs for customer inputs provided during installation").
 		Type("array").
 		Field("stack_overrides").Short("Stack template overrides").
-		Long("Per-install overrides for the app-level stack template configuration. Overrides take precedence over app-level defaults.")
+		Long("Per-install overrides for the app-level stack template configuration. For cloud-connected installs, Git config creation provisions the managed stack; changes reprovision it using the install approval policy.").
+		Field("cloudformation").Short("Per-install CloudFormation configuration").
+		Long("Root and nested stack parameters supported by Git-backed install config sync only, not nuon installs sync. Requires an AWS cloud_connection. Values merge over app configuration and generated parameter wiring; changing the install config queues stack reprovisioning.")
 }
 
 func (i *Install) Parse() error {
@@ -272,6 +324,44 @@ func (i *Install) Validate() error {
 	if i.AppBranchGroup != "" && i.AppBranch == "" {
 		return ErrConfig{
 			Description: fmt.Sprintf("install %q: app_branch_group requires app_branch", i.Name),
+		}
+	}
+
+	if i.CloudFormation != nil {
+		if i.CloudConnection == "" || i.GCPAccount != nil || i.AzureAccount != nil {
+			return ErrConfig{Description: fmt.Sprintf("install %q: cloudformation requires an AWS cloud_connection", i.Name)}
+		}
+		parameterSets := map[string]map[string]string{"root": i.CloudFormation.Root.Parameters}
+		for name, stack := range i.CloudFormation.NestedStacks {
+			if name == "" || strings.Contains(name, "{{") {
+				return ErrConfig{Description: fmt.Sprintf("install %q: nested stack name %q must be a nonempty literal", i.Name, name)}
+			}
+			parameterSets["nested_stacks."+name] = stack.Parameters
+		}
+		for scope, parameters := range parameterSets {
+			for name, value := range parameters {
+				if name == "" || strings.Contains(name, "{{") {
+					return ErrConfig{Description: fmt.Sprintf("install %q: %s parameter name %q must not be templated or empty", i.Name, scope, name)}
+				}
+				if !cloudFormationParameterName.MatchString(name) {
+					return ErrConfig{Description: fmt.Sprintf("install %q: %s parameter name %q must start with a letter and contain only letters and digits", i.Name, scope, name)}
+				}
+				if value == "" {
+					continue
+				}
+				if err := ValidateStackParameterTemplate(value); err != nil {
+					return ErrConfig{
+						Description: fmt.Sprintf("install %q: %s parameter %q %s", i.Name, scope, name, err),
+						Err:         err,
+					}
+				}
+			}
+		}
+	}
+
+	if i.StackOverrides != nil && i.GCPAccount == nil && i.AzureAccount == nil {
+		if err := ValidateAWSImageID("stack_overrides.runner_image_id", i.StackOverrides.RunnerImageID); err != nil {
+			return err
 		}
 	}
 
@@ -419,6 +509,24 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 				diff.WithStringDiff(upstream.RunnerNestedTemplateURL, curr.RunnerNestedTemplateURL),
 			))
 		}
+		if curr.UIDefinition != "" || upstream.UIDefinition != "" {
+			stackDiffs = append(stackDiffs, diff.NewDiff(
+				diff.WithKey("ui_definition"),
+				diff.WithStringDiff(upstream.UIDefinition, curr.UIDefinition),
+			))
+		}
+		if curr.RunnerImageAutoUpdate != nil || upstream.RunnerImageAutoUpdate != nil {
+			stackDiffs = append(stackDiffs, diff.NewDiff(
+				diff.WithKey("runner_image_auto_update"),
+				diff.WithOptionalBoolDiff(upstream.RunnerImageAutoUpdate, curr.RunnerImageAutoUpdate),
+			))
+		}
+		if curr.RunnerImageID != "" || upstream.RunnerImageID != "" {
+			stackDiffs = append(stackDiffs, diff.NewDiff(
+				diff.WithKey("runner_image_id"),
+				diff.WithStringDiff(upstream.RunnerImageID, curr.RunnerImageID),
+			))
+		}
 
 		// Diff custom nested stacks by name.
 		upstreamByName := make(map[string]CustomNestedStack, len(upstream.CustomNestedStacks))
@@ -455,6 +563,30 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 			diffs = append(diffs, diff.NewDiff(
 				diff.WithKey("stack_overrides"),
 				diff.WithChildren(stackDiffs...),
+			))
+		}
+	}
+
+	if curr := i.CloudFormation; curr != nil {
+		upstream := upstreamInstall.CloudFormation
+		if upstream == nil {
+			upstream = &CloudFormation{}
+		}
+		for key, values := range map[string]struct {
+			changed           bool
+			previous, current any
+		}{
+			"root.parameters": {curr.Root.Parameters != nil && !maps.Equal(upstream.Root.Parameters, curr.Root.Parameters), upstream.Root.Parameters, curr.Root.Parameters},
+			"nested_stacks":   {curr.NestedStacks != nil && !maps.EqualFunc(upstream.NestedStacks, curr.NestedStacks, func(a, b CloudFormationStack) bool { return maps.Equal(a.Parameters, b.Parameters) }), upstream.NestedStacks, curr.NestedStacks},
+		} {
+			if !values.changed {
+				continue
+			}
+			previous, _ := json.Marshal(values.previous)
+			current, _ := json.Marshal(values.current)
+			diffs = append(diffs, diff.NewDiff(
+				diff.WithKey("cloudformation."+key),
+				diff.WithStringDiff(string(previous), string(current)),
 			))
 		}
 	}

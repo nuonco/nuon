@@ -38,10 +38,15 @@ type InstallConfig struct {
 	TelemetryEnabled *bool                 `json:"telemetry_enabled" temporaljson:"telemetry_enabled,omitempty" extensions:"x-nullable"`
 
 	// Per-install stack template overrides (nil = use app config default)
-	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty" gorm:"column:vpc_nested_template_url" temporaljson:"vpc_nested_template_url,omitempty"`
-	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty" gorm:"column:runner_nested_template_url" temporaljson:"runner_nested_template_url,omitempty"`
-	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"custom_nested_stacks,omitempty"`
-	ComponentToggles        map[string]bool            `json:"component_toggles,omitempty" gorm:"type:jsonb;serializer:json;default:'{}'" temporaljson:"component_toggles,omitempty"`
+	VPCNestedTemplateURL     *string                               `json:"vpc_nested_template_url,omitempty" gorm:"column:vpc_nested_template_url" temporaljson:"vpc_nested_template_url,omitempty"`
+	RunnerNestedTemplateURL  *string                               `json:"runner_nested_template_url,omitempty" gorm:"column:runner_nested_template_url" temporaljson:"runner_nested_template_url,omitempty"`
+	UIDefinition             *config.UploadedUIDefinition          `json:"ui_definition,omitempty" gorm:"column:uidefinition;type:jsonb;serializer:json" temporaljson:"ui_definition,omitzero,omitempty"`
+	CustomNestedStacks       []config.CustomNestedStack            `json:"custom_nested_stacks,omitempty" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"custom_nested_stacks,omitempty"`
+	AWSStackParameters       map[string]string                     `json:"-" gorm:"type:jsonb;serializer:json" temporaljson:"aws_stack_parameters,omitempty"`
+	AWSNestedStackParameters map[string]config.CloudFormationStack `json:"-" gorm:"type:jsonb;serializer:json" temporaljson:"aws_nested_stack_parameters,omitempty"`
+	ComponentToggles         map[string]bool                       `json:"component_toggles,omitempty" gorm:"type:jsonb;serializer:json;default:'{}'" temporaljson:"component_toggles,omitempty"`
+	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty" gorm:"default null" temporaljson:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
+	RunnerImageID            *string                               `json:"runner_image_id,omitempty" gorm:"default null" temporaljson:"runner_image_id,omitempty"`
 	labels.Labeled
 }
 

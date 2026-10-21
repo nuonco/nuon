@@ -1,13 +1,17 @@
 import { useSearchParams } from 'react-router'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useCallback, useContext, useEffect, useRef, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
-import type { IPanel } from '@/components/surfaces/Panel'
+import { Loading } from '@/components/common/Loading'
+import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { getWorkflowStep } from '@/lib'
+import { InstallAppConfigContext, InstallAppConfigProvider } from '@/providers/install-app-config-provider'
+import { InstallContext, InstallProvider } from '@/providers/install-provider'
+import { hasPanelKey } from '@/providers/surfaces-provider'
 import type { TWorkflowStep } from '@/types'
 import { ActionRunStepDetails } from '../action-run-details/ActionRunStepDetails'
 import { DeployStepDetails } from '../deploy-details/DeployStepDetails'
@@ -17,6 +21,7 @@ import { StackStepDetails } from '../stack-details/StackStepDetails'
 import { RunnerStepDetails } from '../RunnerStepDetails'
 import { VerifyHealthStepDetails } from '../verify-health-details'
 import { SyncSecretsStepDetails } from '../SyncSecretsStepDetails'
+import { StepTitle } from '../StepTitle'
 import { StepDetailPanel } from './StepDetailPanel'
 
 type TPanelSize = IPanel['size']
@@ -58,9 +63,39 @@ export function getStepPanelDetails(step: TWorkflowStep): ReactNode {
   )
 }
 
+// Panels render at the nearest SurfacesProvider, which can sit above the
+// InstallProvider the step was opened under (app branch pages, the install
+// wizard).
+const StepInstallScope = ({
+  installId,
+  loadingElement,
+  children,
+}: {
+  installId?: string
+  loadingElement: ReactNode
+  children: ReactNode
+}) => {
+  const install = useContext(InstallContext)
+  const appConfig = useContext(InstallAppConfigContext)
+  if (!installId) return <>{children}</>
+  if (install?.install?.id === installId) {
+    return appConfig ? (
+      <>{children}</>
+    ) : (
+      <InstallAppConfigProvider>{children}</InstallAppConfigProvider>
+    )
+  }
+  return (
+    <InstallProvider installId={installId} loadingElement={loadingElement}>
+      <InstallAppConfigProvider>{children}</InstallAppConfigProvider>
+    </InstallProvider>
+  )
+}
+
 export interface IStepDetailPanelContainer extends IPanel {
   children: ReactNode
   initStep: TWorkflowStep
+  installId?: string
   planOnly?: boolean
   pollInterval?: number
   shouldPoll?: boolean
@@ -69,6 +104,7 @@ export interface IStepDetailPanelContainer extends IPanel {
 export const StepDetailPanelContainer = ({
   children,
   initStep,
+  installId,
   planOnly = false,
   pollInterval = 10000,
   shouldPoll = false,
@@ -100,19 +136,64 @@ export const StepDetailPanelContainer = ({
   })
 
   return (
-    <StepDetailPanel
-      step={step}
-      planOnly={planOnly}
-      triggerHref={
-        org?.id && step?.links?.event_wait?.trigger_id
-          ? `/${org.id}/settings/triggers/${step.links.event_wait.trigger_id}`
-          : undefined
+    <StepInstallScope
+      installId={installId}
+      loadingElement={
+        <Panel heading={<StepTitle step={step} />} size="half" {...props}>
+          <Loading />
+        </Panel>
       }
-      {...props}
     >
-      {children}
-    </StepDetailPanel>
+      <StepDetailPanel
+        step={step}
+        planOnly={planOnly}
+        triggerHref={
+          org?.id && step?.links?.event_wait?.trigger_id
+            ? `/${org.id}/settings/triggers/${step.links.event_wait.trigger_id}`
+            : undefined
+        }
+        {...props}
+      >
+        {children}
+      </StepDetailPanel>
+    </StepInstallScope>
   )
+}
+
+// A step's workflow is scoped to one install, but this builds panels from
+// anywhere workflow steps are shown (step rows, error banners, a stopped-at
+// link), so every caller needs the same install resolution rather than each
+// reinventing it and drifting out of sync with StepInstallScope.
+export const useStepDetailPanel = () => {
+  const { addPanel } = useSurfaces()
+  const { workflow } = useWorkflow()
+  const install = useContext(InstallContext)?.install
+  const installId =
+    install?.id || workflow?.metadata?.install_id || workflow?.owner_id
+
+  const buildPanel = useCallback(
+    (step: TWorkflowStep, planOnly = false) => (
+      <StepDetailPanelContainer
+        panelKey={step.id}
+        initStep={step}
+        installId={installId}
+        size={getStepPanelSize(step)}
+        shouldPoll
+        planOnly={planOnly}
+      >
+        {getStepPanelDetails(step)}
+      </StepDetailPanelContainer>
+    ),
+    [installId]
+  )
+
+  const openPanel = useCallback(
+    (step: TWorkflowStep, planOnly = false) =>
+      addPanel(buildPanel(step, planOnly), step.id),
+    [addPanel, buildPanel]
+  )
+
+  return { buildPanel, openPanel }
 }
 
 const StepPanelButton = ({
@@ -124,26 +205,15 @@ const StepPanelButton = ({
   step: TWorkflowStep
   planOnly?: boolean
 }) => {
-  const { addPanel, addPanelIfEmpty, removePanel } = useSurfaces()
+  const { addPanelIfEmpty, removePanel, panels } = useSurfaces()
   const { workflow } = useWorkflow()
+  const { buildPanel, openPanel } = useStepDetailPanel()
   const [searchParams] = useSearchParams()
   const autoOpened = useRef(false)
   const autoOpenedPanelIdRef = useRef<string | null>(null)
 
-  const panel = (
-    <StepDetailPanelContainer
-      panelKey={step.id}
-      initStep={step}
-      size={getStepPanelSize(step)}
-      shouldPoll
-      planOnly={planOnly}
-    >
-      {getStepPanelDetails(step)}
-    </StepDetailPanelContainer>
-  )
-
   const handleAddPanel = () => {
-    addPanel(panel, step.id)
+    openPanel(step, planOnly)
   }
 
   const isPendingApproval =
@@ -171,7 +241,8 @@ const StepPanelButton = ({
     if (
       !suppressAutoOpen &&
       step.id &&
-      step.id === searchParams?.get('panel')
+      hasPanelKey(searchParams, step.id) &&
+      !panels.some((p) => p.key === step.id)
     ) {
       handleAddPanel()
     }
@@ -185,7 +256,8 @@ const StepPanelButton = ({
       (isPendingApproval || isPendingAwaitStack)
     ) {
       autoOpened.current = true
-      autoOpenedPanelIdRef.current = addPanelIfEmpty(panel, step.id) ?? null
+      autoOpenedPanelIdRef.current =
+        addPanelIfEmpty(buildPanel(step, planOnly), step.id) ?? null
     }
   }, [
     workflow?.id,
@@ -193,6 +265,10 @@ const StepPanelButton = ({
     suppressAutoOpen,
     isPendingApproval,
     isPendingAwaitStack,
+    buildPanel,
+    step,
+    planOnly,
+    addPanelIfEmpty,
   ])
 
   useEffect(() => {

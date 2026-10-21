@@ -27,11 +27,11 @@ Actions can be used for:
 
 ## How do you configure an Action?
 
-Create an `actions` directory at the root of the app, and create a TOML file for
+Create an `actions` directory at the root of your app config directory, and create a TOML file for
 each action. e.g., `alb_healthcheck.toml` `deployment_restart.toml`
 `kubectl_logs.toml`.
 
-Actions along with components, the sandbox and app metadata are sent to the Nuon control plane with the CLI command `nuon apps sync`. If you change and add additional actions, you need to run `nuon apps sync` again to upload the changes. But unlike components, actions do not need to be built.
+Actions along with components, the sandbox and app metadata are sent to the Nuon control plane by your [app branch](/concepts/app-branches): each push to the tracked git branch starts a run that uploads them. If you change or add actions, commit and push again to upload the changes. But unlike components, actions do not need to be built.
 
 ![Actions list](../images/concepts/actions/actions-list.png)
 
@@ -124,8 +124,17 @@ Actions can be triggered in several ways:
 To run an action manually with the CLI:
 
 ```sh
-nuon actions create-run -w <action-workflow-id> -i <install-id>
+nuon actions create-run -i <install-id-or-name> -w <action-id-or-name>
 ```
+
+Pass `--env KEY=VALUE` (repeatable) or `--env-file <path>` to set environment variables for the run, and `--wait` to
+wait for completion and print the action's logs:
+
+```sh
+nuon actions create-run -i customer1 -w pg_status --env DEBUG=true --wait
+```
+
+With `--wait`, the command exits non-zero if the run does not finish successfully, including when it times out.
 
 ## Action Triggers
 
@@ -210,13 +219,13 @@ You can view the history of action runs using the dashboard:
 You can view the history of action runs using the CLI:
 
 ```sh
-nuon actions list-runs -w <action-workflow-id> -i <install-id>
+nuon actions recent-runs -i <install-id-or-name> -w <action-id-or-name>
 ```
 
 Or get details about a specific run:
 
 ```sh
-nuon actions get-run -r <run-id> -i <install-id>
+nuon actions get-run -i <install-id-or-name> -r <run-id>
 ```
 
 ## Action Permissions

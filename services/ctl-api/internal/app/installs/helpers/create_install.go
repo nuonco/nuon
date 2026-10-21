@@ -81,8 +81,9 @@ type CreateInstallParams struct {
 	// the install starts on that branch's active app config and stays on the
 	// branch until explicitly moved. When empty, the install uses the latest
 	// unbranched config from apps sync.
-	AppBranchID    string `json:"app_branch_id,omitempty"`
-	AppBranchGroup string `json:"app_branch_group,omitempty"`
+	AppBranchID    string                             `json:"app_branch_id,omitempty"`
+	AppBranchGroup string                             `json:"app_branch_group,omitempty"`
+	AfterCreate    func(*gorm.DB, *app.Install) error `json:"-"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
@@ -409,6 +410,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				return fmt.Errorf("unable to add install to app branch: %w", err)
 			}
 		}
+		if req.AfterCreate != nil {
+			return req.AfterCreate(tx, &install)
+		}
 		return nil
 	}); err != nil {
 		return nil, err
@@ -435,14 +439,22 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	// Install components, actions, and runbooks are created asynchronously
 	// by the install-created signal's reconcile activities.
 
-	loadedInstall, err := s.getInstall(ctx, install.ID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load all install resources: %w", err)
-	}
-
-	if _, err := s.runnersHelpers.CreateInstallRunnerGroup(ctx, loadedInstall); err != nil {
-		return nil, fmt.Errorf("unable to create install runner: %w", err)
+	if err := s.EnsureInstallRunner(ctx, install.ID); err != nil {
+		return nil, err
 	}
 
 	return &install, nil
+}
+
+func (s *Helpers) EnsureInstallRunner(ctx context.Context, installID string) error {
+	loadedInstall, err := s.getInstall(ctx, installID)
+	if err != nil {
+		return fmt.Errorf("unable to load all install resources: %w", err)
+	}
+
+	if _, err := s.runnersHelpers.CreateInstallRunnerGroup(ctx, loadedInstall); err != nil {
+		return fmt.Errorf("unable to create install runner: %w", err)
+	}
+
+	return nil
 }

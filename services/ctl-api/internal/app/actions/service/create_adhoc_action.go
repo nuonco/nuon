@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -105,10 +106,14 @@ func (s *service) CreateAdHocAction(ctx *gin.Context) {
 
 	install, err := s.getInstall(ctx, installID)
 	if err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         err,
-			Description: "install not found",
-		})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.Error(stderr.ErrNotFound{
+				Err:         err,
+				Description: "install not found",
+			})
+			return
+		}
+		ctx.Error(err)
 		return
 	}
 

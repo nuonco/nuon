@@ -86,7 +86,8 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 		},
 	}
 
-	res, err := copyWithReferrers(ctx, srcRepo, srcTag, dstRepo, dstTag, cpo)
+	tagChildren := c.cfg != nil && c.cfg.TagOCIIndexChildren
+	res, err := copyWithReferrers(ctx, srcRepo, srcTag, dstRepo, dstTag, cpo, tagChildren)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 	return &res, nil
 }
 
-func copyWithReferrers(ctx context.Context, src oras.ReadOnlyGraphTarget, srcRef string, dst oras.Target, dstRef string, opts oras.CopyGraphOptions) (ocispec.Descriptor, error) {
+func copyWithReferrers(ctx context.Context, src oras.ReadOnlyGraphTarget, srcRef string, dst oras.Target, dstRef string, opts oras.CopyGraphOptions, tagChildren bool) (ocispec.Descriptor, error) {
 	root, err := oras.ExtendedCopy(ctx, src, srcRef, dst, dstRef, oras.ExtendedCopyOptions{
 		ExtendedCopyGraphOptions: oras.ExtendedCopyGraphOptions{
 			CopyGraphOptions: opts,
@@ -110,6 +111,11 @@ func copyWithReferrers(ctx context.Context, src oras.ReadOnlyGraphTarget, srcRef
 
 	if err := copyLegacyCosignArtifacts(ctx, src, dst, root, opts); err != nil {
 		return ocispec.Descriptor{}, err
+	}
+	if tagChildren {
+		if err := tagIndexChildren(ctx, dst, root, dstRef); err != nil {
+			return ocispec.Descriptor{}, err
+		}
 	}
 
 	return root, nil

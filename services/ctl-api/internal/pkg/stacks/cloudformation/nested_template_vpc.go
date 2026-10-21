@@ -64,6 +64,10 @@ func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder)
 	// merge specific params into common params
 	maps.Copy(parameters, commonParams)
 
+	if err := tpl.applyNestedStackParameters(inp, "VPC", inp.AppCfg.StackConfig.VPCNestedTemplateURL, parameters, defaultParameters); err != nil {
+		return nil, nil, nil, err
+	}
+
 	stack := &nestedcloudformation.Stack{
 		Parameters: parameters,
 		TemplateURL: cloudformation.Join("", []any{

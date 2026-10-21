@@ -1,3 +1,4 @@
+import { useLocation, useParams } from 'react-router'
 import { useMemo } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
@@ -10,20 +11,25 @@ import {
 } from '@/components/branches/ConfigChanges'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Link } from '@/components/common/Link'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Text } from '@/components/common/Text'
 import { WorkflowChangesSummaryContainer } from '@/components/workflows/WorkflowChangesSummary'
 import { WorkflowAlertBanners } from '@/components/workflows/WorkflowDetails'
+import { WorkflowInputChanges } from '@/components/workflows/WorkflowInputChanges'
 import { WorkflowSteps } from '@/components/workflows/WorkflowSteps'
 import { PolicyViolations } from '@/components/workflows/step-details/PolicyViolations'
 import { WorkflowActionButtons } from '@/components/workflows/workflow-details/WorkflowActionButtons'
+import { useInstallLink, useInstallNested } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { getBranchWorkflowRun } from '@/lib'
+import { isWorkflowPath, workflowPageSuffix } from '@/lib/workflow-href'
 import { AppProvider } from '@/providers/app-provider'
 import type { TInstallDeploymentRecord, TWorkflow } from '@/types'
 import { getPolicyViolationCounts } from '@/utils/workflow-utils'
+import { humanize } from '@/utils/string-utils'
 import { DeploymentConfigChanges } from './DeploymentConfigChanges'
 import {
   deploymentChangeDescription,
@@ -207,10 +213,51 @@ export const DeploymentAlerts = () => {
   )
 }
 
-export const DeploymentWorkflowContent = () => {
+export const DeploymentWorkflowContent = ({
+  installId: installIdProp,
+}: {
+  installId?: string
+} = {}) => {
   const { workflow } = useWorkflow()
+  const { org } = useOrg()
+  const params = useParams()
+  const { pathname } = useLocation()
+  const nested = useInstallNested()
+  const installLink = useInstallLink()
+  const installId =
+    installIdProp ||
+    params.installId ||
+    workflow.metadata?.install_id ||
+    workflow.owner_id
+  const name = workflow.name || humanize(workflow.type) || 'Workflow'
+  const href =
+    org?.id && installId && workflow.id
+      ? installLink({
+          orgId: org.id,
+          appId: params.appId,
+          installId,
+          suffix: workflowPageSuffix(workflow.id, nested),
+        })
+      : ''
+  const onWorkflowPage = isWorkflowPath(pathname, workflow.id)
+  const hasInputChanges = !!workflow.metadata?.changed_input_values
+
   return (
     <div className="flex flex-col gap-4">
+      {!onWorkflowPage && href ? (
+        <Link href={href} textVariant="base">
+          {name}
+        </Link>
+      ) : null}
+      {hasInputChanges ? (
+        <>
+          <SectionHeader
+            title="Input changes"
+            description="Values changed by this update."
+          />
+          <WorkflowInputChanges workflow={workflow} empty />
+        </>
+      ) : null}
       <SectionHeader
         title="Workflow steps"
         description={

@@ -94,7 +94,14 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		deploymentParams["enableTelemetryIngress"] = map[string]any{"value": "[parameters('enableTelemetryIngress')]"}
 	}
 	if scope.subscription {
+		uiNames, err := t.vendorUINames(inp)
+		if err != nil {
+			return nil, nil, err
+		}
 		for name, param := range runnerHoistedParameters(armTmpl) {
+			if uiNames.hidden[name] {
+				continue
+			}
 			customerParams[name] = param
 			deploymentParams[name] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", name)}
 		}

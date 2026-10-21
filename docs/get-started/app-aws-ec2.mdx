@@ -1,10 +1,10 @@
 ---
-title: "Create An AWS EC2 App"
+title: "Create An AWS EC2 App Template"
 description: "Learn how to package and install a Cloud Development Environment (CDE) on AWS EC2."
 ---
 
 <Note>
-	This [app](/concepts/apps) can be found in the [cde directory](https://github.com/nuonco/example-app-configs/tree/main/cde) of the example-app-configs repository.
+	This [app template](/concepts/apps) can be found in the [cde directory](https://github.com/nuonco/example-app-configs/tree/main/cde) of the example-app-configs repository.
 </Note>
 
 The CDE app is a straightforward EC2 VM, but it is a good example of how much Nuon can do beyond
@@ -35,7 +35,7 @@ their cloud. It also demonstrates several platform features working together:
 
 This tutorial will walk you through creating the following:
 
-- An [app](/concepts/apps)
+- An [app template](/concepts/apps)
 - A Terraform [component](/concepts/components) to provision the EC2 instance, Elastic IP, DNS record, and security group
 - [Actions](/concepts/actions) for post-provision setup and day-2 operations (start/stop VM, healthchecks)
 - An [install](/concepts/installs), using our
@@ -46,7 +46,7 @@ This tutorial will walk you through creating the following:
 	repository](https://github.com/nuonco/example-app-configs) which includes the
 	`cde` app versus creating each config file manually. This guide is
 	meant to explain the concepts behind the config files, so you can
-	create your own apps in the future.
+	create your own app templates in the future.
 </Note>
 
 ## Configure App
@@ -331,19 +331,34 @@ vendor has no network access to the instance. A few specifics worth understandin
   only the AWS services this app requires: `ec2`, `iam`, `ssm`, `elasticloadbalancing`, `acm`,
   and `route53`. It cannot access other resources in the customer's account.
 
-### Sync App to Nuon
+### Sync the App Branch
 
-You now have a complete Nuon app.
+You now have a complete Nuon app template.
 
-This is a good place to stop and sync it to Nuon.
+Its config ships through an [app branch](/concepts/app-branches): a branch file that tells Nuon which repository,
+directory, and git branch hold the app config. The `cde` directory already includes one at `branches/main.toml`. It points at the example repo:
 
-Make sure you are in the root directory of your app, then run:
+```toml branches/main.toml (excerpt)
+name = "main"
 
-```sh
-nuon apps sync
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "cde"
+branch    = "main"
 ```
 
-Select the app in the dashboard, and you should now see the updated inputs,
+From the `cde` directory, sync the branch file:
+
+```sh
+nuon branches sync --file branches/main.toml
+```
+
+The sync creates the branch and starts its first run. The run fetches the app config from the example repo at the latest commit on `main` and
+builds its components. Because the branch tracks the example repo, local edits to your clone do not ship. To ship your
+own changes, push the config to a repository you control and point the branch file at it, as described in
+[Configure app branches](/guides/app-branches).
+
+Once the run finishes building, select the app in the dashboard, and you should now see the inputs,
 sandbox, components, and actions.
 
 ![App](/images/get-started/cde/app.png)
@@ -500,5 +515,5 @@ A few suggestions for where to go next:
   [example-app-configs repository](https://github.com/nuonco/example-app-configs)
   to see how to deploy a more complex app.
 
-- Dig into our [app](/concepts/apps) guide to learn how to configure more
+- Dig into our [app template](/concepts/apps) guide to learn how to configure more
   complex apps.

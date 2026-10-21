@@ -199,16 +199,18 @@ Common template variables:
 The rendered role name must match a role defined in `permissions.toml` (either a standard role or a `custom_roles`
 entry).
 
-## Syncing with the CLI
+## Shipping the config
 
-After adding or changing operation role config, sync your app to push the updated config to Nuon:
+After adding or changing operation role config, commit it and push to the git branch your
+[app branch](/guides/app-branches) tracks:
 
 ```sh
-nuon apps sync
+git commit -am "update operation roles"
+git push origin main
 ```
 
-This syncs all the configs with the control plane, including `operation_roles.toml` and any inline `operation_roles`
-blocks.
+The push starts a branch run, which uploads all of your app config to the control plane, including
+`operation_roles.toml` and any inline `operation_roles` blocks.
 
 ## Runtime Role Override
 
@@ -220,7 +222,7 @@ Pass `--role <role-name>` when triggering a sandbox or component operation:
 
 ```sh
 # Override role for a manual action run
-nuon actions create-run -w <action-workflow-id> -i <install-id> --role my-custom-role
+nuon actions create-run -i <install-id-or-name> -w <action-id-or-name> --role-name my-custom-role
 ```
 
 ### Dashboard

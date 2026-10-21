@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ChartDependency chart dependency
+// HelmShHelmV3PkgChartDependency helm sh helm v3 pkg chart dependency
 //
-// swagger:model chart.Dependency
-type ChartDependency struct {
+// swagger:model helm_sh_helm_v3_pkg_chart.Dependency
+type HelmShHelmV3PkgChartDependency struct {
 
 	// Alias usable alias to be used for the chart
 	Alias string `json:"alias,omitempty"`
@@ -51,18 +51,18 @@ type ChartDependency struct {
 	Version string `json:"version,omitempty"`
 }
 
-// Validate validates this chart dependency
-func (m *ChartDependency) Validate(formats strfmt.Registry) error {
+// Validate validates this helm sh helm v3 pkg chart dependency
+func (m *HelmShHelmV3PkgChartDependency) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this chart dependency based on context it is used
-func (m *ChartDependency) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this helm sh helm v3 pkg chart dependency based on context it is used
+func (m *HelmShHelmV3PkgChartDependency) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *ChartDependency) MarshalBinary() ([]byte, error) {
+func (m *HelmShHelmV3PkgChartDependency) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -70,8 +70,8 @@ func (m *ChartDependency) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ChartDependency) UnmarshalBinary(b []byte) error {
-	var res ChartDependency
+func (m *HelmShHelmV3PkgChartDependency) UnmarshalBinary(b []byte) error {
+	var res HelmShHelmV3PkgChartDependency
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -124,11 +124,8 @@ spec:
 
 ## How do you configure Policies?
 
-Policies are part of your app configuration. To create or update policies, add them to your app config and sync:
-
-```sh
-nuon apps sync
-```
+Policies are part of your app configuration. To create or update policies, add them to your app config, then commit
+and push to the git branch your [app branch](/guides/app-branches) tracks. The push starts a run that uploads them.
 
 ![Policies list](../images/concepts/policies/policies-list.png)
 
@@ -168,7 +165,8 @@ This policy still denies a deploy that would delete or replace a stateful resour
 `apply_on_teardown` is supported for `terraform_module`, `helm_chart`, `kubernetes_manifest`, `pulumi` and `sandbox` policies, which are the types evaluated against teardown plans.
 
 <Note>
-`apply_on_teardown` requires a CLI version that supports it, because `nuon apps sync` validates your config before uploading it.
+Branch runs parse your config in the control plane, so `apply_on_teardown` does not depend on your CLI version. To
+check it locally with `nuon apps validate`, use a CLI version that supports it.
 </Note>
 
 ## Policy Reports

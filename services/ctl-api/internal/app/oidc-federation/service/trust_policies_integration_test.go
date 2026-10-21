@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -253,4 +254,72 @@ func (s *OIDCFederationTestSuite) TestExchangeRejections() {
 		rr = s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
 		require.Equal(s.T(), http.StatusUnauthorized, rr.Code, rr.Body.String())
 	})
+}
+
+func (s *OIDCFederationTestSuite) federatedTokenCount() int64 {
+	var count int64
+	require.NoError(s.T(), s.deps.DB.Model(&app.Token{}).
+		Where(app.Token{OrgID: s.testOrg.ID, TokenType: app.TokenTypeFederated}).
+		Count(&count).Error)
+	return count
+}
+
+func (s *OIDCFederationTestSuite) TestExchangeRejectsNonCompactTokens() {
+	idp := newFakeIDP(s.T())
+	s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+
+	signed := idp.signToken(s.T(), jwt.MapClaims{"sub": "repo:attacker/app:ref:refs/heads/main"})
+
+	unsigned, err := json.Marshal(map[string]any{
+		"iss": idp.issuer(),
+		"aud": "nuon-test",
+		"sub": "repo:acme/app:ref:refs/heads/main",
+		"exp": time.Now().Add(5 * time.Minute).Unix(),
+	})
+	require.NoError(s.T(), err)
+	dotted := "." + base64.RawURLEncoding.EncodeToString(unsigned) + "."
+
+	tokens := map[string]string{
+		"flattened JSON serialization":                toJSONSerialization(s.T(), signed, nil),
+		"flattened JSON with dotted unknown property": toJSONSerialization(s.T(), signed, map[string]string{"extra": dotted}),
+	}
+
+	for name, token := range tokens {
+		s.Run(name, func() {
+			rr := s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+			require.Equal(s.T(), http.StatusUnauthorized, rr.Code, rr.Body.String())
+			require.Zero(s.T(), s.federatedTokenCount())
+		})
+	}
+}
+
+func (s *OIDCFederationTestSuite) TestExchangeMatchesVerifiedClaims() {
+	idp := newFakeIDP(s.T())
+	s.createPolicy(idp, map[string]string{
+		"sub":        "repo:acme/*:ref:refs/heads/main",
+		"repository": "acme/other",
+	})
+
+	token := idp.signToken(s.T(), jwt.MapClaims{
+		"sub":        "repo:acme/app:ref:refs/heads/main",
+		"repository": "acme/app",
+	})
+
+	rr := s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusUnauthorized, rr.Code, rr.Body.String())
+	require.Zero(s.T(), s.federatedTokenCount())
+}
+
+func (s *OIDCFederationTestSuite) TestExchangeTrimsSurroundingWhitespace() {
+	idp := newFakeIDP(s.T())
+	policy := s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+
+	token := idp.signToken(s.T(), jwt.MapClaims{"sub": "repo:acme/app:ref:refs/heads/main"})
+
+	rr := s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token + "\n"})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var resp ExchangeOIDCTokenResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.Equal(s.T(), policy.ID, resp.TrustPolicyID)
 }

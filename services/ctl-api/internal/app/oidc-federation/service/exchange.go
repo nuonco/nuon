@@ -45,13 +45,32 @@ func genericExchangeError() stderr.ErrAuthentication {
 	}
 }
 
+var errInvalidJWTFormat = errors.New("invalid JWT format")
+
+func compactJWSParts(tokenStr string) ([]string, error) {
+	parts := strings.Split(tokenStr, ".")
+	if len(parts) != 3 {
+		return nil, errInvalidJWTFormat
+	}
+	for _, part := range parts {
+		if part == "" || strings.IndexFunc(part, isNotBase64URL) >= 0 {
+			return nil, errInvalidJWTFormat
+		}
+	}
+	return parts, nil
+}
+
+func isNotBase64URL(r rune) bool {
+	return !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_')
+}
+
 // parseUnverifiedIssuer extracts the iss claim from a JWT without signature
 // verification. It is only used to select among stored trust policies; the
 // issuer used for verification and JWKS fetching always comes from the policy.
 func parseUnverifiedIssuer(tokenStr string) (string, error) {
-	parts := strings.Split(tokenStr, ".")
-	if len(parts) != 3 {
-		return "", errors.New("invalid JWT format")
+	parts, err := compactJWSParts(tokenStr)
+	if err != nil {
+		return "", err
 	}
 
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
@@ -72,33 +91,21 @@ func parseUnverifiedIssuer(tokenStr string) (string, error) {
 	return claims.Issuer, nil
 }
 
-// parseTokenClaims decodes the payload of an already-verified JWT into a
-// generic claim map for condition matching.
-func parseTokenClaims(tokenStr string) (map[string]any, error) {
-	parts := strings.Split(tokenStr, ".")
-	if len(parts) != 3 {
-		return nil, errors.New("invalid JWT format")
-	}
+type verifiedClaims map[string]any
 
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode JWT payload: %w", err)
-	}
-
-	claims := map[string]any{}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return nil, fmt.Errorf("failed to parse JWT claims: %w", err)
-	}
-
-	return claims, nil
-}
+func (verifiedClaims) Validate(context.Context) error { return nil }
 
 // verifyOIDCToken verifies the token's signature, issuer, audience, and time
-// claims against a policy's stored configuration.
-func (s *service) verifyOIDCToken(ctx context.Context, tokenStr, issuer, audience string) error {
+// claims against a policy's stored configuration and returns the verified
+// claims.
+func (s *service) verifyOIDCToken(ctx context.Context, tokenStr, issuer, audience string) (map[string]any, error) {
+	if _, err := compactJWSParts(tokenStr); err != nil {
+		return nil, err
+	}
+
 	provider, err := s.jwks.getProvider(issuer)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tokenValidator, err := validator.New(
@@ -107,16 +114,27 @@ func (s *service) verifyOIDCToken(ctx context.Context, tokenStr, issuer, audienc
 		issuer,
 		[]string{audience},
 		validator.WithAllowedClockSkew(time.Minute),
+		validator.WithCustomClaims(func() validator.CustomClaims { return &verifiedClaims{} }),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create JWT validator: %w", err)
+		return nil, fmt.Errorf("failed to create JWT validator: %w", err)
 	}
 
-	if _, err := tokenValidator.ValidateToken(ctx, tokenStr); err != nil {
-		return fmt.Errorf("JWT validation failed: %w", err)
+	res, err := tokenValidator.ValidateToken(ctx, tokenStr)
+	if err != nil {
+		return nil, fmt.Errorf("JWT validation failed: %w", err)
 	}
 
-	return nil
+	validated, ok := res.(*validator.ValidatedClaims)
+	if !ok {
+		return nil, errors.New("unexpected JWT validation result")
+	}
+	claims, ok := validated.CustomClaims.(*verifiedClaims)
+	if !ok || claims == nil {
+		return nil, errors.New("unexpected JWT claims type")
+	}
+
+	return *claims, nil
 }
 
 // @ID						ExchangeOIDCToken
@@ -159,7 +177,8 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 	}
 	metricTags["org_id"] = req.OrgID
 
-	issuer, err := parseUnverifiedIssuer(req.Token)
+	tokenStr := strings.TrimSpace(req.Token)
+	issuer, err := parseUnverifiedIssuer(tokenStr)
 	if err != nil {
 		s.l.Warn("oidc exchange: failed to parse token issuer", zap.String("org_id", req.OrgID), zap.Error(err))
 		ctx.Error(genericExchangeError())
@@ -202,7 +221,7 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 
 		verified, seen := verifiedAudiences[policy.Audience]
 		if !seen {
-			err := s.verifyOIDCToken(reqCtx, req.Token, policy.IssuerURL, policy.Audience)
+			tokenClaims, err := s.verifyOIDCToken(reqCtx, tokenStr, policy.IssuerURL, policy.Audience)
 			verified = err == nil
 			verifiedAudiences[policy.Audience] = verified
 			if err != nil {
@@ -211,19 +230,12 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 					zap.String("issuer", issuer),
 					zap.String("policy_id", policy.ID),
 					zap.Error(err))
+			} else if claims == nil {
+				claims = tokenClaims
 			}
 		}
 		if !verified {
 			continue
-		}
-
-		if claims == nil {
-			claims, err = parseTokenClaims(req.Token)
-			if err != nil {
-				s.l.Warn("oidc exchange: failed to parse verified token claims", zap.Error(err))
-				ctx.Error(genericExchangeError())
-				return
-			}
 		}
 
 		if matchClaims(policy.ClaimConditions, claims) {

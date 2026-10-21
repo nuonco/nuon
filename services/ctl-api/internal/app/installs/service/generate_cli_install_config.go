@@ -160,8 +160,21 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		if len(installConfig.CustomNestedStacks) > 0 {
 			so.CustomNestedStacks = installConfig.CustomNestedStacks
 		}
+		if installConfig.UIDefinition != nil {
+			so.UIDefinition = installConfig.UIDefinition.Path
+		}
+		so.RunnerImageAutoUpdate = installConfig.RunnerImageAutoUpdate
+		if installConfig.RunnerImageID != nil {
+			so.RunnerImageID = *installConfig.RunnerImageID
+		}
 		if so.HasOverrides() {
 			installCfg.StackOverrides = so
+		}
+		if len(installConfig.AWSStackParameters) > 0 || len(installConfig.AWSNestedStackParameters) > 0 {
+			installCfg.CloudFormation = &config.CloudFormation{
+				Root:         config.CloudFormationStack{Parameters: installConfig.AWSStackParameters},
+				NestedStacks: installConfig.AWSNestedStackParameters,
+			}
 		}
 	}
 

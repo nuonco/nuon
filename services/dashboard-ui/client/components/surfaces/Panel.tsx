@@ -8,6 +8,7 @@ import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { useAutoFocusOnVisible } from '@/hooks/use-auto-focus-on-visible'
 import { useEscapeKey } from '@/hooks/use-escape-key'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { hasPanelKey } from '@/providers/surfaces-provider'
 import { Tooltip } from '@/components/common/Tooltip'
 import { cn } from '@/utils/classnames'
 import './Panel.css'
@@ -182,22 +183,18 @@ export const Panel = ({ triggerButton, ...props }: IPanel) => {
     addPanel(panel, props.panelKey)
   }
 
-  const panelParam = searchParams?.get('panel')
+  const panelDeepLinked = !!props.panelKey && hasPanelKey(searchParams, props.panelKey)
   useEffect(() => {
     if (openedByTrigger.current) {
       openedByTrigger.current = false
       return
     }
-    if (
-      props.panelKey &&
-      props.panelKey === panelParam &&
-      !props.isVisible
-    ) {
+    if (panelDeepLinked && !props.isVisible) {
       // Defer so this runs after the pathname-change panel clear in SurfacesProvider
       const timer = setTimeout(() => handleAddPanel(), 0)
       return () => clearTimeout(timer)
     }
-  }, [panelParam])
+  }, [panelDeepLinked])
 
   const handleTriggerClick = () => {
     openedByTrigger.current = true

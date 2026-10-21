@@ -10,6 +10,91 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestInstallValidate_CloudFormation(t *testing.T) {
+	tests := map[string]struct {
+		config  string
+		wantErr string
+	}{
+		"no overrides preserves legacy installs": {},
+		"legacy stack overrides do not require a cloud connection": {
+			config: "[stack_overrides]\nvpc_nested_template_url = 'https://example.com/vpc.yaml'",
+		},
+		"overrides require a cloud connection": {
+			config:  "[cloudformation.root.parameters]\nRunnerInstanceType = 't3.small'",
+			wantErr: "cloudformation requires an AWS cloud_connection",
+		},
+		"empty overrides still require a connection": {
+			config:  "[cloudformation]",
+			wantErr: "cloudformation requires an AWS cloud_connection",
+		},
+		"literal templated and empty values are accepted": {
+			config: `cloud_connection = "acme-aws"
+[cloudformation.root.parameters]
+RunnerInstanceType = "t3.small"
+InstallDomain = "{{ .nuon.inputs.inputs.domain }}"
+OptionalValue = ""
+[cloudformation.nested_stacks.database.parameters]
+InstanceClass = "db.r7g.large"
+BackupRetentionDays = "{{ .nuon.inputs.inputs.retention }}"
+OptionalValue = ""`,
+		},
+		"explicit clear is accepted": {
+			config: "cloud_connection = 'acme-aws'\n[cloudformation.root.parameters]\n[cloudformation.nested_stacks]",
+		},
+		"parameter names cannot be templated": {
+			config:  "cloud_connection = 'acme-aws'\n[cloudformation.root.parameters]\n'{{ .nuon.id }}' = 'value'",
+			wantErr: "must not be templated",
+		},
+		"invalid CloudFormation parameter names are rejected": {
+			config:  "cloud_connection = 'acme-aws'\n[cloudformation.nested_stacks.database.parameters]\n'Instance-Class' = 'value'",
+			wantErr: "contain only letters and digits",
+		},
+		"unavailable state is rejected at validation": {
+			config:  "cloud_connection = 'acme-aws'\n[cloudformation.root.parameters]\nDomain = '{{ .nuon.components.api.outputs.domain }}'",
+			wantErr: "not populated when the install stack is generated",
+		},
+		"malformed value templates are rejected": {
+			config:  "cloud_connection = 'acme-aws'\n[cloudformation.root.parameters]\nInstallDomain = '{{ .nuon.inputs.inputs.domain'",
+			wantErr: "not a valid template",
+		},
+		"nested parameter templates are validated": {
+			config:  "cloud_connection = 'acme-aws'\n[cloudformation.nested_stacks.database.parameters]\nInstanceClass = '{{ .nuon.inputs.inputs.instance_class'",
+			wantErr: "not a valid template",
+		},
+		"nested stack names cannot be templated": {
+			config:  "cloud_connection = 'acme-aws'\n[cloudformation.nested_stacks.'{{ .nuon.id }}'.parameters]\nInstanceClass = 'db.r7g.large'",
+			wantErr: "must be a nonempty literal",
+		},
+		"GCP cannot use AWS parameters": {
+			config:  "cloud_connection = 'acme-gcp'\n[gcp_account]\n[cloudformation.root.parameters]\nRunnerInstanceType = 't3.small'",
+			wantErr: "requires an AWS cloud_connection",
+		},
+		"Azure cannot use AWS parameters": {
+			config:  "cloud_connection = 'acme-azure'\n[azure_account]\n[cloudformation.root.parameters]\nRunnerInstanceType = 't3.small'",
+			wantErr: "requires an AWS cloud_connection",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			var install Install
+			require.NoError(t, toml.Unmarshal([]byte(tt.config), &install))
+			err := install.Validate()
+			if tt.wantErr != "" {
+				var configErr ErrConfig
+				require.ErrorAs(t, err, &configErr)
+				assert.Contains(t, configErr.Description, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			encoded, err := toml.Marshal(install)
+			require.NoError(t, err)
+			var roundtrip Install
+			require.NoError(t, toml.Unmarshal(encoded, &roundtrip))
+			assert.Equal(t, install.CloudFormation, roundtrip.CloudFormation)
+		})
+	}
+}
+
 func TestInstallMarshal(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -855,4 +940,63 @@ func TestInstallValidate_Labels(t *testing.T) {
 		}
 		require.NoError(t, install.Validate())
 	})
+}
+
+func TestInstallValidate_RunnerImageOverrides(t *testing.T) {
+	enabled := true
+
+	tests := map[string]struct {
+		install Install
+		wantErr bool
+	}{
+		"auto-update only": {
+			install: Install{Name: "prod", StackOverrides: &InstallStackOverrides{RunnerImageAutoUpdate: &enabled}},
+		},
+		"valid ami pin": {
+			install: Install{Name: "prod", StackOverrides: &InstallStackOverrides{RunnerImageID: "ami-0abc123"}},
+		},
+		"malformed ami pin": {
+			install: Install{Name: "prod", StackOverrides: &InstallStackOverrides{RunnerImageID: "ami-bogus!"}},
+			wantErr: true,
+		},
+		"non-ami pin on a gcp install": {
+			install: Install{
+				Name:           "prod",
+				GCPAccount:     &GCPAccount{ProjectID: "acme", Region: "us-central1"},
+				StackOverrides: &InstallStackOverrides{RunnerImageID: "projects/acme/global/images/runner"},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := tc.install.Validate()
+
+			if tc.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestInstallStackOverrides_HasOverrides_RunnerImage(t *testing.T) {
+	disabled := false
+
+	tests := map[string]struct {
+		overrides *InstallStackOverrides
+		want      bool
+	}{
+		"nil":                  {overrides: nil, want: false},
+		"empty":                {overrides: &InstallStackOverrides{}, want: false},
+		"auto-update disabled": {overrides: &InstallStackOverrides{RunnerImageAutoUpdate: &disabled}, want: true},
+		"image pin":            {overrides: &InstallStackOverrides{RunnerImageID: "ami-0abc123"}, want: true},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, tc.overrides.HasOverrides())
+		})
+	}
 }

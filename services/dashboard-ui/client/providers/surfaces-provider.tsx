@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router'
+import { useLocation, useSearchParams } from 'react-router'
 import React, {
   createContext,
   useState,
@@ -51,11 +51,36 @@ export const SurfacesContext = createContext<TSurfacesContext | undefined>(
   undefined
 )
 
+const PANEL_PARAM = 'panel'
+
+// Repeated params rather than one, since panels stack and a deep link needs
+// to reconstruct the whole chain, not just the topmost panel.
+export const panelKeyStack = (search: URLSearchParams | string) =>
+  (typeof search === 'string'
+    ? new URLSearchParams(search)
+    : search
+  ).getAll(PANEL_PARAM)
+
+export const hasPanelKey = (search: URLSearchParams | string, key: string) =>
+  panelKeyStack(search).includes(key)
+
+export const withPanelKey = (params: URLSearchParams, key: string) => {
+  if (!params.getAll(PANEL_PARAM).includes(key)) params.append(PANEL_PARAM, key)
+  return params
+}
+
+export const withoutPanelKey = (params: URLSearchParams, key: string) => {
+  const remaining = params.getAll(PANEL_PARAM).filter((k) => k !== key)
+  params.delete(PANEL_PARAM)
+  remaining.forEach((k) => params.append(PANEL_PARAM, k))
+  return params
+}
+
 export function SurfacesProvider({ children }: { children: ReactNode }) {
   const [panels, setPanels] = useState<TPanels>([])
   const autoOpenPending = useRef(false)
-  const navigate = useNavigate()
   const { pathname } = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   useEffect(() => {
     setPanels((ps) => ps.filter((p) => p.pathname === pathname))
@@ -64,24 +89,37 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
   const addPanel = useCallback(
     (content: TPanelEl, panelKey?: string, panelId?: string): string => {
       const id = panelId || uuid()
-      setPanels((ps) => [
-        ...ps,
-        {
-          id,
-          key: panelKey,
-          content,
-          isVisible: true,
-          pathname: window.location.pathname,
-        },
-      ])
+      const order = panelKeyStack(searchParams)
+      setPanels((ps) => {
+        const withNew = [
+          ...ps,
+          {
+            id,
+            key: panelKey,
+            content,
+            isVisible: true,
+            pathname,
+          },
+        ]
+        return withNew
+          .map((panel, index) => ({ panel, index }))
+          .sort((a, b) => {
+            const rank = (panel: (typeof withNew)[number], index: number) => {
+              const stackIndex = panel.key ? order.indexOf(panel.key) : -1
+              return stackIndex === -1 ? order.length + index : stackIndex
+            }
+            return rank(a.panel, a.index) - rank(b.panel, b.index)
+          })
+          .map(({ panel }) => panel)
+      })
       if (panelKey) {
-        const params = new URLSearchParams(window.location.search)
-        params.set('panel', panelKey)
-        navigate(`?${params.toString()}`, { replace: true })
+        setSearchParams((prev) => withPanelKey(new URLSearchParams(prev), panelKey), {
+          replace: true,
+        })
       }
       return id
     },
-    [navigate]
+    [pathname, searchParams, setSearchParams]
   )
 
   useEffect(() => {
@@ -113,24 +151,30 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       setTimeout(() => {
         setPanels((ps) => ps.filter((p) => p?.id !== id))
         if (panelKey) {
-          const params = new URLSearchParams(window.location.search)
-          params.delete('panel')
-          navigate(`?${params.toString()}`, { replace: true })
+          setSearchParams(
+            (prev) => withoutPanelKey(new URLSearchParams(prev), panelKey),
+            { replace: true }
+          )
         }
       }, 160)
     },
-    [navigate]
+    [setSearchParams]
   )
 
   const clearPanels = useCallback(() => {
     setPanels((ps) => ps.map((p) => ({ ...p, isVisible: false })))
     setTimeout(() => {
       setPanels([])
-      const params = new URLSearchParams(window.location.search)
-      params.delete('panel')
-      navigate(`?${params.toString()}`, { replace: true })
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete(PANEL_PARAM)
+          return next
+        },
+        { replace: true }
+      )
     }, 160)
-  }, [navigate])
+  }, [setSearchParams])
 
   const [modals, setModals] = useState<TModals>([])
 
@@ -142,13 +186,18 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
         { id, key: modalKey, content, isVisible: true },
       ])
       if (modalKey) {
-        const params = new URLSearchParams(window.location.search)
-        params.set('modal', modalKey)
-        navigate(`?${params.toString()}`, { replace: true })
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev)
+            next.set('modal', modalKey)
+            return next
+          },
+          { replace: true }
+        )
       }
       return id
     },
-    [navigate]
+    [setSearchParams]
   )
 
   const removeModal = useCallback(
@@ -159,13 +208,18 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       setTimeout(() => {
         setModals((ms) => ms.filter((m) => m?.id !== id))
         if (modalKey) {
-          const params = new URLSearchParams(window.location.search)
-          params.delete('modal')
-          navigate(`?${params.toString()}`, { replace: true })
+          setSearchParams(
+            (prev) => {
+              const next = new URLSearchParams(prev)
+              next.delete('modal')
+              return next
+            },
+            { replace: true }
+          )
         }
       }, 160)
     },
-    [navigate]
+    [setSearchParams]
   )
 
   return (
@@ -183,20 +237,21 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      {panels.map((p) => (
-        <React.Fragment key={p.id}>
-          {React.isValidElement(p.content)
-            ? createPortal(
-                React.cloneElement(p.content, {
-                  panelId: p.id,
-                  panelKey: p?.key,
-                  isVisible: p.isVisible,
-                }),
-                document.getElementById('panel-root')!
-              )
-            : null}
-        </React.Fragment>
-      ))}
+      {panels.length > 0
+        ? createPortal(
+            panels.map((p) =>
+              React.isValidElement(p.content)
+                ? React.cloneElement(p.content, {
+                    key: p.id,
+                    panelId: p.id,
+                    panelKey: p?.key,
+                    isVisible: p.isVisible,
+                  })
+                : null
+            ),
+            document.getElementById('panel-root')!
+          )
+        : null}
       <div id="panel-root" />
       {modals.map((m) => (
         <React.Fragment key={m.id}>

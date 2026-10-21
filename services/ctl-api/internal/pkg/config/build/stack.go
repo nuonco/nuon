@@ -3,6 +3,7 @@ package build
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -24,7 +25,16 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 	if err := config.ValidateDeploymentScope(stack.DeploymentScope, stack.Type); err != nil {
 		return nil, err
 	}
+	if err := config.ValidateCloudFormationCustomNestedStacks(stack.Type, stack.CustomNestedStacks); err != nil {
+		return nil, err
+	}
 	if err := config.ValidateAzureCustomNestedStacks(stack.Type, stack.CustomNestedStacks); err != nil {
+		return nil, err
+	}
+	if err := config.ValidateAzureUIDefinition(stack.Type, stack.UIDefinition); err != nil {
+		return nil, err
+	}
+	if err := config.ValidateCreateUIDefinition(stack.UIDefinitionContents); err != nil {
 		return nil, err
 	}
 	if err := config.ValidateGCPCustomNestedStacks(stack.Type, stack.CustomNestedStacks); err != nil {
@@ -68,6 +78,15 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 		customNestedStacks = append(customNestedStacks, nested)
 	}
 
+	var uiDefinition *config.UploadedUIDefinition
+	if strings.TrimSpace(stack.UIDefinitionContents) != "" {
+		uiDefinition = &config.UploadedUIDefinition{
+			Path:     stack.UIDefinition,
+			Contents: stack.UIDefinitionContents,
+			Status:   config.CustomNestedStackStatusPending,
+		}
+	}
+
 	return &app.AppStackConfig{
 		AppID:                   appID,
 		AppConfigID:             appConfigID,
@@ -80,6 +99,7 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 		// every pre-existing config diff on its next sync.
 		DeploymentScope:    app.StackDeploymentScope(stack.DeploymentScope),
 		CustomNestedStacks: customNestedStacks,
+		UIDefinition:       uiDefinition,
 	}, nil
 }
 

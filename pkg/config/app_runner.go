@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 	"github.com/mitchellh/mapstructure"
@@ -25,6 +27,13 @@ type AppRunnerConfig struct {
 
 	// InstanceType sets the cloud machine/instance type for the install runner host.
 	InstanceType string `mapstructure:"instance_type,omitempty" toml:"instance_type,omitempty"`
+
+	// ImageAutoUpdate resolves the latest runner image at every instance launch instead of once
+	// at stack create/update. Ignored when ImageID is set.
+	ImageAutoUpdate bool `mapstructure:"image_auto_update,omitempty" toml:"image_auto_update,omitempty"`
+
+	// ImageID pins the install runner host to a specific image (an AMI ID for aws).
+	ImageID string `mapstructure:"image_id,omitempty" toml:"image_id,omitempty"`
 
 	// RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config.
 	RunnerAPIURL string `mapstructure:"runner_api_url,omitempty" toml:"runner_api_url,omitempty"`
@@ -62,6 +71,12 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("t3a.medium").
 		Example("e2-medium").
 		Example("Standard_D2s_v5").
+		Field("image_auto_update").Short("resolve the latest runner image at every launch").
+		Long("When true, the install runner host picks up the latest base image every time an instance launches. When false (the default), the image is resolved once when the install stack is created or updated. Ignored when image_id is set. Only applies to aws runners whose stack runner template supports it; otherwise it is ignored").
+		Example("true").
+		Field("image_id").Short("pin the runner host image").
+		Long("Pins the install runner host to a specific image, overriding image_auto_update. Use it to hold runners on a known-good image. For aws this is an AMI ID. Only applies to aws runners whose stack runner template supports it; otherwise it is ignored").
+		Example("ami-0abcdef1234567890").
 		Field("runner_api_url").Short("custom runner API endpoint").
 		Long("Set this to proxy all runner API calls (heartbeats, job polling, logs) through your own domain instead of Nuon's.").
 		Example("https://runner-api.example.com").
@@ -85,20 +100,39 @@ func (a *AppRunnerConfig) parse(rootDir string) error {
 		}
 	}
 
-	if a.Source == "" {
-		return nil
-	}
+	if a.Source != "" {
+		obj, err := source.LoadSourceFrom(a.Source, rootDir)
+		if err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("unable to load source %s", a.Source),
+				Err:         err,
+			}
+		}
 
-	obj, err := source.LoadSourceFrom(a.Source, rootDir)
-	if err != nil {
-		return ErrConfig{
-			Description: fmt.Sprintf("unable to load source %s", a.Source),
-			Err:         err,
+		if err := mapstructure.Decode(obj, &a); err != nil {
+			return err
 		}
 	}
 
-	if err := mapstructure.Decode(obj, &a); err != nil {
-		return err
+	return a.validateImageID()
+}
+
+var awsAMIIDPattern = regexp.MustCompile(`^ami-[0-9a-f]+$`)
+
+// Only aws image IDs are checked: other clouds use their own formats and don't consume image_id yet.
+func (a *AppRunnerConfig) validateImageID() error {
+	if !strings.HasPrefix(a.RunnerType, "aws") {
+		return nil
 	}
-	return nil
+	return ValidateAWSImageID("image_id", a.ImageID)
+}
+
+// ValidateAWSImageID checks that a non-empty runner image ID is an AMI ID.
+func ValidateAWSImageID(field, imageID string) error {
+	if imageID == "" || awsAMIIDPattern.MatchString(imageID) {
+		return nil
+	}
+	return ErrConfig{
+		Description: fmt.Sprintf("%s %q is not a valid AMI ID (expected ami- followed by hex characters)", field, imageID),
+	}
 }

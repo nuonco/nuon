@@ -51,7 +51,7 @@ const ResourceNode = ({ data }: NodeProps<TResourceNode>) => {
     <Button
       variant="ghost"
       className={cn(
-        'nodrag nopan relative !h-52 !w-64 !p-4 !border flex-col !items-start !gap-3 text-left !bg-elevation-2 hover:!bg-elevation-3',
+        'nodrag nopan relative overflow-hidden !h-52 !w-64 !p-4 !border flex-col !items-start !gap-3 text-left !bg-elevation-2 hover:!bg-elevation-3',
         data.selected &&
           '![--tw-outline-style:solid] !outline-1 !outline-primary-500'
       )}
@@ -64,7 +64,7 @@ const ResourceNode = ({ data }: NodeProps<TResourceNode>) => {
           role="img"
           aria-label={`Last reported ${health}`}
           className={cn(
-            'absolute inset-x-4 top-0 h-1 rounded-b',
+            'absolute inset-x-0 top-0 h-1',
             accentClassName
           )}
         />

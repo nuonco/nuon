@@ -143,6 +143,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Apply per-install stack template overrides before rendering so
 	// template variables in override URLs get expanded.
 	app.ApplyInstallStackOverrides(install, &cfg.StackConfig)
+	app.ApplyInstallRunnerImageOverrides(install, &cfg.RunnerConfig)
 
 	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
 		return s.failStackConfigRender(ctx, install, stack, cfg, region, platform, err, "stack config render failed", "unable to render stack config")
@@ -343,6 +344,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 		tmplByts = renderedTemplate.RAWJson
 		checksum = renderedTemplate.Checksum
+		stackVersion.AWSStackParameters = renderedTemplate.AWSStackParameters
 
 		// Render the Terraform tfvars envelope alongside the CloudFormation
 		// template so the dashboard can offer both during the await step.
@@ -433,9 +435,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
-		ID:       stackVersion.ID,
-		Template: tmplByts,
-		Checksum: checksum,
+		ID:                 stackVersion.ID,
+		Template:           tmplByts,
+		Checksum:           checksum,
+		AWSStackParameters: stackVersion.AWSStackParameters,
 	}); err != nil {
 		return errors.Wrap(err, "unable to save cloudformation stack")
 	}

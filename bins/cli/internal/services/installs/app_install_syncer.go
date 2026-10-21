@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/pkg/config"
@@ -88,7 +89,13 @@ func (s *appInstallSyncer) syncInstall(
 }
 
 func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, confirm, wait, dryRun bool) (*models.AppInstall, error) {
-	branch := s.branchesByInstall[installCfg.Name]
+	branch, err := s.awaitBranchConfig(ctx, s.branchesByInstall[installCfg.Name], dryRun)
+	if err != nil {
+		return nil, err
+	}
+	if branch != nil {
+		s.branchesByInstall[installCfg.Name] = branch
+	}
 	appInputCfg, err := s.inputConfigForNewInstall(ctx, branch)
 	if err != nil {
 		return nil, err
@@ -196,6 +203,8 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			if len(so.CustomNestedStacks) > 0 {
 				icParams.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
 			}
+			icParams.RunnerImageAutoUpdate = so.RunnerImageAutoUpdate
+			icParams.RunnerImageID = so.RunnerImageID
 		}
 		req.InstallConfig = icParams
 	}
@@ -221,12 +230,15 @@ func (s *appInstallSyncer) syncExistingInstall(
 ) (*models.AppInstall, error) {
 	var err error
 
-	branch := s.branchesByInstall[installCfg.Name]
+	branch, err := s.awaitBranchConfig(ctx, s.branchesByInstall[installCfg.Name], dryRun)
+	if err != nil {
+		return nil, err
+	}
+	if branch != nil {
+		s.branchesByInstall[installCfg.Name] = branch
+	}
 	targetAppConfigID := appInstall.AppConfigID
 	if branch != nil {
-		if branch.LatestRun == nil || branch.LatestRun.AppConfigID == "" {
-			return nil, fmt.Errorf("app branch %q has no app config to apply", branch.Name)
-		}
 		targetAppConfigID = branch.LatestRun.AppConfigID
 	}
 	appConfig, err := s.api.GetAppConfig(ctx, appInstall.AppID, targetAppConfigID, generics.ToPtr(true))
@@ -327,6 +339,8 @@ func (s *appInstallSyncer) syncExistingInstall(
 			if len(so.CustomNestedStacks) > 0 {
 				createReq.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
 			}
+			createReq.RunnerImageAutoUpdate = so.RunnerImageAutoUpdate
+			createReq.RunnerImageID = so.RunnerImageID
 			appInstall.InstallConfig, err = s.api.CreateInstallConfig(ctx, appInstall.ID, createReq)
 			if err != nil {
 				return nil, err
@@ -356,6 +370,14 @@ func (s *appInstallSyncer) syncExistingInstall(
 			}
 			if installCfg.StackOverrides != nil && !customNestedStacksEqual(so.CustomNestedStacks, appInstall.InstallConfig.CustomNestedStacks) {
 				updateReq.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
+				needsUpdate = true
+			}
+			if so.RunnerImageAutoUpdate != nil && !boolPtrEqual(so.RunnerImageAutoUpdate, appInstall.InstallConfig.RunnerImageAutoUpdate) {
+				updateReq.RunnerImageAutoUpdate = so.RunnerImageAutoUpdate
+				needsUpdate = true
+			}
+			if so.RunnerImageID != "" && so.RunnerImageID != appInstall.InstallConfig.RunnerImageID {
+				updateReq.RunnerImageID = so.RunnerImageID
 				needsUpdate = true
 			}
 
@@ -429,6 +451,15 @@ func (s *appInstallSyncer) syncExistingInstall(
 		ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	}
 	return appInstall, nil
+}
+
+// awaitBranchConfig waits until the install's app branch has a config to apply.
+func (s *appInstallSyncer) awaitBranchConfig(ctx context.Context, branch *models.AppAppBranch, dryRun bool) (*models.AppAppBranch, error) {
+	return installcreate.AwaitBranchConfig(ctx, s.api, s.appID, branch, dryRun, func(msg string) {
+		if !s.asJSON {
+			ui.PrintLn(msg)
+		}
+	})
 }
 
 func (s *appInstallSyncer) inputConfigForNewInstall(
@@ -586,6 +617,13 @@ func toAPICustomNestedStacks(stacks []config.CustomNestedStack) []*models.Config
 		}
 	}
 	return result
+}
+
+func boolPtrEqual(a, b *bool) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
 }
 
 func customNestedStacksEqual(local []config.CustomNestedStack, remote []*models.ConfigCustomNestedStack) bool {

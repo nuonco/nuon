@@ -20,12 +20,16 @@ implemented and reviewed in the selected install-stack repository's `gcp/modules
 ## Backward compatibility
 
 Existing valid AWS `stack.toml` files require no changes. The `name`, `template_url`, `index`, and `parameters` fields
-retain their original behavior. Azure and GCP support is additive, and apps without `custom_nested_stacks` continue to
+retain their original behavior. Azure and GCP support is additive, and app templates without `custom_nested_stacks` continue to
 produce the same install stack. Configurations with duplicate names or indices now fail during sync instead of
 producing ambiguous resources.
 
 Per-install overrides also keep the existing merge behavior: an override with the same `name` replaces the app-level
 entry, while a new name is appended.
+
+For AWS parameter-only customization, use `cloudformation.nested_stacks.<name>.parameters` in the install config instead.
+It merges parameter values without replacing the template or index; see
+[AWS Cloud-Connection Stack Parameters](/guides/configuring-inputs-and-secrets#aws-cloud-connection-stack-parameters).
 
 ### Capabilities
 
@@ -94,15 +98,18 @@ index        = 0
 accountName = "{{.nuon.install.id | substr 0 18}}store"
 ```
 
-Azure templates must be compiled ARM JSON. A `.bicep` `template_url` or a non-JSON body fails at sync with the compile
-command to run:
+Azure templates must be compiled ARM JSON. A `.bicep` `template_url` or a non-JSON body fails when your app config is
+parsed, with the compile command to run. Compile, then commit the JSON and push it to the git branch your
+[app branch](/guides/app-branches) tracks:
 
 ```bash
 az bicep build --file arm/storage.bicep --outfile arm/storage.json
-nuon apps sync
+git add arm/storage.json
+git commit -m "compile storage template"
+git push origin main
 ```
 
-Relative ARM templates are uploaded during sync. A public HTTPS URL also works.
+Relative ARM templates are uploaded when the branch run parses your app config. A public HTTPS URL also works.
 
 ### GCP
 
@@ -139,7 +146,7 @@ install stack. The built-in collection supports `bucket`, `kms`, `service_accoun
 
 ## Apply the Install Stack
 
-After syncing the app and creating an install:
+After your app branch has run and you have created an install:
 
 - AWS customers open the install's CloudFormation quick link and create or update the stack as usual.
 - Azure and GCP customers apply the corresponding `nuonco/stack` Terraform module. Custom stacks are read from the
@@ -419,8 +426,8 @@ RootDomain = "{{ if .nuon.install.inputs.root_domain }}{{ .nuon.install.inputs.r
 Parameters are rendered **before** the customer applies the stack, so they can only reference state that exists at that
 point: `.nuon.install.inputs.*`, `.nuon.inputs.inputs.*`, `.nuon.install.id`, `.nuon.app.*` and `.nuon.org.*`.
 
-Sandbox outputs, component outputs, action outputs and install stack outputs are rejected when you sync your app config —
-they only exist after the stack has been applied. Reference those from component or sandbox vars instead.
+Sandbox outputs, component outputs, action outputs and install stack outputs are rejected when your app config is parsed,
+because they only exist after the stack has been applied. Reference those from component or sandbox vars instead.
 </Warning>
 {/* prettier-ignore-end */}
 

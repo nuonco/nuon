@@ -21,7 +21,7 @@ import (
 type ChartLock struct {
 
 	// Dependencies is the list of dependencies that this lock file has locked.
-	Dependencies []*ChartDependency `json:"dependencies"`
+	Dependencies []*HelmShHelmV3PkgChartDependency `json:"dependencies"`
 
 	// Digest is a hash of the dependencies in Chart.yaml.
 	Digest string `json:"digest,omitempty"`

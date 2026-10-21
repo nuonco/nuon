@@ -10,6 +10,7 @@ import { SkipStepButton } from '@/components/workflows/step-details/SkipStep/Ski
 import type { TAppBranchRun, TWorkflowStep } from '@/types'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { useDeepLinkedPanels } from '@/hooks/use-deep-linked-panels'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { InstallFailureNotice } from './BranchOverview'
 import { InstallRolloutPanel } from './InstallRolloutPanel'
@@ -71,6 +72,38 @@ export const BranchRolloutGroupContainer = () => {
     if (!installId) return undefined
     return { id: installId, name: installId, status: 'pending' }
   }, [group?.installs, installId])
+
+  const installFacts = useMemo(
+    () =>
+      group
+        ? Object.fromEntries(
+            group.installs.map((install) => [
+              install.id,
+              {
+                labels: install.labels,
+                region: install.region,
+                status: install.status,
+                detail: install.detail,
+                appliedConfigId: install.appliedConfigId,
+              },
+            ])
+          )
+        : undefined,
+    [group]
+  )
+
+  useDeepLinkedPanels(
+    planStep?.id
+      ? [
+          {
+            key: `plan-diff-${planStep.id}`,
+            build: () => (
+              <PlanDiffPanel step={planStep} installFacts={installFacts} />
+            ),
+          },
+        ]
+      : []
+  )
 
   const closeInstall = useCallback(() => {
     setSearchParams(
@@ -155,22 +188,7 @@ export const BranchRolloutGroupContainer = () => {
                   addPanel(
                     <PlanDiffPanel
                       step={planStep}
-                      installFacts={
-                        group
-                          ? Object.fromEntries(
-                              group.installs.map((install) => [
-                                install.id,
-                                {
-                                  labels: install.labels,
-                                  region: install.region,
-                                  status: install.status,
-                                  detail: install.detail,
-                                  appliedConfigId: install.appliedConfigId,
-                                },
-                              ])
-                            )
-                          : undefined
-                      }
+                      installFacts={installFacts}
                     />,
                     `plan-diff-${planStep.id}`
                   )
@@ -215,18 +233,7 @@ export const BranchRolloutGroupContainer = () => {
                 }
                 workflowStatus={rollout?.status}
                 hideHeading
-                installFacts={Object.fromEntries(
-                  group.installs.map((install) => [
-                    install.id,
-                    {
-                      labels: install.labels,
-                      region: install.region,
-                      status: install.status,
-                      detail: install.detail,
-                      appliedConfigId: install.appliedConfigId,
-                    },
-                  ])
-                )}
+                installFacts={installFacts}
                 onSelectInstall={(id) => selectInstall(group.id, id)}
               />
             ) : undefined

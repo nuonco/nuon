@@ -10,9 +10,10 @@ import (
 )
 
 type SaveInstallStackVersionTemplateRequest struct {
-	ID       string `validate:"required"`
-	Template []byte `validate:"required"`
-	Checksum string `validate:"required"`
+	ID                 string            `validate:"required"`
+	Template           []byte            `validate:"required"`
+	Checksum           string            `validate:"required"`
+	AWSStackParameters map[string]string `temporaljson:"aws_stack_parameters,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -22,8 +23,9 @@ func (a *Activities) SaveInstallStackVersionTemplate(ctx context.Context, req *S
 	}
 
 	res := a.db.WithContext(ctx).
-		Model(&obj).Updates(app.InstallStackVersion{
-		Contents: req.Template,
+		Model(&obj).Select("Contents", "AWSStackParameters").Updates(app.InstallStackVersion{
+		Contents:           req.Template,
+		AWSStackParameters: req.AWSStackParameters,
 	})
 
 	if res.Error != nil {

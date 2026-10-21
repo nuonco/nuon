@@ -58,6 +58,11 @@ export interface IInstallSetup {
   configurationKey?: string
   configurationLoading?: boolean
   configurationReady?: boolean
+  configurationNotice?: {
+    theme: 'default' | 'error'
+    heading: string
+    body: string
+  }
   appsLoading?: boolean
   requireTargetAccount?: boolean
   pending?: boolean
@@ -341,6 +346,7 @@ export const InstallSetup = ({
   configurationKey,
   configurationLoading = false,
   configurationReady = false,
+  configurationNotice,
   appsLoading = false,
   requireTargetAccount = false,
   pending = false,
@@ -743,6 +749,13 @@ export const InstallSetup = ({
                     <Text loading loadingWidth={18} />
                     <Text loading loadingWidth={24} />
                   </>
+                ) : configurationNotice ? (
+                  <Banner
+                    theme={configurationNotice.theme}
+                    heading={configurationNotice.heading}
+                  >
+                    {configurationNotice.body}
+                  </Banner>
                 ) : !configurationReady ? (
                   <Banner theme="error" heading="App configuration unavailable">
                     No active app configuration is available for this selection.
@@ -871,6 +884,7 @@ export const InstallSetup = ({
       appsLoading,
       branches,
       configurationLoading,
+      configurationNotice,
       configurationReady,
       detailsValid,
       duplicateNameError,

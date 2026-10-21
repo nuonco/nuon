@@ -2,7 +2,7 @@
 title: "Common commands"
 sidebarTitle: "Common commands"
 description: "The Nuon CLI commands you'll reach for most, from auth to deploy."
-keywords: ["nuon cli commands", "nuon auth login", "nuon orgs select", "nuon orgs current", "switch organization", "select org", "current org", "nuon apps create", "nuon apps sync", "nuon installs create", "nuon runbooks", "cli quick reference", "common nuon commands"]
+keywords: ["nuon cli commands", "nuon auth login", "nuon orgs select", "nuon orgs current", "switch organization", "select org", "current org", "nuon apps create", "nuon branches sync", "nuon branches trigger", "nuon installs create", "nuon runbooks", "cli quick reference", "common nuon commands"]
 ---
 
 The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for the full set.
@@ -17,6 +17,16 @@ These work on every command.
 | `--output <format>` | Output format: `table` (default), `json`, or `agent`. Can also be set with `NUON_OUTPUT`. |
 | `--read-only` | Block any command that modifies state. Can also be set with `NUON_READ_ONLY=1`. |
 | `--debug` | Print per-request API timing to stderr. |
+
+## Names and defaults
+
+Flags that take an app, install, component, action, runbook, or branch ID generally accept the resource's name as well.
+The `-i` (install) and `-a` (app) flags default to the install or app you last selected, so you can usually leave them
+off.
+
+```sh
+nuon actions create-run -i customer1 -w pg_status
+```
 
 ## Authenticate
 
@@ -40,26 +50,34 @@ These work on every command.
 
 | Command | What it does |
 |---------|--------------|
-| `nuon apps create --name <name>` | Create an app in the control plane. |
-| `nuon apps sync` | Sync the config in the current directory to Nuon. The app name comes from the directory name. |
-| `nuon apps validate` | Validate the config in the current directory. Requires login, and the app must already exist with a name matching the directory — run `nuon apps create` first. |
+| `nuon apps create --name <name>` | Create an app template in the control plane. |
+| `nuon apps validate [dir]` | Validate an app config directory (default: the current directory). Requires login, and it looks up the app by the directory's name, so an app with that name must exist. Run `nuon apps create` first. |
 | `nuon apps list` | List your apps. |
 | `nuon apps select` | Set your active app. |
 
 ## App branches
 
-These subcommands take the app **ID** (`app...`) — get it from `nuon apps list`. Running `nuon apps select` with no
-flags and picking from the list stores the ID, which lets you omit `--app-id` from `trigger` and `runs`.
+These subcommands operate on the selected app. Use `nuon apps select` to choose it; commands that accept `--app-id`
+can use the ID from `nuon apps list` when you do not want to rely on the selected app. `nuon apps branches` is a
+deprecated alias; use `nuon branches`.
 
 | Command | What it does |
 |---------|--------------|
-| `nuon sync --branch <name>` | Sync the current directory, then trigger a run on that [app branch](/guides/app-branches). Add `--preview` for a plan-only run, or use `--app-branch` to pick the branch interactively. `nuon apps sync` takes the same three flags. |
-| `nuon apps branches list --app-id <app-id>` | List an app's branches. Alias: `nuon apps br`. |
-| `nuon apps branches get --app-id <app-id> --branch-id <branch-id>` | Show a branch and its deployment groups. |
-| `nuon apps branches create --app-id <app-id> --name <name>` | Create a branch without syncing a config file. |
-| `nuon apps branches trigger --branch-id <branch>` | Trigger a branch run against the selected app. `--preview` plans every group but applies nothing, `--force` rebuilds every component. |
-| `nuon apps branches runs --branch-id <branch>` | List the selected app's branch runs and open one in the workflow TUI. |
-| `nuon apps branches delete --app-id <app-id> --branch-id <branch> --confirm` | Delete a branch. |
+| `nuon branches sync --file <path>` | Reconcile branch settings from a TOML file or directory. Directory mode can propose deleting remote branches missing locally; a single file never deletes others. |
+| `nuon branches list` | List the selected app's branches. |
+| `nuon branches get --branch-id <branch-id>` | Show a branch and its install groups. |
+| `nuon branches create --name <name>` | Create a branch without syncing a config file. |
+| `nuon branches trigger --branch-id <branch-id>` | Start a real branch run. Add `--force` to rebuild every component. Add `--run-type` (`pr`, `tag`, or `commit`) and `--run-ref` to deploy a specific source. |
+| `nuon branches preview --branch-id <branch-id> --git-ref <ref> --mode plan-only` | Preview a committed Git ref. Use `--pr-number` for a pull request; `--mode` also accepts `apply` or `build-only`. |
+| `nuon branches runs --branch-id <branch-id>` | List the selected app's branch runs and open one in the workflow TUI. |
+| `nuon branches delete --branch-id <branch-id> --confirm` | Delete a branch. |
+
+<Note>
+  `nuon apps sync` and `nuon sync` are deprecated: app config ships through a branch file synced once with
+  `nuon branches sync`, then a push to the tracked git branch. Once they are turned off for your org, running
+  `nuon apps sync` in an interactive terminal offers to migrate: it writes a branch file, syncs it, and offers to move
+  your installs onto the branch. See [Migrating from `nuon apps sync`](/guides/app-branches#migrating-from-nuon-apps-sync).
+</Note>
 
 ## Installs
 
@@ -68,7 +86,7 @@ flags and picking from the list stores the ID, which lets you omit `--app-id` fr
 | `nuon installs create` | Create an install of the selected app. |
 | `nuon installs list` | List installs. Add `--labels k=v` (repeatable) to filter; all labels must match. |
 | `nuon installs get` | Show an install's details. |
-| `nuon installs labels set --install-id <install> k=v ...` | Set labels on an install. Deployment group [label selectors](/guides/app-branches#selecting-installs-for-a-group) match on these. |
+| `nuon installs labels set --install-id <install> k=v ...` | Set labels on an install. Install group [label selectors](/guides/app-branches) match on these. |
 | `nuon installs labels list --install-id <install>` | List an install's labels. |
 | `nuon installs labels unset --install-id <install> <key> ...` | Remove labels from an install. |
 | `nuon installs components deploy-all` | Deploy all components to an install. |

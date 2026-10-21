@@ -90,6 +90,19 @@ func (c CustomNestedStack) GCPModuleName() string {
 	return name
 }
 
+func ValidateCloudFormationCustomNestedStacks(stackType string, stacks []CustomNestedStack) error {
+	if stackType != "aws-cloudformation" {
+		return nil
+	}
+	for _, stack := range stacks {
+		if stack.Name == "VPC" || stack.Name == "RunnerAutoScalingGroup" {
+			msg := fmt.Sprintf("custom nested stack name %q conflicts with a built-in stack", stack.Name)
+			return ErrConfig{Description: msg, Err: fmt.Errorf("%s", msg)}
+		}
+	}
+	return nil
+}
+
 // ValidateGCPCustomNestedStacks validates requirements that are known before
 // Terraform runs in the customer's project.
 func ValidateGCPCustomNestedStacks(stackType string, stacks []CustomNestedStack) error {
@@ -137,6 +150,9 @@ type StackConfig struct {
 
 	DeploymentScope string `mapstructure:"deployment_scope" toml:"deployment_scope,omitempty"`
 
+	UIDefinition         string `mapstructure:"ui_definition,omitempty" toml:"ui_definition,omitempty" json:"ui_definition,omitempty"`
+	UIDefinitionContents string `mapstructure:"-" toml:"-" json:"ui_definition_contents,omitempty" jsonschema:"-" features:"get"`
+
 	CustomNestedStacks []CustomNestedStack `mapstructure:"custom_nested_stacks" toml:"custom_nested_stacks"`
 }
 
@@ -163,6 +179,9 @@ func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("deployment_scope").Short("deployment scope").
 		Long("Scope the generated install stack root template deploys at. Only supported for 'azure-bicep'. Supported values: 'resource_group' (the default) confines every resource to the install's own resource group; 'subscription' deploys at subscription scope, which lets nested stack templates create their own resource groups — needed when an app splits networking, application and security resources across several groups.").
 		Example("subscription").
+		Field("ui_definition").Short("Azure createUiDefinition").
+		Long("Optional path or URL of an Azure createUiDefinition. Only supported when type is 'azure-bicep'. The portal quick link merges this document with the generated definition.").
+		Example("./arm/ui.json").
 		Field("custom_nested_stacks").Short("custom nested stacks").
 		Long("Custom install-stack resources to include. Each entry has a name, template_url, index, and optional parameters. AWS uses CloudFormation templates, Azure uses compiled ARM JSON, and GCP uses curated install-stack modules.").
 		Nullable()
@@ -321,6 +340,15 @@ func isS3URL(u *url.URL) bool {
 
 func (a *StackConfig) parse() error {
 	if err := ValidateDeploymentScope(a.DeploymentScope, a.Type); err != nil {
+		return err
+	}
+	if err := ValidateAzureUIDefinition(a.Type, a.UIDefinition); err != nil {
+		return err
+	}
+	if err := ValidateCreateUIDefinition(a.UIDefinitionContents); err != nil {
+		return err
+	}
+	if err := ValidateCloudFormationCustomNestedStacks(a.Type, a.CustomNestedStacks); err != nil {
 		return err
 	}
 	if a.Type == "aws-cloudformation" {
