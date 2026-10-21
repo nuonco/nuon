@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -145,17 +146,21 @@ func (s *service) requireAuth() gin.HandlerFunc {
 			return
 		}
 
-		token, _ := c.Cookie("X-Nuon-Auth")
-		if token != "" {
-			var userToken app.Token
-			if res := s.db.WithContext(c).Where(&app.Token{Token: token}).First(&userToken); res.Error == nil {
-				if acct, err := s.acctClient.FetchAccount(c, userToken.AccountID); err == nil {
-					cctx.SetAccountGinContext(c, acct)
-					c.Request = c.Request.WithContext(cctx.SetAccountContext(c.Request.Context(), acct))
-					c.Next()
-					return
-				}
+		acct, ok := s.adminSessionAccount(c)
+		if ok && !isNuonEmployee(acct) {
+			s.l.Warn("admin dashboard access denied", zap.String("account_id", acct.ID))
+			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+				return
 			}
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		if ok {
+			cctx.SetAccountGinContext(c, acct)
+			c.Request = c.Request.WithContext(cctx.SetAccountContext(c.Request.Context(), acct))
+			c.Next()
+			return
 		}
 
 		// For API requests, return 401 so the SPA can redirect client-side
@@ -169,6 +174,37 @@ func (s *service) requireAuth() gin.HandlerFunc {
 		c.Redirect(http.StatusFound, loginURL)
 		c.Abort()
 	}
+}
+
+func (s *service) adminSessionAccount(c *gin.Context) (*app.Account, bool) {
+	token, err := c.Cookie("X-Nuon-Auth")
+	if err != nil || token == "" {
+		return nil, false
+	}
+
+	var userToken app.Token
+	if res := s.db.WithContext(c).Where(&app.Token{Token: token}).First(&userToken); res.Error != nil {
+		return nil, false
+	}
+	if !userToken.ExpiresAt.After(time.Now()) {
+		return nil, false
+	}
+
+	acct, err := s.acctClient.FetchAccount(c, userToken.AccountID)
+	if err != nil {
+		return nil, false
+	}
+	return acct, true
+}
+
+func isNuonEmployee(acct *app.Account) bool {
+	if acct == nil {
+		return false
+	}
+	if acct.AccountType != app.AccountTypeAuth && acct.AccountType != app.AccountTypeAuth0 {
+		return false
+	}
+	return strings.HasSuffix(acct.Email, "@nuon.co")
 }
 
 func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
