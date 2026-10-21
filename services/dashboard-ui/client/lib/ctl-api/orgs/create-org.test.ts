@@ -70,3 +70,25 @@ test('does not retry other errors', async () => {
   await expect(createTrialOrg()).rejects.toMatchObject({ status: 500 })
   expect(orgCreates()).toHaveLength(1)
 })
+
+test('names the org after a work email domain', async () => {
+  const org = await createTrialOrg({ email: 'jane@acme.io' })
+
+  expect(org.id).toBe('orgabc123')
+  expect(orgCreates().map((c) => c.body.name)).toEqual(['Acme'])
+  expect(calls.some((c) => c.url === '/api/random-name')).toBe(false)
+})
+
+test('falls back to a random name when the domain name is taken', async () => {
+  orgStatuses = [409, 201]
+
+  await createTrialOrg({ email: 'jane@acme.io' })
+
+  expect(orgCreates().map((c) => c.body.name)).toEqual(['Acme', 'taken-name-one'])
+})
+
+test('uses a random name for a free email address', async () => {
+  await createTrialOrg({ email: 'jane@gmail.com' })
+
+  expect(orgCreates().map((c) => c.body.name)).toEqual(['taken-name-one'])
+})

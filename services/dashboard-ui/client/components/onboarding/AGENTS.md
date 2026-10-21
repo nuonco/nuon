@@ -23,7 +23,8 @@ context (org ID, journey helpers, `choosePath`, `backToIntro`) lives in `@/provi
 ## Changing a first-run step
 
 - Each step file exports a presentational `*StepView` (props only, no queries) and a `*Step` container that the wizard
-  renders. Stories use the view with mock props inside `StoryFrame`, which draws the real wizard chrome.
+  renders. Stories render `MockStory` from `first-run/mocks.tsx`: the real views in the real wizard chrome, driven by
+  mocked data, so every button works in Ladle. A new screen state is a new `IMockScenario` seed, not a new harness.
 - Anything a later step needs goes in both `sharedData` and the journey (`journey.saveStep`). The place to resume is
   the local session written by `FirstRunProgress`, not the journey's first incomplete step. Add new keys to
   `FIRST_RUN_METADATA_KEYS` so a journey reset can still clear them.

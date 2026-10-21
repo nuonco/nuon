@@ -74,7 +74,7 @@ export async function startOnboarding(page: Page) {
 }
 
 export async function deployToWorkflow(page: Page) {
-  await expect(page.getByRole("heading", { name: "Your app is ready for BYOC" })).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Your app is ready for BYOC|Test install of Kitchen Sink demo app/ })).toBeVisible({
     timeout: 60000,
   });
   await page.getByRole("button", { name: /Create install/ }).click();

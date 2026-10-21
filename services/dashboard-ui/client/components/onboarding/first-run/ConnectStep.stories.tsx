@@ -2,45 +2,18 @@ export default {
   title: 'Features / Onboarding / First run / Connect',
 }
 
-import { useState } from 'react'
-import { ConnectStepView, type IConnectStepView } from './ConnectStep'
-import { StoryFrame } from './StoryFrame'
+import { MockStory } from './mocks'
 
-const PROMPT =
-  '/goal Set up this application on Nuon (nuon.co) so a customer can run it in their own cloud account. This is sample text standing in for the file served at nuon.co/loop.md.'
+// Every story runs the mocked flow from this screen, so all buttons work.
 
-const Harness = (overrides: Partial<IConnectStepView>) => {
-  const [confirmSkip, setConfirmSkip] = useState(overrides.confirmSkip ?? false)
-  return (
-    <StoryFrame step="connect">
-      <ConnectStepView
-        appName="acme-api"
-        repo="acme/acme-api"
-        cloud="aws"
-        prompt={PROMPT}
-        promptFailed={false}
-        detected={false}
-        onContinue={() => setConfirmSkip(true)}
-        onContinueAnyway={() => {}}
-        onKeepWaiting={() => setConfirmSkip(false)}
-        onExampleExit={() => {}}
-        onGetHelp={() => {}}
-        onBack={() => {}}
-        {...overrides}
-        confirmSkip={confirmSkip}
-      />
-    </StoryFrame>
-  )
-}
-
-export const WaitingForPush = () => <Harness />
+export const WaitingForPush = () => <MockStory start={{ step: 'connect' }} />
 WaitingForPush.meta = { fullBleed: true }
 
-export const PushWarning = () => <Harness confirmSkip />
+export const PushWarning = () => <MockStory start={{ step: 'connect', scenario: { confirmSkip: true } }} />
 PushWarning.meta = { fullBleed: true }
 
-export const PushDetected = () => <Harness detected sha="a1b2c3d" />
+export const PushDetected = () => <MockStory start={{ step: 'connect', scenario: { detected: true } }} />
 PushDetected.meta = { fullBleed: true }
 
-export const PromptUnavailable = () => <Harness prompt={undefined} promptFailed cloud="gcp" />
+export const PromptUnavailable = () => <MockStory start={{ step: 'connect', cloud: 'gcp', scenario: { promptFailed: true } }} />
 PromptUnavailable.meta = { fullBleed: true }

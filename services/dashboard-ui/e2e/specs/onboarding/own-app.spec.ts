@@ -63,7 +63,7 @@ test.describe("Onboarding: own app", () => {
       );
 
       await page.getByRole("button", { name: /Set up your first install/ }).click();
-      await expect(page.getByText("Nuon does not have your app config yet")).toBeVisible();
+      await expect(page.getByText("Nuon does not have your app template yet")).toBeVisible();
       await page.getByRole("button", { name: "Continue anyway" }).click();
 
       await deployToWorkflow(page);

@@ -58,10 +58,12 @@ func (s *service) completeUserJourney(ctx *gin.Context, accountID string, journe
 	// Find the specified journey and complete all steps
 	found := false
 	updated := false
+	journeyIdx := -1
 
 	for i, journey := range fullAccount.UserJourneys {
 		if journey.Name == journeyName {
 			found = true
+			journeyIdx = i
 			for j, step := range journey.Steps {
 				if !step.Complete {
 					fullAccount.UserJourneys[i].Steps[j].Complete = true
@@ -84,6 +86,7 @@ func (s *service) completeUserJourney(ctx *gin.Context, accountID string, journe
 		if err := s.db.WithContext(ctx).Select("user_journeys").Save(fullAccount).Error; err != nil {
 			return nil, fmt.Errorf("unable to complete user journey '%s': %w", journeyName, err)
 		}
+		s.trackJourneyEvent(ctx, fullAccount, journeyCompleteEvent, fullAccount.UserJourneys[journeyIdx], "")
 	}
 
 	return fullAccount, nil
