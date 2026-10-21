@@ -26,6 +26,9 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -39,6 +42,8 @@ type LogStreamWriteLogsTestService struct {
 	L              *zap.Logger
 	Seeder         *testseed.Seeder
 	RunnersService *service
+	Authz          *authz.Client
+	Accts          *account.Client
 }
 
 type LogStreamWriteLogsTestSuite struct {
@@ -484,4 +489,80 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			}
 		})
 	}
+}
+
+func (s *LogStreamWriteLogsTestSuite) TestLogStreamAccountCanWriteOnlyItsStream() {
+	ctx := cctx.SetOrgIDContext(context.Background(), s.testOrg.ID)
+	ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+	own := &app.LogStream{ID: domains.NewLogStreamID(), OrgID: s.testOrg.ID, OwnerID: s.testOrg.ID, Open: true}
+	other := &app.LogStream{ID: domains.NewLogStreamID(), OrgID: s.testOrg.ID, OwnerID: s.testOrg.ID, Open: true}
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(own).Error)
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(other).Error)
+
+	svc, err := s.service.Accts.CreateServiceAccount(ctx, own.ID, "log-stream")
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), s.service.Authz.EnsureLogStreamWriteRole(ctx, s.testOrg.ID, own.ID, svc.ID))
+
+	var assignment app.AccountRole
+	require.NoError(s.T(), s.service.DB.Where(app.AccountRole{AccountID: svc.ID}).First(&assignment).Error)
+	require.Equal(s.T(), s.testOrg.ID, assignment.OrgID.ValueString())
+
+	var role app.Role
+	require.NoError(s.T(), s.service.DB.Preload("Policies").Where(app.Role{ID: assignment.RoleID}).First(&role).Error)
+	require.Equal(s.T(), app.RoleTypeLogStream, role.RoleType)
+	require.Equal(s.T(), s.testOrg.ID, role.OrgID.ValueString())
+	require.False(s.T(), role.OrgID.Empty())
+
+	loaded, err := s.service.Accts.FetchAccount(ctx, svc.ID)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), []string{s.testOrg.ID}, loaded.OrgIDs)
+	require.Len(s.T(), loaded.Orgs, 1)
+	require.Equal(s.T(), s.testOrg.ID, loaded.Orgs[0].ID)
+
+	ownObject := permissions.Object(s.testOrg.ID, permissions.KindLogStream, own.ID)
+	require.NoError(s.T(), loaded.AllPermissions.CanPerform(ownObject, permissions.PermissionCreate))
+	require.Error(s.T(), loaded.AllPermissions.CanPerform(permissions.Object(s.testOrg.ID, permissions.KindLogStream, other.ID), permissions.PermissionCreate))
+	require.Error(s.T(), loaded.AllPermissions.CanPerform(s.testOrg.ID, permissions.PermissionCreate))
+
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Where(app.AccountRole{AccountID: svc.ID}).Delete(&app.AccountRole{})
+		s.service.DB.Unscoped().Where(app.Policy{RoleID: role.ID}).Delete(&app.Policy{})
+		s.service.DB.Unscoped().Delete(&app.Role{ID: role.ID})
+		s.service.DB.Unscoped().Delete(&app.Account{ID: svc.ID})
+		s.service.DB.Unscoped().Delete(own)
+		s.service.DB.Unscoped().Delete(other)
+	})
+
+	router := tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: loaded,
+	})
+	require.NoError(s.T(), s.service.RunnersService.RegisterRunnerRoutes(router))
+
+	serve := func(method, path string, body []byte) *httptest.ResponseRecorder {
+		req, err := http.NewRequest(method, path, bytes.NewBuffer(body))
+		require.NoError(s.T(), err)
+		if len(body) > 0 {
+			req.Header.Set("Content-Type", "application/x-protobuf")
+		}
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+		return rr
+	}
+
+	body := s.buildOTLPLogExportRequest([]string{"scoped write"})
+	ownResp := serve(http.MethodPost, fmt.Sprintf("/v1/log-streams/%s/logs", own.ID), body)
+	require.Equal(s.T(), http.StatusCreated, ownResp.Code, ownResp.Body.String())
+
+	otherResp := serve(http.MethodPost, fmt.Sprintf("/v1/log-streams/%s/logs", other.ID), body)
+	require.Equal(s.T(), http.StatusNotFound, otherResp.Code, otherResp.Body.String())
+
+	jobResp := serve(http.MethodPost, "/v1/runner-jobs/"+domains.NewRunnerJobID()+"/executions", []byte(`{}`))
+	require.Equal(s.T(), http.StatusForbidden, jobResp.Code, jobResp.Body.String())
+
+	tfResp := serve(http.MethodPost, "/v1/terraform-backend", []byte(`{}`))
+	require.Equal(s.T(), http.StatusForbidden, tfResp.Code, tfResp.Body.String())
 }

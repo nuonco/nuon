@@ -134,7 +134,9 @@ func (s *service) orgServiceAccounts(ctx context.Context, orgID string, includeR
 		Joins("JOIN accounts ON accounts.id = account_roles.account_id AND accounts.deleted_at = 0 AND accounts.account_type = ?", app.AccountTypeService).
 		Where(app.AccountRole{OrgID: generics.NewNullString(orgID)})
 
-	excludedRoleTypes := []app.RoleType{}
+	// Log-stream writers are one account per stream. They are not operator-facing
+	// service accounts, so they stay out of the list even when runners are included.
+	excludedRoleTypes := []app.RoleType{app.RoleTypeLogStream}
 	if !includeRunners {
 		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeRunner)
 	}

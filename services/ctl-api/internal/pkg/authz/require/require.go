@@ -20,9 +20,10 @@ import (
 // nouns names the resource in the not-found error, so the message matches what
 // the handlers say. A stack route is addressed by its install.
 var nouns = map[permissions.ResourceKind]string{
-	permissions.KindApp:     "app",
-	permissions.KindInstall: "install",
-	permissions.KindStack:   "install",
+	permissions.KindApp:       "app",
+	permissions.KindInstall:   "install",
+	permissions.KindStack:     "install",
+	permissions.KindLogStream: "log stream",
 }
 
 func noun(kind permissions.ResourceKind) string {
