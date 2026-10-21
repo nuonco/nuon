@@ -1,28 +1,55 @@
 package oidc
 
-// MatchClaims reports whether every condition matches the corresponding token
-// claim. Conditions only match string-typed claims; a missing or non-string
-// claim fails the policy.
-func MatchClaims(conditions map[string]string, claims map[string]any) bool {
-	if len(conditions) == 0 {
+// Conditions are the claim conditions of a trust policy: a pattern per claim
+// that must all match.
+type Conditions struct {
+	Sub   string
+	Extra map[string]string
+}
+
+// ParseConditions splits a claim-name to pattern map into typed conditions.
+func ParseConditions(raw map[string]string) Conditions {
+	c := Conditions{Sub: raw["sub"]}
+
+	for name, pattern := range raw {
+		if name == "sub" {
+			continue
+		}
+		if c.Extra == nil {
+			c.Extra = make(map[string]string, len(raw))
+		}
+		c.Extra[name] = pattern
+	}
+
+	return c
+}
+
+// Match reports whether every condition matches the corresponding token
+// claim. A missing or non-string claim fails, and empty conditions never
+// match.
+func (c Conditions) Match(claims Claims) bool {
+	if c.Sub == "" && len(c.Extra) == 0 {
 		return false
 	}
 
-	for claim, pattern := range conditions {
-		raw, ok := claims[claim]
-		if !ok {
-			return false
-		}
+	if c.Sub != "" && !matchClaim(claims, "sub", c.Sub) {
+		return false
+	}
 
-		value, ok := raw.(string)
-		if !ok {
-			return false
-		}
-
-		if !MatchPattern(pattern, value) {
+	for name, pattern := range c.Extra {
+		if !matchClaim(claims, name, pattern) {
 			return false
 		}
 	}
 
 	return true
+}
+
+func matchClaim(claims Claims, name, pattern string) bool {
+	value, ok := claims.Lookup(name)
+	if !ok {
+		return false
+	}
+
+	return MatchPattern(pattern, value)
 }

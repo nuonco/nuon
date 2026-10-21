@@ -171,8 +171,9 @@ func TestVerifyOIDCTokenReturnsVerifiedClaims(t *testing.T) {
 
 	claims, err := svc.verifyOIDCToken(context.Background(), token, idp.issuer(), "nuon-test")
 	require.NoError(t, err)
-	require.Equal(t, "repo:acme/app:ref:refs/heads/main", claims["sub"])
-	require.Equal(t, "acme", claims["repository_owner"])
+	require.Equal(t, "repo:acme/app:ref:refs/heads/main", claims.Sub)
+	owner, _ := claims.Lookup("repository_owner")
+	require.Equal(t, "acme", owner)
 }
 
 func toJSONSerialization(t *testing.T, compact string, extra map[string]string) string {
@@ -257,13 +258,13 @@ func TestCompactJWSOnly(t *testing.T) {
 			if tc.wantErr {
 				require.Error(t, issuerErr)
 				require.Error(t, verifyErr)
-				require.Nil(t, claims)
+				require.Zero(t, claims)
 				return
 			}
 
 			require.NoError(t, issuerErr)
 			require.NoError(t, verifyErr)
-			require.Equal(t, "repo:attacker/app:ref:refs/heads/main", claims["sub"])
+			require.Equal(t, "repo:attacker/app:ref:refs/heads/main", claims.Sub)
 		})
 	}
 }
