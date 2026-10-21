@@ -14,7 +14,6 @@ import (
 const (
 	OIDCTrustPolicyDefaultTokenDuration = 3600
 	OIDCTrustPolicyMaxTokenDuration     = 86400
-	OIDCTrustPolicyMaxPatternLength     = 512
 )
 
 // OIDCTrustPolicy defines a workload identity federation rule for an org: an

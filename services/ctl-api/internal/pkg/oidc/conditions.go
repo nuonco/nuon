@@ -3,9 +3,13 @@ package oidc
 // Conditions are the claim conditions of a trust policy: a pattern per claim
 // that must all match.
 type Conditions struct {
-	Sub   string
-	Extra map[string]string
+	Sub   string            `validate:"required,max=512,oidc_pattern"`
+	Extra map[string]string `validate:"dive,keys,oidc_claim_name,endkeys,required,max=512,oidc_pattern"`
 }
+
+// ConditionsStruct is the validator struct name of Conditions, which prefixes
+// its field namespaces.
+const ConditionsStruct = "Conditions"
 
 // ParseConditions splits a claim-name to pattern map into typed conditions.
 func ParseConditions(raw map[string]string) Conditions {

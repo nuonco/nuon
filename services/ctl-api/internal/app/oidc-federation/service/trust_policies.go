@@ -15,6 +15,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 const defaultTrustPolicyRole = app.RoleTypeOrgReadOnly
@@ -79,6 +81,10 @@ func parseTrustPolicyTokenDuration(raw int) (int, error) {
 	return raw, nil
 }
 
+func (s *service) validateClaimConditions(issuerURL string, conditions map[string]string) error {
+	return validator.FormatValidationError(oidc.ValidateConditions(s.v, s.providers, issuerURL, conditions))
+}
+
 func (s *service) validateIssuerURL(raw string) error {
 	parsed, err := url.Parse(raw)
 	if err != nil {
@@ -137,7 +143,7 @@ func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
 		return
 	}
 
-	if err := validateClaimConditions(req.IssuerURL, req.ClaimConditions); err != nil {
+	if err := s.validateClaimConditions(req.IssuerURL, req.ClaimConditions); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
@@ -299,7 +305,7 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 		policy.ClaimConditions = req.ClaimConditions
 	}
 	if req.IssuerURL != "" || req.ClaimConditions != nil {
-		if err := validateClaimConditions(policy.IssuerURL, policy.ClaimConditions); err != nil {
+		if err := s.validateClaimConditions(policy.IssuerURL, policy.ClaimConditions); err != nil {
 			ctx.Error(stderr.NewInvalidRequest(err))
 			return
 		}

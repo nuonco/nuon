@@ -11,6 +11,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc/github"
 )
 
 type Params struct {
@@ -32,6 +34,7 @@ type service struct {
 	authzClient *authz.Client
 	mw          metrics.Writer
 	jwks        *jwksProviderCache
+	providers   oidc.Providers
 }
 
 var _ api.Service = (*service)(nil)
@@ -45,6 +48,7 @@ func New(params Params) *service {
 		authzClient: params.AuthzClient,
 		mw:          params.MW,
 		jwks:        newJWKSProviderCache(),
+		providers:   oidc.NewProviders(github.Provider{}),
 	}
 }
 

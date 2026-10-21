@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -115,4 +116,43 @@ func (c Claims) Names() []string {
 
 	sort.Strings(names)
 	return names
+}
+
+// reservedClaims are validated by the JWT verifier itself and may not be used
+// as claim conditions.
+var reservedClaims = map[string]struct{}{
+	"iss": {},
+	"aud": {},
+	"exp": {},
+	"nbf": {},
+	"iat": {},
+}
+
+// IsReservedClaim reports whether name is verified automatically and so cannot
+// be a claim condition.
+func IsReservedClaim(name string) bool {
+	_, ok := reservedClaims[name]
+	return ok
+}
+
+// ClaimNames returns the claim names of a claims struct (such as Claims or a
+// struct embedding it), read from its `json` tags.
+func ClaimNames(claims any) map[string]struct{} {
+	names := map[string]struct{}{}
+	collectClaimNames(reflect.TypeOf(claims), names)
+	return names
+}
+
+func collectClaimNames(t reflect.Type, names map[string]struct{}) {
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		name, opts, _ := strings.Cut(field.Tag.Get("json"), ",")
+
+		switch {
+		case opts == "squash":
+			collectClaimNames(field.Type, names)
+		case name != "":
+			names[name] = struct{}{}
+		}
+	}
 }

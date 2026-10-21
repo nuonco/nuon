@@ -15,6 +15,10 @@ func FormatValidationError(err error) error {
 		var errMsg string
 		for _, e := range errs {
 			var fieldErr string
+			if msg, ok := oidcFieldError(e); ok {
+				errMsg += msg + "\n"
+				continue
+			}
 			switch e.Tag() {
 			case "interpolated_name":
 				fieldErr = fmt.Sprintf("%s: Name must contain only lowercase letters, numbers, underscores, dots, and curly braces (for interpolation)", e.Field())
@@ -39,6 +43,8 @@ func New() *validator.Validate {
 	v.RegisterValidation("entity_name", entityNameValidator)
 	v.RegisterValidation("cron_schedule", cronScheduleValidator)
 	v.RegisterValidation("optional_json", optionalJSONValidator)
+	v.RegisterValidation("oidc_pattern", oidcPatternValidator)
+	v.RegisterValidation("oidc_claim_name", oidcClaimNameValidator)
 
 	return v
 }
