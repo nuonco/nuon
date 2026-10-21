@@ -8,8 +8,8 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-// enforceMinCLI rejects commands when this build is older than the control
-// plane's min_cli_version. A failed config fetch does not block the command.
+// enforceMinCLI warns when this build is older than the control plane's
+// min_cli_version. A failed config fetch does not warn.
 func (c *cli) enforceMinCLI(cmd *cobra.Command) error {
 	if skipMinCLICheck(cmd) || c.apiClient == nil {
 		return nil
@@ -20,8 +20,8 @@ func (c *cli) enforceMinCLI(cmd *cobra.Command) error {
 		return nil
 	}
 
-	if err := version.RequireMinCLI(cfg.MinCliVersion); err != nil {
-		return c.returnToFang(err)
+	if msg := version.MinCLIWarning(cfg.MinCliVersion); msg != "" {
+		ui.PrintWarning(msg)
 	}
 	return nil
 }

@@ -42,6 +42,6 @@ func (s *service) GetCLIConfig(ctx *gin.Context) {
 		RootDomain:      s.cfg.RootDomain,
 
 		OIDCFederationEnabled: s.cfg.OIDCFederationEnabled,
-		MinCLIVersion:         s.cfg.MinCLIVersion,
+		MinCLIVersion:         s.resolveMinCLIVersion(ctx.Request.Context()),
 	})
 }
