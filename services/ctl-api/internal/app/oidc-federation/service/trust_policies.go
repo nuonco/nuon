@@ -304,12 +304,6 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 	if req.ClaimConditions != nil {
 		policy.ClaimConditions = req.ClaimConditions
 	}
-	if req.IssuerURL != "" || req.ClaimConditions != nil {
-		if err := s.validateClaimConditions(policy.IssuerURL, policy.ClaimConditions); err != nil {
-			ctx.Error(stderr.NewInvalidRequest(err))
-			return
-		}
-	}
 	if req.TokenDurationSeconds != 0 {
 		duration, err := parseTrustPolicyTokenDuration(req.TokenDurationSeconds)
 		if err != nil {
@@ -317,6 +311,15 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 			return
 		}
 		policy.TokenDurationSeconds = duration
+	}
+
+	// Validate the effective state, so a policy that no longer passes validation
+	// can only be disabled.
+	if policy.Enabled {
+		if err := s.validateClaimConditions(policy.IssuerURL, policy.ClaimConditions); err != nil {
+			ctx.Error(stderr.NewInvalidRequest(err))
+			return
+		}
 	}
 
 	if req.Role != "" && req.Role != policy.Role {
