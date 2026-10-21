@@ -284,6 +284,15 @@ func (a *Activities) reconcileStackVersionPhoneHomeTokens(
 			continue
 		}
 
+		if _, err := a.acctClient.EnsurePhoneHomeServiceAccount(
+			ctx,
+			version.OrgID,
+			version.InstallStackID,
+			version.ID,
+		); err != nil {
+			return nil, err
+		}
+
 		if value, ok := live[version.PhoneHomeTokenID]; ok {
 			tokens[version.PhoneHomeID] = value
 
@@ -336,15 +345,9 @@ func (a *Activities) livePhoneHomeTokens(
 
 // mintPhoneHomeToken issues a token to the stack version's own service account.
 //
-// That account already exists for versions created since service-account management
-// landed, carries no org roles, and is 1:1 with the credential's lifetime — so the
-// token authenticates as this specific stack version and authorizes nothing else.
-// Older versions predate it, hence the find-or-create.
+// The reconciler has already converged the version's managed service account and
+// private role before this function issues its credential.
 func (a *Activities) mintPhoneHomeToken(ctx context.Context, version *app.InstallStackVersion) (string, error) {
-	if _, err := a.acctClient.EnsureServiceAccount(ctx, version.ID, ""); err != nil {
-		return "", fmt.Errorf("unable to ensure stack version service account: %w", err)
-	}
-
 	token, err := a.acctClient.CreateToken(ctx, account.ServiceAccountEmail(version.ID), phoneHomeTokenTimeout)
 	if err != nil {
 		return "", fmt.Errorf("unable to create phone home token: %w", err)
