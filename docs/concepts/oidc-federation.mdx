@@ -49,8 +49,10 @@ Values support glob patterns. The `*` wildcard does not cross `:` segment bounda
 Policies whose `sub` pattern matches unrelated identities are rejected as too broad, for every issuer. For example, `*` and `**` are never accepted.
 
 <Warning>
-  GitHub's issuer (`https://token.actions.githubusercontent.com`) is shared by every GitHub account, so a policy for it must be pinned to your own owner. Either start the `sub` condition with a literal owner, such as `repo:acme/` or `repo:acme@123/` (no wildcards in the owner; wildcards after it are fine), or add a `repository_owner_id` condition set to the literal numeric ID of your owner.
+  GitHub's issuer (`https://token.actions.githubusercontent.com`) is shared by every GitHub account, so a policy for it must be pinned to your own owner. Either start the `sub` condition with a literal owner, such as `repo:acme/` or `repo:acme@123/` (no wildcards in the owner; wildcards after it are fine), or add a `repository_owner_id` condition set to the literal numeric ID of your owner. Conditions on claims GitHub does not issue (such as a misspelled claim name) are rejected.
 </Warning>
+
+A policy is checked again whenever it is updated while enabled. If an older policy no longer passes these checks, fix its conditions or disable it; any other update to it is rejected.
 
 ## Managing trust policies
 
