@@ -27,11 +27,11 @@ Actions can be used for:
 
 ## How do you configure an Action?
 
-Create an `actions` directory at the root of the app, and create a TOML file for
+Create an `actions` directory at the root of your app config directory, and create a TOML file for
 each action. e.g., `alb_healthcheck.toml` `deployment_restart.toml`
 `kubectl_logs.toml`.
 
-Actions along with components, the sandbox and app metadata are sent to the Nuon control plane with the CLI command `nuon apps sync`. If you change and add additional actions, you need to run `nuon apps sync` again to upload the changes. But unlike components, actions do not need to be built.
+Actions along with components, the sandbox and app metadata are sent to the Nuon control plane by your [app branch](/concepts/app-branches): each push to the tracked git branch starts a run that uploads them. If you change or add actions, commit and push again to upload the changes. But unlike components, actions do not need to be built.
 
 ![Actions list](../images/concepts/actions/actions-list.png)
 

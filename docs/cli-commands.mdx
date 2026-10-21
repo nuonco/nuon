@@ -2,7 +2,7 @@
 title: "Common commands"
 sidebarTitle: "Common commands"
 description: "The Nuon CLI commands you'll reach for most, from auth to deploy."
-keywords: ["nuon cli commands", "nuon auth login", "nuon orgs select", "nuon orgs current", "switch organization", "select org", "current org", "nuon apps create", "nuon apps sync", "nuon installs create", "nuon runbooks", "cli quick reference", "common nuon commands"]
+keywords: ["nuon cli commands", "nuon auth login", "nuon orgs select", "nuon orgs current", "switch organization", "select org", "current org", "nuon apps create", "nuon branches sync", "nuon branches trigger", "nuon installs create", "nuon runbooks", "cli quick reference", "common nuon commands"]
 ---
 
 The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for the full set.
@@ -50,9 +50,8 @@ nuon actions create-run -i customer1 -w pg_status
 
 | Command | What it does |
 |---------|--------------|
-| `nuon apps create --name <name>` | Create an app in the control plane. |
-| `nuon apps sync` | Sync the config in the current directory to Nuon. The app name comes from the directory name. |
-| `nuon apps validate` | Validate the config in the current directory. Requires login and an existing app whose name matches the directory. Create it first with `nuon apps create`. |
+| `nuon apps create --name <name>` | Create an app template in the control plane. |
+| `nuon apps validate [dir]` | Validate an app config directory (default: the current directory). Requires login, and it looks up the app by the directory's name, so an app with that name must exist. Run `nuon apps create` first. |
 | `nuon apps list` | List your apps. |
 | `nuon apps select` | Set your active app. |
 
@@ -72,6 +71,13 @@ deprecated alias; use `nuon branches`.
 | `nuon branches preview --branch-id <branch-id> --git-ref <ref> --mode plan-only` | Preview a committed Git ref. Use `--pr-number` for a pull request; `--mode` also accepts `apply` or `build-only`. |
 | `nuon branches runs --branch-id <branch-id>` | List the selected app's branch runs and open one in the workflow TUI. |
 | `nuon branches delete --branch-id <branch-id> --confirm` | Delete a branch. |
+
+<Note>
+  `nuon apps sync` and `nuon sync` are deprecated: app config ships through a branch file synced once with
+  `nuon branches sync`, then a push to the tracked git branch. Once they are turned off for your org, running
+  `nuon apps sync` in an interactive terminal offers to migrate: it writes a branch file, syncs it, and offers to move
+  your installs onto the branch. See [Migrating from `nuon apps sync`](/guides/app-branches#migrating-from-nuon-apps-sync).
+</Note>
 
 ## Installs
 

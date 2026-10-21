@@ -44,11 +44,8 @@ migrate -database "$DATABASE_URL" -path /migrations up
 DATABASE_URL = "{{.nuon.install.sandbox.outputs.database_url}}"
 ```
 
-Sync it the same way as any other action:
-
-```sh
-nuon apps sync
-```
+Ship it the same way as any other action: commit it and push to the git branch your
+[app branch](/guides/app-branches) tracks.
 
 Everything else about the action is unchanged: triggers, `timeout` (30 minutes maximum), `role`,
 `enable_kube_config`, `env_vars`, and templating all behave exactly as they do when the action runs

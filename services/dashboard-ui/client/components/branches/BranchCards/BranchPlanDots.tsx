@@ -20,7 +20,7 @@ const DOT_THEME_CLASSES: Record<TStatusTheme, string> = {
   error: 'bg-red-600 dark:bg-red-500',
   warn: 'bg-orange-600 dark:bg-orange-500',
   info: 'bg-blue-600 dark:bg-blue-500',
-  brand: 'bg-primary-600 dark:bg-primary-400',
+  brand: 'bg-status-brand',
   neutral: 'bg-cool-grey-400 dark:bg-dark-grey-500',
 }
 

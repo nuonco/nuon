@@ -47,7 +47,7 @@ func (r *AdminPatchIdentityProviderRequest) Validate(v *validator.Validate) erro
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	app.IdentityProvider
+// @Success				200	{object}	AdminIdentityProviderSummary
 // @Router					/v1/auth/identity-providers/{identity_provider_id} [PATCH]
 func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 	identityProviderID := ctx.Param("identity_provider_id")
@@ -137,5 +137,5 @@ func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 		zap.String("provider_type", string(ip.ProviderType)),
 		zap.Bool("enabled", ip.Enabled))
 
-	ctx.JSON(http.StatusOK, ip)
+	ctx.JSON(http.StatusOK, s.identityProviderSummary(&ip))
 }

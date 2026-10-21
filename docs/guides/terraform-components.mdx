@@ -37,10 +37,10 @@ You can configure Terraform components to use either a public repo (using a
 `public_repo` block) or a private GitHub repo (using a `connected_repo` block).
 Read more about VCS configuration [here](/guides/vcs).
 
-You can also put the Terraform source inside of the same repo as the app, and point to it.
+You can also put the Terraform source inside of the same repo as your app config, and point to it.
 
 <Note>
-If you include the Terraform source in the app repo, you must push the entire repo and do a manual build of the component in the dashboard or CLI. The CLI's `nuon apps sync` will not recognize that the component has changed so will not do the build.
+If you include the Terraform source in the app config repo, push the source along with the rest of the repo. A branch run rebuilds a component when its config changes, so a push that changes only the Terraform source does not rebuild it. After that push, run `nuon branches trigger --branch-id <branch> --force`, or build the component manually in the dashboard or CLI.
 </Note>
 
 ## Configuring Terraform Vars

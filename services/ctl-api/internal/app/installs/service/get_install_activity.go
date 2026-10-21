@@ -364,14 +364,22 @@ func (s *service) listActivityActionRuns(
 	}
 	for _, token := range strings.Fields(search) {
 		like := "%" + token + "%"
-		query = query.Where(`install_action_workflow_runs.id ILIKE ? OR EXISTS (
-			SELECT 1
-			FROM install_action_workflows iaw
-			JOIN action_workflows aw ON aw.id = iaw.action_workflow_id AND aw.deleted_at = 0
-			WHERE iaw.id = install_action_workflow_runs.install_action_workflow_id
-			  AND iaw.deleted_at = 0
-			  AND aw.name ILIKE ?
-		)`, like, like)
+		query = query.Where(`install_action_workflow_runs.id ILIKE ?
+			OR EXISTS (
+				SELECT 1
+				FROM install_action_workflows iaw
+				JOIN action_workflows aw ON aw.id = iaw.action_workflow_id AND aw.deleted_at = 0
+				WHERE iaw.id = install_action_workflow_runs.install_action_workflow_id
+				  AND iaw.deleted_at = 0
+				  AND aw.name ILIKE ?
+			)
+			OR EXISTS (
+				SELECT 1
+				FROM install_action_workflow_run_steps iaws
+				WHERE iaws.install_action_workflow_run_id = install_action_workflow_runs.id
+				  AND iaws.deleted_at = 0
+				  AND iaws.ad_hoc_config ->> 'name' ILIKE ?
+			)`, like, like, like)
 	}
 
 	var runs []app.InstallActionWorkflowRun

@@ -37,7 +37,7 @@ export const FeatureTile = ({ src, eyebrow, title, description, href, reverse })
   <div className="relative z-10 px-4 pt-8 pb-8 lg:pt-12 lg:pb-12 max-w-4xl mx-auto">
     <div id="nuon-in-3-parts" className="scroll-mt-24">
       <h2 className="text-center text-2xl lg:text-3xl font-medium tracking-tight" style={{ color: 'inherit' }}>
-        Get started with your app, or <a href="https://github.com/nuonco/example-app-configs#example-apps-on-nuon" style={{ color: '#256A7F' }}>deploy an example app today</a>
+        Get started with your product, or <a href="https://github.com/nuonco/example-app-configs#example-apps-on-nuon" style={{ color: '#256A7F' }}>deploy an example app today</a>
       </h2>
 
       <div className="mt-6 flex justify-center gap-3">
@@ -61,7 +61,7 @@ export const FeatureTile = ({ src, eyebrow, title, description, href, reverse })
           src="/images/introduction/guides.svg"
           eyebrow="Step 1"
           title="Connect your app"
-          description="Wrap your existing Terraform, Helm, Kubernetes, and Docker assets into a Nuon app. Define inputs, secrets, and a sandbox once."
+          description="Wrap your existing Terraform, Helm, Kubernetes, and Docker assets into a Nuon app template. Define inputs, secrets, and a sandbox once."
           href="/concepts/apps"
         />
         <FeatureTile
@@ -109,7 +109,7 @@ export const FeatureTile = ({ src, eyebrow, title, description, href, reverse })
       Run `git clone https://github.com/nuonco/example-app-configs`, then `cd example-app-configs/eks-simple`.
     </Step>
     <Step title="Define and deploy it">
-      Run `nuon apps create --name eks-simple`, then `nuon apps sync`, then `nuon installs create --name <install-name> --region <region>`.
+      Run `nuon apps create --name eks-simple`, then `nuon branches sync --file branch.toml` (which starts the first run), then `nuon installs create --name <install-name> --region <region>`.
     </Step>
   </Steps>
 
