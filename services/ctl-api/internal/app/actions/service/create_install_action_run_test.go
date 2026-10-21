@@ -402,12 +402,10 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunCrossOrgIsolation()
 	path := fmt.Sprintf("/v1/installs/%s/actions/runs", install2.ID)
 	rr := s.makeRequest(http.MethodPost, path, req)
 
-	// Cross-org request returns 400 because the config's app_config_id
-	// doesn't match the other org's install's app_config_id
-	if rr.Code != http.StatusBadRequest {
+	if rr.Code != http.StatusNotFound {
 		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 	}
-	assert.Equal(s.T(), http.StatusBadRequest, rr.Code)
+	assert.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
 
 // Helper methods
