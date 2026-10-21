@@ -13,7 +13,7 @@ import (
 )
 
 func (s *OIDCFederationTestSuite) createPolicy(idp *fakeIDP, conditions map[string]string) app.OIDCTrustPolicy {
-	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = true
+	s.setAllowInsecureIssuers(true)
 
 	rr := s.makeRequest(http.MethodPost, "/v1/oidc/trust-policies", CreateOIDCTrustPolicyRequest{
 		Name:            "ci",
@@ -65,7 +65,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyCreatesServiceAccount() {
 }
 
 func (s *OIDCFederationTestSuite) TestCreatePolicyValidation() {
-	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = false
+	s.setAllowInsecureIssuers(false)
 
 	cases := []struct {
 		name string
@@ -111,7 +111,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyValidation() {
 
 func (s *OIDCFederationTestSuite) TestCreatePolicyAllowsAdminRole() {
 	idp := newFakeIDP(s.T())
-	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = true
+	s.setAllowInsecureIssuers(true)
 
 	rr := s.makeRequest(http.MethodPost, "/v1/oidc/trust-policies", CreateOIDCTrustPolicyRequest{
 		Name: "admin", IssuerURL: idp.issuer(), Audience: "nuon-test",
@@ -132,7 +132,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyAllowsAdminRole() {
 
 func (s *OIDCFederationTestSuite) TestCreatePolicyRejectsDeprecatedBuilderRole() {
 	idp := newFakeIDP(s.T())
-	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = true
+	s.setAllowInsecureIssuers(true)
 
 	rr := s.makeRequest(http.MethodPost, "/v1/oidc/trust-policies", CreateOIDCTrustPolicyRequest{
 		Name: "builder", IssuerURL: idp.issuer(), Audience: "nuon-test",

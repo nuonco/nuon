@@ -144,3 +144,8 @@ func (s *OIDCFederationTestSuite) makeRequest(method, path string, body interfac
 	s.router.ServeHTTP(rr, req)
 	return rr
 }
+
+func (s *OIDCFederationTestSuite) setAllowInsecureIssuers(allow bool) {
+	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = allow
+	s.deps.Service.verifier = newVerifier(s.deps.Service.cfg)
+}

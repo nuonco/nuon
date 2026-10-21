@@ -18,8 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
-
-	"github.com/auth0/go-jwt-middleware/v2/validator"
 )
 
 type ExchangeOIDCTokenRequest struct {
@@ -45,30 +43,11 @@ func genericExchangeError() stderr.ErrAuthentication {
 	}
 }
 
-var errInvalidJWTFormat = errors.New("invalid JWT format")
-
-func compactJWSParts(tokenStr string) ([]string, error) {
-	parts := strings.Split(tokenStr, ".")
-	if len(parts) != 3 {
-		return nil, errInvalidJWTFormat
-	}
-	for _, part := range parts {
-		if part == "" || strings.IndexFunc(part, isNotBase64URL) >= 0 {
-			return nil, errInvalidJWTFormat
-		}
-	}
-	return parts, nil
-}
-
-func isNotBase64URL(r rune) bool {
-	return !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_')
-}
-
 // parseUnverifiedIssuer extracts the iss claim from a JWT without signature
 // verification. It is only used to select among stored trust policies; the
 // issuer used for verification and JWKS fetching always comes from the policy.
 func parseUnverifiedIssuer(tokenStr string) (string, error) {
-	parts, err := compactJWSParts(tokenStr)
+	parts, err := oidc.CompactJWSParts(tokenStr)
 	if err != nil {
 		return "", err
 	}
@@ -91,50 +70,8 @@ func parseUnverifiedIssuer(tokenStr string) (string, error) {
 	return claims.Issuer, nil
 }
 
-type verifiedClaims map[string]any
-
-func (verifiedClaims) Validate(context.Context) error { return nil }
-
-// verifyOIDCToken verifies the token's signature, issuer, audience, and time
-// claims against a policy's stored configuration and returns the verified
-// claims.
 func (s *service) verifyOIDCToken(ctx context.Context, tokenStr, issuer, audience string) (oidc.Claims, error) {
-	if _, err := compactJWSParts(tokenStr); err != nil {
-		return oidc.Claims{}, err
-	}
-
-	provider, err := s.jwks.getProvider(issuer)
-	if err != nil {
-		return oidc.Claims{}, err
-	}
-
-	tokenValidator, err := validator.New(
-		provider.KeyFunc,
-		validator.RS256,
-		issuer,
-		[]string{audience},
-		validator.WithAllowedClockSkew(time.Minute),
-		validator.WithCustomClaims(func() validator.CustomClaims { return &verifiedClaims{} }),
-	)
-	if err != nil {
-		return oidc.Claims{}, fmt.Errorf("failed to create JWT validator: %w", err)
-	}
-
-	res, err := tokenValidator.ValidateToken(ctx, tokenStr)
-	if err != nil {
-		return oidc.Claims{}, fmt.Errorf("JWT validation failed: %w", err)
-	}
-
-	validated, ok := res.(*validator.ValidatedClaims)
-	if !ok {
-		return oidc.Claims{}, errors.New("unexpected JWT validation result")
-	}
-	claims, ok := validated.CustomClaims.(*verifiedClaims)
-	if !ok || claims == nil {
-		return oidc.Claims{}, errors.New("unexpected JWT claims type")
-	}
-
-	return oidc.DecodeClaims(*claims)
+	return s.verifier.Verify(ctx, tokenStr, issuer, audience)
 }
 
 // @ID						ExchangeOIDCToken

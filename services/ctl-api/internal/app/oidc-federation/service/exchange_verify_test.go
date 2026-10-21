@@ -15,6 +15,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
 )
 
 const testKeyID = "test-key"
@@ -95,7 +97,10 @@ func (idp *fakeIDP) signToken(t *testing.T, claims jwt.MapClaims) string {
 }
 
 func newVerifyTestService() *service {
-	return &service{jwks: newJWKSProviderCache()}
+	return &service{verifier: oidc.NewVerifier(oidc.VerifierOptions{
+		HTTPClient:           &http.Client{Timeout: 10 * time.Second},
+		AllowInsecureIssuers: true,
+	})}
 }
 
 func TestVerifyOIDCToken(t *testing.T) {
