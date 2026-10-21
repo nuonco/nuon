@@ -8,7 +8,7 @@ keywords: ["app branch migration", "migrate to app branches", "install groups", 
 ### Control Plane Syncing via App Branches
 Previously, running `nuon apps sync` validated, synced, and built your app template directly from the Nuon CLI.
 
-With App Branches, Nuon directly fetches your config repo and syncs it from the control plane. This unlocks features like automated previews and complex rollouts.
+With App Branches, Nuon directly fetches your app template Git repository and syncs it to the Nuon control plane. This unlocks features like automated previews and install rollouts.
 
 ### Install Groups
 Rollouts were previously managed on an install-by-install basis. With Install Groups, you can define multi-install deployment plans and orchestrate the update sequence across installs using labels or version pinning.
