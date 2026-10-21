@@ -67,10 +67,18 @@ func (s *service) updateUserJourneyStep(ctx *gin.Context, accountID, journeyName
 
 	// Find and update the specific journey step
 	found := false
+	journeyIdx := -1
+	newlyComplete := false
+	pathChosen := false
 	for i, journey := range account.UserJourneys {
 		if journey.Name == journeyName {
 			for j, step := range journey.Steps {
 				if step.Name == stepName {
+					newlyComplete = complete && !step.Complete
+					if path, ok := metadata["path"].(string); ok && path != "" && path != step.Metadata["path"] {
+						pathChosen = true
+					}
+					journeyIdx = i
 					account.UserJourneys[i].Steps[j].Complete = complete
 
 					// Merge metadata if provided
@@ -101,6 +109,13 @@ func (s *service) updateUserJourneyStep(ctx *gin.Context, accountID, journeyName
 	// Save to database
 	if err := s.db.WithContext(ctx).Select("user_journeys").Save(account).Error; err != nil {
 		return nil, fmt.Errorf("unable to update user journey step: %w", err)
+	}
+
+	if pathChosen {
+		s.trackJourneyEvent(ctx, account, journeyPathChosenEvent, account.UserJourneys[journeyIdx], "")
+	}
+	if newlyComplete {
+		s.trackJourneyEvent(ctx, account, journeyStepCompleteEvent, account.UserJourneys[journeyIdx], stepName)
 	}
 
 	return account, nil

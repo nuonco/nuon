@@ -1,8 +1,8 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
-import { Code } from '@/components/common/Code'
 import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
@@ -11,22 +11,23 @@ import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-pr
 import type { TAPIError } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
-  CLI_INSTALL,
-  CLI_LOGIN,
   CLOUD_CONNECT,
   CLOUD_ICON,
+  DOCS_CLI,
+  DOCS_MCP,
   KITCHEN_SINK_LABEL,
   SANDBOX_PARTS,
   buildStages,
   defaultRegion,
   isCloud,
   watchCommand,
+  watchPrompt,
   type IBuildStage,
   type TCloud,
   type TStageId,
 } from './constants'
 import { clearFirstRunSession } from './session'
-import { CopyTextButton, FirstRunCloudRegion, NextButton } from './shared'
+import { CopyBlock, FirstRunCloudRegion, NextButton } from './shared'
 
 const ProvisionAccountView = ({
   stages,
@@ -182,27 +183,70 @@ export const ProvisionStepView = ({
   onBack,
 }: IProvisionStepView) => {
   const command = watchCommand(installId)
+  const [showBuild, setShowBuild] = useState(false)
   return (
     <div className="flex flex-col gap-6">
-      <Card className="!gap-5">
-        <ProvisionAccountView stages={buildStages(cloud, appName)} cloud={cloud} region={region} />
-        <div className="flex flex-col gap-3 border-t pt-5">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card className="!gap-3 !p-4">
           <div className="flex flex-col gap-1">
+            <Text variant="body" weight="strong" flex className="items-center gap-2">
+              <Icon variant="TerminalWindowIcon" size={16} /> Watch it from the CLI
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              Streams each step of the install to your terminal.
+            </Text>
+          </div>
+          <CopyBlock text={command} label="Copy command" mono />
+          <Text variant="subtext" theme="neutral" flex className="mt-auto flex-wrap items-center gap-x-1.5 gap-y-1">
+            Needs the Nuon CLI:
+            <Link href={DOCS_CLI} isExternal textVariant="subtext">
+              Install it
+            </Link>
+          </Text>
+        </Card>
+        <Card className="!gap-3 !p-4">
+          <div className="flex flex-col gap-1">
+            <Text variant="body" weight="strong" flex className="items-center gap-2">
+              <Icon variant="RobotIcon" size={16} /> Watch it from your agent
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              Your agent follows the install step by step and explains any failure from its logs.
+            </Text>
+          </div>
+          <CopyBlock text={watchPrompt(appName)} label="Copy prompt" />
+          <Text variant="subtext" theme="neutral" flex className="mt-auto flex-wrap items-center gap-x-1.5 gap-y-1">
+            Needs the Nuon MCP server:
+            <Link href={DOCS_MCP} isExternal textVariant="subtext">
+              Set it up
+            </Link>
+          </Text>
+        </Card>
+      </div>
+      <Card className="!gap-0 !p-0">
+        <button
+          type="button"
+          aria-expanded={showBuild}
+          aria-controls="provision-build-order"
+          onClick={() => setShowBuild((open) => !open)}
+          className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-md px-5 py-4 text-left hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600 dark:hover:bg-neutral-900"
+        >
+          <span className="flex flex-col">
             <Text variant="body" weight="strong">
-              See it in action in the CLI
+              What Nuon builds in your test {CLOUD_CONNECT[cloud].accountNoun}
             </Text>
-            <Text variant="subtext" theme="neutral" flex className="flex-wrap">
-              Needs the Nuon CLI:
-              <Code variant="inline">{CLI_INSTALL}</Code>
-              then
-              <Code variant="inline">{CLI_LOGIN}</Code>
+            <Text variant="subtext" theme="neutral">
+              The runner, then the sandbox, then your components.
             </Text>
+          </span>
+          <span className={cn('flex transition-transform duration-300', showBuild && 'rotate-180')} aria-hidden>
+            <Icon variant="CaretDownIcon" size={14} weight="bold" theme="neutral" />
+          </span>
+        </button>
+        {showBuild ? (
+          <div id="provision-build-order" className="border-t p-5">
+            <ProvisionAccountView stages={buildStages(cloud, appName)} cloud={cloud} region={region} />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Code variant="inline">{command}</Code>
-            <CopyTextButton text={command} label="Copy" size="sm" />
-          </div>
-        </div>
+        ) : null}
       </Card>
       {error ? <Banner theme="error">{error}</Banner> : null}
       <NextButton label="Go to deploy workflow" onClick={onFinish} onBack={onBack} loading={finishing} />
