@@ -381,11 +381,13 @@ func (s *service) validateRunnerAzureIdentity(ctx context.Context, install *app.
 		return fmt.Errorf("install %s does not have Azure stack outputs configured", install.ID)
 	}
 
-	azureOutputs := installStack.InstallStackOutputs.AzureStackOutputs
+	return matchAzureRunnerClaims(install.ID, installStack.InstallStackOutputs.AzureStackOutputs, claims, subscriptionID)
+}
 
-	expectedTenantID := azureOutputs.SubscriptionTenantID
+func matchAzureRunnerClaims(installID string, outputs *app.AzureStackOutputs, claims *azureClaims, subscriptionID string) error {
+	expectedTenantID := outputs.SubscriptionTenantID
 	if expectedTenantID == "" {
-		return fmt.Errorf("install %s does not have a subscription tenant ID in stack outputs", install.ID)
+		return fmt.Errorf("install %s does not have a subscription tenant ID in stack outputs", installID)
 	}
 
 	if claims.TenantID != expectedTenantID {
@@ -393,15 +395,15 @@ func (s *service) validateRunnerAzureIdentity(ctx context.Context, install *app.
 	}
 
 	if subscriptionID != "" {
-		expectedSubscriptionID := azureOutputs.SubscriptionID
+		expectedSubscriptionID := outputs.SubscriptionID
 		if expectedSubscriptionID != "" && !strings.EqualFold(subscriptionID, expectedSubscriptionID) {
 			return fmt.Errorf("subscription ID mismatch: got %s, expected %s", subscriptionID, expectedSubscriptionID)
 		}
 	}
 
-	expectedPrincipalID := azureOutputs.RunnerIdentityPrincipalID
+	expectedPrincipalID := outputs.RunnerIdentityPrincipalID
 	if expectedPrincipalID == "" {
-		return fmt.Errorf("install %s does not have a runner identity principal id in stack outputs", install.ID)
+		return fmt.Errorf("install %s does not have a runner identity principal id in stack outputs", installID)
 	}
 	if !strings.EqualFold(claims.ObjectID, expectedPrincipalID) {
 		return fmt.Errorf("principal id mismatch: got %s, expected %s", claims.ObjectID, expectedPrincipalID)
