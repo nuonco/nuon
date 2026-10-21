@@ -23,6 +23,7 @@ export const RadioFilterDropdown = ({
   const selectedLabel = options.find(
     (option) => option.value === selected
   )?.label
+  const buttonLabel = selectedLabel ? `${label} · ${selectedLabel}` : label
 
   return (
     <Dropdown
@@ -31,17 +32,30 @@ export const RadioFilterDropdown = ({
       buttonText={
         <>
           <Icon variant="FunnelIcon" size={14} />
-          {selectedLabel ?? label}
+          <span className="min-w-0 max-w-40 truncate" title={buttonLabel}>
+            {buttonLabel}
+          </span>
         </>
       }
     >
-      <Menu className="min-w-56 max-h-80">
-        <div className="-mx-2 -mt-2 flex min-h-0 flex-col gap-0.5 overflow-y-auto p-2">
+      <Menu className="max-h-80">
+        <div className="-mx-2 -mt-2 flex min-h-0 flex-col gap-0.5 overflow-y-auto overflow-x-hidden p-2">
           {options.map((option) => (
             <RadioInput
               key={option.value}
               checked={selected === option.value}
-              labelProps={{ className: 'shrink-0', labelText: option.label }}
+              className="size-3.5"
+              labelProps={{
+                className: 'w-full min-w-0 !p-1',
+                labelText: option.label,
+                labelTextProps: {
+                  className: 'truncate',
+                  nowrap: true,
+                  variant: 'subtext',
+                  weight: 'strong',
+                },
+                title: option.label,
+              }}
               name={id}
               onChange={(event) => onChange(event.target.value)}
               value={option.value}

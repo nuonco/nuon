@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import type { Node, NodeProps } from '@xyflow/react'
 import { GraphCanvas } from '@/components/branches/graph/GraphCanvas'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
-import { Dropdown } from '@/components/common/Dropdown'
+import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import { EmptyState } from '@/components/common/EmptyState'
-import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Icon } from '@/components/common/Icon'
 import { SearchInput } from '@/components/common/SearchInput'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { InstallResourceDetailPanelComponent } from '@/components/install-resources/InstallResourceDetailPanel'
 import { resourceStatusFields } from '@/components/install-resources/InstallResourceDetailPanel/resource-details'
@@ -16,8 +16,18 @@ import { ResourceKind } from '@/components/install-resources/ResourceKind'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TInstallResource } from '@/types'
 import { cn } from '@/utils/classnames'
-import { isIdentityOnlyResource } from '@/utils/health-utils'
-import { isStaleObservation } from '@/utils/time-utils'
+import {
+  HEALTH_DEGRADED,
+  HEALTH_HEALTHY,
+  HEALTH_NOT_APPLICABLE,
+  HEALTH_PROGRESSING,
+  HEALTH_UNHEALTHY,
+  HEALTH_UNKNOWN,
+  isIdentityOnlyResource,
+  reportedHealth,
+  resourceIsStale,
+  worstHealth,
+} from '@/utils/health-utils'
 import { layoutResourceKinds, type TResourceBoardItem } from './resource-layout'
 
 export type { TResourceBoardItem } from './resource-layout'
@@ -31,27 +41,41 @@ type TResourceNode = Node<
   }
 >
 
+const ATTENTION_BORDER: Record<string, string> = {
+  [HEALTH_UNHEALTHY]: 'bg-red-600 dark:bg-red-500',
+  [HEALTH_DEGRADED]: 'bg-orange-600 dark:bg-orange-500',
+  [HEALTH_PROGRESSING]: 'bg-blue-600 dark:bg-blue-500',
+}
+
+const HEALTH_FILTER_OPTIONS = [
+  { value: HEALTH_UNHEALTHY, label: 'Unhealthy' },
+  { value: HEALTH_DEGRADED, label: 'Degraded' },
+  { value: HEALTH_PROGRESSING, label: 'Progressing' },
+  { value: HEALTH_HEALTHY, label: 'Healthy' },
+  { value: HEALTH_UNKNOWN, label: 'Unknown' },
+  { value: HEALTH_NOT_APPLICABLE, label: 'Not applicable' },
+]
+
+const groupAttentionHealth = (resources: TResourceBoardItem[]) => {
+  const health = worstHealth(
+    resources.map((item) =>
+      reportedHealth(item.resource, resourceIsStale(item.resource))
+    )
+  )
+  return ATTENTION_BORDER[health] ? health : undefined
+}
+
 const ResourceNode = ({ data }: NodeProps<TResourceNode>) => {
   const fields = resourceStatusFields(data.resource)
-  const health =
-    !data.stale &&
-    !data.resource.removed_from_config &&
-    !isIdentityOnlyResource(data.resource)
-      ? data.resource.health
-      : undefined
-  const accentClassName =
-    health === 'healthy'
-      ? 'bg-green-500/70 dark:bg-green-500/60'
-      : health === 'unhealthy'
-        ? 'bg-red-500/70 dark:bg-red-500/60'
-        : health === 'progressing' || health === 'degraded'
-          ? 'bg-orange-500/70 dark:bg-orange-500/60'
-          : undefined
+  const health = reportedHealth(data.resource, data.stale)
+  const attentionBorder = health ? ATTENTION_BORDER[health] : undefined
   return (
     <Button
       variant="ghost"
       className={cn(
         'nodrag nopan relative overflow-hidden !h-52 !w-64 !p-4 !border flex-col !items-start !gap-3 text-left !bg-elevation-2 hover:!bg-elevation-3',
+        data.matching &&
+          '!bg-primary-500/15 hover:!bg-primary-500/20 ![--tw-outline-style:solid] !outline-1 !outline-primary-500',
         data.selected &&
           '![--tw-outline-style:solid] !outline-1 !outline-primary-500'
       )}
@@ -59,35 +83,13 @@ const ResourceNode = ({ data }: NodeProps<TResourceNode>) => {
       aria-pressed={data.selected}
       onClick={data.onInspect}
     >
-      {accentClassName ? (
+      {attentionBorder ? (
         <span
-          role="img"
-          aria-label={`Last reported ${health}`}
-          className={cn(
-            'absolute inset-x-0 top-0 h-1',
-            accentClassName
-          )}
+          aria-hidden
+          className={cn('absolute inset-x-0 top-0 h-1', attentionBorder)}
         />
       ) : null}
-      {data.matching && !data.selected ? (
-        <span
-          className="absolute left-0 top-0 h-2 w-2 rounded-br bg-primary-500"
-          aria-label="Search match"
-        />
-      ) : null}
-      <div className="flex w-full items-center justify-between gap-2">
-        <ResourceKind resource={data.resource} compact />
-        {data.selected ? (
-          <Text variant="label" theme="brand">
-            Selected
-          </Text>
-        ) : null}
-        {data.stale ? (
-          <Badge size="sm" theme="warn">
-            Stale
-          </Badge>
-        ) : null}
-      </div>
+      {health ? <Status status={health} variant="badge" /> : null}
       <Text
         family="mono"
         weight="strong"
@@ -97,6 +99,21 @@ const ResourceNode = ({ data }: NodeProps<TResourceNode>) => {
       >
         {data.resource.name}
       </Text>
+      <div className="flex w-full items-center justify-between gap-2">
+        <ResourceKind resource={data.resource} compact />
+        <div className="flex items-center gap-2">
+          {data.selected ? (
+            <Text variant="label" theme="brand">
+              Selected
+            </Text>
+          ) : null}
+          {data.stale ? (
+            <Badge size="sm" theme="warn">
+              Stale
+            </Badge>
+          ) : null}
+        </div>
+      </div>
       <div className="flex w-full flex-auto flex-col gap-1 min-h-0">
         {fields.length ? (
           fields.slice(0, 3).map(([label, value], index) => (
@@ -159,25 +176,33 @@ const ResourceNode = ({ data }: NodeProps<TResourceNode>) => {
 const KindNode = ({
   data,
 }: NodeProps<
-  Node<{ resource: TInstallResource; count: number; showGroup: boolean }>
+  Node<{
+    resource: TInstallResource
+    count: number
+    showGroup: boolean
+    health?: string
+  }>
 >) => (
   <div className="flex w-64 flex-col gap-1">
     <div className="flex items-center justify-between gap-2">
-      <Text
-        family="mono"
-        variant="subtext"
-        weight="strong"
-        nowrap
-        className="truncate"
-        title={`${data.resource.kind} · ${data.resource.api_group || 'core'}`}
-      >
-        {data.resource.kind === 'HorizontalPodAutoscaler'
-          ? 'HPA'
-          : data.resource.kind === 'PersistentVolumeClaim'
-            ? 'PVC'
-            : data.resource.kind}
-      </Text>
-      <Text variant="label" theme="neutral">
+      <span className="flex min-w-0 items-center gap-2">
+        <Text
+          family="mono"
+          variant="subtext"
+          weight="strong"
+          nowrap
+          className="min-w-0 truncate"
+          title={`${data.resource.kind} · ${data.resource.api_group || 'core'}`}
+        >
+          {data.resource.kind === 'HorizontalPodAutoscaler'
+            ? 'HPA'
+            : data.resource.kind === 'PersistentVolumeClaim'
+              ? 'PVC'
+              : data.resource.kind}
+        </Text>
+        {data.health ? <Status status={data.health} /> : null}
+      </span>
+      <Text variant="label" theme="neutral" className="shrink-0">
         {data.count}
       </Text>
     </div>
@@ -223,8 +248,12 @@ const noEdges = []
 
 export const InstallResourceBoard = ({
   items,
+  filters,
+  toggles,
 }: {
   items: TResourceBoardItem[]
+  filters?: ReactNode
+  toggles?: ReactNode
 }) => {
   const { panels, addPanel, updatePanel } = useSurfaces()
   const panelId = useRef<string>()
@@ -232,7 +261,7 @@ export const InstallResourceBoard = ({
   const search = params.get('q') || ''
   const legacyKind = params.get('kind') || ''
   const selectedKinds = new Set(params.getAll('resource_kind'))
-  const [kindSearch, setKindSearch] = useState('')
+  const selectedHealth = new Set(params.getAll('resource_health'))
   const [selected, setSelected] = useState<string>()
   const panelVisible = panels.some(
     (panel) => panel.id === panelId.current && panel.isVisible
@@ -247,8 +276,11 @@ export const InstallResourceBoard = ({
     }
   }, [inspected, panelVisible, updatePanel])
 
+  const healthScoped = selectedHealth.size
+    ? items.filter((item) => selectedHealth.has(item.resource.health || ''))
+    : items
   const byKind = new Map<string, TResourceBoardItem[]>()
-  for (const item of items) {
+  for (const item of healthScoped) {
     const key = `${item.resource.provider || ''}/${item.resource.api_group || ''}/${item.resource.kind || ''}`
     byKind.set(key, [...(byKind.get(key) || []), item])
   }
@@ -307,6 +339,7 @@ export const InstallResourceBoard = ({
         resource: resources[0].resource,
         count: resources.length,
         showGroup: additional,
+        health: groupAttentionHealth(resources),
       },
     })
     resources.forEach((item, index) =>
@@ -321,12 +354,7 @@ export const InstallResourceBoard = ({
         data: {
           ...item,
           matching: filtering && matchingIds.has(item.id),
-          stale:
-            !isIdentityOnlyResource(item.resource) &&
-            isStaleObservation(
-              item.resource.observed_at,
-              item.resource.stale_after_seconds || undefined
-            ),
+          stale: resourceIsStale(item.resource),
           selected: panelVisible && selected === item.id,
           onInspect: () => {
             setSelected(item.id)
@@ -351,94 +379,30 @@ export const InstallResourceBoard = ({
       },
       { replace: true }
     )
-  const toggleKind = (key: string) => {
-    const next = new Set(selectedKinds)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    setKinds(next)
-  }
+  const setHealth = (values: Set<string>) =>
+    setParams(
+      (previous) => {
+        previous.delete('resource_health')
+        values.forEach((value) => previous.append('resource_health', value))
+        return previous
+      },
+      { replace: true }
+    )
+  const clearFilters = () =>
+    setParams(
+      (previous) => {
+        previous.delete('q')
+        previous.delete('kind')
+        previous.delete('resource_kind')
+        previous.delete('resource_health')
+        return previous
+      },
+      { replace: true }
+    )
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <Dropdown
-          id="resource-kinds"
-          closeOnBlur={false}
-          buttonText={
-            <>
-              <Icon variant="FunnelIcon" size={14} />
-              Kinds · {selectedKinds.size || 'All'}
-            </>
-          }
-        >
-          <div className="flex w-80 flex-col gap-2 p-3">
-            <SearchInput
-              aria-label="Find a kind"
-              placeholder="Find a kind or API group"
-              className="w-full !min-w-0"
-              labelClassName="w-full"
-              value={kindSearch}
-              onChange={setKindSearch}
-            />
-            <div
-              className="max-h-72 overflow-y-auto"
-              role="group"
-              aria-label="Reported resource kinds"
-            >
-              {kinds
-                .filter(([key]) =>
-                  key.toLowerCase().includes(kindSearch.toLowerCase())
-                )
-                .map(([key, resources]) => (
-                  <CheckboxInput
-                    key={key}
-                    aria-label={`${resources[0].resource.kind} ${resources[0].resource.api_group || 'core'} (${resources.length})`}
-                    checked={selectedKinds.has(key)}
-                    onChange={() => toggleKind(key)}
-                    labelProps={{
-                      labelTextProps: { className: 'w-full' },
-                      labelText: (
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="flex min-w-0 flex-col gap-1">
-                            <Text
-                              family="mono"
-                              variant="subtext"
-                              className="break-words"
-                            >
-                              {resources[0].resource.kind}
-                            </Text>
-                            <Text family="mono" variant="label" theme="neutral">
-                              {resources[0].resource.api_group || 'core'}
-                            </Text>
-                          </span>
-                          <Text variant="label" theme="neutral">
-                            {resources.length}
-                          </Text>
-                        </span>
-                      ),
-                    }}
-                  />
-                ))}
-              {!kinds.some(([key]) =>
-                key.toLowerCase().includes(kindSearch.toLowerCase())
-              ) ? (
-                <Text variant="subtext" theme="neutral" className="p-2">
-                  No reported kinds match.
-                </Text>
-              ) : null}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setKinds(new Set())
-                setKindSearch('')
-              }}
-            >
-              All kinds
-            </Button>
-          </div>
-        </Dropdown>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <SearchInput
           aria-label="Find resources in canvas"
           placeholder="Find by name, kind, namespace, or status"
@@ -454,33 +418,34 @@ export const InstallResourceBoard = ({
             )
           }
         />
-      </div>
-      {selectedKinds.size || legacyKind ? (
-        <div
-          className="flex flex-wrap items-center gap-2"
-          aria-label="Selected kinds"
+        <Text
+          variant="subtext"
+          theme="neutral"
+          aria-live="polite"
+          className="w-20 shrink-0 tabular-nums"
         >
-          {kinds
-            .filter(([key]) => selectedKinds.has(key))
-            .map(([key, resources]) => (
-              <Button
-                key={key}
-                size="sm"
-                onClick={() => toggleKind(key)}
-                aria-label={`Remove ${resources[0].resource.kind} ${resources[0].resource.api_group || 'core'} filter`}
-              >
-                <Text variant="label" family="mono">
-                  {resources[0].resource.kind} ·{' '}
-                  {resources[0].resource.api_group || 'core'}
-                </Text>
-                <Icon variant="XIcon" size={12} />
-              </Button>
-            ))}
-          <Button variant="ghost" size="sm" onClick={() => setKinds(new Set())}>
-            Clear filters
-          </Button>
-        </div>
-      ) : null}
+          {filtering ? `${matching.length} of ${visibleItems.length}` : ''}
+        </Text>
+        {filters}
+        <CheckboxFilterDropdown
+          id="resource-health"
+          label="Health"
+          options={HEALTH_FILTER_OPTIONS}
+          selected={selectedHealth}
+          onChange={setHealth}
+        />
+        <CheckboxFilterDropdown
+          id="resource-kinds"
+          label="Kinds"
+          options={kinds.map(([key, resources]) => ({
+            value: key,
+            label: `${resources[0].resource.kind} · ${resources[0].resource.api_group || 'core'} (${resources.length})`,
+          }))}
+          selected={selectedKinds}
+          onChange={setKinds}
+        />
+        {toggles}
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Text variant="subtext" theme="neutral">
           Grouped by function. Connections are not shown.
@@ -489,31 +454,38 @@ export const InstallResourceBoard = ({
           {visibleItems.length} of {items.length} reported resources
         </Text>
       </div>
-      {filtering ? (
-        <Text variant="subtext" theme="neutral" aria-live="polite">
-          {matching.length} matching{' '}
-          {matching.length === 1 ? 'resource' : 'resources'}. Other cards stay
-          visible for context.
-        </Text>
-      ) : null}
-      {visibleKinds.length ? (
+      <div className="relative">
         <GraphCanvas
           nodes={nodes}
           edges={noEdges}
           nodeTypes={nodeTypes}
           height={640}
-          minZoom={0.8}
+          minZoom={0.1}
           maxZoom={1.5}
           fitPadding={0.08}
+          fitMinZoom={0.8}
           alignStart
           style={{ background: 'var(--elevation-1)' }}
         />
-      ) : (
-        <EmptyState
-          emptyTitle="No resources match these filters"
-          emptyMessage="Clear the kind filters to browse reported resources."
-        />
-      )}
+        {visibleKinds.length ? null : (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <EmptyState
+              variant="search"
+              emptyTitle="No resources match these filters"
+              emptyMessage="Clear the filters to see every reported resource."
+              action={
+                <Button
+                  className="pointer-events-auto"
+                  variant="secondary"
+                  onClick={clearFilters}
+                >
+                  Clear filters
+                </Button>
+              }
+            />
+          </div>
+        )}
+      </div>
       <Text variant="label" theme="neutral">
         Pan or zoom the canvas. Select a resource to inspect its latest report.
       </Text>

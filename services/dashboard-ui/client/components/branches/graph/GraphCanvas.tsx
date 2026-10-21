@@ -22,7 +22,13 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { cn } from '@/utils/classnames'
 
-const GraphControls = ({ onFit }: { onFit?: () => void }) => {
+const GraphControls = ({
+  onFit,
+  fitMinZoom,
+}: {
+  onFit?: () => void
+  fitMinZoom?: number
+}) => {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
 
   return (
@@ -39,7 +45,9 @@ const GraphControls = ({ onFit }: { onFit?: () => void }) => {
       </Button>
       <Button
         variant="icon"
-        onClick={() => (onFit ? onFit() : fitView({ padding: 0.2 }))}
+        onClick={() =>
+          onFit ? onFit() : fitView({ padding: 0.2, minZoom: fitMinZoom })
+        }
         aria-label="Fit to view"
       >
         <Icon variant="CornersOutIcon" size={14} />
@@ -57,6 +65,7 @@ interface IGraphCanvas {
   minZoom?: number
   maxZoom?: number
   fitPadding?: number
+  fitMinZoom?: number
   alignStart?: boolean
   style?: CSSProperties
 }
@@ -70,6 +79,7 @@ const GraphCanvasInner = ({
   minZoom,
   maxZoom,
   fitPadding,
+  fitMinZoom,
   alignStart,
   style,
 }: IGraphCanvas) => {
@@ -81,7 +91,7 @@ const GraphCanvasInner = ({
   const resolvedMaxZoom = maxZoom ?? (compact ? 1 : 1.5)
   const resolvedPadding = fitPadding ?? (compact ? 0.15 : 0.25)
   const fit = useCallback(async () => {
-    await fitView({ padding: resolvedPadding })
+    await fitView({ padding: resolvedPadding, minZoom: fitMinZoom })
     if (!alignStart || !container.current) return
     const current = getNodes()
     if (!current.length) return
@@ -109,7 +119,15 @@ const GraphCanvasInner = ({
           ? 64 - top * viewport.zoom
           : viewport.y,
     })
-  }, [alignStart, fitView, getNodes, getViewport, setViewport, resolvedPadding])
+  }, [
+    alignStart,
+    fitView,
+    getNodes,
+    getViewport,
+    setViewport,
+    resolvedPadding,
+    fitMinZoom,
+  ])
 
   useEffect(() => {
     setNodes(initialNodes)
@@ -152,13 +170,18 @@ const GraphCanvasInner = ({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         fitView
-        fitViewOptions={{ padding: resolvedPadding }}
+        fitViewOptions={{ padding: resolvedPadding, minZoom: fitMinZoom }}
         minZoom={minZoom ?? (compact ? 0.6 : 0.5)}
         maxZoom={resolvedMaxZoom}
         nodesConnectable={false}
         proOptions={{ hideAttribution: true }}
       >
-        {!compact && <GraphControls onFit={alignStart ? fit : undefined} />}
+        {!compact && (
+          <GraphControls
+            onFit={alignStart ? fit : undefined}
+            fitMinZoom={fitMinZoom}
+          />
+        )}
       </ReactFlow>
     </div>
   )
