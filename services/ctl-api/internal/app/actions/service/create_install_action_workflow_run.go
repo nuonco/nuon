@@ -234,8 +234,13 @@ func PrependRunEnvPrefix(runEnvVars map[string]string) map[string]string {
 }
 
 func (s *service) getInstall(ctx context.Context, installID string) (*app.Install, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var install app.Install
-	res := s.db.WithContext(ctx).First(&install, "id = ?", installID)
+	res := s.db.WithContext(ctx).Where(app.Install{ID: installID, OrgID: orgID}).First(&install)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install")
 	}
