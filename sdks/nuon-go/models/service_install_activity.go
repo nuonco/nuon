@@ -22,6 +22,9 @@ type ServiceInstallActivity struct {
 	// action
 	Action *ServiceInstallActivityAction `json:"action,omitempty"`
 
+	// actor
+	Actor *AppAccount `json:"actor,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -55,6 +58,10 @@ func (m *ServiceInstallActivity) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAction(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateActor(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -94,6 +101,29 @@ func (m *ServiceInstallActivity) validateAction(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("action")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallActivity) validateActor(formats strfmt.Registry) error {
+	if swag.IsZero(m.Actor) { // not required
+		return nil
+	}
+
+	if m.Actor != nil {
+		if err := m.Actor.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("actor")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("actor")
 			}
 
 			return err
@@ -201,6 +231,10 @@ func (m *ServiceInstallActivity) ContextValidate(ctx context.Context, formats st
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateActor(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidatePolicy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -239,6 +273,31 @@ func (m *ServiceInstallActivity) contextValidateAction(ctx context.Context, form
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("action")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallActivity) contextValidateActor(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Actor != nil {
+
+		if swag.IsZero(m.Actor) { // not required
+			return nil
+		}
+
+		if err := m.Actor.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("actor")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("actor")
 			}
 
 			return err

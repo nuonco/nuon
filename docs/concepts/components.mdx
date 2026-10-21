@@ -2,7 +2,7 @@
 title: "Components"
 icon: "object-group"
 description:
-  "Connect and configure your app using your existing container images, Helm
+  "Connect and configure your app template using your existing container images, Helm
   charts, Kubernetes Manifests and Terraform code."
 boost: 9
 keywords: ["config", "configuration", "app config", "app configuration", "component config", "component configuration", "configure a component", "how to configure a component", "how do you configure a component", "components", "what are components", "Helm chart", "Terraform module", "Kubernetes manifest", "container image", "component types", "component builds", "OCI artifacts", "auto retry", "auto retries", "max_auto_retries", "automatic retries", "retry component"]
@@ -10,7 +10,7 @@ keywords: ["config", "configuration", "app config", "app configuration", "compon
 
 Nuon supports several different component types that allow you to connect your
 existing container images, Helm charts, Kubernetes manifests and Terraform code
-to your app.
+to your app template.
 
 ## What is a Component?
 
@@ -72,7 +72,7 @@ branch    = "main"
 ```
 
 <Note>
-If you are iterating and making changes to the source files of a component, running `nuon apps sync` will not trigger a new build. You need to first push your changes to your repo then create a new build manually using dashboard or CLI after syncing the app. During development, it is recommended to create a branch and use that branch in the component config file.
+If you are iterating and making changes to the source files of a component, a branch run rebuilds the component only when its config also changes. After you push source-only changes, run `nuon branches trigger --branch-id <branch> --force`, or create a new build manually using the dashboard or CLI. During development, it is recommended to create a branch and use that branch in the component config file.
 </Note>
 
 ![Component Build](../images/concepts/components/component-build.png)
@@ -114,7 +114,7 @@ nuon components get -c <component_id or component_name>
 
 <Note>
 	It is not recommended to delete components using the CLI. Instead, manage them
-	by removing a component TOML file from the app directory and then running `nuon apps sync`.
+	by removing a component TOML file from the app directory, then committing and pushing to the git branch your app branch tracks.
 </Note>
 
 ```sh
@@ -129,7 +129,7 @@ nuon components latest-config -c <component_id or component_name>
 
 ### Component Builds
 
-All components must be built before creating an install or updating an install. `nuon apps sync` for the first time or if a component TOML or related Helm `values.yaml` has changed will also trigger a build. The release commands support an `-auto-build` flag which will trigger a build.
+All components must be built before creating an install or updating an install. The first run of an [app branch](/concepts/app-branches), and any run where a component TOML or related Helm `values.yaml` has changed, will also trigger a build. The release commands support an `-auto-build` flag which will trigger a build.
 
 Any of the following CLI commands can use component_id or component_name with the `-c` flag to specify which component to build.
 

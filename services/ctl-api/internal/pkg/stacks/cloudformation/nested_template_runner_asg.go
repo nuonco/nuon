@@ -70,6 +70,18 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		params["RunnerEnvVars"] = inp.RunnerEnvVars
 	}
 
+	// Older runner templates don't declare these and CloudFormation rejects unknown parameters, so drop them there.
+	_, hasAutoUpdateParam := tmpl.Parameters["RunnerAmiAutoUpdate"]
+	_, hasImageIDParam := tmpl.Parameters["RunnerAmiId"]
+	if hasAutoUpdateParam && hasImageIDParam {
+		if inp.AppCfg.RunnerConfig.ImageAutoUpdate {
+			params["RunnerAmiAutoUpdate"] = "true"
+		}
+		if inp.AppCfg.RunnerConfig.ImageID != "" {
+			params["RunnerAmiId"] = inp.AppCfg.RunnerConfig.ImageID
+		}
+	}
+
 	_, supportsTelemetryIngress := tmpl.Outputs["TelemetryEndpoint"]
 	for _, name := range []string{"EnableTelemetryIngress", "VpcId", "TelemetrySourcePrefixListId"} {
 		if _, ok := tmpl.Parameters[name]; !ok {

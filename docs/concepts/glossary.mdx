@@ -14,7 +14,7 @@ This page defines terms you will see throughout our product and documentation.
 | --- | --- |
 | Vendor | A BYOC software provider. |
 | Customer | A BYOC software consumer. |
-| Customer Account | The cloud account where a Vendor deploys a BYOC App. Owned by their Customer. |
+| Customer Account | The cloud account where a Vendor installs their App Template. Owned by their Customer. |
 
 ## System Components
 
@@ -24,7 +24,7 @@ This page defines terms you will see throughout our product and documentation.
 | Nuon Control Plane | The part of the Nuon platform that orchestrates jobs for runners. |
 | Nuon Runner | The part of the Nuon platform that executes jobs. The runners being orchestrated by the Nuon Control Plane can collectively be considered the Data Plane. |
 | Organization | A business unit that operates Apps and Installs. A Vendor will be given one or more Orgs to use. |
-| App | A BYOC application, composed of a sandbox, inputs, components, and actions. Provided by a Vendor to a Customer. |
+| App Template | What a Vendor builds in Nuon to deliver their product as BYOC: a sandbox, inputs, components, and actions that point to the Terraform modules, Helm charts, Kubernetes manifests, and container images behind that product. Each Install is one deployment of the App Template in a Customer Account. The docs often shorten it to "App". |
 | Build | An OCI artifact packaging a Component. Stored in a private OCI registry alongside the Nuon Control Plane. |
 | Inputs | A Vendor-defined input for an App, that can be set by a Customer when creating an Install. Input values can be used by the Sandbox, Components, and Action Workflows of the App. |
 | Sandbox | The “root” component of an App. Defines the base infrastructure required by the App Components. |
@@ -32,7 +32,7 @@ This page defines terms you will see throughout our product and documentation.
 | Action Workflow | A series of commands, defined by a Vendor, that can be run in an Install. |
 | Build Runner | A Nuon Runner that builds docker images and packages OCI artifacts for Install runners to pull. Deployed alongside the Nuon Control Plane, but technically part of the Data Plane. Single-tenant. |
 | Install Runner | The Nuon Runner deployed in the Customer Account for an Install. It executes tasks to sync artifacts, provision, maintain, and deprovision the sandbox and components, and run actions in the Install. Single-tenant. |
-| Install | A single-tennant deployment of a BYOC app. Typically deployed into a cloud account owned by a Customer. |
+| Install | A single-tenant deployment of an App Template. Typically deployed into a cloud account owned by a Customer. |
 
 ## Processes
 
@@ -57,4 +57,4 @@ This page defines terms you will see throughout our product and documentation.
 | Label Selector | A set of key/value pairs on a Deployment Group. Any Install carrying all of them belongs to the group, so membership re-evaluates on every run. Set an Install's labels with `nuon installs labels set`. |
 | Plan | The diff an App Branch Run computes for each Install in a Deployment Group, showing what would change before anything is applied. Its workflow step is an approval gate. |
 | App Config Version | A snapshot of the config an Install was expected to be running at a point in time. Nuon records one per change, keeps the diff between versions, and can apply any earlier version again. |
-| PR Preview | A plan-only App Branch Run triggered by opening or updating a pull request against a tracked branch. Nuon posts the resulting config diff as a pull request comment and sets a commit status named `nuon/<org>/<app>/<branch> preview (plan-only)` that links to the preview run. Requires the Nuon GitHub App connected in your Org for the repository's owner. |
+| PR Preview | A preview App Branch Run (`git-preview-run`) started by opening or updating a pull request against a tracked branch, using the branch's `[preview]` defaults (`plan-only`, `apply`, or `build-only`). It does not roll install groups. Nuon can post a pull request comment and commit status that link to the preview run. Requires the Nuon GitHub App connected in your Org for the repository's owner. You can also start a preview manually with `nuon branches preview`. |

@@ -194,6 +194,7 @@ export interface IDeploymentsListPresenter {
   appId: string
   installId: string
   repo?: string
+  installComponents: string[]
   search: string
   filter: IDeploymentFilter
   onSearchChange: (value: string) => void
@@ -307,6 +308,7 @@ export const DeploymentsListPresenter = ({
   appId,
   installId,
   repo,
+  installComponents,
   search,
   filter,
   onSearchChange,
@@ -327,14 +329,12 @@ export const DeploymentsListPresenter = ({
     [activeDeployments]
   )
   const allResources = [
-    ...new Set([
-      'stack',
-      'sandbox',
-      ...(filter.resource ? [filter.resource] : []),
-      ...[...activeRuns, ...runs].flatMap(
-        ({ resources }) => resources.components
-      ),
-    ]),
+    'stack',
+    'sandbox',
+    ...installComponents,
+    ...(filter.resource && !installComponents.includes(filter.resource)
+      ? [filter.resource]
+      : []),
   ]
   const hasActiveFilters = hasDeploymentFilters(filter)
   return (

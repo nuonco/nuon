@@ -92,6 +92,7 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 			return nil
 		}
 		fmt.Printf("Preview run %s completed\n", run.ID)
+		s.printBranchRunDetails(ctx, appID, branchID, run.WorkflowID)
 		return nil
 	}
 
@@ -106,6 +107,7 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 	}
 
 	workflow.WorkflowApp(ctx, s.cfg, s.api, "", run.WorkflowID, false)
+	s.printBranchRunDetails(ctx, appID, branchID, run.WorkflowID)
 	return nil
 }
 
@@ -187,6 +189,7 @@ func (s *Service) previewBranchRunInteractive(ctx context.Context, appID, branch
 			return err
 		}
 		fmt.Printf("Preview run %s completed\n", run.ID)
+		s.printBranchRunDetails(ctx, appID, result.BranchID, run.WorkflowID)
 		return nil
 	}
 	if opts.NoWait {
@@ -198,6 +201,7 @@ func (s *Service) previewBranchRunInteractive(ctx context.Context, appID, branch
 		return nil
 	}
 	workflow.WorkflowApp(ctx, s.cfg, s.api, "", run.WorkflowID, false)
+	s.printBranchRunDetails(ctx, appID, result.BranchID, run.WorkflowID)
 	return nil
 }
 

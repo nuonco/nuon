@@ -121,11 +121,17 @@ func validateAzureCustomNestedStacks(a *config.AppConfig) error {
 	if err := config.ValidateAzureCustomNestedStacks(a.Stack.Type, a.Stack.CustomNestedStacks); err != nil {
 		return err
 	}
+	if err := config.ValidateAzureUIDefinition(a.Stack.Type, a.Stack.UIDefinition); err != nil {
+		return err
+	}
 	for _, install := range a.Installs {
 		if install.StackOverrides == nil {
 			continue
 		}
 		if err := config.ValidateAzureCustomNestedStacks(a.Stack.Type, install.StackOverrides.CustomNestedStacks); err != nil {
+			return err
+		}
+		if err := config.ValidateAzureUIDefinition(a.Stack.Type, install.StackOverrides.UIDefinition); err != nil {
 			return err
 		}
 	}

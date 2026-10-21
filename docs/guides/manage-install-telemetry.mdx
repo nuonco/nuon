@@ -70,7 +70,7 @@ settings and renews relay access directly with the Nuon control plane, even whil
 runner-bound collector cannot forward data while its runner is down. Already-issued relay credentials can remain
 valid for up to ten minutes after forwarding is disabled or collector access is revoked.
 
-If your app uses a [toggleable component](/guides/toggleable-components) to collect telemetry, that component must
+If your app template uses a [toggleable component](/guides/toggleable-components) to collect telemetry, that component must
 also be enabled. The install telemetry setting controls forwarding, not component deployment.
 
 ## Set up an optional in-cluster collector
@@ -91,7 +91,7 @@ Use an in-cluster collector to keep collecting application telemetry while the i
    "nuon.co/telemetry-collector" = "true"
    ```
 
-4. Run `nuon apps sync` to publish the app config.
+4. Commit and push to the git branch your [app branch](/guides/app-branches) tracks to publish the app config.
 
 ### Enable an install
 

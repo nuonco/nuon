@@ -61,6 +61,8 @@
   --color-primary-800: var(--primary-800);
   --color-primary-900: var(--primary-900);
   --color-primary-950: var(--primary-950);
+  --color-status-brand: var(--status-brand);
+  --color-status-brand-ink: var(--status-brand-ink);
 
   --color-blue-50: var(--blue-50);
   --color-blue-100: var(--blue-100);
@@ -798,6 +800,15 @@
   --syntax-punctuation: light-dark(#374151, #9aa3b2);
   --syntax-link: light-dark(var(--primary-600), var(--primary-400));
 
+  --status-brand: light-dark(
+    color-mix(in srgb, var(--primary-600) 50%, #8a8f94),
+    color-mix(in srgb, var(--primary-400) 20%, #8a8f94)
+  );
+  --status-brand-ink: light-dark(
+    color-mix(in srgb, var(--primary-600) 50%, #8a8f94),
+    color-mix(in srgb, var(--primary-400) 20%, #8a8f94)
+  );
+
   --code-match: light-dark(rgba(234, 179, 8, 0.28), rgba(250, 204, 21, 0.18));
   --code-match-current: light-dark(
     rgba(234, 179, 8, 0.55),
@@ -883,6 +894,13 @@
 :root[data-theme='monochrome'] {
   color-scheme: dark;
   --app-color-scheme: dark;
+}
+
+:root[data-theme='classic'],
+:root[data-theme='high-contrast'],
+:root[data-theme='monochrome'] {
+  --status-brand: var(--primary-400);
+  --status-brand-ink: var(--primary-400);
 }
 
 @media (prefers-color-scheme: dark) {

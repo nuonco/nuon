@@ -6,10 +6,16 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
+import { Button } from '@/components/common/Button'
+import { Panel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { SurfacesContext } from '@/providers/surfaces-provider'
+import { InstallContext } from '@/providers/install-provider'
+import { OrgContext } from '@/providers/org-provider'
+import { SurfacesContext, SurfacesProvider } from '@/providers/surfaces-provider'
+import { ToastProvider } from '@/providers/toast-provider'
 import { WorkflowContext } from '@/providers/workflow-provider'
 import type { TWorkflow, TWorkflowStep } from '@/types'
 import { StepDetailPanelButton } from './StepDetailPanelContainer'
@@ -124,4 +130,60 @@ test('an approval transition does not close a manually opened step panel', async
   await waitFor(() =>
     expect(screen.getByTestId('panel-count')).toHaveTextContent('1')
   )
+})
+
+const OpenDeploymentPanel = () => {
+  const { addPanel } = useSurfaces()
+  return (
+    <Button
+      onClick={() =>
+        addPanel(
+          <Panel heading="Deployment">
+            <InstallContext.Provider
+              value={{
+                install: { id: 'ins-1' } as never,
+                labelColors: {},
+                refresh: () => {},
+              }}
+            >
+              <WorkflowContext.Provider value={workflowContext}>
+                <StepDetailPanelButton step={runningStep} />
+              </WorkflowContext.Provider>
+            </InstallContext.Provider>
+          </Panel>
+        )
+      }
+    >
+      Open deployment
+    </Button>
+  )
+}
+
+test('view details stacks the step panel over a workflow panel outside the install', async () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+  })
+  client.setQueryData(['install', 'org-1', 'ins-1'], { id: 'ins-1' })
+
+  render(
+    <QueryClientProvider client={client}>
+      <OrgContext.Provider
+        value={{ org: { id: 'org-1' } as never, refresh: () => {} }}
+      >
+        <ToastProvider>
+          <MemoryRouter initialEntries={['/org-1/apps/app-1/branches/br-1']}>
+            <SurfacesProvider>
+              <OpenDeploymentPanel />
+            </SurfacesProvider>
+          </MemoryRouter>
+        </ToastProvider>
+      </OrgContext.Provider>
+    </QueryClientProvider>
+  )
+
+  fireEvent.click(screen.getByText('Open deployment'))
+  fireEvent.click(await screen.findByText('View details'))
+
+  expect(await screen.findByText('View workflows')).toBeTruthy()
+  expect(screen.getAllByRole('complementary')).toHaveLength(2)
 })

@@ -12,12 +12,12 @@ keywords: ["sandboxes", "what is a sandbox", "base infrastructure", "set up Kube
 Sandboxes create a consistent, isolated environment that your application can be
 guaranteed to work with, across your installs. They are
 responsible for defining the basic networking, permissioning, and infrastructure
-compute primitives e.g., a Kubernetes cluster - to power the app.
+compute primitives e.g., a Kubernetes cluster - to power your application.
 
 In a shared responsiblity model, a customer may provide some infrastructure in
 the sandbox, such as an existing VPC or Kubernetes cluster. In this case,
 sandboxes enable you to leverage this customer infrastructure to meet security
-requirements, while also having a consistent way to deploy and manage your App
+requirements, while also having a consistent way to install and manage your app template
 in any account.
 
 Sandboxes can ensure isolation, reproducability and repeatability with each
@@ -126,8 +126,8 @@ reference in your `sandbox.toml`.
 
 ## Runner Types
 
-Update the `runner.toml` in your app to specify the type of Cloud runner to use
-for your app. The runner is responsible for executing the deployment of your app
+Update the `runner.toml` in your app config to specify the type of Cloud runner to use
+for your app. The runner is responsible for executing the deployment of your application
 into the customer's account.
 
 ```toml runner.toml

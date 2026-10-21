@@ -1,13 +1,13 @@
 ---
-title: "Create Your First App"
-description: "Use an example app to learn Nuon or package your app with Nuon."
+title: "Create Your First App Template"
+description: "Use an example app template to learn Nuon or package your product as a Nuon app template."
 keywords: ["first app", "example app", "package an app", "wrap existing Terraform", "wrap existing Helm chart", "deploy to test account", "deploy your own app", "first install"]
 ---
 
-Your first app can take one of two forms, and both deploy into your cloud account:
+Your first app template can take one of two forms, and both install into your cloud account:
 
-- **An example app (recommended)** — the fastest way to see Nuon work end to end. Use one of our pre-built [example apps](https://github.com/nuonco/example-app-configs).
-- **Your own app** — your app packaged in Nuon's configuration format and referencing your existing Terraform, Helm, Kubernetes, and Docker assets.
+- **An example app (recommended)**: the fastest way to see Nuon work end to end. Use one of our pre-built [example apps](https://github.com/nuonco/example-app-configs).
+- **Your own app template**: your product packaged in Nuon's configuration format, referencing your existing Terraform, Helm, Kubernetes, and Docker assets.
 
 <Tip>
 New to Nuon? Read the [App & Install Life Cycle](/guides/app-install-life-cycle) guide to understand how apps are packaged, installed and managed with Nuon.
@@ -25,24 +25,37 @@ Estimated times above include creating the initial VPC, Subnets, Nat Gateway, AS
 
 cde and aws-lambda are less resource and cost intensive than eks-simple which provisions a Kubernetes cluster with 3 nodes.
 
-For these and other examples, clone the [example-app-configs repository](https://github.com/nuonco/example-app-configs) and run:
+For these and other examples, clone the [example-app-configs repository](https://github.com/nuonco/example-app-configs).
+Each example ships through an [app branch](/concepts/app-branches). If the example's directory has no branch file
+(`branch.toml` or `branches/main.toml`), add `branches/main.toml`:
+
+```toml branches/main.toml
+name = "main"
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "<app directory>"
+branch    = "main"
+```
+
+Then run:
 
 ```sh
 brew install nuonco/tap/nuon
 nuon auth login
 cd example-app-configs/<app directory>
 nuon apps create --name <app directory>
-nuon apps sync
+nuon branches sync --file branches/main.toml   # or: --file branch.toml; starts the first run
 nuon installs create --name <install-name> --region <region>
 ```
 
 ## Use Your Own App
 
-When you're ready to try your app with Nuon, package your existing Terraform, Helm, Kubernetes manifest, and container image assets into a Nuon app — then install it into your AWS, Azure or GCP.
+When you're ready to try your product with Nuon, package your existing Terraform, Helm, Kubernetes manifest, and container image assets into a Nuon app template, then install it into your AWS, Azure or GCP.
 
 See [how apps are configured](/concepts/apps#how-do-you-configure-an-app) to structure your app, including connecting a GitHub repository.
 
-Use agents like Claude Code to build your app by learning from Nuon's example apps. See our [AI and Apps Building docs](/guides/agents/ai-and-apps) for more info.
+Use agents like Claude Code to build your app template by learning from Nuon's example apps. See our [AI and App Template Building docs](/guides/agents/ai-and-apps) for more info.
 
 ## Prerequisites
 

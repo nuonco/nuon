@@ -7,12 +7,14 @@ import type { InstallFormApi } from './useInstallForm'
 
 interface ILabelsField {
   form: InstallFormApi
+  isOpen?: boolean
 }
 
-export const LabelsField = ({ form }: ILabelsField) => (
+export const LabelsField = ({ form, isOpen = false }: ILabelsField) => (
   <Expand
     id="install-labels"
     heading="Labels"
+    isOpen={isOpen}
     headerClassName="!px-4 bg-code"
     className="border rounded-md"
   >

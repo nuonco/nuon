@@ -3,6 +3,7 @@ import { Link } from '@/components/common/Link'
 import { CurrentAppBranchRun } from '@/components/install-updates/CurrentAppBranchRun'
 import { InstallUpdatesTimeline } from '@/components/install-updates/InstallUpdatesTimeline'
 import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
+import { ChangeInstallGroupButton } from '@/components/installs/management/ChangeInstallGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -50,6 +51,11 @@ export const Updates = () => {
                   View branch
                 </Link>
               ) : null}
+              <ChangeInstallGroupButton
+                compact
+                install={install}
+                onSuccess={refresh}
+              />
               <ChangeAppBranchButton
                 compact
                 install={install}

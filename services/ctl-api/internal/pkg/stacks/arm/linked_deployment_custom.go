@@ -71,6 +71,11 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		return nil, nil, nil, nil, nil
 	}
 
+	uiNames, err := t.vendorUINames(inp)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
 	// Sort by index
 	sorted := make([]config.CustomNestedStack, len(stacks))
 	copy(sorted, stacks)
@@ -256,7 +261,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		}
 
 		for paramName, param := range defaultParams {
-			if !hoistableDefault(param.DefaultValue) {
+			if uiNames.hidden[paramName] || !hoistableDefault(param.DefaultValue) {
 				delete(defaultParams, paramName)
 			}
 		}

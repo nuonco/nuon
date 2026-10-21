@@ -976,16 +976,18 @@ const syncStep = {
   status: { status: 'success' },
 }
 
-const deploymentRecord = (status: string) => ({
+const deploymentRecord = (status: string, inputUpdate = false) => ({
   id: 'wf-deploy-1',
   type: 'app_branch_update',
   status,
   created_at: '2026-10-02T16:00:00Z',
-  title: 'Update production install',
-  summary: 'Apply the latest app template to this install.',
+  title: inputUpdate ? 'Updated input' : 'Update production install',
+  summary: inputUpdate
+    ? 'Updated install input values.'
+    : 'Apply the latest app template to this install.',
   workflow: {
     id: 'wf-deploy-1',
-    name: 'Update production install',
+    name: inputUpdate ? 'Updated input' : 'Update production install',
     type: 'app_branch_config_update',
   },
   app_branch: {
@@ -1008,8 +1010,29 @@ const counts = {
 }
 
 const deploymentWorkflow = (
-  state: 'in-progress' | 'awaiting' | 'succeeded' | 'failed'
+  state: 'in-progress' | 'awaiting' | 'succeeded' | 'failed' | 'input-update'
 ) => {
+  if (state === 'input-update') {
+    return {
+      id: 'wf-deploy-1',
+      name: 'Updated input',
+      type: 'app_branch_config_update',
+      created_at: '2026-10-02T16:00:00Z',
+      finished: true,
+      status: {
+        status: 'success',
+        status_human_description: 'Install inputs updated',
+      },
+      steps: [syncStep],
+      metadata: {
+        changed_input_values: JSON.stringify({
+          api_replicas: { old: '2', new: '4' },
+          region: { old: 'us-east-1', new: 'us-west-2' },
+        }),
+      },
+    }
+  }
+
   const status =
     state === 'in-progress'
       ? 'in-progress'
@@ -1228,18 +1251,19 @@ const templateConfigDiff = {
 }
 
 export const deploymentDetailFixture = (
-  state: 'in-progress' | 'awaiting' | 'succeeded' | 'failed'
+  state: 'in-progress' | 'awaiting' | 'succeeded' | 'failed' | 'input-update'
 ): TFixture =>
   withChrome(viewInstall(), (url) => {
     const path = url.pathname
     const record = deploymentRecord(
       state === 'awaiting'
         ? 'pending'
-        : state === 'succeeded'
+        : state === 'succeeded' || state === 'input-update'
           ? 'success'
           : state === 'failed'
             ? 'error'
-            : 'in-progress'
+            : 'in-progress',
+      state === 'input-update'
     )
     if (path.endsWith(`/deployments/${record.id}`)) return ok(record)
     if (path.endsWith('/deployments')) return deploymentPage([record])

@@ -55,25 +55,31 @@ func (s *service) AdminGetIdentityProviders(ctx *gin.Context) {
 	}
 
 	for i := range ips {
-		clientID, err := ips[i].GetClientID()
-		if err != nil {
-			s.l.Warn("failed to parse client_id for identity provider",
-				zap.String("id", ips[i].ID),
-				zap.Error(err))
-		}
-
-		summaries = append(summaries, AdminIdentityProviderSummary{
-			ID:            ips[i].ID,
-			ProviderType:  ips[i].ProviderType,
-			Name:          ips[i].Name,
-			ClientID:      clientID,
-			Enabled:       ips[i].Enabled,
-			AllowAllUsers: ips[i].AllowAllUsers,
-			Source:        identityProviderSourceDatabase,
-		})
+		summaries = append(summaries, s.identityProviderSummary(&ips[i]))
 	}
 
 	ctx.JSON(http.StatusOK, summaries)
+}
+
+// identityProviderSummary is the only shape a database provider leaves the API in: the stored config
+// carries the client secret, so app.IdentityProvider must never be serialized directly.
+func (s *service) identityProviderSummary(ip *app.IdentityProvider) AdminIdentityProviderSummary {
+	clientID, err := ip.GetClientID()
+	if err != nil {
+		s.l.Warn("failed to parse client_id for identity provider",
+			zap.String("id", ip.ID),
+			zap.Error(err))
+	}
+
+	return AdminIdentityProviderSummary{
+		ID:            ip.ID,
+		ProviderType:  ip.ProviderType,
+		Name:          ip.Name,
+		ClientID:      clientID,
+		Enabled:       ip.Enabled,
+		AllowAllUsers: ip.AllowAllUsers,
+		Source:        identityProviderSourceDatabase,
+	}
 }
 
 // envIdentityProviderSummary reports the provider configured through environment variables. It has

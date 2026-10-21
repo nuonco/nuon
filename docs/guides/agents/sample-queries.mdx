@@ -82,9 +82,9 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
     Preview PR <number> for app <app> against install acme-prod. Use plan-only unless I ask you to apply. Follow the returned run_id and workflow_id, then summarize the result.
     ```
 
-    Write. Same as `nuon apps branches preview`. Ask before `apply`.
+    Write. Same as `nuon branches preview`. Ask before `apply`.
 
-    HTTP MCP cannot read the local workspace. For local toml, run `nuon apps sync --branch <branch> --output agent` first, then pass the resulting `app_config_id`.
+    HTTP MCP cannot read the local workspace. To preview local changes, push them to a git branch first, then preview that git ref.
   </Accordion>
   <Accordion title="See why a build failed">
     ```

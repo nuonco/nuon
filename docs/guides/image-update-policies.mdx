@@ -1,26 +1,26 @@
 ---
 title: "Track image patches with update policies"
-description: "Use a semver constraint so each app sync picks up the latest matching patch tag without editing your app config."
+description: "Use a semver constraint so each component build picks up the latest matching patch tag without editing your app config."
 icon: "tag"
-keywords: ["container image", "update_policy", "semver", "image patch", "patch tag", "image tracking", "external image"]
+keywords: ["container image", "update_policy", "semver", "image patch", "patch tag", "image tracking", "external image", "nuon branches trigger --force"]
 ---
 
-A container image component normally pins to a literal tag (`v1.10.0`). When upstream ships `v1.10.1`, you have to edit your app config, change the tag, and resync. For images you want to stay current on within a version range (patches inside a minor, minors inside a major), you can set `update_policy` instead.
+A container image component normally pins to a literal tag (`v1.10.0`). When upstream ships `v1.10.1`, you have to edit your app config, change the tag, and push the change. For images you want to stay current on within a version range (patches inside a minor, minors inside a major), you can set `update_policy` instead.
 
 When `update_policy` is set, every time the component is rebuilt the runner lists tags from the source registry, filters them to the semver tags that satisfy your constraint, and selects the highest matching tag. Tags that aren't valid semver (`latest`, `stable`, branch names) are skipped.
 
 <Note>
-Update policies are evaluated **at build time**. There is no background scheduler that polls upstream. You pick up new tags the next time a build runs for the component, which today means running `nuon apps sync` (or anything else that triggers a build for that component).
+Update policies are evaluated **at build time**. There is no background scheduler that polls upstream. You pick up new tags the next time a build runs for the component. An [app branch](/guides/app-branches) run only rebuilds components whose config changed, so to pick up a new upstream tag with no config change, run `nuon branches trigger --branch-id <branch> --force` (or anything else that triggers a build for that component, such as `nuon builds create -c <component>`).
 </Note>
 
 ## Scenario
 
-You have an app with two components:
+You have an app template with two components:
 
 * `img_whoami` — a `container_image` component pulling from Docker Hub.
 * `whoami` — a `helm_chart` component that consumes `img_whoami` in its pod spec.
 
-You want `img_whoami` to stay on the latest `1.10.x` patch automatically. Major and minor bumps still go through a deliberate config change, but patches should be picked up the next time you sync.
+You want `img_whoami` to stay on the latest `1.10.x` patch automatically. Major and minor bumps still go through a deliberate config change, but patches should be picked up the next time the component builds.
 
 ## Step 1: Configure the image component with `update_policy`
 
@@ -59,13 +59,16 @@ image_repository  = "{{ .nuon.components.img_whoami.outputs.image.repository }}"
 image_display_tag = "{{ .nuon.components.img_whoami.outputs.image.display_tag }}"
 ```
 
-## Step 3: Sync and deploy
+## Step 3: Push and deploy
+
+Commit the change and push it to the git branch your [app branch](/guides/app-branches) tracks:
 
 ```bash
-nuon apps sync
+git commit -am "track whoami 1.10.x"
+git push origin main
 ```
 
-The runner builds `img_whoami`. Assume the highest tag in `containous/whoami` matching `~1.10.0` is `v1.10.0`:
+The push starts a branch run, and the run builds `img_whoami`. Assume the highest tag in `containous/whoami` matching `~1.10.0` is `v1.10.0`:
 
 ```
 update_policy "~1.10.0" selected tag "v1.10.0" from 47 source tags
@@ -81,14 +84,15 @@ The resulting build records:
 | `resolved_tag` | `v1.10.0` |
 | `source_digest` | `sha256:abc…` |
 
-Deploy installs as usual. Pods come up running `v1.10.0`.
+Approve each deployment group as usual. Pods come up running `v1.10.0`.
 
-## Step 4: Upstream ships v1.10.1 — pick it up on the next sync
+## Step 4: Upstream ships v1.10.1, pick it up on the next build
 
-A few days later upstream releases `v1.10.1`. You don't touch your app config. Next time you run:
+A few days later upstream releases `v1.10.1`. You don't touch your app config, so there is nothing to push. Start a
+run that rebuilds every component:
 
 ```bash
-nuon apps sync
+nuon branches trigger --branch-id main --force
 ```
 
 A new build for `img_whoami` runs:
@@ -105,13 +109,13 @@ A [container action](/guides/container-actions) that points its `image` at `img_
 
 ## Step 5: Upstream ships v2.0.0 — your installs stay put
 
-When `containous/whoami:v2.0.0` lands, the next sync sees it but rejects it: it falls outside `~1.10.0`. The runner stays on the highest matching `1.10.x` tag. Major bumps still require you to update the constraint deliberately — for example `update_policy = "~1.11.0"` or `update_policy = "^1.0.0"` if you want to track any `1.x`.
+When `containous/whoami:v2.0.0` lands, the next build sees it but rejects it: it falls outside `~1.10.0`. The runner stays on the highest matching `1.10.x` tag. Major bumps still require you to update the constraint deliberately, for example `update_policy = "~1.11.0"` or `update_policy = "^1.0.0"` if you want to track any `1.x`.
 
 ## When nothing changed: no-op builds
 
-If you sync and upstream hasn't moved since the last build, the runner resolves the source ref, sees the manifest digest matches the previous build's recorded digest, and skips the copy entirely. The new build row is marked **no-op** and no new install deploy is queued. You'll see this on the build header in the dashboard and on the build timeline.
+If a build runs and upstream hasn't moved since the last build, the runner resolves the source ref, sees the manifest digest matches the previous build's recorded digest, and skips the copy entirely. The new build row is marked **no-op** and no new install deploy is queued. You'll see this on the build header in the dashboard and on the build timeline.
 
-This means rerunning `nuon apps sync` is always safe — it never re-pushes bytes the install registry already has.
+This means rerunning `nuon branches trigger --force` is always safe for this component: it never re-pushes bytes the install registry already has.
 
 ## Reference: common policy shapes
 
@@ -129,6 +133,6 @@ Full reference: [container-image config](/config-ref/container-image).
 
 ## When `update_policy` is **not** the right tool
 
-* **Pinning a specific build for compliance / reproducibility.** Use a literal `tag` (or pin by digest) so nothing changes between syncs.
-* **Polling upstream continuously.** `update_policy` only fires when a build runs. There is no background poller. If you need scheduled image refreshes today, wire `nuon apps sync` into your CI on a cron.
+* **Pinning a specific build for compliance / reproducibility.** Use a literal `tag` (or pin by digest) so nothing changes between builds.
+* **Polling upstream continuously.** `update_policy` only fires when a build runs. There is no background poller. If you need scheduled image refreshes today, run `nuon branches trigger --branch-id main --force --no-wait` from your CI on a cron.
 * **Tracking non-semver tags.** Tags like `latest`, `stable`, or `release-2024` are silently ignored — the highest semver match wins.

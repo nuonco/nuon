@@ -1,10 +1,10 @@
 ---
 title: "Stacks"
 icon: "layer-group"
-description: "Customers use Stacks to install an app in their account."
+description: "Customers use Stacks to install an app template in their account."
 ---
 
-A Stack is the first thing deployed in a customer's cloud account when an install is created. It provisions the foundational resources needed to deploy and operate the app.
+A Stack is the first thing deployed in a customer's cloud account when an install is created. It provisions the foundational resources needed to deploy and operate your application.
 
 For each install, Nuon generates a Stack template in both Terraform and the platform's native IaC language. Both formats produce the same resources, so you or your customer can use whichever one fits into your tooling and processes the best.
 
@@ -16,8 +16,8 @@ For each install, Nuon generates a Stack template in both Terraform and the plat
 
 Every Stack provisions the same three things:
 
-- The network the app runs in
-- The [permissions the Runner needs](/concepts/operation-roles#what-are-operation-roles) to deploy and operate your app
+- The network your application runs in
+- The [permissions the Runner needs](/concepts/operation-roles#what-are-operation-roles) to deploy and operate your application
 - The Nuon-powered [Runner](/concepts/runners) itself
 
 The network can either be **created** by the Stack or **selected** from resources the customer already has. See [Stand-Alone VPC](/concepts/stacks/stand-alone-vpc), [Customer VPC](/concepts/stacks/customer-vpc), and [Customer Cluster](/concepts/stacks/customer-cluster) for each pattern.
@@ -47,4 +47,4 @@ Stacks accept customer-provided values at deploy time. They come in three forms:
 
 - **[Secrets](/concepts/app-secrets)** — entered by the customer as CloudFormation/Bicep parameters or Terraform variables, then stored in AWS Secrets Manager, Azure Key Vault, or GCP Secret Manager.
 - **[Customer-facing inputs](/concepts/app-inputs#customer-facing-inputs)** marked `user_configurable` — passed through the Stack at deploy time.
-- **VPC and cluster IDs** — required when the app uses the [Customer VPC](/concepts/stacks/customer-vpc) or [Customer Cluster](/concepts/stacks/customer-cluster) pattern. The customer enters them in the Stack's parameter form alongside any other inputs.
+- **VPC and cluster IDs** — required when the app template uses the [Customer VPC](/concepts/stacks/customer-vpc) or [Customer Cluster](/concepts/stacks/customer-cluster) pattern. The customer enters them in the Stack's parameter form alongside any other inputs.

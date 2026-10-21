@@ -44,11 +44,17 @@ type ServiceInstallBranchTracking struct {
 	// repo
 	Repo string `json:"repo,omitempty"`
 
+	// runs behind
+	RunsBehind *int64 `json:"runs_behind,omitempty"`
+
 	// selected commit
 	SelectedCommit *ServiceInstallOverviewCommit `json:"selected_commit,omitempty"`
 
 	// status
 	Status string `json:"status,omitempty"`
+
+	// successful runs
+	SuccessfulRuns []*ServiceInstallOverviewCommit `json:"successful_runs"`
 
 	// target branch
 	TargetBranch string `json:"target_branch,omitempty"`
@@ -71,6 +77,10 @@ func (m *ServiceInstallBranchTracking) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSelectedCommit(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSuccessfulRuns(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -179,6 +189,36 @@ func (m *ServiceInstallBranchTracking) validateSelectedCommit(formats strfmt.Reg
 	return nil
 }
 
+func (m *ServiceInstallBranchTracking) validateSuccessfulRuns(formats strfmt.Registry) error {
+	if swag.IsZero(m.SuccessfulRuns) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.SuccessfulRuns); i++ {
+		if swag.IsZero(m.SuccessfulRuns[i]) { // not required
+			continue
+		}
+
+		if m.SuccessfulRuns[i] != nil {
+			if err := m.SuccessfulRuns[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("successful_runs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("successful_runs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service install branch tracking based on the context it is used
 func (m *ServiceInstallBranchTracking) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -196,6 +236,10 @@ func (m *ServiceInstallBranchTracking) ContextValidate(ctx context.Context, form
 	}
 
 	if err := m.contextValidateSelectedCommit(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSuccessfulRuns(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -304,6 +348,35 @@ func (m *ServiceInstallBranchTracking) contextValidateSelectedCommit(ctx context
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallBranchTracking) contextValidateSuccessfulRuns(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.SuccessfulRuns); i++ {
+
+		if m.SuccessfulRuns[i] != nil {
+
+			if swag.IsZero(m.SuccessfulRuns[i]) { // not required
+				return nil
+			}
+
+			if err := m.SuccessfulRuns[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("successful_runs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("successful_runs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { hasPanelKey } from '@/providers/surfaces-provider'
 import type { TRunSource } from '@/components/branches/BranchOverview/run-source'
 import { ConfigChangesLoading } from './ConfigChangesLoading'
 import { ConfigChangesViewer } from './ConfigChangesViewer'
@@ -134,16 +135,16 @@ export const TemplateChangesButton = (props: ITemplateChangesButton) => {
     panelId.current = addPanel(<TemplateChangesPanel {...props} />, PANEL_KEY)
   }
 
-  const panelParam = searchParams.get('panel')
+  const isDeepLinked = hasPanelKey(searchParams, PANEL_KEY)
   useEffect(() => {
     if (openedByTrigger.current) {
       openedByTrigger.current = false
       return
     }
-    if (panelParam !== PANEL_KEY || openPanelId) return
+    if (!isDeepLinked || openPanelId) return
     const timer = setTimeout(open, 0)
     return () => clearTimeout(timer)
-  }, [panelParam])
+  }, [isDeepLinked])
 
   if (isPending) return null
 

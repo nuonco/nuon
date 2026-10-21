@@ -8,7 +8,7 @@ keywords: ["GCP BYOC", "Google Cloud BYOC", "service account permissions GCP", "
 
 ## Configuration
 
-To deploy an app to GCP, configure it to use a GCP sandbox and runner. We provide a [GKE sandbox](https://github.com/nuonco/gcp-gke-sandbox) you can use to get started, which provisions a GKE cluster and the IAM bindings the runner needs. Create inputs for the public and private domains, since those will be different for each install.
+To install an app template on GCP, configure it to use a GCP sandbox and runner. We provide a [GKE sandbox](https://github.com/nuonco/gcp-gke-sandbox) you can use to get started, which provisions a GKE cluster and the IAM bindings the runner needs. Create inputs for the public and private domains, since those will be different for each install.
 
 ```toml sandbox.toml
 # sandbox
@@ -97,7 +97,9 @@ To try it:
 - `cd` into the `gke-simple` directory
 - Run `nuon auth login`
 - Run `nuon apps create -n gke-simple`
-- Run `nuon apps sync`
+- Add `branches/main.toml` with a `[public_repo]` block pointing at `nuonco/example-app-configs`, directory
+  `gke-simple`, branch `main` (see [Configure app branches](/guides/app-branches))
+- Run `nuon branches sync --file branches/main.toml`, which creates the branch and starts its first run
 - Open the Nuon dashboard and create an install
 
 ## Updating

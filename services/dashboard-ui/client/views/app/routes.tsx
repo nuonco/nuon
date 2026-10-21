@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { redirect, type RouteObject, type Params } from 'react-router'
+import { hasPanelKey } from '@/providers/surfaces-provider'
 import { AppLayout } from './AppLayout'
 import { AppIndex } from './AppIndex'
 import { LegacyAppRoute } from './LegacyAppRoute'
@@ -49,6 +50,7 @@ import { BranchActions } from './branches/scoped/BranchActions'
 import { BranchRunbooks } from './branches/scoped/BranchRunbooks'
 import { BranchInstalls } from './branches/scoped/BranchInstalls'
 import { BranchRunDetail } from './branches/BranchRunDetail'
+import { CreateInstallWizardPage } from './branches/CreateInstallWizardPage'
 
 const legacy = (element: ReactNode, subPath?: (params: Params) => string) => (
   <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
@@ -151,10 +153,14 @@ export const appRoutes: RouteObject[] = [
       },
       { path: ':orgId/apps/:appId/branches', element: legacy(<Branches />) },
       {
+        path: ':orgId/apps/:appId/branches/:branchId/installs/new',
+        element: <CreateInstallWizardPage />,
+      },
+      {
         path: ':orgId/apps/:appId/branches/:branchId',
         loader: ({ request, params }) => {
-          const panel = new URL(request.url).searchParams.get('panel')
-          if (panel === 'branch-settings') {
+          const panel = new URL(request.url).searchParams
+          if (hasPanelKey(panel, 'branch-settings')) {
             return redirect(
               `/${params.orgId}/apps/${params.appId}/branches/${params.branchId}/settings`
             )

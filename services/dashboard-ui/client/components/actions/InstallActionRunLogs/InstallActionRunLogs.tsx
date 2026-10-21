@@ -21,7 +21,7 @@ interface IInstallActionRunLogs {
   activeLog: TOTELLog | undefined
   handleActiveLog: (id: string) => void
   filters: TLogFiltersProps
-  searchParamPanel?: string | null
+  searchParamPanelKeys?: string[]
   stepStatuses?: Record<string, string>
 }
 
@@ -34,7 +34,7 @@ export const InstallActionRunLogs = ({
   activeLog,
   handleActiveLog,
   filters,
-  searchParamPanel,
+  searchParamPanelKeys,
   stepStatuses,
 }: IInstallActionRunLogs) => {
   const steps = actionConfig?.steps || []
@@ -139,7 +139,7 @@ export const InstallActionRunLogs = ({
     activeLog,
     handleActiveLog,
     filters,
-    searchParamPanel,
+    searchParamPanelKeys,
   }
 
   if (layout === 'horizontal') {
@@ -183,7 +183,7 @@ const StepAwareLogViewer = ({
   activeLog,
   handleActiveLog,
   filters,
-  searchParamPanel,
+  searchParamPanelKeys,
 }: {
   activeStep?: string
   showAllLogs: boolean
@@ -194,7 +194,7 @@ const StepAwareLogViewer = ({
   activeLog: TOTELLog | undefined
   handleActiveLog: (id: string) => void
   filters: TLogFiltersProps
-  searchParamPanel?: string | null
+  searchParamPanelKeys?: string[]
 }) => {
   const displayLogs = useMemo(() => {
     if (showAllLogs) {
@@ -269,7 +269,7 @@ const StepAwareLogViewer = ({
                 log={logLine}
                 activeLog={activeLog}
                 handleActiveLog={handleActiveLog}
-                searchParamPanel={searchParamPanel}
+                searchParamPanelKeys={searchParamPanelKeys}
               />
             ))}
           </div>
@@ -283,15 +283,15 @@ const LogLine = ({
   log,
   activeLog,
   handleActiveLog,
-  searchParamPanel,
+  searchParamPanelKeys,
 }: {
   log: TOTELLog
   activeLog: TOTELLog | undefined
   handleActiveLog: (id: string) => void
-  searchParamPanel?: string | null
+  searchParamPanelKeys?: string[]
 }) => {
   useEffect(() => {
-    if (log.id && log.id === searchParamPanel) {
+    if (log.id && searchParamPanelKeys?.includes(log.id)) {
       handleActiveLog(log.id)
     }
   }, [])

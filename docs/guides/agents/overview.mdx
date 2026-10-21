@@ -5,11 +5,52 @@ icon: "robot"
 keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
 ---
 
-<Note>
-**AI agent** here means an LLM client (Claude Code, Cursor, etc.) driving the control plane. This is not the [install runner](/concepts/runners) in customer clouds.
-</Note>
+import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
+import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
 
-Use an LLM client to read and operate orgs, apps, installs, and workflows, or to scaffold app config from example repos.
+Use an LLM client to read and operate orgs, app templates, installs, and workflows, or to scaffold app config from example repos.
+
+## Connect your client
+
+<McpInstallPicker />
+
+## Understanding your Nuon App Template
+
+Once the MCP server is connected, paste one of these into your client. Each one only reads from Nuon.
+
+<AskYourAgent
+  title="Summarize my app template"
+  tools={["get_app", "list_app_branches", "get_app_config_schema"]}
+  prompt={`Summarize my Nuon app template: its sandbox, each component and its type, and the app branches that deploy it. For each component type, use the app config schema to explain the settings that matter most.`}
+/>
+
+<AskYourAgent
+  title="Check my config sync"
+  tools={["list_app_branches", "get_app_branch_run", "get_build_logs", "get_workflow_step_logs"]}
+  prompt={`I'm setting up my Nuon app template. Check whether it has an app branch, then look at the latest branch run: did the app config sync, and did every component build? If a step failed, pull its logs, explain the error, and tell me what to change in my config. If there is no app branch yet, walk me through creating one.`}
+/>
+
+## Once you have an install
+
+<AskYourAgent
+  title="Summarize an install"
+  tools={["install_summary"]}
+  prompt={`Give me a summary of my Nuon install: what's deployed, which commit it's on, its health, and any failing workflows.`}
+/>
+
+<AskYourAgent
+  title="Check install health"
+  tools={["get_install_health"]}
+  prompt={`Check the health of my Nuon install. List every component that isn't healthy and why, tell me when health was last reported, and tell me if Nuon can't reach the cluster.`}
+/>
+
+<AskYourAgent
+  title="Find failing workflows"
+  tools={["list_workflows", "get_pending_approvals", "get_workflow_step_logs"]}
+  prompt={`Check my Nuon install for workflows that failed or are waiting on an approval. For any failed step, pull its logs and explain what went wrong.`}
+/>
+
+<Card title="More sample queries" icon="comments" href="/guides/agents/sample-queries" horizontal />
 
 <CardGroup cols={2}>
   <Card title="Setup" icon="gear" href="/guides/agents/setup">
@@ -17,9 +58,6 @@ Use an LLM client to read and operate orgs, apps, installs, and workflows, or to
   </Card>
   <Card title="Tools" icon="wrench" href="/guides/agents/tools">
     Read and write tools exposed on the control plane.
-  </Card>
-  <Card title="Sample queries" icon="comments" href="/guides/agents/sample-queries">
-    Prompts to paste into your client after MCP is connected.
   </Card>
   <Card title="Skills" icon="graduation-cap" href="/guides/agents/skills">
     Guidance for writing READMEs and policies.
