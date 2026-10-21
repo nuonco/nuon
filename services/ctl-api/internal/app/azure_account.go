@@ -30,7 +30,7 @@ type AzureAccount struct {
 	SubscriptionID           string `json:"subscription_id,omitzero" gorm:"not null;default null" temporaljson:"subscription_id,omitzero,omitempty"`
 	SubscriptionTenantID     string `json:"subscription_tenant_id,omitzero" gorm:"not null;default null" temporaljson:"subscription_tenant_id,omitzero,omitempty"`
 	ServicePrincipalAppID    string `json:"service_principal_app_id,omitzero" gorm:"not null;default null" temporaljson:"service_principal_app_id,omitzero,omitempty"`
-	ServicePrincipalPassword string `json:"service_principal_password,omitzero" gorm:"not null;default null" temporaljson:"service_principal_password,omitzero,omitempty"`
+	ServicePrincipalPassword string `json:"-" gorm:"not null;default null" temporaljson:"-" swaggerignore:"true"`
 }
 
 func (a *AzureAccount) Indexes(db *gorm.DB) []migrations.Index {
