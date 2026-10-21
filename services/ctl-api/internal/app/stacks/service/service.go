@@ -56,7 +56,11 @@ func registerStackRoutes(s *service, ge *gin.Engine) {
 }
 
 func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
-	registerStackRoutes(s, ge)
+	stacks := ge.Group("/v1/stacks/:install_id")
+	config := require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id")
+	s.GET(config, "/config", s.GetStackConfigRunner, api.APIContextTypeRunner, true)
+	phoneHome := require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id")
+	s.POST(phoneHome, "/phone-home", s.PostStackPhoneHomeRunner, api.APIContextTypeRunner, true)
 	return nil
 }
 

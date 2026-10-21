@@ -111,37 +111,109 @@ func (m *Middleware) InstallHandler() gin.HandlerFunc {
 			notFound(ctx, fmt.Errorf("install %s", id))
 			return
 		}
-		for _, param := range []string{"job_id", "runner_job_id"} {
-			id := ctx.Param(param)
-			if id == "" {
-				continue
-			}
-			var job app.RunnerJob
-			if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
-				Where(app.RunnerJob{ID: id}).Take(&job).Error; err != nil || job.RunnerID != runner.ID {
-				notFound(ctx, fmt.Errorf("job %s", id))
-				return
-			}
+		if err := m.authorizeJob(ctx, runner.ID); err != nil {
+			notFound(ctx, err)
+			return
+		}
+		if err := m.authorizeProcess(ctx, runner.ID); err != nil {
+			notFound(ctx, err)
+			return
 		}
 		if err := m.authorizeOwnedResource(ctx, runner.OrgID, installID); err != nil {
 			notFound(ctx, err)
 			return
 		}
+		cctx.SetRunnerGinContext(ctx, &runner)
 		ctx.Next()
 	}
 }
 
+func (m *Middleware) authorizeJob(ctx *gin.Context, runnerID string) error {
+	jobID := ""
+	for _, param := range []string{"job_id", "runner_job_id"} {
+		if id := ctx.Param(param); id != "" {
+			jobID = id
+			break
+		}
+	}
+	if jobID != "" {
+		var job app.RunnerJob
+		if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
+			Where(app.RunnerJob{ID: jobID, RunnerID: runnerID}).Take(&job).Error; err != nil {
+			return fmt.Errorf("job %s: %w", jobID, err)
+		}
+	}
+	execID := ctx.Param("runner_job_execution_id")
+	if execID == "" {
+		return nil
+	}
+	var execution app.RunnerJobExecution
+	if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_job_id").
+		Where(app.RunnerJobExecution{ID: execID}).Take(&execution).Error; err != nil {
+		return fmt.Errorf("execution %s: %w", execID, err)
+	}
+	if jobID != "" && execution.RunnerJobID != jobID {
+		return fmt.Errorf("execution %s is not part of job %s", execID, jobID)
+	}
+	var job app.RunnerJob
+	if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
+		Where(app.RunnerJob{ID: execution.RunnerJobID, RunnerID: runnerID}).Take(&job).Error; err != nil {
+		return fmt.Errorf("execution %s: %w", execID, err)
+	}
+	return nil
+}
+
+func (m *Middleware) authorizeProcess(ctx *gin.Context, runnerID string) error {
+	processID := ctx.Param("process_id")
+	if processID != "" {
+		var process app.RunnerProcess
+		if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
+			Where(app.RunnerProcess{ID: processID, RunnerID: runnerID}).Take(&process).Error; err != nil {
+			return fmt.Errorf("process %s: %w", processID, err)
+		}
+	}
+	shutdownID := ctx.Param("shutdown_id")
+	if shutdownID == "" {
+		return nil
+	}
+	var shutdown app.RunnerProcessShutdown
+	if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_process_id").
+		Where(app.RunnerProcessShutdown{ID: shutdownID}).Take(&shutdown).Error; err != nil {
+		return fmt.Errorf("shutdown %s: %w", shutdownID, err)
+	}
+	if processID != "" && shutdown.RunnerProcessID != processID {
+		return fmt.Errorf("shutdown %s is not part of process %s", shutdownID, processID)
+	}
+	var process app.RunnerProcess
+	if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
+		Where(app.RunnerProcess{ID: shutdown.RunnerProcessID, RunnerID: runnerID}).Take(&process).Error; err != nil {
+		return fmt.Errorf("shutdown %s: %w", shutdownID, err)
+	}
+	return nil
+}
+
 func (m *Middleware) authorizeOwnedResource(ctx *gin.Context, orgID, installID string) error {
-	if id := ctx.Param("workspace_id"); id != "" {
-		return m.ownerMatchesInstall(ctx, orgID, installID, &app.TerraformWorkspace{}, id)
+	if id := firstID(ctx, "workspace_id"); id != "" {
+		if err := m.ownerMatchesInstall(ctx, orgID, installID, &app.TerraformWorkspace{}, id); err != nil {
+			return err
+		}
 	}
 	if id := ctx.Param("helm_chart_id"); id != "" {
-		return m.ownerMatchesInstall(ctx, orgID, installID, &app.HelmChart{}, id)
+		if err := m.ownerMatchesInstall(ctx, orgID, installID, &app.HelmChart{}, id); err != nil {
+			return err
+		}
 	}
 	if id := ctx.Param("log_stream_id"); id != "" {
 		return m.ownerMatchesInstall(ctx, orgID, installID, &app.LogStream{}, id)
 	}
 	return nil
+}
+
+func firstID(ctx *gin.Context, name string) string {
+	if id := ctx.Param(name); id != "" {
+		return id
+	}
+	return ctx.Query(name)
 }
 
 func (m *Middleware) ownerMatchesInstall(ctx *gin.Context, orgID, installID string, model interface{}, id string) error {
@@ -154,41 +226,20 @@ func (m *Middleware) ownerMatchesInstall(ctx *gin.Context, orgID, installID stri
 		Select("org_id", "owner_id", "owner_type").
 		Where("id = ?", id).
 		Take(&row).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
 	if err != nil {
-		return nil
+		return err
 	}
 	if row.OrgID != "" && row.OrgID != orgID {
 		return fmt.Errorf("resource %s is outside the runner org", id)
 	}
-	resolved, ok := m.installFromOwner(ctx, row.OwnerType, row.OwnerID)
-	if !ok {
-		return nil
+	resolved, err := ResolveInstallID(ctx.Request.Context(), m.db, row.OwnerType, row.OwnerID)
+	if err != nil {
+		return err
 	}
 	if installID == "" || resolved != installID {
 		return fmt.Errorf("resource %s belongs to install %s", id, resolved)
 	}
 	return nil
-}
-
-func (m *Middleware) installFromOwner(ctx *gin.Context, ownerType, ownerID string) (string, bool) {
-	if ownerType == "" || ownerID == "" {
-		return "", false
-	}
-	if ownerType == "installs" {
-		return ownerID, true
-	}
-	var row struct {
-		InstallID string
-	}
-	err := m.db.WithContext(ctx.Request.Context()).Table(ownerType).
-		Select("install_id").Where("id = ?", ownerID).Take(&row).Error
-	if err != nil || row.InstallID == "" {
-		return "", false
-	}
-	return row.InstallID, true
 }
 
 func deny(ctx *gin.Context, description string) {

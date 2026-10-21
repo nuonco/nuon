@@ -227,7 +227,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.DELETE("/telemetry/collector", s.DeleteInstallTelemetryCollector)
 
 		// phone home
-		installs.POST("/phone-home/:phone_home_id", s.InstallPhoneHome)
+		s.POST(installs, "/phone-home/:phone_home_id", s.InstallPhoneHome, api.APIContextTypePublic, true)
 
 		// runner bootstrap token
 		installs.POST("/runner-bootstrap-token", s.CreateRunnerBootstrapToken)
@@ -385,14 +385,11 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	// phone home reported by the install stack over the runner API. The
-	// per-stack-version phone_home_id in the URL path is the secret; the route
-	// is already in the public whitelist, so no runner token is required.
-	api.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
-	require.Route(api, permissions.KindTelemetry, permissions.PermissionRead, "install_id").
+func (s *service) RegisterRunnerRoutes(engine *gin.Engine) error {
+	s.POST(engine, "/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHomeRunner, api.APIContextTypeRunner, true)
+	require.Route(engine, permissions.KindTelemetry, permissions.PermissionRead, "install_id").
 		GET("/v1/installs/:install_id/telemetry/collector-settings", s.GetInstallTelemetryCollectorSettings)
-	require.Route(api, permissions.KindTelemetry, permissions.PermissionCreate, "install_id").
+	require.Route(engine, permissions.KindTelemetry, permissions.PermissionCreate, "install_id").
 		POST("/v1/installs/:install_id/telemetry/access-token", s.CreateInstallTelemetryAccessToken)
 	return nil
 }

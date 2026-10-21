@@ -184,3 +184,25 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 }
+
+// @ID						PostStackPhoneHomeRunner
+// @Summary				phone home from an install stack
+// @Description			Deprecated. Use POST /v1/stacks/{install_id}/phone-home on the stack API.
+// @Param					install_id	path	string	true	"install ID"
+// @Param					req	body	StackPhoneHomeRequest	true	"Input"
+// @Tags					installs/runner
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Deprecated				true
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.EmptyResponse
+// @Router					/v1/stacks/{install_id}/phone-home [post]
+func (s *service) PostStackPhoneHomeRunner(ctx *gin.Context) {
+	s.PostStackPhoneHome(ctx)
+}

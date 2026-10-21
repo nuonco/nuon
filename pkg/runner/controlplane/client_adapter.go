@@ -17,10 +17,11 @@ type clientAdapter struct {
 
 var _ nuonrunner.Client = (*clientAdapter)(nil)
 
-func (c *clientAdapter) SetRunnerID(string)         {}
-func (c *clientAdapter) SetAuthToken(string)        {}
-func (c *clientAdapter) SetJobToken(string, string) {}
-func (c *clientAdapter) ClearJobToken(string)       {}
+func (c *clientAdapter) SetRunnerID(string)  {}
+func (c *clientAdapter) SetAuthToken(string) {}
+func (c *clientAdapter) ForJob(string, string) (nuonrunner.Client, error) {
+	return nil, unsupported("ForJob")
+}
 func (c *clientAdapter) ClaimJobToken(context.Context, string) (string, error) {
 	return "", unsupported("ClaimJobToken")
 }

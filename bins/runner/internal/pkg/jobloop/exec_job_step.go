@@ -37,7 +37,7 @@ func (j *jobLoop) writeJobExecutionStatus(ctx context.Context, jobID, jobExecuti
 		description = description[:jobExecutionStatusDescriptionMaxLen] + "…(truncated)"
 	}
 	fn := func(ctx context.Context) error {
-		if _, err := j.apiClient.UpdateJobExecution(ctx, jobID, jobExecutionID, &models.ServiceUpdateRunnerJobExecutionRequest{
+		if _, err := j.client(ctx).UpdateJobExecution(ctx, jobID, jobExecutionID, &models.ServiceUpdateRunnerJobExecutionRequest{
 			Status:            status,
 			StatusDescription: description,
 		}); err != nil {
@@ -130,7 +130,7 @@ func (j *jobLoop) writeFallbackJobExecutionResult(ctx context.Context, job *mode
 		},
 	}
 	writeResult := func(ctx context.Context) error {
-		if _, err := j.apiClient.CreateJobExecutionResult(ctx, job.ID, execution.ID, req); err != nil {
+		if _, err := j.client(ctx).CreateJobExecutionResult(ctx, job.ID, execution.ID, req); err != nil {
 			return fmt.Errorf("unable to create fallback job execution result: %w", err)
 		}
 		return nil

@@ -7,7 +7,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"sync"
 )
 
 // appTransport is a transport that injects our authentication token and org id into the api request
@@ -18,7 +17,9 @@ type appTransport struct {
 	clientVersion string
 
 	transport http.RoundTripper
-	jobTokens sync.Map
+
+	jobID    string
+	jobToken string
 }
 
 func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -38,10 +39,13 @@ func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			return nil, fmt.Errorf("auth token file contains an invalid credential")
 		}
 	}
-	if jobID, ok := jobWriteID(req.Method, req.URL.Path); ok {
-		if override, found := t.jobTokens.Load(jobID); found {
-			if jobToken, _ := override.(string); jobToken != "" {
-				token = jobToken
+	if _, ok := jobWriteID(req.Method, req.URL.Path); ok {
+		switch {
+		case t.jobToken != "":
+			token = t.jobToken
+		default:
+			if scope, ok := jobScopeFrom(req.Context()); ok && scope.token != "" {
+				token = scope.token
 			}
 		}
 	}
@@ -55,14 +59,6 @@ func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	return t.transport.RoundTrip(req)
-}
-
-func (c *client) SetJobToken(jobID, token string) {
-	c.appTransport.jobTokens.Store(jobID, token)
-}
-
-func (c *client) ClearJobToken(jobID string) {
-	c.appTransport.jobTokens.Delete(jobID)
 }
 
 var jobWritePatterns = []*regexp.Regexp{

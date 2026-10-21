@@ -331,7 +331,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runnerRoutes.POST("/processes", s.CreateRunnerProcess)
 	runnerRoutes.GET("/processes/:process_id", s.GetRunnerProcess)
 	runnerRoutes.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
-	runners.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+	runnerRoutes.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
 	runnerRoutes.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
 	runnerRoutes.POST("/processes/:process_id/terminating", s.ReportRunnerProcessTerminating)
 

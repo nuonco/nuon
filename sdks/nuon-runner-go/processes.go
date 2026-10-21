@@ -37,7 +37,6 @@ func (c *client) GetProcess(ctx context.Context, processID string) (*models.AppR
 	return resp.Payload, nil
 }
 
-// GetProcessShutdowns fetches shutdowns for a process via the unauthenticated endpoint.
 func (c *client) GetProcessShutdowns(ctx context.Context, processID string) ([]*models.AppRunnerProcessShutdown, error) {
 	url := fmt.Sprintf("%s/v1/runners/%s/processes/%s/shutdowns", c.APIURL, c.RunnerID, processID)
 
@@ -46,7 +45,7 @@ func (c *client) GetProcessShutdowns(ctx context.Context, processID string) ([]*
 		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
 
-	httpResp, err := c.unauthClient.Do(httpReq)
+	httpResp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get process shutdowns: %w", err)
 	}
