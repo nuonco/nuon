@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
 )
 
-// IssuerURL is GitHub's multi-tenant Actions OIDC issuer: any GitHub user can
-// mint tokens from it.
 const IssuerURL = "https://token.actions.githubusercontent.com"
 
 var errOwnerNotPinned = errors.New("GitHub Actions tokens can come from any account, so the `sub` must pin an owner: " +
@@ -21,14 +19,12 @@ var errOwnerIDNotNumber = errors.New(`claim "repository_owner_id" must be a numb
 
 var claimNames = oidc.ClaimNames(Claims{})
 
-// Provider implements oidc.Provider for GitHub Actions.
 type Provider struct{}
 
 var _ oidc.Provider = Provider{}
 
 func (Provider) IssuerURL() string { return IssuerURL }
 
-// Probes returns repository subjects of an owner no policy should match.
 func (Provider) Probes() []string {
 	repo := NewSubject(oidc.ProbeA, oidc.ProbeB, "")
 
@@ -40,9 +36,6 @@ func (Provider) Probes() []string {
 	}
 }
 
-// ValidateConditions rejects claims GitHub does not issue and requires the
-// policy to be pinned to an owner, either by a literal owner in `sub` or a
-// numeric `repository_owner_id` condition.
 func (Provider) ValidateConditions(v *validator.Validate, c oidc.Conditions) error {
 	names := make([]string, 0, len(c.Extra))
 	for name := range c.Extra {

@@ -9,12 +9,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// Audience is the `aud` claim, which tokens carry as either a string or an
-// array of strings.
 type Audience []string
 
-// Claims are the verified claims of an ID token. Registered claims are typed;
-// everything else lands in Extra.
 type Claims struct {
 	Iss   string         `json:"iss"`
 	Sub   string         `json:"sub"`
@@ -26,7 +22,6 @@ type Claims struct {
 	Extra map[string]any `json:",remain"`
 }
 
-// DecodeClaims decodes a raw claim set into Claims.
 func DecodeClaims(raw map[string]any) (Claims, error) {
 	var claims Claims
 	if err := Decode(raw, &claims); err != nil {
@@ -36,8 +31,6 @@ func DecodeClaims(raw map[string]any) (Claims, error) {
 	return claims, nil
 }
 
-// Decode decodes a raw claim set into out, a pointer to Claims or to a struct
-// embedding it with `json:",squash"`.
 func Decode(raw map[string]any, out any) error {
 	dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		TagName:    "json",
@@ -67,8 +60,6 @@ func audienceHook(from, to reflect.Type, data any) (any, error) {
 	return data, nil
 }
 
-// Lookup returns the string value of a claim. Claims that are absent, empty,
-// or not strings are reported as absent.
 func (c Claims) Lookup(name string) (string, bool) {
 	var value string
 
@@ -94,7 +85,6 @@ func (c Claims) Lookup(name string) (string, bool) {
 	return value, value != ""
 }
 
-// Names returns the sorted names of the claims present in the token.
 func (c Claims) Names() []string {
 	var names []string
 	add := func(present bool, name string) {
@@ -128,15 +118,11 @@ var reservedClaims = map[string]struct{}{
 	"iat": {},
 }
 
-// IsReservedClaim reports whether name is verified automatically and so cannot
-// be a claim condition.
 func IsReservedClaim(name string) bool {
 	_, ok := reservedClaims[name]
 	return ok
 }
 
-// ClaimNames returns the claim names of a claims struct (such as Claims or a
-// struct embedding it), read from its `json` tags.
 func ClaimNames(claims any) map[string]struct{} {
 	names := map[string]struct{}{}
 	collectClaimNames(reflect.TypeOf(claims), names)

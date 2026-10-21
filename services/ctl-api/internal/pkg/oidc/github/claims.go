@@ -2,7 +2,6 @@ package github
 
 import "github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
 
-// Claims are the documented claims of a GitHub Actions OIDC token.
 type Claims struct {
 	oidc.Claims `json:",squash"`
 
@@ -35,7 +34,6 @@ type Claims struct {
 	EnterpriseID         string `json:"enterprise_id"`
 }
 
-// DecodeClaims decodes a raw GitHub Actions claim set.
 func DecodeClaims(raw map[string]any) (Claims, error) {
 	var claims Claims
 	if err := oidc.Decode(raw, &claims); err != nil {

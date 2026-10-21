@@ -6,14 +6,10 @@ import (
 	"github.com/gobwas/glob"
 )
 
-// MaxPatternLength bounds a single claim condition pattern.
 const MaxPatternLength = 512
 
-// globMetaChars is the single set of characters that make a pattern a glob
-// rather than an exact string.
 const globMetaChars = "*?[{"
 
-// IsGlob reports whether pattern contains glob metacharacters.
 func IsGlob(pattern string) bool {
 	return strings.ContainsAny(pattern, globMetaChars)
 }
@@ -25,8 +21,6 @@ func Compile(pattern string) (glob.Glob, error) {
 	return glob.Compile(pattern, ':')
 }
 
-// MatchPattern matches a value against a pattern: exact comparison unless the
-// pattern is a glob.
 func MatchPattern(pattern, value string) bool {
 	if !IsGlob(pattern) {
 		return pattern == value

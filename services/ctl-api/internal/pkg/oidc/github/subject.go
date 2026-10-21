@@ -9,32 +9,23 @@ const (
 	ownerForbiddenChars = "*?[]{}\\:"
 )
 
-// Subject is the `sub` claim of a GitHub Actions token:
-// `repo:<owner>/<repo>:<context>`. When the repository has immutable
-// identifiers enabled, owner and repo carry their numeric IDs as
-// `<name>@<id>`.
 type Subject struct {
 	Owner   string
 	OwnerID string
 	Repo    string
 	RepoID  string
-	// Context is everything after the repository, e.g. `ref:refs/heads/main`
-	// or `environment:production`.
 	Context string
 }
 
-// NewSubject builds a subject with mutable (name-only) repository identity.
 func NewSubject(owner, repo, context string) Subject {
 	return Subject{Owner: owner, Repo: repo, Context: context}
 }
 
-// WithContext returns the subject with the given context.
 func (s Subject) WithContext(context string) Subject {
 	s.Context = context
 	return s
 }
 
-// WithIDs returns the subject with immutable owner and repository IDs.
 func (s Subject) WithIDs(ownerID, repoID string) Subject {
 	s.OwnerID = ownerID
 	s.RepoID = repoID
@@ -69,7 +60,6 @@ func cutID(part string) (name, id string) {
 	return name, id
 }
 
-// ParseSubject parses a concrete `sub` claim value.
 func ParseSubject(sub string) (Subject, bool) {
 	rest, ok := strings.CutPrefix(sub, subjectRepoPrefix)
 	if !ok {
@@ -94,10 +84,6 @@ func ParseSubject(sub string) (Subject, bool) {
 	return s, s.Owner != "" && s.Repo != ""
 }
 
-// ParseSubjectOwner returns the literal owner a `sub` pattern is pinned to,
-// for patterns like `repo:acme/app:*` or `repo:acme@123/app@456:*`. It
-// reports false when the pattern does not start with `repo:<owner>/` or the
-// owner is empty or contains glob metacharacters.
 func ParseSubjectOwner(pattern string) (string, bool) {
 	rest, ok := strings.CutPrefix(pattern, subjectRepoPrefix)
 	if !ok {

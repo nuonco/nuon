@@ -312,8 +312,6 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 		policy.TokenDurationSeconds = duration
 	}
 
-	// Validate the effective state, so a policy that no longer passes validation
-	// can only be disabled.
 	if policy.Enabled || req.IssuerURL != "" || req.ClaimConditions != nil {
 		if err := s.validateClaimConditions(policy.IssuerURL, policy.ClaimConditions); err != nil {
 			ctx.Error(stderr.NewInvalidRequest(err))
