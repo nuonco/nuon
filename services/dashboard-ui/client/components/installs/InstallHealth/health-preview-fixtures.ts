@@ -288,6 +288,21 @@ export function healthPreviewFixture(state: THealthPreviewState) {
           'healthy',
           'batch'
         ),
+        item(
+          'Job',
+          'api-migrate-293901',
+          '1 / 2 completed',
+          {
+            spec: { completions: 2 },
+            status: {
+              succeeded: 1,
+              active: 1,
+              conditions: [{ type: 'Complete', status: 'Unknown' }],
+            },
+          },
+          'progressing',
+          'batch'
+        ),
         gateway,
         route,
         database('api-db', 'db.example.com'),
