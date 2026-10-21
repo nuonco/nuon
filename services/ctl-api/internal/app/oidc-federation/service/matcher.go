@@ -2,10 +2,10 @@ package service
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc/github"
 )
 
 // reservedClaims are validated by the JWT verifier itself and may not be used
@@ -55,15 +55,15 @@ func validateClaimConditions(issuerURL string, conditions map[string]string) err
 	}
 
 	sub := conditions["sub"]
-	github := isGitHubActionsIssuer(issuerURL)
+	isGitHub := github.IsIssuer(issuerURL)
 
-	if github {
+	if isGitHub {
 		if err := validateGitHubOwnerPinned(conditions); err != nil {
 			return err
 		}
 	}
 
-	if subPatternTooBroad(sub, github) {
+	if subPatternTooBroad(sub, isGitHub) {
 		return fmt.Errorf("the `sub` condition is too broad: it matches unrelated identities. " +
 			"Put wildcards only after the part that identifies your repository or workload")
 	}
@@ -71,18 +71,10 @@ func validateClaimConditions(issuerURL string, conditions map[string]string) err
 	return nil
 }
 
-// githubActionsIssuer is GitHub's multi-tenant OIDC issuer: any GitHub user
-// can mint tokens from it, so policies must be pinned to an owner.
-const githubActionsIssuer = "https://token.actions.githubusercontent.com"
-
-func isGitHubActionsIssuer(issuerURL string) bool {
-	return strings.TrimSuffix(issuerURL, "/") == githubActionsIssuer
-}
-
 // validateGitHubOwnerPinned requires either a literal owner prefix in the
 // `sub` pattern or a literal numeric `repository_owner_id` condition.
 func validateGitHubOwnerPinned(conditions map[string]string) error {
-	if subPinsGitHubOwner(conditions["sub"]) {
+	if _, ok := github.ParseSubjectOwner(conditions["sub"]); ok {
 		return nil
 	}
 
@@ -92,22 +84,6 @@ func validateGitHubOwnerPinned(conditions map[string]string) error {
 
 	return fmt.Errorf("GitHub Actions tokens can come from any account, so the `sub` must pin an owner: " +
 		"start it with a literal owner like `repo:acme/`, or add a numeric `repository_owner_id` condition")
-}
-
-// subPinsGitHubOwner reports whether pattern starts with `repo:<owner>/` where
-// the owner is non-empty and free of glob metacharacters.
-func subPinsGitHubOwner(pattern string) bool {
-	rest, ok := strings.CutPrefix(pattern, "repo:")
-	if !ok {
-		return false
-	}
-
-	owner, _, ok := strings.Cut(rest, "/")
-	if !ok || owner == "" {
-		return false
-	}
-
-	return !strings.ContainsAny(owner, "*?[]{}\\:")
 }
 
 func isDigits(s string) bool {
@@ -130,7 +106,7 @@ const (
 
 // subPatternTooBroad reports whether the `sub` pattern matches foreign probe
 // values, which no policy for a specific identity should.
-func subPatternTooBroad(pattern string, github bool) bool {
+func subPatternTooBroad(pattern string, isGitHub bool) bool {
 	a, b, c, d := probeA, probeB, probeC, probeD
 
 	probes := []string{
@@ -140,12 +116,13 @@ func subPatternTooBroad(pattern string, github bool) bool {
 		a + ":" + b + ":" + c + ":" + d,
 		a + "/" + b,
 	}
-	if github {
+	if isGitHub {
+		repo := github.NewSubject(a, b, "")
 		probes = append(probes,
-			"repo:"+a+"/"+b+":ref:refs/heads/main",
-			"repo:"+a+"/"+b+":environment:production",
-			"repo:"+a+"/"+b+":pull_request",
-			"repo:"+a+"@1/"+b+"@2:ref:refs/heads/main",
+			repo.WithContext("ref:refs/heads/main").String(),
+			repo.WithContext("environment:production").String(),
+			repo.WithContext("pull_request").String(),
+			repo.WithIDs("1", "2").WithContext("ref:refs/heads/main").String(),
 		)
 	}
 
