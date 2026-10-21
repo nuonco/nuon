@@ -5,6 +5,7 @@ import { Status } from '@/components/common/Status'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { AwaitAzureDetails } from '@/components/workflows/step-details/stack-details/AwaitAzureDetails'
 import { AwaitGCPDetails } from '@/components/workflows/step-details/stack-details/AwaitGCPDetails'
@@ -29,7 +30,7 @@ import {
   type TCloud,
 } from './constants'
 import { waitItems, type IWaitItem } from './progress'
-import { FirstRunCloudRegion } from './shared'
+import { CopyTextButton, FirstRunCloudRegion } from './shared'
 import { ByocReferences, WaitProgress } from './WaitProgress'
 
 const STACK_POLL_MS = 2000
@@ -162,6 +163,18 @@ export const StackStepView = ({
           </Text>
         </div>
       )}
+
+      {launched && linkLaunch ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <Text variant="subtext" theme="neutral">
+            Signed in to a different AWS account, or the tab did not open?
+          </Text>
+          <Link href={quickLinkUrl} isExternal textVariant="subtext">
+            Open it again
+          </Link>
+          <CopyTextButton text={quickLinkUrl} label="Copy link" size="sm" />
+        </div>
+      ) : null}
 
       {failed && errorDescription ? <Banner theme="error">{errorDescription}</Banner> : null}
 
