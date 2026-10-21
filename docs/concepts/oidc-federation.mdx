@@ -15,7 +15,7 @@ Managing OIDC federation requires **org admin** access.
 
 1. A workload obtains its ambient OIDC token from its platform (for example, the ID token GitHub Actions issues to a job).
 2. It calls the Nuon token-exchange endpoint with that token and your org ID.
-3. Nuon verifies the token's signature against the issuer's JWKS and checks its issuer, audience, and claims against your trust policies.
+3. Nuon verifies the token's RS256 signature against the issuer's JWKS and checks its issuer, audience, and claims against your trust policies. The token must include `exp` and `iat` claims.
 4. On a match, Nuon mints a short-lived API token bound to the policy's service account and returns it. The workload uses it like any other Nuon API token.
 
 The exchange endpoint requires no Nuon credentials — trust is established entirely by the OIDC token and your trust policy.
