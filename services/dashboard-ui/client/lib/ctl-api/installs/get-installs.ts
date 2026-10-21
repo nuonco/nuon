@@ -11,6 +11,8 @@ export const getInstalls = ({
   runner_id,
   branches,
   cloud_connection_id,
+  health,
+  lifecycle_phase,
 }: {
   orgId: string
   q?: string
@@ -18,9 +20,11 @@ export const getInstalls = ({
   runner_id?: string
   branches?: string
   cloud_connection_id?: string
+  health?: string
+  lifecycle_phase?: string
 } & TPaginationParams) =>
   api<TInstall[]>({
-    path: `installs${buildQueryParams({ limit, offset, q, labels, runner_id, branches, cloud_connection_id, include_components: false })}`,
+    path: `installs${buildQueryParams({ limit, offset, q, labels, runner_id, branches, cloud_connection_id, health, lifecycle_phase, include_components: false })}`,
     orgId,
     paginated: true,
   })

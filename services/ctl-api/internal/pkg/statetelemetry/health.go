@@ -1,17 +1,14 @@
 package statetelemetry
 
+import "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
+
 var healthStates = []string{"unhealthy", "degraded", "other", "unknown", "progressing", "healthy", "not-applicable", "unset"}
 var reportAgeStates = []string{"within_5m", "over_5m", "never_reported", "invalid_time"}
 var sandboxStates = []string{"deleted", "delete_failed", "active", "error", "queued", "deprovisioned", "deprovisioning", "provisioning", "reprovisioning", "access_error", "unknown", "empty", "unset", "other", "missing"}
 
-const installHealthSQL = `
-SELECT i.org_id, i.app_id, i.id AS install_id, COALESCE(r.state, 'unset') AS state
-FROM live_installs i LEFT JOIN (
-    SELECT install_id, ($1::text[])[MIN(array_position($1::text[],
-        CASE WHEN health = '' THEN 'unset' WHEN health = ANY($1::text[]) THEN health ELSE 'other' END))
-        FILTER (WHERE health NOT IN ('', 'unset', 'not-applicable'))] AS state
-    FROM live_targets GROUP BY install_id
-) r ON r.install_id = i.id
+var installHealthSQL = `
+SELECT i.org_id, i.app_id, i.id AS install_id, ` + viewsql.InstallHealthRollupV1("i.id") + ` AS state, i.state AS lifecycle
+FROM live_installs i
 `
 
 const reportAgeSQL = `

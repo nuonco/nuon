@@ -13,15 +13,39 @@ import {
   getAppLabels,
   toLabelColorMap,
 } from '@/lib'
+import type { TPaginatedResult } from '@/lib/api'
+import type { TAPIError, TInstall } from '@/types'
 import { CreateInstallButton } from '../CreateInstall'
 import { InstallBranchFilter } from '../InstallBranchFilter'
 import {
+  INSTALL_HEALTH_FILTER_VALUES,
+  INSTALL_LIFECYCLE_PHASE_FILTER_VALUES,
+  InstallHealthFilters,
   InstallsTable,
   parseInstallsToTableData,
   type TInstallsTableScope,
 } from './InstallsTable'
 
 const LIMIT = 20
+
+const parseListParam = (values: string[]) => [
+  ...new Set(
+    values
+      .flatMap((value) => value.split(','))
+      .map((v) => v.trim())
+      .filter(Boolean)
+  ),
+]
+
+const invalidFilterMessage = (
+  param: string,
+  values: string[],
+  allowed: readonly string[]
+) => {
+  const invalid = values.filter((v) => !allowed.includes(v))
+  if (invalid.length === 0) return undefined
+  return `Unsupported ${param} filter value: ${invalid.join(', ')}. Clear the filter to see installs.`
+}
 
 export const InstallsTableContainer = ({
   appId,
@@ -42,16 +66,60 @@ export const InstallsTableContainer = ({
   pollInterval?: number
   shouldPoll?: boolean
 } = {}) => {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { org } = useOrg()
   const installHref = useInstallHref()
   const newInstallIA = useNewInstallIA()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
+  const labels = searchParams.get('labels') || undefined
+  const branches = searchParams.get('branches') || undefined
+  const healthValues = parseListParam(searchParams.getAll('health'))
+  const lifecyclePhaseValues = parseListParam(
+    searchParams.getAll('lifecycle_phase')
+  )
+  const health = healthValues.join(',') || undefined
+  const lifecycle_phase = lifecyclePhaseValues.join(',') || undefined
+  const filterError =
+    invalidFilterMessage(
+      'health',
+      healthValues,
+      INSTALL_HEALTH_FILTER_VALUES
+    ) ??
+    invalidFilterMessage(
+      'lifecycle',
+      lifecyclePhaseValues,
+      INSTALL_LIFECYCLE_PHASE_FILTER_VALUES
+    )
+  const hasActiveFilters = Boolean(
+    q || labels || branches || health || lifecycle_phase
+  )
+
+  const setListParam = (
+    key: 'health' | 'lifecycle_phase',
+    allowed: readonly string[],
+    selected: Set<string>
+  ) => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev)
+        const values = allowed.filter((v) => selected.has(v))
+        if (values.length === 0) params.delete(key)
+        else params.set(key, values.join(','))
+        params.delete('offset')
+        return params
+      },
+      { replace: true }
+    )
+  }
 
   const scope: TInstallsTableScope = branchId ? 'branch' : appId ? 'app' : 'org'
 
-  const { data: result, isLoading } = useQuery({
+  const {
+    data: result,
+    error,
+    isLoading,
+  } = useQuery<TPaginatedResult<TInstall[]>, TAPIError>({
     queryKey: [
       'installs',
       org.id,
@@ -60,8 +128,10 @@ export const InstallsTableContainer = ({
       cloudConnectionId,
       offset,
       q,
-      searchParams.get('labels'),
-      searchParams.get('branches'),
+      labels,
+      branches,
+      health,
+      lifecycle_phase,
     ],
     queryFn: () =>
       appId
@@ -72,6 +142,8 @@ export const InstallsTableContainer = ({
             limit: LIMIT,
             q,
             app_branch_id: branchId,
+            health,
+            lifecycle_phase,
           })
         : getInstalls({
             orgId: org.id,
@@ -79,14 +151,42 @@ export const InstallsTableContainer = ({
             offset,
             limit: LIMIT,
             q,
-            labels: searchParams.get('labels') || undefined,
-            branches: searchParams.get('branches') || undefined,
+            labels,
+            branches,
+            health,
+            lifecycle_phase,
           }),
+    enabled: !filterError,
+    retry: (failureCount, err) =>
+      !(err?.status && err.status >= 400 && err.status < 500) &&
+      failureCount < 3,
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
   })
 
-  const installs = result?.data ?? []
+  const errorMessage =
+    filterError ??
+    (error
+      ? error?.error || 'Unable to load installs. Try refreshing the page.'
+      : undefined)
+  const installs = errorMessage ? [] : (result?.data ?? [])
+
+  const healthFilters = (
+    <InstallHealthFilters
+      health={new Set(healthValues)}
+      lifecyclePhase={new Set(lifecyclePhaseValues)}
+      onHealthChange={(selected) =>
+        setListParam('health', INSTALL_HEALTH_FILTER_VALUES, selected)
+      }
+      onLifecyclePhaseChange={(selected) =>
+        setListParam(
+          'lifecycle_phase',
+          INSTALL_LIFECYCLE_PHASE_FILTER_VALUES,
+          selected
+        )
+      }
+    />
+  )
   const appIds = [
     ...new Set(installs.map((i) => i.app_id).filter(Boolean)),
   ] as string[]
@@ -121,27 +221,32 @@ export const InstallsTableContainer = ({
       emptyStateAction={emptyStateAction ?? <CreateInstallButton />}
       emptyTitle={emptyTitle}
       emptyMessage={emptyMessage}
+      errorMessage={errorMessage}
+      hasActiveFilters={hasActiveFilters}
       filterActions={
-        scope === 'org' ? (
-          <div className="flex items-center gap-3">
-            <LabelFilterDropdown
-              queryKey={['install-label-keys', org.id]}
-              queryFn={() => getInstallLabelKeys({ orgId: org.id })}
-            />
-            <InstallBranchFilter
-              queryKey={['org-branch-names', org.id]}
-              queryFn={async () => {
-                const { data } = await getBranches({
-                  orgId: org.id,
-                  limit: 100,
-                })
-                return [
-                  ...new Set(data.map((b) => b.name).filter(Boolean)),
-                ].sort()
-              }}
-            />
-          </div>
-        ) : undefined
+        <div className="flex items-center gap-3">
+          {scope === 'org' ? (
+            <>
+              <LabelFilterDropdown
+                queryKey={['install-label-keys', org.id]}
+                queryFn={() => getInstallLabelKeys({ orgId: org.id })}
+              />
+              <InstallBranchFilter
+                queryKey={['org-branch-names', org.id]}
+                queryFn={async () => {
+                  const { data } = await getBranches({
+                    orgId: org.id,
+                    limit: 100,
+                  })
+                  return [
+                    ...new Set(data.map((b) => b.name).filter(Boolean)),
+                  ].sort()
+                }}
+              />
+            </>
+          ) : null}
+          {healthFilters}
+        </div>
       }
       pagination={{
         hasNext: result?.pagination?.hasNext ?? false,
@@ -149,6 +254,7 @@ export const InstallsTableContainer = ({
         limit: LIMIT,
       }}
       scope={scope}
+      showHealthCoverage={healthValues.length > 0}
       statusAxes={newInstallIA && scope === 'branch'}
     />
   )

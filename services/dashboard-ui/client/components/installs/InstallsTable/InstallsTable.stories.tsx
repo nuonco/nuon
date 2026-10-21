@@ -2,8 +2,14 @@ export default {
   title: 'Features / Installs / Installs table',
 }
 
+import { useState } from 'react'
 import { Button } from '@/components/common/Button'
-import { InstallsTable, type InstallRow } from './InstallsTable'
+import {
+  HealthCoverage,
+  InstallHealthFilters,
+  InstallsTable,
+  type InstallRow,
+} from './InstallsTable'
 
 const mockRows: InstallRow[] = Array.from({ length: 5 }, (_, i) => ({
   name: `prod-acme-${i + 1}`,
@@ -27,13 +33,94 @@ const mockRows: InstallRow[] = Array.from({ length: 5 }, (_, i) => ({
   ),
 }))
 
+const coverageFixtures: Record<string, string>[] = [
+  { 'comp-api': 'healthy', 'comp-db': 'healthy', 'comp-queue': 'healthy' },
+  { 'comp-api': 'healthy', 'comp-db': '', 'comp-dns': 'not-applicable' },
+  { 'comp-api': 'unknown', 'comp-db': 'healthy', 'comp-cache': 'unset' },
+  { 'comp-api': 'degraded', 'comp-db': 'healthy' },
+  { 'comp-api': 'healthy', 'comp-db': 'custom-verdict' },
+]
+
+const filteredRows: InstallRow[] = mockRows.slice(0, 3).map((row, i) => ({
+  ...row,
+  healthCoverage: (
+    <HealthCoverage componentHealthStatuses={coverageFixtures[i]} />
+  ),
+}))
+
+const HealthFilters = ({
+  initialHealth = [],
+  initialLifecyclePhase = [],
+}: {
+  initialHealth?: string[]
+  initialLifecyclePhase?: string[]
+}) => {
+  const [health, setHealth] = useState(new Set(initialHealth))
+  const [lifecyclePhase, setLifecyclePhase] = useState(
+    new Set(initialLifecyclePhase)
+  )
+  return (
+    <div className="flex items-center gap-3">
+      <InstallHealthFilters
+        health={health}
+        lifecyclePhase={lifecyclePhase}
+        onHealthChange={setHealth}
+        onLifecyclePhaseChange={setLifecyclePhase}
+      />
+    </div>
+  )
+}
+
 export const Default = () => (
   <InstallsTable
     data={mockRows}
     isLoading={false}
     emptyStateAction={<Button>Create install</Button>}
-    filterActions={<Button variant="primary">Create install</Button>}
+    filterActions={<HealthFilters />}
     pagination={{ hasNext: true, offset: 0, limit: 20 }}
+  />
+)
+
+export const FilteredByHealth = () => (
+  <InstallsTable
+    data={filteredRows}
+    isLoading={false}
+    scope="app"
+    hasActiveFilters
+    showHealthCoverage
+    filterActions={
+      <HealthFilters
+        initialHealth={['healthy', 'unknown']}
+        initialLifecyclePhase={['provisioned']}
+      />
+    }
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)
+
+export const FilteredEmpty = () => (
+  <InstallsTable
+    data={[]}
+    isLoading={false}
+    scope="app"
+    hasActiveFilters
+    showHealthCoverage
+    emptyStateAction={<Button>Create install</Button>}
+    filterActions={<HealthFilters initialHealth={['unhealthy']} />}
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)
+
+export const LoadError = () => (
+  <InstallsTable
+    data={mockRows}
+    isLoading={false}
+    scope="app"
+    hasActiveFilters
+    errorMessage="invalid health value: healthyish"
+    emptyStateAction={<Button>Create install</Button>}
+    filterActions={<HealthFilters initialHealth={['healthyish']} />}
+    pagination={{ hasNext: true, offset: 20, limit: 20 }}
   />
 )
 
@@ -42,7 +129,7 @@ export const Empty = () => (
     data={[]}
     isLoading={false}
     emptyStateAction={<Button>Create install</Button>}
-    filterActions={<Button variant="primary">Create install</Button>}
+    filterActions={<HealthFilters />}
     pagination={{ hasNext: false, offset: 0, limit: 20 }}
   />
 )
