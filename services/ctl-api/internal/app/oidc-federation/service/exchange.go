@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
 
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 )
@@ -238,7 +239,7 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 			continue
 		}
 
-		if matchClaims(policy.ClaimConditions, claims) {
+		if oidc.MatchClaims(policy.ClaimConditions, claims) {
 			matched = policy
 			break
 		}

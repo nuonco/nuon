@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gobwas/glob"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
 )
 
 // reservedClaims are validated by the JWT verifier itself and may not be used
@@ -50,7 +49,7 @@ func validateClaimConditions(issuerURL string, conditions map[string]string) err
 		if len(pattern) > app.OIDCTrustPolicyMaxPatternLength {
 			return fmt.Errorf("condition for claim %q exceeds %d characters", claim, app.OIDCTrustPolicyMaxPatternLength)
 		}
-		if _, err := compilePattern(pattern); err != nil {
+		if _, err := oidc.Compile(pattern); err != nil {
 			return fmt.Errorf("condition for claim %q is not a valid pattern: %w", claim, err)
 		}
 	}
@@ -75,8 +74,6 @@ func validateClaimConditions(issuerURL string, conditions map[string]string) err
 // githubActionsIssuer is GitHub's multi-tenant OIDC issuer: any GitHub user
 // can mint tokens from it, so policies must be pinned to an owner.
 const githubActionsIssuer = "https://token.actions.githubusercontent.com"
-
-const globMetaChars = "*?[]{}\\"
 
 func isGitHubActionsIssuer(issuerURL string) bool {
 	return strings.TrimSuffix(issuerURL, "/") == githubActionsIssuer
@@ -110,7 +107,7 @@ func subPinsGitHubOwner(pattern string) bool {
 		return false
 	}
 
-	return !strings.ContainsAny(owner, globMetaChars+":")
+	return !strings.ContainsAny(owner, "*?[]{}\\:")
 }
 
 func isDigits(s string) bool {
@@ -153,58 +150,10 @@ func subPatternTooBroad(pattern string, github bool) bool {
 	}
 
 	for _, probe := range probes {
-		if matchPattern(pattern, probe) {
+		if oidc.MatchPattern(pattern, probe) {
 			return true
 		}
 	}
 
 	return false
-}
-
-// matchClaims reports whether every condition matches the corresponding token
-// claim. Conditions only match string-typed claims; a missing or non-string
-// claim fails the policy.
-func matchClaims(conditions map[string]string, claims map[string]any) bool {
-	if len(conditions) == 0 {
-		return false
-	}
-
-	for claim, pattern := range conditions {
-		raw, ok := claims[claim]
-		if !ok {
-			return false
-		}
-
-		value, ok := raw.(string)
-		if !ok {
-			return false
-		}
-
-		if !matchPattern(pattern, value) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// matchPattern matches a value against a pattern: exact comparison unless the
-// pattern contains glob metacharacters, in which case it is compiled with `:`
-// as a separator so wildcards cannot cross `:` segments (the delimiter in
-// GitHub Actions `sub` claims like `repo:org/repo:ref:refs/heads/main`).
-func matchPattern(pattern, value string) bool {
-	if !strings.ContainsAny(pattern, "*?[{") {
-		return pattern == value
-	}
-
-	g, err := compilePattern(pattern)
-	if err != nil {
-		return false
-	}
-
-	return g.Match(value)
-}
-
-func compilePattern(pattern string) (glob.Glob, error) {
-	return glob.Compile(pattern, ':')
 }
