@@ -11,7 +11,9 @@ Previously, running `nuon apps sync` validated, synced, and built your app templ
 With App Branches, Nuon directly fetches your app template Git repository and syncs it to the Nuon control plane. This unlocks features like automated previews and install rollouts.
 
 ### Install Groups
-Rollouts were previously managed on an install-by-install basis. With Install Groups, you can define multi-install deployment plans and orchestrate the update sequence across installs using labels or version pinning.
+Rollouts were previously managed on an install-by-install basis using the Nuon CLI or dashboard. With App Branches, installs are aggregated into Install Groups which are vendor-defined ways to rollout upgrades to similar installs.
+
+See more in the [App Branches docs](/concepts/app-branches#structuring-branches-and-install-groups).
 
 ### Native Automation & Triggers
 You can now natively trigger updates to your installs using:
