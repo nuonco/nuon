@@ -399,5 +399,13 @@ func (s *service) validateRunnerAzureIdentity(ctx context.Context, install *app.
 		}
 	}
 
+	expectedPrincipalID := azureOutputs.RunnerIdentityPrincipalID
+	if expectedPrincipalID == "" {
+		return fmt.Errorf("install %s does not have a runner identity principal id in stack outputs", install.ID)
+	}
+	if !strings.EqualFold(claims.ObjectID, expectedPrincipalID) {
+		return fmt.Errorf("principal id mismatch: got %s, expected %s", claims.ObjectID, expectedPrincipalID)
+	}
+
 	return nil
 }
