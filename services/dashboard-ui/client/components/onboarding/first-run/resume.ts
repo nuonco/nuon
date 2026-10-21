@@ -21,7 +21,7 @@ export async function resolveFirstRunOrg({ user }: { user: IUser | null }): Prom
     org = orgs.find((o) => o.id === session) ?? orgs[0]
   } else {
     try {
-      org = await createTrialOrg()
+      org = await createTrialOrg({ email: user?.email })
     } catch (error) {
       trackEvent({
         event: 'org_create',

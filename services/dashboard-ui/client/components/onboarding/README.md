@@ -12,8 +12,10 @@ then a wizard that creates an app template and a first test install.
 | `first-run/IntroScreen.tsx` | Full-screen intro before the stepper. No network calls. |
 | `first-run/StartStep.tsx` | Picks the path. Own app: GitHub, name, test cloud, then app + branch + branch config. Example: Kitchen Sink. |
 | `first-run/ConnectStep.tsx` | Own path only. Agent prompt from `nuon.co/loop.md`, push detection, fine print, Get help. |
-| `first-run/DeployStep.tsx` | Region and auto-approve, waits for an active app config, creates the install. |
+| `first-run/DeployStep.tsx` | Region and auto-approve, waits for an active app config and the branch run's builds, creates the install. |
 | `first-run/StackStep.tsx` | Polls the install stack: AWS quick-create link, GCP Terraform, Azure `az` commands. |
+| `first-run/WaitProgress.tsx` | Live checklist of the workflow steps behind a wait, plus a rotating Awesome BYOC reference. |
+| `first-run/progress.ts` | Maps workflow steps to checklist items. |
 | `first-run/ProvisionStep.tsx` | Static preview of what the install builds. Finish opens the deploy workflow. |
 | `first-run/constants.ts` | Clouds, regions, sandbox repos, config stubs, stack copy. |
 | `first-run/api.ts` | Multi-call helpers: set up the app and branch, find the active config, create the install. |
@@ -82,8 +84,8 @@ saved place. Resume still starts over at Start if a saved app or install returns
 | Start, own | `GET /v1/vcs/connections`, `GET /v1/vcs/connections/:id/repos`, `POST /v1/apps`, `PATCH /v1/apps/:id` (`config_repo`, `config_directory`), `POST /v1/apps/:id/branches`, `POST .../branches/:id/configs` |
 | Start, example | `GET /v1/apps?q=`, `POST /v1/apps`, the same branch calls with `public_git_vcs_config` |
 | Connect | `GET https://nuon.co/loop.md`, `GET .../branches/:id/runs` every 5 seconds |
-| Deploy | `GET /v1/apps/:id/configs`, `GET /v1/apps/:id/configs/:config_id?recurse=true`, `POST /v1/apps/:id/installs` |
-| Stack | `GET /v1/installs/:id/stack` every 3 seconds |
+| Deploy | `GET /v1/apps/:id/configs` and `GET .../branches/:id/runs` + `GET /v1/workflows/:id/steps` every 2 seconds while waiting, `GET /v1/apps/:id/configs/:config_id?recurse=true`, `POST /v1/apps/:id/installs` |
+| Stack | `GET /v1/installs/:id/stack` every 2 seconds, `GET /v1/workflows/:id`, `GET /v1/workflows/:id/steps` every 2 seconds while generating |
 | Provision | None until Finish |
 
 Kitchen Sink keeps one config per cloud, so the example path uses `kitchen-sink` (directory `kitchen-sink-aws`,

@@ -114,11 +114,6 @@ export const KITCHEN_SINK_VARIANTS: Record<
 export const KITCHEN_SINK_REPO = 'nuonco/kitchen-sink'
 export const KITCHEN_SINK_URL = `https://github.com/${KITCHEN_SINK_REPO}`
 export const KITCHEN_SINK_LABEL = 'Kitchen Sink'
-export const EXAMPLE_APP_FACTS = [
-  'Helm chart: API, UI, and worker pods',
-  'Pulumi S3 bucket and CI-built images',
-  'Actions, policies, runbooks, app branches',
-]
 
 export const DEFAULT_BRANCH_NAME = 'default'
 export const TRACKED_GIT_BRANCH = 'main'
@@ -134,11 +129,13 @@ export const INSTALL_NAME_ATTEMPTS = 3
 export const PROMPT_URL = 'https://nuon.co/loop.md'
 
 export const DEMO_REQUEST = 'https://nuon.co/demo-request'
-export const CONTACT_MESSAGE = 'I would like help writing the app config for my first install.'
+export const CONTACT_MESSAGE = 'I would like help writing the app template for my first install.'
 
 export const DOCS_URL = 'https://docs.nuon.co'
 export const DOCS_MCP = 'https://docs.nuon.co/guides/agents/setup'
+export const DOCS_CLI = 'https://docs.nuon.co/cli'
 export const DOCS_APPS = 'https://docs.nuon.co/concepts/apps'
+export const DOCS_APP_INPUTS = 'https://docs.nuon.co/concepts/app-inputs'
 export const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'
 export const DOCS_SANDBOXES = 'https://docs.nuon.co/concepts/sandboxes'
 export const DOCS_STACKS = 'https://docs.nuon.co/concepts/stacks'
@@ -155,8 +152,10 @@ export const CLI_LOGIN = 'nuon login'
 export const CLI_SETUP = `${CLI_INSTALL}\n${CLI_LOGIN}`
 export const MCP_ADD_CLAUDE =
   'claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes'
-export const GIT_PUSH = 'git add .\ngit commit -m "Add Nuon app config"\ngit push origin main'
+export const GIT_PUSH = 'git add .\ngit commit -m "Add Nuon app template"\ngit push origin main'
 export const watchCommand = (installId: string) => `nuon installs workflows watch -i ${installId}`
+export const watchPrompt = (appName: string) =>
+  `Watch my ${appName} test install on Nuon while it provisions. Tell me as each step finishes, and if a step fails, pull its logs and explain what went wrong.`
 
 export interface IAppFileStub {
   name: string
@@ -243,40 +242,6 @@ export const appFileStubs = ({
   },
 ]
 
-export const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
-  aws: [
-    {
-      name: 'CloudFormation quick-create',
-      how: 'One pre-filled link. Your customer creates the stack in their console.',
-    },
-    { name: 'AWS CLI', how: 'The same CloudFormation template, from a terminal.' },
-    {
-      name: 'Terraform',
-      how: 'Generated tfvars for the install-stacks/aws module, applied with terraform.',
-    },
-  ],
-  gcp: [
-    {
-      name: 'Terraform',
-      how: 'Generated tfvars for the install-stacks/gcp module. gcloud auth, then terraform apply. GCP is Terraform only.',
-    },
-  ],
-  azure: [
-    {
-      name: 'Azure CLI (Bicep)',
-      how: 'Create a resource group and Key Vault, then deploy the template with az. Nuon fills in the commands.',
-    },
-    {
-      name: 'Terraform',
-      how: 'Generated tfvars for the install-stacks/azure module, applied with terraform.',
-    },
-    {
-      name: 'Deploy to Azure',
-      how: 'A pre-filled portal link. Only when stack.toml sets deployment_scope = "subscription".',
-    },
-  ],
-}
-
 export const testAccountLabel = (cloud: TCloud) => `your test ${CLOUD_CONNECT[cloud].accountNoun}`
 
 export type TStageId = 'runner' | 'sandbox' | 'components'
@@ -304,3 +269,106 @@ export const buildStages = (cloud: TCloud, appName: string): IBuildStage[] => [
     blurb: `${appName}'s Terraform, Helm charts and images, deployed into the sandbox. A few minutes.`,
   },
 ]
+
+export const AWESOME_BYOC_URL = 'https://www.awesomebyoc.com'
+
+// From github.com/nuonco/awesome-byoc. BYOC platform vendors are left out on purpose.
+export const BYOC_REFERENCES: { name: string; category: string; blurb: string; href: string }[] = [
+  {
+    name: 'Datadog',
+    category: 'Observability',
+    blurb: 'Log management with indexing and search running in your own Kubernetes cluster.',
+    href: 'https://docs.datadoghq.com/cloudprem/introduction/',
+  },
+  {
+    name: 'Snowflake Openflow',
+    category: 'Data integration',
+    blurb: 'Moves data into Snowflake while keeping compute in your environment.',
+    href: 'https://www.snowflake.com/en/blog/openflow-byoc-data-integration/',
+  },
+  {
+    name: 'Vercel',
+    category: 'Dev platforms',
+    blurb: 'Deploy enterprise apps and AI agents in your own cloud, with Vercel running the control plane.',
+    href: 'https://vercel.com/enterprise',
+  },
+  {
+    name: 'ClickHouse',
+    category: 'Databases',
+    blurb: 'Real-time OLAP database for analytics, deployed in your own cloud account.',
+    href: 'https://clickhouse.com/cloud/bring-your-own-cloud',
+  },
+  {
+    name: 'Redpanda',
+    category: 'Streaming',
+    blurb: 'Kafka-compatible streaming platform with a BYOC deployment option.',
+    href: 'https://www.redpanda.com/product/bring-your-own-cloud-byoc',
+  },
+  {
+    name: 'LangChain',
+    category: 'AI',
+    blurb: 'LangSmith traces, datasets and prompts stored in your own AWS account.',
+    href: 'https://www.langchain.com/blog/langsmith-byoc-is-now-generally-available-on-aws',
+  },
+  {
+    name: 'Grafana',
+    category: 'Observability',
+    blurb: 'Metrics, logs and traces with a bring your own cloud option.',
+    href: 'https://grafana.com/products/bring-your-own-cloud-byoc/',
+  },
+  {
+    name: 'Pinecone',
+    category: 'Databases',
+    blurb: 'Vector database for AI applications, deployable in your own cloud.',
+    href: 'https://docs.pinecone.io/guides/production/bring-your-own-cloud',
+  },
+  {
+    name: 'Fivetran',
+    category: 'Data integration',
+    blurb: 'Managed ELT pipelines with a data-plane agent running in your own VPC.',
+    href: 'https://fivetran.com/docs/deployment-models/hybrid-deployment',
+  },
+  {
+    name: 'Retool',
+    category: 'Internal tools',
+    blurb: 'Internal tool builder with vendor-managed deployment in your AWS VPC.',
+    href: 'https://docs.retool.com/self-hosted/retool-managed/concepts/architecture',
+  },
+  {
+    name: 'Glean',
+    category: 'Apps',
+    blurb: 'Enterprise AI search and assistant platform managed in your own cloud.',
+    href: 'https://docs.glean.com/get-started/build/about-self-hosted',
+  },
+  {
+    name: 'Cohere',
+    category: 'AI',
+    blurb: 'Enterprise LLM platform with model containers deployed in your own cloud.',
+    href: 'https://docs.cohere.com/docs/private-deployment-overview',
+  },
+  {
+    name: 'Braintrust',
+    category: 'AI',
+    blurb: 'LLM evals platform with its data plane running in your own cloud VPC.',
+    href: 'https://www.braintrust.dev/docs/guides/self-hosting',
+  },
+  {
+    name: 'CockroachDB',
+    category: 'Databases',
+    blurb: 'Distributed SQL database with a bring your own cloud deployment option.',
+    href: 'https://www.cockroachlabs.com/product/cloud/bring-your-own-cloud/',
+  },
+]
+
+export const STACK_RENDER_LABEL: Record<TCloud, string> = {
+  aws: 'Build the CloudFormation template',
+  gcp: 'Build the Terraform stack',
+  azure: 'Build the Bicep template',
+}
+
+// Normal waits on app.nuon.co are about 2 minutes for builds and under a minute
+// for the stack link, so these leave room before calling a wait slow.
+export const DEPLOY_SLOW_MS = 10 * 60_000
+export const STACK_SLOW_MS = 5 * 60_000
+export const DEPLOY_HELP_MESSAGE = 'My first install is stuck while Nuon gets the app template ready.'
+export const STACK_HELP_MESSAGE = 'My first install is stuck while Nuon generates the install stack.'
