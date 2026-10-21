@@ -43,6 +43,7 @@ const (
 	InstallComponentHealthStatusDegraded      InstallComponentHealthStatus = "degraded"
 	InstallComponentHealthStatusUnhealthy     InstallComponentHealthStatus = "unhealthy"
 	InstallComponentHealthStatusUnknown       InstallComponentHealthStatus = "unknown"
+	InstallComponentHealthStatusOther         InstallComponentHealthStatus = "other"
 	InstallComponentHealthStatusNotApplicable InstallComponentHealthStatus = "not-applicable"
 )
 
