@@ -40,14 +40,12 @@ import {
   type TCloud,
   type TPath,
 } from './constants'
-import { waitItems, type IWaitItem } from './progress'
+import { BUILDS_STEP, installGate, waitItems, type IWaitItem } from './progress'
 import { deploySchema, type DeployValues } from './schema'
 import { NextButton, RepoChip } from './shared'
 import { ByocReferences, WaitProgress } from './WaitProgress'
 
 const CONFIG_POLL_MS = 2000
-const BUILDS_STEP = 'building components and sandbox'
-const BUILDS_DONE = ['success', 'skipped', 'user-skipped', 'auto-skipped', 'noop']
 
 const InstallSummaryCard = ({
   path,
@@ -369,16 +367,15 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
     refetchInterval: CONFIG_POLL_MS,
   })
 
-  // A branch-run config pins its builds, and an install provisioned before they
-  // finish fails, so wait for the run's builds step too. Only a config that no
-  // branch run produced (synced from the CLI) has no builds to wait for.
-  const buildsStatus = runSteps?.find((step) => step.name === BUILDS_STEP)?.status?.status as string | undefined
-  const buildsReady =
-    (!!buildsStatus && BUILDS_DONE.includes(buildsStatus)) ||
-    (!!runs && !runs.length && !!activeConfig && !activeConfig.app_branch_id)
+  const { buildsReady, readyToCreate } = installGate({
+    hasRuns: runs ? runs.length > 0 : undefined,
+    runStatus: latestRun?.status?.status,
+    steps: runSteps,
+    configFromBranch: activeConfig ? !!activeConfig.app_branch_id : undefined,
+  })
 
   useEffect(() => {
-    if (phase !== 'waiting-config' || !activeConfig?.id || !buildsReady || creating.current) return
+    if (phase !== 'waiting-config' || !activeConfig?.id || !readyToCreate || creating.current) return
     creating.current = true
     setPhase('creating')
     const { region: chosenRegion, autoApprove } = choice.current
@@ -435,7 +432,7 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
       }
     }
     run()
-  }, [phase, activeConfig, buildsReady, orgId, appId, appName, branchId, cloud, journey, setSharedData, onAdvance, path, user])
+  }, [phase, activeConfig, readyToCreate, orgId, appId, appName, branchId, cloud, journey, setSharedData, onAdvance, path, user])
 
   const progress = waitItems(
     [
