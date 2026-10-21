@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Status } from '@/components/common/Status'
 import { Button } from '@/components/common/Button'
@@ -14,24 +13,27 @@ import { InstallAppConfigProvider } from '@/providers/install-app-config-provide
 import { InstallProvider } from '@/providers/install-provider'
 import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
-import { getInstallStack } from '@/lib'
+import { getInstallStack, getInstallWorkflows, getWorkflowSteps } from '@/lib'
+import { openSupportChat } from '@/lib/pylon-chat'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TInstallStack } from '@/types'
 import {
   CLOUD_CONNECT,
   CLOUD_ICON,
-  CLOUD_LABEL,
-  DOCS_STACKS,
   KITCHEN_SINK_LABEL,
-  STACK_METHODS,
+  STACK_HELP_MESSAGE,
+  STACK_SLOW_MS,
+  STACK_RENDER_LABEL,
   defaultRegion,
   isCloud,
   type TCloud,
 } from './constants'
-import { FirstRunCloudRegion } from './shared'
+import { waitItems, type IWaitItem } from './progress'
+import { CopyTextButton, FirstRunCloudRegion } from './shared'
+import { ByocReferences, WaitProgress } from './WaitProgress'
 
-const STACK_POLL_MS = 3000
+const STACK_POLL_MS = 2000
 
 export type TStackPhase = 'generating' | 'ready' | 'launched' | 'done' | 'error'
 
@@ -53,6 +55,9 @@ export interface IStackStepView {
   quickLinkUrl?: string
   errorDescription?: string
   details?: React.ReactNode
+  progress?: IWaitItem[]
+  progressSince?: number
+  onGetHelp?: () => void
   onLaunch: () => void
   onContinue: () => void
   onBack?: () => void
@@ -66,12 +71,14 @@ export const StackStepView = ({
   quickLinkUrl,
   errorDescription,
   details,
+  progress,
+  progressSince,
+  onGetHelp,
   onLaunch,
   onContinue,
   onBack,
 }: IStackStepView) => {
   const connect = CLOUD_CONNECT[cloud]
-  const methods = STACK_METHODS[cloud]
   const generating = phase === 'generating'
   const ready = phase === 'ready'
   const launched = phase === 'launched'
@@ -85,13 +92,10 @@ export const StackStepView = ({
   )
   const status = generating ? (
     <>
-      Generating the {connect.artifactNoun} for {regionName}. About 30 seconds.
+      Generating the {connect.artifactNoun} for {regionName}. Usually under a minute.
     </>
   ) : ready ? (
-    <>
-      {connect.artifactNoun} ready for {regionName}. From launch to a healthy runner is about 11 minutes. This
-      page updates on its own.
-    </>
+    `${connect.artifactNoun} ready`
   ) : launched ? (
     `${connect.waitingHint} This page updates on its own.`
   ) : failed ? (
@@ -132,61 +136,52 @@ export const StackStepView = ({
         </Status>
       </Card>
 
-      <Card className="!gap-5">
-        <div className="flex flex-col gap-1">
-          <Text variant="h3" role="heading" level={3}>
-            How your customers create this install
-          </Text>
-          <Text variant="body" theme="neutral">
-            {cloud === 'gcp'
-              ? 'On Google Cloud, Nuon renders the install stack in Terraform.'
-              : `Nuon renders the install stack in Terraform and in ${CLOUD_LABEL[cloud]}'s native format.`}{' '}
-            Your customer creates it with their own credentials; that is how access is granted. You are about
-            to do it the way they would.
+      {generating && progress ? (
+        <>
+          <WaitProgress
+            title={connect.generating}
+            items={progress}
+            since={progressSince}
+            slowAfterMs={STACK_SLOW_MS}
+            onGetHelp={onGetHelp}
+          />
+          <ByocReferences />
+        </>
+      ) : null}
+
+      {generating && progress ? null : (
+        <div className="flex items-center gap-2">
+          {failed ? (
+            <Icon variant="WarningCircleIcon" size={16} theme="error" weight="fill" />
+          ) : ready || done ? (
+            <Icon variant="CheckCircleIcon" size={16} theme="success" weight="fill" />
+          ) : (
+            <Icon variant="Loading" size={16} />
+          )}
+          <Text variant="subtext" theme={statusTheme}>
+            {status}
           </Text>
         </div>
-        <ul className="flex flex-col divide-y rounded-md border">
-          {methods.map((method, index) => (
-            <li key={method.name} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-3">
-              <Text variant="body" weight="strong">
-                {method.name}
-              </Text>
-              {index === 0 ? (
-                <Badge size="sm" theme="brand">
-                  This install
-                </Badge>
-              ) : null}
-              <Text variant="subtext" theme="neutral">
-                {method.how}
-              </Text>
-            </li>
-          ))}
-        </ul>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            {failed ? (
-              <Icon variant="WarningCircleIcon" size={16} theme="error" weight="fill" />
-            ) : ready || done ? (
-              <Icon variant="CheckCircleIcon" size={16} theme="success" weight="fill" />
-            ) : (
-              <Icon variant="Loading" size={16} />
-            )}
-            <Text variant="subtext" theme={statusTheme}>
-              {status}
-            </Text>
-          </div>
-          <Link href={DOCS_STACKS} isExternal textVariant="subtext">
-            All formats and CLI snippets
+      )}
+
+      {launched && linkLaunch ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <Text variant="subtext" theme="neutral">
+            Signed in to a different AWS account, or the tab did not open?
+          </Text>
+          <Link href={quickLinkUrl} isExternal textVariant="subtext">
+            Open it again
           </Link>
+          <CopyTextButton text={quickLinkUrl} label="Copy link" size="sm" />
         </div>
-      </Card>
+      ) : null}
 
       {failed && errorDescription ? <Banner theme="error">{errorDescription}</Banner> : null}
 
       {details}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {onBack && (generating || ready) ? (
+        {onBack && (generating || ready || done) ? (
           <Button variant="secondary" size="lg" onClick={onBack}>
             <Icon variant="CaretLeftIcon" weight="bold" /> Back
           </Button>
@@ -199,7 +194,11 @@ export const StackStepView = ({
               Continue <Icon variant="CaretRightIcon" weight="bold" />
             </Button>
           ) : null}
-          {linkLaunch && ready ? (
+          {done ? (
+            <Button variant="primary" size="lg" onClick={onContinue}>
+              Continue <Icon variant="CaretRightIcon" weight="bold" />
+            </Button>
+          ) : linkLaunch && ready ? (
             <Button
               variant="primary"
               size="lg"
@@ -234,7 +233,7 @@ export const StackStepView = ({
 
 const readString = (value: unknown) => (typeof value === 'string' ? value : '')
 
-export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
+export const StackStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const { orgId, journey } = useFirstRun()
   const { user } = useAuth()
   const cloud: TCloud = isCloud(sharedData.cloud) ? sharedData.cloud : 'aws'
@@ -251,20 +250,55 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
     enabled: !!installId,
     refetchInterval: STACK_POLL_MS,
   })
-  const phase = phaseFromStatus(stackStatus(stack), launched)
+  const stackPhase = phaseFromStatus(stackStatus(stack), launched)
+
+  // The create response has no workflow ID, so find the install's provision workflow.
+  const { data: workflow } = useQuery({
+    queryKey: ['first-run-provision-workflow', orgId, installId],
+    queryFn: () =>
+      getInstallWorkflows({ orgId, installId, type: 'provision', planonly: false, limit: 1 }).then(
+        (res) => res.data?.[0] ?? null
+      ),
+    enabled: !!installId,
+    refetchInterval: stackPhase === 'generating' ? STACK_POLL_MS : false,
+  })
+  const workflowId = workflow?.id ?? ''
+  // A provision that fails before it creates the stack never moves the stack's
+  // status, so read the failure from the workflow.
+  const provisionStatus = workflow?.status?.status as string | undefined
+  const provisionFailed =
+    stackPhase === 'generating' && !!provisionStatus && ['error', 'failed', 'cancelled'].includes(provisionStatus)
+  const phase: TStackPhase = provisionFailed ? 'error' : stackPhase
+  const { data: steps } = useQuery({
+    queryKey: ['first-run-provision-steps', orgId, workflowId],
+    queryFn: () => getWorkflowSteps({ orgId, workflowId }),
+    enabled: !!workflowId && phase === 'generating',
+    refetchInterval: STACK_POLL_MS,
+  })
+  const progress = waitItems(
+    [
+      { label: 'Create your test install', done: !!steps?.length },
+      { label: STACK_RENDER_LABEL[cloud], step: 'generate install stack' },
+      { label: `${CLOUD_CONNECT[cloud].artifactNoun} ready`, done: phase !== 'generating' },
+    ],
+    steps
+  )
+  const progressSince = workflow?.created_at ? Date.parse(workflow.created_at) : undefined
   const version = stack?.versions?.at(0)
 
   const advance = () => {
     if (advanced.current) return
     advanced.current = true
     journey.saveStep('stack', {}, { complete: true }).catch(() => {})
+    setSharedData('stack_done', true)
     onAdvance()
   }
   const advanceRef = useRef(advance)
   advanceRef.current = advance
 
   useEffect(() => {
-    if (phase === 'done') advanceRef.current()
+    // Only the first completion moves on by itself; coming back with Back stays here.
+    if (phase === 'done' && !sharedData.stack_done) advanceRef.current()
   }, [phase])
 
   const showDetails = !!stack && (phase === 'launched' || phase === 'ready') && cloud !== 'aws'
@@ -285,8 +319,18 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
       region={region}
       phase={phase}
       quickLinkUrl={version?.quick_link_url}
-      errorDescription={version?.composite_status?.status_human_description}
+      errorDescription={
+        provisionFailed
+          ? workflow?.status?.status_human_description || 'The deploy workflow stopped.'
+          : version?.composite_status?.status_human_description
+      }
       details={details}
+      progress={progress}
+      progressSince={progressSince}
+      onGetHelp={() => {
+        openSupportChat(STACK_HELP_MESSAGE)
+        trackEvent({ event: 'support_chat_open', status: 'ok', user, props: { source: 'onboarding_stack' } })
+      }}
       onLaunch={() => {
         setLaunched(true)
         trackEvent({ event: 'install_stack_launch', status: 'ok', user, props: { installId, cloud } })
