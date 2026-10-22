@@ -138,6 +138,63 @@ const deployments = [
     { component_name: 'worker' }
   ),
   deployment(
+    'dep-ledger-plan',
+    'app_branch_update',
+    'approval-awaiting',
+    '2026-10-05T13:20:00Z',
+    'Release ledger 2.1',
+    'Waiting for approval of the ledger plan.',
+    { components: ['ledger', 'api'], images: [] }
+  ),
+  deployment(
+    'dep-webhooks-retry',
+    'component_deploy',
+    'failed-pending-retry',
+    '2026-10-05T12:45:00Z',
+    'Update webhooks routes',
+    'Applying webhooks failed; retry or skip the step.',
+    { components: ['webhooks'], images: [] },
+    { component_name: 'webhooks' }
+  ),
+  deployment(
+    'dep-api-retrying',
+    'component_deploy',
+    'retrying',
+    '2026-10-05T12:10:00Z',
+    'Rotate api certificates',
+    'Retrying the api apply after a transient error.',
+    { components: ['api'], images: [] },
+    { component_name: 'api' }
+  ),
+  deployment(
+    'dep-stack-queued',
+    'stack_update',
+    'queued',
+    '2026-10-05T14:05:00Z',
+    'Stack update',
+    'Queued behind the running deployments.',
+    { stack: true, components: [], images: [] }
+  ),
+  deployment(
+    'dep-secrets-pending',
+    'install_config_update',
+    'pending',
+    '2026-10-05T14:10:00Z',
+    'Sync secrets',
+    'Waiting for a runner to pick up the job.',
+    { components: [], images: [] }
+  ),
+  deployment(
+    'dep-worker-cancelled',
+    'component_deploy',
+    'cancelled',
+    '2026-10-04T08:15:00Z',
+    'Rollback worker',
+    'Cancelled by an operator before apply.',
+    { components: ['worker'], images: [] },
+    { component_name: 'worker' }
+  ),
+  deployment(
     'dep-ledger',
     'component_deploy',
     'success',
@@ -232,6 +289,13 @@ const deploymentSummary = (record: {
       component_name: component,
     })),
   ]
+  const finished = ['success', 'error', 'cancelled'].includes(record.status)
+  const lastStepStatus: Record<string, string> = {
+    'failed-pending-retry': 'error',
+    retrying: 'in-progress',
+    queued: 'pending',
+    pending: 'pending',
+  }
   return {
     id: record.id,
     type: record.type === 'image_update' ? 'component_deploy' : record.type,
@@ -239,27 +303,34 @@ const deploymentSummary = (record: {
     created_at: record.created_at,
     title: record.title,
     activity: record.summary,
-    finished: record.status === 'success' || record.status === 'error',
-    steps: targets.map((target, index) => ({
-      ...target,
-      id: `${record.id}-step-${index}`,
-      group_idx: index + 1,
-      execution_type: 'system',
-      status:
-        record.status === 'success' || index < targets.length - 1
-          ? 'success'
-          : record.status,
-    })),
+    finished,
+    steps: targets.map((target, index) => {
+      const last = index === targets.length - 1
+      const notStarted = ['pending', 'queued'].includes(record.status)
+      const approval = last && record.status === 'approval-awaiting'
+      return {
+        ...target,
+        name: approval ? target.name.replace(/^apply /, 'plan ') : target.name,
+        id: `${record.id}-step-${index}`,
+        group_idx: index + 1,
+        execution_type: approval ? 'approval' : 'system',
+        status: notStarted
+          ? 'pending'
+          : record.status === 'success' || !last
+            ? 'success'
+            : (lastStepStatus[record.status] ?? record.status),
+      }
+    }),
   }
 }
 
-const deploymentPage = (rows: unknown[], total?: number) =>
+const deploymentPage = (rows: unknown[], total?: number, hasMore = false) =>
   ok({
     deployments: rows,
     page: 0,
     offset: 0,
     limit: 20,
-    has_more: false,
+    has_more: hasMore,
     total,
   })
 
@@ -312,9 +383,26 @@ export const deploymentsFixture = (
       if (type && !type.split(',').includes(item.type)) return false
       return true
     })
+    const rank = (item: { status: string }) =>
+      url.searchParams.get('sort') !== 'attention'
+        ? 0
+        : ['in-progress', 'retrying'].includes(item.status)
+          ? 0
+          : item.status === 'approval-awaiting'
+            ? 1
+            : item.status === 'failed-pending-retry'
+              ? 2
+              : 3
+    rows.sort(
+      (left, right) =>
+        rank(left) - rank(right) ||
+        right.created_at.localeCompare(left.created_at)
+    )
+    const limit = Number(url.searchParams.get('limit') ?? rows.length)
     return deploymentPage(
-      rows,
-      lifecycle === 'active' ? rows.length : undefined
+      rows.slice(0, limit),
+      lifecycle === 'active' ? rows.length : undefined,
+      rows.length > limit
     )
   })
 
