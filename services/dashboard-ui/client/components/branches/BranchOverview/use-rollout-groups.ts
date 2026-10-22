@@ -17,6 +17,7 @@ import {
 } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
 import type {
+  TAppBranchConfig,
   TAppBranchInstallGroup,
   TAppBranchRun,
   TInstall,
@@ -158,6 +159,17 @@ const fromGroupRun = (
 const sameName = (a?: string, b?: string) =>
   !!a && !!b && a.toLowerCase() === b.toLowerCase()
 
+// A run keeps the install groups it was planned with. The branch's latest
+// config is only a fallback for a run whose config has not loaded yet.
+export const rolloutConfig = (
+  branchRun: TAppBranchRun | undefined,
+  latest: TAppBranchConfig | undefined
+): TAppBranchConfig | undefined => {
+  const pinned = branchRun?.app_branch_config
+  if ((pinned?.install_groups?.length ?? 0) > 0) return pinned
+  return latest
+}
+
 export const rolloutHrefForWorkflow = (
   basePath: string,
   workflowId?: string
@@ -276,15 +288,7 @@ export const useRolloutGroups = () => {
     [installHref, orgId, appId]
   )
 
-  const currentConfig = useMemo(() => latestBranchConfig(branch), [branch])
-  const groups = useMemo(
-    () => currentConfig?.install_groups ?? [],
-    [currentConfig]
-  )
-  const vcs =
-    currentConfig?.connected_github_vcs_config ??
-    currentConfig?.public_git_vcs_config
-  const repoSlug = vcs?.repo
+  const latestConfig = useMemo(() => latestBranchConfig(branch), [branch])
 
   const { data: installsResult } = useQuery({
     queryKey: ['app-installs', orgId, appId, branchId],
@@ -341,6 +345,14 @@ export const useRolloutGroups = () => {
   const branchRun = rolloutRun?.app_branch_runs?.at(0)
   const branchRunId = branchRun?.id
   const isTerminal = TERMINAL.has(rolloutRun?.status?.status ?? '')
+  const planConfig = useMemo(
+    () => rolloutConfig(branchRun, latestConfig),
+    [branchRun, latestConfig]
+  )
+  const groups = useMemo(() => planConfig?.install_groups ?? [], [planConfig])
+  const vcs =
+    planConfig?.connected_github_vcs_config ?? planConfig?.public_git_vcs_config
+  const repoSlug = vcs?.repo
 
   const { data: groupRuns } = useQuery({
     queryKey: [
