@@ -1,15 +1,20 @@
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
-import type { TCreateWizardStepStatus } from './wizard-path'
 
-interface ICreateStepper {
-  steps: { id: string; label: string; status: TCreateWizardStepStatus }[]
+export type TInstallWizardStepStatus = 'done' | 'current' | 'upcoming'
+
+interface IWizardStepper {
+  steps: { id: string; label: string; status: TInstallWizardStepStatus }[]
   selectedId: string
   onSelect: (id: string) => void
 }
 
-export const CreateStepper = ({ steps, selectedId, onSelect }: ICreateStepper) => {
+export const WizardStepper = ({
+  steps,
+  selectedId,
+  onSelect,
+}: IWizardStepper) => {
   const currentIndex = steps.findIndex((step) => step.status === 'current')
   const position = currentIndex === -1 ? steps.length : currentIndex + 1
 
@@ -61,7 +66,9 @@ export const CreateStepper = ({ steps, selectedId, onSelect }: ICreateStepper) =
                 )}
                 <Text
                   variant="body"
-                  weight={selected || step.status === 'current' ? 'strong' : 'normal'}
+                  weight={
+                    selected || step.status === 'current' ? 'strong' : 'normal'
+                  }
                   theme={
                     step.status === 'upcoming'
                       ? 'neutral'
