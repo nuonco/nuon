@@ -195,6 +195,21 @@ func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.Run
 	return result, nil
 }
 
+// runbookEnablementConfig is the latest component config, with the parent
+// component name filled in. GetComponent preloads configs but not each
+// config's Component, and enablement keys the install toggle off that name.
+// An empty name misses a true toggle and falls through to default_enabled.
+func runbookEnablementConfig(component *app.Component) *app.ComponentConfigConnection {
+	if component == nil || len(component.ComponentConfigs) == 0 {
+		return nil
+	}
+	latest := &component.ComponentConfigs[0]
+	if latest.Component.Name == "" {
+		latest.Component.Name = component.Name
+	}
+	return latest
+}
+
 func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string, cccIDByComp map[string]string) ([]*app.WorkflowStep, error) {
 	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 		InstallID:   installID,
@@ -220,10 +235,7 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 	// Install inputs are the source of truth for toggleable components: a
 	// component disabled on this install is skipped rather than deployed, even
 	// when a runbook step names it explicitly.
-	var latestConfig *app.ComponentConfigConnection
-	if len(component.ComponentConfigs) > 0 {
-		latestConfig = &component.ComponentConfigs[0]
-	}
+	latestConfig := runbookEnablementConfig(component)
 	if !componentEnabledFromInputs(enabledInputs, latestConfig) {
 		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (skipped)", name))
 		skipStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("skipped %s — component disabled", name), pgtype.Hstore{
