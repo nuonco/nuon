@@ -15,7 +15,7 @@ Managing OIDC federation requires **org admin** access.
 
 1. A workload obtains its ambient OIDC token from its platform (for example, the ID token GitHub Actions issues to a job).
 2. It calls the Nuon token-exchange endpoint with that token and your org ID.
-3. Nuon verifies the token's signature against the issuer's JWKS and checks its issuer, audience, and claims against your trust policies.
+3. Nuon verifies the token's RS256 signature against the issuer's JWKS and checks its issuer, audience, and claims against your trust policies. The token must include `exp` and `iat` claims.
 4. On a match, Nuon mints a short-lived API token bound to the policy's service account and returns it. The workload uses it like any other Nuon API token.
 
 The exchange endpoint requires no Nuon credentials — trust is established entirely by the OIDC token and your trust policy.
@@ -45,6 +45,14 @@ Values support glob patterns. The `*` wildcard does not cross `:` segment bounda
 | `repo:acme/app:ref:refs/heads/main` | Exactly that subject |
 | `repo:acme/app:*` | Any subject for the `acme/app` repo |
 | `repo:acme/*:ref:refs/heads/main` | The `main` ref of any repo in `acme` |
+
+Policies whose `sub` pattern matches unrelated identities are rejected as too broad, for every issuer. For example, `*` and `**` are never accepted.
+
+<Warning>
+  GitHub's issuer (`https://token.actions.githubusercontent.com`) is shared by every GitHub account, so a policy for it must be pinned to your own owner. Either start the `sub` condition with a literal owner, such as `repo:acme/` or `repo:acme@123/` (no wildcards in the owner; wildcards after it are fine), or add a `repository_owner_id` condition set to the literal numeric ID of your owner. Conditions on claims GitHub does not issue (such as a misspelled claim name) are rejected.
+</Warning>
+
+A policy is checked again whenever it is updated while enabled. If an older policy no longer passes these checks, fix its conditions or disable it; any other update to it is rejected.
 
 ## Managing trust policies
 

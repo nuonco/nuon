@@ -319,7 +319,10 @@ func (c *cli) oidcTrustPoliciesCmd() *cobra.Command {
 policy can be exchanged for Nuon API tokens with the policy's role.
 
 Claim patterns are exact strings, or globs where '*' does not cross ':' segments. A --claim
-condition on "sub" is required.
+condition on "sub" is required. Patterns that match unrelated identities (for example "*") are
+rejected. For the GitHub Actions issuer, the sub pattern must start with a literal owner such as
+"repo:acme/", or the policy must include a literal numeric repository_owner_id claim. Claims that
+GitHub does not issue are rejected.
 
 Example (GitHub Actions, main branch of acme/app only):
 

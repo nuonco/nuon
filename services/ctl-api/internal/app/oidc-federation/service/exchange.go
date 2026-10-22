@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 
@@ -18,8 +17,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-
-	"github.com/auth0/go-jwt-middleware/v2/validator"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
 )
 
 type ExchangeOIDCTokenRequest struct {
@@ -45,30 +43,11 @@ func genericExchangeError() stderr.ErrAuthentication {
 	}
 }
 
-var errInvalidJWTFormat = errors.New("invalid JWT format")
-
-func compactJWSParts(tokenStr string) ([]string, error) {
-	parts := strings.Split(tokenStr, ".")
-	if len(parts) != 3 {
-		return nil, errInvalidJWTFormat
-	}
-	for _, part := range parts {
-		if part == "" || strings.IndexFunc(part, isNotBase64URL) >= 0 {
-			return nil, errInvalidJWTFormat
-		}
-	}
-	return parts, nil
-}
-
-func isNotBase64URL(r rune) bool {
-	return !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_')
-}
-
 // parseUnverifiedIssuer extracts the iss claim from a JWT without signature
 // verification. It is only used to select among stored trust policies; the
 // issuer used for verification and JWKS fetching always comes from the policy.
 func parseUnverifiedIssuer(tokenStr string) (string, error) {
-	parts, err := compactJWSParts(tokenStr)
+	parts, err := oidc.CompactJWSParts(tokenStr)
 	if err != nil {
 		return "", err
 	}
@@ -91,50 +70,8 @@ func parseUnverifiedIssuer(tokenStr string) (string, error) {
 	return claims.Issuer, nil
 }
 
-type verifiedClaims map[string]any
-
-func (verifiedClaims) Validate(context.Context) error { return nil }
-
-// verifyOIDCToken verifies the token's signature, issuer, audience, and time
-// claims against a policy's stored configuration and returns the verified
-// claims.
-func (s *service) verifyOIDCToken(ctx context.Context, tokenStr, issuer, audience string) (map[string]any, error) {
-	if _, err := compactJWSParts(tokenStr); err != nil {
-		return nil, err
-	}
-
-	provider, err := s.jwks.getProvider(issuer)
-	if err != nil {
-		return nil, err
-	}
-
-	tokenValidator, err := validator.New(
-		provider.KeyFunc,
-		validator.RS256,
-		issuer,
-		[]string{audience},
-		validator.WithAllowedClockSkew(time.Minute),
-		validator.WithCustomClaims(func() validator.CustomClaims { return &verifiedClaims{} }),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create JWT validator: %w", err)
-	}
-
-	res, err := tokenValidator.ValidateToken(ctx, tokenStr)
-	if err != nil {
-		return nil, fmt.Errorf("JWT validation failed: %w", err)
-	}
-
-	validated, ok := res.(*validator.ValidatedClaims)
-	if !ok {
-		return nil, errors.New("unexpected JWT validation result")
-	}
-	claims, ok := validated.CustomClaims.(*verifiedClaims)
-	if !ok || claims == nil {
-		return nil, errors.New("unexpected JWT claims type")
-	}
-
-	return *claims, nil
+func (s *service) verifyOIDCToken(ctx context.Context, tokenStr, issuer, audience string) (oidc.Claims, error) {
+	return s.verifier.Verify(ctx, tokenStr, issuer, audience)
 }
 
 // @ID						ExchangeOIDCToken
@@ -214,7 +151,8 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 
 	verifiedAudiences := map[string]bool{}
 	var matched *app.OIDCTrustPolicy
-	var claims map[string]any
+	var claims oidc.Claims
+	haveClaims := false
 
 	for i := range policies {
 		policy := &policies[i]
@@ -230,15 +168,16 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 					zap.String("issuer", issuer),
 					zap.String("policy_id", policy.ID),
 					zap.Error(err))
-			} else if claims == nil {
+			} else if !haveClaims {
 				claims = tokenClaims
+				haveClaims = true
 			}
 		}
 		if !verified {
 			continue
 		}
 
-		if matchClaims(policy.ClaimConditions, claims) {
+		if oidc.ParseConditions(policy.ClaimConditions).Match(claims) {
 			matched = policy
 			break
 		}
@@ -252,14 +191,8 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 		// When at least one policy verified the token, claims are populated;
 		// logging the sub and claim keys lets operators see why no policy's
 		// conditions matched without weakening the generic client-facing 401.
-		if claims != nil {
-			sub, _ := claims["sub"].(string)
-			keys := make([]string, 0, len(claims))
-			for k := range claims {
-				keys = append(keys, k)
-			}
-			sort.Strings(keys)
-			fields = append(fields, zap.String("sub", sub), zap.Strings("claim_keys", keys))
+		if haveClaims {
+			fields = append(fields, zap.String("sub", claims.Sub), zap.Strings("claim_keys", claims.Names()))
 		}
 		s.l.Warn("oidc exchange: no trust policy matched", fields...)
 		ctx.Error(genericExchangeError())
@@ -306,13 +239,12 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 		s.l.Warn("oidc exchange: failed to update last_used_at", zap.String("policy_id", matched.ID), zap.Error(err))
 	}
 
-	sub, _ := claims["sub"].(string)
 	metricTags["status"] = "ok"
 	s.l.Info("oidc exchange: token issued",
 		zap.String("org_id", matched.OrgID),
 		zap.String("policy_id", matched.ID),
 		zap.String("issuer", matched.IssuerURL),
-		zap.String("sub", sub),
+		zap.String("sub", claims.Sub),
 		zap.String("role", matched.Role))
 
 	ctx.JSON(http.StatusOK, ExchangeOIDCTokenResponse{

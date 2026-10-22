@@ -1,6 +1,8 @@
 package service
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
@@ -11,6 +13,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidc/github"
 )
 
 type Params struct {
@@ -31,10 +35,24 @@ type service struct {
 	cfg         *internal.Config
 	authzClient *authz.Client
 	mw          metrics.Writer
-	jwks        *jwksProviderCache
+	verifier    *oidc.Verifier
+	providers   oidc.Providers
 }
 
 var _ api.Service = (*service)(nil)
+
+func newFederationHTTPClient(cfg *internal.Config) *http.Client {
+	return oidc.NewHTTPClient(oidc.HTTPClientOptions{
+		AllowPrivateAddresses: cfg.OIDCFederationAllowInsecureIssuers,
+	})
+}
+
+func newVerifier(cfg *internal.Config) *oidc.Verifier {
+	return oidc.NewVerifier(oidc.VerifierOptions{
+		HTTPClient:           newFederationHTTPClient(cfg),
+		AllowInsecureIssuers: cfg.OIDCFederationAllowInsecureIssuers,
+	})
+}
 
 func New(params Params) *service {
 	return &service{
@@ -44,7 +62,8 @@ func New(params Params) *service {
 		cfg:         params.Cfg,
 		authzClient: params.AuthzClient,
 		mw:          params.MW,
-		jwks:        newJWKSProviderCache(),
+		verifier:    newVerifier(params.Cfg),
+		providers:   oidc.NewProviders(github.Provider{}),
 	}
 }
 

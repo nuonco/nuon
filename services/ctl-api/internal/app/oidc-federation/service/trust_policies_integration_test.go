@@ -13,7 +13,7 @@ import (
 )
 
 func (s *OIDCFederationTestSuite) createPolicy(idp *fakeIDP, conditions map[string]string) app.OIDCTrustPolicy {
-	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = true
+	s.setAllowInsecureIssuers(true)
 
 	rr := s.makeRequest(http.MethodPost, "/v1/oidc/trust-policies", CreateOIDCTrustPolicyRequest{
 		Name:            "ci",
@@ -65,7 +65,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyCreatesServiceAccount() {
 }
 
 func (s *OIDCFederationTestSuite) TestCreatePolicyValidation() {
-	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = false
+	s.setAllowInsecureIssuers(false)
 
 	cases := []struct {
 		name string
@@ -111,7 +111,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyValidation() {
 
 func (s *OIDCFederationTestSuite) TestCreatePolicyAllowsAdminRole() {
 	idp := newFakeIDP(s.T())
-	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = true
+	s.setAllowInsecureIssuers(true)
 
 	rr := s.makeRequest(http.MethodPost, "/v1/oidc/trust-policies", CreateOIDCTrustPolicyRequest{
 		Name: "admin", IssuerURL: idp.issuer(), Audience: "nuon-test",
@@ -132,7 +132,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyAllowsAdminRole() {
 
 func (s *OIDCFederationTestSuite) TestCreatePolicyRejectsDeprecatedBuilderRole() {
 	idp := newFakeIDP(s.T())
-	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = true
+	s.setAllowInsecureIssuers(true)
 
 	rr := s.makeRequest(http.MethodPost, "/v1/oidc/trust-policies", CreateOIDCTrustPolicyRequest{
 		Name: "builder", IssuerURL: idp.issuer(), Audience: "nuon-test",
@@ -322,4 +322,51 @@ func (s *OIDCFederationTestSuite) TestExchangeTrimsSurroundingWhitespace() {
 	var resp ExchangeOIDCTokenResponse
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	require.Equal(s.T(), policy.ID, resp.TrustPolicyID)
+}
+
+func (s *OIDCFederationTestSuite) legacyPolicy(idp *fakeIDP) app.OIDCTrustPolicy {
+	policy := s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+
+	require.NoError(s.T(), s.deps.DB.
+		Model(&app.OIDCTrustPolicy{}).
+		Where(app.OIDCTrustPolicy{ID: policy.ID}).
+		Updates(app.OIDCTrustPolicy{ClaimConditions: map[string]string{"sub": "**"}}).Error)
+
+	return policy
+}
+
+func (s *OIDCFederationTestSuite) TestUpdatePolicyIssuerChangeRevalidates() {
+	idp := newFakeIDP(s.T())
+	policy := s.createPolicy(idp, map[string]string{"sub": "repo:*/app:ref:refs/heads/main"})
+
+	rr := s.makeRequest(http.MethodPatch, "/v1/oidc/trust-policies/"+policy.ID, UpdateOIDCTrustPolicyRequest{
+		IssuerURL: "https://token.actions.githubusercontent.com",
+	})
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+}
+
+func (s *OIDCFederationTestSuite) TestUpdateLegacyPolicyBlockedUnlessDisabled() {
+	idp := newFakeIDP(s.T())
+	policy := s.legacyPolicy(idp)
+	path := "/v1/oidc/trust-policies/" + policy.ID
+
+	enabled := true
+	rr := s.makeRequest(http.MethodPatch, path, UpdateOIDCTrustPolicyRequest{Name: "renamed"})
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+
+	rr = s.makeRequest(http.MethodPatch, path, UpdateOIDCTrustPolicyRequest{Enabled: &enabled})
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+
+	disabled := false
+	rr = s.makeRequest(http.MethodPatch, path, UpdateOIDCTrustPolicyRequest{Enabled: &disabled})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	rr = s.makeRequest(http.MethodPatch, path, UpdateOIDCTrustPolicyRequest{Name: "renamed"})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	rr = s.makeRequest(http.MethodPatch, path, UpdateOIDCTrustPolicyRequest{Enabled: &enabled})
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+
+	rr = s.makeRequest(http.MethodDelete, path, nil)
+	require.Equal(s.T(), http.StatusNoContent, rr.Code, rr.Body.String())
 }

@@ -39,6 +39,8 @@ func New() *validator.Validate {
 	v.RegisterValidation("entity_name", entityNameValidator)
 	v.RegisterValidation("cron_schedule", cronScheduleValidator)
 	v.RegisterValidation("optional_json", optionalJSONValidator)
+	v.RegisterValidation("oidc_pattern", oidcPatternValidator)
+	v.RegisterValidation("oidc_claim_name", oidcClaimNameValidator)
 
 	return v
 }
