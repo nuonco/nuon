@@ -5,10 +5,7 @@ export type SpotlightResult = {
   subtitle?: string
   tag?: string
   icon: TIconVariant
-} & (
-  | { path: string; action?: never }
-  | { action: () => void; path?: never }
-)
+} & ({ path: string; action?: never } | { action: () => void; path?: never })
 
 export type ParsedQuery = {
   prefix: 'app' | 'install' | 'component' | 'action' | 'org' | null
@@ -191,26 +188,22 @@ export const APP_SUB_PAGES = [
   'Installs',
 ]
 
-export const APP_BRANCH_SUB_PAGES = [
-  'Branches',
-  'Sandbox',
+export const APP_BRANCH_SUB_PAGES = ['Branches', 'Sandbox']
+
+export const FILTER_PREFIXES = [
+  'app:',
+  'install:',
+  'component:',
+  'action:',
+  'org:',
 ]
 
-export const FILTER_PREFIXES = ['app:', 'install:', 'component:', 'action:', 'org:']
-
-export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix']>, string[]>> = {
-  app: [
-    'build all components',
-  ],
-  action: [
-    'run',
-  ],
-  component: [
-    'build',
-    'deploy',
-    'drift scan',
-    'teardown',
-  ],
+export const COMMANDS_BY_PREFIX: Partial<
+  Record<NonNullable<ParsedQuery['prefix']>, string[]>
+> = {
+  app: ['build all components'],
+  action: ['run'],
+  component: ['build', 'teardown'],
   install: [
     'deploy all components',
     'edit inputs',
@@ -231,18 +224,16 @@ export const spotlightCommands = (newAppIA: boolean) => {
   return {
     ...COMMANDS_BY_PREFIX,
     app: ['trigger run'],
-    component: ['deploy', 'drift scan', 'teardown'],
+    component: ['teardown'],
   }
 }
 
 export const COMMAND_DESCRIPTIONS: Record<string, string> = {
   'build all components': 'Trigger a build for every component in the app',
   'trigger run': 'Start a new run for the app branch',
-  'run': 'Manually trigger an action workflow run',
-  'build': 'Trigger a build for the component',
-  'deploy': 'Deploy the component to the install',
-  'drift scan': 'Run a plan-only deploy to detect configuration drift',
-  'teardown': 'Tear down the component from the install',
+  run: 'Manually trigger an action workflow run',
+  build: 'Trigger a build for the component',
+  teardown: 'Tear down the component from the install',
   'deploy all components': 'Deploy every component in the install',
   'edit inputs': 'Update the install input values',
   'edit stack overrides': 'Override stack-level configuration for the install',
@@ -250,7 +241,7 @@ export const COMMAND_DESCRIPTIONS: Record<string, string> = {
   'reprovision sandbox': 'Re-run the sandbox provisioning workflow',
   'restart runner': 'Restart the runner process for the install',
   'run adhoc action': 'Execute a one-off adhoc action on the install',
-  'settings': 'Open the install settings panel',
+  settings: 'Open the install settings panel',
   'sync secrets': 'Sync secrets to the install runner',
   'view current inputs': 'View the current input values for the install',
   'view state': 'View the install state object',
@@ -275,7 +266,11 @@ export function parseQuery(raw: string): ParsedQuery {
       const rest = raw.slice(p.length)
       const slashIdx = rest.indexOf('/')
       if (slashIdx >= 0) {
-        return { prefix, query: rest.slice(0, slashIdx).trim(), command: rest.slice(slashIdx + 1).trim() }
+        return {
+          prefix,
+          query: rest.slice(0, slashIdx).trim(),
+          command: rest.slice(slashIdx + 1).trim(),
+        }
       }
       return { prefix, query: rest.trim(), command: null }
     }
@@ -290,7 +285,10 @@ const GLOBAL_COMMANDS = [
   'sync secrets',
 ]
 
-export function getAutocompletion(input: string, newAppIA = false): string | null {
+export function getAutocompletion(
+  input: string,
+  newAppIA = false
+): string | null {
   if (!input) return null
   if (input.includes('/')) {
     const parsed = parseQuery(input)
@@ -298,7 +296,9 @@ export function getAutocompletion(input: string, newAppIA = false): string | nul
       if (input.startsWith('/')) {
         const after = input.slice(1).toLowerCase()
         if (!after) return null
-        const match = GLOBAL_COMMANDS.find((c) => c.startsWith(after) && c !== after)
+        const match = GLOBAL_COMMANDS.find(
+          (c) => c.startsWith(after) && c !== after
+        )
         return match ? '/' + match : null
       }
       return null

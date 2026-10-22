@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewGetInstallOverviewParams creates a new GetInstallOverviewParams object,
@@ -61,6 +62,14 @@ GetInstallOverviewParams contains all the parameters to send to the API endpoint
 */
 type GetInstallOverviewParams struct {
 
+	/* IncludeAlignment.
+
+	   include per-resource alignment; set false for branch tracking and config drift only
+
+	   Default: true
+	*/
+	IncludeAlignment *bool
+
 	/* InstallID.
 
 	   install ID
@@ -84,7 +93,18 @@ func (o *GetInstallOverviewParams) WithDefaults() *GetInstallOverviewParams {
 //
 // All values with no default are reset to their zero value.
 func (o *GetInstallOverviewParams) SetDefaults() {
-	// no default values defined for this parameter
+	var (
+		includeAlignmentDefault = bool(true)
+	)
+
+	val := GetInstallOverviewParams{
+		IncludeAlignment: &includeAlignmentDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get install overview params
@@ -120,6 +140,17 @@ func (o *GetInstallOverviewParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithIncludeAlignment adds the includeAlignment to the get install overview params
+func (o *GetInstallOverviewParams) WithIncludeAlignment(includeAlignment *bool) *GetInstallOverviewParams {
+	o.SetIncludeAlignment(includeAlignment)
+	return o
+}
+
+// SetIncludeAlignment adds the includeAlignment to the get install overview params
+func (o *GetInstallOverviewParams) SetIncludeAlignment(includeAlignment *bool) {
+	o.IncludeAlignment = includeAlignment
+}
+
 // WithInstallID adds the installID to the get install overview params
 func (o *GetInstallOverviewParams) WithInstallID(installID string) *GetInstallOverviewParams {
 	o.SetInstallID(installID)
@@ -138,6 +169,23 @@ func (o *GetInstallOverviewParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
+
+	if o.IncludeAlignment != nil {
+
+		// query param include_alignment
+		var qrIncludeAlignment bool
+
+		if o.IncludeAlignment != nil {
+			qrIncludeAlignment = *o.IncludeAlignment
+		}
+		qIncludeAlignment := swag.FormatBool(qrIncludeAlignment)
+		if qIncludeAlignment != "" {
+
+			if err := r.SetQueryParam("include_alignment", qIncludeAlignment); err != nil {
+				return err
+			}
+		}
+	}
 
 	// path param install_id
 	if err := r.SetPathParam("install_id", o.InstallID); err != nil {
