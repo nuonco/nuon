@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
@@ -315,11 +316,11 @@ func (w *Writer) record(event Event) otellog.Record {
 	record.SetSeverity(otellog.SeverityInfo)
 	record.SetSeverityText("INFO")
 	record.SetEventName(event.Name)
-	record.SetBody(otellog.StringValue(event.Message))
+	record.SetBody(attribute.StringValue(event.Message))
 	record.AddAttributes(
-		otellog.String(AttrAudit, AttrAuditValue),
-		otellog.String(AttrEvent, event.Name),
-		otellog.String(AttrOutcome, event.Outcome),
+		attribute.String(AttrAudit, AttrAuditValue),
+		attribute.String(AttrEvent, event.Name),
+		attribute.String(AttrOutcome, event.Outcome),
 	)
 	attributes := make(map[string]string, len(w.identity)+len(event.Attributes))
 	for key, value := range w.identity {
@@ -330,7 +331,7 @@ func (w *Writer) record(event Event) otellog.Record {
 	}
 	for key, value := range attributes {
 		if value != "" {
-			record.AddAttributes(otellog.String(key, value))
+			record.AddAttributes(attribute.String(key, value))
 		}
 	}
 	return record
