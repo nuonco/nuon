@@ -2249,7 +2249,8 @@ export interface paths {
   "/v1/installs/{install_id}/phone-home/{phone_home_id}": {
     /**
      * phone home for an install
-     * @description A public endpoint for phoning home from a runner AWS cloudformation stack upon successfully processing it.
+     * @deprecated
+     * @description Deprecated. Phone home with POST /v1/stacks/{install_id}/phone-home on the stack API. The caller authenticates as the stack service account, and the path no longer contains phone_home_id.
      */
     post: operations["PhoneHome"];
   };
@@ -4293,6 +4294,8 @@ export interface components {
       };
       helm_driver?: string;
       id?: string;
+      image_auto_update?: boolean;
+      image_id?: string;
       /** @description takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent. */
       init_script?: string;
       /** @description InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform. */
@@ -4448,6 +4451,11 @@ export interface components {
       org_id?: string;
       runner_nested_template_url?: string;
       type?: components["schemas"]["app.StackType"];
+      /**
+       * @description Column name matches GORM's default for this field. "UI" is treated as one
+       * word, so the column is uidefinition rather than ui_definition.
+       */
+      ui_definition?: components["schemas"]["config.UploadedUIDefinition"];
       updated_at?: string;
       vpc_nested_template_url?: string;
     };
@@ -4476,7 +4484,6 @@ export interface components {
       id?: string;
       location?: string;
       service_principal_app_id?: string;
-      service_principal_password?: string;
       subscription_id?: string;
       subscription_tenant_id?: string;
       updated_at?: string;
@@ -5307,8 +5314,11 @@ export interface components {
       install_id?: string;
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       org_id?: string;
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry_enabled?: boolean | null;
+      ui_definition?: components["schemas"]["config.UploadedUIDefinition"];
       updated_at?: string;
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
@@ -5847,7 +5857,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector";
+    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "runner_job";
     "app.Notebook": {
       cell_count?: number;
       cells?: components["schemas"]["app.NotebookCell"][];
@@ -6153,7 +6163,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack" | "telemetry_collector";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_job" | "hosted_installer" | "stack" | "telemetry_collector";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -6357,9 +6367,10 @@ export interface components {
        */
       title?: string;
       updated_at?: string;
+      version?: number;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack" | "telemetry_collector";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -7466,6 +7477,13 @@ export interface components {
       patch_truncated?: boolean;
       path?: string;
     };
+    "config.UploadedUIDefinition": {
+      contents?: string;
+      contents_hash?: string;
+      path?: string;
+      source_url?: string;
+      status?: components["schemas"]["config.CustomNestedStackStatus"];
+    };
     "configs.ACRAppRegistration": {
       clientCertificateName?: string;
       clientID?: string;
@@ -7636,6 +7654,8 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
@@ -8723,6 +8743,8 @@ export interface components {
         [key: string]: string;
       };
       helm_driver?: components["schemas"]["app.AppRunnerConfigHelmDriverType"];
+      image_auto_update?: boolean;
+      image_id?: string;
       init_script_url?: string;
       instance_type?: string;
       /** @description PhoneHomeScriptURL overrides the phone-home Lambda source for this app. */
@@ -8952,6 +8974,8 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
@@ -10210,6 +10234,8 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
@@ -27001,7 +27027,8 @@ export interface operations {
   };
   /**
    * phone home for an install
-   * @description A public endpoint for phoning home from a runner AWS cloudformation stack upon successfully processing it.
+   * @deprecated
+   * @description Deprecated. Phone home with POST /v1/stacks/{install_id}/phone-home on the stack API. The caller authenticates as the stack service account, and the path no longer contains phone_home_id.
    */
   PhoneHome: {
     parameters: {
