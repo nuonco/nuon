@@ -56,7 +56,7 @@ RUN --mount=type=cache,target=/root/.bun/install/cache,id=bun-dashboard-ui bun r
 
 # --- Build Go server ---
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.26.10-alpine AS build-server
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.26-alpine AS build-server
 
 WORKDIR /src
 
