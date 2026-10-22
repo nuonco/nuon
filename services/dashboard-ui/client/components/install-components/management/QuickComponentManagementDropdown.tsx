@@ -2,10 +2,6 @@ import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
-import { Text } from '@/components/common/Text'
-import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
-import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
-import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TInstallComponent } from '@/types'
 import { useInstallLink } from '@/hooks/use-install-path'
 
@@ -13,60 +9,33 @@ export const QuickComponentManagementDropdown = ({
   installComponent,
   orgId,
   installId,
-  removed = false,
 }: {
   installComponent: TInstallComponent
   orgId: string
   installId: string
-  removed?: boolean
 }) => {
   const installLink = useInstallLink()
   const component = installComponent.component
   if (!component) return null
 
-  const href = installLink({ orgId: orgId, installId: installId, suffix: `/components/${component.id}` })
+  const href = installLink({
+    orgId: orgId,
+    installId: installId,
+    suffix: `/components/${component.id}`,
+  })
 
   return (
-    <SurfacesProvider>
-      <Dropdown
-        alignment="right"
-        buttonText=""
-        buttonClassName="!p-1"
-        icon={<Icon variant="DotsThreeVerticalIcon" />}
-        id={`component-quick-${component.id}`}
-        variant="ghost"
-      >
-        <Menu>
-          <Button href={href}>
-            View component
-          </Button>
-          <hr />
-          <Text variant="label" theme="neutral">
-            Controls
-          </Text>
-          {removed ? (
-            <Button
-              isMenuButton
-              disabled
-              className="w-full"
-              tooltipProps={{
-                className: 'block !w-full',
-                position: 'left',
-                tipContent:
-                  "This component is no longer in the install's app config version.",
-              }}
-            >
-              Deploy component
-              <Icon variant="CloudArrowUpIcon" />
-            </Button>
-          ) : (
-            <>
-              <DriftScanComponentButton component={component} isMenuButton />
-              <DeployComponentButton component={component} isMenuButton />
-            </>
-          )}
-        </Menu>
-      </Dropdown>
-    </SurfacesProvider>
+    <Dropdown
+      alignment="right"
+      buttonText=""
+      buttonClassName="!p-1"
+      icon={<Icon variant="DotsThreeVerticalIcon" />}
+      id={`component-quick-${component.id}`}
+      variant="ghost"
+    >
+      <Menu>
+        <Button href={href}>View component</Button>
+      </Menu>
+    </Dropdown>
   )
 }

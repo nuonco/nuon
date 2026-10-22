@@ -2,22 +2,18 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
-import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import type { TComponent, TDeploy, TWorkflow } from '@/types'
 
 interface IManagementDropdown {
   component: TComponent
-  currentBuildId?: string
   workflow: TWorkflow
   deploy: TDeploy
 }
 
 export const ManagementDropdown = ({
   component,
-  currentBuildId,
   workflow,
   deploy,
 }: IManagementDropdown) => {
@@ -48,19 +44,6 @@ export const ManagementDropdown = ({
             runnerJobId={deploy?.runner_jobs?.[0]?.id}
           />
         ) : null}
-        <hr />
-        <Text>Controls</Text>
-        <DriftScanComponentButton
-          component={component}
-          currentBuildId={currentBuildId}
-          isMenuButton
-        />
-        <DeployComponentButton
-          component={component}
-          currentBuildId={currentBuildId}
-          isMenuButton
-        />
-
         {deploy?.runner_jobs &&
         deploy?.status_v2?.status !== 'active' &&
         deploy?.status_v2?.status !== 'error' &&

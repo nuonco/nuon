@@ -3,7 +3,6 @@ export default {
 }
 
 import { useState } from 'react'
-import { Button } from '@/components/common/Button'
 import type { TCollectionView } from '@/components/common/CollectionViewToggle'
 import { SearchInput } from '@/components/common/SearchInput'
 import type { TComponentBuild, TDeploy } from '@/types'
@@ -39,18 +38,7 @@ const build = {
 } as TComponentBuild
 
 const summary = (
-  <InstallImageSummary
-    deploy={sync}
-    syncHref="#"
-    build={build}
-    buildHref="#"
-  />
-)
-
-const actions = (
-  <Button variant="secondary" size="sm">
-    More
-  </Button>
+  <InstallImageSummary deploy={sync} syncHref="#" build={build} buildHref="#" />
 )
 
 const image = (
@@ -60,16 +48,15 @@ const image = (
   name: 'api',
   type: 'external_image',
   status: 'active',
-  actions,
   image: summary,
   ...overrides,
 })
 
 const images: TInstallImageListItem[] = [
   image({}),
-  image({ id: 'cmp-img-2', name: 'worker', type: 'docker_build' }),
+  image({ id: 'cmp-img-2', name: 'worker', type: 'external_image' }),
   image({ id: 'cmp-img-3', name: 'proxy', type: 'external_image' }),
-  image({ id: 'cmp-img-4', name: 'sidecar', type: 'docker_build' }),
+  image({ id: 'cmp-img-4', name: 'sidecar', type: 'external_image' }),
 ]
 
 const ListStory = ({
@@ -99,10 +86,6 @@ const ListStory = ({
 export const Default = () => <ListStory />
 
 export const Grid = () => <ListStory initialView="grid" />
-
-export const Behind = () => (
-  <InstallImagesList images={[image({ behind: true })]} />
-)
 
 export const NeverBuilt = () => (
   <InstallImagesList
@@ -135,11 +118,6 @@ export const Loading = () => <InstallImagesList images={[]} loading />
 export const LoadingGrid = () => {
   const [view, setView] = useState<TCollectionView>('grid')
   return (
-    <InstallImagesList
-      images={[]}
-      loading
-      view={view}
-      onViewChange={setView}
-    />
+    <InstallImagesList images={[]} loading view={view} onViewChange={setView} />
   )
 }

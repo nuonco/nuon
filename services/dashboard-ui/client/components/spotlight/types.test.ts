@@ -22,12 +22,7 @@ test('org spotlight pages hide installs and the build runner under new-app-ia', 
     'Build runner',
     'Settings',
   ])
-  expect(labels(true)).toEqual([
-    'Dashboard',
-    'Apps',
-    'Team',
-    'Settings',
-  ])
+  expect(labels(true)).toEqual(['Dashboard', 'Apps', 'Team', 'Settings'])
 })
 
 test('app spotlight navigation lists branches under new-app-ia', () => {
@@ -69,32 +64,35 @@ test('app spotlight navigation lists branches under new-app-ia', () => {
 
 test('app spotlight commands use trigger run under new-app-ia', () => {
   expect(spotlightCommands(false).app).toEqual(['build all components'])
-  expect(spotlightCommands(false).component).toEqual([
-    'build',
-    'deploy',
-    'drift scan',
-    'teardown',
-  ])
+  expect(spotlightCommands(false).component).toEqual(['build', 'teardown'])
   expect(spotlightCommands(true).app).toEqual(['trigger run'])
-  expect(spotlightCommands(true).component).toEqual([
-    'deploy',
-    'drift scan',
-    'teardown',
-  ])
-  expect(spotlightCommands(true).install).toEqual(spotlightCommands(false).install)
-  expect(spotlightCommands(true).action).toEqual(spotlightCommands(false).action)
+  expect(spotlightCommands(true).component).toEqual(['teardown'])
+  expect(spotlightCommands(true).install).toEqual(
+    spotlightCommands(false).install
+  )
+  expect(spotlightCommands(true).action).toEqual(
+    spotlightCommands(false).action
+  )
 })
 
 test('install spotlight opens the nested app route under new-app-ia', () => {
   expect(
-    spotlightInstallPath({ appId: 'app-1', installId: 'inst-1', newAppIA: false })
+    spotlightInstallPath({
+      appId: 'app-1',
+      installId: 'inst-1',
+      newAppIA: false,
+    })
   ).toBe('/installs/inst-1')
   expect(
-    spotlightInstallPath({ appId: 'app-1', installId: 'inst-1', newAppIA: true })
+    spotlightInstallPath({
+      appId: 'app-1',
+      installId: 'inst-1',
+      newAppIA: true,
+    })
   ).toBe('/apps/app-1/installs/inst-1')
-  expect(
-    spotlightInstallPath({ installId: 'inst-1', newAppIA: true })
-  ).toBe('/installs/inst-1')
+  expect(spotlightInstallPath({ installId: 'inst-1', newAppIA: true })).toBe(
+    '/installs/inst-1'
+  )
 })
 
 test('new install pages and resource searches use the nested routes', () => {
