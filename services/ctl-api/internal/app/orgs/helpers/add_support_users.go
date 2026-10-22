@@ -46,7 +46,7 @@ func (h *Helpers) addSingleSupportUser(ctx context.Context, subject, email, orgI
 			return result
 		}
 
-		acct, err = h.acctClient.CreateAccount(ctx, email, subject, account.NoUserJourneys())
+		acct, err = h.acctClient.CreateAuthAccount(ctx, email, subject, account.NoUserJourneys())
 		if err != nil {
 			result.Error = err
 			return result
