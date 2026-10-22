@@ -64,8 +64,8 @@
         }
     },
     "scripts": {
-        "build": "yes | vsce package --allow-missing-repository || true",
-        "install": "code --install-extension nuon-lsp-0.0.3.vsix --force",
+        "build": "yes | vsce package --allow-missing-repository",
+        "install-extension": "code --install-extension nuon-lsp-0.0.3.vsix --force",
         "vscode:prepublish": "echo 'Prepublish complete'"
     },
     "dependencies": {
