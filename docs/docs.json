@@ -342,7 +342,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
-          "updates/043-release-rollouts-runner-control-retries",
+          "updates/043-release-rollouts-runner-control",
           "updates/042-deprovisions-and-new-dashboard",
           "updates/041-agents-health-checks-and-triggers",
           "updates/040-app-branches",
