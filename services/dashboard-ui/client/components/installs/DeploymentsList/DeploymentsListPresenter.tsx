@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Badge, type TBadgeTheme } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import {
@@ -13,14 +14,18 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import { ToggleButton } from '@/components/common/ToggleButton'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import type { TDeploymentRun } from '@/components/installs/DeploymentDetail/DeploymentProgress'
 import {
+  ACTIVE_DEPLOYMENT_FILTERS,
   deploymentOutcomes,
   deploymentSteps,
   recoveredDeploymentResources,
   stepAffectedResources,
   summaryDeploymentEvidence,
+  type TActiveDeploymentCounts,
+  type TActiveDeploymentFilter,
   type TDeploymentOutcome,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
 import { useInstallHref } from '@/hooks/use-install-path'
@@ -64,6 +69,20 @@ export const DEPLOYMENT_TYPE_LABELS: Record<
 export const DEPLOYMENT_FILTER_TYPES = (
   Object.keys(DEPLOYMENT_TYPE_LABELS) as TInstallDeploymentRecordType[]
 ).filter((type) => type !== 'image_update')
+
+export const HISTORY_STATUS_OPTIONS = workflowStatusOptions().filter(
+  (option) => option !== 'running' && option !== 'queued'
+)
+
+const ACTIVE_FILTER_THEMES: Record<
+  Exclude<TActiveDeploymentFilter, 'all'>,
+  TBadgeTheme
+> = {
+  'awaiting-approval': 'warn',
+  failed: 'error',
+  running: 'info',
+  queued: 'neutral',
+}
 
 const deploymentRun = (deployment: TInstallDeploymentSummary) => {
   const evidence = summaryDeploymentEvidence(deployment)
@@ -181,9 +200,10 @@ export interface IDeploymentsListPresenter {
   activeLoading?: boolean
   activeError?: TAPIError | null
   hasMoreActive?: boolean
-  showActive?: boolean
-  showHistory?: boolean
   onLoadMoreActive?: () => void
+  activeFilter?: TActiveDeploymentFilter
+  activeCounts?: TActiveDeploymentCounts
+  onActiveFilterChange?: (value: TActiveDeploymentFilter) => void
   isLoading: boolean
   error?: TAPIError | null
   pagination: Omit<IPagination, 'position'> & {
@@ -246,7 +266,7 @@ export const DeploymentsListFilters = ({
     <CheckboxFilterDropdown
       id="deployments-filter-status"
       label="Status"
-      options={workflowStatusOptions().map((value) => ({
+      options={HISTORY_STATUS_OPTIONS.map((value) => ({
         value,
         label: WORKFLOW_STATUS_LABELS[value],
       }))}
@@ -298,9 +318,10 @@ export const DeploymentsListPresenter = ({
   activeLoading = false,
   activeError,
   hasMoreActive = false,
-  showActive = true,
-  showHistory = true,
   onLoadMoreActive,
+  activeFilter = 'all',
+  activeCounts,
+  onActiveFilterChange,
   isLoading,
   error,
   pagination,
@@ -337,30 +358,50 @@ export const DeploymentsListPresenter = ({
       : []),
   ]
   const hasActiveFilters = hasDeploymentFilters(filter)
+  const activeFilterLabel = ACTIVE_DEPLOYMENT_FILTERS.find(
+    (option) => option.value === activeFilter
+  )?.label.toLowerCase()
   return (
     <div className="@container flex flex-col gap-6">
-      <DeploymentsListFilters
-        resources={allResources}
-        search={search}
-        filter={filter}
-        onSearchChange={onSearchChange}
-        onStatusChange={onStatusChange}
-        onTypeChange={onTypeChange}
-        onResourceChange={onResourceChange}
-        onDateChange={onDateChange}
-        onClearFilters={onClearFilters}
-      />
-      {showActive &&
-      (activeLoading ||
-        activeError ||
-        activeDeployments.length > 0 ||
-        hasActiveFilters) ? (
+      {activeLoading ||
+      activeError ||
+      activeDeployments.length > 0 ||
+      activeFilter !== 'all' ? (
         <section aria-label="In progress" className="flex flex-col gap-3">
           <SectionHeader
             title={`In progress${activeTotal !== undefined ? ` (${activeTotal})` : ''}`}
             description="Follow active deployments and rollouts."
             actions={<CollectionViewToggle value={view} onChange={setView} />}
           />
+          {onActiveFilterChange ? (
+            <ToggleButton<TActiveDeploymentFilter>
+              label="Filter in-progress deployments"
+              size="md"
+              value={activeFilter}
+              onChange={onActiveFilterChange}
+              className="self-start"
+              options={ACTIVE_DEPLOYMENT_FILTERS.map(({ label, value }) => {
+                const count = value === 'all' ? 0 : (activeCounts?.[value] ?? 0)
+                return {
+                  value,
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      {label}
+                      {value !== 'all' && count > 0 ? (
+                        <Badge
+                          theme={ACTIVE_FILTER_THEMES[value]}
+                          size="sm"
+                          variant="code"
+                        >
+                          {count}
+                        </Badge>
+                      ) : null}
+                    </span>
+                  ),
+                }
+              })}
+            />
+          ) : null}
           {activeLoading && activeDeployments.length === 0 ? (
             <TimelineSkeleton eventCount={4} />
           ) : activeError ? (
@@ -371,8 +412,7 @@ export const DeploymentsListPresenter = ({
             />
           ) : activeDeployments.length === 0 ? (
             <Text variant="subtext" theme="neutral">
-              No in-progress deployments match these filters. Adjust or clear
-              the filters to see more.
+              No {activeFilterLabel} deployments right now.
             </Text>
           ) : (
             <>
@@ -415,80 +455,88 @@ export const DeploymentsListPresenter = ({
           )}
         </section>
       ) : null}
-      {showHistory ? (
-        <section aria-label="History" className="flex flex-col gap-3">
-          <SectionHeader
-            title="History"
-            description="Review completed deployments and rollouts."
+      <section aria-label="History" className="flex flex-col gap-3">
+        <SectionHeader
+          title="History"
+          description="Review completed deployments and rollouts."
+        />
+        <DeploymentsListFilters
+          resources={allResources}
+          search={search}
+          filter={filter}
+          onSearchChange={onSearchChange}
+          onStatusChange={onStatusChange}
+          onTypeChange={onTypeChange}
+          onResourceChange={onResourceChange}
+          onDateChange={onDateChange}
+          onClearFilters={onClearFilters}
+        />
+        {isLoading && deployments.length === 0 ? (
+          <TimelineSkeleton eventCount={pagination.limit ?? 5} />
+        ) : error ? (
+          <EmptyState
+            variant="history"
+            emptyTitle="Deployments failed to load"
+            emptyMessage="Unable to load deployments. Try refreshing the page."
+            className="my-12"
           />
-          {isLoading && deployments.length === 0 ? (
-            <TimelineSkeleton eventCount={pagination.limit ?? 5} />
-          ) : error ? (
-            <EmptyState
-              variant="history"
-              emptyTitle="Deployments failed to load"
-              emptyMessage="Unable to load deployments. Try refreshing the page."
-              className="my-12"
-            />
-          ) : deployments.length === 0 ? (
-            <EmptyState
-              variant={hasActiveFilters ? 'search' : 'history'}
-              emptyTitle={
-                hasActiveFilters ? 'No deployments found' : 'No deployments yet'
-              }
-              emptyMessage={
-                hasActiveFilters
-                  ? 'No deployments match the current filters. Try adjusting or clearing them.'
-                  : 'Deployments will appear here once a workflow deploys components to this install.'
-              }
-              className="my-12"
-            />
-          ) : (
-            <Timeline
-              className="w-full"
-              events={deployments}
-              groupByDate={false}
-              pagination={{ hasNext: false, offset: 0 }}
-              getEventKey={(deployment) => deployment.id}
-              renderEvent={(deployment, index) => (
-                <DeploymentRecordRow
-                  deployment={deployment}
-                  run={runs[index].run}
-                  orgId={orgId}
-                  appId={appId}
-                  installId={installId}
-                  repo={repo}
-                  previousOutcomes={runs
-                    .slice(index + 1)
-                    .map((previous) => previous.run.outcomes)}
-                />
-              )}
-            />
-          )}
-          {pagination.hasNext || (pagination.offset ?? 0) > 0 ? (
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                disabled={isLoading || !pagination.offset}
-                onClick={pagination.onPrevious}
-              >
-                Previous
-              </Button>
-              <Text variant="subtext" theme="neutral">
-                Page{' '}
-                {Math.floor(
-                  (pagination.offset ?? 0) / (pagination.limit ?? 20)
-                ) + 1}
-              </Text>
-              <Button
-                disabled={isLoading || !pagination.hasNext}
-                onClick={pagination.onNext}
-              >
-                Next
-              </Button>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
+        ) : deployments.length === 0 ? (
+          <EmptyState
+            variant={hasActiveFilters ? 'search' : 'history'}
+            emptyTitle={
+              hasActiveFilters ? 'No deployments found' : 'No deployments yet'
+            }
+            emptyMessage={
+              hasActiveFilters
+                ? 'No deployments match the current filters. Try adjusting or clearing them.'
+                : 'Deployments will appear here once a workflow deploys components to this install.'
+            }
+            className="my-12"
+          />
+        ) : (
+          <Timeline
+            className="w-full"
+            events={deployments}
+            groupByDate={false}
+            pagination={{ hasNext: false, offset: 0 }}
+            getEventKey={(deployment) => deployment.id}
+            renderEvent={(deployment, index) => (
+              <DeploymentRecordRow
+                deployment={deployment}
+                run={runs[index].run}
+                orgId={orgId}
+                appId={appId}
+                installId={installId}
+                repo={repo}
+                previousOutcomes={runs
+                  .slice(index + 1)
+                  .map((previous) => previous.run.outcomes)}
+              />
+            )}
+          />
+        )}
+        {pagination.hasNext || (pagination.offset ?? 0) > 0 ? (
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              disabled={isLoading || !pagination.offset}
+              onClick={pagination.onPrevious}
+            >
+              Previous
+            </Button>
+            <Text variant="subtext" theme="neutral">
+              Page{' '}
+              {Math.floor((pagination.offset ?? 0) / (pagination.limit ?? 20)) +
+                1}
+            </Text>
+            <Button
+              disabled={isLoading || !pagination.hasNext}
+              onClick={pagination.onNext}
+            >
+              Next
+            </Button>
+          </div>
+        ) : null}
+      </section>
     </div>
   )
 }
