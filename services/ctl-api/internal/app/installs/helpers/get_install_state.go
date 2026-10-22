@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/inputstate"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
@@ -395,30 +396,7 @@ func ToInstallStackState(stack *app.InstallStack) *state.InstallStackState {
 }
 
 func ToInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) *state.InputsState {
-	if inputs == nil {
-		return nil
-	}
-	inputValues := inputs.Values
-	if redacted {
-		inputValues = inputs.ValuesRedacted
-	}
-	if len(inputValues) < 1 && len(cfg.InputConfig.AppInputs) < 1 {
-		return nil
-	}
-	is := state.NewInputsState()
-	for _, inp := range cfg.InputConfig.AppInputs {
-		// Fall back to the default when the input is unset, which covers both a
-		// missing key and a key materialized as "". ValuesRedacted carries every
-		// declared input, unset ones included, so keying off presence alone
-		// resolves those to "" and drops the default — a declared bool then
-		// reaches terraform as "" and fails plan with "a bool is required".
-		val, ok := inputValues[inp.Name]
-		if !ok || pkggenerics.FromPtrStr(val) == "" {
-			val = &inp.Default
-		}
-		is.Inputs[inp.Name] = pkggenerics.FromPtrStr(val)
-	}
-	return is
+	return inputstate.Resolve(inputs, cfg, redacted)
 }
 
 func ToAppState(currentApp app.App) *state.AppState {

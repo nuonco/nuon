@@ -46,11 +46,11 @@ export const DeployTimeline = ({
     return (
       <EmptyState
         variant="table"
-        emptyTitle={isSync ? 'No syncs' : 'No deploys'}
+        emptyTitle={isSync ? 'No syncs' : 'No deploys found'}
         emptyMessage={
           isSync
             ? 'This image has not been synced yet.'
-            : 'This component has not been deployed yet.'
+            : 'No deployment records are available for this component. Recorded deployments will appear here.'
         }
       />
     )

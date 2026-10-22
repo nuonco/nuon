@@ -46,6 +46,7 @@ func appConfigComponentFilter(syncedOnly bool) string {
 // @Description.markdown	get_install_components.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					types						query	string	false	"component types to filter by"
+// @Param                 ids                     query   string  false   "comma-separated install component IDs to include"
 // @Param         q					query	string	false	"search query for component name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					synced						query	bool	false	"return components in the install's current app config; set false to return only components no longer in it"	Default(true)
@@ -94,6 +95,10 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, ty
 	if len(types) > 0 {
 		tx = tx.
 			Where("components.type IN ?", types)
+	}
+
+	if ids, specified := ctx.GetQuery("ids"); specified {
+		tx = tx.Where("install_components.id IN ?", strings.Split(ids, ","))
 	}
 
 	if q != "" {
