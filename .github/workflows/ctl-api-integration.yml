@@ -235,6 +235,7 @@ jobs:
             --request PUT http://127.0.0.1:8333/ctl-api-integration-test
           cat > "$HOME/.nuonctl-env.yml" <<'YAML'
           ctl-api:
+            TEMPORAL_HOST: 127.0.0.1:7233
             AWS_ENDPOINT_URL_S3: http://127.0.0.1:8333
             AWS_ACCESS_KEY_ID: test
             AWS_SECRET_ACCESS_KEY: test
