@@ -19,6 +19,7 @@ name: ctl-api integration
 
 # PR pushes supersede each other. Main runs one per commit and never cancels: promotion of a
 # commit waits on its own run (.github/actions/await-ctl-api-integration).
+# skip-integration on the pull request skips the lanes here and the promotion gate.
 concurrency:
   group: ctl-api-integration-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -26,6 +27,7 @@ concurrency:
 permissions:
   contents: read
   id-token: write
+  pull-requests: read
 
 defaults:
   run:
@@ -46,18 +48,38 @@ jobs:
       run: ${{ steps.decide.outputs.run }}
       reason: ${{ steps.decide.outputs.reason }}
     steps:
+      - name: Merged pull request labels
+        id: merged
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          labels=""
+          if ! labels="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '[.[].labels[].name] | join("\n")')"; then
+            echo "could not read pull request labels; not treating this commit as skip-integration"
+            labels=""
+          fi
+          if printf '%s\n' "$labels" | grep -qx 'skip-integration'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Decide whether to run the lanes
         id: decide
         run: |
           run=false
-          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+          reason=""
+          if [[ "${{ github.event_name }}" == "pull_request" && "${{ contains(github.event.pull_request.labels.*.name, 'skip-integration') }}" == "true" ]]; then
+            reason="skip-integration label; skipped on this pull request, after merge to main, and during promotion"
+          elif [[ "${{ github.event_name }}" != "pull_request" && "${{ steps.merged.outputs.skip }}" == "true" ]]; then
+            reason="skip-integration label on the pull request"
+          elif [[ "${{ github.event_name }}" != "pull_request" ]]; then
             run=true
           elif [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
             reason="fork PR; runs after merge to main"
           elif [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-integration') }}" == "true" ]]; then
             run=true
           else
-            reason="runs after merge to main and gates promotion; to run it here, add the run-integration label and push, or dispatch the workflow on this branch"
+            reason="runs after merge to main and gates promotion; to run it here, add the run-integration label and push, or dispatch the workflow on this branch. add skip-integration to skip the run after merge and the promotion gate"
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
