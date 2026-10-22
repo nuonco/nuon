@@ -1,0 +1,125 @@
+---
+title: 043 - Release-Driven Rollouts, Runner Control, and Safe Retries
+description: Roll out on tags and labels, control runner images and stack parameters per install, and retry automation without duplicate workflows
+boost: 0.3
+---
+
+_October 22, 2026_
+
+## Release-driven rollouts
+
+Ship to customers on your release cadence, not on every commit.
+
+- Start an app branch run on a tag, on a merged pull request's label, or only manually
+- Trigger a run for a specific tag, commit, or pull request from the CLI
+- Trigger runs and previews from GitHub Actions with the Nuon action
+- Every mode still rolls out through your install groups, with a plan and approval at each step
+
+```toml branches/monthly.toml
+[run]
+mode       = "on_tag"
+tag_prefix = "release/"
+```
+
+```sh
+nuon branches trigger --branch-id main --run-type tag --run-ref v1.2.3
+```
+
+{/* ANIMATION: commits flow past a branch line without starting anything; a release/ tag lands and a run lights up, then fans out through install groups (stage, then production) with an approval gate between them. */}
+
+<CardGroup cols={2}>
+  <Card title="Control when the branch runs" icon="code-branch" href="/guides/app-branches#control-when-the-branch-runs" horizontal />
+  <Card title="Trigger runs from GitHub Actions" icon="github" href="/guides/github-actions" horizontal />
+</CardGroup>
+
+---
+
+## Runner and stack control per install
+
+Match each customer's AMI and CloudFormation requirements without forking your app.
+
+- Pin the runner to a known-good AMI, or pick up the latest AL2023 AMI at every launch
+- Override the runner image for a single install in `[stack_overrides]`
+- Set root and nested CloudFormation parameters per install from its Git config
+- Parameter changes queue a stack reprovision on their own
+
+```toml runner.toml
+image_auto_update = true
+```
+
+```toml installs/acme-production.toml
+name             = "acme-production"
+app_branch       = "main"
+cloud_connection = "acme-aws"
+
+[cloudformation.nested_stacks.VPC.parameters]
+VpcCIDR = "10.42.0.0/16"
+
+[cloudformation.nested_stacks.RunnerAutoScalingGroup.parameters]
+InstanceType = "m7i.large"
+```
+
+{/* ANIMATION: one app template feeding three installs; each install card swaps in its own AMI pin, VPC CIDR, and instance type while the shared template stays unchanged. */}
+
+<CardGroup cols={2}>
+  <Card title="Runner config reference" icon="server" href="/config-ref/runner" horizontal />
+  <Card title="Cloud connection stack parameters" icon="sliders" href="/guides/configuring-inputs-and-secrets#aws-cloud-connection-stack-parameters" horizontal />
+</CardGroup>
+
+---
+
+## Safe retries for automation
+
+Retry a timed-out call and get the original workflow back.
+
+- Pass a `request_id` when you deploy, reprovision, or run an action or runbook through the API
+- The same id and body return the original workflow instead of starting a second one
+- The CLI takes `--request-id` on deploys, builds, branch triggers, and action runs
+- `nuon actions create-run --wait` streams output and exits non-zero on failure or timeout
+- Timed-out actions now report `timed-out`
+
+```sh
+nuon actions create-run -i customer1 -w pg_status \
+  --env DEBUG=true --request-id pg-status-2026-10-22 --wait
+```
+
+{/* ANIMATION: a pipeline sends a deploy request, the response is lost, the pipeline retries with the same request_id, and the API hands back the same workflow id instead of a second workflow. */}
+
+<CardGroup cols={2}>
+  <Card title="Idempotent operations" icon="repeat" href="/guides/idempotent-operations" horizontal />
+  <Card title="Running actions" icon="bolt" href="/concepts/actions" horizontal />
+</CardGroup>
+
+---
+
+## Other updates in this release
+
+### Named IAM policies
+
+Define an AWS IAM policy once and attach it to any role by name, including break-glass roles.
+
+<Card title="Permissions config reference" icon="shield-check" href="/config-ref/permissions" horizontal />
+
+### Azure portal install UI
+
+Customize the Azure portal create experience with your own `ui.json` for subscription-scoped Bicep stacks.
+
+```toml stack.toml
+type             = "azure-bicep"
+deployment_scope = "subscription"
+ui_definition    = "./arm/ui.json"
+```
+
+<Card title="Stack config reference" icon="microsoft" href="/config-ref/stack" horizontal />
+
+### Signature status on every build
+
+Container image builds show whether their signature was verified, rejected, or not required.
+
+<Card title="Image signature verification" icon="signature" href="/guides/image-signature-verification" horizontal />
+
+### Skills for your agent
+
+The Nuon MCP server exposes skills as resources, so your agent loads Nuon's guides for writing app config.
+
+<Card title="Agent skills" icon="robot" href="/guides/agents/skills" horizontal />
