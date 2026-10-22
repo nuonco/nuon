@@ -2,11 +2,11 @@
 
 ARG BUILD_IMAGE=buildimage
 ARG NUON_CLI_VERSION=0.19.1257
-ARG AWS_IAM_AUTHENTICATOR_VERSION=0.7.22
+ARG AWS_IAM_AUTHENTICATOR_VERSION=0.7.23
 ARG KUBELOGIN_VERSION=0.2.21
-ARG GCLOUD_VERSION=589.0.0
+ARG GCLOUD_VERSION=590.0.0
 ARG AZURE_CLI_VERSION=2.91.0
-ARG PULUMI_VERSION=3.268.0
+ARG PULUMI_VERSION=3.271.0
 ARG KANIKO_VERSION=1.25.19
 
 ARG GOCACHE_S3_URI
@@ -152,7 +152,7 @@ FROM code AS build-otelcol
 
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
-    go run go.opentelemetry.io/collector/cmd/builder@v0.162.0 --config build-config.yaml --skip-compilation && \
+    go run go.opentelemetry.io/collector/cmd/builder@v0.163.0 --config build-config.yaml --skip-compilation && \
     CGO_ENABLED=0 GOOS=linux go build -C ./otelcol-build -o /bin/nuon-runner-otelcol && \
     touch /go/pkg/build-cache/.nuon-dirty
 
@@ -210,6 +210,10 @@ RUN apk add --update --no-cache git ca-certificates
 WORKDIR /src
 RUN git clone --depth 1 --branch "v${KANIKO_VERSION}" https://github.com/chainguard-dev/kaniko.git .
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+RUN go get golang.org/x/net@v0.61.0 golang.org/x/crypto@v0.58.0 golang.org/x/text@v0.43.0 \
+    google.golang.org/grpc@v1.84.0 github.com/containerd/containerd/v2@v2.4.2 \
+    github.com/klauspost/compress@v1.20.3 \
+    && go mod tidy && go mod vendor
 RUN go build -o /usr/local/bin/docker-credential-gcr github.com/GoogleCloudPlatform/docker-credential-gcr/v2 \
     && go build -o /usr/local/bin/docker-credential-ecr-login github.com/awslabs/amazon-ecr-credential-helper/ecr-login/cli/docker-credential-ecr-login \
     && go build -o /usr/local/bin/docker-credential-acr-env github.com/chrismellard/docker-credential-acr-env \
@@ -254,7 +258,8 @@ RUN apk add --update --no-cache curl ca-certificates python3
 WORKDIR /opt
 RUN curl -sSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" | tar xz \
     && /opt/google-cloud-sdk/install.sh --quiet --usage-reporting false --path-update false \
-    && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet
+    && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet \
+    && find /opt/google-cloud-sdk/platform/gsutil \( -name Pipfile.lock -o -name "*requirements*.txt" \) -delete
 
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/python:3.12-alpine AS azure-cli
 
