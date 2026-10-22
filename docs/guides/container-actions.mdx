@@ -47,9 +47,10 @@ DATABASE_URL = "{{.nuon.install.sandbox.outputs.database_url}}"
 Ship it the same way as any other action: commit it and push to the git branch your
 [app branch](/guides/app-branches) tracks.
 
-Everything else about the action is unchanged: triggers, `timeout` (30 minutes maximum), `role`,
+Everything else about the action is unchanged: triggers, `timeout` (one-hour default maximum), `role`,
 `enable_kube_config`, `env_vars`, and templating all behave exactly as they do when the action runs
-on the runner. See [Configure actions](/guides/actions).
+on the runner. An install-level `action_timeout` can replace the timeout with a value from 30 minutes
+to 24 hours. See [Configure actions](/guides/actions).
 
 ## Choosing an image
 

@@ -49,6 +49,9 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 	if err := ValidateStackOverrides(req.VPCNestedTemplateURL, req.RunnerNestedTemplateURL, req.CustomNestedStacks); err != nil {
 		return nil, fmt.Errorf("invalid stack overrides: %w", err)
 	}
+	if err := req.ValidateActionTimeout(); err != nil {
+		return nil, err
+	}
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		return nil, err

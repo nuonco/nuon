@@ -70,7 +70,7 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("labels").Short("key/value labels for the action").
 		Long("Arbitrary key/value metadata used to group and categorize actions").
 		Field("timeout").Short("timeout for action execution").Required().
-		Long("Maximum time the action can run. Maximum allowed is 30 minutes. Must be a valid Go duration string (e.g., 30s, 5m, 30m)").
+		Long("Maximum time the action can run. The default maximum is one hour. An install action_timeout can replace it with a value from 30 minutes to 24 hours. Must be a valid Go duration string (e.g., 30s, 5m, 30m)").
 		Example("15s").
 		Example("5m").
 		Example("30m").

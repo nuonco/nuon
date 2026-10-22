@@ -10,7 +10,9 @@ import (
 func (s *service) resolveRunTriggers(ctx context.Context, runs []*app.InstallActionWorkflowRun) error {
 	workflowIDs := make([]string, 0, len(runs))
 	configIDs := make([]string, 0, len(runs))
+	installIDs := make([]string, 0, len(runs))
 	for _, run := range runs {
+		installIDs = append(installIDs, run.InstallID)
 		if run.InstallWorkflowID != nil && *run.InstallWorkflowID != "" {
 			workflowIDs = append(workflowIDs, *run.InstallWorkflowID)
 		}
@@ -62,6 +64,19 @@ func (s *service) resolveRunTriggers(ctx context.Context, runs []*app.InstallAct
 		}
 	}
 
+	installConfigs := map[string]*app.InstallConfig{}
+	if len(installIDs) > 0 {
+		var cfgs []app.InstallConfig
+		if err := s.db.WithContext(ctx).
+			Where("install_id IN ?", installIDs).
+			Find(&cfgs).Error; err != nil {
+			return fmt.Errorf("unable to get run install configs: %w", err)
+		}
+		for i := range cfgs {
+			installConfigs[cfgs[i].InstallID] = &cfgs[i]
+		}
+	}
+
 	for _, run := range runs {
 		var wf *app.Workflow
 		var rbRun *app.InstallRunbookRun
@@ -79,6 +94,7 @@ func (s *service) resolveRunTriggers(ctx context.Context, runs []*app.InstallAct
 		if !run.ActionWorkflowConfigID.Empty() {
 			run.EffectiveTimeout = configs[run.ActionWorkflowConfigID.String].Timeout
 		}
+		run.EffectiveTimeout = installConfigs[run.InstallID].ResolveActionTimeout(run.EffectiveTimeout)
 	}
 
 	return nil

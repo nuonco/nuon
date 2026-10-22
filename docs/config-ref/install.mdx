@@ -25,6 +25,7 @@ title: 'Install'
 | **`stack_overrides`**<br/>[InstallStackOverrides](#stack_overrides) | Stack template overrides Per-install overrides for the app-level stack template configuration. For cloud-connected installs, Git config creation provisions the managed stack; changes reprovision it... | **Optional** | - |
 | **`cloudformation`**<br/>[CloudFormation](#cloudformation) | Per-install CloudFormation configuration Root and nested stack parameters supported by Git-backed install config sync only, not nuon installs sync. Requires an AWS cloud_connection. Values merge ov... | **Optional** | - |
 | **`component_toggles`**<br/>object | - | **Optional** | - |
+| **`action_timeout`**<br/>string | Action timeout override Replaces the configured timeout for every action on this install. Must be a duration from 30m to 24h. Installs without an override use each action's configured timeout with ... | **Optional** | `"4h"`, `"90m"` |
 | **`components`**<br/>object | - | **Optional** | - |
 
 ### `telemetry`

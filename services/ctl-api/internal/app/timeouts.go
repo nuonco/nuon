@@ -11,6 +11,8 @@ const (
 	MinDeployTimeout = time.Second * 1
 	MaxDeployTimeout = time.Hour * 1
 
+	DefaultMaxActionTimeout = time.Hour
+
 	// Auto retry bounds (applies to deploy auto-retry)
 	MaxAutoRetries = 20
 

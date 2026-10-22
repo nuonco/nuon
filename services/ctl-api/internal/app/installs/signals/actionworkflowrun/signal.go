@@ -400,14 +400,19 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 
 	planJSON = nil
 
-	// now queue and execute the job
 	l.Info("executing runner job")
-	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID: run.Install.RunnerID,
-		JobID:    runnerJob.ID,
-	}, &workflow.ChildWorkflowOptions{
+	waitTimeout := job.ActionWaitTimeout(planResponse.Plan.Timeout)
+	jobOpts := &workflow.ChildWorkflowOptions{
 		WorkflowID: "actions-install-run-exec-job" + run.ID,
-	})
+	}
+	if waitTimeout > 0 {
+		jobOpts.WorkflowExecutionTimeout = waitTimeout
+	}
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID:    run.Install.RunnerID,
+		JobID:       runnerJob.ID,
+		WaitTimeout: waitTimeout,
+	}, jobOpts)
 	if err != nil {
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, job.JobErrorMessage(err, "action workflow job failed"))
 		return errors.Wrap(err, "runner job failed")

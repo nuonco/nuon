@@ -1,6 +1,9 @@
 package build
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
@@ -18,6 +21,7 @@ type InstallConfigInput struct {
 	AWSNestedStackParameters map[string]config.CloudFormationStack `json:"-"`
 	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID            *string                               `json:"runner_image_id,omitempty"`
+	ActionTimeout            *time.Duration                        `json:"action_timeout,omitempty" swaggertype:"primitive,integer" extensions:"x-nullable"`
 }
 
 func InstallConfigInputFromConfig(install *config.Install) InstallConfigInput {
@@ -42,7 +46,23 @@ func InstallConfigInputFromConfig(install *config.Install) InstallConfigInput {
 		in.AWSStackParameters = overrides.Root.Parameters
 		in.AWSNestedStackParameters = overrides.NestedStacks
 	}
+	if install.ActionTimeout != "" {
+		timeout, err := config.ParseActionTimeout(install.ActionTimeout)
+		if err == nil {
+			in.ActionTimeout = &timeout
+		}
+	}
 	return in
+}
+
+func (in InstallConfigInput) ValidateActionTimeout() error {
+	if in.ActionTimeout == nil {
+		return nil
+	}
+	if *in.ActionTimeout < config.MinActionTimeout || *in.ActionTimeout > config.MaxActionTimeout {
+		return fmt.Errorf("action_timeout must be between %s and %s", config.MinActionTimeout, config.MaxActionTimeout)
+	}
+	return nil
 }
 
 func InstallConfig(in InstallConfigInput, installID string) *app.InstallConfig {
@@ -56,6 +76,7 @@ func InstallConfig(in InstallConfigInput, installID string) *app.InstallConfig {
 		AWSNestedStackParameters: in.AWSNestedStackParameters,
 		RunnerImageAutoUpdate:    in.RunnerImageAutoUpdate,
 		RunnerImageID:            in.RunnerImageID,
+		ActionTimeout:            in.ActionTimeout,
 		Labeled:                  labels.Labeled{Labels: labels.Labels(in.Labels)},
 	}
 	if in.Telemetry != nil {

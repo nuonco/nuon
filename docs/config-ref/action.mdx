@@ -12,7 +12,7 @@ title: 'Action'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`name`**<br/>string | name of the action The action name is displayed in the Actions tab of the Nuon dashboard | **✅ Required** | `"http_healthcheck"`, `"database_migration"` |
-| **`timeout`**<br/>string | timeout for action execution Maximum time the action can run. Maximum allowed is 30 minutes. Must be a valid Go duration string (e.g., 30s, 5m, 30m) | **✅ Required** | `"15s"`, `"5m"`, `"30m"` |
+| **`timeout`**<br/>string | timeout for action execution Maximum time the action can run. The default maximum is one hour. An install action_timeout can replace it with a value from 30 minutes to 24 hours. Must be a valid Go ... | **✅ Required** | `"15s"`, `"5m"`, `"30m"` |
 | **`triggers`**<br/>[array](#triggers) | triggers that execute this action Actions can be triggered manually, on a cron schedule, or by install lifecycle events (provision, deploy, teardown, etc). Define multiple triggers if needed | **✅ Required** | - |
 | **`steps`**<br/>[array](#steps) | steps to execute in this action Ordered list of steps to execute. Each step requires a command and can optionally load scripts from repositories | **✅ Required** | - |
 | **`labels`**<br/>object | key/value labels for the action Arbitrary key/value metadata used to group and categorize actions | **Optional** | - |

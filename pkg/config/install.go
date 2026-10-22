@@ -230,6 +230,8 @@ type Install struct {
 	// Absent keys fall through to the component's default_enabled setting.
 	ComponentToggles map[string]bool `mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
 
+	ActionTimeout string `mapstructure:"action_timeout,omitempty" toml:"action_timeout,omitempty"`
+
 	// Components holds per-component install-level overrides, keyed by component
 	// name. Each override deep-merges over the component's app-config values and
 	// wins. It is carried through the install input system under a reserved
@@ -302,7 +304,11 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("stack_overrides").Short("Stack template overrides").
 		Long("Per-install overrides for the app-level stack template configuration. For cloud-connected installs, Git config creation provisions the managed stack; changes reprovision it using the install approval policy.").
 		Field("cloudformation").Short("Per-install CloudFormation configuration").
-		Long("Root and nested stack parameters supported by Git-backed install config sync only, not nuon installs sync. Requires an AWS cloud_connection. Values merge over app configuration and generated parameter wiring; changing the install config queues stack reprovisioning.")
+		Long("Root and nested stack parameters supported by Git-backed install config sync only, not nuon installs sync. Requires an AWS cloud_connection. Values merge over app configuration and generated parameter wiring; changing the install config queues stack reprovisioning.").
+		Field("action_timeout").Short("Action timeout override").
+		Long("Replaces the configured timeout for every action on this install. Must be a duration from 30m to 24h. Installs without an override use each action's configured timeout with the default one-hour cap.").
+		Example("4h").
+		Example("90m")
 }
 
 func (i *Install) Parse() error {
@@ -324,6 +330,14 @@ func (i *Install) Validate() error {
 	if i.AppBranchGroup != "" && i.AppBranch == "" {
 		return ErrConfig{
 			Description: fmt.Sprintf("install %q: app_branch_group requires app_branch", i.Name),
+		}
+	}
+	if i.ActionTimeout != "" {
+		if _, err := ParseActionTimeout(i.ActionTimeout); err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("install %q: %s", i.Name, err),
+				Err:         err,
+			}
 		}
 	}
 
@@ -472,6 +486,13 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("approval_option"),
 			diff.WithStringDiff(string(upstreamInstall.ApprovalOption), string(i.ApprovalOption)),
+		))
+	}
+
+	if i.ActionTimeout != "" && !ActionTimeoutsEqual(upstreamInstall.ActionTimeout, i.ActionTimeout) {
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("action_timeout"),
+			diff.WithStringDiff(upstreamInstall.ActionTimeout, i.ActionTimeout),
 		))
 	}
 

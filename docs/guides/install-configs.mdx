@@ -22,6 +22,15 @@ nuon installs sync --file <your-install>.toml --app-id <your-app-id> --confirm
 
 For the full property list, see the [Install configuration reference](/config-ref/install).
 
+### Action timeout override
+
+Set `action_timeout` to replace the configured timeout for every action on an install. The value must be between 30 minutes and 24 hours. Installs without an override use each action's configured timeout and the default one-hour cap.
+
+```toml install.toml
+name = "customer-acme"
+action_timeout = "4h"
+```
+
 ## Labeling installs
 
 Installs support arbitrary key/value `labels` set via the `labels` field in the install config. Labels are useful for tagging installs with metadata like environment, region, or version, and they're surfaced in the dashboard alongside the install.

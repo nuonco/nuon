@@ -184,7 +184,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil {
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil || installCfg.ActionTimeout != "" {
 		icParams := &models.HelpersCreateInstallConfigParams{}
 		if installCfg.Telemetry != nil {
 			icParams.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
@@ -192,6 +192,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			icParams.ApprovalOption = installCfg.ApprovalOption.APIType()
 		}
+		icParams.ActionTimeout = installActionTimeout(installCfg.ActionTimeout)
 		if installCfg.StackOverrides.HasOverrides() {
 			so := installCfg.StackOverrides
 			if so.VPCNestedTemplateURL != "" {
@@ -314,7 +315,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil || installCfg.ActionTimeout != ""
 
 	if hasConfigFields {
 		so := installCfg.StackOverrides
@@ -330,6 +331,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 				createReq.ApprovalOption = installCfg.ApprovalOption.APIType()
 			}
+			createReq.ActionTimeout = installActionTimeout(installCfg.ActionTimeout)
 			if so.VPCNestedTemplateURL != "" {
 				createReq.VpcNestedTemplateURL = so.VPCNestedTemplateURL
 			}
@@ -358,6 +360,11 @@ func (s *appInstallSyncer) syncExistingInstall(
 			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown &&
 				appInstall.InstallConfig.ApprovalOption != installCfg.ApprovalOption.APIType() {
 				updateReq.ApprovalOption = installCfg.ApprovalOption.APIType()
+				needsUpdate = true
+			}
+			if actionTimeout := installActionTimeout(installCfg.ActionTimeout); actionTimeout != nil &&
+				(appInstall.InstallConfig.ActionTimeout == nil || *appInstall.InstallConfig.ActionTimeout != *actionTimeout) {
+				updateReq.ActionTimeout = actionTimeout
 				needsUpdate = true
 			}
 			if installCfg.StackOverrides != nil && so.VPCNestedTemplateURL != appInstall.InstallConfig.VpcNestedTemplateURL {
@@ -624,6 +631,18 @@ func boolPtrEqual(a, b *bool) bool {
 		return a == b
 	}
 	return *a == *b
+}
+
+func installActionTimeout(raw string) *int64 {
+	if raw == "" {
+		return nil
+	}
+	timeout, err := config.ParseActionTimeout(raw)
+	if err != nil {
+		return nil
+	}
+	value := int64(timeout)
+	return &value
 }
 
 func customNestedStacksEqual(local []config.CustomNestedStack, remote []*models.ConfigCustomNestedStack) bool {

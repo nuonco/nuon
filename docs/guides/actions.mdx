@@ -57,7 +57,9 @@ Following that example, we can describe the parts of a workflow.
 
 ### Timeout
 
-Each workflow should have a timeout limiting how long it can run. The maximum allowed timeout is 30 minutes. Timeouts must be provided as valid Golang `time.Duration` strings. An action without a timeout gets 5 minutes.
+Each workflow should have a timeout limiting how long it can run. The default maximum is one hour. Timeouts must be provided as valid Golang `time.Duration` strings. An action without a timeout gets 5 minutes.
+
+An install can set `action_timeout` to replace the configured timeout for every action on that install. The override must be between 30 minutes and 24 hours.
 
 A run that exceeds its timeout is stopped and ends with status `timed-out`. Time spent waiting in the install's queue or for the runner to pick up the job does not count toward the timeout.
 

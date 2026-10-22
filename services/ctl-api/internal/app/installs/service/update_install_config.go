@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -28,11 +29,15 @@ type UpdateInstallConfigRequest struct {
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty"`
 	RunnerImageAutoUpdate   *bool                      `json:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID           *string                    `json:"runner_image_id,omitempty"`
+	ActionTimeout           *time.Duration             `json:"action_timeout,omitempty" swaggertype:"primitive,integer" extensions:"x-nullable"`
 }
 
 func (c *UpdateInstallConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+	if err := (helpers.CreateInstallConfigParams{ActionTimeout: c.ActionTimeout}).ValidateActionTimeout(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -109,6 +114,9 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 	}
 	if req.RunnerImageID != nil {
 		updates["runner_image_id"] = *req.RunnerImageID
+	}
+	if req.ActionTimeout != nil {
+		updates["action_timeout"] = *req.ActionTimeout
 	}
 	if req.CustomNestedStacks != nil {
 		// Pre-serialize to JSON so the raw map-based update stores a valid

@@ -183,10 +183,13 @@ func (p *Planner) RenderActionWorkflowRunPlan(l *zap.Logger, in *RenderActionWor
 		GCPAuth:         in.CloudAuth.GCP,
 	}
 
+	configuredTimeout := run.Timeout
 	if !run.ActionWorkflowConfigID.Empty() {
-		if run.ActionWorkflowConfig.Timeout > 0 {
-			plan.Timeout = run.ActionWorkflowConfig.Timeout
-		}
+		configuredTimeout = run.ActionWorkflowConfig.Timeout
+	}
+	plan.Timeout = run.Install.InstallConfig.ResolveActionTimeout(configuredTimeout)
+
+	if !run.ActionWorkflowConfigID.Empty() {
 		for idx, stepCfg := range run.Steps {
 			l.Debug(fmt.Sprintf("creating plan for step %d", idx))
 			l.Debug("creating git source for config")
@@ -201,10 +204,6 @@ func (p *Planner) RenderActionWorkflowRunPlan(l *zap.Logger, in *RenderActionWor
 			}
 
 			plan.Steps = append(plan.Steps, stepPlan)
-		}
-	} else {
-		if run.Timeout > 0 {
-			plan.Timeout = run.Timeout
 		}
 	}
 

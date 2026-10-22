@@ -47,7 +47,15 @@ type InstallConfig struct {
 	ComponentToggles         map[string]bool                       `json:"component_toggles,omitempty" gorm:"type:jsonb;serializer:json;default:'{}'" temporaljson:"component_toggles,omitempty"`
 	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty" gorm:"default null" temporaljson:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID            *string                               `json:"runner_image_id,omitempty" gorm:"default null" temporaljson:"runner_image_id,omitempty"`
+	ActionTimeout            *time.Duration                        `json:"action_timeout,omitempty" gorm:"default null" swaggertype:"primitive,integer" temporaljson:"action_timeout,omitempty" extensions:"x-nullable"`
 	labels.Labeled
+}
+
+func (c *InstallConfig) ResolveActionTimeout(configured time.Duration) time.Duration {
+	if c != nil && c.ActionTimeout != nil {
+		return min(max(*c.ActionTimeout, config.MinActionTimeout), config.MaxActionTimeout)
+	}
+	return min(configured, DefaultMaxActionTimeout)
 }
 
 func (a *InstallConfig) BeforeCreate(tx *gorm.DB) error {
