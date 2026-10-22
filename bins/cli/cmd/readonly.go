@@ -42,6 +42,8 @@ var readOnlyCommands = map[string]struct{}{
 	"deploys":              {},
 	"sandbox":              {},
 	"plan":                 {},
+	"contents":             {},
+	"diff":                 {},
 	"api-token":            {},
 	"logs":                 {},
 	"deploy-logs":          {},
