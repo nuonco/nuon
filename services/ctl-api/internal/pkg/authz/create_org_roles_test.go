@@ -33,9 +33,11 @@ func TestStandardOrgRoles(t *testing.T) {
 	}
 
 	for _, role := range roles {
+		require.Equal(t, app.RoleVersionV2, role.Version, "role %s", role.RoleType)
 		require.Len(t, role.Policies, 1, "role %s", role.RoleType)
-		require.Len(t, role.Policies[0].Permissions, 1, "role %s policies must only carry the bare org key", role.RoleType)
+		require.Len(t, role.Policies[0].Permissions, 2, "role %s policies carry the org key and api", role.RoleType)
 		require.NotNil(t, role.Policies[0].Permissions[orgID], "role %s must key its permission on the org ID", role.RoleType)
+		require.NotNil(t, role.Policies[0].Permissions[permissions.APIPermissionKey], "role %s", role.RoleType)
 		require.NotEmpty(t, role.Title, "role %s must carry display metadata", role.RoleType)
 		require.NotEmpty(t, role.Description, "role %s must carry display metadata", role.RoleType)
 		require.True(t, role.Managed, "standard roles are managed")
@@ -58,4 +60,6 @@ func TestStandardOrgRoles(t *testing.T) {
 	require.NoError(t, set.Add(readOnly.Policies[0].Permissions))
 	require.NoError(t, set.CanPerform(orgID, permissions.PermissionRead))
 	require.Error(t, set.CanPerform(orgID, permissions.PermissionCreate))
+	require.Equal(t, string(permissions.APICtl), *readOnly.Policies[0].Permissions[permissions.APIPermissionKey])
+	require.Equal(t, string(permissions.APIRunner), *seen[app.RoleTypeRunner].Policies[0].Permissions[permissions.APIPermissionKey])
 }

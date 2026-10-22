@@ -29,14 +29,27 @@ import (
 // @Router					/v1/runners/{runner_id}/processes/{process_id} [get]
 func (s *service) GetRunnerProcess(ctx *gin.Context) {
 	processID := ctx.Param("process_id")
+	runnerID := ctx.Param("runner_id")
 
-	process, err := s.getRunnerProcess(ctx, processID)
+	process, err := s.getRunnerProcessForRunner(ctx, runnerID, processID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get runner process: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, process)
+}
+
+func (s *service) getRunnerProcessForRunner(ctx context.Context, runnerID, processID string) (*app.RunnerProcess, error) {
+	var process app.RunnerProcess
+	res := s.db.WithContext(ctx).
+		Preload("Shutdowns").
+		Where(app.RunnerProcess{ID: processID, RunnerID: runnerID}).
+		First(&process)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get runner process: %w", res.Error)
+	}
+	return &process, nil
 }
 
 func (s *service) getRunnerProcess(ctx context.Context, processID string) (*app.RunnerProcess, error) {

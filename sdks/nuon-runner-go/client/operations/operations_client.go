@@ -100,6 +100,8 @@ func WithAcceptApplicationOctetStream(r *runtime.ClientOperation) {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ClaimRunnerJobToken(params *ClaimRunnerJobTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ClaimRunnerJobTokenOK, error)
+
 	CompleteRunnerProcessShutdown(params *CompleteRunnerProcessShutdownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteRunnerProcessShutdownOK, error)
 
 	CreateComponentHealth(params *CreateComponentHealthParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentHealthCreated, error)
@@ -178,6 +180,8 @@ type ClientService interface {
 
 	GetRunnerSettings(params *GetRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerSettingsOK, error)
 
+	GetStackConfigRunner(params *GetStackConfigRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackConfigRunnerOK, error)
+
 	GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error)
 
 	GetTerraformWorkspace(params *GetTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceOK, error)
@@ -187,6 +191,10 @@ type ClientService interface {
 	LockTerraformWorkspace(params *LockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockTerraformWorkspaceOK, error)
 
 	LogStreamWriteLogs(params *LogStreamWriteLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamWriteLogsCreated, error)
+
+	PhoneHomeRunner(params *PhoneHomeRunnerParams, opts ...ClientOption) (*PhoneHomeRunnerCreated, error)
+
+	PostStackPhoneHomeRunner(params *PostStackPhoneHomeRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PostStackPhoneHomeRunnerCreated, error)
 
 	PublishMetrics(params *PublishMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PublishMetricsOK, error)
 
@@ -227,6 +235,52 @@ type ClientService interface {
 	UpdateTerraformStateJSON(params *UpdateTerraformStateJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateTerraformStateJSONOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+ClaimRunnerJobToken claims a job execution token
+
+Exchanges the process runner token for a short-lived token that can write only this job. Succeeds only when the job status is available. A second claim returns 409 and does not return the existing token.
+*/
+func (a *Client) ClaimRunnerJobToken(params *ClaimRunnerJobTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ClaimRunnerJobTokenOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewClaimRunnerJobTokenParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ClaimRunnerJobToken",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/jobs/{job_id}/token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ClaimRunnerJobTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ClaimRunnerJobTokenOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ClaimRunnerJobToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
@@ -2019,6 +2073,52 @@ func (a *Client) GetRunnerSettings(params *GetRunnerSettingsParams, authInfo run
 }
 
 /*
+GetStackConfigRunner gets the s d k config for an install stack
+
+Deprecated. Use GET /v1/stacks/{install_id}/config on the stack API.
+*/
+func (a *Client) GetStackConfigRunner(params *GetStackConfigRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackConfigRunnerOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetStackConfigRunnerParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetStackConfigRunner",
+		Method:             "GET",
+		PathPattern:        "/v1/stacks/{install_id}/config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetStackConfigRunnerReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetStackConfigRunnerOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetStackConfigRunner: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetTerraformCurrentStateData gets current terraform
 
 Returns the current terraform state.
@@ -2245,6 +2345,97 @@ func (a *Client) LogStreamWriteLogs(params *LogStreamWriteLogsParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for LogStreamWriteLogs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+PhoneHomeRunner phones home for an install
+
+Deprecated. Use POST /v1/stacks/{install_id}/phone-home on the stack API. The caller authenticates as the stack service account, and the path no longer contains phone_home_id.
+*/
+func (a *Client) PhoneHomeRunner(params *PhoneHomeRunnerParams, opts ...ClientOption) (*PhoneHomeRunnerCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewPhoneHomeRunnerParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "PhoneHomeRunner",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/phone-home/{phone_home_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PhoneHomeRunnerReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*PhoneHomeRunnerCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for PhoneHomeRunner: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+PostStackPhoneHomeRunner phones home from an install stack
+
+Deprecated. Use POST /v1/stacks/{install_id}/phone-home on the stack API.
+*/
+func (a *Client) PostStackPhoneHomeRunner(params *PostStackPhoneHomeRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PostStackPhoneHomeRunnerCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewPostStackPhoneHomeRunnerParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "PostStackPhoneHomeRunner",
+		Method:             "POST",
+		PathPattern:        "/v1/stacks/{install_id}/phone-home",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PostStackPhoneHomeRunnerReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*PostStackPhoneHomeRunnerCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for PostStackPhoneHomeRunner: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

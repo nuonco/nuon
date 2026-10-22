@@ -91,6 +91,13 @@ func WithIdleHook(fn func(context.Context)) Option {
 	}
 }
 
+func (j *jobLoop) client(ctx context.Context) nuonrunner.Client {
+	if scoped, ok := nuonrunner.ClientFromContext(ctx); ok {
+		return scoped
+	}
+	return j.apiClient
+}
+
 func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params BaseParams, opts ...Option) *jobLoop {
 	pollCtx, pollCancel := context.WithCancel(context.Background())
 	jobCtx, jobCancel := context.WithCancel(context.Background())

@@ -56,6 +56,10 @@ func OrgRoute(router gin.IRouter) *gin.RouterGroup {
 	return route(router, permissions.KindOrg, "", permissions.FromRequest)
 }
 
+func ResourceRoute(router gin.IRouter, kind permissions.ResourceKind, paramName string) *gin.RouterGroup {
+	return route(router, kind, paramName, permissions.FromRequest)
+}
+
 func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, permission func(*gin.Context) permissions.Permission) *gin.RouterGroup {
 	description := noun(kind) + " not found"
 

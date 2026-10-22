@@ -1,6 +1,9 @@
 package permissions
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type Set map[string]Permission
 
@@ -10,6 +13,17 @@ func NewSet() map[string]Permission {
 
 func (p Set) Add(set map[string]*string) error {
 	for k, v := range set {
+		if k == APIPermissionKey {
+			if v == nil || *v == "" {
+				return fmt.Errorf("api permission requires a value")
+			}
+			if _, err := ParseAPI(*v); err != nil {
+				return err
+			}
+			p[k] = Permission(*v)
+			continue
+		}
+
 		perm, err := NewPermission(*v)
 		if err != nil {
 			return err

@@ -74,8 +74,32 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 	}
 
 	// The authenticated report route. CloudFormation and ARM keep the capability URL.
+	phoneHomeBase := cfg.RunnerAPIURL
+	if s.cfg != nil && s.cfg.StackAPIURL != "" {
+		phoneHomeBase = s.cfg.StackAPIURL
+	}
 	cfg.PhoneHomeURL = fmt.Sprintf("%s/v1/stacks/%s/phone-home",
-		strings.TrimSuffix(cfg.RunnerAPIURL, "/"), install.ID)
+		strings.TrimSuffix(phoneHomeBase, "/"), install.ID)
 
 	ctx.JSON(http.StatusOK, StackConfigResponse{Config: cfg})
+}
+
+// @ID						GetStackConfigRunner
+// @Summary				get the SDK config for an install stack
+// @Description			Deprecated. Use GET /v1/stacks/{install_id}/config on the stack API.
+// @Param					install_id	path	string	true	"install ID"
+// @Tags					installs/runner
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Deprecated				true
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	StackConfigResponse
+// @Router					/v1/stacks/{install_id}/config [get]
+func (s *service) GetStackConfigRunner(ctx *gin.Context) {
+	s.GetStackConfig(ctx)
 }

@@ -65,7 +65,6 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 		t.Fatalf("GetSettings: %v", err)
 	}
 
-	// public calls → must NOT carry an Authorization header
 	_, _ = c.GetProcessShutdowns(ctx, "prc_test")
 	_, _ = c.RunnerAuthAWS(ctx, &models.ServiceRunnerAuthAWSRequest{})
 
@@ -93,8 +92,8 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 	}
 
 	shutdownPath := "/v1/runners/rnr_test/processes/prc_test/shutdowns"
-	if got := authByPath[shutdownPath]; got != "" {
-		t.Errorf("public shutdowns: got Authorization %q, want empty", got)
+	if got := authByPath[shutdownPath]; got != "Bearer secret-token" {
+		t.Errorf("process shutdowns: got Authorization %q, want %q", got, "Bearer secret-token")
 	}
 
 	authPath := "/v1/runner-auth/aws"

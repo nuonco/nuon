@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
@@ -319,7 +320,8 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runnerRoutes.POST("/metrics", s.OtelWriteMetrics)
 	runnerRoutes.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
 	runnerRoutes.GET("/jobs/:job_id", s.GetRunnerJobV2)
-	runnerRoutes.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
+	runnerRoutes.POST("/jobs/:job_id/token", s.ClaimRunnerJobToken)
+	require.ResourceRoute(runners, permissions.KindRunnerJob, "job_id").PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
 
 	// sandbox configs
 	runnerRoutes.GET("/sandbox-configs", s.GetRunnerSandboxConfigs)
@@ -329,13 +331,12 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runnerRoutes.POST("/processes", s.CreateRunnerProcess)
 	runnerRoutes.GET("/processes/:process_id", s.GetRunnerProcess)
 	runnerRoutes.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
-	runners.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+	runnerRoutes.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
 	runnerRoutes.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
 	runnerRoutes.POST("/processes/:process_id/terminating", s.ReportRunnerProcessTerminating)
 
 	runnerJobs := org.Group("/v1/runner-jobs/:runner_job_id")
 	runnerJobs.GET("", s.GetRunnerJob)
-	runnerJobs.PATCH("", s.UpdateRunnerJob)
 	runnerJobs.GET("/plan", s.GetRunnerJobPlan)
 	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), runnerJobs.BasePath())
 	s.EndpointAudit.Add("PATCH", string(apiPkg.APIContextTypeRunner), runnerJobs.BasePath())
@@ -343,12 +344,16 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runnerJobs.GET("/composite-plan", s.GetRunnerJobCompositePlan)
 
 	executions := runnerJobs.Group("/executions")
-	executions.POST("", s.CreateRunnerJobExecution)
 	executions.GET("", s.GetRunnerJobExecutions)
 	executions.GET("/:runner_job_execution_id", s.GetRunnerJobExecution)
-	executions.PATCH("/:runner_job_execution_id", s.UpdateRunnerJobExecution)
-	executions.POST("/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
-	executions.POST("/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
+
+	jobWrites := require.ResourceRoute(api, permissions.KindRunnerJob, "runner_job_id")
+	jobWrites.PATCH("/v1/runner-jobs/:runner_job_id", s.UpdateRunnerJob)
+	jobExecutions := jobWrites.Group("/v1/runner-jobs/:runner_job_id/executions")
+	jobExecutions.POST("", s.CreateRunnerJobExecution)
+	jobExecutions.PATCH("/:runner_job_execution_id", s.UpdateRunnerJobExecution)
+	jobExecutions.POST("/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
+	jobExecutions.POST("/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
 
 	// Terraform backend
 	tfBackend := org.Group("/v1/terraform-backend")

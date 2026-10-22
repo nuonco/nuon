@@ -73,12 +73,23 @@ var SlackAPIModule = fx.Module("slack-api",
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )
 
+// StackAPIModule provides the stack API server.
+var StackAPIModule = fx.Module("stack-api",
+	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(poolmetrics.New),
+	fx.Provide(api.AsAPI(api.NewStackAPI)),
+	fx.Invoke(telemetry.StartRuntimeMetrics),
+	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
+	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
+)
+
 // AllAPIsModule provides all API servers (for running all in one process).
 var AllAPIsModule = fx.Module("all-apis",
 	fx.Provide(api.NewEndpointAudit),
 	fx.Provide(poolmetrics.New),
 	fx.Provide(api.AsAPI(api.NewPublicAPI)),
 	fx.Provide(api.AsAPI(api.NewRunnerAPI)),
+	fx.Provide(api.AsAPI(api.NewStackAPI)),
 	fx.Provide(api.AsAPI(api.NewInternalAPI)),
 	fx.Provide(api.AsAPI(api.NewAuthAPI)),
 	fx.Provide(api.AsAPI(api.NewAdminDashboardAPI)),
