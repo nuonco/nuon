@@ -16,6 +16,15 @@ export const Component = () => (
   <ResourceComponentActions
     component={component}
     currentDeployStatus="active"
+    onViewDetails={() => {}}
+  />
+)
+
+export const Disabled = () => (
+  <ResourceComponentActions
+    component={component}
+    enabled={false}
+    onViewDetails={() => {}}
   />
 )
 

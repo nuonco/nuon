@@ -41,7 +41,6 @@ export const ResourceComponentActions = ({
         <ToggleComponentButton
           component={component}
           enabling
-          size="sm"
           variant="secondary"
           disabled={managedByConfig}
           tooltipProps={
@@ -55,11 +54,7 @@ export const ResourceComponentActions = ({
         />
       ) : null}
       {onViewDetails ? (
-        <Button
-          variant={disabled ? 'ghost' : 'secondary'}
-          size={disabled ? 'sm' : undefined}
-          onClick={onViewDetails}
-        >
+        <Button variant="secondary" onClick={onViewDetails}>
           View details
         </Button>
       ) : null}

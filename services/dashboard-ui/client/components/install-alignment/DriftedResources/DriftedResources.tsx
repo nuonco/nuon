@@ -6,8 +6,9 @@ import { Card } from '@/components/common/Card'
 import type { TCollectionView } from '@/components/common/CollectionViewToggle'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
-import { Skeleton } from '@/components/common/Skeleton'
+import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
+import { ToggleButton } from '@/components/common/ToggleButton'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import type { TAPIError, TInstallAlignmentResource } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -34,34 +35,6 @@ export interface IDriftedResources {
   search?: string
   view?: TCollectionView
 }
-
-const FilterButton = ({
-  active,
-  count,
-  label,
-  ariaLabel,
-  onClick,
-}: {
-  active: boolean
-  count: number
-  label: string
-  ariaLabel?: string
-  onClick: () => void
-}) => (
-  <Button
-    size="sm"
-    variant={active ? 'secondary' : 'ghost'}
-    aria-pressed={active}
-    aria-label={ariaLabel ? `${ariaLabel} (${count})` : undefined}
-    className="gap-2"
-    onClick={onClick}
-  >
-    {label}
-    <Badge size="sm" theme="neutral">
-      {count}
-    </Badge>
-  </Button>
-)
 
 const notComparedSummary = (resources: TInstallAlignmentResource[]) => {
   const unknown = resources.filter(
@@ -107,11 +80,7 @@ export const DriftedResources = ({
             Unable to load {imagesOnly ? 'sync status' : 'drift'} for these{' '}
             {noun}. {error.description || error.error}
           </Text>
-          {onRetry ? (
-            <Button size="sm" onClick={onRetry}>
-              Try again
-            </Button>
-          ) : null}
+          {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
         </div>
       </Banner>
     )
@@ -119,11 +88,28 @@ export const DriftedResources = ({
 
   if (loading && !resources.length) {
     return (
-      <div data-testid="alignment-loading" aria-busy>
-        <Skeleton height="5rem" width="100%" />
+      <div
+        className="flex items-center gap-2"
+        role="status"
+        data-testid="alignment-loading"
+        aria-busy
+      >
+        <Loading />
+        <Text variant="subtext" theme="neutral">
+          Loading {imagesOnly ? 'image sync status' : 'resource alignment'}
+        </Text>
       </div>
     )
   }
+
+  const refreshError = error ? (
+    <div role="alert">
+      <Text variant="subtext" theme="error">
+        Refreshing resources failed. Showing the last loaded results.{' '}
+        {error.description || error.error}
+      </Text>
+    </div>
+  ) : null
 
   const searched = resources.filter((resource) =>
     matchesSearch(resource, search)
@@ -140,29 +126,32 @@ export const DriftedResources = ({
   const notCompared = notComparedSummary(resources.filter((r) => !isDrifted(r)))
 
   if (!drifted.length && !ongoing.length) {
-    if (search || !resources.length || imagesOnly) return null
+    if (search || !resources.length || imagesOnly) return refreshError
     const allInSync = resources.every(
       (resource) => resource.category === 'in-sync'
     )
     return (
-      <div
-        className="flex flex-wrap items-center gap-2"
-        data-testid="alignment-summary"
-      >
-        <Icon
-          variant={allInSync ? 'CheckCircleIcon' : 'InfoIcon'}
-          size={18}
-          className={
-            allInSync
-              ? 'text-green-800 dark:text-green-500'
-              : 'text-cool-grey-600 dark:text-cool-grey-500'
-          }
-        />
-        <Text variant="subtext">
-          {allInSync
-            ? `All ${noun} match the desired configuration and inputs. No changes are needed.`
-            : `Compared ${noun} match the desired configuration and inputs. ${notCompared}.`}
-        </Text>
+      <div className="flex flex-col gap-3">
+        <div
+          className="flex flex-wrap items-center gap-2"
+          data-testid="alignment-summary"
+        >
+          <Icon
+            variant={allInSync ? 'CheckCircleIcon' : 'InfoIcon'}
+            size={18}
+            className={
+              allInSync
+                ? 'text-green-800 dark:text-green-500'
+                : 'text-cool-grey-600 dark:text-cool-grey-500'
+            }
+          />
+          <Text variant="subtext">
+            {allInSync
+              ? `All ${noun} match the desired configuration and inputs. No changes are needed.`
+              : `Compared ${noun} match the desired configuration and inputs. ${notCompared}.`}
+          </Text>
+        </div>
+        {refreshError}
       </div>
     )
   }
@@ -186,10 +175,11 @@ export const DriftedResources = ({
           <Card className="!p-3 !gap-3">
             <Expand
               id="drifted-resources"
+              className="-mx-3 !w-auto"
               interactiveHeading
               isOpen={expanded}
               onExpandedChange={setExpanded}
-              headerClassName="!p-0 !items-center [&>button]:whitespace-nowrap [&_button:focus-visible]:outline [&_button:focus-visible]:outline-primary-400"
+              headerClassName="!p-0 mx-3 !w-auto !items-center [&>button]:whitespace-nowrap [&_button:focus-visible]:outline [&_button:focus-visible]:outline-primary-400"
               toggleLabel={`${expanded ? 'Hide' : 'Show'} ${imagesOnly ? 'unsynced images' : `drifted ${noun}`}`}
               toggleContent={
                 <Text theme="brand" variant="subtext">
@@ -214,34 +204,49 @@ export const DriftedResources = ({
                 </div>
               }
             >
-              <div className="flex flex-col gap-3 mt-3">
+              <div className="flex flex-col gap-3 mt-3 px-3">
                 {!imagesOnly ? (
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <div
-                      className="flex flex-wrap items-center gap-1"
-                      role="group"
-                      aria-label="Filter drift"
-                    >
-                      <FilterButton
-                        active={driftFilter === 'all'}
-                        count={counts.all}
-                        label="All"
-                        ariaLabel="All drifted"
-                        onClick={() => selectDrift('all')}
-                      />
-                      <FilterButton
-                        active={driftFilter === 'changes-not-applied'}
-                        count={counts.unapplied}
-                        label="Changes not applied"
-                        onClick={() => selectDrift('changes-not-applied')}
-                      />
-                      <FilterButton
-                        active={driftFilter === 'state-drift-detected'}
-                        count={counts.stateDrift}
-                        label="State drift detected"
-                        onClick={() => selectDrift('state-drift-detected')}
-                      />
-                    </div>
+                  <div
+                    className="overflow-x-auto p-1 [&_button:focus-visible]:[--tw-outline-style:solid] [&_button:focus-visible]:outline-2 [&_button:focus-visible]:-outline-offset-2 [&_button:focus-visible]:outline-primary-400/80"
+                    onFocusCapture={(event) =>
+                      event.target.scrollIntoView({
+                        block: 'nearest',
+                        inline: 'nearest',
+                      })
+                    }
+                  >
+                    <ToggleButton<TDriftFilter>
+                      label="Filter drift"
+                      size="md"
+                      className="w-max"
+                      value={driftFilter}
+                      onChange={selectDrift}
+                      options={(
+                        [
+                          { value: 'all', label: 'All', count: counts.all },
+                          {
+                            value: 'changes-not-applied',
+                            label: 'Changes not applied',
+                            count: counts.unapplied,
+                          },
+                          {
+                            value: 'state-drift-detected',
+                            label: 'State drift detected',
+                            count: counts.stateDrift,
+                          },
+                        ] as const
+                      ).map(({ value, label, count }) => ({
+                        value,
+                        label: (
+                          <span className="flex items-center gap-2">
+                            {label}
+                            <Badge size="sm" theme="neutral">
+                              {count}
+                            </Badge>
+                          </span>
+                        ),
+                      }))}
+                    />
                   </div>
                 ) : null}
                 {visible.length ? (
@@ -279,7 +284,7 @@ export const DriftedResources = ({
                             className={cn(
                               view === 'grid'
                                 ? 'flex flex-col gap-2 md:grid md:grid-cols-2 md:items-start'
-                                : 'flex flex-col divide-y'
+                                : 'flex flex-col divide-y -mx-3'
                             )}
                           >
                             {group.map((resource) => (
@@ -287,6 +292,7 @@ export const DriftedResources = ({
                                 key={resource.id}
                                 className={cn(
                                   'min-w-0',
+                                  view === 'list' && 'px-3',
                                   view === 'grid' && 'md:h-full'
                                 )}
                               >
@@ -305,7 +311,7 @@ export const DriftedResources = ({
                         ? `No state drift detected for these ${noun}.`
                         : `No changes not applied for these ${noun}.`}
                     </Text>
-                    <Button size="sm" onClick={() => selectDrift('all')}>
+                    <Button onClick={() => selectDrift('all')}>
                       View all drifted
                     </Button>
                   </div>
@@ -319,7 +325,6 @@ export const DriftedResources = ({
                     </Text>
                     <div className="flex gap-2">
                       <Button
-                        size="sm"
                         disabled={currentPage === 0}
                         onClick={() => setPage(currentPage - 1)}
                         aria-label="Previous drifted page"
@@ -328,7 +333,6 @@ export const DriftedResources = ({
                         Previous
                       </Button>
                       <Button
-                        size="sm"
                         disabled={currentPage >= lastPage}
                         onClick={() => setPage(currentPage + 1)}
                         aria-label="Next drifted page"
@@ -344,14 +348,7 @@ export const DriftedResources = ({
           </Card>
         </section>
       ) : null}
-      {error ? (
-        <div role="alert">
-          <Text variant="subtext" theme="error">
-            Refreshing resources failed. Showing the last loaded results.{' '}
-            {error.description || error.error}
-          </Text>
-        </div>
-      ) : null}
+      {refreshError}
     </div>
   )
 }

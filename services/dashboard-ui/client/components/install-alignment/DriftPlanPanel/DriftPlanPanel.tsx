@@ -63,11 +63,7 @@ export const DriftPlanPanel = ({
   return (
     <Panel
       {...props}
-      heading={
-        <Text variant="base" weight="strong">
-          {resource?.name ?? 'Resource'} · {title}
-        </Text>
-      }
+      heading={`${resource?.name ?? 'Resource'} · ${title}`}
       size="half"
       className="!h-auto max-h-screen"
       data-testid="drift-plan-panel"

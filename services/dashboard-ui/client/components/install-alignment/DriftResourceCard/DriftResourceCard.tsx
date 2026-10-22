@@ -1,8 +1,9 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import type { TCollectionView } from '@/components/common/CollectionViewToggle'
+import { Expand } from '@/components/common/Expand'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link, LINK_COLOR_CLASSES } from '@/components/common/Link'
@@ -81,7 +82,6 @@ export const DriftResourceCard = ({
   view = 'list',
 }: IDriftResourceCard) => {
   const detailsId = useId()
-  const [detailsOpen, setDetailsOpen] = useState(false)
   const isGrid = view === 'grid'
   const openDeployment = hasOngoingDeployment(resource)
     ? resource.open_deployment
@@ -135,50 +135,39 @@ export const DriftResourceCard = ({
       level={3}
       className="break-all"
     >
-      {resource.name}
+      {nameHref ? (
+        <Link href={nameHref} variant="inline" className="!font-mono">
+          {resource.name}
+        </Link>
+      ) : (
+        resource.name
+      )}
     </Text>
   )
 
   const content = (
-    <>
+    <div className="flex flex-col gap-1">
       <div
         className={cn(
           'flex flex-col gap-2',
           !isGrid && 'sm:flex-row sm:items-start sm:justify-between sm:gap-4'
         )}
       >
-        <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            {resource.component_type ? (
-              <ComponentType
-                type={resource.component_type as TComponentType}
-                displayVariant="icon-only"
-                colorVariant="color"
-                iconSize="16"
-              />
-            ) : (
-              <Icon
-                variant={KIND_ICONS[resource.kind ?? 'component']}
-                size={16}
-              />
-            )}
-            {nameHref ? <Link href={nameHref}>{name}</Link> : name}
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className={cn(
-              LINK_COLOR_CLASSES,
-              '!h-auto !p-0 !font-normal !whitespace-normal text-left underline underline-offset-2'
-            )}
-            data-testid="drift-consequence"
-            aria-expanded={detailsOpen}
-            aria-controls={detailsId}
-            onClick={() => setDetailsOpen((open) => !open)}
-          >
-            {consequence}
-          </Button>
+        <div className="flex items-center gap-2 min-w-0">
+          {resource.component_type ? (
+            <ComponentType
+              type={resource.component_type as TComponentType}
+              displayVariant="icon-only"
+              colorVariant="color"
+              iconSize="16"
+            />
+          ) : (
+            <Icon
+              variant={KIND_ICONS[resource.kind ?? 'component']}
+              size={16}
+            />
+          )}
+          {name}
         </div>
         <div
           className={cn(
@@ -200,27 +189,36 @@ export const DriftResourceCard = ({
             </Status>
           ) : null}
           {onViewPlan ? (
-            <Button size="sm" variant="ghost" onClick={onViewPlan}>
+            <Button variant="secondary" onClick={onViewPlan}>
               <Icon variant="FileTextIcon" size={16} />
               View plan
             </Button>
           ) : null}
           {openDeployment && deploymentHref ? (
-            <Button size="sm" variant="secondary" href={deploymentHref}>
+            <Button variant="secondary" href={deploymentHref}>
               {isImage ? 'View sync' : 'View deployment'}
             </Button>
           ) : null}
         </div>
       </div>
 
-      {metadata}
-
-      {detailsOpen ? (
-        <div
-          id={detailsId}
-          className="flex flex-col gap-3 border-t pt-3"
-          data-testid="drift-details"
-        >
+      <Expand
+        id={detailsId}
+        headerClassName={cn(
+          LINK_COLOR_CLASSES,
+          '!p-1 !justify-start text-left rounded-md [&>svg]:shrink-0 focus-visible:[--tw-outline-style:solid] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-400/80'
+        )}
+        heading={
+          <Text
+            variant="subtext"
+            className="underline underline-offset-2"
+            data-testid="drift-consequence"
+          >
+            {consequence}
+          </Text>
+        }
+      >
+        <div className="flex flex-col gap-3 pt-3" data-testid="drift-details">
           <LabeledValue
             label={
               ongoingOnly ? 'Progress' : isStateDrift ? 'Detected by' : 'Why'
@@ -284,12 +282,13 @@ export const DriftResourceCard = ({
                 {branchRunHref ? (
                   <Link
                     href={branchRunHref}
-                    className="inline-flex items-center gap-2"
+                    className={cn(
+                      'inline-flex items-center gap-2',
+                      branchRun?.sha && '!font-mono'
+                    )}
                   >
                     <Icon variant="GitCommitIcon" size={14} />
-                    <Text as="span" family="mono" variant="subtext">
-                      {shortSha(branchRun?.sha) ?? 'View run'}
-                    </Text>
+                    {shortSha(branchRun?.sha) ?? 'View run'}
                   </Link>
                 ) : branchRun?.sha ? (
                   <Text as="span" family="mono" variant="subtext">
@@ -305,8 +304,8 @@ export const DriftResourceCard = ({
             </LabeledValue>
           ) : null}
         </div>
-      ) : null}
-    </>
+      </Expand>
+    </div>
   )
 
   const dataProps = {
@@ -318,10 +317,12 @@ export const DriftResourceCard = ({
   return isGrid ? (
     <Card className="!p-3 !gap-3 min-w-0 md:h-full" {...dataProps}>
       {content}
+      {metadata}
     </Card>
   ) : (
     <div className="flex flex-col gap-3 py-3 min-w-0" {...dataProps}>
       {content}
+      {metadata}
     </div>
   )
 }

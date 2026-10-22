@@ -45,6 +45,20 @@ export const InSync = () => (
   </div>
 )
 
+export const RefreshFailed = () => (
+  <div className="p-4">
+    <ResourceAlignment
+      label="sandbox"
+      resource={alignmentResource(sandbox)}
+      error={{
+        error: 'Internal Server Error',
+        description: 'Overview unavailable',
+        user_error: false,
+      }}
+    />
+  </div>
+)
+
 export const Unknown = () => (
   <div className="p-4">
     <ResourceAlignment

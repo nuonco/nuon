@@ -136,6 +136,16 @@ export const InputUpdates = () => (
   />
 )
 export const AllInSync = () => <Interactive resources={inSyncResources(4)} />
+export const RefreshFailed = () => (
+  <Interactive
+    resources={inSyncResources(4)}
+    error={{
+      error: 'Internal Server Error',
+      description: 'Overview unavailable',
+      user_error: false,
+    }}
+  />
+)
 export const SomeNotCompared = () => (
   <Interactive
     resources={[

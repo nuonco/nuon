@@ -57,13 +57,16 @@ export const OngoingDeployments = ({
           className={cn(
             view === 'grid'
               ? 'flex flex-col gap-2 md:grid md:grid-cols-2 md:items-start'
-              : 'flex flex-col divide-y'
+              : 'flex flex-col divide-y -mx-3'
           )}
           data-testid="ongoing-cards"
           data-view={view}
         >
           {resources.slice(start, start + pageSize).map((resource) => (
-            <div key={resource.id} className="min-w-0">
+            <div
+              key={resource.id}
+              className={cn('min-w-0', view === 'list' && 'px-3')}
+            >
               {renderCard(resource)}
             </div>
           ))}
@@ -76,7 +79,6 @@ export const OngoingDeployments = ({
             </Text>
             <div className="flex gap-2">
               <Button
-                size="sm"
                 disabled={currentPage === 0}
                 onClick={() => setPage(currentPage - 1)}
                 aria-label="Previous ongoing page"
@@ -85,7 +87,6 @@ export const OngoingDeployments = ({
                 Previous
               </Button>
               <Button
-                size="sm"
                 disabled={currentPage >= lastPage}
                 onClick={() => setPage(currentPage + 1)}
                 aria-label="Next ongoing page"

@@ -246,10 +246,8 @@ const InstallComponentsListBase = ({
                     />
                   ) : null}
                   {component.href ? (
-                    <Link href={component.href}>
-                      <Text family="mono" variant="subtext">
-                        {component.name}
-                      </Text>
+                    <Link href={component.href} className="!font-mono">
+                      {component.name}
                     </Link>
                   ) : (
                     <Text family="mono" variant="subtext">

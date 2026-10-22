@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { Skeleton } from '@/components/common/Skeleton'
+import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
 import type { TAPIError, TInstallAlignmentResource } from '@/types'
 import { hasOngoingDeployment, isDrifted } from '../alignment-utils'
@@ -33,40 +33,27 @@ export const ResourceAlignment = ({
             Unable to load drift for the {label}.{' '}
             {error.description || error.error}
           </Text>
-          {onRetry ? (
-            <Button size="sm" onClick={onRetry}>
-              Try again
-            </Button>
-          ) : null}
+          {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
         </div>
       </Banner>
     )
   }
   if (loading && !resource) {
     return (
-      <div data-testid="alignment-loading" aria-busy>
-        <Skeleton height="5rem" width="100%" />
+      <div
+        className="flex items-center gap-2"
+        role="status"
+        data-testid="alignment-loading"
+        aria-busy
+      >
+        <Loading />
+        <Text variant="subtext" theme="neutral">
+          Loading {label} alignment
+        </Text>
       </div>
     )
   }
   if (!resource) return null
-  if (hasOngoingDeployment(resource)) {
-    return (
-      <OngoingDeployments
-        resources={[resource]}
-        renderCard={() => card}
-        view="list"
-        pageSize={1}
-      />
-    )
-  }
-  if (isDrifted(resource)) {
-    return (
-      <section aria-label="Drifted" data-testid="drifted-section">
-        {card}
-      </section>
-    )
-  }
 
   const inSync = resource.category === 'in-sync'
   const message = inSync
@@ -76,21 +63,44 @@ export const ResourceAlignment = ({
       : `Drift could not be determined for the ${label}.`
 
   return (
-    <div
-      className="flex flex-wrap items-center gap-2"
-      data-testid="alignment-summary"
-      data-category={resource.category}
-    >
-      <Icon
-        variant={inSync ? 'CheckCircleIcon' : 'InfoIcon'}
-        size={18}
-        className={
-          inSync
-            ? 'text-green-800 dark:text-green-500'
-            : 'text-cool-grey-600 dark:text-cool-grey-500'
-        }
-      />
-      <Text variant="subtext">{message}</Text>
+    <div className="flex flex-col gap-3">
+      {hasOngoingDeployment(resource) ? (
+        <OngoingDeployments
+          resources={[resource]}
+          renderCard={() => card}
+          view="list"
+          pageSize={1}
+        />
+      ) : isDrifted(resource) ? (
+        <section aria-label="Drifted" data-testid="drifted-section">
+          {card}
+        </section>
+      ) : (
+        <div
+          className="flex flex-wrap items-center gap-2"
+          data-testid="alignment-summary"
+          data-category={resource.category}
+        >
+          <Icon
+            variant={inSync ? 'CheckCircleIcon' : 'InfoIcon'}
+            size={18}
+            className={
+              inSync
+                ? 'text-green-800 dark:text-green-500'
+                : 'text-cool-grey-600 dark:text-cool-grey-500'
+            }
+          />
+          <Text variant="subtext">{message}</Text>
+        </div>
+      )}
+      {error ? (
+        <div role="alert">
+          <Text variant="subtext" theme="error">
+            Refreshing resources failed. Showing the last loaded results.{' '}
+            {error.description || error.error}
+          </Text>
+        </div>
+      ) : null}
     </div>
   )
 }

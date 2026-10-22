@@ -1,5 +1,11 @@
 import { afterEach, expect, test } from 'bun:test'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitForElementToBeRemoved,
+} from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import {
   inputUpdateResource,
@@ -9,7 +15,7 @@ import { DriftResourceCard } from './DriftResourceCard'
 
 afterEach(cleanup)
 
-test('cancelled input changes keep details and their workflow link even when the last attempt is the evidence', () => {
+test('cancelled input changes keep details and their workflow link even when the last attempt is the evidence', async () => {
   render(
     <MemoryRouter>
       <DriftResourceCard
@@ -50,7 +56,10 @@ test('cancelled input changes keep details and their workflow link even when the
   ).toBe('/workflows/input-update?panel=deploy')
   expect(screen.getByText(/Started/)).toBeTruthy()
   fireEvent.click(details)
-  expect(screen.queryByRole('link', { name: 'View workflow' })).toBeNull()
+  expect(details.getAttribute('aria-expanded')).toBe('false')
+  await waitForElementToBeRemoved(() =>
+    screen.queryByRole('link', { name: 'View workflow' })
+  )
 })
 
 test('unattributed changes explain the missing evidence without inventing a workflow', () => {

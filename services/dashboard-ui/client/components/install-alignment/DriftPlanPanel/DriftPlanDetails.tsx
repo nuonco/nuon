@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
+import { Divider } from '@/components/common/Divider'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
@@ -49,14 +50,12 @@ export const DriftPlanDetails = ({
       className="flex flex-col gap-4 shrink-0"
       data-testid="drift-plan-details"
     >
-      <div className="flex flex-wrap gap-x-6 gap-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {sha ? (
           <LabeledValue label="Selected commit">
             {selectedCommitHref ? (
-              <Link href={selectedCommitHref}>
-                <Text as="span" family="mono" variant="subtext">
-                  {sha}
-                </Text>
+              <Link href={selectedCommitHref} className="!font-mono">
+                {sha}
               </Link>
             ) : (
               <Text as="span" family="mono" variant="subtext">
@@ -119,12 +118,12 @@ export const DriftPlanDetails = ({
         ) : null}
       </div>
 
+      <Divider dividerWord="Plan" />
       <div className="flex flex-col min-w-0 shrink-0">{plan}</div>
 
       {openDeployment && deploymentHref ? (
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <Button
-            size="lg"
             variant="primary"
             className="w-full sm:w-auto justify-center shrink-0"
             href={deploymentHref}

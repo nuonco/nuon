@@ -46,7 +46,7 @@ export const ImageConsumers = ({
           <Link
             key={consumer.component_id}
             href={componentHref(consumer.component_id)}
-            className="inline-flex items-center gap-1.5 font-mono"
+            className="inline-flex items-center gap-1.5 !font-mono"
           >
             {consumer.type ? (
               <ComponentType
