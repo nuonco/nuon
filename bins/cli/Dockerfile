@@ -164,7 +164,7 @@ RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-cli \
     CGO_ENABLED=0 golangci-lint run -c .golangci.yml -v && \
     touch /go/pkg/build-cache/.nuon-dirty
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS final
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS final
 
 ARG BIN_NAME=nuon
 ARG SERVICE=cli
