@@ -57,9 +57,9 @@ if [[ -n ${PARALLEL:-} ]]; then
 fi
 if [[ -n ${TESTWORKER_NAMESPACE:-} && $TESTWORKER_NAMESPACE != default ]]; then
   temporal operator namespace create --namespace "$TESTWORKER_NAMESPACE" \
-    --address "${TEMPORAL_HOST:-localhost:7233}" >/dev/null 2>&1 || true
+    --address "${TEMPORAL_HOST:-127.0.0.1:7233}" >/dev/null 2>&1 || true
   until temporal operator namespace describe --namespace "$TESTWORKER_NAMESPACE" \
-    --address "${TEMPORAL_HOST:-localhost:7233}" >/dev/null 2>&1; do
+    --address "${TEMPORAL_HOST:-127.0.0.1:7233}" >/dev/null 2>&1; do
     sleep 0.5
   done
 fi

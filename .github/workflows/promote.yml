@@ -10,6 +10,10 @@ on:
         description: 'Branch to promote from'
         required: true
         default: 'main'
+      skip_integration:
+        description: 'Skip ctl-api integration'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -84,7 +88,8 @@ jobs:
           sibling_repo: nuonco/mono
           token: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-  # Prod promotion only ships commits that passed ctl-api integration; waits for the run if it is still going.
+  # Prod promotion waits for ctl-api integration unless this dispatch skips it, or the commit's
+  # pull request has the skip-integration label.
   integration_gate:
     name: ctl-api integration gate
     needs:
@@ -96,6 +101,7 @@ jobs:
     permissions:
       contents: read
       actions: write
+      pull-requests: read
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -108,6 +114,7 @@ jobs:
           sha: ${{ needs.tag.outputs.sha }}
           ref: ${{ inputs.branch || github.ref_name }}
           token: ${{ github.token }}
+          skip: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_integration == true }}
 
   start_slack_notifications:
     name: update promotions channel

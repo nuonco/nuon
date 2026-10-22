@@ -655,6 +655,87 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 	return nil
 }
 
+func (s *Service) WorkflowStepContents(ctx context.Context, workflowID, stepID string, asJSON bool) error {
+	view := ui.NewListView()
+	raw, err := s.loadStepApprovalContents(ctx, workflowID, stepID)
+	if err != nil {
+		return view.Error(err)
+	}
+	if asJSON {
+		ui.PrintJSON(raw)
+		return nil
+	}
+	return printPrettyJSON(raw)
+}
+
+func (s *Service) WorkflowStepDiff(ctx context.Context, workflowID, stepID string, asJSON bool) error {
+	view := ui.NewListView()
+	raw, err := s.loadStepApprovalContents(ctx, workflowID, stepID)
+	if err != nil {
+		return view.Error(err)
+	}
+
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return view.Error(err)
+	}
+	parsed, err := plandiff.ParsePlan(string(encoded))
+	if err != nil {
+		return view.Error(fmt.Errorf("%w; use `nuon installs workflows steps contents` to view the raw approval contents", err))
+	}
+	if asJSON {
+		ui.PrintJSON(parsed)
+		return nil
+	}
+
+	formatted, err := plandiff.FormatParsedPlan(parsed)
+	if err != nil {
+		return view.Error(err)
+	}
+	ui.Println(formatted)
+	return nil
+}
+
+func (s *Service) loadStepApprovalContents(ctx context.Context, workflowID, stepID string) (any, error) {
+	if stepID == "" {
+		var err error
+		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
+	if err != nil {
+		return nil, err
+	}
+	if step.Approval == nil || step.Approval.ID == "" {
+		return nil, fmt.Errorf("step %s has no approval contents", stepID)
+	}
+
+	resolvedStepID := step.ID
+	if resolvedStepID == "" {
+		resolvedStepID = stepID
+	}
+	raw, err := s.api.GetWorkflowStepApprovalContents(ctx, workflowID, resolvedStepID, step.Approval.ID)
+	if err != nil {
+		return nil, err
+	}
+	if raw == nil {
+		return nil, fmt.Errorf("step %s has no approval contents", stepID)
+	}
+	return raw, nil
+}
+
+func printPrettyJSON(v any) error {
+	encoded, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err
+	}
+	ui.Println(string(encoded))
+	return nil
+}
+
 // displayPolicyViolationsIfPresent checks step metadata for policy violations and displays them.
 func displayPolicyViolationsIfPresent(step *models.AppWorkflowStep, policyNames map[string]string) {
 	if step.Status == nil || step.Status.Metadata == nil {
