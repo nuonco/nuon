@@ -18,8 +18,6 @@ replace (
 	github.com/nuonco/nuon/sdks/nuon-runner-go => ./sdks/nuon-runner-go
 )
 
-replace github.com/pelletier/go-toml/v2 v2.2.4 => github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7
-
 require (
 	charm.land/bubbles/v2 v2.0.0
 	charm.land/bubbletea/v2 v2.0.0
@@ -717,3 +715,5 @@ replace (
 )
 
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
+
+replace github.com/pelletier/go-toml/v2 => github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7
