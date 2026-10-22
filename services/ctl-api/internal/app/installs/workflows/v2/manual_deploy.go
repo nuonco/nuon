@@ -31,15 +31,20 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, err
 	}
 
-	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
+	keepHealthGate := sg.keepRunnerHealthGate(ctx)
+	if keepHealthGate {
+		sg.nextGroupEager()
+		step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	} else {
+		sg.deferGroupEager()
 	}
-	steps = append(steps, step)
 
 	installDeployID, ok := flw.Metadata["install_deploy_id"]
 	if !ok {
@@ -108,12 +113,14 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		}
 	}
 
-	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePreDeployComponent)
-	if err != nil {
-		return nil, err
-	}
-	if !flw.PlanOnly {
-		steps = append(steps, preDeploySteps...)
+	if !flw.PlanOnly || keepHealthGate {
+		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePreDeployComponent)
+		if err != nil {
+			return nil, err
+		}
+		if !flw.PlanOnly {
+			steps = append(steps, preDeploySteps...)
+		}
 	}
 
 	// sync image

@@ -40,16 +40,17 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 
 	dg := newGenCtx(sg, flw, installID, appCfg, awData)
 
-	sg.nextGroupEager()
-
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
+	if sg.keepRunnerHealthGate(ctx) {
+		sg.nextGroupEager()
+		step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreDeprovisionSandbox)
 	if err != nil {
@@ -64,7 +65,7 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 
 	sg.nextGroup() // deprovision sandbox plan + apply
 
-	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox plan", pgtype.Hstore{}, &deprovisionsandboxplan.Signal{
+	step, err := sg.installSignalStep(ctx, installID, "deprovision sandbox plan", pgtype.Hstore{}, &deprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,
 		InstallID:        installID,
 		Role:             flw.Role,

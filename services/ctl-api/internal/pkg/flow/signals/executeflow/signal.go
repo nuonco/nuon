@@ -357,6 +357,14 @@ func liveHostValidator[T any](s *Signal) func(workflow.Context, T) error {
 }
 
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "runner-job-completed", s.runnerJobCompleted, workflow.UpdateHandlerOptions{Validator: func(workflow.Context, RunnerJobCompletedRequest) error {
+		if s.executeStarted || s.hostFinished {
+			return errors.New(HostFinishedRejection)
+		}
+		return nil
+	}}); err != nil {
+		return err
+	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "retry-step",
 		s.retryStepHandler, workflow.UpdateHandlerOptions{Validator: liveHostValidator[RetryStepRequest](s)}); err != nil {
 		return err

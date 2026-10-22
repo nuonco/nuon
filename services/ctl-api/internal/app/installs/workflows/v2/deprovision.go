@@ -30,15 +30,17 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 
-	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
+	if sg.keepRunnerHealthGate(ctx) {
+		sg.nextGroupEager()
+		step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
@@ -71,6 +73,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 
+	var step *app.WorkflowStep
 	if sandboxNeedsDeprovision(sandbox.Status) {
 		sg.nextGroup() // deprovision dns delegation before the sandbox (and its zone) is destroyed
 		step, err = sg.installSignalStep(ctx, installID, "deprovision dns delegation", pgtype.Hstore{}, &deprovisiondns.Signal{

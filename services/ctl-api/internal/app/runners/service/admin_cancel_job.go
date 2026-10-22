@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -34,7 +33,7 @@ func (s *service) AdminCancelRunnerJob(ctx *gin.Context) {
 		return
 	}
 
-	if _, err := s.cancelRunnerJob(ctx, runnerJobID, joberrors.CancellationReasonAPI); err != nil {
+	if _, err := s.cancelRunnerJob(ctx, runnerJobID); err != nil {
 		ctx.Error(fmt.Errorf("unable to cancel job: %w", err))
 		return
 	}

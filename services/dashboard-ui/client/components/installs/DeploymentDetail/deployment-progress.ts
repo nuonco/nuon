@@ -75,6 +75,7 @@ export const ACTIVE_DEPLOYMENT_STATUSES = new Set([
   'approved',
   'approval-awaiting',
   'failed-pending-retry',
+  'waiting-for-runner',
 ])
 
 export type TActiveDeploymentFilter =
@@ -142,6 +143,7 @@ export const isDeploymentRunning = (status: string) =>
     'approved',
     'approval-awaiting',
     'awaiting-approval',
+    'waiting-for-runner',
   ].includes(status)
 
 export const recoveredDeploymentResources = (
@@ -303,6 +305,7 @@ export const isAwaitingDeploymentApproval = (step: TDeploymentStep) =>
 
 const ACTIVE_STEP_DETAILS: Record<string, string> = {
   queued: 'queued',
+  'waiting-for-runner': 'waiting for runner',
   'checking-plan': 'checking plan',
   'approval-retry': 're-planning',
 }
@@ -409,7 +412,10 @@ const outcomeForSteps = (
     return {
       category,
       name,
-      status: 'in-progress',
+      status:
+        current.status?.status === 'waiting-for-runner'
+          ? 'waiting-for-runner'
+          : 'in-progress',
       detail:
         current.status?.status === 'approval-awaiting'
           ? 'Plan approved; continuing'

@@ -55,6 +55,7 @@ export const WORKFLOW_BADGE_MAP: Record<
   'approval-awaiting': { children: 'Awaiting approval', theme: 'warn' },
   'approval-denied': { children: 'Plan denied', theme: 'neutral' },
   'approval-retry': { children: 'Plan retried', theme: 'info' },
+  'waiting-for-runner': { children: 'Waiting for runner', theme: 'neutral' },
   error: { children: 'Failed', theme: 'error' },
   'failed-pending-retry': {
     children: 'Failed — awaiting retry',
@@ -369,6 +370,14 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
 
   const { status, status_human_description } = step.status
   const email = step?.created_by?.email
+
+  if (status === 'waiting-for-runner') {
+    return {
+      copy: 'The job is queued until the runner picks it up. There is no pickup deadline. The execution timeout starts at pickup, and logs appear here as the runner produces them.',
+      theme: 'neutral',
+      title: 'Waiting for runner',
+    }
+  }
 
   if (status === 'failed-pending-retry') {
     const hints: string[] = []

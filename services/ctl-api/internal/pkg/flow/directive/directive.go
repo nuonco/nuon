@@ -41,7 +41,8 @@ const (
 
 	// StepAwaitRetry means auto-retries are exhausted but manual retries remain.
 	// Execute() blocks internally until the user retries or skips.
-	StepAwaitRetry Step = "await-retry"
+	StepAwaitRetry  Step = "await-retry"
+	StepAwaitRunner Step = "await-runner"
 )
 
 // IsTerminal returns true if the directive represents a completed step that the
@@ -109,7 +110,8 @@ const (
 	GroupAwaitApproval Group = "await-approval"
 
 	// GroupAwaitRetry means the group is awaiting a manual retry or skip.
-	GroupAwaitRetry Group = "await-retry"
+	GroupAwaitRetry  Group = "await-retry"
+	GroupAwaitRunner Group = "await-runner"
 )
 
 // MetadataKey is the key used to store the directive in status metadata.

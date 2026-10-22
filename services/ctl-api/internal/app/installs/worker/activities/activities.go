@@ -22,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/registryauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -55,6 +56,7 @@ type Params struct {
 	SecretsService          secretsmanager.Service
 	StatusActivities        *statusactivities.Activities
 	MeterProvider           metric.MeterProvider `optional:"true"`
+	RegistryAuth            *registryauth.Issuer
 }
 
 type Activities struct {
@@ -83,6 +85,7 @@ type Activities struct {
 	statusActivities        *statusactivities.Activities
 	stateMetrics            *state.Metrics
 	healthMetrics           *componentHealthEvaluationMetrics
+	registryAuth            *registryauth.Issuer
 }
 
 func New(params Params) *Activities {
@@ -112,5 +115,6 @@ func New(params Params) *Activities {
 		statusActivities:        params.StatusActivities,
 		stateMetrics:            state.NewMetrics(params.MeterProvider),
 		healthMetrics:           newComponentHealthEvaluationMetrics(params.MeterProvider),
+		registryAuth:            params.RegistryAuth,
 	}
 }

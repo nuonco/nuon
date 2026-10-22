@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-github/v50/github"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -74,20 +73,15 @@ func (h *Helpers) ResolvePublicRepoCloneToken(ctx context.Context, l *zap.Logger
 }
 
 func (h *Helpers) findOrgVCSConnectionForOwner(ctx context.Context, orgID, repoOwner string) (*app.VCSConnection, bool, error) {
-	var vcsConn app.VCSConnection
+	var connections []app.VCSConnection
 	err := h.db.WithContext(ctx).
-		Where(app.VCSConnection{
-			OrgID:             orgID,
-			GithubAccountName: repoOwner,
-		}).
-		First(&vcsConn).Error
-	if err == gorm.ErrRecordNotFound {
-		return nil, false, nil
-	}
+		Where(app.VCSConnection{OrgID: orgID}).
+		Find(&connections).Error
 	if err != nil {
 		return nil, false, fmt.Errorf("unable to look up VCS connection for %s: %w", repoOwner, err)
 	}
-	return &vcsConn, true, nil
+	conn := connectionForRepoOwner(repoOwner, connections)
+	return conn, conn != nil, nil
 }
 
 func (h *Helpers) createFullInstallationToken(ctx context.Context, vcsConn *app.VCSConnection) (string, error) {

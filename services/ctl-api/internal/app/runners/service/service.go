@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
@@ -28,6 +29,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/registryauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 )
 
@@ -54,6 +56,8 @@ type Params struct {
 	BlobSvc              blobstore.Service
 	EmitterClient        *emitterclient.Client
 	QueueClient          *queueclient.Client
+	RegistryAuth         *registryauth.Issuer
+	VCSHelpers           *vcshelpers.Helpers
 }
 
 type service struct {
@@ -79,6 +83,8 @@ type service struct {
 	blobSvc                blobstore.Service
 	emitterClient          *emitterclient.Client
 	queueClient            *queueclient.Client
+	registryAuth           *registryauth.Issuer
+	vcsHelpers             *vcshelpers.Helpers
 	telemetryTokenIssuer   *telemetrytoken.Issuer
 	telemetryRelayEndpoint string
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
@@ -433,6 +439,8 @@ func New(params Params) (*service, error) {
 		blobSvc:                params.BlobSvc,
 		emitterClient:          params.EmitterClient,
 		queueClient:            params.QueueClient,
+		registryAuth:           params.RegistryAuth,
+		vcsHelpers:             params.VCSHelpers,
 		telemetryTokenIssuer:   telemetryTokenIssuer,
 		telemetryRelayEndpoint: telemetryRelayEndpoint,
 		logStreamCache:         expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),

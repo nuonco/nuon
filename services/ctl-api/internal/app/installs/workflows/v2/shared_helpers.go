@@ -771,16 +771,17 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy boo
 	// caller that also ends in a runner-health step makes the two
 	// indistinguishable downstream, where a step's identity is its group + name.
 	if gateRunnerHealthy {
-		dg.sg.nextGroup()
-
-		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-			InstallID: dg.installID,
-			Mode:      awaitrunnerhealthy.ModeRequireActive,
-		}, dg.flw.PlanOnly)
-		if err != nil {
-			return nil, err
+		if dg.sg.keepRunnerHealthGate(ctx) {
+			dg.sg.nextGroup()
+			step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+				InstallID: dg.installID,
+				Mode:      awaitrunnerhealthy.ModeRequireActive,
+			}, dg.flw.PlanOnly)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, step)
 		}
-		steps = append(steps, step)
 	}
 
 	var lifecycleSteps []*app.WorkflowStep

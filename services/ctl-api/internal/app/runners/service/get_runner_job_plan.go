@@ -67,7 +67,14 @@ func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (str
 		return "", fmt.Errorf("unable to get job plan: %w", res.Error)
 	}
 
-	return runnerPlan.PlanJSON, nil
+	var runnerJob app.RunnerJob
+	if err := s.db.WithContext(ctx).Where(app.RunnerJob{
+		ID: runnerJobID,
+	}).First(&runnerJob).Error; err != nil {
+		return "", fmt.Errorf("unable to get job: %w", err)
+	}
+
+	return s.refreshDemandPlanJSON(ctx, &runnerPlan, &runnerJob)
 }
 
 func (s *service) getOrgRunnerJobPlan(ctx context.Context, runnerJobID string, orgID string) (string, error) {
@@ -80,7 +87,15 @@ func (s *service) getOrgRunnerJobPlan(ctx context.Context, runnerJobID string, o
 		return "", fmt.Errorf("unable to get job plan: %w", res.Error)
 	}
 
-	return runnerPlan.PlanJSON, nil
+	var runnerJob app.RunnerJob
+	if err := s.db.WithContext(ctx).Where(app.RunnerJob{
+		ID:    runnerJobID,
+		OrgID: orgID,
+	}).First(&runnerJob).Error; err != nil {
+		return "", fmt.Errorf("unable to get job: %w", err)
+	}
+
+	return s.refreshDemandPlanJSON(ctx, &runnerPlan, &runnerJob)
 }
 
 // @ID						GetRunnerJobPlanV2

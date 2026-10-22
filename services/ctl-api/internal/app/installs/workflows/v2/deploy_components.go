@@ -24,17 +24,17 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)
 
-	// Eager group — returned early so execution can start immediately.
-	sg.nextGroupEager()
-
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
+	if sg.keepRunnerHealthGate(ctx) {
+		sg.nextGroupEager()
+		step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	// Remaining groups — fetch dependencies needed for component deploys.
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)

@@ -15,10 +15,26 @@ type CreateOCIArtifactRequest struct {
 	OwnerID   string `validate:"required"`
 
 	Outputs state.OCIArtifactOutputs `validate:"required"`
+
+	ReuseExisting bool
 }
 
 // @temporal-gen-v2 activity
 func (a *Activities) CreateOCIArtifact(ctx context.Context, req CreateOCIArtifactRequest) (*app.OCIArtifact, error) {
+	if req.ReuseExisting {
+		var existing app.OCIArtifact
+		res := a.db.WithContext(ctx).
+			Where(app.OCIArtifact{OwnerID: req.OwnerID, OwnerType: req.OwnerType}).
+			Limit(1).
+			Find(&existing)
+		if res.Error != nil {
+			return nil, errors.Wrap(res.Error, "unable to get existing oci artifact")
+		}
+		if res.RowsAffected > 0 {
+			return &existing, nil
+		}
+	}
+
 	ociArt := app.OCIArtifact{
 		OwnerType: req.OwnerType,
 		OwnerID:   req.OwnerID,

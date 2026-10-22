@@ -26,7 +26,7 @@ func cleanupStaleWorkflows(tc temporalclient.Client, l *zap.Logger) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	if err := registerTestNamespace(ctx, tc); err != nil {
+	if err := registerTestNamespace(ctx, tc, defaultNamespace); err != nil {
 		l.Warn("stale workflow cleanup: unable to register namespace", zap.Error(err))
 		return
 	}

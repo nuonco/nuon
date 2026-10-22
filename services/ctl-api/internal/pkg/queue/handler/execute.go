@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/continuation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -44,6 +45,8 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 		case finStatus == app.StatusCancelled:
 			status = "cancelled"
 			desc = finDesc
+		case finStatus == app.StatusWaitingForRunner:
+			status = string(finStatus)
 		case retErr != nil:
 			status = "error"
 			desc = retErr.Error()
@@ -110,6 +113,18 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 
 	err = h.runSignalExecute(execCtx)
 	dur := workflow.Now(ctx).Sub(start)
+
+	if callback.IsSuspended(err) && !h.canceled {
+		if stampErr := statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID: h.queueSignalID,
+			Status:        app.StatusWaitingForRunner,
+			Metadata:      map[string]any{"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339)},
+		}); stampErr != nil {
+			return nil, stampErr
+		}
+		finStatus = app.StatusWaitingForRunner
+		return nil, nil
+	}
 
 	// run after-phase hooks (best-effort)
 	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
@@ -184,6 +199,9 @@ func (h *handler) signalContext(ctx workflow.Context, refreshLogStream bool) (wo
 	signalCtx := h.queueSignal.SignalContext
 	ctx = queuecctx.ApplyWorkflow(ctx, signalCtx)
 	ctx = cctx.SetQueueIDWorkflowContext(ctx, h.queueID)
+	if h.queueSignal.RunnerDemand {
+		ctx = continuation.WithScope(ctx, h.queueSignalID)
+	}
 	if lc, ok := h.sig.(signal.SignalWithLifecycleContext); ok {
 		lifecycleCtx := lc.LifecycleContext()
 		telemetry := cctx.WorkflowTelemetry{

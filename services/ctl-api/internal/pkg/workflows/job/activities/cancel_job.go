@@ -7,7 +7,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/demand"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type CancelJobRequest struct {
@@ -17,6 +19,14 @@ type CancelJobRequest struct {
 // @temporal-gen-v2 activity
 // @by-field ID
 func (a *Activities) PkgWorkflowsJobCancelJob(ctx context.Context, req *CancelJobRequest) error {
+	var loaded app.RunnerJob
+	if err := a.db.WithContext(ctx).Scopes(scopes.WithDisableViews).Where(app.RunnerJob{ID: req.ID}).First(&loaded).Error; err != nil {
+		return err
+	}
+	if demand.SignalID(&loaded) != "" {
+		_, err := a.queueClient.CancelDemandRunnerJob(ctx, req.ID, nil)
+		return err
+	}
 	runnerJob := app.RunnerJob{
 		ID: req.ID,
 	}

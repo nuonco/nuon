@@ -2,6 +2,7 @@ package executeflow
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -26,6 +27,13 @@ func (s *Signal) cancelWorkflowHandler(ctx workflow.Context) (*CancelWorkflowRes
 	defer s.beginUpdate()()
 
 	s.cancelRequested = true
+
+	if s.Resident && workflow.GetVersion(ctx, "runner-demand-cancellation-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		actCtx := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
+		if err := workflow.ExecuteActivity(actCtx, (*workflowactivities.Activities).CancelRunnerDemandWorkflow, s.WorkflowID).Get(ctx, nil); err != nil {
+			return nil, err
+		}
+	}
 
 	if s.Resident {
 		steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{

@@ -26,6 +26,11 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 		if err != nil {
 			return err
 		}
+		for _, step := range steps {
+			if step.ResultDirective == string(directive.StepAwaitRunner) {
+				return s.writeStepGroupDirective(ctx, directive.GroupAwaitRunner)
+			}
+		}
 
 		step, found := s.nextExecutableStep(steps)
 		if !found {
@@ -81,6 +86,8 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 
 		case actionAwaitRetry:
 			return s.writeStepGroupDirective(ctx, directive.GroupAwaitRetry)
+		case actionAwaitRunner:
+			return s.writeStepGroupDirective(ctx, directive.GroupAwaitRunner)
 		}
 	}
 }

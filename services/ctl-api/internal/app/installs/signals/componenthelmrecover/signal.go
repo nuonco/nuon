@@ -73,6 +73,13 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	defer cancel()
 	if s.runnerJobID != "" {
 		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+		return nil
+	}
+	if jobID := activeCheckpointJobID(cancelCtx); jobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, jobID)
+		if s.InstallDeployID != "" {
+			s.updateDeployStatus(cancelCtx, s.InstallDeployID, app.InstallDeployStatusCancelled, "recovery cancelled")
+		}
 	}
 	return nil
 }
@@ -127,12 +134,29 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// The endpoint's deploy row has no log stream, and runner_jobs.log_stream_id
 	// is a foreign key. Also mints the service account the runner writes with.
-	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-		DeployID: installDeploy.ID,
-		StepID:   s.InstallWorkflowStepID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to create log stream for the recovery")
+	var lsCheckpoint logStreamCheckpoint
+	if _, err := job.LoadCheckpoint(ctx, checkpointLogStream, &lsCheckpoint); err != nil {
+		return errors.Wrap(err, "unable to load log stream checkpoint")
+	}
+
+	var logStream *app.LogStream
+	if lsCheckpoint.LogStreamID != "" {
+		logStream, err = activities.AwaitGetLogStreamByLogStreamID(ctx, lsCheckpoint.LogStreamID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get log stream for the recovery")
+		}
+	} else {
+		logStream, err = activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+			DeployID: installDeploy.ID,
+			StepID:   s.InstallWorkflowStepID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create log stream for the recovery")
+		}
+		lsCheckpoint.LogStreamID = logStream.ID
+		if err := job.SaveCheckpoint(ctx, checkpointLogStream, lsCheckpoint); err != nil {
+			return errors.Wrap(err, "unable to checkpoint log stream")
+		}
 	}
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
@@ -145,11 +169,37 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}()
 
+	if job.DemandEnabled(ctx) {
+		return (job.Sequence{
+			Phases: []job.Phase{{
+				Key: checkpointRecover,
+				Prepare: func(ctx workflow.Context) (string, error) {
+					return s.prepareRecoverPhase(ctx, install, installDeploy, logStream.ID)
+				},
+				Finalize: func(ctx workflow.Context, _ string) error {
+					s.finishRecover(ctx, installDeploy)
+					return nil
+				},
+			}},
+			Finish: func(ctx workflow.Context, err error) error {
+				if err != nil {
+					s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to recover helm release")
+				}
+				activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+				return errors.Wrap(err, "unable to recover helm release")
+			},
+		}).Run(ctx)
+	}
+
 	if err := s.execRecover(ctx, install, installDeploy); err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to recover helm release")
 		return errors.Wrap(err, "unable to recover helm release")
 	}
+	s.finishRecover(ctx, installDeploy)
+	return nil
+}
 
+func (s *Signal) finishRecover(ctx workflow.Context, installDeploy *app.InstallDeploy) {
 	_ = activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
 		DeployID: installDeploy.ID,
 	})
@@ -157,8 +207,34 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Not inactive: the dashboard reads the newest deploy of any type as the
 	// component's state and treats inactive as torn down.
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "helm release recovered")
+}
 
-	return nil
+func (s *Signal) prepareRecoverPhase(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, logStreamID string) (string, error) {
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "preparing helm release recovery")
+	build, err := getHelmBuild(ctx, installDeploy)
+	if err != nil {
+		return "", err
+	}
+	jobID, err := s.prepareRecoverJob(ctx, install, installDeploy, build, logStreamID)
+	if err != nil {
+		return "", err
+	}
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "recovering helm release")
+	return jobID, nil
+}
+
+func getHelmBuild(ctx workflow.Context, installDeploy *app.InstallDeploy) (*app.ComponentBuild, error) {
+	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get build: %w", err)
+	}
+
+	// Re-checked here: the endpoint's check can go stale before the step runs.
+	if build.ComponentConfigConnection.Type != app.ComponentTypeHelmChart {
+		return nil, fmt.Errorf("component %s is a %s component, not a helm chart",
+			build.ComponentConfigConnection.Component.Name, build.ComponentConfigConnection.Type)
+	}
+	return build, nil
 }
 
 func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) error {
@@ -169,15 +245,9 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "preparing helm release recovery")
 
-	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	build, err := getHelmBuild(ctx, installDeploy)
 	if err != nil {
-		return fmt.Errorf("unable to get build: %w", err)
-	}
-
-	// Re-checked here: the endpoint's check can go stale before the step runs.
-	if build.ComponentConfigConnection.Type != app.ComponentTypeHelmChart {
-		return fmt.Errorf("component %s is a %s component, not a helm chart",
-			build.ComponentConfigConnection.Component.Name, build.ComponentConfigConnection.Type)
+		return err
 	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
@@ -188,6 +258,26 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
 	}()
 
+	jobID, err := s.prepareRecoverJob(ctx, install, installDeploy, build, logStreamID)
+	if err != nil {
+		return err
+	}
+
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "recovering helm release")
+	if _, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID: install.RunnerID,
+		JobID:    jobID,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, jobID),
+	}); err != nil {
+		l.Error("helm release recovery job did not succeed", zap.Error(err))
+		return fmt.Errorf("%s", job.JobErrorMessage(err, "helm release recovery job failed"))
+	}
+
+	return nil
+}
+
+func (s *Signal) prepareRecoverJob(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, build *app.ComponentBuild, logStreamID string) (string, error) {
 	op := app.RunnerJobOperationTypeApplyPlan
 	jobTyp := app.RunnerJobTypeHelmChartDeploy
 
@@ -209,7 +299,7 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("unable to create runner job: %w", err)
+		return "", fmt.Errorf("unable to create runner job: %w", err)
 	}
 	s.runnerJobID = runnerJob.ID
 
@@ -235,11 +325,11 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 				Detail:          deployerrors.PlanRenderDetail(err),
 			})
 		}
-		return errors.Wrap(err, "unable to create deploy plan")
+		return "", errors.Wrap(err, "unable to create deploy plan")
 	}
 
 	if deployPlan.Plan == nil || deployPlan.Plan.HelmDeployPlan == nil {
-		return errors.New("deploy plan has no helm section, so there is no release to recover")
+		return "", errors.New("deploy plan has no helm section, so there is no release to recover")
 	}
 
 	// Stamped here rather than threaded through the builder: this is its only caller.
@@ -252,7 +342,7 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 
 	planJSON, err := json.Marshal(deployPlan.Plan)
 	if err != nil {
-		return errors.Wrap(err, "unable to create json from plan")
+		return "", errors.Wrap(err, "unable to create json from plan")
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
@@ -262,7 +352,7 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 			DeployPlan: deployPlan.Plan,
 		},
 	}); err != nil {
-		return fmt.Errorf("unable to store runner job plan: %w", err)
+		return "", fmt.Errorf("unable to store runner job plan: %w", err)
 	}
 
 	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
@@ -270,23 +360,10 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 		RunnerJobID:   runnerJob.ID,
 		RoleSelection: deployPlan.RoleSelection,
 	}); err != nil {
-		return fmt.Errorf("unable to record install role usage: %w", err)
+		return "", fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
-	planJSON = nil
-
-	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "recovering helm release")
-	if _, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID: install.RunnerID,
-		JobID:    runnerJob.ID,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
-	}); err != nil {
-		l.Error("helm release recovery job did not succeed", zap.Error(err))
-		return fmt.Errorf("%s", job.JobErrorMessage(err, "helm release recovery job failed"))
-	}
-
-	return nil
+	return runnerJob.ID, nil
 }
 
 func (s *Signal) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {

@@ -42,16 +42,17 @@ func RecoverHelmRelease(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 		return nil, err
 	}
 
-	sg.nextGroupEager()
-
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
+	if sg.keepRunnerHealthGate(ctx) {
+		sg.nextGroupEager()
+		step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	compIDStr := generics.FromPtrStr(componentID)
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, compIDStr)

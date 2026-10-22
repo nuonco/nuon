@@ -113,12 +113,12 @@ jobs:
           go-version-file: nuon/go.mod
           cache-dependency-path: nuon/go.sum
 
-      - name: Bring up dependencies (postgres / temporal / clickhouse)
+      - name: Bring up dependencies (postgres / temporal / clickhouse / seaweedfs)
         working-directory: mono
         run: |
           nohup sh -c '
             docker compose down -v --remove-orphans || true
-            CHVER=25.6.2.5 docker compose up -d --build postgres temporal temporal-init clickhouse
+            CHVER=25.6.2.5 docker compose up -d --build postgres temporal temporal-init clickhouse seaweedfs
             echo $? > /tmp/deps-up.exit
           ' > /tmp/deps-up.log 2>&1 &
 
@@ -150,6 +150,9 @@ jobs:
           path: /tmp/schema-dump
           key: pg-schema-${{ runner.os }}-${{ hashFiles('nuon/services/ctl-api/internal/pkg/db/psql/**', 'nuon/services/ctl-api/internal/app/**/*.go', 'nuon/services/ctl-api/tests/testdb.go') }}
 
+      - name: Create runner test blob bucket
+        run: curl --fail --retry 30 --retry-all-errors --retry-delay 2 --request PUT http://127.0.0.1:8333/runner-demand-test
+
       # build-run pods are single-tenant on m6id.2xlarge (~7.75 allocatable vCPU), so -parallel=8
       # with DB_MAX_CONNECTIONS=32 (pgx pool for 8 concurrent flow cases) matches the node.
       - name: Run flow lane
@@ -159,11 +162,17 @@ jobs:
           DB_MAX_CONNECTIONS: "32"
           NUON_FLOW_PHASE_LEDGER: "1"
           NUONTEST_PG_SCHEMA_DIR: /tmp/schema-dump
+          AWS_ENDPOINT_URL_S3: http://127.0.0.1:8333
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_EC2_METADATA_DISABLED: "true"
+          BLOB_STORAGE_BUCKET: runner-demand-test
+          BLOB_STORAGE_REGION: us-east-1
         run: |
           source tests/integration.env
-          go run ./cmd/nuontest -v -timeout=30m -count=1 -parallel=8 \
+          go run ./cmd/nuontest -v -timeout=30m -count=1 -parallel=8 -p=1 \
             -skip 'TestSuite/TestPin' \
-            ./internal/pkg/flow/testworker/
+            ./internal/pkg/flow/testworker/ ./internal/integration/runnerdemand/
 
       - name: Dump deps state on failure
         if: failure()

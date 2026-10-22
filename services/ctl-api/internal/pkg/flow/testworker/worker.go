@@ -47,10 +47,16 @@ type WorkerParams struct {
 	L              *zap.Logger
 	Lc             fx.Lifecycle
 	Interceptors   []interceptor.WorkerInterceptor `group:"interceptors"`
+	Activities     []any                           `group:"testworker-activities"`
+	Namespace      string                          `name:"testworker-namespace" optional:"true"`
 }
 
 func New(params WorkerParams) (*Worker, error) {
-	client, err := params.Tclient.GetNamespaceClient(defaultNamespace)
+	namespace := params.Namespace
+	if namespace == "" {
+		namespace = defaultNamespace
+	}
+	client, err := params.Tclient.GetNamespaceClient(namespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
@@ -67,6 +73,9 @@ func New(params WorkerParams) (*Worker, error) {
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
+	for _, acts := range params.Activities {
+		wkr.RegisterActivity(acts)
+	}
 
 	// Register workflows
 	for _, wkflow := range params.QueueWkflows.All() {
@@ -79,7 +88,7 @@ func New(params WorkerParams) (*Worker, error) {
 	params.Lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			params.L.Info("starting flow test worker")
-			if err := registerTestNamespace(ctx, params.Tclient); err != nil {
+			if err := registerTestNamespace(ctx, params.Tclient, namespace); err != nil {
 				return err
 			}
 			return wkr.Start()
@@ -93,9 +102,9 @@ func New(params WorkerParams) (*Worker, error) {
 	return &Worker{wkr}, nil
 }
 
-func registerTestNamespace(ctx context.Context, client temporalclient.Client) error {
+func registerTestNamespace(ctx context.Context, client temporalclient.Client, namespace string) error {
 	_, err := client.WorkflowService().RegisterNamespace(ctx, &workflowservice.RegisterNamespaceRequest{
-		Namespace:                        defaultNamespace,
+		Namespace:                        namespace,
 		WorkflowExecutionRetentionPeriod: durationpb.New(24 * time.Hour),
 	})
 	if err != nil {
@@ -107,7 +116,7 @@ func registerTestNamespace(ctx context.Context, client temporalclient.Client) er
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 	for {
-		_, err = client.WorkflowService().DescribeNamespace(ctx, &workflowservice.DescribeNamespaceRequest{Namespace: defaultNamespace})
+		_, err = client.WorkflowService().DescribeNamespace(ctx, &workflowservice.DescribeNamespaceRequest{Namespace: namespace})
 		if err == nil {
 			return nil
 		}

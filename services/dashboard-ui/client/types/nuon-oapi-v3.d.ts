@@ -6862,7 +6862,7 @@ export interface components {
     /** @enum {string} */
     "app.StackVersionRunType": "workflow-run" | "out-of-band-update";
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "disabled" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "disabled" | "waiting-for-runner" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     /** @enum {string} */
     "app.StepChangeState": "" | "ok" | "unsupported" | "error";
     "app.TerraformLock": {
@@ -7196,6 +7196,7 @@ export interface components {
       retried?: boolean;
       retry_index?: number;
       retryable?: boolean;
+      runner_job_id?: string;
       /**
        * @description SkipOnFailure lets the workflow continue past this step after its retry
        * budget is exhausted. Skippable only gates user-initiated skips.

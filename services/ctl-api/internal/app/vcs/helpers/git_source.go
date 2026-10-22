@@ -3,7 +3,9 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/google/go-github/v50/github"
 	"github.com/pkg/errors"
@@ -55,6 +57,37 @@ func (h *Helpers) GetGitSourceAtCommit(ctx context.Context, cfg *app.ConnectedGi
 // Uses an org VCS connection token when available; otherwise falls back to a plain HTTPS URL.
 func (h *Helpers) GetPublicGitSourceAtCommit(ctx context.Context, cfg *app.PublicGitVCSConfig, commitSHA string) (*plantypes.GitSource, error) {
 	return h.publicGitSource(ctx, cfg, commitSHA)
+}
+
+func (h *Helpers) RefreshGitSource(ctx context.Context, orgID string, source *plantypes.GitSource) error {
+	if source == nil || !strings.HasPrefix(source.URL, "https://") {
+		return nil
+	}
+	u, err := url.Parse(source.URL)
+	if err != nil {
+		return errors.New("unable to parse git source URL")
+	}
+	if u.Host != "github.com" || u.User == nil {
+		return nil
+	}
+	owner, repo, err := githubpkg.ParseRepo(strings.TrimSuffix(strings.Trim(u.Path, "/"), ".git"))
+	if err != nil {
+		return errors.Wrap(err, "unable to parse git source repository")
+	}
+	conn, found, err := h.findOrgVCSConnectionForOwner(ctx, orgID, owner)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("unable to refresh GitHub credentials for %s/%s", owner, repo)
+	}
+	token, err := h.CreateInstallationToken(ctx, conn, repo)
+	if err != nil {
+		return err
+	}
+	u.User = url.UserPassword(u.User.Username(), token)
+	source.URL = u.String()
+	return nil
 }
 
 func (h *Helpers) publicGitSource(ctx context.Context, cfg *app.PublicGitVCSConfig, ref string) (*plantypes.GitSource, error) {

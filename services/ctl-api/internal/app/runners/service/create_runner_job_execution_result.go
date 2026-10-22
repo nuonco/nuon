@@ -13,8 +13,10 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/demand"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all" // register all errparse parsers
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
@@ -340,7 +342,7 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		CompositeError:       compositeError,
 	}
 
-	persisted, created, err := helpers.CreateJobExecutionResultIfAbsent(ctx, s.db, &result)
+	persisted, created, err := s.persistRunnerJobExecutionResult(ctx, runnerJob, &result)
 	if err != nil {
 		return nil, false, err
 	}
@@ -379,7 +381,7 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		CompositeError:       compositeError,
 	}
 
-	persisted, created, err := helpers.CreateJobExecutionResultIfAbsent(ctx, s.db, &result)
+	persisted, created, err := s.persistRunnerJobExecutionResult(ctx, runnerJob, &result)
 	if err != nil {
 		return nil, false, err
 	}
@@ -391,4 +393,38 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 	}
 
 	return persisted, created, nil
+}
+
+func (s *service) persistRunnerJobExecutionResult(ctx context.Context, job *app.RunnerJob, result *app.RunnerJobExecutionResult) (*app.RunnerJobExecutionResult, bool, error) {
+	if demand.SignalID(job) == "" {
+		return helpers.CreateJobExecutionResultIfAbsent(ctx, s.db, result)
+	}
+	var persisted *app.RunnerJobExecutionResult
+	var created bool
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		flw, err := demand.LockJob(ctx, tx, job)
+		if err != nil {
+			return err
+		}
+		if err := demand.RequireActiveWorkflow(flw); err != nil {
+			return stderr.ErrConflict{Err: err, Description: "workflow is cancelled"}
+		}
+		var execution app.RunnerJobExecution
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.RunnerJobExecution{ID: result.RunnerJobExecutionID, RunnerJobID: job.ID}).First(&execution).Error; err != nil {
+			return err
+		}
+		var existing app.RunnerJobExecutionResult
+		if err := tx.Where(app.RunnerJobExecutionResult{RunnerJobExecutionID: execution.ID}).First(&existing).Error; err == nil {
+			persisted = &existing
+			return nil
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if job.Status.IsTerminal() || (!execution.Status.IsRunning() && execution.Status != app.RunnerJobExecutionStatusFinished) || !time.Now().Before(execution.CreatedAt.Add(job.ExecutionTimeout)) {
+			return stderr.ErrConflict{Err: fmt.Errorf("job is terminal or expired"), Description: "job is terminal or expired"}
+		}
+		persisted, created, err = helpers.CreateJobExecutionResultIfAbsent(ctx, tx, result)
+		return err
+	})
+	return persisted, created, err
 }

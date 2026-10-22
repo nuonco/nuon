@@ -114,7 +114,7 @@ func (r *RunnerJobPlan) DeriveCompositePlan(runnerJob *RunnerJob) (*plantypes.Co
 		if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.DeployPlan); err != nil {
 			return nil, fmt.Errorf("unable to unmarshal deploy plan: %w", err)
 		}
-	case RunnerJobGroupActions:
+	case RunnerJobGroupActions, RunnerJobGroupImageActions:
 		if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.ActionWorkflowRunPlan); err != nil {
 			return nil, fmt.Errorf("unable to unmarshal action plan: %w", err)
 		}

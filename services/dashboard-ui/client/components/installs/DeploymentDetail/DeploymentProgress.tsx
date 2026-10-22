@@ -40,6 +40,7 @@ export const DeploymentRunStatus = ({
 const CATEGORY_LABELS = {
   success: 'Completed',
   'in-progress': 'In progress',
+  'waiting-for-runner': 'Waiting for runner',
   warn: 'Partial rollout',
   error: 'Failed',
   'not-started': 'Not started',
@@ -70,22 +71,28 @@ export const resourceCategories = (
         outcomes.some((outcome) => ['success', 'warn'].includes(outcome.status))
       const every = (...statuses: string[]) =>
         outcomes.every((outcome) => statuses.includes(outcome.status))
+      const waitingForRunner = outcomes.some(
+        (outcome) => outcome.status === 'waiting-for-runner'
+      )
       const status: TResourceCategory['status'] = completed
         ? 'success'
         : outcomes.some((outcome) => outcome.status === 'in-progress') ||
-            (partial && isDeploymentRunning(run.status))
+            (partial && isDeploymentRunning(run.status) && !waitingForRunner)
           ? 'in-progress'
-          : partial
-            ? 'warn'
-            : outcomes.some((outcome) => outcome.status === 'error')
-              ? 'error'
-              : every('not-started')
-                ? 'not-started'
-                : every('cancelled', 'not-started')
-                  ? 'cancelled'
-                  : every('user-skipped')
-                    ? 'user-skipped'
-                    : 'unknown'
+          : waitingForRunner &&
+              !outcomes.some((outcome) => outcome.status === 'error')
+            ? 'waiting-for-runner'
+            : partial
+              ? 'warn'
+              : outcomes.some((outcome) => outcome.status === 'error')
+                ? 'error'
+                : every('not-started')
+                  ? 'not-started'
+                  : every('cancelled', 'not-started')
+                    ? 'cancelled'
+                    : every('user-skipped')
+                      ? 'user-skipped'
+                      : 'unknown'
       return { category, status, label: CATEGORY_LABELS[status] }
     }
   )

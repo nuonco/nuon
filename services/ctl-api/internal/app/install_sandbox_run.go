@@ -47,6 +47,17 @@ const (
 	SandboxRunStatusRetried        SandboxRunStatus = "retried"
 )
 
+func (s SandboxRunStatus) IsTerminal() bool {
+	switch s {
+	case SandboxRunStatusActive, SandboxRunStatusDeprovisioned, SandboxRunStatusError,
+		SandboxRunStatusAccessError, SandboxRunStatusCancelled, SandboxRunStatusEmpty,
+		SandboxRunApprovalDenied, SandboxRunNoDrift, SandboxRunAutoSkipped,
+		SandboxRunStatusRetried, SandboxRunStatus(StatusSuccess):
+		return true
+	}
+	return false
+}
+
 type InstallSandboxRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`

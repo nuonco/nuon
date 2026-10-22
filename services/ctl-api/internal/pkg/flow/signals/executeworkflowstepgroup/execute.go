@@ -2,6 +2,7 @@ package executeworkflowstepgroup
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -17,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 // Execute runs all steps in this group, either sequentially or in parallel.
@@ -74,6 +76,11 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 				},
 			})
 		}
+	} else if s.lastDirective == string(directive.GroupAwaitRunner) {
+		pauseCtx := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
+		if err := workflow.ExecuteActivity(pauseCtx, (*workflowactivities.Activities).PauseForRunner, s.WorkflowID, s.StepGroupID).Get(ctx, nil); err != nil {
+			return err
+		}
 	} else if s.lastDirective == string(directive.GroupAwaitRetry) {
 		s.updateGroupStatus(ctx, app.CompositeStatus{
 			Status:                 app.StatusFailedPendingRetry,
@@ -125,11 +132,23 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 		zap.Int("group_idx", s.GroupIdx),
 		zap.Int("step_count", len(steps)))
 
+	runnerDemandResume := s.ResidentFlow && workflow.GetVersion(ctx, "runner-demand-parallel-resume-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	resultCh := workflow.NewChannel(ctx)
 
 	for i := range steps {
 		step := steps[i]
 		workflow.Go(ctx, func(gCtx workflow.Context) {
+			d := directive.Step(step.ResultDirective)
+			if runnerDemandResume && (step.Retried || step.Status.Status == app.StatusDiscarded) {
+				d = directive.StepContinue
+			}
+			if d == directive.StepAwaitRunner || (runnerDemandResume && (d == directive.StepAwaitRetry || step.Retried || isTerminalStatus(step.Status.Status))) {
+				if d == "" && step.Status.Status != app.StatusError && step.Status.Status != app.StatusCancelled {
+					d = directive.StepContinue
+				}
+				resultCh.Send(gCtx, StepResult{Result: directive.NewStepResult(d)})
+				return
+			}
 			result := s.executeSingleStep(gCtx, l, &step)
 			resultCh.Send(gCtx, result)
 		})
@@ -139,6 +158,7 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 	hasStop := false
 	hasRetryGroup := false
 	hasAwaitRetry := false
+	hasAwaitRunner := false
 
 	for range steps {
 		var result StepResult
@@ -157,6 +177,8 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 			hasRetryGroup = true
 		case actionAwaitRetry:
 			hasAwaitRetry = true
+		case actionAwaitRunner:
+			hasAwaitRunner = true
 		}
 	}
 
@@ -175,6 +197,9 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 		return s.writeStepGroupDirective(ctx, directive.GroupRetryGroup)
 	}
 
+	if hasAwaitRunner && (!hasAwaitRetry || runnerDemandResume) {
+		return s.writeStepGroupDirective(ctx, directive.GroupAwaitRunner)
+	}
 	if hasAwaitRetry {
 		return s.writeStepGroupDirective(ctx, directive.GroupAwaitRetry)
 	}

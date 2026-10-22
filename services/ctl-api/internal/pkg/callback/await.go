@@ -57,6 +57,18 @@ type Result struct {
 // steps the user asked to stop.
 const CancelledErrType = "SIGNAL_CANCELLED"
 
+// SuspendedErrType lets the Temporal run finish while the Nuon workflow waits for a runner job.
+const SuspendedErrType = "SIGNAL_SUSPENDED"
+
+func Suspended() error {
+	return temporal.NewNonRetryableApplicationError("waiting for runner", SuspendedErrType, nil)
+}
+
+func IsSuspended(err error) bool {
+	var appErr *temporal.ApplicationError
+	return errors.As(err, &appErr) && appErr.Type() == SuspendedErrType
+}
+
 // IsCancelled reports whether err (possibly wrapped) is a cancelled-signal
 // error from AwaitWithTimeout. Callers use this to stop without invoking
 // failure/retry handling.
@@ -119,6 +131,8 @@ func AwaitWithTimeout(ctx workflow.Context, ref Ref, timeout time.Duration) (*Re
 			return nil, temporal.NewNonRetryableApplicationError(
 				msg,
 				CancelledErrType, nil)
+		case "waiting-for-runner":
+			return nil, Suspended()
 		}
 		return &result, nil
 	}

@@ -57,18 +57,6 @@ func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID str
 		return nil, fmt.Errorf("unable to get job plan: %w", res.Error)
 	}
 
-	cp, fromBlob := runnerPlan.GetCompositePlan(ctx, s.cfg.BlobReadEnabled)
-	if fromBlob {
-		s.l.Debug("read composite plan from blob",
-			zap.String("runner_job_id", runnerJobID),
-			zap.String("plan_id", runnerPlan.ID))
-	}
-	if !cp.IsEmpty() {
-		return cp, nil
-	}
-
-	// if empty derive from plan json
-
 	var runnerJob app.RunnerJob
 	res = s.db.WithContext(ctx).
 		Where(app.RunnerJob{
@@ -78,7 +66,24 @@ func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID str
 		return nil, fmt.Errorf("unable to get job: %w", res.Error)
 	}
 
-	return runnerPlan.DeriveCompositePlan(&runnerJob)
+	cp, fromBlob := runnerPlan.GetCompositePlan(ctx, s.cfg.BlobReadEnabled)
+	if fromBlob {
+		s.l.Debug("read composite plan from blob",
+			zap.String("runner_job_id", runnerJobID),
+			zap.String("plan_id", runnerPlan.ID))
+	}
+	if cp.IsEmpty() {
+		var err error
+		cp, err = runnerPlan.DeriveCompositePlan(&runnerJob)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if _, err := s.refreshDemandPlanCredentials(ctx, &runnerJob, cp); err != nil {
+		return nil, err
+	}
+	return cp, nil
 }
 
 func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID string, orgID string) (*plantypes.CompositePlan, error) {
@@ -91,6 +96,16 @@ func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID 
 		return nil, fmt.Errorf("unable to get job plan: %w", res.Error)
 	}
 
+	var runnerJob app.RunnerJob
+	res = s.db.WithContext(ctx).
+		Where(app.RunnerJob{
+			ID:    runnerJobID,
+			OrgID: orgID,
+		}).First(&runnerJob)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get job: %w", res.Error)
+	}
+
 	cp, fromBlob := runnerPlan.GetCompositePlan(ctx, s.cfg.BlobReadEnabled)
 	if fromBlob {
 		s.l.Debug("read composite plan from blob",
@@ -98,19 +113,16 @@ func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID 
 			zap.String("org_id", orgID),
 			zap.String("plan_id", runnerPlan.ID))
 	}
-	if !cp.IsEmpty() {
-		return cp, nil
+	if cp.IsEmpty() {
+		var err error
+		cp, err = runnerPlan.DeriveCompositePlan(&runnerJob)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// if empty derive from plan json
-
-	var runnerJob app.RunnerJob
-	res = s.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", runnerJobID, orgID).
-		First(&runnerJob)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get job: %w", res.Error)
+	if _, err := s.refreshDemandPlanCredentials(ctx, &runnerJob, cp); err != nil {
+		return nil, err
 	}
-
-	return runnerPlan.DeriveCompositePlan(&runnerJob)
+	return cp, nil
 }

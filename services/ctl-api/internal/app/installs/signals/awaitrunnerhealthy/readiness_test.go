@@ -177,6 +177,7 @@ func readinessTestEnvironment(t *testing.T, mode Mode) (*testsuite.TestWorkflowE
 
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	env.OnGetVersion(noopVersion, workflow.DefaultVersion, 1).Return(workflow.DefaultVersion)
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	env.SetStartTime(time.Date(2026, time.September, 21, 12, 0, 0, 0, time.UTC))
 
