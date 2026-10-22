@@ -188,10 +188,12 @@ jobs:
           path: mono
           token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
 
+      # Generate and the integration tests run in the nuon checkout. setup-go sets
+      # GOTOOLCHAIN=local, so the toolchain has to satisfy nuon/go.mod even when mono lags.
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
-          go-version-file: mono/go.mod
+          go-version-file: nuon/go.mod
           cache-dependency-path: |
             mono/go.sum
             nuon/go.sum
