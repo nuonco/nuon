@@ -353,7 +353,7 @@ func (s *InstallStateIntegrationSuite) TestRegenerateWorkflowRepublishesFromCurr
 			env.SetWorkerOptions(worker.Options{BackgroundActivityContext: ctx, DeadlockDetectionTimeout: time.Minute})
 			env.RegisterActivityWithOptions(s.activities, activity.RegisterOptions{SkipInvalidStructFunctions: true})
 			if legacy {
-				env.OnGetVersion("install-state-publication", workflow.DefaultVersion, 1).Return(workflow.DefaultVersion)
+				env.OnGetVersion("install-state-publication", workflow.DefaultVersion, 2).Return(workflow.DefaultVersion)
 			}
 			env.ExecuteWorkflow(statesignals.Regenerate, &pkgstate.ExecuteRegenerationRequest{
 				InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
