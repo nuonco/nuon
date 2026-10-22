@@ -130,6 +130,9 @@ func buildComponentConfigMaps(appCfg *app.AppConfig) (
 }
 
 func resolvePinnedComponentBuild(ctx workflow.Context, dg *genCtx, compID string) (*app.ComponentBuild, error) {
+	if dg.flw.Request != nil && dg.flw.Request.DriftResolution != nil && dg.flw.Request.DriftResolution.ComponentID == compID {
+		return activities.AwaitGetComponentBuildByComponentBuildID(ctx, dg.flw.Request.DriftResolution.BuildID)
+	}
 	ccc, ok := dg.cccByComp[compID]
 	if !ok || ccc == nil {
 		return nil, nil

@@ -12,6 +12,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ComponentType } from '@/components/components/ComponentType'
 import type {
+  TAPIError,
   TComponentType,
   TInstallAlignmentResource,
   TInstallAlignmentResourceKind,
@@ -32,7 +33,10 @@ export interface IDriftResourceCard {
   lastAttemptHref?: string
   metadata?: ReactNode
   nameHref?: string
+  onResolve?: () => void
   onViewPlan?: () => void
+  resolveError?: TAPIError | null
+  resolving?: boolean
   resource: TInstallAlignmentResource
   view?: TCollectionView
 }
@@ -77,7 +81,10 @@ export const DriftResourceCard = ({
   lastAttemptHref,
   metadata,
   nameHref,
+  onResolve,
   onViewPlan,
+  resolveError,
+  resolving = false,
   resource,
   view = 'list',
 }: IDriftResourceCard) => {
@@ -198,9 +205,28 @@ export const DriftResourceCard = ({
             <Button variant="secondary" href={deploymentHref}>
               {isImage ? 'View sync' : 'View deployment'}
             </Button>
+          ) : !openDeployment && isDrifted(resource) && onResolve ? (
+            <Button
+              variant="secondary"
+              onClick={onResolve}
+              disabled={resolving}
+              aria-busy={resolving}
+            >
+              <Icon variant={resolving ? 'Loading' : 'PlayIcon'} size={16} />
+              {resolving ? 'Starting deployment' : 'Resolve drift'}
+            </Button>
           ) : null}
         </div>
       </div>
+
+      {resolveError ? (
+        <div role="alert">
+          <Text variant="subtext" theme="error">
+            Unable to resolve drift.{' '}
+            {resolveError.description || resolveError.error}
+          </Text>
+        </div>
+      ) : null}
 
       <Expand
         id={detailsId}

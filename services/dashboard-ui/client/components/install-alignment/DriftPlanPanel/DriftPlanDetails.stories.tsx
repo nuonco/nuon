@@ -34,6 +34,7 @@ const details = (
     selectedCommitHref="#selected-commit"
     planWorkflowHref="#planning-deployment"
     deploymentHref="#deployment"
+    onApproveAndResolve={() => {}}
     plan={
       <PlanComponent
         step={step}
@@ -50,6 +51,23 @@ export const DeploymentPlan = () => (
   <div className="p-4">{details(unappliedResource())}</div>
 )
 
+export const Resolving = () => (
+  <div className="p-4">{details(unappliedResource(), { resolving: true })}</div>
+)
+
+export const ResolveError = () => (
+  <div className="p-4">
+    {details(unappliedResource(), {
+      resolveError: {
+        status: 409,
+        user_error: true,
+        error: 'Target changed',
+        description: 'Input values changed. Reload Resources and try again.',
+      },
+    })}
+  </div>
+)
+
 export const OpenDeployment = () => (
   <div className="p-4">{details(openDeploymentResource())}</div>
 )
@@ -61,6 +79,7 @@ export const StateDriftScan = () => (
 export const PlanLoading = () => (
   <div className="p-4">
     {details(unappliedResource(), {
+      resolveDisabled: true,
       plan: (
         <PlanComponent step={step} plan={undefined} isLoading error={null} />
       ),

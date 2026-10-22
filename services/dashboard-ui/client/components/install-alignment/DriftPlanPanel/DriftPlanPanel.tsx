@@ -7,8 +7,9 @@ import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useQueryApprovalPlan } from '@/hooks/use-query-approval-plan'
+import { useResolveInstallDrift } from '@/hooks/use-resolve-install-drift'
 import type { TInstallAlignmentPlan, TWorkflowStep } from '@/types'
-import { branchRunHref } from '../alignment-utils'
+import { branchRunHref, isDrifted } from '../alignment-utils'
 import { DriftPlanDetails } from './DriftPlanDetails'
 
 const PREVIEWABLE_PLAN_TYPES = new Set([
@@ -44,6 +45,7 @@ export const DriftPlanPanel = ({
     step: plan ? planStep(plan) : undefined,
     enabled: previewable,
   })
+  const resolve = useResolveInstallDrift()
   const workflowHref = (workflowId?: string) =>
     workflowId
       ? installLink({
@@ -89,6 +91,17 @@ export const DriftPlanPanel = ({
           })}
           planWorkflowHref={workflowHref(plan.workflow_id)}
           deploymentHref={workflowHref(resource.open_deployment?.id)}
+          resolving={resolve.isPending}
+          resolveError={resolve.error}
+          resolveDisabled={
+            !contents.isSuccess || !contents.plan || !!contents.error
+          }
+          onApproveAndResolve={
+            isDrifted(resource) && previewable && plan.approval_id
+              ? () =>
+                  resolve.mutate({ resource, approvedPlanId: plan.approval_id })
+              : undefined
+          }
           plan={
             PREVIEWABLE_PLAN_TYPES.has(plan.type ?? '') ? (
               <PlanComponent

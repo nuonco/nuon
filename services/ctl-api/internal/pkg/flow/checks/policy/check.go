@@ -64,7 +64,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	l, _ := log.WorkflowLogger(ctx)
 
 	if !c.requiresEvaluation() {
-		result, autoApproved := c.autoApprove(ctx, l, step)
+		result, autoApproved := c.autoApprove(ctx, l, step, flw)
 		if autoApproved {
 			return result, nil
 		}
@@ -82,6 +82,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		l.Error("failed to check policies; continuing with warning",
 			zap.String("step_id", step.ID),
 			zap.Error(policyErr))
+		c.checkCtx.PolicyNotPassed = true
 		c.recordFailure(ctx, step, flw, policyErr)
 		recordEvaluationCompositeError(ctx, l, step, policyErr)
 		return directive.Pass(), nil
@@ -126,6 +127,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 			err:   errors.Wrap(reportErr, "unable to persist policy report"),
 		}
 		l.Error("failed to persist policy report; continuing with warning", zap.Error(reportErr))
+		c.checkCtx.PolicyNotPassed = true
 		c.recordFailure(ctx, step, flw, policyErr)
 		recordEvaluationCompositeError(ctx, l, step, policyErr)
 	} else {
@@ -147,7 +149,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	// If the signal opts into auto-approve on policies passing and there are
 	// no deny violations, short-circuit the pipeline with a continue directive.
 	if reportErr == nil {
-		if result, autoApproved := c.autoApprove(ctx, l, step); autoApproved {
+		if result, autoApproved := c.autoApprove(ctx, l, step, flw); autoApproved {
 			return result, nil
 		}
 	}
@@ -158,7 +160,10 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 // autoApprove builds the approve-and-continue result for signals that opted into
 // auto-approval on passing policies. Callers only reach it once evaluation has
 // produced no deny violations, or when the signal has nothing to evaluate.
-func (c *Check) autoApprove(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep) (directive.CheckResult, bool) {
+func (c *Check) autoApprove(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, bool) {
+	if directive.ResolveDrift(ctx, flw) {
+		return directive.Pass(), false
+	}
 	aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing)
 	if !ok || !aa.AutoApproveOnPoliciesPassing(ctx) {
 		return directive.Pass(), false

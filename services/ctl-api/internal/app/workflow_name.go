@@ -19,6 +19,10 @@ func (w *Workflow) ComputeName() string {
 func computeWorkflowName(w *Workflow) string {
 	suffix := workflowNameSuffix(w)
 
+	if metaValue(w, WorkflowMetadataKeyResolveDrift) == "true" {
+		return "Resolve drift" + suffix
+	}
+
 	if w.Type == WorkflowTypeActionWorkflowRun {
 		if adhoc := metaValue(w, "adhoc_action"); adhoc != "" {
 			actionName := metaValue(w, "install_action_workflow_name")

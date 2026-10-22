@@ -267,6 +267,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/deployments/:workflow_id", s.GetInstallDeployment)
 		installs.GET("/deployment-summaries", s.GetInstallDeploymentSummaries)
 		installs.GET("/overview", s.GetInstallOverview)
+		installs.POST("/resolve-drift", s.ResolveInstallDrift)
 		installs.GET("/activity", s.GetInstallActivity)
 		installs.GET("/updates", s.GetInstallUpdates)
 		installs.GET("/config-versions", s.GetInstallConfigVersions)

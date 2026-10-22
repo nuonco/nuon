@@ -32,13 +32,6 @@ type SetDeployAppliedAtRequest struct {
 // @temporal-gen-v2 activity
 func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployAppliedAtRequest) error {
 	now := time.Now().UTC()
-	res := a.db.WithContext(ctx).
-		Model(&app.InstallDeploy{}).
-		Where(app.InstallDeploy{ID: req.DeployID}).
-		Update("applied_at", now)
-	if res.Error != nil {
-		return fmt.Errorf("unable to set applied_at on deploy: %w", res.Error)
-	}
 	return a.helpers.RecordInstallDeployApplied(ctx, req.DeployID, now)
 }
 
@@ -66,12 +59,5 @@ type SetSandboxRunAppliedAtRequest struct {
 // @temporal-gen-v2 activity
 func (a *Activities) SetSandboxRunAppliedAt(ctx context.Context, req SetSandboxRunAppliedAtRequest) error {
 	now := time.Now().UTC()
-	res := a.db.WithContext(ctx).
-		Model(&app.InstallSandboxRun{}).
-		Where(app.InstallSandboxRun{ID: req.SandboxRunID}).
-		Update("applied_at", now)
-	if res.Error != nil {
-		return fmt.Errorf("unable to set applied_at on sandbox run: %w", res.Error)
-	}
 	return a.helpers.RecordInstallSandboxRunApplied(ctx, req.SandboxRunID, now)
 }
