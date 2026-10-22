@@ -9,8 +9,8 @@ _October 22, 2026_
 ## Configure triggers for your app branches
 
 [App branches](/concepts/app-branches) roll your app config out to customer installs through install groups.
-Nuon listens for GitHub webhook events on the connected repo and starts a branch run automatically. Add a `[run]` block to your
-branch config to control which events create an app branch run:
+Nuon listens for GitHub webhook events on the connected repo and starts a branch run automatically. Add a `[run]` block to control
+what triggers will create an app branch run:
 
 | Mode | Starts a run when |
 | --- | --- |
@@ -42,11 +42,27 @@ nuon branches trigger --branch-id production --run-type tag --run-ref release/1.
 
 The run shows the tag it was created from:
 
-<img
-  src="/images/changelog/043-tag-run.png"
-  alt="An app branch run in the Nuon dashboard created from tag release/1.0.1, with its commit and steps from Fetch commit through Rollout"
-  style={{ width: '100%', borderRadius: '12px', margin: '16px 0' }}
-/>
+<div style={{
+  backgroundImage: 'url(/images/changelog/038-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '32px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/043-tag-run.png"
+    alt="An app branch run in the Nuon dashboard created from tag release/1.0.1, with the tag magnified, its commit, and steps from Fetch commit through Rollout"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
 
 <Card title="See App Branch Docs" icon="code-branch" href="/guides/app-branches#control-when-the-branch-runs" horizontal />
 
@@ -54,8 +70,8 @@ The run shows the tag it was created from:
 
 ## Trigger app branch runs from GitHub Actions
 
-If you don't want Nuon to listen for GitHub webhook events, or you want more control over when app branch runs happen,
-trigger them from your own workflows with the [Nuon GitHub Action](https://github.com/nuonco/actions-nuon). It has an
+If you do not want to configure automatic webhook events to Nuon, or you want more control over when app branch runs
+happen, you can use GitHub Actions with the [Nuon GitHub Action](https://github.com/nuonco/actions-nuon). It has an
 action for each run type (tag, commit, or pull request) and for previews.
 
 ```yaml .github/workflows/nuon-release.yaml
@@ -88,8 +104,8 @@ jobs:
 
 ## Runner and stack control per install
 
-Pin the Nuon runner's machine image for a customer who wants to verify or audit it before use, and set stack parameters
-for one install.
+Pin a specific runner image for a customer, if they want to verify or audit the runner before use. You can also set
+stack parameters for one install.
 
 - Keep the Nuon runner in each customer's AWS account on a patched image: pin an approved AMI, or pick up the latest AL2023 AMI each time a runner instance launches. Auto-update is off by default and needs runner template v0.7.0+.
 - Give one install its own VPC range, instance size, or other CloudFormation parameter (installs with an AWS cloud connection)
