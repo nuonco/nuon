@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
@@ -35,9 +34,7 @@ func TestWorkflowStepContentsAndDiff(t *testing.T) {
 	}
 
 	t.Run("contents json", func(t *testing.T) {
-		svc, api := newContentsService(t)
-		api.EXPECT().GetWorkflowStep(gomock.Any(), "wf1", "step1").Return(step, nil)
-		api.EXPECT().GetWorkflowStepApprovalContents(gomock.Any(), "wf1", "step1", "appr1").Return(helmContents, nil)
+		svc := newContentsService(step, helmContents)
 
 		out := captureStdout(t, func() {
 			err := svc.WorkflowStepContents(context.Background(), "wf1", "step1", true)
@@ -48,9 +45,7 @@ func TestWorkflowStepContentsAndDiff(t *testing.T) {
 	})
 
 	t.Run("diff json", func(t *testing.T) {
-		svc, api := newContentsService(t)
-		api.EXPECT().GetWorkflowStep(gomock.Any(), "wf1", "step1").Return(step, nil)
-		api.EXPECT().GetWorkflowStepApprovalContents(gomock.Any(), "wf1", "step1", "appr1").Return(helmContents, nil)
+		svc := newContentsService(step, helmContents)
 
 		out := captureStdout(t, func() {
 			err := svc.WorkflowStepDiff(context.Background(), "wf1", "step1", true)
@@ -62,9 +57,7 @@ func TestWorkflowStepContentsAndDiff(t *testing.T) {
 	})
 
 	t.Run("diff table", func(t *testing.T) {
-		svc, api := newContentsService(t)
-		api.EXPECT().GetWorkflowStep(gomock.Any(), "wf1", "step1").Return(step, nil)
-		api.EXPECT().GetWorkflowStepApprovalContents(gomock.Any(), "wf1", "step1", "appr1").Return(helmContents, nil)
+		svc := newContentsService(step, helmContents)
 
 		out := captureStdout(t, func() {
 			err := svc.WorkflowStepDiff(context.Background(), "wf1", "step1", false)
@@ -75,28 +68,36 @@ func TestWorkflowStepContentsAndDiff(t *testing.T) {
 	})
 
 	t.Run("missing approval", func(t *testing.T) {
-		svc, api := newContentsService(t)
-		api.EXPECT().GetWorkflowStep(gomock.Any(), "wf1", "step1").Return(&models.AppWorkflowStep{ID: "step1"}, nil)
+		svc := newContentsService(&models.AppWorkflowStep{ID: "step1"}, nil)
 
 		err := svc.WorkflowStepContents(context.Background(), "wf1", "step1", true)
 		require.ErrorContains(t, err, "has no approval contents")
 	})
 
 	t.Run("unsupported diff", func(t *testing.T) {
-		svc, api := newContentsService(t)
-		api.EXPECT().GetWorkflowStep(gomock.Any(), "wf1", "step1").Return(step, nil)
-		api.EXPECT().GetWorkflowStepApprovalContents(gomock.Any(), "wf1", "step1", "appr1").Return(map[string]any{"installs": []any{}}, nil)
+		svc := newContentsService(step, map[string]any{"installs": []any{}})
 
 		err := svc.WorkflowStepDiff(context.Background(), "wf1", "step1", true)
 		require.ErrorContains(t, err, "steps contents")
 	})
 }
 
-func newContentsService(t *testing.T) (*Service, *nuon.MockClient) {
-	t.Helper()
-	ctrl := gomock.NewController(t)
-	api := nuon.NewMockClient(ctrl)
-	return New(api, &config.Config{}), api
+type contentsTestClient struct {
+	nuon.Client
+	step     *models.AppWorkflowStep
+	contents any
+}
+
+func (c contentsTestClient) GetWorkflowStep(context.Context, string, string) (*models.AppWorkflowStep, error) {
+	return c.step, nil
+}
+
+func (c contentsTestClient) GetWorkflowStepApprovalContents(context.Context, string, string, string) (any, error) {
+	return c.contents, nil
+}
+
+func newContentsService(step *models.AppWorkflowStep, contents any) *Service {
+	return New(contentsTestClient{step: step, contents: contents}, &config.Config{})
 }
 
 func captureStdout(t *testing.T, fn func()) string {
