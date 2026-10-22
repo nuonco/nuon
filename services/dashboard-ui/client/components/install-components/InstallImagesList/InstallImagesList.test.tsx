@@ -80,7 +80,7 @@ test('image consumers link to configured output users, not ordering-only or simi
   expect(screen.queryByText('Used by')).toBeNull()
 })
 
-test('missing image sync evidence stays neutral outside the synced section, without a not-compared category', () => {
+test('missing image sync evidence stays neutral outside the synced section, and torn-down images say so, without a not-compared category', () => {
   render(
     <MemoryRouter>
       <InstallImagesList
@@ -101,6 +101,13 @@ test('missing image sync evidence stays neutral outside the synced section, with
             status: 'active',
             image: null,
           },
+          {
+            id: 'torn-down',
+            name: 'ledger-image',
+            alignment: 'torn-down',
+            status: 'inactive',
+            image: null,
+          },
         ]}
       />
     </MemoryRouter>
@@ -112,12 +119,17 @@ test('missing image sync evidence stays neutral outside the synced section, with
   expect(
     within(synced).queryByRole('heading', { name: 'worker-image' })
   ).toBeNull()
-  expect(screen.getByText('Sync status unavailable')).toBeTruthy()
+  expect(screen.getAllByText('Sync status unavailable')).toHaveLength(1)
   expect(
-    screen.getByText(
+    within(
+      screen.getByRole('heading', { name: 'ledger-image' }).parentElement!
+    ).getByText('Torn down')
+  ).toBeTruthy()
+  expect(
+    screen.getAllByText(
       'Delivery of the configured version can’t be confirmed from the available records.'
     )
-  ).toBeTruthy()
+  ).toHaveLength(1)
   expect(screen.queryByText('Not compared')).toBeNull()
   expect(screen.queryByText('Needs attention')).toBeNull()
 })

@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -40,6 +41,9 @@ func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPl
 	var job app.RunnerJob
 	if err := a.db.WithContext(ctx).Select("id", "owner_id", "owner_type", "operation").
 		Where(app.RunnerJob{ID: req.JobID}).First(&job).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return fmt.Errorf("unable to get runner job for input evidence: %w", err)
 	}
 	var model any

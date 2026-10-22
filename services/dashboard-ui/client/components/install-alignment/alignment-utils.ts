@@ -67,6 +67,45 @@ export const resourcesOfKinds = (
     (resource) => !!resource.kind && kinds.includes(resource.kind)
   )
 
+// The list endpoint defaults to selected-config members, newest first;
+// overview resources are oldest first and also include removed components.
+export const listedResources = (
+  resources: TInstallAlignmentResource[] | undefined,
+  kinds: TInstallAlignmentResourceKind[],
+  {
+    enabled,
+    search,
+    types,
+  }: { enabled?: string; search?: string; types?: string[] } = {}
+) =>
+  resourcesOfKinds(resources, kinds)
+    .filter(
+      (resource) =>
+        !!resource.expected_config_id &&
+        !isDrifted(resource) &&
+        !hasOngoingDeployment(resource) &&
+        (!types?.length || types.includes(resource.component_type ?? '')) &&
+        (!search ||
+          resource.name?.toLowerCase().includes(search.toLowerCase()) ||
+          resource.component_id === search) &&
+        (enabled !== 'disabled' || resource.category === 'disabled') &&
+        (enabled !== 'enabled' || resource.category !== 'disabled')
+    )
+    .reverse()
+
+export const resourcePage = (
+  resources: TInstallAlignmentResource[],
+  offset: number,
+  limit: number
+) => {
+  const start = offset > 0 && offset < resources.length ? offset : 0
+  return {
+    offset: start,
+    ids: resources.slice(start, start + limit).map((resource) => resource.id!),
+    hasNext: start + limit < resources.length,
+  }
+}
+
 export const filterDrifted = (
   drifted: TInstallAlignmentResource[],
   driftFilter: TDriftFilter

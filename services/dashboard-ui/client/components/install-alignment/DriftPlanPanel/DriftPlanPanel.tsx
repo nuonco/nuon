@@ -72,7 +72,11 @@ export const DriftPlanPanel = ({
         <EmptyState
           variant="table"
           emptyTitle="Plan unavailable"
-          emptyMessage="This resource no longer has a recorded plan. Close this panel to see its latest state."
+          emptyMessage={
+            overview?.alignment?.error
+              ? 'Resource alignment is unavailable. Close this panel and try again.'
+              : 'This resource no longer has a recorded plan. Close this panel to see its latest state.'
+          }
         />
       ) : (
         <DriftPlanDetails

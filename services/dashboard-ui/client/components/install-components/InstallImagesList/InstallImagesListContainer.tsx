@@ -1,11 +1,12 @@
+import { useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DebouncedSearchInput } from '@/components/common/DeboundedSearch'
 import { DriftedResources } from '@/components/install-alignment/DriftedResources'
 import {
   hasOngoingDeployment,
-  isDrifted,
-  resourcesOfKinds,
+  listedResources,
+  resourcePage,
 } from '@/components/install-alignment/alignment-utils'
 import { ResourceComponentActions } from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
@@ -28,8 +29,13 @@ export const InstallImagesListContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const { appConfig } = useInstallAppConfig()
-  const [searchParams] = useSearchParams()
-  const { data: overview, isPlaceholderData } = useInstallOverview()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const {
+    data: overview,
+    isLoading: overviewLoading,
+    isPlaceholderData,
+  } = useInstallOverview()
+  const alignmentAvailable = !!overview?.alignment && !overview.alignment.error
   const ongoingIds = new Set(
     (overview?.alignment?.resources ?? [])
       .filter(hasOngoingDeployment)
@@ -38,32 +44,63 @@ export const InstallImagesListContainer = () => {
 
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
-  const ids = overview?.alignment
-    ? resourcesOfKinds(overview.alignment.resources, ['image'])
-        .filter(
-          (resource) => !isDrifted(resource) && !ongoingIds.has(resource.id)
-        )
-        .map((resource) => resource.id)
-        .sort()
-        .join(',') || 'none'
+  const listed = alignmentAvailable
+    ? listedResources(overview.alignment.resources, ['image'], { search: q })
     : undefined
+  const membership = listed?.map((resource) => resource.id).join(',')
+  const pagedMembership = useRef(membership)
+  const membershipChanged =
+    membership !== undefined &&
+    pagedMembership.current !== undefined &&
+    pagedMembership.current !== membership
+  const page = listed
+    ? resourcePage(listed, membershipChanged ? 0 : offset, LIMIT)
+    : undefined
+  const pageOffset = page?.offset ?? offset
+  const pageIds = page?.ids.join(',')
+
+  useEffect(() => {
+    const previous = pagedMembership.current
+    pagedMembership.current = membership
+    if (membership === undefined || !searchParams.has('offset')) return
+    if (
+      (previous !== undefined && previous !== membership) ||
+      offset !== pageOffset
+    ) {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev)
+          params.delete('offset')
+          return params
+        },
+        { replace: true }
+      )
+    }
+  }, [membership, offset, pageOffset, searchParams, setSearchParams])
 
   const { data: result, isLoading } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['install-resource-images', org?.id, install?.id, offset, q, ids],
+    queryKey: [
+      'install-resource-images',
+      org?.id,
+      install?.id,
+      page ? `ids:${pageIds}` : offset,
+      q,
+    ],
     queryFn: () =>
       getInstallComponents({
         orgId: org.id,
         installId: install.id,
         limit: LIMIT,
-        offset,
+        offset: page ? 0 : offset,
         q,
-        ids,
+        ids: pageIds,
         types: IMAGE_TYPES,
       }),
     refetchInterval: 20000,
-    enabled: !!org?.id && !!install?.id,
+    enabled: !!org?.id && !!install?.id && !overviewLoading && pageIds !== '',
   })
+  const rows = pageIds === '' ? undefined : result?.data
 
   const toListItem = (
     installComponent: TInstallComponent
@@ -108,10 +145,10 @@ export const InstallImagesListContainer = () => {
 
   return (
     <InstallImagesList
-      images={(result?.data ?? [])
+      images={(rows ?? [])
         .filter((image) => !ongoingIds.has(image.id))
         .map(toListItem)}
-      aligned={!!overview && !isPlaceholderData}
+      aligned={alignmentAvailable && !isPlaceholderData}
       drifted={(view) => (
         <DriftedResources
           kinds={['image']}
@@ -120,11 +157,11 @@ export const InstallImagesListContainer = () => {
           view={view}
         />
       )}
-      loading={isLoading}
+      loading={isLoading || overviewLoading}
       filtered={!!q}
       pagination={{
-        hasNext: result?.pagination?.hasNext ?? false,
-        offset,
+        hasNext: page?.hasNext ?? result?.pagination?.hasNext ?? false,
+        offset: pageOffset,
         limit: LIMIT,
       }}
       search={

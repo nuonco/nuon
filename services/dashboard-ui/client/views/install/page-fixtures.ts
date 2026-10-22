@@ -642,11 +642,15 @@ const resourceComponents = (state: 'empty' | 'active' | 'degraded') =>
 
 export type TResourcesAlignment =
   | 'in-sync'
+  | 'inputs-unverified'
   | 'drifted'
   | 'ongoing'
   | 'image-sync-cancelled'
   | 'input-updates'
   | 'torn-down'
+  | 'component-history'
+  | 'paged'
+  | 'unavailable'
   | 'error'
 
 const driftedAlignment = (inputUpdatesOnly = false) => {
@@ -655,6 +659,7 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
     name,
     component_id: id,
     component_type: type,
+    expected_config_id: APP_CONFIG_ID,
   })
   const resources = [
     alignmentResource({
@@ -664,20 +669,12 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
       component_id: undefined,
       component_type: undefined,
     }),
-    unappliedResource({
+    alignmentResource({
       id: 'sbx-1',
       kind: 'sandbox',
       name: 'sandbox',
       component_id: undefined,
       component_type: undefined,
-      reason: 'Sandbox configuration changes haven’t been applied.',
-      plan: {
-        ...unappliedResource().plan!,
-        workflow_id: 'wf-plan-sbx-1',
-        step_id: 'step-plan-sbx-1',
-        approval_id: 'apr-sbx-1',
-        owner_type: 'install_sandbox_runs',
-      },
     }),
     unappliedResource(component('cmp-api', 'api', 'helm_chart')),
     openDeploymentResource({
@@ -821,6 +818,7 @@ const inSyncAlignment = () =>
           component_id: id,
           component_type: type,
           kind: type === 'external_image' ? 'image' : 'component',
+          expected_config_id: APP_CONFIG_ID,
         })
       ),
     ],
@@ -840,6 +838,27 @@ export const resourcesFixture = (
   const overview = hasDrift
     ? driftedAlignment(alignment === 'input-updates')
     : inSyncAlignment()
+  if (alignment === 'unavailable') {
+    overview.alignment = {
+      error: 'Resource alignment unavailable',
+      resources: [],
+    }
+    overview.branch_tracking!.runs_behind = 2
+    overview.branch_tracking!.commits_behind = 2
+  }
+  if (alignment === 'inputs-unverified') {
+    const component = overview.alignment?.resources?.find(
+      (resource) => resource.id === 'ic-cmp-api'
+    )
+    if (component) {
+      component.expected_build_id = 'bld-cmp-api'
+      component.applied_build_id = 'bld-cmp-api'
+      component.expected_config_id = APP_CONFIG_ID
+      component.applied_config_id = APP_CONFIG_ID
+      component.reason =
+        'Inputs not verified. Applied input values weren’t recorded for this deployment.'
+    }
+  }
   if (alignment === 'image-sync-cancelled') {
     const image = overview.alignment?.resources?.find(
       (resource) => resource.id === 'ic-cmp-api-image'
@@ -858,9 +877,7 @@ export const resourcesFixture = (
   if (alignment === 'ongoing') {
     for (const resource of overview.alignment?.resources ?? []) {
       if (
-        ['ic-cmp-scheduler', 'ic-cmp-worker-image', 'sbx-1'].includes(
-          resource.id ?? ''
-        )
+        ['ic-cmp-scheduler', 'ic-cmp-worker-image'].includes(resource.id ?? '')
       ) {
         resource.open_deployment = {
           id: `wf-open-${resource.id}`,
@@ -882,6 +899,74 @@ export const resourcesFixture = (
     state === 'empty' ? 'empty' : state === 'provisioning' ? 'active' : state
   )
   const config = resourceConfig(state === 'empty' ? 'empty' : 'active')
+  if (alignment === 'component-history') {
+    config.component_config_connections =
+      config.component_config_connections.map((connection) => ({
+        ...connection,
+        id: `ccc-${connection.component_id}`,
+        app_config_id: APP_CONFIG_ID,
+        version: 12,
+      }))
+    const resources = [
+      alignmentResource({
+        id: 'ic-cmp-api',
+        component_id: 'cmp-api',
+        name: 'api',
+        status: 'inactive',
+        category: 'changes-not-applied',
+        reason: 'This component is enabled, but hasn’t been deployed.',
+        expected_build_id: 'bld-cmp-api',
+        expected_config_id: APP_CONFIG_ID,
+        explanation: {
+          summary: 'No deployment has started for this component.',
+        },
+      }),
+      alignmentResource({
+        id: 'ic-cmp-worker',
+        component_id: 'cmp-worker',
+        name: 'worker',
+        status: 'disabled',
+        category: 'disabled',
+        reason: 'component is disabled on this install',
+        expected_build_id: 'bld-cmp-worker',
+        expected_config_id: APP_CONFIG_ID,
+      }),
+      alignmentResource({
+        id: 'ic-cmp-ledger',
+        component_id: 'cmp-ledger',
+        name: 'ledger',
+        component_type: 'terraform_module',
+        category: 'unknown',
+        reason: 'the applied deploy for this component could not be determined',
+        expected_build_id: 'bld-cmp-ledger',
+        expected_config_id: APP_CONFIG_ID,
+      }),
+    ]
+    overview.alignment!.resources = [
+      ...overview.alignment!.resources!.filter(
+        (resource) => resource.kind !== 'component'
+      ),
+      ...resources,
+    ]
+    components.splice(
+      0,
+      components.length,
+      ...components.filter(
+        (component) => component.component.type === 'external_image'
+      ),
+      ...resources.map((resource) => ({
+        ...installComponent(
+          resource.component_id!,
+          resource.name!,
+          resource.component_type!,
+          resource.status!,
+          ''
+        ),
+        enabled: resource.category !== 'disabled',
+        install_deploys: [],
+      }))
+    )
+  }
   if (hasDrift) {
     components.push({
       ...installComponent(
@@ -911,8 +996,47 @@ export const resourcesFixture = (
       install_deploys: [],
     })
   }
+  if (alignment === 'paged') {
+    const extras = Array.from({ length: 12 }, (_, index) => {
+      const id = `cmp-service-${String(index + 1).padStart(2, '0')}`
+      return [id, `service-${String(index + 1).padStart(2, '0')}`] as const
+    })
+    overview.alignment!.resources!.push(
+      ...extras.map(([id, name]) =>
+        alignmentResource({
+          id: `ic-${id}`,
+          name,
+          component_id: id,
+          component_type: 'helm_chart',
+          expected_config_id: APP_CONFIG_ID,
+        })
+      ),
+      // Still installed, but no longer in the selected app config: the list
+      // endpoint never returns it, so it must not count toward pages.
+      alignmentResource({
+        id: 'ic-cmp-legacy',
+        name: 'legacy',
+        component_id: 'cmp-legacy',
+        category: 'unknown',
+        reason: 'component is not part of the install’s selected app config',
+      })
+    )
+    components.push(
+      ...extras.map(([id, name]) =>
+        installComponent(id, name, 'helm_chart', 'active', '')
+      )
+    )
+    // The overview lists install components oldest first; the list endpoint
+    // returns them newest first.
+    components.reverse()
+  }
   if (alignment === 'torn-down') {
     for (const resource of overview.alignment?.resources ?? []) {
+      if (resource.component_id === 'cmp-ledger-image') {
+        resource.category = 'torn-down'
+        resource.status = 'inactive'
+        resource.reason = 'component was explicitly torn down on this install'
+      }
       if (resource.component_id === 'cmp-scheduler') {
         resource.category = 'torn-down'
         resource.status = 'inactive'
@@ -955,6 +1079,12 @@ export const resourcesFixture = (
     if (path === `/v1/installs/${VIEW_INSTALL_ID}/overview`) {
       if (alignment === 'error') return fail('unable to get install overview')
       return ok(overview)
+    }
+    if (
+      alignment === 'component-history' &&
+      /\/components\/cmp-(api|worker|ledger)\/deploys$/.test(path)
+    ) {
+      return ok([], true)
     }
     const inputAttemptId = path.match(
       /\/(?:workflows|deployments)\/(wf-input-(?:ic-cmp-webhooks|enable-search))$/
@@ -1114,6 +1244,31 @@ export const resourcesFixture = (
     }
     if (path === '/v1/builds') {
       const id = url.searchParams.get('component_id')
+      if (alignment === 'component-history') {
+        const resource = overview.alignment?.resources?.find(
+          (resource) => resource.component_id === id
+        )
+        return ok(
+          resource?.expected_build_id
+            ? [
+                {
+                  id: resource.expected_build_id,
+                  component_id: id,
+                  status: 'active',
+                  status_v2: { status: 'active' },
+                  component_config_connection_id: `ccc-${id}`,
+                  component_config_connection: {
+                    id: `ccc-${id}`,
+                    component_id: id,
+                    app_config_id: resource.expected_config_id,
+                  },
+                  created_at: '2026-10-04T12:00:00Z',
+                },
+              ]
+            : [],
+          true
+        )
+      }
       const row = resourceComponents(
         state === 'degraded' ? 'degraded' : 'active'
       ).find((item) => item.component_id === id)

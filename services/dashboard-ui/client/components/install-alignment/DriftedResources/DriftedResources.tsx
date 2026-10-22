@@ -33,6 +33,7 @@ export interface IDriftedResources {
   renderCard: (resource: TInstallAlignmentResource) => ReactNode
   resources: TInstallAlignmentResource[]
   search?: string
+  unavailable?: boolean
   view?: TCollectionView
 }
 
@@ -62,6 +63,7 @@ export const DriftedResources = ({
   renderCard,
   resources,
   search,
+  unavailable = false,
   view = 'list',
 }: IDriftedResources) => {
   const [page, setPage] = useState(0)
@@ -72,13 +74,19 @@ export const DriftedResources = ({
 
   useEffect(() => setPage(0), [search])
 
-  if (error && !resources.length) {
+  if (unavailable || (error && !resources.length)) {
     return (
       <Banner theme="error" data-testid="alignment-error">
         <div className="flex flex-wrap items-center justify-between gap-3 w-full">
           <Text variant="subtext">
-            Unable to load {imagesOnly ? 'sync status' : 'drift'} for these{' '}
-            {noun}. {error.description || error.error}
+            {unavailable ? (
+              'Resource alignment unavailable.'
+            ) : (
+              <>
+                Unable to load {imagesOnly ? 'sync status' : 'drift'} for these{' '}
+                {noun}. {error?.description || error?.error}
+              </>
+            )}
           </Text>
           {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
         </div>
@@ -147,8 +155,8 @@ export const DriftedResources = ({
           />
           <Text variant="subtext">
             {allInSync
-              ? `All ${noun} match the desired configuration and inputs. No changes are needed.`
-              : `Compared ${noun} match the desired configuration and inputs. ${notCompared}.`}
+              ? `All ${noun} match the desired configuration.`
+              : `Compared ${noun} match the desired configuration. ${notCompared}.`}
           </Text>
         </div>
         {refreshError}

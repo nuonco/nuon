@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -24,12 +25,25 @@ var alignmentComponentSignalTypes = []string{
 }
 
 func (s *service) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *installAlignmentState, alignment *InstallAlignment) error {
-	needsWorkflowEvidence := false
+	var resourceIDs, workflowIDs []string
+	var since *time.Time
+	unboundedHistory := false
 	for i := range alignment.Resources {
 		res := &alignment.Resources[i]
 		switch res.Category {
 		case InstallAlignmentCategoryChangesNotApplied:
-			needsWorkflowEvidence = true
+			resourceIDs = append(resourceIDs, res.ID)
+			if res.appliedAt == nil {
+				unboundedHistory = true
+			} else if since == nil || res.appliedAt.Before(*since) {
+				since = res.appliedAt
+			}
+			if res.LastAttempt != nil && res.LastAttempt.WorkflowID != "" {
+				workflowIDs = append(workflowIDs, res.LastAttempt.WorkflowID)
+			}
+			if res.OpenDeployment != nil {
+				workflowIDs = append(workflowIDs, res.OpenDeployment.ID)
+			}
 		case InstallAlignmentCategoryStateDriftDetected:
 			res.Explanation = &InstallAlignmentExplanation{Summary: "A drift check found differences between live resources and what was last applied."}
 			if res.Plan != nil && res.Plan.PlanOnly {
@@ -38,7 +52,7 @@ func (s *service) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *
 			}
 		}
 	}
-	if !needsWorkflowEvidence {
+	if len(resourceIDs) == 0 {
 		return nil
 	}
 	var sandboxID, stackID string
@@ -56,6 +70,14 @@ func (s *service) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *
 		stackSignals = append(stackSignals, t)
 	}
 	allSignals := append(append(append([]string{}, alignmentComponentSignalTypes...), sandboxSignals...), stackSignals...)
+	args := []any{sandboxSignals, sandboxID, stackSignals, stackID, st.install.AppID,
+		st.install.ID, st.install.OrgID, allSignals}
+	historyFilter := ""
+	if !unboundedHistory && since != nil {
+		historyFilter = "AND (w.created_at >= ? OR w.id IN ?)"
+		args = append(args, *since, workflowIDs)
+	}
+	args = append(args, resourceIDs)
 	var latest []struct {
 		ResourceID string
 		WorkflowID string
@@ -75,24 +97,20 @@ func (s *service) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *
 				AND (ic.component_id = s.queue_signal->'data'->>'ComponentID' OR ic.component_id = c.id OR ic.id = d.install_component_id)
 			WHERE w.owner_id = ? AND w.owner_type = 'installs' AND w.org_id = ? AND w.deleted_at = 0 AND NOT w.plan_only
 				AND (s.queue_signal->>'type' IN ? OR s.step_target_type IN ('install_deploys', 'install_deploy', 'install_sandbox_runs', 'install_sandbox_run', 'install_stack_versions', 'install_stack_version'))
+				`+historyFilter+`
 		) matched
-		WHERE resource_id IS NOT NULL
+		WHERE resource_id IN ?
 		ORDER BY resource_id, created_at DESC, workflow_id DESC`,
-		sandboxSignals, sandboxID, stackSignals, stackID, st.install.AppID,
-		st.install.ID, st.install.OrgID, allSignals).Scan(&latest).Error; err != nil {
+		args...).Scan(&latest).Error; err != nil {
 		return fmt.Errorf("unable to get latest resource workflows: %w", err)
 	}
 	byResource := map[string]string{}
 	for _, row := range latest {
 		byResource[row.ResourceID] = row.WorkflowID
 	}
-	var workflowIDs []string
 	for _, res := range alignment.Resources {
 		if res.Category != InstallAlignmentCategoryChangesNotApplied {
 			continue
-		}
-		if last := res.LastAttempt; last != nil && last.WorkflowID != "" {
-			workflowIDs = append(workflowIDs, last.WorkflowID)
 		}
 		if res.OpenDeployment != nil {
 			byResource[res.ID] = res.OpenDeployment.ID
@@ -150,10 +168,15 @@ func (s *service) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *
 
 func explainUnappliedResource(res *InstallAlignmentResource, wf *app.Workflow, steps []*alignmentStep) *InstallAlignmentExplanation {
 	explanation := &InstallAlignmentExplanation{Summary: "We couldn’t determine why these changes haven’t taken effect."}
-	if wf == nil || (res.OpenDeployment == nil && res.appliedAt != nil && wf.CreatedAt.Before(*res.appliedAt)) {
+	if wf == nil {
 		if res.LastAttempt == nil && res.AppliedBuildID == "" && res.AppliedConfigID == "" {
 			explanation.Summary = "No deployment has started for these changes."
 		}
+		return explanation
+	}
+	if res.OpenDeployment == nil && res.appliedAt != nil && wf.CreatedAt.Before(*res.appliedAt) &&
+		(res.LastAttempt == nil || !res.LastAttempt.CreatedAt.After(*res.appliedAt)) {
+		explanation.Summary = "No deployment has started for these changes."
 		return explanation
 	}
 	var related []*alignmentStep

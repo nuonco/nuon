@@ -112,7 +112,9 @@ const InstallImagesListBase = ({
                       ? 'Synced'
                       : image.alignment === 'disabled'
                         ? 'Disabled'
-                        : 'Sync status unavailable'
+                        : image.alignment === 'torn-down'
+                          ? 'Torn down'
+                          : 'Sync status unavailable'
                     : undefined}
                 </Status>
               </div>

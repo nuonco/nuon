@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DebouncedSearchInput } from '@/components/common/DeboundedSearch'
@@ -10,7 +10,8 @@ import {
 import { DriftedResources } from '@/components/install-alignment/DriftedResources'
 import {
   hasOngoingDeployment,
-  isDrifted,
+  listedResources,
+  resourcePage,
   resourcesOfKinds,
 } from '@/components/install-alignment/alignment-utils'
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
@@ -64,7 +65,12 @@ export const InstallComponentsListContainer = () => {
   const installLink = useInstallLink()
   const [searchParams, setSearchParams] = useSearchParams()
   const showHealth = !!org?.features?.['component-health']
-  const { data: overview, isPlaceholderData } = useInstallOverview()
+  const {
+    data: overview,
+    isLoading: overviewLoading,
+    isPlaceholderData,
+  } = useInstallOverview()
+  const alignmentAvailable = !!overview?.alignment && !overview.alignment.error
   const alignmentById = useMemo(
     () =>
       new Map(
@@ -86,21 +92,43 @@ export const InstallComponentsListContainer = () => {
   const types = (selectedTypes.length ? selectedTypes : COMPONENT_TYPES).join(
     ','
   )
-  const ids = overview?.alignment
-    ? resourcesOfKinds(overview.alignment.resources, ['component'])
-        .filter(
-          (resource) =>
-            !isDrifted(resource) &&
-            !hasOngoingDeployment(resource) &&
-            resource.category !== 'torn-down' &&
-            (enabledFilter !== 'disabled' ||
-              resource.category === 'disabled') &&
-            (enabledFilter !== 'enabled' || resource.category !== 'disabled')
-        )
-        .map((resource) => resource.id)
-        .sort()
-        .join(',') || 'none'
+  const listed = alignmentAvailable
+    ? listedResources(overview.alignment.resources, ['component'], {
+        enabled: enabledFilter,
+        search: q,
+        types: selectedTypes,
+      }).filter((resource) => resource.category !== 'torn-down')
     : undefined
+  const membership = listed?.map((resource) => resource.id).join(',')
+  const pagedMembership = useRef(membership)
+  const membershipChanged =
+    membership !== undefined &&
+    pagedMembership.current !== undefined &&
+    pagedMembership.current !== membership
+  const page = listed
+    ? resourcePage(listed, membershipChanged ? 0 : offset, LIMIT)
+    : undefined
+  const pageOffset = page?.offset ?? offset
+  const pageIds = page?.ids.join(',')
+
+  useEffect(() => {
+    const previous = pagedMembership.current
+    pagedMembership.current = membership
+    if (membership === undefined || !searchParams.has('offset')) return
+    if (
+      (previous !== undefined && previous !== membership) ||
+      offset !== pageOffset
+    ) {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev)
+          params.delete('offset')
+          return params
+        },
+        { replace: true }
+      )
+    }
+  }, [membership, offset, pageOffset, searchParams, setSearchParams])
 
   const { data: result, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -108,24 +136,24 @@ export const InstallComponentsListContainer = () => {
       'install-resource-components',
       org?.id,
       install?.id,
-      offset,
+      page ? `ids:${pageIds}` : offset,
       q,
       types,
-      ids,
     ],
     queryFn: () =>
       getInstallComponents({
         orgId: org.id,
         installId: install.id,
         limit: LIMIT,
-        offset,
+        offset: page ? 0 : offset,
         q,
         types,
-        ids,
+        ids: pageIds,
       }),
     refetchInterval: 20000,
-    enabled: !!org?.id && !!install?.id,
+    enabled: !!org?.id && !!install?.id && !overviewLoading && pageIds !== '',
   })
+  const rows = pageIds === '' ? undefined : result?.data
 
   const components = useMemo(() => {
     const toListItem = (
@@ -135,14 +163,16 @@ export const InstallComponentsListContainer = () => {
       const componentId = component?.id ?? installComponent.component_id ?? ''
       const latestDeploy = installComponent.install_deploys?.[0]
       const appliedConfigId = installComponent.app_config_ref?.applied_config_id
+      const alignment = installComponent.id
+        ? alignmentById.get(installComponent.id)
+        : undefined
 
       return {
         id: componentId || (installComponent.id ?? ''),
         name: component?.name ?? 'Component',
         type: component?.type,
-        alignment: installComponent.id
-          ? alignmentById.get(installComponent.id)?.category
-          : undefined,
+        alignment: alignment?.category,
+        alignmentReason: alignment?.reason,
         enabled: installComponent.enabled,
         status: installComponent.status_v2?.status ?? installComponent.status,
         href: componentId
@@ -181,7 +211,7 @@ export const InstallComponentsListContainer = () => {
       }
     }
 
-    const items = (result?.data ?? [])
+    const items = (rows ?? [])
       .filter(
         (component) => !hasOngoingDeployment(alignmentById.get(component.id))
       )
@@ -197,7 +227,7 @@ export const InstallComponentsListContainer = () => {
       (a, b) => enabledRank(a.enabled) - enabledRank(b.enabled)
     )
   }, [
-    result?.data,
+    rows,
     enabledFilter,
     org?.id,
     install?.id,
@@ -244,7 +274,7 @@ export const InstallComponentsListContainer = () => {
   return (
     <InstallComponentsList
       components={[...components, ...tornDown]}
-      aligned={!!overview && !isPlaceholderData}
+      aligned={alignmentAvailable && !isPlaceholderData}
       drifted={(view) => (
         <DriftedResources
           kinds={['component']}
@@ -255,11 +285,11 @@ export const InstallComponentsListContainer = () => {
           view={view}
         />
       )}
-      loading={isLoading}
+      loading={isLoading || overviewLoading}
       filtered={!!q || !!selectedTypes.length || !!enabledFilter}
       pagination={{
-        hasNext: result?.pagination?.hasNext ?? false,
-        offset,
+        hasNext: page?.hasNext ?? result?.pagination?.hasNext ?? false,
+        offset: pageOffset,
         limit: LIMIT,
       }}
       actions={<ManageAllDropdown />}

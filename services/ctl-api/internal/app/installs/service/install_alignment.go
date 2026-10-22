@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type InstallAlignmentResourceKind string
@@ -111,6 +113,7 @@ type InstallAlignmentResource struct {
 }
 
 type InstallAlignment struct {
+	Error     string                     `json:"error,omitempty"`
 	Resources []InstallAlignmentResource `json:"resources"`
 }
 
@@ -172,7 +175,8 @@ func (s *service) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 		}
 	}
 	var appConfigs []app.AppConfig
-	if err := db.WithContext(ctx).Preload("InputConfig.AppInputs").
+	if err := db.WithContext(ctx).Scopes(scopes.WithDisableViews).Select("id").
+		Preload("InputConfig.AppInputs").
 		Where("id IN ?", configIDs).Find(&appConfigs).Error; err != nil {
 		return nil, fmt.Errorf("unable to get alignment input defaults: %w", err)
 	}
@@ -291,11 +295,11 @@ func (st *installAlignmentState) desiredInputs(buildConfigID string) *state.Inpu
 	if current == nil {
 		return nil
 	}
-	inputs := st.inputs
-	if inputs == nil {
-		inputs = &app.InstallInputs{}
+	inputs := &state.InputsState{}
+	if st.inputs != nil {
+		inputs = installhelpers.ToInputState(st.inputs, current, false)
 	}
-	resolved := &state.State{Inputs: installhelpers.ToInputState(inputs, current, false)}
+	resolved := &state.State{Inputs: inputs}
 	if buildConfigID != "" && buildConfigID != current.ID {
 		installhelpers.FillInputDefaults(resolved, st.appConfigs[buildConfigID])
 	}
@@ -308,9 +312,8 @@ func (res *InstallAlignmentResource) compareInputs(names []string, desired *stat
 	}
 	if appliedDigest == "" {
 		if len(names) > 0 {
-			res.Category = InstallAlignmentCategoryUnknown
 			res.inputsUnknown = true
-			res.Reason = "the last applied inputs were not recorded; input alignment could not be verified"
+			res.Reason = "Inputs not verified. Applied input values weren’t recorded for this deployment."
 		}
 		return
 	}
@@ -390,7 +393,7 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 	default:
 		res.Category = InstallAlignmentCategoryInSync
 	}
-	if target != nil && target.Build != nil && applied != nil {
+	if res.Kind == InstallAlignmentResourceKindComponent && target != nil && target.Build != nil && applied != nil {
 		cfg := &target.Build.ComponentConfigConnection
 		inputs := st.desiredInputs(cfg.AppConfigID)
 		res.compareInputs(installhelpers.ComponentInputNames(cfg, inputs), inputs, applied.AppliedInputsDigest)
@@ -765,6 +768,9 @@ func sandboxScanMatchesApplied(st *installAlignmentState, scan *app.InstallSandb
 }
 
 func (s *service) latestInstallDeploysByComponent(ctx context.Context, db *gorm.DB, icIDs []string, planOnly bool) (map[string]*app.InstallDeploy, error) {
+	if len(icIDs) == 0 {
+		return map[string]*app.InstallDeploy{}, nil
+	}
 	join := "LEFT JOIN install_workflows w ON w.id = d.install_workflow_id AND w.deleted_at = 0"
 	filter := "(w.id IS NULL OR w.plan_only = false)"
 	if planOnly {
@@ -773,13 +779,16 @@ func (s *service) latestInstallDeploysByComponent(ctx context.Context, db *gorm.
 	}
 	var ids []string
 	if err := db.WithContext(ctx).Raw(`
-		SELECT DISTINCT ON (d.install_component_id) d.id
-		FROM install_deploys d
-		`+join+`
-		WHERE d.deleted_at = 0
-		  AND d.install_component_id IN ?
-		  AND `+filter+`
-		ORDER BY d.install_component_id, d.created_at DESC`, icIDs).
+		SELECT latest.id
+		FROM unnest(?::text[]) AS component_ids(id)
+		CROSS JOIN LATERAL (
+			SELECT d.id FROM install_deploys d
+			`+join+`
+			WHERE d.deleted_at = 0 AND d.install_component_id = component_ids.id
+			  AND `+filter+`
+			ORDER BY d.created_at DESC
+			LIMIT 1
+		) latest`, pq.Array(icIDs)).
 		Scan(&ids).Error; err != nil {
 		return nil, fmt.Errorf("unable to get latest install deploys: %w", err)
 	}
@@ -946,6 +955,8 @@ func workflowCoversKind(wf *app.Workflow, kind InstallAlignmentResourceKind) boo
 		return true
 	case app.WorkflowTypeDeployComponents, app.WorkflowTypeInputUpdate:
 		return componentKind
+	case app.WorkflowTypeTeardownComponents:
+		return kind == InstallAlignmentResourceKindComponent
 	case app.WorkflowTypeReprovisionSandbox:
 		if kind == InstallAlignmentResourceKindSandbox {
 			return true
@@ -1119,6 +1130,10 @@ func workflowOpenForTarget(
 		if target.installComponent != nil {
 			if _, ok := workflowComponents[target.installComponent.ID]; ok {
 				return true
+			}
+			if wf.Type == app.WorkflowTypeTeardownComponent && target.kind == InstallAlignmentResourceKindComponent {
+				id := wf.Metadata["component_id"]
+				return id != nil && *id == target.installComponent.ComponentID
 			}
 		}
 		return workflowCoversKind(wf, target.kind)

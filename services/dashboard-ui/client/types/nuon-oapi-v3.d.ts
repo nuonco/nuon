@@ -9477,6 +9477,7 @@ export interface components {
       type?: components["schemas"]["app.WorkflowType"];
     };
     "service.InstallAlignment": {
+      error?: string;
       resources?: components["schemas"]["service.InstallAlignmentResource"][];
     };
     "service.InstallAlignmentAttempt": {
@@ -27021,6 +27022,10 @@ export interface operations {
    */
   GetInstallOverview: {
     parameters: {
+      query?: {
+        /** @description include per-resource alignment; set false for branch tracking and config drift only */
+        include_alignment?: boolean;
+      };
       path: {
         /** @description install ID */
         install_id: string;

@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import {
   COLLECTION_VIEW_MODES,
@@ -10,6 +11,7 @@ import {
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { ID } from '@/components/common/ID'
+import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Pagination, type IPagination } from '@/components/common/Pagination'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -26,6 +28,7 @@ import { cn } from '@/utils/classnames'
 export type TInstallComponentListItem = {
   actions?: ReactNode
   alignment?: TInstallAlignmentCategory
+  alignmentReason?: string
   enabled?: boolean | null
   id: string
   href?: string
@@ -88,19 +91,22 @@ const InstallComponentsListBase = ({
     >
       {items.map((component) => {
         const disabled = component.enabled === false
+        const notCompared =
+          aligned && (!component.alignment || component.alignment === 'unknown')
+        const compact = disabled || notCompared
 
         return (
           <Card
             key={component.id}
             className={cn(
-              disabled ? '!p-3 !gap-3 self-start w-full' : '!p-4 !gap-4',
-              isGrid && !disabled && 'md:h-full'
+              compact ? '!p-3 !gap-3 self-start w-full' : '!p-4 !gap-4',
+              isGrid && !compact && 'md:h-full'
             )}
           >
             <div
               className={cn(
                 'flex justify-between gap-3 flex-wrap',
-                disabled ? 'items-center' : 'items-start'
+                compact ? 'items-center' : 'items-start'
               )}
             >
               <div className="flex flex-col gap-1.5 min-w-0">
@@ -140,16 +146,39 @@ const InstallComponentsListBase = ({
                     <Badge size="sm" theme="neutral">
                       Disabled
                     </Badge>
-                  ) : (
+                  ) : !notCompared ? (
                     <Status status={component.status} variant="badge" />
-                  )}
+                  ) : null}
+                  {aligned &&
+                  component.alignment === 'in-sync' &&
+                  component.alignmentReason ? (
+                    <Button
+                      variant="icon"
+                      size="sm"
+                      aria-label={`Alignment information for ${component.name}`}
+                      aria-description={component.alignmentReason}
+                      tooltipProps={{
+                        tipContent: component.alignmentReason,
+                        tipContentClassName:
+                          'max-w-72 whitespace-normal text-left',
+                      }}
+                    >
+                      <Icon variant="InfoIcon" size={16} aria-hidden />
+                    </Button>
+                  ) : null}
                 </div>
-                {!disabled ? <ID>{component.id}</ID> : null}
+                {notCompared && !disabled ? (
+                  <Text variant="subtext" theme="neutral">
+                    {component.alignmentReason ||
+                      'Alignment could not be determined from the available records.'}
+                  </Text>
+                ) : null}
+                {!compact ? <ID>{component.id}</ID> : null}
               </div>
               {component.actions}
             </div>
 
-            {!disabled ? (
+            {!compact ? (
               <div className="flex flex-col gap-4 border-t pt-4">
                 {component.latestDeploy}
               </div>

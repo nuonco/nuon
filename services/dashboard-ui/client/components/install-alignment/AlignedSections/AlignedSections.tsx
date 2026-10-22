@@ -40,7 +40,7 @@ export const AlignedSections = <T extends TAlignedItem>({
             description={
               noun === 'images'
                 ? 'The configured image versions have been synced to this install’s registry. This does not verify which versions workloads are running.'
-                : `These ${noun} match the desired configuration and inputs. No changes are needed.`
+                : `These ${noun} match the desired configuration.`
             }
           />
           {render(inSync)}
@@ -55,10 +55,7 @@ export const AlignedSections = <T extends TAlignedItem>({
             aria-label="Not compared"
             data-testid="not-compared-section"
           >
-            <SectionHeader
-              title="Not compared"
-              description={`Drift could not be determined for these ${noun}.`}
-            />
+            <SectionHeader title="Not compared" />
             {render(other)}
           </section>
         )

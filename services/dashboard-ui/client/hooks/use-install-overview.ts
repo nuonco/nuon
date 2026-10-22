@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -9,7 +10,9 @@ export const INSTALL_OVERVIEW_QUERY_KEY = 'install-overview'
 export const useInstallOverview = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const { pathname } = useLocation()
   const installId = install?.id
+  const includeAlignment = /\/resources\/(components|images)\/?$/.test(pathname)
 
   return useQuery<TInstallOverview, TAPIError>({
     queryKey: [
@@ -18,9 +21,14 @@ export const useInstallOverview = () => {
       installId,
       install?.app_config_id,
       install?.app_branch?.id ?? install?.app_branch_id,
+      includeAlignment,
     ],
     queryFn: () =>
-      getInstallOverview({ orgId: org!.id, installId: installId! }),
+      getInstallOverview({
+        orgId: org!.id,
+        installId: installId!,
+        includeAlignment,
+      }),
     enabled: !!org?.id && !!installId,
     refetchInterval: 20000,
     placeholderData: (previous, previousQuery) =>

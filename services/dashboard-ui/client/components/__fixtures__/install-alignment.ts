@@ -255,7 +255,13 @@ const cancelledCause = (index: number, type: TAttemptType, summary: string) => {
 export const causeResources = (): TInstallAlignmentResource[] => [
   unappliedResource({
     ...causeBase(0),
-    last_attempt: undefined,
+    status: 'active',
+    reason: 'The deployed version doesn’t match this install’s configuration.',
+    expected_build_id: 'bld-api-selected',
+    applied_build_id: 'bld-api-applied',
+    expected_config_id: 'cfg-selected',
+    applied_config_id: 'cfg-applied',
+    last_attempt: pastAttempt(causeBase(0).id, 'active'),
     plan: undefined,
     newer_branch_runs: null,
     explanation: { summary: 'No deployment has started for these changes.' },

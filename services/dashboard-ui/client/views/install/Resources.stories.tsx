@@ -42,15 +42,22 @@ export const ComponentsInputUpdatesConfigManaged = () =>
   aligned('/resources/components', 'input-updates', true)
 export const ComponentsInSync = () =>
   aligned('/resources/components', 'in-sync')
+export const ComponentsInputsUnverified = () =>
+  aligned('/resources/components', 'inputs-unverified')
 export const ComponentsTornDown = () =>
   aligned('/resources/components', 'torn-down')
+export const ComponentsDeploymentHistory = () =>
+  aligned('/resources/components', 'component-history')
+export const ComponentsPaged = () => aligned('/resources/components', 'paged')
 export const ImagesPendingSync = () => aligned('/resources/images', 'drifted')
 export const ImagesSyncing = () => aligned('/resources/images', 'ongoing')
 export const ImagesSyncCancelled = () =>
   aligned('/resources/images', 'image-sync-cancelled')
 export const ImagesSynced = () => aligned('/resources/images', 'in-sync')
-export const SandboxDrifted = () => aligned('/resources/sandbox', 'drifted')
-export const SandboxOngoing = () => aligned('/resources/sandbox', 'ongoing')
-export const StackInSync = () => aligned('/resources', 'drifted')
+export const ImagesTornDown = () => aligned('/resources/images', 'torn-down')
+export const ComponentsAlignmentUnavailable = () =>
+  aligned('/resources/components', 'unavailable')
+export const ImagesAlignmentUnavailable = () =>
+  aligned('/resources/images', 'unavailable')
 export const AlignmentLoadFailed = () =>
   aligned('/resources/components', 'error')

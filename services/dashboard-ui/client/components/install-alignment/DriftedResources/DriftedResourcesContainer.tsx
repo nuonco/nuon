@@ -98,6 +98,7 @@ export const DriftedResourcesContainer = ({
       )}
       loading={isLoading}
       error={error}
+      unavailable={!!data?.alignment?.error}
       onRetry={() => void refetch()}
       noun={noun}
       search={search ?? searchParams.get('q') ?? undefined}

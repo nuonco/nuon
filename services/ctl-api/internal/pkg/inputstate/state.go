@@ -56,6 +56,9 @@ func FillDefaults(st *state.State, cfg *app.AppConfig) {
 			st.Inputs = state.NewInputsState()
 			st.Inputs.Populated = true
 		}
+		if st.Inputs.Inputs == nil {
+			st.Inputs.Inputs = make(map[string]string)
+		}
 		if st.Inputs.Inputs[input.Name] != "" {
 			continue
 		}

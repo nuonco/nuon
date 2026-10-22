@@ -16,7 +16,6 @@ import {
 } from '@/components/__fixtures__/install-alignment'
 import type { TAPIError, TInstallAlignmentResource } from '@/types'
 import { DriftResourceCard } from '../DriftResourceCard'
-import { ResourceAlignment } from '../ResourceAlignment/ResourceAlignment'
 import { DriftedResources } from './DriftedResources'
 
 afterEach(cleanup)
@@ -48,12 +47,16 @@ const View = ({
   noun = 'components',
   search,
   pageSize = 4,
+  unavailable = false,
+  onRetry,
 }: {
   items?: TInstallAlignmentResource[]
   error?: TAPIError
   noun?: string
   search?: string
   pageSize?: number
+  unavailable?: boolean
+  onRetry?: () => void
 }) => (
   <MemoryRouter>
     <DriftedResources
@@ -62,6 +65,8 @@ const View = ({
       error={error}
       search={search}
       pageSize={pageSize}
+      unavailable={unavailable}
+      onRetry={onRetry}
       renderCard={(resource) => (
         <DriftResourceCard
           resource={resource}
@@ -170,9 +175,7 @@ test('a stopped deployment returns to drift until its changes are actually appli
   )
   expect(screen.queryByRole('region', { name: 'Drifted' })).toBeNull()
   expect(
-    screen.getByText(
-      'All components match the desired configuration and inputs. No changes are needed.'
-    )
+    screen.getByText('All components match the desired configuration.')
   ).toBeTruthy()
 })
 
@@ -278,34 +281,50 @@ test('cached alignment remains visible with a refresh warning in summary, drift,
   const renderCached = (
     resource: TInstallAlignmentResource,
     search?: string
-  ) => (
-    <>
-      <ResourceAlignment
-        label="stack"
-        resource={resource}
-        card={<span>Cached stack</span>}
-        error={error}
-      />
-      <View items={[resource]} error={error} search={search} />
-    </>
-  )
+  ) => <View items={[resource]} error={error} search={search} />
   const { rerender } = render(renderCached(alignmentResource()))
-  expect(screen.getAllByTestId('alignment-summary')).toHaveLength(2)
-  expect(screen.getAllByRole('alert')).toHaveLength(2)
+  expect(screen.getAllByTestId('alignment-summary')).toHaveLength(1)
+  expect(screen.getAllByRole('alert')).toHaveLength(1)
   expect(
     screen.getAllByText(
       'Refreshing resources failed. Showing the last loaded results. Overview unavailable'
     )
-  ).toHaveLength(2)
+  ).toHaveLength(1)
 
   for (const resource of [unappliedResource(), openDeploymentResource()]) {
     rerender(renderCached(resource))
-    expect(screen.getByText('Cached stack')).toBeTruthy()
     expect(screen.getByRole('heading', { name: resource.name })).toBeTruthy()
-    expect(screen.getAllByRole('alert')).toHaveLength(2)
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
   }
 
   rerender(renderCached(alignmentResource(), 'no-match'))
-  expect(screen.getAllByRole('alert')).toHaveLength(2)
-  expect(screen.getAllByTestId('alignment-summary')).toHaveLength(1)
+  expect(screen.getAllByRole('alert')).toHaveLength(1)
+  expect(screen.queryByTestId('alignment-summary')).toBeNull()
+})
+
+test('unavailable alignment shows a retry instead of successful or cached comparison results', () => {
+  for (const noun of ['components', 'images']) {
+    let retried = false
+    const { rerender, unmount } = render(
+      <View
+        noun={noun}
+        items={[]}
+        unavailable
+        onRetry={() => (retried = true)}
+      />
+    )
+    expect(screen.getByText('Resource alignment unavailable.')).toBeTruthy()
+    expect(screen.queryByTestId('alignment-summary')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(retried).toBe(true)
+    rerender(<View noun={noun} items={[alignmentResource()]} unavailable />)
+    expect(screen.getByText('Resource alignment unavailable.')).toBeTruthy()
+    expect(screen.queryByTestId('alignment-summary')).toBeNull()
+    rerender(<View items={[alignmentResource()]} />)
+    expect(screen.queryByTestId('alignment-error')).toBeNull()
+    expect(
+      screen.getByText('All components match the desired configuration.')
+    ).toBeTruthy()
+    unmount()
+  }
 })
