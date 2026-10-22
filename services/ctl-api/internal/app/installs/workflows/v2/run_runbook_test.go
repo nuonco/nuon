@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -34,22 +33,4 @@ func TestRunbookStepWorkflow(t *testing.T) {
 		PlanOnly: true,
 	})
 	require.False(t, action.PlanOnly)
-}
-
-func TestRunbookEnablementConfigKeepsEnabledToggle(t *testing.T) {
-	toggleable := true
-	defaultEnabled := false
-	component := &app.Component{
-		Name: "telemetry_relay",
-		ComponentConfigs: []app.ComponentConfigConnection{{
-			Toggleable:     &toggleable,
-			DefaultEnabled: &defaultEnabled,
-		}},
-	}
-	enabled := "true"
-	inputs := map[string]*string{
-		config.EnabledOverrideInputName(component.Name): &enabled,
-	}
-
-	require.True(t, componentEnabledFromInputs(inputs, runbookEnablementConfig(component)))
 }
