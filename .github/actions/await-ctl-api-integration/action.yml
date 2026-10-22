@@ -2,6 +2,7 @@
 name: await-ctl-api-integration
 description: |
   Blocks until the ctl-api integration workflow has passed for a commit, dispatching it when no run exists.
+  Returns immediately when skip is true, or when a pull request for the commit has the skip-integration label.
 inputs:
   sha:
     description: Commit being promoted
@@ -10,12 +11,16 @@ inputs:
     description: Branch whose head is the commit, used when a run has to be dispatched
     required: true
   token:
-    description: Token with actions:write
+    description: Token with actions:write and pull-requests:read
     required: true
   timeout-minutes:
     description: How long to wait for the run to finish
     required: false
     default: "70"
+  skip:
+    description: Skip the gate. The commit's pull request label skip-integration also skips it.
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -29,8 +34,22 @@ runs:
         TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
         REPO: ${{ github.repository }}
         WORKFLOW: ctl-api-integration.yml
+        SKIP: ${{ inputs.skip }}
       run: |
         set -euo pipefail
+        if [[ "$SKIP" == "true" ]]; then
+          echo "skipping ctl-api integration gate"
+          exit 0
+        fi
+        labels=""
+        if ! labels="$(gh api "repos/${REPO}/commits/${SHA}/pulls" --jq '[.[].labels[].name] | join("\n")')"; then
+          echo "could not read pull request labels for ${SHA}; not skipping on the label"
+          labels=""
+        fi
+        if printf '%s\n' "$labels" | grep -qx 'skip-integration'; then
+          echo "skipping ctl-api integration gate (skip-integration label)"
+          exit 0
+        fi
         deadline=$(( $(date +%s) + TIMEOUT_MINUTES * 60 ))
         dispatched=false
 

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
-	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 
@@ -70,9 +69,9 @@ func (e *testExporter) Shutdown(context.Context) error {
 
 func attrs(record sdklog.Record) map[string]string {
 	result := make(map[string]string)
-	record.WalkAttributes(func(attr otellog.KeyValue) bool {
-		if attr.Value.Kind() == otellog.KindString {
-			result[attr.Key] = attr.Value.AsString()
+	record.WalkAttributes(func(attr attribute.KeyValue) bool {
+		if attr.Value.Type() == attribute.STRING {
+			result[string(attr.Key)] = attr.Value.AsString()
 		}
 		return true
 	})

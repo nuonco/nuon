@@ -119,6 +119,9 @@ func (s *service) getAppBranchWorkflow(ctx *gin.Context, orgID, appBranchID, wor
 		Preload("AppBranchRuns").
 		Preload("AppBranchRuns.VCSConnectionCommit").
 		Preload("AppBranchRuns.AppBranchConfig").
+		Preload("AppBranchRuns.AppBranchConfig.InstallGroups", func(db *gorm.DB) *gorm.DB {
+			return db.Order("\"order\" ASC")
+		}).
 		Preload("AppBranchRuns.AppBranchConfig.ConnectedGithubVCSConfig").
 		Preload("AppBranchRuns.AppBranchConfig.PublicGitVCSConfig").
 		Preload("AppBranchRuns.Preview").
