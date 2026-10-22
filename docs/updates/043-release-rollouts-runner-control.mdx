@@ -124,6 +124,10 @@ Pass `request_id` (or `--request-id` in the CLI) when you start a deploy, reprov
 
 ### Named IAM policies
 
-Define an AWS IAM policy once and attach it to any role by name, including break-glass roles.
+Define IAM policies in your `permissions/` directory and attach them by name to any role, alongside each role's inline
+policies. The customer's install stack creates them, and your components can use their ARNs, for example to attach a
+policy to a Kubernetes workload.
+
+Use them for sensitive permissions you don't want write access to.
 
 <Card title="Permissions config reference" icon="shield-check" href="/config-ref/permissions" horizontal />
