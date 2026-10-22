@@ -178,14 +178,16 @@ func TestLogStreamTLSIgnoresOTELTrust(t *testing.T) {
 			logger.Info("planning deployment")
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			require.NoError(t, provider.ForceFlush(ctx))
-			select {
-			case err := <-exportErrors:
-				var unknownAuthority x509.UnknownAuthorityError
-				require.ErrorAs(t, err, &unknownAuthority)
-			case <-ctx.Done():
-				t.Fatal("OTEL certificate settings changed log-stream TLS trust")
+			err = provider.ForceFlush(ctx)
+			if err == nil {
+				select {
+				case err = <-exportErrors:
+				case <-ctx.Done():
+					t.Fatal("OTEL certificate settings changed log-stream TLS trust")
+				}
 			}
+			var unknownAuthority x509.UnknownAuthorityError
+			require.ErrorAs(t, err, &unknownAuthority)
 		})
 	}
 }
