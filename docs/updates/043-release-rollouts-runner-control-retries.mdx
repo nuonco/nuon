@@ -25,7 +25,16 @@ tag_prefix = "release/"
 nuon branches trigger --branch-id main --run-type tag --run-ref v1.2.3
 ```
 
-{/* ANIMATION: commits flow past a branch line without starting anything; a release/ tag lands and a run lights up, then fans out through install groups (stage, then production) with an approval gate between them. */}
+<video
+  src="/images/changelog/043-release-rollouts.mp4"
+  poster="/images/changelog/043-release-rollouts.png"
+  aria-label="Commits land on main without starting a run, a release tag starts one, and it rolls out to stage and then, after approval, production"
+  autoPlay
+  loop
+  muted
+  playsInline
+  style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
+/>
 
 <CardGroup cols={2}>
   <Card title="Control when the branch runs" icon="code-branch" href="/guides/app-branches#control-when-the-branch-runs" horizontal />
@@ -59,7 +68,16 @@ VpcCIDR = "10.42.0.0/16"
 InstanceType = "m7i.large"
 ```
 
-{/* ANIMATION: one app template feeding three installs; each install card swaps in its own AMI pin, VPC CIDR, and instance type while the shared template stays unchanged. */}
+<video
+  src="/images/changelog/043-runner-control.mp4"
+  poster="/images/changelog/043-runner-control.png"
+  aria-label="One app template feeding two installs, each overriding its own runner AMI, instance type, or VPC CIDR while the template stays unchanged"
+  autoPlay
+  loop
+  muted
+  playsInline
+  style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
+/>
 
 <CardGroup cols={2}>
   <Card title="Runner config reference" icon="server" href="/config-ref/runner" horizontal />
@@ -83,7 +101,16 @@ nuon actions create-run -i customer1 -w pg_status \
   --env DEBUG=true --request-id pg-status-2026-10-22 --wait
 ```
 
-{/* ANIMATION: a pipeline sends a deploy request, the response is lost, the pipeline retries with the same request_id, and the API hands back the same workflow id instead of a second workflow. */}
+<video
+  src="/images/changelog/043-safe-retries.mp4"
+  poster="/images/changelog/043-safe-retries.png"
+  aria-label="A deploy request times out, the pipeline retries with the same request_id, and the API returns the original workflow instead of starting a second one"
+  autoPlay
+  loop
+  muted
+  playsInline
+  style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
+/>
 
 <CardGroup cols={2}>
   <Card title="Idempotent operations" icon="repeat" href="/guides/idempotent-operations" horizontal />
