@@ -41,6 +41,9 @@ type PlantypesDeployPlan struct {
 	// helm
 	Helm *PlantypesHelmDeployPlan `json:"helm,omitempty"`
 
+	// inputs digest
+	InputsDigest string `json:"inputs_digest,omitempty"`
+
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 

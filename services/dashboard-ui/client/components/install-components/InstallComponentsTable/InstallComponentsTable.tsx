@@ -135,13 +135,20 @@ export function parseInstallComponentSummaryToTableData(
       ),
       labels: (() => {
         const lbls = component.component?.labels
-        if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
+        if (!lbls || Object.keys(lbls).length === 0)
+          return <Icon variant="MinusIcon" />
         return (
           <span className="flex flex-wrap gap-1">
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" customColor={labelColors?.[k]} />
+                <LabelBadge
+                  key={k}
+                  labelKey={k}
+                  labelValue={lbls[k]}
+                  size="sm"
+                  customColor={labelColors?.[k]}
+                />
               ))}
           </span>
         )
@@ -153,7 +160,6 @@ export function parseInstallComponentSummaryToTableData(
             installComponent={component}
             orgId={orgId}
             installId={installId}
-            removed={removed}
           />
         </div>
       ),
@@ -169,7 +175,9 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body" flex className="items-center gap-2">
-          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">
+            {info.getValue() as string}
+          </Link>
           {info.row.original.removed ? (
             <RemovedFromAppConfigBadge kind="component" />
           ) : null}
@@ -194,7 +202,11 @@ const columns: ColumnDef<InstallComponentRow>[] = [
           position="top"
           tipContentClassName="!p-0"
           tipContent={
-            <Text as="div" className="flex w-fit max-w-96 p-2" variant="subtext">
+            <Text
+              as="div"
+              className="flex w-fit max-w-96 p-2"
+              variant="subtext"
+            >
               {message}
             </Text>
           }
@@ -214,7 +226,9 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     accessorKey: 'dependencies',
     header: 'Dependencies',
     cell: (info) => (
-      <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
+      <Text as="div" className="flex">
+        {info.getValue() as ReactNode}
+      </Text>
     ),
   },
   {
@@ -236,7 +250,9 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     accessorKey: 'driftStatus',
     header: 'Drifted',
     cell: (info) => (
-      <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
+      <Text as="div" className="flex">
+        {info.getValue() as ReactNode}
+      </Text>
     ),
   },
   {
@@ -244,7 +260,9 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     accessorKey: 'toggleStatus',
     header: 'Toggle',
     cell: (info) => (
-      <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
+      <Text as="div" className="flex">
+        {info.getValue() as ReactNode}
+      </Text>
     ),
   },
   {
@@ -252,7 +270,9 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     accessorKey: 'overrideStatus',
     header: 'Overrides',
     cell: (info) => (
-      <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
+      <Text as="div" className="flex">
+        {info.getValue() as ReactNode}
+      </Text>
     ),
   },
   {
