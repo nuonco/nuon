@@ -1,0 +1,62 @@
+---
+title: "App branch migration"
+description: "Migrate your app template from Nuon CLI-driven syncs to App Branches and Install Groups."
+icon: "code-branch"
+keywords: ["app branch migration", "migrate to app branches", "install groups", "deployment groups", "control plane sync", "branch.toml", "PR previews"]
+---
+
+App Branches were introduced in [changelog 040](/updates/040-app-branches). Use this guide to migrate from `nuon apps sync` to app branches and install groups.
+
+*Shortcut: Ask Nuon to enable the feature flag, then run `nuon apps sync`. The CLI walks you through the migration.*
+
+## What's changing
+
+Previously, running `nuon apps sync` validated, synced, and built your app template directly from the Nuon CLI.
+
+With App Branches, Nuon directly fetches your app template Git repository and syncs it to the Nuon control plane. This unlocks features like automated previews and install rollouts.
+
+## Migration Steps
+
+### Step 1: Create Your App Branch
+
+1. Add a `branch.toml` to your app template.
+2. Sync it to the Nuon control plane with `nuon branches sync`.
+
+For `branch.toml` examples and how to write one, see the [App Branches docs](/guides/app-branches#write-a-branch-config).
+
+### Step 2: Automations and Triggers
+
+Nuon automatically starts the first branch run on sync, which pulls the app template and builds the sandbox and components. Confirm that run succeeds.
+
+You can now trigger updates to your installs using:
+* Git pushes
+* Git tags
+* Pull Request (PR) labels
+* Manual runs
+
+Automate these triggers using a GitHub Webhook or the [GitHub Action (GHA)](/guides/github-actions#trigger-a-branch-run-from-your-workflow).
+
+### Step 3: Create Install Groups
+
+Install rollouts were previously managed on an install-by-install basis using the Nuon CLI or dashboard. With App Branches, installs are categorized into Install Groups which are vendor-defined ways to rollout upgrades to similar installs.
+
+1. Add [labels](/guides/install-configs#labeling-installs) to your installs or [install configs](/guides/install-configs#install-configs) so they join an install group on the app branch.
+2. Push to the app branch’s tracked git branch to roll the update out to those installs.
+
+For how to structure Install Groups, see the [App Branches docs](/concepts/app-branches#structuring-branches-and-install-groups).
+
+### Step 4: Setup Previews
+Validate changes on your app template’s git branch before merging them into the branch your app is configured to use. When you open a pull request or create a feature branch, you can preview changes in three distinct modes:
+1. Validate and Build: Validates your config and builds your components.
+2. Plan Only: Previews deploys and updates against a single test install without applying changes.
+3. Apply: Runs and executes changes on a single test install.
+
+For how to set up Previews, see the [App Branches docs](/guides/app-branches#previews).
+
+## Next Steps & Advanced Setup
+
+Now that your base migration is complete, expand your setup with these advanced features:
+
+* Set up [GitHub Actions](/guides/github-actions#trigger-a-branch-run-from-your-workflow) for Branch Syncing
+* Automate deployment group rollouts with git pushes, tags, or PR labels
+* Set up [pull request previews](/guides/app-branches#previews) that comment and set checks on your PRs
