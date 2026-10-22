@@ -21,7 +21,7 @@ repository root:
 ```sh
 docker build --target final -f bins/telemetry-agent/Dockerfile \
   --build-arg AGENT_SOURCE=bins/telemetry-agent \
-  --build-arg BUILD_IMAGE=golang:1.26-alpine \
+  --build-arg BUILD_IMAGE=golang:1.27-alpine \
   --build-arg RUNTIME_IMAGE=alpine:3.21 \
   -t registry.example.com/nuon-telemetry-agent:0.1.0 .
 ```

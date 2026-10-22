@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.26 AS build-base
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27 AS build-base
 
 # Set GOPROXY environment variable
 ARG GOPROXY=https://proxy.golang.org,direct
@@ -29,7 +29,7 @@ RUN curl -sSL -o /tmp/s5cmd.tar.gz https://github.com/peak/s5cmd/releases/downlo
     rm /tmp/s5cmd.tar.gz
 
 # Get golangci-lint from the official image
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/golangci/golangci-lint:v2.5.0 AS golangci
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/golangci/golangci-lint:v2.15.0 AS golangci
 
 # Back to main build
 FROM build-base AS deps
