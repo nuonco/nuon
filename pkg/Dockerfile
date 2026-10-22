@@ -6,7 +6,7 @@ ARG GOCACHE_COMPACT=false
 ARG GOBUILD_CACHE_ID=gobuild-pkg
 ARG GOMOD_CACHE_ID=gomod-pkg
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25 AS tools
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.26 AS tools
 ARG GOBUILD_CACHE_ID
 ARG GOMOD_CACHE_ID
 ENV GOCACHE=/go/pkg/build-cache \

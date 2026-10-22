@@ -1,6 +1,6 @@
 module github.com/nuonco/nuon
 
-go 1.25.8
+go 1.26.10
 
 // NOTE(jm): some older versions of viper, require an older and incompatible version of ugorgi/go which has some
 // backwards compatibility issues with go modules:
