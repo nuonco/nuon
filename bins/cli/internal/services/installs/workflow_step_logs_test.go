@@ -2,8 +2,6 @@ package installs
 
 import (
 	"context"
-	"io"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -153,21 +151,6 @@ func logRec(body string) *models.AppOtelLogRecord {
 		ServiceName:  "runner",
 		Body:         body,
 	}
-}
-
-func captureStdout(t *testing.T, fn func()) string {
-	t.Helper()
-	r, w, err := os.Pipe()
-	require.NoError(t, err)
-	orig := os.Stdout
-	os.Stdout = w
-	defer func() { os.Stdout = orig }()
-
-	fn()
-	require.NoError(t, w.Close())
-	out, err := io.ReadAll(r)
-	require.NoError(t, err)
-	return string(out)
 }
 
 func TestUnixNanoCursorParsesTimestamp(t *testing.T) {
