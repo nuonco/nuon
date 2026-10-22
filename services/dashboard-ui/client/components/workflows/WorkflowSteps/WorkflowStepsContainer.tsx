@@ -24,6 +24,9 @@ export const WorkflowStepsContainer = ({
     workflowTheme === 'warn'
   const eagerStepsLoaded = !!metadata?.eager_steps_loaded
   const allStepsLoaded = !!metadata?.all_steps_loaded || isTerminal
+  if (!workflowSteps.length && !allStepsLoaded && !workflow?.finished) {
+    return <WorkflowStepsSkeleton />
+  }
 
   return (
     <WorkflowSteps

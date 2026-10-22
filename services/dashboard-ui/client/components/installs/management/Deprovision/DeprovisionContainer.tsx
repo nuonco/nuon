@@ -7,6 +7,7 @@ import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallUIWizards } from '@/hooks/use-install-ui-wizards'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -15,7 +16,9 @@ import { DeprovisionModal } from './Deprovision'
 
 interface IDeprovision {}
 
-export const DeprovisionModalContainer = ({ ...props }: IDeprovision & Omit<IModal, 'onSubmit'>) => {
+export const DeprovisionModalContainer = ({
+  ...props
+}: IDeprovision & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
@@ -23,7 +26,11 @@ export const DeprovisionModalContainer = ({ ...props }: IDeprovision & Omit<IMod
   const installLink = useInstallLink()
   const { addToast } = useToast()
 
-  const { mutate, isPending: isLoading, error } = useMutation({
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation({
     mutationFn: () =>
       deprovisionInstall({
         orgId: org.id,
@@ -42,12 +49,24 @@ export const DeprovisionModalContainer = ({ ...props }: IDeprovision & Omit<IMod
       removeModal(props.modalId)
       const workflowId = result.data.workflow_id
       if (workflowId) {
-        navigate(installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows/${workflowId}` }))
+        navigate(
+          installLink({
+            installId: install.id,
+            appId: install.app_id,
+            suffix: `/workflows/${workflowId}`,
+          })
+        )
       } else {
-        navigate(installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows` }))
+        navigate(
+          installLink({
+            installId: install.id,
+            appId: install.app_id,
+            suffix: `/workflows`,
+          })
+        )
       }
     },
-    onError: (error) => {
+    onError: () => {
       addToast(
         <Toast heading="Deprovision failed" theme="error">
           <Text>Unable to start deprovision workflow for {install.name}.</Text>
@@ -70,12 +89,26 @@ export const DeprovisionModalContainer = ({ ...props }: IDeprovision & Omit<IMod
 export const DeprovisionButton = ({
   ...props
 }: IDeprovision & IButtonAsButton) => {
+  const navigate = useNavigate()
   const { addModal } = useSurfaces()
+  const { install } = useInstall()
+  const installLink = useInstallLink()
+  const wizards = useInstallUIWizards()
   const modal = <DeprovisionModalContainer />
 
   return (
     <Button
       onClick={() => {
+        if (wizards) {
+          navigate(
+            installLink({
+              installId: install.id,
+              appId: install.app_id,
+              suffix: '/teardown',
+            })
+          )
+          return
+        }
         addModal(modal)
       }}
       {...props}
