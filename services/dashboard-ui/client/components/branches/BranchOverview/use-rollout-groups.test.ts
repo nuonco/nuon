@@ -7,6 +7,7 @@ import {
   historyPreviewMode,
   mergeGroupRuns,
   previewAffectedInstalls,
+  rolloutConfig,
   rolloutGroupHrefForWorkflow,
   rolloutHrefForWorkflow,
 } from './use-rollout-groups'
@@ -86,6 +87,46 @@ describe('mergeGroupRuns install detail', () => {
       'Queued behind run run_earlier',
       'Superseded by a later run',
     ])
+  })
+})
+
+describe('rolloutConfig', () => {
+  test('keeps the install groups the run was planned with', () => {
+    const latest = {
+      id: 'cfg-latest',
+      install_groups: [{ id: 'default', name: 'default' }],
+    }
+    const pinned = rolloutConfig(
+      {
+        app_branch_config: {
+          id: 'cfg-run',
+          install_groups: [
+            { id: 'preview', name: 'preview' },
+            { id: 'default', name: 'default' },
+          ],
+        },
+      } as TAppBranchRun,
+      latest
+    )
+    expect(pinned?.id).toBe('cfg-run')
+    expect(pinned?.install_groups?.map((group) => group.name)).toEqual([
+      'preview',
+      'default',
+    ])
+  })
+
+  test('uses the latest config until the run config has groups', () => {
+    const latest = {
+      id: 'cfg-latest',
+      install_groups: [{ id: 'default', name: 'default' }],
+    }
+    expect(rolloutConfig(undefined, latest)?.id).toBe('cfg-latest')
+    expect(
+      rolloutConfig(
+        { app_branch_config: { id: 'cfg-empty' } } as TAppBranchRun,
+        latest
+      )?.id
+    ).toBe('cfg-latest')
   })
 })
 
