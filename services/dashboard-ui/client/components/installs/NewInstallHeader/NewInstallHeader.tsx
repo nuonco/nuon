@@ -36,7 +36,7 @@ export const NewInstallHeader = ({
   install,
   labelColors,
   latestCommit,
-  latestCommitLabel = 'Applied commit',
+  latestCommitLabel = 'Selected commit',
   latestCommitLoading,
   installPath: installPathProp,
   orgId,

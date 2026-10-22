@@ -14183,7 +14183,7 @@ func (a *Client) GetInstallLatestDeploy(params *GetInstallLatestDeployParams, au
 /*
 GetInstallOverview installs overview
 
-Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
 */
 func (a *Client) GetInstallOverview(params *GetInstallOverviewParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOverviewOK, error) {
 	// NOTE: parameters are not validated before sending

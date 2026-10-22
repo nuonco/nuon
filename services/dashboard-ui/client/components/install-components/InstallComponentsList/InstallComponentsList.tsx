@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import {
   COLLECTION_VIEW_MODES,
@@ -8,23 +9,26 @@ import {
   type TCollectionView,
 } from '@/components/common/CollectionViewToggle'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Expand } from '@/components/common/Expand'
 import { ID } from '@/components/common/ID'
+import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Pagination, type IPagination } from '@/components/common/Pagination'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
-import { InstallConfigBehindBadge } from '@/components/installs/InstallResourceConfig'
+import { AlignedSections } from '@/components/install-alignment/AlignedSections'
 import { usePagination } from '@/hooks/use-pagination'
 import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { PaginationProvider } from '@/providers/pagination-provider'
-import type { TComponentType } from '@/types'
+import type { TComponentType, TInstallAlignmentCategory } from '@/types'
 import { cn } from '@/utils/classnames'
 
 export type TInstallComponentListItem = {
   actions?: ReactNode
-  behind?: boolean
+  alignment?: TInstallAlignmentCategory
+  alignmentReason?: string
   enabled?: boolean | null
   id: string
   href?: string
@@ -36,7 +40,9 @@ export type TInstallComponentListItem = {
 
 export interface IInstallComponentsList {
   actions?: ReactNode
+  aligned?: boolean
   components: TInstallComponentListItem[]
+  drifted?: (view: TCollectionView) => ReactNode
   filterActions?: ReactNode
   filtered?: boolean
   loading?: boolean
@@ -48,7 +54,9 @@ export interface IInstallComponentsList {
 
 const InstallComponentsListBase = ({
   actions,
+  aligned = false,
   components,
+  drifted,
   filterActions,
   filtered = false,
   loading = false,
@@ -74,6 +82,112 @@ const InstallComponentsListBase = ({
   }, [components, setIsPaginating])
 
   const isGrid = view === 'grid'
+  const tornDown = components.filter((item) => item.alignment === 'torn-down')
+  const remaining = components.filter((item) => item.alignment !== 'torn-down')
+
+  const renderCards = (items: TInstallComponentListItem[]) => (
+    <div
+      className={cn('flex flex-col gap-4', isGrid && 'md:grid md:grid-cols-2')}
+    >
+      {items.map((component) => {
+        const disabled = component.enabled === false
+        const notCompared =
+          aligned && (!component.alignment || component.alignment === 'unknown')
+        const compact = disabled || notCompared
+
+        return (
+          <Card
+            key={component.id}
+            className={cn(
+              compact ? '!p-3 !gap-3 self-start w-full' : '!p-4 !gap-4',
+              isGrid && !compact && 'md:h-full'
+            )}
+          >
+            <div
+              className={cn(
+                'flex justify-between gap-3 flex-wrap',
+                compact ? 'items-center' : 'items-start'
+              )}
+            >
+              <div className="flex flex-col gap-1.5 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  {component.type ? (
+                    <ComponentType
+                      type={component.type}
+                      displayVariant="icon-only"
+                      iconSize="16"
+                      colorVariant={disabled ? 'mono' : 'color'}
+                    />
+                  ) : null}
+                  {component.href ? (
+                    <Link href={component.href} className="min-w-0">
+                      <Text
+                        variant="body"
+                        weight="stronger"
+                        role="heading"
+                        level={3}
+                        theme={disabled ? 'neutral' : undefined}
+                      >
+                        {component.name}
+                      </Text>
+                    </Link>
+                  ) : (
+                    <Text
+                      variant="body"
+                      weight="stronger"
+                      role="heading"
+                      level={3}
+                      theme={disabled ? 'neutral' : undefined}
+                    >
+                      {component.name}
+                    </Text>
+                  )}
+                  {disabled ? (
+                    <Badge size="sm" theme="neutral">
+                      Disabled
+                    </Badge>
+                  ) : !notCompared ? (
+                    <Status status={component.status} variant="badge" />
+                  ) : null}
+                  {aligned &&
+                  component.alignment === 'in-sync' &&
+                  component.alignmentReason ? (
+                    <Button
+                      variant="icon"
+                      size="sm"
+                      aria-label={`Alignment information for ${component.name}`}
+                      aria-description={component.alignmentReason}
+                      tooltipProps={{
+                        tipContent: component.alignmentReason,
+                        tipContentClassName:
+                          'max-w-72 whitespace-normal text-left',
+                      }}
+                    >
+                      <Icon variant="InfoIcon" size={16} aria-hidden />
+                    </Button>
+                  ) : null}
+                </div>
+                {notCompared && !disabled ? (
+                  <Text variant="subtext" theme="neutral">
+                    {component.alignmentReason ||
+                      'Alignment could not be determined from the available records.'}
+                  </Text>
+                ) : null}
+                {!compact ? <ID>{component.id}</ID> : null}
+              </div>
+              {component.actions}
+            </div>
+
+            {!compact ? (
+              <div className="flex flex-col gap-4 border-t pt-4">
+                {component.latestDeploy}
+              </div>
+            ) : null}
+          </Card>
+        )
+      })}
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -87,6 +201,8 @@ const InstallComponentsListBase = ({
           {actions}
         </div>
       </div>
+
+      {drifted?.(view)}
 
       {loading && !components.length ? (
         <div
@@ -104,80 +220,22 @@ const InstallComponentsListBase = ({
             </div>
           ) : null}
         </div>
-      ) : components.length ? (
-        <div
-          className={cn(
-            'flex flex-col gap-4',
-            isGrid && 'md:grid md:grid-cols-2'
-          )}
-        >
-          {components.map((component) => {
-            const disabled = component.enabled === false
-
-            return (
-              <Card
-                key={component.id}
-                className={cn(
-                  '!p-4 !gap-4',
-                  disabled && 'opacity-55',
-                  isGrid && 'md:h-full'
-                )}
-              >
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="flex flex-col gap-1.5 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap min-w-0">
-                      {component.type ? (
-                        <ComponentType
-                          type={component.type}
-                          displayVariant="icon-only"
-                          iconSize="16"
-                          colorVariant={disabled ? 'mono' : 'color'}
-                        />
-                      ) : null}
-                      {component.href ? (
-                        <Link href={component.href} className="min-w-0">
-                          <Text
-                            variant="body"
-                            weight="stronger"
-                            role="heading"
-                            level={3}
-                            theme={disabled ? 'neutral' : undefined}
-                          >
-                            {component.name}
-                          </Text>
-                        </Link>
-                      ) : (
-                        <Text
-                          variant="body"
-                          weight="stronger"
-                          role="heading"
-                          level={3}
-                          theme={disabled ? 'neutral' : undefined}
-                        >
-                          {component.name}
-                        </Text>
-                      )}
-                      {disabled ? (
-                        <Badge size="sm" theme="neutral">
-                          Disabled
-                        </Badge>
-                      ) : (
-                        <Status status={component.status} variant="badge" />
-                      )}
-                      {component.behind ? <InstallConfigBehindBadge /> : null}
-                    </div>
-                    <ID>{component.id}</ID>
-                  </div>
-                  {component.actions}
-                </div>
-
-                <div className="flex flex-col gap-4 border-t pt-4">
-                  {component.latestDeploy}
-                </div>
-              </Card>
-            )
-          })}
-        </div>
+      ) : remaining.length ? (
+        aligned ? (
+          <AlignedSections
+            items={remaining}
+            noun="components"
+            render={renderCards}
+          />
+        ) : (
+          renderCards(remaining)
+        )
+      ) : tornDown.length ? null : aligned ? (
+        <EmptyState
+          variant="table"
+          emptyTitle="No other components"
+          emptyMessage="Check Ongoing deployments and Drifted above, or adjust the filters."
+        />
       ) : filtered ? (
         <EmptyState
           variant="table"
@@ -191,6 +249,46 @@ const InstallComponentsListBase = ({
           emptyMessage="Components appear here once they are defined on the app config and synced to this install."
         />
       )}
+
+      {tornDown.length ? (
+        <section
+          aria-label="Torn down components"
+          data-testid="torn-down-section"
+        >
+          <Expand
+            id="torn-down-components"
+            className="border-t"
+            heading={`Torn down components · ${tornDown.length}`}
+          >
+            <ul className="divide-y max-h-64 overflow-y-auto">
+              {tornDown.map((component) => (
+                <li
+                  key={component.id}
+                  className="flex items-center gap-3 px-2 py-2"
+                >
+                  {component.type ? (
+                    <ComponentType
+                      type={component.type}
+                      displayVariant="icon-only"
+                      iconSize="16"
+                      colorVariant="mono"
+                    />
+                  ) : null}
+                  {component.href ? (
+                    <Link href={component.href} className="!font-mono">
+                      {component.name}
+                    </Link>
+                  ) : (
+                    <Text family="mono" variant="subtext">
+                      {component.name}
+                    </Text>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Expand>
+        </section>
+      ) : null}
 
       {pagination && (pagination.hasNext || (pagination.offset ?? 0) !== 0) ? (
         <Pagination {...pagination} />
