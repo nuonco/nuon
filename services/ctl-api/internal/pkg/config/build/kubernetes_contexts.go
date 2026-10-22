@@ -10,6 +10,7 @@ import (
 type KubernetesContextInput struct {
 	Name          string
 	ComponentName string
+	InCluster     bool
 }
 
 func KubernetesContextInputsFromConfig(contexts *config.KubernetesContextsConfig) []KubernetesContextInput {
@@ -18,7 +19,7 @@ func KubernetesContextInputsFromConfig(contexts *config.KubernetesContextsConfig
 	}
 	out := make([]KubernetesContextInput, 0, len(contexts.Contexts))
 	for _, c := range contexts.Contexts {
-		out = append(out, KubernetesContextInput{Name: c.Name, ComponentName: c.Component})
+		out = append(out, KubernetesContextInput{Name: c.Name, ComponentName: c.Component, InCluster: c.InCluster})
 	}
 	return out
 }
@@ -29,6 +30,19 @@ func KubernetesContextInputsFromConfig(contexts *config.KubernetesContextsConfig
 func KubernetesContextsConfig(contexts []KubernetesContextInput, componentIDByName map[string]string, appID, appConfigID string) (*app.AppKubernetesContextsConfig, error) {
 	children := make([]app.AppKubernetesContextConfig, 0, len(contexts))
 	for _, c := range contexts {
+		if c.InCluster {
+			if c.ComponentName != "" {
+				return nil, fmt.Errorf("kubernetes_context %q can not set component when in_cluster is true", c.Name)
+			}
+			children = append(children, app.AppKubernetesContextConfig{
+				AppID:       appID,
+				AppConfigID: appConfigID,
+				Name:        c.Name,
+				InCluster:   true,
+			})
+			continue
+		}
+
 		compID, ok := componentIDByName[c.ComponentName]
 		if !ok {
 			return nil, fmt.Errorf("kubernetes_context %q references unknown component %q", c.Name, c.ComponentName)

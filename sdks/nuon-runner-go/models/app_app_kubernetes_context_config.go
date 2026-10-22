@@ -35,6 +35,9 @@ type AppAppKubernetesContextConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// in cluster
+	InCluster bool `json:"in_cluster,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 

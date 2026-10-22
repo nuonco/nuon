@@ -26,7 +26,9 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 
 	names := make([]string, 0, len(inputs))
 	for _, c := range inputs {
-		names = append(names, c.ComponentName)
+		if c.ComponentName != "" {
+			names = append(names, c.ComponentName)
+		}
 	}
 
 	var components []app.Component

@@ -89,10 +89,18 @@ func (p *Planner) ResolveKubernetesContextFromData(
 	)
 
 	if contextName != "" {
-		peer, err := lookupKubernetesContextSource(appCfg, contextName)
+		kctx, err := lookupKubernetesContext(appCfg, contextName)
 		if err != nil {
 			return nil, err
 		}
+		if kctx.InCluster {
+			l.Info("resolving in-cluster kubernetes_context", zap.String("context", contextName))
+			return &kube.ClusterInfo{InCluster: true}, nil
+		}
+		if kctx.SourceComponentName == "" {
+			return nil, errors.Errorf("kubernetes_context %q has no source component", contextName)
+		}
+		peer := kctx.SourceComponentName
 		l.Info("resolving kubernetes_context",
 			zap.String("context", contextName),
 			zap.String("source_component", peer),
@@ -131,24 +139,21 @@ func (p *Planner) ResolveKubernetesContextFromData(
 	return obj, nil
 }
 
-// lookupKubernetesContextSource finds the named kubernetes_context on the
-// AppConfig and returns the name of its source peer component. Errors when
-// the named context is missing — config-time validation should have caught
-// this in pkg/config/AppConfig.resolveKubernetesContexts, so a miss here
-// indicates a stale config or out-of-band mutation.
-func lookupKubernetesContextSource(appCfg *app.AppConfig, name string) (string, error) {
+// lookupKubernetesContext finds the named kubernetes_context on the
+// AppConfig. Errors when the named context is missing — config-time
+// validation should have caught this in
+// pkg/config/AppConfig.resolveKubernetesContexts, so a miss here indicates a
+// stale config or out-of-band mutation.
+func lookupKubernetesContext(appCfg *app.AppConfig, name string) (*app.AppKubernetesContextConfig, error) {
 	if appCfg == nil {
-		return "", errors.Errorf("kubernetes_context %q referenced but app config is nil", name)
+		return nil, errors.Errorf("kubernetes_context %q referenced but app config is nil", name)
 	}
-	for _, c := range appCfg.KubernetesContextsConfig.Contexts {
-		if c.Name == name {
-			if c.SourceComponentName == "" {
-				return "", errors.Errorf("kubernetes_context %q has no source component", name)
-			}
-			return c.SourceComponentName, nil
+	for i := range appCfg.KubernetesContextsConfig.Contexts {
+		if c := &appCfg.KubernetesContextsConfig.Contexts[i]; c.Name == name {
+			return c, nil
 		}
 	}
-	return "", errors.Errorf("kubernetes_context %q is not defined on this app config", name)
+	return nil, errors.Errorf("kubernetes_context %q is not defined on this app config", name)
 }
 
 // sandboxEmitsClusterOutputs reports whether the sandbox's outputs include a

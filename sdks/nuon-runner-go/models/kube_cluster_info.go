@@ -40,6 +40,9 @@ type KubeClusterInfo struct {
 	// ID is the ID of the EKS cluster
 	ID string `json:"id,omitempty"`
 
+	// InCluster uses the runner pod's service account instead of cloud auth
+	InCluster bool `json:"in_cluster,omitempty"`
+
 	// If this is set, we will _not_ use aws-iam-authenticator, but rather inline create the token
 	Inline bool `json:"inline,omitempty"`
 

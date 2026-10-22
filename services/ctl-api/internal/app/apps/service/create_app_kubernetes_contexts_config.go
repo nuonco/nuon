@@ -25,7 +25,8 @@ type AppKubernetesContext struct {
 	Name string `json:"name" validate:"required"`
 	// Component is the name of the peer terraform_module or pulumi component
 	// that emits cluster connection details as outputs.
-	Component string `json:"component" validate:"required"`
+	Component string `json:"component" validate:"required_unless=InCluster true"`
+	InCluster bool   `json:"in_cluster"`
 }
 
 func (c *CreateAppKubernetesContextsConfigRequest) Validate(v *validator.Validate) error {
@@ -46,7 +47,7 @@ func (c *CreateAppKubernetesContextsConfigRequest) Validate(v *validator.Validat
 
 // @ID						CreateAppKubernetesContextsConfig
 // @Summary				create a kubernetes contexts config
-// @Description			Create the named kubernetes_context bindings for an app config version. Each context names a peer terraform_module or pulumi component that emits cluster connection details as outputs.
+// @Description			Create the named kubernetes_context bindings for an app config version. Each context names a peer terraform_module or pulumi component that emits cluster connection details as outputs, or sets in_cluster to use the runner pod's service account.
 // @Tags					apps
 // @Accept					json
 // @Param					req		body	CreateAppKubernetesContextsConfigRequest	true	"Input"
@@ -92,7 +93,9 @@ func (s *service) createAppKubernetesContextsConfig(ctx context.Context, appID s
 	if len(req.Contexts) > 0 {
 		names := make([]string, 0, len(req.Contexts))
 		for _, c := range req.Contexts {
-			names = append(names, c.Component)
+			if c.Component != "" {
+				names = append(names, c.Component)
+			}
 		}
 
 		var components []app.Component
@@ -110,7 +113,7 @@ func (s *service) createAppKubernetesContextsConfig(ctx context.Context, appID s
 
 	inputs := make([]build.KubernetesContextInput, 0, len(req.Contexts))
 	for _, c := range req.Contexts {
-		inputs = append(inputs, build.KubernetesContextInput{Name: c.Name, ComponentName: c.Component})
+		inputs = append(inputs, build.KubernetesContextInput{Name: c.Name, ComponentName: c.Component, InCluster: c.InCluster})
 	}
 
 	obj, err := build.KubernetesContextsConfig(inputs, componentIDByName, appID, req.AppConfigID)

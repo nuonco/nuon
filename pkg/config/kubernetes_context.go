@@ -26,6 +26,9 @@ func (a *KubernetesContextsConfig) parse() error {
 func (a *KubernetesContextsConfig) Validate() error {
 	seen := make(map[string]struct{}, len(a.Contexts))
 	for _, c := range a.Contexts {
+		if c == nil {
+			continue
+		}
 		if err := c.Validate(); err != nil {
 			return err
 		}
@@ -47,9 +50,13 @@ func (a *KubernetesContextsConfig) Validate() error {
 //
 // Static / external clusters are intentionally not modeled here — wrap them in
 // a thin terraform_module component that emits the same cluster outputs.
+//
+// An InCluster context has no source component: the runner pod deploys into
+// its own cluster with its service account.
 type KubernetesContext struct {
 	Name      string `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Component string `mapstructure:"component" toml:"component" jsonschema:"required"`
+	Component string `mapstructure:"component,omitempty" toml:"component,omitempty"`
+	InCluster bool   `mapstructure:"in_cluster,omitempty" toml:"in_cluster,omitempty"`
 }
 
 func (a KubernetesContext) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -58,18 +65,24 @@ func (a KubernetesContext) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Unique name for this kubernetes context within the app. Components reference this name via the top-level kubernetes_context field").
 		Example("data-cluster").
 		Example("shared-prod").
-		Field("component").Short("source peer component").Required().
-		Long("Name of the peer component that produces cluster connection details. Must be a terraform_module or pulumi component, and must expose a `cluster` output object").
+		Field("component").Short("source peer component").
+		Long("Peer terraform_module or pulumi component that exposes a `cluster` output object with the connection details. Required unless in_cluster is true").
 		Example("data-eks").
-		Example("shared-aks")
+		Example("shared-aks").
+		Field("in_cluster").Short("use the runner pod's service account").
+		Long("Deploy into the cluster the runner pod runs in, with the pod's service account instead of cloud credentials. Can not be combined with component").
+		Default(false)
 }
 
 func (a *KubernetesContext) Validate() error {
 	if a.Name == "" {
 		return ErrConfig{Description: "kubernetes_context.name is required"}
 	}
-	if a.Component == "" {
-		return ErrConfig{Description: "kubernetes_context.component is required"}
+	if a.InCluster && a.Component != "" {
+		return ErrConfig{Description: "kubernetes_context " + a.Name + ": component can not be set when in_cluster is true"}
+	}
+	if !a.InCluster && a.Component == "" {
+		return ErrConfig{Description: "kubernetes_context.component is required unless in_cluster is true"}
 	}
 	return nil
 }

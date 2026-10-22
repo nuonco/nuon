@@ -57,6 +57,10 @@ func (h *handler) getContainerBuiltInEnv(ctx context.Context, cfg *models.AppAct
 	}
 
 	if h.state.plan.ClusterInfo != nil {
+		if h.state.plan.ClusterInfo.InCluster {
+			return nil, errors.New("in-cluster kubernetes contexts are not supported for image-backed action steps")
+		}
+
 		path := h.state.workspace.AbsPath(config.DefaultKubeConfigFilename)
 		// unlink any symlink a prior action container may have planted here
 		// before writing the kubeconfig into the shared workspace.
