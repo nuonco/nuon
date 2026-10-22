@@ -44,12 +44,11 @@ nuon branches trigger --branch-id main --run-type tag --run-ref v1.2.3
 
 ## Runner and stack control per install
 
-Match each customer's AMI and CloudFormation requirements without forking your app.
+Meet one customer's infrastructure requirements without changing your app for everyone.
 
-- Pin the runner to a known-good AMI, or pick up the latest AL2023 AMI at every launch
-- Override the runner image for a single install in `[stack_overrides]`
-- Set root and nested CloudFormation parameters per install from its Git config
-- Parameter changes queue a stack reprovision on their own
+- Keep AWS runners on a patched image: pin an approved AMI, or pick up the latest AL2023 AMI each time a runner instance launches (runner template v0.7.0+)
+- Give one install its own VPC range, instance size, or other CloudFormation parameter (installs with an AWS cloud connection)
+- Nuon updates that install's stack on its own when the values change
 
 ```toml runner.toml
 image_auto_update = true
