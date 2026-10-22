@@ -108,6 +108,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if err != nil {
 		return nil, err
 	}
+	if !req.StackOnly && len(pin.AppConfig.ComponentIDs) == 0 {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("app config %s has no components", pin.AppConfig.ID),
+			Description: "This app config has no components. Add components and sync the app config before creating an install.",
+		}
+	}
 
 	// Validate and pin against the input config belonging to the app config this
 	// install is pinned to. Using the app's newest input config instead lets the
