@@ -7,7 +7,6 @@ ARG KUBELOGIN_VERSION=0.2.21
 ARG GCLOUD_VERSION=590.0.0
 ARG AZURE_CLI_VERSION=2.91.0
 ARG PULUMI_VERSION=3.271.0
-ARG KANIKO_VERSION=1.25.19
 
 ARG GOCACHE_S3_URI
 ARG GOCACHE_S3_ETAG
@@ -202,28 +201,6 @@ ARG NUON_CLI_VERSION
 RUN apk add --update --no-cache curl ca-certificates
 RUN curl "https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/${NUON_CLI_VERSION}/nuon_linux_amd64" -o /bin/nuon && chmod +x /bin/nuon
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS kaniko
-
-ARG KANIKO_VERSION
-
-RUN apk add --update --no-cache git ca-certificates
-WORKDIR /src
-RUN git clone --depth 1 --branch "v${KANIKO_VERSION}" https://github.com/chainguard-dev/kaniko.git .
-ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-RUN go get golang.org/x/net@v0.61.0 golang.org/x/crypto@v0.58.0 golang.org/x/text@v0.43.0 \
-    google.golang.org/grpc@v1.84.0 github.com/containerd/containerd/v2@v2.4.2 \
-    github.com/klauspost/compress@v1.20.3 \
-    && go mod tidy && go mod vendor
-RUN go build -o /usr/local/bin/docker-credential-gcr github.com/GoogleCloudPlatform/docker-credential-gcr/v2 \
-    && go build -o /usr/local/bin/docker-credential-ecr-login github.com/awslabs/amazon-ecr-credential-helper/ecr-login/cli/docker-credential-ecr-login \
-    && go build -o /usr/local/bin/docker-credential-acr-env github.com/chrismellard/docker-credential-acr-env \
-    && go build -ldflags "-X github.com/chainguard-dev/kaniko/pkg/version.version=v${KANIKO_VERSION} -w -s" \
-    -o out/executor github.com/chainguard-dev/kaniko/cmd/executor
-RUN mkdir -p /kaniko/.docker /kaniko/ssl/certs \
-    && cp out/executor /usr/local/bin/docker-credential-gcr /usr/local/bin/docker-credential-ecr-login /usr/local/bin/docker-credential-acr-env /kaniko/ \
-    && cp /etc/ssl/certs/ca-certificates.crt /kaniko/ssl/certs/ \
-    && cp files/nsswitch.conf /etc/nsswitch.conf
-
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS aws-iam-authenticator
 
 ARG AWS_IAM_AUTHENTICATOR_VERSION
@@ -379,12 +356,9 @@ FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-
 RUN apk add --no-cache \
     bash \
     libc6-compat \
-    build-base \
-    make \
     ca-certificates-bundle \
     coreutils \
     curl \
-    protoc \
     jq \
     git \
     aws-cli \
@@ -396,9 +370,6 @@ RUN apk add --no-cache \
     oras-cli
 
 # add dependencies
-COPY --from=kaniko /kaniko/* /kaniko/
-COPY --from=kaniko /kaniko/.docker /kaniko/.docker
-COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=kubelogin /bin/kubelogin /usr/local/bin/kubelogin
