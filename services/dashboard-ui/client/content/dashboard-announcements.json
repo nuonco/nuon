@@ -2,7 +2,7 @@
   "announcements": [
     {
       "id": "release-rollouts-runner-control-043",
-      "title": "Release-Driven Rollouts and Runner Control",
+      "title": "Git Tag Releases and Per-Install Runner Control",
       "date": "October 22, 2026",
       "description": "Roll out on tags and labels, and control runner images and stack parameters per install",
       "ctaText": "Learn more",
