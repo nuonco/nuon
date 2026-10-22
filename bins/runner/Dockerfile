@@ -2,11 +2,12 @@
 
 ARG BUILD_IMAGE=buildimage
 ARG NUON_CLI_VERSION=0.19.1257
-ARG AWS_IAM_AUTHENTICATOR_VERSION=0.6.2
-ARG KUBELOGIN_VERSION=0.2.9
-ARG GCLOUD_VERSION=516.0.0
-ARG AZURE_CLI_VERSION=2.73.0
-ARG PULUMI_VERSION=3.234.0
+ARG AWS_IAM_AUTHENTICATOR_VERSION=0.7.22
+ARG KUBELOGIN_VERSION=0.2.21
+ARG GCLOUD_VERSION=589.0.0
+ARG AZURE_CLI_VERSION=2.91.0
+ARG PULUMI_VERSION=3.268.0
+ARG KANIKO_VERSION=1.25.19
 
 ARG GOCACHE_S3_URI
 ARG GOCACHE_S3_ETAG
@@ -151,7 +152,7 @@ FROM code AS build-otelcol
 
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
-    go run go.opentelemetry.io/collector/cmd/builder --config build-config.yaml --skip-compilation && \
+    go run go.opentelemetry.io/collector/cmd/builder@v0.162.0 --config build-config.yaml --skip-compilation && \
     CGO_ENABLED=0 GOOS=linux go build -C ./otelcol-build -o /bin/nuon-runner-otelcol && \
     touch /go/pkg/build-cache/.nuon-dirty
 
@@ -201,7 +202,23 @@ ARG NUON_CLI_VERSION
 RUN apk add --update --no-cache curl ca-certificates
 RUN curl "https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/${NUON_CLI_VERSION}/nuon_linux_amd64" -o /bin/nuon && chmod +x /bin/nuon
 
-FROM public.ecr.aws/p7e3r5y0/kaniko-project/executor:latest  AS kaniko
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS kaniko
+
+ARG KANIKO_VERSION
+
+RUN apk add --update --no-cache git ca-certificates
+WORKDIR /src
+RUN git clone --depth 1 --branch "v${KANIKO_VERSION}" https://github.com/chainguard-dev/kaniko.git .
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+RUN go build -o /usr/local/bin/docker-credential-gcr github.com/GoogleCloudPlatform/docker-credential-gcr/v2 \
+    && go build -o /usr/local/bin/docker-credential-ecr-login github.com/awslabs/amazon-ecr-credential-helper/ecr-login/cli/docker-credential-ecr-login \
+    && go build -o /usr/local/bin/docker-credential-acr-env github.com/chrismellard/docker-credential-acr-env \
+    && go build -ldflags "-X github.com/chainguard-dev/kaniko/pkg/version.version=v${KANIKO_VERSION} -w -s" \
+    -o out/executor github.com/chainguard-dev/kaniko/cmd/executor
+RUN mkdir -p /kaniko/.docker /kaniko/ssl/certs \
+    && cp out/executor /usr/local/bin/docker-credential-gcr /usr/local/bin/docker-credential-ecr-login /usr/local/bin/docker-credential-acr-env /kaniko/ \
+    && cp /etc/ssl/certs/ca-certificates.crt /kaniko/ssl/certs/ \
+    && cp files/nsswitch.conf /etc/nsswitch.conf
 
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS aws-iam-authenticator
 
