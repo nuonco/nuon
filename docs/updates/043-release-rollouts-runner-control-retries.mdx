@@ -6,14 +6,13 @@ boost: 0.3
 
 _October 22, 2026_
 
-## Release-driven rollouts
+## App branches on your release cadence
 
-Ship to customers on your release cadence, not on every commit.
+Roll out when you cut a release.
 
-- Start an app branch run on a tag, on a merged pull request's label, or only manually
+- Start a run on a tag, on a merged pull request's label, or only manually, instead of on every push
 - Trigger a run for a specific tag, commit, or pull request from the CLI
 - Trigger runs and previews from GitHub Actions with the Nuon action
-- Every mode still rolls out through your install groups, with a plan and approval at each step
 
 ```toml branches/monthly.toml
 [run]
@@ -28,7 +27,7 @@ nuon branches trigger --branch-id main --run-type tag --run-ref v1.2.3
 <video
   src="/images/changelog/043-release-rollouts.mp4"
   poster="/images/changelog/043-release-rollouts.png"
-  aria-label="Commits land on main without starting a run, a release tag starts one, and it rolls out to stage and then, after approval, production"
+  aria-label="Commits land on main without starting a run, and a release tag starts one"
   autoPlay
   loop
   muted
@@ -68,17 +67,6 @@ VpcCIDR = "10.42.0.0/16"
 InstanceType = "m7i.large"
 ```
 
-<video
-  src="/images/changelog/043-runner-control.mp4"
-  poster="/images/changelog/043-runner-control.png"
-  aria-label="One app template feeding two installs, each overriding its own runner AMI, instance type, or VPC CIDR while the template stays unchanged"
-  autoPlay
-  loop
-  muted
-  playsInline
-  style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
-/>
-
 <CardGroup cols={2}>
   <Card title="Runner config reference" icon="server" href="/config-ref/runner" horizontal />
   <Card title="Cloud connection stack parameters" icon="sliders" href="/guides/configuring-inputs-and-secrets#aws-cloud-connection-stack-parameters" horizontal />
@@ -100,17 +88,6 @@ Retry a timed-out call and get the original workflow back.
 nuon actions create-run -i customer1 -w pg_status \
   --env DEBUG=true --request-id pg-status-2026-10-22 --wait
 ```
-
-<video
-  src="/images/changelog/043-safe-retries.mp4"
-  poster="/images/changelog/043-safe-retries.png"
-  aria-label="A deploy request times out, the pipeline retries with the same request_id, and the API returns the original workflow instead of starting a second one"
-  autoPlay
-  loop
-  muted
-  playsInline
-  style={{ width: '100%', borderRadius: '12px', margin: '24px 0' }}
-/>
 
 <CardGroup cols={2}>
   <Card title="Idempotent operations" icon="repeat" href="/guides/idempotent-operations" horizontal />
