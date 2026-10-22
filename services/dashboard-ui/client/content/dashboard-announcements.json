@@ -1,12 +1,12 @@
 {
   "announcements": [
     {
-      "id": "release-rollouts-runner-control-retries-043",
-      "title": "Release-Driven Rollouts, Runner Control, and Safe Retries",
+      "id": "release-rollouts-runner-control-043",
+      "title": "Release-Driven Rollouts and Runner Control",
       "date": "October 22, 2026",
-      "description": "Roll out on tags and labels, control runner images and stack parameters per install, and retry automation without duplicate workflows",
+      "description": "Roll out on tags and labels, and control runner images and stack parameters per install",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/043-release-rollouts-runner-control-retries",
+      "ctaUrl": "https://docs.nuon.co/updates/043-release-rollouts-runner-control",
       "image": "/images/announcements/nuon-changelog-043.png",
       "imageDark": "/images/announcements/nuon-changelog-043.png",
       "dismissible": false
