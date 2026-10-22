@@ -1,6 +1,7 @@
 package plandiff
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -575,5 +576,53 @@ func TestComplexKubernetesPlan(t *testing.T) {
 	}
 	if !hasChanges {
 		t.Error("HasChanges() = false, want true (plan has errors)")
+	}
+}
+
+func TestParsePlanHelm(t *testing.T) {
+	parsed, err := ParsePlan(`{
+		"op": "install",
+		"helm_content_diff": [
+			{
+				"kind": "Deployment",
+				"name": "my-app",
+				"namespace": "default",
+				"entries": [{"type": 1, "path": "spec.replicas", "applied": "3"}]
+			}
+		]
+	}`)
+	if err != nil {
+		t.Fatalf("ParsePlan() error: %v", err)
+	}
+	if parsed.PlanType != PlanTypeHelm {
+		t.Fatalf("plan type = %s, want %s", parsed.PlanType, PlanTypeHelm)
+	}
+
+	encoded, err := json.Marshal(parsed)
+	if err != nil {
+		t.Fatalf("marshal parsed plan: %v", err)
+	}
+	var got struct {
+		PlanType string `json:"plan_type"`
+		Plan     struct {
+			Summary struct {
+				Add int `json:"add"`
+			} `json:"summary"`
+			Changes []struct {
+				Release string `json:"release"`
+			} `json:"changes"`
+		} `json:"plan"`
+	}
+	if err := json.Unmarshal(encoded, &got); err != nil {
+		t.Fatalf("unmarshal parsed plan: %v", err)
+	}
+	if got.PlanType != string(PlanTypeHelm) {
+		t.Fatalf("plan_type = %s", got.PlanType)
+	}
+	if got.Plan.Summary.Add != 1 {
+		t.Fatalf("summary.add = %d, want 1", got.Plan.Summary.Add)
+	}
+	if len(got.Plan.Changes) != 1 || got.Plan.Changes[0].Release != "my-app" {
+		t.Fatalf("changes = %+v", got.Plan.Changes)
 	}
 }
