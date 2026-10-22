@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
@@ -392,11 +391,14 @@ func LogStreamApp(
 	}
 }
 
-// logStreamPlainText streams logs to stdout as plain text lines.
+// logStreamPlainText prints every current page, then returns. Following new lines is --tail.
 func logStreamPlainText(ctx context.Context, api nuon.Client, logstreamID string) {
-	cursor := "0"
+	cursor := ""
 	for {
-		logs, err := api.LogStreamReadLogs(ctx, logstreamID, cursor, "", nil)
+		if err := ctx.Err(); err != nil {
+			return
+		}
+		logs, next, err := api.LogStreamReadLogsWithNextOffset(ctx, logstreamID, cursor, "", nil)
 		if err != nil {
 			fmt.Printf("Error reading logs: %v\n", err)
 			return
@@ -406,23 +408,9 @@ func logStreamPlainText(ctx context.Context, api nuon.Client, logstreamID string
 			fmt.Printf("[%s] %s %s: %s\n", log.Timestamp, log.SeverityText, log.ServiceName, log.Body)
 		}
 
-		// Update cursor to the latest timestamp
-		for _, log := range logs {
-			if log.Timestamp > cursor {
-				cursor = log.Timestamp
-			}
-		}
-
-		// Check if stream is still open
-		logStream, err := api.GetLogStream(ctx, logstreamID)
-		if err != nil || !logStream.Open {
+		if next == "" || next == cursor {
 			return
 		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(5 * time.Second):
-		}
+		cursor = next
 	}
 }
