@@ -9,8 +9,8 @@ _October 22, 2026_
 ## Configure triggers for your app branches
 
 [App branches](/concepts/app-branches) roll your app config out to customer installs through install groups.
-Nuon listens for GitHub webhook events on the connected repo and starts a branch run automatically. The `[run]` block
-in a branch file chooses which event starts it:
+Nuon listens for GitHub webhook events on the connected repo and starts a branch run automatically. Add a mode to the
+`[run]` block on your branch config:
 
 | Mode | Starts a run when |
 | --- | --- |
