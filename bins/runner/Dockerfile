@@ -238,12 +238,13 @@ RUN curl -sSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google
     && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet \
     && find /opt/google-cloud-sdk/platform/gsutil \( -name Pipfile.lock -o -name "*requirements*.txt" \) -delete
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/python:3.12-alpine AS azure-cli
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS azure-cli
 
 ARG AZURE_CLI_VERSION
 
-RUN apk add --update --no-cache gcc musl-dev libffi-dev
-RUN pip install --no-cache-dir --prefix=/azure-cli azure-cli==${AZURE_CLI_VERSION}
+RUN apk add --update --no-cache python3 gcc musl-dev libffi-dev python3-dev
+RUN python3 -m venv /opt/azure-cli \
+    && /opt/azure-cli/bin/pip install --no-cache-dir azure-cli==${AZURE_CLI_VERSION}
 
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS pulumi
 
@@ -374,7 +375,8 @@ COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=kubelogin /bin/kubelogin /usr/local/bin/kubelogin
 COPY --from=gcloud /opt/google-cloud-sdk /opt/google-cloud-sdk
-COPY --from=azure-cli /azure-cli /usr/local
+COPY --from=azure-cli /opt/azure-cli /opt/azure-cli
+RUN ln -s /opt/azure-cli/bin/az /usr/local/bin/az
 COPY --from=pulumi /opt/pulumi /opt/pulumi
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
