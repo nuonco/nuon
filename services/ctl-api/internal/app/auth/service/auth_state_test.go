@@ -314,6 +314,10 @@ type fakeMailchimp struct {
 	err    error
 }
 
+func (f *fakeMailchimp) Enabled() bool {
+	return true
+}
+
 func (f *fakeMailchimp) UpsertListMember(_ context.Context, email string) error {
 	f.emails = append(f.emails, email)
 	return f.err

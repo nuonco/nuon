@@ -393,6 +393,7 @@
           {{ end }}
         </div>
 
+        {{ if .MarketingConsentEnabled }}
         <div class="consent">
           <input type="checkbox" id="marketing-consent" name="marketing-consent">
           <label class="consent-text" for="marketing-consent">
@@ -400,6 +401,7 @@
             <span class="consent-fine">Occasional release notes and engineering write-ups, written by the team. Unsubscribe anytime.</span>
           </label>
         </div>
+        {{ end }}
 
         <p class="terms">By continuing you agree to the <a href="https://nuon.co/terms">terms of service</a> and <a href="https://nuon.co/privacy">privacy policy</a>.</p>
       {{ end }}
@@ -430,6 +432,7 @@
   </section>
 
 </div>
+{{ if .MarketingConsentEnabled }}
 <script>
   (function () {
     var box = document.getElementById('marketing-consent');
@@ -447,6 +450,7 @@
     });
   })();
 </script>
+{{ end }}
 </body>
 </html>
 {{ end }}

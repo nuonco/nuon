@@ -5,20 +5,27 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	mcclient "github.com/mailchimp/mailchimp-marketing-go-sdk/client"
+	"github.com/mailchimp/mailchimp-marketing-go-sdk/option"
 )
 
 type Client interface {
+	// Enabled reports whether audience sync is configured, so callers can hide consent UI otherwise.
+	Enabled() bool
 	UpsertListMember(ctx context.Context, email string) error
 }
 
 type client struct {
 	v *validator.Validate
 
-	APIKey       string `validate:"required"`
-	ServerPrefix string `validate:"required"`
-	AudienceID   string `validate:"required"`
+	APIKey     string `validate:"required"`
+	AudienceID string `validate:"required"`
+	// ServerPrefix pins the account's data center host (e.g. us21). Optional: the SDK's default
+	// api.mailchimp.com host is used when it is empty.
+	ServerPrefix string
 
 	baseURL string
+	sdk     *mcclient.MailchimpClient
 }
 
 var _ Client = (*client)(nil)
@@ -37,11 +44,24 @@ func New(v *validator.Validate, opts ...clientOption) (*client, error) {
 		return nil, fmt.Errorf("unable to validate client: %w", err)
 	}
 
-	if c.baseURL == "" {
-		c.baseURL = fmt.Sprintf("https://%s.api.mailchimp.com/3.0", c.ServerPrefix)
+	if c.baseURL == "" && c.ServerPrefix != "" {
+		c.baseURL = fmt.Sprintf("https://%s.api.mailchimp.com", c.ServerPrefix)
 	}
 
+	sdkOpts := []option.RequestOption{
+		option.WithToken(c.APIKey),
+		option.WithMaxAttempts(1),
+	}
+	if c.baseURL != "" {
+		sdkOpts = append(sdkOpts, option.WithBaseURL(c.baseURL))
+	}
+	c.sdk = mcclient.NewMailchimpClient(sdkOpts...)
+
 	return c, nil
+}
+
+func (c *client) Enabled() bool {
+	return true
 }
 
 type clientOption func(*client) error
@@ -67,7 +87,7 @@ func WithAudienceID(audienceID string) clientOption {
 	}
 }
 
-// WithBaseURL overrides the derived Mailchimp API base URL, for tests.
+// WithBaseURL overrides the Mailchimp API base URL, for tests.
 func WithBaseURL(baseURL string) clientOption {
 	return func(c *client) error {
 		c.baseURL = baseURL

@@ -7,7 +7,7 @@ import (
 )
 
 func New(v *validator.Validate, cfg *internal.Config) (mailchimpclient.Client, error) {
-	if cfg.MailchimpAPIKey == "" || cfg.MailchimpServerPrefix == "" || cfg.MailchimpAudienceID == "" {
+	if cfg.MailchimpAPIKey == "" || cfg.MailchimpAudienceID == "" {
 		return mailchimpclient.NewDisabled(), nil
 	}
 

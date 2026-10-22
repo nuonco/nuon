@@ -154,8 +154,24 @@ func TestIndexTemplatesRender(t *testing.T) {
 			require.NoError(t, err)
 			assert.Contains(t, b.String(), "Continue with Google")
 			assert.NotContains(t, b.String(), "posthog.init", "no PostHogKey must mean no analytics snippet")
+			assert.NotContains(t, b.String(), "marketing-consent", "no Mailchimp config must mean no consent checkbox")
+		})
+
+		t.Run(name+" signed out with marketing consent", func(t *testing.T) {
+			var b strings.Builder
+			err := tmpl.ExecuteTemplate(&b, name, map[string]any{
+				"IsAuthenticated":         false,
+				"Email":                   "",
+				"Providers":               providers,
+				"RedirectURL":             "https%3A%2F%2Fapp.nuon.co",
+				"DashboardURL":            "https://app.nuon.co",
+				"MarketingConsentEnabled": true,
+			})
+			require.NoError(t, err)
 			if name == "auth/index_nuon.tmpl" {
 				assert.Contains(t, b.String(), "Marketing and customer outreach consent")
+			} else {
+				assert.NotContains(t, b.String(), "marketing-consent", "only the Nuon-branded page offers consent")
 			}
 		})
 
