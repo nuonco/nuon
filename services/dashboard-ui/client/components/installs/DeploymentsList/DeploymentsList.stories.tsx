@@ -1,5 +1,10 @@
 import { useState } from 'react'
 import { PanelStory } from '@/components/__stories__/helpers'
+import {
+  ACTIVE_DEPLOYMENT_FILTERS,
+  activeDeploymentCounts,
+  type TActiveDeploymentFilter,
+} from '@/components/installs/DeploymentDetail/deployment-progress'
 import type {
   TInstallDeploymentStepSummary,
   TInstallDeploymentSummary,
@@ -9,8 +14,6 @@ import {
   DeploymentsListPresenter,
   type IDeploymentFilter,
 } from './DeploymentsListPresenter'
-
-// ─── Fixtures ────────────────────────────────────────────────────────────────
 
 const ORG_ID = 'org_example'
 const APP_ID = 'app_example'
@@ -143,22 +146,36 @@ const ACTIVE_DEPLOYMENTS: TInstallDeploymentSummary[] = [
   })),
 ]
 
-// ─── Stories ─────────────────────────────────────────────────────────────────
-
 export default {
   title: 'Features / Installs / Deployments list',
 }
 
 export const Default = () => {
   const [limit, setLimit] = useState(4)
+  const [activeFilter, setActiveFilter] =
+    useState<TActiveDeploymentFilter>('all')
+  const statuses = ACTIVE_DEPLOYMENT_FILTERS.find(
+    (option) => option.value === activeFilter
+  )?.statuses
+  const active = statuses
+    ? ACTIVE_DEPLOYMENTS.filter((deployment) =>
+        statuses.includes(deployment.status)
+      )
+    : ACTIVE_DEPLOYMENTS
   return (
     <div className="max-w-7xl mx-auto p-6">
       <DeploymentsListPresenter
         deployments={MOCK_DEPLOYMENTS}
-        activeDeployments={ACTIVE_DEPLOYMENTS.slice(0, limit)}
-        activeTotal={ACTIVE_DEPLOYMENTS.length}
-        hasMoreActive={limit < ACTIVE_DEPLOYMENTS.length}
+        activeDeployments={active.slice(0, limit)}
+        activeTotal={active.length}
+        hasMoreActive={limit < active.length}
         onLoadMoreActive={() => setLimit((limit) => limit + 4)}
+        activeFilter={activeFilter}
+        activeCounts={activeDeploymentCounts(ACTIVE_DEPLOYMENTS)}
+        onActiveFilterChange={(value) => {
+          setActiveFilter(value)
+          setLimit(4)
+        }}
         isLoading={false}
         error={null}
         pagination={{ hasNext: false, offset: 0, limit: 20 }}
