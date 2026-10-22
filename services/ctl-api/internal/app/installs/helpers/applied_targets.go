@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type ComponentTarget struct {
@@ -27,15 +28,22 @@ func (h *Helpers) EffectiveComponentTargets(ctx context.Context, db *gorm.DB, ap
 
 	var appCfg app.AppConfig
 	if err := db.WithContext(ctx).
-		Select("id", "component_ids").
+		Scopes(scopes.WithDisableViews).
+		Select("id", "component_ids", "builds_pinned").
 		Where(app.AppConfig{ID: appConfigID}).
 		First(&appCfg).Error; err != nil {
 		return nil, fmt.Errorf("unable to get app config %s: %w", appConfigID, err)
 	}
 
+	configFields := []string{"id", "app_config_id", "component_id", "latest_build_id", "checksum", "references", "component_dependency_ids", "toggleable", "default_enabled"}
+	loadConfig := func(db *gorm.DB) *gorm.DB {
+		return db.Scopes(scopes.WithDisableViews).Select(configFields).
+			Where("EXISTS (SELECT 1 FROM app_configs a WHERE a.id = component_config_connections.app_config_id)")
+	}
+	loadComponent := func(db *gorm.DB) *gorm.DB { return db.Select("id", "name", "type") }
 	var conns []app.ComponentConfigConnection
-	if err := db.WithContext(ctx).
-		Preload("Component").
+	if err := loadConfig(db.WithContext(ctx)).
+		Preload("Component", loadComponent).
 		Where(app.ComponentConfigConnection{AppConfigID: appConfigID}).
 		Find(&conns).Error; err != nil {
 		return nil, fmt.Errorf("unable to get component configs for app config %s: %w", appConfigID, err)
@@ -45,21 +53,27 @@ func (h *Helpers) EffectiveComponentTargets(ctx context.Context, db *gorm.DB, ap
 	for _, id := range appCfg.ComponentIDs {
 		member[id] = struct{}{}
 	}
+	configs := make([]app.ComponentConfigConnection, 0, len(conns))
 	for i := range conns {
 		if len(member) > 0 {
 			if _, ok := member[conns[i].ComponentID]; !ok {
 				continue
 			}
 		}
+		conns[i].AppConfig = appCfg
 		targets[conns[i].ComponentID] = &ComponentTarget{Config: &conns[i]}
 	}
+	for _, target := range targets {
+		configs = append(configs, *target.Config)
+	}
 
+	selected, err := buildselection.Components(ctx, db, configs)
+	if err != nil {
+		return nil, err
+	}
 	buildIDs := make([]string, 0, len(targets))
 	for _, target := range targets {
-		build, err := buildselection.Component(ctx, db, target.Config.ID)
-		if err != nil {
-			return nil, err
-		}
+		build := selected[target.Config.ID]
 		target.Build = build
 		if build != nil {
 			buildIDs = append(buildIDs, build.ID)
@@ -68,7 +82,9 @@ func (h *Helpers) EffectiveComponentTargets(ctx context.Context, db *gorm.DB, ap
 	if len(buildIDs) > 0 {
 		var builds []app.ComponentBuild
 		if err := db.WithContext(ctx).
-			Preload("ComponentConfigConnection.Component").
+			Select("id", "status", "status_v2", "component_config_connection_id").
+			Preload("ComponentConfigConnection", loadConfig).
+			Preload("ComponentConfigConnection.Component", loadComponent).
 			Where("id IN ?", buildIDs).Find(&builds).Error; err != nil {
 			return nil, fmt.Errorf("unable to get selected build configs: %w", err)
 		}

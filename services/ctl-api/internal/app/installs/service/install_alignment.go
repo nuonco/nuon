@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type InstallAlignmentResourceKind string
@@ -172,7 +174,8 @@ func (s *service) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 		}
 	}
 	var appConfigs []app.AppConfig
-	if err := db.WithContext(ctx).Preload("InputConfig.AppInputs").
+	if err := db.WithContext(ctx).Scopes(scopes.WithDisableViews).Select("id").
+		Preload("InputConfig.AppInputs").
 		Where("id IN ?", configIDs).Find(&appConfigs).Error; err != nil {
 		return nil, fmt.Errorf("unable to get alignment input defaults: %w", err)
 	}
@@ -765,6 +768,9 @@ func sandboxScanMatchesApplied(st *installAlignmentState, scan *app.InstallSandb
 }
 
 func (s *service) latestInstallDeploysByComponent(ctx context.Context, db *gorm.DB, icIDs []string, planOnly bool) (map[string]*app.InstallDeploy, error) {
+	if len(icIDs) == 0 {
+		return map[string]*app.InstallDeploy{}, nil
+	}
 	join := "LEFT JOIN install_workflows w ON w.id = d.install_workflow_id AND w.deleted_at = 0"
 	filter := "(w.id IS NULL OR w.plan_only = false)"
 	if planOnly {
@@ -773,13 +779,16 @@ func (s *service) latestInstallDeploysByComponent(ctx context.Context, db *gorm.
 	}
 	var ids []string
 	if err := db.WithContext(ctx).Raw(`
-		SELECT DISTINCT ON (d.install_component_id) d.id
-		FROM install_deploys d
-		`+join+`
-		WHERE d.deleted_at = 0
-		  AND d.install_component_id IN ?
-		  AND `+filter+`
-		ORDER BY d.install_component_id, d.created_at DESC`, icIDs).
+		SELECT latest.id
+		FROM unnest(?::text[]) AS component_ids(id)
+		CROSS JOIN LATERAL (
+			SELECT d.id FROM install_deploys d
+			`+join+`
+			WHERE d.deleted_at = 0 AND d.install_component_id = component_ids.id
+			  AND `+filter+`
+			ORDER BY d.created_at DESC
+			LIMIT 1
+		) latest`, pq.Array(icIDs)).
 		Scan(&ids).Error; err != nil {
 		return nil, fmt.Errorf("unable to get latest install deploys: %w", err)
 	}
