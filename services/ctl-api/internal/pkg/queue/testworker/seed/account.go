@@ -16,7 +16,7 @@ func (s *Seeder) EnsureAccount(ctx context.Context, t *testing.T) context.Contex
 	subjectID := generics.GetFakeObj[string]()
 	email := fmt.Sprintf("%s@test.nuon.co", subjectID)
 
-	acct, err := s.acctHelpers.CreateAccount(ctx, email, subjectID, app.UserJourneys{})
+	acct, err := s.acctHelpers.CreateAuthAccount(ctx, email, subjectID, app.UserJourneys{})
 	require.Nil(t, err)
 
 	return cctx.SetAccountIDContext(ctx, acct.ID)
