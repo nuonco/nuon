@@ -140,12 +140,40 @@ command: "installs sync -a ${{ vars.nuon_app_id }} -d ./installs --confirm --app
 | `api_token`     | no       | A static API token. Omit it to authenticate with OIDC.                                              |
 | `api_url`       | no       | The control plane API URL. Defaults to `https://api.nuon.co`.                                       |
 | `oidc_audience` | no       | Audience for the OIDC token, if your trust policy's audience differs from `api_url`.                |
-| `nuon_version`  | no       | CLI version to install. Defaults to the version your control plane reports.                         |
+| `nuon_version`  | no       | CLI version to install. Defaults to the version your control plane reports. See [Choosing the CLI version](#choosing-the-cli-version). |
 
 <Note>
-  For a self-hosted control plane, pass its API URL as the `api_url` input and use the same URL as the trust policy
-  audience. If the two must differ, set `oidc_audience` to match the policy.
+  For a Nuon BYOC or self-hosted control plane, pass its API URL as the `api_url` input and use the same URL as the
+  trust policy audience. If the two must differ, set `oidc_audience` to match the policy.
 </Note>
+
+### Choosing the CLI version
+
+The CLI should match your control plane's version (see [Choosing a CLI version](/cli#choosing-a-cli-version)). The
+action handles this for you: when `nuon_version` is unset or `latest`, it reads the version from `api_url`'s
+`/version` endpoint and installs that release. This works for Nuon Cloud, BYOC, and Self-Hosted, so we recommend
+leaving `nuon_version` unset.
+
+If no CLI binary is published for the reported version, the action installs the latest release instead and adds a
+warning to the job summary.
+
+To pin the CLI, for example to make a workflow reproducible, set `nuon_version`:
+
+```yaml
+- name: Trigger branch run
+  uses: nuonco/actions-nuon@v0.5.0
+  with:
+    org_id: ${{ vars.nuon_org_id }}
+    app_id: ${{ vars.nuon_app_id }}
+    nuon_version: "0.19.1260"
+    command: "branches trigger --branch-id main --no-wait"
+```
+
+Update the pin whenever your control plane is upgraded. Once the control plane's minimum CLI version passes the pin,
+every command prints a warning that the CLI is older than the minimum.
+
+The action's tag (`@v0.5.0`) is the version of the action itself, not of the CLI. The CLI version the action
+installed is available as the `nuon_version` step output.
 
 ## Authentication
 
