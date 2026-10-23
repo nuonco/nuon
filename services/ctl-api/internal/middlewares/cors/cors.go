@@ -1,6 +1,8 @@
 package cors
 
 import (
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -21,9 +23,18 @@ func (m *middleware) Name() string {
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
+	appURL := ""
+	allowAll := false
+	if m.cfg != nil {
+		appURL = m.cfg.AppURL
+		allowAll = m.cfg.CORSAllowAllOrigins
+	}
+	if allowAll && m.l != nil {
+		m.l.Warn("cors_allow_all_origins is set; any origin is reflected with credentials")
+	}
 	return cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			return true
+			return isAllowedOrigin(appURL, origin, allowAll)
 		},
 		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "OPTIONS"},
 		AllowHeaders: []string{
@@ -56,6 +67,25 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 func New(writer metrics.Writer, l *zap.Logger, cfg *internal.Config) *middleware {
 	return &middleware{
-		l: l,
+		l:   l,
+		cfg: cfg,
 	}
+}
+
+func isAllowedOrigin(appURL, origin string, allowAll bool) bool {
+	if allowAll {
+		return true
+	}
+	allowed := originOf(appURL)
+	return allowed != "" && originOf(origin) == allowed
+}
+
+// originOf returns scheme://host for a URL or Origin header. A path is ignored.
+// An empty or invalid value returns "" so the caller allows nothing.
+func originOf(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return ""
+	}
+	return u.Scheme + "://" + strings.ToLower(u.Host)
 }
