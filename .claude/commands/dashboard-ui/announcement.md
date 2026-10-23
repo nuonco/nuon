@@ -3,6 +3,8 @@ name: dashboard-ui:announcement
 description: Add a new announcement to the dashboard-ui org dashboard page
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 You are adding a new announcement entry to `services/dashboard-ui/client/content/dashboard-announcements.json`. This file powers the announcement cards on the org dashboard page.
 
 ## Step 1: Gather context from git
