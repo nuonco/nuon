@@ -216,6 +216,55 @@ func (s *OIDCFederationTestSuite) TestExchangeIssuesToken() {
 	require.NotNil(s.T(), updated.LastUsedAt)
 }
 
+func (s *OIDCFederationTestSuite) TestExchangeRejectsReplayedToken() {
+	idp := newFakeIDP(s.T())
+	s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+
+	token := idp.signToken(s.T(), jwt.MapClaims{
+		"sub": "repo:acme/app:ref:refs/heads/main",
+		"jti": "jti-replay-test",
+	})
+
+	rr := s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var resp ExchangeOIDCTokenResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.True(s.T(), resp.Authenticated)
+
+	rr = s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusUnauthorized, rr.Code, rr.Body.String())
+	require.Equal(s.T(), int64(1), s.federatedTokenCount())
+}
+
+func (s *OIDCFederationTestSuite) TestExchangeRejectsReplayedTokenWithoutJTI() {
+	idp := newFakeIDP(s.T())
+	s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+
+	issuedAt := time.Now().Add(-time.Minute).Unix()
+	token := idp.signToken(s.T(), jwt.MapClaims{
+		"sub": "repo:acme/app:ref:refs/heads/main",
+		"iat": issuedAt,
+	})
+
+	rr := s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	rr = s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusUnauthorized, rr.Code, rr.Body.String())
+	require.Equal(s.T(), int64(1), s.federatedTokenCount())
+
+	other := idp.signToken(s.T(), jwt.MapClaims{
+		"sub": "repo:acme/app:ref:refs/heads/main",
+		"iat": issuedAt + 1,
+	})
+	require.NotEqual(s.T(), token, other)
+
+	rr = s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: other})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+	require.Equal(s.T(), int64(2), s.federatedTokenCount())
+}
+
 func (s *OIDCFederationTestSuite) TestExchangeRejections() {
 	idp := newFakeIDP(s.T())
 	policy := s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})

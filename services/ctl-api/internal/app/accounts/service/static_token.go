@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -89,6 +90,11 @@ func parseTokenDuration(raw string) (time.Duration, error) {
 // @Success				201	{object}	StaticTokenResponse
 // @Router					/v1/account/static-token [POST]
 func (s *service) CreateStaticToken(ctx *gin.Context) {
+	if err := require.NotFederatedToken(ctx, "create API tokens"); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	var req CreateStaticTokenRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.NewInvalidRequest(err))
