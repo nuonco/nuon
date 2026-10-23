@@ -52,6 +52,11 @@ func (h *ConnectHandler) StartConnectGithub(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "missing org_id"})
 		return
 	}
+	token, err := c.Cookie(authCookie)
+	if err != nil || token == "" || !h.sessionCanUseOrg(c, token, orgID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "org is not available to this session"})
+		return
+	}
 	if h.cfg.GithubAppName == "" {
 		h.l.Error("github_app_name not configured")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "github app not configured"})
@@ -63,6 +68,37 @@ func (h *ConnectHandler) StartConnectGithub(c *gin.Context) {
 	}
 	target := fmt.Sprintf("https://github.com/apps/%s/installations/new?state=%s", githubAppSlug(h.cfg.GithubAppName), url.QueryEscape(state))
 	c.Redirect(http.StatusFound, target)
+}
+
+// sessionCanUseOrg reports whether the session token can see orgID. The GitHub
+// install state is caller-supplied, so a link can name an org the session does
+// not belong to.
+func (h *ConnectHandler) sessionCanUseOrg(c *gin.Context, token, orgID string) bool {
+	if token == "" || !orgIDPattern.MatchString(orgID) {
+		return false
+	}
+	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
+	if err != nil {
+		h.l.Error("failed to create nuon client", zap.Error(err))
+		return false
+	}
+	offset := 0
+	for {
+		orgs, more, err := client.GetOrgs(c.Request.Context(), &models.GetPaginatedQuery{Limit: 100, Offset: offset})
+		if err != nil {
+			h.l.Error("failed to list session orgs", zap.Error(err))
+			return false
+		}
+		for _, org := range orgs {
+			if org != nil && org.ID == orgID {
+				return true
+			}
+		}
+		if !more || len(orgs) == 0 {
+			return false
+		}
+		offset += len(orgs)
+	}
 }
 
 func (h *ConnectHandler) Handle(c *gin.Context) {
@@ -78,7 +114,7 @@ func (h *ConnectHandler) Handle(c *gin.Context) {
 	}
 
 	token, err := c.Cookie(authCookie)
-	if err != nil || token == "" {
+	if err != nil || token == "" || !h.sessionCanUseOrg(c, token, orgID) {
 		c.Redirect(http.StatusFound, fallback)
 		return
 	}
