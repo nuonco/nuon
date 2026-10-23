@@ -45,8 +45,9 @@ Declining the confirmation prompts for a new URL.
 ### 2. Authentication
 
 The CLI fetches auth configuration from the API (`GetCLIConfig`) and gets a device code flow against the Nuon auth
-service. To do this, it generates a local device code, opens a browser to `auth.<root_domain>/device/code`, and polls
-for a token.
+service using the device authorization grant (RFC 8628). It asks `auth.<root_domain>/device/authorize` for a device code
+and a user code, prints the user code, opens a browser to `auth.<root_domain>/device` with the user code pre-filled, and
+polls `/device/token` with the device code until the user approves.
 
 ### 3. Org Selection
 
