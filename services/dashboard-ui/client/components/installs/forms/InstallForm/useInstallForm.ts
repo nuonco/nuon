@@ -19,7 +19,6 @@ export interface UseInstallFormParams {
   requireTargetAccount?: boolean
   showNameField?: boolean
   defaultAutoApprove?: boolean
-  defaultStackOnly?: boolean
   storageKey?: string
   onSubmit: (values: InstallFormValues) => void | Promise<unknown>
 }
@@ -32,7 +31,6 @@ export function useInstallForm({
   requireTargetAccount,
   showNameField,
   defaultAutoApprove,
-  defaultStackOnly,
   storageKey,
   onSubmit,
 }: UseInstallFormParams) {
@@ -55,9 +53,8 @@ export function useInstallForm({
         inputConfig,
         install,
         defaultAutoApprove,
-        defaultStackOnly,
       }),
-    [mode, inputConfig, install, defaultAutoApprove, defaultStackOnly]
+    [mode, inputConfig, install, defaultAutoApprove]
   )
 
   const validator = schema as unknown as FormValidateOrFn<InstallFormValues>
