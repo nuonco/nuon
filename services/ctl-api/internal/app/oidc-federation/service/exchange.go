@@ -172,9 +172,8 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 			zap.String("org_id", req.OrgID),
 			zap.String("issuer", issuer),
 		}
-		// When at least one policy verified the token, claims are populated;
-		// logging the sub and claim keys lets operators see why no policy's
-		// conditions matched without weakening the generic client-facing 401.
+		// Log incoming claims to help diagnose why no policy's conditions matched,
+		// without weakening the generic client-facing 401.
 		if claims != nil {
 			sub, _ := claims["sub"].(string)
 			keys := make([]string, 0, len(claims))

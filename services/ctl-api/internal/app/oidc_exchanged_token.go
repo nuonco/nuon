@@ -11,12 +11,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-// OIDCExchangedToken records the SHA-256 of an OIDC token that has already been
-// exchanged for a Nuon API token, so the same token cannot be exchanged
-// twice. It is backed by a unique index rather than an in-memory cache so the
-// check holds across every ctl-api and runner API replica. Rows are
-// redundant once ExpiresAt (the source token's own exp claim) passes; expired
-// rows are not pruned on insert.
+// OIDCExchangedToken records the SHA-256 of an OIDC token that has already
+// been exchanged for a Nuon API token, so the same token cannot be exchanged
+// twice.
 type OIDCExchangedToken struct {
 	ID        string    `gorm:"primarykey" json:"id,omitzero"`
 	CreatedAt time.Time `json:"created_at,omitzero"`

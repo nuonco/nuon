@@ -14,7 +14,6 @@ import (
 	orgcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/created"
 	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/useragent"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -52,11 +51,6 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 func (s *service) CreateOrg(ctx *gin.Context) {
 	acct, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	if err := require.NotFederatedToken(ctx, "create organizations"); err != nil {
 		ctx.Error(err)
 		return
 	}

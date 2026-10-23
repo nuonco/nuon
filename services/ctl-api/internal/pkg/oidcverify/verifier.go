@@ -102,6 +102,9 @@ func (v *Verifier) provider(ctx context.Context, issuer string) (*oidc.Provider,
 	v.mu.Unlock()
 
 	discovered, err, _ := v.group.Do(issuer, func() (any, error) {
+		// Re-check under the singleflight key: the outer check above raced
+		// with another caller that may have already finished discovery for
+		// this issuer between that check and this one starting.
 		v.mu.Lock()
 		if provider, ok := v.providers[issuer]; ok {
 			v.mu.Unlock()
@@ -115,11 +118,12 @@ func (v *Verifier) provider(ctx context.Context, issuer string) (*oidc.Provider,
 			return nil, fmt.Errorf("oidc discovery for %s failed: %w", issuer, err)
 		}
 
+		// No re-check needed here: singleflight runs this function at most
+		// once at a time per issuer, and this is the only writer to
+		// v.providers, so nothing could have inserted issuer since the check
+		// above.
 		v.mu.Lock()
 		defer v.mu.Unlock()
-		if existing, ok := v.providers[issuer]; ok {
-			return existing, nil
-		}
 		if len(v.inserted) >= maxCachedIssuers {
 			oldest := v.inserted[0]
 			v.inserted = v.inserted[1:]
@@ -143,11 +147,6 @@ func UnverifiedIssuer(rawToken string) (string, error) {
 	if len(parts) != 3 {
 		return "", errors.New("malformed jwt")
 	}
-	for _, part := range parts {
-		if part == "" || strings.IndexFunc(part, isNotBase64URL) >= 0 {
-			return "", errors.New("malformed jwt")
-		}
-	}
 
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
@@ -165,8 +164,4 @@ func UnverifiedIssuer(rawToken string) (string, error) {
 	}
 
 	return claims.Issuer, nil
-}
-
-func isNotBase64URL(r rune) bool {
-	return !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_')
 }

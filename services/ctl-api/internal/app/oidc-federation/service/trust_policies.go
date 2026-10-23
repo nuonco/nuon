@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -84,35 +82,7 @@ func parseTrustPolicyTokenDuration(raw int) (int, error) {
 }
 
 func (s *service) validateIssuerURL(ctx context.Context, raw string) error {
-	parsed, err := url.Parse(raw)
-	if err != nil {
-		return fmt.Errorf("invalid issuer URL: %w", err)
-	}
-
-	if parsed.Hostname() == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
-		return fmt.Errorf("issuer URL must include a host and no credentials, query, or fragment")
-	}
-
-	switch parsed.Scheme {
-	case "https":
-	case "http":
-		if !s.cfg.OIDCFederationAllowInsecureIssuers {
-			return fmt.Errorf("issuer URL must use https")
-		}
-	default:
-		return fmt.Errorf("issuer URL must use https")
-	}
-
-	if !s.cfg.OIDCFederationAllowInsecureIssuers {
-		if strings.EqualFold(parsed.Hostname(), "localhost") {
-			return fmt.Errorf("issuer URL must not address a local network")
-		}
-		if err := oidcverify.RequirePublicHost(ctx, parsed.Hostname()); err != nil {
-			return fmt.Errorf("issuer URL must not address a local network: %w", err)
-		}
-	}
-
-	return nil
+	return oidcverify.ValidateIssuerURL(ctx, raw, s.cfg.OIDCFederationAllowInsecureIssuers)
 }
 
 // @ID						CreateOIDCTrustPolicy
@@ -266,7 +236,7 @@ func (s *service) GetOIDCTrustPolicy(ctx *gin.Context) {
 
 // @ID						UpdateOIDCTrustPolicy
 // @Summary				update an OIDC trust policy
-// @Description			Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+// @Description			Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy. Disabling the policy revokes tokens already issued under it.
 // @Param					policy_id	path	string							true	"policy ID"
 // @Param					req			body	UpdateOIDCTrustPolicyRequest	true	"Input"
 // @Tags					oidc_federation
@@ -298,10 +268,12 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 		return
 	}
 
+	disabling := false
 	if req.Name != "" {
 		policy.Name = req.Name
 	}
 	if req.Enabled != nil {
+		disabling = policy.Enabled && !*req.Enabled
 		policy.Enabled = *req.Enabled
 	}
 	if req.IssuerURL != "" {
@@ -351,6 +323,11 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 				return fmt.Errorf("unable to update service account role: %w", err)
 			}
 		}
+		if disabling {
+			if err := account.RevokeDerivedCredentials(tx, app.TokenSourceTypeOIDCTrustPolicy, []string{policy.ID}); err != nil {
+				return fmt.Errorf("unable to revoke tokens issued under this policy: %w", err)
+			}
+		}
 		return tx.Save(policy).Error
 	})
 	if err != nil {
@@ -389,6 +366,9 @@ func (s *service) DeleteOIDCTrustPolicy(ctx *gin.Context) {
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(policy).Error; err != nil {
 			return err
+		}
+		if err := account.RevokeDerivedCredentials(tx, app.TokenSourceTypeOIDCTrustPolicy, []string{policy.ID}); err != nil {
+			return fmt.Errorf("unable to revoke tokens issued under this policy: %w", err)
 		}
 		return s.deletePolicyServiceAccount(tx, org.ID, policy.ServiceAccountID)
 	})

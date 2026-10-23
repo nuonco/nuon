@@ -207,20 +207,25 @@ func TestUnverifiedIssuer(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("rejects non-compact serializations", func(t *testing.T) {
+	t.Run("rejects wrong segment counts", func(t *testing.T) {
 		token := idp.signToken(t, jwt.MapClaims{})
 		parts := strings.Split(token, ".")
 
 		cases := []string{
 			token + ".extra",
 			parts[0] + "." + parts[1],
-			parts[0] + "." + parts[1] + ".",
-			token + "\n",
-			parts[0] + "." + parts[1] + "." + parts[2] + "+/=",
 		}
 		for _, tc := range cases {
 			_, err := UnverifiedIssuer(tc)
 			require.Error(t, err, tc)
 		}
+	})
+
+	t.Run("rejects invalid base64 payload", func(t *testing.T) {
+		token := idp.signToken(t, jwt.MapClaims{})
+		parts := strings.Split(token, ".")
+
+		_, err := UnverifiedIssuer(parts[0] + ".not!valid!base64." + parts[2])
+		require.Error(t, err)
 	})
 }

@@ -33,6 +33,8 @@ func (s *service) issueFederatedToken(tx *gorm.DB, policy *app.OIDCTrustPolicy) 
 		IssuedAt:    now,
 		Issuer:      policy.IssuerURL,
 		AccountID:   policy.ServiceAccountID,
+		SourceType:  app.TokenSourceTypeOIDCTrustPolicy,
+		SourceID:    policy.ID,
 	}
 	if err := tx.Create(&token).Error; err != nil {
 		return nil, fmt.Errorf("creating federated token: %w", err)

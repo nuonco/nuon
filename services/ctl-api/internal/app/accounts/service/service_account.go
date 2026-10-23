@@ -18,7 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -808,11 +807,6 @@ type CreateServiceAccountTokenResponse struct {
 // @Success				201	{object}	CreateServiceAccountTokenResponse
 // @Router					/v1/service-accounts/{account_id}/tokens [POST]
 func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
-	if err := require.NotFederatedToken(ctx, "create API tokens"); err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	org, err := s.requireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
