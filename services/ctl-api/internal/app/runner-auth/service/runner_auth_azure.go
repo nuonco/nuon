@@ -18,15 +18,13 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/azure"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-const (
-	azureJWKSCacheDuration  = 5 * time.Minute
-	azureManagementAudience = "https://management.azure.com/"
-)
+const azureJWKSCacheDuration = 5 * time.Minute
 
 type RunnerAuthAzureRequest struct {
 	Token    string `json:"token" validate:"required"`
@@ -141,11 +139,16 @@ func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureCl
 		return &azureClaims{}
 	}
 
+	configured := ""
+	if s.cfg != nil {
+		configured = s.cfg.AzureRunnerAuthAudience
+	}
+
 	tokenValidator, err := validator.New(
 		provider.KeyFunc,
 		validator.RS256,
 		issuerURL,
-		[]string{azureManagementAudience},
+		azure.AuthAudiences(configured),
 		validator.WithAllowedClockSkew(time.Minute),
 		validator.WithCustomClaims(customClaimsFn),
 	)

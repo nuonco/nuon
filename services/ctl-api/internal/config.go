@@ -112,6 +112,7 @@ func init() {
 	config.RegisterDefault("runner_container_image_signature_identity_regexp", `^https://github\.com/nuonco/nuon/\.github/workflows/service\.yml@refs/heads/main$`)
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("stack_api_url", "http://localhost:8093")
+	config.RegisterDefault("azure_runner_auth_audience", "")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
 	config.RegisterDefault("telemetry_jwks", "")
@@ -399,12 +400,16 @@ type Config struct {
 	PostHogHost string `config:"posthog_host"`
 
 	// links
-	AppURL        string `config:"app_url" validate:"required"`
-	RunnerAPIURL  string `config:"runner_api_url" validate:"required"`
-	StackAPIURL   string `config:"stack_api_url"`
-	PublicAPIURL  string `config:"public_api_url" validate:"required"`
-	AdminAPIURL   string `config:"admin_api_url" validate:"required"`
-	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`
+	AppURL       string `config:"app_url" validate:"required"`
+	RunnerAPIURL string `config:"runner_api_url" validate:"required"`
+	StackAPIURL  string `config:"stack_api_url"`
+	// AzureRunnerAuthAudience is the Nuon app audience (api://<client-id>) runners
+	// should request instead of an ARM token. Empty leaves runner auth on the ARM
+	// audience. When set, runner auth accepts both, and new Azure stacks request it.
+	AzureRunnerAuthAudience string `config:"azure_runner_auth_audience"`
+	PublicAPIURL            string `config:"public_api_url" validate:"required"`
+	AdminAPIURL             string `config:"admin_api_url" validate:"required"`
+	TemporalUIURL           string `config:"temporal_ui_url" validate:"required"`
 
 	// flags for controlling the background workers
 	ForceSandboxMode           bool          `config:"force_sandbox_mode"`
