@@ -143,7 +143,9 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"update_install_inputs",
 		"Update install inputs",
 		"WRITE OPERATION: Update install input values (partial merge over current values). Starts an input-update workflow. "+
-			"deploy_dependents defaults to true. Use get_install_inputs first to inspect current values. "+
+			"Values are checked against the install's pinned app config, including a branch config. "+
+			"deploy_dependents defaults to true. Set it false to deploy only the components whose inputs changed. "+
+			"Use get_install_inputs first to inspect current values. "+
 			"Call list_available_roles (operation_type=deploy) before passing role. "+
 			mcpWatchAfterStart,
 		false,

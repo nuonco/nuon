@@ -11,6 +11,30 @@ import (
 
 const branchConfigPageSize = 100
 
+// InputConfigForInstall returns the input config the install is pinned to.
+// That is the branch config when the install is on an app branch, which can
+// declare inputs the app's latest config does not. An install with no pinned
+// app config falls back to the latest input config.
+func InputConfigForInstall(ctx context.Context, api nuon.Client, install *models.AppInstall) (*models.AppAppInputConfig, error) {
+	if install == nil {
+		return nil, fmt.Errorf("install is required")
+	}
+	if install.AppConfigID == "" {
+		return api.GetAppInputLatestConfig(ctx, install.AppID)
+	}
+
+	recurse := true
+	cfg, err := api.GetAppConfig(ctx, install.AppID, install.AppConfigID, &recurse)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app config %s: %w", install.AppConfigID, err)
+	}
+	if cfg == nil || cfg.Input == nil {
+		return nil, fmt.Errorf("app config %s has no input config", install.AppConfigID)
+	}
+	hydrateInputGroups(cfg.Input)
+	return cfg.Input, nil
+}
+
 // ResolveInputConfig returns the input config belonging to the app config that
 // install creation will pin. Apps without branches retain the legacy app-wide
 // latest-input behavior.
