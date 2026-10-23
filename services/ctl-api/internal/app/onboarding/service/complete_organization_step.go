@@ -144,10 +144,10 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 // The step stays at "organization" with "processing" status until the signal
 // creates the org and advances to "your_stack".
 func (s *service) createNewOrg(ctx *gin.Context, account *app.Account, onboarding *app.Onboarding, orgName string) {
-	if s.cfg.DisableOrgSignup && !internal.IsNuonEmail(account.Email) {
+	if s.cfg.DisableOrgCreation && !internal.IsNuonEmail(account.Email) {
 		ctx.Error(stderr.ErrAuthorization{
-			Err:         orgshelpers.ErrOrgSignupDisabled,
-			Description: "Organization signup is disabled on this deployment.",
+			Err:         orgshelpers.ErrOrgCreationDisabled,
+			Description: "Organization creation is disabled on this deployment.",
 		})
 		return
 	}

@@ -79,10 +79,10 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		Tags:           req.Tags,
 	})
 	if err != nil {
-		if errors.Is(err, orgshelpers.ErrOrgSignupDisabled) {
+		if errors.Is(err, orgshelpers.ErrOrgCreationDisabled) {
 			ctx.Error(stderr.ErrAuthorization{
 				Err:         err,
-				Description: "Organization signup is disabled on this deployment.",
+				Description: "Organization creation is disabled on this deployment.",
 			})
 			return
 		}

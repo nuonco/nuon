@@ -19,7 +19,7 @@ New env vars for auth.nuon.co
 | NUON_AUTH_ALLOWED_DOMAINS | Domains from which any user can register. Usually the org email.                            | Auth Service |
 | NUON_AUTH_ALLOW_ALL_USERS | Whether or not any user with an email from an allowed domain should be allowed to register. | Auth Service |
 | DISABLE_ACCOUNT_SIGNUP    | Kill switch. When true, login never creates a new account, including for pending invites and providers with `allow_all_users` set. Existing accounts can still sign in. An `@nuon.co` email bypasses this. | Auth Service |
-| DISABLE_ORG_SIGNUP        | Kill switch. When true, `POST /v1/orgs` and onboarding org creation are rejected. Attaching an existing org still works. An `@nuon.co` account bypasses this. | ctl-api |
+| DISABLE_ORG_CREATION      | Kill switch. When true, `POST /v1/orgs` and onboarding org creation are rejected. Attaching an existing org still works. An `@nuon.co` account bypasses this. | ctl-api |
 
 We construct a domain from the root domain by prefixing `auth` to it. e.g. `app`.`byoc.org.co`. This becomes the service
 domain which the service understands itself to be available at .
@@ -32,7 +32,7 @@ domain which the service understands itself to be available at .
 > `NUON_AUTH_ALLOW_ALL_USERS` defaults to false.
 
 > [!NOTE]
-> `DISABLE_ACCOUNT_SIGNUP` and `DISABLE_ORG_SIGNUP` default to false. Set either to `true` to turn that signup path off. `DISABLE_ACCOUNT_SIGNUP` overrides `NUON_AUTH_ALLOW_ALL_USERS` and a provider's `allow_all_users`. An `@nuon.co` email still gets through both switches.
+> `DISABLE_ACCOUNT_SIGNUP` and `DISABLE_ORG_CREATION` default to false. Set either to `true` to turn that path off. `DISABLE_ACCOUNT_SIGNUP` overrides `NUON_AUTH_ALLOW_ALL_USERS` and a provider's `allow_all_users`. An `@nuon.co` email still gets through both switches.
 
 > [!NOTE]
 > `NUON_AUTH_ALLOWED_DOMAINS` cannot be empty.

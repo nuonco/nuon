@@ -19,8 +19,8 @@ import (
 
 const OrgSignalsQueueName = queue.OrgSignalsQueueName
 
-// ErrOrgSignupDisabled is returned when disable_org_signup is set.
-var ErrOrgSignupDisabled = errors.New("organization signup is disabled")
+// ErrOrgCreationDisabled is returned when disable_org_creation is set.
+var ErrOrgCreationDisabled = errors.New("organization creation is disabled")
 
 type CreateOrgParams struct {
 	Name           string
@@ -29,8 +29,8 @@ type CreateOrgParams struct {
 }
 
 func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *CreateOrgParams) (*app.Org, error) {
-	if h.cfg.DisableOrgSignup && !internal.IsNuonEmail(acct.Email) {
-		return nil, ErrOrgSignupDisabled
+	if h.cfg.DisableOrgCreation && !internal.IsNuonEmail(acct.Email) {
+		return nil, ErrOrgCreationDisabled
 	}
 
 	orgTyp := app.OrgTypeDefault
