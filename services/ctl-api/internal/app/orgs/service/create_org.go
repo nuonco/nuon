@@ -73,6 +73,14 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
+	s.l.Info("creating org",
+		zap.String("email", acct.Email),
+		zap.String("account_id", acct.ID),
+		zap.String("org_name", req.Name),
+		zap.String("endpoint", ctx.FullPath()),
+		zap.Bool("disable_org_creation", s.cfg.DisableOrgCreation),
+	)
+
 	newOrg, err := s.helpers.CreateOrg(ctx, acct, &orgshelpers.CreateOrgParams{
 		Name:           req.Name,
 		UseSandboxMode: req.UseSandboxMode,
