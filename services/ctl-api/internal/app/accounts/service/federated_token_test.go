@@ -113,12 +113,14 @@ func (s *AccountsServiceTestSuite) TestCreateStaticTokenRejectsFederatedToken() 
 				require.Contains(s.T(), rr.Body.String(), "federated tokens cannot create API tokens")
 			}
 			require.Equal(s.T(), tc.wantMinted, s.countStaticTokens() > tokensBefore)
-			require.Equal(s.T(), tc.wantNewSvcSA, s.countServiceAccounts() > accountsBefore)
+			require.Equal(s.T(), tc.wantNewSA, s.countServiceAccounts() > accountsBefore)
 		})
 	}
 }
 
 func (s *AccountsServiceTestSuite) TestCreateServiceAccountTokenRejectsFederatedToken() {
+	admin := s.makeOrgAdmin()
+
 	testCases := map[string]struct {
 		tokenType  app.TokenType
 		wantStatus int
@@ -129,7 +131,7 @@ func (s *AccountsServiceTestSuite) TestCreateServiceAccountTokenRejectsFederated
 
 	for name, tc := range testCases {
 		s.Run(name, func() {
-			router := s.orgAdminRouter(tc.tokenType)
+			router := s.routerWithTokenType(admin, tc.tokenType)
 			target, err := s.service.AccountsService.createTokenServiceAccount(cctx.SetAccountContext(s.ctx, s.testAcc), s.testOrg.ID, app.RoleTypeOrgAdmin)
 			require.NoError(s.T(), err)
 			tokensBefore := s.countStaticTokens()
