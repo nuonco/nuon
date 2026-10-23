@@ -8425,6 +8425,7 @@ export interface components {
       auth_client_id?: string;
       auth_domain?: string;
       dashboard_url?: string;
+      min_cli_version?: string;
       nuon_auth_enabled?: boolean;
       oidc_federation_enabled?: boolean;
       root_domain?: string;
