@@ -93,26 +93,29 @@ func TestConnectHandle(t *testing.T) {
 	ok := jsonResponse(http.StatusCreated, `{"id":"vcsconn123"}`)
 	fail := jsonResponse(http.StatusBadRequest, `{"error":"bad install"}`)
 
+	member := jsonResponse(http.StatusOK, `[{"id":"orgabc123"}]`)
 	tests := []struct {
 		name     string
 		state    string
 		callback func(http.ResponseWriter, *http.Request)
+		orgs     func(http.ResponseWriter, *http.Request)
 		noAuth   bool
 		want     string
 	}{
-		{name: "plain success", state: "orgabc123", callback: ok, want: "/orgabc123/apps?vcs-connected=vcsconn123"},
-		{name: "plain failure", state: "orgabc123", callback: fail, want: "/orgabc123/apps"},
-		{name: "onboarding success", state: "orgabc123:onboarding", callback: ok, want: "/onboarding?vcs-connected=vcsconn123"},
-		{name: "onboarding failure", state: "orgabc123:onboarding", callback: fail, want: "/onboarding?vcs-error=1"},
+		{name: "plain success", state: "orgabc123", callback: ok, orgs: member, want: "/orgabc123/apps?vcs-connected=vcsconn123"},
+		{name: "plain failure", state: "orgabc123", callback: fail, orgs: member, want: "/orgabc123/apps"},
+		{name: "onboarding success", state: "orgabc123:onboarding", callback: ok, orgs: member, want: "/onboarding?vcs-connected=vcsconn123"},
+		{name: "onboarding failure", state: "orgabc123:onboarding", callback: fail, orgs: member, want: "/onboarding?vcs-error=1"},
 		{name: "onboarding without auth", state: "orgabc123:onboarding", noAuth: true, want: "/onboarding?vcs-error=1"},
-		{name: "foreign suffix is ignored", state: "orgabc123:https://evil.example.com", callback: ok, want: "/orgabc123/apps?vcs-connected=vcsconn123"},
-		{name: "foreign suffix failure", state: "orgabc123:https://evil.example.com", callback: fail, want: "/orgabc123/apps"},
+		{name: "foreign suffix is ignored", state: "orgabc123:https://evil.example.com", callback: ok, orgs: member, want: "/orgabc123/apps?vcs-connected=vcsconn123"},
+		{name: "foreign suffix failure", state: "orgabc123:https://evil.example.com", callback: fail, orgs: member, want: "/orgabc123/apps"},
 		{name: "malformed org never reaches the path", state: "/evil.example.com", noAuth: true, want: "/"},
+		{name: "other org is refused", state: "orgabc123", orgs: jsonResponse(http.StatusOK, `[{"id":"orgother"}]`), want: "/orgabc123/apps"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			api := (&fakeCtlAPI{callback: tt.callback}).start(t)
+			api := (&fakeCtlAPI{callback: tt.callback, orgs: tt.orgs}).start(t)
 			h := NewConnectHandler(&internal.Config{APIUrl: api.URL}, zap.NewNop())
 
 			var cookies []*http.Cookie
@@ -133,18 +136,31 @@ func TestConnectHandle(t *testing.T) {
 }
 
 func TestStartConnectGithubState(t *testing.T) {
-	h := NewConnectHandler(&internal.Config{GithubAppName: "Nuon Dev"}, zap.NewNop())
+	api := (&fakeCtlAPI{orgs: jsonResponse(http.StatusOK, `[{"id":"orgabc123"}]`)}).start(t)
+	h := NewConnectHandler(&internal.Config{APIUrl: api.URL, GithubAppName: "Nuon Dev"}, zap.NewNop())
 
 	tests := []struct {
-		query string
-		want  string
+		name   string
+		query  string
+		noAuth bool
+		want   string
+		status int
 	}{
-		{query: "org_id=orgabc123", want: "https://github.com/apps/nuon-dev/installations/new?state=orgabc123"},
-		{query: "org_id=orgabc123&onboarding=1", want: "https://github.com/apps/nuon-dev/installations/new?state=orgabc123%3Aonboarding"},
+		{name: "member", query: "org_id=orgabc123", want: "https://github.com/apps/nuon-dev/installations/new?state=orgabc123", status: http.StatusFound},
+		{name: "onboarding", query: "org_id=orgabc123&onboarding=1", want: "https://github.com/apps/nuon-dev/installations/new?state=orgabc123%3Aonboarding", status: http.StatusFound},
+		{name: "other org", query: "org_id=orgother", status: http.StatusForbidden},
+		{name: "no session", query: "org_id=orgabc123", noAuth: true, status: http.StatusForbidden},
 	}
 	for _, tt := range tests {
-		t.Run(tt.query, func(t *testing.T) {
-			rec := serve(t, h.RegisterRoutes, "/api/connect-github?"+tt.query)
+		t.Run(tt.name, func(t *testing.T) {
+			var cookies []*http.Cookie
+			if !tt.noAuth {
+				cookies = append(cookies, authed())
+			}
+			rec := serve(t, h.RegisterRoutes, "/api/connect-github?"+tt.query, cookies...)
+			if rec.Code != tt.status {
+				t.Fatalf("status = %d, want %d", rec.Code, tt.status)
+			}
 			if got := rec.Header().Get("Location"); got != tt.want {
 				t.Errorf("Location = %q, want %q", got, tt.want)
 			}
