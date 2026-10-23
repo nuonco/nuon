@@ -3,6 +3,8 @@ name: dashboard-ui:api
 description: Use when creating a new API function in client/lib/ctl-api/
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 This skill enforces creating a lib/ctl-api API function with correct types and barrel export.
 
 ## Steps

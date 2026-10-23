@@ -3,6 +3,8 @@ name: dashboard-ui:add-tracking
 description: Use when adding PostHog analytics tracking to a user action (mutation) in the dashboard-ui
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 Add a `trackEvent` call to a mutation so a user action is captured in PostHog. Analytics is proxied
 through the BFF and is off unless the org runs on Nuon-owned cloud (never in BYOC), so tracking is
 always best-effort — `trackEvent` is a silent no-op when PostHog isn't initialized. You never need
