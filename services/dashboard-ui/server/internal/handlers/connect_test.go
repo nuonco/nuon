@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -15,7 +17,9 @@ import (
 type fakeCtlAPI struct {
 	callback func(w http.ResponseWriter, r *http.Request)
 	orgs     func(w http.ResponseWriter, r *http.Request)
+	org      func(w http.ResponseWriter, r *http.Request)
 	account  func(w http.ResponseWriter, r *http.Request)
+	validate func(w http.ResponseWriter, r *http.Request)
 }
 
 func (f *fakeCtlAPI) start(t *testing.T) *httptest.Server {
@@ -27,8 +31,12 @@ func (f *fakeCtlAPI) start(t *testing.T) *httptest.Server {
 			h = f.callback
 		case "/v1/orgs":
 			h = f.orgs
+		case "/v1/orgs/current":
+			h = f.org
 		case "/v1/general/current-user":
 			h = f.account
+		case "/v1/auth/validate":
+			h = f.validate
 		}
 		if h == nil {
 			t.Errorf("unexpected ctl-api call: %s %s", r.Method, r.URL.Path)
@@ -67,26 +75,37 @@ func serve(t *testing.T, register func(e *gin.Engine) error, target string, cook
 
 func authed() *http.Cookie { return &http.Cookie{Name: authCookie, Value: "token"} }
 
-func TestParseConnectState(t *testing.T) {
-	tests := []struct {
-		state          string
-		wantOrg        string
-		wantOnboarding bool
-	}{
-		{state: "orgabc123", wantOrg: "orgabc123"},
-		{state: "orgabc123:onboarding", wantOrg: "orgabc123", wantOnboarding: true},
-		{state: "orgabc123:https://evil.example.com", wantOrg: "orgabc123"},
-		{state: "orgabc123:onboarding:extra", wantOrg: "orgabc123"},
-		{state: "", wantOrg: ""},
+func testConfig(apiURL string) *internal.Config {
+	return &internal.Config{
+		APIUrl:         apiURL,
+		AppUrl:         "http://app.example.test",
+		AuthServiceUrl: "http://auth.example.test",
+		GithubAppName:  "Nuon Dev",
 	}
-	for _, tt := range tests {
-		t.Run(tt.state, func(t *testing.T) {
-			org, onboarding := parseConnectState(tt.state)
-			if org != tt.wantOrg || onboarding != tt.wantOnboarding {
-				t.Errorf("parseConnectState(%q) = (%q, %v), want (%q, %v)", tt.state, org, onboarding, tt.wantOrg, tt.wantOnboarding)
-			}
-		})
+}
+
+func allowToken() func(http.ResponseWriter, *http.Request) {
+	return jsonResponse(http.StatusOK, `{"valid":true}`)
+}
+
+func allowOrg() func(http.ResponseWriter, *http.Request) {
+	return jsonResponse(http.StatusOK, `{"id":"orgabc123"}`)
+}
+
+func startConnect(t *testing.T, h *ConnectHandler, query string, cookies ...*http.Cookie) *httptest.ResponseRecorder {
+	t.Helper()
+	return serve(t, h.RegisterRoutes, "/api/connect-github?"+query, cookies...)
+}
+
+func stateCookie(t *testing.T, rec *httptest.ResponseRecorder) *http.Cookie {
+	t.Helper()
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == connectStateCookie && c.Value != "" {
+			return c
+		}
 	}
+	t.Fatal("connect state cookie was not set")
+	return nil
 }
 
 func TestConnectHandle(t *testing.T) {
@@ -94,32 +113,76 @@ func TestConnectHandle(t *testing.T) {
 	fail := jsonResponse(http.StatusBadRequest, `{"error":"bad install"}`)
 
 	tests := []struct {
-		name     string
-		state    string
-		callback func(http.ResponseWriter, *http.Request)
-		noAuth   bool
-		want     string
+		name       string
+		onboarding bool
+		callback   func(http.ResponseWriter, *http.Request)
+		mutate     func(t *testing.T, h *ConnectHandler, state *http.Cookie, nonce *string)
+		noAuth     bool
+		want       string
 	}{
-		{name: "plain success", state: "orgabc123", callback: ok, want: "/orgabc123/apps?vcs-connected=vcsconn123"},
-		{name: "plain failure", state: "orgabc123", callback: fail, want: "/orgabc123/apps"},
-		{name: "onboarding success", state: "orgabc123:onboarding", callback: ok, want: "/onboarding?vcs-connected=vcsconn123"},
-		{name: "onboarding failure", state: "orgabc123:onboarding", callback: fail, want: "/onboarding?vcs-error=1"},
-		{name: "onboarding without auth", state: "orgabc123:onboarding", noAuth: true, want: "/onboarding?vcs-error=1"},
-		{name: "foreign suffix is ignored", state: "orgabc123:https://evil.example.com", callback: ok, want: "/orgabc123/apps?vcs-connected=vcsconn123"},
-		{name: "foreign suffix failure", state: "orgabc123:https://evil.example.com", callback: fail, want: "/orgabc123/apps"},
-		{name: "malformed org never reaches the path", state: "/evil.example.com", noAuth: true, want: "/"},
+		{name: "plain success", callback: ok, want: "/orgabc123/apps?vcs-connected=vcsconn123"},
+		{name: "plain failure", callback: fail, want: "/orgabc123/apps"},
+		{name: "onboarding success", onboarding: true, callback: ok, want: "/onboarding?vcs-connected=vcsconn123"},
+		{name: "onboarding failure", onboarding: true, callback: fail, want: "/onboarding?vcs-error=1"},
+		{name: "onboarding without auth", onboarding: true, noAuth: true, want: "/onboarding?vcs-error=1"},
+		{
+			name:     "tampered state is ignored",
+			callback: ok,
+			mutate: func(t *testing.T, h *ConnectHandler, state *http.Cookie, nonce *string) {
+				*nonce = "someone-elses-nonce"
+			},
+			want: "/orgabc123/apps",
+		},
+		{
+			name: "other session is ignored",
+			mutate: func(t *testing.T, h *ConnectHandler, state *http.Cookie, nonce *string) {
+				opened, err := openConnectState(state.Value)
+				if err != nil {
+					t.Fatal(err)
+				}
+				opened.TokenHash = tokenHash("other-token")
+				sealed, err := sealConnectState(opened)
+				if err != nil {
+					t.Fatal(err)
+				}
+				state.Value = sealed
+			},
+			want: "/orgabc123/apps",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			api := (&fakeCtlAPI{callback: tt.callback}).start(t)
-			h := NewConnectHandler(&internal.Config{APIUrl: api.URL}, zap.NewNop())
+			api := (&fakeCtlAPI{callback: tt.callback, org: allowOrg(), validate: allowToken()}).start(t)
+			h := NewConnectHandler(testConfig(api.URL), zap.NewNop())
+
+			query := "org_id=orgabc123"
+			if tt.onboarding {
+				query += "&onboarding=1"
+			}
+			started := startConnect(t, h, query, authed())
+			if started.Code != http.StatusFound {
+				t.Fatalf("start status = %d, want 302", started.Code)
+			}
+			location, err := url.Parse(started.Header().Get("Location"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			nonce := location.Query().Get("state")
+			if nonce == "" || nonce == "orgabc123" || strings.Contains(nonce, "onboarding") {
+				t.Fatalf("github state = %q", nonce)
+			}
+			state := stateCookie(t, started)
+			if tt.mutate != nil {
+				tt.mutate(t, h, state, &nonce)
+			}
 
 			var cookies []*http.Cookie
 			if !tt.noAuth {
 				cookies = append(cookies, authed())
 			}
-			target := "/connect?installation_id=42&state=" + url.QueryEscape(tt.state)
+			cookies = append(cookies, state)
+			target := "/connect?installation_id=42&state=" + url.QueryEscape(nonce)
 			rec := serve(t, h.RegisterRoutes, target, cookies...)
 
 			if rec.Code != http.StatusFound {
@@ -132,22 +195,97 @@ func TestConnectHandle(t *testing.T) {
 	}
 }
 
-func TestStartConnectGithubState(t *testing.T) {
-	h := NewConnectHandler(&internal.Config{GithubAppName: "Nuon Dev"}, zap.NewNop())
+func TestConnectStateIsSingleUseInTheBrowser(t *testing.T) {
+	api := (&fakeCtlAPI{
+		callback: jsonResponse(http.StatusCreated, `{"id":"vcsconn123"}`),
+		org:      allowOrg(),
+		validate: allowToken(),
+	}).start(t)
+	h := NewConnectHandler(testConfig(api.URL), zap.NewNop())
+	started := startConnect(t, h, "org_id=orgabc123", authed())
+	nonce := mustState(t, started)
+	state := stateCookie(t, started)
 
-	tests := []struct {
-		query string
-		want  string
-	}{
-		{query: "org_id=orgabc123", want: "https://github.com/apps/nuon-dev/installations/new?state=orgabc123"},
-		{query: "org_id=orgabc123&onboarding=1", want: "https://github.com/apps/nuon-dev/installations/new?state=orgabc123%3Aonboarding"},
+	first := serve(t, h.RegisterRoutes, "/connect?installation_id=42&state="+url.QueryEscape(nonce), authed(), state)
+	if first.Header().Get("Location") != "/orgabc123/apps?vcs-connected=vcsconn123" {
+		t.Fatalf("first Location = %q", first.Header().Get("Location"))
 	}
-	for _, tt := range tests {
-		t.Run(tt.query, func(t *testing.T) {
-			rec := serve(t, h.RegisterRoutes, "/api/connect-github?"+tt.query)
-			if got := rec.Header().Get("Location"); got != tt.want {
-				t.Errorf("Location = %q, want %q", got, tt.want)
-			}
-		})
+	cleared := false
+	for _, c := range first.Result().Cookies() {
+		if c.Name == connectStateCookie && c.MaxAge < 0 {
+			cleared = true
+		}
 	}
+	if !cleared {
+		t.Fatal("connect state cookie was not cleared")
+	}
+
+	second := serve(t, h.RegisterRoutes, "/connect?installation_id=42&state="+url.QueryEscape(nonce), authed())
+	if second.Header().Get("Location") != "/" {
+		t.Fatalf("replay Location = %q", second.Header().Get("Location"))
+	}
+}
+
+func TestConnectStateExpires(t *testing.T) {
+	h := NewConnectHandler(testConfig("http://ctl.example.test"), zap.NewNop())
+	sealed, err := sealConnectState(connectState{
+		Nonce:     "nonce",
+		OrgID:     "orgabc123",
+		TokenHash: tokenHash("token"),
+		ExpiresAt: time.Now().Add(-time.Minute).Unix(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := serve(t, h.RegisterRoutes, "/connect?installation_id=42&state=nonce", authed(), &http.Cookie{
+		Name:  connectStateCookie,
+		Value: sealed,
+	})
+	if rec.Header().Get("Location") != "/orgabc123/apps" {
+		t.Fatalf("Location = %q", rec.Header().Get("Location"))
+	}
+}
+
+func TestStartConnectGithub(t *testing.T) {
+	api := (&fakeCtlAPI{org: allowOrg(), validate: allowToken()}).start(t)
+	h := NewConnectHandler(testConfig(api.URL), zap.NewNop())
+
+	t.Run("requires a session", func(t *testing.T) {
+		rec := startConnect(t, h, "org_id=orgabc123")
+		if !strings.HasPrefix(rec.Header().Get("Location"), "http://auth.example.test/?url=") {
+			t.Fatalf("Location = %q", rec.Header().Get("Location"))
+		}
+	})
+
+	t.Run("rejects an org the session cannot access", func(t *testing.T) {
+		denied := (&fakeCtlAPI{
+			org:      jsonResponse(http.StatusForbidden, `{"error":"nope"}`),
+			validate: allowToken(),
+		}).start(t)
+		deniedHandler := NewConnectHandler(testConfig(denied.URL), zap.NewNop())
+		rec := startConnect(t, deniedHandler, "org_id=orgabc123", authed())
+		if rec.Header().Get("Location") != "/orgabc123/apps" {
+			t.Fatalf("Location = %q", rec.Header().Get("Location"))
+		}
+	})
+
+	t.Run("rejects a bad org id before calling the api", func(t *testing.T) {
+		rec := startConnect(t, h, "org_id=../evil", authed())
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d", rec.Code)
+		}
+	})
+}
+
+func mustState(t *testing.T, rec *httptest.ResponseRecorder) string {
+	t.Helper()
+	location, err := url.Parse(rec.Header().Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	nonce := location.Query().Get("state")
+	if nonce == "" {
+		t.Fatal("missing state")
+	}
+	return nonce
 }

@@ -9,24 +9,17 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
-export const githubAppSlug = (githubAppName: string) =>
-  githubAppName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-
-export const githubAppInstallUrl = ({
-  githubAppName,
+export const githubConnectStartUrl = ({
   orgId,
   onboarding = false,
 }: {
-  githubAppName: string
   orgId: string
   onboarding?: boolean
-}) =>
-  `https://github.com/apps/${githubAppSlug(githubAppName)}/installations/new?state=${encodeURIComponent(
-    onboarding ? `${orgId}:onboarding` : orgId
-  )}`
+}) => {
+  const params = new URLSearchParams({ org_id: orgId })
+  if (onboarding) params.set('onboarding', '1')
+  return `/api/connect-github?${params}`
+}
 
 interface IConnectGithubModal extends Omit<IModal, 'onSubmit'> {
   githubAppName: string
@@ -90,7 +83,8 @@ export const ConnectGithubModal = ({
       {!isManualMode ? (
         <div className="flex flex-col gap-6">
           <Button
-            href={githubAppInstallUrl({ githubAppName, orgId })}
+            href={githubConnectStartUrl({ orgId })}
+            isAnchorTag
             variant="ghost"
             className="flex flex-col items-center justify-center gap-4 !p-8 rounded !h-auto !text-center !border-cool-grey-400 dark:!border-dark-grey-500"
           >
