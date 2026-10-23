@@ -1,0 +1,43 @@
+{{ define "auth/device_enter.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{template "head.tmpl"}}
+    <title>Connect the CLI | Nuon</title>
+</head>
+<body class="min-h-screen bg-gray-100 relative" style="background-image: url('https://nuon.co/Rightsideimage.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div class="absolute inset-0 bg-cool-grey-100 opacity-50 dark:bg-dark-grey-950 dark:opacity-75"></div>
+    <main class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-md">
+            <div class="mb-8 -mt-24">
+                {{template "logo.tmpl"}}
+            </div>
+            <div class="bg-white dark:bg-dark-grey-900 rounded-lg shadow-sm p-8">
+                <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-2">Connect the Nuon CLI</h2>
+                <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-6">
+                    {{ if .UserCode }}Check that this matches the code shown in your terminal after running <code>nuon auth login</code>.{{ else }}Enter the code shown in your terminal after running <code>nuon auth login</code>.{{ end }}
+                </p>
+
+                {{ if .Error }}
+                <div class="bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 rounded-md p-4 mb-6 text-sm">
+                    {{ .Error }}
+                </div>
+                {{ end }}
+
+                <form action="/device" method="POST">
+                    <input type="text" name="user_code" placeholder="XXXX-XXXX" value="{{ .UserCode }}" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" autofocus required
+                        class="w-full mb-6 py-3 px-4 text-center text-2xl font-mono tracking-widest uppercase border border-cool-grey-300 dark:border-cool-grey-700 rounded-md bg-white dark:bg-dark-grey-800 text-cool-grey-950 dark:text-cool-grey-50">
+                    <button type="submit" class="flex items-center justify-center w-full py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold transition-colors">
+                        Continue
+                    </button>
+                </form>
+
+                <p class="text-sm text-cool-grey-500 dark:text-cool-grey-400 mt-6">
+                    Signed in as {{ .Email }}
+                </p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+{{ end }}
