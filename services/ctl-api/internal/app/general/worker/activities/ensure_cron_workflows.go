@@ -20,6 +20,7 @@ type EnsureCronWorkflowsResponse struct {
 	MetricsStarted              bool `json:"metrics_started"`
 	CleanupStarted              bool `json:"cleanup_started"`
 	TriggerEventCleanupStarted  bool `json:"trigger_event_cleanup_started"`
+	OIDCTokenCleanupStarted     bool `json:"oidc_token_cleanup_started"`
 }
 
 // EnsureCronWorkflows starts (or replaces) the enqueuer-sweep and
@@ -93,6 +94,24 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	}
 	resp.TriggerEventCleanupStarted = true
 	a.logger.Info("trigger event cleanup cron started/replaced", zap.String("workflow-id", "general-trigger-event-cleanup-cron"))
+
+	// Start (or replace) the daily OIDC exchanged-token cleanup cron: prunes
+	// replay-protection rows whose source JWT has already expired, so the
+	// table doesn't grow unbounded.
+	oidcTokenCleanupOpts := tclient.StartWorkflowOptions{
+		ID:                    "general-oidc-exchanged-token-cleanup-cron",
+		TaskQueue:             workflows.APITaskQueue,
+		CronSchedule:          "0 0 * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", oidcTokenCleanupOpts, "CleanupOIDCExchangedTokens"); err != nil {
+		return nil, fmt.Errorf("unable to start oidc exchanged token cleanup workflow: %w", err)
+	}
+	resp.OIDCTokenCleanupStarted = true
+	a.logger.Info("oidc exchanged token cleanup cron started/replaced", zap.String("workflow-id", "general-oidc-exchanged-token-cleanup-cron"))
 
 	// One fleet-wide sweep replaces what used to be a cron emitter per install:
 	// live installs are evaluated when their report lands, so all that is left
