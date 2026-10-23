@@ -88,6 +88,35 @@ func ResetDatabase(cfg DBConfig) error {
 	return nil
 }
 
+// CloneDatabase drops cfg's database and recreates it as a copy of src's, skipping migrations.
+// Postgres refuses to copy a template database that has open connections, so both are cleared first.
+func CloneDatabase(src, cfg DBConfig) error {
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=%s",
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBSSLMode)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to connect to postgres: %w", err)
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get sql.DB: %w", err)
+	}
+	defer sqlDB.Close()
+
+	db.Exec(fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname IN ('%s', '%s')", src.DBName, cfg.DBName))
+	db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", cfg.DBName))
+
+	if err := db.Exec(fmt.Sprintf("CREATE DATABASE %s TEMPLATE %s", cfg.DBName, src.DBName)).Error; err != nil {
+		return fmt.Errorf("failed to clone test database from %s: %w", src.DBName, err)
+	}
+
+	return nil
+}
+
 // CreateAndMigrateDatabase drops and recreates the test database, then runs migrations.
 // Called by the testsetup binary before tests run.
 func CreateAndMigrateDatabase(cfg DBConfig) error {

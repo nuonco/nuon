@@ -7,10 +7,10 @@
 // Use -shards=N to split the packages across N parallel lanes, each against its own
 // Postgres and ClickHouse database (DB_NAME_i / CLICKHOUSE_DB_NAME_i) and its own
 // blob-cache directory. All lanes start from an identical schema, built before any
-// lane begins: setupDatabases creates and fully migrates each shard database in
-// turn, or — when NUONTEST_PG_SCHEMA_DIR names a snapshot directory — restores
-// every shard from a single pg_dump snapshot, so lanes diverge only in data,
-// never in schema. Lane placement is not a blind even split:
+// lane begins: setupDatabases migrates shard 0's database — or restores it from a
+// pg_dump snapshot when NUONTEST_PG_SCHEMA_DIR names a snapshot directory — and
+// clones every other shard from it with CREATE DATABASE ... TEMPLATE, so lanes
+// diverge only in data, never in schema. Lane placement is not a blind even split:
 //
 //   - Lane 0 runs the flow testworker package, alone. It is the slowest suite and
 //     the most environment-sensitive one (in-process Temporal worker, poll
@@ -355,7 +355,13 @@ func (p *plan) setupDatabases() error {
 	schemaDir := tests.SchemaSnapshotDir()
 	for i := range p.shards {
 		s := &p.shards[i]
-		if snapshotPath, ok := tests.SchemaSnapshotPath(s.dbCfg); ok {
+		if i > 0 {
+			src := p.shards[0].dbCfg
+			log.Printf("shard %d: cloning postgresql database %s from %s", s.index, s.dbCfg.DBName, src.DBName)
+			if err := tests.CloneDatabase(src, s.dbCfg); err != nil {
+				return fmt.Errorf("shard %d postgres clone: %w", s.index, err)
+			}
+		} else if snapshotPath, ok := tests.SchemaSnapshotPath(s.dbCfg); ok {
 			log.Printf("shard %d: restoring postgres schema from %s", s.index, snapshotPath)
 			if err := tests.RestoreDatabase(s.dbCfg, snapshotPath); err != nil {
 				return fmt.Errorf("shard %d postgres restore: %w", s.index, err)

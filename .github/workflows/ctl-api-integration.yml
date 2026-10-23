@@ -201,6 +201,18 @@ jobs:
           path: mono
           token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
 
+      # Same steps as `nuonctl scripts go-reset-dependencies`, backgrounded so the images pull and
+      # boot while Go, Node, and codegen run.
+      - name: Bring up dependencies (postgres / temporal / clickhouse)
+        working-directory: mono
+        run: |
+          nohup sh -c '
+            docker buildx use default &&
+            docker compose --profile linux down -v &&
+            CHVER=25.6.2.5 docker compose --profile linux up --build -d --remove-orphans --pull always
+            echo $? > /tmp/deps-up.exit
+          ' > /tmp/deps-up.log 2>&1 &
+
       # Generate and the integration tests run in the nuon checkout. setup-go sets
       # GOTOOLCHAIN=local, so the toolchain has to satisfy nuon/go.mod even when mono lags.
       - name: Setup Go
@@ -236,9 +248,25 @@ jobs:
           fi
           nuonctl version
 
-      - name: Bring up dependencies (postgres / temporal / clickhouse)
-        working-directory: mono
-        run: printf 'n\n' | nuonctl scripts go-reset-dependencies
+      # The untracked temporal-gen wrappers are required to compile the test tree. Run before the dev
+      # stack, which generates into the same checkout on boot.
+      - name: Generate code
+        working-directory: nuon
+        run: |
+          go mod download
+          go generate ./...
+
+      - name: Wait for dependencies
+        run: |
+          for i in $(seq 1 150); do
+            [ -f /tmp/deps-up.exit ] && break
+            sleep 2
+          done
+          tail -n 30 /tmp/deps-up.log || true
+          [ -f /tmp/deps-up.exit ] && [ "$(cat /tmp/deps-up.exit)" = "0" ] || {
+            echo "deps did not come up"
+            exit 1
+          }
 
       - name: Configure local blob storage
         working-directory: mono
@@ -258,14 +286,6 @@ jobs:
             BLOB_STORAGE_BUCKET: ctl-api-integration-test
             BLOB_STORAGE_REGION: us-east-1
           YAML
-
-      # The untracked temporal-gen wrappers are required to compile the test tree. Run before the dev
-      # stack, which generates into the same checkout on boot.
-      - name: Generate code
-        working-directory: nuon
-        run: |
-          go mod download
-          go generate ./...
 
       - name: Start ctl-api dev stack
         working-directory: mono
@@ -308,6 +328,13 @@ jobs:
           echo "::endgroup::"
           exit 1
 
+      # Its own key: the flow lane snapshots ctl_api_test, this lane snapshots ctl_api_test_0.
+      - name: Restore postgres schema snapshot
+        uses: actions/cache@v6
+        with:
+          path: /tmp/schema-dump
+          key: pg-schema-sharded-${{ runner.os }}-${{ hashFiles('nuon/services/ctl-api/internal/pkg/db/psql/**', 'nuon/services/ctl-api/internal/app/**/*.go', 'nuon/services/ctl-api/tests/testdb.go') }}
+
       - name: Run integration tests
         working-directory: nuon/services/ctl-api
         env:
@@ -324,6 +351,7 @@ jobs:
           BLOB_STORAGE_PROVIDER: s3
           BLOB_STORAGE_BUCKET: ctl-api-integration-test
           BLOB_STORAGE_REGION: us-east-1
+          NUONTEST_PG_SCHEMA_DIR: /tmp/schema-dump
         run: |
           source tests/integration.env
           # flow/testworker runs in the flow lane. grep, not rg: build-run runners have no rg, and an
@@ -339,7 +367,9 @@ jobs:
             exit 1
           fi
           printf 'testing %s\n' "${packages[@]}"
-          go run ./cmd/nuontest -v -timeout=40m -count=1 -p=1 \
+          # nuontest reserves shard 0 for the flow package, which is excluded here, so -shards=5
+          # gives four working lanes.
+          go run ./cmd/nuontest -shards=5 -v -timeout=40m -count=1 -p=1 \
             -skip 'TestSuite/TestPin' "${packages[@]}"
 
       - name: Dump dev logs on failure
