@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'bun:test'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, within } from '@testing-library/react'
 import { ShowMore } from './ShowMore'
 
 const originalScrollHeight = Object.getOwnPropertyDescriptor(
@@ -38,36 +38,34 @@ afterAll(() => {
 afterEach(cleanup)
 
 test('renders short children with no toggle', () => {
-  render(<ShowMore>short</ShowMore>)
+  const { container } = render(<ShowMore>short</ShowMore>)
 
-  expect(screen.getByText('short')).toBeTruthy()
-  expect(screen.queryByRole('button')).toBeNull()
+  expect(within(container).getByText('short')).toBeTruthy()
+  expect(within(container).queryByRole('button')).toBeNull()
 })
 
 test('clips overflowing children until expanded', () => {
-  render(<ShowMore>{'x'.repeat(200)}</ShowMore>)
+  const { container } = render(<ShowMore>{'x'.repeat(200)}</ShowMore>)
 
-  expect(screen.getByRole('button', { name: /Show more/ })).toBeTruthy()
+  fireEvent.click(within(container).getByRole('button', { name: /Show more/ }))
 
-  fireEvent.click(screen.getByRole('button', { name: /Show more/ }))
-
-  expect(screen.getByRole('button', { name: /Show less/ })).toBeTruthy()
+  expect(within(container).getByRole('button', { name: /Show less/ })).toBeTruthy()
 })
 
 test('respects a controlled expanded prop', () => {
-  const onExpandedChange = () => {}
-
-  render(
-    <ShowMore expanded onExpandedChange={onExpandedChange}>
+  const { container } = render(
+    <ShowMore expanded onExpandedChange={() => {}}>
       {'x'.repeat(200)}
     </ShowMore>,
   )
 
-  expect(screen.getByRole('button', { name: /Show less/ })).toBeTruthy()
+  expect(within(container).getByRole('button', { name: /Show less/ })).toBeTruthy()
 })
 
 test('swaps the icon set via the icons prop', () => {
-  render(<ShowMore icons="plusMinus">{'x'.repeat(200)}</ShowMore>)
+  const { container } = render(
+    <ShowMore icons="plusMinus">{'x'.repeat(200)}</ShowMore>,
+  )
 
-  expect(document.querySelector('svg')).toBeTruthy()
+  expect(container.querySelector('svg')).toBeTruthy()
 })
