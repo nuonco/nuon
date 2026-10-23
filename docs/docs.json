@@ -38,10 +38,10 @@
         "tab": "Start Here",
         "icon": "rocket",
         "pages": [
+          "get-started/introduction",
           "get-started/quickstart",
           "get-started/create-your-first-app",
           "get-started/app-branches-walkthrough",
-          "get-started/introduction",
           {
             "group": "Deployment Options",
             "root": "guides/deployment-options",
