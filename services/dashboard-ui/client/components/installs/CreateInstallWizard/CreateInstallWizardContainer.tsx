@@ -2,7 +2,6 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { pickCreateInstallConfig } from '@/components/installs/CreateInstall/CreateInstallFromAppContainer'
-import { shouldDefaultStackOnly } from '@/components/installs/CreateInstall/app-install-readiness'
 import { FormSkeleton } from '@/components/installs/CreateInstall/FormSkeleton'
 import { normalizeInstallPlatform } from '@/components/installs/forms/InstallForm'
 import { useApp } from '@/hooks/use-app'
@@ -200,13 +199,6 @@ export const CreateInstallWizardContainer = ({
         componentIds.includes(component.id)
       )}
       requireTargetAccount={requireTargetAccount}
-      defaultStackOnly={shouldDefaultStackOnly(
-        {
-          ...app,
-          app_configs: [{ component_ids: config?.component_ids ?? [] }],
-        },
-        needsComponents ? componentsResult?.data : []
-      )}
       cloudConnections={
         platform === 'aws'
           ? (cloudConnections || []).filter(
