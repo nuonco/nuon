@@ -96,7 +96,7 @@ func (i info) text() string {
 		b.WriteByte('\n')
 	}
 	if i.minCLI != "" {
-		b.WriteString("min_cli_version: ")
+		b.WriteString("api-min-cli-supported-version: ")
 		b.WriteString(i.minCLI)
 		b.WriteByte('\n')
 	}
@@ -111,7 +111,7 @@ func (i info) json() map[string]string {
 		out["ctl_api_version"] = i.ctlAPI
 	}
 	if i.minCLI != "" {
-		out["min_cli_version"] = i.minCLI
+		out["api-min-cli-supported-version"] = i.minCLI
 	}
 	if i.goVer != "" {
 		out["go_version"] = i.goVer
