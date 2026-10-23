@@ -140,7 +140,7 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 	// quick link) and — for AWS — a Terraform tfvars envelope stored on the
 	// row. The user picks one to apply during the await step.
 	if req.Platform != "gcp" {
-		obj.AWSBucketKey = fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
+		obj.AWSBucketKey = fmt.Sprintf("templates/%s.json", id)
 
 		// Only generate S3-based template URL and quick link when the template
 		// bucket is configured; otherwise the install is Terraform-only and no
@@ -156,7 +156,7 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 			}
 
 			if (req.Platform == "aws" || req.Platform == "azure") && req.HasCustomNestedStacks {
-				obj.CustomStacksAWSBucketKey = fmt.Sprintf("templates/%s/%s-custom.json", req.InstallID, id)
+				obj.CustomStacksAWSBucketKey = fmt.Sprintf("templates/%s-custom.json", id)
 				baseURL := strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/")
 				obj.CustomStacksTemplateURL = fmt.Sprintf("%s/%s", baseURL, obj.CustomStacksAWSBucketKey)
 			}
