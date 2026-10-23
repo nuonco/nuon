@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	githubevent "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/github_event"
@@ -121,6 +122,7 @@ func (s *service) fanOutToVCSConnections(ctx context.Context, event *app.GithubE
 // @Accept					json
 // @Produce					json
 // @Failure					400	{object}	stderr.ErrResponse
+// @Failure					401	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					200	{object}	app.GithubEvent
@@ -137,6 +139,26 @@ func (s *service) WriteEvent(ctx *gin.Context) {
 	body, err := readBody(ctx)
 	if err != nil {
 		ctx.Error(err)
+		return
+	}
+
+	var sub app.VCSWebhookSubscription
+	if err := s.db.WithContext(ctx).
+		Where(app.VCSWebhookSubscription{GithubInstallID: vcsConn.GithubInstallID}).
+		First(&sub).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
+			return
+		}
+		ctx.Error(fmt.Errorf("unable to get webhook subscription: %w", err))
+		return
+	}
+
+	if !verifyGitHubSignature(sub.WebhookSecret, ctx.GetHeader("X-Hub-Signature-256"), body) {
+		s.l.Warn("webhook signature verification failed",
+			zap.String("vcs_connection_id", vcsConnectionID),
+		)
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
 		return
 	}
 
