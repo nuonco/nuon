@@ -24,10 +24,7 @@ func (c *cli) authCmd() *cobra.Command {
 		Use:         "login",
 		Short:       "Login to Nuon",
 		Annotations: skipAuthAnnotation(),
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := c.auth
-			return svc.Login(cmd.Context())
-		}),
+		RunE:        c.runLogin,
 	}
 
 	// Add logout subcommand
