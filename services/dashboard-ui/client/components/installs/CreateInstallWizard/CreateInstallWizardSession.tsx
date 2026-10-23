@@ -73,7 +73,6 @@ interface ICreateInstallWizardSession {
   components: TComponent[]
   cloudConnections?: TCloudConnectionSummary[]
   requireTargetAccount: boolean
-  defaultStackOnly: boolean
   installsPath: string
 }
 
@@ -86,7 +85,6 @@ export const CreateInstallWizardSession = ({
   components,
   cloudConnections,
   requireTargetAccount,
-  defaultStackOnly,
   installsPath,
 }: ICreateInstallWizardSession) => {
   const { org } = useOrg()
@@ -139,7 +137,6 @@ export const CreateInstallWizardSession = ({
       platform,
       inputConfig,
       requireTargetAccount,
-      defaultStackOnly,
       storageKey,
       onSubmit: async (values) => {
         const base = buildCreateInstallBody(values, platform)

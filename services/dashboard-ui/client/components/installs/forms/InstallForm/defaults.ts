@@ -11,7 +11,6 @@ export interface BuildInstallDefaultsParams {
   inputConfig?: TAppInputConfig
   install?: TInstall
   defaultAutoApprove?: boolean
-  defaultStackOnly?: boolean
 }
 
 export const buildInstallInputDefaults = (
@@ -39,7 +38,6 @@ export const buildInstallDefaults = ({
   inputConfig,
   install,
   defaultAutoApprove,
-  defaultStackOnly,
 }: BuildInstallDefaultsParams): InstallFormValues => ({
   name: install?.name ?? '',
   region: '',
@@ -54,7 +52,7 @@ export const buildInstallDefaults = ({
   labels: [],
   role: '',
   deployDependents: true,
-  stackOnly: Boolean(defaultStackOnly),
+  stackOnly: false,
   inputsOnly: false,
   inputs: buildInstallInputDefaults(inputConfig, install),
 })
