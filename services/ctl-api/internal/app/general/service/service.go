@@ -34,6 +34,8 @@ type service struct {
 	codecs         []converter.PayloadCodec
 
 	productAnalytics *productanalytics.Client
+
+	latestCLI latestCLICache
 }
 
 var _ apiPkg.Service = (*service)(nil)

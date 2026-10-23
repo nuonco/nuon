@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-var Version string = "development"
+var Version string = "0.19.1228"
 
 func (s *Service) Version(ctx context.Context, asJSON bool) error {
 	if asJSON {
