@@ -175,6 +175,10 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "unable to initialize CLI dependencies")
 	}
 
+	if err := c.enforceMinCLI(cmd); err != nil {
+		return err
+	}
+
 	if !skipAuth {
 		if err := c.initUser(); err != nil {
 			return errors.Wrap(err, "unable to initialize user")
