@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -144,6 +145,13 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 // The step stays at "organization" with "processing" status until the signal
 // creates the org and advances to "your_stack".
 func (s *service) createNewOrg(ctx *gin.Context, account *app.Account, onboarding *app.Onboarding, orgName string) {
+	s.l.Info("creating org",
+		zap.String("email", account.Email),
+		zap.String("org_name", orgName),
+		zap.String("endpoint", ctx.FullPath()),
+		zap.Bool("disable_org_creation", s.cfg.DisableOrgCreation),
+	)
+
 	if s.cfg.DisableOrgCreation && !internal.IsNuonEmail(account.Email) {
 		ctx.Error(stderr.ErrAuthorization{
 			Err:         orgshelpers.ErrOrgCreationDisabled,
