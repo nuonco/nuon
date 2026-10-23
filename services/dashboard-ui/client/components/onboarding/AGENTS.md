@@ -34,6 +34,8 @@ context (org ID, journey helpers, `choosePath`, `backToIntro`) lives in `@/provi
 
 ## UI building blocks
 
+This flow is marketing-owned. It may drift from the production Stratus rules in [DESIGN.md](../../../DESIGN.md). Do not restyle it onto dashboard scaffolds unless the task is about this flow.
+
 Use components from `@/components/common/`: `Button`, `Card`, `Text`, `Badge`, `Icon`, `Banner`, `CodeBlock`,
 `Link`, and form controls under `common/form/`. Read a component's `.stories.tsx` for its props before using it.
 
