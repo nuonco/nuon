@@ -147,7 +147,6 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 func (s *service) createNewOrg(ctx *gin.Context, account *app.Account, onboarding *app.Onboarding, orgName string) {
 	s.l.Info("creating org",
 		zap.String("email", account.Email),
-		zap.String("account_id", account.ID),
 		zap.String("org_name", orgName),
 		zap.String("endpoint", ctx.FullPath()),
 		zap.Bool("disable_org_creation", s.cfg.DisableOrgCreation),
