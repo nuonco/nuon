@@ -58,7 +58,7 @@ func (s *service) createSeedUser(ctx context.Context) (*app.Token, error) {
 			return nil, err
 		}
 
-		acct, err = s.acctClient.CreateAccount(ctx, email, email, account.NoUserJourneys())
+		acct, err = s.acctClient.CreateAuthAccount(ctx, email, email, account.NoUserJourneys())
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +68,7 @@ func (s *service) createSeedUser(ctx context.Context) (*app.Token, error) {
 		CreatedByID: acct.ID,
 		AccountID:   acct.ID,
 		Token:       domains.NewUserTokenID(),
-		TokenType:   app.TokenTypeAuth0,
+		TokenType:   app.TokenTypeNuon,
 		ExpiresAt:   time.Now().Add(defaultSeedAPITokenTimeout),
 		IssuedAt:    time.Now(),
 		Issuer:      "seed",

@@ -118,4 +118,6 @@ func (s *InstallsServiceTestSuite) TestGetAppInstallsSerializesAzureAccount() {
 	assert.Equal(s.T(), azureAccount.ID, found.AzureAccount.ID)
 	assert.Equal(s.T(), "eastus", found.AzureAccount.Location)
 	assert.Equal(s.T(), "sub-1234", found.AzureAccount.SubscriptionID)
+	assert.NotContains(s.T(), rr.Body.String(), "sp-secret")
+	assert.NotContains(s.T(), rr.Body.String(), "service_principal_password")
 }

@@ -27,7 +27,7 @@ The vendor's `stack.toml` references CloudFormation nested templates plus the cu
 
 ```toml stack.toml
 vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/byo-vpc/default/stack.yaml"
-runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/runner/asg/stack.yaml"
+runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.7.0/runner/asg/stack.yaml"
 
 [[custom_nested_stacks]]
 name         = "runner_sg_eks_access"   # grant the Runner SG access to the cluster

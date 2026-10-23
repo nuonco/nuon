@@ -97,6 +97,7 @@ import { RunnerJobDetail } from './RunnerJobDetail'
 import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
+import { TeardownInstallWizardPage } from './TeardownInstallWizardPage'
 
 const redirectTo =
   (suffix: (params: LoaderFunctionArgs['params']) => string) =>
@@ -136,6 +137,10 @@ const NewInstallResourcesIndex = () => {
 }
 
 const installChildren = (): RouteObject[] => [
+  {
+    path: 'teardown',
+    element: <TeardownInstallWizardPage />,
+  },
   {
     index: true,
     element: <InstallOverviewRoute />,

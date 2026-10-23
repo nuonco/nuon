@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.7
 
 ARG BUILD_IMAGE=buildimage
-ARG NUON_CLI_VERSION=0.19.602
-ARG AWS_IAM_AUTHENTICATOR_VERSION=0.6.2
-ARG KUBELOGIN_VERSION=0.2.9
-ARG GCLOUD_VERSION=516.0.0
-ARG AZURE_CLI_VERSION=2.73.0
-ARG PULUMI_VERSION=3.234.0
+ARG NUON_CLI_VERSION=0.19.1257
+ARG AWS_IAM_AUTHENTICATOR_VERSION=0.7.23
+ARG KUBELOGIN_VERSION=0.2.21
+ARG GCLOUD_VERSION=590.0.0
+ARG AZURE_CLI_VERSION=2.91.0
+ARG PULUMI_VERSION=3.271.0
 
 ARG GOCACHE_S3_URI
 ARG GOCACHE_S3_ETAG
@@ -151,7 +151,7 @@ FROM code AS build-otelcol
 
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
-    go run go.opentelemetry.io/collector/cmd/builder --config build-config.yaml --skip-compilation && \
+    go run go.opentelemetry.io/collector/cmd/builder@v0.163.0 --config build-config.yaml --skip-compilation && \
     CGO_ENABLED=0 GOOS=linux go build -C ./otelcol-build -o /bin/nuon-runner-otelcol && \
     touch /go/pkg/build-cache/.nuon-dirty
 
@@ -194,16 +194,14 @@ RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
     CGO_ENABLED=0 golangci-lint run -c .golangci.yml -v && \
     touch /go/pkg/build-cache/.nuon-dirty
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS nuon-cli
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS nuon-cli
 
 ARG NUON_CLI_VERSION
 
 RUN apk add --update --no-cache curl ca-certificates
 RUN curl "https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/${NUON_CLI_VERSION}/nuon_linux_amd64" -o /bin/nuon && chmod +x /bin/nuon
 
-FROM public.ecr.aws/p7e3r5y0/kaniko-project/executor:latest  AS kaniko
-
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS aws-iam-authenticator
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS aws-iam-authenticator
 
 ARG AWS_IAM_AUTHENTICATOR_VERSION
 
@@ -214,7 +212,7 @@ RUN curl \
     "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${AWS_IAM_AUTHENTICATOR_VERSION}/aws-iam-authenticator_${AWS_IAM_AUTHENTICATOR_VERSION}_linux_amd64" \
     && chmod +x aws-iam-authenticator
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS kubelogin
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS kubelogin
 
 ARG KUBELOGIN_VERSION
 
@@ -229,7 +227,7 @@ RUN curl -LO \
     && rm -r bin \
     && chmod +x kubelogin
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS gcloud
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS gcloud
 
 ARG GCLOUD_VERSION
 
@@ -237,16 +235,18 @@ RUN apk add --update --no-cache curl ca-certificates python3
 WORKDIR /opt
 RUN curl -sSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" | tar xz \
     && /opt/google-cloud-sdk/install.sh --quiet --usage-reporting false --path-update false \
-    && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet
+    && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet \
+    && find /opt/google-cloud-sdk/platform/gsutil \( -name Pipfile.lock -o -name "*requirements*.txt" \) -delete
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/python:3.12-alpine AS azure-cli
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS azure-cli
 
 ARG AZURE_CLI_VERSION
 
-RUN apk add --update --no-cache gcc musl-dev libffi-dev
-RUN pip install --no-cache-dir --prefix=/azure-cli azure-cli==${AZURE_CLI_VERSION}
+RUN apk add --update --no-cache python3 gcc musl-dev libffi-dev python3-dev
+RUN python3 -m venv /opt/azure-cli \
+    && /opt/azure-cli/bin/pip install --no-cache-dir azure-cli==${AZURE_CLI_VERSION}
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS pulumi
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS pulumi
 
 ARG PULUMI_VERSION
 
@@ -254,7 +254,7 @@ RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /opt
 RUN curl -sSL "https://get.pulumi.com/releases/sdk/pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz" | tar xz
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS certs
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS certs
 
 # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
 # or use `update-ca-certificate` but it can't handle a single file w/ multiple certs
@@ -352,17 +352,14 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
 
 # END
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS runtime-base
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS runtime-base
 
 RUN apk add --no-cache \
     bash \
     libc6-compat \
-    build-base \
-    make \
     ca-certificates-bundle \
     coreutils \
     curl \
-    protoc \
     jq \
     git \
     aws-cli \
@@ -374,14 +371,12 @@ RUN apk add --no-cache \
     oras-cli
 
 # add dependencies
-COPY --from=kaniko /kaniko/* /kaniko/
-COPY --from=kaniko /kaniko/.docker /kaniko/.docker
-COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=kubelogin /bin/kubelogin /usr/local/bin/kubelogin
 COPY --from=gcloud /opt/google-cloud-sdk /opt/google-cloud-sdk
-COPY --from=azure-cli /azure-cli /usr/local
+COPY --from=azure-cli /opt/azure-cli /opt/azure-cli
+RUN ln -s /opt/azure-cli/bin/az /usr/local/bin/az
 COPY --from=pulumi /opt/pulumi /opt/pulumi
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 

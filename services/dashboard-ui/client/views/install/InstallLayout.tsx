@@ -116,6 +116,7 @@ const InstallTemplate = () => {
   const { pathname } = useLocation()
   const hasNotebooks = !!org?.features?.notebooks
   const installBasePath = href()
+  const isTeardownWizard = !!useInstallRouteMatch('/teardown')
   const openSettings = useOpenInstallSettings()
   const [searchParams] = useSearchParams()
   const isSettingsOpen = hasPanelKey(searchParams, INSTALL_SETTINGS_PANEL_KEY)
@@ -229,6 +230,13 @@ const InstallTemplate = () => {
     !!useInstallRouteMatch('/:section/:rest/*') && !isNewIASectionTab
 
   if (!install) return null
+  if (isTeardownWizard) {
+    return (
+      <PageLayout>
+        <Outlet />
+      </PageLayout>
+    )
+  }
 
   const isManagedByConfig =
     install?.metadata?.managed_by === 'nuon/cli/install-config'

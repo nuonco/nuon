@@ -3,11 +3,13 @@ import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { useCopyState } from '@/components/common/ClickToCopy'
+import { CodeBlock } from '@/components/common/CodeBlock'
 import { Cron } from '@/components/common/Cron'
 import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { SearchInput } from '@/components/common/SearchInput'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ResourceKind } from '@/components/install-resources/ResourceKind'
@@ -19,9 +21,12 @@ import {
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import type { TInstallResource } from '@/types'
-import { isIdentityOnlyResource } from '@/utils/health-utils'
+import {
+  isIdentityOnlyResource,
+  reportedHealth,
+  resourceIsStale,
+} from '@/utils/health-utils'
 import { humanize } from '@/utils/string-utils'
-import { isStaleObservation } from '@/utils/time-utils'
 import {
   describeResource,
   parseResourceDetails,
@@ -204,12 +209,8 @@ export const InstallResourceDetailPanel = ({
   const matches = query
     ? (searchable.match(searchPattern(query)) || []).length
     : 0
-  const stale =
-    !isIdentityOnlyResource(resource) &&
-    isStaleObservation(
-      resource?.observed_at,
-      resource?.stale_after_seconds || undefined
-    )
+  const stale = resourceIsStale(resource)
+  const health = reportedHealth(resource, stale)
 
   return (
     <Panel
@@ -293,6 +294,7 @@ export const InstallResourceDetailPanel = ({
       }}
     >
       <div className="flex shrink-0 flex-wrap items-center gap-3">
+        {health ? <Status status={health} variant="badge" /> : null}
         {resource.removed_from_config ? (
           <RemovedFromAppConfigBadge kind="probe" />
         ) : null}
@@ -408,15 +410,9 @@ export const InstallResourceDetailPanel = ({
         className="flex min-h-0 flex-auto flex-col gap-8 overflow-y-auto pb-4 focus-visible:outline-1 focus-visible:outline-primary-400/80"
       >
         {mode === 'json' ? (
-          <Text
-            as="pre"
-            family="mono"
-            variant="body"
-            nowrap
-            className="overflow-x-auto whitespace-pre shrink-0"
-          >
-            <HighlightedText text={json || ''} search={query} />
-          </Text>
+          <CodeBlock language="json" className="shrink-0">
+            {json || ''}
+          </CodeBlock>
         ) : sections.length ? (
           sections.map((section) => (
             <ResourceSection

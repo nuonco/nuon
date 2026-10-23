@@ -190,6 +190,9 @@ func init() {
 	// Nuon Auth Service Configs
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
+	config.RegisterDefault("disable_account_signup", false)
+	config.RegisterDefault("disable_org_creation", false)
+	config.RegisterDefault("disable_vcs_connection_callback", false)
 	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
 	config.RegisterDefault("nuon_auth_token_ttl", 24*60)
 	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
@@ -358,6 +361,11 @@ type Config struct {
 	NuonAuthTokenTTL       int      `config:"nuon_auth_token_ttl"`
 	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
 	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"` // if true, any user with an allowedDomain can sign in
+
+	DisableAccountSignup bool `config:"disable_account_signup"`
+	DisableOrgCreation   bool `config:"disable_org_creation"`
+
+	DisableVCSConnectionCallback bool `config:"disable_vcs_connection_callback"`
 
 	// OIDC workload identity federation
 	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -67,12 +68,14 @@ type InstallConfigDrift struct {
 type InstallOverviewResponse struct {
 	BranchTracking InstallBranchTracking `json:"branch_tracking"`
 	ConfigDrift    InstallConfigDrift    `json:"config_drift"`
+	Alignment      *InstallAlignment     `json:"alignment,omitempty"`
 }
 
 // @ID						GetInstallOverview
 // @Summary				install overview
-// @Description			Returns branch tracking and config drift for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+// @Description			Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
 // @Param					install_id	path	string	true	"install ID"
+// @Param                 include_alignment query bool false "include per-resource alignment; set false for branch tracking and config drift only" Default(true)
 // @Tags					installs
 // @Accept					json
 // @Produce				json
@@ -92,7 +95,7 @@ func (s *service) GetInstallOverview(ctx *gin.Context) {
 		return
 	}
 
-	overview, err := s.getInstallOverview(ctx, org.ID, ctx.Param("install_id"))
+	overview, err := s.getInstallOverview(ctx, org.ID, ctx.Param("install_id"), ctx.Query("include_alignment") != "false")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install overview: %w", err))
 		return
@@ -100,7 +103,7 @@ func (s *service) GetInstallOverview(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, overview)
 }
 
-func (s *service) getInstallOverview(ctx context.Context, orgID, installID string) (*InstallOverviewResponse, error) {
+func (s *service) getInstallOverview(ctx context.Context, orgID, installID string, includeAlignment bool) (*InstallOverviewResponse, error) {
 	var install app.Install
 	if err := s.db.WithContext(ctx).
 		Where(app.Install{ID: installID, OrgID: orgID}).
@@ -118,10 +121,30 @@ func (s *service) getInstallOverview(ctx context.Context, orgID, installID strin
 	}
 	tracking.CommitsBehind = tracking.RunsBehind
 	tracking.PendingCommits = tracking.SuccessfulRuns
-	return &InstallOverviewResponse{
+	overview := &InstallOverviewResponse{
 		BranchTracking: tracking,
 		ConfigDrift:    drift,
-	}, nil
+	}
+	if !includeAlignment {
+		return overview, nil
+	}
+	alignment, err := s.installAlignment(ctx, &install)
+	if err != nil {
+		alignment = &InstallAlignment{
+			Error:     "Resource alignment unavailable",
+			Resources: []InstallAlignmentResource{},
+		}
+	} else {
+		err = s.alignmentBranchRunCounts(ctx, &install, tracking.BranchID, alignment)
+	}
+	if err != nil && !errors.Is(err, context.Canceled) {
+		s.l.Warn("unable to complete install alignment",
+			zap.String("install_id", install.ID),
+			zap.String("org_id", install.OrgID),
+			zap.Error(err))
+	}
+	overview.Alignment = alignment
+	return overview, nil
 }
 
 func currentAppConfigID(install *app.Install) string {

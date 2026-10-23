@@ -219,10 +219,14 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 
 	// Install inputs are the source of truth for toggleable components: a
 	// component disabled on this install is skipped rather than deployed, even
-	// when a runbook step names it explicitly.
+	// when a runbook step names it explicitly. The config preload leaves
+	// Component.Name empty, and enablement keys the toggle off that name.
 	var latestConfig *app.ComponentConfigConnection
 	if len(component.ComponentConfigs) > 0 {
 		latestConfig = &component.ComponentConfigs[0]
+		if latestConfig.Component.Name == "" {
+			latestConfig.Component.Name = component.Name
+		}
 	}
 	if !componentEnabledFromInputs(enabledInputs, latestConfig) {
 		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (skipped)", name))

@@ -2,33 +2,15 @@ export default {
   title: 'Features / Onboarding / First run / Provision',
 }
 
-import { ProvisionStepView } from './ProvisionStep'
-import { StoryFrame } from './StoryFrame'
+import { MockStory } from './mocks'
 
-export const Default = () => (
-  <StoryFrame step="provision">
-    <ProvisionStepView
-      cloud="aws"
-      appName="acme-api"
-      region="us-east-1"
-      installId="inlk3x9q2m7v4w8p1z6r5t0y2c"
-      onFinish={() => {}}
-      onBack={() => {}}
-    />
-  </StoryFrame>
-)
+// Every story runs the mocked flow from this screen, so all buttons work.
+
+export const Default = () => <MockStory start={{ step: 'provision' }} />
 Default.meta = { fullBleed: true }
 
-export const Gcp = () => (
-  <StoryFrame step="provision" path="example" cloud="gcp">
-    <ProvisionStepView
-      cloud="gcp"
-      appName="Kitchen Sink"
-      region="us-central1"
-      installId="inlk3x9q2m7v4w8p1z6r5t0y2c"
-      onFinish={() => {}}
-      onBack={() => {}}
-    />
-  </StoryFrame>
-)
+export const Gcp = () => <MockStory start={{ step: 'provision', path: 'example', cloud: 'gcp' }} />
 Gcp.meta = { fullBleed: true }
+
+export const KitchenSinkAws = () => <MockStory start={{ step: 'provision', path: 'example' }} />
+KitchenSinkAws.meta = { fullBleed: true }

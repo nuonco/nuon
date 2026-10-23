@@ -4,8 +4,8 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { EmptyState } from '@/components/common/EmptyState'
-import { CheckboxInput } from '@/components/common/form/CheckboxInput'
-import { Select } from '@/components/common/form/Select'
+import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
+import { Toggle } from '@/components/common/form/Toggle'
 import { Icon } from '@/components/common/Icon'
 import { Loading } from '@/components/common/Loading'
 import { Table } from '@/components/common/Table'
@@ -200,6 +200,17 @@ export const InstallHealthResources = ({
         <Text weight="strong">Resource canvas</Text>
         <Text variant="subtext" theme="neutral">
           {caption || 'Latest reported observations · Refresh ~15s'}
+          {observedAt ? (
+            <>
+              {' · Last observation '}
+              <Time
+                time={observedAt}
+                format="relative"
+                variant="subtext"
+                shouldTick
+              />
+            </>
+          ) : null}
         </Text>
       </div>
       {error ? (
@@ -239,77 +250,41 @@ export const InstallHealthResources = ({
       ) : (
         <>
           {managed.length ? (
-            <>
-              <div className="flex flex-wrap items-center gap-4">
-                <Select
-                  id="health-component"
-                  size="sm"
-                  searchable
-                  className="min-w-64"
-                  labelProps={{
-                    labelText: 'Component',
-                    labelTextProps: { variant: 'label', theme: 'neutral' },
-                  }}
-                  options={[
-                    { label: 'All components', value: '' },
-                    ...[...owners.entries()]
+            <InstallResourceBoard
+              key={`${component}/${namespace}/${includeSandbox}`}
+              items={items}
+              filters={
+                <>
+                  <RadioFilterDropdown
+                    id="health-component"
+                    label="Component"
+                    options={[...owners.entries()]
                       .sort((a, b) => a[1].localeCompare(b[1]))
-                      .map(([value, label]) => ({ label, value })),
-                  ]}
-                  value={component}
-                  onChange={(value) => setFilter('component', value)}
-                />
-                <CheckboxInput
-                  id="health-sandbox"
+                      .map(([value, label]) => ({ label, value }))}
+                    selected={component || undefined}
+                    onChange={(value) => setFilter('component', value || '')}
+                  />
+                  <RadioFilterDropdown
+                    id="health-namespace"
+                    label="Namespace"
+                    options={namespaces.map((value) => ({
+                      label: value,
+                      value,
+                    }))}
+                    selected={namespace || undefined}
+                    onChange={(value) => setFilter('namespace', value || '')}
+                  />
+                </>
+              }
+              toggles={
+                <Toggle
                   checked={includeSandbox}
-                  onChange={(event) =>
-                    setFilter('sandbox', String(event.target.checked))
-                  }
-                  labelProps={{
-                    labelText: 'Include sandbox',
-                    className: 'self-end',
-                    labelTextProps: { variant: 'subtext' },
-                  }}
+                  onChange={(checked) => setFilter('sandbox', String(checked))}
+                  label="Include sandbox"
+                  className="px-2"
                 />
-                <Select
-                  id="health-namespace"
-                  size="sm"
-                  className="min-w-40"
-                  labelProps={{
-                    labelText: 'Namespace',
-                    labelTextProps: { variant: 'label', theme: 'neutral' },
-                  }}
-                  options={[
-                    { label: 'All namespaces', value: '' },
-                    ...namespaces.map((value) => ({ label: value, value })),
-                  ]}
-                  value={namespace}
-                  onChange={(value) => setFilter('namespace', value)}
-                />
-                {observedAt ? (
-                  <Text variant="subtext" theme="neutral" className="ml-auto">
-                    Last resource observation{' '}
-                    <Time
-                      time={observedAt}
-                      format="relative"
-                      variant="subtext"
-                      shouldTick
-                    />
-                  </Text>
-                ) : null}
-              </div>
-              {items.length ? (
-                <InstallResourceBoard
-                  key={`${component}/${namespace}/${includeSandbox}`}
-                  items={items}
-                />
-              ) : (
-                <EmptyState
-                  emptyTitle="No resources match these filters"
-                  emptyMessage="Change the component or namespace filter to browse reported resources."
-                />
-              )}
-            </>
+              }
+            />
           ) : null}
           {checks.length ? (
             <div className="flex flex-col gap-3">
