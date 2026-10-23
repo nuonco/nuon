@@ -12,7 +12,7 @@ import (
 func (c *cli) versionCmd() *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use:               "version",
-		Short:             "Show the CLI version, the ctl-api version, and min-cli-supported-version when set",
+		Short:             "Show the CLI version, the control plane API version, and min_cli_supported_version when set",
 		PersistentPreRunE: c.versionPreRunE,
 		Annotations:       skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {

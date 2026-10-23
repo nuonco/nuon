@@ -44,19 +44,19 @@ func TestVersionReportUsesSDK(t *testing.T) {
 	assert.Equal(t, Version, got.client)
 	assert.Equal(t, "0.19.1109", got.ctlAPI)
 	assert.Equal(t, "0.19.1102", got.minCLI)
-	assert.Equal(t, "client: "+Version+"\nctl-api: 0.19.1109\nmin-cli-supported-version: 0.19.1102\n", got.text())
+	assert.Equal(t, "client: "+Version+"\nctl-api: 0.19.1109\nmin_cli_supported_version: 0.19.1102\n", got.text())
 
 	out := got.json()
 	assert.Equal(t, Version, out["version"])
 	assert.Equal(t, "0.19.1109", out["ctl_api_version"])
-	assert.Equal(t, "0.19.1102", out["min-cli-supported-version"])
+	assert.Equal(t, "0.19.1102", out["min_cli_supported_version"])
 }
 
 func TestVersionReportOmitsUnsetMinCLI(t *testing.T) {
 	api := &stubAPI{version: &nuon.APIVersion{Version: "0.19.1109"}}
 	got := New(api, configuredConfig("https://api.example.com")).collect(context.Background())
 	assert.Equal(t, "client: "+Version+"\nctl-api: 0.19.1109\n", got.text())
-	_, ok := got.json()["min-cli-supported-version"]
+	_, ok := got.json()["min_cli_supported_version"]
 	assert.False(t, ok)
 }
 
@@ -65,7 +65,7 @@ func TestVersionReportOmitsFailedLookup(t *testing.T) {
 	got := New(api, configuredConfig("https://api.example.com")).collect(context.Background())
 	assert.Equal(t, "client: "+Version+"\n", got.text())
 	_, hasCtl := got.json()["ctl_api_version"]
-	_, hasMin := got.json()["min-cli-supported-version"]
+	_, hasMin := got.json()["min_cli_supported_version"]
 	assert.False(t, hasCtl)
 	assert.False(t, hasMin)
 }
