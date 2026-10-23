@@ -41,7 +41,12 @@
           {
             "group": "Orientation",
             "pages": [
-              "get-started/introduction",
+              "get-started/introduction"
+            ]
+          },
+          {
+            "group": "First deployment",
+            "pages": [
               "get-started/quickstart",
               "get-started/create-your-first-app",
               "get-started/app-branches-walkthrough"
@@ -49,28 +54,33 @@
           },
           {
             "group": "Deployment Options",
-            "root": "guides/deployment-options",
-            "boost": 5,
-            "expanded": true,
             "pages": [
-              "guides/nuon-cloud",
               {
-                "group": "BYOC",
-                "root": "guides/byoc",
-                "expanded": false,
+                "group": "Deployment Options",
+                "root": "guides/deployment-options",
+                "boost": 5,
+                "expanded": true,
                 "pages": [
-                  "guides/byoc/requirements",
-                  "guides/byoc/installation",
-                  "guides/byoc/optional",
-                  "guides/byoc/telemetry",
-                  "guides/byoc/updates"
+                  "guides/nuon-cloud",
+                  {
+                    "group": "BYOC",
+                    "root": "guides/byoc",
+                    "expanded": false,
+                    "pages": [
+                      "guides/byoc/requirements",
+                      "guides/byoc/installation",
+                      "guides/byoc/optional",
+                      "guides/byoc/telemetry",
+                      "guides/byoc/updates"
+                    ]
+                  },
+                  {
+                    "group": "Self-Hosted",
+                    "root": "guides/self-hosted",
+                    "expanded": false,
+                    "pages": ["guides/self-hosted/dependencies"]
+                  }
                 ]
-              },
-              {
-                "group": "Self-Hosted",
-                "root": "guides/self-hosted",
-                "expanded": false,
-                "pages": ["guides/self-hosted/dependencies"]
               }
             ]
           }
