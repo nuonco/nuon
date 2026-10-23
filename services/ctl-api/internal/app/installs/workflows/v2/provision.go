@@ -104,6 +104,9 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
 	}
+	if len(appCfg.ComponentIDs) == 0 {
+		return nil, errors.New("this app config has no components. Add components and sync the app config before provisioning the install")
+	}
 
 	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
 		InstallID: installID,
