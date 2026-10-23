@@ -49,6 +49,39 @@ func LoadCHConfig() (CHConfig, error) {
 	return cfg, nil
 }
 
+// ForgetCHMigrations removes the ClickHouse rows from a Postgres migration ledger.
+// A database cloned from an already-migrated shard carries that ledger, so the
+// ClickHouse migrator would treat every migration as applied and leave the new
+// ClickHouse database without its tables and views.
+func ForgetCHMigrations(psqlCfg DBConfig) error {
+	psqlDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		psqlCfg.DBHost, psqlCfg.DBPort, psqlCfg.DBUser, psqlCfg.DBPassword, psqlCfg.DBName, psqlCfg.DBSSLMode)
+
+	psqlDB, err := gorm.Open(postgres.Open(psqlDSN), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to connect to postgres: %w", err)
+	}
+
+	sqlDB, err := psqlDB.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get postgres sql.DB: %w", err)
+	}
+	defer sqlDB.Close()
+
+	names := make([]string, 0)
+	for _, mig := range chmigrations.New(chmigrations.Params{}).All() {
+		names = append(names, mig.Name)
+	}
+
+	if err := psqlDB.Unscoped().Where("name IN ?", names).Delete(&migrations.MigrationModel{}).Error; err != nil {
+		return fmt.Errorf("failed to clear clickhouse migration ledger: %w", err)
+	}
+
+	return nil
+}
+
 // CreateAndMigrateCHDatabase drops and recreates the ClickHouse test database, then runs migrations.
 // Called by the testsetup binary before tests run.
 // CH migration state is tracked in PostgreSQL, so psqlCfg must be the config of the

@@ -18,6 +18,10 @@
 //     starts it at t=0, and stops any other package from sharing its database or
 //     slowing its start.
 //
+//   - The queue testworkers run after the other lanes, on shard 0. They drive a
+//     real Temporal worker, and that worker misses its update-registration window
+//     while the other lanes are compiling.
+//
 //   - The migrations package runs last and alone on the final lane's database,
 //     sequenced by the launcher after that lane finishes its other packages. Its
 //     tests mutate the schema (apply and roll back migrations), so sharing the
@@ -58,9 +62,11 @@ import (
 )
 
 const (
-	flowPackageSuffix       = "internal/pkg/flow/testworker"
-	migrationsPackageSuffix = "internal/pkg/db/psql/migrations"
-	maxShards               = 8
+	flowPackageSuffix            = "internal/pkg/flow/testworker"
+	migrationsPackageSuffix      = "internal/pkg/db/psql/migrations"
+	queueTestworkerSuffix        = "internal/pkg/queue/testworker"
+	queueEmitterTestworkerSuffix = "internal/pkg/queue/emitter/testworker"
+	maxShards                    = 8
 )
 
 // go test flags that take a separate value argument, needed to tell
@@ -124,6 +130,7 @@ type shard struct {
 type plan struct {
 	shards     []shard
 	migrations []string // migrations package flags+path, run last on the final shard
+	temporal   []string // in-process temporal workers, run after the parallel lanes
 }
 
 // parseArgs extracts -shards=N from the argument list and passes the rest through
@@ -227,6 +234,10 @@ func buildPlan(shardCount int, args []string, dbCfg tests.DBConfig, chCfg tests.
 		switch {
 		case strings.HasSuffix(pkg, flowPackageSuffix):
 			flow = append(flow, pkg)
+		case shardCount > 1 && (strings.HasSuffix(pkg, queueTestworkerSuffix) || strings.HasSuffix(pkg, queueEmitterTestworkerSuffix)):
+			// These drive a real temporal worker and miss their update-registration
+			// window when the machine is busy compiling the other lanes.
+			p.temporal = append(p.temporal, pkg)
 		default:
 			rest = append(rest, pkg)
 		}
@@ -377,6 +388,11 @@ func (p *plan) setupDatabases() error {
 				}
 			}
 		}
+		if i > 0 {
+			if err := tests.ForgetCHMigrations(s.dbCfg); err != nil {
+				return fmt.Errorf("shard %d clickhouse ledger: %w", s.index, err)
+			}
+		}
 		log.Printf("shard %d: creating clickhouse database %s...", s.index, s.chCfg.Name)
 		if err := tests.CreateAndMigrateCHDatabase(s.chCfg, s.dbCfg); err != nil {
 			return fmt.Errorf("shard %d clickhouse: %w", s.index, err)
@@ -412,6 +428,12 @@ func (p *plan) run() int {
 	}
 	wg.Wait()
 
+	// The temporal workers run once the other lanes have stopped compiling.
+	if len(p.temporal) > 0 {
+		res := p.shards[0].runTests(ctx, "temporal", p.temporal)
+		results[0].temporal = &res
+	}
+
 	// Migrations run only after all lanes have finished, exclusively on the
 	// final lane's database.
 	if len(p.migrations) > 0 {
@@ -428,6 +450,7 @@ type shardResult struct {
 	status     int
 	logPath    string
 	migrations *shardResult
+	temporal   *shardResult
 }
 
 func (s *shard) runTests(ctx context.Context, phase string, packages []string) shardResult {
@@ -494,10 +517,18 @@ func summarize(p *plan, results []shardResult) int {
 			status = "FAIL"
 			failed = true
 		}
-		if len(p.shards[i].packages) == 0 && r.migrations == nil {
+		if len(p.shards[i].packages) == 0 && r.migrations == nil && r.temporal == nil {
 			status = "empty (no packages assigned)"
 		}
 		line := fmt.Sprintf("  shard %d: %s in %s (log: %s)", i, status, r.elapsed.Round(time.Second), r.logPath)
+		if r.temporal != nil {
+			tStatus := "ok"
+			if r.temporal.status != 0 {
+				tStatus = "FAIL"
+				failed = true
+			}
+			line += fmt.Sprintf("\n  shard %d temporal: %s in %s (log: %s)", i, tStatus, r.temporal.elapsed.Round(time.Second), r.temporal.logPath)
+		}
 		if r.migrations != nil {
 			mStatus := "ok"
 			if r.migrations.status != 0 {
