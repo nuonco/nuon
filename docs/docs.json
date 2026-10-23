@@ -388,11 +388,6 @@
           "updates/002-inputs-dependencies",
           "updates/001-install-workflows-actions"
         ]
-      },
-      {
-        "tab": "Knowledge Base",
-        "icon": "book-open",
-        "href": "https://support.nuon.co"
       }
     ],
     "global": {
