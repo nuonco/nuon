@@ -7,8 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	createorg "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_org"
+	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -142,6 +144,14 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 // The step stays at "organization" with "processing" status until the signal
 // creates the org and advances to "your_stack".
 func (s *service) createNewOrg(ctx *gin.Context, account *app.Account, onboarding *app.Onboarding, orgName string) {
+	if s.cfg.DisableOrgCreation && !internal.IsNuonEmail(account.Email) {
+		ctx.Error(stderr.ErrAuthorization{
+			Err:         orgshelpers.ErrOrgCreationDisabled,
+			Description: "Organization creation is disabled on this deployment.",
+		})
+		return
+	}
+
 	onboarding.StepStatus = app.OnboardingStepStatusInProgress
 	onboarding.SetCompositeStatus(ctx, app.StatusInProgress)
 

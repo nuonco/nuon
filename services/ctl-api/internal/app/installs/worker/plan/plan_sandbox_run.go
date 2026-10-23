@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/stackerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -209,6 +210,7 @@ func (p *Planner) RenderSandboxRunPlan(l *zap.Logger, in *RenderSandboxRunPlanIn
 	if err != nil {
 		return nil, nil, err
 	}
+	inputsDigest := installhelpers.InputsDigest(installhelpers.InputNames(appCfg.SandboxConfig.Refs), state.Inputs)
 
 	l.Info("rendering environment variables")
 	if err := render.RenderMap(&envVars, stateData); err != nil {
@@ -279,9 +281,10 @@ func (p *Planner) RenderSandboxRunPlan(l *zap.Logger, in *RenderSandboxRunPlanIn
 	}
 
 	plan := &plantypes.SandboxRunPlan{
-		AppID:       install.AppID,
-		AppConfigID: appCfg.ID,
-		InstallID:   install.ID,
+		AppID:        install.AppID,
+		AppConfigID:  appCfg.ID,
+		InstallID:    install.ID,
+		InputsDigest: inputsDigest,
 
 		Vars:               vars,
 		EnvVars:            envVars,

@@ -187,14 +187,6 @@ nuon branches list
 nuon branches get --branch-id main
 ```
 
-<Note>
-  New apps use app branches. `nuon branches sync` is how you create and update branch settings.
-  `nuon apps sync` still works for apps that are not on app branches yet, and is deprecated (see
-  [Migrating from `nuon apps sync`](#migrating-from-nuon-apps-sync)). If the app
-  directory contains `branch.toml` or `branches/`, the CLI steers you to `nuon branches sync` instead.
-  `nuon apps branches` is a deprecated alias of `nuon branches`.
-</Note>
-
 ## Label your installs
 
 Pin each install to a branch with `app_branch`, and set the labels install groups select. Prefer install config
@@ -402,20 +394,6 @@ to one install or to a whole install group, with a plan in front of it. The
 | `nuon installs list --labels k=v` | Preview which installs a selector matches. |
 
 `nuon apps branches` is a deprecated alias of `nuon branches`.
-
-## Migrating from `nuon apps sync`
-
-`nuon apps sync` and `nuon sync` are deprecated: app config now ships through app branches. Once they are turned off
-for your org, running `nuon apps sync` in an interactive terminal from your app config directory offers to migrate
-you. The migration:
-
-1. Reads the GitHub remote, the current git branch, and the config directory's path from your git checkout.
-2. Writes `branches/<git-branch>.toml`, using `[connected_repo]` when your org has connected the repository and
-   `[public_repo]` otherwise.
-3. Syncs the new branch file, then offers to move your existing installs onto the branch.
-
-Commit and push the new branch file to finish. To migrate by hand, write the branch file yourself, run
-`nuon branches sync --file branches/<name>.toml`, and set `app_branch` in each [install config](/guides/install-configs).
 
 ## Troubleshooting
 

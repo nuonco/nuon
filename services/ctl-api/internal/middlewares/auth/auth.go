@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
@@ -157,21 +156,4 @@ func New(params Params) *middleware {
 		accountsHelpers: params.AccountsHelpers,
 		runnersHelpers:  params.RunnersHelpers,
 	}
-}
-
-// extractAttributionFromCookie reads marketing attribution data from the nuon_attribution cookie
-// set by customer-dashboard during the auth flow. Returns nil if no attribution is present.
-func (m *middleware) extractAttributionFromCookie(ctx *gin.Context) map[string]interface{} {
-	cookie, err := ctx.Cookie("nuon_attribution")
-	if err != nil || cookie == "" {
-		return nil
-	}
-
-	var attribution map[string]interface{}
-	if err := json.Unmarshal([]byte(cookie), &attribution); err != nil {
-		m.l.Debug("failed to parse attribution cookie", zap.Error(err))
-		return nil
-	}
-
-	return attribution
 }
