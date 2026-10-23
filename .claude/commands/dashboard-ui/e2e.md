@@ -3,6 +3,8 @@ name: dashboard-ui:e2e
 description: Create a Playwright E2E test from a user-described flow
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 This skill creates a Playwright E2E spec by first writing a flow markdown doc, getting user approval, then generating the spec and running it.
 
 ## Step 1: Gather the flow
