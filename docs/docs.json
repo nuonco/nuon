@@ -35,7 +35,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Quickstart",
+        "tab": "Start Here",
         "icon": "rocket",
         "pages": [
           "get-started/quickstart",
@@ -72,7 +72,7 @@
         ]
       },
       {
-        "tab": "How it Works",
+        "tab": "Concepts",
         "icon": "lightbulb",
         "groups": [
           {
@@ -139,7 +139,7 @@
         ]
       },
       {
-        "tab": "How-tos",
+        "tab": "Guides",
         "icon": "screwdriver-wrench",
         "groups": [
           {
