@@ -152,7 +152,9 @@ Use `variant="danger"` for destructive actions. The label should name the destru
 
 ### Disabled states
 
-When a button or action is disabled, **always explain why** via a tooltip. The user should never have to guess.
+When a button is disabled and the reason is not already on screen, explain why via `tooltipProps` on `Button`. The user should never have to guess at a hidden blocker.
+
+Skip the tooltip when the reason is already visible: the label changes for an in-progress action ("Saving..."), validation errors sit on the fields, a type-to-confirm input is directly above, or the control is positional (the first item cannot move up). The interaction rule is [DESIGN.md](./DESIGN.md) "Button tooltips".
 
 **Pattern: "Cannot [action] — [reason]"**
 
@@ -165,7 +167,7 @@ When a button or action is disabled, **always explain why** via a tooltip. The u
 
 Keep it to one line. The reason should suggest what to do, or at least name the blocker.
 
-**Don't** just disable a button silently. **Don't** use "This action is currently unavailable" — say *why*.
+**Don't** disable a button silently when the reason is not already on screen. **Don't** use "This action is currently unavailable" — say *why*.
 
 ## Modals
 

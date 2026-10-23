@@ -41,6 +41,9 @@ the node context directly from this file instead of eyeballing.
    nested cards, and boxes are usually wrong (see §4, anti-slop).
 5. **Ask only when truly blocked.** Otherwise pick the option most consistent with existing
    patterns and proceed, noting the decision.
+6. **Stop before a new pattern.** A new component, token, or interaction needs an explicit yes
+   before it is built. Name the existing options you rejected. The index of what to copy is
+   [client/components/PATTERNS.md](./client/components/PATTERNS.md).
 
 ---
 
@@ -48,7 +51,7 @@ the node context directly from this file instead of eyeballing.
 
 Surfaces: `Modal`, `Panel`, `Toast` (`components/surfaces/`).
 Common (`components/common/`), non-exhaustive: `Button`, `Card`, `Badge`, `Banner`, `Divider`,
-`Dropdown`, `Menu`, `Expand`, `Icon`, `Link`, `Text`, `Time`, `Duration`, `Cron`, `Status`,
+`Dropdown`, `Menu`, `Expand`, `ShowMore`, `ToggleButton`, `Icon`, `Link`, `Text`, `Time`, `Duration`, `Cron`, `Status`,
 `LabeledStatus`, `LabeledValue`, `KeyValueList`, `PropertyGrid`, `ID`, `Hash`, `ClickToCopy`, `Code`,
 `CodeBlock`, `JSONViewer`, `Loading`, `EmptyState`, `Avatar`, `Group`, `HeadingGroup`, `BackLink`.
 
@@ -213,7 +216,8 @@ These are the specific inconsistencies that make the UI look "off". Treat each a
 ### Collapsible header ("Show more / Show less")
 Make the whole header row the control; keep it keyboard accessible. A `<div role="button">` is
 acceptable here (and only in cases like this) because the control is a full row containing other
-content — `Button` cannot represent it. For ordinary actions, always use `Button`.
+content — `Button` cannot represent it. For ordinary actions, always use `Button`. The label + icon
+on the right is plain `Text` + `Icon` — copy the markup below rather than inventing new classes.
 ```tsx
 <div
   role="button" tabIndex={0} aria-expanded={expanded}
@@ -222,18 +226,18 @@ content — `Button` cannot represent it. For ordinary actions, always use `Butt
   className="flex items-center justify-between gap-3 cursor-pointer select-none rounded-md transition-colors hover:bg-black/5 dark:hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400/80"
 >
   <div className="flex items-center gap-1.5 min-w-0">…</div>
-  <Text
-    as="span"
-    variant="subtext"
-    weight="strong"
-    className="flex items-center gap-1 shrink-0 text-primary-600 dark:text-primary-400"
-  >
+  <Text as="span" variant="subtext" weight="strong" flex nowrap className="shrink-0 text-primary-600 dark:text-primary-400">
     {expanded ? 'Show less' : 'Show more'}
     <Icon variant={expanded ? 'MinusIcon' : 'PlusIcon'} size={14} />
   </Text>
 </div>
 {expanded && <>…</>}
 ```
+
+Overflowing content with no header row — a commit message — is `ShowMore`. Wrap it, don't pass a
+string; it measures its own children and only adds the toggle when the content exceeds `lines`
+(default 3) or `maxHeight`. That is the commit body on the app overview. See PATTERNS.md "Choosing
+a control".
 
 ### Modal
 - Sizes `sm | default | lg | xl | full` (`default` when unset). Use `xl` for dense content (build
@@ -273,11 +277,19 @@ inside `labelProps`:
   full-width disclosure row. It still needs `cursor-pointer`, a hover background in both themes,
   and a visible focus state. The browser's default arrow cursor is not acceptable, and
   `focus:outline-none` with nothing in its place is not a focus state.
-- Variants: `primary | secondary | ghost | danger | tab | icon`.
-- `icon` = square, icon-only (`aspect-square rounded-md !p-0`, ghost-style hover/focus). Use for
-  caret/arrow affordances next to a row instead of a bordered button.
-- One **primary** action per surface — never two primary buttons on the same page (see §4.8);
-  everything else `secondary`/`ghost`. `danger` only for destructive actions.
+- Variants: `primary | secondary | ghost | danger | tab | icon`. One question decides which:
+  - Ordinary action → `secondary`, the default. Pass no `variant` at all.
+  - The single most important action on the screen → `primary` — never two on one page (§4.8).
+  - A destructive action → `danger`.
+  - UI chrome, not a page action — opening/closing the sidebar, expanding a diff section or row,
+    the `ShowMore` control, the panel-trigger link on a table row — → `ghost` (or `icon` for
+    icon-only chrome, square, `aspect-square rounded-md !p-0`).
+  - A tab inside `Tabs` / `TabNav` → `tab`, set internally by those components. Never by hand.
+  - `ghost` for an ordinary action (a submit, a create button, a row action) is a defect, not a
+    lighter style — it reads as disabled or as chrome.
+- **Size:** every component with a `size` prop defaults to its default size. Passing `size` needs a
+  reason the change states (a dense table cell, a toolbar the design calls for) — "it looked too
+  big" is not one.
 
 ### Button tooltips (disabled reasons + nudges)
 The `Button` owns its tooltip via `tooltipProps` — **never hand-wrap `<Tooltip>` around a `Button`,
@@ -473,9 +485,10 @@ Prefer the Stratus `Table`. If you must hand-roll (e.g. inside a modal), mirror 
 - Use an inline table over an accordion when each row's content is short and scannable.
 
 ### Loading states — primitives own skeletons
-Skeletons are **derived from the real components**, never hand-built. A hand-measured skeleton is
-a second implementation of the layout — it drifts from the real component, and that drift is the
-swap jank.
+The rule in one line: **use the component's built-in loading state; never add a separate skeleton
+that recreates it.** `Skeleton`, `TableSkeleton`, and `TimelineSkeleton` are internals of `common/`
+and do not appear in a view or feature. A hand-measured skeleton is a second implementation of the
+layout — it drifts from the real component, and that drift is the swap jank.
 
 - **Chrome and labels always render real.** Breadcrumbs, headings, section titles, modal
   chrome, and a `LabeledValue`'s label are content the client already knows — render them as real
@@ -611,6 +624,7 @@ Apply widely-accepted interaction-design heuristics (stated generically; do not 
 
 ## 9. Definition of done (self-check before handing off)
 
+- [ ] Copied a page named in [client/components/PATTERNS.md](./client/components/PATTERNS.md), or the closest shipped page when none is listed.
 - [ ] Reused existing components/patterns; nothing hand-rolled that the library provides.
 - [ ] Every color/space/radius/type value is a Stratus token; no raw hex or off-scale values.
 - [ ] Borders are the default 1px token — no custom border colors or widths; no extra bounding boxes.
