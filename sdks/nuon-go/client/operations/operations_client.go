@@ -1088,8 +1088,6 @@ type ClientService interface {
 
 	VerifyCloudConnection(params *VerifyCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyCloudConnectionAccepted, error)
 
-	WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error)
-
 	WriteWebhookEvent(params *WriteWebhookEventParams, opts ...ClientOption) (*WriteWebhookEventOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
@@ -23671,51 +23669,6 @@ func (a *Client) VerifyCloudConnection(params *VerifyCloudConnectionParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for VerifyCloudConnection: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-WriteVCSEvent writes a v c s webhook event
-
-Writes incoming webhook events for a VCS connection (legacy endpoint)
-*/
-func (a *Client) WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewWriteVCSEventParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "WriteVCSEvent",
-		Method:             "POST",
-		PathPattern:        "/v1/vcs/{vcs_connection_id}/events",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &WriteVCSEventReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*WriteVCSEventOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for WriteVCSEvent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
