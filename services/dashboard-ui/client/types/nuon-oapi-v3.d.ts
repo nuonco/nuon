@@ -3447,13 +3447,6 @@ export interface paths {
      */
     post: operations["WriteWebhookEvent"];
   };
-  "/v1/vcs/{vcs_connection_id}/events": {
-    /**
-     * Write a VCS webhook event
-     * @description Writes incoming webhook events for a VCS connection (legacy endpoint)
-     */
-    post: operations["WriteVCSEvent"];
-  };
   "/v1/workflows": {
     /** get all workflows for the org */
     get: operations["GetOrgWorkflows"];
@@ -35161,44 +35154,6 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * Write a VCS webhook event
-   * @description Writes incoming webhook events for a VCS connection (legacy endpoint)
-   */
-  WriteVCSEvent: {
-    parameters: {
-      path: {
-        /** @description VCS Connection ID */
-        vcs_connection_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.GithubEvent"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
