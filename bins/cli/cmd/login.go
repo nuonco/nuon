@@ -11,11 +11,8 @@ func (c *cli) loginCmd() *cobra.Command {
 		Short:             "Login to Nuon (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       skipAuthAnnotation(),
-		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			svc := c.auth
-			return svc.Login(cmd.Context())
-		}),
-		GroupID: AdditionalGroup.ID,
+		RunE:              c.runLogin,
+		GroupID:           AdditionalGroup.ID,
 	}
 
 	return loginCmd
