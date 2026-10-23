@@ -103,7 +103,7 @@ func New(params Params) *service {
 		blobSvc:     params.BlobSvc,
 		queueClient: params.QueueClient,
 
-		disableConnectionCallback: params.Cfg.DisableVCSConnectionCallback,
+		disableConnectionCallback: params.Cfg != nil && params.Cfg.DisableVCSConnectionCallback,
 	}
 }
 
