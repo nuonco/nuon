@@ -185,9 +185,9 @@ func acaMediumTemplateInput(cfg *config.AppConfig, ui *config.UploadedUIDefiniti
 		},
 		CloudFormationStackVersion: &app.InstallStackVersion{
 			PhoneHomeURL:            "https://api.example.com/phone-home/phid",
-			AWSBucketKey:            "templates/inst-aca-medium/ist-aca.json",
-			QuickLinkBucketKey:      "templates/inst-aca-medium/ist-aca-quicklink.json",
-			QuickLinkUIDefBucketKey: "templates/inst-aca-medium/ist-aca-ui.json",
+			AWSBucketKey:            "templates/ist-aca.json",
+			QuickLinkBucketKey:      "templates/ist-aca-quicklink.json",
+			QuickLinkUIDefBucketKey: "templates/ist-aca-ui.json",
 		},
 		Runner:   &app.Runner{ID: "runner-aca", OrgID: "org-aca"},
 		Settings: &app.RunnerGroupSettings{ContainerImageURL: "example.com/runner", ContainerImageTag: "latest"},
