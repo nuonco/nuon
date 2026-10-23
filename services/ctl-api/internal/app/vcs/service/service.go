@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
@@ -23,6 +24,7 @@ type Params struct {
 	GhClient    helpers.GithubClient `optional:"true"`
 	BlobSvc     blobstore.Service
 	QueueClient *queueclient.Client
+	Cfg         *internal.Config
 }
 
 type service struct {
@@ -33,6 +35,8 @@ type service struct {
 	ghClient    helpers.GithubClient
 	blobSvc     blobstore.Service
 	queueClient *queueclient.Client
+
+	disableConnectionCallback bool
 }
 
 var _ api.Service = (*service)(nil)
@@ -98,6 +102,8 @@ func New(params Params) *service {
 		ghClient:    ghClient,
 		blobSvc:     params.BlobSvc,
 		queueClient: params.QueueClient,
+
+		disableConnectionCallback: params.Cfg != nil && params.Cfg.DisableVCSConnectionCallback,
 	}
 }
 
