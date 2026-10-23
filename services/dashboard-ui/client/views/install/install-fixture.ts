@@ -7,9 +7,10 @@ export const viewPath = (suffix = '') =>
 
 export type TFixtureReply = {
   body: unknown
-  paginated?: boolean
+  paginated?: boolean | { hasNext: boolean; offset: number; limit: number }
   status?: number
   pending?: boolean
+  delayMs?: number
 }
 
 export type TFixture = (
@@ -21,12 +22,20 @@ const misses: string[] = []
 
 export const fixtureMisses = () => misses.slice()
 
-const json = (body: unknown, paginated = false, status = 200) => {
+const json = (
+  body: unknown,
+  paginated: TFixtureReply['paginated'] = false,
+  status = 200
+) => {
   const headers = new Headers({ 'content-type': 'application/json' })
   if (paginated) {
-    headers.set('X-Nuon-Page-Next', 'false')
-    headers.set('X-Nuon-Page-Offset', '0')
-    headers.set('X-Nuon-Page-Limit', '20')
+    const pagination =
+      typeof paginated === 'object'
+        ? paginated
+        : { hasNext: false, offset: 0, limit: 20 }
+    headers.set('X-Nuon-Page-Next', String(pagination.hasNext))
+    headers.set('X-Nuon-Page-Offset', String(pagination.offset))
+    headers.set('X-Nuon-Page-Limit', String(pagination.limit))
   }
   return new Response(JSON.stringify(body), { status, headers })
 }
@@ -79,14 +88,27 @@ export const beginInstallFixture = (fixture: TFixture) => {
     const url = new URL(raw, window.location.origin)
     if (url.pathname === '/readyz') return json({ status: 'ok' })
     if (url.pathname === '/version') {
-      return json({ api: { version: '0.0.0', git_ref: 'dev' }, ui: { version: '0.0.0' } })
+      return json({
+        api: { version: '0.0.0', git_ref: 'dev' },
+        ui: { version: '0.0.0' },
+      })
     }
-    if (url.pathname.startsWith('/v1/') && current) {
+    const isApi = url.pathname.startsWith('/v1/')
+    if ((isApi || url.pathname.startsWith('/api/')) && current) {
       const reply = current(url, init)
       if (reply?.pending) return new Promise(() => {})
+      if (reply?.delayMs) {
+        await new Promise((resolve) => setTimeout(resolve, reply.delayMs))
+      }
       if (reply) return json(reply.body, reply.paginated, reply.status ?? 200)
-      misses.push(`${init?.method ?? 'GET'} ${url.pathname}${url.search}`)
-      return json({ error: 'fixture miss', description: url.pathname }, false, 404)
+      if (isApi) {
+        misses.push(`${init?.method ?? 'GET'} ${url.pathname}${url.search}`)
+        return json(
+          { error: 'fixture miss', description: url.pathname },
+          false,
+          404
+        )
+      }
     }
     return restoreFetch!(input, init)
   }) as typeof window.fetch

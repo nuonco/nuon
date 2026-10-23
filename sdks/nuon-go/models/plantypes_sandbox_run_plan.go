@@ -49,6 +49,9 @@ type PlantypesSandboxRunPlan struct {
 	// hooks
 	Hooks *PlantypesTerraformDeployHooks `json:"hooks,omitempty"`
 
+	// inputs digest
+	InputsDigest string `json:"inputs_digest,omitempty"`
+
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 

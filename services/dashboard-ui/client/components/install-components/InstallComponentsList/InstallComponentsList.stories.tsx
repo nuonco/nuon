@@ -172,12 +172,6 @@ export const WithoutHealth = () => (
   />
 )
 
-export const Behind = () => (
-  <InstallComponentsList
-    components={[component({ behind: true, name: 'api' })]}
-  />
-)
-
 export const NeverDeployed = () => (
   <InstallComponentsList
     components={[
@@ -190,13 +184,15 @@ export const NeverDeployed = () => (
 
 export const WithDisabledComponent = () => (
   <InstallComponentsList
+    aligned
     components={[
-      component({ enabled: true }),
+      component({ enabled: true, alignment: 'in-sync' }),
       component({
         id: 'cmp-2',
         name: 'worker',
         type: 'job',
         enabled: false,
+        alignment: 'disabled',
         status: 'inactive',
         latestDeploy: details(false),
       }),
@@ -204,6 +200,7 @@ export const WithDisabledComponent = () => (
         id: 'cmp-3',
         name: 'cache',
         type: 'terraform_module',
+        alignment: 'unknown',
         latestDeploy: details(false),
       }),
     ]}
@@ -212,18 +209,44 @@ export const WithDisabledComponent = () => (
 
 export const AllComponentsDisabled = () => (
   <InstallComponentsList
+    aligned
     components={[
-      component({ enabled: false, status: 'inactive' }),
+      component({ enabled: false, alignment: 'disabled', status: 'inactive' }),
       component({
         id: 'cmp-2',
         name: 'worker',
         type: 'job',
         enabled: false,
+        alignment: 'disabled',
         status: 'inactive',
         latestDeploy: details(false, null),
       }),
     ]}
   />
+)
+
+const tornDownComponents = Array.from({ length: 25 }, (_, index) =>
+  component({
+    id: `cmp-retired-${index + 1}`,
+    name: `retired-worker-${index + 1}`,
+    href: '#component-details',
+    type: 'job',
+    alignment: 'torn-down',
+    status: 'inactive',
+    latestDeploy: null,
+  })
+)
+
+export const WithTornDownComponents = () => (
+  <ListStory items={[components[0], ...tornDownComponents.slice(0, 2)]} />
+)
+
+export const ManyTornDownComponents = () => (
+  <ListStory items={[components[0], ...tornDownComponents]} />
+)
+
+export const AllComponentsTornDown = () => (
+  <InstallComponentsList aligned components={tornDownComponents.slice(0, 2)} />
 )
 
 export const Empty = () => <InstallComponentsList components={[]} />

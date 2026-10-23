@@ -27,7 +27,7 @@ The vendor's `stack.toml` references nested templates. Set `type` to the cloud's
 type = "aws-cloudformation"
 
 vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/vpc/eks/default/stack.yaml"
-runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/runner/asg/stack.yaml"
+runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.7.0/runner/asg/stack.yaml"
 ```
 
 The customer deploys via the CloudFormation Quick Create form (or `aws cloudformation deploy`) — no further input is needed beyond account and region.

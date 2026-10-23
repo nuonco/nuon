@@ -23,7 +23,6 @@ export const ActiveInConfig = () => (
   <ManagementDropdown
     component={mockComponent}
     componentConfig={inConfig}
-    currentBuildId="build-1"
     currentDeployStatus="active"
     installComponent={mockInstallComponent}
   />
@@ -33,7 +32,6 @@ export const InactiveInConfig = () => (
   <ManagementDropdown
     component={mockComponent}
     componentConfig={inConfig}
-    currentBuildId="build-1"
     currentDeployStatus="inactive"
     installComponent={mockInstallComponent}
   />
@@ -42,7 +40,6 @@ export const InactiveInConfig = () => (
 export const InactiveRemovedFromConfig = () => (
   <ManagementDropdown
     component={mockComponent}
-    currentBuildId="build-1"
     currentDeployStatus="inactive"
     installComponent={mockInstallComponent}
   />
@@ -51,7 +48,6 @@ export const InactiveRemovedFromConfig = () => (
 export const ConfigLoading = () => (
   <ManagementDropdown
     component={mockComponent}
-    currentBuildId="build-1"
     currentDeployStatus="active"
     installComponent={mockInstallComponent}
     isConfigLoading
@@ -62,8 +58,12 @@ export const TerraformComponent = () => (
   <ManagementDropdown
     component={{ ...mockComponent, type: 'terraform_module' } as TComponent}
     componentConfig={inConfig}
-    currentBuildId="build-1"
     currentDeployStatus="active"
-    installComponent={{ ...mockInstallComponent, terraform_workspace: { id: 'ws-1' } } as TInstallComponent}
+    installComponent={
+      {
+        ...mockInstallComponent,
+        terraform_workspace: { id: 'ws-1' },
+      } as TInstallComponent
+    }
   />
 )
