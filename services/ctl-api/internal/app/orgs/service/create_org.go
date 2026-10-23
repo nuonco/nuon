@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -78,6 +79,13 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		Tags:           req.Tags,
 	})
 	if err != nil {
+		if errors.Is(err, orgshelpers.ErrOrgSignupDisabled) {
+			ctx.Error(stderr.ErrAuthorization{
+				Err:         err,
+				Description: "Organization signup is disabled on this deployment.",
+			})
+			return
+		}
 		ctx.Error(fmt.Errorf("unable to create org: %w", err))
 		return
 	}
