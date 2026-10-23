@@ -299,8 +299,10 @@ func (s *DeviceAuthorizationTestSuite) TestDevicePage() {
 
 		rr := s.do(http.MethodGet, `/device?user_code=%22%3E%3Cscript%3E`, nil, session.Token)
 		require.Equal(s.T(), http.StatusOK, rr.Code)
-		assert.Contains(s.T(), rr.Body.String(), `value=""`)
-		assert.NotContains(s.T(), rr.Body.String(), "<script>")
+		body := rr.Body.String()
+		assert.Contains(s.T(), body, `value=""`)
+		assert.NotContains(s.T(), body, `"><script>`)
+		assert.NotContains(s.T(), body, `&#34;&gt;&lt;script&gt;`)
 	})
 }
 
