@@ -90,10 +90,14 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 	api.GET("/validate", s.Validate)
 	api.GET("/", s.Index)
 
-	// Device code flow for CLI authentication
-	api.GET("/device/code", s.DeviceCodePage)
-	api.POST("/device/code/approve", s.DeviceCodeApprove)
-	api.GET("/device/token", s.DeviceCodeToken)
+	// Device authorization grant (RFC 8628) for CLI authentication
+	api.POST("/device/authorize", s.DeviceAuthorize)
+	api.GET("/device", s.DevicePage)
+	api.POST("/device", s.DeviceLookup)
+	api.POST("/device/approve", s.DeviceApprove)
+	api.POST("/device/token", s.DeviceToken)
+	api.GET("/device/code", s.LegacyDevicePage)
+	api.GET("/device/token", s.LegacyDeviceToken)
 
 	// OAuth 2.0 authorization server (authorization-code + PKCE + DCR) for MCP clients
 	api.GET("/.well-known/oauth-authorization-server", s.OAuthAuthorizationServerMetadata)
