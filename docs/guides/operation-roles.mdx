@@ -74,6 +74,43 @@ contents = """
 """
 ```
 
+## Named IAM policies
+
+Named IAM policies are standalone, customer-managed policies that the install stack creates before any role. Define
+each one in `permissions/policies/`, then attach it by name to any role: provision, maintenance, deprovision, custom, or
+break-glass. Use them to share one policy across several roles, or to split a large permission set that would exceed
+AWS's inline policy size limit.
+
+```toml permissions/policies/rds-admin.toml
+name        = "{{.nuon.install.id}}-rds-admin"
+description = "Manage this install's RDS cluster"
+contents    = """
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["rds:ModifyDBCluster", "rds:RebootDBInstance"],
+      "Resource": "*"
+    }
+  ]
+}
+"""
+```
+
+```toml permissions/maintenance.toml
+type        = "maintenance"
+name        = "{{.nuon.install.id}}-maintenance"
+description = "Day-2 operations"
+
+[[named_policies]]
+name = "{{.nuon.install.id}}-rds-admin"
+```
+
+The `name` in `[[named_policies]]` must match a policy defined under `permissions/policies/`. Named policies are created
+even when the role that attaches them is disabled. The install stack outputs a `named_policy_arns` map of policy name to
+ARN, so components can attach a policy to other roles, such as a Kubernetes workload's IAM role.
+
 ## Configuring Entity Roles
 
 Entity roles are defined inline on the individual config file. They take precedence over matrix rules.

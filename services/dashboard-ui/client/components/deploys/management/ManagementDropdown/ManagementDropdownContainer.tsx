@@ -4,11 +4,9 @@ import { ManagementDropdown } from './ManagementDropdown'
 
 export const ManagementDropdownContainer = ({
   component,
-  currentBuildId,
   workflow,
 }: {
   component: TComponent
-  currentBuildId?: string
   workflow: TWorkflow
 }) => {
   const { deploy } = useDeploy()
@@ -16,7 +14,6 @@ export const ManagementDropdownContainer = ({
   return (
     <ManagementDropdown
       component={component}
-      currentBuildId={currentBuildId}
       workflow={workflow}
       deploy={deploy}
     />

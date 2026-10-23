@@ -3,8 +3,6 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
-import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { ForgetComponentButton } from '@/components/install-components/management/Forget'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
 import { ToggleComponentButton } from '@/components/install-components/management/ToggleComponent'
@@ -24,7 +22,11 @@ const DisabledMenuItem = ({
     isMenuButton
     disabled
     className="w-full"
-    tooltipProps={{ className: 'block !w-full', position: 'left', tipContent: reason }}
+    tooltipProps={{
+      className: 'block !w-full',
+      position: 'left',
+      tipContent: reason,
+    }}
   >
     {label}
     <Icon variant={icon} />
@@ -34,7 +36,6 @@ const DisabledMenuItem = ({
 export const ManagementDropdown = ({
   component,
   componentConfig,
-  currentBuildId,
   currentDeployStatus,
   installComponent,
   isConfigLoading,
@@ -42,7 +43,6 @@ export const ManagementDropdown = ({
 }: {
   component: TComponent
   componentConfig?: TComponentConfig
-  currentBuildId?: string
   currentDeployStatus?: string
   installComponent?: TInstallComponent
   isConfigLoading?: boolean
@@ -67,36 +67,16 @@ export const ManagementDropdown = ({
       alignment="right"
     >
       <Menu>
-        <Text>Controls</Text>
-        {isToggleable ? (
+        {isToggleable && !removed ? (
           <ToggleComponentButton
             component={component}
             enabling={isDisabled}
             isMenuButton
           />
         ) : null}
-        {removed ? (
-          <DisabledMenuItem
-            label="Deploy component"
-            icon="CloudArrowUpIcon"
-            reason="This component is no longer in the install's app config version."
-          />
-        ) : !isDisabled ? (
-          <>
-            <DriftScanComponentButton
-              component={component}
-              currentBuildId={currentBuildId}
-              isMenuButton
-            />
-            <DeployComponentButton
-              component={component}
-              currentBuildId={currentBuildId}
-              currentDeployStatus={currentDeployStatus}
-              isMenuButton
-            />
-          </>
-        ) : null}
-        {(component?.type === 'terraform_module' || component?.type === 'pulumi') && workspaceId ? (
+        {(component?.type === 'terraform_module' ||
+          component?.type === 'pulumi') &&
+        workspaceId ? (
           <UnlockTerraformWorkspaceButton
             workspaceId={workspaceId}
             description={component.name}
@@ -112,7 +92,11 @@ export const ManagementDropdown = ({
             reason="This component is already torn down."
           />
         ) : (
-          <TeardownComponentButton component={component} isMenuButton variant="danger" />
+          <TeardownComponentButton
+            component={component}
+            isMenuButton
+            variant="danger"
+          />
         )}
         <ForgetComponentButton
           component={component}

@@ -93,6 +93,9 @@ type InstallDeploy struct {
 	// AppliedAt is set when the apply runner job completes successfully.
 	AppliedAt *time.Time `json:"applied_at,omitzero" gorm:"default null" temporaljson:"applied_at,omitzero,omitempty"`
 
+	PlannedInputsDigest string `json:"-" temporaljson:"planned_inputs_digest,omitempty"`
+	AppliedInputsDigest string `json:"-" temporaljson:"applied_inputs_digest,omitempty"`
+
 	Status            InstallDeployStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string              `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	Type              InstallDeployType   `json:"install_deploy_type,omitzero" temporaljson:"type,omitzero,omitempty"`

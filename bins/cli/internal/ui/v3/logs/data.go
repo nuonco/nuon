@@ -2,6 +2,7 @@ package logs
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -18,35 +19,42 @@ func (m *model) getLogStream() error {
 func (m *model) getLogs() error {
 	m.loading = true
 	m.setMessage(fmt.Sprintf("[data] fetching logs cursor:%s", m.logsCursor), "info")
-	// get the next page of logs
-	logs, err := m.api.LogStreamReadLogs(m.ctx, m.logstream_id, m.logsCursor, "", nil)
-	if err != nil {
-		return err
-	}
-
-	// TODO(fd): use a dict
-	for _, log := range logs {
-		m.logs[log.ID] = log
+	for {
+		logs, next, err := m.api.LogStreamReadLogsWithNextOffset(m.ctx, m.logstream_id, m.logsCursor, "", nil)
+		if err != nil {
+			m.loading = false
+			return err
+		}
+		for _, log := range logs {
+			m.logs[log.ID] = log
+		}
+		if next == "" || next == m.logsCursor {
+			// A short page has no next header. Remember the last record so a
+			// later refresh does not reprint this page.
+			if len(logs) > 0 {
+				if cursor := unixNanoCursor(logs[len(logs)-1].Timestamp); cursor != "" {
+					m.logsCursor = cursor
+				}
+			}
+			break
+		}
+		m.logsCursor = next
 	}
 	m.loading = false
 	return nil
 }
 
-func (m *model) setCursorFromLogs() {
-	timestamp := "0"
-	for _, v := range m.logs {
-		if v.Timestamp > timestamp {
-			timestamp = v.Timestamp
+func unixNanoCursor(timestamp string) string {
+	if timestamp == "" {
+		return ""
+	}
+	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
+		parsed, err := time.Parse(layout, timestamp)
+		if err == nil {
+			return strconv.FormatInt(parsed.UnixNano(), 10)
 		}
 	}
-	// Convert timestamp string to nanosecond string
-	if parsedTime, err := time.Parse(time.RFC3339, timestamp); err == nil {
-		cursor := fmt.Sprintf("%d", parsedTime.UnixNano())
-		m.logsCursor = cursor
-	} else {
-		// Fallback to original timestamp if parsing fails
-		m.logsCursor = "0"
-	}
+	return ""
 }
 
 func (m *model) getLatestLogs() {
@@ -58,7 +66,6 @@ func (m *model) getLatestLogs() {
 	m.setMessage(fmt.Sprintf("[%s] getting latest data", time.Now().String()), "info")
 	m.getLogs()
 	m.getLogStream()
-	m.setCursorFromLogs()
 
 	rows := m.prepareRows()
 

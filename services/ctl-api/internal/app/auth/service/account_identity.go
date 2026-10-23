@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/auth/providers"
@@ -22,6 +23,10 @@ var (
 	// ErrEmailDomainNotAllowed is returned when a user tries to authenticate
 	// but their email domain is not in the allowed domains list.
 	ErrEmailDomainNotAllowed = errors.New("email domain not allowed")
+
+	// ErrAccountSignupDisabled is returned when disable_account_signup is set and
+	// login would otherwise create a new account.
+	ErrAccountSignupDisabled = errors.New("account signup is disabled")
 )
 
 // getOrCreateAccountByIdentityStrict looks up an account by (identity_provider_id, sub).
@@ -236,6 +241,15 @@ func (s *service) createAccountWithIdentity(
 	userInfo *providers.UserInfo,
 	isInvitedUser bool,
 ) (*app.Account, error) {
+	if s.cfg.DisableAccountSignup && !internal.IsNuonEmail(userInfo.Email) {
+		s.l.Warn("account signup disabled",
+			zap.String("provider_id", identityProvider.ID),
+			zap.String("sub", userInfo.Subject),
+			zap.String("email", userInfo.Email),
+			zap.Bool("invited", isInvitedUser))
+		return nil, ErrAccountSignupDisabled
+	}
+
 	// Determine appropriate user journey based on signup type
 	var userJourneys app.UserJourneys
 	if isInvitedUser {

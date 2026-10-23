@@ -34,7 +34,8 @@ export const lastApprovedGroupVersions = (
       if (!match) continue
       const name = groupNameKey(match[1])
       if (!name || found[name]) continue
-      if (getStepDisplayStatus(step) !== 'approved') continue
+      const status = getStepDisplayStatus(step)
+      if (status !== 'approved' && status !== 'success') continue
 
       const sha =
         branchRun.vcs_connection_commit?.sha ||

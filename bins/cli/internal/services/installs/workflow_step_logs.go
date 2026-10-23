@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,9 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/logs"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
+
+// stepLogFollowWait is how long --tail waits after history is drained and the stream is still open.
+var stepLogFollowWait = 5 * time.Second
 
 type WorkflowStepLogsOptions struct {
 	Follow    bool
@@ -106,7 +110,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 	}
 
 	if asJSON {
-		logRecords, err := s.api.LogStreamReadLogs(ctx, logStreamID, "", "", nil)
+		logRecords, err := s.readAllStepLogs(ctx, logStreamID)
 		if err != nil {
 			return view.Error(err)
 		}
@@ -142,6 +146,10 @@ func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts W
 	offset := ""
 	printed := 0
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		logRecords, nextOffset, err := s.api.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset, "", nil)
 		if err != nil {
 			return ui.PrintError(err)
@@ -163,12 +171,19 @@ func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts W
 			}
 		}
 
-		if nextOffset != "" {
+		if nextOffset != "" && nextOffset != offset {
 			offset = nextOffset
+			continue
 		}
 
 		if !opts.Follow {
 			break
+		}
+
+		// A short page returns an empty next header. Follow from the last
+		// record so the next poll does not reprint this page.
+		if cursor := lastLogCursor(logRecords); cursor != "" {
+			offset = cursor
 		}
 
 		logStream, err := s.api.GetLogStream(ctx, logStreamID)
@@ -178,8 +193,8 @@ func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts W
 
 		select {
 		case <-ctx.Done():
-			break
-		case <-time.After(5 * time.Second):
+			return ctx.Err()
+		case <-time.After(stepLogFollowWait):
 		}
 	}
 
@@ -195,6 +210,48 @@ func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts W
 	}
 
 	return nil
+}
+
+func (s *Service) readAllStepLogs(ctx context.Context, logStreamID string) ([]*models.AppOtelLogRecord, error) {
+	var all []*models.AppOtelLogRecord
+	offset := ""
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		records, next, err := s.api.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset, "", nil)
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, records...)
+		if next == "" || next == offset {
+			if all == nil {
+				all = []*models.AppOtelLogRecord{}
+			}
+			return all, nil
+		}
+		offset = next
+	}
+}
+
+func lastLogCursor(records []*models.AppOtelLogRecord) string {
+	if len(records) == 0 {
+		return ""
+	}
+	return unixNanoCursor(records[len(records)-1].Timestamp)
+}
+
+func unixNanoCursor(timestamp string) string {
+	if timestamp == "" {
+		return ""
+	}
+	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
+		parsed, err := time.Parse(layout, timestamp)
+		if err == nil {
+			return strconv.FormatInt(parsed.UnixNano(), 10)
+		}
+	}
+	return ""
 }
 
 func matchesLogFilters(rec *models.AppOtelLogRecord, filter string, severitySet, serviceSet map[string]bool) bool {

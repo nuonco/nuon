@@ -10,6 +10,7 @@ type DeployPlan struct {
 	AppConfigID   string `json:"app_config_id"`
 	ComponentID   string `json:"component_id"`
 	ComponentName string `json:"component_name"`
+	InputsDigest  string `json:"inputs_digest,omitempty"`
 
 	Src    *configs.OCIRegistryRepository `json:"src_registry" validate:"required"`
 	SrcTag string                         `json:"src_tag" validate:"required"`
