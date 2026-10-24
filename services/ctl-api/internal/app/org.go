@@ -81,6 +81,7 @@ const (
 	OrgFeatureInstallUIWizards         OrgFeature = "install-ui-wizards"
 	OrgFeaturePRPreviewUI              OrgFeature = "pr-preview-ui"
 	OrgFeatureTerraformInstallerConfig OrgFeature = "terraform-installer-config"
+	OrgFeatureManualBuildSelection     OrgFeature = "allow-manual-build-selection"
 )
 
 type OrgTelemetrySettings struct {
@@ -244,6 +245,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureInstallUIWizards:         false,
 		OrgFeaturePRPreviewUI:              false,
 		OrgFeatureTerraformInstallerConfig: false,
+		OrgFeatureManualBuildSelection:     false,
 	}
 }
 
@@ -266,6 +268,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureInstallUIWizards,
 		OrgFeaturePRPreviewUI,
 		OrgFeatureTerraformInstallerConfig,
+		OrgFeatureManualBuildSelection,
 	}
 }
 
@@ -297,6 +300,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureInstallUIWizards:         "Enable the install create and teardown wizards in the dashboard.",
 		OrgFeaturePRPreviewUI:              "Enable the pull request preview page in the dashboard.",
 		OrgFeatureTerraformInstallerConfig: "Enable the legacy GET /v1/installs/{install_id}/generate-terraform-installer-config endpoint, which returns an install's stack tfvars as a single file.",
+		OrgFeatureManualBuildSelection:     "Temporarily allow manual component build selection for installs with branch-run app configs whose builds are pinned, bypassing the requirement to deploy through an app branch run.",
 	}
 }
 
