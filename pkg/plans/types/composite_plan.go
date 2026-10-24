@@ -93,6 +93,7 @@ func clusterInfoIsZero(ci *kube.ClusterInfo) bool {
 		ci.AzureAuth == nil &&
 		ci.GCPAuth == nil &&
 		!ci.Inline &&
+		!ci.InCluster &&
 		ci.TrustedRoleARN == ""
 }
 

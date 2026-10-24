@@ -21,8 +21,10 @@ type ServiceAppKubernetesContext struct {
 
 	// Component is the name of the peer terraform_module or pulumi component
 	// that emits cluster connection details as outputs.
-	// Required: true
-	Component *string `json:"component"`
+	Component string `json:"component,omitempty"`
+
+	// in cluster
+	InCluster bool `json:"in_cluster,omitempty"`
 
 	// name
 	// Required: true
@@ -33,10 +35,6 @@ type ServiceAppKubernetesContext struct {
 func (m *ServiceAppKubernetesContext) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateComponent(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
 	}
@@ -44,15 +42,6 @@ func (m *ServiceAppKubernetesContext) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceAppKubernetesContext) validateComponent(formats strfmt.Registry) error {
-
-	if err := validate.Required("component", "body", m.Component); err != nil {
-		return err
-	}
-
 	return nil
 }
 

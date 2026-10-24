@@ -18,5 +18,6 @@ title: 'Kubernetes Contexts'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`name`**<br/>string | context name Unique name for this kubernetes context within the app. Components reference this name via the top-level kubernetes_context field | **✅ Required** | `"data-cluster"`, `"shared-prod"` |
-| **`component`**<br/>string | source peer component Name of the peer component that produces cluster connection details. Must be a terraform_module or pulumi component, and must expose a `cluster` output object | **✅ Required** | `"data-eks"`, `"shared-aks"` |
+| **`component`**<br/>string | source peer component Peer terraform_module or pulumi component that exposes a `cluster` output object with the connection details. Required unless in_cluster is true | **Optional** | `"data-eks"`, `"shared-aks"` |
+| **`in_cluster`**<br/>boolean | use the runner pod's service account Deploy into the cluster the runner pod runs in, with the pod's service account instead of cloud credentials. Can not be combined with component | **Optional**<br/>Default: `false` | - |
 

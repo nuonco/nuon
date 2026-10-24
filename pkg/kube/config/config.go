@@ -29,6 +29,7 @@ func WriteConfig(ctx context.Context, cfg *kube.ClusterInfo, fp string) error {
 		Clusters: map[string]*clientcmdapi.Cluster{
 			"default": {
 				Server:                   kubeCfg.Host,
+				CertificateAuthority:     kubeCfg.CAFile,
 				CertificateAuthorityData: kubeCfg.CAData,
 			},
 		},
@@ -40,7 +41,8 @@ func WriteConfig(ctx context.Context, cfg *kube.ClusterInfo, fp string) error {
 		},
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{
 			"default": {
-				Exec: kubeCfg.ExecProvider,
+				Exec:      kubeCfg.ExecProvider,
+				TokenFile: kubeCfg.BearerTokenFile,
 			},
 		},
 	}

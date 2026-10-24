@@ -44,6 +44,8 @@ type AppKubernetesContextConfig struct {
 
 	SourceComponentName string `json:"source_component_name,omitzero" temporaljson:"source_component_name,omitzero,omitempty"`
 	SourceComponentID   string `json:"source_component_id,omitzero" temporaljson:"source_component_id,omitzero,omitempty"`
+
+	InCluster bool `json:"in_cluster,omitzero" gorm:"not null;default:false" temporaljson:"in_cluster,omitzero,omitempty"`
 }
 
 func (a *AppKubernetesContextConfig) Indexes(db *gorm.DB) []migrations.Index {

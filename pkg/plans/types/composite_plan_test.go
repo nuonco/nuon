@@ -102,3 +102,21 @@ func TestCompositePlanFromAny_KeepsHelmSkipCRDs(t *testing.T) {
 	require.NotNil(t, cp.DeployPlan.HelmDeployPlan)
 	assert.True(t, cp.DeployPlan.HelmDeployPlan.SkipCRDs)
 }
+
+func TestCompositePlanFromAny_KeepsInClusterClusterInfo(t *testing.T) {
+	sdkPlan := &models.PlantypesCompositePlan{
+		DeployPlan: &models.PlantypesDeployPlan{
+			Helm: &models.PlantypesHelmDeployPlan{
+				ClusterInfo: &models.KubeClusterInfo{InCluster: true},
+			},
+		},
+	}
+
+	cp, err := CompositePlanFromAny(sdkPlan)
+	require.NoError(t, err)
+
+	ci := cp.DeployPlan.HelmDeployPlan.ClusterInfo
+	require.NotNil(t, ci, "an in-cluster cluster_info must not be pruned")
+	assert.True(t, ci.InCluster)
+	assert.Nil(t, ci.AWSAuth)
+}

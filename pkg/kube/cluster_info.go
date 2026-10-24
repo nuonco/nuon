@@ -54,6 +54,9 @@ type ClusterInfo struct {
 	// If this is set, we will _not_ use aws-iam-authenticator, but rather inline create the token
 	Inline bool `json:"inline"`
 
+	// InCluster uses the runner pod's service account instead of cloud auth
+	InCluster bool `json:"in_cluster"`
+
 	// TrustedRoleARN is the arn of the role that should be assumed to interact with the cluster
 	// NOTE(JM): we are deprecating this
 	TrustedRoleARN string `json:"trusted_role_arn" hcl:"trusted_role_arn"`
@@ -84,10 +87,23 @@ func withRateLimits(cfg *rest.Config) *rest.Config {
 }
 
 func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, error) {
+	if cInfo == nil {
+		return nil, fmt.Errorf("missing cluster info")
+	}
+
 	if cInfo.KubeConfig != "" {
 		config, err := clientcmd.RESTConfigFromKubeConfig([]byte(cInfo.KubeConfig))
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse kube config: %w", err)
+		}
+
+		return withRateLimits(config), nil
+	}
+
+	if cInfo.InCluster {
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			return nil, fmt.Errorf("unable to load in-cluster config, the runner must run as a pod in the target cluster: %w", err)
 		}
 
 		return withRateLimits(config), nil

@@ -266,8 +266,15 @@ func (a *AppConfig) resolveKubernetesContexts() error {
 
 	contextsByName := map[string]*KubernetesContext{}
 	if a.KubernetesContexts != nil {
+		if err := a.KubernetesContexts.Validate(); err != nil {
+			return err
+		}
 		for _, ctx := range a.KubernetesContexts.Contexts {
 			if ctx == nil {
+				continue
+			}
+			if ctx.InCluster {
+				contextsByName[ctx.Name] = ctx
 				continue
 			}
 			source, ok := componentsByName[ctx.Component]
@@ -289,7 +296,9 @@ func (a *AppConfig) resolveKubernetesContexts() error {
 		if !ok {
 			return fmt.Errorf("component %q references unknown kubernetes_context %q", c.Name, c.KubernetesContext)
 		}
-		c.AddDependency(ctx.Component)
+		if ctx.Component != "" {
+			c.AddDependency(ctx.Component)
+		}
 	}
 
 	for _, action := range a.Actions {
@@ -300,7 +309,9 @@ func (a *AppConfig) resolveKubernetesContexts() error {
 		if !ok {
 			return fmt.Errorf("action %q references unknown kubernetes_context %q", action.Name, action.KubernetesContext)
 		}
-		action.Dependencies = generics.UniqueSlice(append(action.Dependencies, ctx.Component))
+		if ctx.Component != "" {
+			action.Dependencies = generics.UniqueSlice(append(action.Dependencies, ctx.Component))
+		}
 	}
 
 	return nil

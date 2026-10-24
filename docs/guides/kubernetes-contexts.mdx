@@ -1,0 +1,51 @@
+---
+title: 'Kubernetes Contexts'
+description: "Point components and actions at a cluster other than the sandbox cluster."
+icon: "network-wired"
+keywords: ["kubernetes", "kubernetes context", "kubernetes_context", "in_cluster", "service account", "rbac", "cluster"]
+---
+
+By default, components and actions that use Kubernetes connect to the cluster that the sandbox creates. A Kubernetes context gives a cluster a name. Components and actions then select it with their `kubernetes_context` field.
+
+## Peer component contexts
+
+A context can point at a `terraform_module` or `pulumi` component that creates a cluster. That component must expose a `cluster` output object with the same fields the sandbox uses.
+
+```toml kubernetes_contexts.toml
+[[kubernetes_context]]
+name      = "data-cluster"
+component = "data-eks"
+```
+
+```toml components/acme-api.toml
+name               = "acme-api"
+type               = "helm_chart"
+kubernetes_context = "data-cluster"
+```
+
+Nuon adds a dependency from `acme-api` to `data-eks`, so the cluster exists before the chart deploys.
+
+## In-cluster contexts
+
+Set `in_cluster = true` when the runner runs as a pod inside the target cluster. An example is a runner deployed as a pod in a customer-managed EKS cluster. The runner then uses the service account of its own pod. It does not use the AWS, Azure or GCP credentials of the install.
+
+```toml kubernetes_contexts.toml
+[[kubernetes_context]]
+name       = "runner-cluster"
+in_cluster = true
+```
+
+An in-cluster context has no `component`. You can not set both fields.
+
+Requirements:
+
+- The runner must run as a pod in the cluster you want to deploy to. A runner on a VM fails with an "unable to load in-cluster config" error.
+- The service account of the runner pod needs RBAC permissions for every resource that the components and actions create, update or delete in that cluster.
+- Component health checks can also use this service account. Give it `get`, `list` and `watch` on the resources of those components.
+- [Container actions](/guides/container-actions) do not support in-cluster contexts. Other action steps get a kubeconfig that points at the service account token of the runner pod.
+
+<Note>
+Runners that are older than this feature do not know about `in_cluster` and drop it from the plan. Helm and Kubernetes manifest deploys that use such a context then fail, and Terraform and Pulumi components get no kubeconfig. Update the runner before you use an in-cluster context.
+</Note>
+
+See the [Kubernetes contexts reference](/config-ref/kubernetes-contexts) for all fields.

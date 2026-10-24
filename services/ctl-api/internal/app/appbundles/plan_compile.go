@@ -622,7 +622,7 @@ func contextClusterRefs(cfg *app.AppConfig, connections []app.ComponentConfigCon
 	}
 	refs := make([]componentOutputRefKey, 0, 3*len(used))
 	for _, kctx := range cfg.KubernetesContextsConfig.Contexts {
-		if !used[kctx.Name] {
+		if !used[kctx.Name] || kctx.InCluster {
 			continue
 		}
 		for _, field := range fields {
