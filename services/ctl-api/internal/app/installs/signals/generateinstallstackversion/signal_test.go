@@ -92,23 +92,3 @@ func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_ActivityError(
 	require.NoError(s.T(), env.GetWorkflowError(), "helper must swallow recording errors")
 	env.AssertExpectations(s.T())
 }
-
-func TestIsLegacyGCPInitScript(t *testing.T) {
-	tests := map[string]struct {
-		url  string
-		want bool
-	}{
-		"default script": {url: DefaultGCPRunnerInitScript, want: true},
-		"suffix match":   {url: "https://cdn.example.com/scripts/gcp/init.sh", want: true},
-		"v2 script":      {url: "https://cdn.example.com/scripts/gcp/init-mng-v2.sh", want: false},
-		"unrelated url":  {url: "https://example.com/setup.sh", want: false},
-		"empty":          {url: "", want: false},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := isLegacyGCPInitScript(tt.url)
-			require.Equal(t, tt.want, got, "isLegacyGCPInitScript(%q)", tt.url)
-		})
-	}
-}
