@@ -79,6 +79,8 @@ func (s *service) Index(c *gin.Context) {
 		template = "auth/index_nuon.tmpl"
 		data["PostHogKey"] = s.cfg.PostHogKey
 		data["PostHogHost"] = s.cfg.PostHogHost
+		// The consent checkbox only means something when there is an audience to sync it to.
+		data["MarketingConsentEnabled"] = s.mailchimp.Enabled()
 	}
 
 	c.HTML(http.StatusOK, template, data)

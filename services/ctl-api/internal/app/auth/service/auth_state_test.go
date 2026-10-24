@@ -308,3 +308,57 @@ func (s *AuthStateTestSuite) TestAuthStateRedirectFlow() {
 		s.T().Logf("Response: code=%d", rr.Code)
 	})
 }
+
+type fakeMailchimp struct {
+	emails []string
+	err    error
+}
+
+func (f *fakeMailchimp) Enabled() bool {
+	return true
+}
+
+func (f *fakeMailchimp) UpsertListMember(_ context.Context, email string) error {
+	f.emails = append(f.emails, email)
+	return f.err
+}
+
+// consentSvc returns the auth service wired to the suite's Postgres DB with a fake Mailchimp.
+func (s *AuthStateTestSuite) consentSvc(mc *fakeMailchimp) *service {
+	return &service{db: s.service.DB, l: zap.NewNop(), mailchimp: mc}
+}
+
+func (s *AuthStateTestSuite) storedConsent() bool {
+	var acc app.Account
+	require.NoError(s.T(), s.service.DB.Where(app.Account{ID: s.testAcc.ID}).First(&acc).Error)
+	return acc.MarketingConsent
+}
+
+func (s *AuthStateTestSuite) TestRecordMarketingConsent() {
+	ctx := context.Background()
+	mc := &fakeMailchimp{}
+	svc := s.consentSvc(mc)
+
+	svc.recordMarketingConsent(ctx, &SessionData{MarketingConsent: false}, s.testAcc)
+	s.False(s.storedConsent(), "unchecked box must not set consent")
+	s.Empty(mc.emails, "unchecked box must not sync to mailchimp")
+
+	svc.recordMarketingConsent(ctx, &SessionData{MarketingConsent: true}, s.testAcc)
+	s.True(s.storedConsent(), "checked box must set consent")
+	s.Equal([]string{s.testAcc.Email}, mc.emails, "checked box must sync to mailchimp")
+
+	consented := *s.testAcc
+	consented.MarketingConsent = true
+	svc.recordMarketingConsent(ctx, &SessionData{MarketingConsent: false}, &consented)
+	s.True(s.storedConsent(), "an unchecked box on a later login is not a revocation")
+	s.Len(mc.emails, 1, "already-consented accounts must not re-sync")
+}
+
+func (s *AuthStateTestSuite) TestRecordMarketingConsentMailchimpErrorIsBestEffort() {
+	mc := &fakeMailchimp{err: fmt.Errorf("mailchimp is down")}
+
+	s.consentSvc(mc).recordMarketingConsent(context.Background(), &SessionData{MarketingConsent: true}, s.testAcc)
+
+	s.True(s.storedConsent(), "a mailchimp failure must not lose the consent bit")
+	s.Len(mc.emails, 1)
+}
