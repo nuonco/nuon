@@ -3,6 +3,7 @@ package arm
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -103,5 +104,25 @@ func TestGetRunnerLinkedDeployment_CustomTemplateReceivesVMSize(t *testing.T) {
 	got := params["runnerVmSize"].(map[string]any)["value"]
 	if got != "[parameters('runnerVmSize')]" {
 		t.Errorf("runnerVmSize = %v, want the hoisted parameter", got)
+	}
+}
+
+func TestBuildRunnerCustomData_AuthResource(t *testing.T) {
+	inp := minimalTemplateInput()
+
+	without := (&Templates{cfg: &internal.Config{}}).buildRunnerCustomData(inp)
+	if strings.Contains(without, "AZURE_RUNNER_AUTH_RESOURCE") {
+		t.Fatal("unset audience wrote a resource line")
+	}
+
+	const audience = "api://11111111-1111-1111-1111-111111111111"
+	with := (&Templates{cfg: &internal.Config{AzureRunnerAuthAudience: audience}}).buildRunnerCustomData(inp)
+	if !strings.Contains(with, "AZURE_RUNNER_AUTH_RESOURCE="+audience+"\n") {
+		t.Fatalf("custom data missing the audience:\n%s", with)
+	}
+
+	invalid := (&Templates{cfg: &internal.Config{AzureRunnerAuthAudience: "https://management.azure.com/"}}).buildRunnerCustomData(inp)
+	if strings.Contains(invalid, "AZURE_RUNNER_AUTH_RESOURCE") {
+		t.Fatal("ARM audience was written into the runner env")
 	}
 }
