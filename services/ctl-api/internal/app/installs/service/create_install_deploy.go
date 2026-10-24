@@ -366,9 +366,15 @@ func (s *service) insertInstallDeploy(
 		return nil, "", "", "", err
 	}
 	if install.AppConfig.BuildsPinned {
-		return nil, "", "", "", stderr.ErrUser{
-			Err:         fmt.Errorf("manual build selection is not supported for branch-run app configs"),
-			Description: "Use an app branch run to deploy changes to this install.",
+		enabled, err := s.featuresClient.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureManualBuildSelection)
+		if err != nil {
+			return nil, "", "", "", fmt.Errorf("unable to check manual build selection feature: %w", err)
+		}
+		if !enabled {
+			return nil, "", "", "", stderr.ErrUser{
+				Err:         fmt.Errorf("manual build selection is not supported for branch-run app configs"),
+				Description: "Use an app branch run to deploy changes to this install.",
+			}
 		}
 	}
 
