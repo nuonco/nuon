@@ -77,6 +77,29 @@ func componentSourceChanged(src componentSource, branchRepo string, changedPaths
 	return anyPathMatchesDirectory(changedPaths, src.Directory)
 }
 
+// componentSourceFiles returns the per-file diffs for files that changed
+// inside src's connected_repo directory, when that repo is the same repo as
+// the branch being compared. filePatches is keyed by normalized repo path
+// (see GitDiffResult.FilePatches); files without a rendered patch (e.g.
+// binary files) are omitted.
+func componentSourceFiles(src componentSource, branchRepo string, changedPaths []string, filePatches map[string]string) []ConfigDiffSourceFile {
+	if !repoURLsEqual(src.Repo, branchRepo) || len(filePatches) == 0 {
+		return nil
+	}
+	var files []ConfigDiffSourceFile
+	for _, p := range changedPaths {
+		if !pathMatchesDirectory(p, src.Directory) {
+			continue
+		}
+		patch, ok := filePatches[normalizeRepoPath(p)]
+		if !ok || patch == "" {
+			continue
+		}
+		files = append(files, ConfigDiffSourceFile{Path: p, Diff: patch})
+	}
+	return files
+}
+
 // sectionMemberKind maps a config diff section name to the source archive
 // member kind that holds each entity's defining file.
 var sectionMemberKind = map[string]string{
@@ -102,6 +125,7 @@ func enrichConfigDiffWithSourceChanged(
 	sources []componentSource,
 	branchRepo string,
 	changedPaths []string,
+	filePatches map[string]string,
 	headArchive *pkgconfig.SourceArchive,
 	baseArchive *pkgconfig.SourceArchive,
 ) *ConfigDiffWithSourceOutput {
@@ -110,11 +134,15 @@ func enrichConfigDiffWithSourceChanged(
 	}
 
 	componentSourceChangedMap := make(map[string]bool, len(sources))
+	componentSourceFilesMap := make(map[string][]ConfigDiffSourceFile, len(sources))
 	for _, src := range sources {
 		if src.Name == "" {
 			continue
 		}
 		componentSourceChangedMap[src.Name] = componentSourceChanged(src, branchRepo, changedPaths)
+		if files := componentSourceFiles(src, branchRepo, changedPaths, filePatches); len(files) > 0 {
+			componentSourceFilesMap[src.Name] = files
+		}
 	}
 
 	out := &ConfigDiffWithSourceOutput{
@@ -142,6 +170,7 @@ func enrichConfigDiffWithSourceChanged(
 			}
 			if sec.Name == "Components" {
 				entry.SourceChanged = componentSourceChangedMap[e.Name]
+				entry.SourceFiles = componentSourceFilesMap[e.Name]
 			}
 			entry.File = memberFilePath(headArchive, sec.Name, e.Name)
 			if entry.File == "" {

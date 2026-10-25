@@ -8,11 +8,17 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	fdiff "github.com/go-git/go-git/v5/plumbing/format/diff"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/workspace"
 )
+
+// maxGitFilePatchBytes caps the per-file patch text stored in FilePatches so
+// a single large connected_repo source file can't blow up the comparison
+// blob; the full repo-wide Patch text is unaffected.
+const maxGitFilePatchBytes = 32 << 10
 
 // GitDiffResult is the structured git diff between two commits.
 type GitDiffResult struct {
@@ -21,6 +27,12 @@ type GitDiffResult struct {
 	Patch        string   `json:"patch"`
 	ChangedPaths []string `json:"changed_paths"`
 	FilesChanged int      `json:"files_changed"`
+	// FilePatches holds a per-file rendering of the patch, keyed by the
+	// repo-relative path, using the same "+ "/"- "/"  " line-prefix
+	// convention the dashboard's diff-rendering components expect. This lets
+	// callers surface the diff for an individual file (e.g. a file inside a
+	// component's connected_repo directory) without re-parsing Patch.
+	FilePatches map[string]string `json:"file_patches,omitempty"`
 }
 
 // computeGitDiffBetweenSHAs clones the repo at headSHA, ensures baseSHA is
@@ -127,7 +139,71 @@ func diffCommits(ctx context.Context, repo *git.Repository, baseSHA, headSHA str
 		Patch:        buf.String(),
 		ChangedPaths: paths,
 		FilesChanged: len(paths),
+		FilePatches:  filePatchesByPath(patch),
 	}, nil
+}
+
+// filePatchesByPath renders each file in patch individually, keyed by its
+// repo-relative path (normalized the same way as changedPathsFromPatch so
+// callers can look up a file's patch using a ChangedPaths entry).
+func filePatchesByPath(patch *object.Patch) map[string]string {
+	if patch == nil {
+		return nil
+	}
+	out := make(map[string]string)
+	for _, fp := range patch.FilePatches() {
+		from, to := fp.Files()
+		var p string
+		switch {
+		case to != nil:
+			p = to.Path()
+		case from != nil:
+			p = from.Path()
+		}
+		p = normalizeRepoPath(p)
+		if p == "" {
+			continue
+		}
+		rendered := renderFilePatchLines(fp)
+		if rendered == "" {
+			continue
+		}
+		if len(rendered) > maxGitFilePatchBytes {
+			rendered = rendered[:maxGitFilePatchBytes]
+			if i := strings.LastIndex(rendered, "\n"); i >= 0 {
+				rendered = rendered[:i]
+			}
+		}
+		out[p] = rendered
+	}
+	return out
+}
+
+// renderFilePatchLines renders a FilePatch's chunks using the same
+// "+ "/"- "/"  " line-prefix convention produced by the dashboard's
+// diffLines() helper, so the result can be rendered through the same
+// diff-display components without any separate parsing path.
+func renderFilePatchLines(fp fdiff.FilePatch) string {
+	var b strings.Builder
+	for _, chunk := range fp.Chunks() {
+		prefix := "  "
+		switch chunk.Type() {
+		case fdiff.Add:
+			prefix = "+ "
+		case fdiff.Delete:
+			prefix = "- "
+		}
+		lines := strings.Split(chunk.Content(), "\n")
+		if len(lines) > 0 && lines[len(lines)-1] == "" {
+			lines = lines[:len(lines)-1]
+		}
+		for _, line := range lines {
+			b.WriteString(prefix)
+			b.WriteString(line)
+			b.WriteString("\n")
+		}
+	}
+	return strings.TrimRight(b.String(), "\n")
 }
 
 func changedPathsFromPatch(patch *object.Patch) []string {

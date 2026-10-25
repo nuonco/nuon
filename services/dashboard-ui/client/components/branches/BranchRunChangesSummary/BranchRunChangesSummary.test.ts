@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import type { TCompositeError } from '@/types'
 import {
+  overlaySectionDetail,
   summarySectionsFromComparisonConfigDiff,
   withBuildChangeKinds,
 } from './BranchRunChangesSummary'
@@ -92,6 +93,112 @@ describe('withBuildChangeKinds', () => {
     )
 
     expect(next[0]?.entities[0]?.changeKinds).toEqual(['source', 'config'])
+  })
+})
+
+describe('summarySectionsFromComparisonConfigDiff', () => {
+  test('surfaces connected_repo source files as file entries', () => {
+    const sections = summarySectionsFromComparisonConfigDiff({
+      additions: 0,
+      removals: 0,
+      changed: 1,
+      sections: [
+        {
+          name: 'Components',
+          additions: 0,
+          removals: 0,
+          changed: 1,
+          entries: [
+            {
+              op: 'change',
+              name: 'grafana_lgtm',
+              source_changed: true,
+              source_files: [
+                {
+                  path: 'byoc-nuon/components/grafana_lgtm/values.yaml',
+                  diff: '+ securityPolicy: ""',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    })
+
+    const grafana = sections[0]?.entities[0]
+    expect(grafana?.fields).toEqual([
+      { key: 'source', op: 'change', diff: 'source files changed' },
+    ])
+    expect(grafana?.files).toEqual([
+      {
+        name: 'byoc-nuon/components/grafana_lgtm/values.yaml',
+        op: 'change',
+        patch: '+ securityPolicy: ""',
+      },
+    ])
+  })
+})
+
+describe('overlaySectionDetail', () => {
+  test('keeps connected_repo source files alongside the detailed diff files', () => {
+    const summary = summarySectionsFromComparisonConfigDiff({
+      additions: 0,
+      removals: 0,
+      changed: 1,
+      sections: [
+        {
+          name: 'Components',
+          additions: 0,
+          removals: 0,
+          changed: 1,
+          entries: [
+            {
+              op: 'change',
+              name: 'grafana_lgtm',
+              source_changed: true,
+              source_files: [
+                {
+                  path: 'byoc-nuon/components/grafana_lgtm/values.yaml',
+                  diff: '+ securityPolicy: ""',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    })
+
+    const detailed: DiffSectionData[] = [
+      {
+        name: 'Components',
+        sectionKey: 'components',
+        additions: 0,
+        removals: 0,
+        changed: 1,
+        grouped: true,
+        fields: [],
+        entities: [
+          {
+            name: 'grafana_lgtm',
+            op: 'change',
+            fields: [{ key: 'branch', op: 'change', diff: "main -> jm/x" }],
+            files: [{ name: 'values_files', op: 'change', before: 'a', after: 'b' }],
+          },
+        ],
+      },
+    ]
+
+    const merged = overlaySectionDetail(summary, detailed)
+    const grafana = merged[0]?.entities[0]
+    expect(grafana?.fields).toEqual([{ key: 'branch', op: 'change', diff: 'main -> jm/x' }])
+    expect(grafana?.files).toEqual([
+      { name: 'values_files', op: 'change', before: 'a', after: 'b' },
+      {
+        name: 'byoc-nuon/components/grafana_lgtm/values.yaml',
+        op: 'change',
+        patch: '+ securityPolicy: ""',
+      },
+    ])
   })
 })
 

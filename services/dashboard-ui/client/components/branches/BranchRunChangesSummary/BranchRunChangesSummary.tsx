@@ -7,6 +7,7 @@ import {
   type DiffChangeKind,
   type DiffEntityEntry,
   type DiffFieldEntry,
+  type DiffFileEntry,
   type DiffSectionData,
 } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import type { TBuildMeta } from '@/components/branches/BranchOverview/changed-builds'
@@ -96,6 +97,11 @@ export function summarySectionsFromComparisonConfigDiff(
                     diff: 'Configuration changed',
                   },
                 ],
+          files: e.source_files?.map((file) => ({
+            name: file.path,
+            op: (e.op as 'add' | 'remove' | 'change') || 'change',
+            patch: file.diff,
+          })),
         }))
       : []
 
@@ -195,6 +201,21 @@ export function withBuildChangeKinds(
   return next
 }
 
+// mergeFiles combines the detailed diff's files for an entity with files
+// already resolved at the summary level (e.g. connected_repo source files
+// resolved from the branch's git diff, which the detailed diff never sees).
+// Detailed files win on path collisions.
+function mergeFiles(
+  summaryFiles: DiffFileEntry[] | undefined,
+  detailFiles: DiffFileEntry[] | undefined
+): DiffFileEntry[] | undefined {
+  if (!summaryFiles?.length) return detailFiles
+  if (!detailFiles?.length) return summaryFiles
+  const detailNames = new Set(detailFiles.map((f) => f.name))
+  const extra = summaryFiles.filter((f) => !detailNames.has(f.name))
+  return extra.length ? [...detailFiles, ...extra] : detailFiles
+}
+
 export function overlaySectionDetail(
   summary: DiffSectionData[],
   detailed: DiffSectionData[]
@@ -219,7 +240,7 @@ export function overlaySectionDetail(
                 ...entity,
                 componentType: entity.componentType ?? match.componentType,
                 fields: match.fields,
-                files: match.files,
+                files: mergeFiles(entity.files, match.files),
                 content: match.content,
               }
             : entity

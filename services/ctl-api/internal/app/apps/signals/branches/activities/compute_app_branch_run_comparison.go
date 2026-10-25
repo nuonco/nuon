@@ -64,6 +64,19 @@ type ConfigDiffEntryWithSource struct {
 	// File is the repo-relative path of the config file this entity was
 	// parsed from, resolved from the head config's source archive members.
 	File string `json:"file,omitempty"`
+	// SourceFiles carries per-file diffs for files that changed inside a
+	// component's connected_repo directory (same repo as the branch). The
+	// component's own source archive never captures these files - they live
+	// outside the app's config directory - so without this they show only
+	// as SourceChanged=true with no content.
+	SourceFiles []ConfigDiffSourceFile `json:"source_files,omitempty"`
+}
+
+// ConfigDiffSourceFile is a single file's diff within a component's
+// connected_repo directory, rendered from the branch's whole-repo git diff.
+type ConfigDiffSourceFile struct {
+	Path string `json:"path"`
+	Diff string `json:"diff"`
 }
 
 // @temporal-gen-v2 activity
@@ -138,6 +151,7 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	}
 
 	var changedPaths []string
+	var filePatches map[string]string
 	switch {
 	case noBase:
 		a.l.Info("no base run for comparison; diffing against empty baseline",
@@ -155,6 +169,7 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		}
 		if gitDiff != nil {
 			changedPaths = gitDiff.ChangedPaths
+			filePatches = gitDiff.FilePatches
 			out.FilesChanged = gitDiff.FilesChanged
 			if err := a.uploadComparisonBlob(ctx, comparison.ID, "git_diff", gitDiff, &comparison.GitDiff); err != nil {
 				return nil, fmt.Errorf("unable to store git diff: %w", err)
@@ -202,7 +217,7 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		return nil, fmt.Errorf("unable to load component sources: %w", dirErr)
 	}
 
-	configDiff := a.computeAndEnrichConfigDiff(ctx, branch, fullDiff, componentSources, changedPaths, headRun.AppConfigID, baseRun.AppConfigID)
+	configDiff := a.computeAndEnrichConfigDiff(ctx, branch, fullDiff, componentSources, changedPaths, filePatches, headRun.AppConfigID, baseRun.AppConfigID)
 	if configDiff != nil {
 		baseSHAs := map[string]string{}
 		if !noBase && baseRun.AppConfigID != "" {
@@ -518,6 +533,7 @@ func (a *Activities) computeAndEnrichConfigDiff(
 	fullDiff *ComputeAppConfigDiffOutput,
 	componentSources []componentSource,
 	changedPaths []string,
+	filePatches map[string]string,
 	headConfigID, baseConfigID string,
 ) *ConfigDiffWithSourceOutput {
 	headArchive, headErr := a.loadSourceArchive(ctx, branch.AppID, headConfigID)
@@ -535,5 +551,5 @@ func (a *Activities) computeAndEnrichConfigDiff(
 		}
 	}
 
-	return enrichConfigDiffWithSourceChanged(fullDiff, componentSources, branchRepo(branch), changedPaths, headArchive, baseArchive)
+	return enrichConfigDiffWithSourceChanged(fullDiff, componentSources, branchRepo(branch), changedPaths, filePatches, headArchive, baseArchive)
 }

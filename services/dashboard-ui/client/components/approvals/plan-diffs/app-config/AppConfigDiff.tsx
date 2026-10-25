@@ -66,6 +66,10 @@ export type DiffFileEntry = {
   op: 'add' | 'remove' | 'change'
   before?: string
   after?: string
+  // patch, when set, is a pre-rendered "+ "/"- "/"  " diff (e.g. derived
+  // from a git diff for a file outside the entity's own config) and is
+  // rendered directly instead of diffing before/after.
+  patch?: string
 }
 
 export type DiffChangeKind = 'source' | 'config'
@@ -512,9 +516,9 @@ const FileDiffRow = ({
   const borderColor = isSnapshot
     ? '!border-l-cool-grey-200 dark:!border-l-dark-grey-600'
     : getOpBorderColor(file.op)
-  const content = isSnapshot
-    ? (file.after ?? file.before ?? '')
-    : diffLines(file.before, file.after)
+  const content =
+    file.patch ??
+    (isSnapshot ? (file.after ?? file.before ?? '') : diffLines(file.before, file.after))
 
   return (
     <Expand
@@ -540,7 +544,7 @@ const FileDiffRow = ({
       <DiffCodeBlock
         className="!rounded-none border-t"
         language={langForFile(file.name)}
-        isDiff={!isSnapshot}
+        isDiff={!isSnapshot || !!file.patch}
       >
         {content}
       </DiffCodeBlock>
