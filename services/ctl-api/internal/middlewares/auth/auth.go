@@ -99,6 +99,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			}
 
 			cctx.SetAccountGinContext(ctx, acct)
+			cctx.SetTokenTypeGinContext(ctx, acctToken.TokenType)
 			m.detectCLIUsage(ctx, acct)
 			m.logAgentRequest(ctx, acct.ID)
 			ctx.Next()

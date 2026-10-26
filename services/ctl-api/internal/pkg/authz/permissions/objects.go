@@ -8,6 +8,7 @@ const (
 	KindInstall   ResourceKind = "install"
 	KindStack     ResourceKind = "stack"
 	KindTelemetry ResourceKind = "telemetry"
+	KindPhoneHome ResourceKind = "phone_home"
 )
 
 // Object is the grant key for a resource-scoped permission: "<orgID>:<kind>/<id>".

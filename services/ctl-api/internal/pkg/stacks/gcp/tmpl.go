@@ -10,9 +10,6 @@ gcp_project_id           = "{{.GCPProjectID}}"
 gcp_region               = "{{.GCPRegion}}"
 {{- end}}
 runner_api_url           = "{{.Settings.RunnerAPIURL}}"
-{{- if .APIToken}}
-runner_api_token         = "{{.APIToken}}"
-{{- end}}
 runner_id                = "{{.Runner.ID}}"
 runner_init_script_url   = "{{.RunnerInitScriptURL}}"
 {{- if .Settings.AWSInstanceType}}

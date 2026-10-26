@@ -169,6 +169,7 @@ func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string, include
 		Preload("Steps.CreatedBy").
 		Preload("Steps.Approval").
 		Preload("Steps.Approval.Response").
+		Preload("Steps.Approval.Response.CreatedBy").
 		Preload("AppBranchRuns").
 		Preload("AppBranchRuns.AppBranchConfig").
 		Preload("AppBranchRuns.AppBranchConfig.ConnectedGithubVCSConfig").

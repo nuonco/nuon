@@ -58,6 +58,7 @@ func (s *service) getWorkflowStepGroup(ctx *gin.Context, orgID, workflowID, step
 			return db.Omit("contents")
 		}).
 		Preload("Steps.Approval.Response").
+		Preload("Steps.Approval.Response.CreatedBy").
 		First(&group)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow step group")
