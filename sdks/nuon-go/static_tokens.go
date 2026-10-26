@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+// Deprecated: use CreateToken with a service account instead.
 func (c *client) CreateStaticToken(ctx context.Context, req *models.ServiceCreateStaticTokenRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppAccountsServiceStaticTokenResponse, error) {
 	resp, err := c.genClient.Operations.CreateStaticToken(&operations.CreateStaticTokenParams{
 		Req:     req,
@@ -19,6 +20,7 @@ func (c *client) CreateStaticToken(ctx context.Context, req *models.ServiceCreat
 	return resp.Payload, nil
 }
 
+// Deprecated: use ListTokens instead.
 func (c *client) ListStaticTokens(ctx context.Context) ([]*models.AppToken, error) {
 	resp, err := c.genClient.Operations.ListStaticTokens(&operations.ListStaticTokensParams{
 		Context: ctx,
@@ -30,6 +32,7 @@ func (c *client) ListStaticTokens(ctx context.Context) ([]*models.AppToken, erro
 	return resp.Payload, nil
 }
 
+// Deprecated: use DeleteToken instead.
 func (c *client) DeleteStaticToken(ctx context.Context, tokenID string) error {
 	_, err := c.genClient.Operations.DeleteStaticToken(&operations.DeleteStaticTokenParams{
 		TokenID: tokenID,
