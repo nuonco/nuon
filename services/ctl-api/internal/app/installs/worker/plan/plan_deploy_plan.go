@@ -202,7 +202,7 @@ func (p *Planner) getRoleForDeploy(
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
 	flw := p.installWorkflowForRoleDefault(ctx, l, generics.FromPtrStr(installDeploy.InstallWorkflowID))
-	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState, flw, p.legacyAzureRoleFallbackEnabled(ctx, l))
+	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState, flw, p.legacyAzureRoleFallbackEnabled(ctx, l), gcpLegacyRoleFallback)
 }
 
 // installWorkflowForRoleDefault returns the parent install workflow used to

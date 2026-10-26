@@ -43,6 +43,7 @@ type SelectionContext struct {
 	InstallState *state.State
 
 	LegacyAzureRoleFallback bool
+	LegacyGCPRoleFallback   bool
 }
 
 // RoleSelectionSource represents where a role selection came from
@@ -108,6 +109,7 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		ctx.StackOutputs,
 		ctx.InstallState,
 		ctx.LegacyAzureRoleFallback,
+		ctx.LegacyGCPRoleFallback,
 	)
 	if err != nil {
 		return nil, &SelectionError{
@@ -136,6 +138,7 @@ func SelectDefaultRole(ctx *SelectionContext) (*RoleSelection, error) {
 		ctx.StackOutputs,
 		ctx.InstallState,
 		ctx.LegacyAzureRoleFallback,
+		ctx.LegacyGCPRoleFallback,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve role ARN for %q: %w", renderedDefaultRole, err)
@@ -385,6 +388,7 @@ func resolveRoleARN(
 	installStackOutputs *app.InstallStackOutputs,
 	installState *state.State,
 	legacyAzureRoleFallback bool,
+	legacyGCPRoleFallback bool,
 ) (string, error) {
 	if installStackOutputs == nil {
 		return "", fmt.Errorf("stack outputs are required")
@@ -411,6 +415,10 @@ func resolveRoleARN(
 	// operation run as the runner's ambient identity.
 	if legacyAzureRoleFallback && ok && roleARN == "" && installStackOutputs.AzureStackOutputs != nil &&
 		!installStackOutputs.HasAzureOperationIdentities() {
+		return "", nil
+	}
+	if legacyGCPRoleFallback && ok && roleARN == "" && installStackOutputs.GCPStackOutputs != nil &&
+		!installStackOutputs.HasGCPOperationIdentities() {
 		return "", nil
 	}
 	// A role that is disabled in the install stack reports an empty ID.
