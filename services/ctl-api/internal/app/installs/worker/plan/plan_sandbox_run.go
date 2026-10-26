@@ -72,7 +72,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		Run:        run,
 
 		LegacyAzureRoleFallback: p.legacyAzureRoleFallbackEnabled(ctx, l),
-		LegacyGCPRoleFallback:   p.legacyGCPRoleFallbackEnabled(ctx, l),
+		LegacyGCPRoleFallback:   gcpLegacyRoleFallback,
 		ResolveState: func() (*state.State, map[string]any, error) {
 			st, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 				InstallID: install.ID,
@@ -507,7 +507,7 @@ func (p *Planner) getAuthForSandbox(
 		return nil, nil, err
 	}
 
-	return p.AuthForSandbox(l, outputs, run, appCfg, stack, installState, p.legacyAzureRoleFallbackEnabled(ctx, l), p.legacyGCPRoleFallbackEnabled(ctx, l))
+	return p.AuthForSandbox(l, outputs, run, appCfg, stack, installState, p.legacyAzureRoleFallbackEnabled(ctx, l), gcpLegacyRoleFallback)
 }
 
 // AuthForSandbox is the pure core of getAuthForSandbox, usable outside a
