@@ -36,7 +36,7 @@ var (
 	errUserCodeNotFound = errors.New("that code is invalid or has expired")
 	errNotAuthenticated = errors.New("you must be logged in to approve CLI access")
 	errDeviceCodeUsed   = errors.New("device code already used")
-	errLegacyDeviceFlow = errors.New("this version of the nuon CLI is no longer supported, please upgrade to log in")
+	errLegacyDeviceFlow = errors.New("This version of the Nuon CLI is no longer supported. Update it with brew upgrade nuonco/tap/nuon, then run nuon login again.")
 )
 
 func generateUserCode() (string, error) {
