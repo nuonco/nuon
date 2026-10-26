@@ -9,9 +9,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// disabledFuncs are sprig's non-hermetic functions, minus the date helpers configs rely on. Templates are rendered
-// inside the control plane, so env/expandenv would leak its secrets and getHostByName would resolve attacker-chosen
-// names from inside our network.
+// disabledFuncs are sprig's non-hermetic functions (minus the date helpers configs rely on) plus functions whose cost
+// is controlled by the template author. Templates are rendered inside the control plane, so env/expandenv would leak
+// its secrets, getHostByName would resolve attacker-chosen names from inside our network, and the rest could exhaust
+// memory or CPU shared across tenants.
 var disabledFuncs = []string{
 	"date_in_zone",
 	"date_modify",
@@ -30,6 +31,23 @@ var disabledFuncs = []string{
 	"expandenv",
 
 	"getHostByName",
+
+	// unbounded allocation or CPU inside the shared control plane
+	"repeat",
+	"until",
+	"untilStep",
+	"seq",
+	"bcrypt",
+	"htpasswd",
+	"derivePassword",
+	"genPrivateKey",
+	"buildCustomCert",
+	"genCA",
+	"genCAWithKey",
+	"genSelfSignedCert",
+	"genSelfSignedCertWithKey",
+	"genSignedCert",
+	"genSignedCertWithKey",
 }
 
 // TxtFuncMap returns the function set for rendering user-supplied templates with "text/template".
