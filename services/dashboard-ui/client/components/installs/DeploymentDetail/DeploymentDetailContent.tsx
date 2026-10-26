@@ -53,7 +53,13 @@ const DeploymentTemplateDiff = ({
   workflow?: TWorkflow
 }) => {
   const { org } = useOrg()
-  const { data: branchRun } = useQuery({
+  const runEnabled = !!org?.id
+  const {
+    data: branchRun,
+    isPending: runPending,
+    isPlaceholderData: runPlaceholder,
+    isError: runError,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['branch-workflow-run', org?.id, appId, branchId, branchRunId],
     queryFn: () =>
@@ -63,13 +69,13 @@ const DeploymentTemplateDiff = ({
         branchId,
         runId: branchRunId,
       }),
-    enabled: !!org?.id,
+    enabled: runEnabled,
   })
   const scope = useMemo(
     () => deploymentTemplateScope(deployment, workflow),
     [deployment, workflow]
   )
-  const { metaBuilds, templateBuilds } = useRunTemplateBuilds({
+  const { metaBuilds, templateBuilds, buildsPending } = useRunTemplateBuilds({
     orgId: org?.id,
     appId,
     branchId,
@@ -117,7 +123,12 @@ const DeploymentTemplateDiff = ({
         emptyMessage="Unable to load this deployment's changes."
       />
     )
-  if (config.isLoading) return <ConfigChangesLoading />
+  if (
+    config.isLoading ||
+    (runEnabled && !runError && (runPending || runPlaceholder)) ||
+    buildsPending
+  )
+    return <ConfigChangesLoading />
   return (
     <ConfigChangesViewer
       sections={config.sections}

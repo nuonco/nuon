@@ -91,7 +91,7 @@ export const BranchOverviewContainer = ({
 
   const {
     builds,
-    buildsLoading,
+    buildsPending,
     metaBuilds,
     runBuilds,
     sandboxBuildId,
@@ -149,7 +149,6 @@ export const BranchOverviewContainer = ({
     !!branchRunId &&
     configSections.comparison === undefined &&
     !configSections.isError
-  const buildsPending = !!orgId && !!appId && !!branchRunId && buildsLoading
   const buildRowsLoading =
     buildRows.length === 0 && (buildsPending || configPending)
   const versionLabel = useConfigVersionLabel({
@@ -202,7 +201,7 @@ export const BranchOverviewContainer = ({
     createdAt: rollout?.commit?.createdAt,
     source: rollout?.source,
     isPending: changesPending,
-    isLoading: configSections.isLoading,
+    isLoading: configSections.isLoading || buildsPending,
     isError: configSections.isError,
   }
   const configParseFailure = configError ? (
@@ -271,7 +270,7 @@ export const BranchOverviewContainer = ({
           versionLabel,
           changesProps.sha,
           changesPending,
-          configSections.isLoading,
+          configSections.isLoading || buildsPending,
           configSections.isError,
         ].join(':')}
         groups={groupsWithErrors}

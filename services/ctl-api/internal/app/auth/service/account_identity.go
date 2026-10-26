@@ -133,7 +133,8 @@ func (s *service) getOrCreateAccountByIdentityStrict(
 		zap.String("sub", userInfo.Subject),
 		zap.String("email", userInfo.Email),
 		zap.String("invite_id", pendingInvite.ID),
-		zap.String("org_id", pendingInvite.OrgID))
+		zap.String("org_id", pendingInvite.OrgID),
+		zap.Bool("disable_account_signup", s.cfg.DisableAccountSignup))
 
 	return s.createAccountWithIdentity(ctx, identityProvider, userInfo, true)
 }
@@ -228,7 +229,8 @@ func (s *service) getOrCreateAccountByIdentity(
 	s.l.Info("creating account for user with allowed domain",
 		zap.String("provider_id", identityProvider.ID),
 		zap.String("sub", userInfo.Subject),
-		zap.String("email", userInfo.Email))
+		zap.String("email", userInfo.Email),
+		zap.Bool("disable_account_signup", s.cfg.DisableAccountSignup))
 
 	return s.createAccountWithIdentity(ctx, identityProvider, userInfo, false)
 }
@@ -246,7 +248,8 @@ func (s *service) createAccountWithIdentity(
 			zap.String("provider_id", identityProvider.ID),
 			zap.String("sub", userInfo.Subject),
 			zap.String("email", userInfo.Email),
-			zap.Bool("invited", isInvitedUser))
+			zap.Bool("invited", isInvitedUser),
+			zap.Bool("disable_account_signup", s.cfg.DisableAccountSignup))
 		return nil, ErrAccountSignupDisabled
 	}
 

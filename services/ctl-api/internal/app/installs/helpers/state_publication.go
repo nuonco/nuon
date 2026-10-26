@@ -25,6 +25,11 @@ import (
 
 const InstallStateConflict = "InstallStateConflict"
 
+const (
+	installStateArchiveRetention = 50
+	installStateArchiveBatch     = 100
+)
+
 func IsInstallStateConflict(err error) bool {
 	var conflict *temporal.ApplicationError
 	return errors.As(err, &conflict) && conflict.Type() == InstallStateConflict
@@ -146,17 +151,34 @@ func (h *Helpers) PublishInstallState(ctx context.Context, obj *app.InstallState
 }
 
 func (h *Helpers) ArchiveInstallState(ctx context.Context, installID string) error {
-	return h.db.WithContext(routing.WithoutReplica(ctx)).
-		Model(&app.InstallState{}).
-		Scopes(scopes.WithDisableViews).
-		Where(app.InstallState{InstallID: installID}).
-		Where("NOT archived AND id NOT IN (?) AND id NOT IN (?)",
-			h.db.Model(&app.InstallState{}).Scopes(scopes.WithDisableViews).
-				Select("id").Where(app.InstallState{InstallID: installID}).
-				Order("created_at DESC, id DESC").Limit(50),
-			h.db.Model(&app.InstallStateHead{}).
-				Select("current_state_id").Where(app.InstallStateHead{InstallID: installID}),
-		).
-		Select("archived", "state").
-		Updates(map[string]any{"archived": true, "state": nil}).Error
+	// The keep-list is a finished set, then a partial-index lookup locks a bounded
+	// batch. NOT IN (ORDER BY ... LIMIT) on the update made Postgres scan the table
+	// and block the publish for about 30s.
+	return h.db.WithContext(routing.WithoutReplica(ctx)).Exec(`
+UPDATE install_states
+SET archived = TRUE, state = NULL, updated_at = ?
+WHERE id IN (
+	SELECT candidate.id
+	FROM install_states AS candidate
+	WHERE candidate.install_id = ?
+		AND candidate.deleted_at = 0
+		AND NOT candidate.archived
+		AND candidate.id NOT IN (
+			SELECT keep.id
+			FROM (
+				SELECT id
+				FROM install_states
+				WHERE install_id = ? AND deleted_at = 0
+				ORDER BY created_at DESC, id DESC
+				LIMIT ?
+			) AS keep
+		)
+		AND candidate.id IS DISTINCT FROM (
+			SELECT current_state_id
+			FROM install_state_heads
+			WHERE install_id = ?
+		)
+	LIMIT ?
+	FOR UPDATE SKIP LOCKED
+)`, time.Now().UTC(), installID, installID, installStateArchiveRetention, installID, installStateArchiveBatch).Error
 }

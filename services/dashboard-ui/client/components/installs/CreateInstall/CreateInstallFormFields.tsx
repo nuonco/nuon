@@ -27,7 +27,6 @@ interface ICreateInstallFormFields {
   cloudConnections?: TCloudConnectionSummary[]
   requireTargetAccount?: boolean
   defaultAutoApprove?: boolean
-  defaultStackOnly?: boolean
   autoApproveDescription?: string
   submitError?: TAPIError | null
   validateName?: (name: string) => Promise<string | undefined>
@@ -41,7 +40,6 @@ export const CreateInstallFormFields = ({
   cloudConnections,
   requireTargetAccount,
   defaultAutoApprove,
-  defaultStackOnly,
   autoApproveDescription,
   submitError,
   validateName,
@@ -70,7 +68,6 @@ export const CreateInstallFormFields = ({
     inputConfig,
     requireTargetAccount,
     defaultAutoApprove,
-    defaultStackOnly,
     storageKey: `install-draft:${app.id}`,
     onSubmit: async (values) => {
       try {
