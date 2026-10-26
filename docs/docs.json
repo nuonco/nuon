@@ -262,6 +262,12 @@
             ]
           },
           {
+            "group": "Operate",
+            "pages": [
+              "guides/agents/sample-queries"
+            ]
+          },
+          {
             "group": "Agents",
             "expanded": true,
             "pages": [
@@ -269,8 +275,7 @@
                 "group": "MCP",
                 "expanded": true,
                 "pages": [
-                  "guides/agents/tools",
-                  "guides/agents/sample-queries"
+                  "guides/agents/tools"
                 ]
               },
               "guides/agents/skills",
