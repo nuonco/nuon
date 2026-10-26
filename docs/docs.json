@@ -42,7 +42,8 @@
             "group": "Orientation",
             "pages": [
               "get-started/introduction",
-              "get-started/overview"
+              "get-started/overview",
+              "get-started/glossary"
             ]
           },
           {
@@ -91,11 +92,6 @@
         "tab": "Concepts",
         "icon": "lightbulb",
         "groups": [
-          {
-            "group": "Overview",
-            "boost": 3,
-            "pages": ["concepts/glossary"]
-          },
           {
             "group": "Connect Your App",
             "boost": 3,
