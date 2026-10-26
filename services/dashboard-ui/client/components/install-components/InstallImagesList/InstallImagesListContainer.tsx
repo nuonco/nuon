@@ -128,6 +128,7 @@ export const InstallImagesListContainer = () => {
         <ResourceComponentActions
           appliedConfigId={appliedConfigId}
           component={component}
+          currentBuildId={latestDeploy?.build_id}
           currentDeployStatus={
             latestDeploy?.status_v2?.status ?? latestDeploy?.status
           }
