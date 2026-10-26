@@ -76,12 +76,11 @@ const (
 	// OrgFeatureAzureLegacyRoleFallback lets Azure installs whose stack predates
 	// per-operation identities run operations as the runner's own identity
 	// instead of failing role selection.
-	OrgFeatureAzureLegacyRoleFallback  OrgFeature = "azure-legacy-role-fallback"
-	OrgFeatureBranchOverviewV2         OrgFeature = "branch-overview-v2"
-	OrgFeatureInstallUIWizards         OrgFeature = "install-ui-wizards"
-	OrgFeaturePRPreviewUI              OrgFeature = "pr-preview-ui"
-	OrgFeatureTerraformInstallerConfig OrgFeature = "terraform-installer-config"
-	OrgFeatureManualBuildSelection     OrgFeature = "allow-manual-build-selection"
+	OrgFeatureAzureLegacyRoleFallback OrgFeature = "azure-legacy-role-fallback"
+	OrgFeatureBranchOverviewV2        OrgFeature = "branch-overview-v2"
+	OrgFeatureInstallUIWizards        OrgFeature = "install-ui-wizards"
+	OrgFeaturePRPreviewUI             OrgFeature = "pr-preview-ui"
+	OrgFeatureManualBuildSelection    OrgFeature = "allow-manual-build-selection"
 )
 
 type OrgTelemetrySettings struct {
@@ -232,20 +231,19 @@ func DefaultFeatures() map[OrgFeature]bool {
 	return map[OrgFeature]bool{
 		OrgFeatureAppBundleExport: true,
 		// Disabled by default
-		OrgFeatureNotebooks:                false,
-		OrgFeaturePhoneHomeAuth:            false,
-		OrgFeatureRunbookStudio:            false,
-		OrgFeatureCronNamespaceIsolation:   false,
-		OrgFeatureNewAppIA:                 false,
-		OrgFeatureOrgHealthcheckSweeps:     false,
-		OrgFeatureAppInstallSyncing:        false,
-		OrgFeatureDisableAppSync:           false,
-		OrgFeatureAzureLegacyRoleFallback:  false,
-		OrgFeatureBranchOverviewV2:         false,
-		OrgFeatureInstallUIWizards:         false,
-		OrgFeaturePRPreviewUI:              false,
-		OrgFeatureTerraformInstallerConfig: false,
-		OrgFeatureManualBuildSelection:     false,
+		OrgFeatureNotebooks:               false,
+		OrgFeaturePhoneHomeAuth:           false,
+		OrgFeatureRunbookStudio:           false,
+		OrgFeatureCronNamespaceIsolation:  false,
+		OrgFeatureNewAppIA:                false,
+		OrgFeatureOrgHealthcheckSweeps:    false,
+		OrgFeatureAppInstallSyncing:       false,
+		OrgFeatureDisableAppSync:          false,
+		OrgFeatureAzureLegacyRoleFallback: false,
+		OrgFeatureBranchOverviewV2:        false,
+		OrgFeatureInstallUIWizards:        false,
+		OrgFeaturePRPreviewUI:             false,
+		OrgFeatureManualBuildSelection:    false,
 	}
 }
 
@@ -267,7 +265,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureBranchOverviewV2,
 		OrgFeatureInstallUIWizards,
 		OrgFeaturePRPreviewUI,
-		OrgFeatureTerraformInstallerConfig,
 		OrgFeatureManualBuildSelection,
 	}
 }
@@ -284,23 +281,22 @@ type OrgFeatureInfo struct {
 // GetFeatureDescriptions returns a map of feature names to their descriptions
 func GetFeatureDescriptions() map[OrgFeature]string {
 	return map[OrgFeature]string{
-		OrgFeatureUserManagedFeatures:      "Allow organization users to manage feature flags through the public API (admin-only flag)",
-		OrgFeatureAutoSkipNoop:             "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
-		OrgFeatureNotebooks:                "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
-		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
-		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
-		OrgFeatureCronNamespaceIsolation:   "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
-		OrgFeatureNewAppIA:                 "Enable the branch-centric app and install information architecture in the dashboard: branches as the app landing page, grouped navigation, the app source header, and the new install pages.",
-		OrgFeatureOrgHealthcheckSweeps:     "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
-		OrgFeatureAppInstallSyncing:        "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
-		OrgFeatureDisableAppSync:           "Block standalone `nuon apps sync`. Config changes ship through config-managed app branches (`nuon branches sync`) instead; on a TTY the CLI offers a wizard that creates a branch config file and moves the app's installs onto it.",
-		OrgFeatureAppBundleExport:          "Enable the app bundle export API: package pinned sandbox and component builds for an app-config version into a portable OCI-layout tar.zst with presigned download grants.",
-		OrgFeatureAzureLegacyRoleFallback:  "Let Azure installs whose install stack predates per-operation managed identities run deploys, sandbox runs, and actions as the runner's own identity instead of failing with \"role not found in install stack outputs\".",
-		OrgFeatureBranchOverviewV2:         "Enable the second-generation branch overview with an expanded active install group, navigable deployment plan, and install deployment details.",
-		OrgFeatureInstallUIWizards:         "Enable the install create and teardown wizards in the dashboard.",
-		OrgFeaturePRPreviewUI:              "Enable the pull request preview page in the dashboard.",
-		OrgFeatureTerraformInstallerConfig: "Enable the legacy GET /v1/installs/{install_id}/generate-terraform-installer-config endpoint, which returns an install's stack tfvars as a single file.",
-		OrgFeatureManualBuildSelection:     "Temporarily allow manual component build selection for installs with branch-run app configs whose builds are pinned, bypassing the requirement to deploy through an app branch run.",
+		OrgFeatureUserManagedFeatures:     "Allow organization users to manage feature flags through the public API (admin-only flag)",
+		OrgFeatureAutoSkipNoop:            "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
+		OrgFeatureNotebooks:               "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
+		OrgFeaturePhoneHomeAuth:           "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
+		OrgFeatureRunbookStudio:           "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
+		OrgFeatureCronNamespaceIsolation:  "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
+		OrgFeatureNewAppIA:                "Enable the branch-centric app and install information architecture in the dashboard: branches as the app landing page, grouped navigation, the app source header, and the new install pages.",
+		OrgFeatureOrgHealthcheckSweeps:    "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
+		OrgFeatureAppInstallSyncing:       "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
+		OrgFeatureDisableAppSync:          "Block standalone `nuon apps sync`. Config changes ship through config-managed app branches (`nuon branches sync`) instead; on a TTY the CLI offers a wizard that creates a branch config file and moves the app's installs onto it.",
+		OrgFeatureAppBundleExport:         "Enable the app bundle export API: package pinned sandbox and component builds for an app-config version into a portable OCI-layout tar.zst with presigned download grants.",
+		OrgFeatureAzureLegacyRoleFallback: "Let Azure installs whose install stack predates per-operation managed identities run deploys, sandbox runs, and actions as the runner's own identity instead of failing with \"role not found in install stack outputs\".",
+		OrgFeatureBranchOverviewV2:        "Enable the second-generation branch overview with an expanded active install group, navigable deployment plan, and install deployment details.",
+		OrgFeatureInstallUIWizards:        "Enable the install create and teardown wizards in the dashboard.",
+		OrgFeaturePRPreviewUI:             "Enable the pull request preview page in the dashboard.",
+		OrgFeatureManualBuildSelection:    "Temporarily allow manual component build selection for installs with branch-run app configs whose builds are pinned, bypassing the requirement to deploy through an app branch run.",
 	}
 }
 
