@@ -2127,13 +2127,6 @@ export interface paths {
      */
     get: operations["GenerateCLIInstallConfig"];
   };
-  "/v1/installs/{install_id}/generate-terraform-installer-config": {
-    /**
-     * generate a Terraform installer config
-     * @description Generate terraform configuration for an installer.
-     */
-    get: operations["GenerateTerraformInstallerConfig"];
-  };
   "/v1/installs/{install_id}/health/baseline": {
     /**
      * reset the install's health window
@@ -26145,56 +26138,6 @@ export interface operations {
    * @description Generate CLI configuration for an install.
    */
   GenerateCLIInstallConfig: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/octet-stream": string;
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * generate a Terraform installer config
-   * @description Generate terraform configuration for an installer.
-   */
-  GenerateTerraformInstallerConfig: {
     parameters: {
       path: {
         /** @description install ID */
