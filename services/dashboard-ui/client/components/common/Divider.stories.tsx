@@ -145,7 +145,7 @@ export const UsageExamples = () => (
           Continue with Google
         </Button>
         <Button variant="secondary" className="w-full">
-          <Icon variant="GithubLogoIcon" size="16" />
+          <Icon variant="GitHub" size="16" />
           Continue with GitHub
         </Button>
       </div>
