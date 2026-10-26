@@ -386,8 +386,6 @@ type ClientService interface {
 
 	GenerateCLIInstallConfig(params *GenerateCLIInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateCLIInstallConfigOK, error)
 
-	GenerateTerraformInstallerConfig(params *GenerateTerraformInstallerConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateTerraformInstallerConfigOK, error)
-
 	GetActionLabelKeys(params *GetActionLabelKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionLabelKeysOK, error)
 
 	GetActionLatestConfig(params *GetActionLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionLatestConfigOK, error)
@@ -7402,52 +7400,6 @@ func (a *Client) GenerateCLIInstallConfig(params *GenerateCLIInstallConfigParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GenerateCLIInstallConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GenerateTerraformInstallerConfig generates a terraform installer config
-
-Generate terraform configuration for an installer.
-*/
-func (a *Client) GenerateTerraformInstallerConfig(params *GenerateTerraformInstallerConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateTerraformInstallerConfigOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGenerateTerraformInstallerConfigParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GenerateTerraformInstallerConfig",
-		Method:             "GET",
-		PathPattern:        "/v1/installs/{install_id}/generate-terraform-installer-config",
-		ProducesMediaTypes: []string{"application/octet-stream"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GenerateTerraformInstallerConfigReader{formats: a.formats, writer: writer},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GenerateTerraformInstallerConfigOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GenerateTerraformInstallerConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
