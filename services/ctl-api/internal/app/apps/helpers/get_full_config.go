@@ -3,12 +3,9 @@ package helpers
 import (
 	"context"
 	"fmt"
-	"regexp"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-
-	"github.com/Masterminds/semver/v3"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -51,17 +48,6 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 		return nil, stderr.ErrUser{
 			Description: fmt.Sprintf("app config %s is in an error state", appCfg.ID),
 			Err:         fmt.Errorf("app config %s is in an error state", appCfg.ID),
-		}
-	}
-
-	if !skipAdditionalChecks {
-		versionAllowed, err := h.CliVerisionAllowed(ctx, appCfg.CLIVersion)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to check cli version")
-		}
-
-		if !versionAllowed {
-			return nil, fmt.Errorf("resync config with a newer cli version: app_config_id %s", appCfg.ID)
 		}
 	}
 
@@ -153,34 +139,3 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 
 	return &appCfg, nil
 }
-
-func (h *Helpers) CliVerisionAllowed(ctx context.Context, version string) (bool, error) {
-	// If no minimum version is set, all versions are allowed
-	if h.cfg.MinCLIVersion == "" {
-		return true, nil
-	}
-
-	// Allow development versions
-	if version == "development" {
-		return true, nil
-	}
-
-	// Allow commit SHAs (some releases are shorthand commit SHAs)
-	if commitSHARegex.MatchString(version) {
-		return true, nil
-	}
-
-	v, err := semver.NewVersion(version)
-	if err != nil {
-		return false, err
-	}
-
-	constraint, err := semver.NewConstraint(">= " + h.cfg.MinCLIVersion)
-	if err != nil {
-		return false, err
-	}
-
-	return constraint.Check(v), nil
-}
-
-var commitSHARegex = regexp.MustCompile(`^[0-9a-f]{7}$`)

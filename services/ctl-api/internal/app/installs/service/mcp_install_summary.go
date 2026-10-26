@@ -106,7 +106,7 @@ func (s *service) mcpInstallSummary(ctx context.Context, _ *mcp.CallToolRequest,
 	if err != nil {
 		return nil, nil, err
 	}
-	versionOverview, err := s.getInstallOverview(ctx, orgID, install.ID)
+	versionOverview, err := s.getInstallOverview(ctx, orgID, install.ID, false)
 	if err != nil {
 		return nil, nil, err
 	}

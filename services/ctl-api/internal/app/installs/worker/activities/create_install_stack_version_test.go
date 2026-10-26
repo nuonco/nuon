@@ -9,7 +9,7 @@ import (
 
 const (
 	testBaseURL   = "https://templates.example.com"
-	testBucketKey = "templates/inl-test/ist-test.json"
+	testBucketKey = "templates/ist-test.json"
 )
 
 func TestStackTemplateLocations_AzureSubscriptionScope(t *testing.T) {

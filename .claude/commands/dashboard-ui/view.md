@@ -3,6 +3,8 @@ name: dashboard-ui:view
 description: Use when adding a new page or view to the dashboard-ui client/ SPA
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 This skill enforces correct route registration, layout-aware provider usage, and a guarded useQuery pattern when adding a new view.
 
 ## Steps
@@ -79,15 +81,17 @@ This skill enforces correct route registration, layout-aware provider usage, and
    }
    ```
 
-   **Non-list section page** (document, config page, tab layout) — `SectionHeader` inside a `PageSection`:
+   **Non-list section page** (document, config page, tab layout) — `SectionHeader` inside a `PageSection`. `PageTitle` and `Breadcrumbs` are siblings before the scaffold:
    ```tsx
    export const MyConfigPage = () => (
-     <PageSection>
+     <>
        <PageTitle segments={['Configuration', app?.name]} />
        <Breadcrumbs breadcrumbs={[...]} />
-       <SectionHeader title="Configuration" description="What this page shows." actions={<EditButton />} />
-       {/* content */}
-     </PageSection>
+       <PageSection>
+         <SectionHeader title="Configuration" description="What this page shows." actions={<EditButton />} />
+         {/* content */}
+       </PageSection>
+     </>
    )
    ```
 
@@ -130,7 +134,7 @@ This skill enforces correct route registration, layout-aware provider usage, and
    </DetailPage>
    ```
 
-   **Entity page** (a configured thing) — sections in the main column, related history in a `HistoryRail`, with a `HistoryPanelButton` in the header's `actions` for narrow widths. It graduates to routed `TabNav` when the page gains a third independent concern:
+   **Entity page** (a configured thing) — full-width sections, related history behind `HistoryPanelButton` in the header. It graduates to routed `TabNav` when the page gains a third independent concern. Shipped page: `views/install/Sandbox.tsx`.
    ```tsx
    const history = <RunTimeline … shouldPoll />
 
@@ -138,9 +142,7 @@ This skill enforces correct route registration, layout-aware provider usage, and
      header={<DetailHeader backLink={false} title="Sandbox details" id={sandbox?.id}
        actions={<><HistoryPanelButton title="Sandbox history" history={history} /><ManagementDropdown /></>} />}
    >
-     <HistoryRail title="Sandbox history" history={history}>
-       <SandboxConfigCard config={config} />
-     </HistoryRail>
+     <SandboxConfigCard config={config} />
    </DetailPage>
    ```
 
@@ -202,7 +204,7 @@ export const DeployPlanTab = () => {
   return (
     <>
       <PageTitle segments={['Deploy plan', install?.name]} />
-      {isLoading ? <Skeleton /> : !plan ? <EmptyState … /> : <Plan … />}
+      {isLoading ? <Loading variant="large" /> : !plan ? <EmptyState … /> : <Plan … />}
     </>
   )
 }
@@ -238,7 +240,7 @@ A page's loading state is the page itself with `loading` primitives inside — b
 - **Do not** use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead
 - **Do not** hand-assemble a heading row (`PageHeader` + `HeadingGroup` + an actions `div`, or a bare heading `Text`) — use `SectionHeader`/`ListPage`
 - **Do not** hand-roll a detail page's identity header (`BackLink` + heading `Text` + `<ID>` + a metadata row) — use `DetailHeader`
-- **Do not** hand-roll a history rail (`@container` + `grid-cols-12` + a `@5xl:hidden` panel button) — use `HistoryRail` + `HistoryPanelButton`
+- **Do not** hand-roll a history column (`grid-cols-12` split, a rail beside the page) — related history opens from `HistoryPanelButton`. The page body stays full width.
 - **Do not** use unrouted `Tabs` for a detail page's structure — detail-page tabs are always routed `TabNav`, and a run page's landing tab is Summary
 - **Do not** render a run page without a Summary tab, or put a run's metadata anywhere but `DetailHeader`'s `metadata` slot
 - **Do not** render `PageLayout` from a view mounted via a parent layout's `Outlet` — use the default `variant="section"`

@@ -395,3 +395,41 @@ func (s *ValidateTestSuite) TestValidateWithDifferentAccounts() {
 		rr2.Header().Get(HeaderNuonAuthEmail),
 		"different accounts should have different emails")
 }
+
+func (s *ValidateTestSuite) TestValidateRejectsNonSessionTokenTypes() {
+	tokenTypes := []app.TokenType{
+		app.TokenTypeOAuth,
+		app.TokenTypeStatic,
+		app.TokenTypeFederated,
+		app.TokenTypeAdmin,
+		app.TokenTypeIntegration,
+		app.TokenTypeCanary,
+		app.TokenTypeAuth0,
+		app.TokenTypeAuth,
+	}
+
+	for _, tokenType := range tokenTypes {
+		s.Run(string(tokenType), func() {
+			now := time.Now()
+			tokenValue := domains.NewUserTokenID()
+			token := app.Token{
+				CreatedByID: s.testAcc.ID,
+				AccountID:   s.testAcc.ID,
+				Token:       tokenValue,
+				TokenType:   tokenType,
+				Role:        "org_read_only",
+				ExpiresAt:   now.Add(time.Hour),
+				IssuedAt:    now,
+				Issuer:      "test",
+			}
+			require.NoError(s.T(), s.service.DB.Create(&token).Error)
+
+			rr := s.makeRequestWithCookie("GET", "/validate", tokenValue)
+
+			require.Equal(s.T(), http.StatusUnauthorized, rr.Code)
+			assert.Equal(s.T(), "false", rr.Header().Get(HeaderNuonAuthSuccess))
+			assert.Empty(s.T(), rr.Header().Get(HeaderNuonAuthUser))
+			assert.Empty(s.T(), rr.Header().Get(HeaderNuonAuthEmail))
+		})
+	}
+}

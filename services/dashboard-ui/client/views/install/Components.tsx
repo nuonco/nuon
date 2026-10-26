@@ -1,3 +1,4 @@
+import { DriftedResources } from '@/components/install-alignment/DriftedResources'
 import { InstallComponentsTable } from '@/components/install-components/InstallComponentsTable'
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 import { PageSection } from '@/components/layout/PageSection'
@@ -31,6 +32,7 @@ export const Components = () => {
         actions={<ManageAllDropdown />}
       />
 
+      <DriftedResources kinds={['component', 'image']} noun="components" />
       <InstallComponentsTable shouldPoll />
     </PageSection>
   )

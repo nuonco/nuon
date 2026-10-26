@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
@@ -90,6 +91,8 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		InstallID:     install.ID,
 		ComponentName: installDeploy.ComponentName,
 		ComponentID:   installDeploy.ComponentID,
+		InputsDigest: installhelpers.InputsDigest(
+			installhelpers.ComponentInputNames(&build.ComponentConfigConnection, installState.Inputs), installState.Inputs),
 	}
 
 	switch build.ComponentConfigConnection.Type {

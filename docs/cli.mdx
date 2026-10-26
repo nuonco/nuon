@@ -1,8 +1,8 @@
 ---
 title: 'CLI'
-description: 'Install the Nuon CLI.'
+description: 'Install the Nuon CLI and keep it matched to your control plane.'
 boost: 2
-keywords: ["CLI install", "nuon command", "command line", "terminal", "homebrew install", "automate installs from CLI"]
+keywords: ["CLI install", "nuon command", "command line", "terminal", "homebrew install", "automate installs from CLI", "CLI version", "install specific CLI version", "pin CLI version", "upgrade CLI", "CLI older than the minimum"]
 ---
 
 ## Installation
@@ -15,11 +15,11 @@ We publish an official tap you can install with [Homebrew](https://brew.sh/).
 brew install nuonco/tap/nuon
 ```
 
-After installation, you may need to refresh your shell session.
+This installs the latest release. If your control plane runs an older version, as Nuon BYOC and Self-Hosted control
+planes often do, install that version instead. See [Choosing a CLI version](#choosing-a-cli-version).
 
-```sh
-source ~/.bashrc # or ~/.zshrc, etc.
-```
+After installation, you may need to refresh your shell session, for example with `source ~/.zshrc` or
+`source ~/.bashrc`.
 
 You can also enable autocomplete for you shell. Run `nuon completion` to see what shells we support.
 
@@ -27,20 +27,24 @@ You can also enable autocomplete for you shell. Run `nuon completion` to see wha
 source <(nuon completion <your-shell>)
 ```
 
-<Note>
-The Nuon CLI changes frequently. To ensure you have the latest version, run `brew upgrade nuonco/tap/nuon` regularly. If you encounter any CLI command errors, please check you are using the latest version.
-</Note>
-
 ### Install Script
 
 If you are not using Homebrew, you can use our install script to automatically download and install the correct binary
-for your platform (macOS or Linux):
+for your platform (macOS or Linux). It requires `curl` and `jq`.
 
 ```sh
 bash <(curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)
 ```
 
-The script automatically detects your OS and architecture, downloads the latest version, and installs it to your path.
+The script detects your OS and architecture, installs the latest release of `nuon` and the `nuon-lsp` language server
+into `~/bin` (or `/usr/local/bin` if `~/bin` does not exist), and checks that the `nuon` on your `PATH` is the version
+it installed.
+
+To install a specific release, set `NUON_VERSION`. Pass `--no-input` to skip the confirmation prompt, for example in CI:
+
+```sh
+NUON_VERSION=0.19.1260 bash <(curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh) --no-input
+```
 
 ### Manual Binary Download
 
@@ -53,41 +57,22 @@ You can also download binaries directly for macOS or Linux:
 - `linux_386`
 - `linux_amd64`
 
-Binaries are published to https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli, and versioned by release. To download a
-binary, first look up the current API version, and then download the current binary for your platform.
+Binaries are published to `https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/$VERSION/nuon_$PLATFORM`, with a
+gzipped copy at the same URL plus `.gz`. The latest release number is published at
+`https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/latest.txt`. To pick the right version, see
+[Choosing a CLI version](#choosing-a-cli-version).
 
-To look up the current API version:
-
-```sh
-curl https://api.nuon.co/version
-```
-
-To download the binaries for a specific version, substitute the version and platform into the following URL:
-`https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/$VERSION/nuon_${PLATFORM}`
-
-An example of downloading version `0.19.421` of the CLI for `darwin_arm64`:
+An example of downloading version `0.19.1260` of the CLI for `darwin_arm64`:
 
 ```sh
-wget -O nuon https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.421/nuon_darwin_arm64
+curl -fsSL -o nuon https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.1260/nuon_darwin_arm64
 ```
 
-Once the binary has been downloaded remember to make it executable.
+Once the binary has been downloaded, make it executable and move it into a directory on your `PATH`.
 
 ```sh
 chmod +x nuon
 ```
-
-### Updates
-
-You can update the CLI using Homebrew:
-
-```sh
-brew update
-brew upgrade nuonco/tap/nuon
-```
-
-Or, if you installed via the install script, simply run it again to get the latest version. For manual binary installs,
-download the latest version from the S3 bucket as described above.
 
 ### Debug Mode
 
@@ -98,28 +83,111 @@ can be helpful to share with us, while debugging any issues.
 NUON_DEBUG=true nuon apps list
 ```
 
-### Using the CLI against a BYOC Instance
+## Choosing a CLI version
 
-If you are using a Nuon BYOC instance, i.e., a self-hosted Nuon control plane running in your own infrastructure, you
-can use the CLI to interact with it.
+The CLI and the control plane are released together and share a version number. Install the CLI version that matches
+your control plane.
 
-To do this, you can:
+| Deployment                                    | CLI version to install       | When to update                                     |
+| --------------------------------------------- | ---------------------------- | -------------------------------------------------- |
+| [Nuon Cloud](/guides/nuon-cloud)              | The latest release           | After each Nuon release. Nuon Cloud upgrades with every release. |
+| [Nuon BYOC](/guides/byoc)                     | Your control plane's version | After Nuon upgrades your control plane.            |
+| [Nuon Self-Hosted](/guides/self-hosted)       | Your control plane's version | After you upgrade your control plane.              |
+
+### Check your versions
+
+`nuon version` prints the CLI's version, your control plane's version, and the minimum CLI version your control plane
+requires, if it sets one:
 
 ```sh
-NUON_API_URL=https://api.your-byoc-instance.com nuon auth login
-
-# or
-
-export NUON_API_URL=https://api.your-byoc-instance.com
-nuon auth login #or other nuon CLI commands.
+nuon version
 ```
 
-By default, the CLI will use api.nuon.co as the API URL.
+If the CLI isn't pointed at a control plane yet, or can't reach it, `nuon version` prints only the CLI's version.
 
-`nuon auth login` also prompts the user to either use Nuon Cloud (api.nuon.co) or Nuon BYOC where the user can enter
-their Nuon control place URL
+To look up the control plane's version without the CLI, for example in a script, query its `/version` endpoint. This
+uses Nuon Cloud unless `NUON_API_URL` is set:
+
+```sh
+curl -s "${NUON_API_URL:-https://api.nuon.co}/version" | jq -r .version
+```
+
+### Update to the latest release
+
+On Nuon Cloud, update with Homebrew:
+
+```sh
+brew update
+brew upgrade nuonco/tap/nuon
+```
+
+If you installed with the install script, run it again. For manual installs, download the version in `latest.txt`.
+
+### Install your control plane's version
+
+On Nuon BYOC or Self-Hosted, install the version your control plane reports. With the install script, you can look up
+the version and install it in one step:
+
+```sh
+export NUON_API_URL=https://api.your-byoc-instance.com
+
+NUON_VERSION=$(curl -fsS "$NUON_API_URL/version" | jq -r .version) \
+  bash <(curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh) --no-input
+```
+
+With Homebrew, every release is published as a versioned formula, `nuonco/tap/nuon@<version>`. To install one, or to
+keep several versions and switch between them, see [Using multiple CLI versions](/guides/cli-versions).
+
+For a manual install, download the binary for your control plane's version as shown in
+[Manual Binary Download](#manual-binary-download).
+
+In GitHub Actions, the [Nuon GitHub Action](/guides/github-actions#choosing-the-cli-version) installs your control
+plane's version by default.
+
+### Version warnings
+
+When your CLI is older than your control plane requires, the CLI prints a warning with the version to install. Commands
+still run, but some may not work as expected.
+
+When you see a warning, update the CLI. On Nuon Cloud, [update to the latest release](#update-to-the-latest-release).
+On Nuon BYOC or Self-Hosted, [install your control plane's version](#install-your-control-planes-version).
+
+On Nuon Self-Hosted, you set the minimum allowed version using `min_cli_version` setting. Set it to your control plane's
+version, or to `latest` to follow Nuon's latest release.
+
+### Using the CLI with Nuon BYOC or Self-Hosted
+
+If you use [Nuon BYOC](/guides/byoc) or [Nuon Self-Hosted](/guides/self-hosted), your control plane runs in your own
+infrastructure, and the CLI needs its API URL. By default, the CLI uses Nuon Cloud (`https://api.nuon.co`).
+
+`nuon auth login` asks which deployment you use. Choose Nuon BYOC and enter your control plane's API URL:
 
 ![Nuon auth login](./images/resources/cli/cli-auth-login.png)
+
+Or set the API URL with `NUON_API_URL`, and login asks you to confirm it instead:
+
+```sh
+NUON_API_URL=https://api.acme-byoc.example.com nuon auth login
+```
+
+Login saves the API URL, your token, and your selected org to the CLI's config file, `~/.nuon`, so later commands use the
+same control plane. Logging in to another control plane replaces them. If you also use Nuon Cloud or another control
+plane, give each one its own config file with `NUON_CONFIG_FILE` (or `--config`):
+
+```sh
+NUON_CONFIG_FILE=~/.nuon-acme-byoc NUON_API_URL=https://api.acme-byoc.example.com nuon auth login
+NUON_CONFIG_FILE=~/.nuon-acme-byoc nuon apps list
+```
+
+A shell alias saves typing the config file each time:
+
+```sh
+alias nuon-byoc='NUON_CONFIG_FILE=~/.nuon-acme-byoc nuon'
+nuon-byoc apps list
+```
+
+Then [install your control plane's version](#install-your-control-planes-version) of the CLI. To keep it alongside the
+latest release for Nuon Cloud, and point an alias at each, see [Using multiple CLI versions](/guides/cli-versions).
 
 ## Nuon Preview Features
 

@@ -44,9 +44,10 @@ type OCISource struct {
 }
 
 type SandboxRunPlan struct {
-	InstallID   string `json:"install_id"`
-	AppID       string `json:"app_id"`
-	AppConfigID string `json:"app_config_id"`
+	InstallID    string `json:"install_id"`
+	AppID        string `json:"app_id"`
+	AppConfigID  string `json:"app_config_id"`
+	InputsDigest string `json:"inputs_digest,omitempty"`
 
 	Vars             map[string]any         `json:"vars" faker:"-"`
 	EnvVars          map[string]string      `json:"env_vars"`

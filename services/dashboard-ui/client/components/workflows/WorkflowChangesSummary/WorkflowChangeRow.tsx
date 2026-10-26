@@ -16,6 +16,13 @@ const RowCounts = ({ summary }: { summary: TStepChangeSummary }) => {
   if (summary.status === 'generating') {
     return <Text variant="subtext" loading loadingWidth={10} />
   }
+  if (summary.status === 'not-generated') {
+    return (
+      <Text variant="subtext" theme="neutral">
+        Step wasn&apos;t reached
+      </Text>
+    )
+  }
   if (summary.status === 'error') {
     return (
       <Text variant="subtext" theme="error">

@@ -77,6 +77,64 @@ export const ACTIVE_DEPLOYMENT_STATUSES = new Set([
   'failed-pending-retry',
 ])
 
+export type TActiveDeploymentFilter =
+  | 'all'
+  | 'awaiting-approval'
+  | 'failed'
+  | 'running'
+  | 'queued'
+
+export const ACTIVE_DEPLOYMENT_FILTERS: {
+  value: TActiveDeploymentFilter
+  label: string
+  statuses?: readonly string[]
+}[] = [
+  { value: 'all', label: 'All' },
+  {
+    value: 'awaiting-approval',
+    label: 'Awaiting approval',
+    statuses: ['approval-awaiting'],
+  },
+  { value: 'failed', label: 'Failed', statuses: ['failed-pending-retry'] },
+  {
+    value: 'running',
+    label: 'Running',
+    statuses: ['in-progress', 'retrying', 'approved'],
+  },
+  { value: 'queued', label: 'Queued', statuses: ['pending', 'queued'] },
+]
+
+export const activeDeploymentFilterParameter = (
+  filter: TActiveDeploymentFilter
+) =>
+  ACTIVE_DEPLOYMENT_FILTERS.find(
+    (option) => option.value === filter
+  )?.statuses?.join(',')
+
+export type TActiveDeploymentCounts = Record<
+  Exclude<TActiveDeploymentFilter, 'all'>,
+  number
+>
+
+export const activeDeploymentCounts = (
+  deployments: { status: string }[]
+): TActiveDeploymentCounts => {
+  const counts: TActiveDeploymentCounts = {
+    'awaiting-approval': 0,
+    failed: 0,
+    running: 0,
+    queued: 0,
+  }
+  for (const deployment of deployments) {
+    const match = ACTIVE_DEPLOYMENT_FILTERS.find(
+      (option) =>
+        option.value !== 'all' && option.statuses?.includes(deployment.status)
+    )
+    if (match && match.value !== 'all') counts[match.value] += 1
+  }
+  return counts
+}
+
 export const isDeploymentRunning = (status: string) =>
   [
     'in-progress',

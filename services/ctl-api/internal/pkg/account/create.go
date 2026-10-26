@@ -8,10 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-func (m *Client) CreateAccount(ctx context.Context, email, subject string, userJourneys app.UserJourneys) (*app.Account, error) {
-	return m.createAccount(ctx, email, subject, app.AccountTypeAuth0, userJourneys)
-}
-
 func (m *Client) CreateAuthAccount(ctx context.Context, email, subject string, userJourneys app.UserJourneys) (*app.Account, error) {
 	return m.createAccount(ctx, email, subject, app.AccountTypeAuth, userJourneys)
 }
@@ -104,26 +100,4 @@ func DefaultEvaluationJourney(completionSource string) app.UserJourneys {
 // NoUserJourneys returns an empty journey slice for invited/support users
 func NoUserJourneys() app.UserJourneys {
 	return app.UserJourneys{}
-}
-
-// DefaultEvaluationJourneyWithAttribution returns the evaluation journey with attribution data
-// stored in the account_created step's metadata. This enables tracking marketing source
-// for ROI analysis.
-func DefaultEvaluationJourneyWithAttribution(attribution map[string]interface{}, completionSource string) app.UserJourneys {
-	journey := DefaultEvaluationJourney(completionSource)
-
-	// Store attribution in the first step (account_created) metadata
-	if len(attribution) > 0 && len(journey) > 0 && len(journey[0].Steps) > 0 {
-		for i, step := range journey[0].Steps {
-			if step.Name == "account_created" {
-				if journey[0].Steps[i].Metadata == nil {
-					journey[0].Steps[i].Metadata = make(map[string]interface{})
-				}
-				journey[0].Steps[i].Metadata["attribution"] = attribution
-				break
-			}
-		}
-	}
-
-	return journey
 }

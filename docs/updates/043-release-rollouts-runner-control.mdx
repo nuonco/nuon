@@ -1,0 +1,175 @@
+---
+title: 043 - App Branch Triggers and Runner Control
+description: App branch triggers, GitHub Actions for branch runs, and per-install runner and stack control
+boost: 0.3
+---
+
+_October 22, 2026_
+
+## Configure triggers for your app branches
+
+[App branches](/concepts/app-branches) roll your app config out to customer installs through install groups.
+Nuon listens for GitHub webhook events on the connected repo and starts a branch run automatically. Add a `[run]` block to control
+what triggers will create an app branch run:
+
+| Mode | Starts a run when |
+| --- | --- |
+| `push` (default) | A commit is pushed to the tracked branch |
+| `on_github_label` | A pull request with a specific label is merged |
+| `on_tag` | A tag matching `tag_prefix` is pushed |
+| `manual_only` | Only when you trigger it from the CLI, API, or dashboard |
+
+In your branch configuration:
+
+```toml branches/production.toml
+[run]
+mode       = "on_tag"
+tag_prefix = "release/"
+```
+
+Tag a commit on the tracked branch with a name that starts with `release/`, then push the tag. Nuon starts the run:
+
+```sh
+git tag release/1.4.0
+git push origin release/1.4.0
+```
+
+To start a run by hand for a specific tag, commit, or pull request:
+
+```sh
+nuon branches trigger --branch-id production --run-type tag --run-ref release/1.4.0
+```
+
+The run shows the tag it was created from:
+
+<div style={{
+  backgroundImage: 'url(/images/changelog/038-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '32px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/043-tag-run.png"
+    alt="An app branch run in the Nuon dashboard created from tag release/1.0.1, with the tag magnified, its commit, and steps from Fetch commit through Rollout"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+<Card title="See App Branch Docs" icon="code-branch" href="/guides/app-branches#control-when-the-branch-runs" horizontal />
+
+---
+
+## Trigger app branch runs from GitHub Actions
+
+If you do not want to configure automatic webhook events to Nuon, or you want more control over when app branch runs
+happen, you can use GitHub Actions with the [Nuon GitHub Action](https://github.com/nuonco/actions-nuon). It has an
+action for each run type (tag, commit, or pull request) and for previews.
+
+```yaml .github/workflows/nuon-release.yaml
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  rollout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: nuonco/actions-nuon/branches/trigger/tag@v0.5.0
+        with:
+          org_id: ${{ vars.nuon_org_id }}
+          app_id: ${{ vars.nuon_app_id }}
+          branch_id: production
+          tag: ${{ github.event.release.tag_name }}
+```
+
+<CardGroup cols={2}>
+  <Card title="GitHub Actions docs" icon="book" href="/guides/github-actions#trigger-a-specific-tag-commit-or-pull-request" horizontal />
+  <Card title="Nuon GitHub Action repo" icon="github" href="https://github.com/nuonco/actions-nuon" horizontal />
+</CardGroup>
+
+---
+
+## Runner and stack control per install
+
+Pin a specific runner image for a customer, if they want to verify or audit the runner before use. You can also set
+stack parameters for one install.
+
+- Keep the Nuon runner in each customer's AWS account on a patched image: pin an approved AMI, or pick up the latest AL2023 AMI each time a runner instance launches. Auto-update is off by default and needs runner template v0.7.0+.
+- Give one install its own VPC range, instance size, or other CloudFormation parameter (installs with an AWS cloud connection)
+
+Turn on auto-update for every install in `runner.toml`:
+
+```toml runner.toml
+image_auto_update = true
+```
+
+Then pin one install to an approved AMI and give it its own VPC range:
+
+```toml installs/acme-production.toml
+name             = "acme-production"
+app_branch       = "main"
+cloud_connection = "acme-aws"
+
+[stack_overrides]
+runner_image_id = "ami-0abcdef1234567890"
+
+[cloudformation.nested_stacks.VPC.parameters]
+VpcCIDR = "10.42.0.0/16"
+```
+
+<CardGroup cols={2}>
+  <Card title="Runner config reference" icon="server" href="/config-ref/runner" horizontal />
+  <Card title="AWS stack parameters" icon="sliders" href="/guides/configuring-inputs-and-secrets#aws-cloud-connection-stack-parameters" horizontal />
+</CardGroup>
+
+---
+
+## Other updates in this release
+
+### Idempotency keys for workflow calls
+
+When a call to start a deploy times out, your automation can't tell whether Nuon started the workflow, and a retry could
+start a second one. Pass `request_id` (or `--request-id` in the CLI) when you start a deploy, reprovision, action, or
+runbook, and a retry with the same id returns the workflow that's already running.
+
+<Card title="Idempotent operations" icon="repeat" href="/guides/idempotent-operations" horizontal />
+
+### Named IAM policies
+
+Define IAM policies in your `permissions/` directory and attach them by name to any role, alongside each role's inline
+policies. The customer's install stack creates them, and your components can use their ARNs, for example to attach a
+policy to a Kubernetes workload.
+
+Use them for sensitive permissions you don't want write access to, and for roles whose policies would exceed AWS's
+inline policy size limit.
+
+```toml permissions/policies/rds-admin.toml
+name        = "{{.nuon.install.id}}-rds-admin"
+description = "Manage this install's RDS cluster"
+contents    = """
+{
+  "Version": "2012-10-17",
+  "Statement": [{ "Effect": "Allow", "Action": ["rds:ModifyDBCluster", "rds:RebootDBInstance"], "Resource": "*" }]
+}
+"""
+```
+
+```toml permissions/maintenance.toml
+[[named_policies]]
+name = "{{.nuon.install.id}}-rds-admin"
+```
+
+<Card title="Named IAM policies guide" icon="shield-check" href="/guides/operation-roles#named-iam-policies" horizontal />

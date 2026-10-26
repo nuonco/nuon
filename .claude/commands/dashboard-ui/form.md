@@ -3,6 +3,8 @@ name: dashboard-ui:form
 description: Use when building a form inside a modal in the dashboard-ui
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 Forms use **TanStack Form + Zod** behind the field-aware `Form*` wrappers in
 `client/components/common/form/`. The form owns field state + validation; the container owns the
 async mutation. Never hand-roll `useState`-per-field, `FormData`, or `forwardRef`/`requestSubmit`.
