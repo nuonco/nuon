@@ -169,8 +169,8 @@ func (e *logExporter) Export(ctx context.Context, records []sdklog.Record) error
 		scope := record.InstrumentationScope()
 		scopeAttrs := attributeMap(scope.Attributes.ToSlice())
 		logAttrs := map[string]string{}
-		record.WalkAttributes(func(kv otellog.KeyValue) bool {
-			logAttrs[kv.Key] = logValue(kv.Value)
+		record.WalkAttributes(func(kv attribute.KeyValue) bool {
+			logAttrs[string(kv.Key)] = logValue(kv.Value)
 			return true
 		})
 
@@ -332,8 +332,8 @@ func attributeValue(v attribute.Value) string {
 	return v.Emit()
 }
 
-func logValue(v otellog.Value) string {
-	if v.Kind() == otellog.KindString {
+func logValue(v attribute.Value) string {
+	if v.Type() == attribute.STRING {
 		return v.AsString()
 	}
 	return v.String()

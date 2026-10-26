@@ -27,7 +27,7 @@ func (s *Seeder) EnsureAccount(ctx context.Context, t *testing.T) context.Contex
 	subjectID := FakeString()
 	email := fmt.Sprintf("%s@test.nuon.co", subjectID)
 
-	acct, err := s.AcctHelpers.CreateAccount(ctx, email, subjectID, app.UserJourneys{})
+	acct, err := s.AcctHelpers.CreateAuthAccount(ctx, email, subjectID, app.UserJourneys{})
 	require.Nil(t, err)
 
 	return cctx.SetAccountIDContext(ctx, acct.ID)

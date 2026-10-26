@@ -1,4 +1,4 @@
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS build
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS build
 
 WORKDIR /src/bins/telemetry-relay
 

@@ -26,37 +26,11 @@ This guide walks through a common use case: triggering an [app branch](/concepts
 ## Prerequisites
 
 - An app template with a branch configured and synced. See the [app branches guide](/guides/app-branches) for details.
-- Org admin access, to create the trust policy or API token the workflow authenticates with.
-
-## Using OIDC
-
-We strongly recommend configuring GitHub Actions to authenticate with Nuon using OIDC, so no long-lived API tokens need to be stored in GitHub.
-Create a trust policy for the repository and its protected branch on the **Manage OIDC** page in the Dashboard. Select the repo you want to trust and the form will be filled out for you.
-
-You can also use the CLI.
-
-```sh
-nuon orgs oidc-trust-policies create \
-  --name github-actions \
-  --issuer https://token.actions.githubusercontent.com \
-  --audience https://api.nuon.co \
-  --role org_admin \
-  --ttl 900 \
-  --claim sub=repo:acme/app:ref:refs/heads/main
-```
-
-Keep the `sub` condition limited to a protected branch and the `--ttl` short. The exchanged token only needs to
-outlive the one command it runs. See [claim matching](/concepts/oidc-federation#claim-matching) for other supported
-patterns.
-
-<Note>
-  Triggering an App Branch run currently requires `org_admin` permissions.
-  We are in the process of adding more roles so such broad permissions are not required.
-</Note>
+- Org admin access, to create the trust policy or API token the workflow authenticates with. See [Authentication](#authentication).
 
 ## Trigger a branch run from your workflow
 
-Grant the job permission to request an OIDC token by setting the `id-token: write` permission on the workflow. Then configure a job step to use the Nuon CLI action. The CLI will detect that it's running in GitHub Actions and perform the token exchange automatically.
+Configure a job step to use the Nuon CLI action. The example authenticates with [OIDC](#using-oidc), so the job needs the `id-token: write` permission; the CLI detects that it's running in GitHub Actions and performs the token exchange automatically.
 
 ```yaml .github/workflows/rollout.yaml
 on:
@@ -80,7 +54,7 @@ jobs:
         run: make test
 
       - name: Trigger branch run
-        uses: nuonco/actions-nuon@v0.4.1
+        uses: nuonco/actions-nuon@v0.5.0
         with:
           org_id: ${{ vars.nuon_org_id }}
           app_id: ${{ vars.nuon_app_id }}
@@ -90,6 +64,48 @@ jobs:
 <Note>
 `--no-wait` will tell the CLI to return as soon as the App Branch run has been successfully created, allowing the GitHub Actions workflow to complete. Depending on how your App Branch is configured, there may still be manual approvals required in the workflows that are triggered.
 </Note>
+
+### Trigger a specific tag, commit, or pull request
+
+`actions-nuon` also ships one action per run type. Each wraps `nuon branches trigger --run-type`:
+
+| Action | Equivalent CLI command |
+| --- | --- |
+| `nuonco/actions-nuon/branches/trigger/tag` | `nuon branches trigger --run-type tag` |
+| `nuonco/actions-nuon/branches/trigger/commit` | `nuon branches trigger --run-type commit` |
+| `nuonco/actions-nuon/branches/trigger/pr` | `nuon branches trigger --run-type pr` |
+| `nuonco/actions-nuon/branches/preview/pr` | `nuon branches preview --pr-number` |
+| `nuonco/actions-nuon/branches/preview/git-ref` | `nuon branches preview --git-ref` |
+
+For example, roll out each GitHub release once your own release workflow publishes it:
+
+```yaml .github/workflows/nuon-release.yaml
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  rollout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger branch run for the release tag
+        uses: nuonco/actions-nuon/branches/trigger/tag@v0.5.0
+        with:
+          org_id: ${{ vars.nuon_org_id }}
+          app_id: ${{ vars.nuon_app_id }}
+          branch_id: production
+          tag: ${{ github.event.release.tag_name }}
+```
+
+A release run's OIDC token carries the tag ref as its subject (`repo:acme/app:ref:refs/tags/<tag>`), so the trust
+policy needs a `sub` condition that matches tag refs as well as `main`. See [claim matching](/concepts/oidc-federation#claim-matching).
+
+Trigger actions take `tag`, `sha`, or `pr_number`. Preview actions take `pr_number` or `git_ref`, plus an optional `mode`
+(`plan-only`, `apply`, `build-only`). See the [actions-nuon README](https://github.com/nuonco/actions-nuon) for every input.
 
 ### Variations
 
@@ -124,14 +140,72 @@ command: "installs sync -a ${{ vars.nuon_app_id }} -d ./installs --confirm --app
 | `api_token`     | no       | A static API token. Omit it to authenticate with OIDC.                                              |
 | `api_url`       | no       | The control plane API URL. Defaults to `https://api.nuon.co`.                                       |
 | `oidc_audience` | no       | Audience for the OIDC token, if your trust policy's audience differs from `api_url`.                |
-| `nuon_version`  | no       | CLI version to install. Defaults to the version your control plane reports.                         |
+| `nuon_version`  | no       | CLI version to install. Defaults to the version your control plane reports. See [Choosing the CLI version](#choosing-the-cli-version). |
 
 <Note>
-  For a self-hosted control plane, pass its API URL as the `api_url` input and use the same URL as the trust policy
-  audience. If the two must differ, set `oidc_audience` to match the policy.
+  For a Nuon BYOC or self-hosted control plane, pass its API URL as the `api_url` input and use the same URL as the
+  trust policy audience. If the two must differ, set `oidc_audience` to match the policy.
 </Note>
 
-## Using static API tokens
+### Choosing the CLI version
+
+The CLI should match your control plane's version (see [Choosing a CLI version](/cli#choosing-a-cli-version)). The
+action handles this for you: when `nuon_version` is unset or `latest`, it reads the version from `api_url`'s
+`/version` endpoint and installs that release. This works for Nuon Cloud, BYOC, and Self-Hosted, so we recommend
+leaving `nuon_version` unset.
+
+If no CLI binary is published for the reported version, the action installs the latest release instead and adds a
+warning to the job summary.
+
+To pin the CLI, for example to make a workflow reproducible, set `nuon_version`:
+
+```yaml
+- name: Trigger branch run
+  uses: nuonco/actions-nuon@v0.5.0
+  with:
+    org_id: ${{ vars.nuon_org_id }}
+    app_id: ${{ vars.nuon_app_id }}
+    nuon_version: "0.19.1260"
+    command: "branches trigger --branch-id main --no-wait"
+```
+
+Update the pin whenever your control plane is upgraded. Once the control plane's minimum CLI version passes the pin,
+every command prints a warning that the CLI is older than the minimum.
+
+The action's tag (`@v0.5.0`) is the version of the action itself, not of the CLI. The CLI version the action
+installed is available as the `nuon_version` step output.
+
+## Authentication
+
+The action authenticates with OIDC or with a static API token.
+
+### Using OIDC
+
+We strongly recommend configuring GitHub Actions to authenticate with Nuon using OIDC, so no long-lived API tokens need to be stored in GitHub.
+Create a trust policy for the repository and its protected branch on the **Manage OIDC** page in the Dashboard. Select the repo you want to trust and the form will be filled out for you.
+
+You can also use the CLI.
+
+```sh
+nuon orgs oidc-trust-policies create \
+  --name github-actions \
+  --issuer https://token.actions.githubusercontent.com \
+  --audience https://api.nuon.co \
+  --role org_admin \
+  --ttl 900 \
+  --claim sub=repo:acme/app:ref:refs/heads/main
+```
+
+Keep the `sub` condition limited to a protected branch and the `--ttl` short. The exchanged token only needs to
+outlive the one command it runs. See [claim matching](/concepts/oidc-federation#claim-matching) for other supported
+patterns.
+
+<Note>
+  Triggering an App Branch run currently requires `org_admin` permissions.
+  We are in the process of adding more roles so such broad permissions are not required.
+</Note>
+
+### Using static API tokens
 
 If you can't use OIDC — for example, your organization disallows the `id-token: write` permission — you can
 authenticate using a long-lived [API token](/concepts/api-tokens).
@@ -147,7 +221,7 @@ The `id-token: write` permission is not required if you are using a token.
 
 ```yaml
 - name: Trigger branch run
-  uses: nuonco/actions-nuon@v0.4.1
+  uses: nuonco/actions-nuon@v0.5.0
   with:
     api_token: ${{ secrets.NUON_API_TOKEN }}
     org_id: ${{ vars.nuon_org_id }}

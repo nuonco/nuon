@@ -18,6 +18,8 @@ New env vars for auth.nuon.co
 | NUON_AUTH_SESSION_KEY     | Session Key for nonce                                                                       | Auth Service |
 | NUON_AUTH_ALLOWED_DOMAINS | Domains from which any user can register. Usually the org email.                            | Auth Service |
 | NUON_AUTH_ALLOW_ALL_USERS | Whether or not any user with an email from an allowed domain should be allowed to register. | Auth Service |
+| DISABLE_ACCOUNT_SIGNUP    | Kill switch. When true, login never creates a new account, including for pending invites and providers with `allow_all_users` set. Existing accounts can still sign in. An `@nuon.co` email bypasses this. | Auth Service |
+| DISABLE_ORG_CREATION      | Kill switch. When true, `POST /v1/orgs` and onboarding org creation are rejected. Attaching an existing org still works. An `@nuon.co` account bypasses this. | ctl-api |
 
 We construct a domain from the root domain by prefixing `auth` to it. e.g. `app`.`byoc.org.co`. This becomes the service
 domain which the service understands itself to be available at .
@@ -28,6 +30,9 @@ domain which the service understands itself to be available at .
 
 > [!NOTE]
 > `NUON_AUTH_ALLOW_ALL_USERS` defaults to false.
+
+> [!NOTE]
+> `DISABLE_ACCOUNT_SIGNUP` and `DISABLE_ORG_CREATION` default to false. Set either to `true` to turn that path off. `DISABLE_ACCOUNT_SIGNUP` overrides `NUON_AUTH_ALLOW_ALL_USERS` and a provider's `allow_all_users`. An `@nuon.co` email still gets through both switches.
 
 > [!NOTE]
 > `NUON_AUTH_ALLOWED_DOMAINS` cannot be empty.
@@ -258,25 +263,39 @@ nuon auth login
 This will pull down the cli configs from the api. If Nuon Auth is enabled, it will use the auth service for
 authentication.
 
-Once the flow starts, the CLI will open the `/device/code` endpoint. If the user is not authenticated, the endpoint will
-redirect the user to the index page with the `s.cfg.Domain` + `/device/code` as the `url` param. If the user _is_
-authenticated, the device code flow will start.
+The CLI uses the OAuth 2.0 device authorization grant ([RFC 8628](https://www.rfc-editor.org/rfc/rfc8628)). The server
+issues both codes:
 
-> [!NOTE] The /device/code endpoint should be opened directly, otherwise the user may invalidate their session for the
-> browser.
+- `device_code`: a 256-bit secret that only the CLI sees. It is used to poll `/device/token` and is never shown in a
+  browser or put in a URL.
+- `user_code`: a short `XXXX-XXXX` code (consonants only) that the CLI prints. The user types it in at `/device`.
+
+The CLI opens `verification_uri_complete` (`/device?user_code=XXXX-XXXX`), which only pre-fills the entry form. The
+user still submits the code and then approves it on a confirmation page that tells them to check it against their
+terminal. If the user is not authenticated, `/device` redirects to login and returns to the same link afterwards.
+
+> [!WARNING] A pre-filled link can be phished: an attacker can start a request, send the victim the link, and collect the
+> token if the victim approves. The expiry, the confirmation copy and the requester details reduce this but don't remove
+> it. See NUO-1126. The approval page shows the requesting IP, user agent and time so the user can check the
+request is theirs before approving or denying it. Both codes expire after 10 minutes, and a request can be decided and
+redeemed only once.
 
 ```
  Flow
 
  CLI                                 Browser                              Server
-  |                                     |                                      |
-  |-- Generate device_code locally ---->|                                      |
-  |-- Open browser /device/code?code=XXX ------------------------------------->|
-  |                                     |<-- Check X-Nuon-Auth cookie ---------|
-  |                                     |<-- Show "Approve CLI?" page ---------|
-  |                                     |-- User clicks Approve (POST) ------->|
-  |                                     |            (stores code → account_id)
-  |                                     |<-- Show success page ----------------|
-  |-- Poll GET /device/token?code=XXX ---------------------------------------->|
+  |-- POST /device/authorize ------------------------------------------------->|
+  |<-- {device_code, user_code, verification_uri, expires_in, interval} -------|
+  |-- Print user_code, open link ----->|                                      |
+  |                                     |-- GET /device?user_code= (cookie) -->|
+  |                                     |-- POST /device user_code=XXXX-XXXX ->|
+  |                                     |<-- Requester IP / UA / time ---------|
+  |                                     |-- POST /device/approve ------------->|
+  |                                     |            (binds request → account_id)
+  |-- POST /device/token grant_type=...device_code&device_code=... ----------->|
+  |<-- 400 {error: "authorization_pending"} (until approved) ------------------|
   |<-- 200 {access_token: "tok..."} -------------------------------------------|
 ```
+
+CLIs from before this flow generated their own code and called `GET /device/code` and `GET /device/token`. Those
+endpoints now return an error telling the user to upgrade.

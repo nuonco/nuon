@@ -52,18 +52,20 @@ export const CheckboxFilterDropdown = ({
         </>
       }
     >
-      <Menu className="min-w-56 max-h-80">
-        <div className="-mx-2 -mt-2 flex min-h-0 flex-col gap-0.5 overflow-y-auto p-2">
+      <Menu className="!w-max max-w-80 max-h-80">
+        <div className="-mx-2 -mt-2 flex min-h-0 flex-col gap-0.5 overflow-y-auto overflow-x-hidden p-2">
           {options.map((option) => (
             <CheckboxInputWithButton
               key={option.value}
               buttonProps={{
+                className: 'min-w-0',
+                title: option.label,
                 children: (
                   <>
-                    <span className="font-semibold text-xs">
+                    <span className="min-w-0 truncate font-semibold text-xs">
                       {option.label}
                     </span>
-                    <span className="ml-2 text-xs opacity-0 group-hover:opacity-100">
+                    <span className="ml-2 shrink-0 text-xs opacity-0 group-hover:opacity-100">
                       {selected.size === 1 && selected.has(option.value)
                         ? 'Reset'
                         : 'Only'}
@@ -75,7 +77,7 @@ export const CheckboxFilterDropdown = ({
                 value: option.value,
               }}
               checked={selected.has(option.value)}
-              className="w-full shrink-0"
+              className="w-full min-w-0 shrink-0"
               name={`${id}-${option.value}`}
               onChange={handleToggle}
               value={option.value}
