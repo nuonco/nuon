@@ -290,17 +290,7 @@
         "icon": "book",
         "pages": [
           {
-            "group": "Cloud Reference",
-            "boost": 1,
-            "pages": [
-              "platform-support/introduction",
-              "platform-support/aws",
-              "platform-support/azure",
-              "platform-support/gcp"
-            ]
-          },
-          {
-            "group": "Interface Reference",
+            "group": "Interfaces",
             "pages": [
               {
                 "group": "CLI",
@@ -313,11 +303,19 @@
             ]
           },
           {
-            "group": "Config Reference",
-            "root": "config-ref/index",
-            "boost": 0.25,
-            "expanded": true,
+            "group": "Cloud Reference",
+            "boost": 1,
             "pages": [
+              "platform-support/introduction",
+              "platform-support/aws",
+              "platform-support/azure",
+              "platform-support/gcp"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "config-ref/index",
               "configuration-files",
               {
                 "group": "Component Types",
