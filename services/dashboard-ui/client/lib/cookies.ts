@@ -1,10 +1,12 @@
 const MAX_AGE = 60 * 60 * 24 * 365
 
-function setCookie(name: string, value: string) {
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax; max-age=${MAX_AGE}`
+export function setCookie(name: string, value: string, domain?: string) {
+  document.cookie =
+    `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax; max-age=${MAX_AGE}` +
+    (domain ? `; domain=${domain}` : '')
 }
 
-function getCookie(name: string): string | undefined {
+export function getCookie(name: string): string | undefined {
   const match = document.cookie
     .split(';')
     .map((c) => c.trim())
