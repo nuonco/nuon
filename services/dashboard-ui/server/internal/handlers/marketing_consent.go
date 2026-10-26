@@ -12,8 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
-// MarketingConsentHandler adds the signed-in user to the Mailchimp audience after they tick
-// the consent box on the sign-in page.
 type MarketingConsentHandler struct {
 	cfg       *internal.Config
 	l         *zap.Logger
@@ -41,8 +39,6 @@ func (h *MarketingConsentHandler) RegisterRoutes(e *gin.Engine) error {
 	return nil
 }
 
-// Subscribe uses the email on the caller's account, so it can only subscribe the signed-in user.
-// synced is false when Mailchimp is not configured, so the client keeps the cookie for later.
 func (h *MarketingConsentHandler) Subscribe(c *gin.Context) {
 	if !h.mailchimp.Enabled() {
 		c.JSON(http.StatusOK, gin.H{"synced": false})

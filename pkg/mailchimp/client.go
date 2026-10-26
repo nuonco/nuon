@@ -10,7 +10,6 @@ import (
 )
 
 type Client interface {
-	// Enabled is false when Mailchimp is not configured.
 	Enabled() bool
 	UpsertListMember(ctx context.Context, email string) error
 }
@@ -18,9 +17,8 @@ type Client interface {
 type client struct {
 	v *validator.Validate
 
-	APIKey     string `validate:"required"`
-	AudienceID string `validate:"required"`
-	// ServerPrefix is optional, e.g. us21.
+	APIKey       string `validate:"required"`
+	AudienceID   string `validate:"required"`
 	ServerPrefix string
 
 	baseURL string
@@ -86,7 +84,6 @@ func WithAudienceID(audienceID string) clientOption {
 	}
 }
 
-// WithBaseURL overrides the API base URL, for tests.
 func WithBaseURL(baseURL string) clientOption {
 	return func(c *client) error {
 		c.baseURL = baseURL

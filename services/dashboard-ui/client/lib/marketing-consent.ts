@@ -1,12 +1,16 @@
-import { getMarketingConsent, setMarketingConsentSynced } from '@/lib/cookies'
+import { getCookie, setCookie } from '@/lib/cookies'
 import { postMarketingConsent } from '@/lib/ctl-api/general'
 
+const COOKIE = 'nuon_marketing_consent'
+
 export async function syncMarketingConsent() {
-  if (getMarketingConsent() !== '1') return
+  if (getCookie(COOKIE) !== '1') return
 
   try {
     const { synced } = await postMarketingConsent()
-    if (synced) setMarketingConsentSynced()
+    if (!synced) return
+    const host = window.location.hostname
+    setCookie(COOKIE, 'synced', host.includes('.') ? host : undefined)
   } catch (error) {
     console.warn('Failed to sync marketing consent:', error)
   }

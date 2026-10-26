@@ -13,8 +13,7 @@ import (
 
 const defaultAPITimeout time.Duration = time.Second * 10
 
-// UpsertListMember adds email to the audience. Existing members keep their status, so
-// unsubscribes stick.
+// Existing members keep their status, so unsubscribes stick.
 func (c *client) UpsertListMember(ctx context.Context, email string) error {
 	timeoutCtx, cancelFn := context.WithTimeout(ctx, defaultAPITimeout)
 	defer cancelFn()
@@ -32,7 +31,6 @@ func (c *client) UpsertListMember(ctx context.Context, email string) error {
 	return nil
 }
 
-// subscriberHash is Mailchimp's member ID: the md5 of the lowercased email.
 func subscriberHash(email string) string {
 	sum := md5.Sum([]byte(strings.ToLower(email)))
 	return hex.EncodeToString(sum[:])

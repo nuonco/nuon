@@ -75,7 +75,6 @@ type Config struct {
 	PostHogHost            string `config:"posthog_host"`
 	PostHogReplayEnabled   bool   `config:"posthog_replay_enabled"`
 
-	// Mailchimp sync is off unless the API key and audience ID are set.
 	MailchimpAPIKey       string `config:"mailchimp_api_key"`
 	MailchimpServerPrefix string `config:"mailchimp_server_prefix"`
 	MailchimpAudienceID   string `config:"mailchimp_audience_id"`
