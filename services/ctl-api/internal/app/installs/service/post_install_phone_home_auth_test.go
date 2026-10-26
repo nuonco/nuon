@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
 func TestBearerToken(t *testing.T) {
@@ -63,16 +64,28 @@ func (s *InstallsServiceTestSuite) TestAuthorizePhoneHomeRejectsPreviousToken() 
 	serviceAccountEmail := account.ServiceAccountEmail(stackVersion.ID)
 	serviceAccount := &app.Account{
 		Email:       serviceAccountEmail,
-		Subject:     serviceAccountEmail,
+		Subject:     stackVersion.ID,
 		AccountType: app.AccountTypeService,
 	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(serviceAccount).Error)
+	client := account.New(account.Params{
+		DB:          s.deps.DB,
+		AuthzClient: authz.New(authz.Params{DB: s.deps.DB}),
+	})
+	_, err := client.EnsurePhoneHomeServiceAccount(
+		s.ctx,
+		stackVersion.OrgID,
+		stackVersion.InstallStackID,
+		stackVersion.ID,
+	)
+	require.NoError(s.T(), err)
 
 	now := time.Now()
 	previous := &app.Token{
 		CreatedByID: s.testAcc.ID,
 		AccountID:   serviceAccount.ID,
 		Token:       "previous-phone-home-token",
+		TokenType:   app.TokenTypeNuon,
 		ExpiresAt:   now.Add(time.Hour),
 		IssuedAt:    now,
 		Issuer:      "test",
@@ -81,6 +94,7 @@ func (s *InstallsServiceTestSuite) TestAuthorizePhoneHomeRejectsPreviousToken() 
 		CreatedByID: s.testAcc.ID,
 		AccountID:   serviceAccount.ID,
 		Token:       "current-phone-home-token",
+		TokenType:   app.TokenTypeNuon,
 		ExpiresAt:   now.Add(time.Hour),
 		IssuedAt:    now,
 		Issuer:      "test",

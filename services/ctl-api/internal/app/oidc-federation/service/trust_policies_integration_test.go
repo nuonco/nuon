@@ -185,6 +185,60 @@ func (s *OIDCFederationTestSuite) TestDeletePolicyDeletesServiceAccount() {
 	require.Zero(s.T(), count)
 }
 
+func (s *OIDCFederationTestSuite) issueFederatedTokenForPolicy(idp *fakeIDP, sub string) app.Token {
+	token := idp.signToken(s.T(), jwt.MapClaims{"sub": sub})
+	rr := s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var resp ExchangeOIDCTokenResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+
+	var minted app.Token
+	require.NoError(s.T(), s.deps.DB.Where(app.Token{Token: resp.Token}).First(&minted).Error)
+	return minted
+}
+
+func (s *OIDCFederationTestSuite) TestDisablePolicyRevokesIssuedTokens() {
+	idp := newFakeIDP(s.T())
+	policy := s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+	minted := s.issueFederatedTokenForPolicy(idp, "repo:acme/app:ref:refs/heads/main")
+
+	disabled := false
+	rr := s.makeRequest(http.MethodPatch, "/v1/oidc/trust-policies/"+policy.ID, UpdateOIDCTrustPolicyRequest{Enabled: &disabled})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var count int64
+	require.NoError(s.T(), s.deps.DB.Model(&app.Token{}).Where("id = ?", minted.ID).Count(&count).Error)
+	require.Zero(s.T(), count)
+}
+
+func (s *OIDCFederationTestSuite) TestEnablingPolicyDoesNotRevokeTokens() {
+	idp := newFakeIDP(s.T())
+	policy := s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+	minted := s.issueFederatedTokenForPolicy(idp, "repo:acme/app:ref:refs/heads/main")
+
+	enabled := true
+	rr := s.makeRequest(http.MethodPatch, "/v1/oidc/trust-policies/"+policy.ID, UpdateOIDCTrustPolicyRequest{Enabled: &enabled})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var count int64
+	require.NoError(s.T(), s.deps.DB.Model(&app.Token{}).Where("id = ?", minted.ID).Count(&count).Error)
+	require.Equal(s.T(), int64(1), count)
+}
+
+func (s *OIDCFederationTestSuite) TestDeletePolicyRevokesIssuedTokens() {
+	idp := newFakeIDP(s.T())
+	policy := s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+	minted := s.issueFederatedTokenForPolicy(idp, "repo:acme/app:ref:refs/heads/main")
+
+	rr := s.makeRequest(http.MethodDelete, "/v1/oidc/trust-policies/"+policy.ID, nil)
+	require.Equal(s.T(), http.StatusNoContent, rr.Code, rr.Body.String())
+
+	var count int64
+	require.NoError(s.T(), s.deps.DB.Model(&app.Token{}).Where("id = ?", minted.ID).Count(&count).Error)
+	require.Zero(s.T(), count)
+}
+
 func (s *OIDCFederationTestSuite) TestExchangeIssuesToken() {
 	idp := newFakeIDP(s.T())
 	policy := s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
@@ -214,6 +268,55 @@ func (s *OIDCFederationTestSuite) TestExchangeIssuesToken() {
 	var updated app.OIDCTrustPolicy
 	require.NoError(s.T(), s.deps.DB.Where("id = ?", policy.ID).First(&updated).Error)
 	require.NotNil(s.T(), updated.LastUsedAt)
+}
+
+func (s *OIDCFederationTestSuite) TestExchangeRejectsReplayedToken() {
+	idp := newFakeIDP(s.T())
+	s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+
+	token := idp.signToken(s.T(), jwt.MapClaims{
+		"sub": "repo:acme/app:ref:refs/heads/main",
+		"jti": "jti-replay-test",
+	})
+
+	rr := s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var resp ExchangeOIDCTokenResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.True(s.T(), resp.Authenticated)
+
+	rr = s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusUnauthorized, rr.Code, rr.Body.String())
+	require.Equal(s.T(), int64(1), s.federatedTokenCount())
+}
+
+func (s *OIDCFederationTestSuite) TestExchangeRejectsReplayedTokenWithoutJTI() {
+	idp := newFakeIDP(s.T())
+	s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+
+	issuedAt := time.Now().Add(-time.Minute).Unix()
+	token := idp.signToken(s.T(), jwt.MapClaims{
+		"sub": "repo:acme/app:ref:refs/heads/main",
+		"iat": issuedAt,
+	})
+
+	rr := s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	rr = s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusUnauthorized, rr.Code, rr.Body.String())
+	require.Equal(s.T(), int64(1), s.federatedTokenCount())
+
+	other := idp.signToken(s.T(), jwt.MapClaims{
+		"sub": "repo:acme/app:ref:refs/heads/main",
+		"iat": issuedAt + 1,
+	})
+	require.NotEqual(s.T(), token, other)
+
+	rr = s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: other})
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+	require.Equal(s.T(), int64(2), s.federatedTokenCount())
 }
 
 func (s *OIDCFederationTestSuite) TestExchangeRejections() {

@@ -3,7 +3,6 @@ package generateinstallstackversion
 import (
 	"fmt"
 	"maps"
-	"strings"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
@@ -231,16 +230,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, s.cfg.RunnerContainerImageTag),
 		}
 
-		// Legacy init.sh needs a pre-provisioned bootstrap token.
-		// init-mng-v2.sh fetches its own token via GCP identity (POST /v1/runner-auth/gcp).
-		if isLegacyGCPInitScript(initScriptURL) {
-			bootstrapToken, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
-			if err != nil {
-				return errors.Wrap(err, "unable to create bootstrap token")
-			}
-			inp.APIToken = generics.FromPtrStr(bootstrapToken)
-		}
-
 		tmplByts, checksum, err := gcp.Render(inp)
 		if err != nil {
 			if compositeErrorsEnabled {
@@ -464,10 +453,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusPendingUser),
 	})
 	return nil
-}
-
-func isLegacyGCPInitScript(url string) bool {
-	return strings.HasSuffix(url, "/scripts/gcp/init.sh") || url == DefaultGCPRunnerInitScript
 }
 
 func (s *Signal) failStackConfigRender(ctx workflow.Context, install *app.Install, stack *app.InstallStack, cfg *app.AppConfig, region, platform string, cause error, nonRetryableMsg, wrapMsg string) error {

@@ -25,6 +25,7 @@ import (
 	appbundle "github.com/nuonco/nuon/pkg/appbundle"
 	bundle "github.com/nuonco/nuon/pkg/appbundle/bundle"
 	"github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/oci"
@@ -293,7 +294,7 @@ func (a *Activities) bundleInputs(ctx context.Context, bundleRow *app.AppBundle,
 		{role: "init_script", source: initScriptURL, mediaType: stackAssetShellMediaType},
 	}
 	for _, custom := range cfg.StackConfig.CustomNestedStacks {
-		source, err := customStackSource(a.cfg.AWSCloudFormationStackTemplateBaseURL, bundleRow.OrgID, bundleRow.AppID, custom.ContentsHash, custom.TemplateURL)
+		source, err := customStackSource(a.cfg.AWSCloudFormationStackTemplateBaseURL, bundleRow.OrgID, bundleRow.AppID, custom)
 		if err != nil {
 			return logical, nil, nil, fmt.Errorf("resolve custom stack asset %s: %w", custom.Name, err)
 		}
@@ -483,16 +484,16 @@ func readAtMost(r io.Reader, limit int64) ([]byte, error) {
 	return data, nil
 }
 
-func customStackSource(baseURL, orgID, appID, contentsHash, templateURL string) (string, error) {
-	if len(contentsHash) != sha256.Size*2 {
+func customStackSource(baseURL, orgID, appID string, stack config.CustomNestedStack) (string, error) {
+	if len(stack.ContentsHash) != sha256.Size*2 {
 		return "", fmt.Errorf("custom stack content hash must be a 64-character SHA-256 digest")
 	}
-	for _, c := range contentsHash {
+	for _, c := range stack.ContentsHash {
 		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
 			return "", fmt.Errorf("custom stack content hash must be a 64-character SHA-256 digest")
 		}
 	}
-	return cloudformation.CustomNestedStackTemplateURL(baseURL, orgID, appID, contentsHash, templateURL), nil
+	return cloudformation.ResolveCustomNestedStackTemplateURL(baseURL, orgID, appID, stack), nil
 }
 
 func uniqueRoots(roots []bundle.Root) []bundle.Root {

@@ -376,6 +376,41 @@ export const Unsummarized = () => (
   />
 )
 
+export const CancelledMidRun = () => (
+  <WorkflowChangesSummary
+    renderDetail={renderMockDetail}
+    summaries={[
+      mk({
+        stepId: 'done-1',
+        stepName: 'Sync and plan api',
+        componentName: 'api',
+        status: 'applied',
+        counts: { create: 1, update: 2, delete: 0, replace: 0, noop: 3 },
+      }),
+      mk({
+        stepId: 'pending-1',
+        stepName: 'Sync and plan worker',
+        componentName: 'worker',
+        planType: 'pending',
+        status: 'not-generated',
+        counts: noCounts,
+        countsState: 'unsupported',
+        hasDetail: false,
+      }),
+      mk({
+        stepId: 'pending-2',
+        stepName: 'Sync and plan db',
+        componentName: 'db',
+        planType: 'pending',
+        status: 'not-generated',
+        counts: noCounts,
+        countsState: 'unsupported',
+        hasDetail: false,
+      }),
+    ]}
+  />
+)
+
 export const SingleStepTrivial = () => (
   <WorkflowChangesSummary
     renderDetail={renderMockDetail}
