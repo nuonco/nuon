@@ -6,7 +6,7 @@ type disabledClient struct{}
 
 var _ Client = (*disabledClient)(nil)
 
-// NewDisabled returns a no-op client for deployments without Mailchimp configuration.
+// NewDisabled returns a no-op client.
 func NewDisabled() Client {
 	return &disabledClient{}
 }

@@ -178,10 +178,8 @@ func (s *service) AuthState(c *gin.Context) {
 	s.redirect302(c, "/success")
 }
 
-// recordMarketingConsent persists an opted-in consent checkbox onto the account, then
-// best-effort upserts the member into the Mailchimp audience. It is set-only (an unchecked box
-// on a later login is not a revocation) and never fails the login — losing a consent bit or a
-// Mailchimp sync is acceptable, losing a sign-in is not.
+// recordMarketingConsent saves opt-in consent and syncs it to Mailchimp. Errors are logged and
+// never block sign-in.
 func (s *service) recordMarketingConsent(ctx context.Context, sessionData *SessionData, account *app.Account) {
 	if !sessionData.MarketingConsent || account.MarketingConsent {
 		return

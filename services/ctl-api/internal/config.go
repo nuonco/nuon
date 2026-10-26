@@ -417,9 +417,8 @@ type Config struct {
 	// notifications configuration
 	LoopsAPIKey string `config:"loops_api_key" validate:"required"`
 
-	// Mailchimp marketing audience sync. Optional so BYOC vendor deployments and local dev
-	// boot without it: the client, and the sign-in consent checkbox, are disabled unless the
-	// API key and audience ID are set. The server prefix (e.g. us21) is optional.
+	// Mailchimp sync and the sign-in consent checkbox are off unless the API key and audience ID
+	// are set.
 	MailchimpAPIKey       string `config:"mailchimp_api_key"`
 	MailchimpServerPrefix string `config:"mailchimp_server_prefix"`
 	MailchimpAudienceID   string `config:"mailchimp_audience_id"`

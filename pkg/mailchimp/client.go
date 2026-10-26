@@ -10,7 +10,7 @@ import (
 )
 
 type Client interface {
-	// Enabled reports whether audience sync is configured, so callers can hide consent UI otherwise.
+	// Enabled is false when Mailchimp is not configured.
 	Enabled() bool
 	UpsertListMember(ctx context.Context, email string) error
 }
@@ -20,8 +20,7 @@ type client struct {
 
 	APIKey     string `validate:"required"`
 	AudienceID string `validate:"required"`
-	// ServerPrefix pins the account's data center host (e.g. us21). Optional: the SDK's default
-	// api.mailchimp.com host is used when it is empty.
+	// ServerPrefix is optional, e.g. us21.
 	ServerPrefix string
 
 	baseURL string
@@ -87,7 +86,7 @@ func WithAudienceID(audienceID string) clientOption {
 	}
 }
 
-// WithBaseURL overrides the Mailchimp API base URL, for tests.
+// WithBaseURL overrides the API base URL, for tests.
 func WithBaseURL(baseURL string) clientOption {
 	return func(c *client) error {
 		c.baseURL = baseURL

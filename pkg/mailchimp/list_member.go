@@ -13,9 +13,8 @@ import (
 
 const defaultAPITimeout time.Duration = time.Second * 10
 
-// UpsertListMember adds an email to the configured audience, or leaves an existing member's
-// status untouched: status_if_new only applies on insert, so it never resubscribes someone
-// who unsubscribed in Mailchimp.
+// UpsertListMember adds email to the audience. Existing members keep their status, so
+// unsubscribes stick.
 func (c *client) UpsertListMember(ctx context.Context, email string) error {
 	timeoutCtx, cancelFn := context.WithTimeout(ctx, defaultAPITimeout)
 	defer cancelFn()
@@ -33,7 +32,7 @@ func (c *client) UpsertListMember(ctx context.Context, email string) error {
 	return nil
 }
 
-// subscriberHash is Mailchimp's member identifier: the md5 of the lowercased email.
+// subscriberHash is Mailchimp's member ID: the md5 of the lowercased email.
 func subscriberHash(email string) string {
 	sum := md5.Sum([]byte(strings.ToLower(email)))
 	return hex.EncodeToString(sum[:])

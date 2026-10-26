@@ -21,8 +21,7 @@ type SessionData struct {
 	RequestedURL string `json:"url,omitempty"`
 	FailCount    int    `json:"fc,omitempty"`
 	CreatedAt    int64  `json:"iat"`
-	// Carries the sign-in page's consent checkbox across the OAuth redirect, since the checkbox
-	// state cannot survive the round-trip to the provider any other way.
+	// MarketingConsent carries the sign-in checkbox through the OAuth redirect.
 	MarketingConsent bool `json:"mc,omitempty"`
 }
 

@@ -323,7 +323,6 @@ func (f *fakeMailchimp) UpsertListMember(_ context.Context, email string) error 
 	return f.err
 }
 
-// consentSvc returns the auth service wired to the suite's Postgres DB with a fake Mailchimp.
 func (s *AuthStateTestSuite) consentSvc(mc *fakeMailchimp) *service {
 	return &service{db: s.service.DB, l: zap.NewNop(), mailchimp: mc}
 }
