@@ -33,6 +33,7 @@ func TestResolveRoleARN(t *testing.T) {
 		errorContains string
 
 		legacyAzureRoleFallback bool
+		legacyGCPRoleFallback   bool
 	}{
 		{
 			name:          "nil stack outputs",
@@ -344,11 +345,74 @@ func TestResolveRoleARN(t *testing.T) {
 
 			legacyAzureRoleFallback: true,
 		},
+		{
+			name:     "legacy gcp stack without operation identities falls back to runner identity",
+			roleName: "maintenance",
+			appCfg: &app.AppConfig{
+				PermissionsConfig: app.AppPermissionsConfig{
+					ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+					MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+					DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+				},
+			},
+			stackOutputs: &app.InstallStackOutputs{
+				Data:            pgtype.Hstore{"runner_service_account_email": generics.ToPtr("runner@project.iam.gserviceaccount.com")},
+				GCPStackOutputs: &app.GCPStackOutputs{},
+			},
+			installState: installState,
+			expectedARN:  "",
+			expectError:  false,
+
+			legacyGCPRoleFallback: true,
+		},
+		{
+			name:     "legacy gcp stack without operation identities errors when fallback is disabled",
+			roleName: "maintenance",
+			appCfg: &app.AppConfig{
+				PermissionsConfig: app.AppPermissionsConfig{
+					ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+					MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+					DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+				},
+			},
+			stackOutputs: &app.InstallStackOutputs{
+				Data:            pgtype.Hstore{"runner_service_account_email": generics.ToPtr("runner@project.iam.gserviceaccount.com")},
+				GCPStackOutputs: &app.GCPStackOutputs{},
+			},
+			installState:  installState,
+			expectedARN:   "",
+			expectError:   true,
+			errorContains: "role maintenance not found in install stack outputs",
+		},
+		{
+			name:     "gcp stack with disabled operation identity",
+			roleName: "maintenance",
+			appCfg: &app.AppConfig{
+				PermissionsConfig: app.AppPermissionsConfig{
+					ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+					MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+					DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+				},
+			},
+			stackOutputs: &app.InstallStackOutputs{
+				Data: pgtype.Hstore{
+					"runner_service_account_email": generics.ToPtr("runner@project.iam.gserviceaccount.com"),
+					"maintenance_sa_email":         generics.ToPtr(""),
+				},
+				GCPStackOutputs: &app.GCPStackOutputs{},
+			},
+			installState:  installState,
+			expectedARN:   "",
+			expectError:   true,
+			errorContains: "role maintenance not found in install stack outputs",
+
+			legacyGCPRoleFallback: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			arn, err := resolveRoleARN(tt.roleName, tt.appCfg, tt.stackOutputs, tt.installState, tt.legacyAzureRoleFallback)
+			arn, err := resolveRoleARN(tt.roleName, tt.appCfg, tt.stackOutputs, tt.installState, tt.legacyAzureRoleFallback, tt.legacyGCPRoleFallback)
 
 			if tt.expectError {
 				if err == nil {
