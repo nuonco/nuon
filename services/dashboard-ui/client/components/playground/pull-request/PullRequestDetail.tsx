@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -38,30 +39,39 @@ const CONFIG_SOURCE_LABEL: Record<
 }
 
 export interface IPullRequestDetail {
-  pullRequest: TPlaygroundPullRequest
+  pullRequest?: TPlaygroundPullRequest
   runs?: TPlaygroundPullRequestRun[]
-  onEditConfig: () => void
+  backLink?: ReactNode
+  onEditConfig?: () => void
   onRerun?: () => void
   isLoading?: boolean
+  configHint?: string
 }
 
 export const PullRequestDetail = ({
   pullRequest,
   runs = previewRuns,
+  backLink,
   onEditConfig,
   onRerun,
   isLoading = false,
+  configHint,
 }: IPullRequestDetail) => {
-  const resolved = pullRequest.resolved_preview_config
-  const source = CONFIG_SOURCE_LABEL[pullRequest.config_status]
-  const isClosed = pullRequest.state !== 'open'
-  const needsInput = pullRequest.config_status === 'needs-input'
+  const loading = !pullRequest
+  const resolved = pullRequest?.resolved_preview_config
+  const source = pullRequest
+    ? CONFIG_SOURCE_LABEL[pullRequest.config_status]
+    : undefined
+  const isClosed = !pullRequest || pullRequest.state !== 'open'
+  const needsInput = pullRequest?.config_status === 'needs-input'
 
   return (
     <PageContent>
       <PageSection>
         <PullRequestHeader
           pullRequest={pullRequest}
+          backLink={backLink}
+          loading={loading}
           actions={
             isClosed ? null : (
               <>
@@ -81,17 +91,19 @@ export const PullRequestDetail = ({
             )
           }
         />
-      </PageSection>
-
-      <PageSection className="pt-0">
         <Card>
           <SectionHeader
             title="Preview configuration"
-            description={source.hint}
+            loading={loading}
+            description={loading ? undefined : configHint ?? source?.hint}
             status={
-              <Badge size="sm" theme={source.theme}>
-                {source.label}
-              </Badge>
+              loading ? (
+                <Badge size="sm" loading />
+              ) : (
+                <Badge size="sm" theme={source!.theme}>
+                  {source!.label}
+                </Badge>
+              )
             }
             actions={
               isClosed ? null : (
@@ -110,17 +122,17 @@ export const PullRequestDetail = ({
             }
           />
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            <LabeledValue label="Mode">
+            <LabeledValue label="Mode" loading={loading}>
               <Badge size="sm">
-                {previewModeDisplayLabel(resolved.mode ?? 'plan-only')}
+                {previewModeDisplayLabel(resolved?.mode ?? 'plan-only')}
               </Badge>
             </LabeledValue>
-            <LabeledValue label="Install">
-              {resolved.mode === 'build-only' ? (
+            <LabeledValue label="Install" loading={loading}>
+              {resolved?.mode === 'build-only' ? (
                 <Text variant="subtext" theme="neutral">
                   Not used
                 </Text>
-              ) : resolved.install_name ? (
+              ) : resolved?.install_name ? (
                 <Text variant="subtext" family="mono">
                   {resolved.install_name}
                 </Text>
@@ -130,19 +142,19 @@ export const PullRequestDetail = ({
                 </Text>
               )}
             </LabeledValue>
-            <LabeledValue label="GitHub">
+            <LabeledValue label="GitHub" loading={loading} loadingWidth={16}>
               <span className="flex flex-wrap gap-1">
-                {resolved.comment ? (
+                {resolved?.comment ? (
                   <Badge size="xs" theme="neutral">
                     comment
                   </Badge>
                 ) : null}
-                {resolved.set_statuses ? (
+                {resolved?.set_statuses ? (
                   <Badge size="xs" theme="neutral">
                     statuses
                   </Badge>
                 ) : null}
-                {resolved.ignore_drafts ? (
+                {resolved?.ignore_drafts ? (
                   <Badge size="xs" theme="neutral">
                     ignore drafts
                   </Badge>
@@ -152,15 +164,19 @@ export const PullRequestDetail = ({
           </div>
         </Card>
 
-        <SectionHeader
-          title="Activity"
-          description="Pushes on this pull request, and the preview runs each one started."
-        />
-        <PullRequestActivity
-          pullRequest={pullRequest}
-          runs={runs}
-          isLoading={isLoading}
-        />
+        {pullRequest ? (
+          <>
+            <SectionHeader
+              title="Activity"
+              description="Pushes on this pull request, and the preview runs each one started."
+            />
+            <PullRequestActivity
+              pullRequest={pullRequest}
+              runs={runs}
+              isLoading={isLoading}
+            />
+          </>
+        ) : null}
       </PageSection>
     </PageContent>
   )

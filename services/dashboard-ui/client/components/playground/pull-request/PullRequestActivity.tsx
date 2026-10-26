@@ -3,7 +3,6 @@ import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
 import { LabeledValue } from '@/components/common/LabeledValue'
-import { Loading } from '@/components/common/Loading'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -33,6 +32,13 @@ const MODE_THEME: Record<TAppBranchRunPreviewMode, 'brand' | 'info' | 'neutral'>
 
 export const ImpactCell = ({ run }: { run: TPlaygroundPullRequestRun }) => {
   if (run.mode === 'build-only') {
+    if (run.components_built == null) {
+      return (
+        <Text variant="subtext" theme="neutral">
+          —
+        </Text>
+      )
+    }
     return (
       <Text variant="subtext" theme="neutral">
         {run.components_built} built
@@ -40,7 +46,12 @@ export const ImpactCell = ({ run }: { run: TPlaygroundPullRequestRun }) => {
     )
   }
 
-  if (run.status !== 'success') {
+  if (
+    run.status !== 'success' ||
+    run.added == null ||
+    run.changed == null ||
+    run.removed == null
+  ) {
     return (
       <Text variant="subtext" theme="neutral">
         —
@@ -116,8 +127,12 @@ export const pullRequestRunPanel = (
           message={run.commit_message}
           author={run.commit_author}
           createdAt={run.started_at}
-          href={`${pullRequest.html_url}/commits/${run.head_sha}`}
-          isExternal
+          href={
+            pullRequest.html_url
+              ? `${pullRequest.html_url}/commits/${run.head_sha}`
+              : undefined
+          }
+          isExternal={!!pullRequest.html_url}
         />
       </div>
 
@@ -164,6 +179,9 @@ export interface IPullRequestActivity {
   isLoading?: boolean
 }
 
+const SKELETON_PUSHES = [0, 1]
+const SKELETON_RUNS_PER_PUSH = 2
+
 export const PullRequestActivity = ({
   pullRequest,
   runs,
@@ -176,13 +194,13 @@ export const PullRequestActivity = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <LabeledValue label="Pushes">
+        <LabeledValue label="Pushes" loading={isLoading}>
           <Text variant="subtext">{pushes.length}</Text>
         </LabeledValue>
-        <LabeledValue label="Runs">
+        <LabeledValue label="Runs" loading={isLoading}>
           <Text variant="subtext">{runs.length}</Text>
         </LabeledValue>
-        <LabeledValue label="Latest change">
+        <LabeledValue label="Latest change" loading={isLoading}>
           {latest ? (
             <ImpactCell run={latest} />
           ) : (
@@ -194,11 +212,33 @@ export const PullRequestActivity = ({
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-8">
-          <Loading />
-        </div>
+        SKELETON_PUSHES.map((push) => (
+          <Card key={push}>
+            <div className="flex items-start justify-between gap-3">
+              <Text variant="body" loading loadingWidth={28} />
+              <Badge size="sm" loading loadingWidth={10} />
+            </div>
+            <div className="flex flex-col divide-y border-t">
+              {Array.from({ length: SKELETON_RUNS_PER_PUSH }, (_, run) => (
+                <div
+                  key={run}
+                  className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-1 py-2"
+                >
+                  <Text variant="subtext" loading loadingWidth={6} />
+                  <Badge size="xs" loading loadingWidth={12} />
+                  <Badge size="xs" loading loadingWidth={10} />
+                  <Text variant="subtext" loading loadingWidth={14} />
+                  <span className="ml-auto">
+                    <Text variant="subtext" loading loadingWidth={8} />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))
       ) : pushes.length === 0 ? (
         <EmptyState
+          variant="history"
           emptyTitle="No preview runs yet"
           emptyMessage="Activity shows up here when this pull request is opened or pushed to."
         />
@@ -215,8 +255,12 @@ export const PullRequestActivity = ({
                   message={commit.commit_message}
                   author={commit.commit_author}
                   createdAt={commit.started_at}
-                  href={`${pullRequest.html_url}/commits/${commit.head_sha}`}
-                  isExternal
+                  href={
+                    pullRequest.html_url
+                      ? `${pullRequest.html_url}/commits/${commit.head_sha}`
+                      : undefined
+                  }
+                  isExternal={!!pullRequest.html_url}
                 />
                 <Badge size="sm" theme="neutral">
                   {countLabel(pushRuns.length, 'run', 'runs')}

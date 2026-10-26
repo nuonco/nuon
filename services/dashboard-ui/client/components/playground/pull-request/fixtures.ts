@@ -22,7 +22,7 @@ export type TPlaygroundPullRequest = {
   number: number
 
   title: string
-  author_login: string
+  author_login?: string
   html_url: string
   repo_owner: string
   repo_name: string
@@ -33,7 +33,7 @@ export type TPlaygroundPullRequest = {
   state: TPullRequestState
   is_draft: boolean
 
-  opened_at: string
+  opened_at?: string
   closed_at?: string
   merged_at?: string
 
@@ -61,10 +61,10 @@ export type TPlaygroundPullRequestRun = {
   completed_at?: string
   error_message?: string
 
-  added: number
-  changed: number
-  removed: number
-  components_built: number
+  added?: number
+  changed?: number
+  removed?: number
+  components_built?: number
 }
 
 export type TPlaygroundInstallCandidate = {
