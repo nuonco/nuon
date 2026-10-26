@@ -253,15 +253,20 @@
         "icon": "robot",
         "pages": [
           {
+            "group": "Start Safely",
+            "pages": [
+              "guides/agents/overview",
+              "guides/agents/setup"
+            ]
+          },
+          {
             "group": "Agents",
-            "root": "guides/agents/overview",
             "expanded": true,
             "pages": [
               {
                 "group": "MCP",
                 "expanded": true,
                 "pages": [
-                  "guides/agents/setup",
                   "guides/agents/tools",
                   "guides/agents/sample-queries"
                 ]
