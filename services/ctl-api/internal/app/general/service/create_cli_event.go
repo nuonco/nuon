@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	posthog "github.com/posthog/posthog-go"
 
+	"github.com/nuonco/nuon/pkg/agentclient"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -67,7 +68,7 @@ func (s *service) CreateCLIEvent(ctx *gin.Context) {
 		Set("success", req.Success).
 		Set("duration_ms", req.DurationMS).
 		Set("os", req.OS).
-		Set("agent", req.Agent))
+		Set("agent", agentclient.Normalize(req.Agent)))
 
 	ctx.Status(http.StatusAccepted)
 }

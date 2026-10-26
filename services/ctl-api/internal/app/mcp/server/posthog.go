@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	posthog "github.com/posthog/posthog-go"
@@ -61,7 +62,7 @@ func attributionProperties(_ context.Context, req *mcp.CallToolRequest, _ *mcp.C
 		return nil, nil
 	}
 	props := posthog.NewProperties()
-	if agent := req.Extra.Header.Get(agentclient.Header); agent != "" {
+	if agent := mcpAgent(req.Extra.Header); agent != "" {
 		props.Set("agent", agent)
 	}
 	if command := req.Extra.Header.Get(agentclient.CommandHeader); command != "" {
@@ -71,4 +72,14 @@ func attributionProperties(_ context.Context, req *mcp.CallToolRequest, _ *mcp.C
 		return nil, nil
 	}
 	return props, nil
+}
+
+func mcpAgent(h http.Header) string {
+	if agent := agentclient.Normalize(h.Get(agentclient.Header)); agent != "" {
+		return agent
+	}
+	if agent, ok := agentclient.FromUserAgent(h.Get("User-Agent")); ok {
+		return agent
+	}
+	return ""
 }
