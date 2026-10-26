@@ -131,6 +131,7 @@ func (s *service) getWorkflowSteps(ctx *gin.Context, orgID, workflowID string) (
 			return gdb.Omit("contents")
 		}).
 		Preload("Approval.Response").
+		Preload("Approval.Response.CreatedBy").
 		Preload("PolicyValidation").
 		Order("group_idx, group_retry_idx, idx, created_at asc").
 		Find(&steps)
