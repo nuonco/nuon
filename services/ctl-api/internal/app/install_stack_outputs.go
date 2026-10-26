@@ -264,6 +264,11 @@ func (a *InstallStackOutputs) HasAzureOperationIdentities() bool {
 	return ok
 }
 
+func (a *InstallStackOutputs) HasGCPOperationIdentities() bool {
+	_, ok := a.Data["maintenance_sa_email"]
+	return ok
+}
+
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
