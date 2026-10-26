@@ -2,13 +2,18 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 
 	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
 	"github.com/nuonco/nuon/bins/cli/internal/telemetry"
@@ -63,6 +68,7 @@ func Execute() {
 		rootCmd,
 		fang.WithColorSchemeFunc(fang.AnsiColorScheme),
 		fang.WithoutVersion(),
+		fang.WithErrorHandler(fangErrorHandler),
 	)
 
 	telemetry.Send(c.cfg, err == nil, time.Since(start))
@@ -74,4 +80,41 @@ func Execute() {
 	if err != nil {
 		os.Exit(2)
 	}
+}
+
+// fangErrorHandler matches fang's default box without the period fang appends
+// to every error.
+func fangErrorHandler(w io.Writer, styles fang.Styles, err error) {
+	if f, ok := w.(interface{ Fd() uintptr }); ok && !term.IsTerminal(int(f.Fd())) {
+		fmt.Fprintln(w, err.Error())
+		return
+	}
+	fmt.Fprintln(w, styles.ErrorHeader.String())
+	fmt.Fprintln(w, styles.ErrorText.Render(err.Error()))
+	fmt.Fprintln(w)
+	if fangUsageError(err) {
+		fmt.Fprintln(w, lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			styles.ErrorText.UnsetWidth().Render("Try"),
+			styles.Program.Flag.Render(" --help "),
+			styles.ErrorText.UnsetWidth().UnsetMargins().UnsetTransform().Render("for usage."),
+		))
+		fmt.Fprintln(w)
+	}
+}
+
+func fangUsageError(err error) bool {
+	message := err.Error()
+	for _, prefix := range []string{
+		"flag needs an argument:",
+		"unknown flag:",
+		"unknown shorthand flag:",
+		"unknown command",
+		"invalid argument",
+	} {
+		if strings.HasPrefix(message, prefix) {
+			return true
+		}
+	}
+	return false
 }

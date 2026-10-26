@@ -75,11 +75,7 @@ export const DeployHeader = ({
             componentId={deploy?.component_id}
             deployId={deploy?.id}
           />
-          <ManagementDropdown
-            component={component}
-            currentBuildId={deploy?.build_id}
-            workflow={workflow}
-          />
+          <ManagementDropdown component={component} workflow={workflow} />
         </>
       }
       metadata={
@@ -107,7 +103,12 @@ export const DeployHeader = ({
             />
           </LabeledValue>
           <LabeledValue label="Install">
-            <Link href={installLink({ orgId: install?.org_id, installId: install?.id })}>
+            <Link
+              href={installLink({
+                orgId: install?.org_id,
+                installId: install?.id,
+              })}
+            >
               {install?.name}
             </Link>
           </LabeledValue>
@@ -118,7 +119,11 @@ export const DeployHeader = ({
               appId={component?.app_id}
             >
               <Link
-                href={installLink({ orgId: install?.org_id, installId: install?.id, suffix: `/components/${component?.id}` })}
+                href={installLink({
+                  orgId: install?.org_id,
+                  installId: install?.id,
+                  suffix: `/components/${component?.id}`,
+                })}
               >
                 {component?.name}
               </Link>
@@ -149,7 +154,11 @@ export const DeployHeader = ({
             <LabeledValue label="Execution role">
               <Text variant="subtext" family="mono" className="text-xs">
                 <Link
-                  href={installLink({ orgId: install?.org_id, installId: install?.id, suffix: `/roles?panel=${executionRole.install_role_id}` })}
+                  href={installLink({
+                    orgId: install?.org_id,
+                    installId: install?.id,
+                    suffix: `/roles?panel=${executionRole.install_role_id}`,
+                  })}
                   variant="inline"
                 >
                   {executionRole.role_name}
@@ -162,7 +171,11 @@ export const DeployHeader = ({
     >
       {deploy?.install_workflow_id ? (
         <Button
-          href={installLink({ orgId: install?.org_id, installId: install?.id, suffix: `/history/${workflow?.id}?panel=${stepId}` })}
+          href={installLink({
+            orgId: install?.org_id,
+            installId: install?.id,
+            suffix: `/history/${workflow?.id}?panel=${stepId}`,
+          })}
         >
           View workflow
         </Button>

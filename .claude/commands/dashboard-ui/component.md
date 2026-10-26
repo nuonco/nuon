@@ -3,6 +3,8 @@ name: dashboard-ui:component
 description: Use when adding or using a UI component in the dashboard-ui client/ SPA
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 This skill enforces checking existing components before creating new ones, using the container/component pattern, and including Ladle stories.
 
 ## Steps
@@ -40,11 +42,11 @@ export { MyComponent as MyComponentComponent } from './MyComponent'
 
 ## Ladle Stories (Required)
 
-Every component directory must include a `.stories.tsx` file. Stories use **Ladle v5** format — NOT Storybook.
+A new component, and any reusable component you change, includes or updates a `.stories.tsx` in the same change. Stories use **Ladle v5** format — NOT Storybook. Titles use the roots in `AGENTS.md`: `UI`, `Features`, `Views`, `Playground`.
 
 ```tsx
 // ✅ Correct
-export default { title: 'Domain/MyComponent' }
+export default { title: 'Features / Installs / My component' }
 import { MyComponent } from './MyComponent'
 export const Default = () => <MyComponent items={mockItems} />
 ```
@@ -105,7 +107,7 @@ Never hand-assemble a heading row. Two components own it; pick with one question
 1. **`DetailHeader`** — the header carries a resource ID, `BackLink`, label badges, a status chip, timestamps, or a metadata block → it is an **identity header**. Metadata goes in its `metadata` slot, which renders a `Card` of `LabeledValue`/`LabeledStatus` below the heading row — never an inline top-right block, and no value-count threshold.
 2. **`SectionHeader`** — the heading just names what you're looking at ("Components", "Install state", "Processes"). `variant="page"` at the top of a route tree, `variant="section"` (default) inside a `PageSection`.
 
-`DetailHeader` renders `SectionHeader`'s row internally, so the heading row is identical either way. A resource's `*Header` feature component (e.g. `DeployHeader`, `BuildHeader`) is a thin wrapper that fills `DetailHeader`'s slots from domain data — it never re-implements the row. Pair it with `DetailPage` (shell + banners + routed `TabNav`) and, on entity pages, `HistoryRail` + `HistoryPanelButton`.
+`DetailHeader` renders `SectionHeader`'s row internally, so the heading row is identical either way. A resource's `*Header` feature component (e.g. `DeployHeader`, `BuildHeader`) is a thin wrapper that fills `DetailHeader`'s slots from domain data — it never re-implements the row. Pair it with `DetailPage` (shell + banners + routed `TabNav`) and, on entity pages, `HistoryPanelButton`. History stays off the page body.
 
 ## Collection bodies & drill-down (`Table` / `Timeline` / `Cards`)
 
@@ -209,7 +211,7 @@ The `Button` owns its tooltip via `tooltipProps` (`Omit<ITooltip, 'children'>`).
 - **Do not** use `ModalBase` or `PanelBase` directly — always use the `Modal`/`Panel` wrappers from `surfaces/`
 - **Do not** put a domain-specific component (e.g., `InstallCard`) into `client/components/common/`
 - **Do not** leave both a flat file and directory with the same name — delete the flat file after migrating to the directory pattern
-- **Do not** skip the `.stories.tsx` file — every component directory must have one
+- **Do not** add or change a reusable component without updating its `.stories.tsx` in the same change
 - **Do not** use `StoryObj` or `render:` in stories — Ladle v5 requires plain function exports
 - **Do not** import icons directly from `@phosphor-icons/react` — always use the `Icon` component
 - **Do not** put a text-size class, a sizing `Text` wrapper, a trailing `CaretRightIcon`/`ArrowRightIcon`, or a manual `ArrowSquareOutIcon` on a `Link` — the default self-sizes at subtext (`textVariant` to override), `variant="inline"` inherits in sized contexts, and external links get their new-tab icon from `isExternal`

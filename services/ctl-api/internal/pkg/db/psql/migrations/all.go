@@ -259,5 +259,13 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "147-install-states-unarchived-index",
 			Fn:   m.Migration147InstallStatesUnarchivedIndex,
 		},
+		migrations.Migration{
+			Name: "148-drop-device-codes",
+			Fn:   m.Migration148DropDeviceCodes,
+		},
+		migrations.Migration{
+			Name: "149-backfill-phone-home-roles",
+			Fn:   m.Migration148BackfillPhoneHomeRoles,
+		},
 	)
 }

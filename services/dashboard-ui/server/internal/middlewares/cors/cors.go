@@ -1,6 +1,8 @@
 package cors
 
 import (
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -24,9 +26,13 @@ func (m *middleware) Name() string {
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
+	allowed := ""
+	if m.cfg != nil {
+		allowed = originOf(m.cfg.AppUrl)
+	}
 	return cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			return true
+			return allowed != "" && originOf(origin) == allowed
 		},
 		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{
@@ -41,4 +47,14 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	})
+}
+
+// originOf returns scheme://host for a URL or Origin header. A path is ignored.
+// An empty or invalid value returns "" so the caller allows nothing.
+func originOf(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return ""
+	}
+	return u.Scheme + "://" + strings.ToLower(u.Host)
 }

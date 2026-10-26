@@ -118,7 +118,7 @@ func (s *service) validateToken(tokenValue string) (*TokenInfo, error) {
 
 	var token app.Token
 	err := s.db.
-		Where(&app.Token{Token: tokenValue}).
+		Where(&app.Token{Token: tokenValue, TokenType: app.TokenTypeNuon}).
 		First(&token).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
