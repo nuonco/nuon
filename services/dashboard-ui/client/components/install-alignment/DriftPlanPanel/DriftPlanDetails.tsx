@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Divider } from '@/components/common/Divider'
 import { Icon } from '@/components/common/Icon'
@@ -157,7 +158,7 @@ export const DriftPlanDetails = ({
             tooltipProps={
               resolveDisabled
                 ? {
-                    tipContent: 'Load and review the plan before approving it.',
+                    tipContent: 'Load and review the plan before approving it',
                   }
                 : undefined
             }
@@ -169,19 +170,19 @@ export const DriftPlanDetails = ({
               : 'Approve plan and resolve drift'}
           </Button>
           <Text variant="subtext" theme="neutral">
-            Starts a new deployment for this resource. Its fresh plan is
-            approved automatically only if it is identical to this plan. If the
-            plan changed, the deployment waits for your review.
+            Starts a fresh deployment and reuses this approval only for an
+            identical plan. Changed plans follow the install’s approval
+            settings, and policy denials still block deployment.
           </Text>
         </div>
       ) : null}
       {resolveError ? (
-        <div role="alert">
-          <Text variant="subtext" theme="error">
-            Unable to resolve drift.{' '}
+        <Banner theme="error" role="alert">
+          <Text variant="subtext">
+            Drift resolution failed.{' '}
             {resolveError.description || resolveError.error}
           </Text>
-        </div>
+        </Banner>
       ) : null}
     </div>
   )

@@ -22,10 +22,16 @@ export const Degraded = () => page('degraded')
 const aligned = (
   suffix: string,
   alignment: Parameters<typeof resourcesFixture>[1],
-  managedByConfig = false
+  managedByConfig = false,
+  resolutionScenario?: Parameters<typeof resourcesFixture>[3]
 ) => (
   <InstallView
-    fixture={resourcesFixture('active', alignment, managedByConfig)}
+    fixture={resourcesFixture(
+      'active',
+      alignment,
+      managedByConfig,
+      resolutionScenario
+    )}
     path={viewPath(suffix)}
   />
 )
@@ -61,3 +67,10 @@ export const ImagesAlignmentUnavailable = () =>
   aligned('/resources/images', 'unavailable')
 export const AlignmentLoadFailed = () =>
   aligned('/resources/components', 'error')
+
+export const ResolveChangedPlan = () =>
+  aligned('/resources/components', 'drifted', false, 'changed-plan')
+export const ResolveAutoApproved = () =>
+  aligned('/resources/components', 'drifted', false, 'auto-approved')
+export const ResolvePolicyDenied = () =>
+  aligned('/resources/components', 'drifted', false, 'policy-denied')

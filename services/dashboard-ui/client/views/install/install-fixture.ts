@@ -11,6 +11,7 @@ export type TFixtureReply = {
   status?: number
   pending?: boolean
   delayMs?: number
+  sseEvent?: string
 }
 
 export type TFixture = (
@@ -40,7 +41,7 @@ const json = (
   return new Response(JSON.stringify(body), { status, headers })
 }
 
-class StoryEventSource {
+class StoryEventSource extends EventTarget {
   static CONNECTING = 0
   static OPEN = 1
   static CLOSED = 2
@@ -49,21 +50,36 @@ class StoryEventSource {
   onerror: ((event: Event) => void) | null = null
   onmessage: ((event: MessageEvent) => void) | null = null
   url: string
+  private timer: ReturnType<typeof setInterval>
 
   constructor(url: string) {
+    super()
     this.url = url
+    const fixture = current
+    this.timer = setInterval(() => {
+      if (fixture !== current) {
+        this.close()
+        return
+      }
+      const reply = fixture?.(new URL(url, window.location.origin), undefined)
+      if (reply?.sseEvent) {
+        this.dispatchEvent(
+          new MessageEvent(reply.sseEvent, {
+            data: JSON.stringify(reply.body),
+          })
+        )
+      }
+    }, 1000)
     queueMicrotask(() => {
-      this.onopen?.(new Event('open'))
+      if (this.readyState === StoryEventSource.OPEN) {
+        this.onopen?.(new Event('open'))
+      }
     })
   }
 
-  addEventListener() {}
-  removeEventListener() {}
   close() {
+    clearInterval(this.timer)
     this.readyState = StoryEventSource.CLOSED
-  }
-  dispatchEvent() {
-    return true
   }
 }
 
@@ -101,14 +117,12 @@ export const beginInstallFixture = (fixture: TFixture) => {
         await new Promise((resolve) => setTimeout(resolve, reply.delayMs))
       }
       if (reply) return json(reply.body, reply.paginated, reply.status ?? 200)
-      if (isApi) {
-        misses.push(`${init?.method ?? 'GET'} ${url.pathname}${url.search}`)
-        return json(
-          { error: 'fixture miss', description: url.pathname },
-          false,
-          404
-        )
-      }
+      misses.push(`${init?.method ?? 'GET'} ${url.pathname}${url.search}`)
+      return json(
+        { error: 'fixture miss', description: url.pathname },
+        false,
+        404
+      )
     }
     return restoreFetch!(input, init)
   }) as typeof window.fetch

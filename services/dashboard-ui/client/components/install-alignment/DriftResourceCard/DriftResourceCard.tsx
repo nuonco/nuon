@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import type { TCollectionView } from '@/components/common/CollectionViewToggle'
@@ -213,19 +214,23 @@ export const DriftResourceCard = ({
               aria-busy={resolving}
             >
               <Icon variant={resolving ? 'Loading' : 'PlayIcon'} size={16} />
-              {resolving ? 'Starting deployment' : 'Resolve drift'}
+              {resolving
+                ? isImage
+                  ? 'Starting sync'
+                  : 'Starting deployment'
+                : 'Resolve drift'}
             </Button>
           ) : null}
         </div>
       </div>
 
       {resolveError ? (
-        <div role="alert">
-          <Text variant="subtext" theme="error">
-            Unable to resolve drift.{' '}
+        <Banner theme="error" role="alert">
+          <Text variant="subtext">
+            Drift resolution failed.{' '}
             {resolveError.description || resolveError.error}
           </Text>
-        </div>
+        </Banner>
       ) : null}
 
       <Expand

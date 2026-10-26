@@ -89,11 +89,11 @@ export const useResolveInstallDrift = () => {
       }
       const workflowId = result?.workflow_id
       addToast(
-        <Toast
-          heading={`Resolving drift for ${input.resource.name}`}
-          theme="success"
-        >
-          <Text>Opening the deployment for this resource.</Text>
+        <Toast heading="Resolving drift" theme="info">
+          <Text>
+            Resolving drift for <Text family="mono">{input.resource.name}</Text>
+            . This may take a few minutes.
+          </Text>
         </Toast>
       )
       navigate(
