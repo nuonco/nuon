@@ -21,6 +21,7 @@ func GetRoleForDeploy(
 	installState *state.State,
 	flw *app.Workflow,
 	legacyAzureRoleFallback bool,
+	legacyGCPRoleFallback bool,
 ) (*RoleSelection, app.OperationType, error) {
 	operation := app.OperationDeploy
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
@@ -44,6 +45,7 @@ func GetRoleForDeploy(
 		InstallState: installState,
 
 		LegacyAzureRoleFallback: legacyAzureRoleFallback,
+		LegacyGCPRoleFallback:   legacyGCPRoleFallback,
 	}
 
 	roleSelection, err := SelectRole(selectionCtx, l)
@@ -86,6 +88,7 @@ func GetRoleForSandbox(
 	stack *app.InstallStack,
 	installState *state.State,
 	legacyAzureRoleFallback bool,
+	legacyGCPRoleFallback bool,
 ) (*RoleSelection, app.OperationType, error) {
 	var operation app.OperationType
 	switch run.RunType {
@@ -119,6 +122,7 @@ func GetRoleForSandbox(
 		InstallState: installState,
 
 		LegacyAzureRoleFallback: legacyAzureRoleFallback,
+		LegacyGCPRoleFallback:   legacyGCPRoleFallback,
 	}
 
 	roleSelection, err := SelectRole(selectionCtx, l)
@@ -162,6 +166,7 @@ func GetRoleForAction(
 	installState *state.State,
 	flw *app.Workflow,
 	legacyAzureRoleFallback bool,
+	legacyGCPRoleFallback bool,
 ) (*RoleSelection, app.OperationType, error) {
 	operation := app.OperationTrigger
 
@@ -193,6 +198,7 @@ func GetRoleForAction(
 		InstallState:   installState,
 
 		LegacyAzureRoleFallback: legacyAzureRoleFallback,
+		LegacyGCPRoleFallback:   legacyGCPRoleFallback,
 	}
 
 	roleSelection, err := SelectRole(selectionCtx, l)
