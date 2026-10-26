@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
-	"time"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 )
 
@@ -48,13 +46,8 @@ func RenderV2(inputVal string, data map[string]interface{}) (string, error) {
 		return inputVal, nil
 	}
 
-	funcMap := template.FuncMap{
-		"now": time.Now,
-	}
-
 	temp, err := template.New("input").
-		Funcs(funcMap).
-		Funcs(sprig.FuncMap()).
+		Funcs(HTMLFuncMap()).
 		Option("missingkey=error").
 		Parse(inputVal)
 	if err != nil {
