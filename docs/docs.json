@@ -256,7 +256,9 @@
             "group": "Start Safely",
             "pages": [
               "guides/agents/overview",
-              "guides/agents/setup"
+              "guides/agents/five-minute-quickstart",
+              "guides/agents/setup",
+              "guides/agents/safety-and-permissions"
             ]
           },
           {
