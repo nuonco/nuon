@@ -270,18 +270,17 @@
             ]
           },
           {
-            "group": "Agents",
-            "expanded": true,
+            "group": "Build",
             "pages": [
-              {
-                "group": "MCP",
-                "expanded": true,
-                "pages": [
-                  "guides/agents/tools"
-                ]
-              },
-              "guides/agents/skills",
-              "guides/agents/ai-and-apps"
+              "guides/agents/ai-and-apps",
+              "guides/agents/skills"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "guides/agents/tools",
+              "guides/agents/troubleshooting"
             ]
           }
         ]
