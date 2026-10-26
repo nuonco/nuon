@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
-	"time"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 )
 
@@ -43,13 +41,8 @@ func ValidateTextTemplate(inputVal string) error {
 }
 
 func newTextTemplate(inputVal string) (*template.Template, error) {
-	funcMap := template.FuncMap{
-		"now": time.Now,
-	}
-
 	return template.New("input").
-		Funcs(funcMap).
-		Funcs(sprig.TxtFuncMap()).
+		Funcs(TxtFuncMap()).
 		Option("missingkey=error").
 		Parse(inputVal)
 }
