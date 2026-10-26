@@ -85,18 +85,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 func (h *handler) buildKustomization(kustomizePath string) ([]byte, error) {
 	opts := krusty.MakeDefaultOptions()
+	// Builds run on the shared control-plane worker; an app-controlled restrictor would let
+	// kustomize read worker files (service-account tokens, /proc/self/environ) into the artifact.
+	opts.LoadRestrictions = types.LoadRestrictionsRootOnly
 
-	if h.state.cfg.KustomizeConfig != nil {
-		switch h.state.cfg.KustomizeConfig.LoadRestrictor {
-		case "none":
-			opts.LoadRestrictions = types.LoadRestrictionsNone
-		default:
-			opts.LoadRestrictions = types.LoadRestrictionsRootOnly
-		}
-
-		if h.state.cfg.KustomizeConfig.EnableHelm {
-			opts.PluginConfig.HelmConfig.Enabled = true
-		}
+	if h.state.cfg.KustomizeConfig != nil && h.state.cfg.KustomizeConfig.EnableHelm {
+		opts.PluginConfig.HelmConfig.Enabled = true
 	}
 
 	k := krusty.MakeKustomizer(opts)
