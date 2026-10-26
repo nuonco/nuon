@@ -60,6 +60,7 @@ func (s *service) getWorkflowStepGroups(ctx *gin.Context, orgID, workflowID stri
 			return db.Omit("contents")
 		}).
 		Preload("Steps.Approval.Response").
+		Preload("Steps.Approval.Response.CreatedBy").
 		Order("group_idx asc").
 		Find(&groups)
 	if res.Error != nil {
