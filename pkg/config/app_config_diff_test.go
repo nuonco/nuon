@@ -1236,6 +1236,102 @@ func (s *AppConfigDiffSuite) TestStackChanges() {
 	s.Equal(diff.OpAdd, eks.Diff.Op)
 }
 
+// --- Test: same-repo connected_repo branch overrides are not real changes ---
+
+// terraformModuleWithConnectedRepo returns a component whose connected_repo
+// points at repo/branch, mirroring what ctl-api's config sync stores after
+// branch_override.go runs: every component whose connected_repo resolves to
+// the branch's own repo gets its branch field overwritten with whatever
+// branch is currently being built, regardless of whether the component's own
+// file was touched.
+func terraformModuleWithConnectedRepo(name, repo, branch string) *Component {
+	return &Component{
+		Name: name,
+		Type: TerraformModuleComponentType,
+		TerraformModule: &TerraformModuleComponentConfig{
+			TerraformVersion: "1.11.3",
+			ConnectedRepo: &ConnectedRepoConfig{
+				Repo:      repo,
+				Directory: "src/components/" + name,
+				Branch:    branch,
+			},
+		},
+	}
+}
+
+func configWithBranchRepo(repo string, components ...*Component) *AppConfig {
+	cfg := baseConfig()
+	cfg.Branch = &AppBranchConfig{
+		Name: "main",
+		ConnectedRepo: &ConnectedRepoConfig{
+			Repo:      repo,
+			Directory: ".",
+			Branch:    "main",
+		},
+	}
+	cfg.Components = components
+	return cfg
+}
+
+// TestSameRepoConnectedRepoBranchOverrideIsNotAChange reproduces the reported
+// bug: a component whose connected_repo points back at the app branch's own
+// repo (e.g. a Helm chart/module bundled in the same repo) is unmodified in a
+// PR, but ctl-api's branch_override.go still bakes the PR's branch name into
+// its stored connected_repo.branch. Diffing the base config (branch override
+// -> "main") against the head config (branch override -> the PR branch)
+// should not report this as a change.
+func (s *AppConfigDiffSuite) TestSameRepoConnectedRepoBranchOverrideIsNotAChange() {
+	old := configWithBranchRepo("nuonco/byoc",
+		terraformModuleWithConnectedRepo("app_nodepools", "nuonco/byoc", "main"))
+	new := configWithBranchRepo("nuonco/byoc",
+		terraformModuleWithConnectedRepo("app_nodepools", "nuonco/byoc", "jm/gcp-backend-security-policy"))
+
+	d := new.Diff(old)
+	s.False(d.Summary().HasChanged, "unedited same-repo component should not show as changed: %s", d.FormatChanged(""))
+}
+
+// TestDifferentRepoConnectedRepoBranchChangeIsReal is the control case: a
+// component sourced from a different repo than the branch's own repo is
+// never touched by branch_override.go, so an actual branch edit there must
+// still surface normally.
+func (s *AppConfigDiffSuite) TestDifferentRepoConnectedRepoBranchChangeIsReal() {
+	old := configWithBranchRepo("nuonco/byoc",
+		terraformModuleWithConnectedRepo("shared_module", "nuonco/other-repo", "v1"))
+	new := configWithBranchRepo("nuonco/byoc",
+		terraformModuleWithConnectedRepo("shared_module", "nuonco/other-repo", "v2"))
+
+	d := new.Diff(old)
+	s.True(d.Summary().HasChanged)
+	components := findChild(d, "components")
+	s.Require().NotNil(components)
+	comp := findChild(components, "component.shared_module")
+	s.Require().NotNil(comp)
+	s.Equal(diff.OpChange, comp.Diff.Op)
+}
+
+// TestSameRepoConnectedRepoDirectoryChangeIsReal checks that normalizing the
+// branch-override noise doesn't also hide a genuine edit to the same
+// component (e.g. its directory), when the component is otherwise sourced
+// from the branch's own repo.
+func (s *AppConfigDiffSuite) TestSameRepoConnectedRepoDirectoryChangeIsReal() {
+	old := terraformModuleWithConnectedRepo("app_nodepools", "nuonco/byoc", "main")
+	old.TerraformModule.ConnectedRepo.Directory = "src/components/app_nodepools_old"
+	oldCfg := configWithBranchRepo("nuonco/byoc", old)
+	newCfg := configWithBranchRepo("nuonco/byoc",
+		terraformModuleWithConnectedRepo("app_nodepools", "nuonco/byoc", "jm/gcp-backend-security-policy"))
+
+	d := newCfg.Diff(oldCfg)
+	s.True(d.Summary().HasChanged)
+	components := findChild(d, "components")
+	s.Require().NotNil(components)
+	comp := findChild(components, "component.app_nodepools")
+	s.Require().NotNil(comp)
+	connectedRepo := findChild(comp, "connected_repo")
+	s.Require().NotNil(connectedRepo)
+	s.Contains(connectedRepo.FormatChanged(""), "directory:")
+	s.NotContains(connectedRepo.FormatChanged(""), "branch:")
+}
+
 // --- Helpers ---
 
 // findChild searches for a child with the given key in a diff tree (one level deep).
