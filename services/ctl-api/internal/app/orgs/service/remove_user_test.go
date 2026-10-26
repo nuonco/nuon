@@ -109,6 +109,34 @@ func (s *RemoveUserTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+
+	// The integration database is shared and not truncated. An unrelated managed
+	// service account must not change the result of a call with an empty user id.
+	managedID := domains.NewAccountID()
+	managed := &app.Account{
+		ID:          managedID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", managedID),
+		Subject:     "managed-" + managedID,
+		AccountType: app.AccountTypeService,
+	}
+	err := s.service.DB.Create(managed).Error
+	require.NoError(s.T(), err)
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.ManagedServiceAccount{}, "account_id = ?", managedID)
+		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", managedID)
+	})
+
+	ctx = cctx.SetAccountContext(ctx, s.testAcc)
+	err = s.service.DB.WithContext(ctx).Create(&app.ManagedServiceAccount{
+		AccountID:   managedID,
+		CreatedByID: s.testAcc.ID,
+		OrgID:       s.testOrg.ID,
+		OwnerType:   "install",
+		OwnerID:     domains.NewAccountID(),
+		Purpose:     app.ManagedServiceAccountPurposeStack,
+		InstanceKey: managedID,
+	}).Error
+	require.NoError(s.T(), err)
 }
 
 func (s *RemoveUserTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
