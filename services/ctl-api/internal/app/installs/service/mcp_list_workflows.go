@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type mcpListWorkflowsInput struct {
@@ -27,6 +28,7 @@ func (s *service) mcpListWorkflows(ctx context.Context, _ *mcp.CallToolRequest, 
 	if err != nil {
 		return nil, nil, err
 	}
+	ctx = cctx.SetInstallIDContext(ctx, in.InstallID)
 
 	var workflows []app.Workflow
 	err = s.db.WithContext(ctx).

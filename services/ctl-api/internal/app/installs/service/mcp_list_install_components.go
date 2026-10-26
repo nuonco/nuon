@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -56,6 +57,7 @@ func (s *service) mcpListInstallComponents(ctx context.Context, _ *mcp.CallToolR
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find install %q: %w", in.Install, err)
 	}
+	ctx = cctx.SetInstallIDContext(ctx, install.ID)
 
 	var components []app.InstallComponent
 	err = s.db.WithContext(ctx).

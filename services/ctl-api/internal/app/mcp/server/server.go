@@ -223,6 +223,8 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 	})
 	server.AddReceivingMiddleware(s.receivingMetricsMiddleware, s.loggingMiddleware)
 	s.instrumentPostHog(server)
+	// Added last so it wraps PostHog and the handler shares the install-id slot.
+	server.AddReceivingMiddleware(s.installIDMiddleware)
 
 	for _, svc := range s.mcpServices {
 		svc.RegisterMCPTools(server)

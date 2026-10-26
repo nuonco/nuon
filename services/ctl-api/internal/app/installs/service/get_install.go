@@ -114,6 +114,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		return nil, fmt.Errorf("unable to get drifted objects: %w", res.Error)
 	}
 	install.DriftedObjects = driftedObj
+	ctx = cctx.SetInstallIDContext(ctx, install.ID)
 
 	return &install, nil
 }

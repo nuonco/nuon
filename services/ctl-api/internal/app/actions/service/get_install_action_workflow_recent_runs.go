@@ -104,6 +104,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
+	ctx = cctx.SetInstallIDContext(ctx, install.ID)
 
 	return &install, nil
 }

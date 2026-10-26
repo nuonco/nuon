@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type mcpRejectStepInput struct {
@@ -34,6 +35,7 @@ func (s *service) mcpRejectStep(ctx context.Context, _ *mcp.CallToolRequest, in 
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find approval %q: %w", in.ApprovalID, err)
 	}
+	ctx = cctx.SetInstallIDContext(ctx, s.mcpWorkflowInstallID(ctx, orgID, approval.InstallWorkflowStep.InstallWorkflowID))
 
 	if approval.Response != nil {
 		return nil, nil, fmt.Errorf("approval already has a response")

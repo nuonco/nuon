@@ -24,7 +24,7 @@ func (c *client) CreateVCSConnectionCallback(ctx context.Context, req *models.Se
 	resp, err := c.genClient.Operations.CreateVCSConnectionCallback(&operations.CreateVCSConnectionCallbackParams{
 		Req:     req,
 		Context: ctx,
-	})
+	}, c.getOrgIDAuthInfo())
 	if err != nil {
 		return nil, err
 	}

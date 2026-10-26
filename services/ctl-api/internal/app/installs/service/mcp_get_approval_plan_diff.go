@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type mcpGetApprovalPlanDiffInput struct {
@@ -56,6 +57,7 @@ func (s *service) mcpGetApprovalPlanDiff(ctx context.Context, _ *mcp.CallToolReq
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find approval %q: %w", in.ApprovalID, err)
 	}
+	ctx = cctx.SetInstallIDContext(ctx, s.mcpWorkflowInstallID(ctx, orgID, approval.InstallWorkflowStep.InstallWorkflowID))
 
 	contents, _ := approval.GetContents(ctx, s.cfg.BlobReadEnabled)
 	built, err := buildApprovalPlanDiff(approval.Type, contents, in.Action, in.Search)

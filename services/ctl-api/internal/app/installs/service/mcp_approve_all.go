@@ -33,6 +33,7 @@ func (s *service) mcpApproveAll(ctx context.Context, _ *mcp.CallToolRequest, in 
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find workflow %q: %w", in.WorkflowID, err)
 	}
+	noteMCPInstallWorkflow(ctx, workflow)
 	if err := mcpApproveAllGate(workflow); err != nil {
 		return nil, nil, err
 	}

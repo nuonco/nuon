@@ -34,6 +34,7 @@ func (s *service) mcpCancelWorkflow(ctx context.Context, _ *mcp.CallToolRequest,
 		First(&wf).Error; err != nil {
 		return nil, nil, fmt.Errorf("unable to find workflow %q: %w", in.WorkflowID, err)
 	}
+	noteMCPInstallWorkflow(ctx, wf)
 
 	if !generics.SliceContains(wf.Status.Status, []app.Status{
 		app.StatusInProgress,

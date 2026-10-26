@@ -41,6 +41,7 @@ func (s *service) mcpGetDeployLogs(ctx context.Context, _ *mcp.CallToolRequest, 
 		First(&deploy).Error; err != nil {
 		return nil, nil, fmt.Errorf("unable to find deploy %q: %w", in.DeployID, err)
 	}
+	s.noteMCPInstallForDeploy(ctx, orgID, deploy)
 
 	logStreamID, err := s.resolveOwnerLogStream(ctx, orgID, "install_deploys", deploy.ID)
 	if err != nil {
