@@ -1,6 +1,7 @@
-import { createContext, useState, useCallback } from 'react'
+import { createContext, useState, useCallback, useEffect } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getMe } from '@/lib/ctl-api/auth/get-me'
+import { syncMarketingConsent } from '@/lib/marketing-consent'
 import { isNuonSession } from '@/utils/session-utils'
 import type { IUser, TMe } from '@/types'
 
@@ -50,6 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return next
     })
   }, [])
+
+  useEffect(() => {
+    if (me?.id) syncMarketingConsent()
+  }, [me?.id])
 
   const user = me ? meToUser(me) : null
   const isNuonEmployee = !!user && isNuonSession(user)
