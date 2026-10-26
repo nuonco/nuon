@@ -264,6 +264,14 @@ func (a *InstallStackOutputs) HasAzureOperationIdentities() bool {
 	return ok
 }
 
+// HasGCPOperationIdentities reports whether the GCP stack reports per-operation
+// service accounts. Stacks created before they were introduced omit the keys
+// entirely, while newer stacks report an empty ID for a disabled role.
+func (a *InstallStackOutputs) HasGCPOperationIdentities() bool {
+	_, ok := a.Data["maintenance_sa_email"]
+	return ok
+}
+
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{

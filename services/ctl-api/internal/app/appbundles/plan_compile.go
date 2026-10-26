@@ -709,7 +709,7 @@ func compileActionTemplates(cfg *app.AppConfig, planner *planpkg.Planner, l *zap
 		for _, stepCfg := range actionCfg.Steps {
 			run.Steps = append(run.Steps, app.InstallActionWorkflowRunStep{ID: virtualID("vast", actionCfg.ID+":"+stepCfg.ID), Step: stepCfg})
 		}
-		role, _, err := operationroles.GetRoleForAction(l, cfg, run, stack, st, nil, false)
+		role, _, err := operationroles.GetRoleForAction(l, cfg, run, stack, st, nil, false, false)
 		if err != nil {
 			return nil, fmt.Errorf("select role for action %s: %w", actionCfg.ActionWorkflowID, err)
 		}

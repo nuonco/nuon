@@ -214,6 +214,12 @@ func init() {
 	// operation defaults are unaffected.
 	config.RegisterDefault("use_legacy_maintenance_role_default", false)
 
+	// Let GCP installs whose install stack predates per-operation service
+	// accounts run deploys, sandbox runs, and actions as the runner's own
+	// identity instead of failing with "role not found in install stack
+	// outputs". Override with GCP_LEGACY_ROLE_FALLBACK=true.
+	config.RegisterDefault("gcp_legacy_role_fallback", false)
+
 	config.RegisterDefault("cors_allow_all_origins", false)
 }
 
@@ -622,6 +628,11 @@ type Config struct {
 	// UseLegacyMaintenanceRoleDefault keeps component and action defaults on
 	// maintenance instead of deriving them from the parent workflow type.
 	UseLegacyMaintenanceRoleDefault bool `config:"use_legacy_maintenance_role_default"`
+
+	// GCPLegacyRoleFallback lets GCP installs whose install stack predates
+	// per-operation service accounts run deploys, sandbox runs, and actions as
+	// the runner's own identity instead of failing role selection.
+	GCPLegacyRoleFallback bool `config:"gcp_legacy_role_fallback"`
 }
 
 func (c *Config) IsAWS() bool {
