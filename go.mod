@@ -35,7 +35,6 @@ require (
 	github.com/DataDog/dd-trace-go/v2 v2.8.1
 	github.com/Jeffail/gabs v1.4.0
 	github.com/Masterminds/semver/v3 v3.4.0
-	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/XSAM/otelsql v0.41.0
 	github.com/a-h/templ v0.3.977
@@ -273,6 +272,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
