@@ -20,7 +20,10 @@
                 {{end}}
 
                 {{if .Error}}
-                    <p class="text-sm text-red-600 dark:text-red-400 mb-8">{{.Error}}</p>
+                    <p class="text-sm text-red-600 dark:text-red-400 {{if .DocsURL}}mb-4{{else}}mb-8{{end}}">{{.Error}}</p>
+                    {{if .DocsURL}}
+                        <p class="text-sm mb-8"><a href="{{.DocsURL}}" target="_blank" rel="noopener noreferrer" class="font-semibold text-cool-grey-950 dark:text-cool-grey-50 underline hover:text-cool-grey-700 dark:hover:text-cool-grey-300">How to update the Nuon CLI</a></p>
+                    {{end}}
                 {{else}}
                     <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-8">An error occurred during authentication.</p>
                 {{end}}
