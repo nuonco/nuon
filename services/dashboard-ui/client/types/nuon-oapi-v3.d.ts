@@ -2127,13 +2127,6 @@ export interface paths {
      */
     get: operations["GenerateCLIInstallConfig"];
   };
-  "/v1/installs/{install_id}/generate-terraform-installer-config": {
-    /**
-     * generate a Terraform installer config
-     * @description Generate terraform configuration for an installer.
-     */
-    get: operations["GenerateTerraformInstallerConfig"];
-  };
   "/v1/installs/{install_id}/health/baseline": {
     /**
      * reset the install's health window
@@ -3312,8 +3305,8 @@ export interface paths {
   };
   "/v1/vcs/connection-callback": {
     /**
-     * public connection to create a vcs connection via a callback
-     * @description Handle VCS connection callback for OAuth flow.
+     * create a vcs connection from the github app install callback
+     * @description Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
      */
     post: operations["CreateVCSConnectionCallback"];
   };
@@ -4286,6 +4279,8 @@ export interface components {
       };
       helm_driver?: string;
       id?: string;
+      image_auto_update?: boolean;
+      image_id?: string;
       /** @description takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent. */
       init_script?: string;
       /** @description InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform. */
@@ -4441,6 +4436,11 @@ export interface components {
       org_id?: string;
       runner_nested_template_url?: string;
       type?: components["schemas"]["app.StackType"];
+      /**
+       * @description Column name matches GORM's default for this field. "UI" is treated as one
+       * word, so the column is uidefinition rather than ui_definition.
+       */
+      ui_definition?: components["schemas"]["config.UploadedUIDefinition"];
       updated_at?: string;
       vpc_nested_template_url?: string;
     };
@@ -4469,7 +4469,6 @@ export interface components {
       id?: string;
       location?: string;
       service_principal_app_id?: string;
-      service_principal_password?: string;
       subscription_id?: string;
       subscription_tenant_id?: string;
       updated_at?: string;
@@ -5300,8 +5299,11 @@ export interface components {
       install_id?: string;
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       org_id?: string;
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry_enabled?: boolean | null;
+      ui_definition?: components["schemas"]["config.UploadedUIDefinition"];
       updated_at?: string;
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
@@ -7459,6 +7461,13 @@ export interface components {
       patch_truncated?: boolean;
       path?: string;
     };
+    "config.UploadedUIDefinition": {
+      contents?: string;
+      contents_hash?: string;
+      path?: string;
+      source_url?: string;
+      status?: components["schemas"]["config.CustomNestedStackStatus"];
+    };
     "configs.ACRAppRegistration": {
       clientCertificateName?: string;
       clientID?: string;
@@ -7629,6 +7638,8 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
@@ -8719,6 +8730,8 @@ export interface components {
         [key: string]: string;
       };
       helm_driver?: components["schemas"]["app.AppRunnerConfigHelmDriverType"];
+      image_auto_update?: boolean;
+      image_id?: string;
       init_script_url?: string;
       instance_type?: string;
       /** @description PhoneHomeScriptURL overrides the phone-home Lambda source for this app. */
@@ -8948,6 +8961,8 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
@@ -10269,6 +10284,8 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
@@ -26167,56 +26184,6 @@ export interface operations {
     };
   };
   /**
-   * generate a Terraform installer config
-   * @description Generate terraform configuration for an installer.
-   */
-  GenerateTerraformInstallerConfig: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/octet-stream": string;
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
    * reset the install's health window
    * @description Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime.
    */
@@ -34637,8 +34604,8 @@ export interface operations {
     };
   };
   /**
-   * public connection to create a vcs connection via a callback
-   * @description Handle VCS connection callback for OAuth flow.
+   * create a vcs connection from the github app install callback
+   * @description Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
    */
   CreateVCSConnectionCallback: {
     /** @description Input */
