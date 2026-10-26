@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/driftresolution"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/driftresolution"
 )
 
 // LockInstallInputs serializes an install's inputs writers for the rest of the
