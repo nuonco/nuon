@@ -87,7 +87,7 @@ Two entry points:
 - **Explicit**: `nuon auth exchange-token` prints the exchanged token (table output prints only the
   token, for `export NUON_API_TOKEN=$(nuon auth exchange-token)`).
 
-Ambient token sources, in precedence order (`internal/oidctoken`):
+Ambient token sources, in precedence order (`sdks/auth/oidctoken`):
 
 1. `--oidc-token` flag (explicit command only)
 2. `NUON_OIDC_TOKEN` — a raw OIDC JWT
