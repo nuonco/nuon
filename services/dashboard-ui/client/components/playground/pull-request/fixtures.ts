@@ -182,6 +182,7 @@ export const mergedPullRequest: TPlaygroundPullRequest = {
 
 export const draftPullRequest: TPlaygroundPullRequest = {
   ...basePullRequest,
+  head_sha: '4c8de91b2a7f60d3e5c1908baf27d46e0b39a5c2',
   is_draft: true,
   config_status: 'ready-from-defaults',
   branch_preview_config: { ...completeBranchPreviewConfig, mode: 'build-only' },

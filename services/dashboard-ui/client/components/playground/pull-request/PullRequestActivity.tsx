@@ -9,8 +9,9 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
+import { Panel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { ImpactCell, pullRequestRunPanel } from './PullRequestRunsTable'
+import type { TAppBranchRunPreviewMode } from '@/types'
 import type {
   TPlaygroundPullRequest,
   TPlaygroundPullRequestRun,
@@ -21,6 +22,118 @@ const TRIGGER_LABEL: Record<TPlaygroundPullRequestRun['trigger'], string> = {
   push: 'Push',
   manual: 'Re-run',
 }
+
+const MODE_THEME: Record<TAppBranchRunPreviewMode, 'brand' | 'info' | 'neutral'> =
+  {
+    none: 'neutral',
+    apply: 'brand',
+    'plan-only': 'info',
+    'build-only': 'neutral',
+  }
+
+export const ImpactCell = ({ run }: { run: TPlaygroundPullRequestRun }) => {
+  if (run.mode === 'build-only') {
+    return (
+      <Text variant="subtext" theme="neutral">
+        {run.components_built} built
+      </Text>
+    )
+  }
+
+  if (run.status !== 'success') {
+    return (
+      <Text variant="subtext" theme="neutral">
+        —
+      </Text>
+    )
+  }
+
+  return (
+    <span className="flex items-center gap-1 whitespace-nowrap">
+      <Badge size="xs" theme="success">
+        +{run.added}
+      </Badge>
+      <Badge size="xs" theme="warn">
+        ~{run.changed}
+      </Badge>
+      <Badge size="xs" theme="error">
+        -{run.removed}
+      </Badge>
+    </span>
+  )
+}
+
+// A factory, not a component: SurfacesProvider clones whatever it is handed to
+// inject isVisible, so the Panel has to be the outermost element.
+export const pullRequestRunPanel = (
+  pullRequest: TPlaygroundPullRequest,
+  run: TPlaygroundPullRequestRun
+) => (
+  <Panel heading={`Preview run #${run.run_number}`} size="half">
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1">
+          <Text variant="subtext" theme="neutral">
+            Status
+          </Text>
+          <Status variant="default" status={run.status} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Text variant="subtext" theme="neutral">
+            Mode
+          </Text>
+          <Badge size="sm" theme={MODE_THEME[run.mode]}>
+            {previewModeDisplayLabel(run.mode)}
+          </Badge>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Text variant="subtext" theme="neutral">
+            Install
+          </Text>
+          <Text variant="subtext" family={run.install_name ? 'mono' : 'sans'}>
+            {run.install_name ?? 'Not used'}
+          </Text>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Text variant="subtext" theme="neutral">
+            Duration
+          </Text>
+          <Duration
+            variant="subtext"
+            beginTime={run.started_at}
+            endTime={run.completed_at}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Text variant="subtext" theme="neutral">
+          Commit
+        </Text>
+        <BranchRunCommit
+          showStatus={false}
+          sha={run.head_sha}
+          message={run.commit_message}
+          author={run.commit_author}
+          createdAt={run.started_at}
+          href={`${pullRequest.html_url}/commits/${run.head_sha}`}
+          isExternal
+        />
+      </div>
+
+      {run.error_message ? (
+        <div className="flex flex-col gap-2">
+          <Text variant="subtext" theme="neutral">
+            Error
+          </Text>
+          <pre className="whitespace-pre-wrap rounded-md border border-red-300 bg-red-50 p-3 font-mono text-xs text-red-800 dark:border-red-500/40 dark:bg-red-950 dark:text-red-500">
+            {run.error_message}
+          </pre>
+        </div>
+      ) : null}
+    </div>
+  </Panel>
+)
 
 const byNewest = (a: TPlaygroundPullRequestRun, b: TPlaygroundPullRequestRun) =>
   Date.parse(b.started_at) - Date.parse(a.started_at)
