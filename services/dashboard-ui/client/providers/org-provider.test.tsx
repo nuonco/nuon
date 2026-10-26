@@ -11,6 +11,8 @@ const setOrgSession = mock(() => {})
 mock.module('@/lib/cookies', () => ({
   clearOrgSession,
   setOrgSession,
+  getCookie: () => undefined,
+  setCookie: () => {},
 }))
 
 mock.module('@/lib/ctl-api/orgs', () => ({
