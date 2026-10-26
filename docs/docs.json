@@ -147,7 +147,7 @@
         "icon": "screwdriver-wrench",
         "groups": [
           {
-            "group": "Connect Your App",
+            "group": "Build an App",
             "boost": 3,
             "pages": [
               "guides/managing-apps",
@@ -176,7 +176,7 @@
             ]
           },
           {
-            "group": "Install with a Customer",
+            "group": "Deliver to Customers",
             "boost": 3,
             "pages": [
               "guides/vendor-customers",
@@ -192,7 +192,7 @@
             ]
           },
           {
-            "group": "Day 2 Operations",
+            "group": "Operate Installs",
             "boost": 3,
             "pages": [
               "guides/app-branches",
@@ -205,12 +205,11 @@
               "guides/configuring-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
-              "guides/manage-install-telemetry",
-              "guides/team-management"
+              "guides/manage-install-telemetry"
             ]
           },
           {
-            "group": "Integrations",
+            "group": "Automate and Integrate",
             "boost": 2,
             "pages": [
               "guides/control-plane-integration",
@@ -221,6 +220,13 @@
               "guides/export-runner-audit-logs",
               "guides/health-checks",
               "guides/slack"
+            ]
+          },
+          {
+            "group": "Administer Nuon",
+            "boost": 2,
+            "pages": [
+              "guides/team-management"
             ]
           },
           {
