@@ -417,8 +417,6 @@ func resolveRoleARN(
 		!installStackOutputs.HasAzureOperationIdentities() {
 		return "", nil
 	}
-	// Legacy GCP stacks have no per-operation service accounts; an empty ID makes
-	// the operation run as the runner's ambient identity.
 	if legacyGCPRoleFallback && ok && roleARN == "" && installStackOutputs.GCPStackOutputs != nil &&
 		!installStackOutputs.HasGCPOperationIdentities() {
 		return "", nil
