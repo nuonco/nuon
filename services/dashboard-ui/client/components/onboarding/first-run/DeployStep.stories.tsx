@@ -2,45 +2,33 @@ export default {
   title: 'Features / Onboarding / First run / Deploy',
 }
 
-import { DeployStepView, type IDeployStepView } from './DeployStep'
-import { StoryFrame } from './StoryFrame'
+import { MockStory } from './mocks'
 
-const Harness = ({ path = 'own', ...overrides }: Partial<IDeployStepView>) => {
-  const cloud = overrides.cloud ?? 'aws'
-  const region =
-    overrides.region ?? (cloud === 'gcp' ? 'us-central1' : cloud === 'azure' ? 'eastus' : 'us-east-1')
-  return (
-    <StoryFrame step="deploy" path={path} cloud={cloud}>
-      <DeployStepView
-        path={path}
-        appName={path === 'own' ? 'acme-api' : 'kitchen-sink'}
-        repo={path === 'own' ? 'acme/acme-api' : 'nuonco/kitchen-sink'}
-        cloud={cloud}
-        phase="idle"
-        installCreated={false}
-        missingInputs={[]}
-        onCreate={() => {}}
-        onBack={() => {}}
-        {...overrides}
-        region={region}
-      />
-    </StoryFrame>
-  )
-}
+// Every story runs the mocked flow from this screen, so all buttons work.
 
-export const OwnApp = () => <Harness />
+export const OwnApp = () => <MockStory start={{ step: 'deploy' }} />
 OwnApp.meta = { fullBleed: true }
 
-export const ExampleApp = () => <Harness path="example" cloud="gcp" />
+export const ExampleApp = () => <MockStory start={{ step: 'deploy', path: 'example', cloud: 'gcp' }} />
 ExampleApp.meta = { fullBleed: true }
 
-export const WaitingForConfig = () => <Harness phase="waiting-config" />
+export const WaitingForConfig = () => <MockStory start={{ step: 'deploy', scenario: { deploy: 'waiting' } }} />
 WaitingForConfig.meta = { fullBleed: true }
 
-export const SyncFailed = () => (
-  <Harness phase="waiting-config" syncError="workflow stopped: no such file or directory" />
-)
+export const SyncFailed = () => <MockStory start={{ step: 'deploy', scenario: { deploy: 'sync-failed' } }} />
 SyncFailed.meta = { fullBleed: true }
 
-export const MissingInputDefaults = () => <Harness cloud="azure" missingInputs={['db_password', 'api_domain']} />
+export const ExampleSyncFailed = () => <MockStory start={{ step: 'deploy', path: 'example', scenario: { deploy: 'sync-failed' } }} />
+ExampleSyncFailed.meta = { fullBleed: true }
+
+export const SlowWait = () => <MockStory start={{ step: 'deploy', path: 'example', scenario: { deploy: 'slow' } }} />
+SlowWait.meta = { fullBleed: true }
+
+export const MissingInputDefaults = () => <MockStory start={{ step: 'deploy', cloud: 'azure', scenario: { deploy: 'missing-inputs' } }} />
 MissingInputDefaults.meta = { fullBleed: true }
+
+export const KitchenSinkAws = () => <MockStory start={{ step: 'deploy', path: 'example' }} />
+KitchenSinkAws.meta = { fullBleed: true }
+
+export const KitchenSinkWaitingForConfig = () => <MockStory start={{ step: 'deploy', path: 'example', scenario: { deploy: 'waiting' } }} />
+KitchenSinkWaitingForConfig.meta = { fullBleed: true }

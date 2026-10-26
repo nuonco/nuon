@@ -62,6 +62,12 @@ GetInstallComponentsParams contains all the parameters to send to the API endpoi
 */
 type GetInstallComponentsParams struct {
 
+	/* Ids.
+
+	   comma-separated install component IDs to include
+	*/
+	Ids *string
+
 	/* InstallID.
 
 	   install ID
@@ -178,6 +184,17 @@ func (o *GetInstallComponentsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithIds adds the ids to the get install components params
+func (o *GetInstallComponentsParams) WithIds(ids *string) *GetInstallComponentsParams {
+	o.SetIds(ids)
+	return o
+}
+
+// SetIds adds the ids to the get install components params
+func (o *GetInstallComponentsParams) SetIds(ids *string) {
+	o.Ids = ids
+}
+
 // WithInstallID adds the installID to the get install components params
 func (o *GetInstallComponentsParams) WithInstallID(installID string) *GetInstallComponentsParams {
 	o.SetInstallID(installID)
@@ -262,6 +279,23 @@ func (o *GetInstallComponentsParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
+
+	if o.Ids != nil {
+
+		// query param ids
+		var qrIds string
+
+		if o.Ids != nil {
+			qrIds = *o.Ids
+		}
+		qIds := qrIds
+		if qIds != "" {
+
+			if err := r.SetQueryParam("ids", qIds); err != nil {
+				return err
+			}
+		}
+	}
 
 	// path param install_id
 	if err := r.SetPathParam("install_id", o.InstallID); err != nil {

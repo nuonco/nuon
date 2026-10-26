@@ -25,6 +25,9 @@ export type TStepChangePlanType =
   | 'app_branch_plan'
   | 'install_creation'
   | 'install_input'
+  // Not a backend approval type: synthesized client-side for a plan step
+  // that hasn't run, before its real tool is knowable.
+  | 'pending'
 
 export type TStepChangeStatus =
   | 'pending-approval'
@@ -33,6 +36,9 @@ export type TStepChangeStatus =
   | 'applied'
   | 'generating'
   | 'error'
+  // Not a backend step status: synthesized client-side when a step has no
+  // approval yet and the workflow stopped before reaching it.
+  | 'not-generated'
 
 export type TStepChangeCounts = {
   create: number

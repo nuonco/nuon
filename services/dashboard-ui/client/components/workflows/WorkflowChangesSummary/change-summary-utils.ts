@@ -18,6 +18,7 @@ export const PLAN_TYPE_META: Record<
   app_branch_plan: { icon: 'GitBranchIcon', label: 'App branch' },
   install_creation: { icon: 'CubeIcon', label: 'Install' },
   install_input: { icon: 'ListBulletsIcon', label: 'Input' },
+  pending: { icon: 'ClockIcon', label: 'Plan' },
 }
 
 export const STATUS_META: Record<TStepChangeStatus, TBadgeCfg> = {
@@ -27,6 +28,7 @@ export const STATUS_META: Record<TStepChangeStatus, TBadgeCfg> = {
   applied: WORKFLOW_BADGE_MAP['success'],
   generating: { children: 'Generating', theme: 'info' },
   error: WORKFLOW_BADGE_MAP['error'],
+  'not-generated': { children: 'Plan not generated', theme: 'neutral' },
 }
 
 export const emptyCounts = (): TStepChangeCounts => ({
@@ -58,7 +60,7 @@ export const sumCounts = (summaries: TStepChangeSummary[]): TStepChangeCounts =>
     emptyCounts()
   )
 
-const pluralize = (count: number, word: string): string =>
+export const pluralize = (count: number, word: string): string =>
   `${count} ${count === 1 ? word : `${word}s`}`
 
 export const aggregateNoun = (summaries: TStepChangeSummary[]): string =>

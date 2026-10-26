@@ -1359,6 +1359,42 @@ Examples:
 	stepsPlanCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
 	stepsCmd.AddCommand(stepsPlanCmd)
 
+	stepsContentsCmd := &cobra.Command{
+		Use:         "contents",
+		Short:       "View step approval contents",
+		Long:        "View the approval contents for a workflow step, including Helm and other plan payloads",
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.installs
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
+			return svc.WorkflowStepContents(cmd.Context(), wfID, stepID, PrintJSON)
+		}),
+	}
+	stepsContentsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
+	stepsContentsCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
+	stepsCmd.AddCommand(stepsContentsCmd)
+
+	stepsDiffCmd := &cobra.Command{
+		Use:         "diff",
+		Short:       "View step plan diff",
+		Long:        "View the parsed plan diff for a workflow step approval",
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.installs
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
+			return svc.WorkflowStepDiff(cmd.Context(), wfID, stepID, PrintJSON)
+		}),
+	}
+	stepsDiffCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
+	stepsDiffCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
+	stepsCmd.AddCommand(stepsDiffCmd)
+
 	var (
 		logsFollow    bool
 		logsRaw       bool

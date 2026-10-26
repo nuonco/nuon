@@ -1,4 +1,5 @@
 import type { TInstallResource } from '@/types'
+import { isStaleObservation } from './time-utils'
 
 export const HEALTH_UNHEALTHY = 'unhealthy'
 export const HEALTH_DEGRADED = 'degraded'
@@ -54,4 +55,20 @@ export function worstHealth(healths: (string | undefined)[]): string {
 
 export function compareHealthSeverityDesc(a?: string, b?: string): number {
   return healthSeverity(b) - healthSeverity(a)
+}
+
+export function resourceIsStale(resource: TInstallResource): boolean {
+  return (
+    !isIdentityOnlyResource(resource) &&
+    isStaleObservation(resource.observed_at, resource.stale_after_seconds || undefined)
+  )
+}
+
+export function reportedHealth(
+  resource: TInstallResource,
+  stale: boolean
+): string | undefined {
+  return stale || resource.removed_from_config || isIdentityOnlyResource(resource)
+    ? undefined
+    : resource.health
 }

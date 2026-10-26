@@ -1,0 +1,125 @@
+---
+title: 'Using Multiple CLI Versions'
+description: 'Install an older version of the Nuon CLI alongside the latest release, and switch between them.'
+icon: 'code-compare'
+keywords: ['CLI version', 'multiple CLI versions', 'switch CLI version', 'pin CLI version', 'brew unlink', 'versioned formula', 'Nuon BYOC CLI', 'downgrade CLI']
+---
+
+Each control plane expects the CLI version that matches its own (see [Choosing a CLI version](/cli#choosing-a-cli-version)).
+If you need an older version of the CLI, for example to use a Nuon BYOC control plane that is not on the latest
+release, you can install it alongside the latest release and switch between them. This guide uses `0.19.1250` as the
+older version.
+
+## With Homebrew
+
+Homebrew installs the latest release as `nuon` and as a versioned formula, `nuonco/tap/nuon@<version>`.
+You can install multiple versions, but only one can be linked as `nuon` at a time, so you switch by unlinking one and linking the
+other.
+
+<Note>
+If you also installed the CLI with the install script or by hand, that copy (often `~/bin/nuon`) may come before
+Homebrew's on your `PATH`, and running `nuon` keeps calling it no matter which formula is linked. Run `which -a nuon` to
+see every `nuon` on your `PATH`. Remove the other copies, or put Homebrew's `bin` directory first.
+
+Your shell also remembers where it last found `nuon`, so after switching it can keep running another copy even when
+Homebrew's comes first. Run `hash -r` (or `rehash` in zsh), or open a new shell.
+</Note>
+
+### Install an older version
+
+Unlink the latest release, then install the older version. It is linked as `nuon` when the install finishes:
+
+```sh
+brew unlink nuon
+brew install nuonco/tap/nuon@0.19.1250
+nuon version
+```
+
+### Switch back to the latest release
+
+Unlink both versions, then link the latest release and upgrade it in case a new release has come out since you last
+used it. Unlinking both works whichever version is linked now:
+
+```sh
+brew unlink nuon nuon@0.19.1250
+brew link nuon
+brew upgrade nuonco/tap/nuon
+```
+
+### Switch to the older version
+
+```sh
+brew unlink nuon nuon@0.19.1250
+brew link nuon@0.19.1250
+```
+
+Run `nuon version` after switching to confirm which version is linked.
+
+### Replace the older version
+
+When the control plane you use the older version with is upgraded, install the formula for its new version and remove
+the old one. For example, after an upgrade to `0.19.1260`:
+
+```sh
+brew unlink nuon nuon@0.19.1250
+brew install nuonco/tap/nuon@0.19.1260
+brew uninstall nuon@0.19.1250
+```
+
+## Side by side without Homebrew
+
+To run versions side by side instead of switching, download each version's binary under its own name. Binaries are
+published at `https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/<version>/nuon_<platform>` (see
+[Manual Binary Download](/cli#manual-binary-download) for platforms). This example works out your platform, such as
+`darwin_arm64` or `linux_amd64`, and saves the binary to `~/bin`, which must exist and be on your `PATH`:
+
+```sh
+VERSION=0.19.1250
+
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+case $(uname -m) in
+  x86_64) ARCH=amd64 ;;
+  aarch64 | arm64) ARCH=arm64 ;;
+  *) ARCH=$(uname -m) ;;
+esac
+PLATFORM=${OS}_${ARCH}
+
+curl -fsSL -o ~/bin/nuon-$VERSION \
+  https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/$VERSION/nuon_$PLATFORM
+chmod +x ~/bin/nuon-$VERSION
+
+nuon-$VERSION version
+```
+
+Keep `nuon` itself as the version you use most, for example the latest release from Homebrew.
+
+## Keep each control plane's login separate
+
+The CLI stores its API URL, token, and selected org in `~/.nuon`. When you switch between control planes, give each one
+its own config file with `--config` (`-C`) or `NUON_CONFIG_FILE`, so logging in to one does not sign you out of the
+other.
+
+For Nuon Cloud, use `nuon` with the default config file:
+
+```sh
+nuon auth login
+```
+
+For a Nuon BYOC control plane, use its CLI version with its own config file:
+
+```sh
+NUON_CONFIG_FILE=~/.nuon-acme-byoc NUON_API_URL=https://api.acme-byoc.example.com nuon-0.19.1250 auth login
+NUON_CONFIG_FILE=~/.nuon-acme-byoc nuon-0.19.1250 apps list
+```
+
+A shell alias keeps the pair together:
+
+```sh
+alias nuon-byoc='NUON_CONFIG_FILE=~/.nuon-acme-byoc nuon-0.19.1250'
+```
+
+## In CI
+
+The [Nuon GitHub Action](/guides/github-actions#choosing-the-cli-version) installs the version your control plane
+reports, so each workflow gets the right CLI for its `api_url` without extra setup. In other CI systems, use the
+[install script](/cli#install-your-control-planes-version) with `NUON_VERSION`.

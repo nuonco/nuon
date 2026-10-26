@@ -287,7 +287,7 @@ func runMigrator(ctx context.Context, db *gorm.DB) error {
 			GitRef:                          "test",
 			Version:                         "test",
 			LogLevel:                        "error",
-			TemporalHost:                    "localhost:7233",
+			TemporalHost:                    "127.0.0.1:7233",
 			TemporalTaskQueue:               "test",
 			TemporalMaxConcurrentActivities: 1,
 			HostIP:                          "localhost",

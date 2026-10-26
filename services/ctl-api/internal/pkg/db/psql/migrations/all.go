@@ -250,8 +250,18 @@ func (m *Migrations) All() []migrations.Migration {
 		},
 	}
 	all = append(all, m.installStateInvalidationMigrations()...)
-	return append(all, migrations.Migration{
-		Name: "146-install-state-heads",
-		Fn:   m.Migration146InstallStateHeads,
-	})
+	return append(all,
+		migrations.Migration{
+			Name: "146-install-state-heads",
+			Fn:   m.Migration146InstallStateHeads,
+		},
+		migrations.Migration{
+			Name: "147-install-states-unarchived-index",
+			Fn:   m.Migration147InstallStatesUnarchivedIndex,
+		},
+		migrations.Migration{
+			Name: "148-drop-device-codes",
+			Fn:   m.Migration148DropDeviceCodes,
+		},
+	)
 }

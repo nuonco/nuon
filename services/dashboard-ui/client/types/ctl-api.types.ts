@@ -1098,6 +1098,15 @@ export type TWorkflowResponse = components['schemas']['app.WorkflowResponse']
 export type TAppSecretConfig = components['schemas']['app.AppSecretConfig']
 export type TAppSecretsConfig = components['schemas']['app.AppSecretsConfig']
 
+export type TInstallAlignmentResource =
+  components['schemas']['service.InstallAlignmentResource']
+export type TInstallAlignmentCategory =
+  components['schemas']['service.InstallAlignmentCategory']
+export type TInstallAlignmentResourceKind =
+  components['schemas']['service.InstallAlignmentResourceKind']
+export type TInstallAlignmentPlan =
+  components['schemas']['service.InstallAlignmentPlan']
+
 export type TInstallStack = components['schemas']['app.InstallStack']
 export type TInstallStackVersion =
   components['schemas']['app.InstallStackVersion']

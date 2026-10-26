@@ -229,8 +229,10 @@
               "guides/nuon-stack-terraform-provider",
               "guides/customizing-terraform-stack-templates",
               "guides/cli-extensions",
+              "guides/cli-versions",
               "guides/external-image-policies",
-              "guides/terraform-cli"
+              "guides/terraform-cli",
+              "guides/app-branch-migration"
             ]
           }
         ]
@@ -342,6 +344,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/043-release-rollouts-runner-control",
           "updates/042-deprovisions-and-new-dashboard",
           "updates/041-agents-health-checks-and-triggers",
           "updates/040-app-branches",

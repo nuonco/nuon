@@ -81,6 +81,20 @@ test('uses the newest approved plan for each group', () => {
   expect(versions['us east']).toBeUndefined()
 })
 
+test('keeps an older apply when the latest plan was auto-skipped', () => {
+  const versions = lastApprovedGroupVersions([
+    run({ id: 'skipped', group: 'Default', status: 'auto-skipped' }),
+    run({
+      id: 'applied',
+      group: 'Default',
+      status: 'success',
+      sha: '4444444444444444',
+    }),
+  ])
+
+  expect(versions.default?.configId).toBe('cfg-applied')
+})
+
 test('keeps an older approval when the latest plan is still waiting', () => {
   const versions = lastApprovedGroupVersions([
     run({ id: 'waiting', group: 'Default', status: 'approval-awaiting' }),
@@ -99,7 +113,12 @@ test('keeps an older approval when the latest plan is still waiting', () => {
 
 test('ignores denied plans and preview runs', () => {
   const versions = lastApprovedGroupVersions([
-    run({ id: 'denied', group: 'Canary', response: 'deny', status: 'approval-denied' }),
+    run({
+      id: 'denied',
+      group: 'Canary',
+      response: 'deny',
+      status: 'approval-denied',
+    }),
     run({ id: 'preview', group: 'Canary', response: 'approve', preview: true }),
     run({ id: 'plan', group: 'Canary', response: 'approve', planOnly: true }),
   ])

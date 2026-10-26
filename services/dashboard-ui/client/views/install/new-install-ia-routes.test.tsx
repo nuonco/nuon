@@ -54,6 +54,7 @@ test('registers the new install IA navigation and routes', () => {
     expect.arrayContaining([
       ':orgId/installs/:installId',
       ':orgId/apps/:appId/installs/:installId',
+      'teardown',
       'resources',
       'sandbox',
       'components',
@@ -98,4 +99,9 @@ test('install detail matches beside the app layout', () => {
 
   const history = matchedPaths('/org-1/installs/inst-1/history/wf-1')
   expect(history).toContain('history/:workflowId')
+
+  const teardown = matchedPaths(
+    '/org-1/apps/app-1/installs/inst-1/teardown'
+  )
+  expect(teardown).toContain('teardown')
 })

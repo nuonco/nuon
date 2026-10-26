@@ -9,29 +9,34 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 )
 
 type Params struct {
 	fx.In
 
-	DB          *gorm.DB `name:"psql"`
-	AcctClient  *account.Client
-	AuthzClient *authz.Client
+	DB               *gorm.DB `name:"psql"`
+	AcctClient       *account.Client
+	AuthzClient      *authz.Client
+	ProductAnalytics *productanalytics.Client
 }
 
 type service struct {
-	db          *gorm.DB
-	acctClient  *account.Client
-	authzClient *authz.Client
+	db               *gorm.DB
+	acctClient       *account.Client
+	authzClient      *authz.Client
+	productAnalytics *productanalytics.Client
 }
 
 var _ api.Service = (*service)(nil)
 
 func New(params Params) *service {
 	return &service{
-		db:          params.DB,
-		acctClient:  params.AcctClient,
-		authzClient: params.AuthzClient,
+		db:               params.DB,
+		acctClient:       params.AcctClient,
+		authzClient:      params.AuthzClient,
+		productAnalytics: params.ProductAnalytics,
 	}
 }
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
@@ -40,7 +45,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	{
 		account.GET("", s.GetCurrentAccount)
 
-		account.POST("/static-token", s.CreateStaticToken)
+		require.NotFederatedTokenRoute(account, "create API tokens").POST("/static-token", s.CreateStaticToken)
 		account.GET("/static-tokens", s.ListStaticTokens)
 		account.DELETE("/static-tokens/:token_id", s.DeleteStaticToken)
 
@@ -67,7 +72,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		serviceAccounts.PATCH("/:account_id", s.UpdateServiceAccount)
 		serviceAccounts.PATCH("/:account_id/role", s.UpdateServiceAccountRole)
 		serviceAccounts.DELETE("/:account_id", s.DeleteServiceAccount)
-		serviceAccounts.POST("/:account_id/tokens", s.CreateServiceAccountToken)
+		require.NotFederatedTokenRoute(serviceAccounts, "create API tokens").POST("/:account_id/tokens", s.CreateServiceAccountToken)
 	}
 
 	// auth/me - registered here instead of authservice so it's available in PublicServicesModule

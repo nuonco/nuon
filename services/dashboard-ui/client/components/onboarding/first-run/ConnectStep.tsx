@@ -70,7 +70,7 @@ const PushListener = ({
       )}
       <div className="flex min-w-0 flex-col gap-0.5">
         <Text variant="body" weight="strong">
-          {detected ? 'Synced from main' : 'The prompt ends with pushing your app config'}
+          {detected ? 'Synced from main' : 'The prompt ends with pushing your app template'}
         </Text>
         {detected ? (
           <Text variant="subtext" theme="neutral" flex className="flex-wrap">
@@ -156,7 +156,7 @@ const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; 
       ),
     },
     {
-      title: 'Fill in the app config templates with your values',
+      title: 'Fill in the app template with your values',
       body: (
         <>
           Point each component at a repo and branch, pick a sandbox, scope roles.{' '}
@@ -395,7 +395,7 @@ export const ConnectStepView = ({
     {confirmSkip && !detected ? (
       <Banner theme="warn">
         <div className="flex flex-col gap-2">
-          <Text weight="strong">Nuon does not have your app config yet</Text>
+          <Text weight="strong">Nuon does not have your app template yet</Text>
           <Text variant="subtext">
             If you continue now, you would only deploy Nuon infrastructure that your BYOC install runs on:{' '}
             <InlineLink href={DOCS_RUNNERS}>Nuon Runner</InlineLink> and{' '}

@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
 // @ID						GenerateTerraformInstallerConfig
@@ -29,6 +30,16 @@ import (
 // @Success				200	{file}	string
 // @Router					/v1/installs/{install_id}/generate-terraform-installer-config [get]
 func (s *service) GenerateTerraformInstallerConfig(ctx *gin.Context) {
+	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureTerraformInstallerConfig)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to check feature: %w", err))
+		return
+	}
+	if !enabled {
+		ctx.Error(features.ErrFeatureNotEnabled(app.OrgFeatureTerraformInstallerConfig))
+		return
+	}
+
 	installID := ctx.Param("install_id")
 
 	installCfg, err := s.genTerraformInstallerConfig(ctx, installID)
