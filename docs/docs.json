@@ -93,7 +93,7 @@
         "icon": "lightbulb",
         "groups": [
           {
-            "group": "Connect Your App",
+            "group": "App Templates",
             "boost": 3,
             "pages": [
               "concepts/apps",
@@ -112,7 +112,7 @@
             ]
           },
           {
-            "group": "Customer installs",
+            "group": "Installs and Stacks",
             "boost": 3,
             "pages": [
               "guides/app-install-life-cycle",
@@ -131,7 +131,7 @@
             ]
           },
           {
-            "group": "Continuous Delivery",
+            "group": "Delivery and Operations",
             "boost": 3,
             "pages": [
               "get-started/day-2-operations",
@@ -141,7 +141,13 @@
               "concepts/policies",
               "concepts/operation-roles",
               "concepts/install-telemetry",
-              "concepts/triggers",
+              "concepts/triggers"
+            ]
+          },
+          {
+            "group": "Identity and Security",
+            "boost": 3,
+            "pages": [
               "concepts/access-control",
               "concepts/api-tokens",
               "concepts/service-accounts",
