@@ -1,7 +1,9 @@
 const MAX_AGE = 60 * 60 * 24 * 365
 
-function setCookie(name: string, value: string) {
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax; max-age=${MAX_AGE}`
+function setCookie(name: string, value: string, domain?: string) {
+  document.cookie =
+    `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax; max-age=${MAX_AGE}` +
+    (domain ? `; domain=${domain}` : '')
 }
 
 function getCookie(name: string): string | undefined {
@@ -41,3 +43,10 @@ export const getInstallsTabEnabled = (): boolean | undefined => {
 }
 export const setInstallsTabEnabled = (isEnabled: boolean) =>
   setCookie('installs_tab', isEnabled ? '1' : '0')
+
+// Shared with the sign-in page, which sets it to 1 when the consent box is ticked.
+export const getMarketingConsent = () => getCookie('nuon_marketing_consent')
+export const setMarketingConsentSynced = () => {
+  const host = window.location.hostname
+  setCookie('nuon_marketing_consent', 'synced', host.includes('.') ? host : undefined)
+}
