@@ -185,7 +185,7 @@ Exchange an ambient OIDC ID token for a short-lived Nuon API token (`POST /v1/oi
 `oidc_federation_enabled` on the control plane and an org trust policy (`nuon orgs oidc-trust-policies create`).
 
 In GitHub Actions: `permissions: id-token: write` plus `NUON_ORG_ID` (and `NUON_API_URL` when not Nuon Cloud). Other CI:
-`NUON_OIDC_TOKEN` / `NUON_OIDC_TOKEN_FILE`, or `nuon auth exchange-token`. Implementation: `internal/oidctoken`,
+`NUON_OIDC_TOKEN` / `NUON_OIDC_TOKEN_FILE`, or `nuon auth exchange-token`. Implementation: `sdks/auth/oidctoken`,
 `internal/services/auth/exchange.go`, `tryAmbientOIDCExchange` in `cmd/cli.go`.
 
 ### Read-only mode (`--read-only` / `NUON_READ_ONLY=1`)
