@@ -151,6 +151,7 @@ export const InstallComponentLayout = () => {
                 <ManagementDropdown
                   component={component}
                   componentConfig={config}
+                  currentBuildId={latestDeploy?.build_id}
                   currentDeployStatus={
                     isDisabled ? 'disabled' : latestDeploy?.status_v2?.status
                   }
