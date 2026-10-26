@@ -40,7 +40,13 @@ export const useRunTemplateBuilds = ({
   isRunTerminal,
 }: IRunTemplateBuilds) => {
   const { app } = useApp()
-  const { data: builds, isLoading: buildsLoading } = useQuery({
+  const {
+    data: builds,
+    isLoading: buildsLoading,
+    isPending: buildsQueryPending,
+    isPlaceholderData: buildsPlaceholder,
+    isError: buildsError,
+  } = useQuery({
     queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
     queryFn: () =>
       getBranchRunBuilds({
@@ -113,9 +119,14 @@ export const useRunTemplateBuilds = ({
     [changedBuilds, sandboxBuild, app?.sandbox_config]
   )
 
+  const buildsEnabled = !!orgId && !!appId && !!branchRunId
   return {
     builds,
     buildsLoading,
+    buildsPending:
+      buildsEnabled &&
+      !buildsError &&
+      (buildsQueryPending || buildsPlaceholder),
     changedBuilds,
     metaBuilds,
     runBuilds,
