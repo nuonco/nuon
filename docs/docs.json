@@ -264,6 +264,8 @@
           {
             "group": "Operate",
             "pages": [
+              "guides/agents/operate-with-mcp",
+              "guides/agents/use-the-cli-from-an-agent",
               "guides/agents/sample-queries"
             ]
           },
