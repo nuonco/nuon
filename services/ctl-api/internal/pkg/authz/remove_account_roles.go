@@ -4,19 +4,21 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (h *Client) RemoveAccountOrgRoles(ctx context.Context, orgID, accountID string) error {
+	// Struct filters drop zero values, so an empty id would delete every role in the org.
+	if accountID == "" {
+		return gorm.ErrRecordNotFound
+	}
+
 	// Hard delete all roles for the account in the specified organization
 	res := h.db.WithContext(ctx).
 		Unscoped().
-		Where(app.AccountRole{
-			OrgID:     generics.NewNullString(orgID),
-			AccountID: accountID,
-		}).
+		Where("org_id = ? AND account_id = ?", orgID, accountID).
 		Delete(&app.AccountRole{})
 
 	if res.Error != nil {
