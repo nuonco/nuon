@@ -160,19 +160,20 @@
               "guides/cloud-connections",
               "guides/sandbox-builds",
               "guides/using-variables",
-              "guides/vcs",
-              {
-                "group": "Components",
-                "pages": [
-                  "guides/container-image-components",
-                  "guides/image-signature-verification",
-                  "guides/image-update-policies",
-                  "guides/helm-chart-components",
-                  "guides/kubernetes-manifest-components",
-                  "guides/pulumi-components",
-                  "guides/terraform-components"
-                ]
-              }
+              "guides/vcs"
+            ]
+          },
+          {
+            "group": "Manage Components",
+            "boost": 3,
+            "pages": [
+              "guides/container-image-components",
+              "guides/image-signature-verification",
+              "guides/image-update-policies",
+              "guides/helm-chart-components",
+              "guides/kubernetes-manifest-components",
+              "guides/pulumi-components",
+              "guides/terraform-components"
             ]
           },
           {
