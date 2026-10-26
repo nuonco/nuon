@@ -93,7 +93,6 @@ import {
   GitBranchIcon,
   GitCommitIcon,
   GitForkIcon,
-  GithubLogoIcon,
   GitPullRequestIcon,
   GlobeIcon,
   GraphIcon,
@@ -316,7 +315,6 @@ const phosphorIcons = {
   GitBranchIcon,
   GitCommitIcon,
   GitForkIcon,
-  GithubLogoIcon,
   GitPullRequestIcon,
   GlobeIcon,
   GraphIcon,
@@ -456,7 +454,7 @@ interface IconProps extends Omit<PhosphorIconProps, 'ref'> {
 }
 
 export const Icon = ({
-  variant,
+  variant: requested,
   size = 16,
   weight = 'regular',
   theme = 'default',
@@ -464,6 +462,9 @@ export const Icon = ({
   className,
   ...props
 }: IconProps) => {
+  const variant = (
+    (requested as string) === 'GithubLogoIcon' ? 'GitHub' : requested
+  ) as TIconVariant
   const themeClass = cn(THEME_CLASSES[theme], className)
 
   if (variant === 'Loading') {
