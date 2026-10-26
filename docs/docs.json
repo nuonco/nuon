@@ -97,13 +97,8 @@
             "boost": 3,
             "pages": [
               "concepts/apps",
-              {
-                "group": "Components",
-                "root": "concepts/components",
-                "icon": "object-group",
-                "boost": 3,
-                "pages": ["concepts/components/auto-retries"]
-              },
+              "concepts/components",
+              "concepts/components/auto-retries",
               "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",
@@ -116,25 +111,16 @@
             "boost": 3,
             "pages": [
               "guides/app-install-life-cycle",
-              {
-                "group": "Stacks",
-                "root": "concepts/stacks",
-                "icon": "layer-group",
-                "expanded": true,
-                "pages": [
-                  "concepts/stacks/stand-alone-vpc",
-                  "concepts/stacks/customer-vpc",
-                  "concepts/stacks/customer-cluster"
-                ]
-              },
-              "concepts/cli"
+              "concepts/stacks",
+              "concepts/stacks/stand-alone-vpc",
+              "concepts/stacks/customer-vpc",
+              "concepts/stacks/customer-cluster"
             ]
           },
           {
             "group": "Delivery and Operations",
             "boost": 3,
             "pages": [
-              "get-started/day-2-operations",
               "concepts/workflows",
               "concepts/app-branches",
               "concepts/actions",
