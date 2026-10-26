@@ -98,7 +98,7 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 					}
 				}
 				if checksumsEqual(oldConn, newConn) {
-					if entry.BuildChanged || len(entry.ImpactReasons) > 0 {
+					if len(entry.ImpactReasons) > 0 {
 						diff.Changed = append(diff.Changed, entry)
 					} else {
 						diff.Unchanged = append(diff.Unchanged, entry)
@@ -408,7 +408,7 @@ func fillComponentSlices(
 				entry.ImpactReasons = append([]pkgdiff.ImpactReason(nil), component.ImpactReasons...)
 			}
 		}
-		if checksumsEqual(oldConn, newConn) && !entry.BuildChanged && len(entry.ImpactReasons) == 0 {
+		if checksumsEqual(oldConn, newConn) && len(entry.ImpactReasons) == 0 {
 			diff.Unchanged = append(diff.Unchanged, entry)
 			continue
 		}
@@ -502,6 +502,9 @@ func loadIntermediateConfig(ctx context.Context, appCfg *app.AppConfig) (*config
 	decoder.UseNumber()
 	if err := decoder.Decode(&cfg); err != nil {
 		return nil, false, err
+	}
+	for _, component := range cfg.Components {
+		component.Checksum = ""
 	}
 	return &cfg, true, nil
 }

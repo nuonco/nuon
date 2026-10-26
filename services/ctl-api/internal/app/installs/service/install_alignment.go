@@ -255,6 +255,20 @@ func (s *service) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 
 	baselines := configdiff.CompositeBaselines{Components: map[string]string{}}
 	needsDiff := false
+	for _, ic := range st.components {
+		applied := st.appliedDeploys[ic.ID]
+		if applied == nil {
+			continue
+		}
+		baseline := ic.AppConfigRef.AppliedConfigID
+		if baseline == "" {
+			baseline = applied.ComponentBuild.ComponentConfigConnection.AppConfigID
+		}
+		baselines.Components[ic.ComponentID] = baseline
+		if baseline != "" && baseline != install.AppConfigID {
+			needsDiff = true
+		}
+	}
 	if st.stack != nil {
 		applied := st.stack.AppConfigRef.AppliedConfigID
 		if applied != "" && applied != install.AppConfigID {
@@ -387,11 +401,26 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 	case applied == nil:
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "This component hasn’t been deployed yet."
-	case applied.ComponentBuildID != target.Build.ID:
+	case applied.ComponentBuildID != target.Build.ID &&
+		(target.Config.Checksum == "" || applied.ComponentBuild.ComponentConfigConnection.Checksum != target.Config.Checksum):
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "The deployed version doesn’t match this install’s configuration."
 	default:
 		res.Category = InstallAlignmentCategoryInSync
+	}
+	if res.Category == InstallAlignmentCategoryInSync && applied.ComponentBuildID != target.Build.ID {
+		if st.compositeErr != nil {
+			res.Category = InstallAlignmentCategoryUnknown
+			res.Reason = "unable to compare the applied component dependencies with the selected config"
+		} else if st.compositeDiff != nil {
+			for _, entry := range st.compositeDiff.Changed {
+				if entry.ComponentID == ic.ComponentID && len(entry.ImpactReasons) > 0 {
+					res.Category = InstallAlignmentCategoryChangesNotApplied
+					res.Reason = "Component dependency changes haven’t been applied."
+					break
+				}
+			}
+		}
 	}
 	if res.Kind == InstallAlignmentResourceKindComponent && target != nil && target.Build != nil && applied != nil {
 		cfg := &target.Build.ComponentConfigConnection
@@ -441,7 +470,7 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 	case st.compositeErr != nil || st.compositeDiff == nil:
 		res.Category = InstallAlignmentCategoryUnknown
 		res.Reason = "unable to compare the applied sandbox config with the selected config"
-	case st.compositeDiff.SandboxChanged || st.compositeDiff.SandboxBuildChanged:
+	case st.compositeDiff.SandboxChanged:
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "Sandbox configuration changes haven’t been applied."
 	default:
@@ -764,7 +793,7 @@ func sandboxScanMatchesApplied(st *installAlignmentState, scan *app.InstallSandb
 		return true
 	}
 	return st.compositeErr == nil && st.compositeDiff != nil &&
-		!st.compositeDiff.SandboxChanged && !st.compositeDiff.SandboxBuildChanged
+		!st.compositeDiff.SandboxChanged
 }
 
 func (s *service) latestInstallDeploysByComponent(ctx context.Context, db *gorm.DB, icIDs []string, planOnly bool) (map[string]*app.InstallDeploy, error) {

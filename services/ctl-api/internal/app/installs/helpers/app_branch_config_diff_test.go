@@ -257,8 +257,13 @@ func (s *AppBranchConfigDiffTestSuite) TestComponentSource() {
 	s.componentRef(f.install.ID, f.componentID, f.oldID)
 
 	diff := s.diff(f)
-	s.Equal([]string{f.componentID}, s.componentIDs(diff.Changed))
-	s.True(diff.Changed[0].BuildChanged)
+	s.Empty(diff.Changed)
+	s.ElementsMatch([]string{f.componentID, f.workerID}, s.componentIDs(diff.Unchanged))
+	for _, entry := range diff.Unchanged {
+		if entry.ComponentID == f.componentID {
+			s.True(entry.BuildChanged)
+		}
+	}
 	s.False(diff.StackChanged)
 }
 
