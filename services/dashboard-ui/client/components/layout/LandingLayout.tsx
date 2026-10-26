@@ -60,7 +60,7 @@ export const LandingLayout = ({ children }: { children: ReactNode }) => {
                   target="_blank"
                   className="text-lg hover:text-white/75"
                 >
-                  <Icon variant="GithubLogoIcon" size={20} />
+                  <Icon variant="GitHub" size={20} />
                 </a>
               </div>
             </div>
