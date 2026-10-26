@@ -113,11 +113,10 @@ func (s *service) Login(c *gin.Context) {
 
 	// Create and save the session with provider ID
 	sessionData := &SessionData{
-		State:            state,
-		ProviderID:       identityProvider.ID,
-		RequestedURL:     requestedURL,
-		FailCount:        failCount,
-		MarketingConsent: c.Query("marketing_consent") == "true",
+		State:        state,
+		ProviderID:   identityProvider.ID,
+		RequestedURL: requestedURL,
+		FailCount:    failCount,
 	}
 
 	if err := s.setSession(c, sessionData); err != nil {

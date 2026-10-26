@@ -79,7 +79,6 @@ func (s *service) Index(c *gin.Context) {
 		template = "auth/index_nuon.tmpl"
 		data["PostHogKey"] = s.cfg.PostHogKey
 		data["PostHogHost"] = s.cfg.PostHogHost
-		data["MarketingConsentEnabled"] = s.mailchimp.Enabled()
 	}
 
 	c.HTML(http.StatusOK, template, data)
