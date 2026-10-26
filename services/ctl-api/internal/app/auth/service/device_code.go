@@ -31,8 +31,6 @@ const (
 	userCodeAttempts = 5
 )
 
-const legacyDeviceFlowDocsURL = "https://docs.nuon.co/cli#update-to-the-latest-release"
-
 var (
 	errUserCodeMissing  = errors.New("enter the code shown in your terminal")
 	errUserCodeNotFound = errors.New("that code is invalid or has expired")
@@ -357,21 +355,12 @@ func (s *service) DeviceToken(c *gin.Context) {
 
 // LegacyDevicePage handles GET /device/code from CLIs that still generate their own code.
 func (s *service) LegacyDevicePage(c *gin.Context) {
-	s.l.Error("nuon auth error",
-		zap.Int("status", http.StatusGone),
-		zap.Error(errLegacyDeviceFlow),
-		zap.String("path", c.Request.URL.Path),
-	)
-	c.HTML(http.StatusGone, "auth/error.tmpl", gin.H{
-		"Error":   errLegacyDeviceFlow.Error(),
-		"Status":  http.StatusGone,
-		"DocsURL": legacyDeviceFlowDocsURL,
-	})
+	s.respondError(c, http.StatusGone, errLegacyDeviceFlow)
 }
 
 // LegacyDeviceToken handles GET /device/token from CLIs that still generate their own code.
 func (s *service) LegacyDeviceToken(c *gin.Context) {
-	s.deviceTokenError(c, http.StatusOK, "unsupported_client", errLegacyDeviceFlow.Error()+" See "+legacyDeviceFlowDocsURL)
+	s.deviceTokenError(c, http.StatusOK, "unsupported_client", errLegacyDeviceFlow.Error())
 }
 
 func (s *service) deviceTokenError(c *gin.Context, status int, code, description string) {
