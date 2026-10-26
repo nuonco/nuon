@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -94,6 +95,23 @@ type resolveDriftTarget struct {
 	ic       *app.InstallComponent
 }
 
+func (s *service) loadResolveDriftTarget(ctx context.Context, db *gorm.DB, install *app.Install, resourceID string) (*installAlignmentState, *resolveDriftTarget, error) {
+	st, err := s.loadInstallAlignmentState(ctx, db, install)
+	if err != nil {
+		return nil, nil, err
+	}
+	target, err := st.resolveDriftTarget(resourceID)
+	if err != nil {
+		return nil, nil, err
+	}
+	evidence, err := s.loadAlignmentEvidence(ctx, db, st)
+	if err != nil {
+		return nil, nil, err
+	}
+	target.resource.applyDriftEvidence(evidence)
+	return st, target, nil
+}
+
 func (s *service) resolveInstallDrift(ctx *gin.Context, orgID, installID string, req *ResolveInstallDriftRequest) (string, bool, error) {
 	var install app.Install
 	if err := s.db.WithContext(ctx).Where(app.Install{ID: installID, OrgID: orgID}).First(&install).Error; err != nil {
@@ -123,20 +141,11 @@ func (s *service) resolveInstallDrift(ctx *gin.Context, orgID, installID string,
 	if !isNotFound(err) {
 		return "", false, fmt.Errorf("unable to look up resolve drift request: %w", err)
 	}
-	st, err := s.loadInstallAlignmentState(ctx, s.db, &install)
-	if err != nil {
-		return "", false, err
-	}
-	target, err := st.resolveDriftTarget(req.ResourceID)
-	if err != nil {
-		return "", false, err
-	}
-	ev, err := s.loadAlignmentEvidence(ctx, s.db, st)
+	st, target, err := s.loadResolveDriftTarget(ctx, s.db, &install, req.ResourceID)
 	if err != nil {
 		return "", false, err
 	}
 	res := &target.resource
-	res.applyDriftEvidence(ev)
 	open, err := s.openDeployments(ctx, s.db, st)
 	if err != nil {
 		return "", false, err
@@ -217,19 +226,10 @@ func (s *service) resolveInstallDrift(ctx *gin.Context, orgID, installID string,
 			if digest != resolution.InputsDigest {
 				return nil, stderr.ErrConflict{Err: fmt.Errorf("resolution inputs changed"), Description: "input values changed; reload Resources and try again"}
 			}
-			fresh, err := s.loadInstallAlignmentState(ctx, tx, &install)
+			fresh, freshTarget, err := s.loadResolveDriftTarget(ctx, tx, &install, req.ResourceID)
 			if err != nil {
 				return nil, err
 			}
-			freshTarget, err := fresh.resolveDriftTarget(req.ResourceID)
-			if err != nil {
-				return nil, err
-			}
-			freshEvidence, err := s.loadAlignmentEvidence(ctx, tx, fresh)
-			if err != nil {
-				return nil, err
-			}
-			freshTarget.resource.applyDriftEvidence(freshEvidence)
 			if err := validateResolvable(&freshTarget.resource); err != nil {
 				return nil, err
 			}

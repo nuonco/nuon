@@ -41,7 +41,12 @@ func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
 
 func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
 	if directive.ResolveDrift(ctx, flw) {
-		return c.runPriorApprovalMatch(ctx, step, flw)
+		if !directive.ResolveDriftApprovalPolicy(ctx, flw) || flw.ApprovalOption != app.InstallApprovalOptionApproveAll {
+			return c.runPriorApprovalMatch(ctx, step, flw)
+		}
+		if c.checkCtx.PolicyNotPassed {
+			return directive.Pass(), nil
+		}
 	}
 
 	if flw.ApprovalOption != app.InstallApprovalOptionApproveAll {
@@ -56,10 +61,11 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	}
 
 	return c.approve(ctx, step, flw, autoApproval{
-		note:         "auto-approved",
-		approvalType: approvalType,
-		summary:      "Auto-approved (approve-all enabled)",
-		reason:       "approve_all",
+		note:                   "auto-approved",
+		approvalType:           approvalType,
+		summary:                "Auto-approved (approve-all enabled)",
+		reason:                 "approve_all",
+		requireApproveResponse: directive.ResolveDriftApprovalPolicy(ctx, flw),
 	})
 }
 

@@ -978,7 +978,7 @@ func (s *service) openDeployments(ctx context.Context, db *gorm.DB, st *installA
 		Select("id", "type", "status", "metadata", "created_at", "plan_only", "finished_at").
 		Where(app.Workflow{OwnerID: st.install.ID, OrgID: st.install.OrgID, OwnerType: "installs"}).
 		Where("plan_only = ?", false).
-		Where("("+installDeploymentsStatusExpr+" IN ? OR "+installDeploymentsStatusExpr+" = ?)", installDeploymentActiveStatuses, app.StatusFailedPendingRetry).
+		Where("(status->>'status' IN ? OR status->>'status' = ? OR status->>'status' IS NULL)", installDeploymentActiveStatuses, app.StatusFailedPendingRetry).
 		Order("created_at ASC").
 		Find(&workflows).Error; err != nil {
 		return nil, fmt.Errorf("unable to get active install workflows: %w", err)

@@ -43,8 +43,14 @@ func New(sig signal.Signal, tmw tmetrics.Writer, checkCtx *directive.CheckContex
 func (c *Check) Name() string { return "policy" }
 
 func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
-	if flw.PlanOnly || c.checkCtx.NoopPlan {
+	if flw.PlanOnly {
 		return false
+	}
+	if c.checkCtx.NoopPlan {
+		resolve := flw.Metadata[directive.WorkflowMetadataResolveDrift]
+		if resolve == nil || *resolve != "true" {
+			return false
+		}
 	}
 	if c.requiresEvaluation() {
 		return true
@@ -61,6 +67,9 @@ func (c *Check) requiresEvaluation() bool {
 }
 
 func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
+	if c.checkCtx.NoopPlan && !directive.ResolveDriftApprovalPolicy(ctx, flw) {
+		return directive.Pass(), nil
+	}
 	l, _ := log.WorkflowLogger(ctx)
 
 	if !c.requiresEvaluation() {
@@ -161,7 +170,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 // auto-approval on passing policies. Callers only reach it once evaluation has
 // produced no deny violations, or when the signal has nothing to evaluate.
 func (c *Check) autoApprove(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, bool) {
-	if directive.ResolveDrift(ctx, flw) {
+	if directive.ResolveDrift(ctx, flw) && !directive.ResolveDriftApprovalPolicy(ctx, flw) {
 		return directive.Pass(), false
 	}
 	aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing)

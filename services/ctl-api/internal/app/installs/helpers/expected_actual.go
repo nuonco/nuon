@@ -36,17 +36,15 @@ func (h *Helpers) RecordInstallDeployApplied(ctx context.Context, deployID strin
 		if err := tx.Model(&app.InstallDeploy{}).Where(app.InstallDeploy{ID: deploy.ID}).Update("applied_at", appliedAt).Error; err != nil {
 			return err
 		}
+		var ref app.AppConfigRef
+		operation := "record"
 		switch deploy.Type {
 		case app.InstallDeployTypeRecover:
 			return nil
 		case app.InstallDeployTypeTeardown:
-			if err := tx.WithContext(ctx).
-				Model(&app.InstallComponent{}).
-				Where(app.InstallComponent{ID: deploy.InstallComponentID}).
-				Update("app_config_ref", app.AppConfigRef{
-					ExpectedConfigID: deploy.InstallComponent.AppConfigRef.ExpectedConfigID,
-				}).Error; err != nil {
-				return fmt.Errorf("unable to clear actual deploy on install component: %w", err)
+			operation = "clear"
+			ref = app.AppConfigRef{
+				ExpectedConfigID: deploy.InstallComponent.AppConfigRef.ExpectedConfigID,
 			}
 		default:
 			appConfigID := deploy.ComponentBuild.ComponentConfigConnection.AppConfigID
@@ -55,18 +53,19 @@ func (h *Helpers) RecordInstallDeployApplied(ctx context.Context, deployID strin
 			}
 
 			at := appliedAt
-			if err := tx.WithContext(ctx).
-				Model(&app.InstallComponent{}).
-				Where(app.InstallComponent{ID: deploy.InstallComponentID}).
-				Update("app_config_ref", app.AppConfigRef{
-					ExpectedConfigID:    appConfigID,
-					AppliedConfigID:     appConfigID,
-					AppliedConfigAt:     &at,
-					AppliedConfigByType: app.AppConfigRefByTypeInstallDeploys,
-					AppliedConfigByID:   deploy.ID,
-				}).Error; err != nil {
-				return fmt.Errorf("unable to record actual deploy on install component: %w", err)
+			ref = app.AppConfigRef{
+				ExpectedConfigID:    appConfigID,
+				AppliedConfigID:     appConfigID,
+				AppliedConfigAt:     &at,
+				AppliedConfigByType: app.AppConfigRefByTypeInstallDeploys,
+				AppliedConfigByID:   deploy.ID,
 			}
+		}
+		if err := tx.WithContext(ctx).
+			Model(&app.InstallComponent{}).
+			Where(app.InstallComponent{ID: deploy.InstallComponentID}).
+			Update("app_config_ref", ref).Error; err != nil {
+			return fmt.Errorf("unable to %s actual deploy on install component: %w", operation, err)
 		}
 		return nil
 	})

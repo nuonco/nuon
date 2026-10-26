@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -244,117 +243,78 @@ func canonicalApprovalPlan(approvalType app.WorkflowStepApprovalType, contents s
 		return nil, errors.New("plan is not a json object")
 	}
 
-	var buf bytes.Buffer
-	if err := writeCanonicalJSONObject(dec, &buf, approvalType == app.TerraformPlanApprovalType); err != nil {
+	fields, err := readCanonicalJSONObject(dec)
+	if err != nil {
 		return nil, err
 	}
 	if _, err := dec.Token(); err != io.EOF {
 		return nil, errors.New("trailing data after plan")
 	}
-	return buf.Bytes(), nil
+	if approvalType == app.TerraformPlanApprovalType {
+		if _, ok := fields["timestamp"].(string); ok {
+			delete(fields, "timestamp")
+		}
+	}
+	return json.Marshal(fields)
 }
 
-func writeCanonicalJSONValue(dec *json.Decoder, buf *bytes.Buffer) error {
+func readCanonicalJSONValue(dec *json.Decoder) (any, error) {
 	tok, err := dec.Token()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	switch t := tok.(type) {
 	case json.Delim:
 		switch t {
 		case '{':
-			return writeCanonicalJSONObject(dec, buf, false)
+			return readCanonicalJSONObject(dec)
 		case '[':
-			buf.WriteByte('[')
-			for i := 0; dec.More(); i++ {
-				if i > 0 {
-					buf.WriteByte(',')
+			values := make([]any, 0)
+			for dec.More() {
+				value, err := readCanonicalJSONValue(dec)
+				if err != nil {
+					return nil, err
 				}
-				if err := writeCanonicalJSONValue(dec, buf); err != nil {
-					return err
-				}
+				values = append(values, value)
 			}
 			if end, err := dec.Token(); err != nil || end != json.Delim(']') {
-				return errors.New("unterminated json array")
+				return nil, errors.New("unterminated json array")
 			}
-			buf.WriteByte(']')
-			return nil
+			return values, nil
 		default:
-			return errors.New("unexpected json delimiter")
+			return nil, errors.New("unexpected json delimiter")
 		}
-	case string:
-		b, err := json.Marshal(t)
-		if err != nil {
-			return err
-		}
-		buf.Write(b)
-	case json.Number:
-		buf.WriteString(t.String())
-	case bool:
-		if t {
-			buf.WriteString("true")
-		} else {
-			buf.WriteString("false")
-		}
-	case nil:
-		buf.WriteString("null")
+	case string, json.Number, bool, nil:
+		return tok, nil
 	default:
-		return errors.New("unexpected json token")
+		return nil, errors.New("unexpected json token")
 	}
-	return nil
 }
 
-func writeCanonicalJSONObject(dec *json.Decoder, buf *bytes.Buffer, stripRunTimestamp bool) error {
-	fields := map[string][]byte{}
+func readCanonicalJSONObject(dec *json.Decoder) (map[string]any, error) {
+	fields := map[string]any{}
 	for dec.More() {
 		tok, err := dec.Token()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		key, ok := tok.(string)
 		if !ok {
-			return errors.New("json object key is not a string")
+			return nil, errors.New("json object key is not a string")
 		}
 		if _, dup := fields[key]; dup {
-			return errors.New("duplicate json object key")
+			return nil, errors.New("duplicate json object key")
 		}
 
-		var val bytes.Buffer
-		if err := writeCanonicalJSONValue(dec, &val); err != nil {
-			return err
+		value, err := readCanonicalJSONValue(dec)
+		if err != nil {
+			return nil, err
 		}
-		if stripRunTimestamp && key == "timestamp" && val.Len() > 0 && val.Bytes()[0] == '"' {
-			fields[key] = nil
-			continue
-		}
-		fields[key] = val.Bytes()
+		fields[key] = value
 	}
 	if end, err := dec.Token(); err != nil || end != json.Delim('}') {
-		return errors.New("unterminated json object")
+		return nil, errors.New("unterminated json object")
 	}
-
-	keys := make([]string, 0, len(fields))
-	for k, v := range fields {
-		if v != nil {
-			keys = append(keys, k)
-		}
-	}
-	sort.Strings(keys)
-
-	buf.WriteByte('{')
-	for i, k := range keys {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		kb, err := json.Marshal(k)
-		if err != nil {
-			return err
-		}
-		buf.Write(kb)
-		buf.WriteByte(':')
-		buf.Write(fields[k])
-	}
-	buf.WriteByte('}')
-	return nil
+	return fields, nil
 }

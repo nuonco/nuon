@@ -69,7 +69,8 @@ const (
 	WorkflowMetadataResolveDrift    = app.WorkflowMetadataKeyResolveDrift
 	WorkflowMetadataReuseApprovalID = "reuse_approval_id"
 
-	resolveDriftApprovalReuseVersion = "resolve-drift-approval-reuse-v1"
+	resolveDriftApprovalReuseVersion  = "resolve-drift-approval-reuse-v1"
+	resolveDriftApprovalPolicyVersion = "resolve-drift-approval-policy-v1"
 )
 
 func ResolveDrift(ctx workflow.Context, flw *app.Workflow) bool {
@@ -78,6 +79,10 @@ func ResolveDrift(ctx workflow.Context, flw *app.Workflow) bool {
 		return false
 	}
 	return workflow.GetVersion(ctx, resolveDriftApprovalReuseVersion, workflow.DefaultVersion, 1) == 1
+}
+
+func ResolveDriftApprovalPolicy(ctx workflow.Context, flw *app.Workflow) bool {
+	return ResolveDrift(ctx, flw) && workflow.GetVersion(ctx, resolveDriftApprovalPolicyVersion, workflow.DefaultVersion, 1) == 1
 }
 
 func ReuseApprovalID(flw *app.Workflow) string {
