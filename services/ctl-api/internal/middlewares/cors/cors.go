@@ -77,7 +77,12 @@ func isAllowedOrigin(appURL, origin string, allowAll bool) bool {
 		return true
 	}
 	allowed := originOf(appURL)
-	return allowed != "" && originOf(origin) == allowed
+	if allowed != "" && originOf(origin) == allowed {
+		return true
+	}
+	// Local dev tooling (live-reload proxies, worktrees) runs on other loopback
+	// ports the server has no way to enumerate.
+	return isLoopbackOrigin(appURL) && isLoopbackOrigin(origin)
 }
 
 // originOf returns scheme://host for a URL or Origin header. A path is ignored.
@@ -88,4 +93,17 @@ func originOf(raw string) string {
 		return ""
 	}
 	return u.Scheme + "://" + strings.ToLower(u.Host)
+}
+
+func isLoopbackOrigin(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "http" {
+		return false
+	}
+	switch strings.ToLower(u.Hostname()) {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	default:
+		return false
+	}
 }

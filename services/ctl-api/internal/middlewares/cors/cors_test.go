@@ -48,6 +48,28 @@ func TestCORSAllowsConfiguredOriginOnly(t *testing.T) {
 			allowAll: true,
 			want:     "https://app.other.example",
 		},
+		{
+			name:   "local app allows a different loopback port",
+			appURL: "http://localhost:4000",
+			origin: "http://localhost:4001",
+			want:   "http://localhost:4001",
+		},
+		{
+			name:   "local app allows 127.0.0.1 even when app url is localhost",
+			appURL: "http://localhost:4000",
+			origin: "http://127.0.0.1:4010",
+			want:   "http://127.0.0.1:4010",
+		},
+		{
+			name:   "local app rejects a non-loopback origin",
+			appURL: "http://localhost:4000",
+			origin: "http://evil.example",
+		},
+		{
+			name:   "deployed app rejects a loopback origin",
+			appURL: "https://app.byoc.example.com",
+			origin: "http://localhost:4001",
+		},
 	}
 
 	for _, tc := range cases {
