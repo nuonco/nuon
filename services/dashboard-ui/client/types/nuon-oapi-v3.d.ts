@@ -5799,7 +5799,7 @@ export interface components {
     "app.KustomizeConfig": {
       /** @description Enable Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description Load restrictor: "none" or "rootOnly" (default: "rootOnly") */
+      /** @description Load restrictor: only "rootOnly" is supported */
       load_restrictor?: string;
       /** @description Additional patch files to apply after kustomize build */
       patches?: string[];
@@ -8033,7 +8033,7 @@ export interface components {
     "plantypes.KustomizeBuildConfig": {
       /** @description EnableHelm enables Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description LoadRestrictor controls file loading: "none" or "rootOnly" (default) */
+      /** @description Ignored by the runner, which pins rootOnly so app config cannot widen worker file access */
       load_restrictor?: string;
       /** @description Patches are additional patch files to apply after kustomize build */
       patches?: string[];
