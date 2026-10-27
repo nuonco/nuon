@@ -4,6 +4,8 @@ description: "Define and remotely execute custom action workflows in your instal
 keywords: ["actions", "actions guide", "how to create actions", "configure actions", "action TOML", "connected repo actions", "action steps", "action environment variables", "action triggers", "container actions", "action image"]
 ---
 
+import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
+
 Actions let you define and remotely execute custom workflows in installs. You can automate common tasks, implement healthchecks, and even automate runbooks to handle incidents.
 
 For one-off scripts you don't want to commit to TOML, see [Run adhoc actions](/guides/adhoc-actions).
@@ -192,5 +194,12 @@ or a repo (`public_repo` / `connected_repo`). Container actions run on AWS, Azur
 GCP VM install runners. See [Container actions](/guides/container-actions) for the full guide.
 
 ## Monitoring workflow runs
+
+<TryWithYourAgent
+  title="Run an action"
+  tools={["list_install_actions", "run_action", "watch_workflow", "get_workflow_step_logs"]}
+  writes
+  prompt={`Show me the actions on my Nuon install, run the one I pick, and summarize its output.`}
+/>
 
 Action workflow runs can be monitored on the "Actions" tab in each install. You can see a list of all workflow runs, and inspect each run to see logs, what triggered the run, and whether it succeeded or not.
