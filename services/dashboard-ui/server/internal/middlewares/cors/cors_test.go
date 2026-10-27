@@ -15,10 +15,11 @@ func TestCORSAllowsConfiguredOriginOnly(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cases := []struct {
-		name   string
-		appURL string
-		origin string
-		want   string
+		name          string
+		appURL        string
+		origin        string
+		allowLoopback bool
+		want          string
 	}{
 		{
 			name:   "configured origin",
@@ -41,21 +42,44 @@ func TestCORSAllowsConfiguredOriginOnly(t *testing.T) {
 			origin: "https://app.byoc.example.com",
 		},
 		{
-			name:   "local app allows a different loopback port",
+			name:          "loopback flag allows a different port",
+			appURL:        "http://localhost:4000",
+			origin:        "http://localhost:4001",
+			allowLoopback: true,
+			want:          "http://localhost:4001",
+		},
+		{
+			name:          "loopback flag allows 127.0.0.1",
+			appURL:        "http://localhost:4000",
+			origin:        "http://127.0.0.1:4010",
+			allowLoopback: true,
+			want:          "http://127.0.0.1:4010",
+		},
+		{
+			name:          "loopback flag rejects a non-loopback origin",
+			appURL:        "http://localhost:4000",
+			origin:        "http://evil.example",
+			allowLoopback: true,
+		},
+		{
+			name:          "https localhost is not a loopback origin",
+			appURL:        "http://localhost:4000",
+			origin:        "https://localhost:4001",
+			allowLoopback: true,
+		},
+		{
+			name:   "empty app url rejects a loopback origin",
+			origin: "http://localhost:4001",
+		},
+		{
+			name:   "invalid app url rejects a loopback origin",
+			appURL: "not a url",
+			origin: "http://localhost:4001",
+		},
+		{
+			name:   "localhost app without the flag rejects another port",
 			appURL: "http://localhost:4000",
 			origin: "http://localhost:4001",
-			want:   "http://localhost:4001",
-		},
-		{
-			name:   "local app allows 127.0.0.1 even when app url is localhost",
-			appURL: "http://localhost:4000",
-			origin: "http://127.0.0.1:4010",
-			want:   "http://127.0.0.1:4010",
-		},
-		{
-			name:   "local app rejects a non-loopback origin",
-			appURL: "http://localhost:4000",
-			origin: "http://evil.example",
 		},
 		{
 			name:   "deployed app rejects a loopback origin",
@@ -66,7 +90,7 @@ func TestCORSAllowsConfiguredOriginOnly(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			m := New(&internal.Config{AppUrl: tc.appURL}, zap.NewNop())
+			m := New(&internal.Config{AppUrl: tc.appURL, CORSAllowLoopbackOrigins: tc.allowLoopback}, zap.NewNop())
 			e := gin.New()
 			e.Use(m.Handler())
 			e.GET("/v1/orgs", func(c *gin.Context) { c.Status(http.StatusOK) })

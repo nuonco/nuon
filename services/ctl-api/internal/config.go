@@ -217,6 +217,7 @@ func init() {
 	config.RegisterDefault("gcp_legacy_role_fallback", false)
 
 	config.RegisterDefault("cors_allow_all_origins", false)
+	config.RegisterDefault("cors_allow_loopback_origins", false)
 }
 
 type Config struct {
@@ -347,6 +348,9 @@ type Config struct {
 	SlackMiddlewares          []string `config:"slack_middlewares"`
 	// Reflect any Origin and still send Allow-Credentials. Default false restricts Origin to app_url.
 	CORSAllowAllOrigins bool `config:"cors_allow_all_origins"`
+	// Also reflect plain-http loopback origins on any port. Default false.
+	// service_deployment=local turns this on without the flag.
+	CORSAllowLoopbackOrigins bool `config:"cors_allow_loopback_origins"`
 
 	// Slack app configuration (Phase 0–4 of slackbot integration).
 	// Tokens are stored plaintext in DB; these env-var-driven values back
@@ -700,6 +704,10 @@ func NewConfig() (*Config, error) {
 	v := validator.New()
 	if err := v.Struct(cfg); err != nil {
 		return nil, fmt.Errorf("unable to validate config: %w", err)
+	}
+
+	if cfg.CORSAllowLoopbackOrigins && cfg.ServiceDeployment != "local" {
+		return nil, fmt.Errorf("cors_allow_loopback_origins is only allowed when service_deployment=local")
 	}
 
 	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)
