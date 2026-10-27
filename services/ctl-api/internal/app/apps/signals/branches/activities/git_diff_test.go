@@ -59,4 +59,7 @@ func TestDiffCommitsChangedPaths(t *testing.T) {
 	require.ElementsMatch(t, []string{"a.txt", "b.txt"}, result.ChangedPaths)
 	require.Contains(t, result.Patch, "a.txt")
 	require.Contains(t, result.Patch, "b.txt")
+
+	require.Equal(t, "- one\n+ two", result.FilePatches["a.txt"])
+	require.Equal(t, "+ new", result.FilePatches["b.txt"])
 }

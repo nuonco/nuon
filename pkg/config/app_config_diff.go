@@ -18,6 +18,25 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 		old = &AppConfig{}
 	}
 
+	// ctl-api's config sync overrides the branch field on any connected_repo
+	// / public_repo pointing at the app's own repo to whatever branch is
+	// currently being built (see
+	// services/ctl-api/.../branches/appconfig/branch_override.go), so by the
+	// time configs reach here that branch value is a build-time artifact,
+	// not authored content. Left alone, a config built on main and one built
+	// on a feature branch would show every such component/action/sandbox as
+	// "branch changed" even when nothing in its own file was touched.
+	// Normalize both sides the same way before diffing so that noise cancels
+	// out, while a genuine edit to repo, directory, or anything else still
+	// surfaces normally.
+	if branchRepo := branchOwnRepo(a.Branch); branchRepo != "" {
+		normalizeSameRepoBranches(old, branchRepo)
+		normalizeSameRepoBranches(a, branchRepo)
+	} else if branchRepo := branchOwnRepo(old.Branch); branchRepo != "" {
+		normalizeSameRepoBranches(old, branchRepo)
+		normalizeSameRepoBranches(a, branchRepo)
+	}
+
 	var children []*diff.Diff
 
 	// Metadata
@@ -1577,6 +1596,93 @@ func diffPublicRepo(key string, old, new *PublicRepoConfig) []*diff.Diff {
 			diff.NewDiff(diff.WithKey("branch"), diff.WithStringDiff(old.Branch, new.Branch)),
 		)),
 	}
+}
+
+// branchOwnRepo returns the repo the app branch itself is configured to
+// build from (its branch.toml), the same repo identifier
+// services/ctl-api/.../branch_override.go compares components/actions/sandbox
+// repos against when deciding whether to override their branch.
+func branchOwnRepo(b *AppBranchConfig) string {
+	if b == nil {
+		return ""
+	}
+	if b.ConnectedRepo != nil && b.ConnectedRepo.Repo != "" {
+		return b.ConnectedRepo.Repo
+	}
+	if b.PublicRepo != nil && b.PublicRepo.Repo != "" {
+		return b.PublicRepo.Repo
+	}
+	return ""
+}
+
+// normalizeSameRepoBranches clears the branch field of any connected_repo /
+// public_repo whose repo matches branchRepo, mirroring exactly which configs
+// branch_override.go overrides at build time (components, sandbox, and
+// action steps).
+func normalizeSameRepoBranches(cfg *AppConfig, branchRepo string) {
+	if cfg == nil {
+		return
+	}
+	for _, comp := range cfg.Components {
+		normalizeComponentBranch(comp, branchRepo)
+	}
+	if cfg.Sandbox != nil {
+		normalizeRepoBranch(cfg.Sandbox.ConnectedRepo, cfg.Sandbox.PublicRepo, branchRepo)
+	}
+	for _, action := range cfg.Actions {
+		for _, step := range action.Steps {
+			normalizeRepoBranch(step.ConnectedRepo, step.PublicRepo, branchRepo)
+		}
+	}
+}
+
+func normalizeComponentBranch(comp *Component, branchRepo string) {
+	if comp == nil {
+		return
+	}
+	if comp.TerraformModule != nil {
+		normalizeRepoBranch(comp.TerraformModule.ConnectedRepo, comp.TerraformModule.PublicRepo, branchRepo)
+	}
+	if comp.HelmChart != nil {
+		normalizeRepoBranch(comp.HelmChart.ConnectedRepo, comp.HelmChart.PublicRepo, branchRepo)
+	}
+	if comp.DockerBuild != nil {
+		normalizeRepoBranch(comp.DockerBuild.ConnectedRepo, comp.DockerBuild.PublicRepo, branchRepo)
+	}
+	if comp.KubernetesManifest != nil {
+		normalizeRepoBranch(comp.KubernetesManifest.ConnectedRepo, comp.KubernetesManifest.PublicRepo, branchRepo)
+	}
+	if comp.Pulumi != nil {
+		normalizeRepoBranch(comp.Pulumi.ConnectedRepo, comp.Pulumi.PublicRepo, branchRepo)
+	}
+}
+
+func normalizeRepoBranch(connected *ConnectedRepoConfig, public *PublicRepoConfig, branchRepo string) {
+	if connected != nil && repoURLsEqualForDiff(connected.Repo, branchRepo) {
+		connected.Branch = ""
+	}
+	if public != nil && repoURLsEqualForDiff(public.Repo, branchRepo) {
+		public.Branch = ""
+	}
+}
+
+// repoURLsEqualForDiff normalizes and compares two repo identifiers. Handles
+// both formats: ConnectedRepoConfig's "owner/repo" and PublicRepoConfig's
+// "https://github.com/owner/repo.git".
+func repoURLsEqualForDiff(a, b string) bool {
+	if a == "" || b == "" {
+		return false
+	}
+	return normalizeRepoForDiff(a) == normalizeRepoForDiff(b)
+}
+
+func normalizeRepoForDiff(repo string) string {
+	repo = strings.TrimSuffix(repo, ".git")
+	repo = strings.TrimPrefix(repo, "https://github.com/")
+	repo = strings.TrimPrefix(repo, "http://github.com/")
+	repo = strings.TrimPrefix(repo, "git@github.com:")
+	repo = strings.TrimSuffix(repo, "/")
+	return strings.ToLower(repo)
 }
 
 func diffConnectedRepo(key string, old, new *ConnectedRepoConfig) []*diff.Diff {

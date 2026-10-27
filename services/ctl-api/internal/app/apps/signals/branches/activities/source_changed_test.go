@@ -87,7 +87,7 @@ func TestEnrichConfigDiffWithSourceChanged(t *testing.T) {
 	}
 	changed := []string{"components/api/main.go", "docs/readme.md"}
 
-	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", changed, nil, nil)
+	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", changed, nil, nil, nil)
 	require.Len(t, out.Sections, 2)
 
 	comp := out.Sections[0]
@@ -137,7 +137,7 @@ func TestEnrichConfigDiffSourceOnlyComponent(t *testing.T) {
 	sources := []componentSource{
 		{Name: "api", Repo: "acme/app", Directory: "components/api"},
 	}
-	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", []string{"components/api/main.go"}, nil, nil)
+	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", []string{"components/api/main.go"}, nil, nil, nil)
 	require.True(t, out.ComponentSourceChanged["api"])
 	require.False(t, out.Sections[0].Entries[0].SourceChanged)
 }
@@ -154,8 +154,57 @@ func TestEnrichConfigDiffWithSourceChangedMissingDirectoryIsFalse(t *testing.T) 
 		},
 	}
 
-	out := enrichConfigDiffWithSourceChanged(full, nil, "acme/app", []string{"any/file.go"}, nil, nil)
+	out := enrichConfigDiffWithSourceChanged(full, nil, "acme/app", []string{"any/file.go"}, nil, nil, nil)
 	require.False(t, out.Sections[0].Entries[0].SourceChanged)
+}
+
+func TestComponentSourceFiles(t *testing.T) {
+	branch := "acme/app"
+	changed := []string{"components/grafana/values.yaml", "components/grafana/templates/gcp.yaml", "docs/readme.md"}
+	patches := map[string]string{
+		"components/grafana/values.yaml":        "+ securityPolicy: \"\"",
+		"components/grafana/templates/gcp.yaml": "+ kind: GCPBackendPolicy",
+		"docs/readme.md":                        "+ unrelated",
+	}
+
+	files := componentSourceFiles(componentSource{
+		Name: "grafana", Repo: "https://github.com/acme/app.git", Directory: "components/grafana",
+	}, branch, changed, patches)
+	require.Len(t, files, 2)
+	require.ElementsMatch(t, []string{"components/grafana/values.yaml", "components/grafana/templates/gcp.yaml"},
+		[]string{files[0].Path, files[1].Path})
+
+	// Different repo: no files, even though directories/paths line up.
+	require.Nil(t, componentSourceFiles(componentSource{
+		Name: "grafana", Repo: "acme/other", Directory: "components/grafana",
+	}, branch, changed, patches))
+
+	// No patches available (e.g. no git diff computed): no files.
+	require.Nil(t, componentSourceFiles(componentSource{
+		Name: "grafana", Repo: "acme/app", Directory: "components/grafana",
+	}, branch, changed, nil))
+}
+
+func TestEnrichConfigDiffWithSourceChangedAttachesSourceFiles(t *testing.T) {
+	full := &ComputeAppConfigDiffOutput{
+		Sections: []ConfigDiffSection{
+			{
+				Name:    "Components",
+				Entries: []ConfigDiffEntry{{Op: "change", Name: "grafana"}},
+			},
+		},
+	}
+	sources := []componentSource{
+		{Name: "grafana", Repo: "acme/app", Directory: "components/grafana"},
+	}
+	changed := []string{"components/grafana/values.yaml"}
+	patches := map[string]string{"components/grafana/values.yaml": "+ securityPolicy: \"\""}
+
+	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", changed, patches, nil, nil)
+	require.True(t, out.Sections[0].Entries[0].SourceChanged)
+	require.Len(t, out.Sections[0].Entries[0].SourceFiles, 1)
+	require.Equal(t, "components/grafana/values.yaml", out.Sections[0].Entries[0].SourceFiles[0].Path)
+	require.Equal(t, "+ securityPolicy: \"\"", out.Sections[0].Entries[0].SourceFiles[0].Diff)
 }
 
 func TestEnrichConfigDiffWithSourceChangedRootDirMatchesSameRepo(t *testing.T) {
@@ -175,7 +224,7 @@ func TestEnrichConfigDiffWithSourceChangedRootDirMatchesSameRepo(t *testing.T) {
 		{Name: "alb", Repo: "acme/app", Directory: "."},
 		{Name: "pulumi", Repo: "acme/app", Directory: "components/pulumi"},
 	}
-	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", []string{"inputs/dns/domain.toml"}, nil, nil)
+	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", []string{"inputs/dns/domain.toml"}, nil, nil, nil)
 	require.True(t, out.Sections[0].Entries[0].SourceChanged)
 	require.False(t, out.Sections[0].Entries[1].SourceChanged)
 }

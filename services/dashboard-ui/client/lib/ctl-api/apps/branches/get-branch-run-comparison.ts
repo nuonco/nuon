@@ -1,12 +1,22 @@
 import { api } from '@/lib/api'
 import { buildQueryParams } from '@/utils/build-query-params'
 
+export type TBranchRunComparisonConfigDiffSourceFile = {
+  path: string
+  diff: string
+}
+
 export type TBranchRunComparisonConfigDiffEntry = {
   op: string
   name: string
   description?: string
   source_changed?: boolean
   file?: string
+  // Per-file diffs for files that changed inside a component's
+  // connected_repo directory (same repo as the branch). These files live
+  // outside the app's own config directory, so the source archive diff
+  // never captures them - source_changed is otherwise a bare boolean.
+  source_files?: TBranchRunComparisonConfigDiffSourceFile[]
 }
 
 export type TBranchRunComparisonConfigDiffSection = {
