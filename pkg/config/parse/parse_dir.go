@@ -163,7 +163,6 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		FieldTimeout: fieldTimeout,
 		RootDir:      fp,
 		OnLocalFile:  localSourceFileRecorder(source),
-		Restricted:   parseCfg.RestrictFetches,
 	}); err != nil {
 		return nil, ParseErr{
 			Description: "unable to get fields",
