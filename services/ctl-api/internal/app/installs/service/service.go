@@ -85,25 +85,25 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
+	org := require.OrgRoute(ge)
+
 	// get all installs across orgs
-	ge.GET("/v1/installs", s.GetOrgInstalls)
-	ge.GET("/v1/installs/label-keys", s.GetInstallLabelKeys)
-	ge.GET("/v1/installs/health", s.GetInstallsHealth)
-	ge.POST("/v1/installs", s.CreateInstallV2)
+	org.GET("/v1/installs", s.GetOrgInstalls)
+	org.GET("/v1/installs/label-keys", s.GetInstallLabelKeys)
+	org.GET("/v1/installs/health", s.GetInstallsHealth)
+	org.POST("/v1/installs", s.CreateInstallV2)
 
 	// get / create installs for an app
-	apps := ge.Group("/v1/apps/:app_id")
+	apps := require.OrgRoute(ge).Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
 		apps.GET("/installs", s.GetAppInstalls)
-		// apps.POST("/installs", s.CreateInstall)
 		s.POST(apps, "/installs", s.CreateInstall, api.APIContextTypePublic, true) // Deprecated
 	}
 
 	// deprecated sandbox run route
-	s.GET(ge, "/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun, api.APIContextTypePublic, true) // Deprecated
+	s.GET(org, "/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun, api.APIContextTypePublic, true) // Deprecated
 
-	// individual installs
-	installs := ge.Group("/v1/installs/:install_id")
+	installs := require.ResourceRoute(ge, permissions.KindInstall, "install_id").Group("/v1/installs/:install_id")
 	{
 		installs.GET("", s.GetInstall)
 		installs.PATCH("", s.UpdateInstall)
@@ -227,7 +227,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.DELETE("/telemetry/collector", s.DeleteInstallTelemetryCollector)
 
 		// phone home
-		installs.POST("/phone-home/:phone_home_id", s.InstallPhoneHome)
+		s.POST(installs, "/phone-home/:phone_home_id", s.InstallPhoneHome, api.APIContextTypePublic, true)
 
 		// runner bootstrap token
 		installs.POST("/runner-bootstrap-token", s.CreateRunnerBootstrapToken)
@@ -281,15 +281,15 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	}
 
 	// stack lookup by stack_id
-	ge.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
+	org.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
 
 	// org-level workflow queries (must be registered before /:workflow_id group)
-	ge.GET("/v1/workflows/pending-approvals", s.GetOrgPendingApprovals)
-	ge.GET("/v1/workflows", s.GetOrgWorkflows)
-	ge.POST("/v1/workflows/cancel", s.CancelWorkflows)
+	org.GET("/v1/workflows/pending-approvals", s.GetOrgPendingApprovals)
+	org.GET("/v1/workflows", s.GetOrgWorkflows)
+	org.POST("/v1/workflows/cancel", s.CancelWorkflows)
 
 	// workflows (standalone)
-	workflows := ge.Group("/v1/workflows/:workflow_id")
+	workflows := require.OrgRoute(ge).Group("/v1/workflows/:workflow_id", require.WorkflowInOrg(s.db))
 	{
 		workflows.GET("", s.GetWorkflow)
 		workflows.PATCH("", s.UpdateWorkflow)
@@ -321,13 +321,13 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	}
 
 	// deprecated install-workflows
-
-	s.GET(ge, "/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow, api.APIContextTypePublic, true)
-	s.PATCH(ge, "/v1/install-workflows/:install_workflow_id", s.UpdateInstallWorkflow, api.APIContextTypePublic, true)
-	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps", s.GetInstallWorkflowSteps, api.APIContextTypePublic, true)
-	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id", s.GetInstallWorkflowStep, api.APIContextTypePublic, true)
-	s.POST(ge, "/v1/install-workflows/:install_workflow_id/cancel", s.CancelInstallWorkflow, api.APIContextTypePublic, true)
-	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id", s.GetInstallWorkflowStepApproval, api.APIContextTypePublic, true)
+	installWorkflows := org.Group("/v1/install-workflows/:install_workflow_id", require.InstallWorkflowInOrg(s.db))
+	s.GET(installWorkflows, "", s.GetInstallWorkflow, api.APIContextTypePublic, true)
+	s.PATCH(installWorkflows, "", s.UpdateInstallWorkflow, api.APIContextTypePublic, true)
+	s.GET(installWorkflows, "/steps", s.GetInstallWorkflowSteps, api.APIContextTypePublic, true)
+	s.GET(installWorkflows, "/steps/:install_workflow_step_id", s.GetInstallWorkflowStep, api.APIContextTypePublic, true)
+	s.POST(installWorkflows, "/cancel", s.CancelInstallWorkflow, api.APIContextTypePublic, true)
+	s.GET(installWorkflows, "/steps/:install_workflow_step_id/approvals/:approval_id", s.GetInstallWorkflowStepApproval, api.APIContextTypePublic, true)
 
 	return nil
 }
@@ -351,6 +351,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			install.PATCH("/admin-update-runner", s.AdminUpdateInstallRunner)
 			install.POST("/admin-reconcile-entities", s.AdminReconcileInstallEntities)
 			install.POST("/admin-generate-state", s.AdminInstallGenerateInstallState)
+			install.POST("/admin-cleanup-tokens", s.AdminCleanupInstallTokens)
 
 			// NOTE(JM): the following endpoints should be removed after workflows/independent runners are rolled out
 			install.POST("/admin-reprovision", s.ReprovisionInstall)
@@ -383,14 +384,11 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	// phone home reported by the install stack over the runner API. The
-	// per-stack-version phone_home_id in the URL path is the secret; the route
-	// is already in the public whitelist, so no runner token is required.
-	api.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
-	require.Route(api, permissions.KindTelemetry, permissions.PermissionRead, "install_id").
+func (s *service) RegisterRunnerRoutes(engine *gin.Engine) error {
+	s.POST(engine, "/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHomeRunner, api.APIContextTypeRunner, true)
+	require.Route(engine, permissions.KindTelemetry, permissions.PermissionRead, "install_id").
 		GET("/v1/installs/:install_id/telemetry/collector-settings", s.GetInstallTelemetryCollectorSettings)
-	require.Route(api, permissions.KindTelemetry, permissions.PermissionCreate, "install_id").
+	require.Route(engine, permissions.KindTelemetry, permissions.PermissionCreate, "install_id").
 		POST("/v1/installs/:install_id/telemetry/access-token", s.CreateInstallTelemetryAccessToken)
 	return nil
 }

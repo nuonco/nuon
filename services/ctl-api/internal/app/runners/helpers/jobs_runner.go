@@ -6,6 +6,7 @@ import (
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -36,6 +37,9 @@ func (h *Helpers) CreateRunnerJob(ctx context.Context,
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job: %w", res.Error)
+	}
+	if err := h.provisionJobCredentials(ctx, job); err != nil {
+		return nil, err
 	}
 
 	return job, nil
@@ -78,6 +82,37 @@ func (h *Helpers) CreateMngRunnerJob(
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job: %w", res.Error)
 	}
+	if err := h.provisionJobCredentials(ctx, job); err != nil {
+		return nil, err
+	}
 
 	return job, nil
+}
+
+func (h *Helpers) provisionJobCredentials(ctx context.Context, job *app.RunnerJob) error {
+	orgID, err := orgIDForJob(ctx, h, job)
+	if err != nil {
+		return err
+	}
+	if err := h.ProvisionJobServiceAccount(ctx, orgID, job); err != nil {
+		return fmt.Errorf("unable to provision job service account: %w", err)
+	}
+	return nil
+}
+
+func orgIDForJob(ctx context.Context, h *Helpers, job *app.RunnerJob) (string, error) {
+	if orgID, err := cctx.OrgIDFromContext(ctx); err == nil && orgID != "" {
+		return orgID, nil
+	}
+	if job.RunnerID == "" {
+		return "", fmt.Errorf("job %s has no org context or runner", job.ID)
+	}
+	var runner app.Runner
+	if err := h.db.WithContext(ctx).Select("id", "org_id").Where(app.Runner{ID: job.RunnerID}).Take(&runner).Error; err != nil {
+		return "", fmt.Errorf("load runner for job credentials: %w", err)
+	}
+	if runner.OrgID == "" {
+		return "", fmt.Errorf("runner %s has no org", job.RunnerID)
+	}
+	return runner.OrgID, nil
 }

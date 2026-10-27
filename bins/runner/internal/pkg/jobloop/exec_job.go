@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/sandboxhandler"
@@ -58,9 +59,20 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	l = l.With(zap.String("runner_job.type", string(job.Type)))
 	l = l.With(zap.String("log_stream.id", job.LogStreamID))
 
+	l.Info("claiming job token")
+	jobToken, err := j.apiClient.ClaimJobToken(ctx, job.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to claim job token")
+	}
+	jobClient, err := j.apiClient.ForJob(job.ID, jobToken)
+	if err != nil {
+		return errors.Wrap(err, "unable to create job client")
+	}
+	ctx = nuonrunner.WithJobClient(ctx, jobClient)
+
 	// create an execution in the API
 	l.Info("creating job execution")
-	execution, err := j.apiClient.CreateJobExecution(ctx, job.ID, new(models.ServiceCreateRunnerJobExecutionRequest))
+	execution, err := j.client(ctx).CreateJobExecution(ctx, job.ID, new(models.ServiceCreateRunnerJobExecutionRequest))
 	if err != nil {
 		return errors.Wrap(err, "unable to create execution")
 	}
@@ -168,7 +180,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		)
 
 		var sandboxCfg *sandboxhandler.Config
-		apiCfg, err := j.apiClient.GetSandboxConfig(ctx, string(job.Type), string(job.Operation))
+		apiCfg, err := j.client(ctx).GetSandboxConfig(ctx, string(job.Type), string(job.Operation))
 		if err != nil {
 			l.Warn("unable to fetch sandbox config from API, using defaults",
 				zap.Error(err))
@@ -177,7 +189,13 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 			sandboxCfg = sandboxhandler.ConfigFromAPI(apiCfg)
 		}
 
-		handler = sandboxhandler.New(sandboxCfg, j.apiClient, j.cfg, j.shutdowner, job, execution)
+		handler = sandboxhandler.New(sandboxCfg, j.client(ctx), j.cfg, j.shutdowner, job, execution)
+	}
+
+	// In-job API traffic uses the job-token client; restore when done.
+	if setter, ok := handler.(jobs.APIClientSetter); ok {
+		prev := setter.SetAPIClient(jobClient)
+		defer setter.SetAPIClient(prev)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)

@@ -39,3 +39,9 @@ func New(params HandlerParams) (*handler, error) {
 		errRecorder: params.ErrRecorder,
 	}, nil
 }
+
+func (h *handler) SetAPIClient(c nuonrunner.Client) nuonrunner.Client {
+	prev := h.apiClient
+	h.apiClient = c
+	return prev
+}

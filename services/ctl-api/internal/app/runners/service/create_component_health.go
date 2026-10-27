@@ -121,6 +121,10 @@ func (s *service) CreateComponentHealth(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
+	if err := s.componentHealthAllowed(ctx, req); err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
@@ -391,6 +395,41 @@ func (s *service) updateInstallSandboxHealth(ctx context.Context, installID, wor
 		s.l.Warn("unable to update install sandbox health rollup",
 			zap.String("install_id", installID), zap.Error(err))
 	}
+}
+
+func (s *service) componentHealthAllowed(ctx *gin.Context, req CreateComponentHealthRequest) error {
+	runner, err := cctx.RunnerFromContext(ctx)
+	if err != nil {
+		return nil
+	}
+	if runner.RunnerGroup.Type != app.RunnerGroupTypeInstall || runner.RunnerGroup.OwnerID == "" || req.InstallID != runner.RunnerGroup.OwnerID {
+		return stderr.ErrNotFound{Err: fmt.Errorf("component health is outside this install"), Description: "not found"}
+	}
+	seen := map[string]struct{}{}
+	ids := make([]string, 0, len(req.Components))
+	for _, component := range req.Components {
+		if component.InstallComponentID == "" {
+			continue
+		}
+		if _, ok := seen[component.InstallComponentID]; ok {
+			continue
+		}
+		seen[component.InstallComponentID] = struct{}{}
+		ids = append(ids, component.InstallComponentID)
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	var count int64
+	if err := s.db.WithContext(ctx).Model(&app.InstallComponent{}).
+		Where("install_id = ? AND id IN ?", req.InstallID, ids).
+		Count(&count).Error; err != nil {
+		return fmt.Errorf("load install components: %w", err)
+	}
+	if int(count) != len(ids) {
+		return stderr.ErrNotFound{Err: fmt.Errorf("component health includes a component outside this install"), Description: "not found"}
+	}
+	return nil
 }
 
 func boundDetails(details string) string {

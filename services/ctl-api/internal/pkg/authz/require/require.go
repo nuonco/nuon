@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -54,6 +55,67 @@ func Route(router gin.IRouter, kind permissions.ResourceKind, verb permissions.P
 //	org.GET("/v1/orgs/current", handler)
 func OrgRoute(router gin.IRouter) *gin.RouterGroup {
 	return route(router, permissions.KindOrg, "", permissions.FromRequest)
+}
+
+// OrgOrInstallRoute is like OrgRoute, but also allows accounts that only have
+// install-scoped grants when runnerguard has set an install-scoped runner on the
+// request (job SA path). Org-wide grants still pass. Denials stay 403.
+func OrgOrInstallRoute(router gin.IRouter) *gin.RouterGroup {
+	return group(router, func(ctx *gin.Context) {
+		verb := permissions.FromRequest(ctx)
+		if verb == permissions.PermissionUnknown {
+			ctx.Error(stderr.ErrSystem{
+				Err:         fmt.Errorf("cannot infer permission for %s; use require.Route with an explicit permission", ctx.Request.Method),
+				Description: "invalid route authorization configuration",
+			})
+			ctx.Abort()
+			return
+		}
+
+		acct, err := cctx.AccountFromGinContext(ctx)
+		if err != nil {
+			cctx.GetLogger(ctx, zap.NewNop()).Info("route authorization denied",
+				zap.String("route", ctx.FullPath()),
+				zap.Error(fmt.Errorf("unable to resolve account from request: %w", err)),
+			)
+			ctx.Error(stderr.ErrNotFound{Err: errors.New("not found"), Description: "not found"})
+			ctx.Abort()
+			return
+		}
+
+		orgID, err := cctx.OrgIDFromContext(ctx)
+		if err != nil {
+			cctx.GetLogger(ctx, zap.NewNop()).Info("route authorization denied",
+				zap.String("route", ctx.FullPath()),
+				zap.Error(fmt.Errorf("unable to resolve org from request: %w", err)),
+			)
+			ctx.Error(stderr.ErrNotFound{Err: errors.New("not found"), Description: "not found"})
+			ctx.Abort()
+			return
+		}
+
+		if err := acct.AllPermissions.CanPerform(orgID, verb); err == nil {
+			ctx.Next()
+			return
+		}
+
+		if runner, err := cctx.RunnerFromContext(ctx); err == nil &&
+			runner.RunnerGroup.Type == app.RunnerGroupTypeInstall &&
+			runner.RunnerGroup.OwnerID != "" {
+			obj := permissions.Object(orgID, permissions.KindInstall, runner.RunnerGroup.OwnerID)
+			if err := acct.AllPermissions.CanPerform(obj, verb); err == nil {
+				ctx.Next()
+				return
+			}
+		}
+
+		ctx.Error(PermissionDeniedError(acct, orgID, verb, ScopeFromPath(ctx.FullPath())))
+		ctx.Abort()
+	})
+}
+
+func ResourceRoute(router gin.IRouter, kind permissions.ResourceKind, paramName string) *gin.RouterGroup {
+	return route(router, kind, paramName, permissions.FromRequest)
 }
 
 func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, permission func(*gin.Context) permissions.Permission) *gin.RouterGroup {

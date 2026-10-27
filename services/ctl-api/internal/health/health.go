@@ -47,6 +47,10 @@ func (s *Service) RegisterRunnerRoutes(api *gin.Engine) error {
 	return nil
 }
 
+func (s *Service) RegisterStackRoutes(api *gin.Engine) error {
+	return s.RegisterRunnerRoutes(api)
+}
+
 func (s *Service) RegisterAuthRoutes(api *gin.Engine) error {
 	api.GET("/livez", s.GetLivezHandler)
 	api.GET("/readyz", s.GetReadyzHandler)
