@@ -7,8 +7,8 @@ import { Toast } from '@/components/surfaces/Toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { deleteInstallTelemetryCollector } from '@/lib/ctl-api/installs/install-telemetry-collector'
-import { deleteStaticToken } from '@/lib/ctl-api/tokens/delete-static-token'
-import type { TStaticToken } from '@/types'
+import { deleteToken } from '@/lib/ctl-api/tokens/delete-token'
+import type { TToken } from '@/types'
 
 export const RemoveCollectorAccessModal = ({
   installId,
@@ -18,7 +18,7 @@ export const RemoveCollectorAccessModal = ({
 }: {
   installId: string
   orgId: string
-  token?: TStaticToken
+  token?: TToken
 } & IModal) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
@@ -26,13 +26,13 @@ export const RemoveCollectorAccessModal = ({
   const mutation = useMutation({
     mutationFn: () =>
       token
-        ? deleteStaticToken({ orgId, tokenId: token.id })
+        ? deleteToken({ orgId, tokenId: token.id! })
         : deleteInstallTelemetryCollector({ orgId, installId }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['install-telemetry-collector', orgId, installId],
       })
-      queryClient.invalidateQueries({ queryKey: ['static-tokens', orgId] })
+      queryClient.invalidateQueries({ queryKey: ['tokens', orgId] })
       queryClient.invalidateQueries({ queryKey: ['service-accounts', orgId] })
       removeModal(props.modalId)
       addToast(
