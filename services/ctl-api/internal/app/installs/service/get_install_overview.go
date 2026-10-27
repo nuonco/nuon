@@ -5,30 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/alignment"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-type InstallOverviewCommit struct {
-	SHA              string                   `json:"sha,omitempty"`
-	RunID            string                   `json:"run_id,omitempty"`
-	WorkflowID       string                   `json:"workflow_id,omitempty"`
-	BranchID         string                   `json:"branch_id,omitempty"`
-	AppConfigID      string                   `json:"app_config_id,omitempty"`
-	Message          string                   `json:"message,omitempty"`
-	Author           string                   `json:"author,omitempty"`
-	CreatedAt        *time.Time               `json:"created_at,omitempty"`
-	RunStatus        string                   `json:"run_status,omitempty"`
-	AwaitingApproval bool                     `json:"awaiting_approval,omitempty"`
-	Metadata         app.AppBranchRunMetadata `json:"metadata,omitzero"`
-}
+type InstallOverviewCommit = alignment.InstallOverviewCommit
 
 type InstallBranchTracking struct {
 	BranchID       string                  `json:"branch_id,omitempty"`
@@ -128,7 +115,7 @@ func (s *service) getInstallOverview(ctx context.Context, orgID, installID strin
 	if !includeAlignment {
 		return overview, nil
 	}
-	alignment, err := s.installAlignment(ctx, &install)
+	alignment, err := s.alignment.Read(ctx, &install)
 	if err != nil {
 		alignment = &InstallAlignment{
 			Error:     "Resource alignment unavailable",
@@ -408,33 +395,7 @@ func (s *service) appliedBranchRun(ctx context.Context, install *app.Install) (*
 }
 
 func commitFromRun(run *app.AppBranchRun) *InstallOverviewCommit {
-	if run == nil {
-		return nil
-	}
-	commit := &InstallOverviewCommit{
-		RunID:       run.ID,
-		BranchID:    run.AppBranchID,
-		AppConfigID: run.AppConfigID,
-		RunStatus:   run.Status,
-		SHA:         run.RunMetadata().HeadSHA,
-		Metadata:    run.RunMetadata(),
-	}
-	if run.WorkflowID != nil {
-		commit.WorkflowID = *run.WorkflowID
-	}
-	if commit.SHA == "" {
-		commit.SHA = run.HeadSHA
-	}
-	created := run.CreatedAt
-	commit.CreatedAt = &created
-	if run.VCSConnectionCommit != nil {
-		commit.Author = run.VCSConnectionCommit.AuthorName
-		commit.Message = firstLine(run.VCSConnectionCommit.Message)
-		if commit.SHA == "" {
-			commit.SHA = run.VCSConnectionCommit.SHA
-		}
-	}
-	return commit
+	return alignment.CommitFromRun(run)
 }
 
 func branchTrackingStatus(expected, applied *app.AppBranchRun) string {
@@ -462,14 +423,6 @@ func branchRunTerminal(status string) bool {
 	default:
 		return true
 	}
-}
-
-func firstLine(message string) string {
-	message = strings.TrimSpace(message)
-	if i := strings.IndexByte(message, '\n'); i >= 0 {
-		return message[:i]
-	}
-	return message
 }
 
 func isNotFound(err error) bool {

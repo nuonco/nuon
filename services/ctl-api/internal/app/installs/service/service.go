@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/alignment"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -67,6 +68,7 @@ type service struct {
 	cfg                  *internal.Config
 	componentHelpers     *componenthelpers.Helpers
 	helpers              *helpers.Helpers
+	alignment            *alignment.Helpers
 	accountsHelpers      *accountshelpers.Helpers
 	acctClient           *account.Client
 	appsHelpers          *appshelpers.Helpers
@@ -423,6 +425,7 @@ func New(params Params) (*service, error) {
 		mw:                   params.MW,
 		componentHelpers:     params.ComponentHelpers,
 		helpers:              params.Helpers,
+		alignment:            alignment.New(params.DB, params.Helpers, params.BlobService, params.L),
 		accountsHelpers:      params.AccountsHelpers,
 		acctClient:           params.AcctClient,
 		queueClient:          params.QueueClient,

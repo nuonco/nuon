@@ -1,4 +1,4 @@
-package service
+package alignment
 
 import (
 	"context"
@@ -60,7 +60,7 @@ func (st *installAlignmentState) inputWorkflowTargets(wf *app.Workflow) map[stri
 	return out
 }
 
-func (s *service) addInputWorkflowAttempts(ctx context.Context, db *gorm.DB, st *installAlignmentState, ev *alignmentEvidence) error {
+func (s *Helpers) addInputWorkflowAttempts(ctx context.Context, db *gorm.DB, st *installAlignmentState, ev *alignmentEvidence) error {
 	latest := db.WithContext(ctx).Raw(`
 		SELECT DISTINCT ON (changed.name, COALESCE(w.metadata->'resolve_drift_component_id', '')) w.id
 		FROM install_workflows w

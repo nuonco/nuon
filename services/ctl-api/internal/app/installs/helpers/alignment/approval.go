@@ -1,4 +1,4 @@
-package service
+package alignment
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-func (s *service) validateResolvePlan(ctx context.Context, db *gorm.DB, st *installAlignmentState, res *InstallAlignmentResource, approvalID string, allowUnresponded bool) (*alignmentApproval, error) {
+func (s *Helpers) validateResolvePlan(ctx context.Context, db *gorm.DB, st *installAlignmentState, res *InstallAlignmentResource, approvalID string, allowUnresponded bool) (*alignmentApproval, error) {
 	var approval app.WorkflowStepApproval
 	err := db.WithContext(ctx).Preload("Response").Preload("InstallWorkflowStep").
 		Where(app.WorkflowStepApproval{ID: approvalID, OrgID: st.install.OrgID}).First(&approval).Error
@@ -101,7 +101,7 @@ func (s *service) validateResolvePlan(ctx context.Context, db *gorm.DB, st *inst
 	return &alignmentApproval{approval: &approval, workflow: &wf}, nil
 }
 
-func (s *service) findApprovedResolvePlan(ctx context.Context, st *installAlignmentState, res *InstallAlignmentResource) (*alignmentApproval, error) {
+func (s *Helpers) findApprovedResolvePlan(ctx context.Context, st *installAlignmentState, res *InstallAlignmentResource) (*alignmentApproval, error) {
 	query := s.db.WithContext(ctx).Model(&app.WorkflowStepApproval{}).
 		Joins("JOIN install_workflow_step_approval_responses r ON r.install_workflow_step_approval_id = install_workflow_step_approvals.id AND r.deleted_at = 0").
 		Where("r.type = ? AND r.note NOT LIKE ?", app.WorkflowStepApprovalResponseTypeApprove, "auto-approved%").
@@ -139,7 +139,7 @@ func (s *service) findApprovedResolvePlan(ctx context.Context, st *installAlignm
 	return nil, nil
 }
 
-func (s *service) ensureResolvePlanApproved(ctx context.Context, tx *gorm.DB, approvalID string) (*app.WorkflowStepApprovalResponse, error) {
+func (s *Helpers) ensureResolvePlanApproved(ctx context.Context, tx *gorm.DB, approvalID string) (*app.WorkflowStepApprovalResponse, error) {
 	var locked app.WorkflowStepApproval
 	if err := tx.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE"}).Select("id").
 		Where(app.WorkflowStepApproval{ID: approvalID}).First(&locked).Error; err != nil {
