@@ -392,6 +392,7 @@ export const useRolloutGroups = () => {
       groups,
       steps: rolloutRun?.steps ?? [],
       installsByGroup: membership.installsByGroup,
+      runStatus: rolloutRun?.status?.status,
     })
       .filter((stage) => stage.kind === 'group')
       .map((stage): TTrackGroup => {
@@ -433,6 +434,7 @@ export const useRolloutGroups = () => {
     groups,
     installsById,
     rolloutRun?.steps,
+    rolloutRun?.status?.status,
     membership,
     installLink,
   ])

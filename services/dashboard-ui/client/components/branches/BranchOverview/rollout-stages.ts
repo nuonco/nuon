@@ -166,11 +166,16 @@ export const buildRolloutStages = ({
   steps,
   installsByGroup,
   sha,
+  runStatus,
 }: {
   groups: TAppBranchInstallGroup[]
   steps: TInstallWorkflowStep[]
   installsByGroup: TInstall[][]
   sha?: string
+  // Status of the overall branch run. A group that never got its own steps
+  // (e.g. the run was cancelled before this group started) otherwise stays
+  // "pending" forever instead of reflecting how the run actually ended.
+  runStatus?: string
 }): TRolloutStage[] => {
   const ordered = [...steps].sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
   const commit = ordered.find((step) => isCommitStep(step.name))
@@ -217,12 +222,17 @@ export const buildRolloutStages = ({
         (entry) =>
           stepStatusCategory(normalizeInstallStatus(entry.status)) === 'error'
       )
+      const rawStatus = installFailed ? 'error' : aggregateStatus(groupSteps)
+      const status =
+        rawStatus === 'pending' && runStatus === 'cancelled'
+          ? 'cancelled'
+          : rawStatus
 
       return {
         id: group.id || `group-${index}`,
         kind: 'group' as const,
         name,
-        status: installFailed ? 'error' : aggregateStatus(groupSteps),
+        status,
         detail: installs ? undefined : pluralize(known.length, 'install'),
         durationNs: durationNs(groupSteps),
         installs,
