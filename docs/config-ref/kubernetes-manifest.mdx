@@ -47,7 +47,7 @@ title: 'Kubernetes Manifest'
 | **`path`**<br/>string | kustomization directory path Path to the kustomization directory, relative to the source root. | **✅ Required** | `"overlays/production"`, `"."` |
 | **`patches`**<br/>array | additional patch files Additional patch files to apply after kustomize build. | **Optional** | `"patches/namespace.yaml"` |
 | **`enable_helm`**<br/>boolean | enable Helm chart inflation Enable Helm chart inflation during kustomize build. | **Optional** | - |
-| **`load_restrictor`**<br/>string | file load restrictor Controls how kustomize loads files. Options: none, rootOnly. Default: rootOnly. | **Optional** | `"rootOnly"`, `"none"` |
+| **`load_restrictor`**<br/>string | file load restrictor Controls how kustomize loads files. Only rootOnly is supported. Default: rootOnly. | **Optional** | `"rootOnly"` |
 
 ### `public_repo`
 
