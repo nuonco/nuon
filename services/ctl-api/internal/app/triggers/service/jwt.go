@@ -9,7 +9,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"net/netip"
 	"net/url"
 	"strings"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/pkg/publicnet"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -40,13 +40,6 @@ const (
 	maxBearerTokenSize    = 16 << 10
 )
 
-var nonPublicOIDCPrefixes = []netip.Prefix{
-	netip.MustParsePrefix("100.64.0.0/10"),
-	netip.MustParsePrefix("192.0.0.0/24"),
-	netip.MustParsePrefix("198.18.0.0/15"),
-	netip.MustParsePrefix("2001:db8::/32"),
-}
-
 func validateOIDCIssuer(value string) error {
 	issuer, err := url.Parse(value)
 	if err != nil || issuer.Scheme != "https" || issuer.Hostname() == "" || issuer.User != nil || issuer.RawQuery != "" || issuer.Fragment != "" {
@@ -55,27 +48,10 @@ func validateOIDCIssuer(value string) error {
 	if strings.EqualFold(issuer.Hostname(), "localhost") {
 		return errors.New("bearer_jwt issuer may not address a local network")
 	}
-	if ip := net.ParseIP(issuer.Hostname()); ip != nil && !publicOIDCIP(ip) {
+	if ip := net.ParseIP(issuer.Hostname()); ip != nil && !publicnet.IsPublicIP(ip) {
 		return errors.New("bearer_jwt issuer may not address a local network")
 	}
 	return nil
-}
-
-func publicOIDCIP(ip net.IP) bool {
-	if ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() || ip.IsMulticast() {
-		return false
-	}
-	addr, ok := netip.AddrFromSlice(ip)
-	if !ok {
-		return false
-	}
-	addr = addr.Unmap()
-	for _, prefix := range nonPublicOIDCPrefixes {
-		if prefix.Contains(addr) {
-			return false
-		}
-	}
-	return true
 }
 
 type oidcTransport struct {
@@ -105,25 +81,7 @@ func newOIDCHTTPClient() *http.Client {
 	dialer := &net.Dialer{Timeout: 5 * time.Second, KeepAlive: 30 * time.Second}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.Proxy = nil
-	transport.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
-		host, port, err := net.SplitHostPort(address)
-		if err != nil {
-			return nil, err
-		}
-		ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
-		if err != nil {
-			return nil, err
-		}
-		for _, resolved := range ips {
-			if !publicOIDCIP(resolved.IP) {
-				return nil, errors.New("OIDC endpoint resolved to a local network")
-			}
-		}
-		if len(ips) == 0 {
-			return nil, errors.New("OIDC endpoint did not resolve")
-		}
-		return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
-	}
+	transport.DialContext = publicnet.DialContext(dialer)
 	return &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: oidcTransport{base: transport},
