@@ -347,10 +347,8 @@ This is off by default, and it's the only way health can affect whether a deploy
 Nuon can't observe never blocks a deploy.
 
 <Warning>
-**Gate a component only on what it provides.** Put a probe for a public endpoint on the load
-balancer component that exposes it, instead of the app behind it. If a component's gate depends
-on a downstream component, a first install deadlocks: the app's gate can't pass until the load
-balancer exists, and the load balancer never deploys because the app's gate is holding the workflow.
+**Gate a component only on what it provides.** If an app's gate probes an endpoint that a later
+component creates, like a load balancer, the first install deadlocks.
 </Warning>
 
 ## Canary and bake periods
