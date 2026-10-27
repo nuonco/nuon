@@ -61,8 +61,6 @@ func (r CheckReason) Metadata() map[string]any {
 // CheckContext carries state shared between checks in a single pipeline run.
 type CheckContext struct {
 	NoopPlan bool
-
-	PolicyNotPassed bool
 }
 
 const (

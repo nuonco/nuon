@@ -145,7 +145,7 @@ func (s *Signal) approvalCreateChecks(ctx workflow.Context, sig qsignal.Signal, 
 		noop.New(sig, checkCtx, orgAutoSkipNoop, setResultDirective),
 		planonly.New(s.OwnerID, checkCtx),
 		policy.New(sig, s.tmw, checkCtx),
-		autoapproval.New(stepSignal, setResultDirective, checkCtx),
+		autoapproval.New(stepSignal, setResultDirective),
 	}
 }
 

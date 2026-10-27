@@ -25,12 +25,10 @@ type Check struct {
 
 	// SetResultDirective writes the directive to the step's ResultDirective column.
 	SetResultDirective func(ctx workflow.Context, stepID string, d directive.Step) error
-
-	checkCtx *directive.CheckContext
 }
 
-func New(stepSignalFn func(*app.WorkflowStep) signal.Signal, setDirective func(workflow.Context, string, directive.Step) error, checkCtx *directive.CheckContext) directive.ApprovalCreateCheck {
-	return &Check{StepSignalFn: stepSignalFn, SetResultDirective: setDirective, checkCtx: checkCtx}
+func New(stepSignalFn func(*app.WorkflowStep) signal.Signal, setDirective func(workflow.Context, string, directive.Step) error) directive.ApprovalCreateCheck {
+	return &Check{StepSignalFn: stepSignalFn, SetResultDirective: setDirective}
 }
 
 func (c *Check) Name() string { return "auto-approval" }
@@ -43,9 +41,6 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	if directive.ResolveDrift(ctx, flw) {
 		if !directive.ResolveDriftApprovalPolicy(ctx, flw) || flw.ApprovalOption != app.InstallApprovalOptionApproveAll {
 			return c.runPriorApprovalMatch(ctx, step, flw)
-		}
-		if c.checkCtx.PolicyNotPassed {
-			return directive.Pass(), nil
 		}
 	}
 
@@ -82,7 +77,7 @@ type autoApproval struct {
 func (c *Check) runPriorApprovalMatch(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
 	l, _ := log.WorkflowLogger(ctx)
 	priorApprovalID := directive.ReuseApprovalID(flw)
-	if priorApprovalID == "" || step.Approval == nil || c.checkCtx.PolicyNotPassed {
+	if priorApprovalID == "" || step.Approval == nil {
 		return directive.Pass(), nil
 	}
 

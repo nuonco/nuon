@@ -26,7 +26,8 @@ const (
 	WarnViolationsKey  = "warn_violations"
 	PassedPolicyIDsKey = "passed_policy_ids"
 
-	policyEvaluationMetric = "policy.evaluation"
+	policyEvaluationMetric      = "policy.evaluation"
+	policyErrorsTerminalVersion = "policy-check-errors-terminal-v1"
 )
 
 // Check implements directive.ApprovalCreateCheck for policy evaluation.
@@ -67,13 +68,10 @@ func (c *Check) requiresEvaluation() bool {
 }
 
 func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
-	if c.checkCtx.NoopPlan && !directive.ResolveDriftApprovalPolicy(ctx, flw) {
-		return directive.Pass(), nil
-	}
 	l, _ := log.WorkflowLogger(ctx)
 
 	if !c.requiresEvaluation() {
-		result, autoApproved := c.autoApprove(ctx, l, step, flw)
+		result, autoApproved := c.autoApprove(ctx, l, step)
 		if autoApproved {
 			return result, nil
 		}
@@ -88,11 +86,13 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	violations, policyContext, outcome, policyErr := checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
 	if policyErr != nil {
-		l.Error("failed to check policies; continuing with warning",
+		l.Error("failed to check policies",
 			zap.String("step_id", step.ID),
 			zap.Error(policyErr))
-		c.checkCtx.PolicyNotPassed = true
 		c.recordFailure(ctx, step, flw, policyErr)
+		if workflow.GetVersion(ctx, policyErrorsTerminalVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			return directive.Pass(), policyErr
+		}
 		recordEvaluationCompositeError(ctx, l, step, policyErr)
 		return directive.Pass(), nil
 	}
@@ -135,9 +135,11 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 			stage: string(policyerrors.EvaluationFailureStagePersistence),
 			err:   errors.Wrap(reportErr, "unable to persist policy report"),
 		}
-		l.Error("failed to persist policy report; continuing with warning", zap.Error(reportErr))
-		c.checkCtx.PolicyNotPassed = true
+		l.Error("failed to persist policy report", zap.Error(reportErr))
 		c.recordFailure(ctx, step, flw, policyErr)
+		if workflow.GetVersion(ctx, policyErrorsTerminalVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			return directive.Pass(), policyErr
+		}
 		recordEvaluationCompositeError(ctx, l, step, policyErr)
 	} else {
 		c.recordSuccess(ctx, step, flw, outcome)
@@ -158,7 +160,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	// If the signal opts into auto-approve on policies passing and there are
 	// no deny violations, short-circuit the pipeline with a continue directive.
 	if reportErr == nil {
-		if result, autoApproved := c.autoApprove(ctx, l, step, flw); autoApproved {
+		if result, autoApproved := c.autoApprove(ctx, l, step); autoApproved {
 			return result, nil
 		}
 	}
@@ -169,10 +171,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 // autoApprove builds the approve-and-continue result for signals that opted into
 // auto-approval on passing policies. Callers only reach it once evaluation has
 // produced no deny violations, or when the signal has nothing to evaluate.
-func (c *Check) autoApprove(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, bool) {
-	if directive.ResolveDrift(ctx, flw) && !directive.ResolveDriftApprovalPolicy(ctx, flw) {
-		return directive.Pass(), false
-	}
+func (c *Check) autoApprove(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep) (directive.CheckResult, bool) {
 	aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing)
 	if !ok || !aa.AutoApproveOnPoliciesPassing(ctx) {
 		return directive.Pass(), false
