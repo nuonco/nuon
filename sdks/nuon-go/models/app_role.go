@@ -57,6 +57,9 @@ type AppRole struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// version
+	Version int64 `json:"version,omitempty"`
 }
 
 // Validate validates this app role

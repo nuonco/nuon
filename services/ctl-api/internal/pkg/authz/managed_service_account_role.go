@@ -21,11 +21,17 @@ func (h *Client) EnsureManagedServiceAccountRole(ctx context.Context, accountID 
 	}
 	orgID := want.OrgID.ValueString()
 	for object, verb := range want.Policies[0].Permissions {
-		if object != orgID && !strings.HasPrefix(object, orgID+":") {
-			return fmt.Errorf("private role grant %q is outside the owning org", object)
-		}
 		if verb == nil {
 			return fmt.Errorf("private role grant requires a permission")
+		}
+		if object == permissions.APIPermissionKey {
+			if _, err := permissions.ParseAPI(*verb); err != nil {
+				return err
+			}
+			continue
+		}
+		if object != orgID && !strings.HasPrefix(object, orgID+":") {
+			return fmt.Errorf("private role grant %q is outside the owning org", object)
 		}
 		if _, err := permissions.NewPermission(*verb); err != nil {
 			return err
@@ -106,6 +112,9 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 		return fmt.Errorf("load private role assignment: %w", err)
 	}
 	if count == 0 {
+		if err := assertRoleAPICompatible(tx, accountID, want); err != nil {
+			return err
+		}
 		if err := tx.Create(&app.AccountRole{
 			OrgID: generics.NewNullString(want.OrgID.ValueString()), RoleID: want.ID, AccountID: accountID,
 		}).Error; err != nil {

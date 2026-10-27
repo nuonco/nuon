@@ -20196,7 +20196,7 @@ func (a *Client) MoveInstallToAppBranch(params *MoveInstallToAppBranchParams, au
 /*
 PhoneHome phones home for an install
 
-A public endpoint for phoning home from a runner AWS cloudformation stack upon successfully processing it.
+Deprecated. Phone home with POST /v1/stacks/{install_id}/phone-home on the stack API. The caller authenticates as the stack service account, and the path no longer contains phone_home_id.
 */
 func (a *Client) PhoneHome(params *PhoneHomeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PhoneHomeCreated, error) {
 	// NOTE: parameters are not validated before sending

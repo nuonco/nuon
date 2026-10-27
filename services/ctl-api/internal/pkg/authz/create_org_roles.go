@@ -26,92 +26,78 @@ func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
 // standardOrgRoles defines the managed roles every org gets. It is the single
 // source of truth for their permissions and metadata: new orgs get these rows
 // at creation, and ReconcileOrgRoles keeps existing orgs' metadata in sync.
+func orgPolicy(orgID string, name app.PolicyName, verb permissions.Permission, api permissions.API) app.Policy {
+	return app.Policy{
+		OrgID: generics.NewNullString(orgID),
+		Name:  name,
+		Permissions: pgtype.Hstore(map[string]*string{
+			orgID:                        verb.ToStrPtr(),
+			permissions.APIPermissionKey: generics.ToPtr(string(api)),
+		}),
+	}
+}
+
 func standardOrgRoles(orgID string) []app.Role {
 	return []app.Role{
 		{
 			OrgID:       generics.NewNullString(orgID),
 			RoleType:    app.RoleTypeOrgAdmin,
+			Version:     app.RoleVersionV2,
 			Title:       "Admin",
 			Description: "Full access to the organization and all of its resources.",
 			Contexts:    []string{app.RoleContextTeam, app.RoleContextServiceAccount, app.RoleContextAPIToken, app.RoleContextTrustPolicy},
 			Managed:     true,
 			Policies: []app.Policy{
-				{
-					OrgID: generics.NewNullString(orgID),
-					Name:  app.PolicyNameOrgAdmin,
-					Permissions: pgtype.Hstore(map[string]*string{
-						orgID: permissions.PermissionAll.ToStrPtr(),
-					}),
-				},
+				orgPolicy(orgID, app.PolicyNameOrgAdmin, permissions.PermissionAll, permissions.APICtl),
 			},
 		},
 
 		{
 			OrgID:       generics.NewNullString(orgID),
 			RoleType:    app.RoleTypeOrgSupport,
+			Version:     app.RoleVersionV2,
 			Title:       "Support",
 			Description: "Deprecated full-access role; no longer offered for new assignments.",
 			Managed:     true,
 			Policies: []app.Policy{
-				{
-					OrgID: generics.NewNullString(orgID),
-					Name:  app.PolicyNameOrgSupport,
-					Permissions: pgtype.Hstore(map[string]*string{
-						orgID: permissions.PermissionAll.ToStrPtr(),
-					}),
-				},
+				orgPolicy(orgID, app.PolicyNameOrgSupport, permissions.PermissionAll, permissions.APICtl),
 			},
 		},
 
 		{
 			OrgID:       generics.NewNullString(orgID),
 			RoleType:    app.RoleTypeOrgReadOnly,
+			Version:     app.RoleVersionV2,
 			Title:       "Read-only",
 			Description: "Read-only access to the organization and its resources.",
 			Contexts:    []string{app.RoleContextTeam, app.RoleContextServiceAccount, app.RoleContextAPIToken, app.RoleContextTrustPolicy},
 			Managed:     true,
 			Policies: []app.Policy{
-				{
-					OrgID: generics.NewNullString(orgID),
-					Name:  app.PolicyNameOrgReadOnly,
-					Permissions: pgtype.Hstore(map[string]*string{
-						orgID: permissions.PermissionRead.ToStrPtr(),
-					}),
-				},
+				orgPolicy(orgID, app.PolicyNameOrgReadOnly, permissions.PermissionRead, permissions.APICtl),
 			},
 		},
 
 		{
 			OrgID:       generics.NewNullString(orgID),
 			RoleType:    app.RoleTypeInstaller,
+			Version:     app.RoleVersionV2,
 			Title:       "Installer",
 			Description: "Deprecated full-access role; no longer offered for new assignments.",
 			Managed:     true,
 			Policies: []app.Policy{
-				{
-					OrgID: generics.NewNullString(orgID),
-					Name:  app.PolicyNameInstaller,
-					Permissions: pgtype.Hstore(map[string]*string{
-						orgID: permissions.PermissionAll.ToStrPtr(),
-					}),
-				},
+				orgPolicy(orgID, app.PolicyNameInstaller, permissions.PermissionAll, permissions.APICtl),
 			},
 		},
 
 		{
 			OrgID:       generics.NewNullString(orgID),
 			RoleType:    app.RoleTypeRunner,
+			Version:     app.RoleVersionV2,
 			Title:       "Runner",
 			Description: "Permissions for runners executing deployments.",
 			Managed:     true,
 			Policies: []app.Policy{
-				{
-					OrgID: generics.NewNullString(orgID),
-					Name:  "admin",
-					Permissions: pgtype.Hstore(map[string]*string{
-						orgID: permissions.PermissionAll.ToStrPtr(),
-					}),
-				},
+				orgPolicy(orgID, "admin", permissions.PermissionAll, permissions.APIRunner),
 			},
 		},
 	}
