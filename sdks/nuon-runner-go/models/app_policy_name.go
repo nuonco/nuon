@@ -48,6 +48,9 @@ const (
 	// AppPolicyNameRunner captures enum value "runner"
 	AppPolicyNameRunner AppPolicyName = "runner"
 
+	// AppPolicyNameRunnerJob captures enum value "runner_job"
+	AppPolicyNameRunnerJob AppPolicyName = "runner_job"
+
 	// AppPolicyNameHostedInstaller captures enum value "hosted_installer"
 	AppPolicyNameHostedInstaller AppPolicyName = "hosted_installer"
 
@@ -66,7 +69,7 @@ var appPolicyNameEnum []any
 
 func init() {
 	var res []AppPolicyName
-	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","hosted_installer","stack","telemetry_collector","phone_home"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","runner_job","hosted_installer","stack","telemetry_collector","phone_home"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

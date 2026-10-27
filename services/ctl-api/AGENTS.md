@@ -28,6 +28,7 @@ Each surface is a separate HTTP listener (defaults in `internal/config.go`). Run
 | MCP | 8088 | `RegisterMCPTools` on domain services | Bearer + org RBAC | Agent MCP (Streamable HTTP) |
 | Slack API | 8089 | `RegisterSlackRoutes` | Slack signing / OAuth JWT | Slash commands, Events API |
 | nuonctl MCP | 8091 | `RegisterMCPTools` on `nuonctl_mcp_services` | Bearer + employee | Employee-only nuonctl MCP |
+| Stack API | 8093 | `RegisterStackRoutes` | Stack phone-home | Install stack callbacks |
 
 Health: `/livez`, `/readyz` on each Gin server. Despite the method name, most authenticated customer routes live on the
 public server via `RegisterPublicRoutes` at `/v1/*`. `RegisterAuthRoutes` is for the auth listener, not org-scoped API

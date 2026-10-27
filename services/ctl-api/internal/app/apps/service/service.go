@@ -70,13 +70,14 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	{
 		apps.POST("", s.CreateApp)
 		apps.GET("", s.GetApps)
-		apps.PATCH("/:app_id", s.UpdateApp)
-		apps.GET("/:app_id", s.GetApp)
-		apps.DELETE("/:app_id", s.DeleteApp)
+		appByID := apps.Group("/:app_id", require.AppInOrg(s.db))
+		appByID.PATCH("", s.UpdateApp)
+		appByID.GET("", s.GetApp)
+		appByID.DELETE("", s.DeleteApp)
 	}
 
 	// app-specific routes
-	app := ge.Group("/v1/apps/:app_id")
+	app := ge.Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
 		// app configs
 		app.GET("/template-config", s.GetAppConfigTemplate)
@@ -286,7 +287,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	require.OrgRoute(api).GET("/v1/apps/:app_id/config/:app_config_id", s.GetRunnerAppConfig)
+	require.OrgOrInstallRoute(api).GET("/v1/apps/:app_id/config/:app_config_id", s.GetRunnerAppConfig)
 	return nil
 }
 

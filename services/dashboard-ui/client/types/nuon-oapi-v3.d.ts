@@ -2242,7 +2242,8 @@ export interface paths {
   "/v1/installs/{install_id}/phone-home/{phone_home_id}": {
     /**
      * phone home for an install
-     * @description A public endpoint for phoning home from a runner AWS cloudformation stack upon successfully processing it.
+     * @deprecated
+     * @description Deprecated. Phone home with POST /v1/stacks/{install_id}/phone-home on the stack API. The caller authenticates as the stack service account, and the path no longer contains phone_home_id.
      */
     post: operations["PhoneHome"];
   };
@@ -5806,7 +5807,7 @@ export interface components {
     "app.KustomizeConfig": {
       /** @description Enable Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description Load restrictor: only "rootOnly" is supported */
+      /** @description Load restrictor: "none" or "rootOnly" (default: "rootOnly") */
       load_restrictor?: string;
       /** @description Additional patch files to apply after kustomize build */
       patches?: string[];
@@ -5849,7 +5850,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home";
+    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home" | "runner_job";
     "app.Notebook": {
       cell_count?: number;
       cells?: components["schemas"]["app.NotebookCell"][];
@@ -6155,7 +6156,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack" | "telemetry_collector" | "phone_home";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_job" | "hosted_installer" | "stack" | "telemetry_collector" | "phone_home";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -6359,9 +6360,10 @@ export interface components {
        */
       title?: string;
       updated_at?: string;
+      version?: number;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -8040,7 +8042,7 @@ export interface components {
     "plantypes.KustomizeBuildConfig": {
       /** @description EnableHelm enables Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description Ignored by the runner, which pins rootOnly so app config cannot widen worker file access */
+      /** @description LoadRestrictor controls file loading: "none" or "rootOnly" (default) */
       load_restrictor?: string;
       /** @description Patches are additional patch files to apply after kustomize build */
       patches?: string[];
@@ -27045,7 +27047,8 @@ export interface operations {
   };
   /**
    * phone home for an install
-   * @description A public endpoint for phoning home from a runner AWS cloudformation stack upon successfully processing it.
+   * @deprecated
+   * @description Deprecated. Phone home with POST /v1/stacks/{install_id}/phone-home on the stack API. The caller authenticates as the stack service account, and the path no longer contains phone_home_id.
    */
   PhoneHome: {
     parameters: {
