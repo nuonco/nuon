@@ -37,6 +37,7 @@ const (
 // @Param					phone_home_id	path	string		true	"phone home ID"
 // @Param					req		body	InstallPhoneHomeRequest	true	"Input"
 // @Tags					installs
+// @Deprecated				true
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -260,4 +261,25 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 	}
 
 	return nil
+}
+
+// @ID						PhoneHomeRunner
+// @Summary				phone home for an install
+// @Description			Deprecated. Use POST /v1/stacks/{install_id}/phone-home on the stack API. The caller authenticates as the stack service account, and the path no longer contains phone_home_id.
+// @Param					install_id	path	string		true	"install ID"
+// @Param					phone_home_id	path	string		true	"phone home ID"
+// @Param					req		body	InstallPhoneHomeRequest	true	"Input"
+// @Tags					installs/runner
+// @Deprecated				true
+// @Accept					json
+// @Produce				json
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.EmptyResponse
+// @Router					/v1/installs/{install_id}/phone-home/{phone_home_id} [post]
+func (s *service) InstallPhoneHomeRunner(ctx *gin.Context) {
+	s.InstallPhoneHome(ctx)
 }

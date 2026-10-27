@@ -30,6 +30,7 @@ type TokenSourceType string
 const (
 	TokenSourceTypeToken           TokenSourceType = "token"
 	TokenSourceTypeOIDCTrustPolicy TokenSourceType = "oidc_trust_policy"
+	TokenSourceTypeRunnerJob       TokenSourceType = "runner_job"
 )
 
 type Token struct {

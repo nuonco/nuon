@@ -28,6 +28,8 @@ const (
 	// Deprecated: installer is no longer assignable; it grants full org access, use org_admin instead.
 	RoleTypeInstaller       RoleType = "installer"
 	RoleTypeRunner          RoleType = "runner"
+	RoleTypeRunnerInstall   RoleType = "runner_install"
+	RoleTypeRunnerJob       RoleType = "runner_job"
 	RoleTypeHostedInstaller RoleType = "hosted-installer"
 	// RoleTypeStack is per-install: one role per install-stack service account,
 	// granting only that install's stack endpoints.
@@ -46,6 +48,11 @@ const (
 	RoleContextTrustPolicy    = "oidc_trust_policy"
 )
 
+const (
+	RoleVersionV1 = 1
+	RoleVersionV2 = 2
+)
+
 type Role struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"notnull;defaultnull" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -61,6 +68,7 @@ type Role struct {
 	Org   *Org                `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	RoleType RoleType `json:"role_type,omitzero" gorm:"defaultnull;notnull" temporaljson:"role_type,omitzero,omitempty"`
+	Version  int      `json:"version,omitzero" gorm:"not null;default:1" temporaljson:"version,omitzero,omitempty"`
 
 	// display + assignability metadata; the single source of truth read by
 	// GET /v1/roles and every role picker. Managed roles are kept in sync
@@ -99,6 +107,9 @@ func (a *Role) BeforeCreate(tx *gorm.DB) error {
 	}
 	if a.CreatedByID == "" {
 		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+	if a.Version == 0 {
+		a.Version = RoleVersionV1
 	}
 
 	return nil

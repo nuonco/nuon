@@ -11,6 +11,7 @@ import (
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -58,7 +59,7 @@ func New(params Params) *service {
 func (s *service) RegisterAuthRoutes(api *gin.Engine) error { return nil }
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	apps := api.Group("/v1/apps/:app_id")
+	apps := api.Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
 		runbooks := apps.Group("/runbooks")
 		{

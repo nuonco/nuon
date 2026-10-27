@@ -68,12 +68,14 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		respZapFields := m.responseToZapFields(ctx, w, startAt)
 		responseMessage := fmt.Sprintf("res: %s %s %d (%.2fms)", ctx.Request.Method, path, status, duration)
 
-		if status >= 500 {
+		switch {
+		case status >= 500:
 			childLogger.Error(responseMessage, respZapFields...)
-		} else {
-			if logRequests {
-				childLogger.Info(responseMessage, respZapFields...)
-			}
+		case status >= 400:
+			// Always surface client errors (e.g. 403) even when org debug is off.
+			childLogger.Warn(responseMessage, respZapFields...)
+		case logRequests:
+			childLogger.Info(responseMessage, respZapFields...)
 		}
 	}
 }
@@ -189,7 +191,7 @@ func (m *middleware) responseToZapFields(ctx *gin.Context, bw *responseBodyWrite
 		}
 	}
 
-	if ctx.Writer.Status() >= 500 {
+	if ctx.Writer.Status() >= 400 {
 		fields = append(fields, zap.String("response_body", bw.body.String()))
 	}
 
