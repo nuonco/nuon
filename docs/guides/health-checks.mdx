@@ -38,12 +38,6 @@ Nuon checks the components running on each install regularly, so you can see the
   </Step>
 </Steps>
 
-<TryWithYourAgent
-  title="Check install health"
-  tools={["get_install_health"]}
-  prompt={`Check the health of my Nuon install. List every component that isn't healthy and why, tell me when health was last reported, and tell me if Nuon can't reach the cluster.`}
-/>
-
 <Note>
 None of this requires configuration. The rest of this page covers optional settings that add to
 the default checks.
@@ -344,6 +338,13 @@ soon as its own observations come back healthy.
 
 This is off by default, and it's the only way health can affect whether a deploy passes. A component
 Nuon can't observe never blocks a deploy.
+
+<TryWithYourAgent
+  title="Deploy and verify health"
+  tools={["deploy_install_components", "watch_workflow", "get_install_health"]}
+  writes
+  prompt={`Deploy the latest build of the api component to my Nuon install and watch the workflow through its verify health step. If the component doesn't stay healthy, show me the failing resource and the reason, and tell me whether this deploy caused it.`}
+/>
 
 <Warning>
 **Gate a component only on what it provides.** Put a probe for a public endpoint on the load

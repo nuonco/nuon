@@ -1,4 +1,4 @@
-export const TryWithYourAgent = ({ title, prompt, tools = [] }) => {
+export const TryWithYourAgent = ({ title, prompt, tools = [], writes = false }) => {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -48,7 +48,7 @@ export const TryWithYourAgent = ({ title, prompt, tools = [] }) => {
         <div className="nuon-try-agent-body">
           <pre className="nuon-try-agent-prompt">{prompt}</pre>
           <p className="nuon-try-agent-note">
-            Read-only: the agent calls{" "}
+            {writes ? "Needs write access: the agent calls" : "Read-only: the agent calls"}{" "}
             {tools.map((t, i) => (
               <span key={t}>
                 {i > 0 && (i === tools.length - 1 ? " and " : ", ")}

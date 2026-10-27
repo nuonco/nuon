@@ -58,7 +58,7 @@ Roles can be scoped per component or per action; every workflow run records whic
 [How it works → Operation Roles](/concepts/operation-roles)
 
 <TryWithYourAgent
-  title="Summarize an install"
-  tools={["install_summary"]}
-  prompt={`Give me a summary of my Nuon install: what's deployed, which commit it's on, its health, and any failing workflows.`}
+  title="Triage an install"
+  tools={["install_summary", "get_pending_approvals", "get_workflow_step_logs"]}
+  prompt={`Summarize my Nuon install, then list what needs my attention: failing workflows, pending approvals, and unhealthy components. For each one, explain the cause and offer to fix it.`}
 />

@@ -50,17 +50,18 @@ A plan step waiting on you shows **Awaiting approval** in the step list. Open it
 
 You can approve plan steps in bulk at two levels. To approve every plan step on an install automatically, turn on auto approval in the install's settings. To approve the remaining plan steps in one workflow, click **Approve all** on that workflow.
 
-<TryWithYourAgent
-  title="Find failing workflows"
-  tools={["list_workflows", "get_pending_approvals", "get_workflow_step_logs"]}
-  prompt={`Check my Nuon install for workflows that failed or are waiting on an approval. For any failed step, pull its logs and explain what went wrong.`}
-/>
-
 ## Workflow Diffs
 
 If a component using Terraform, Helm or a Kubernetes manifest has been changed by the user, re-synced to an app and therefore re-built, the plan step will visually show the diff, aka the before and after proposed change, and require the user to approve or reject/deny the change. Learn more about [Understanding diffs](../updates/012-approval-diffs-plan-only).
 
 A Helm plan, for example, opens with how many resources it will add, change and destroy, then shows the diff of each manifest.
+
+<TryWithYourAgent
+  title="Review and approve a plan"
+  tools={["get_pending_approvals", "get_approval_plan_diff", "approve_step", "reject_step"]}
+  writes
+  prompt={`Find the workflow on my Nuon install that's waiting on approval. Load the plan diff, summarize what each resource change does, and flag anything that deletes or replaces a resource. Then approve or reject based on my answer.`}
+/>
 
 ## Drift Detection
 
