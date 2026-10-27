@@ -8,10 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/nuonco/nuon/pkg/origin"
 )
 
 const (
@@ -91,7 +92,7 @@ func (h *ConnectHandler) clearConnectState(c *gin.Context) {
 }
 
 func connectCookieSecure(appURL string) bool {
-	return !strings.Contains(appURL, "localhost") && !strings.Contains(appURL, "127.0.0.1")
+	return !origin.IsHTTPLoopback(appURL)
 }
 
 func sealConnectState(state connectState) (string, error) {

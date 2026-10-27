@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/origin"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 	authmw "github.com/nuonco/nuon/services/dashboard-ui/server/internal/middlewares/auth"
 )
@@ -210,13 +211,13 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 		c.Data(http.StatusOK, "text/html; charset=utf-8", html)
 	}
 
-	isLocal := h.cfg.ServiceDeployment == "local"
+	isLocal := h.cfg.IsLocalDev()
 	assetCacheControl := "public, max-age=31536000, immutable"
 	if isLocal {
 		assetCacheControl = "no-cache, no-store, must-revalidate"
 	}
 
-	isLocalEnv := strings.Contains(h.cfg.AppUrl, "localhost") || strings.Contains(h.cfg.AppUrl, "127.0.0.1")
+	isLocalEnv := origin.IsHTTPLoopback(h.cfg.AppUrl)
 
 	e.GET("/lite", func(c *gin.Context) {
 		shell := shellLite

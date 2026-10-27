@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/origin"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
@@ -27,12 +28,20 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	allowed := ""
+	allowLoopback := false
 	if m.cfg != nil {
 		allowed = originOf(m.cfg.AppUrl)
+		allowLoopback = m.cfg.CORSAllowLoopbackOrigins
+	}
+	if m.l != nil && allowLoopback {
+		m.l.Warn("plain-http loopback origins are allowed with credentials")
 	}
 	return cors.New(cors.Config{
-		AllowOriginFunc: func(origin string) bool {
-			return allowed != "" && originOf(origin) == allowed
+		AllowOriginFunc: func(requestOrigin string) bool {
+			if allowed != "" && originOf(requestOrigin) == allowed {
+				return true
+			}
+			return allowLoopback && origin.IsHTTPLoopback(requestOrigin)
 		},
 		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{
