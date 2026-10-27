@@ -39,4 +39,3 @@ func (h *handler) SetAPIClient(c nuonrunner.Client) nuonrunner.Client {
 	h.apiClient = c
 	return prev
 }
-

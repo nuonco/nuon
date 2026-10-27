@@ -55,7 +55,6 @@ func (h *handler) SetAPIClient(c nuonrunner.Client) nuonrunner.Client {
 	return prev
 }
 
-
 func (h *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error {
 	return nil
 }

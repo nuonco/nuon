@@ -55,7 +55,6 @@ func (h *handler) SetAPIClient(c nuonrunner.Client) nuonrunner.Client {
 	return prev
 }
 
-
 func (h *handler) Name() string {
 	return "sandbox-build"
 }
