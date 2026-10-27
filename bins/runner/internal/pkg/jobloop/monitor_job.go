@@ -24,7 +24,7 @@ func (j *jobLoop) monitorJob(ctx context.Context, cancel func(), doneCh chan str
 		case <-ticker.C:
 		}
 
-		job, err := j.apiClient.GetJob(ctx, jobID)
+		job, err := j.client(ctx).GetJob(ctx, jobID)
 		if err != nil {
 			l.Warn("unable to fetch job cancellation status", zap.Error(err))
 			continue

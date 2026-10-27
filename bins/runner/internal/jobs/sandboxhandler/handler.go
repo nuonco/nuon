@@ -59,6 +59,12 @@ func New(
 	}
 }
 
+func (h *Handler) SetAPIClient(c nuonrunner.Client) nuonrunner.Client {
+	prev := h.apiClient
+	h.apiClient = c
+	return prev
+}
+
 func (h *Handler) Name() string {
 	return "sandbox"
 }
@@ -581,7 +587,7 @@ func (h *Handler) writeTerraformSandboxMode(ctx context.Context, plan *plantypes
 	}
 
 	if _, err := h.apiClient.UpdateTerraformStateJSON(ctx, plan.WorkspaceID, &h.job.ID, []byte(plan.StateJSON)); err != nil {
-		return cockerrors.Errorf("unable to update state json")
+		return cockerrors.Wrap(err, "unable to update state json")
 	}
 
 	if len(plan.PlanContents) > 0 {

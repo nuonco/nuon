@@ -85,6 +85,10 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 				want.ID = role.ID
 			}
 		}
+		if want.ID == "" && binding.PrivateRoleID == nil {
+			want.Version = app.RoleVersionV2
+			want.Policies[0].Permissions[permissions.APIPermissionKey] = generics.ToPtr(string(permissions.APIStack))
+		}
 		if binding.AccountID != "" {
 			return New(Params{DB: tx}).EnsureManagedServiceAccountRole(ctx, accountID, want)
 		}

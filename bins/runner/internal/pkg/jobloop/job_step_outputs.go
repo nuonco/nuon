@@ -16,7 +16,7 @@ func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHan
 		return errors.Wrap(err, "unable to get outputs")
 	}
 
-	_, err = j.apiClient.CreateJobExecutionOutputs(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionOutputsRequest{
+	_, err = j.client(ctx).CreateJobExecutionOutputs(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionOutputsRequest{
 		Outputs: outputs,
 	})
 	if err != nil {

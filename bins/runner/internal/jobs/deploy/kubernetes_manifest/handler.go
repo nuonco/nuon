@@ -53,6 +53,12 @@ func New(params HandlerParams) (*handler, error) {
 	}, nil
 }
 
+func (h *handler) SetAPIClient(c nuonrunner.Client) nuonrunner.Client {
+	prev := h.apiClient
+	h.apiClient = c
+	return prev
+}
+
 func (h *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error {
 	return nil
 }
