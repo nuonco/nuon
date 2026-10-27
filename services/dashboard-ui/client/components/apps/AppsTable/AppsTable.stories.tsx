@@ -31,7 +31,7 @@ export const Empty = () => (
     data={[]}
     isLoading={false}
     emptyStateAction={
-      <Button href="/onboarding">
+      <Button>
         <Icon size="14" variant="AppWindowIcon" />
         Create app
       </Button>
