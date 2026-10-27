@@ -385,7 +385,32 @@ func TestResolveRoleARN(t *testing.T) {
 			errorContains: "role maintenance not found in install stack outputs",
 		},
 		{
-			name:     "gcp stack with disabled operation identity",
+			name:     "gcp stack with empty maintenance sa email falls back to runner identity",
+			roleName: "maintenance",
+			appCfg: &app.AppConfig{
+				PermissionsConfig: app.AppPermissionsConfig{
+					ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+					MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+					DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+				},
+			},
+			stackOutputs: &app.InstallStackOutputs{
+				Data: pgtype.Hstore{
+					"runner_service_account_email": generics.ToPtr("runner@project.iam.gserviceaccount.com"),
+					"provision_sa_email":           generics.ToPtr(""),
+					"maintenance_sa_email":         generics.ToPtr(""),
+					"deprovision_sa_email":         generics.ToPtr(""),
+				},
+				GCPStackOutputs: &app.GCPStackOutputs{},
+			},
+			installState: installState,
+			expectedARN:  "",
+			expectError:  false,
+
+			legacyGCPRoleFallback: true,
+		},
+		{
+			name:     "gcp stack with empty maintenance sa email errors when fallback is disabled",
 			roleName: "maintenance",
 			appCfg: &app.AppConfig{
 				PermissionsConfig: app.AppPermissionsConfig{
@@ -405,8 +430,6 @@ func TestResolveRoleARN(t *testing.T) {
 			expectedARN:   "",
 			expectError:   true,
 			errorContains: "role maintenance not found in install stack outputs",
-
-			legacyGCPRoleFallback: true,
 		},
 	}
 
