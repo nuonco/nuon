@@ -14,7 +14,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+type IssueTokenRequest struct {
+	SourceType app.TokenSourceType
+	SourceID   string
+	OrgID      string
+}
+
 func (c *Client) CreateToken(ctx context.Context, subjectOrEmail string, dur time.Duration) (*app.Token, error) {
+	return c.IssueToken(ctx, subjectOrEmail, dur, IssueTokenRequest{})
+}
+
+func (c *Client) IssueToken(ctx context.Context, subjectOrEmail string, dur time.Duration, req IssueTokenRequest) (*app.Token, error) {
 	acct, err := c.FindAccount(ctx, subjectOrEmail)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "unable to get account")
@@ -28,6 +38,9 @@ func (c *Client) CreateToken(ctx context.Context, subjectOrEmail string, dur tim
 		IssuedAt:    time.Now(),
 		Issuer:      "nuon",
 		AccountID:   acct.ID,
+		OrgID:       req.OrgID,
+		SourceType:  req.SourceType,
+		SourceID:    req.SourceID,
 	}
 
 	if err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/appbundles/transport"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -62,7 +63,7 @@ func (s *service) requireBundleExport(ctx *gin.Context) bool {
 }
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	group := api.Group("/v1/apps/:app_id/bundles")
+	group := api.Group("/v1/apps/:app_id/bundles", require.AppInOrg(s.db))
 	group.POST("", s.CreateBundle)
 	group.GET("", s.ListBundles)
 	group.GET("/:bundle_id", s.GetBundle)

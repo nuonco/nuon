@@ -10,7 +10,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
@@ -41,13 +40,7 @@ func (s *service) CreateRunnerJobExecutionOutputs(ctx *gin.Context) {
 	runnerJobExecutionID := ctx.Param("runner_job_execution_id")
 	runnerJobID := ctx.Param("runner_job_id")
 
-	jobExecution, err := s.getRunnerJobExecution(ctx, runnerJobID, runnerJobExecutionID)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	if err := authz.CanCreate(ctx, jobExecution.OrgID); err != nil {
+	if _, err := s.getRunnerJobExecution(ctx, runnerJobID, runnerJobExecutionID); err != nil {
 		ctx.Error(err)
 		return
 	}

@@ -8,7 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/jobcompleted"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 type UpdateRunnerJobRequest struct {
@@ -63,8 +68,40 @@ func (s *service) updateRunnerJob(ctx context.Context, runnerJobID string, req U
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner job status: %w", res.Error)
 	}
+	if req.Status.IsTerminal() {
+		var existing app.RunnerJob
+		if err := s.db.WithContext(ctx).Select("id", "runner_id").Where(app.RunnerJob{ID: runnerJobID}).Take(&existing).Error; err != nil {
+			return nil, fmt.Errorf("load job for completion: %w", err)
+		}
+		if err := s.enqueueJobCompleted(ctx, existing.RunnerID, existing.ID); err != nil {
+			return nil, err
+		}
+	}
 
 	return &job, nil
+}
+
+func (s *service) enqueueJobCompleted(ctx context.Context, runnerID, jobID string) error {
+	if s.queueClient == nil || runnerID == "" {
+		return nil
+	}
+	q, err := s.queueClient.GetQueueByOwnerAndName(ctx, runnerID, "runners", queuenames.RunnerSignalsQueueName)
+	if err != nil {
+		if generics.IsGormErrRecordNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("find runner-signals queue: %w", err)
+	}
+	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:        q.ID,
+		OwnerID:        runnerID,
+		OwnerType:      plugins.TableName(s.db, app.Runner{}),
+		Signal:         &jobcompleted.Signal{JobID: jobID, RunnerID: runnerID},
+		IdempotencyKey: "job-completed:" + jobID,
+	}); err != nil {
+		return fmt.Errorf("enqueue job-completed: %w", err)
+	}
+	return nil
 }
 
 // @ID						UpdateRunnerJobV2

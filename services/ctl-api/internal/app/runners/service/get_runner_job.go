@@ -8,8 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/shortid"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -132,6 +134,34 @@ func (s *service) GetRunnerJobV2(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to get runner job: %w", err))
 		return
 	}
+	if runnerJob.RunnerID != runnerID {
+		ctx.Error(stderr.ErrNotFound{
+			Err:         fmt.Errorf("job %s not found for runner %s", runnerJobID, runnerID),
+			Description: "job not found",
+		})
+		return
+	}
+	if err := requireAvailableRunnerJob(ctx, runnerJob); err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	ctx.JSON(http.StatusOK, runnerJob)
+}
+
+// requireAvailableRunnerJob enforces available-only for root runner tokens.
+// The job's own token may fetch the job in any status (e.g. in-progress monitor).
+func requireAvailableRunnerJob(ctx *gin.Context, job *app.RunnerJob) error {
+	if job.Status == app.RunnerJobStatusAvailable {
+		return nil
+	}
+	if acct, err := cctx.AccountFromGinContext(ctx); err == nil {
+		if prefix, perr := shortid.GetPrefix(acct.Subject); perr == nil && prefix == "job" && acct.Subject == job.ID {
+			return nil
+		}
+	}
+	return stderr.ErrConflict{
+		Err:         fmt.Errorf("job %s is %s", job.ID, job.Status),
+		Description: "job is not available",
+	}
 }

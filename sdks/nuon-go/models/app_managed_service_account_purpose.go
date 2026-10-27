@@ -38,6 +38,9 @@ const (
 
 	// AppManagedServiceAccountPurposePhoneHome captures enum value "phone_home"
 	AppManagedServiceAccountPurposePhoneHome AppManagedServiceAccountPurpose = "phone_home"
+
+	// AppManagedServiceAccountPurposeRunnerJob captures enum value "runner_job"
+	AppManagedServiceAccountPurposeRunnerJob AppManagedServiceAccountPurpose = "runner_job"
 )
 
 // for schema
@@ -45,7 +48,7 @@ var appManagedServiceAccountPurposeEnum []any
 
 func init() {
 	var res []AppManagedServiceAccountPurpose
-	if err := json.Unmarshal([]byte(`["stack","telemetry_collector","phone_home"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["stack","telemetry_collector","phone_home","runner_job"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
