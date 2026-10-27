@@ -341,9 +341,9 @@ Nuon can't observe never blocks a deploy.
 
 <TryWithYourAgent
   title="Deploy and verify health"
-  tools={["deploy_install_components", "watch_workflow", "get_install_health"]}
+  tools={["list_install_components", "deploy_install_components", "watch_workflow", "get_install_health"]}
   writes
-  prompt={`Deploy the api component to my Nuon install and confirm it stays healthy.`}
+  prompt={`Show me the components on my Nuon install, deploy the one I pick, and confirm it stays healthy.`}
 />
 
 <Warning>

@@ -110,9 +110,9 @@ Each run is recorded in the install's workflow history, so you can review the st
 
 <TryWithYourAgent
   title="Run a runbook"
-  tools={["get_runbook", "run_runbook", "watch_workflow", "get_workflow_step_logs"]}
+  tools={["list_runbooks", "get_runbook", "run_runbook", "watch_workflow", "get_workflow_step_logs"]}
   writes
-  prompt={`Run the upgrade runbook on my Nuon install and tell me if any step fails.`}
+  prompt={`Show me the runbooks on my Nuon install, run the one I pick, and tell me if any step fails.`}
 />
 
 ## A complete example
