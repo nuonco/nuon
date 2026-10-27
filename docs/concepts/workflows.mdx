@@ -6,13 +6,7 @@ boost: 4
 keywords: ["workflows", "what are workflows", "deploy lifecycle", "approvals", "plan and apply", "diffs", "drift detection", "retry", "auto retry", "auto_retry", "max_auto_retries", "workflow states", "monitoring deploys", "rollback", "release pipeline", "approval workflow", "approval gates", "release windows", "manual deploy", "deployment workflow"]
 ---
 
-import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
-
-<AskYourAgent
-  title="Find failing workflows"
-  tools={["list_workflows", "get_pending_approvals", "get_workflow_step_logs"]}
-  prompt={`Check my Nuon install for workflows that failed or are waiting on an approval. For any failed step, pull its logs and explain what went wrong.`}
-/>
+import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 
 ## What is a Workflow?
 
@@ -55,6 +49,12 @@ Components using Terraform, Helm and Kubernetes manifests run a plan step which 
 A plan step waiting on you shows **Awaiting approval** in the step list. Open it to see each resource the plan will create, update, delete or read, then choose **Approve plan**, **Deny plan** or **Retry plan**.
 
 You can approve plan steps in bulk at two levels. To approve every plan step on an install automatically, turn on auto approval in the install's settings. To approve the remaining plan steps in one workflow, click **Approve all** on that workflow.
+
+<TryWithYourAgent
+  title="Find failing workflows"
+  tools={["list_workflows", "get_pending_approvals", "get_workflow_step_logs"]}
+  prompt={`Check my Nuon install for workflows that failed or are waiting on an approval. For any failed step, pull its logs and explain what went wrong.`}
+/>
 
 ## Workflow Diffs
 

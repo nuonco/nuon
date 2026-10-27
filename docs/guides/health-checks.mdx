@@ -4,13 +4,7 @@ description: "Health checks tell you whether every component on every install is
 keywords: ["health checks", "health check", "healthcheck", "healthchecks", "health-check", "health checking", "component health", "component health check", "kubernetes health check", "helm health check", "terraform health check", "install health", "liveness", "readiness", "probe", "probes", "http probe", "tcp probe", "exec probe", "custom health check", "required checks", "verified deploys", "deploy gate", "block_deploy", "stabilization window", "uptime", "uptime monitoring", "canary", "bake period", "degraded", "unhealthy", "monitoring", "alerting", "resource explorer"]
 ---
 
-import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
-
-<AskYourAgent
-  title="Check install health"
-  tools={["get_install_health"]}
-  prompt={`Check the health of my Nuon install. List every component that isn't healthy and why, tell me when health was last reported, and tell me if Nuon can't reach the cluster.`}
-/>
+import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 
 Nuon checks the components running on each install regularly, so you can see their live status.
 
@@ -43,6 +37,12 @@ Nuon checks the components running on each install regularly, so you can see the
     health, filterable by component, kind, namespace and status.
   </Step>
 </Steps>
+
+<TryWithYourAgent
+  title="Check install health"
+  tools={["get_install_health"]}
+  prompt={`Check the health of my Nuon install. List every component that isn't healthy and why, tell me when health was last reported, and tell me if Nuon can't reach the cluster.`}
+/>
 
 <Note>
 None of this requires configuration. The rest of this page covers optional settings that add to
