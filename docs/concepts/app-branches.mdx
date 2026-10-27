@@ -7,6 +7,8 @@ boost: 4
 keywords: ["app branches", "app branch", "what are app branches", "continuous delivery", "git push deploy", "gitops", "install groups", "install_groups", "label selector", "staged rollout", "progressive rollout", "canary", "plan and approve", "PR preview", "pull request preview", "branch run", "Commit pushed", "nuon branches sync", "install version history", "app config version", "fleet deployment", "roll out to many installs"]
 ---
 
+import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
+
 ## What is an App Branch?
 
 An app branch connects one git branch to your [app template](/concepts/apps). By default, a push to the tracked branch triggers
@@ -131,6 +133,13 @@ env = "prod"
 Every change a branch run applies to an install is planned and reviewed first. Each `plan install group` step
 computes a diff per install in that install group. By default the plan waits for approval. Set
 `auto_approve_on_policies_passing = true` on an install group to approve automatically when policy checks pass.
+
+<TryWithYourAgent
+  title="Approve a rollout"
+  tools={["list_app_branches", "get_app_branch_run", "get_approval_plan_diff", "approve_step"]}
+  writes
+  prompt={`Show me the latest run of my Nuon app branch, summarize each install group's plan, and approve it if I agree.`}
+/>
 
 ## Install version history
 
