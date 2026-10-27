@@ -34,11 +34,6 @@ type ParseConfig struct {
 	// a separate installs repo, is still parsed. Callers that apply install
 	// files leave this unset.
 	SkipInstalls bool
-
-	// RestrictFetches confines get-enabled fields to files inside Dirname and
-	// remote sources on the public internet. Set it whenever the config comes
-	// from someone other than the operator running the parse.
-	RestrictFetches bool
 }
 
 func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
