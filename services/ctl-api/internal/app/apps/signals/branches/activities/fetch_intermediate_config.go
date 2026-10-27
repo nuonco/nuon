@@ -23,12 +23,11 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 
 	v := validator.New()
 	parseResult, err := parse.ParseDirWithSource(ctx, parse.ParseConfig{
-		Dirname:         sourceDir,
-		V:               v,
-		FileProcessor:   func(name string, obj map[string]any) map[string]any { return obj },
-		SkipBranches:    true,
-		SkipInstalls:    true,
-		RestrictFetches: true,
+		Dirname:       sourceDir,
+		V:             v,
+		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
+		SkipBranches:  true,
+		SkipInstalls:  true,
 	})
 	if err != nil {
 		return nil, configValidationFailed(err)
