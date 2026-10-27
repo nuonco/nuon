@@ -322,6 +322,13 @@ See [Webhooks](/guides/webhooks) for the full subscription model.
 
 ## Verified deploys
 
+<TryWithYourAgent
+  title="Deploy and verify health"
+  tools={["list_install_components", "deploy_install_components", "watch_workflow", "get_install_health"]}
+  writes
+  prompt={`Show me the components on my Nuon install, deploy the one I pick, and confirm it stays healthy.`}
+/>
+
 By default a deploy finishes when the apply succeeds. Set `block_deploy` and it finishes only once
 the component has held `healthy` for `stabilization_window` afterwards.
 
@@ -338,13 +345,6 @@ soon as its own observations come back healthy.
 
 This is off by default, and it's the only way health can affect whether a deploy passes. A component
 Nuon can't observe never blocks a deploy.
-
-<TryWithYourAgent
-  title="Deploy and verify health"
-  tools={["list_install_components", "deploy_install_components", "watch_workflow", "get_install_health"]}
-  writes
-  prompt={`Show me the components on my Nuon install, deploy the one I pick, and confirm it stays healthy.`}
-/>
 
 <Warning>
 **Gate a component only on what it provides.** Put a probe for a public endpoint on the load
