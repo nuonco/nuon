@@ -27,12 +27,19 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	allowed := ""
+	isLocalApp := false
 	if m.cfg != nil {
 		allowed = originOf(m.cfg.AppUrl)
+		isLocalApp = isLoopbackOrigin(m.cfg.AppUrl)
 	}
 	return cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			return allowed != "" && originOf(origin) == allowed
+			if allowed != "" && originOf(origin) == allowed {
+				return true
+			}
+			// Local dev tooling (live-reload proxy, worktrees) runs on other
+			// loopback ports the BFF has no way to enumerate.
+			return isLocalApp && isLoopbackOrigin(origin)
 		},
 		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{
@@ -57,4 +64,17 @@ func originOf(raw string) string {
 		return ""
 	}
 	return u.Scheme + "://" + strings.ToLower(u.Host)
+}
+
+func isLoopbackOrigin(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "http" {
+		return false
+	}
+	switch strings.ToLower(u.Hostname()) {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	default:
+		return false
+	}
 }
