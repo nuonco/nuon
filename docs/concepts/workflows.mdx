@@ -60,7 +60,7 @@ A Helm plan, for example, opens with how many resources it will add, change and 
   title="Review and approve a plan"
   tools={["get_pending_approvals", "get_approval_plan_diff", "approve_step", "reject_step"]}
   writes
-  prompt={`Find the workflow on my Nuon install that's waiting on approval. Load the plan diff, summarize what each resource change does, and flag anything that deletes or replaces a resource. Then approve or reject based on my answer.`}
+  prompt={`Summarize the plan waiting on approval on my Nuon install, then approve it if I agree.`}
 />
 
 ## Drift Detection
