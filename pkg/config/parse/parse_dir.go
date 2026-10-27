@@ -153,6 +153,11 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		install.StackOverrides.UIDefinitionContents = install.StackOverrides.UIDefinition
 	}
 
+	confineDir, err := parseConfineDir(fp, parseCfg.ConfineDir)
+	if err != nil {
+		return nil, err
+	}
+
 	fieldTimeout := defaultFieldGetTimeout
 	if parseCfg.FieldTimeout > 0 {
 		fieldTimeout = parseCfg.FieldTimeout
@@ -163,6 +168,8 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		FieldTimeout: fieldTimeout,
 		RootDir:      fp,
 		OnLocalFile:  localSourceFileRecorder(source),
+		Restricted:   parseCfg.RestrictFetches,
+		ConfineDir:   confineDir,
 	}); err != nil {
 		return nil, ParseErr{
 			Description: "unable to get fields",
@@ -226,6 +233,21 @@ func sourceFileRecorder(source *sourceCapture) func(dir.ParsedFile) error {
 		source.recordError(source.archive.AddMember(kind, name, file.Path))
 		return nil
 	}
+}
+
+func parseConfineDir(dirname, confineDir string) (string, error) {
+	if confineDir == "" {
+		return dirname, nil
+	}
+	abs, err := filepath.Abs(confineDir)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to resolve confine directory")
+	}
+	relative, err := filepath.Rel(abs, dirname)
+	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("config directory %s is outside %s", dirname, abs)
+	}
+	return abs, nil
 }
 
 func localSourceFileRecorder(source *sourceCapture) func(string, []byte) error {

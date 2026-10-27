@@ -2,6 +2,8 @@ package get
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -459,4 +461,116 @@ func TestRecordLocalFile(t *testing.T) {
 
 		require.NoError(t, g.recordLocalFile("./values.yaml", root))
 	})
+}
+
+func TestGetAll_Restricted(t *testing.T) {
+	outsideDir := t.TempDir()
+	outside := filepath.Join(outsideDir, "secret.txt")
+	require.NoError(t, os.WriteFile(outside, []byte("secret"), 0o644))
+
+	rootDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(rootDir, "test.txt"), []byte("test content"), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(rootDir, "files"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(rootDir, "files", "a.txt"), []byte("nested content"), 0o644))
+	require.NoError(t, os.Symlink(outside, filepath.Join(rootDir, "link.txt")))
+	require.NoError(t, os.Symlink("test.txt", filepath.Join(rootDir, "inner-link.txt")))
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("internal"))
+	}))
+	t.Cleanup(server.Close)
+
+	tests := map[string]struct {
+		input   string
+		want    string
+		wantErr bool
+	}{
+		"local_file":              {input: "./test.txt", want: "test content"},
+		"schemeless_local_file":   {input: "files/a.txt", want: "nested content"},
+		"symlink_inside_root":     {input: "./inner-link.txt", want: "test content"},
+		"plain_value_passthrough": {input: "hello", want: "hello"},
+		"abs_file":                {input: "file://" + outside, wantErr: true},
+		"relative_escape":         {input: "../" + filepath.Base(outsideDir) + "/secret.txt", wantErr: true},
+		"symlink_escape":          {input: "./link.txt", wantErr: true},
+		"loopback_http":           {input: server.URL, wantErr: true},
+		"metadata_http":           {input: "http://169.254.169.254/latest/meta-data/", wantErr: true},
+		"git_file":                {input: "git::file://" + rootDir + "//test.txt", wantErr: true},
+		"git_loopback":            {input: "git::https://127.0.0.1/repo.git//test.txt", wantErr: true},
+		"public_ip_http":          {input: "https://8.8.8.8/config.yaml", wantErr: true},
+		"public_ip_git":           {input: "git::https://8.8.8.8/repo.git//test.txt", wantErr: true},
+		"ipv6_http":               {input: "https://[2606:4700::1]/config.yaml", wantErr: true},
+		"file_forced":             {input: "file::" + outside, wantErr: true},
+		"http_forced":             {input: "http::" + server.URL, wantErr: true},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			input := testStruct{Obj: tc.input}
+			err := Parse(context.Background(), &input, &Options{
+				FieldTimeout: 5 * time.Second,
+				RootDir:      rootDir,
+				Restricted:   true,
+			})
+			if tc.wantErr {
+				require.Error(t, err)
+				require.Equal(t, tc.input, input.Obj)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.want, input.Obj)
+		})
+	}
+}
+
+func TestGetAll_RestrictedConfineDir(t *testing.T) {
+	outsideDir := t.TempDir()
+	outside := filepath.Join(outsideDir, "secret.txt")
+	require.NoError(t, os.WriteFile(outside, []byte("secret"), 0o644))
+
+	repoDir := t.TempDir()
+	configDir := filepath.Join(repoDir, "app")
+	sharedDir := filepath.Join(repoDir, "shared")
+	gitDir := filepath.Join(repoDir, ".git")
+	for _, dir := range []string{configDir, sharedDir, gitDir} {
+		require.NoError(t, os.MkdirAll(dir, 0o755))
+	}
+	require.NoError(t, os.WriteFile(filepath.Join(sharedDir, "timestamp.sh"), []byte("shared content"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(gitDir, "config"), []byte("url = https://x:token@github.com/acme/app.git"), 0o644))
+	require.NoError(t, os.Symlink("../shared/timestamp.sh", filepath.Join(configDir, "timestamp.sh")))
+	require.NoError(t, os.Symlink(outside, filepath.Join(configDir, "outside.txt")))
+	require.NoError(t, os.Symlink("../.git/config", filepath.Join(configDir, "git-config")))
+
+	tests := map[string]struct {
+		input      string
+		confineDir string
+		want       string
+		wantErr    bool
+	}{
+		"symlink_into_repo":            {input: "./timestamp.sh", confineDir: repoDir, want: "shared content"},
+		"relative_into_repo":           {input: "../shared/timestamp.sh", confineDir: repoDir, want: "shared content"},
+		"symlink_into_repo_unconfined": {input: "./timestamp.sh", wantErr: true},
+		"symlink_outside_repo":         {input: "./outside.txt", confineDir: repoDir, wantErr: true},
+		"relative_outside_repo":        {input: "../../" + filepath.Base(outsideDir) + "/secret.txt", confineDir: repoDir, wantErr: true},
+		"git_dir":                      {input: "../.git/config", confineDir: repoDir, wantErr: true},
+		"symlink_into_git_dir":         {input: "./git-config", confineDir: repoDir, wantErr: true},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			input := testStruct{Obj: tc.input}
+			err := Parse(context.Background(), &input, &Options{
+				FieldTimeout: 5 * time.Second,
+				RootDir:      configDir,
+				ConfineDir:   tc.confineDir,
+				Restricted:   true,
+			})
+			if tc.wantErr {
+				require.Error(t, err)
+				require.Equal(t, tc.input, input.Obj)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.want, input.Obj)
+		})
+	}
 }

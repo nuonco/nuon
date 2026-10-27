@@ -18,16 +18,18 @@ import (
 // @as-wrapper
 // @by-field sourceDir
 // @local
-func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir string) (*config.AppConfig, error) {
+func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir string, rootDir string) (*config.AppConfig, error) {
 	defer os.RemoveAll(sourceDir)
 
 	v := validator.New()
 	parseResult, err := parse.ParseDirWithSource(ctx, parse.ParseConfig{
-		Dirname:       sourceDir,
-		V:             v,
-		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
-		SkipBranches:  true,
-		SkipInstalls:  true,
+		Dirname:         sourceDir,
+		V:               v,
+		FileProcessor:   func(name string, obj map[string]any) map[string]any { return obj },
+		SkipBranches:    true,
+		SkipInstalls:    true,
+		RestrictFetches: true,
+		ConfineDir:      rootDir,
 	})
 	if err != nil {
 		return nil, configValidationFailed(err)

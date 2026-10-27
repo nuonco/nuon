@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -48,14 +49,24 @@ func ParseInstallConfig(r io.Reader, v *validator.Validate) (*config.Install, er
 // LoadInstallUIDefinition fetches an install override's ui_definition into
 // UIDefinitionContents. An unset path is a no-op. The config syncer uploads
 // whatever this leaves in the field.
-func LoadInstallUIDefinition(ctx context.Context, cfg *config.Install, rootDir string) error {
+//
+// Relative paths resolve from installDir, and local reads are confined to
+// rootDir, the checked-out repository.
+func LoadInstallUIDefinition(ctx context.Context, cfg *config.Install, rootDir, installDir string) error {
 	if cfg == nil || cfg.StackOverrides == nil || strings.TrimSpace(cfg.StackOverrides.UIDefinition) == "" {
 		return nil
 	}
 	cfg.StackOverrides.UIDefinitionContents = cfg.StackOverrides.UIDefinition
+
+	workDir, err := filepath.Rel(rootDir, installDir)
+	if err != nil || workDir == ".." || strings.HasPrefix(workDir, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("install directory %q is outside %q", installDir, rootDir)
+	}
 	if err := get.Parse(ctx, cfg.StackOverrides, &get.Options{
 		FieldTimeout: defaultFieldGetTimeout,
 		RootDir:      rootDir,
+		WorkDir:      workDir,
+		Restricted:   true,
 	}); err != nil {
 		return fmt.Errorf("ui_definition: %w", err)
 	}

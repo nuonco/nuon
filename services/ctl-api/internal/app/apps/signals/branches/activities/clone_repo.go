@@ -14,6 +14,7 @@ import (
 type CloneRepoResult struct {
 	WorkspaceID string `json:"workspace_id"`
 	SourceDir   string `json:"source_dir"`
+	RootDir     string `json:"root_dir"`
 }
 
 // @temporal-gen-v2 activity
@@ -45,6 +46,7 @@ func (a *Activities) cloneRepo(ctx context.Context, runID string, vcsConfigID st
 	return &CloneRepoResult{
 		WorkspaceID: workspaceID,
 		SourceDir:   ws.SourceDir(),
+		RootDir:     ws.Root(),
 	}, nil
 }
 

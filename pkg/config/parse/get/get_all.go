@@ -15,7 +15,7 @@ import (
 )
 
 func (g *get) GetAll(ctx context.Context) error {
-	return g.walkFields(ctx, g.dst, "")
+	return g.walkFields(ctx, g.dst, g.opts.WorkDir)
 }
 
 var errIsDirectory = errors.New("git source path is a directory")
@@ -209,6 +209,10 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 		if stat, err := os.Stat(subdirPath); err == nil && stat.IsDir() {
 			pwd = subdirPath
 		}
+	}
+
+	if g.opts.Restricted {
+		return g.processRestrictedField(ctx, inputVal, pwd)
 	}
 
 	detected, err := getter.Detect(inputVal, pwd, GetDetectors())

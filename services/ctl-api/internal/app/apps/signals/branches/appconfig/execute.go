@@ -122,8 +122,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"commit_sha", commitSHA,
 		"source_dir", sourceDir)
 
+	rootDir := cloneResult.RootDir
+	if rootDir == "" {
+		rootDir = sourceDir
+	}
+
 	intermediateConfig, err := activities.LocalAwaitFetchIntermediateConfig(ctx, activities.FetchIntermediateConfigRequest{
 		SourceDir: sourceDir,
+		RootDir:   rootDir,
 	})
 	if err != nil {
 		if detail, ok := branchrunerrors.ValidationDetail(err); ok {
