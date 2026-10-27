@@ -24,7 +24,7 @@ func New(lc fx.Lifecycle, cfg *internal.Config, l *zap.Logger) *Client {
 		return c
 	}
 
-	env := strings.ToLower(strings.TrimSpace(cfg.NuonEnv))
+	env := string(cfg.Env)
 	host := apiHost(cfg.PublicAPIURL)
 	c.l.Debug("posthog capture config", zap.String("env", env), zap.String("api_host", host))
 	ph, err := posthog.NewWithConfig(cfg.PostHogKey, posthog.Config{
@@ -95,7 +95,6 @@ func stampDeployment(l *zap.Logger, env, host string) func(posthog.Message) post
 			l.Debug("posthog capture",
 				zap.String("event", capture.Event),
 				zap.String("tool", propString(capture.Properties, "$mcp_tool_name")),
-				zap.String("install_id", propString(capture.Properties, "install_id")),
 				zap.String("agent", propString(capture.Properties, "agent")),
 				zap.String("command", propString(capture.Properties, "command")),
 				zap.String("env", propString(capture.Properties, "env")),

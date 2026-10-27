@@ -389,9 +389,6 @@ type Config struct {
 
 	PostHogKey  string `config:"posthog_key"`
 	PostHogHost string `config:"posthog_host"`
-	// NuonEnv is stamped on PostHog captures as "env". Set it to the same value as the
-	// Datadog env tag (cloud, byoc). Empty leaves the property off.
-	NuonEnv string `config:"nuon_env"`
 
 	// links
 	AppURL        string `config:"app_url" validate:"required"`

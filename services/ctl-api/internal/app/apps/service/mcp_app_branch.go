@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 func (s *service) findAppRef(ctx context.Context, orgID, appRef string) (*app.App, error) {
@@ -44,7 +43,6 @@ func (s *service) findInstallOnApp(ctx context.Context, orgID, appID, installRef
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to find install %q: %w", installRef, res.Error)
 	}
-	ctx = cctx.SetInstallIDContext(ctx, inst.ID)
 	return &inst, nil
 }
 

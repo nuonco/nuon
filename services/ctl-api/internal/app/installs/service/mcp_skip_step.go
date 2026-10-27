@@ -35,7 +35,6 @@ func (s *service) mcpSkipStep(ctx context.Context, _ *mcp.CallToolRequest, in mc
 		First(&workflow).Error; err != nil {
 		return nil, nil, fmt.Errorf("unable to find workflow %q: %w", in.WorkflowID, err)
 	}
-	noteMCPInstallWorkflow(ctx, workflow)
 
 	var step app.WorkflowStep
 	if err := s.db.WithContext(ctx).

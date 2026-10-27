@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type mcpGetWorkflowStepLogsInput struct {
@@ -45,7 +44,6 @@ func (s *service) mcpGetWorkflowStepLogs(ctx context.Context, _ *mcp.CallToolReq
 		First(&step).Error; err != nil {
 		return nil, nil, fmt.Errorf("unable to find step %q: %w", in.StepID, err)
 	}
-	ctx = cctx.SetInstallIDContext(ctx, s.mcpWorkflowInstallID(ctx, orgID, step.InstallWorkflowID))
 
 	if step.StepTargetID == "" || !stepTargetHasLogs(step.StepTargetType) {
 		return apiPkg.MCPJSONResult(mcpStepLogResult{

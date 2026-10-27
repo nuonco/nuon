@@ -2,8 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
-	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	posthog "github.com/posthog/posthog-go"
@@ -58,74 +56,19 @@ func (s *Server) newPostHogMiddleware() *posthogmcpsdk.Middleware {
 	return &m
 }
 
-func (s *Server) installIDMiddleware(next mcp.MethodHandler) mcp.MethodHandler {
-	return func(ctx context.Context, method string, req mcp.Request) (mcp.Result, error) {
-		ctx = cctx.SetInstallIDContext(ctx, "")
-		result, err := next(ctx, method, req)
-		if method == "tools/call" {
-			s.logMCPCapture(ctx, req)
-		}
-		return result, err
+func attributionProperties(_ context.Context, req *mcp.CallToolRequest, _ *mcp.CallToolResult, _ error) (posthog.Properties, error) {
+	if req == nil || req.Extra == nil {
+		return nil, nil
 	}
-}
-
-func (s *Server) logMCPCapture(ctx context.Context, req mcp.Request) {
-	if s == nil || s.l == nil || req == nil {
-		return
-	}
-	agent, command := "", ""
-	if extra := req.GetExtra(); extra != nil {
-		agent = extra.Header.Get(agentclient.Header)
-		command = extra.Header.Get(agentclient.CommandHeader)
-	}
-	cctx.GetLogger(ctx, s.l).Debug("mcp posthog capture",
-		zap.String("tool", mcpToolName(req)),
-		zap.String("install_id", cctx.InstallIDFromContext(ctx)),
-		zap.String("agent", agent),
-		zap.String("command", command),
-	)
-}
-
-func attributionProperties(ctx context.Context, req *mcp.CallToolRequest, _ *mcp.CallToolResult, _ error) (posthog.Properties, error) {
 	props := posthog.NewProperties()
-	if req != nil && req.Extra != nil {
-		if agent := req.Extra.Header.Get(agentclient.Header); agent != "" {
-			props.Set("agent", agent)
-		}
-		if command := req.Extra.Header.Get(agentclient.CommandHeader); command != "" {
-			props.Set("command", command)
-		}
+	if agent := req.Extra.Header.Get(agentclient.Header); agent != "" {
+		props.Set("agent", agent)
 	}
-	if id := mcpInstallID(ctx, req); id != "" {
-		props.Set("install_id", id)
+	if command := req.Extra.Header.Get(agentclient.CommandHeader); command != "" {
+		props.Set("command", command)
 	}
 	if len(props) == 0 {
 		return nil, nil
 	}
 	return props, nil
-}
-
-// mcpInstallID prefers the ID the handler resolved. Tools that take install_id
-// directly, without a lookup, fall back to that argument. A name in "install"
-// is not an ID.
-func mcpInstallID(ctx context.Context, req *mcp.CallToolRequest) string {
-	if id := cctx.InstallIDFromContext(ctx); id != "" {
-		return id
-	}
-	if req == nil || req.Params == nil || len(req.Params.Arguments) == 0 {
-		return ""
-	}
-	// These tools take an install ID and do not resolve a name.
-	switch req.Params.Name {
-	case "list_deploys", "list_workflows":
-	default:
-		return ""
-	}
-	var args struct {
-		InstallID string `json:"install_id"`
-	}
-	if err := json.Unmarshal(req.Params.Arguments, &args); err != nil {
-		return ""
-	}
-	return strings.TrimSpace(args.InstallID)
 }

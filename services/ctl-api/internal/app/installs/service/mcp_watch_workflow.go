@@ -102,7 +102,6 @@ func (s *service) fetchWorkflowSummary(ctx context.Context, orgID, workflowID st
 	if err != nil {
 		return nil, fmt.Errorf("unable to find workflow %q: %w", workflowID, err)
 	}
-	noteMCPInstallWorkflow(ctx, workflow)
 
 	summary := summarizeMCPWorkflow(workflow)
 	s.attachStackSetups(ctx, orgID, workflow.Steps, summary.Steps)

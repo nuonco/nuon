@@ -184,7 +184,6 @@ func (s *service) resolveInstallRef(ctx context.Context, orgID, installRef strin
 		First(&install).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
-	ctx = cctx.SetInstallIDContext(ctx, install.ID)
 
 	return &install, nil
 }

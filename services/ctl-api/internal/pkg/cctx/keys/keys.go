@@ -32,7 +32,6 @@ const (
 	TraceIDCtxKey           string = "trace_id"
 	FlowWorkflowIDCtxKey    string = "flow_workflow_id"
 	FlowInstallIDCtxKey     string = "flow_install_id"
-	InstallIDCtxKey         string = "install_id"
 	WorkflowTelemetryCtxKey string = "workflow_telemetry"
 	QueueIDCtxKey           string = "queue_id"
 	TokenRoleCtxKey         string = "token_role"
