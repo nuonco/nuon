@@ -82,6 +82,12 @@ type Config struct {
 	MailchimpAudienceID   string `config:"mailchimp_audience_id"`
 }
 
+const LocalDevDeployment = "dashboard-local"
+
+func (c *Config) IsLocalDev() bool {
+	return c.ServiceDeployment == LocalDevDeployment
+}
+
 func NewConfig() (*Config, error) {
 	var cfg Config
 	if err := config.LoadInto(nil, &cfg); err != nil {
@@ -91,6 +97,10 @@ func NewConfig() (*Config, error) {
 	v := validator.New()
 	if err := v.Struct(cfg); err != nil {
 		return nil, fmt.Errorf("unable to validate config: %w", err)
+	}
+
+	if cfg.CORSAllowLoopbackOrigins && !cfg.IsLocalDev() {
+		return nil, fmt.Errorf("cors_allow_loopback_origins is only allowed when service_deployment=%s", LocalDevDeployment)
 	}
 
 	return &cfg, nil

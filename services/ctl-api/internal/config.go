@@ -706,6 +706,10 @@ func NewConfig() (*Config, error) {
 		return nil, fmt.Errorf("unable to validate config: %w", err)
 	}
 
+	if cfg.CORSAllowLoopbackOrigins && cfg.ServiceDeployment != "local" {
+		return nil, fmt.Errorf("cors_allow_loopback_origins is only allowed when service_deployment=local")
+	}
+
 	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)
 	orgfeatures.SetAuto(cfg.AutoEnabledFeatures)
 

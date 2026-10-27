@@ -211,7 +211,7 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 		c.Data(http.StatusOK, "text/html; charset=utf-8", html)
 	}
 
-	isLocal := h.cfg.ServiceDeployment == "local"
+	isLocal := h.cfg.IsLocalDev()
 	assetCacheControl := "public, max-age=31536000, immutable"
 	if isLocal {
 		assetCacheControl = "no-cache, no-store, must-revalidate"

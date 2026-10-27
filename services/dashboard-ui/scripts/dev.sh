@@ -35,6 +35,7 @@ echo "Building dashboard server from ${NUON_DIR:-$REPO_DIR}..."
 go build -C "${NUON_DIR:-$REPO_DIR}" -o /tmp/dashboard-server ./services/dashboard-ui/server
 
 rm -f dist/.port
+export SERVICE_DEPLOYMENT=dashboard-local
 export CORS_ALLOW_LOOPBACK_ORIGINS=true
 /tmp/dashboard-server serve &
 
