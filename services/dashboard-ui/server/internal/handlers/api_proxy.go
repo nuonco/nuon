@@ -29,6 +29,7 @@ func (h *APIProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	}
 
 	proxy := &httputil.ReverseProxy{
+		ModifyResponse: stripUpstreamCORS,
 		Director: func(req *http.Request) {
 			token, _ := req.Cookie(authCookie)
 
@@ -46,5 +47,16 @@ func (h *APIProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	}
 
 	e.Any(APIProxyRoutePattern, gin.WrapH(proxy))
+	return nil
+}
+
+func stripUpstreamCORS(resp *http.Response) error {
+	h := resp.Header
+	h.Del("Access-Control-Allow-Origin")
+	h.Del("Access-Control-Allow-Credentials")
+	h.Del("Access-Control-Allow-Methods")
+	h.Del("Access-Control-Allow-Headers")
+	h.Del("Access-Control-Expose-Headers")
+	h.Del("Access-Control-Max-Age")
 	return nil
 }

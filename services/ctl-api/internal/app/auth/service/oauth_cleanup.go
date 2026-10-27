@@ -12,7 +12,7 @@ import (
 const oauthCleanupInterval = time.Hour
 
 // runOAuthCleanup periodically purges spent OAuth artifacts (expired or consumed
-// authorization codes and refresh tokens) so those tables stay bounded. It runs
+// authorization codes, refresh tokens and device authorizations) so those tables stay bounded. It runs
 // once at startup and then on an interval until the service stops.
 func (s *service) runOAuthCleanup() {
 	s.purgeExpiredOAuth(context.Background())
@@ -48,7 +48,16 @@ func (s *service) purgeExpiredOAuth(ctx context.Context) {
 		s.l.Warn("failed to purge oauth refresh tokens", zap.Error(refreshRes.Error))
 	}
 
+	deviceRes := s.db.WithContext(ctx).
+		Unscoped().
+		Where("expires_at < ? OR status = ?", now, app.DeviceAuthorizationStatusConsumed).
+		Delete(&app.DeviceAuthorization{})
+	if deviceRes.Error != nil {
+		s.l.Warn("failed to purge device authorizations", zap.Error(deviceRes.Error))
+	}
+
 	s.l.Debug("purged spent oauth artifacts",
 		zap.Int64("authorization_codes", codeRes.RowsAffected),
-		zap.Int64("refresh_tokens", refreshRes.RowsAffected))
+		zap.Int64("refresh_tokens", refreshRes.RowsAffected),
+		zap.Int64("device_authorizations", deviceRes.RowsAffected))
 }

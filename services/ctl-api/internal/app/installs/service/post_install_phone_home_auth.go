@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 // Rejection reasons, used as a metric tag and in the warn log. They are deliberately
@@ -137,24 +138,20 @@ func (s *service) authorizePhoneHome(
 			phoneHomeRejectExpiredToken, errors.New("token is expired"),
 		)
 	}
-
-	// The one piece of real authorization in the scheme. Without it any valid Nuon
-	// token — a user's, or another stack version's — could post outputs for any
-	// install, which is materially worse than the status quo. Compared against the
-	// *calling* stack version rather than the install's runner: the runner identity is
-	// shared by every version of the install, so a leak from any one of them would
-	// pass a runner-scoped check.
-	var acct app.Account
-	if res := s.db.WithContext(ctx).
-		Where(app.Account{ID: token.AccountID}).
-		First(&acct); res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+	acct, err := s.acctClient.FetchAccount(ctx, token.AccountID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return phoneHomeRejectWrongAccount, rejectPhoneHome(
 				phoneHomeRejectWrongAccount, errors.New("token has no account"),
 			)
 		}
 
-		return "", fmt.Errorf("unable to resolve token account: %w", res.Error)
+		return "", fmt.Errorf("unable to resolve token account: %w", err)
+	}
+
+	object := permissions.Object(install.OrgID, permissions.KindPhoneHome, stackVersion.ID)
+	if err := acct.AllPermissions.CanPerform(object, permissions.PermissionCreate); err != nil {
+		return phoneHomeRejectWrongAccount, rejectPhoneHome(phoneHomeRejectWrongAccount, err)
 	}
 
 	want := account.ServiceAccountEmail(stackVersion.ID)

@@ -3,10 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -111,53 +109,4 @@ func (s *service) fanOutToVCSConnections(ctx context.Context, event *app.GithubE
 			zap.String("vcs_connection_id", conn.ID),
 		)
 	}
-}
-
-// @ID						WriteVCSEvent
-// @Summary					Write a VCS webhook event
-// @Description				Writes incoming webhook events for a VCS connection (legacy endpoint)
-// @Param					vcs_connection_id	path	string	true	"VCS Connection ID"
-// @Tags					vcs
-// @Accept					json
-// @Produce					json
-// @Failure					400	{object}	stderr.ErrResponse
-// @Failure					404	{object}	stderr.ErrResponse
-// @Failure					500	{object}	stderr.ErrResponse
-// @Success					200	{object}	app.GithubEvent
-// @Router					/v1/vcs/{vcs_connection_id}/events [post]
-func (s *service) WriteEvent(ctx *gin.Context) {
-	vcsConnectionID := ctx.Param("vcs_connection_id")
-
-	var vcsConn app.VCSConnection
-	if err := s.db.WithContext(ctx).First(&vcsConn, "id = ?", vcsConnectionID).Error; err != nil {
-		ctx.Error(fmt.Errorf("vcs connection not found: %w", err))
-		return
-	}
-
-	body, err := readBody(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	eventType := ctx.GetHeader("X-GitHub-Event")
-	if eventType == "" {
-		eventType = "unknown"
-	}
-
-	event, err := s.createGithubEvent(ctx.Request.Context(), vcsConn.GithubInstallID, eventType, body)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	s.l.Info("stored github event (legacy)",
-		zap.String("event_id", event.ID),
-		zap.String("event_type", eventType),
-		zap.String("github_install_id", vcsConn.GithubInstallID),
-	)
-
-	s.fanOutToVCSConnections(ctx.Request.Context(), event)
-
-	ctx.JSON(http.StatusOK, event)
 }

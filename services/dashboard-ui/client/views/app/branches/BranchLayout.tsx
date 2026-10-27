@@ -10,6 +10,7 @@ import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { useBranchNavCounts } from '@/hooks/use-branch-nav-counts'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
+import { usePRPreviewUI } from '@/hooks/use-pr-preview-ui'
 import { useOrg } from '@/hooks/use-org'
 import { BranchProvider } from '@/providers/branch-provider'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
@@ -111,6 +112,7 @@ const BranchTemplate = () => {
   const showTriggerNudge =
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
+  const hasPRPreview = usePRPreviewUI()
   const navCounts = useBranchNavCounts({ orgId, appId, branchId })
   const groupName =
     currentConfig?.install_groups?.find((group) => group.id === params.groupId)
@@ -120,6 +122,15 @@ const BranchTemplate = () => {
     { path: `/`, iconVariant: 'GraphIcon', text: 'Overview' },
     { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
     { path: `/runs`, iconVariant: 'ListIcon', text: 'Previous runs' },
+    ...(hasPRPreview
+      ? [
+          {
+            path: `/pull-requests`,
+            iconVariant: 'GitPullRequestIcon' as const,
+            text: 'Pull requests',
+          },
+        ]
+      : []),
     ...(hasInstallSyncing
       ? [
           {

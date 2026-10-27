@@ -310,7 +310,7 @@ type ClientService interface {
 
 	CreateVCSConnection(params *CreateVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCreated, error)
 
-	CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error)
+	CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error)
 
 	CreateVCSConnectionWebhookSubscription(params *CreateVCSConnectionWebhookSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionWebhookSubscriptionCreated, error)
 
@@ -385,8 +385,6 @@ type ClientService interface {
 	ForgetInstallComponent(params *ForgetInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForgetInstallComponentOK, error)
 
 	GenerateCLIInstallConfig(params *GenerateCLIInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateCLIInstallConfigOK, error)
-
-	GenerateTerraformInstallerConfig(params *GenerateTerraformInstallerConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateTerraformInstallerConfigOK, error)
 
 	GetActionLabelKeys(params *GetActionLabelKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionLabelKeysOK, error)
 
@@ -1087,8 +1085,6 @@ type ClientService interface {
 	ValidateToken(params *ValidateTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateTokenOK, error)
 
 	VerifyCloudConnection(params *VerifyCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyCloudConnectionAccepted, error)
-
-	WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error)
 
 	WriteWebhookEvent(params *WriteWebhookEventParams, opts ...ClientOption) (*WriteWebhookEventOK, error)
 
@@ -5614,11 +5610,11 @@ func (a *Client) CreateVCSConnection(params *CreateVCSConnectionParams, authInfo
 }
 
 /*
-CreateVCSConnectionCallback publics connection to create a vcs connection via a callback
+CreateVCSConnectionCallback creates a vcs connection from the github app install callback
 
-Handle VCS connection callback for OAuth flow.
+Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
 */
-func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error) {
+func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewCreateVCSConnectionCallbackParams()
@@ -5632,6 +5628,7 @@ func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallback
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &CreateVCSConnectionCallbackReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	}
@@ -7404,52 +7401,6 @@ func (a *Client) GenerateCLIInstallConfig(params *GenerateCLIInstallConfigParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GenerateCLIInstallConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GenerateTerraformInstallerConfig generates a terraform installer config
-
-Generate terraform configuration for an installer.
-*/
-func (a *Client) GenerateTerraformInstallerConfig(params *GenerateTerraformInstallerConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateTerraformInstallerConfigOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGenerateTerraformInstallerConfigParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GenerateTerraformInstallerConfig",
-		Method:             "GET",
-		PathPattern:        "/v1/installs/{install_id}/generate-terraform-installer-config",
-		ProducesMediaTypes: []string{"application/octet-stream"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GenerateTerraformInstallerConfigReader{formats: a.formats, writer: writer},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GenerateTerraformInstallerConfigOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GenerateTerraformInstallerConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -22921,7 +22872,7 @@ func (a *Client) UpdateNotebookCell(params *UpdateNotebookCellParams, authInfo r
 /*
 UpdateOIDCTrustPolicy updates an o ID c trust policy
 
-Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy. Disabling the policy revokes tokens already issued under it.
 */
 func (a *Client) UpdateOIDCTrustPolicy(params *UpdateOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOIDCTrustPolicyOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -23671,51 +23622,6 @@ func (a *Client) VerifyCloudConnection(params *VerifyCloudConnectionParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for VerifyCloudConnection: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-WriteVCSEvent writes a v c s webhook event
-
-Writes incoming webhook events for a VCS connection (legacy endpoint)
-*/
-func (a *Client) WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewWriteVCSEventParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "WriteVCSEvent",
-		Method:             "POST",
-		PathPattern:        "/v1/vcs/{vcs_connection_id}/events",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &WriteVCSEventReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*WriteVCSEventOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for WriteVCSEvent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

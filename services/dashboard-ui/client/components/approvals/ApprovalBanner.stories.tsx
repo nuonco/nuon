@@ -88,6 +88,19 @@ export const AwaitingTerraformApproval = () => <ApprovalBanner step={baseTerrafo
 
 export const Approved = () => <ApprovalBanner step={approvedStep} />
 
+const approvedByStep: TWorkflowStep = {
+  ...baseTerraformStep,
+  approval: {
+    type: 'helm_approval',
+    response: {
+      type: 'approve',
+      created_by: { email: 'ada@example.com', name: 'Ada Lovelace' },
+    },
+  },
+} as unknown as TWorkflowStep
+
+export const ApprovedBy = () => <ApprovalBanner step={approvedByStep} />
+
 export const Superseded = () => <ApprovalBanner step={supersededStep} />
 
 export const Denied = () => <ApprovalBanner step={deniedStep} />

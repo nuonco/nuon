@@ -433,6 +433,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 				installState,
 				nil,
 				false,
+				false,
 			)
 
 			if tt.expectedError != "" {

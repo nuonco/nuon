@@ -1028,7 +1028,7 @@ const ExampleAppDrawer = () => {
         className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900"
       >
         <span className="flex items-center gap-2">
-          <Icon variant="GithubLogoIcon" size={16} theme="neutral" />
+          <Icon variant="GitHub" size={16} theme="neutral" />
           <Text variant="subtext" weight="strong">
             See the example app repo
           </Text>
@@ -1064,7 +1064,7 @@ const ExampleAppDrawer = () => {
               </ul>
             </div>
             <Button variant="secondary" size="sm" href={KITCHEN_SINK_REPO} target="_blank" rel="noreferrer">
-              <Icon variant="GithubLogoIcon" size={14} /> View on GitHub
+              <Icon variant="GitHub" size={14} /> View on GitHub
             </Button>
           </div>
         </div>

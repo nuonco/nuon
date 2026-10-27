@@ -21,6 +21,9 @@
 
                 {{if .Error}}
                     <p class="text-sm text-red-600 dark:text-red-400 mb-8">{{.Error}}</p>
+                    {{if eq .Status 410}}
+                        <p class="text-sm -mt-4 mb-8"><a href="https://docs.nuon.co/cli" target="_blank" rel="noopener noreferrer" class="font-semibold text-cool-grey-950 dark:text-cool-grey-50 underline">How to update the Nuon CLI</a></p>
+                    {{end}}
                 {{else}}
                     <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-8">An error occurred during authentication.</p>
                 {{end}}

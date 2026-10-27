@@ -29,6 +29,9 @@ type ServiceCLIConfig struct {
 	// dashboard url
 	DashboardURL string `json:"dashboard_url,omitempty"`
 
+	// min cli version
+	MinCliVersion string `json:"min_cli_version,omitempty"`
+
 	// nuon auth enabled
 	NuonAuthEnabled bool `json:"nuon_auth_enabled,omitempty"`
 

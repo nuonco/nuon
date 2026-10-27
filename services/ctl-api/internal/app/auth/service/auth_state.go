@@ -123,6 +123,15 @@ func (s *service) AuthState(c *gin.Context) {
 			s.respondError(c, http.StatusForbidden, fmt.Errorf("access denied: your email domain is not authorized to use this service"))
 			return
 		}
+		if err == ErrAccountSignupDisabled {
+			s.l.Warn("authentication denied: account signup disabled",
+				zap.String("provider_id", providerID),
+				zap.String("sub", userInfo.Subject),
+				zap.String("email", userInfo.Email),
+				zap.Bool("disable_account_signup", s.cfg.DisableAccountSignup))
+			s.respondError(c, http.StatusForbidden, fmt.Errorf("access denied: your email domain is not authorized to use this service"))
+			return
+		}
 		s.l.Error("failed to get or create account",
 			zap.String("provider_id", providerID),
 			zap.String("sub", userInfo.Subject),

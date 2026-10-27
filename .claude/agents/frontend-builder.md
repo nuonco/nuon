@@ -33,7 +33,18 @@ The conventions for this service live in three files. They are the source of tru
 2. **`services/dashboard-ui/COPY_STYLE.md`** — all user-facing text: voice, capitalization, buttons, modal copy, toasts, empty states, errors, forms, word list. **Read before writing any copy.**
 3. **`services/dashboard-ui/DESIGN.md`** — visual conventions: Stratus tokens, spacing rhythm, anti-slop rules, interaction patterns, accessibility. **Read before any visual/styling work.**
 
-There are also step-by-step skills in `.claude/commands/dashboard-ui/` for common tasks (new view, API function, component, form, pagination, button→modal flow, admin action) — follow the matching one when your task fits.
+There are also step-by-step skills in `.claude/commands/dashboard-ui/` for common tasks (new view, API function, component, form, pagination, button→modal flow, admin action) — follow the matching one when your task fits. If a command disagrees with the three docs above, the docs win.
+
+## Before writing UI
+
+1. Decide whether the change is production `client/` or `client/lite/`. Follow that tree's AGENTS.md only.
+2. Onboarding (`client/components/onboarding/`) is marketing-owned. Leave its visual drift alone unless the task is about that flow.
+3. Find the nearest shipped page. The index is `services/dashboard-ui/client/components/PATTERNS.md`.
+4. Search `common/`, `layout/`, `surfaces/`, and the domain directory. Read the component's `.stories.tsx` before using it.
+5. Do not invent a component, token, color, page shell, or interaction. If every existing option fails, stop and ask. Name the options you rejected.
+6. Do not add stock Tailwind colors, raw hex, arbitrary `px` spacing, colored or heavy borders, `space-y-*` / `space-x-*`, raw form controls, feature skeletons, or a hand-rolled page header.
+
+When the change is visual, say which page you copied, which primitives you reused, any exception the user approved, and that you checked light and dark.
 
 ## Agent constraints
 

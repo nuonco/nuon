@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
 
 type Params struct {
@@ -31,7 +32,7 @@ type service struct {
 	cfg         *internal.Config
 	authzClient *authz.Client
 	mw          metrics.Writer
-	jwks        *jwksProviderCache
+	verifier    *oidcverify.Verifier
 }
 
 var _ api.Service = (*service)(nil)
@@ -44,7 +45,7 @@ func New(params Params) *service {
 		cfg:         params.Cfg,
 		authzClient: params.AuthzClient,
 		mw:          params.MW,
-		jwks:        newJWKSProviderCache(),
+		verifier:    oidcverify.NewVerifier(func() bool { return params.Cfg.OIDCFederationAllowInsecureIssuers }),
 	}
 }
 

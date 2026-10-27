@@ -116,6 +116,7 @@ func (s *service) getAppBranchWorkflow(ctx *gin.Context, orgID, appBranchID, wor
 			return db.Omit("contents")
 		}).
 		Preload("Steps.Approval.Response").
+		Preload("Steps.Approval.Response.CreatedBy").
 		Preload("AppBranchRuns").
 		Preload("AppBranchRuns.VCSConnectionCommit").
 		Preload("AppBranchRuns.AppBranchConfig").

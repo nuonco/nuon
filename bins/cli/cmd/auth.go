@@ -7,8 +7,8 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
-	"github.com/nuonco/nuon/bins/cli/internal/oidctoken"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/auth/oidctoken"
 )
 
 func (c *cli) authCmd() *cobra.Command {
@@ -24,10 +24,7 @@ func (c *cli) authCmd() *cobra.Command {
 		Use:         "login",
 		Short:       "Login to Nuon",
 		Annotations: skipAuthAnnotation(),
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := c.auth
-			return svc.Login(cmd.Context())
-		}),
+		RunE:        c.runLogin,
 	}
 
 	// Add logout subcommand

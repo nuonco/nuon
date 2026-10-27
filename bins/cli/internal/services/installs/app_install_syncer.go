@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/pkg/browser"
@@ -122,6 +124,9 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		if _, ok := sensitiveInputs[inputName]; ok {
 			delete(finalInputs, inputName)
 		}
+	}
+	if err := unknownInputsError(appInputCfg.Inputs, finalInputs); err != nil {
+		return nil, err
 	}
 	installCfg.InputGroups = []config.InputGroup{{
 		Inputs: finalInputs,
@@ -262,6 +267,14 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 	for name, val := range fill {
 		definedInputs[name] = val
+	}
+
+	pinnedInputs, err := s.pinnedAppInputs(ctx, appInstall, appConfig, targetAppConfigID)
+	if err != nil {
+		return nil, err
+	}
+	if err := unknownInputsError(pinnedInputs, definedInputs); err != nil {
+		return nil, err
 	}
 
 	upstreamRawConfig, err := s.api.GenerateCLIInstallConfig(ctx, appInstall.ID)
@@ -460,6 +473,29 @@ func (s *appInstallSyncer) awaitBranchConfig(ctx context.Context, branch *models
 			ui.PrintLn(msg)
 		}
 	})
+}
+
+func (s *appInstallSyncer) pinnedAppInputs(
+	ctx context.Context,
+	install *models.AppInstall,
+	targetConfig *models.AppAppConfig,
+	targetConfigID string,
+) ([]*models.AppAppInput, error) {
+	if targetConfigID == install.AppConfigID {
+		if targetConfig == nil || targetConfig.Input == nil {
+			return nil, fmt.Errorf("app config %s has no input configuration", install.AppConfigID)
+		}
+		return targetConfig.Input.Inputs, nil
+	}
+
+	pinned, err := s.api.GetAppConfig(ctx, install.AppID, install.AppConfigID, generics.ToPtr(true))
+	if err != nil {
+		return nil, fmt.Errorf("error getting pinned app config for install %s: %w", install.Name, err)
+	}
+	if pinned == nil || pinned.Input == nil {
+		return nil, fmt.Errorf("app config %s has no input configuration", install.AppConfigID)
+	}
+	return pinned.Input.Inputs, nil
 }
 
 func (s *appInstallSyncer) inputConfigForNewInstall(
@@ -698,6 +734,29 @@ func inputDefaults(appInputs []*models.AppAppInput) map[string]string {
 		}
 	}
 	return defaults
+}
+
+func unknownInputsError(appInputs []*models.AppAppInput, defined map[string]string) error {
+	known := make(map[string]struct{}, len(appInputs))
+	for _, ic := range appInputs {
+		if ic == nil || ic.Name == "" {
+			continue
+		}
+		known[ic.Name] = struct{}{}
+	}
+
+	var unknown []string
+	for name := range defined {
+		if _, ok := known[name]; ok {
+			continue
+		}
+		unknown = append(unknown, installDiffKey(name))
+	}
+	if len(unknown) == 0 {
+		return nil
+	}
+	sort.Strings(unknown)
+	return fmt.Errorf("unknown input(s): %s", strings.Join(unknown, ", "))
 }
 
 // resolveRequiredInputs checks an install config's inputs against the app's

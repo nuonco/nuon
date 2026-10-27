@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test'
-import { getApprovalType, getApprovalResponseType } from './approval-utils'
+import {
+  approvalResponder,
+  describeApprovalResponse,
+  getApprovalType,
+  getApprovalResponseType,
+} from './approval-utils'
 
 describe('approval-utils', () => {
   describe('getApprovalType', () => {
@@ -56,6 +61,60 @@ describe('approval-utils', () => {
     test('should return specific mappings correctly', () => {
       expect(getApprovalResponseType('retry')).toBe('retried')
       expect(getApprovalResponseType('auto-approve')).toBe('auto-approved')
+    })
+  })
+
+  describe('describeApprovalResponse', () => {
+    test('names the person who approved a helm plan', () => {
+      expect(
+        describeApprovalResponse({
+          approvalType: 'helm_approval',
+          responseType: 'approve',
+          approver: 'ada@example.com',
+        })
+      ).toBe('This helm plan was approved by ada@example.com.')
+    })
+
+    test('keeps the anonymous copy when nobody is recorded', () => {
+      expect(
+        describeApprovalResponse({
+          approvalType: 'helm_approval',
+          responseType: 'approve',
+        })
+      ).toBe('This helm plan was approved.')
+    })
+
+    test('does not attribute an auto-approval to an account', () => {
+      expect(
+        describeApprovalResponse({
+          approvalType: 'terraform_plan',
+          responseType: 'auto-approve',
+          approver: 'runner@example.com',
+        })
+      ).toBe('This terraform plan was auto-approved.')
+    })
+  })
+
+  describe('approvalResponder', () => {
+    test('prefers email, then name, and skips auto-approve', () => {
+      expect(
+        approvalResponder({
+          type: 'approve',
+          created_by: { email: 'ada@example.com', name: 'Ada' },
+        })
+      ).toBe('ada@example.com')
+      expect(
+        approvalResponder({
+          type: 'deny',
+          created_by: { name: 'Ada' },
+        })
+      ).toBe('Ada')
+      expect(
+        approvalResponder({
+          type: 'auto-approve',
+          created_by: { email: 'runner@example.com' },
+        })
+      ).toBeUndefined()
     })
   })
 

@@ -308,7 +308,7 @@ func (p *Planner) getRoleForAction(
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
 	flw := p.installWorkflowForRoleDefault(ctx, l, generics.FromPtrStr(run.InstallWorkflowID))
-	return operationroles.GetRoleForAction(l, appCfg, run, stack, installState, flw, p.legacyAzureRoleFallbackEnabled(ctx, l))
+	return operationroles.GetRoleForAction(l, appCfg, run, stack, installState, flw, p.legacyAzureRoleFallbackEnabled(ctx, l), gcpLegacyRoleFallback)
 }
 
 func (p *Planner) getAuthForActionWorkflowRun(

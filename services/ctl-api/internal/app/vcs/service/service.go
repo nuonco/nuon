@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
@@ -23,6 +24,7 @@ type Params struct {
 	GhClient    helpers.GithubClient `optional:"true"`
 	BlobSvc     blobstore.Service
 	QueueClient *queueclient.Client
+	Cfg         *internal.Config
 }
 
 type service struct {
@@ -33,22 +35,20 @@ type service struct {
 	ghClient    helpers.GithubClient
 	blobSvc     blobstore.Service
 	queueClient *queueclient.Client
+
+	disableConnectionCallback bool
 }
 
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// Webhook event receiver (public, no auth required).
-	// Registered outside /v1/vcs to avoid route conflict with the legacy /:vcs_connection_id wildcard.
 	api.POST("/v1/vcs/webhooks/:subscription_id/events", s.WriteWebhookEvent)
 
 	// vcs connections
 	vcs := api.Group("/v1/vcs")
 	{
 		vcs.POST("/connection-callback", s.CreateConnectionCallback)
-
-		// Legacy webhook event receiver (per-connection)
-		vcs.POST("/:vcs_connection_id/events", s.WriteEvent)
 
 		connections := vcs.Group("/connections")
 		{
@@ -98,6 +98,8 @@ func New(params Params) *service {
 		ghClient:    ghClient,
 		blobSvc:     params.BlobSvc,
 		queueClient: params.QueueClient,
+
+		disableConnectionCallback: params.Cfg != nil && params.Cfg.DisableVCSConnectionCallback,
 	}
 }
 

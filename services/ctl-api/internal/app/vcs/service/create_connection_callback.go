@@ -11,6 +11,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -28,9 +30,10 @@ func (c *CreateConnectionCallbackRequest) Validate(v *validator.Validate) error 
 }
 
 // @ID						CreateVCSConnectionCallback
-// @Summary					public connection to create a vcs connection via a callback
+// @Summary					create a vcs connection from the github app install callback
 // @Description.markdown	create_connection_callback.md
 // @Tags					vcs
+// @Security				APIKey
 // @Accept					json
 // @Produce					json
 // @Param					req	body		CreateConnectionCallbackRequest	true	"Input"
@@ -53,6 +56,25 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
+	acct, err := cctx.AccountFromGinContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if s.disableConnectionCallback {
+		ctx.Error(stderr.ErrAuthorization{
+			Err:         fmt.Errorf("vcs connection callback is disabled"),
+			Description: "Connecting a GitHub app is temporarily disabled.",
+		})
+		return
+	}
+
+	if err := acct.AllPermissions.CanPerform(req.OrgID, permissions.PermissionCreate); err != nil {
+		ctx.Error(require.PermissionDeniedError(acct, req.OrgID, permissions.PermissionCreate, require.ScopeFromPath(ctx.FullPath())))
+		return
+	}
+
 	org, err := s.getOrg(ctx, req.OrgID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org: %w", err))
@@ -69,8 +91,8 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 	ghAccountName := ghAccount.GetLogin()
 
 	// Create object
-	dbCtx := cctx.SetAccountIDContext(ctx, org.CreatedByID)
-	vcsConn, err := s.createOrgConnection(dbCtx, req.OrgID, req.GithubInstallID, ghAccountID, ghAccountName)
+	dbCtx := cctx.SetAccountContext(ctx, acct)
+	vcsConn, err := s.createOrgConnection(dbCtx, org.ID, req.GithubInstallID, ghAccountID, ghAccountName)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org connection: %w", err))
 		return

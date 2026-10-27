@@ -579,6 +579,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 				stack,
 				installState,
 				false,
+				false,
 			)
 
 			if tt.expectedError != "" {

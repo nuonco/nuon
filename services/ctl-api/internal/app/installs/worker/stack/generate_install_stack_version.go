@@ -2,7 +2,6 @@ package stack
 
 import (
 	"maps"
-	"strings"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -181,16 +180,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
 		}
 
-		// Legacy init.sh needs a pre-provisioned bootstrap token.
-		// init-mng-v2.sh fetches its own token via GCP identity (POST /v1/runner-auth/gcp).
-		if isLegacyGCPInitScript(initScriptURL) {
-			bootstrapToken, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
-			if err != nil {
-				return errors.Wrap(err, "unable to create bootstrap token")
-			}
-			inp.APIToken = generics.FromPtrStr(bootstrapToken)
-		}
-
 		tmplByts, checksum, err := gcp.Render(inp)
 		if err != nil {
 			return errors.Wrap(err, "unable to render gcp tfvars")
@@ -345,8 +334,4 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusPendingUser),
 	})
 	return nil
-}
-
-func isLegacyGCPInitScript(url string) bool {
-	return strings.HasSuffix(url, "/scripts/gcp/init.sh") || url == DefaultGCPRunnerInitScript
 }

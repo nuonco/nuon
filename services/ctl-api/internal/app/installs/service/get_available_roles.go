@@ -177,6 +177,7 @@ func (s *service) getDefaultRoleName(
 	if err != nil {
 		return "", fmt.Errorf("unable to check azure legacy role fallback feature: %w", err)
 	}
+	legacyGCPRoleFallback := s.cfg.GCPLegacyRoleFallback
 
 	switch principalType {
 	case principal.TypeComponent:
@@ -198,7 +199,7 @@ func (s *service) getDefaultRoleName(
 		if operationType == app.OperationTeardown {
 			installDeploy.Type = app.InstallDeployTypeTeardown
 		}
-		roleSelection, _, err := operationroles.GetRoleForDeploy(s.l, appCfg, installDeploy, latestConfig, installStack, installState, flw, legacyAzureRoleFallback)
+		roleSelection, _, err := operationroles.GetRoleForDeploy(s.l, appCfg, installDeploy, latestConfig, installStack, installState, flw, legacyAzureRoleFallback, legacyGCPRoleFallback)
 		if err != nil {
 			return "", err
 		}
@@ -217,7 +218,7 @@ func (s *service) getDefaultRoleName(
 		run := &app.InstallSandboxRun{
 			RunType: runType,
 		}
-		roleSelection, _, err := operationroles.GetRoleForSandbox(s.l, appCfg, run, installStack, installState, legacyAzureRoleFallback)
+		roleSelection, _, err := operationroles.GetRoleForSandbox(s.l, appCfg, run, installStack, installState, legacyAzureRoleFallback, legacyGCPRoleFallback)
 		if err != nil {
 			return "", err
 		}
@@ -238,7 +239,7 @@ func (s *service) getDefaultRoleName(
 			run.ActionWorkflowConfig = *actionWorkflowCfg
 		}
 
-		roleSelection, _, err := operationroles.GetRoleForAction(s.l, appCfg, run, installStack, installState, flw, legacyAzureRoleFallback)
+		roleSelection, _, err := operationroles.GetRoleForAction(s.l, appCfg, run, installStack, installState, flw, legacyAzureRoleFallback, legacyGCPRoleFallback)
 		if err != nil {
 			return "", err
 		}

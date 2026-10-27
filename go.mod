@@ -14,6 +14,7 @@ replace github.com/ulikunitz/xz => github.com/ulikunitz/xz v0.5.15
 
 // Use in-tree SDKs instead of external module
 replace (
+	github.com/nuonco/nuon/sdks/auth => ./sdks/auth
 	github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
 	github.com/nuonco/nuon/sdks/nuon-runner-go => ./sdks/nuon-runner-go
 )
@@ -34,7 +35,6 @@ require (
 	github.com/DataDog/dd-trace-go/v2 v2.8.1
 	github.com/Jeffail/gabs v1.4.0
 	github.com/Masterminds/semver/v3 v3.4.0
-	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/XSAM/otelsql v0.41.0
 	github.com/a-h/templ v0.3.977
@@ -62,6 +62,7 @@ require (
 	github.com/charmbracelet/fang v0.4.4
 	github.com/charmbracelet/huh v0.8.0
 	github.com/cockroachdb/errors v1.11.3
+	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/databus23/helm-diff/v3 v3.12.5
 	github.com/distribution/distribution/v3 v3.1.2
 	github.com/distribution/reference v0.6.0
@@ -117,6 +118,7 @@ require (
 	github.com/kyokomi/emoji v2.2.4+incompatible
 	github.com/lib/pq v1.12.0
 	github.com/lithammer/fuzzysearch v1.1.8
+	github.com/mailchimp/mailchimp-marketing-go-sdk v1.0.3
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mccutchen/go-httpbin/v2 v2.18.3
 	github.com/mholt/archiver/v4 v4.0.0-alpha.8
@@ -126,6 +128,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/modelcontextprotocol/go-sdk v1.7.1-0.20260825151509-2732839dbadd
 	github.com/nuonco/gin-swagger v1.6.2
+	github.com/nuonco/nuon/sdks/auth v0.0.0-00010101000000-000000000000
 	github.com/nuonco/nuon/sdks/nuon-go v0.92.1
 	github.com/nuonco/nuon/sdks/nuon-runner-go v0.0.0-00010101000000-000000000000
 	github.com/nuonco/sandboxes v1.34.0
@@ -270,6 +273,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
@@ -343,7 +347,6 @@ require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v1.0.0-rc.2 // indirect
-	github.com/coreos/go-oidc/v3 v3.21.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467 // indirect

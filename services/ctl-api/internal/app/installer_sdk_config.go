@@ -86,8 +86,10 @@ type InstallerSDKGCPConfig struct {
 	Region    string `json:"region,omitempty"`
 
 	RunnerInitScriptURL string `json:"runner_init_script_url,omitempty"`
-	RunnerAPIToken      string `json:"runner_api_token,omitempty"`
-	RunnerMachineType   string `json:"runner_machine_type,omitempty"`
+	// Unused. GCP runners authenticate with instance identity. Left so older
+	// Terraform modules that still read it get an empty value.
+	RunnerAPIToken    string `json:"runner_api_token,omitempty"`
+	RunnerMachineType string `json:"runner_machine_type,omitempty"`
 
 	ProvisionPermissions      []string `json:"provision_permissions,omitempty"`
 	ProvisionPredefinedRole   string   `json:"provision_predefined_role,omitempty"`
@@ -120,9 +122,8 @@ type InstallerSDKGCPConfig struct {
 // assignments at resource-group scope. Built-in roles are served as GUIDs,
 // already resolved by pkg/azureroles.
 //
-// There is no runner API token here, unlike GCP: the Azure runner authenticates
-// as its own managed identity, so the config carries the container image it
-// should run instead.
+// The Azure runner authenticates as its own managed identity, so the config
+// carries the container image it should run.
 type InstallerSDKAzureConfig struct {
 	Location             string `json:"location,omitempty"`
 	SubscriptionID       string `json:"subscription_id,omitempty"`

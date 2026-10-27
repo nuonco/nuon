@@ -94,6 +94,7 @@ func (s *service) getWorkflow(ctx *gin.Context, orgID, workflowID string) (*app.
 			return db.Omit("contents")
 		}).
 		Preload("Steps.Approval.Response").
+		Preload("Steps.Approval.Response.CreatedBy").
 		Preload("AppBranchRuns").
 		Preload("AppBranchRuns.VCSConnectionCommit").
 		Preload("AppBranchRuns.AppBranchConfig").

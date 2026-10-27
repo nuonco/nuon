@@ -3,7 +3,8 @@ import { Text } from '@/components/common/Text'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import type { TWorkflowStep, TWorkflowStepApprovalType } from '@/types'
 import {
-  getApprovalType,
+  approvalResponder,
+  describeApprovalResponse,
   getApprovalResponseType,
   getApprovalResponseTheme,
 } from '@/utils/approval-utils'
@@ -135,7 +136,11 @@ const ApprovedPlanBanner = ({ step }: IApprovalBanner) => {
           </Text>
           <Text variant="subtext" theme="neutral">
             {responseType
-              ? `This ${getApprovalType(step?.approval?.type)} plan was ${responseType}.`
+              ? describeApprovalResponse({
+                  approvalType: step?.approval?.type,
+                  responseType: step?.approval?.response?.type,
+                  approver: approvalResponder(step?.approval?.response),
+                })
               : optimistic
                 ? 'Waiting for the workflow to process your response.'
                 : step?.status?.status_human_description ||

@@ -7,9 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 func (s *VCSServiceTestSuite) TestCreateConnectionCallback_Success() {
+	s.testAcc.AllPermissions = permissions.Set{s.testOrg.ID: permissions.PermissionAll}
+
 	req := CreateConnectionCallbackRequest{
 		OrgID:           s.testOrg.ID,
 		GithubInstallID: "12345",

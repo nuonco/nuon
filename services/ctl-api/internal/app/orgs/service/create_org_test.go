@@ -327,6 +327,38 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 	require.Contains(s.T(), rr.Body.String(), "not allowed to create new orgs")
 }
 
+func (s *CreateOrgTestSuite) TestCreateOrgFederatedTokenRestriction() {
+	router := tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
+		AdditionalMiddlewares: []gin.HandlerFunc{
+			func(c *gin.Context) {
+				cctx.SetTokenTypeGinContext(c, app.TokenTypeFederated)
+				c.Next()
+			},
+		},
+	})
+	require.NoError(s.T(), s.orgsService.RegisterPublicRoutes(router))
+
+	name := fmt.Sprintf("federated-org-%s", domains.NewOrgID()[:8])
+	jsonBytes, err := json.Marshal(CreateOrgRequest{Name: name})
+	require.NoError(s.T(), err)
+	req, err := http.NewRequest(http.MethodPost, "/v1/orgs", bytes.NewBuffer(jsonBytes))
+	require.NoError(s.T(), err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	require.Equal(s.T(), http.StatusForbidden, rr.Code)
+	require.Contains(s.T(), rr.Body.String(), "federated tokens cannot create organizations")
+
+	var count int64
+	require.NoError(s.T(), s.service.DB.Model(&app.Org{}).Unscoped().Where(app.Org{Name: name}).Count(&count).Error)
+	require.Zero(s.T(), count)
+}
+
 func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {
 	request := CreateOrgRequest{
 		Name: fmt.Sprintf("test-org-roles-%s", domains.NewOrgID()[:8]),

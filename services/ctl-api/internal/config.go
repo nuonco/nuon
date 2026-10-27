@@ -190,6 +190,9 @@ func init() {
 	// Nuon Auth Service Configs
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
+	config.RegisterDefault("disable_account_signup", false)
+	config.RegisterDefault("disable_org_creation", false)
+	config.RegisterDefault("disable_vcs_connection_callback", false)
 	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
 	config.RegisterDefault("nuon_auth_token_ttl", 24*60)
 	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
@@ -210,6 +213,11 @@ func init() {
 	// orgs with USE_LEGACY_MAINTENANCE_ROLE_DEFAULT=true. Overrides and sandbox
 	// operation defaults are unaffected.
 	config.RegisterDefault("use_legacy_maintenance_role_default", false)
+
+	config.RegisterDefault("gcp_legacy_role_fallback", false)
+
+	config.RegisterDefault("cors_allow_all_origins", false)
+	config.RegisterDefault("cors_allow_loopback_origins", false)
 }
 
 type Config struct {
@@ -338,6 +346,11 @@ type Config struct {
 	AuthMiddlewares           []string `config:"auth_middlewares"`
 	AdminDashboardMiddlewares []string `config:"admin_dashboard_middlewares"`
 	SlackMiddlewares          []string `config:"slack_middlewares"`
+	// Reflect any Origin and still send Allow-Credentials. Default false restricts Origin to app_url.
+	CORSAllowAllOrigins bool `config:"cors_allow_all_origins"`
+	// Also reflect plain-http loopback origins on any port. Default false.
+	// service_deployment=local turns this on without the flag.
+	CORSAllowLoopbackOrigins bool `config:"cors_allow_loopback_origins"`
 
 	// Slack app configuration (Phase 0–4 of slackbot integration).
 	// Tokens are stored plaintext in DB; these env-var-driven values back
@@ -354,6 +367,11 @@ type Config struct {
 	NuonAuthTokenTTL       int      `config:"nuon_auth_token_ttl"`
 	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
 	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"` // if true, any user with an allowedDomain can sign in
+
+	DisableAccountSignup bool `config:"disable_account_signup"`
+	DisableOrgCreation   bool `config:"disable_org_creation"`
+
+	DisableVCSConnectionCallback bool `config:"disable_vcs_connection_callback"`
 
 	// OIDC workload identity federation
 	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)
@@ -610,6 +628,8 @@ type Config struct {
 	// UseLegacyMaintenanceRoleDefault keeps component and action defaults on
 	// maintenance instead of deriving them from the parent workflow type.
 	UseLegacyMaintenanceRoleDefault bool `config:"use_legacy_maintenance_role_default"`
+
+	GCPLegacyRoleFallback bool `config:"gcp_legacy_role_fallback"`
 }
 
 func (c *Config) IsAWS() bool {
@@ -684,6 +704,10 @@ func NewConfig() (*Config, error) {
 	v := validator.New()
 	if err := v.Struct(cfg); err != nil {
 		return nil, fmt.Errorf("unable to validate config: %w", err)
+	}
+
+	if cfg.CORSAllowLoopbackOrigins && cfg.ServiceDeployment != "local" {
+		return nil, fmt.Errorf("cors_allow_loopback_origins is only allowed when service_deployment=local")
 	}
 
 	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)

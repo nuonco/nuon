@@ -1,15 +1,16 @@
 ---
 title: 'Updating Nuon BYOC'
 sidebarTitle: 'Updates'
-description: 'Update Nuon BYOC and the Stack'
+description: 'Update Nuon BYOC, the Stack, and the Nuon CLI'
 icon: 'cloud-arrow-up'
-keywords: ['Nuon BYOC', 'BYOC', 'update', 'updating', 'stack', 'install stack']
+keywords: ['Nuon BYOC', 'BYOC', 'update', 'updating', 'stack', 'install stack', 'CLI version', 'update CLI']
 ---
 
-There are two types of updates that apply to your Nuon BYOC install.
+There are three types of updates that apply to your Nuon BYOC install.
 
 1. Updates to Nuon BYOC itself
 2. Updates to the Nuon BYOC stack module
+3. Updates to the Nuon CLI your team and CI use
 
 ## Updating Nuon BYOC
 
@@ -37,3 +38,16 @@ module "nuon_byoc_stack" {
   version = "~> 1.1" // [!code ++]
 }
 ```
+
+## Updating the CLI
+
+Use the CLI version that matches your Nuon BYOC control plane. Your control plane's minimum CLI version is set to the
+version it runs, so after we deploy an update, older CLIs print a warning that they are older than the minimum.
+
+After each update:
+
+1. Have everyone on your team install the new version. See
+   [Install your control plane's version](/cli#install-your-control-planes-version).
+2. If your CI pins the CLI, for example with the [Nuon GitHub Action](/guides/github-actions#choosing-the-cli-version)'s
+   `nuon_version` input, bump the pin. The action installs your control plane's version automatically when
+   `nuon_version` is unset.

@@ -38,6 +38,36 @@ export function getApprovalResponseType(
   return RESPONSE_TYPE[responseType]
 }
 
+export function describeApprovalResponse({
+  approvalType,
+  responseType,
+  approver,
+}: {
+  approvalType?: TWorkflowStepApprovalType
+  responseType?: string
+  approver?: string
+}): string | undefined {
+  if (!responseType) return undefined
+  const verb = getApprovalResponseType(responseType)
+  if (!verb) return undefined
+  const plan = approvalType ? getApprovalType(approvalType) : undefined
+  const subject = plan ? `This ${plan} plan` : 'This plan'
+  if (approver && responseType !== 'auto-approve') {
+    return `${subject} was ${verb} by ${approver}.`
+  }
+  return `${subject} was ${verb}.`
+}
+
+export function approvalResponder(response: unknown): string | undefined {
+  if (!response || typeof response !== 'object') return undefined
+  const record = response as {
+    type?: string
+    created_by?: { email?: string; name?: string }
+  }
+  if (record.type === 'auto-approve') return undefined
+  return record.created_by?.email || record.created_by?.name || undefined
+}
+
 const RESPONSE_THEME: Record<TWorkflowStepApprovalResponse['type'], TTheme> = {
   approve: 'success',
   'auto-approve': 'success',

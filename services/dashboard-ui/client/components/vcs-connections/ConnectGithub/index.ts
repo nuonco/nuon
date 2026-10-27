@@ -3,4 +3,4 @@ export {
   ConnectGithubButton,
 } from './ConnectGithubContainer'
 export { ConnectGithubModal as ConnectGithubModalComponent } from './ConnectGithub'
-export { githubAppInstallUrl } from './ConnectGithub'
+export { githubConnectStartUrl } from './ConnectGithub'

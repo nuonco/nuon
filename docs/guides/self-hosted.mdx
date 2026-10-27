@@ -55,7 +55,9 @@ flowchart TD
 
 Self-hosting means you own the full lifecycle of the Nuon control plane:
 
-- **Upgrades**: you apply new Nuon releases. There is no Nuon Runner in your account to do this remotely.
+- **Upgrades**: you apply new Nuon releases. There is no Nuon Runner in your account to do this remotely. After each
+  upgrade, your team and CI need the [matching CLI version](/cli#choosing-a-cli-version). Set the ctl-api
+  `min_cli_version` setting to your control plane's version so older CLIs print a warning.
 - **Backup and restore**: your Postgres, blob storage, and container registry are yours to back up and recover.
 - **Monitoring and alerting**: wire your own observability into the control plane services.
 - **Troubleshooting**: Nuon engineers cannot remotely inspect logs, run diagnostics, or apply hotfixes. Support is limited to guidance you can act on yourself.

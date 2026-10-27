@@ -11,7 +11,7 @@ import { fieldErrorMessage } from '@/components/common/form/field-error'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
 import { Text } from '@/components/common/Text'
-import { githubAppInstallUrl } from '@/components/vcs-connections/ConnectGithub'
+import { githubConnectStartUrl } from '@/components/vcs-connections/ConnectGithub'
 import { useAuth } from '@/hooks/use-auth'
 import { useConfig } from '@/hooks/use-config'
 import { useFirstRun } from '@/hooks/use-first-run'
@@ -415,7 +415,7 @@ export const StartStepView = ({
               </Text>
             </div>
             <Button variant="secondary" size="sm" href={KITCHEN_SINK_URL} target="_blank" rel="noreferrer">
-              <Icon variant="GithubLogoIcon" size={14} /> View on GitHub
+              <Icon variant="GitHub" size={14} /> View on GitHub
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -523,7 +523,7 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
     : { status: 'disconnected', error: vcsError }
 
   const connectHref = githubAppName
-    ? githubAppInstallUrl({ githubAppName, orgId, onboarding: true })
+    ? githubConnectStartUrl({ orgId, onboarding: true })
     : undefined
 
   const setOwn = (values: Record<string, unknown>) => {

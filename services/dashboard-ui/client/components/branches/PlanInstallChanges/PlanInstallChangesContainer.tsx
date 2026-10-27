@@ -30,7 +30,13 @@ export const PlanInstallChangesContainer = ({
     step,
     (step.status?.metadata ?? {}) as Record<string, any>
   )
-  const { data: run } = useQuery({
+  const runEnabled = !!orgId && !!appId && !!branchId && !!workflowId
+  const {
+    data: run,
+    isPending: runPending,
+    isPlaceholderData: runPlaceholder,
+    isError: runError,
+  } = useQuery({
     queryKey: ['branch-run', orgId, appId, branchId, workflowId],
     queryFn: () =>
       getBranchWorkflowRun({
@@ -39,16 +45,18 @@ export const PlanInstallChangesContainer = ({
         branchId: branchId!,
         runId: workflowId!,
       }),
-    enabled: !!orgId && !!appId && !!branchId && !!workflowId,
+    enabled: runEnabled,
     placeholderData: keepPreviousData,
   })
-  const { templateBuilds } = useRunTemplateBuilds({
+  const branchRunId = run?.app_branch_runs?.at(0)?.id
+  const { templateBuilds, buildsPending } = useRunTemplateBuilds({
     orgId,
     appId,
     branchId,
-    branchRunId: run?.app_branch_runs?.at(0)?.id,
+    branchRunId,
     workflowSteps: run?.steps ?? [],
   })
+  const waitingForRun = runEnabled && !runError && (runPending || runPlaceholder)
 
   return (
     <PlanInstallChanges
@@ -56,7 +64,7 @@ export const PlanInstallChangesContainer = ({
       builds={templateBuilds}
       installFacts={installFacts}
       labelColors={labelColors}
-      isLoading={isLoading}
+      isLoading={isLoading || waitingForRun || (!!branchRunId && buildsPending)}
     />
   )
 }

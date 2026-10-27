@@ -15,6 +15,8 @@ type CLIConfig struct {
 	RootDomain      string `json:"root_domain"`
 
 	OIDCFederationEnabled bool `json:"oidc_federation_enabled"`
+
+	MinCLIVersion string `json:"min_cli_version"`
 }
 
 // @ID						GetCLIConfig
@@ -40,5 +42,6 @@ func (s *service) GetCLIConfig(ctx *gin.Context) {
 		RootDomain:      s.cfg.RootDomain,
 
 		OIDCFederationEnabled: s.cfg.OIDCFederationEnabled,
+		MinCLIVersion:         s.resolveMinCLIVersion(ctx.Request.Context()),
 	})
 }

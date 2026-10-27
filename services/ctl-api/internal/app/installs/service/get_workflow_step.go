@@ -94,6 +94,7 @@ func (s *service) getWorkflowStep(ctx *gin.Context, orgID, workflowID, stepID st
 			return db.Omit("contents")
 		}).
 		Preload("Approval.Response").
+		Preload("Approval.Response.CreatedBy").
 		Preload("PolicyValidation").
 		First(&installWorkflowStep)
 	if res.Error != nil {

@@ -12,6 +12,7 @@ var registry = []Check{
 	kafkaCheck,
 	blobstoreCheck,
 	slackCheck,
+	corsCheck,
 }
 
 func All() []Check {

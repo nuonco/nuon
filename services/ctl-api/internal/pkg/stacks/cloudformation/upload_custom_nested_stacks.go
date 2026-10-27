@@ -36,7 +36,7 @@ func UploadCustomNestedStackTemplates(ctx context.Context, uploader BlobUploader
 		if stack.Contents == "" {
 			if stack.ContentsHash != "" {
 				stackConfig.CustomNestedStacks[i].Status = config.CustomNestedStackStatusReady
-				stackConfig.CustomNestedStacks[i].TemplateSourceURL = sourceURL(stack.ContentsHash, stack.TemplateURL)
+				stackConfig.CustomNestedStacks[i].TemplateSourceURL = ResolveCustomNestedStackTemplateURL(baseURL, stackConfig.OrgID, stackConfig.AppID, stack)
 			}
 			continue
 		}
@@ -64,11 +64,12 @@ func UploadUIDefinition(ctx context.Context, uploader BlobUploader, baseURL, org
 	if ui == nil {
 		return nil
 	}
-	sourceURL := UIDefinitionSourceURL(baseURL, orgID, appID, ui.ContentsHash)
 	if ui.Contents == "" {
 		if ui.ContentsHash != "" {
 			ui.Status = config.CustomNestedStackStatusReady
-			ui.SourceURL = sourceURL
+			if ui.SourceURL == "" {
+				ui.SourceURL = legacyUIDefinitionSourceURL(baseURL, orgID, appID, ui.ContentsHash)
+			}
 		}
 		return nil
 	}

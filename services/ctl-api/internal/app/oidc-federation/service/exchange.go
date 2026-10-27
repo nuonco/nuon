@@ -1,9 +1,8 @@
 package service
 
 import (
-	"context"
-	"encoding/base64"
-	"encoding/json"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,13 +12,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-
-	"github.com/auth0/go-jwt-middleware/v2/validator"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type ExchangeOIDCTokenRequest struct {
@@ -36,6 +35,8 @@ type ExchangeOIDCTokenResponse struct {
 	Role          string    `json:"role,omitempty"`
 }
 
+var errAlreadyExchanged = errors.New("oidc token already exchanged")
+
 // genericExchangeError is returned for every auth-path failure so responses
 // don't reveal whether an org, policy, or issuer is configured.
 func genericExchangeError() stderr.ErrAuthentication {
@@ -43,98 +44,6 @@ func genericExchangeError() stderr.ErrAuthentication {
 		Err:         errors.New("authentication failed"),
 		Description: "failed to verify OIDC token",
 	}
-}
-
-var errInvalidJWTFormat = errors.New("invalid JWT format")
-
-func compactJWSParts(tokenStr string) ([]string, error) {
-	parts := strings.Split(tokenStr, ".")
-	if len(parts) != 3 {
-		return nil, errInvalidJWTFormat
-	}
-	for _, part := range parts {
-		if part == "" || strings.IndexFunc(part, isNotBase64URL) >= 0 {
-			return nil, errInvalidJWTFormat
-		}
-	}
-	return parts, nil
-}
-
-func isNotBase64URL(r rune) bool {
-	return !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_')
-}
-
-// parseUnverifiedIssuer extracts the iss claim from a JWT without signature
-// verification. It is only used to select among stored trust policies; the
-// issuer used for verification and JWKS fetching always comes from the policy.
-func parseUnverifiedIssuer(tokenStr string) (string, error) {
-	parts, err := compactJWSParts(tokenStr)
-	if err != nil {
-		return "", err
-	}
-
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return "", fmt.Errorf("failed to decode JWT payload: %w", err)
-	}
-
-	var claims struct {
-		Issuer string `json:"iss"`
-	}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return "", fmt.Errorf("failed to parse JWT claims: %w", err)
-	}
-	if claims.Issuer == "" {
-		return "", errors.New("JWT missing iss claim")
-	}
-
-	return claims.Issuer, nil
-}
-
-type verifiedClaims map[string]any
-
-func (verifiedClaims) Validate(context.Context) error { return nil }
-
-// verifyOIDCToken verifies the token's signature, issuer, audience, and time
-// claims against a policy's stored configuration and returns the verified
-// claims.
-func (s *service) verifyOIDCToken(ctx context.Context, tokenStr, issuer, audience string) (map[string]any, error) {
-	if _, err := compactJWSParts(tokenStr); err != nil {
-		return nil, err
-	}
-
-	provider, err := s.jwks.getProvider(issuer)
-	if err != nil {
-		return nil, err
-	}
-
-	tokenValidator, err := validator.New(
-		provider.KeyFunc,
-		validator.RS256,
-		issuer,
-		[]string{audience},
-		validator.WithAllowedClockSkew(time.Minute),
-		validator.WithCustomClaims(func() validator.CustomClaims { return &verifiedClaims{} }),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create JWT validator: %w", err)
-	}
-
-	res, err := tokenValidator.ValidateToken(ctx, tokenStr)
-	if err != nil {
-		return nil, fmt.Errorf("JWT validation failed: %w", err)
-	}
-
-	validated, ok := res.(*validator.ValidatedClaims)
-	if !ok {
-		return nil, errors.New("unexpected JWT validation result")
-	}
-	claims, ok := validated.CustomClaims.(*verifiedClaims)
-	if !ok || claims == nil {
-		return nil, errors.New("unexpected JWT claims type")
-	}
-
-	return *claims, nil
 }
 
 // @ID						ExchangeOIDCToken
@@ -178,7 +87,7 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 	metricTags["org_id"] = req.OrgID
 
 	tokenStr := strings.TrimSpace(req.Token)
-	issuer, err := parseUnverifiedIssuer(tokenStr)
+	issuer, err := oidcverify.UnverifiedIssuer(tokenStr)
 	if err != nil {
 		s.l.Warn("oidc exchange: failed to parse token issuer", zap.String("org_id", req.OrgID), zap.Error(err))
 		ctx.Error(genericExchangeError())
@@ -213,7 +122,7 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 	reqCtx := ctx.Request.Context()
 
 	verifiedAudiences := map[string]bool{}
-	var matched *app.OIDCTrustPolicy
+	var matched []*app.OIDCTrustPolicy
 	var claims map[string]any
 
 	for i := range policies {
@@ -221,7 +130,7 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 
 		verified, seen := verifiedAudiences[policy.Audience]
 		if !seen {
-			tokenClaims, err := s.verifyOIDCToken(reqCtx, tokenStr, policy.IssuerURL, policy.Audience)
+			tokenClaims, err := s.verifier.Verify(reqCtx, tokenStr, policy.IssuerURL, policy.Audience)
 			verified = err == nil
 			verifiedAudiences[policy.Audience] = verified
 			if err != nil {
@@ -239,19 +148,32 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 		}
 
 		if matchClaims(policy.ClaimConditions, claims) {
-			matched = policy
-			break
+			matched = append(matched, policy)
 		}
 	}
 
-	if matched == nil {
+	// More than one match is ambiguous: an older broad policy must not silently
+	// win over a newer narrow one and hand out a different role.
+	if len(matched) > 1 {
+		ids := make([]string, len(matched))
+		for i, policy := range matched {
+			ids[i] = policy.ID
+		}
+		s.l.Warn("oidc exchange: token matched multiple trust policies",
+			zap.String("org_id", req.OrgID),
+			zap.String("issuer", issuer),
+			zap.Strings("policy_ids", ids))
+		ctx.Error(genericExchangeError())
+		return
+	}
+
+	if len(matched) == 0 {
 		fields := []zap.Field{
 			zap.String("org_id", req.OrgID),
 			zap.String("issuer", issuer),
 		}
-		// When at least one policy verified the token, claims are populated;
-		// logging the sub and claim keys lets operators see why no policy's
-		// conditions matched without weakening the generic client-facing 401.
+		// Log incoming claims to help diagnose why no policy's conditions matched,
+		// without weakening the generic client-facing 401.
 		if claims != nil {
 			sub, _ := claims["sub"].(string)
 			keys := make([]string, 0, len(claims))
@@ -265,33 +187,54 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 		ctx.Error(genericExchangeError())
 		return
 	}
-	metricTags["policy_id"] = matched.ID
-
-	duration := matched.TokenDurationSeconds
-	if duration <= 0 {
-		duration = app.OIDCTrustPolicyDefaultTokenDuration
-	}
-	if duration > app.OIDCTrustPolicyMaxTokenDuration {
-		duration = app.OIDCTrustPolicyMaxTokenDuration
-	}
+	policy := matched[0]
+	metricTags["policy_id"] = policy.ID
 
 	now := time.Now()
-	token := app.Token{
-		CreatedByID: matched.ServiceAccountID,
-		Name:        matched.Name,
-		Role:        matched.Role,
-		OrgID:       matched.OrgID,
-		Token:       domains.NewUserTokenID(),
-		TokenType:   app.TokenTypeFederated,
-		ExpiresAt:   now.Add(time.Duration(duration) * time.Second),
-		IssuedAt:    now,
-		Issuer:      matched.IssuerURL,
-		AccountID:   matched.ServiceAccountID,
+	sub, _ := claims["sub"].(string)
+	jti, _ := claims["jti"].(string)
+
+	var sourceExpiry time.Time
+	if exp, ok := claims["exp"].(float64); ok {
+		sourceExpiry = time.Unix(int64(exp), 0)
 	}
-	if res := s.db.WithContext(ctx).Create(&token); res.Error != nil {
+
+	tokenHash := sha256.Sum256([]byte(tokenStr))
+
+	var token *app.Token
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		exchanged := app.OIDCExchangedToken{
+			OrgID:     req.OrgID,
+			IssuerURL: issuer,
+			TokenHash: hex.EncodeToString(tokenHash[:]),
+			ExpiresAt: sourceExpiry,
+		}
+		if err := tx.Create(&exchanged).Error; err != nil {
+			if request.IsDuplicateKey(err) {
+				return errAlreadyExchanged
+			}
+			return fmt.Errorf("recording exchanged token: %w", err)
+		}
+
+		issued, err := s.issueFederatedToken(tx, policy)
+		if err != nil {
+			return err
+		}
+		token = issued
+		return nil
+	})
+	if errors.Is(err, errAlreadyExchanged) {
+		s.l.Warn("oidc exchange: token was already exchanged",
+			zap.String("org_id", req.OrgID),
+			zap.String("issuer", issuer),
+			zap.String("jti", jti))
+		ctx.Error(genericExchangeError())
+		return
+	}
+	if err != nil {
 		s.l.Error("oidc exchange: failed to create token",
-			zap.String("policy_id", matched.ID),
-			zap.Error(res.Error))
+			zap.String("policy_id", policy.ID),
+			zap.Error(err))
 		ctx.Error(stderr.ErrSystem{
 			Err:         errors.New("internal error"),
 			Description: "failed to issue authentication token",
@@ -301,26 +244,25 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 
 	if err := s.db.WithContext(ctx).
 		Model(&app.OIDCTrustPolicy{}).
-		Where(app.OIDCTrustPolicy{ID: matched.ID}).
+		Where(app.OIDCTrustPolicy{ID: policy.ID}).
 		Update("last_used_at", now).Error; err != nil {
-		s.l.Warn("oidc exchange: failed to update last_used_at", zap.String("policy_id", matched.ID), zap.Error(err))
+		s.l.Warn("oidc exchange: failed to update last_used_at", zap.String("policy_id", policy.ID), zap.Error(err))
 	}
 
-	sub, _ := claims["sub"].(string)
 	metricTags["status"] = "ok"
 	s.l.Info("oidc exchange: token issued",
-		zap.String("org_id", matched.OrgID),
-		zap.String("policy_id", matched.ID),
-		zap.String("issuer", matched.IssuerURL),
+		zap.String("org_id", policy.OrgID),
+		zap.String("policy_id", policy.ID),
+		zap.String("issuer", policy.IssuerURL),
 		zap.String("sub", sub),
-		zap.String("role", matched.Role))
+		zap.String("role", policy.Role))
 
 	ctx.JSON(http.StatusOK, ExchangeOIDCTokenResponse{
 		Authenticated: true,
 		Token:         token.Token,
 		ExpiresAt:     token.ExpiresAt,
-		OrgID:         matched.OrgID,
-		TrustPolicyID: matched.ID,
-		Role:          matched.Role,
+		OrgID:         policy.OrgID,
+		TrustPolicyID: policy.ID,
+		Role:          policy.Role,
 	})
 }

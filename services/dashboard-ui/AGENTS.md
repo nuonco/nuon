@@ -15,6 +15,25 @@ Entry: `client/index.tsx` (production `App` or `LiteApp` from runtime config).
 **Working in `client/lite/`?** Follow [client/lite/AGENTS.md](./client/lite/AGENTS.md) and ignore this file. Production
 code must not import from `client/lite/`.
 
+## Design system
+
+Production UI in `client/views/` and `client/components/` uses the Stratus system already in the repo. Read
+[DESIGN.md](./DESIGN.md), [COPY_STYLE.md](./COPY_STYLE.md), and
+[client/components/PATTERNS.md](./client/components/PATTERNS.md) before building a screen. Those three win over
+`.claude/commands/dashboard-ui/` and any skill prompt.
+
+`client/components/onboarding/` is marketing-owned and may drift from Stratus. `client/lite/` follows its own
+AGENTS.md. `client/components/playground/` is not production. Leave those trees alone unless the task is about them.
+
+Before writing production UI:
+
+1. Find the nearest shipped page and mirror its scaffold, spacing, and components. PATTERNS.md names the page to copy.
+2. Search `common/`, `layout/`, `surfaces/`, and the domain directory. Read the component's `.stories.tsx` before using it.
+3. Do not invent a component, token, color, page shell, or interaction. If every existing option fails, stop and ask. Name the options you rejected and the one compliant alternative.
+4. A new or changed reusable component includes or updates a `.stories.tsx` in the same change.
+
+When the change is visual, report the page you copied, the primitives you reused, any exception the user approved, and that light and dark were checked.
+
 ## Go BFF (`server/`)
 
 - Serves the compiled SPA from `dist/`
@@ -149,7 +168,7 @@ public name. Never shadow a directory with a flat sibling file.
 
 Before building UI: check `common/` and domain dirs; read `.stories.tsx` first.
 
-- Loading: primitive `loading` props / `<Table isLoading>` / `<Loading>` — no hand-built skeletons
+- Loading: the real component in its own loading state. `Text`, `LabeledValue`, `ID`, `Time`, `Badge`, `Status`, `Code` take `loading`; `Table` and `Timeline` take `isLoading`; unknown shape gets `<Loading>`. Never render `Skeleton`, `TableSkeleton`, or `TimelineSkeleton` from a view or feature, and never write a `*Skeleton` component. Those recreate a layout by hand and drift from it.
 - Icons: only `Icon` from `@/components/common/Icon`
 - Links: `Link` from `@/components/common/Link` (`href`, not `to`)
 - Actions: `Button` from `@/components/common/Button`. A raw `<button>` is only for a control `Button` cannot represent (a full row that contains other content). It still needs `cursor-pointer`, a hover background in both themes, and a visible focus state. `focus:outline-none` alone is not a focus state.
@@ -183,7 +202,7 @@ Ladle lowercases each segment and capitalizes the first letter, so the sidebar s
 
 ## Design, copy, toasts, dates
 
-- [DESIGN.md](./DESIGN.md), [COPY_STYLE.md](./COPY_STYLE.md)
+- [DESIGN.md](./DESIGN.md), [COPY_STYLE.md](./COPY_STYLE.md), [client/components/PATTERNS.md](./client/components/PATTERNS.md)
 - Toasts: heading + description; status transitions via `useStatusToast`
 - Dates: Luxon via `<Time>` / `<Duration>` only
 

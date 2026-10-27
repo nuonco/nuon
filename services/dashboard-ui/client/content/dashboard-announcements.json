@@ -1,14 +1,14 @@
 {
   "announcements": [
     {
-      "id": "deprovisions-telemetry-dashboard-042",
-      "title": "BYOC Telemetry, Improved UI and Deprovisioning",
-      "date": "October 15, 2026",
-      "description": "OTEL support for BYOC environments, and platform usability improvements",
+      "id": "release-rollouts-runner-control-043",
+      "title": "App Branch Triggers and Runner Control",
+      "date": "October 22, 2026",
+      "description": "App branch triggers, GitHub Actions for branch runs, and per-install runner and stack control",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/042-deprovisions-and-new-dashboard",
-      "image": "/images/announcements/nuon-changelog-042.png",
-      "imageDark": "/images/announcements/nuon-changelog-042.png",
+      "ctaUrl": "https://docs.nuon.co/updates/043-release-rollouts-runner-control",
+      "image": "/images/announcements/nuon-changelog-043.png",
+      "imageDark": "/images/announcements/nuon-changelog-043.png",
       "dismissible": false
     },
     {

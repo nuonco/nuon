@@ -11,6 +11,7 @@ import {
   formatAggregate,
   hasChanges,
   isUnsummarized,
+  pluralize,
   sumCounts,
 } from './change-summary-utils'
 import { WorkflowChangeRow } from './WorkflowChangeRow'
@@ -32,6 +33,7 @@ const isActionable = (summary: TStepChangeSummary): boolean =>
   hasChanges(summary.counts) ||
   summary.status === 'generating' ||
   summary.status === 'error' ||
+  summary.status === 'not-generated' ||
   summary.countsState === 'unknown' ||
   (summary.countsState === 'unsupported' && summary.hasDetail)
 
@@ -39,8 +41,14 @@ const ChangesHeader = ({ summaries }: { summaries: TStepChangeSummary[] }) => {
   const totals = sumCounts(summaries)
   const changedSteps = summaries.filter((s) => hasChanges(s.counts))
   const unsummarized = summaries.filter(isUnsummarized)
+  const notGenerated = summaries.filter((s) => s.status === 'not-generated')
   const noun = aggregateNoun(summaries)
   const unit = noun === 'input' ? 'input' : 'step'
+
+  const notGeneratedSuffix =
+    notGenerated.length > 0
+      ? `, ${pluralize(notGenerated.length, 'plan')} not generated`
+      : ''
 
   if (changedSteps.length === 0) {
     return (
@@ -50,8 +58,8 @@ const ChangesHeader = ({ summaries }: { summaries: TStepChangeSummary[] }) => {
         </Text>
         <Text variant="subtext" theme="neutral">
           {unsummarized.length > 0
-            ? `${summaries.length - unsummarized.length} of ${summaries.length} steps summarized, nothing to apply`
-            : `${summaries.length} ${summaries.length === 1 ? 'step' : 'steps'}, nothing to apply`}
+            ? `${summaries.length - unsummarized.length} of ${summaries.length} steps summarized, nothing to apply${notGeneratedSuffix}`
+            : `${summaries.length} ${summaries.length === 1 ? 'step' : 'steps'}, nothing to apply${notGeneratedSuffix}`}
         </Text>
       </div>
     )
@@ -65,9 +73,8 @@ const ChangesHeader = ({ summaries }: { summaries: TStepChangeSummary[] }) => {
       <Text variant="subtext" theme="neutral">
         {summaries.length} {summaries.length === 1 ? unit : `${unit}s`} in this
         workflow
-        {unsummarized.length > 0
-          ? `, ${unsummarized.length} couldn't be summarized`
-          : ''}
+        {unsummarized.length > 0 ? `, ${unsummarized.length} couldn't be summarized` : ''}
+        {notGeneratedSuffix}
       </Text>
     </div>
   )

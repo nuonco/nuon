@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -18,6 +19,9 @@ import (
 
 const OrgSignalsQueueName = queue.OrgSignalsQueueName
 
+// ErrOrgCreationDisabled is returned when disable_org_creation is set.
+var ErrOrgCreationDisabled = errors.New("organization creation is disabled")
+
 type CreateOrgParams struct {
 	Name           string
 	UseSandboxMode bool
@@ -25,6 +29,10 @@ type CreateOrgParams struct {
 }
 
 func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *CreateOrgParams) (*app.Org, error) {
+	if h.cfg.DisableOrgCreation && !internal.IsNuonEmail(acct.Email) {
+		return nil, ErrOrgCreationDisabled
+	}
+
 	orgTyp := app.OrgTypeDefault
 	if params.UseSandboxMode {
 		orgTyp = app.OrgTypeSandbox

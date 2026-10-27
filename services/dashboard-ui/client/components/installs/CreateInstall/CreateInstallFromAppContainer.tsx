@@ -30,7 +30,6 @@ import {
   getBranchWorkflowRuns,
   createAppInstall,
   getCloudConnections,
-  getComponents,
   installNameTaken,
 } from '@/lib'
 import type {
@@ -43,7 +42,6 @@ import {
   BRANCH_CONFIG_POLL_MS,
   branchConfigWaitState,
 } from '@/lib/branch-config-wait'
-import { shouldDefaultStackOnly } from './app-install-readiness'
 import { BranchStep } from './BranchStep'
 import {
   GroupStep,
@@ -301,15 +299,6 @@ export const CreateInstallFromAppContainer = ({
       enabled: !!org?.id && cloudConnectionsEnabled && phase === 'form',
     })
 
-  const componentIds = config?.component_ids ?? []
-  const needsComponents = componentIds.length > 0
-  const { data: componentsResult, isLoading: componentsLoading } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['components', org?.id, app.id, 'create-install-gate'],
-    queryFn: () => getComponents({ orgId: org.id, appId: app.id, limit: 100 }),
-    enabled: !!org?.id && !!app.id && needsComponents && !!config,
-  })
-
   const {
     mutateAsync,
     isPending: isSubmitting,
@@ -380,7 +369,6 @@ export const CreateInstallFromAppContainer = ({
     unbranchedConfigsLoading ||
     branchConfigsLoading ||
     configLoading ||
-    (needsComponents && componentsLoading) ||
     (cloudConnectionsEnabled && cloudConnectionsLoading)
 
   const missingBranchConfigError =
@@ -611,13 +599,6 @@ export const CreateInstallFromAppContainer = ({
         <CreateInstallFormFields
           app={app}
           inputConfig={inputConfig}
-          defaultStackOnly={shouldDefaultStackOnly(
-            {
-              ...app,
-              app_configs: [{ component_ids: config?.component_ids ?? [] }],
-            },
-            needsComponents ? componentsResult?.data : []
-          )}
           requireTargetAccount={requireTargetAccount}
           cloudConnections={
             cloudConnectionsEnabled

@@ -211,15 +211,11 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		roleParamNames = append(roleParamNames, k)
 	}
 
-	// Use S3 URL when template has been uploaded (ContentsHash is set).
-	templateURL := stack.TemplateURL
-	if stack.ContentsHash != "" {
-		templateURL = CustomNestedStackTemplateURL(
-			tpl.cfg.AWSCloudFormationStackTemplateBaseURL,
-			inp.Install.OrgID, inp.AppCfg.AppID,
-			stack.ContentsHash, stack.TemplateURL,
-		)
-	}
+	templateURL := ResolveCustomNestedStackTemplateURL(
+		tpl.cfg.AWSCloudFormationStackTemplateBaseURL,
+		inp.Install.OrgID, inp.AppCfg.AppID,
+		stack,
+	)
 
 	parameters, defaultParameters, reservedInTemplate, templateOutputs, err := tpl.extractNestedStackParameters(templateURL, roleParamNames...)
 	if err != nil {

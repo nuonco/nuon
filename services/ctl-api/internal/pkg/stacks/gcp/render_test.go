@@ -140,7 +140,6 @@ func TestRenderStandardVars(t *testing.T) {
 		"nuon_org_id":            `"orgabcdefghijklmnopqrstuvw"`,
 		"nuon_app_id":            `"appabcdefghijklmnopqrstuvw"`,
 		"runner_api_url":         `"https://runner.nuon.co"`,
-		"runner_api_token":       `"test-token"`,
 		"runner_id":              `"runnerabcdefghijklmnopqrstu"`,
 		"runner_init_script_url": `"https://example.com/init.sh"`,
 		"phone_home_url":         `"https://example.com/phone-home"`,
@@ -149,6 +148,7 @@ func TestRenderStandardVars(t *testing.T) {
 		assert.Contains(t, tfvars, key+" ", "tfvars should contain %s", key)
 		assert.Contains(t, tfvars, val, "tfvars should contain value %s for %s", val, key)
 	}
+	assert.NotContains(t, tfvars, "runner_api_token")
 }
 
 func TestRenderGCPAccountInjection(t *testing.T) {

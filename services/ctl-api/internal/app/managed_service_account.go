@@ -16,6 +16,7 @@ type ManagedServiceAccountPurpose string
 const (
 	ManagedServiceAccountPurposeStack              ManagedServiceAccountPurpose = "stack"
 	ManagedServiceAccountPurposeTelemetryCollector ManagedServiceAccountPurpose = "telemetry_collector"
+	ManagedServiceAccountPurposePhoneHome          ManagedServiceAccountPurpose = "phone_home"
 )
 
 type ManagedServiceAccount struct {

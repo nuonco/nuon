@@ -20,7 +20,7 @@ type PlantypesKustomizeBuildConfig struct {
 	// EnableHelm enables Helm chart inflation during kustomize build
 	EnableHelm bool `json:"enable_helm,omitempty"`
 
-	// LoadRestrictor controls file loading: "none" or "rootOnly" (default)
+	// Ignored by the runner, which pins rootOnly so app config cannot widen worker file access
 	LoadRestrictor string `json:"load_restrictor,omitempty"`
 
 	// Patches are additional patch files to apply after kustomize build

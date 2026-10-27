@@ -2127,13 +2127,6 @@ export interface paths {
      */
     get: operations["GenerateCLIInstallConfig"];
   };
-  "/v1/installs/{install_id}/generate-terraform-installer-config": {
-    /**
-     * generate a Terraform installer config
-     * @description Generate terraform configuration for an installer.
-     */
-    get: operations["GenerateTerraformInstallerConfig"];
-  };
   "/v1/installs/{install_id}/health/baseline": {
     /**
      * reset the install's health window
@@ -2525,7 +2518,7 @@ export interface paths {
     delete: operations["DeleteOIDCTrustPolicy"];
     /**
      * update an OIDC trust policy
-     * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+     * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy. Disabling the policy revokes tokens already issued under it.
      */
     patch: operations["UpdateOIDCTrustPolicy"];
   };
@@ -3319,8 +3312,8 @@ export interface paths {
   };
   "/v1/vcs/connection-callback": {
     /**
-     * public connection to create a vcs connection via a callback
-     * @description Handle VCS connection callback for OAuth flow.
+     * create a vcs connection from the github app install callback
+     * @description Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
      */
     post: operations["CreateVCSConnectionCallback"];
   };
@@ -3453,13 +3446,6 @@ export interface paths {
      * @description Receives webhook events for a webhook subscription and creates a GithubEvent for processing
      */
     post: operations["WriteWebhookEvent"];
-  };
-  "/v1/vcs/{vcs_connection_id}/events": {
-    /**
-     * Write a VCS webhook event
-     * @description Writes incoming webhook events for a VCS connection (legacy endpoint)
-     */
-    post: operations["WriteVCSEvent"];
   };
   "/v1/workflows": {
     /** get all workflows for the org */
@@ -4300,6 +4286,8 @@ export interface components {
       };
       helm_driver?: string;
       id?: string;
+      image_auto_update?: boolean;
+      image_id?: string;
       /** @description takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent. */
       init_script?: string;
       /** @description InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform. */
@@ -4455,6 +4443,11 @@ export interface components {
       org_id?: string;
       runner_nested_template_url?: string;
       type?: components["schemas"]["app.StackType"];
+      /**
+       * @description Column name matches GORM's default for this field. "UI" is treated as one
+       * word, so the column is uidefinition rather than ui_definition.
+       */
+      ui_definition?: components["schemas"]["config.UploadedUIDefinition"];
       updated_at?: string;
       vpc_nested_template_url?: string;
     };
@@ -4483,7 +4476,6 @@ export interface components {
       id?: string;
       location?: string;
       service_principal_app_id?: string;
-      service_principal_password?: string;
       subscription_id?: string;
       subscription_tenant_id?: string;
       updated_at?: string;
@@ -5314,8 +5306,11 @@ export interface components {
       install_id?: string;
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       org_id?: string;
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry_enabled?: boolean | null;
+      ui_definition?: components["schemas"]["config.UploadedUIDefinition"];
       updated_at?: string;
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
@@ -5811,7 +5806,7 @@ export interface components {
     "app.KustomizeConfig": {
       /** @description Enable Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description Load restrictor: "none" or "rootOnly" (default: "rootOnly") */
+      /** @description Load restrictor: only "rootOnly" is supported */
       load_restrictor?: string;
       /** @description Additional patch files to apply after kustomize build */
       patches?: string[];
@@ -5854,7 +5849,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector";
+    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home";
     "app.Notebook": {
       cell_count?: number;
       cells?: components["schemas"]["app.NotebookCell"][];
@@ -6160,7 +6155,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack" | "telemetry_collector";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack" | "telemetry_collector" | "phone_home";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -6366,7 +6361,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack" | "telemetry_collector";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -7473,6 +7468,13 @@ export interface components {
       patch_truncated?: boolean;
       path?: string;
     };
+    "config.UploadedUIDefinition": {
+      contents?: string;
+      contents_hash?: string;
+      path?: string;
+      source_url?: string;
+      status?: components["schemas"]["config.CustomNestedStackStatus"];
+    };
     "configs.ACRAppRegistration": {
       clientCertificateName?: string;
       clientID?: string;
@@ -7643,6 +7645,8 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
@@ -8036,7 +8040,7 @@ export interface components {
     "plantypes.KustomizeBuildConfig": {
       /** @description EnableHelm enables Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description LoadRestrictor controls file loading: "none" or "rootOnly" (default) */
+      /** @description Ignored by the runner, which pins rootOnly so app config cannot widen worker file access */
       load_restrictor?: string;
       /** @description Patches are additional patch files to apply after kustomize build */
       patches?: string[];
@@ -8439,6 +8443,7 @@ export interface components {
       auth_client_id?: string;
       auth_domain?: string;
       dashboard_url?: string;
+      min_cli_version?: string;
       nuon_auth_enabled?: boolean;
       oidc_federation_enabled?: boolean;
       root_domain?: string;
@@ -8732,6 +8737,8 @@ export interface components {
         [key: string]: string;
       };
       helm_driver?: components["schemas"]["app.AppRunnerConfigHelmDriverType"];
+      image_auto_update?: boolean;
+      image_id?: string;
       init_script_url?: string;
       instance_type?: string;
       /** @description PhoneHomeScriptURL overrides the phone-home Lambda source for this app. */
@@ -8961,6 +8968,8 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
@@ -10287,6 +10296,8 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      runner_image_auto_update?: boolean | null;
+      runner_image_id?: string;
       runner_nested_template_url?: string;
       telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
@@ -26185,56 +26196,6 @@ export interface operations {
     };
   };
   /**
-   * generate a Terraform installer config
-   * @description Generate terraform configuration for an installer.
-   */
-  GenerateTerraformInstallerConfig: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/octet-stream": string;
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
    * reset the install's health window
    * @description Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime.
    */
@@ -29479,7 +29440,7 @@ export interface operations {
   };
   /**
    * update an OIDC trust policy
-   * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+   * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy. Disabling the policy revokes tokens already issued under it.
    */
   UpdateOIDCTrustPolicy: {
     parameters: {
@@ -34723,8 +34684,8 @@ export interface operations {
     };
   };
   /**
-   * public connection to create a vcs connection via a callback
-   * @description Handle VCS connection callback for OAuth flow.
+   * create a vcs connection from the github app install callback
+   * @description Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
    */
   CreateVCSConnectionCallback: {
     /** @description Input */
@@ -35241,44 +35202,6 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * Write a VCS webhook event
-   * @description Writes incoming webhook events for a VCS connection (legacy endpoint)
-   */
-  WriteVCSEvent: {
-    parameters: {
-      path: {
-        /** @description VCS Connection ID */
-        vcs_connection_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.GithubEvent"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

@@ -33,6 +33,7 @@ const (
 	// granting only that install's stack endpoints.
 	RoleTypeStack              RoleType = "stack"
 	RoleTypeTelemetryCollector RoleType = "telemetry_collector"
+	RoleTypePhoneHome          RoleType = "phone_home"
 )
 
 // Role contexts name the assignment surfaces a role may be offered on. A role

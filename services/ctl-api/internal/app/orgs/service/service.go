@@ -67,7 +67,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// global routes
 	orgs := ge.Group("/v1/orgs")
 	{
-		orgs.POST("", s.CreateOrg)
+		require.NotFederatedTokenRoute(orgs, "create organizations").POST("", s.CreateOrg)
 		orgs.GET("", s.GetCurrentUserOrgs)
 		orgs.GET("/features", s.GetOrgFeatures)
 

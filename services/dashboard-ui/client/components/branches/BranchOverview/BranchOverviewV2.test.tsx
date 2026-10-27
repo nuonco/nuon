@@ -602,6 +602,19 @@ test('does not show a group failure as a banner on the active group', () => {
   expect(screen.getByText('Rollout failed')).toBeTruthy()
 })
 
+test('shows a cancelled rollout instead of a not-started group', () => {
+  renderOverview({
+    groups: groups.map((group) =>
+      group.id === 'primary' || group.id === 'remaining'
+        ? { ...group, status: 'cancelled' }
+        : group
+    ),
+  })
+
+  expect(screen.getByText('Rollout cancelled')).toBeTruthy()
+  expect(screen.queryByText('Not started')).toBeNull()
+})
+
 test('counts installs by status on each group', () => {
   renderOverview({
     groups: [

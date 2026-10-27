@@ -2,11 +2,11 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -16,9 +16,20 @@ import (
 )
 
 const (
-	nuonAuthDeviceCodeExpiry = 5 * time.Minute
-	nuonAuthPollInterval     = 5 * time.Second
+	nuonAuthDeviceCodeGrantType = "urn:ietf:params:oauth:grant-type:device_code"
+	nuonAuthDefaultPollInterval = 5 * time.Second
+	nuonAuthSlowDownIncrement   = 5 * time.Second
 )
+
+// NuonAuthDeviceAuthorizationResponse is the device authorization response (RFC 8628 §3.2).
+type NuonAuthDeviceAuthorizationResponse struct {
+	DeviceCode              string `json:"device_code"`
+	UserCode                string `json:"user_code"`
+	VerificationURI         string `json:"verification_uri"`
+	VerificationURIComplete string `json:"verification_uri_complete"`
+	ExpiresIn               int    `json:"expires_in"`
+	Interval                int    `json:"interval"`
+}
 
 // NuonAuthTokenResponse represents the response from the device token endpoint
 type NuonAuthTokenResponse struct {
@@ -29,23 +40,6 @@ type NuonAuthTokenResponse struct {
 	ErrorDescription string `json:"error_description,omitempty"`
 }
 
-// generateDeviceCode creates a device code in format XXXX-XXXX where X is [A-Z0-9]
-func generateDeviceCode() (string, error) {
-	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, 8)
-	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("failed to generate device code: %w", err)
-	}
-
-	// Convert random bytes to characters from our allowed set
-	for i := range b {
-		b[i] = chars[int(b[i])%len(chars)]
-	}
-
-	// Format as XXXX-XXXX
-	return fmt.Sprintf("%s-%s", string(b[:4]), string(b[4:])), nil
-}
-
 // buildAuthURL constructs the auth service URL based on the root domain
 func buildAuthURL(rootDomain string) string {
 	if rootDomain == "localhost" {
@@ -54,45 +48,47 @@ func buildAuthURL(rootDomain string) string {
 	return fmt.Sprintf("https://auth.%s", rootDomain)
 }
 
-// loginWithNuonAuth performs the Nuon Auth device code flow
+// loginWithNuonAuth performs the device authorization grant (RFC 8628) against the Nuon auth service.
 func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIConfig) (*LoginResult, error) {
-	// Generate device code locally
-	deviceCode, err := generateDeviceCode()
+	authBaseURL := buildAuthURL(cfg.RootDomain)
+
+	authz, err := startNuonDeviceAuthorization(ctx, authBaseURL)
 	if err != nil {
 		return nil, err
 	}
 
-	// Build URLs based on root domain
-	authBaseURL := buildAuthURL(cfg.RootDomain)
-	verificationURL := fmt.Sprintf("%s/device/code?code=%s", authBaseURL, deviceCode)
-	tokenURL := fmt.Sprintf("%s/device/token?code=%s", authBaseURL, deviceCode)
+	openURL := authz.VerificationURIComplete
+	if openURL == "" {
+		openURL = authz.VerificationURI
+	}
 
-	// Display instructions
 	fmt.Println("\nLogging in to Nuon")
-	fmt.Printf("Opening your browser to authorize the CLI.\n")
-	fmt.Printf("If the browser does not open, visit this URL:\n\n%s\n\n", verificationURL)
+	fmt.Printf("Opening your browser. Check that it shows this code:\n\n    %s\n\n", authz.UserCode)
+	fmt.Printf("If the browser does not open, visit %s and enter the code.\n", authz.VerificationURI)
+	fmt.Println("Never approve a login code that someone else sent you.")
 
-	// Open browser
-	browser.OpenURL(verificationURL)
+	browser.OpenURL(openURL)
 
-	// Poll for token with timeout
-	deadline := time.Now().Add(nuonAuthDeviceCodeExpiry)
+	interval := time.Duration(authz.Interval) * time.Second
+	if interval <= 0 {
+		interval = nuonAuthDefaultPollInterval
+	}
+	deadline := time.Now().Add(time.Duration(authz.ExpiresIn) * time.Second)
 
 	for time.Now().Before(deadline) {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
-		case <-time.After(nuonAuthPollInterval):
+		case <-time.After(interval):
 		}
 
-		resp, err := a.pollNuonDeviceToken(tokenURL)
+		resp, err := pollNuonDeviceToken(ctx, authBaseURL, authz.DeviceCode)
 		if err != nil {
 			return nil, err
 		}
 
-		// Check for success
 		if resp.AccessToken != "" {
-			fmt.Println() // newline after dots
+			fmt.Println()
 			displayName := resp.Email
 			if displayName == "" {
 				displayName = "user"
@@ -103,43 +99,56 @@ func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIC
 			}, nil
 		}
 
-		// Check error type
 		switch resp.Error {
 		case "authorization_pending":
 			fmt.Print(".")
 			continue
+		case "slow_down":
+			interval += nuonAuthSlowDownIncrement
+			continue
 		case "expired_token":
 			fmt.Println()
-			return nil, fmt.Errorf("device code expired - please try again")
+			return nil, fmt.Errorf("login code expired - please try again")
 		case "access_denied":
 			fmt.Println()
 			return nil, fmt.Errorf("access denied")
-		case "invalid_code":
-			fmt.Println()
-			return nil, fmt.Errorf("invalid device code: %s", resp.ErrorDescription)
-		case "slow_down":
-			time.Sleep(nuonAuthPollInterval)
-			continue
 		default:
-			if resp.Error != "" {
-				fmt.Println()
-				return nil, fmt.Errorf("authentication error: %s - %s", resp.Error, resp.ErrorDescription)
-			}
+			fmt.Println()
+			return nil, fmt.Errorf("authentication error: %s - %s", resp.Error, resp.ErrorDescription)
 		}
 	}
 
 	fmt.Println()
-	return nil, fmt.Errorf("device code expired - please try again")
+	return nil, fmt.Errorf("login code expired - please try again")
 }
 
-// pollNuonDeviceToken makes a single request to the token endpoint
-func (a *Service) pollNuonDeviceToken(tokenURL string) (*NuonAuthTokenResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, tokenURL, nil)
+// startNuonDeviceAuthorization asks the auth service to issue a device code and user code.
+func startNuonDeviceAuthorization(ctx context.Context, authBaseURL string) (*NuonAuthDeviceAuthorizationResponse, error) {
+	body, status, err := postNuonAuthForm(ctx, authBaseURL+"/device/authorize", url.Values{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create token request: %w", err)
+		return nil, fmt.Errorf("failed to start login: %w", err)
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("failed to start login: auth service returned %d", status)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	var authz NuonAuthDeviceAuthorizationResponse
+	if err := json.Unmarshal(body, &authz); err != nil {
+		return nil, fmt.Errorf("failed to parse login response: %w", err)
+	}
+	if authz.DeviceCode == "" || authz.UserCode == "" || authz.VerificationURI == "" {
+		return nil, fmt.Errorf("auth service returned an incomplete login response")
+	}
+	return &authz, nil
+}
+
+// pollNuonDeviceToken makes a single request to the token endpoint. Per RFC 8628 pending and error
+// states come back as 400s with an error code, so the body is parsed regardless of status.
+func pollNuonDeviceToken(ctx context.Context, authBaseURL, deviceCode string) (*NuonAuthTokenResponse, error) {
+	body, status, err := postNuonAuthForm(ctx, authBaseURL+"/device/token", url.Values{
+		"grant_type":  {nuonAuthDeviceCodeGrantType},
+		"device_code": {deviceCode},
+	})
 	if err != nil {
 		// Network errors during polling are not fatal - could be temporary
 		if strings.Contains(err.Error(), "connection refused") {
@@ -150,17 +159,31 @@ func (a *Service) pollNuonDeviceToken(tokenURL string) (*NuonAuthTokenResponse, 
 		}
 		return nil, fmt.Errorf("token request failed: %w", err)
 	}
+
+	var tokenResp NuonAuthTokenResponse
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return nil, fmt.Errorf("failed to parse token response (status %d): %w", status, err)
+	}
+	return &tokenResp, nil
+}
+
+func postNuonAuthForm(ctx context.Context, endpoint string, form url.Values) ([]byte, int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, 0, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return nil, resp.StatusCode, fmt.Errorf("failed to read response: %w", err)
 	}
-
-	var tokenResp NuonAuthTokenResponse
-	if err := json.Unmarshal(body, &tokenResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return &tokenResp, nil
+	return body, resp.StatusCode, nil
 }

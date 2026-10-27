@@ -3,6 +3,8 @@ name: dashboard-ui:admin
 description: Add a new admin action to the dashboard-ui admin panel
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 You are adding a new admin action to the dashboard-ui admin panel.
 
 ## Step 1: Gather requirements

@@ -237,7 +237,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// install stacks
 		installs.GET("/stack", s.GetInstallStackByInstallID)
 		installs.GET("/stack-runs", s.GetInstallStackRuns)
-		installs.GET("/generate-terraform-installer-config", s.GenerateTerraformInstallerConfig)
 
 		// available roles
 		installs.GET("/available-roles", s.GetAvailableRoles)

@@ -813,8 +813,87 @@ const listReply = (state: string, page: string, rows: unknown[]): TFixtureReply 
   return ok(rows, true)
 }
 
+const previewPullRequestRun = {
+  id: 'wf-pr-482',
+  name: 'Widen the worker pool',
+  type: 'app_branches_run',
+  created_at: '2026-10-04T16:04:00Z',
+  finished: true,
+  finished_at: '2026-10-04T16:10:00Z',
+  status: {
+    status: 'success',
+    status_human_description: 'Preview finished.',
+  },
+  app_branch_runs: [
+    {
+      id: 'brun-pr-482',
+      pr_number: 482,
+      run_type: 'git-preview-run',
+      head_sha: '9f2c1ab7e4d05c3188a6b0f7e2d9c4a1b3e5f701',
+      created_at: '2026-10-04T16:04:00Z',
+      started_at: '2026-10-04T16:04:00Z',
+      completed_at: '2026-10-04T16:10:00Z',
+      status: 'success',
+      metadata: {
+        trigger: 'pull_request',
+        pr_number: 482,
+        head_sha: '9f2c1ab7e4d05c3188a6b0f7e2d9c4a1b3e5f701',
+      },
+      vcs_connection_commit: {
+        sha: '9f2c1ab7e4d05c3188a6b0f7e2d9c4a1b3e5f701',
+        message: 'Widen the worker pool to 8',
+        author_name: 'Dana Eng',
+        created_at: '2026-10-04T16:04:00Z',
+      },
+      preview: {
+        source: 'pr',
+        mode: 'plan-only',
+        install_id: 'inst-staging',
+        install_name: 'staging',
+        branch_preview_config: {
+          mode: 'plan-only',
+          install_id: 'inst-staging',
+          install_name: 'staging',
+          set_statuses: true,
+          comment: true,
+          ignore_drafts: true,
+        },
+        resolved_preview_config: {
+          mode: 'plan-only',
+          install_id: 'inst-staging',
+          install_name: 'staging',
+          set_statuses: true,
+          comment: true,
+          ignore_drafts: true,
+        },
+      },
+    },
+  ],
+}
+
+const branchWithPreviewConfig = (branch: {
+  configs?: Array<Record<string, unknown>>
+}) => ({
+  ...branch,
+  configs: branch.configs?.map((cfg, index) =>
+    index === 0
+      ? {
+          ...cfg,
+          preview_config: {
+            mode: 'plan-only',
+            install_id: 'inst-staging',
+            install_name: 'staging',
+            set_statuses: true,
+            comment: true,
+            ignore_drafts: true,
+          },
+        }
+      : cfg
+  ),
+})
+
 export const appFixture = (state: string): TFixture =>
-  withChrome(viewInstall(), (url) => {
+  withChrome(viewInstall(), (url, init) => {
     const path = url.pathname
     const params = url.searchParams
     const rollout = rolloutOf(state)
@@ -822,7 +901,17 @@ export const appFixture = (state: string): TFixture =>
     const current = rolloutData(rollout)
     const branch = planned ? bareBranch : mainBranch
     const configs = planned ? [bareConfig] : [mainConfig]
-    if (path.endsWith('/orgs/current')) return ok(appOrg)
+    if (path.endsWith('/orgs/current')) {
+      return ok({
+        ...appOrg,
+        features: {
+          ...appOrg.features,
+          ...(state.startsWith('pull-request')
+            ? { 'pr-preview-ui': true }
+            : {}),
+        },
+      })
+    }
     if (path === `/v1/apps/${VIEW_APP_ID}`) return ok(app)
     if (path === `/v1/apps/${VIEW_APP_ID}/labels`) {
       const labels = catalogOf(state, 'labels')
@@ -870,8 +959,37 @@ export const appFixture = (state: string): TFixture =>
       const query = params.get('q') ?? ''
       return ok(rows.filter((item) => matches(item.name, query)), true)
     }
+    if (path.endsWith('/branches/br-1/preview-sources')) {
+      if (state === 'pull-request-loading') return pendingReply()
+      return ok({
+        pull_requests: [
+          {
+            pr_number: 482,
+            title: 'Bump the api component to node 22',
+            head_sha: '9f2c1ab7e4d05c3188a6b0f7e2d9c4a1b3e5f701',
+            head_ref: 'dana/node-22-upgrade',
+            url: 'https://github.com/acme/payments/pull/482',
+          },
+        ],
+        branches: [],
+      })
+    }
+    if (path.endsWith('/branches/br-1/preview-install-candidates')) {
+      return ok({
+        installs: [
+          {
+            id: 'inst-staging',
+            name: 'staging',
+            labels: { env: 'staging' },
+            aws_account: { region: 'us-east-1' },
+          },
+        ],
+      })
+    }
     if (path.startsWith(`/v1/apps/${VIEW_APP_ID}/branches/br-1`) && !path.includes('/runs') && !path.includes('/configs')) {
-      return ok(branch)
+      return ok(
+        state.startsWith('pull-request') ? branchWithPreviewConfig(branch) : branch
+      )
     }
     if (path.includes('/branches/br-1/configs')) {
       const inputs = catalogOf(state, 'inputs')
@@ -880,6 +998,11 @@ export const appFixture = (state: string): TFixture =>
       return ok(configs)
     }
     if (path.endsWith('/branches/br-1/runs')) {
+      if (init?.method === 'POST') return ok(previewPullRequestRun)
+      if (params.get('limit') === '100') {
+        if (state === 'pull-request-loading') return pendingReply()
+        return ok([previewPullRequestRun], true)
+      }
       if (rollout === 'loading' || catalogOf(state, 'runs') === 'loading') return pendingReply()
       if (rollout === 'no-runs' || rollout === 'no-plan' || catalogOf(state, 'runs') === 'empty') return ok([], true)
       const latest = rollout === 'succeeded' ? workflowRun : current.run

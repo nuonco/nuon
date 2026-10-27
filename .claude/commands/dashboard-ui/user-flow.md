@@ -3,6 +3,8 @@ name: dashboard-ui:user-flow
 description: Use when implementing a button → modal → confirmation action in the dashboard-ui
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 This skill enforces the two-component (Button + Modal) pattern using useSurfaces, Modal from surfaces/, and useMutation — never raw fetch or bespoke modal divs.
 
 ## Steps

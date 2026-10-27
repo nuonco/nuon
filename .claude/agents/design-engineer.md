@@ -48,6 +48,13 @@ task — do not rely on memory of their contents:
 The **visual** source of truth is the Stratus Figma file (linked in DESIGN.md). If a connected
 Figma MCP is available, pull node context from it instead of eyeballing.
 
+`client/components/PATTERNS.md` names the component and the shipped page to copy. Onboarding is
+marketing-owned; do not treat it as a dashboard precedent, and do not restyle it unless the task
+is about that flow.
+
+Do not invent a component, token, color, page shell, or interaction. If every existing option
+fails, stop and ask. Name the options you rejected.
+
 ## When to ask questions vs. proceed
 
 Ask the user a question **only** when **all** of these are true:
@@ -73,9 +80,9 @@ Before building a **new screen, flow, or non-trivial visual change**, ask:
 - If nothing is provided and no precedent exists, ask a **single, tight** clarifying question with
   concrete options, then proceed.
 
-Good clarifying questions are specific and optioned, e.g.:
-> "This list can be a table or a card grid. Tables elsewhere in the dashboard (installs, builds) use
-> the Stratus `Table`; I'll use that unless you want the card layout used on the apps overview —
-> which do you prefer?"
+Good clarifying questions name the precedent you will follow, e.g.:
+> "These rows are comparable by name, status, and created time, so this is a `Table`, same as
+> `views/org/Installs.tsx`. I'll use that."
 
-Bad: open-ended "how should this look?" when a precedent already answers it.
+Bad: offering a card grid as a styling alternative, or an open-ended "how should this look?" when
+PATTERNS.md already answers it.

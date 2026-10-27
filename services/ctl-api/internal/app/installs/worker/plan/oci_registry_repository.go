@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
-	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/Masterminds/sprig"
 	"github.com/pkg/errors"
 
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
@@ -313,13 +311,8 @@ func RenderText(inputVal string, data map[string]interface{}) (string, error) {
 		return inputVal, nil
 	}
 
-	funcMap := template.FuncMap{
-		"now": time.Now,
-	}
-
 	temp, err := template.New("input").
-		Funcs(funcMap).
-		Funcs(sprig.FuncMap()).
+		Funcs(render.TxtFuncMap()).
 		Option("missingkey=error").
 		Parse(inputVal)
 	if err != nil {

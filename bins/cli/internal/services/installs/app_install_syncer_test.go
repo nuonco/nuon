@@ -2,6 +2,7 @@ package installs
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -286,5 +287,196 @@ func TestResolveRequiredInputs(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestUnknownInputsError(t *testing.T) {
+	declaredOverride := config.HelmValuesOverrideInputName("whoami")
+	tests := []struct {
+		name    string
+		inputs  []*models.AppAppInput
+		defined map[string]string
+		wantErr string
+	}{
+		{
+			name:    "declared inputs are accepted",
+			inputs:  []*models.AppAppInput{{Name: "region"}, {Name: declaredOverride}},
+			defined: map[string]string{"region": "us-west-2", declaredOverride: "replicaCount: 1\n"},
+		},
+		{
+			name:    "empty config is accepted",
+			inputs:  []*models.AppAppInput{{Name: "region"}},
+			defined: map[string]string{},
+		},
+		{
+			name:    "name missing from the app config",
+			inputs:  []*models.AppAppInput{{Name: "region"}},
+			defined: map[string]string{"region": "us-west-2", "retired": "1"},
+			wantErr: "unknown input(s): retired",
+		},
+		{
+			name:    "undeclared component override uses the install config path",
+			inputs:  []*models.AppAppInput{{Name: "region"}},
+			defined: map[string]string{declaredOverride: "replicaCount: 1\n", "retired": "1"},
+			wantErr: "unknown input(s): components.whoami.helm_values, retired",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := unknownInputsError(tt.inputs, tt.defined)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("err = %v", err)
+				}
+				return
+			}
+			if err == nil || err.Error() != tt.wantErr {
+				t.Fatalf("err = %v, want %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+type dryRunInputsAPI struct {
+	nuon.Client
+	configs     map[string]*models.AppAppConfig
+	latestInput *models.AppAppInputConfig
+	fetched     []string
+}
+
+func (a *dryRunInputsAPI) GetAppConfig(_ context.Context, _, appConfigID string, _ *bool) (*models.AppAppConfig, error) {
+	a.fetched = append(a.fetched, appConfigID)
+	cfg, ok := a.configs[appConfigID]
+	if !ok {
+		return nil, fmt.Errorf("no app config %s", appConfigID)
+	}
+	return cfg, nil
+}
+
+func (a *dryRunInputsAPI) GetInstallCurrentInputs(context.Context, string) (*models.AppInstallInputs, error) {
+	return &models.AppInstallInputs{Values: map[string]string{}}, nil
+}
+
+func (a *dryRunInputsAPI) GenerateCLIInstallConfig(context.Context, string) ([]byte, error) {
+	return []byte("name = \"acme\"\n"), nil
+}
+
+func (a *dryRunInputsAPI) GetAppInputLatestConfig(context.Context, string) (*models.AppAppInputConfig, error) {
+	return a.latestInput, nil
+}
+
+func appConfigWithInputs(id string, names ...string) *models.AppAppConfig {
+	inputs := make([]*models.AppAppInput, len(names))
+	for i, name := range names {
+		inputs[i] = &models.AppAppInput{Name: name}
+	}
+	return &models.AppAppConfig{
+		ID:     id,
+		Status: models.AppAppConfigStatusActive,
+		Input:  &models.AppAppInputConfig{Inputs: inputs},
+	}
+}
+
+func TestSyncExistingInstallDryRunRejectsUnknownInput(t *testing.T) {
+	api := &dryRunInputsAPI{
+		configs: map[string]*models.AppAppConfig{
+			"pin-config":    appConfigWithInputs("pin-config", "region"),
+			"branch-config": appConfigWithInputs("branch-config", "region", "renamed"),
+		},
+	}
+	install := &models.AppInstall{ID: "inst-1", Name: "acme", AppID: "app-1", AppConfigID: "pin-config"}
+	branch := &models.AppAppBranch{
+		ID:        "b1",
+		Name:      "main",
+		LatestRun: &models.AppAppBranchRun{AppConfigID: "branch-config"},
+	}
+	syncer := &appInstallSyncer{
+		api:    api,
+		appID:  "app-1",
+		asJSON: true,
+		branchesByInstall: map[string]*models.AppAppBranch{
+			"acme": branch,
+		},
+	}
+	cfg := &config.Install{
+		Name: "acme",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"renamed": "1"},
+		}},
+	}
+
+	_, err := syncer.syncExistingInstall(context.Background(), cfg, install, true, false, true)
+	if err == nil || err.Error() != "unknown input(s): renamed" {
+		t.Fatalf("err = %v", err)
+	}
+	sawPin := false
+	for _, id := range api.fetched {
+		if id == "pin-config" {
+			sawPin = true
+		}
+	}
+	if !sawPin {
+		t.Fatalf("pinned app config was not loaded, fetched %v", api.fetched)
+	}
+}
+
+func TestSyncExistingInstallDryRunAllowsInputDeclaredOnlyOnPin(t *testing.T) {
+	api := &dryRunInputsAPI{
+		configs: map[string]*models.AppAppConfig{
+			"pin-config":    appConfigWithInputs("pin-config", "legacy"),
+			"branch-config": appConfigWithInputs("branch-config", "region"),
+		},
+	}
+	install := &models.AppInstall{ID: "inst-1", Name: "acme", AppID: "app-1", AppConfigID: "pin-config"}
+	branch := &models.AppAppBranch{
+		ID:        "b1",
+		Name:      "main",
+		LatestRun: &models.AppAppBranchRun{AppConfigID: "branch-config"},
+	}
+	syncer := &appInstallSyncer{
+		api:    api,
+		appID:  "app-1",
+		asJSON: true,
+		branchesByInstall: map[string]*models.AppAppBranch{
+			"acme": branch,
+		},
+	}
+	cfg := &config.Install{
+		Name: "acme",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"legacy": "1"},
+		}},
+	}
+
+	got, err := syncer.syncExistingInstall(context.Background(), cfg, install, true, false, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != nil {
+		t.Fatalf("dry-run install = %#v, want nil", got)
+	}
+}
+
+func TestSyncNewInstallDryRunRejectsUnknownInput(t *testing.T) {
+	api := &dryRunInputsAPI{
+		latestInput: &models.AppAppInputConfig{
+			Inputs: []*models.AppAppInput{{Name: "region"}},
+		},
+	}
+	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
+	cfg := &config.Install{
+		Name: "acme",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"retired": "1"},
+		}},
+		Components: map[string]config.ComponentOverride{
+			"whoami": {HelmValues: "replicaCount: 1\n"},
+		},
+	}
+
+	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
+	if err == nil || err.Error() != "unknown input(s): components.whoami.helm_values, retired" {
+		t.Fatalf("err = %v", err)
 	}
 }

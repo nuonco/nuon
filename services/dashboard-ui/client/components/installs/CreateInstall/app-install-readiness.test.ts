@@ -5,7 +5,6 @@ import {
   hasActiveComponentBuild,
   hasRunnerConfig,
   latestComponentIds,
-  shouldDefaultStackOnly,
 } from './app-install-readiness'
 
 const app = (overrides: Partial<TApp> = {}): TApp =>
@@ -28,7 +27,6 @@ describe('app-install-readiness', () => {
     const noRunner = app({ runner_config: {} })
     expect(hasRunnerConfig(noRunner)).toBe(false)
     expect(appInstallBadge(noRunner)).toBe('not-provisionable')
-    expect(shouldDefaultStackOnly(noRunner)).toBe(false)
   })
 
   test('uses latest config component_ids for the no-components badge', () => {
@@ -38,7 +36,6 @@ describe('app-install-readiness', () => {
     })
     expect(latestComponentIds(withConfig)).toEqual([])
     expect(appInstallBadge(withConfig)).toBe('no-components')
-    expect(shouldDefaultStackOnly(withConfig)).toBe(true)
   })
 
   test('waits for components before showing a no-builds badge', () => {
@@ -50,12 +47,9 @@ describe('app-install-readiness', () => {
     expect(appInstallBadge(withComponents, [component()])).toBe(
       'no-component-builds'
     )
-    expect(shouldDefaultStackOnly(withComponents, [component('error')])).toBe(
-      true
-    )
   })
 
-  test('does not force stack-only when any component has an active build', () => {
+  test('clears the badge when any component has an active build', () => {
     const withComponents = app({
       runner_config: { app_runner_type: 'aws' },
       app_configs: [{ component_ids: ['cmp1', 'cmp2'] }],
@@ -63,6 +57,5 @@ describe('app-install-readiness', () => {
     const components = [component(), component('active')]
     expect(hasActiveComponentBuild(components)).toBe(true)
     expect(appInstallBadge(withComponents, components)).toBeUndefined()
-    expect(shouldDefaultStackOnly(withComponents, components)).toBe(false)
   })
 })

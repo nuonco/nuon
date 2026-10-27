@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -25,15 +26,17 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ===========================
-// DeviceCodePage Handler Tests
-// ===========================
+const (
+	testRequesterIP        = "203.0.113.7"
+	testRequesterUserAgent = "nuon-cli/test"
+)
 
-type DeviceCodePageTestService struct {
+var userCodePattern = regexp.MustCompile(`^[BCDFGHJKLMNPQRSTVWXZ]{4}-[BCDFGHJKLMNPQRSTVWXZ]{4}$`)
+
+type DeviceAuthorizationTestService struct {
 	fx.In
 	DB          *gorm.DB `name:"psql"`
 	CHDB        *gorm.DB `name:"ch"`
@@ -43,24 +46,41 @@ type DeviceCodePageTestService struct {
 	AuthService *service
 }
 
-type DeviceCodePageTestSuite struct {
+type DeviceAuthorizationTestSuite struct {
 	tests.BaseDBTestSuite
 	app     *fxtest.App
-	service DeviceCodePageTestService
+	service DeviceAuthorizationTestService
 	router  *gin.Engine
 	testAcc *app.Account
-	testOrg *app.Org
 }
 
-func TestDeviceCodePageSuite(t *testing.T) {
+type deviceAuthorizeResponse struct {
+	DeviceCode              string `json:"device_code"`
+	UserCode                string `json:"user_code"`
+	VerificationURI         string `json:"verification_uri"`
+	VerificationURIComplete string `json:"verification_uri_complete"`
+	ExpiresIn               int    `json:"expires_in"`
+	Interval                int    `json:"interval"`
+}
+
+type deviceTokenResponse struct {
+	AccessToken      string `json:"access_token"`
+	TokenType        string `json:"token_type"`
+	ExpiresIn        int    `json:"expires_in"`
+	Email            string `json:"email"`
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+}
+
+func TestDeviceAuthorizationSuite(t *testing.T) {
 	if os.Getenv("INTEGRATION") != "true" {
 		t.Skip("INTEGRATION is not set, skipping")
 		return
 	}
-	suite.Run(t, new(DeviceCodePageTestSuite))
+	suite.Run(t, new(DeviceAuthorizationTestSuite))
 }
 
-func (s *DeviceCodePageTestSuite) SetupSuite() {
+func (s *DeviceAuthorizationTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
@@ -75,63 +95,46 @@ func (s *DeviceCodePageTestSuite) SetupSuite() {
 	s.SetDB(s.service.DB)
 }
 
-func (s *DeviceCodePageTestSuite) SetupTest() {
+func (s *DeviceAuthorizationTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.setupTestData()
-
-	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:       s.service.L,
-		DB:      s.service.DB,
-		TestOrg: s.testOrg,
-		TestAcc: s.testAcc,
-	})
-
-	err := s.service.AuthService.RegisterAuthRoutes(s.router)
-	require.NoError(s.T(), err)
-}
-
-func (s *DeviceCodePageTestSuite) TearDownSuite() {
-	s.app.RequireStop()
-}
-
-func (s *DeviceCodePageTestSuite) setupTestData() {
-	ctx := context.Background()
 
 	accID := domains.NewAccountID()
-	testAcc := &app.Account{
+	s.testAcc = &app.Account{
 		ID:          accID,
 		Email:       fmt.Sprintf("%s@test.nuon.co", accID),
 		Subject:     accID,
 		AccountType: app.AccountTypeAuth0,
 	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
+	require.NoError(s.T(), s.service.DB.Create(s.testAcc).Error)
 
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	orgID := domains.NewOrgID()
-	testOrg := &app.Org{
-		ID:          orgID,
-		Name:        fmt.Sprintf("test-org-%s", orgID),
-		SandboxMode: true,
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
+	})
+	require.NoError(s.T(), s.service.AuthService.RegisterAuthRoutes(s.router))
 }
 
-func (s *DeviceCodePageTestSuite) makeRequestWithCookie(method, path string, authToken string) *httptest.ResponseRecorder {
-	req, err := http.NewRequest(method, path, nil)
-	require.NoError(s.T(), err)
+func (s *DeviceAuthorizationTestSuite) TearDownSuite() {
+	s.app.RequireStop()
+}
 
-	if authToken != "" {
-		req.AddCookie(&http.Cookie{
-			Name:  NuonAuthCookieName,
-			Value: authToken,
-		})
+func (s *DeviceAuthorizationTestSuite) do(method, path string, form url.Values, sessionToken string) *httptest.ResponseRecorder {
+	var body *strings.Reader
+	if form != nil {
+		body = strings.NewReader(form.Encode())
+	} else {
+		body = strings.NewReader("")
+	}
+	req, err := http.NewRequest(method, path, body)
+	require.NoError(s.T(), err)
+	if form != nil {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
+	req.Header.Set("User-Agent", testRequesterUserAgent)
+	req.RemoteAddr = testRequesterIP + ":51234"
+	if sessionToken != "" {
+		req.AddCookie(&http.Cookie{Name: NuonAuthCookieName, Value: sessionToken})
 	}
 
 	rr := httptest.NewRecorder()
@@ -139,810 +142,455 @@ func (s *DeviceCodePageTestSuite) makeRequestWithCookie(method, path string, aut
 	return rr
 }
 
-func (s *DeviceCodePageTestSuite) createTestToken() string {
-	now := time.Now()
-	tokenValue := domains.NewUserTokenID()
-
+func (s *DeviceAuthorizationTestSuite) createSessionToken(tokenType app.TokenType, expiresAt time.Time) app.Token {
 	token := app.Token{
 		CreatedByID: s.testAcc.ID,
 		AccountID:   s.testAcc.ID,
-		Token:       tokenValue,
-		TokenType:   app.TokenTypeNuon,
-		ExpiresAt:   now.Add(24 * time.Hour),
-		IssuedAt:    now,
+		Token:       domains.NewUserTokenID(),
+		TokenType:   tokenType,
+		ExpiresAt:   expiresAt,
+		IssuedAt:    time.Now(),
 		Issuer:      "test",
 	}
-
-	err := s.service.DB.Create(&token).Error
-	require.NoError(s.T(), err)
-
-	return tokenValue
+	require.NoError(s.T(), s.service.DB.Create(&token).Error)
+	return token
 }
 
-func (s *DeviceCodePageTestSuite) TestDeviceCodePage() {
-	testCases := []struct {
-		name           string
-		code           string
-		withToken      bool
-		expectedCode   int
-		expectedError  bool
-		errorSubstring string
-		validateFunc   func(*httptest.ResponseRecorder)
+func (s *DeviceAuthorizationTestSuite) createSession() app.Token {
+	return s.createSessionToken(app.TokenTypeNuon, time.Now().Add(24*time.Hour))
+}
+
+func (s *DeviceAuthorizationTestSuite) createAuthorization(status app.DeviceAuthorizationStatus, expiresAt time.Time, sourceTokenID string) *app.DeviceAuthorization {
+	deviceCode, err := generateDeviceCode()
+	require.NoError(s.T(), err)
+	userCode, err := generateUserCode()
+	require.NoError(s.T(), err)
+
+	authz := &app.DeviceAuthorization{
+		DeviceCode:         deviceCode,
+		UserCode:           userCode,
+		RequesterIP:        testRequesterIP,
+		RequesterUserAgent: testRequesterUserAgent,
+		Status:             status,
+		ExpiresAt:          expiresAt,
+	}
+	if status != app.DeviceAuthorizationStatusPending {
+		authz.AccountID = s.testAcc.ID
+		authz.SourceTokenID = sourceTokenID
+	}
+	require.NoError(s.T(), s.service.DB.Create(authz).Error)
+	return authz
+}
+
+func (s *DeviceAuthorizationTestSuite) reload(id string) app.DeviceAuthorization {
+	var authz app.DeviceAuthorization
+	require.NoError(s.T(), s.service.DB.Where(&app.DeviceAuthorization{ID: id}).First(&authz).Error)
+	return authz
+}
+
+func (s *DeviceAuthorizationTestSuite) authorize(form url.Values) deviceAuthorizeResponse {
+	rr := s.do(http.MethodPost, "/device/authorize", form, "")
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var resp deviceAuthorizeResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+	return resp
+}
+
+func (s *DeviceAuthorizationTestSuite) pollToken(deviceCode string) (int, deviceTokenResponse) {
+	rr := s.do(http.MethodPost, "/device/token", url.Values{
+		"grant_type":  {deviceCodeGrantType},
+		"device_code": {deviceCode},
+	}, "")
+
+	var resp deviceTokenResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp), rr.Body.String())
+	return rr.Code, resp
+}
+
+func (s *DeviceAuthorizationTestSuite) TestAuthorizeIssuesCodes() {
+	resp := s.authorize(url.Values{})
+
+	assert.Len(s.T(), resp.DeviceCode, 43, "device code should carry 256 bits")
+	assert.Regexp(s.T(), userCodePattern, resp.UserCode)
+	assert.Equal(s.T(), s.service.AuthService.buildDeviceURL(), resp.VerificationURI)
+	assert.NotContains(s.T(), resp.VerificationURI, resp.UserCode)
+	assert.Equal(s.T(), s.service.AuthService.buildDeviceURL()+"?user_code="+resp.UserCode, resp.VerificationURIComplete)
+	assert.NotContains(s.T(), resp.VerificationURIComplete, resp.DeviceCode)
+	assert.Equal(s.T(), int(deviceAuthorizationExpiry.Seconds()), resp.ExpiresIn)
+	assert.Equal(s.T(), int(deviceAuthorizationInterval.Seconds()), resp.Interval)
+
+	var authz app.DeviceAuthorization
+	require.NoError(s.T(), s.service.DB.Where(&app.DeviceAuthorization{DeviceCode: resp.DeviceCode}).First(&authz).Error)
+	assert.Equal(s.T(), resp.UserCode, authz.UserCode)
+	assert.Equal(s.T(), app.DeviceAuthorizationStatusPending, authz.Status)
+	assert.Equal(s.T(), testRequesterIP, authz.RequesterIP)
+	assert.Equal(s.T(), testRequesterUserAgent, authz.RequesterUserAgent)
+	assert.Empty(s.T(), authz.AccountID)
+}
+
+func (s *DeviceAuthorizationTestSuite) TestAuthorizeIgnoresClientChosenCodes() {
+	resp := s.authorize(url.Values{
+		"code":        {"ATTK-0001"},
+		"user_code":   {"BCDF-GHJK"},
+		"device_code": {"attacker-chosen"},
+	})
+
+	assert.NotEqual(s.T(), "BCDF-GHJK", resp.UserCode)
+	assert.NotEqual(s.T(), "attacker-chosen", resp.DeviceCode)
+
+	second := s.authorize(url.Values{})
+	assert.NotEqual(s.T(), resp.DeviceCode, second.DeviceCode)
+	assert.NotEqual(s.T(), resp.UserCode, second.UserCode)
+}
+
+func (s *DeviceAuthorizationTestSuite) TestDevicePage() {
+	s.Run("without a session redirects to login and back to /device", func() {
+		rr := s.do(http.MethodGet, "/device", nil, "")
+		require.Equal(s.T(), http.StatusFound, rr.Code)
+		s.assertDeviceLoginRedirect(rr.Header().Get("Location"), s.service.AuthService.buildDeviceURL())
+	})
+
+	s.Run("without a session keeps the pre-filled code through login", func() {
+		rr := s.do(http.MethodGet, "/device?user_code=bcdf-ghjk", nil, "")
+		require.Equal(s.T(), http.StatusFound, rr.Code)
+		s.assertDeviceLoginRedirect(rr.Header().Get("Location"), s.service.AuthService.buildDeviceURL()+"?user_code=BCDF-GHJK")
+	})
+
+	s.Run("with an expired session redirects to login", func() {
+		session := s.createSessionToken(app.TokenTypeNuon, time.Now().Add(-time.Hour))
+		rr := s.do(http.MethodGet, "/device", nil, session.Token)
+		require.Equal(s.T(), http.StatusFound, rr.Code)
+		s.assertDeviceLoginRedirect(rr.Header().Get("Location"), s.service.AuthService.buildDeviceURL())
+	})
+
+	s.Run("with a non-session token redirects to login", func() {
+		session := s.createSessionToken(app.TokenTypeOAuth, time.Now().Add(time.Hour))
+		rr := s.do(http.MethodGet, "/device", nil, session.Token)
+		require.Equal(s.T(), http.StatusFound, rr.Code)
+	})
+
+	s.Run("with a session shows an empty entry form", func() {
+		session := s.createSession()
+
+		rr := s.do(http.MethodGet, "/device", nil, session.Token)
+		require.Equal(s.T(), http.StatusOK, rr.Code)
+		body := rr.Body.String()
+		assert.Contains(s.T(), body, `name="user_code"`)
+		assert.Contains(s.T(), body, `value=""`)
+		assert.Contains(s.T(), body, s.testAcc.Email)
+	})
+
+	s.Run("a code in the link only pre-fills the form", func() {
+		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "")
+		session := s.createSession()
+
+		rr := s.do(http.MethodGet, "/device?user_code="+authz.UserCode, nil, session.Token)
+		require.Equal(s.T(), http.StatusOK, rr.Code)
+		body := rr.Body.String()
+		assert.Contains(s.T(), body, `value="`+authz.UserCode+`"`)
+		assert.Contains(s.T(), body, `action="/device"`)
+		assert.NotContains(s.T(), body, "/device/approve")
+		assert.Equal(s.T(), app.DeviceAuthorizationStatusPending, s.reload(authz.ID).Status)
+	})
+
+	s.Run("a malformed code in the link is dropped", func() {
+		session := s.createSession()
+
+		rr := s.do(http.MethodGet, `/device?user_code=%22%3E%3Cscript%3E`, nil, session.Token)
+		require.Equal(s.T(), http.StatusOK, rr.Code)
+		body := rr.Body.String()
+		assert.Contains(s.T(), body, `value=""`)
+		assert.NotContains(s.T(), body, `"><script>`)
+		assert.NotContains(s.T(), body, `&#34;&gt;&lt;script&gt;`)
+	})
+}
+
+func (s *DeviceAuthorizationTestSuite) TestLookup() {
+	session := s.createSession()
+
+	s.Run("without a session is rejected", func() {
+		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "")
+		rr := s.do(http.MethodPost, "/device", url.Values{"user_code": {authz.UserCode}}, "")
+		require.Equal(s.T(), http.StatusUnauthorized, rr.Code)
+	})
+
+	testCases := map[string]struct {
+		userCode     func() string
+		errSubstring string
 	}{
-		{
-			name:           "missing code parameter",
-			code:           "",
-			withToken:      false,
-			expectedCode:   http.StatusBadRequest,
-			expectedError:  true,
-			errorSubstring: "device code is required",
+		"empty code": {
+			userCode:     func() string { return "  " },
+			errSubstring: "enter the code",
 		},
-		{
-			name:           "invalid code format - too short",
-			code:           "ABC",
-			withToken:      false,
-			expectedCode:   http.StatusBadRequest,
-			expectedError:  true,
-			errorSubstring: "invalid device code format",
+		"malformed code": {
+			userCode:     func() string { return "ABC$-1234" },
+			errSubstring: "invalid or has expired",
 		},
-		{
-			name:           "invalid code format - lowercase",
-			code:           "abcd-efgh",
-			withToken:      false,
-			expectedCode:   http.StatusBadRequest,
-			expectedError:  true,
-			errorSubstring: "invalid device code format",
-		},
-		{
-			name:           "invalid code format - missing hyphen",
-			code:           "ABCDEFGH",
-			withToken:      false,
-			expectedCode:   http.StatusBadRequest,
-			expectedError:  true,
-			errorSubstring: "invalid device code format",
-		},
-		{
-			name:           "invalid code format - special characters",
-			code:           "ABC$-EFGH",
-			withToken:      false,
-			expectedCode:   http.StatusBadRequest,
-			expectedError:  true,
-			errorSubstring: "invalid device code format",
-		},
-		{
-			name:         "valid code without auth redirects to login",
-			code:         "ABCD-1234",
-			withToken:    false,
-			expectedCode: http.StatusFound,
-			validateFunc: func(rr *httptest.ResponseRecorder) {
-				s.assertDeviceCodeLoginRedirect(rr.Header().Get("Location"), "ABCD-1234")
+		"unknown code": {
+			userCode: func() string {
+				code, err := generateUserCode()
+				require.NoError(s.T(), err)
+				return code
 			},
+			errSubstring: "invalid or has expired",
 		},
-		{
-			name:         "valid code with auth shows approval page",
-			code:         "WXYZ-5678",
-			withToken:    true,
-			expectedCode: http.StatusOK,
-			validateFunc: func(rr *httptest.ResponseRecorder) {
-				body := rr.Body.String()
-				assert.Contains(s.T(), body, "WXYZ-5678", "should show device code")
-				assert.Contains(s.T(), body, s.testAcc.Email, "should show user email")
+		"expired code": {
+			userCode: func() string {
+				return s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(-time.Minute), "").UserCode
 			},
+			errSubstring: "invalid or has expired",
+		},
+		"already approved code": {
+			userCode: func() string {
+				return s.createAuthorization(app.DeviceAuthorizationStatusApproved, time.Now().Add(time.Minute), session.ID).UserCode
+			},
+			errSubstring: "invalid or has expired",
 		},
 	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			var authToken string
-			if tc.withToken {
-				authToken = s.createTestToken()
-			}
-
-			path := "/device/code"
-			if tc.code != "" {
-				path += "?code=" + tc.code
-			}
-
-			rr := s.makeRequestWithCookie("GET", path, authToken)
-
-			if rr.Code != tc.expectedCode {
-				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-			}
-			require.Equal(s.T(), tc.expectedCode, rr.Code)
-
-			if tc.expectedError {
-				body := rr.Body.String()
-				assert.Contains(s.T(), body, tc.errorSubstring)
-			}
-
-			if tc.validateFunc != nil {
-				tc.validateFunc(rr)
-			}
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			rr := s.do(http.MethodPost, "/device", url.Values{"user_code": {tc.userCode()}}, session.Token)
+			require.Equal(s.T(), http.StatusBadRequest, rr.Code)
+			assert.Contains(s.T(), rr.Body.String(), tc.errSubstring)
+			assert.NotContains(s.T(), rr.Body.String(), "/device/approve")
 		})
 	}
+
+	s.Run("pending code shows who is asking", func() {
+		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "")
+		typed := strings.ToLower(strings.ReplaceAll(authz.UserCode, "-", " "))
+
+		rr := s.do(http.MethodPost, "/device", url.Values{"user_code": {typed}}, session.Token)
+		require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+		body := rr.Body.String()
+		assert.Contains(s.T(), body, authz.UserCode)
+		assert.Contains(s.T(), body, testRequesterIP)
+		assert.Contains(s.T(), body, testRequesterUserAgent)
+		assert.Contains(s.T(), body, authz.CreatedAt.UTC().Format("2006-01-02 15:04"))
+		assert.Contains(s.T(), body, s.testAcc.Email)
+		assert.Contains(s.T(), body, `action="/device/approve"`)
+		assert.Contains(s.T(), body, "matches the code in your terminal")
+
+		assert.Equal(s.T(), app.DeviceAuthorizationStatusPending, s.reload(authz.ID).Status, "lookup must not approve")
+	})
 }
 
-func (s *DeviceCodePageTestSuite) TestDeviceCodePageWithExpiredToken() {
-	// Create expired token
-	now := time.Now()
-	tokenValue := domains.NewUserTokenID()
-	token := app.Token{
-		CreatedByID: s.testAcc.ID,
-		AccountID:   s.testAcc.ID,
-		Token:       tokenValue,
-		TokenType:   app.TokenTypeNuon,
-		ExpiresAt:   now.Add(-1 * time.Hour), // Expired
-		IssuedAt:    now.Add(-2 * time.Hour),
-		Issuer:      "test",
-	}
-	err := s.service.DB.Create(&token).Error
-	require.NoError(s.T(), err)
+func (s *DeviceAuthorizationTestSuite) TestApprove() {
+	s.Run("approve binds the request to the signed-in account", func() {
+		session := s.createSession()
+		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "")
 
-	rr := s.makeRequestWithCookie("GET", "/device/code?code=ABCD-1234", tokenValue)
+		rr := s.do(http.MethodPost, "/device/approve", url.Values{
+			"user_code": {authz.UserCode},
+			"action":    {"approve"},
+		}, session.Token)
+		require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+		assert.Contains(s.T(), rr.Body.String(), "CLI Authorized")
 
-	// Should redirect to login (expired token treated as no auth)
-	require.Equal(s.T(), http.StatusFound, rr.Code)
-	s.assertDeviceCodeLoginRedirect(rr.Header().Get("Location"), "ABCD-1234")
-}
-
-// ===========================
-// DeviceCodeApprove Handler Tests
-// ===========================
-
-type DeviceCodeApproveTestService struct {
-	fx.In
-	DB          *gorm.DB `name:"psql"`
-	CHDB        *gorm.DB `name:"ch"`
-	V           *validator.Validate
-	L           *zap.Logger
-	Cfg         *internal.Config
-	AuthService *service
-}
-
-type DeviceCodeApproveTestSuite struct {
-	tests.BaseDBTestSuite
-	app     *fxtest.App
-	service DeviceCodeApproveTestService
-	router  *gin.Engine
-	testAcc *app.Account
-	testOrg *app.Org
-}
-
-func TestDeviceCodeApproveSuite(t *testing.T) {
-	if os.Getenv("INTEGRATION") != "true" {
-		t.Skip("INTEGRATION is not set, skipping")
-		return
-	}
-	suite.Run(t, new(DeviceCodeApproveTestSuite))
-}
-
-func (s *DeviceCodeApproveTestSuite) SetupSuite() {
-	s.BaseDBTestSuite.SetupSuite()
-	gin.SetMode(gin.TestMode)
-
-	options := append(
-		tests.CtlApiFXOptions(s.T()),
-		fx.Provide(New),
-		fx.Populate(&s.service),
-	)
-
-	s.app = fxtest.New(s.T(), options...)
-	s.app.RequireStart()
-	s.SetDB(s.service.DB)
-}
-
-func (s *DeviceCodeApproveTestSuite) SetupTest() {
-	s.BaseDBTestSuite.SetupTest()
-	s.setupTestData()
-
-	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:       s.service.L,
-		DB:      s.service.DB,
-		TestOrg: s.testOrg,
-		TestAcc: s.testAcc,
+		updated := s.reload(authz.ID)
+		assert.Equal(s.T(), app.DeviceAuthorizationStatusApproved, updated.Status)
+		assert.Equal(s.T(), s.testAcc.ID, updated.AccountID)
+		assert.Equal(s.T(), session.ID, updated.SourceTokenID)
 	})
 
-	err := s.service.AuthService.RegisterAuthRoutes(s.router)
-	require.NoError(s.T(), err)
+	s.Run("deny marks the request denied", func() {
+		session := s.createSession()
+		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "")
+
+		rr := s.do(http.MethodPost, "/device/approve", url.Values{
+			"user_code": {authz.UserCode},
+			"action":    {"deny"},
+		}, session.Token)
+		require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+		assert.Contains(s.T(), rr.Body.String(), "CLI Access Denied")
+
+		updated := s.reload(authz.ID)
+		assert.Equal(s.T(), app.DeviceAuthorizationStatusDenied, updated.Status)
+		assert.Empty(s.T(), updated.AccountID)
+	})
+
+	s.Run("a request can only be decided once", func() {
+		session := s.createSession()
+		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "")
+		form := url.Values{"user_code": {authz.UserCode}, "action": {"approve"}}
+
+		require.Equal(s.T(), http.StatusOK, s.do(http.MethodPost, "/device/approve", form, session.Token).Code)
+		rr := s.do(http.MethodPost, "/device/approve", form, session.Token)
+		require.Equal(s.T(), http.StatusBadRequest, rr.Code)
+		assert.Contains(s.T(), rr.Body.String(), "invalid or has expired")
+	})
+
+	s.Run("expired request cannot be approved", func() {
+		session := s.createSession()
+		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(-time.Minute), "")
+
+		rr := s.do(http.MethodPost, "/device/approve", url.Values{
+			"user_code": {authz.UserCode},
+			"action":    {"approve"},
+		}, session.Token)
+		require.Equal(s.T(), http.StatusBadRequest, rr.Code)
+		assert.Equal(s.T(), app.DeviceAuthorizationStatusPending, s.reload(authz.ID).Status)
+	})
+
+	s.Run("without a session is rejected", func() {
+		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "")
+
+		rr := s.do(http.MethodPost, "/device/approve", url.Values{
+			"user_code": {authz.UserCode},
+			"action":    {"approve"},
+		}, "")
+		require.Equal(s.T(), http.StatusUnauthorized, rr.Code)
+		assert.Equal(s.T(), app.DeviceAuthorizationStatusPending, s.reload(authz.ID).Status)
+	})
+
+	s.Run("a limited oauth token cannot approve", func() {
+		limited := s.createSessionToken(app.TokenTypeOAuth, time.Now().Add(time.Hour))
+		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "")
+
+		rr := s.do(http.MethodPost, "/device/approve", url.Values{
+			"user_code": {authz.UserCode},
+			"action":    {"approve"},
+		}, limited.Token)
+		require.Equal(s.T(), http.StatusUnauthorized, rr.Code)
+		assert.Equal(s.T(), app.DeviceAuthorizationStatusPending, s.reload(authz.ID).Status)
+	})
 }
 
-func (s *DeviceCodeApproveTestSuite) TearDownSuite() {
-	s.app.RequireStop()
-}
+func (s *DeviceAuthorizationTestSuite) TestTokenErrors() {
+	session := s.createSession()
 
-func (s *DeviceCodeApproveTestSuite) setupTestData() {
-	ctx := context.Background()
+	s.Run("wrong grant type", func() {
+		rr := s.do(http.MethodPost, "/device/token", url.Values{"device_code": {"x"}}, "")
+		require.Equal(s.T(), http.StatusBadRequest, rr.Code)
+		assert.Contains(s.T(), rr.Body.String(), "unsupported_grant_type")
+	})
 
-	accID := domains.NewAccountID()
-	testAcc := &app.Account{
-		ID:          accID,
-		Email:       fmt.Sprintf("%s@test.nuon.co", accID),
-		Subject:     accID,
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	orgID := domains.NewOrgID()
-	testOrg := &app.Org{
-		ID:          orgID,
-		Name:        fmt.Sprintf("test-org-%s", orgID),
-		SandboxMode: true,
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
-}
-
-func (s *DeviceCodeApproveTestSuite) makePostRequestWithCookie(path, body string, authToken string) *httptest.ResponseRecorder {
-	req, err := http.NewRequest("POST", path, strings.NewReader(body))
-	require.NoError(s.T(), err)
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	if authToken != "" {
-		req.AddCookie(&http.Cookie{
-			Name:  NuonAuthCookieName,
-			Value: authToken,
-		})
-	}
-
-	rr := httptest.NewRecorder()
-	s.router.ServeHTTP(rr, req)
-	return rr
-}
-
-func (s *DeviceCodeApproveTestSuite) createTestToken() string {
-	now := time.Now()
-	tokenValue := domains.NewUserTokenID()
-
-	token := app.Token{
-		CreatedByID: s.testAcc.ID,
-		AccountID:   s.testAcc.ID,
-		Token:       tokenValue,
-		TokenType:   app.TokenTypeNuon,
-		ExpiresAt:   now.Add(24 * time.Hour),
-		IssuedAt:    now,
-		Issuer:      "test",
-	}
-
-	err := s.service.DB.Create(&token).Error
-	require.NoError(s.T(), err)
-
-	return tokenValue
-}
-
-func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApprove() {
-	testCases := []struct {
-		name           string
-		code           string
-		withToken      bool
-		expectedCode   int
-		expectedError  bool
-		errorSubstring string
-		validateFunc   func(*httptest.ResponseRecorder, string)
+	testCases := map[string]struct {
+		deviceCode func() string
+		error      string
 	}{
-		{
-			name:           "missing code parameter",
-			code:           "",
-			withToken:      true,
-			expectedCode:   http.StatusBadRequest,
-			expectedError:  true,
-			errorSubstring: "device code is required",
+		"missing device code": {
+			deviceCode: func() string { return "" },
+			error:      "invalid_request",
 		},
-		{
-			name:           "invalid code format",
-			code:           "invalid",
-			withToken:      true,
-			expectedCode:   http.StatusBadRequest,
-			expectedError:  true,
-			errorSubstring: "invalid device code format",
-		},
-		{
-			name:           "no authentication token",
-			code:           "ABCD-1234",
-			withToken:      false,
-			expectedCode:   http.StatusUnauthorized,
-			expectedError:  true,
-			errorSubstring: "must be logged in",
-		},
-		{
-			name:         "successful approval creates device code",
-			code:         "WXYZ-5678",
-			withToken:    true,
-			expectedCode: http.StatusOK,
-			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
-				body := rr.Body.String()
-				assert.Contains(s.T(), body, "CLI Authorized", "should show success message")
-				assert.Contains(s.T(), body, s.testAcc.Email, "should show user email")
-
-				// Verify device code was created in database
-				var deviceCode app.DeviceCode
-				err := s.service.DB.Where("code = ?", code).First(&deviceCode).Error
-				require.NoError(s.T(), err, "device code should exist in database")
-				assert.Equal(s.T(), s.testAcc.ID, deviceCode.AccountID)
-				assert.False(s.T(), deviceCode.Consumed)
-				assert.True(s.T(), deviceCode.ExpiresAt.After(time.Now()))
+		"unknown device code": {
+			deviceCode: func() string {
+				code, err := generateDeviceCode()
+				require.NoError(s.T(), err)
+				return code
 			},
+			error: "invalid_grant",
 		},
-		{
-			name:         "approving same code twice shows success",
-			code:         "DUPL-1234",
-			withToken:    true,
-			expectedCode: http.StatusOK,
-			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
-				// First approval
-				authToken := s.createTestToken()
-				rr1 := s.makePostRequestWithCookie("/device/code/approve", "code="+code, authToken)
-				require.Equal(s.T(), http.StatusOK, rr1.Code)
-
-				// Second approval (same code)
-				rr2 := s.makePostRequestWithCookie("/device/code/approve", "code="+code, authToken)
-				require.Equal(s.T(), http.StatusOK, rr2.Code)
-
-				body := rr2.Body.String()
-				assert.Contains(s.T(), body, "CLI Authorized")
+		"user code is not accepted as a device code": {
+			deviceCode: func() string {
+				return s.createAuthorization(app.DeviceAuthorizationStatusApproved, time.Now().Add(time.Minute), session.ID).UserCode
 			},
+			error: "invalid_grant",
+		},
+		"pending": {
+			deviceCode: func() string {
+				return s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "").DeviceCode
+			},
+			error: "authorization_pending",
+		},
+		"denied": {
+			deviceCode: func() string {
+				return s.createAuthorization(app.DeviceAuthorizationStatusDenied, time.Now().Add(time.Minute), session.ID).DeviceCode
+			},
+			error: "access_denied",
+		},
+		"expired while pending": {
+			deviceCode: func() string {
+				return s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(-time.Minute), "").DeviceCode
+			},
+			error: "expired_token",
+		},
+		"expired after approval": {
+			deviceCode: func() string {
+				return s.createAuthorization(app.DeviceAuthorizationStatusApproved, time.Now().Add(-time.Minute), session.ID).DeviceCode
+			},
+			error: "expired_token",
+		},
+		"already consumed": {
+			deviceCode: func() string {
+				return s.createAuthorization(app.DeviceAuthorizationStatusConsumed, time.Now().Add(time.Minute), session.ID).DeviceCode
+			},
+			error: "invalid_grant",
 		},
 	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			// Cleanup device codes created by this test case
-			code := tc.code
-			s.T().Cleanup(func() {
-				s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
-			})
-
-			var authToken string
-			if tc.withToken {
-				authToken = s.createTestToken()
-			}
-
-			body := ""
-			if tc.code != "" {
-				body = "code=" + tc.code
-			}
-
-			rr := s.makePostRequestWithCookie("/device/code/approve", body, authToken)
-
-			if rr.Code != tc.expectedCode {
-				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-			}
-			require.Equal(s.T(), tc.expectedCode, rr.Code)
-
-			if tc.expectedError {
-				responseBody := rr.Body.String()
-				assert.Contains(s.T(), responseBody, tc.errorSubstring)
-			}
-
-			if tc.validateFunc != nil {
-				tc.validateFunc(rr, tc.code)
-			}
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			status, resp := s.pollToken(tc.deviceCode())
+			require.Equal(s.T(), http.StatusBadRequest, status)
+			assert.Equal(s.T(), tc.error, resp.Error)
+			assert.Empty(s.T(), resp.AccessToken)
 		})
 	}
 }
 
-func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveWithExpiredToken() {
-	// Create expired token
-	now := time.Now()
-	tokenValue := domains.NewUserTokenID()
-	token := app.Token{
-		CreatedByID: s.testAcc.ID,
-		AccountID:   s.testAcc.ID,
-		Token:       tokenValue,
-		TokenType:   app.TokenTypeNuon,
-		ExpiresAt:   now.Add(-1 * time.Hour),
-		IssuedAt:    now.Add(-2 * time.Hour),
-		Issuer:      "test",
-	}
-	err := s.service.DB.Create(&token).Error
-	require.NoError(s.T(), err)
+func (s *DeviceAuthorizationTestSuite) TestFullFlow() {
+	session := s.createSession()
+	start := s.authorize(url.Values{})
 
-	rr := s.makePostRequestWithCookie("/device/code/approve", "code=ABCD-1234", tokenValue)
+	status, resp := s.pollToken(start.DeviceCode)
+	require.Equal(s.T(), http.StatusBadRequest, status)
+	assert.Equal(s.T(), "authorization_pending", resp.Error)
 
-	require.Equal(s.T(), http.StatusUnauthorized, rr.Code)
-	body := rr.Body.String()
-	assert.Contains(s.T(), body, "must be logged in")
+	rr := s.do(http.MethodPost, "/device", url.Values{"user_code": {start.UserCode}}, session.Token)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	rr = s.do(http.MethodPost, "/device/approve", url.Values{
+		"user_code": {start.UserCode},
+		"action":    {"approve"},
+	}, session.Token)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	status, resp = s.pollToken(start.DeviceCode)
+	require.Equal(s.T(), http.StatusOK, status)
+	require.NotEmpty(s.T(), resp.AccessToken)
+	assert.Equal(s.T(), "Bearer", resp.TokenType)
+	assert.Equal(s.T(), s.testAcc.Email, resp.Email)
+	assert.Equal(s.T(), s.service.Cfg.NuonAuthTokenTTL*60, resp.ExpiresIn)
+
+	var token app.Token
+	require.NoError(s.T(), s.service.DB.Where(&app.Token{Token: resp.AccessToken}).First(&token).Error)
+	assert.Equal(s.T(), s.testAcc.ID, token.AccountID)
+	assert.Equal(s.T(), app.TokenTypeNuon, token.TokenType)
+	assert.Equal(s.T(), app.TokenSourceTypeToken, token.SourceType)
+	assert.Equal(s.T(), session.ID, token.SourceID)
+
+	status, resp = s.pollToken(start.DeviceCode)
+	require.Equal(s.T(), http.StatusBadRequest, status)
+	assert.Equal(s.T(), "invalid_grant", resp.Error)
 }
 
-func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveConsumedCode() {
-	authToken := s.createTestToken()
-	// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
-	code := strings.ToUpper(fmt.Sprintf("CONS-%s", domains.NewAccountID()[:4]))
+func (s *DeviceAuthorizationTestSuite) TestLegacyEndpoints() {
+	session := s.createSession()
 
-	s.T().Cleanup(func() {
-		s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+	s.Run("old CLI polling gets an upgrade error", func() {
+		rr := s.do(http.MethodGet, "/device/token?code=ATTK-0001", nil, "")
+		require.Equal(s.T(), http.StatusOK, rr.Code)
+
+		var resp deviceTokenResponse
+		require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+		assert.Equal(s.T(), "unsupported_client", resp.Error)
+		assert.Contains(s.T(), resp.ErrorDescription, "upgrade")
+		assert.Empty(s.T(), resp.AccessToken)
 	})
 
-	// Create a device code that's already consumed
-	deviceCode := &app.DeviceCode{
-		Code:      code,
-		AccountID: s.testAcc.ID,
-		ExpiresAt: time.Now().Add(5 * time.Minute),
-		Consumed:  true,
-	}
-	err := s.service.DB.Create(deviceCode).Error
-	require.NoError(s.T(), err)
-
-	rr := s.makePostRequestWithCookie("/device/code/approve", "code="+code, authToken)
-
-	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
-	body := rr.Body.String()
-	assert.Contains(s.T(), body, "already used")
-}
-
-func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveExpiredCode() {
-	authToken := s.createTestToken()
-	// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
-	code := strings.ToUpper(fmt.Sprintf("EXPR-%s", domains.NewAccountID()[:4]))
-
-	s.T().Cleanup(func() {
-		s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+	s.Run("old approval link cannot approve anything", func() {
+		rr := s.do(http.MethodGet, "/device/code?code=ATTK-0001", nil, session.Token)
+		require.Equal(s.T(), http.StatusGone, rr.Code)
+		assert.Contains(s.T(), rr.Body.String(), "upgrade")
+		assert.NotContains(s.T(), rr.Body.String(), "ATTK-0001")
 	})
-
-	// Create a device code that's already expired
-	deviceCode := &app.DeviceCode{
-		Code:      code,
-		AccountID: s.testAcc.ID,
-		ExpiresAt: time.Now().Add(-1 * time.Minute), // Expired
-		Consumed:  false,
-	}
-	err := s.service.DB.Create(deviceCode).Error
-	require.NoError(s.T(), err)
-
-	rr := s.makePostRequestWithCookie("/device/code/approve", "code="+code, authToken)
-
-	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
-	body := rr.Body.String()
-	assert.Contains(s.T(), body, "expired")
 }
 
-// ===========================
-// DeviceCodeToken Handler Tests
-// ===========================
-
-type DeviceCodeTokenTestService struct {
-	fx.In
-	DB          *gorm.DB `name:"psql"`
-	CHDB        *gorm.DB `name:"ch"`
-	V           *validator.Validate
-	L           *zap.Logger
-	Cfg         *internal.Config
-	AuthService *service
-}
-
-type DeviceCodeTokenTestSuite struct {
-	tests.BaseDBTestSuite
-	app     *fxtest.App
-	service DeviceCodeTokenTestService
-	router  *gin.Engine
-	testAcc *app.Account
-	testOrg *app.Org
-}
-
-func TestDeviceCodeTokenSuite(t *testing.T) {
-	if os.Getenv("INTEGRATION") != "true" {
-		t.Skip("INTEGRATION is not set, skipping")
-		return
-	}
-	suite.Run(t, new(DeviceCodeTokenTestSuite))
-}
-
-func (s *DeviceCodeTokenTestSuite) SetupSuite() {
-	s.BaseDBTestSuite.SetupSuite()
-	gin.SetMode(gin.TestMode)
-
-	options := append(
-		tests.CtlApiFXOptions(s.T()),
-		fx.Provide(New),
-		fx.Populate(&s.service),
-	)
-
-	s.app = fxtest.New(s.T(), options...)
-	s.app.RequireStart()
-	s.SetDB(s.service.DB)
-}
-
-func (s *DeviceCodeTokenTestSuite) SetupTest() {
-	s.BaseDBTestSuite.SetupTest()
-	s.setupTestData()
-
-	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:       s.service.L,
-		DB:      s.service.DB,
-		TestOrg: s.testOrg,
-		TestAcc: s.testAcc,
-	})
-
-	err := s.service.AuthService.RegisterAuthRoutes(s.router)
-	require.NoError(s.T(), err)
-}
-
-func (s *DeviceCodeTokenTestSuite) TearDownSuite() {
-	s.app.RequireStop()
-}
-
-func (s *DeviceCodeTokenTestSuite) setupTestData() {
-	ctx := context.Background()
-
-	accID := domains.NewAccountID()
-	testAcc := &app.Account{
-		ID:          accID,
-		Email:       fmt.Sprintf("%s@test.nuon.co", accID),
-		Subject:     accID,
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	orgID := domains.NewOrgID()
-	testOrg := &app.Org{
-		ID:          orgID,
-		Name:        fmt.Sprintf("test-org-%s", orgID),
-		SandboxMode: true,
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
-}
-
-func (s *DeviceCodeTokenTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
-	req, err := http.NewRequest(method, path, nil)
-	require.NoError(s.T(), err)
-
-	rr := httptest.NewRecorder()
-	s.router.ServeHTTP(rr, req)
-	return rr
-}
-
-func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
-	testCases := []struct {
-		name         string
-		code         string
-		setupFunc    func() string // Returns device code
-		expectedCode int
-		validateFunc func(*httptest.ResponseRecorder, string)
-	}{
-		{
-			name:         "missing code parameter",
-			code:         "",
-			expectedCode: http.StatusBadRequest,
-			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
-				var resp map[string]interface{}
-				err := s.unmarshalJSON(rr.Body.Bytes(), &resp)
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "missing_code", resp["error"])
-				assert.Contains(s.T(), resp["error_description"], "device code is required")
-			},
-		},
-		{
-			name:         "invalid code format",
-			code:         "invalid",
-			expectedCode: http.StatusBadRequest,
-			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
-				var resp map[string]interface{}
-				err := s.unmarshalJSON(rr.Body.Bytes(), &resp)
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "invalid_code", resp["error"])
-			},
-		},
-		{
-			name: "authorization pending - code not approved yet",
-			code: "",
-			setupFunc: func() string {
-				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
-				code := strings.ToUpper(fmt.Sprintf("PEND-%s", domains.NewAccountID()[:4]))
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
-				})
-				return code
-			},
-			expectedCode: http.StatusOK,
-			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
-				var resp map[string]interface{}
-				err := s.unmarshalJSON(rr.Body.Bytes(), &resp)
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "authorization_pending", resp["error"])
-				assert.Contains(s.T(), resp["error_description"], "waiting for user approval")
-			},
-		},
-		{
-			name: "expired device code",
-			code: "",
-			setupFunc: func() string {
-				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
-				code := strings.ToUpper(fmt.Sprintf("EXPR-%s", domains.NewAccountID()[:4]))
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
-				})
-				deviceCode := &app.DeviceCode{
-					Code:      code,
-					AccountID: s.testAcc.ID,
-					ExpiresAt: time.Now().Add(-1 * time.Minute),
-					Consumed:  false,
-				}
-				err := s.service.DB.Create(deviceCode).Error
-				require.NoError(s.T(), err)
-				return code
-			},
-			expectedCode: http.StatusOK,
-			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
-				var resp map[string]interface{}
-				err := s.unmarshalJSON(rr.Body.Bytes(), &resp)
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "expired_token", resp["error"])
-			},
-		},
-		{
-			name: "already consumed device code",
-			code: "",
-			setupFunc: func() string {
-				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
-				code := strings.ToUpper(fmt.Sprintf("CONS-%s", domains.NewAccountID()[:4]))
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
-				})
-				deviceCode := &app.DeviceCode{
-					Code:      code,
-					AccountID: s.testAcc.ID,
-					ExpiresAt: time.Now().Add(5 * time.Minute),
-					Consumed:  true,
-				}
-				err := s.service.DB.Create(deviceCode).Error
-				require.NoError(s.T(), err)
-				return code
-			},
-			expectedCode: http.StatusOK,
-			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
-				var resp map[string]interface{}
-				err := s.unmarshalJSON(rr.Body.Bytes(), &resp)
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "access_denied", resp["error"])
-				assert.Contains(s.T(), resp["error_description"], "already been used")
-			},
-		},
-		{
-			name: "successful token issuance",
-			code: "",
-			setupFunc: func() string {
-				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
-				code := strings.ToUpper(fmt.Sprintf("SUCC-%s", domains.NewAccountID()[:4]))
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
-				})
-				deviceCode := &app.DeviceCode{
-					Code:      code,
-					AccountID: s.testAcc.ID,
-					ExpiresAt: time.Now().Add(5 * time.Minute),
-					Consumed:  false,
-				}
-				err := s.service.DB.Create(deviceCode).Error
-				require.NoError(s.T(), err)
-				return code
-			},
-			expectedCode: http.StatusOK,
-			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
-				var resp map[string]interface{}
-				err := s.unmarshalJSON(rr.Body.Bytes(), &resp)
-				require.NoError(s.T(), err)
-
-				// Verify response structure
-				assert.NotEmpty(s.T(), resp["access_token"], "should have access token")
-				assert.Equal(s.T(), "Bearer", resp["token_type"])
-				assert.Equal(s.T(), s.testAcc.Email, resp["email"])
-
-				// Verify token was created in database
-				tokenValue := resp["access_token"].(string)
-				var token app.Token
-				err = s.service.DB.Where("token = ?", tokenValue).First(&token).Error
-				require.NoError(s.T(), err, "token should exist in database")
-				assert.Equal(s.T(), s.testAcc.ID, token.AccountID)
-				assert.Equal(s.T(), app.TokenTypeNuon, token.TokenType)
-
-				// Verify device code was marked as consumed
-				var deviceCode app.DeviceCode
-				err = s.service.DB.Where("code = ?", code).First(&deviceCode).Error
-				require.NoError(s.T(), err)
-				assert.True(s.T(), deviceCode.Consumed, "device code should be marked as consumed")
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			var code string
-			if tc.setupFunc != nil {
-				code = tc.setupFunc()
-			} else {
-				code = tc.code
-			}
-
-			path := "/device/token"
-			if code != "" {
-				path += "?code=" + code
-			}
-
-			rr := s.makeRequest("GET", path)
-
-			if rr.Code != tc.expectedCode {
-				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-			}
-			require.Equal(s.T(), tc.expectedCode, rr.Code)
-
-			if tc.validateFunc != nil {
-				tc.validateFunc(rr, code)
-			}
-		})
-	}
-}
-
-func (s *DeviceCodeTokenTestSuite) TestDeviceCodeTokenPollingBehavior() {
-	// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
-	code := strings.ToUpper(fmt.Sprintf("POLL-%s", domains.NewAccountID()[:4]))
-
-	s.T().Cleanup(func() {
-		s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
-	})
-
-	// Poll before approval - should get authorization_pending
-	rr1 := s.makeRequest("GET", "/device/token?code="+code)
-	require.Equal(s.T(), http.StatusOK, rr1.Code)
-
-	var resp1 map[string]interface{}
-	err := s.unmarshalJSON(rr1.Body.Bytes(), &resp1)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), "authorization_pending", resp1["error"])
-
-	// Approve the device code
-	deviceCode := &app.DeviceCode{
-		Code:      code,
-		AccountID: s.testAcc.ID,
-		ExpiresAt: time.Now().Add(5 * time.Minute),
-		Consumed:  false,
-	}
-	err = s.service.DB.Create(deviceCode).Error
-	require.NoError(s.T(), err)
-
-	// Poll after approval - should get token
-	rr2 := s.makeRequest("GET", "/device/token?code="+code)
-	require.Equal(s.T(), http.StatusOK, rr2.Code)
-
-	var resp2 map[string]interface{}
-	err = s.unmarshalJSON(rr2.Body.Bytes(), &resp2)
-	require.NoError(s.T(), err)
-	assert.NotEmpty(s.T(), resp2["access_token"])
-	assert.Equal(s.T(), "Bearer", resp2["token_type"])
-
-	// Poll again - should get access_denied (already consumed)
-	rr3 := s.makeRequest("GET", "/device/token?code="+code)
-	require.Equal(s.T(), http.StatusOK, rr3.Code)
-
-	var resp3 map[string]interface{}
-	err = s.unmarshalJSON(rr3.Body.Bytes(), &resp3)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), "access_denied", resp3["error"])
-}
-
-func (s *DeviceCodeTokenTestSuite) unmarshalJSON(data []byte, v interface{}) error {
-	return json.Unmarshal(data, v)
-}
-
-// assertDeviceCodeLoginRedirect checks the unauthenticated device-code redirect. Which shape is
-// correct depends on how many providers are enabled, and this database is shared with other
-// suites, so the expectation is derived rather than hardcoded: one provider goes straight to it,
-// more than one goes to the picker so the user can choose.
-func (s *DeviceCodePageTestSuite) assertDeviceCodeLoginRedirect(location, code string) {
+// assertDeviceLoginRedirect checks the unauthenticated redirect. Which shape is correct depends on
+// how many providers are enabled, and this database is shared with other suites, so the
+// expectation is derived rather than hardcoded.
+func (s *DeviceAuthorizationTestSuite) assertDeviceLoginRedirect(location, returnURL string) {
 	identityProviders, err := s.service.AuthService.getIdentityProviders(context.Background())
 	require.NoError(s.T(), err)
 
@@ -956,5 +604,5 @@ func (s *DeviceCodePageTestSuite) assertDeviceCodeLoginRedirect(location, code s
 
 	parsedURL, err := url.Parse(location)
 	require.NoError(s.T(), err)
-	assert.Contains(s.T(), parsedURL.Query().Get("url"), code, "return URL should contain device code")
+	assert.Equal(s.T(), returnURL, parsedURL.Query().Get("url"))
 }

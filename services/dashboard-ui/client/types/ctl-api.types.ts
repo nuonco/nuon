@@ -78,6 +78,11 @@ export type TAppBranchPreviewConfig = {
   ignore_drafts?: boolean
 }
 
+export type TAppBranchPreviewOverride = {
+  mode?: TAppBranchRunPreviewMode
+  install_id?: string
+}
+
 export type TAppBranchRunPreview = {
   id?: string
   source?: TAppBranchRunPreviewSource
@@ -86,6 +91,8 @@ export type TAppBranchRunPreview = {
   install_name?: string
   git_ref?: string
   is_draft_mode?: boolean
+  branch_preview_config?: TAppBranchPreviewConfig
+  override_preview_config?: TAppBranchPreviewOverride
   resolved_preview_config?: TAppBranchPreviewConfig
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean

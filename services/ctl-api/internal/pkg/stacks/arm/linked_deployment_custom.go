@@ -136,19 +136,12 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			)
 		}
 
-		// Resolve template URL (use uploaded S3 URL if contents were uploaded)
-		templateURL := stack.TemplateURL
-		if stack.TemplateSourceURL != "" {
-			templateURL = stack.TemplateSourceURL
-		} else if stack.ContentsHash != "" && t.cfg.AWSCloudFormationStackTemplateBaseURL != "" {
-			templateURL = cloudformation.CustomNestedStackTemplateURL(
-				t.cfg.AWSCloudFormationStackTemplateBaseURL,
-				inp.Install.OrgID,
-				inp.AppCfg.AppID,
-				stack.ContentsHash,
-				stack.TemplateURL,
-			)
-		}
+		templateURL := cloudformation.ResolveCustomNestedStackTemplateURL(
+			t.cfg.AWSCloudFormationStackTemplateBaseURL,
+			inp.Install.OrgID,
+			inp.AppCfg.AppID,
+			stack,
+		)
 
 		// Fetch template, validate structure, and extract parameters
 		armTmpl, err := fetchARMTemplate(templateURL)

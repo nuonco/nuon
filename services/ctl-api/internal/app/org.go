@@ -79,6 +79,8 @@ const (
 	OrgFeatureAzureLegacyRoleFallback OrgFeature = "azure-legacy-role-fallback"
 	OrgFeatureBranchOverviewV2        OrgFeature = "branch-overview-v2"
 	OrgFeatureInstallUIWizards        OrgFeature = "install-ui-wizards"
+	OrgFeaturePRPreviewUI             OrgFeature = "pr-preview-ui"
+	OrgFeatureManualBuildSelection    OrgFeature = "allow-manual-build-selection"
 )
 
 type OrgTelemetrySettings struct {
@@ -240,6 +242,8 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureAzureLegacyRoleFallback: false,
 		OrgFeatureBranchOverviewV2:        false,
 		OrgFeatureInstallUIWizards:        false,
+		OrgFeaturePRPreviewUI:             false,
+		OrgFeatureManualBuildSelection:    false,
 	}
 }
 
@@ -260,6 +264,8 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureAzureLegacyRoleFallback,
 		OrgFeatureBranchOverviewV2,
 		OrgFeatureInstallUIWizards,
+		OrgFeaturePRPreviewUI,
+		OrgFeatureManualBuildSelection,
 	}
 }
 
@@ -289,6 +295,8 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureAzureLegacyRoleFallback: "Let Azure installs whose install stack predates per-operation managed identities run deploys, sandbox runs, and actions as the runner's own identity instead of failing with \"role not found in install stack outputs\".",
 		OrgFeatureBranchOverviewV2:        "Enable the second-generation branch overview with an expanded active install group, navigable deployment plan, and install deployment details.",
 		OrgFeatureInstallUIWizards:        "Enable the install create and teardown wizards in the dashboard.",
+		OrgFeaturePRPreviewUI:             "Enable the pull request preview page in the dashboard.",
+		OrgFeatureManualBuildSelection:    "Temporarily allow manual component build selection for installs with branch-run app configs whose builds are pinned, bypassing the requirement to deploy through an app branch run.",
 	}
 }
 

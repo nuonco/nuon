@@ -27,8 +27,8 @@ func revokeAccountCredentials(tx *gorm.DB, accountID string) error {
 	if res := tx.Where(app.OAuthAuthorizationCode{AccountID: accountID}).Delete(&app.OAuthAuthorizationCode{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to revoke account authorization codes")
 	}
-	if res := tx.Where(app.DeviceCode{AccountID: accountID}).Delete(&app.DeviceCode{}); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to revoke account device codes")
+	if res := tx.Where(app.DeviceAuthorization{AccountID: accountID}).Delete(&app.DeviceAuthorization{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to revoke account device authorizations")
 	}
 	return nil
 }
@@ -68,8 +68,8 @@ func RevokeDerivedCredentials(tx *gorm.DB, sourceType app.TokenSourceType, sourc
 		if res := tx.Where("source_token_id = ANY(?)", pq.Array(batch)).Delete(&app.OAuthRefreshToken{}); res.Error != nil {
 			return errors.Wrap(res.Error, "unable to revoke derived refresh tokens")
 		}
-		if res := tx.Where("source_token_id = ANY(?)", pq.Array(batch)).Delete(&app.DeviceCode{}); res.Error != nil {
-			return errors.Wrap(res.Error, "unable to revoke derived device codes")
+		if res := tx.Where("source_token_id = ANY(?)", pq.Array(batch)).Delete(&app.DeviceAuthorization{}); res.Error != nil {
+			return errors.Wrap(res.Error, "unable to revoke derived device authorizations")
 		}
 
 		ids, err := deleteTokensFromSources(tx, app.TokenSourceTypeToken, batch)

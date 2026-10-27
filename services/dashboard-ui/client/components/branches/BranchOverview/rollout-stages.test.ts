@@ -140,6 +140,28 @@ describe('buildRolloutStages', () => {
     ])
   })
 
+  test('marks a group that never started as cancelled when the run was cancelled', () => {
+    const stages = buildRolloutStages({
+      groups: [group('default', 1)],
+      steps: [],
+      installsByGroup: [[{ id: 'ins_alpha', name: 'alpha' } as TInstall]],
+      runStatus: 'cancelled',
+    })
+
+    expect(stages[2]).toMatchObject({ name: 'default', status: 'cancelled' })
+  })
+
+  test('leaves a not-yet-started group pending while the run is still active', () => {
+    const stages = buildRolloutStages({
+      groups: [group('default', 1)],
+      steps: [],
+      installsByGroup: [[{ id: 'ins_alpha', name: 'alpha' } as TInstall]],
+      runStatus: 'running',
+    })
+
+    expect(stages[2]).toMatchObject({ name: 'default', status: 'pending' })
+  })
+
   test('treats a finished plan with a queued deploy as in progress', () => {
     const stages = buildRolloutStages({
       groups: [group('Remaining', 1)],

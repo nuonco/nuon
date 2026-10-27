@@ -33,11 +33,3 @@ export const appInstallBadge = (
   }
   return undefined
 }
-
-export const shouldDefaultStackOnly = (
-  app: TApp,
-  components?: TComponent[]
-) => {
-  const badge = appInstallBadge(app, components)
-  return badge === 'no-components' || badge === 'no-component-builds'
-}

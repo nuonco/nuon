@@ -268,12 +268,8 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		}
 
 	case app.AppRunnerTypeGCP:
-		// GCP provisions via the Terraform module, which authenticates the
-		// runner with a real API token (no IID-based auth like AWS).
-		token, err := h.runnersHelpers.CreateToken(ctx, install.RunnerID)
-		if err != nil {
-			return nil, fmt.Errorf("create runner token: %w", err)
-		}
+		// The runner authenticates with its instance identity
+		// (POST /v1/runner-auth/gcp). No static token is minted.
 		initScriptURL := defaultGCPRunnerInitScript
 		if appCfg.RunnerConfig.InitScriptURL != "" {
 			initScriptURL = appCfg.RunnerConfig.InitScriptURL
@@ -297,7 +293,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			Region:    gcpRegion,
 
 			RunnerInitScriptURL: initScriptURL,
-			RunnerAPIToken:      token.Token,
 			RunnerMachineType:   instanceType,
 
 			ProvisionPermissions:      prov.Permissions,

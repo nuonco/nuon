@@ -1,6 +1,8 @@
 package cors
 
 import (
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -8,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/origin"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
@@ -21,9 +24,23 @@ func (m *middleware) Name() string {
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
+	appURL := ""
+	allowAll := false
+	allowLoopback := false
+	if m.cfg != nil {
+		appURL = m.cfg.AppURL
+		allowAll = m.cfg.CORSAllowAllOrigins
+		allowLoopback = m.cfg.CORSAllowLoopbackOrigins || m.cfg.ServiceDeployment == "local"
+	}
+	if m.l != nil && allowAll {
+		m.l.Warn("cors_allow_all_origins is set; any origin is reflected with credentials")
+	}
+	if m.l != nil && allowLoopback {
+		m.l.Warn("plain-http loopback origins are allowed with credentials")
+	}
 	return cors.New(cors.Config{
-		AllowOriginFunc: func(origin string) bool {
-			return true
+		AllowOriginFunc: func(requestOrigin string) bool {
+			return isAllowedOrigin(appURL, requestOrigin, allowAll, allowLoopback)
 		},
 		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "OPTIONS"},
 		AllowHeaders: []string{
@@ -56,6 +73,28 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 func New(writer metrics.Writer, l *zap.Logger, cfg *internal.Config) *middleware {
 	return &middleware{
-		l: l,
+		l:   l,
+		cfg: cfg,
 	}
+}
+
+func isAllowedOrigin(appURL, requestOrigin string, allowAll, allowLoopback bool) bool {
+	if allowAll {
+		return true
+	}
+	allowed := originOf(appURL)
+	if allowed != "" && originOf(requestOrigin) == allowed {
+		return true
+	}
+	return allowLoopback && origin.IsHTTPLoopback(requestOrigin)
+}
+
+// originOf returns scheme://host for a URL or Origin header. A path is ignored.
+// An empty or invalid value returns "" so the caller allows nothing.
+func originOf(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return ""
+	}
+	return u.Scheme + "://" + strings.ToLower(u.Host)
 }

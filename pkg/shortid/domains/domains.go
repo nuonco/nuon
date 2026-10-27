@@ -81,6 +81,14 @@ func NewOIDCTrustPolicyID() string {
 	return shortid.NewNanoID("otr")
 }
 
+func NewOIDCExchangedTokenID() string {
+	return shortid.NewNanoID("oet")
+}
+
+func NewDeviceAuthorizationID() string {
+	return shortid.NewNanoID("dau")
+}
+
 func NewDeviceCodeID() string {
 	return shortid.NewNanoID("dco")
 }

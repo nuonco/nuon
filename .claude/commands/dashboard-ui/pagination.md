@@ -3,6 +3,8 @@ name: dashboard-ui:pagination
 description: Use when adding pagination to a list view in the dashboard-ui
 ---
 
+Canonical rules live in `services/dashboard-ui/AGENTS.md`, `DESIGN.md`, `COPY_STYLE.md`, and `client/components/PATTERNS.md`. If this file disagrees with them, those win.
+
 This skill enforces URL-driven pagination using useSearchParams for offset, keepPreviousData to prevent flash, and the Table or Timeline pagination prop.
 
 ## Steps

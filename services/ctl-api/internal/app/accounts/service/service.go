@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 )
 
@@ -44,7 +45,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	{
 		account.GET("", s.GetCurrentAccount)
 
-		account.POST("/static-token", s.CreateStaticToken)
+		require.NotFederatedTokenRoute(account, "create API tokens").POST("/static-token", s.CreateStaticToken)
 		account.GET("/static-tokens", s.ListStaticTokens)
 		account.DELETE("/static-tokens/:token_id", s.DeleteStaticToken)
 
@@ -71,7 +72,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		serviceAccounts.PATCH("/:account_id", s.UpdateServiceAccount)
 		serviceAccounts.PATCH("/:account_id/role", s.UpdateServiceAccountRole)
 		serviceAccounts.DELETE("/:account_id", s.DeleteServiceAccount)
-		serviceAccounts.POST("/:account_id/tokens", s.CreateServiceAccountToken)
+		require.NotFederatedTokenRoute(serviceAccounts, "create API tokens").POST("/:account_id/tokens", s.CreateServiceAccountToken)
 	}
 
 	// auth/me - registered here instead of authservice so it's available in PublicServicesModule

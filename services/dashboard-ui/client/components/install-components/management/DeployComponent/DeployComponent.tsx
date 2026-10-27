@@ -1,0 +1,184 @@
+import { useState } from 'react'
+import type { ReactNode } from 'react'
+import { Banner } from '@/components/common/Banner'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
+import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
+import type { TComponent } from '@/types'
+
+interface IDeployComponentModal extends Omit<IModal, 'onSubmit'> {
+  component: TComponent
+  currentBuildId?: string
+  currentDeployStatus?: string
+  installId: string
+  isPending: boolean
+  error?: { error?: string } | null
+  onSubmit: (params: {
+    buildId: string
+    deployDependents: boolean
+    deployDependencies: boolean
+    role: string
+  }) => void
+  onClose: () => void
+  buildSelect: (props: {
+    selectedBuildId?: string
+    onSelectBuild: (buildId: string) => void
+    onClose: () => void
+  }) => ReactNode
+  roleSelector: (props: {
+    value: string
+    onChange: (value: string) => void
+  }) => ReactNode
+}
+
+export const DeployComponentModal = ({
+  component,
+  currentBuildId,
+  currentDeployStatus,
+  installId,
+  isPending,
+  error,
+  onSubmit,
+  onClose,
+  buildSelect,
+  roleSelector,
+  ...props
+}: IDeployComponentModal) => {
+  const [buildId, setBuildId] = useState<string>()
+  const [deployDependents, setDeployDependents] = useState(false)
+  const [deployDependencies, setDeployDependencies] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<string>('')
+
+  const isDeployDisabled = !buildId || isPending
+
+  const handleClose = () => {
+    setBuildId(undefined)
+    onClose()
+  }
+
+  return (
+    <Modal
+      heading={
+        <div className="flex flex-col gap-2">
+          <Text flex className="gap-4" variant="h3" weight="strong">
+            <Icon variant="CloudArrowUpIcon" size="24" />
+            Deploy {component.name} component
+          </Text>
+          <Text
+            variant="body"
+            className="text-cool-grey-600 dark:text-cool-grey-400"
+          >
+            Select a build to deploy to your install
+          </Text>
+        </div>
+      }
+      size="xl"
+      className="!max-h-[80vh]"
+      childrenClassName="flex-auto overflow-y-auto"
+      onClose={handleClose}
+      primaryActionTrigger={{
+        children: isPending ? (
+          <span className="flex items-center gap-2">
+            <Icon variant="Loading" />
+            Deploying build
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <Icon variant="CloudArrowUpIcon" />
+            Deploy build
+          </span>
+        ),
+        disabled: isDeployDisabled,
+        onClick: () => {
+          onSubmit({
+            buildId: buildId!,
+            deployDependents,
+            deployDependencies,
+            role: selectedRole,
+          })
+        },
+        variant: 'primary' as const,
+      }}
+      footerActions={
+        <div className="flex flex-col gap-3">
+          <CheckboxInput
+            checked={deployDependencies}
+            onChange={(e) => setDeployDependencies(e.target.checked)}
+            labelProps={{
+              className:
+                'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
+              labelText: (
+                <span className="flex flex-col gap-1">
+                  <Text
+                    variant="base"
+                    weight="stronger"
+                    className="!leading-none"
+                  >
+                    Sync dependency images
+                  </Text>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="!leading-none"
+                  >
+                    Sync any images that this component depends on.
+                  </Text>
+                </span>
+              ),
+              labelTextProps: { as: 'div' },
+            }}
+          />
+          <CheckboxInput
+            checked={deployDependents}
+            onChange={(e) => setDeployDependents(e.target.checked)}
+            labelProps={{
+              className:
+                'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
+              labelText: (
+                <span className="flex flex-col gap-1">
+                  <Text
+                    variant="base"
+                    weight="stronger"
+                    className="!leading-none"
+                  >
+                    Deploy dependents
+                  </Text>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="!leading-none"
+                  >
+                    Trigger a deploy for any component that depends on this
+                    component.
+                  </Text>
+                </span>
+              ),
+              labelTextProps: { as: 'div' },
+            }}
+          />
+        </div>
+      }
+      {...props}
+    >
+      <div className="flex flex-col gap-6">
+        {(error as any)?.error ? (
+          <Banner theme="error">
+            {(error as any)?.error || 'Unable to deploy component'}
+          </Banner>
+        ) : null}
+
+        {buildSelect({
+          selectedBuildId: buildId,
+          onSelectBuild: (selectedBuildId: string) => setBuildId(selectedBuildId),
+          onClose: handleClose,
+        })}
+
+        {roleSelector({
+          value: selectedRole,
+          onChange: setSelectedRole,
+        })}
+      </div>
+    </Modal>
+  )
+}

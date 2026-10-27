@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/attribution"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/pkg/cli/styles"
@@ -33,7 +34,7 @@ func (a *Service) Login(ctx context.Context) error {
 	// Ask user about deployment type and hostname
 	apiURL, err := a.selectAPIURL()
 	if err != nil {
-		return ui.PrintError(fmt.Errorf("couldn't select API URL: %w", err))
+		return fmt.Errorf("couldn't select API URL: %w", err)
 	}
 
 	// Set the API URL in the config
@@ -42,25 +43,28 @@ func (a *Service) Login(ctx context.Context) error {
 
 	// Recreate the API client with the selected URL
 	if err := a.updateAPIClient(apiURL, a.cfg); err != nil {
-		return ui.PrintError(fmt.Errorf("couldn't update API client: %w", err))
+		return fmt.Errorf("couldn't update API client: %w", err)
 	}
 
 	cfg, err := a.api.GetCLIConfig(ctx)
 	if err != nil {
-		return ui.PrintError(fmt.Errorf("couldn't get cli config: %w", err))
+		return fmt.Errorf("couldn't get cli config: %w", err)
+	}
+	if msg := version.MinCLIWarning(cfg.MinCliVersion); msg != "" {
+		ui.PrintWarning(msg)
 	}
 
 	// Log in with Nuon Auth
 	// NOTE: we used to branch on a config here but we only support Nuon Auth now
 	result, err := a.loginWithNuonAuth(ctx, cfg)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	// Save access token to config
 	a.cfg.Set("api_token", result.AccessToken)
 	if err := a.cfg.WriteConfig(); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	ui.PrintLn(fmt.Sprintf("Logged in as %s", result.DisplayName))
@@ -74,7 +78,7 @@ func (a *Service) Login(ctx context.Context) error {
 		nuon.WithURL(a.cfg.APIURL),
 	)
 	if err != nil {
-		return ui.PrintError(fmt.Errorf("unable to init API client: %w", err))
+		return fmt.Errorf("unable to init API client: %w", err)
 	}
 	attribution.Apply(api, a.cfg)
 	a.api = api
@@ -85,7 +89,7 @@ func (a *Service) Login(ctx context.Context) error {
 		Limit:  10,
 	})
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	switch len(orgs) {
@@ -98,7 +102,7 @@ func (a *Service) Login(ctx context.Context) error {
 		a.cfg.Set("org_id", org.ID)
 		err = a.cfg.WriteConfig()
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 		ui.PrintLn(fmt.Sprintf("Using org %s", org.Name))
 

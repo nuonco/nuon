@@ -2,7 +2,9 @@ import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
+import { Text } from '@/components/common/Text'
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
+import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
 import { ToggleComponentButton } from '@/components/install-components/management/ToggleComponent'
 import { ComponentConfigPanel } from '@/components/installs/InstallResourceConfig'
@@ -14,6 +16,7 @@ import type { TComponent } from '@/types'
 export interface IResourceComponentActions {
   appliedConfigId?: string
   component: TComponent
+  currentBuildId?: string
   currentDeployStatus?: string
   enabled?: boolean | null
   onViewDetails?: () => void
@@ -23,6 +26,7 @@ export interface IResourceComponentActions {
 export const ResourceComponentActions = ({
   appliedConfigId,
   component,
+  currentBuildId,
   currentDeployStatus,
   enabled,
   onViewDetails,
@@ -113,6 +117,15 @@ export const ResourceComponentActions = ({
                 <Icon variant="ClockCounterClockwiseIcon" />
               </Button>
             ) : null}
+            <Text>Controls</Text>
+            <DeployComponentButton
+              component={component}
+              currentBuildId={currentBuildId}
+              currentDeployStatus={currentDeployStatus}
+              isMenuButton
+            >
+              {isImage ? 'Sync' : 'Deploy'}
+            </DeployComponentButton>
             {!isImage && currentDeployStatus !== 'inactive' ? (
               <>
                 <hr />

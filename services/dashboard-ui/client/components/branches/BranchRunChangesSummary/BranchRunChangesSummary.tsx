@@ -256,7 +256,14 @@ export const useBranchConfigSections = ({
   const { org } = useOrg()
   const { app } = useApp()
 
-  const { data, isLoading, isError } = useQuery({
+  const comparisonEnabled =
+    enabled && !!org?.id && !!app?.id && !!branchId && !!appBranchRunId
+  const {
+    data,
+    isPending: comparisonPending,
+    isPlaceholderData: comparisonPlaceholder,
+    isError,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: [
       'branch-run-comparison',
@@ -274,14 +281,19 @@ export const useBranchConfigSections = ({
         runId: appBranchRunId!,
         includeDiff: ['config'],
       }),
-    enabled:
-      enabled && !!org?.id && !!app?.id && !!branchId && !!appBranchRunId,
+    enabled: comparisonEnabled,
     retry: 1,
   })
 
   const headConfigId = data?.head_run?.app_config_id
   const baseConfigId = data?.base_run?.app_config_id
-  const { data: configDiff, isLoading: detailLoading } = useQuery({
+  const detailEnabled = !!org?.id && !!app?.id && !!headConfigId
+  const {
+    data: configDiff,
+    isPending: detailPending,
+    isPlaceholderData: detailPlaceholder,
+    isError: detailError,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-config-diff', org?.id, app?.id, headConfigId, baseConfigId],
     queryFn: () =>
@@ -291,7 +303,7 @@ export const useBranchConfigSections = ({
         configId: headConfigId!,
         oldConfigId: baseConfigId,
       }),
-    enabled: !!org?.id && !!app?.id && !!headConfigId,
+    enabled: detailEnabled,
     retry: 1,
     staleTime: Number.POSITIVE_INFINITY,
     refetchOnWindowFocus: false,
@@ -314,7 +326,10 @@ export const useBranchConfigSections = ({
     sections: visibleSections,
     summary,
     isLoading:
-      (!isError && isLoading && !data) || (!!headConfigId && detailLoading),
+      (comparisonEnabled &&
+        !isError &&
+        (comparisonPending || comparisonPlaceholder)) ||
+      (detailEnabled && !detailError && (detailPending || detailPlaceholder)),
     isError,
     previousSha: (() => {
       const head = data?.head_sha ?? data?.head_run?.vcs_connection_commit?.sha

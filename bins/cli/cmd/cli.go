@@ -17,7 +17,6 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
-	"github.com/nuonco/nuon/bins/cli/internal/oidctoken"
 	"github.com/nuonco/nuon/bins/cli/internal/services/actions"
 	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
 	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
@@ -35,6 +34,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/variables"
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/auth/oidctoken"
 )
 
 type cli struct {
@@ -173,6 +173,10 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 
 	if err := c.populateDeps(); err != nil {
 		return errors.Wrap(err, "unable to initialize CLI dependencies")
+	}
+
+	if err := c.enforceMinCLI(cmd); err != nil {
+		return err
 	}
 
 	if !skipAuth {

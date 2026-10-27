@@ -2,11 +2,7 @@ import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import {
-  getAppConfig,
-  getBranchWorkflowRuns,
-  getInstallAppConfigTreeDiff,
-} from '@/lib'
+import { getAppConfig, getAppConfigDiff, getBranchWorkflowRuns } from '@/lib'
 import type { TAppBranchRun } from '@/types'
 import {
   extractSections,
@@ -68,18 +64,20 @@ export const usePlanGroupInstalls = (
   const diffQueries = useQueries({
     queries: rawInstalls.map((inst) => ({
       queryKey: [
-        'install-app-config-tree-diff',
+        'app-config-diff',
         orgId,
-        inst.install_id,
+        appId,
         inst.new_app_config_id,
+        inst.old_app_config_id,
       ],
       queryFn: () =>
-        getInstallAppConfigTreeDiff({
+        getAppConfigDiff({
           orgId,
-          installId: inst.install_id,
+          appId: appId!,
           configId: inst.new_app_config_id,
+          oldConfigId: inst.old_app_config_id || undefined,
         }),
-      enabled: !!orgId && !!inst.install_id && !!inst.new_app_config_id,
+      enabled: !!orgId && !!appId && !!inst.new_app_config_id,
       ...PLAN_DIFF_CACHE,
     })),
   })

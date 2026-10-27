@@ -275,6 +275,7 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 		ctx = cctx.SetAccountContext(ctx, acct)
 		ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
 		ctx = keys.WithTokenRole(ctx, tok.Role)
+		ctx = cctx.SetTokenTypeContext(ctx, tok.TokenType)
 		ctx = context.WithValue(ctx, mcpHTTPRequestKey{}, mcpHTTPRequest{
 			method: r.Method,
 			path:   r.URL.Path,
