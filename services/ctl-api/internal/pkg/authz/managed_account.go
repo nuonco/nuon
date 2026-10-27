@@ -11,15 +11,20 @@ import (
 )
 
 func RequireUserManaged(tx *gorm.DB, accountID string) error {
+	// Struct filters drop zero values, so an empty id would lock an arbitrary
+	// account and count every managed service account.
+	if accountID == "" {
+		return gorm.ErrRecordNotFound
+	}
 	var acct struct{ ID string }
 	if err := tx.Model(&app.Account{}).Select("id").
 		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where(app.Account{ID: accountID}).Take(&acct).Error; err != nil {
+		Where("id = ?", accountID).Take(&acct).Error; err != nil {
 		return fmt.Errorf("lock account for management: %w", err)
 	}
 	var count int64
 	if err := tx.Model(&app.ManagedServiceAccount{}).
-		Where(app.ManagedServiceAccount{AccountID: accountID}).Count(&count).Error; err != nil {
+		Where("account_id = ?", accountID).Count(&count).Error; err != nil {
 		return fmt.Errorf("load managed service account ownership: %w", err)
 	}
 	if count != 0 {

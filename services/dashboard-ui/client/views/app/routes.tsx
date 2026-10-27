@@ -50,6 +50,8 @@ import { BranchActions } from './branches/scoped/BranchActions'
 import { BranchRunbooks } from './branches/scoped/BranchRunbooks'
 import { BranchInstalls } from './branches/scoped/BranchInstalls'
 import { BranchRunDetail } from './branches/BranchRunDetail'
+import { PullRequest } from './branches/PullRequest'
+import { PullRequests } from './branches/PullRequests'
 import { CreateInstallWizardPage } from './branches/CreateInstallWizardPage'
 
 const legacy = (element: ReactNode, subPath?: (params: Params) => string) => (
@@ -171,6 +173,8 @@ export const appRoutes: RouteObject[] = [
         children: [
           { index: true, element: <BranchOverviewTab /> },
           { path: 'runs', element: <BranchRunsTab /> },
+          { path: 'pull-requests', element: <PullRequests /> },
+          { path: 'pull-requests/:number', element: <PullRequest /> },
           { path: 'runs/:runId', element: <BranchRunDetail /> },
           { path: 'runs/:runId/rollout', element: <BranchRolloutTab /> },
           {

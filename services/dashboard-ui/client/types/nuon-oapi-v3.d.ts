@@ -2511,7 +2511,7 @@ export interface paths {
     delete: operations["DeleteOIDCTrustPolicy"];
     /**
      * update an OIDC trust policy
-     * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+     * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy. Disabling the policy revokes tokens already issued under it.
      */
     patch: operations["UpdateOIDCTrustPolicy"];
   };
@@ -5842,7 +5842,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector";
+    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home";
     "app.Notebook": {
       cell_count?: number;
       cells?: components["schemas"]["app.NotebookCell"][];
@@ -6148,7 +6148,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack" | "telemetry_collector";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack" | "telemetry_collector" | "phone_home";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -6354,7 +6354,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack" | "telemetry_collector";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -29360,7 +29360,7 @@ export interface operations {
   };
   /**
    * update an OIDC trust policy
-   * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+   * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy. Disabling the policy revokes tokens already issued under it.
    */
   UpdateOIDCTrustPolicy: {
     parameters: {

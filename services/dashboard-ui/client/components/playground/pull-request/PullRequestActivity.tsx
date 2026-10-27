@@ -3,14 +3,14 @@ import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
 import { LabeledValue } from '@/components/common/LabeledValue'
-import { Loading } from '@/components/common/Loading'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
+import { Panel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { ImpactCell, pullRequestRunPanel } from './PullRequestRunsTable'
+import type { TAppBranchRunPreviewMode } from '@/types'
 import type {
   TPlaygroundPullRequest,
   TPlaygroundPullRequestRun,
@@ -21,6 +21,134 @@ const TRIGGER_LABEL: Record<TPlaygroundPullRequestRun['trigger'], string> = {
   push: 'Push',
   manual: 'Re-run',
 }
+
+const MODE_THEME: Record<TAppBranchRunPreviewMode, 'brand' | 'info' | 'neutral'> =
+  {
+    none: 'neutral',
+    apply: 'brand',
+    'plan-only': 'info',
+    'build-only': 'neutral',
+  }
+
+export const ImpactCell = ({ run }: { run: TPlaygroundPullRequestRun }) => {
+  if (run.mode === 'build-only') {
+    if (run.components_built == null) {
+      return (
+        <Text variant="subtext" theme="neutral">
+          —
+        </Text>
+      )
+    }
+    return (
+      <Text variant="subtext" theme="neutral">
+        {run.components_built} built
+      </Text>
+    )
+  }
+
+  if (
+    run.status !== 'success' ||
+    run.added == null ||
+    run.changed == null ||
+    run.removed == null
+  ) {
+    return (
+      <Text variant="subtext" theme="neutral">
+        —
+      </Text>
+    )
+  }
+
+  return (
+    <span className="flex items-center gap-1 whitespace-nowrap">
+      <Badge size="xs" theme="success">
+        +{run.added}
+      </Badge>
+      <Badge size="xs" theme="warn">
+        ~{run.changed}
+      </Badge>
+      <Badge size="xs" theme="error">
+        -{run.removed}
+      </Badge>
+    </span>
+  )
+}
+
+// A factory, not a component: SurfacesProvider clones whatever it is handed to
+// inject isVisible, so the Panel has to be the outermost element.
+export const pullRequestRunPanel = (
+  pullRequest: TPlaygroundPullRequest,
+  run: TPlaygroundPullRequestRun
+) => (
+  <Panel heading={`Preview run #${run.run_number}`} size="half">
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1">
+          <Text variant="subtext" theme="neutral">
+            Status
+          </Text>
+          <Status variant="default" status={run.status} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Text variant="subtext" theme="neutral">
+            Mode
+          </Text>
+          <Badge size="sm" theme={MODE_THEME[run.mode]}>
+            {previewModeDisplayLabel(run.mode)}
+          </Badge>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Text variant="subtext" theme="neutral">
+            Install
+          </Text>
+          <Text variant="subtext" family={run.install_name ? 'mono' : 'sans'}>
+            {run.install_name ?? 'Not used'}
+          </Text>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Text variant="subtext" theme="neutral">
+            Duration
+          </Text>
+          <Duration
+            variant="subtext"
+            beginTime={run.started_at}
+            endTime={run.completed_at}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Text variant="subtext" theme="neutral">
+          Commit
+        </Text>
+        <BranchRunCommit
+          showStatus={false}
+          sha={run.head_sha}
+          message={run.commit_message}
+          author={run.commit_author}
+          createdAt={run.started_at}
+          href={
+            pullRequest.html_url
+              ? `${pullRequest.html_url}/commits/${run.head_sha}`
+              : undefined
+          }
+          isExternal={!!pullRequest.html_url}
+        />
+      </div>
+
+      {run.error_message ? (
+        <div className="flex flex-col gap-2">
+          <Text variant="subtext" theme="neutral">
+            Error
+          </Text>
+          <pre className="whitespace-pre-wrap rounded-md border border-red-300 bg-red-50 p-3 font-mono text-xs text-red-800 dark:border-red-500/40 dark:bg-red-950 dark:text-red-500">
+            {run.error_message}
+          </pre>
+        </div>
+      ) : null}
+    </div>
+  </Panel>
+)
 
 const byNewest = (a: TPlaygroundPullRequestRun, b: TPlaygroundPullRequestRun) =>
   Date.parse(b.started_at) - Date.parse(a.started_at)
@@ -51,6 +179,9 @@ export interface IPullRequestActivity {
   isLoading?: boolean
 }
 
+const SKELETON_PUSHES = [0, 1]
+const SKELETON_RUNS_PER_PUSH = 2
+
 export const PullRequestActivity = ({
   pullRequest,
   runs,
@@ -63,13 +194,13 @@ export const PullRequestActivity = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <LabeledValue label="Pushes">
+        <LabeledValue label="Pushes" loading={isLoading}>
           <Text variant="subtext">{pushes.length}</Text>
         </LabeledValue>
-        <LabeledValue label="Runs">
+        <LabeledValue label="Runs" loading={isLoading}>
           <Text variant="subtext">{runs.length}</Text>
         </LabeledValue>
-        <LabeledValue label="Latest change">
+        <LabeledValue label="Latest change" loading={isLoading}>
           {latest ? (
             <ImpactCell run={latest} />
           ) : (
@@ -81,11 +212,33 @@ export const PullRequestActivity = ({
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-8">
-          <Loading />
-        </div>
+        SKELETON_PUSHES.map((push) => (
+          <Card key={push}>
+            <div className="flex items-start justify-between gap-3">
+              <Text variant="body" loading loadingWidth={28} />
+              <Badge size="sm" loading loadingWidth={10} />
+            </div>
+            <div className="flex flex-col divide-y border-t">
+              {Array.from({ length: SKELETON_RUNS_PER_PUSH }, (_, run) => (
+                <div
+                  key={run}
+                  className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-1 py-2"
+                >
+                  <Text variant="subtext" loading loadingWidth={6} />
+                  <Badge size="xs" loading loadingWidth={12} />
+                  <Badge size="xs" loading loadingWidth={10} />
+                  <Text variant="subtext" loading loadingWidth={14} />
+                  <span className="ml-auto">
+                    <Text variant="subtext" loading loadingWidth={8} />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))
       ) : pushes.length === 0 ? (
         <EmptyState
+          variant="history"
           emptyTitle="No preview runs yet"
           emptyMessage="Activity shows up here when this pull request is opened or pushed to."
         />
@@ -102,8 +255,12 @@ export const PullRequestActivity = ({
                   message={commit.commit_message}
                   author={commit.commit_author}
                   createdAt={commit.started_at}
-                  href={`${pullRequest.html_url}/commits/${commit.head_sha}`}
-                  isExternal
+                  href={
+                    pullRequest.html_url
+                      ? `${pullRequest.html_url}/commits/${commit.head_sha}`
+                      : undefined
+                  }
+                  isExternal={!!pullRequest.html_url}
                 />
                 <Badge size="sm" theme="neutral">
                   {countLabel(pushRuns.length, 'run', 'runs')}

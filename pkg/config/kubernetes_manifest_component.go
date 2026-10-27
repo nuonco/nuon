@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/invopop/jsonschema"
 )
@@ -42,8 +43,17 @@ type KustomizeConfig struct {
 	// Enable Helm chart inflation during kustomize build
 	EnableHelm bool `mapstructure:"enable_helm,omitempty" toml:"enable_helm,omitempty"`
 
-	// Load restrictor: none, rootOnly (default: rootOnly)
+	// Load restrictor: only rootOnly is supported
 	LoadRestrictor string `mapstructure:"load_restrictor,omitempty" toml:"load_restrictor,omitempty"`
+}
+
+func (k KustomizeConfig) ValidateLoadRestrictor() error {
+	switch k.LoadRestrictor {
+	case "", "rootOnly":
+		return nil
+	default:
+		return fmt.Errorf("kustomize.load_restrictor %q is not supported; only 'rootOnly' is allowed", k.LoadRestrictor)
+	}
 }
 
 func (k KustomizeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -57,8 +67,8 @@ func (k KustomizeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("enable_helm").Short("enable Helm chart inflation").
 		Long("Enable Helm chart inflation during kustomize build.").
 		Field("load_restrictor").Short("file load restrictor").
-		Long("Controls how kustomize loads files. Options: none, rootOnly. Default: rootOnly.").
-		Example("rootOnly").Example("none")
+		Long("Controls how kustomize loads files. Only rootOnly is supported. Default: rootOnly.").
+		Example("rootOnly")
 }
 
 func (k KubernetesManifestComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -127,6 +137,9 @@ func (t *KubernetesManifestComponentConfig) Validate() error {
 		// Kustomize requires a VCS source
 		if t.PublicRepo == nil && t.ConnectedRepo == nil {
 			return errors.New("kustomize requires either 'public_repo' or 'connected_repo' to be specified")
+		}
+		if err := t.Kustomize.ValidateLoadRestrictor(); err != nil {
+			return err
 		}
 	}
 

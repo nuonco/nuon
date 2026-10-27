@@ -85,7 +85,7 @@ export const PullRequestComment = ({
   return (
     <Card className="max-w-3xl gap-4 bg-white dark:bg-dark-grey-900">
       <div className="flex items-center gap-2">
-        <Icon variant="GithubLogoIcon" size={16} theme="neutral" />
+        <Icon variant="GitHub" size={16} theme="neutral" />
         <Text variant="subtext" theme="neutral">
           <Text variant="subtext" weight="strong">
             nuon
