@@ -11,15 +11,6 @@ type Options struct {
 	FieldTimeout time.Duration
 	RootDir      string
 	OnLocalFile  func(path string, contents []byte) error
-
-	// WorkDir, relative to RootDir, is where relative paths resolve from when
-	// no config section sets its own subdirectory.
-	WorkDir string
-
-	// Restricted is for configs from an untrusted source parsed on the control
-	// plane: local reads are confined to RootDir and remote fetches to the
-	// public internet.
-	Restricted bool
 }
 
 type get struct {
