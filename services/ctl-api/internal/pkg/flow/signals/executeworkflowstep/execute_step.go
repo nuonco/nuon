@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/driftresolution"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -109,7 +110,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	}
 
 	// Execute the inner signal
-	stepErr := s.executeInnerSignal(ctx, step)
+	stepErr := s.executeInnerSignal(ctx, step, flw)
 	if stepErr != nil {
 		if ctx.Err() != nil {
 			// If Cancel() was called (via the cancel update handler), it already
@@ -199,7 +200,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 // executeInnerSignal handles the actual signal dispatch for a step.
 // It updates step status, then enqueues the inner signal to the install-signals
 // queue and awaits completion.
-func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep) error {
+func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
 	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepStartedAtByID(ctx, step.ID); err != nil {
 		return err
 	}
@@ -253,6 +254,12 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 
 	cb := callback.New(ctx, step.ID)
 	dedupeKey := fmt.Sprintf("workflow-step:%s:retry:%d:group-retry:%d", step.ID, step.RetryIndex, step.GroupRetryIdx)
+	if driftresolution.ApplyTarget(flw, step) != nil &&
+		workflow.GetVersion(ctx, "resolve-drift-apply-admission-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := activities.AwaitAdmitResolveDriftApplyByStepID(ctx, step.ID); err != nil {
+			return err
+		}
+	}
 	// Cancel() already wrote the stop directive (Execute exits on s.canceled);
 	// a lifecycle cancel has none yet, so return an error for Execute's fallback.
 	if s.canceled {

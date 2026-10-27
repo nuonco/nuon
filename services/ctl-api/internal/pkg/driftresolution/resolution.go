@@ -2,7 +2,6 @@ package driftresolution
 
 import (
 	"context"
-	"fmt"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -19,12 +18,22 @@ type TargetChanged string
 
 func (e TargetChanged) Error() string { return string(e) }
 
-func Target(wf *app.Workflow) *app.DriftResolutionTarget {
+func ApplyTarget(wf *app.Workflow, step *app.WorkflowStep) *app.DriftResolutionTarget {
 	if wf.OwnerType != "installs" || wf.Metadata[app.WorkflowMetadataKeyResolveDrift] == nil ||
-		*wf.Metadata[app.WorkflowMetadataKeyResolveDrift] != "true" || wf.Request == nil {
+		*wf.Metadata[app.WorkflowMetadataKeyResolveDrift] != "true" || wf.Request == nil || wf.Request.DriftResolution == nil ||
+		step.QueueSignal == nil || step.QueueSignal.Signal == nil || step.ExecutionType == app.WorkflowStepExecutionTypeSkipped {
 		return nil
 	}
-	return wf.Request.DriftResolution
+	target := wf.Request.DriftResolution
+	switch step.QueueSignal.Signal.Type() {
+	case "component-deploy-apply-plan", "component-teardown-apply-plan", "reprovision-sandbox-apply-plan", "generate-install-stack-version":
+		return target
+	case "component-sync-image":
+		if target.Kind == "image" {
+			return target
+		}
+	}
+	return nil
 }
 
 func LockInstall(ctx context.Context, tx *gorm.DB, installID string) (*app.Install, error) {
@@ -131,84 +140,4 @@ func CheckTarget(ctx context.Context, tx *gorm.DB, install *app.Install, target 
 		return TargetChanged("another deployment applied to this resource; resolve drift again")
 	}
 	return nil
-}
-
-func AdmitApply(ctx context.Context, tx *gorm.DB, wf *app.Workflow, stepID string) error {
-	install, err := LockInstall(ctx, tx, wf.OwnerID)
-	if err != nil {
-		return err
-	}
-	if err := tx.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Workflow{ID: wf.ID}).First(wf).Error; err != nil {
-		return err
-	}
-	target := Target(wf)
-	if target.ApplyStepID == stepID {
-		return nil
-	}
-	if target.ApplyStepID != "" {
-		var previous app.WorkflowStep
-		if err := tx.WithContext(ctx).Where(app.WorkflowStep{ID: target.ApplyStepID}).First(&previous).Error; err != nil {
-			return err
-		}
-		var activeSignals int64
-		if err := tx.WithContext(ctx).Model(&app.QueueSignal{}).
-			Where(app.QueueSignal{OwnerID: previous.ID, OwnerType: "install_workflow_steps"}).
-			Where("COALESCE(status->>'status', '') NOT IN ?", []app.Status{app.StatusSuccess, app.StatusCancelled, app.StatusError, app.StatusDiscarded}).
-			Count(&activeSignals).Error; err != nil {
-			return err
-		}
-		if previous.FinishedAt.IsZero() || previous.Status.Status == app.StatusSuccess || activeSignals > 0 {
-			return TargetChanged(fmt.Sprintf("resolution apply is already admitted for step %s", target.ApplyStepID))
-		}
-		if previous.StepTargetID != "" {
-			if target.Kind == "stack" {
-				var version app.InstallStackVersion
-				if err := tx.WithContext(ctx).Where(app.InstallStackVersion{ID: previous.StepTargetID}).First(&version).Error; err != nil {
-					return err
-				}
-				if version.Checksum != "" || version.TerraformChecksum != "" {
-					return TargetChanged("the previous stack apply may still be running; resolve drift again after it settles")
-				}
-			}
-			var jobs []app.RunnerJob
-			if err := tx.WithContext(ctx).Preload("Executions").Where(app.RunnerJob{OwnerID: previous.StepTargetID}).Find(&jobs).Error; err != nil {
-				return err
-			}
-			for _, job := range jobs {
-				if !job.Status.IsTerminal() {
-					return TargetChanged("the previous runner job is still active")
-				}
-				for _, execution := range job.Executions {
-					if execution.Status.IsRunning() {
-						return TargetChanged("the previous runner execution is still active")
-					}
-				}
-			}
-		}
-	}
-	if err := CheckTarget(ctx, tx, install, target); err != nil {
-		return err
-	}
-	switch target.Kind {
-	case "component":
-		var deploy app.InstallDeploy
-		if err := tx.WithContext(ctx).Where(app.InstallDeploy{InstallComponentID: target.ResourceID, InstallWorkflowID: &wf.ID}).
-			Order("created_at DESC, id DESC").First(&deploy).Error; err != nil {
-			return err
-		}
-		if deploy.Type == app.InstallDeployTypeApply && (deploy.ComponentBuildID != target.BuildID || deploy.PlannedInputsDigest != target.InputsDigest) {
-			return TargetChanged("the fresh plan does not match this resolution's build and inputs; resolve drift again")
-		}
-	case "sandbox":
-		var run app.InstallSandboxRun
-		if err := tx.WithContext(ctx).Where(app.InstallSandboxRun{InstallSandboxID: &target.ResourceID, InstallWorkflowID: &wf.ID}).
-			Order("created_at DESC, id DESC").First(&run).Error; err != nil {
-			return err
-		}
-		if run.PlannedInputsDigest != target.InputsDigest {
-			return TargetChanged("the fresh plan does not match this resolution's inputs; resolve drift again")
-		}
-	}
-	target.ApplyStepID = stepID
-	return tx.WithContext(ctx).Model(wf).Select("request").Updates(wf).Error
 }
