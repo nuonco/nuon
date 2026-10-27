@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-
-	"github.com/nuonco/nuon/pkg/publicnet"
 )
 
 // ValidateIssuerURL checks that raw is safe to store as a trust policy issuer:
@@ -37,7 +35,7 @@ func ValidateIssuerURL(ctx context.Context, raw string, allowInsecure bool) erro
 		if strings.EqualFold(parsed.Hostname(), "localhost") {
 			return fmt.Errorf("issuer URL must not address a local network")
 		}
-		if err := publicnet.RequirePublicHost(ctx, parsed.Hostname()); err != nil {
+		if err := RequirePublicHost(ctx, parsed.Hostname()); err != nil {
 			return fmt.Errorf("issuer URL must not address a local network: %w", err)
 		}
 	}
