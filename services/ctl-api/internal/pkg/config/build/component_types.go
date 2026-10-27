@@ -147,6 +147,11 @@ func KubernetesManifestComponentConfig(obj *config.KubernetesManifestComponentCo
 	if hasKustomize && vcs.Github == nil && vcs.Public == nil {
 		return nil, errors.New("kustomize requires a git source")
 	}
+	if hasKustomize {
+		if err := obj.Kustomize.ValidateLoadRestrictor(); err != nil {
+			return nil, err
+		}
+	}
 	if hasManifest && (vcs.Github != nil || vcs.Public != nil) {
 		return nil, errors.New("VCS config is only valid for kustomize sources, not inline manifests")
 	}
