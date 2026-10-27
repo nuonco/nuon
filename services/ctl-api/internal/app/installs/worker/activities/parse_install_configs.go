@@ -42,7 +42,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 	}
 
 	if req.InstallName != "" {
-		return a.parseSingleInstallConfig(ctx, installsPath, req.InstallName)
+		return a.parseSingleInstallConfig(ctx, sourceDir, installsPath, req.InstallName)
 	}
 
 	changedSet := make(map[string]bool, len(req.ChangedFiles))
@@ -69,7 +69,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 		}
 
 		fullPath := filepath.Join(installsPath, entry.Name())
-		installCfg, err := parseInstallTOMLFile(ctx, fullPath)
+		installCfg, err := parseInstallTOMLFile(ctx, sourceDir, fullPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse %s: %w", relPath, err)
 		}
@@ -83,7 +83,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 	return &ParseInstallConfigsResponse{Installs: result}, nil
 }
 
-func (a *Activities) parseSingleInstallConfig(ctx context.Context, installsPath, installName string) (*ParseInstallConfigsResponse, error) {
+func (a *Activities) parseSingleInstallConfig(ctx context.Context, sourceDir, installsPath, installName string) (*ParseInstallConfigsResponse, error) {
 	fileName := installName + ".toml"
 	fullPath := filepath.Join(installsPath, fileName)
 
@@ -91,7 +91,7 @@ func (a *Activities) parseSingleInstallConfig(ctx context.Context, installsPath,
 		return &ParseInstallConfigsResponse{}, nil
 	}
 
-	installCfg, err := parseInstallTOMLFile(ctx, fullPath)
+	installCfg, err := parseInstallTOMLFile(ctx, sourceDir, fullPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse %s: %w", fileName, err)
 	}
@@ -103,7 +103,7 @@ func (a *Activities) parseSingleInstallConfig(ctx context.Context, installsPath,
 	}, nil
 }
 
-func parseInstallTOMLFile(ctx context.Context, filePath string) (*config.Install, error) {
+func parseInstallTOMLFile(ctx context.Context, sourceDir, filePath string) (*config.Install, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open %s: %w", filePath, err)
@@ -114,7 +114,7 @@ func parseInstallTOMLFile(ctx context.Context, filePath string) (*config.Install
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse install config: %w", err)
 	}
-	if err := configparse.LoadInstallUIDefinition(ctx, cfg, filepath.Dir(filePath)); err != nil {
+	if err := configparse.LoadInstallUIDefinition(ctx, cfg, sourceDir, filepath.Dir(filePath)); err != nil {
 		return nil, err
 	}
 
