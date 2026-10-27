@@ -109,9 +109,9 @@ nuon runbooks list --install-id <install-id>
 Each run is recorded in the install's workflow history, so you can review the steps, logs, and outcome of any past runbook execution.
 
 <TryWithYourAgent
-  title="Review your runbooks"
-  tools={["list_runbooks", "get_runbook"]}
-  prompt={`List the runbooks available on my Nuon install and summarize the inputs and steps of each one.`}
+  title="Turn manual work into a runbook"
+  tools={["list_workflows", "list_install_actions", "list_runbooks"]}
+  prompt={`Look through my Nuon install's recent workflows and find a multi-step procedure I keep running by hand, such as redeploying the same components in sequence or running an action after a deploy. Check that no existing runbook already covers it, then draft a runbook TOML for it using the format at https://docs.nuon.co/guides/runbooks, and list the past workflows it would have replaced.`}
 />
 
 ## A complete example
