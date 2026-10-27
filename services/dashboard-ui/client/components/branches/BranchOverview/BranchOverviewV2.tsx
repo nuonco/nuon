@@ -337,13 +337,15 @@ const ActiveGroup = ({
             theme="info"
             aria-live="polite"
           >
-            {category === 'awaiting'
-              ? 'Waiting for approval'
-              : category === 'error'
-                ? 'Rollout failed'
-                : category === 'pending'
-                  ? 'Not started'
-                  : 'Deploying'}
+            {group.status === 'cancelled'
+              ? 'Rollout cancelled'
+              : category === 'awaiting'
+                ? 'Waiting for approval'
+                : category === 'error'
+                  ? 'Rollout failed'
+                  : category === 'pending'
+                    ? 'Not started'
+                    : 'Deploying'}
             <Text as="span" variant="subtext" theme="neutral">
               {' '}
               · Group {index + 1} of {total}
