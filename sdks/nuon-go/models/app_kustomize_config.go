@@ -20,7 +20,7 @@ type AppKustomizeConfig struct {
 	// Enable Helm chart inflation during kustomize build
 	EnableHelm bool `json:"enable_helm,omitempty"`
 
-	// Load restrictor: "none" or "rootOnly" (default: "rootOnly")
+	// Load restrictor: only "rootOnly" is supported
 	LoadRestrictor string `json:"load_restrictor,omitempty"`
 
 	// Additional patch files to apply after kustomize build

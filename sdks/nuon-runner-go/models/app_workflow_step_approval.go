@@ -65,7 +65,7 @@ type AppWorkflowStepApproval struct {
 	OwnerType string `json:"owner_type,omitempty"`
 
 	// response
-	Response map[string]string `json:"response,omitempty"`
+	Response *AppWorkflowStepApprovalResponse `json:"response,omitempty"`
 
 	// runner job
 	RunnerJob *AppRunnerJob `json:"runner_job,omitempty"`
@@ -95,6 +95,10 @@ func (m *AppWorkflowStepApproval) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateInstallWorkflowStep(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateResponse(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -151,6 +155,29 @@ func (m *AppWorkflowStepApproval) validateInstallWorkflowStep(formats strfmt.Reg
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("installWorkflowStep")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppWorkflowStepApproval) validateResponse(formats strfmt.Registry) error {
+	if swag.IsZero(m.Response) { // not required
+		return nil
+	}
+
+	if m.Response != nil {
+		if err := m.Response.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("response")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("response")
 			}
 
 			return err
@@ -239,6 +266,10 @@ func (m *AppWorkflowStepApproval) ContextValidate(ctx context.Context, formats s
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateResponse(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateRunnerJob(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -295,6 +326,31 @@ func (m *AppWorkflowStepApproval) contextValidateInstallWorkflowStep(ctx context
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("installWorkflowStep")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppWorkflowStepApproval) contextValidateResponse(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Response != nil {
+
+		if swag.IsZero(m.Response) { // not required
+			return nil
+		}
+
+		if err := m.Response.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("response")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("response")
 			}
 
 			return err
