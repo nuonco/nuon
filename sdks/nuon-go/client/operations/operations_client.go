@@ -310,7 +310,7 @@ type ClientService interface {
 
 	CreateVCSConnection(params *CreateVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCreated, error)
 
-	CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error)
+	CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error)
 
 	CreateVCSConnectionWebhookSubscription(params *CreateVCSConnectionWebhookSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionWebhookSubscriptionCreated, error)
 
@@ -5610,11 +5610,11 @@ func (a *Client) CreateVCSConnection(params *CreateVCSConnectionParams, authInfo
 }
 
 /*
-CreateVCSConnectionCallback publics connection to create a vcs connection via a callback
+CreateVCSConnectionCallback creates a vcs connection from the github app install callback
 
-Handle VCS connection callback for OAuth flow.
+Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
 */
-func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error) {
+func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewCreateVCSConnectionCallbackParams()
@@ -5628,6 +5628,7 @@ func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallback
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &CreateVCSConnectionCallbackReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	}
@@ -22871,7 +22872,7 @@ func (a *Client) UpdateNotebookCell(params *UpdateNotebookCellParams, authInfo r
 /*
 UpdateOIDCTrustPolicy updates an o ID c trust policy
 
-Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy. Disabling the policy revokes tokens already issued under it.
 */
 func (a *Client) UpdateOIDCTrustPolicy(params *UpdateOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOIDCTrustPolicyOK, error) {
 	// NOTE: parameters are not validated before sending
