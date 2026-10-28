@@ -6,6 +6,8 @@ keywords: ["runner", "kill switch", "shutdown", "ASG", "auto scaling group", "se
 
 The runner is managed via the stack, and is responsible for all actions. While you can also remove permissions, you can also entirely disable the runner. This is useful for partial-airgapped installs, release windows and customers who want more control.
 
+To learn more about runners, see the [Runners](/concepts/runners) concept page.
+
 ## How It Works
 
 The Runner is created by the customer's [Stack](/concepts/stacks) during install provisioning. The customer has full ownership of this ASG in their AWS account. By changing the ASG capacity settings, the customer controls whether the Runner is up.

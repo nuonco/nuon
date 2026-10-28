@@ -45,6 +45,10 @@ type Config struct {
 	PublicDir   string   `config:"public_dir"`
 
 	APIUrl string `config:"nuon_api_url"`
+	// InternalAPIUrl is the ctl-api address this process dials. The browser still
+	// receives APIUrl, which has to be a hostname it can resolve. When this is
+	// empty, server calls use APIUrl.
+	InternalAPIUrl string `config:"nuon_api_internal_url"`
 	// RunnerAPIUrl is the runner API install stacks authenticate against. A different
 	// host from APIUrl, and the audience a stack's OIDC trust policy names.
 	RunnerAPIUrl             string `config:"nuon_runner_api_url"`
@@ -86,6 +90,13 @@ const LocalDevDeployment = "dashboard-local"
 
 func (c *Config) IsLocalDev() bool {
 	return c.ServiceDeployment == LocalDevDeployment
+}
+
+func (c *Config) ServerAPIURL() string {
+	if c.InternalAPIUrl != "" {
+		return c.InternalAPIUrl
+	}
+	return c.APIUrl
 }
 
 func NewConfig() (*Config, error) {

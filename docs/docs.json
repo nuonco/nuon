@@ -12,9 +12,6 @@
       "twitter:site": "@nuonco"
     }
   },
-  "contextual": {
-    "options": ["copy", "view", "cursor", "chatgpt", "claude"]
-  },
   "colors": {
     "primary": "#256A7F",
     "light": "#4CC9F0",
@@ -42,7 +39,6 @@
             "group": "Orientation",
             "pages": [
               "get-started/introduction",
-              "get-started/overview",
               "get-started/glossary"
             ]
           },
@@ -84,53 +80,55 @@
       {
         "tab": "Concepts",
         "icon": "lightbulb",
-        "groups": [
+        "pages": [
+          "concepts/overview",
           {
             "group": "App Templates",
+            "root": "concepts/apps",
+            "expanded": true,
             "boost": 3,
             "pages": [
-              "concepts/apps",
               "concepts/components",
-              "concepts/components/auto-retries",
-              "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",
-              "concepts/app-variables",
-              "concepts/runners"
+              "concepts/policies",
+              "concepts/app-variables"
             ]
           },
           {
-            "group": "Installs and Stacks",
+            "group": "BYOC Management Infra",
+            "root": "concepts/nuon-infrastructure",
+            "expanded": true,
             "boost": 3,
             "pages": [
-              "guides/app-install-life-cycle",
               "concepts/stacks",
-              "concepts/stacks/stand-alone-vpc",
-              "concepts/stacks/customer-vpc",
-              "concepts/stacks/customer-cluster"
+              "concepts/runners",
+              "concepts/sandboxes"
             ]
           },
           {
-            "group": "Delivery and Operations",
+            "group": "Customer Installs",
+            "root": "concepts/installs",
+            "expanded": true,
+            "boost": 3,
+            "pages": [
+              "concepts/stacks/stand-alone-vpc",
+              "concepts/stacks/customer-vpc",
+              "concepts/stacks/customer-cluster",
+              "concepts/install-telemetry"
+            ]
+          },
+          {
+            "group": "Updates and Operations",
+            "root": "concepts/updates-and-operations",
+            "expanded": true,
             "boost": 3,
             "pages": [
               "concepts/workflows",
               "concepts/app-branches",
               "concepts/actions",
-              "concepts/policies",
               "concepts/operation-roles",
-              "concepts/install-telemetry",
               "concepts/triggers"
-            ]
-          },
-          {
-            "group": "Identity and Security",
-            "boost": 3,
-            "pages": [
-              "concepts/access-control",
-              "concepts/api-tokens",
-              "concepts/service-accounts",
-              "concepts/oidc-federation"
             ]
           }
         ]
@@ -144,9 +142,6 @@
             "boost": 3,
             "pages": [
               "guides/managing-apps",
-              "guides/managing-components",
-              "guides/component-dependencies",
-              "guides/toggleable-components",
               "guides/retaining-resources-on-teardown",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
@@ -160,13 +155,17 @@
             "group": "Manage Components",
             "boost": 3,
             "pages": [
+              "guides/managing-components",
+              "guides/component-dependencies",
+              "guides/toggleable-components",
+              "guides/terraform-components",
+              "guides/helm-chart-components",
+              "guides/kubernetes-manifest-components",
               "guides/container-image-components",
               "guides/image-signature-verification",
               "guides/image-update-policies",
-              "guides/helm-chart-components",
-              "guides/kubernetes-manifest-components",
               "guides/pulumi-components",
-              "guides/terraform-components"
+              "concepts/components/auto-retries"
             ]
           },
           {
@@ -178,6 +177,7 @@
               "guides/install-config-syncing",
               "guides/component-overrides",
               "guides/runner-kill-switch",
+              "guides/export-runner-audit-logs",
               "guides/custom-domains",
               "guides/provision-stacks-with-cloudformation",
               "guides/provision-stacks-with-terraform-module",
@@ -211,7 +211,6 @@
               "guides/github-actions",
               "guides/webhooks",
               "guides/triggers",
-              "guides/export-runner-audit-logs",
               "guides/health-checks",
               "guides/slack"
             ]
@@ -220,7 +219,11 @@
             "group": "Access and Permission",
             "boost": 2,
             "pages": [
-              "guides/team-management"
+              "guides/team-management",
+              "concepts/access-control",
+              "concepts/api-tokens",
+              "concepts/service-accounts",
+              "concepts/oidc-federation"
             ]
           },
           {
@@ -245,24 +248,25 @@
         "tab": "Agents",
         "icon": "robot",
         "pages": [
+          "guides/agents/overview",
           {
             "group": "Start",
             "pages": [
-              "guides/agents/overview",
               "guides/agents/setup"
-            ]
-          },
-          {
-            "group": "Operate",
-            "pages": [
-              "guides/agents/sample-queries"
             ]
           },
           {
             "group": "Build",
             "pages": [
               "guides/agents/ai-and-apps",
-              "guides/agents/skills"
+              "guides/agents/writing-policies",
+              "guides/agents/customizing-readmes"
+            ]
+          },
+          {
+            "group": "Operate",
+            "pages": [
+              "guides/agents/sample-queries"
             ]
           },
           {
@@ -443,9 +447,26 @@
   "integrations": {
     "plausible": {
       "domain": "docs.nuon.co"
+    },
+    "posthog": {
+      "apiKey": "phc_1NEQAphH0jxCX7opmp4Iyq2O6mu4tM552kMjJz8uKkl",
+      "apiHost": "https://us.i.posthog.com",
+      "sessionRecording": true
     }
   },
   "redirects": [
+    {
+      "source": "/guides/agents/skills",
+      "destination": "/guides/agents/writing-policies"
+    },
+    {
+      "source": "/guides/app-install-life-cycle",
+      "destination": "/concepts/installs"
+    },
+    {
+      "source": "/get-started/overview",
+      "destination": "/concepts/overview"
+    },
     {
       "source": "/guides/idempotent-triggers",
       "destination": "/guides/idempotent-operations"
@@ -489,10 +510,6 @@
     {
       "source": "/architecture/byoc",
       "destination": "/architecture/app-deployment"
-    },
-    {
-      "source": "/concepts/installs",
-      "destination": "/guides/app-install-life-cycle"
     },
     {
       "source": "/deployment-options",

@@ -35,6 +35,7 @@ import (
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
 	slackservice "github.com/nuonco/nuon/services/ctl-api/internal/app/slack/service"
 	stacksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/stacks/service"
+	tokensservice "github.com/nuonco/nuon/services/ctl-api/internal/app/tokens/service"
 	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 
@@ -57,7 +58,7 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 	require.NoError(t, err)
 
 	services := []api.Service{
-		accountsservice.New(accountsservice.Params{}),
+		accountsservice.New(accountsservice.Params{EndpointAudit: ea}),
 		actionsservice.New(actionsservice.Params{EndpointAudit: ea}),
 		appbundlesservice.New(appbundlesservice.Params{}),
 		cloudConnectionsService,
@@ -78,6 +79,7 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 			Cfg:           &internal.Config{SlackSigningSecret: "test-signing-secret"},
 		}),
 		stacksservice.New(stacksservice.Params{EndpointAudit: ea}),
+		tokensservice.New(tokensservice.Params{}),
 		vcsservice.New(vcsservice.Params{}),
 		onboardingservice.New(onboardingservice.Params{EndpointAudit: ea}),
 		oidcfederationservice.New(oidcfederationservice.Params{}),

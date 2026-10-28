@@ -1,0 +1,32 @@
+---
+title: "Writing policies"
+description: "Use the write-rego-policy skill to have your coding agent write OPA/Rego policies for your app template."
+keywords: ["skills", "agents", "policy", "policies", "rego", "OPA", "write-rego-policy"]
+---
+
+The `write-rego-policy` skill teaches your coding agent to write OPA/Rego [policies](/concepts/policies) in your app
+config's `policies/` directory. It covers every policy type, when to warn versus deny, and testing a policy before
+you ship it.
+
+## Install the skill
+
+If your client is [connected to the Nuon MCP server](/guides/agents/setup), ask for the skill by name and it loads on
+demand.
+
+Otherwise, install the skills from [nuonco/skills](https://github.com/nuonco/skills) using npx.
+
+```sh
+npx skills add nuonco/skills
+```
+
+You can also install individual skills.
+
+```sh
+npx skills add nuonco/skills/write-rego-policy
+```
+
+## Try it
+
+```
+Load the write-rego-policy skill and help me add a policy that blocks public S3 buckets.
+```

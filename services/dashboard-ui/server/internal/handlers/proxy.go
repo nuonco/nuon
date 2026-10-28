@@ -50,8 +50,8 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	// served from {upstream}/docs/{path}. ModifyResponse rewrites the embedded
 	// absolute spec URL so it routes through the proxy instead of hitting the
 	// upstream directly.
-	publicSwaggerProxy := h.newSwaggerProxy(h.cfg.APIUrl, "/public/swagger", "")
-	adminSwaggerProxy := h.newSwaggerProxy(h.cfg.AdminAPIUrl, "/admin/swagger", "/admin")
+	publicSwaggerProxy := h.newSwaggerProxy(h.cfg.ServerAPIURL(), h.cfg.APIUrl, "/public/swagger", "")
+	adminSwaggerProxy := h.newSwaggerProxy(h.cfg.AdminAPIUrl, h.cfg.AdminAPIUrl, "/admin/swagger", "/admin")
 
 	temporalProxy := h.newTemporalProxy(h.cfg.TemporalUIUrl)
 
@@ -195,8 +195,13 @@ func (h *ProxyHandler) newPassthroughProxy(upstreamBase string) *httputil.Revers
 // so the spec loads through the proxy, and rewrites the spec's own
 // host/schemes/basePath so Swagger UI's "Execute" requests route back through
 // the BFF (apiPrefix) instead of hitting the internal upstream host directly.
-func (h *ProxyHandler) newSwaggerProxy(upstreamBase, frontendPrefix, apiPrefix string) *httputil.ReverseProxy {
+func (h *ProxyHandler) newSwaggerProxy(upstreamBase, publicBase, frontendPrefix, apiPrefix string) *httputil.ReverseProxy {
 	target, _ := url.Parse(upstreamBase)
+	public, _ := url.Parse(publicBase)
+	host := target.Host
+	if public.Host != "" {
+		host = public.Host
+	}
 	specURLOld := []byte("url: '/oapi/v2'")
 	specURLNew := []byte("url: '" + frontendPrefix + "/oapi/v2'")
 	return &httputil.ReverseProxy{
@@ -209,7 +214,7 @@ func (h *ProxyHandler) newSwaggerProxy(upstreamBase, frontendPrefix, apiPrefix s
 			} else {
 				req.URL.Path = "/docs" + path
 			}
-			req.Host = target.Host
+			req.Host = host
 			req.Header.Del("Accept-Encoding")
 		},
 		ModifyResponse: func(resp *http.Response) error {
@@ -409,7 +414,7 @@ func (h *ProxyHandler) verifyAndCache(c *gin.Context, token string) (string, err
 	if email, ok := h.lookupAuth(token); ok {
 		return email, nil
 	}
-	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
+	client, err := nuon.New(nuon.WithURL(h.cfg.ServerAPIURL()), nuon.WithAuthToken(token))
 	if err != nil {
 		return "", err
 	}

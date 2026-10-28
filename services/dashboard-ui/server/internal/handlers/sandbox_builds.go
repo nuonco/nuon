@@ -47,7 +47,7 @@ func (h *SandboxBuildsHandler) StreamSandboxBuild(c *gin.Context) {
 
 	// The sandbox build endpoint isn't exposed by nuon-go, so fetch it raw.
 	fetchBuild := func(ctx context.Context) ([]byte, error) {
-		url := fmt.Sprintf("%s/v1/apps/%s/sandbox/builds/%s", h.cfg.APIUrl, appID, buildID)
+		url := fmt.Sprintf("%s/v1/apps/%s/sandbox/builds/%s", h.cfg.ServerAPIURL(), appID, buildID)
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
 			return nil, err

@@ -7,7 +7,7 @@ import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { createServiceAccountToken } from '@/lib'
+import { createToken } from '@/lib'
 import type { TAccount } from '@/types'
 import { CreateServiceAccountTokenModal } from './ServiceAccountToken'
 
@@ -44,13 +44,13 @@ export const CreateServiceAccountTokenModalContainer = ({
       duration: string
       invalidate: boolean
     }) =>
-      createServiceAccountToken({
+      createToken({
         body: {
+          account_id: accountId,
           duration,
           invalidate,
           ...(tokenName ? { name: tokenName } : {}),
         },
-        accountId,
         orgId: org.id,
       }),
     onSuccess: (data) => {

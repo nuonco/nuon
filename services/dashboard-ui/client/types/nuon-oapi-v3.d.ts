@@ -57,21 +57,24 @@ export interface paths {
   "/v1/account/static-token": {
     /**
      * create a static API token for your org
-     * @description Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
+     * @deprecated
+     * @description Deprecated: create a service account with POST /v1/service-accounts, then a token with POST /v1/tokens. Personal tokens (token_identity "personal") are deprecated because they carry all of the creator's access. Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
      */
     post: operations["CreateStaticToken"];
   };
   "/v1/account/static-tokens": {
     /**
      * list your org's static API tokens
-     * @description Lists the static API tokens for your current org. Token secrets are never returned.
+     * @deprecated
+     * @description Deprecated: use GET /v1/tokens instead. Lists the static API tokens for your current org. Token secrets are never returned.
      */
     get: operations["ListStaticTokens"];
   };
   "/v1/account/static-tokens/{token_id}": {
     /**
      * delete a static API token
-     * @description Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
+     * @deprecated
+     * @description Deprecated: use DELETE /v1/tokens/{token_id} instead. Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
      */
     delete: operations["DeleteStaticToken"];
   };
@@ -3191,7 +3194,10 @@ export interface paths {
   "/v1/service-accounts/{account_id}/tokens": {
     /**
      * Create a token for a service account in the current org
-     * @description Create an API token for a service account in the current org.
+     * @deprecated
+     * @description Deprecated: use `POST /v1/tokens` with `account_id` instead.
+     *
+     * Create an API token for a service account in the current org.
      *
      * Defaults to a duration of one year (`8760h`) if `duration` is not
      * specified. If `invalidate` is set, all existing tokens for the service
@@ -3310,6 +3316,47 @@ export interface paths {
      * @description Unlock a terraform workspace.
      */
     post: operations["UnlockTerraformWorkspace"];
+  };
+  "/v1/tokens": {
+    /**
+     * List API tokens for service accounts in the current org
+     * @description List the API tokens for service accounts in the current org. Only
+     * service-account tokens are returned, and token secrets are never
+     * returned.
+     *
+     * Filter to a single service account with `account_id`, and search with
+     * `q`, which matches token names case-insensitively or a token ID exactly.
+     *
+     * Each result includes the owning account's `account_name` and
+     * `account_email`, plus `account_role`, the account's *current* role in this
+     * org (not the role copied onto the token at creation time).
+     */
+    get: operations["ListTokens"];
+    /**
+     * Create an API token for a service account in the current org
+     * @description Create an API token for a service account in the current org.
+     *
+     * Only service-account tokens are supported: `account_id` must be a service
+     * account in the current org (see `POST /v1/service-accounts`). The token
+     * uses the service account's role.
+     *
+     * The token secret is returned only in this response; it cannot be
+     * retrieved again. Defaults to a duration of one year (`8760h`) if
+     * `duration` is not specified. If `invalidate` is set, all existing tokens
+     * for the service account are revoked before the new token is created.
+     */
+    post: operations["CreateToken"];
+  };
+  "/v1/tokens/{token_id}": {
+    /**
+     * Delete an API token for a service account in the current org
+     * @description Revoke an API token for a service account in the current org. Once
+     * deleted, the token can no longer be used to access the API. The service
+     * account itself is not deleted.
+     *
+     * Only service-account tokens are supported.
+     */
+    delete: operations["DeleteToken"];
   };
   "/v1/vcs/connection-callback": {
     /**
@@ -5807,7 +5854,7 @@ export interface components {
     "app.KustomizeConfig": {
       /** @description Enable Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description Load restrictor: "none" or "rootOnly" (default: "rootOnly") */
+      /** @description Load restrictor: only "rootOnly" is supported */
       load_restrictor?: string;
       /** @description Additional patch files to apply after kustomize build */
       patches?: string[];
@@ -7261,9 +7308,7 @@ export interface components {
       installWorkflowStepID?: string;
       owner_id?: string;
       owner_type?: string;
-      response?: {
-        [key: string]: string;
-      };
+      response?: components["schemas"]["app.WorkflowStepApprovalResponse"];
       runner_job?: components["schemas"]["app.RunnerJob"];
       /** @description the runner job where this approval was created */
       runner_job_id?: string;
@@ -7272,6 +7317,17 @@ export interface components {
       workflow_step?: components["schemas"]["app.WorkflowStep"];
       /** @description afterquery */
       workflow_step_id?: string;
+    };
+    "app.WorkflowStepApprovalResponse": {
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      id?: string;
+      install_workflow_step_approval_id?: string;
+      note?: string;
+      /** @description the response type */
+      type?: string;
+      updated_at?: string;
     };
     /** @enum {string} */
     "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan" | "app_branch_plan" | "install_creation";
@@ -7617,6 +7673,14 @@ export interface components {
       api_token?: string;
       id?: string;
     };
+    "github_com_nuonco_nuon_services_ctl-api_internal_app_tokens_service.CreateTokenResponse": {
+      account_id?: string;
+      created_at?: string;
+      expires_at?: string;
+      id?: string;
+      name?: string;
+      token?: string;
+    };
     "helpers.ConnectedGithubVCSConfigRequest": {
       branch?: string;
       directory: string;
@@ -7673,11 +7737,21 @@ export interface components {
       sha?: string;
     };
     "helpers.PreviewSourcePR": {
+      author?: string;
+      author_avatar_url?: string;
+      created_at?: string;
       head_ref?: string;
       head_sha?: string;
+      is_draft?: boolean;
+      labels?: components["schemas"]["helpers.PreviewSourcePRLabel"][];
       pr_number?: number;
       title?: string;
+      updated_at?: string;
       url?: string;
+    };
+    "helpers.PreviewSourcePRLabel": {
+      color?: string;
+      name?: string;
     };
     "helpers.PublicGitVCSConfigRequest": {
       branch: string;
@@ -8042,7 +8116,7 @@ export interface components {
     "plantypes.KustomizeBuildConfig": {
       /** @description EnableHelm enables Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description LoadRestrictor controls file loading: "none" or "rootOnly" (default) */
+      /** @description Ignored by the runner, which pins rootOnly so app config cannot widen worker file access */
       load_restrictor?: string;
       /** @description Patches are additional patch files to apply after kustomize build */
       patches?: string[];
@@ -9329,6 +9403,17 @@ export interface components {
       owner_id: string;
       owner_type: string;
     };
+    "service.CreateTokenRequest": {
+      account_id: string;
+      /**
+       * @description Duration defaults to one year.
+       * @default 8760h
+       */
+      duration?: string;
+      invalidate?: boolean;
+      /** @description Name labels the token where it is listed; defaults to the account's identity. */
+      name?: string;
+    };
     "service.CreateUserJourneyRequest": {
       name: string;
       steps: components["schemas"]["service.CreateUserJourneyStepReq"][];
@@ -10199,6 +10284,26 @@ export interface components {
       enabled: boolean;
       plan_only?: boolean;
     };
+    "service.TokenResponse": {
+      account_email?: string;
+      account_id?: string;
+      account_name?: string;
+      account_role?: string;
+      created_at?: string;
+      created_by_id?: string;
+      /** @description claim data */
+      expires_at?: string;
+      id?: string;
+      issued_at?: string;
+      issuer?: string;
+      name?: string;
+      org_id?: string;
+      role?: string;
+      source_id?: string;
+      source_type?: string;
+      token_type?: components["schemas"]["app.TokenType"];
+      updated_at?: string;
+    };
     "service.TriggerAppBranchRunRequest": {
       app_config_id?: string;
       auto_approve?: boolean;
@@ -10852,7 +10957,8 @@ export interface operations {
   };
   /**
    * create a static API token for your org
-   * @description Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
+   * @deprecated
+   * @description Deprecated: create a service account with POST /v1/service-accounts, then a token with POST /v1/tokens. Personal tokens (token_identity "personal") are deprecated because they carry all of the creator's access. Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
    */
   CreateStaticToken: {
     /** @description Input */
@@ -10872,7 +10978,8 @@ export interface operations {
   };
   /**
    * list your org's static API tokens
-   * @description Lists the static API tokens for your current org. Token secrets are never returned.
+   * @deprecated
+   * @description Deprecated: use GET /v1/tokens instead. Lists the static API tokens for your current org. Token secrets are never returned.
    */
   ListStaticTokens: {
     responses: {
@@ -10886,7 +10993,8 @@ export interface operations {
   };
   /**
    * delete a static API token
-   * @description Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
+   * @deprecated
+   * @description Deprecated: use DELETE /v1/tokens/{token_id} instead. Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
    */
   DeleteStaticToken: {
     parameters: {
@@ -33743,7 +33851,10 @@ export interface operations {
   };
   /**
    * Create a token for a service account in the current org
-   * @description Create an API token for a service account in the current org.
+   * @deprecated
+   * @description Deprecated: use `POST /v1/tokens` with `account_id` instead.
+   *
+   * Create an API token for a service account in the current org.
    *
    * Defaults to a duration of one year (`8760h`) if `duration` is not
    * specified. If `invalidate` is set, all existing tokens for the service
@@ -34653,6 +34764,184 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["app.TerraformWorkspaceState"];
         };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List API tokens for service accounts in the current org
+   * @description List the API tokens for service accounts in the current org. Only
+   * service-account tokens are returned, and token secrets are never
+   * returned.
+   *
+   * Filter to a single service account with `account_id`, and search with
+   * `q`, which matches token names case-insensitively or a token ID exactly.
+   *
+   * Each result includes the owning account's `account_name` and
+   * `account_email`, plus `account_role`, the account's *current* role in this
+   * org (not the role copied onto the token at creation time).
+   */
+  ListTokens: {
+    parameters: {
+      query?: {
+        /** @description only list tokens for this service account */
+        account_id?: string;
+        /** @description case-insensitive substring match on token name, or exact match on token ID */
+        q?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.TokenResponse"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Create an API token for a service account in the current org
+   * @description Create an API token for a service account in the current org.
+   *
+   * Only service-account tokens are supported: `account_id` must be a service
+   * account in the current org (see `POST /v1/service-accounts`). The token
+   * uses the service account's role.
+   *
+   * The token secret is returned only in this response; it cannot be
+   * retrieved again. Defaults to a duration of one year (`8760h`) if
+   * `duration` is not specified. If `invalidate` is set, all existing tokens
+   * for the service account are revoked before the new token is created.
+   */
+  CreateToken: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateTokenRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["github_com_nuonco_nuon_services_ctl-api_internal_app_tokens_service.CreateTokenResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Delete an API token for a service account in the current org
+   * @description Revoke an API token for a service account in the current org. Once
+   * deleted, the token can no longer be used to access the API. The service
+   * account itself is not deleted.
+   *
+   * Only service-account tokens are supported.
+   */
+  DeleteToken: {
+    parameters: {
+      path: {
+        /** @description token ID */
+        token_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
       };
       /** @description Bad Request */
       400: {

@@ -1,0 +1,72 @@
+---
+title: "Customer Installs"
+description: "One deployment of your App Template in a customer's cloud account."
+keywords: ["installs", "install", "what is an install", "create an install", "install inputs", "install config", "customer cloud account", "BYOC install", "install stack", "sandbox", "runner", "customer architectures", "overrides", "health checks", "drift detection", "break glass"]
+---
+
+import { ConceptMap } from "/snippets/concept-map.jsx";
+import { FlowSteps } from "/snippets/flow-steps.jsx";
+
+An install is one instance of your App Template in a customer's cloud account.
+
+<ConceptMap
+  columns={[
+    {
+      title: "Deploy",
+      items: [
+        { label: "Stack", href: "/concepts/stacks", note: "Deployed first: the runner, network, and permissions" },
+        { label: "Sandbox", href: "/concepts/sandboxes", note: "Base compute, such as an EKS, AKS, or GKE cluster" },
+        { label: "Components", href: "/concepts/components", note: "Your product, deployed on top" },
+      ],
+    },
+    {
+      title: "Setup",
+      items: [
+        { label: "Inputs and secrets", href: "/guides/configuring-inputs-and-secrets", note: "This customer's values" },
+        { label: "Customer architectures", href: "/concepts/stacks", note: "A new VPC, the customer's VPC, or the customer's cluster" },
+        { label: "Install configuration", href: "/guides/install-configs", note: "Each install's settings as config files" },
+        { label: "Overrides", href: "/guides/component-overrides", note: "Per-install changes to a component" },
+      ],
+    },
+    {
+      title: "Health",
+      items: [
+        { label: "Health checks", href: "/guides/health-checks", note: "Live health for every component" },
+        { label: "Install telemetry", href: "/concepts/install-telemetry", note: "Logs, metrics, and traces to your backend" },
+      ],
+    },
+  ]}
+/>
+
+## Deploy
+
+An install inherits the sandbox and components your App Template defines, and deploys the latest build of each
+component. The first [workflow](/concepts/workflows), the install workflow, provisions everything in order:
+
+<FlowSteps
+  steps={[
+    { title: "Install stack", detail: "The customer applies it in their cloud account" },
+    { title: "Runner", detail: "Starts in the customer's cloud" },
+    { title: "Sandbox", detail: "Plan, approve, apply" },
+    { title: "Components", detail: "Plan, approve, deploy" },
+    { title: "Actions", detail: "Post-provision scripts run" },
+  ]}
+/>
+
+Terraform, Helm, and Kubernetes manifest steps pause on a plan for your approval before they apply.
+
+## Setup
+
+- **Set inputs.** API keys, cloud region, instance size, or the release to run. Fill them in when you create the
+  install, or set them in an [install config](/guides/install-configs) for installs at scale.
+- **Fit the customer's architecture.** The [stack](/concepts/stacks) creates a fresh network or builds on the
+  customer's VPC or cluster.
+- **Override one install.** A [component override](/guides/component-overrides) changes Helm values or Terraform
+  variables for that install only.
+
+## Health
+
+- **[Health checks](/guides/health-checks)** show whether every component is running, with alerts to Slack and
+  webhooks.
+- **[Install telemetry](/concepts/install-telemetry)** forwards logs, metrics, and traces to your observability
+  backend.

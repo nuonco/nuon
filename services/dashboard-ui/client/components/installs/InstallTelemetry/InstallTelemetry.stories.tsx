@@ -54,7 +54,7 @@ const SetupModal = ({
       }
     )
     client.setQueryData(
-      ['static-tokens', orgId],
+      ['tokens', orgId, 'account-collector'],
       [
         {
           id: 'token-bootstrap-old',

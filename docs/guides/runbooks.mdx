@@ -4,13 +4,7 @@ description: "Define named, multi-step procedures and run them against your inst
 keywords: ["runbooks", "runbook", "runbook TOML", "configure runbooks", "runbook steps", "deploy step", "action step", "operational procedures", "version upgrade", "database migration", "nuon runbooks"]
 ---
 
-import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
-
-<AskYourAgent
-  title="List install runbooks"
-  tools={["list_runbooks", "get_runbook"]}
-  prompt={`List the runbooks available on my Nuon install and summarize the inputs and steps of each one.`}
-/>
+import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 
 Runbooks turn a multi-step operational procedure into a single, repeatable artifact you run against an install on demand. Define the sequence once; run it consistently across every install instead of doing it by hand each time.
 
@@ -113,6 +107,13 @@ nuon runbooks list --install-id <install-id>
 ```
 
 Each run is recorded in the install's workflow history, so you can review the steps, logs, and outcome of any past runbook execution.
+
+<TryWithYourAgent
+  title="Run a runbook"
+  tools={["list_runbooks", "get_runbook", "run_runbook", "watch_workflow", "get_workflow_step_logs"]}
+  writes
+  prompt={`Show me the runbooks on my Nuon install, run the one I pick, and tell me if any step fails.`}
+/>
 
 ## A complete example
 

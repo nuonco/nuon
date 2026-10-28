@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) CreateServiceAccountToken(ctx context.Context, accountID, duration string, invalidate, asJSON bool) error {
+func (s *Service) CreateToken(ctx context.Context, accountID, name, duration string, invalidate, asJSON bool) error {
 	if s.cfg.OrgID == "" {
 		s.printOrgNotSetMsg()
 		return nil
@@ -19,7 +19,9 @@ func (s *Service) CreateServiceAccountToken(ctx context.Context, accountID, dura
 		return view.Error(fmt.Errorf("id is required"))
 	}
 
-	resp, err := s.api.CreateServiceAccountToken(ctx, accountID, &models.ServiceCreateServiceAccountTokenRequest{
+	resp, err := s.api.CreateToken(ctx, &models.ServiceCreateTokenRequest{
+		AccountID:  &accountID,
+		Name:       name,
 		Duration:   &duration,
 		Invalidate: invalidate,
 	})
@@ -33,6 +35,10 @@ func (s *Service) CreateServiceAccountToken(ctx context.Context, accountID, dura
 	}
 
 	view.Render([][]string{
+		{"id", resp.ID},
+		{"name", resp.Name},
+		{"account_id", resp.AccountID},
+		{"expires_at", resp.ExpiresAt},
 		{"token", resp.Token},
 	})
 	fmt.Println("\nCopy this token now. For security, it won't be shown again.")

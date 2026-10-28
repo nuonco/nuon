@@ -1,0 +1,119 @@
+---
+title: "Concepts"
+sidebarTitle: "Overview"
+description: "How App Templates, installs, and updates fit together in Nuon."
+boost: 5
+keywords: ["concepts", "how Nuon works", "platform overview", "app template", "app templates", "what is an app", "apps", "app config", "app configuration", "configure an app", "application packaging", "installs", "what is an install", "updates", "change management", "BYOC", "bring your own cloud", "BYOC deployment platform", "managed BYOC"]
+---
+
+import { ConceptMap } from "/snippets/concept-map.jsx";
+import { FlowSteps } from "/snippets/flow-steps.jsx";
+
+## [App Templates](/concepts/apps)
+
+An App Template is your product, described as TOML in your own git repo. You provide two things:
+
+<ConceptMap
+  columns={[
+    {
+      title: "Your product",
+      items: [
+        { label: "Components", href: "/concepts/components", note: "Such as your API, a database, or a storage bucket" },
+      ],
+    },
+    {
+      title: "Customer settings",
+      items: [
+        { label: "Inputs", href: "/concepts/app-inputs" },
+        { label: "Secrets", href: "/concepts/app-secrets" },
+      ],
+    },
+  ]}
+/>
+
+## [BYOC Management Infra](/concepts/nuon-infrastructure)
+
+What Nuon runs in each customer's cloud account.
+
+<FlowSteps
+  horizontal
+  steps={[
+    { title: "Stack", href: "/concepts/stacks" },
+    { title: "Runner", href: "/concepts/runners" },
+    { title: "Sandbox", href: "/concepts/sandboxes" },
+  ]}
+/>
+
+## [Customer Installs](/concepts/installs)
+
+An install is one instance of your App Template in a customer's cloud account.
+
+<ConceptMap
+  columns={[
+    {
+      title: "Deploy",
+      items: [
+        { label: "Stack", href: "/concepts/stacks" },
+        { label: "Sandbox", href: "/concepts/sandboxes" },
+        { label: "Components", href: "/concepts/components" },
+      ],
+    },
+    {
+      title: "Setup",
+      items: [
+        { label: "Inputs and secrets", href: "/guides/configuring-inputs-and-secrets" },
+        { label: "Customer architectures", href: "/concepts/stacks" },
+        { label: "Install configuration", href: "/guides/install-configs" },
+        { label: "Overrides", href: "/guides/component-overrides" },
+      ],
+    },
+    {
+      title: "Health",
+      items: [
+        { label: "Health checks", href: "/guides/health-checks" },
+        { label: "Install telemetry", href: "/concepts/install-telemetry" },
+      ],
+    },
+  ]}
+/>
+
+The customer deploys the [stack](/concepts/stacks) first. The [sandbox](/concepts/sandboxes) then sets up compute,
+and your components deploy on top.
+
+## [Updates and Operations](/concepts/updates-and-operations)
+
+What Nuon provides. These primitives are built in. Some, like actions and runbooks, take a little configuration.
+
+<ConceptMap
+  columns={[
+    {
+      title: "Automatic updates",
+      tone: "nuon",
+      items: [
+        { label: "App branches", href: "/concepts/app-branches" },
+        { label: "Plan approvals", href: "/concepts/workflows#workflow-approvals" },
+        { label: "Policies", href: "/concepts/policies" },
+        { label: "Roll back", href: "/guides/rollback-install-config" },
+      ],
+    },
+    {
+      title: "Secure execution",
+      tone: "nuon",
+      items: [
+        { label: "Operation roles", href: "/concepts/operation-roles" },
+        { label: "Break-glass access", href: "/concepts/operation-roles#elevated-access-and-break-glass-operations" },
+      ],
+    },
+    {
+      title: "Day-2 tooling",
+      tone: "nuon",
+      items: [
+        { label: "Actions", href: "/concepts/actions" },
+        { label: "Runbooks", href: "/guides/runbooks" },
+        { label: "Drift detection", href: "/concepts/workflows#drift-detection" },
+      ],
+    },
+  ]}
+/>
+
+Every change runs as a [workflow](/concepts/workflows) with a plan you can review before it reaches a customer.

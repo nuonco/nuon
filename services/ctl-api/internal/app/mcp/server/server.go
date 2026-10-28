@@ -264,9 +264,9 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 			s.writeUnauthorized(w, r)
 			return
 		}
-		if !s.accountAllowed(acct) {
-			l.Warn("MCP employee access denied", zap.String("account_id", acct.ID))
-			s.writeForbidden(w)
+		if !s.tokenAllowed(acct, tok) {
+			l.Warn("MCP account access denied", zap.String("account_id", acct.ID), zap.String("token_type", string(tok.TokenType)))
+			s.writeForbidden(w, s.forbiddenDescription(acct, tok))
 			return
 		}
 

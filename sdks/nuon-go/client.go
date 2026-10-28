@@ -48,9 +48,17 @@ type Client interface {
 	UpdateSlackChannelSubscription(ctx context.Context, subID string, req *models.ServiceUpdateChannelSubscriptionRequest) (*models.AppSlackChannelSubscription, error)
 	DeleteSlackChannelSubscription(ctx context.Context, subID string) error
 
+	// api tokens
+	CreateToken(ctx context.Context, req *models.ServiceCreateTokenRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppTokensServiceCreateTokenResponse, error)
+	ListTokens(ctx context.Context, accountID, q string, query *models.GetPaginatedQuery) ([]*models.ServiceTokenResponse, bool, error)
+	DeleteToken(ctx context.Context, tokenID string) error
+
 	// static api tokens
+	// Deprecated: use CreateToken with a service account instead.
 	CreateStaticToken(ctx context.Context, req *models.ServiceCreateStaticTokenRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppAccountsServiceStaticTokenResponse, error)
+	// Deprecated: use ListTokens instead.
 	ListStaticTokens(ctx context.Context) ([]*models.AppToken, error)
+	// Deprecated: use DeleteToken instead.
 	DeleteStaticToken(ctx context.Context, tokenID string) error
 
 	// cloud connections
@@ -67,6 +75,7 @@ type Client interface {
 	UpdateServiceAccount(ctx context.Context, accountID string, req *models.ServiceUpdateServiceAccountRequest) (*models.AppAccount, error)
 	UpdateServiceAccountRole(ctx context.Context, accountID string, req *models.ServiceUpdateServiceAccountRoleRequest) (*models.AppAccount, error)
 	DeleteServiceAccount(ctx context.Context, accountID string) error
+	// Deprecated: use CreateToken instead.
 	CreateServiceAccountToken(ctx context.Context, accountID string, req *models.ServiceCreateServiceAccountTokenRequest) (*models.ServiceCreateServiceAccountTokenResponse, error)
 
 	// app methods
