@@ -240,7 +240,7 @@ type ClientService interface {
 /*
 ClaimRunnerJobToken claims a job execution token
 
-Exchanges the process runner token for a short-lived token that can write only this job. Succeeds only when the job status is available. A second claim returns 409 and does not return the existing token.
+Exchanges the process runner token for a short-lived token for the job's pre-provisioned service account. Succeeds only when the job status is available. Does not mark the job in-progress — CreateJobExecution does that. A second claim returns 409 and does not return the existing token.
 */
 func (a *Client) ClaimRunnerJobToken(params *ClaimRunnerJobTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ClaimRunnerJobTokenOK, error) {
 	// NOTE: parameters are not validated before sending
