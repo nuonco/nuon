@@ -8,23 +8,27 @@ import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
 import { ConceptMap } from "/snippets/concept-map.jsx";
 
+Your agent works on your real app and your customers' installs, so each feature's guide shows it at the step where it
+helps.
+
 <ConceptMap
+  arrows
   columns={[
     {
-      title: "Build",
+      title: "Package your product",
       items: [
-        { label: "Scaffold app config", href: "/guides/agents/ai-and-apps" },
-        { label: "Validate it", href: "/guides/agents/ai-and-apps" },
-        { label: "Write READMEs and policies", href: "/guides/agents/skills" },
+        { label: "Turn your Helm, Terraform, and images into an App Template", href: "/guides/agents/ai-and-apps" },
+        { label: "Write install READMEs and policies", href: "/guides/agents/skills" },
       ],
     },
     {
-      title: "Operate",
+      title: "Run it for your customers",
       tone: "nuon",
       items: [
-        { label: "Ship and approve changes", href: "/concepts/app-branches" },
-        { label: "Run actions and runbooks", href: "/guides/agents/sample-queries" },
-        { label: "Debug failures", href: "/guides/agents/tools" },
+        { label: "Approve a rollout across installs", href: "/concepts/app-branches#plans-diffs-and-approvals" },
+        { label: "Deploy and confirm it stays healthy", href: "/guides/health-checks#verified-deploys" },
+        { label: "Run a runbook on a customer's install", href: "/guides/runbooks#triggering-a-runbook" },
+        { label: "Run an action and read its output", href: "/guides/actions#running-and-monitoring-actions" },
       ],
     },
   ]}
