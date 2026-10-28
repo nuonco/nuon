@@ -80,12 +80,13 @@ func (m *Middleware) InstallHandler() gin.HandlerFunc {
 		isLogStream := hasRoleType(acct, app.RoleTypeLogStream)
 		isJob := hasRoleType(acct, app.RoleTypeRunnerJob)
 		isRunner := hasRoleType(acct, app.RoleTypeRunner)
-		if !isJob && !isRunner {
+
+		if !isJob && !isRunner && !isLogStream {
 			ctx.Next()
 			return
 		}
 
-		if isLogStream{
+		if isLogStream {
 			m.authorizeLogToken(ctx, acct.Subject)
 			return
 		}
