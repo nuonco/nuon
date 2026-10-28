@@ -55,7 +55,7 @@ func (s *service) mcpGetInstallInputs(ctx context.Context, _ *mcp.CallToolReques
 
 	result.InputsID = latest.ID
 	result.CreatedAt = apiPkg.MCPTime(latest.CreatedAt)
-	result.Values = hstoreToStringMap(latest.Values)
+	result.Values = hstoreToStringMap(latest.ValuesRedacted)
 	return apiPkg.MCPJSONResult(result)
 }
 
