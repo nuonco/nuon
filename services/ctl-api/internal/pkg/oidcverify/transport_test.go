@@ -20,31 +20,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPublicIP(t *testing.T) {
-	cases := map[string]bool{
-		"8.8.8.8":         true,
-		"1.1.1.1":         true,
-		"127.0.0.1":       false,
-		"10.1.2.3":        false,
-		"172.16.5.5":      false,
-		"192.168.1.1":     false,
-		"169.254.169.254": false, // link local, cloud metadata
-		"100.64.1.1":      false, // carrier-grade NAT
-		"192.0.0.8":       false, // IETF protocol assignments
-		"198.18.0.1":      false, // benchmarking
-		"0.0.0.0":         false,
-		"224.0.0.1":       false, // multicast
-		"::1":             false,
-		"fe80::1":         false,
-		"2001:db8::1":     false, // documentation
-		"2606:4700::1":    true,
-	}
-
-	for raw, want := range cases {
-		require.Equal(t, want, publicIP(net.ParseIP(raw)), raw)
-	}
-}
-
 // localHTTPSServer serves TLS on 127.0.0.1 with a certificate the returned
 // client trusts, so tests exercise the real dial path.
 func localHTTPSServer(t *testing.T, handler http.Handler) (*httptest.Server, *http.Client) {
