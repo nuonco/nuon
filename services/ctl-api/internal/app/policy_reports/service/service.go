@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type Params struct {
@@ -44,7 +45,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		policyReports.GET("/:report_id/export", s.ExportPolicyReport)
 	}
 
-	analytics := ge.Group("/v1/apps/:app_id/policy-analytics")
+	analytics := ge.Group("/v1/apps/:app_id/policy-analytics", require.AppInOrg(s.db))
 	{
 		analytics.GET("/summary", s.GetPolicyAnalyticsSummary)
 		analytics.GET("/timeseries", s.GetPolicyAnalyticsTimeseries)

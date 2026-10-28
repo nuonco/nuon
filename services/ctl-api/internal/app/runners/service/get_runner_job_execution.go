@@ -44,7 +44,8 @@ func (s *service) getRunnerJobExecution(ctx context.Context, runnerJobID, runner
 	runnerJobExecution := app.RunnerJobExecution{}
 	res := s.db.WithContext(ctx).
 		Preload("RunnerJob").
-		First(&runnerJobExecution, "id = ?", runnerJobExecutionID)
+		Where(app.RunnerJobExecution{ID: runnerJobExecutionID, RunnerJobID: runnerJobID}).
+		First(&runnerJobExecution)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner job execution: %w", res.Error)
 	}

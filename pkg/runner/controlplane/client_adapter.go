@@ -19,6 +19,12 @@ var _ nuonrunner.Client = (*clientAdapter)(nil)
 
 func (c *clientAdapter) SetRunnerID(string)  {}
 func (c *clientAdapter) SetAuthToken(string) {}
+func (c *clientAdapter) ForJob(string, string) (nuonrunner.Client, error) {
+	return nil, unsupported("ForJob")
+}
+func (c *clientAdapter) ClaimJobToken(context.Context, string) (string, error) {
+	return "", unsupported("ClaimJobToken")
+}
 
 func (c *clientAdapter) CreateJobExecutionResult(ctx context.Context, jobID, executionID string, req *models.ServiceCreateRunnerJobExecutionResultRequest) (*models.AppRunnerJobExecutionResult, error) {
 	if req != nil && !req.Success {

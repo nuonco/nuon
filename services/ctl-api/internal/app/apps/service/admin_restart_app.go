@@ -45,7 +45,7 @@ func (s *service) RestartApp(ctx *gin.Context) {
 }
 
 func (s *service) getApp(ctx context.Context, appID string) (*app.App, error) {
-	app := app.App{}
+	a := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Components").
@@ -54,10 +54,10 @@ func (s *service) getApp(ctx context.Context, appID string) (*app.App, error) {
 		}).
 		Where("name = ?", appID).
 		Or("id = ?", appID).
-		First(&app)
+		First(&a)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	return &app, nil
+	return &a, nil
 }
