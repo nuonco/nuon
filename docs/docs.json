@@ -84,14 +84,13 @@
           {
             "group": "Overview",
             "pages": [
-              "get-started/overview"
+              "concepts/apps"
             ]
           },
           {
             "group": "Apps",
             "boost": 3,
             "pages": [
-              "concepts/apps",
               "concepts/components",
               "concepts/components/auto-retries",
               "concepts/sandboxes",
@@ -448,6 +447,14 @@
     }
   },
   "redirects": [
+    {
+      "source": "/concepts/overview",
+      "destination": "/concepts/apps"
+    },
+    {
+      "source": "/get-started/overview",
+      "destination": "/concepts/apps"
+    },
     {
       "source": "/guides/idempotent-triggers",
       "destination": "/guides/idempotent-operations"
