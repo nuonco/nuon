@@ -6,14 +6,13 @@
 package oidcverify
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
-	"net/netip"
 	"time"
+
+	"github.com/nuonco/nuon/pkg/publicnet"
 )
 
 const (
@@ -22,59 +21,6 @@ const (
 	maxResponseBytes = 1 << 20
 	maxRedirects     = 2
 )
-
-// nonPublicPrefixes covers ranges net.IP does not classify as private:
-// carrier-grade NAT, IETF protocol assignments, benchmarking, and documentation.
-var nonPublicPrefixes = []netip.Prefix{
-	netip.MustParsePrefix("100.64.0.0/10"),
-	netip.MustParsePrefix("192.0.0.0/24"),
-	netip.MustParsePrefix("198.18.0.0/15"),
-	netip.MustParsePrefix("2001:db8::/32"),
-}
-
-// RequirePublicHost resolves host and rejects it unless every address is on the
-// public internet. The dial path checks again, so a record that changes between
-// this check and the connection is still caught.
-func RequirePublicHost(ctx context.Context, host string) error {
-	if ip := net.ParseIP(host); ip != nil {
-		if publicIP(ip) {
-			return nil
-		}
-		return fmt.Errorf("%s is not a public address", host)
-	}
-
-	ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
-	if err != nil {
-		return fmt.Errorf("resolving %s: %w", host, err)
-	}
-	if len(ips) == 0 {
-		return fmt.Errorf("%s did not resolve", host)
-	}
-	for _, resolved := range ips {
-		if !publicIP(resolved.IP) {
-			return fmt.Errorf("%s resolved to a non-public address", host)
-		}
-	}
-	return nil
-}
-
-func publicIP(ip net.IP) bool {
-	if ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() ||
-		ip.IsUnspecified() || ip.IsMulticast() {
-		return false
-	}
-	addr, ok := netip.AddrFromSlice(ip)
-	if !ok {
-		return false
-	}
-	addr = addr.Unmap()
-	for _, prefix := range nonPublicPrefixes {
-		if prefix.Contains(addr) {
-			return false
-		}
-	}
-	return true
-}
 
 type limitedTransport struct {
 	base          http.RoundTripper
@@ -109,28 +55,9 @@ func newHTTPClient(allowInsecure bool) *http.Client {
 	dialer := &net.Dialer{Timeout: dialTimeout, KeepAlive: 30 * time.Second}
 	base := http.DefaultTransport.(*http.Transport).Clone()
 	base.Proxy = nil
-	base.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
-		host, port, err := net.SplitHostPort(address)
-		if err != nil {
-			return nil, err
-		}
-		if allowInsecure {
-			return dialer.DialContext(ctx, network, net.JoinHostPort(host, port))
-		}
-
-		ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
-		if err != nil {
-			return nil, err
-		}
-		if len(ips) == 0 {
-			return nil, errors.New("oidc endpoint did not resolve")
-		}
-		for _, resolved := range ips {
-			if !publicIP(resolved.IP) {
-				return nil, fmt.Errorf("oidc endpoint %s resolved to a non-public address", host)
-			}
-		}
-		return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
+	base.DialContext = publicnet.DialContext(dialer)
+	if allowInsecure {
+		base.DialContext = dialer.DialContext
 	}
 
 	return &http.Client{

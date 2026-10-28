@@ -10,7 +10,10 @@ import {
   stateDriftResource,
   unappliedResource,
 } from '@/components/__fixtures__/install-alignment'
+import { mixedHelmPlan } from '@/lib/fixtures/plan-diffs/helm'
+import { mockPlan as kubernetesPlan } from '@/lib/fixtures/plan-diffs/kubernetes'
 import { securityGroupUpdatePlan } from '@/lib/fixtures/plan-diffs/terraform'
+import type { TInstallAlignmentResource, TInstallOverview } from '@/types'
 import {
   APP_CONFIG_ID,
   pendingReply,
@@ -913,10 +916,337 @@ const inSyncAlignment = () =>
     { commits_behind: 0, pending_commits: [] }
   )
 
+export type TResolveDriftScenario =
+  | 'matching-plan'
+  | 'changed-plan'
+  | 'auto-approved'
+  | 'policy-denied'
+
+type TDriftResolution = {
+  id: string
+  resource: TInstallAlignmentResource
+  requestId: string
+  startedAt: number
+  approvedAt?: number
+  approvedPlanId?: string
+  response?: { type: string; note: string }
+}
+
+const resourcePlanFixture = (
+  resource: TInstallAlignmentResource,
+  changed = false
+) => {
+  if (resource.component_type === 'helm_chart') {
+    const contents = structuredClone(mixedHelmPlan)
+    if (changed)
+      contents.helm_content_diff[0].after =
+        contents.helm_content_diff[0].after.replace(
+          'replicas: 3',
+          'replicas: 4'
+        )
+    return { type: 'helm_approval' as const, contents, deletes: 1 }
+  }
+  if (resource.component_type === 'kubernetes_manifest') {
+    const contents = structuredClone(kubernetesPlan)
+    if (changed)
+      contents.k8s_content_diff[0].entries[0].applied =
+        'postgres://review-required:5432/db'
+    return {
+      type: 'kubernetes_manifest_approval' as const,
+      contents,
+      deletes: 0,
+    }
+  }
+  const contents = structuredClone(securityGroupUpdatePlan)
+  if (changed)
+    contents.resource_changes[0].change.after.description =
+      'Web access restricted to the private network'
+  return { type: 'terraform_plan' as const, contents, deletes: 0 }
+}
+
+const resolveDriftFixture = (
+  overview: TInstallOverview,
+  components: ReturnType<typeof resourceComponents>,
+  scenario: TResolveDriftScenario
+): TFixture => {
+  const resolutions = new Map<string, TDriftResolution>()
+
+  const snapshot = (resolution: TDriftResolution) => {
+    const { id, resource, startedAt, approvedAt, response } = resolution
+    const isImage = resource.kind === 'image'
+    const planning = Date.now() - startedAt < 2000
+    const denied =
+      !planning &&
+      (scenario === 'policy-denied' ||
+        (!!response && response.type !== 'approve'))
+    const finished =
+      !planning && (denied || (!!approvedAt && Date.now() - approvedAt >= 2000))
+    const status = planning
+      ? 'in-progress'
+      : denied
+        ? 'error'
+        : finished
+          ? 'success'
+          : approvedAt
+            ? 'in-progress'
+            : 'approval-awaiting'
+    const description = planning
+      ? isImage
+        ? 'Preparing the registry sync'
+        : 'Planning against the saved inputs'
+      : denied
+        ? scenario === 'policy-denied'
+          ? 'Policy denied this deployment. The plan was not applied.'
+          : 'Plan denied. The changes were not applied.'
+        : finished
+          ? isImage
+            ? 'Image synced to the registry'
+            : 'Drift resolved'
+          : approvedAt
+            ? isImage
+              ? 'Syncing the image to the registry'
+              : 'Applying the fresh plan'
+            : 'Review the fresh plan before applying it'
+    const planStatus = planning
+      ? 'in-progress'
+      : denied
+        ? 'error'
+        : approvedAt
+          ? 'success'
+          : 'approval-awaiting'
+    const planFixture = resourcePlanFixture(resource)
+    const plan = {
+      ...planStep(
+        `${id}-plan`,
+        `Plan ${resource.name}`,
+        1,
+        planStatus,
+        planFixture.type,
+        resource.name!,
+        {
+          create: 1,
+          update: 1,
+          delete: planFixture.deletes,
+          replace: 0,
+          noop: 0,
+        }
+      ),
+      install_workflow_id: id,
+      owner_id: VIEW_INSTALL_ID,
+      step_target_type: 'install_deploys',
+      step_target_id: `${id}-deploy`,
+      status: {
+        status: planStatus,
+        status_human_description: denied ? description : undefined,
+      },
+    }
+    const workflow = {
+      id,
+      name: `Resolve drift for ${resource.name}`,
+      type: 'manual_deploy',
+      owner_id: VIEW_INSTALL_ID,
+      created_at: new Date(startedAt).toISOString(),
+      finished,
+      approval_option: scenario === 'auto-approved' ? 'approve-all' : 'prompt',
+      metadata: { resolve_drift: 'true', install_id: VIEW_INSTALL_ID },
+      status: {
+        status,
+        status_human_description: description,
+        metadata: { all_steps_loaded: true },
+      },
+      steps: [
+        {
+          ...syncStep,
+          id: `${id}-prepare`,
+          name: 'Prepare saved inputs',
+          install_workflow_id: id,
+        },
+        ...(!isImage
+          ? [
+              {
+                ...plan,
+                approval: planning
+                  ? undefined
+                  : {
+                      ...plan.approval,
+                      response: denied
+                        ? (response ?? { type: 'deny', note: description })
+                        : approvedAt
+                          ? {
+                              type: 'approve',
+                              note: resolution.approvedPlanId
+                                ? 'Reused approval for an identical fresh plan'
+                                : (response?.note ??
+                                  'Approved by the install policy'),
+                            }
+                          : response,
+                    },
+              },
+            ]
+          : []),
+        {
+          id: `${id}-apply`,
+          name: `${resource.kind === 'image' ? 'Sync' : 'Apply'} ${resource.name}`,
+          group_idx: 1,
+          execution_type: 'system',
+          install_workflow_id: id,
+          finished,
+          status: {
+            status: denied
+              ? 'not-attempted'
+              : finished
+                ? 'success'
+                : !planning && approvedAt
+                  ? 'in-progress'
+                  : 'pending',
+          },
+          metadata: { component_name: resource.name },
+        },
+      ],
+    }
+    const record = {
+      id,
+      title: workflow.name,
+      type: 'manual_deploy',
+      status,
+      created_at: workflow.created_at,
+      summary: description,
+      workflow: { id, name: workflow.name, type: workflow.type },
+      affected_resources: {
+        components: resource.kind === 'image' ? [] : [resource.name!],
+        images: resource.kind === 'image' ? [resource.name!] : [],
+      },
+      change_groups: [],
+    }
+    resource.open_deployment = finished
+      ? undefined
+      : { id, status, created_at: workflow.created_at }
+    if (finished) {
+      resource.last_attempt = {
+        id: `${id}-deploy`,
+        workflow_id: id,
+        status,
+        created_at: workflow.created_at,
+      }
+    }
+    if (finished && !denied) {
+      resource.category = 'in-sync'
+      resource.status = 'active'
+      resource.reason = undefined
+      resource.explanation = undefined
+      resource.plan = undefined
+      const component = components.find(
+        (row) => row.component_id === resource.component_id
+      )
+      if (component) {
+        component.status = 'active'
+        component.status_v2.status = 'active'
+        const deploy = {
+          ...component.install_deploys[0],
+          id: `${id}-deploy`,
+          created_at: workflow.created_at,
+          updated_at: new Date(approvedAt! + 2000).toISOString(),
+          status: 'active',
+          status_v2: { status: 'active' },
+        }
+        component.install_deploys = [deploy]
+      }
+    }
+    return { workflow, record }
+  }
+
+  return (url, init) => {
+    const path = url.pathname
+    const snapshots = Array.from(resolutions.values(), snapshot)
+    if (
+      path === `/v1/installs/${VIEW_INSTALL_ID}/resolve-drift` &&
+      init?.method === 'POST'
+    ) {
+      const body = JSON.parse(String(init.body))
+      const existing = Array.from(resolutions.values()).find(
+        (entry) =>
+          entry.requestId === body.request_id ||
+          (entry.resource.id === body.resource_id &&
+            !snapshot(entry).workflow.finished)
+      )
+      if (existing) return ok({ workflow_id: existing.id })
+      const resource = overview.alignment?.resources?.find(
+        (item) => item.id === body.resource_id
+      )
+      if (!resource)
+        return { status: 404, body: { error: 'Resource not found' } }
+      const startedAt = Date.now()
+      const id = `wf-resolve-${resource.id}-${resolutions.size + 1}`
+      resolutions.set(id, {
+        id,
+        resource,
+        requestId: body.request_id,
+        startedAt,
+        approvedPlanId: body.approved_plan_id,
+        approvedAt:
+          resource.kind === 'image' ||
+          scenario === 'auto-approved' ||
+          (body.approved_plan_id && scenario !== 'changed-plan')
+            ? startedAt + 2000
+            : undefined,
+      })
+      snapshot(resolutions.get(id)!)
+      return { status: 201, body: { workflow_id: id }, delayMs: 500 }
+    }
+    const match = path.match(/\/workflows\/(wf-resolve-[^/]+)(?:\/|$)/)
+    const resolution = match ? resolutions.get(match[1]) : undefined
+    if (resolution) {
+      const { workflow } = snapshot(resolution)
+      if (path.endsWith('/response') && init?.method === 'POST') {
+        const body = JSON.parse(String(init.body))
+        resolution.response = { type: body.response_type, note: body.note }
+        if (body.response_type === 'approve') {
+          resolution.approvedAt = Date.now()
+          resolution.approvedPlanId = undefined
+        }
+        return { status: 201, body: resolution.response }
+      }
+      if (path.endsWith('/contents')) {
+        return {
+          body: resourcePlanFixture(
+            resolution.resource,
+            scenario === 'changed-plan'
+          ).contents,
+          delayMs: 300,
+        }
+      }
+      if (path.endsWith('/sse')) return { body: workflow, sseEvent: 'workflow' }
+      const stepId = path.match(/\/steps\/([^/]+)$/)?.[1]
+      if (stepId) return ok(workflow.steps.find((step) => step.id === stepId))
+      if (path.endsWith(resolution.id)) return ok(workflow)
+    }
+    const record = snapshots.find((item) =>
+      path.endsWith(`/deployments/${item.record.id}`)
+    )?.record
+    if (record) return ok(record)
+    const deploy = Array.from(resolutions.values()).find((item) =>
+      path.endsWith(`/deploys/${item.id}-deploy`)
+    )
+    if (deploy) {
+      return ok({
+        id: `${deploy.id}-deploy`,
+        component_id: deploy.resource.component_id,
+        component_name: deploy.resource.name,
+        created_at: new Date(deploy.startedAt).toISOString(),
+        status_v2: snapshot(deploy).workflow.status,
+      })
+    }
+    if (resolutions.size && path.endsWith('/deployments'))
+      return deploymentPage(snapshots.map((item) => item.record))
+    return undefined
+  }
+}
+
 export const resourcesFixture = (
   state: 'empty' | 'provisioning' | 'active' | 'degraded',
   alignment: TResourcesAlignment = 'in-sync',
-  managedByConfig = false
+  managedByConfig = false,
+  resolutionScenario: TResolveDriftScenario = 'matching-plan'
 ): TFixture => {
   const hasDrift =
     alignment === 'drifted' ||
@@ -926,6 +1256,13 @@ export const resourcesFixture = (
   const overview = hasDrift
     ? driftedAlignment(alignment === 'input-updates')
     : inSyncAlignment()
+  for (const resource of overview.alignment?.resources ?? []) {
+    if (resource.plan) {
+      const plan = resourcePlanFixture(resource)
+      resource.plan.type = plan.type
+      resource.plan.changes_delete = plan.deletes
+    }
+  }
   if (alignment === 'unavailable') {
     overview.alignment = {
       error: 'Resource alignment unavailable',
@@ -1162,7 +1499,14 @@ export const resourcesFixture = (
       : {}),
   }
 
-  return withChrome(install, (url) => {
+  const resolution = resolveDriftFixture(
+    overview,
+    components,
+    resolutionScenario
+  )
+  return withChrome(install, (url, init) => {
+    const resolved = resolution(url, init)
+    if (resolved) return resolved
     const path = url.pathname
     if (path === `/v1/installs/${VIEW_INSTALL_ID}/overview`) {
       if (alignment === 'error') return fail('unable to get install overview')
@@ -1232,8 +1576,14 @@ export const resourcesFixture = (
       return ok({ ...deploymentRecord('in-progress'), id: openWorkflowId })
     }
     if (path.includes('/approvals/') && path.endsWith('/contents')) {
-      return { body: securityGroupUpdatePlan, delayMs: 800 }
+      const resource = overview.alignment?.resources?.find((item) =>
+        path.includes(`/approvals/${item.plan?.approval_id}/`)
+      )
+      if (resource)
+        return { body: resourcePlanFixture(resource).contents, delayMs: 800 }
     }
+    if (path === `/v1/apps/${VIEW_APP_ID}/branches/br-1`) return ok(branch)
+    if (path === `/v1/apps/${VIEW_APP_ID}/configs`) return ok([config], true)
     if (path.includes('/configs/') && path.includes('/apps/')) {
       if (state === 'provisioning') return pendingReply()
       if (state === 'degraded') {

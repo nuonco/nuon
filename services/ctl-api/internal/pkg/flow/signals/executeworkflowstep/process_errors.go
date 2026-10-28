@@ -2,6 +2,7 @@ package executeworkflowstep
 
 import (
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -23,6 +24,8 @@ const parkedWaitCeilingVersion = "parked-step-wait-ceiling-v1"
 const targetlessStepCompositeErrorVersion = "targetless-step-composite-error-v1"
 
 const terminalTargetlessStopVersion = "terminal-targetless-step-stop-v1"
+
+const resolutionTargetChangedStopVersion = "resolve-drift-target-changed-stop-v1"
 
 // handleStepCancelled stops the group when the step's inner signal reported a
 // cancelled completion. Cancellation is never a failure: it must not enter the
@@ -59,6 +62,18 @@ func (s *Signal) handleStepCancelled(ctx workflow.Context, l *zap.Logger) error 
 // hasn't been exhausted, it writes a directive ("retry" or "retry-group")
 // and returns nil. The group reads the directive and handles cloning.
 func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, stepErr error) error {
+	var applicationErr *temporal.ApplicationError
+	if errors.As(stepErr, &applicationErr) && applicationErr.Type() == "resolution-target-changed" &&
+		workflow.GetVersion(ctx, resolutionTargetChangedStopVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
+			return errors.Wrap(err, "unable to set stop directive for outdated resolution")
+		}
+		return s.markStepFailed(ctx, step, stepErr, map[string]any{
+			"terminal": true,
+			"reason":   applicationErr.Message(),
+		}, nil)
+	}
+
 	sig := stepSignal(step)
 
 	// Check auto-retry on inner signal.

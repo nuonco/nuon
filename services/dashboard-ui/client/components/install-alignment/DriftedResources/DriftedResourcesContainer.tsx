@@ -5,6 +5,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
+import { useResolveInstallDrift } from '@/hooks/use-resolve-install-drift'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type {
   TComponentType,
@@ -15,6 +16,7 @@ import {
   branchRunHref,
   explanationEvidence,
   hasOngoingDeployment,
+  isDrifted,
   resourcesOfKinds,
 } from '../alignment-utils'
 import { DriftPlanPanel } from '../DriftPlanPanel'
@@ -26,6 +28,7 @@ export const useDriftCardProps = () => {
   const { install } = useInstall()
   const installLink = useInstallLink()
   const { addPanel } = useSurfaces()
+  const resolve = useResolveInstallDrift()
   const workflowHref = (workflowId?: string, stepId?: string) =>
     workflowId
       ? installLink({
@@ -62,6 +65,15 @@ export const useDriftCardProps = () => {
       onViewPlan: resource.plan?.approval_id
         ? () => addPanel(<DriftPlanPanel resourceId={resource.id!} />)
         : undefined,
+      onResolve: isDrifted(resource)
+        ? () => resolve.mutate({ resource })
+        : undefined,
+      resolving:
+        resolve.isPending && resolve.variables?.resource.id === resource.id,
+      resolveError:
+        resolve.variables?.resource.id === resource.id
+          ? resolve.error
+          : undefined,
     }
   }
 }
