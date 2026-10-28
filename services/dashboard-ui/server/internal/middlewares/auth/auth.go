@@ -51,7 +51,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		client, err := nuon.New(
-			nuon.WithURL(m.cfg.APIUrl),
+			nuon.WithURL(m.cfg.ServerAPIURL()),
 			nuon.WithAuthToken(token),
 		)
 		if err != nil {

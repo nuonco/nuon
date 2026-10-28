@@ -51,7 +51,7 @@ func (h *MarketingConsentHandler) Subscribe(c *gin.Context) {
 		return
 	}
 
-	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
+	client, err := nuon.New(nuon.WithURL(h.cfg.ServerAPIURL()), nuon.WithAuthToken(token))
 	if err != nil {
 		h.l.Error("failed to create nuon client", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create client"})
