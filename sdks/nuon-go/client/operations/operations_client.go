@@ -10852,9 +10852,11 @@ func (a *Client) GetBuild(params *GetBuildParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-GetCLIConfig gets config for cli
+	GetCLIConfig gets config for cli
 
-Returns CLI configuration and settings.
+	Returns CLI configuration and settings.
+
+`min_cli_version` is deprecated. It remains the warning floor for older CLIs. Prefer `min_cli_version_policy.warn`. `min_cli_version_policy.error` is the oldest CLI this control plane will run. An empty warn means the CLI does not warn.
 */
 func (a *Client) GetCLIConfig(params *GetCLIConfigParams, opts ...ClientOption) (*GetCLIConfigOK, error) {
 	// NOTE: parameters are not validated before sending

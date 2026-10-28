@@ -7,7 +7,10 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -17,11 +20,26 @@ import (
 // swagger:model helpers.PreviewSourcePR
 type HelpersPreviewSourcePR struct {
 
+	// author
+	Author string `json:"author,omitempty"`
+
+	// author avatar url
+	AuthorAvatarURL string `json:"author_avatar_url,omitempty"`
+
+	// created at
+	CreatedAt string `json:"created_at,omitempty"`
+
 	// head ref
 	HeadRef string `json:"head_ref,omitempty"`
 
 	// head sha
 	HeadSha string `json:"head_sha,omitempty"`
+
+	// is draft
+	IsDraft bool `json:"is_draft,omitempty"`
+
+	// labels
+	Labels []*HelpersPreviewSourcePRLabel `json:"labels"`
 
 	// pr number
 	PrNumber int64 `json:"pr_number,omitempty"`
@@ -29,17 +47,97 @@ type HelpersPreviewSourcePR struct {
 	// title
 	Title string `json:"title,omitempty"`
 
+	// updated at
+	UpdatedAt string `json:"updated_at,omitempty"`
+
 	// url
 	URL string `json:"url,omitempty"`
 }
 
 // Validate validates this helpers preview source p r
 func (m *HelpersPreviewSourcePR) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateLabels(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this helpers preview source p r based on context it is used
+func (m *HelpersPreviewSourcePR) validateLabels(formats strfmt.Registry) error {
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Labels); i++ {
+		if swag.IsZero(m.Labels[i]) { // not required
+			continue
+		}
+
+		if m.Labels[i] != nil {
+			if err := m.Labels[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("labels" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("labels" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this helpers preview source p r based on the context it is used
 func (m *HelpersPreviewSourcePR) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateLabels(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *HelpersPreviewSourcePR) contextValidateLabels(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Labels); i++ {
+
+		if m.Labels[i] != nil {
+
+			if swag.IsZero(m.Labels[i]) { // not required
+				return nil
+			}
+
+			if err := m.Labels[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("labels" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("labels" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
