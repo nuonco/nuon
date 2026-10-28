@@ -184,5 +184,6 @@ func TestIndexTemplatesRender(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, b.String(), "posthog.init('test-project-key'")
 		assert.Contains(t, b.String(), "us.i.posthog.com")
+		assert.Contains(t, b.String(), "disable_session_recording: true")
 	})
 }
