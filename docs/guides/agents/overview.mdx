@@ -4,7 +4,6 @@ description: "Operate your installs from LLM clients."
 keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
 ---
 
-import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
 import { ConceptMap } from "/snippets/concept-map.jsx";
 
@@ -30,14 +29,6 @@ Your agent operates your customers' installs through Nuon. Each feature's guide 
 <McpInstallPicker />
 
 Changes need writes enabled and [Admin](/concepts/access-control) on your account.
-
-## Try it
-
-<TryWithYourAgent
-  title="Summarize an install"
-  tools={["install_summary"]}
-  prompt={`Summarize my Nuon install: what's deployed, its health, and any failing workflows.`}
-/>
 
 <CardGroup cols={3}>
   <Card title="Setup" icon="gear" href="/guides/agents/setup" />
