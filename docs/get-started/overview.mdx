@@ -1,96 +1,137 @@
 ---
 title: "Concepts"
-description: "Get up to speed on BYOC and Nuon."
+description: "How App Templates, installs, and updates fit together in Nuon."
 keywords: ["BYOC", "bring your own cloud", "concepts", "platform overview", "how Nuon works", "BYOC vs SaaS", "BYOC vs single tenant", "BYOC vs self-hosted", "build vs buy BYOC", "build BYOC in-house alternative", "managed BYOC", "BYOC as a service", "BYOC deployment platform", "API token", "service account", "authentication"]
 ---
 
-Nuon is built around three pillars: connecting your product to Nuon as an app template for BYOC delivery, customer installs, and enabling continuous delivery. This section covers the core concepts behind each.
+Package your product once as a Nuon App Template. Nuon uses that template to create installs of your app in your customer's cloud.
 
-## Connect Your App
+## Apps
 
-Everything you define as a vendor to package your application for BYOC delivery.
+How Nuon works with your App Template:
+
+### You provide
 
 <CardGroup cols={2}>
 
-  <Card title="Nuon App Templates" icon="window-maximize" href="/concepts/apps">
-    Point an app template at your application code and infrastructure to make versioned, installable BYOC products.
-  </Card>
-
   <Card title="Components" icon="object-group" href="/concepts/components">
-    Wire up Helm charts, Terraform modules, Kubernetes manifests, and container images.
-  </Card>
-
-  <Card title="Sandboxes" icon="border-all" href="/concepts/sandboxes">
-    Define the base infrastructure layer provisioned in each customer's cloud account.
+    The Helm charts, Terraform modules, Kubernetes manifests, and container images that make up your app.
   </Card>
 
   <Card title="Inputs" icon="sliders" href="/concepts/app-inputs">
-    Customer-supplied values — region, instance type, API keys — that configure each install.
+    Values each customer supplies to configure their install, such as region or instance type.
   </Card>
 
   <Card title="Secrets" icon="key" href="/concepts/app-secrets">
-    Manage sensitive values like credentials and API keys used in app configuration.
+    Credentials and API keys your customers provide for their install.
   </Card>
 
-  <Card title="App Variables" icon="code" href="/concepts/app-variables">
-    Store and share dynamic values across all installs of an app via the API.
-  </Card>
-
-  <Card title="Runners" icon="shoe-prints" href="/concepts/runners">
-    Egress-only agents that deploy and manage installs inside customer cloud accounts.
+  <Card title="App Templates" icon="window-maximize" href="/concepts/apps">
+    The config that ties your components, sandbox, inputs, and actions together.
   </Card>
 
 </CardGroup>
 
-## Customer installs
-
-Deploy into customer cloud accounts and adapt to their existing infrastructure.
+### Nuon provides
 
 <CardGroup cols={2}>
 
-  <Card title="Installs" icon="cube" href="/concepts/installs">
-    Deployments of your app template running in a customer's cloud account.
+  <Card title="Automatic updates" icon="code-branch" href="/concepts/app-branches">
+    App branches roll each change out across your installs, with a plan and an approval at every step.
   </Card>
+
+  <Card title="Secure execution" icon="shoe-prints" href="/concepts/runners">
+    A runner in each customer account does the work, using scoped permissions and break-glass access.
+  </Card>
+
+  <Card title="Day-2 tooling" icon="wrench" href="/concepts/actions">
+    Actions, runbooks, and drift detection for operating installs after they ship.
+  </Card>
+
+</CardGroup>
+
+## Installs
+
+An install is one instance of your App Template in a customer's cloud account.
+
+### What an install is made of
+
+<CardGroup cols={2}>
 
   <Card title="Stacks" icon="layer-group" href="/concepts/stacks">
-    Cloud-native templates that bootstrap an install in a customer's cloud account.
+    The first thing deployed in a customer's account: the runner and the foundation each install needs.
   </Card>
 
-  <Card title="Operation Roles" icon="user-lock" href="/concepts/operation-roles">
-    Map IAM roles to specific operations for least-privilege access in customer accounts.
+  <Card title="Sandboxes" icon="border-all" href="/concepts/sandboxes">
+    The base infrastructure, such as a network and cluster, that your components deploy into.
   </Card>
 
 </CardGroup>
 
-## Continuous Delivery
-
-Push updates with governance, audit trails, and operational control.
+### Setting up an install
 
 <CardGroup cols={2}>
 
-  <Card title="Workflows" icon="circle-nodes" href="/concepts/workflows">
-    Orchestrate the deployment, update, and teardown lifecycle of apps and components.
+  <Card title="Customer architectures" icon="sitemap" href="/concepts/stacks">
+    Deploy into a new VPC, the customer's VPC, or the customer's cluster.
+  </Card>
+
+  <Card title="Install configuration" icon="file-code" href="/guides/install-configs">
+    Manage each install's inputs and settings as config files, with per-install overrides.
+  </Card>
+
+</CardGroup>
+
+### Health and debugging
+
+<CardGroup cols={2}>
+
+  <Card title="Health checks" icon="heart-pulse" href="/guides/health-checks">
+    Live health for every component on every install.
+  </Card>
+
+  <Card title="Install telemetry" icon="chart-line" href="/concepts/install-telemetry">
+    Forward logs, metrics, and traces from installs to your observability backend.
+  </Card>
+
+  <Card title="Drift detection" icon="code-compare" href="/concepts/workflows#drift-detection">
+    Find differences between your config and what's running in the customer's account.
+  </Card>
+
+  <Card title="Break-glass access" icon="user-lock" href="/concepts/operation-roles#elevated-access-and-break-glass-operations">
+    Elevated permissions the customer enables only when an operation needs them.
+  </Card>
+
+</CardGroup>
+
+## Updates and change management
+
+Every change to an install runs as a [workflow](/concepts/workflows), checked against your [policies](/concepts/policies).
+
+### Push updates
+
+<CardGroup cols={2}>
+
+  <Card title="Across installs" icon="code-branch" href="/concepts/app-branches">
+    Push to git and an app branch rolls the change out to install groups in order.
+  </Card>
+
+  <Card title="To one install" icon="cube" href="/guides/install-configs">
+    Change one install's config, or roll it back to an earlier version.
+  </Card>
+
+</CardGroup>
+
+### Migrations, runbooks, and debugging
+
+<CardGroup cols={2}>
+
+  <Card title="Runbooks" icon="list-check" href="/guides/runbooks">
+    Named, multi-step procedures you run against an install on demand.
   </Card>
 
   <Card title="Actions" icon="circle-play" href="/concepts/actions">
-    Run operational scripts for health checks, migrations, and day-2 operations.
-  </Card>
-
-  <Card title="Policies" icon="shield" href="/concepts/policies">
-    Enforce compliance and security rules across builds and infrastructure deployments.
-  </Card>
-
-  <Card title="Triggers" icon="bolt" href="/concepts/triggers">
-    Route external webhook events to app branch runs and install runbooks.
-  </Card>
-
-  <Card title="API Tokens" icon="key" href="/concepts/api-tokens">
-    Org-scoped tokens for authenticating to the Nuon Control Plane API.
-  </Card>
-
-  <Card title="Service Accounts" icon="robot" href="/concepts/service-accounts">
-    Named machine identities for automation, CI/CD, and runners.
+    Scripts for migrations, health checks, and one-off fixes, run manually or on a trigger.
   </Card>
 
 </CardGroup>
-

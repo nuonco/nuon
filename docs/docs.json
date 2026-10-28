@@ -42,7 +42,6 @@
             "group": "Orientation",
             "pages": [
               "get-started/introduction",
-              "get-started/overview",
               "get-started/glossary"
             ]
           },
@@ -86,7 +85,13 @@
         "icon": "lightbulb",
         "groups": [
           {
-            "group": "App Templates",
+            "group": "Overview",
+            "pages": [
+              "get-started/overview"
+            ]
+          },
+          {
+            "group": "Apps",
             "boost": 3,
             "pages": [
               "concepts/apps",
@@ -100,7 +105,7 @@
             ]
           },
           {
-            "group": "Installs and Stacks",
+            "group": "Installs",
             "boost": 3,
             "pages": [
               "guides/app-install-life-cycle",
@@ -111,7 +116,7 @@
             ]
           },
           {
-            "group": "Delivery and Operations",
+            "group": "Updates and Change Management",
             "boost": 3,
             "pages": [
               "concepts/workflows",
