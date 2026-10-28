@@ -16,11 +16,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-const (
-	runnerPrefix = "run"
-	jobPrefix    = "job"
-	logPrefix    = "log"
-)
+// logPrefix identifies legacy log-stream accounts by their subject's shortid
+// prefix; see isLegacyLogToken.
+const logPrefix = "log"
 
 type Middleware struct {
 	db *gorm.DB
@@ -47,8 +45,7 @@ func (m *Middleware) JobHandler() gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
-		prefix, prefixErr := shortid.GetPrefix(acct.Subject)
-		jobAccount := prefixErr == nil && prefix == jobPrefix
+		jobAccount := hasRoleType(acct, app.RoleTypeRunnerJob)
 		method := ctx.Request.Method
 		path := ctx.FullPath()
 		if isJobTokenExchange(method, path) {
@@ -85,18 +82,23 @@ func (m *Middleware) InstallHandler() gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
-		prefix, prefixErr := shortid.GetPrefix(acct.Subject)
-		if prefixErr == nil && prefix == logPrefix {
+		// Pre-migration log-stream accounts still hold the org Runner role for
+		// up to their one-hour token lifetime after this ships; they're
+		// identified only by subject prefix until they expire. Remove
+		// isLegacyLogToken once that window has passed.
+		if hasRoleType(acct, app.RoleTypeLogStream) || isLegacyLogToken(acct) {
 			m.authorizeLogToken(ctx, acct.Subject)
 			return
 		}
-		if prefixErr != nil || (prefix != runnerPrefix && prefix != jobPrefix) {
+		isJob := hasRoleType(acct, app.RoleTypeRunnerJob)
+		isRunner := hasRoleType(acct, app.RoleTypeRunner)
+		if !isJob && !isRunner {
 			ctx.Next()
 			return
 		}
 
 		runnerID := acct.Subject
-		if prefix == jobPrefix {
+		if isJob {
 			var job app.RunnerJob
 			if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
 				Where(app.RunnerJob{ID: acct.Subject}).Take(&job).Error; err != nil {
@@ -144,6 +146,23 @@ func (m *Middleware) InstallHandler() gin.HandlerFunc {
 		cctx.SetRunnerGinContext(ctx, &runner)
 		ctx.Next()
 	}
+}
+
+func hasRoleType(acct *app.Account, roleType app.RoleType) bool {
+	for _, role := range acct.Roles {
+		if role.RoleType == roleType {
+			return true
+		}
+	}
+	return false
+}
+
+// isLegacyLogToken matches a log-stream account by its subject's shortid
+// prefix instead of its role. It exists only for the migration window: see
+// the comment where it's called.
+func isLegacyLogToken(acct *app.Account) bool {
+	prefix, err := shortid.GetPrefix(acct.Subject)
+	return err == nil && prefix == logPrefix
 }
 
 func (m *Middleware) authorizeLogToken(ctx *gin.Context, subject string) {
@@ -257,7 +276,7 @@ func (m *Middleware) authorizeLogStream(ctx *gin.Context, orgID, installID, logS
 			return err
 		}
 		runnerID := acct.Subject
-		if prefix, err := shortid.GetPrefix(acct.Subject); err == nil && prefix == jobPrefix {
+		if hasRoleType(acct, app.RoleTypeRunnerJob) {
 			var job app.RunnerJob
 			if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
 				Where(app.RunnerJob{ID: acct.Subject}).Take(&job).Error; err != nil {
