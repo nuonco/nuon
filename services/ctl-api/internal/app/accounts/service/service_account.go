@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -75,79 +74,6 @@ func (s *service) ListRoles(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, roles)
-}
-
-// getOrgServiceAccount looks up an account by ID and ensures it is a service
-// account that belongs to the given org.
-func (s *service) getOrgServiceAccount(ctx context.Context, orgID, accountID string) (*app.Account, error) {
-	acct, err := s.acctClient.FindAccount(ctx, accountID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, stderr.ErrNotFound{
-				Err:         fmt.Errorf("service account %q not found", accountID),
-				Description: "service account not found",
-			}
-		}
-		return nil, fmt.Errorf("unable to find account: %w", err)
-	}
-
-	if acct.AccountType != app.AccountTypeService {
-		return nil, stderr.ErrNotFound{
-			Err:         fmt.Errorf("account %q is not a service account", accountID),
-			Description: "service account not found",
-		}
-	}
-
-	found := false
-	for _, orgIDValue := range acct.OrgIDs {
-		if orgIDValue == orgID {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return nil, stderr.ErrAuthorization{
-			Err:         fmt.Errorf("service account %q does not belong to org %q", accountID, orgID),
-			Description: "service account not found for this org",
-		}
-	}
-
-	return acct, nil
-}
-
-// orgServiceAccountIDs resolves the org's service accounts off the
-// account_roles org index. Joining accounts to account_roles in the list query
-// instead lets the planner walk the whole accounts table in email order to
-// satisfy the ORDER BY and LIMIT, which took tens of seconds on a cold cache.
-func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includeRunners, includeStacks bool) ([]string, error) {
-	accountIDs := []string{}
-	if err := s.orgServiceAccounts(ctx, orgID, includeRunners, includeStacks).Pluck("account_roles.account_id", &accountIDs).Error; err != nil {
-		return nil, fmt.Errorf("unable to list service account ids for org %s: %w", orgID, err)
-	}
-
-	return accountIDs, nil
-}
-
-func (s *service) orgServiceAccounts(ctx context.Context, orgID string, includeRunners, includeStacks bool) *gorm.DB {
-	tx := s.db.WithContext(ctx).
-		Model(&app.AccountRole{}).
-		Joins("JOIN accounts ON accounts.id = account_roles.account_id AND accounts.deleted_at = 0 AND accounts.account_type = ?", app.AccountTypeService).
-		Where(app.AccountRole{OrgID: generics.NewNullString(orgID)})
-
-	excludedRoleTypes := []app.RoleType{}
-	if !includeRunners {
-		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeRunner)
-	}
-	if !includeStacks {
-		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeStack)
-	}
-	if len(excludedRoleTypes) > 0 {
-		tx = tx.
-			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
-			Where("roles.role_type NOT IN ?", excludedRoleTypes)
-	}
-
-	return tx.Distinct("account_roles.account_id")
 }
 
 type ServiceAccountOwnership struct {
@@ -378,7 +304,7 @@ func (s *service) searchServiceAccounts(ctx context.Context, org *app.Org, scope
 // @Success				200	{object}	[]ServiceAccount
 // @Router					/v1/service-accounts [GET]
 func (s *service) ListServiceAccounts(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -401,7 +327,7 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 	purpose := ctx.Query("purpose")
 	query := strings.ToLower(ctx.Query("q"))
 
-	accountIDs, err := s.orgServiceAccountIDs(ctx, org.ID, includeRunners, includeStacks)
+	accountIDs, err := s.helpers.OrgServiceAccountIDs(ctx, org.ID, includeRunners, includeStacks)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -410,7 +336,7 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 	filtered := management == "user" || management == "system" || purpose != "" || query != ""
 	var classes serviceAccountClasses
 	if filtered {
-		scope := s.orgServiceAccounts(ctx, org.ID, includeRunners, includeStacks)
+		scope := s.helpers.OrgServiceAccounts(ctx, org.ID, includeRunners, includeStacks)
 		classes, err = s.classifyServiceAccounts(ctx, org.ID, scope)
 		if err != nil {
 			ctx.Error(err)
@@ -508,13 +434,13 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 // @Success				200	{array}		string
 // @Router					/v1/service-accounts/purposes [GET]
 func (s *service) ListServiceAccountPurposes(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	classes, err := s.classifyServiceAccounts(ctx, org.ID, s.orgServiceAccounts(ctx, org.ID, true, true))
+	classes, err := s.classifyServiceAccounts(ctx, org.ID, s.helpers.OrgServiceAccounts(ctx, org.ID, true, true))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -552,7 +478,7 @@ type CreateServiceAccountRequest struct {
 // @Success				201	{object}	app.Account
 // @Router					/v1/service-accounts [POST]
 func (s *service) CreateServiceAccount(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -616,7 +542,7 @@ type UpdateServiceAccountRequest struct {
 // @Success				200	{object}	app.Account
 // @Router					/v1/service-accounts/{account_id} [PATCH]
 func (s *service) UpdateServiceAccount(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -633,7 +559,7 @@ func (s *service) UpdateServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := s.getOrgServiceAccount(ctx, org.ID, accountID)
+	acct, err := s.helpers.GetOrgServiceAccount(ctx, org.ID, accountID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -680,7 +606,7 @@ type UpdateServiceAccountRoleRequest struct {
 // @Success				200	{object}	app.Account
 // @Router					/v1/service-accounts/{account_id}/role [PATCH]
 func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -703,7 +629,7 @@ func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := s.getOrgServiceAccount(ctx, org.ID, accountID)
+	acct, err := s.helpers.GetOrgServiceAccount(ctx, org.ID, accountID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -745,7 +671,7 @@ func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
 // @Success				202
 // @Router					/v1/service-accounts/{account_id} [DELETE]
 func (s *service) DeleteServiceAccount(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -753,7 +679,7 @@ func (s *service) DeleteServiceAccount(ctx *gin.Context) {
 
 	accountID := ctx.Param("account_id")
 
-	acct, err := s.getOrgServiceAccount(ctx, org.ID, accountID)
+	acct, err := s.helpers.GetOrgServiceAccount(ctx, org.ID, accountID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -805,9 +731,10 @@ type CreateServiceAccountTokenResponse struct {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	CreateServiceAccountTokenResponse
+// @Deprecated				true
 // @Router					/v1/service-accounts/{account_id}/tokens [POST]
 func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -826,65 +753,13 @@ func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
 		}
 	}
 
-	duration := req.Duration
-	if duration == "" {
-		duration = "8760h"
-	}
-
-	dur, err := time.ParseDuration(duration)
-	if err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("invalid duration: %w", err),
-			Description: fmt.Sprintf("invalid duration: %s", err.Error()),
-		})
-		return
-	}
-
-	acct, err := s.getOrgServiceAccount(ctx, org.ID, accountID)
+	token, err := s.helpers.CreateServiceAccountToken(ctx, org, accountID, req.Name, req.Duration, req.Invalidate)
 	if err != nil {
 		ctx.Error(err)
-		return
-	}
-
-	if req.Invalidate {
-		if err := s.acctClient.InvalidateTokens(ctx, acct.Email); err != nil {
-			ctx.Error(fmt.Errorf("unable to invalidate tokens: %w", err))
-			return
-		}
-	}
-
-	caller, err := cctx.AccountFromGinContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	name := strings.TrimSpace(req.Name)
-	if name == "" {
-		name = acct.Email
-	}
-
-	// createStaticToken, not acctClient.CreateToken: only this one stamps the columns
-	// ListStaticTokens filters on, so tokens made the other way cannot be revoked
-	// from the org's API tokens page.
-	token, err := s.createStaticToken(ctx, acct, org.ID, caller.ID, name, orgRoleType(acct, org.ID), dur)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create token: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, CreateServiceAccountTokenResponse{
 		Token: token.Token,
 	})
-}
-
-// orgRoleType reports the account's org role for display only.
-func orgRoleType(acct *app.Account, orgID string) app.RoleType {
-	for _, role := range acct.Roles {
-		if role.OrgID.ValueString() == orgID {
-			return role.RoleType
-		}
-	}
-
-	return ""
 }

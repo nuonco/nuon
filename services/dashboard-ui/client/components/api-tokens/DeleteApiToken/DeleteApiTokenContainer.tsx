@@ -6,25 +6,25 @@ import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { deleteStaticToken } from '@/lib'
-import type { TStaticToken } from '@/types'
+import { deleteToken } from '@/lib'
+import type { TToken } from '@/types'
 import { DeleteApiTokenModal } from './DeleteApiToken'
 
-const tokenLabel = (token: TStaticToken) => token.name || 'This token'
+const tokenLabel = (token: TToken) => token.name || 'This token'
 
 const DeleteApiTokenModalContainer = ({
   token,
   ...props
-}: { token: TStaticToken } & Record<string, any>) => {
+}: { token: TToken } & Record<string, any>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: () => deleteStaticToken({ tokenId: token.id, orgId: org.id }),
+    mutationFn: () => deleteToken({ tokenId: token.id!, orgId: org.id }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['static-tokens', org?.id] })
+      queryClient.invalidateQueries({ queryKey: ['tokens', org?.id] })
       addToast(
         <Toast heading="Token deleted" theme="success">
           <Text>{tokenLabel(token)} was deleted and can no longer access the API.</Text>
@@ -55,7 +55,7 @@ const DeleteApiTokenModalContainer = ({
 export const DeleteApiTokenButton = ({
   token,
   ...props
-}: { token: TStaticToken } & Omit<IButtonAsButton, 'children'>) => {
+}: { token: TToken } & Omit<IButtonAsButton, 'children'>) => {
   const { addModal } = useSurfaces()
   const modal = <DeleteApiTokenModalContainer token={token} />
 
