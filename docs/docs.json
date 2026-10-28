@@ -80,7 +80,8 @@
       {
         "tab": "Concepts",
         "icon": "lightbulb",
-        "groups": [
+        "pages": [
+          "concepts/overview",
           {
             "group": "App Templates",
             "root": "concepts/apps",
@@ -88,24 +89,33 @@
             "boost": 3,
             "pages": [
               "concepts/components",
-              "concepts/components/auto-retries",
-              "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",
-              "concepts/app-variables",
-              "concepts/runners"
+              "concepts/policies",
+              "concepts/app-variables"
             ]
           },
           {
-            "group": "Installs",
-            "root": "concepts/installs",
+            "group": "BYOC Management Infra",
+            "root": "concepts/nuon-infrastructure",
             "expanded": true,
             "boost": 3,
             "pages": [
               "concepts/stacks",
+              "concepts/runners",
+              "concepts/sandboxes"
+            ]
+          },
+          {
+            "group": "Customer Installs",
+            "root": "concepts/installs",
+            "expanded": true,
+            "boost": 3,
+            "pages": [
               "concepts/stacks/stand-alone-vpc",
               "concepts/stacks/customer-vpc",
-              "concepts/stacks/customer-cluster"
+              "concepts/stacks/customer-cluster",
+              "concepts/install-telemetry"
             ]
           },
           {
@@ -117,9 +127,7 @@
               "concepts/workflows",
               "concepts/app-branches",
               "concepts/actions",
-              "concepts/policies",
               "concepts/operation-roles",
-              "concepts/install-telemetry",
               "concepts/triggers"
             ]
           }
@@ -156,7 +164,8 @@
               "guides/container-image-components",
               "guides/image-signature-verification",
               "guides/image-update-policies",
-              "guides/pulumi-components"
+              "guides/pulumi-components",
+              "concepts/components/auto-retries"
             ]
           },
           {
@@ -168,6 +177,7 @@
               "guides/install-config-syncing",
               "guides/component-overrides",
               "guides/runner-kill-switch",
+              "guides/export-runner-audit-logs",
               "guides/custom-domains",
               "guides/provision-stacks-with-cloudformation",
               "guides/provision-stacks-with-terraform-module",
@@ -201,7 +211,6 @@
               "guides/github-actions",
               "guides/webhooks",
               "guides/triggers",
-              "guides/export-runner-audit-logs",
               "guides/health-checks",
               "guides/slack"
             ]
@@ -239,24 +248,25 @@
         "tab": "Agents",
         "icon": "robot",
         "pages": [
+          "guides/agents/overview",
           {
             "group": "Start",
             "pages": [
-              "guides/agents/overview",
               "guides/agents/setup"
-            ]
-          },
-          {
-            "group": "Operate",
-            "pages": [
-              "guides/agents/sample-queries"
             ]
           },
           {
             "group": "Build",
             "pages": [
               "guides/agents/ai-and-apps",
-              "guides/agents/skills"
+              "guides/agents/writing-policies",
+              "guides/agents/customizing-readmes"
+            ]
+          },
+          {
+            "group": "Operate",
+            "pages": [
+              "guides/agents/sample-queries"
             ]
           },
           {
@@ -446,16 +456,16 @@
   },
   "redirects": [
     {
+      "source": "/guides/agents/skills",
+      "destination": "/guides/agents/writing-policies"
+    },
+    {
       "source": "/guides/app-install-life-cycle",
       "destination": "/concepts/installs"
     },
     {
-      "source": "/concepts/overview",
-      "destination": "/concepts/apps"
-    },
-    {
       "source": "/get-started/overview",
-      "destination": "/concepts/apps"
+      "destination": "/concepts/overview"
     },
     {
       "source": "/guides/idempotent-triggers",
