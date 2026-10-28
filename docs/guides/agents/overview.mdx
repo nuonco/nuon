@@ -16,11 +16,14 @@ other clients and sign-in details.
 
 <McpInstallPicker />
 
-Once you're connected, an agent helps in two very different ways:
+Once you're connected, an agent helps at every stage:
 
 <AgentTimeline
-  setup={{ when: "Day 0", what: "Write your app config", note: "Once, with any coding agent." }}
-  operate={{ when: "Day 2 Operations", what: "Operate your customers' installs", note: "Ongoing, through the Nuon MCP server: rollouts, deploys, runbooks, and fixes across every customer." }}
+  segments={[
+    { when: "Day 0", what: "Write your app config", note: "Once, with any coding agent." },
+    { when: "Day 1", what: "Install for a customer", note: "Watch the install workflow and approve each plan.", tone: "install", weight: 1.3 },
+    { when: "Day 2 Operations", what: "Operate your customers' installs", note: "Rollouts, deploys, runbooks, and fixes across every customer, through the Nuon MCP server.", tone: "operate", weight: 2.6 },
+  ]}
 />
 
 ## Build
