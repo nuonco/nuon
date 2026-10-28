@@ -141,6 +141,8 @@ After authoring or changing `permissions/` or `break_glass/`, before syncing:
 
 Writes are hidden from the stdio proxy unless `--allow-writes` is set. Descriptions start with `WRITE OPERATION:`.
 
+`get_install_inputs` redacts values for inputs marked sensitive. It is safe to use for inspection, but do not use its redacted values to construct an update.
+
 | Domain | Read | Write |
 | --- | --- | --- |
 | Orgs | `whoami`, `list_orgs` | |
