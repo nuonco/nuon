@@ -271,5 +271,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "150-backfill-service-account-api",
 			Fn:   m.Migration150BackfillServiceAccountAPI,
 		},
+		migrations.Migration{
+			Name: "151-backfill-log-stream-roles",
+			Fn:   m.Migration151BackfillLogStreamRoles,
+		},
 	)
 }

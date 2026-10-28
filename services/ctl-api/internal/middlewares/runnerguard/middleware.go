@@ -10,15 +10,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
-
-// logPrefix identifies legacy log-stream accounts by their subject's shortid
-// prefix; see isLegacyLogToken.
-const logPrefix = "log"
 
 type Middleware struct {
 	db *gorm.DB
@@ -82,18 +77,16 @@ func (m *Middleware) InstallHandler() gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
-		// Pre-migration log-stream accounts still hold the org Runner role for
-		// up to their one-hour token lifetime after this ships; they're
-		// identified only by subject prefix until they expire. Remove
-		// isLegacyLogToken once that window has passed.
-		if hasRoleType(acct, app.RoleTypeLogStream) || isLegacyLogToken(acct) {
-			m.authorizeLogToken(ctx, acct.Subject)
-			return
-		}
+		isLogStream := hasRoleType(acct, app.RoleTypeLogStream)
 		isJob := hasRoleType(acct, app.RoleTypeRunnerJob)
 		isRunner := hasRoleType(acct, app.RoleTypeRunner)
 		if !isJob && !isRunner {
 			ctx.Next()
+			return
+		}
+
+		if isLogStream{
+			m.authorizeLogToken(ctx, acct.Subject)
 			return
 		}
 
@@ -155,14 +148,6 @@ func hasRoleType(acct *app.Account, roleType app.RoleType) bool {
 		}
 	}
 	return false
-}
-
-// isLegacyLogToken matches a log-stream account by its subject's shortid
-// prefix instead of its role. It exists only for the migration window: see
-// the comment where it's called.
-func isLegacyLogToken(acct *app.Account) bool {
-	prefix, err := shortid.GetPrefix(acct.Subject)
-	return err == nil && prefix == logPrefix
 }
 
 func (m *Middleware) authorizeLogToken(ctx *gin.Context, subject string) {
@@ -344,7 +329,8 @@ func deny(ctx *gin.Context, description string) {
 }
 
 func notFound(ctx *gin.Context, err error) {
-	cctx.GetLogger(ctx, zap.NewNop()).Info("runner install authorization denied",
+	cctx.GetLogger(ctx, zap.NewNop()).Info(
+		"runner install authorization denied",
 		zap.String("route", ctx.FullPath()),
 		zap.Error(err),
 	)
