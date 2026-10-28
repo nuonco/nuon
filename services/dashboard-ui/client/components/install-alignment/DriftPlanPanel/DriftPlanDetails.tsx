@@ -1,18 +1,28 @@
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Divider } from '@/components/common/Divider'
+import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import type { TInstallAlignmentResource, TInstallOverviewCommit } from '@/types'
+import type {
+  TAPIError,
+  TInstallAlignmentResource,
+  TInstallOverviewCommit,
+} from '@/types'
 import { shortSha } from '../alignment-utils'
 
 export interface IDriftPlanDetails {
   deploymentHref?: string
+  onApproveAndResolve?: () => void
   plan: ReactNode
   planWorkflowHref?: string
+  resolveDisabled?: boolean
+  resolveError?: TAPIError | null
+  resolving?: boolean
   resource: TInstallAlignmentResource
   selectedCommit?: TInstallOverviewCommit
   selectedCommitHref?: string
@@ -35,8 +45,12 @@ const PlanChange = ({
 
 export const DriftPlanDetails = ({
   deploymentHref,
+  onApproveAndResolve,
   plan,
   planWorkflowHref,
+  resolveDisabled = false,
+  resolveError,
+  resolving = false,
   resource,
   selectedCommit,
   selectedCommitHref,
@@ -134,6 +148,41 @@ export const DriftPlanDetails = ({
             A deployment is already open for this resource. View its progress.
           </Text>
         </div>
+      ) : onApproveAndResolve ? (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <Button
+            variant="primary"
+            className="w-full sm:w-auto justify-center shrink-0"
+            onClick={onApproveAndResolve}
+            disabled={resolving || resolveDisabled}
+            tooltipProps={
+              resolveDisabled
+                ? {
+                    tipContent: 'Load and review the plan before approving it',
+                  }
+                : undefined
+            }
+            aria-busy={resolving}
+          >
+            <Icon variant={resolving ? 'Loading' : 'CheckIcon'} size={16} />
+            {resolving
+              ? 'Starting deployment'
+              : 'Approve plan and resolve drift'}
+          </Button>
+          <Text variant="subtext" theme="neutral">
+            Starts a fresh deployment and reuses this approval only for an
+            identical plan. Changed plans follow the install’s approval
+            settings, and policy denials still block deployment.
+          </Text>
+        </div>
+      ) : null}
+      {resolveError ? (
+        <Banner theme="error" role="alert">
+          <Text variant="subtext">
+            Drift resolution failed.{' '}
+            {resolveError.description || resolveError.error}
+          </Text>
+        </Banner>
       ) : null}
     </div>
   )
