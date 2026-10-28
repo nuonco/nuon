@@ -127,7 +127,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_install_inputs",
 		"Get install inputs",
-		"Get the current input values for an install by name or ID. Returns the latest input revision as a name-to-value map.",
+		"Get the current input values for an install by name or ID. Returns the latest input revision as a name-to-value map; sensitive values are redacted.",
 	), s.mcpGetInstallInputs)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
