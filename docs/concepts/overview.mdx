@@ -12,33 +12,27 @@ Package your product once as a Nuon App Template. Nuon uses that template to cre
 
 ## [App Templates](/concepts/apps)
 
-How Nuon works with your App Template:
+An App Template is your product, described as TOML in your own git repo. You provide two things:
 
 <ConceptMap
-  arrows
   columns={[
     {
-      title: "You provide",
+      title: "Your product",
       items: [
         { label: "Components", href: "/concepts/components" },
-        { label: "Inputs", href: "/concepts/app-inputs" },
-        { label: "Secrets", href: "/concepts/app-secrets" },
       ],
     },
     {
-      title: "Nuon provides",
-      tone: "nuon",
+      title: "What each customer sets",
       items: [
-        { label: "Automatic updates", href: "/concepts/app-branches" },
-        { label: "Secure execution", href: "/concepts/runners" },
-        { label: "Day-2 tooling", href: "/concepts/actions" },
+        { label: "Inputs", href: "/concepts/app-inputs" },
+        { label: "Secrets", href: "/concepts/app-secrets" },
       ],
     },
   ]}
 />
 
-Your app template is a set of TOML files, the [app config](/configuration-files), in your own git repo. Most teams
-keep a few, one per flavor of BYOC, such as AWS and Azure.
+Most teams keep a few templates, one per flavor of BYOC, such as AWS and Azure.
 
 ## [Installs](/concepts/installs)
 
@@ -64,12 +58,10 @@ An install is one instance of your App Template in a customer's cloud account.
       ],
     },
     {
-      title: "Health and debugging",
+      title: "Health",
       items: [
         { label: "Health checks", href: "/guides/health-checks" },
         { label: "Install telemetry", href: "/concepts/install-telemetry" },
-        { label: "Drift detection", href: "/concepts/workflows#drift-detection" },
-        { label: "Break-glass access", href: "/concepts/operation-roles#elevated-access-and-break-glass-operations" },
       ],
     },
   ]}
@@ -80,29 +72,39 @@ and your components deploy on top.
 
 ## [Updates and Operations](/concepts/updates-and-operations)
 
-Every change to an install runs as a [workflow](/concepts/workflows) with a plan you can review, checked against your
-[policies](/concepts/policies).
+What Nuon provides. These primitives are built in. Some, like actions and runbooks, take a little configuration.
 
 <ConceptMap
   columns={[
     {
-      title: "Push updates",
+      title: "Automatic updates",
+      tone: "nuon",
       items: [
-        { label: "Across installs", href: "/concepts/app-branches" },
-        { label: "To one install", href: "/guides/install-configs" },
+        { label: "App branches", href: "/concepts/app-branches" },
+        { label: "Plan approvals", href: "/concepts/workflows#workflow-approvals" },
+        { label: "Policies", href: "/concepts/policies" },
         { label: "Roll back", href: "/guides/rollback-install-config" },
       ],
     },
     {
-      title: "Migrations, runbooks, and debugging",
+      title: "Secure execution",
+      tone: "nuon",
       items: [
-        { label: "Runbooks", href: "/guides/runbooks" },
+        { label: "Runner", href: "/concepts/runners" },
+        { label: "Operation roles", href: "/concepts/operation-roles" },
+        { label: "Break-glass access", href: "/concepts/operation-roles#elevated-access-and-break-glass-operations" },
+      ],
+    },
+    {
+      title: "Day-2 tooling",
+      tone: "nuon",
+      items: [
         { label: "Actions", href: "/concepts/actions" },
-        { label: "Workflows", href: "/concepts/workflows" },
+        { label: "Runbooks", href: "/guides/runbooks" },
+        { label: "Drift detection", href: "/concepts/workflows#drift-detection" },
       ],
     },
   ]}
 />
 
-Most updates start with a git push. For work that isn't a config change, such as a database migration, use a
-[runbook](/guides/runbooks).
+Every change runs as a [workflow](/concepts/workflows) with a plan you can review before it reaches a customer.
