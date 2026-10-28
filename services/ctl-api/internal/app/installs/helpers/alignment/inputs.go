@@ -1,4 +1,4 @@
-package service
+package alignment
 
 import (
 	"context"
@@ -21,6 +21,14 @@ var alignmentInputWorkflowTypes = []app.WorkflowType{
 func (st *installAlignmentState) inputWorkflowTargets(wf *app.Workflow) map[string]bool {
 	out := map[string]bool{}
 	if wf.IsInputsOnly() {
+		return out
+	}
+	if id := wf.Metadata["resolve_drift_component_id"]; id != nil && *id != "" {
+		for _, ic := range st.components {
+			if ic.ComponentID == *id {
+				out[ic.ID] = true
+			}
+		}
 		return out
 	}
 	raw := wf.Metadata["inputs"]
@@ -52,14 +60,14 @@ func (st *installAlignmentState) inputWorkflowTargets(wf *app.Workflow) map[stri
 	return out
 }
 
-func (s *service) addInputWorkflowAttempts(ctx context.Context, db *gorm.DB, st *installAlignmentState, ev *alignmentEvidence) error {
+func (s *Helpers) addInputWorkflowAttempts(ctx context.Context, db *gorm.DB, st *installAlignmentState, ev *alignmentEvidence) error {
 	latest := db.WithContext(ctx).Raw(`
-		SELECT DISTINCT ON (changed.name) w.id
+		SELECT DISTINCT ON (changed.name, COALESCE(w.metadata->'resolve_drift_component_id', '')) w.id
 		FROM install_workflows w
 		CROSS JOIN LATERAL unnest(string_to_array(w.metadata->'inputs', ',')) AS changed(name)
 		WHERE w.deleted_at = 0 AND w.owner_id = ? AND w.owner_type = 'installs'
 		  AND w.org_id = ? AND w.plan_only = false AND w.type IN ?
-		ORDER BY changed.name, w.created_at DESC, w.id DESC`,
+		ORDER BY changed.name, COALESCE(w.metadata->'resolve_drift_component_id', ''), w.created_at DESC, w.id DESC`,
 		st.install.ID, st.install.OrgID, alignmentInputWorkflowTypes)
 	var workflows []app.Workflow
 	if err := db.WithContext(ctx).Select("id", "type", "status", "metadata", "created_at").

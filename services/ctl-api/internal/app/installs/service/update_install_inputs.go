@@ -324,16 +324,7 @@ func (s *service) getLatestInstallInputs(ctx context.Context, installID string) 
 }
 
 func (s *service) getLatestInstallInputsTx(ctx context.Context, db *gorm.DB, installID string) (*app.InstallInputs, error) {
-	installInputs := app.InstallInputs{}
-	res := db.WithContext(ctx).
-		Where("install_id = ?", installID).
-		Order("created_at DESC").
-		First(&installInputs)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install inputs: %w", res.Error)
-	}
-
-	return &installInputs, nil
+	return s.helpers.LatestInstallInputs(ctx, db, installID)
 }
 
 func (s *service) getLatestAppInputConfig(ctx context.Context, appID string) (*app.AppInputConfig, error) {
