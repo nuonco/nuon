@@ -93,7 +93,7 @@ func TestResolveRunnerImageDigestFallsBackToAnonymous(t *testing.T) {
 	_, err = remote.Head(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	require.Error(t, err, "a broken credential helper should fail the keychain lookup")
 
-	got, opts, err := resolveRunnerImageDigest(context.Background(), ref)
+	got, opts, err := resolveRunnerImageDigest(context.Background(), ref, &settings.Settings{})
 	require.NoError(t, err)
 	require.Equal(t, want.String(), got)
 	require.NotEmpty(t, opts)

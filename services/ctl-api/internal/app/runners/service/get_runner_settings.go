@@ -46,6 +46,14 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 	settings.ContainerImageVerificationMode = s.cfg.RunnerContainerImageVerificationMode
 	settings.ContainerImageSignatureIssuer = s.cfg.RunnerContainerImageSignatureIssuer
 	settings.ContainerImageSignatureIdentityRegexp = s.cfg.RunnerContainerImageSignatureIdentityRegexp
+	registryAuth, err := s.registryAuthIssuer.auth(settings.ContainerImageURL)
+	if err != nil {
+		s.l.Warn("unable to mint runner image registry credentials",
+			zap.String("runner_id", runner.ID),
+			zap.Error(err),
+		)
+	}
+	settings.ContainerImageRegistryAuth = registryAuth
 	installTable := plugins.TableName(s.db, app.Install{})
 	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable && runner.Status != app.RunnerStatusDisabled && runner.Status != app.RunnerStatusDeprovisioned {
 		install, err := s.installsHelpers.GetInstallTelemetryConfig(ctx, runner.OrgID, runner.RunnerGroup.OwnerID)

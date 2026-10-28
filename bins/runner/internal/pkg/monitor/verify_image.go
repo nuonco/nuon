@@ -74,7 +74,7 @@ func verifyRunnerImage(ctx context.Context, s *settings.Settings) (string, error
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse runner image reference")
 	}
-	digest, remoteOpts, err := resolveRunnerImageDigest(ctx, ref)
+	digest, remoteOpts, err := resolveRunnerImageDigest(ctx, ref, s)
 	if err != nil {
 		return "", err
 	}
@@ -106,7 +106,16 @@ func verifyRunnerImage(ctx context.Context, s *settings.Settings) (string, error
 }
 
 // a stale credential helper must not make a public runner image unverifiable
-func resolveRunnerImageDigest(ctx context.Context, ref name.Reference) (string, []remote.Option, error) {
+func resolveRunnerImageDigest(ctx context.Context, ref name.Reference, s *settings.Settings) (string, []remote.Option, error) {
+	if auth, ok := registryAuthenticator(s, ref); ok {
+		authOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuth(auth)}
+		desc, err := remote.Head(ref, authOpts...)
+		if err != nil {
+			return "", nil, errors.Wrap(err, "unable to resolve runner image digest with registry credentials")
+		}
+		return desc.Digest.String(), authOpts, nil
+	}
+
 	keychainOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuthFromKeychain(authn.DefaultKeychain)}
 	desc, keychainErr := remote.Head(ref, keychainOpts...)
 	if keychainErr == nil {
