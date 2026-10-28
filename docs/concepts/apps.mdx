@@ -105,10 +105,5 @@ Every change to an install runs as a [workflow](/concepts/workflows) with a plan
   ]}
 />
 
-
-install groups in order, pausing for approval at each one. To change a single customer, edit that install's
-[config](/guides/install-configs), or [roll it back](/guides/rollback-install-config) to an earlier version.
-
-For work that isn't a config change, such as a database migration or a recovery procedure,
-[runbooks](/guides/runbooks) chain deploys and [actions](/concepts/actions) into one procedure you run against an
-install.
+Most updates start with a git push. For work that isn't a config change, such as a database migration, use a
+[runbook](/guides/runbooks).
