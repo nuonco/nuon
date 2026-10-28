@@ -1,17 +1,17 @@
 ---
 title: "App Templates"
-description: "An App Template packages your product so Nuon can install it in your customers' cloud accounts."
+description: "Define your app and all its dependencies so they install easily in any customer environment."
 boost: 10
 keywords: ["app template", "app templates", "what is an app", "what is an app template", "apps", "app config", "app configuration", "configure an app", "application packaging", "sandbox", "components", "inputs", "secrets"]
 ---
 
-An App Template points to the Terraform modules, Helm charts, Kubernetes
-manifests, and container images behind your product, and describes how to install them in a customer's cloud account.
+An App Template is a series of TOML files that describe how your app is structured and what it depends on.
 Each [install](/concepts/installs) is one deployment of an App Template.
 
 ## What's in a template
 
-A template is a directory of TOML files in your own git repo, called the [app config](/configuration-files):
+A template is a directory of TOML files in your own git repo. The [configuration reference](/config-ref) covers
+each file.
 
 ```
 my-app/
@@ -19,6 +19,7 @@ my-app/
 ├── sandbox.toml    # VPC, cluster
 ├── inputs.toml     # customer values
 ├── secrets.toml    # customer credentials
+├── policies.toml   # policy checks
 ├── components/     # your product
 ├── actions/        # scripts
 └── runbooks/       # procedures
@@ -30,6 +31,7 @@ my-app/
 | [Components](/concepts/components) | Your product. Each component wraps an existing Helm chart, Terraform module, Kubernetes manifest, or container image. Components can depend on each other and share outputs. |
 | [Inputs](/concepts/app-inputs) | The knobs each customer sets for their install, such as region, instance size, or domain. |
 | [Secrets](/concepts/app-secrets) | Credentials and API keys each customer supplies. |
+| [Policies](/concepts/policies) | Checks that run before a build or deploy, written in OPA Rego or Kyverno. |
 | [Actions](/concepts/actions) and [runbooks](/guides/runbooks) | Scripts and procedures you run against installs after they ship. |
 
 ## One product, several templates

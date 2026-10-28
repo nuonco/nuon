@@ -91,6 +91,7 @@
               "concepts/components",
               "concepts/app-inputs",
               "concepts/app-secrets",
+              "concepts/policies",
               "concepts/app-variables"
             ]
           },
@@ -126,7 +127,7 @@
               "concepts/workflows",
               "concepts/app-branches",
               "concepts/actions",
-              "concepts/policies",
+              "guides/configuring-policies",
               "concepts/operation-roles",
               "concepts/triggers"
             ]
@@ -196,7 +197,6 @@
               "guides/adhoc-actions",
               "guides/container-actions",
               "guides/runbooks",
-              "guides/configuring-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
               "guides/manage-install-telemetry"
