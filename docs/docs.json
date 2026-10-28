@@ -96,7 +96,7 @@
             ]
           },
           {
-            "group": "Nuon Infrastructure",
+            "group": "BYOC Management Infra",
             "root": "concepts/nuon-infrastructure",
             "expanded": true,
             "boost": 3,
