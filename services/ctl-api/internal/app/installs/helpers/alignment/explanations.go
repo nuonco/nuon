@@ -1,4 +1,4 @@
-package service
+package alignment
 
 import (
 	"context"
@@ -24,7 +24,7 @@ var alignmentComponentSignalTypes = []string{
 	string(componentteardownsyncandplan.SignalType),
 }
 
-func (s *service) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *installAlignmentState, alignment *InstallAlignment) error {
+func (s *Helpers) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *installAlignmentState, alignment *InstallAlignment) error {
 	var resourceIDs, workflowIDs []string
 	var since *time.Time
 	unboundedHistory := false

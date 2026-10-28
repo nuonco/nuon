@@ -2276,6 +2276,13 @@ export interface paths {
      */
     post: operations["ReprovisionInstallStack"];
   };
+  "/v1/installs/{install_id}/resolve-drift": {
+    /**
+     * launch a deployment that resolves drift for one install resource
+     * @description Launches a fresh deployment of the selected target for one resource. approved_plan_id explicitly approves the inspected plan for reuse. Without it, only an already explicitly approved plan can be reused. The fresh plan must match and pass policy and safety checks; otherwise it waits for normal approval. Returns an existing open deployment (200) instead of creating a duplicate.
+     */
+    post: operations["ResolveInstallDrift"];
+  };
   "/v1/installs/{install_id}/resources": {
     /**
      * live resource explorer for an install
@@ -10052,6 +10059,11 @@ export interface components {
     };
     "service.ResetInstallHealthBaselineResponse": {
       baseline_at?: string;
+    };
+    "service.ResolveInstallDriftRequest": {
+      approved_plan_id?: string;
+      request_id: string;
+      resource_id: string;
     };
     "service.RespondInstallCreationApprovalRequest": {
       /** @enum {string} */
@@ -27291,6 +27303,74 @@ export interface operations {
       };
     };
     responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * launch a deployment that resolves drift for one install resource
+   * @description Launches a fresh deployment of the selected target for one resource. approved_plan_id explicitly approves the inspected plan for reuse. Without it, only an already explicitly approved plan can be reused. The fresh plan must match and pass policy and safety checks; otherwise it waits for normal approval. Returns an existing open deployment (200) instead of creating a duplicate.
+   */
+  ResolveInstallDrift: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ResolveInstallDriftRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowResponse"];
+        };
+      };
       /** @description Created */
       201: {
         content: {

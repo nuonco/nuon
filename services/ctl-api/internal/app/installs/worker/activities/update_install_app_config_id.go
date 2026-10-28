@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/driftresolution"
 )
 
 type UpdateInstallAppConfigIDInput struct {
@@ -27,24 +28,20 @@ func (a *Activities) UpdateInstallAppConfigID(ctx context.Context, input *Update
 	if cfg.BuildsPinned && !cfg.BuildsLocked {
 		return fmt.Errorf("app config %s builds are not ready for rollout", cfg.ID)
 	}
-	res := a.db.WithContext(ctx).
-		Model(&app.Install{}).
-		Where(app.Install{ID: input.InstallID}).
-		Updates(map[string]interface{}{
-			"app_config_id": input.NewAppConfigID,
-			// jsonb_build_object is variadic "any", so the parameter needs an
-			// explicit cast for postgres to infer a type at parse time.
-			"app_config_ref": gorm.Expr(
-				"COALESCE(NULLIF(app_config_ref, 'null'::jsonb), '{}'::jsonb) || jsonb_build_object('expected_config_id', ?::text)",
-				input.NewAppConfigID,
-			),
-		})
-	if res.Error != nil {
-		return fmt.Errorf("unable to update install app_config_id: %w", res.Error)
-	}
-	if res.RowsAffected < 1 {
-		return fmt.Errorf("install not found: %s %w", input.InstallID, gorm.ErrRecordNotFound)
-	}
-
-	return nil
+	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if _, err := driftresolution.LockInstall(ctx, tx, input.InstallID); err != nil {
+			return err
+		}
+		if err := tx.Model(&app.Install{}).Where(app.Install{ID: input.InstallID}).
+			Updates(map[string]interface{}{
+				"app_config_id": input.NewAppConfigID,
+				"app_config_ref": gorm.Expr(
+					"COALESCE(NULLIF(app_config_ref, 'null'::jsonb), '{}'::jsonb) || jsonb_build_object('expected_config_id', ?::text)",
+					input.NewAppConfigID,
+				),
+			}).Error; err != nil {
+			return fmt.Errorf("unable to update install app_config_id: %w", err)
+		}
+		return nil
+	})
 }
