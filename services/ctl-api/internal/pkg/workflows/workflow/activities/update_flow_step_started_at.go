@@ -17,18 +17,12 @@ type UpdateFlowStepStartedAtRequest struct {
 // @temporal-gen-v2 activity
 // @by-field ID
 func (a *Activities) PkgWorkflowsFlowUpdateFlowStepStartedAt(ctx context.Context, req UpdateFlowStepStartedAtRequest) error {
-	runner := app.WorkflowStep{
-		ID: req.ID,
-	}
-	res := a.db.WithContext(ctx).Model(&runner).Updates(app.WorkflowStep{
-		StartedAt: time.Now(),
-	})
+	res := a.db.WithContext(ctx).Model(&app.WorkflowStep{ID: req.ID}).Updates(app.WorkflowStep{StartedAt: time.Now()})
 	if res.Error != nil {
-		return generics.TemporalGormError(gorm.ErrRecordNotFound)
+		return generics.TemporalGormError(res.Error)
 	}
 	if res.RowsAffected < 1 {
 		return generics.TemporalGormError(gorm.ErrRecordNotFound)
 	}
-
 	return nil
 }

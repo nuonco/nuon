@@ -121,6 +121,23 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, errors.Wrap(err, "unable to check if sandbox needs reprovision")
 	}
 
+	if id := generics.FromPtrStr(flw.Metadata["resolve_drift_component_id"]); id != "" {
+		keep := func(ids []string) []string {
+			if slices.Contains(ids, id) {
+				return []string{id}
+			}
+			return nil
+		}
+		componentIDs = keep(componentIDs)
+		enableComps = keep(enableComps)
+		disableComps = keep(disableComps)
+		skipComps = keep(skipComps)
+		if _, ok := dg.cccByComp[id]; ok && dg.effectiveEnabled(id) {
+			componentIDs = []string{id}
+		}
+		sandboxNeedsReprovision = false
+	}
+
 	needsRunner := sandboxNeedsReprovision ||
 		slices.ContainsFunc(componentIDs, func(id string) bool {
 			_, ok := dg.cccByComp[id]

@@ -184,6 +184,7 @@ const (
 	WorkflowMetadataKeyInputsOnly         = "inputs_only"
 	WorkflowMetadataKeyStackChanged       = "stack_changed"
 	WorkflowMetadataKeyTriggeredByID      = "triggered_by_id"
+	WorkflowMetadataKeyResolveDrift       = "resolve_drift"
 
 	// misspelled key written by workflows created before triggered_by_id; remove once none remain in flight.
 	workflowMetadataKeyTriggeredByIDLegacy = "triggerred_by_id"
@@ -460,9 +461,24 @@ type Workflow struct {
 }
 
 type WorkflowRequest struct {
-	RequestID         string `json:"request_id" temporaljson:"request_id"`
-	RequestHash       string `json:"request_hash" temporaljson:"request_hash"`
-	PinnedAppConfigID string `json:"pinned_app_config_id" temporaljson:"pinned_app_config_id"`
+	RequestID         string                 `json:"request_id" temporaljson:"request_id"`
+	RequestHash       string                 `json:"request_hash" temporaljson:"request_hash"`
+	PinnedAppConfigID string                 `json:"pinned_app_config_id" temporaljson:"pinned_app_config_id"`
+	DriftResolution   *DriftResolutionTarget `json:"drift_resolution,omitempty" temporaljson:"drift_resolution,omitempty"`
+}
+
+type DriftResolutionTarget struct {
+	ResourceID       string     `json:"resource_id"`
+	Kind             string     `json:"kind"`
+	ComponentID      string     `json:"component_id,omitempty"`
+	AppConfigID      string     `json:"app_config_id"`
+	BuildAppConfigID string     `json:"build_app_config_id,omitempty"`
+	BuildID          string     `json:"build_id,omitempty"`
+	InputNames       []string   `json:"input_names"`
+	InputsDigest     string     `json:"inputs_digest"`
+	AppliedByID      string     `json:"applied_by_id"`
+	AppliedAt        *time.Time `json:"applied_at"`
+	ApplyStepID      string     `json:"apply_step_id,omitempty"`
 }
 
 func (i *Workflow) TableName() string {
