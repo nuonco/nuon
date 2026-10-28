@@ -13,10 +13,22 @@ Select an app template using `nuon apps select` before using component commands,
 
 ## Common Commands
 
+List components:
+
 ```sh
-nuon components list                                  # list components
-nuon components get -c <component_id or name>         # get a component
-nuon components latest-config -c <component_id or name>  # print latest config
+nuon components list
+```
+
+Get a component:
+
+```sh
+nuon components get -c <component_id or name>
+```
+
+Print the latest config:
+
+```sh
+nuon components latest-config -c <component_id or name>
 ```
 
 To delete a component, remove its TOML file from the app directory, then commit and push to the git branch your [app branch](/guides/app-branches) tracks. The next branch run removes it.
@@ -27,11 +39,28 @@ All components must be built before creating or updating an install. A branch ru
 
 If component source files change in git, push those changes first, then build manually:
 
+Create a build:
+
 ```sh
-nuon builds create -c <component_name>    # create a build
-nuon builds list -c <component_name>      # list builds
-nuon builds get -b <build-id> -c <component_name>   # get build details
-nuon builds logs -b <build-id> -c <component_name>  # show build logs
+nuon builds create -c <component_name>
+```
+
+List builds:
+
+```sh
+nuon builds list -c <component_name>
+```
+
+Get build details:
+
+```sh
+nuon builds get -b <build-id> -c <component_name>
+```
+
+Show build logs:
+
+```sh
+nuon builds logs -b <build-id> -c <component_name>
 ```
 
 <Note>
