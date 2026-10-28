@@ -58,7 +58,7 @@ func (h *ConnectHandler) StartConnectGithub(c *gin.Context) {
 		return
 	}
 
-	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token), nuon.WithOrgID(orgID))
+	client, err := nuon.New(nuon.WithURL(h.cfg.ServerAPIURL()), nuon.WithAuthToken(token), nuon.WithOrgID(orgID))
 	if err != nil {
 		h.l.Error("failed to create nuon client", zap.Error(err))
 		h.redirectToLogin(c)
@@ -96,7 +96,7 @@ func (h *ConnectHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token), nuon.WithOrgID(flow.OrgID))
+	client, err := nuon.New(nuon.WithURL(h.cfg.ServerAPIURL()), nuon.WithAuthToken(token), nuon.WithOrgID(flow.OrgID))
 	if err != nil {
 		h.l.Error("failed to create nuon client", zap.Error(err))
 		c.Redirect(http.StatusFound, fallback)
