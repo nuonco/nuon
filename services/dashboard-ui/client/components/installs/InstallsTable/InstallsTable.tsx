@@ -1,5 +1,9 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import {
+  CheckboxFilterDropdown,
+  type IFilterDropdownOption,
+} from '@/components/common/CheckboxFilterDropdown'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { CloudRegion } from '@/components/common/CloudRegion'
 import { ContextTooltip } from '@/components/common/ContextTooltip'
@@ -15,14 +19,156 @@ import { QuickManagementDropdown } from '@/components/installs/management/QuickM
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { installAppBranchGroup } from '@/components/branches/active-app-branch-connection'
 import type { TCloudPlatform, TInstall } from '@/types'
+import { humanize } from '@/utils/string-utils'
 
 export type TInstallsTableScope = 'org' | 'app' | 'branch'
+
+export const INSTALL_HEALTH_FILTER_VALUES = [
+  'unhealthy',
+  'degraded',
+  'other',
+  'unknown',
+  'progressing',
+  'healthy',
+  'unset',
+] as const
+
+export const INSTALL_LIFECYCLE_PHASE_FILTER_VALUES = [
+  'provisioning',
+  'provisioned',
+  'deprovisioning',
+  'deprovisioned',
+  'reprovisioning',
+  'unset',
+  'other',
+] as const
+
+const HEALTH_FILTER_OPTIONS: IFilterDropdownOption[] =
+  INSTALL_HEALTH_FILTER_VALUES.map((value) => ({
+    value,
+    label: value === 'unset' ? 'No recorded verdict' : humanize(value),
+  }))
+
+const LIFECYCLE_PHASE_FILTER_OPTIONS: IFilterDropdownOption[] =
+  INSTALL_LIFECYCLE_PHASE_FILTER_VALUES.map((value) => ({
+    value,
+    label: value === 'unset' ? 'Not set' : humanize(value),
+  }))
+
+interface IInstallHealthFilters {
+  health: Set<string>
+  lifecyclePhase: Set<string>
+  onHealthChange: (selected: Set<string>) => void
+  onLifecyclePhaseChange: (selected: Set<string>) => void
+}
+
+export const InstallHealthFilters = ({
+  health,
+  lifecyclePhase,
+  onHealthChange,
+  onLifecyclePhaseChange,
+}: IInstallHealthFilters) => (
+  <>
+    <CheckboxFilterDropdown
+      id="installs-filter-health"
+      label="Health"
+      options={HEALTH_FILTER_OPTIONS}
+      selected={health}
+      onChange={onHealthChange}
+    />
+    <CheckboxFilterDropdown
+      id="installs-filter-lifecycle-phase"
+      label="Lifecycle"
+      options={LIFECYCLE_PHASE_FILTER_OPTIONS}
+      selected={lifecyclePhase}
+      onChange={onLifecyclePhaseChange}
+    />
+  </>
+)
+
+const COVERAGE_VERDICTS = [
+  'unhealthy',
+  'degraded',
+  'other',
+  'unknown',
+  'progressing',
+  'healthy',
+] as const
+
+type TCoverageBucket =
+  | (typeof COVERAGE_VERDICTS)[number]
+  | 'not-applicable'
+  | 'unset'
+
+const COVERAGE_BUCKET_LABELS: Record<TCoverageBucket, string> = {
+  unhealthy: 'unhealthy',
+  degraded: 'degraded',
+  other: 'other',
+  unknown: 'unknown',
+  progressing: 'progressing',
+  healthy: 'healthy',
+  'not-applicable': 'not applicable',
+  unset: 'no recorded verdict',
+}
+
+const toCoverageBucket = (status?: string | null): TCoverageBucket => {
+  const value = status ?? ''
+  if (value === '' || value === 'unset') return 'unset'
+  if (value === 'not-applicable') return 'not-applicable'
+  return (COVERAGE_VERDICTS as readonly string[]).includes(value)
+    ? (value as TCoverageBucket)
+    : 'other'
+}
+
+function getHealthCoverage(
+  componentHealthStatuses?: Record<string, string | null> | null
+) {
+  const counts: Partial<Record<TCoverageBucket, number>> = {}
+  const statuses = Object.values(componentHealthStatuses ?? {})
+  statuses.forEach((status) => {
+    const bucket = toCoverageBucket(status)
+    counts[bucket] = (counts[bucket] ?? 0) + 1
+  })
+  const recorded = statuses.length - (counts.unset ?? 0)
+  const breakdown = (Object.keys(COVERAGE_BUCKET_LABELS) as TCoverageBucket[])
+    .filter((bucket) => counts[bucket])
+    .map((bucket) => `${counts[bucket]} ${COVERAGE_BUCKET_LABELS[bucket]}`)
+  return { total: statuses.length, recorded, breakdown }
+}
+
+export const HealthCoverage = ({
+  componentHealthStatuses,
+}: {
+  componentHealthStatuses?: Record<string, string | null> | null
+}) => {
+  const { total, recorded, breakdown } = getHealthCoverage(
+    componentHealthStatuses
+  )
+  if (total === 0) {
+    return (
+      <Text variant="subtext" theme="neutral">
+        No components
+      </Text>
+    )
+  }
+  return (
+    <span className="flex flex-col">
+      <Text variant="subtext">
+        {recorded} of {total} with recorded verdicts
+      </Text>
+      <Text variant="label" theme="neutral">
+        {breakdown.join(' · ')}
+      </Text>
+    </span>
+  )
+}
 
 export type InstallRow = {
   action: ReactNode
   activity: ReactNode
   branch: ReactNode
   group: ReactNode
+  healthCoverage?: ReactNode
   updatedAt: string
   appHref: string
   appName: string
@@ -174,6 +320,11 @@ export function parseInstallsToTableData(
         {installAppBranchGroup(install) || '—'}
       </Text>
     ),
+    healthCoverage: (
+      <HealthCoverage
+        componentHealthStatuses={install?.component_health_statuses}
+      />
+    ),
     activity: <ActivityCell install={install} />,
     updatedAt: install?.updated_at ?? '',
     action: (
@@ -220,6 +371,12 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => (
       <InstallStatusAxisCell installId={info.row.original.installId} />
     ),
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'healthCoverage',
+    header: 'Health coverage',
+    cell: (info) => info.getValue() as ReactNode,
   },
   {
     accessorKey: 'platform',
@@ -283,10 +440,41 @@ interface IInstallsTable {
   emptyStateAction?: ReactNode
   emptyTitle?: string
   emptyMessage?: string
+  errorMessage?: string
   filterActions?: ReactNode
+  hasActiveFilters?: boolean
   pagination: { hasNext?: boolean; offset: number; limit: number }
   scope?: TInstallsTableScope
+  showHealthCoverage?: boolean
   statusAxes?: boolean
+}
+
+function getEmptyStateProps({
+  emptyStateAction,
+  emptyTitle,
+  emptyMessage,
+  errorMessage,
+  hasActiveFilters,
+}: Pick<
+  IInstallsTable,
+  | 'emptyStateAction'
+  | 'emptyTitle'
+  | 'emptyMessage'
+  | 'errorMessage'
+  | 'hasActiveFilters'
+>) {
+  if (errorMessage) {
+    return { emptyTitle: 'Installs failed to load', emptyMessage: errorMessage }
+  }
+  if (hasActiveFilters) {
+    return {
+      emptyTitle: 'No matching installs',
+      emptyMessage:
+        'No installs match the current filters. Try adjusting or clearing them.',
+      variant: 'search' as const,
+    }
+  }
+  return { emptyTitle, emptyMessage, action: emptyStateAction }
 }
 
 export const InstallsTable = ({
@@ -295,13 +483,17 @@ export const InstallsTable = ({
   emptyStateAction,
   emptyTitle = 'No installs created',
   emptyMessage = 'An install is an instance of an application running in a customer cloud account.',
+  errorMessage,
   filterActions,
+  hasActiveFilters = false,
   pagination,
   scope = 'org',
+  showHealthCoverage = false,
   statusAxes = false,
 }: IInstallsTable) => {
   const hidden = [
     ...HIDDEN_COLUMNS[scope],
+    ...(showHealthCoverage ? [] : ['healthCoverage']),
     ...(statusAxes ? ['statuses', 'platform'] : ['statusAxes']),
   ]
   const scopedColumns = columns
@@ -331,15 +523,19 @@ export const InstallsTable = ({
   return (
     <Table<InstallRow>
       columns={scopedColumns}
-      data={data}
-      isLoading={isLoading}
-      emptyStateProps={{
-        emptyMessage,
+      data={errorMessage ? [] : data}
+      isLoading={isLoading && !errorMessage}
+      emptyStateProps={getEmptyStateProps({
+        emptyStateAction,
         emptyTitle,
-        action: emptyStateAction,
-      }}
+        emptyMessage,
+        errorMessage,
+        hasActiveFilters,
+      })}
       filterActions={filterActions}
-      pagination={pagination}
+      pagination={
+        errorMessage ? { ...pagination, hasNext: false, offset: 0 } : pagination
+      }
       className={statusAxes ? '@container' : ''}
       searchPlaceholder={
         scope === 'org'

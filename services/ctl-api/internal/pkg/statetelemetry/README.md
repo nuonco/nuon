@@ -85,7 +85,7 @@ regardless of how many runner records are retained.
 
 | Metric | Breakdown | Meaning |
 | --- | --- | --- |
-| `nuon.install.health.count` | `nuon.health.status` | Installs by recorded component-health summary. |
+| `nuon.install.health.count` | `nuon.health.status`, `nuon.install.lifecycle` | Installs by recorded component-health summary and lifecycle phase. |
 | `nuon.install.component.health.count` | `nuon.health.status` | Installed components by recorded health verdict. |
 | `nuon.install.health.report_age.count` | `nuon.health.report_age` | Installs by age of their last health-report arrival. |
 | `nuon.install.sandbox.lifecycle.count` | `nuon.sandbox.status` | Installs by sandbox lifecycle, including missing sandboxes. |
@@ -93,6 +93,10 @@ regardless of how many runner records are retained.
 
 Health has eight values: `healthy`, `progressing`, `degraded`, `unhealthy`, `unknown`, `not-applicable`, `unset`, `other`.
 An install's summary can be healthy while some components remain unevaluated, so read it alongside component coverage.
+The install summary matches the API's install `composite_health_status`: it rolls up every non-deleted installed-component record of
+the install, while `nuon.install.component.health.count` counts only targets with retained, tenant-consistent component
+definitions, so the two populations can differ. `nuon.install.lifecycle` uses the `nuon.install.count` lifecycle values; fleet
+collection reports all 56 health/lifecycle pairs.
 `unset` does not mean healthy, and an active sandbox does not establish runtime health.
 
 | Report age | Meaning |

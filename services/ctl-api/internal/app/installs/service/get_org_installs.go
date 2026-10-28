@@ -25,6 +25,8 @@ import (
 // @Param					runner_id				query	string	false	"filter by runner ID"
 // @Param cloud_connection_id query string false "filter by cloud connection ID"
 // @Param					branches				query	string	false	"filter installs by branch name (comma-separated; use __none__ for installs with no branch)"
+// @Param					health					query	string	false	"filter by composite health status (comma-separated: unhealthy, degraded, other, unknown, progressing, healthy, unset)"
+// @Param					lifecycle_phase			query	string	false	"filter by lifecycle phase (comma-separated: provisioning, provisioned, deprovisioning, deprovisioned, reprovisioning, unset, other)"
 // @Param					include_components	query	bool	false	"include install components"	Default(true)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -52,8 +54,13 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	runnerID := ctx.Query("runner_id")
 	branches := ctx.Query("branches")
 	includeComponents := ctx.Query("include_components") != "false"
+	filters, err := parseInstallListFilters(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
-	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches, ctx.Query("cloud_connection_id"), includeComponents)
+	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches, ctx.Query("cloud_connection_id"), includeComponents, filters)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
@@ -82,7 +89,7 @@ func parseBranchesFilter(raw string) (names []string, none bool) {
 	return names, none
 }
 
-func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches, cloudConnectionID string, includeComponents bool) ([]app.Install, error) {
+func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches, cloudConnectionID string, includeComponents bool, filters installListFilters) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -156,6 +163,7 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 	case branchNone:
 		tx = tx.Where("(active_branch_connection.app_branch_id IS NULL OR active_branch_connection.app_branch_id = '')")
 	}
+	tx = filters.apply(tx, views.TableOrViewName(s.db, &app.Install{}, ""))
 	res := tx.Find(&installs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)

@@ -2,6 +2,7 @@ package viewsql
 
 import (
 	_ "embed"
+	"strings"
 )
 
 //go:embed action_workflow_configs_latest_view_v1.sql
@@ -147,3 +148,17 @@ var InstallsViewV9 string
 
 //go:embed workflow_step_approvals_pending_view_v1.sql
 var WorkflowStepApprovalsPendingViewV1 string
+
+//go:embed install_health_rollup_v1.sql
+var installHealthRollupV1 string
+
+//go:embed install_lifecycle_phase_v1.sql
+var installLifecyclePhaseV1 string
+
+func InstallHealthRollupV1(installIDColumn string) string {
+	return strings.ReplaceAll(installHealthRollupV1, "{{install_id}}", installIDColumn)
+}
+
+func InstallLifecyclePhaseV1(lifecyclePhaseColumn string) string {
+	return strings.ReplaceAll(installLifecyclePhaseV1, "{{lifecycle_phase}}", lifecyclePhaseColumn)
+}

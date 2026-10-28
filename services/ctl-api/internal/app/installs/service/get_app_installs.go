@@ -22,6 +22,8 @@ import (
 // @Param					q							query	string	false	"search query to filter installs by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					app_branch_id				query	string	false	"filter installs connected to an app branch"
+// @Param					health						query	string	false	"filter by composite health status (comma-separated: unhealthy, degraded, other, unknown, progressing, healthy, unset)"
+// @Param					lifecycle_phase				query	string	false	"filter by lifecycle phase (comma-separated: provisioning, provisioned, deprovisioning, deprovisioned, reprovisioning, unset, other)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -48,6 +50,11 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 	q := ctx.Query("q")
 	appBranchID := ctx.Query("app_branch_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
+	filters, err := parseInstallListFilters(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	// Validate app belongs to org before fetching installs
 	currentApp, err := s.findAppByNameOrID(ctx, org.ID, appID)
@@ -56,7 +63,7 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 		return
 	}
 
-	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q, appBranchID, lbls)
+	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q, appBranchID, lbls, filters)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
@@ -78,7 +85,7 @@ func (s *service) findAppByNameOrID(ctx *gin.Context, orgID, appID string) (*app
 	return &currentApp, nil
 }
 
-func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBranchID string, lbls labels.Labels) ([]app.Install, error) {
+func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBranchID string, lbls labels.Labels, filters installListFilters) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -117,6 +124,7 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
 		Order("name ASC")
+	tx = filters.apply(tx, table)
 
 	res := tx.Find(&installs)
 

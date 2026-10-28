@@ -7,6 +7,8 @@ export interface IGetAppInstalls extends TPaginationParams {
   orgId: string
   q?: string
   app_branch_id?: string
+  health?: string
+  lifecycle_phase?: string
 }
 
 export async function getAppInstalls({
@@ -16,10 +18,12 @@ export async function getAppInstalls({
   offset,
   q,
   app_branch_id,
+  health,
+  lifecycle_phase,
 }: IGetAppInstalls) {
   return api<TInstall[]>({
     orgId,
-    path: `apps/${appId}/installs${buildQueryParams({ limit, offset, q, app_branch_id })}`,
+    path: `apps/${appId}/installs${buildQueryParams({ limit, offset, q, app_branch_id, health, lifecycle_phase })}`,
     paginated: true,
   })
 }
