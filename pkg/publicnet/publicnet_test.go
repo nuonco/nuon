@@ -30,7 +30,11 @@ func TestIsPublicIP(t *testing.T) {
 		"fd00:ec2::254":          false, // aws metadata
 		"fd20:ce::254":           false, // gcp metadata
 		"::ffff:169.254.169.254": false, // ipv4-mapped
-		"64:ff9b::a9fe:a9fe":     false, // nat64
+		"64:ff9b::a9fe:a9fe":     false, // nat64 of 169.254.169.254
+		"64:ff9b::a00:102":       false, // nat64 of 10.0.1.2
+		"64:ff9b::7f00:1":        false, // nat64 of 127.0.0.1
+		"64:ff9b::b9c7:6f85":     true,  // nat64 of 185.199.111.133
+		"64:ff9b:1::b9c7:6f85":   false, // local-use nat64, embedding not fixed
 		"2002:a9fe:a9fe::1":      false, // 6to4
 		"2001:0:a9fe:a9fe::1":    false, // teredo
 		"0.1.2.3":                false,

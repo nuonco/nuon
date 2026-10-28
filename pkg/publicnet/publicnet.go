@@ -10,10 +10,13 @@ import (
 	"net/netip"
 )
 
-// globalUnicastV6 is the only IPv6 range treated as public. Everything outside
-// it, including NAT64 (64:ff9b::/96) which can translate to internal IPv4
-// addresses, is refused.
+// globalUnicastV6 is the only IPv6 range treated as public, apart from
+// well-known NAT64 addresses whose embedded IPv4 address is public.
 var globalUnicastV6 = netip.MustParsePrefix("2000::/3")
+
+// nat64WellKnown is where DNS64 resolvers on IPv6-only networks synthesize
+// addresses for IPv4-only hosts. The low 32 bits are the IPv4 destination.
+var nat64WellKnown = netip.MustParsePrefix("64:ff9b::/96")
 
 // nonPublicPrefixes covers ranges net.IP does not classify as private.
 var nonPublicPrefixes = []netip.Prefix{
@@ -40,6 +43,10 @@ func IsPublicIP(ip net.IP) bool {
 		return false
 	}
 	addr = addr.Unmap()
+	if nat64WellKnown.Contains(addr) {
+		embedded := addr.As16()
+		return IsPublicIP(net.IP(embedded[12:]))
+	}
 	if addr.Is6() && !globalUnicastV6.Contains(addr) {
 		return false
 	}
