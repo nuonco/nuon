@@ -143,9 +143,6 @@
             "boost": 3,
             "pages": [
               "guides/managing-apps",
-              "guides/managing-components",
-              "guides/component-dependencies",
-              "guides/toggleable-components",
               "guides/retaining-resources-on-teardown",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
@@ -159,13 +156,16 @@
             "group": "Manage Components",
             "boost": 3,
             "pages": [
+              "guides/managing-components",
+              "guides/component-dependencies",
+              "guides/toggleable-components",
+              "guides/terraform-components",
+              "guides/helm-chart-components",
+              "guides/kubernetes-manifest-components",
               "guides/container-image-components",
               "guides/image-signature-verification",
               "guides/image-update-policies",
-              "guides/helm-chart-components",
-              "guides/kubernetes-manifest-components",
               "guides/pulumi-components",
-              "guides/terraform-components",
               "concepts/components/auto-retries"
             ]
           },
