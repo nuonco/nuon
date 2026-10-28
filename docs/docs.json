@@ -239,24 +239,25 @@
         "tab": "Agents",
         "icon": "robot",
         "pages": [
+          "guides/agents/overview",
           {
             "group": "Start",
             "pages": [
-              "guides/agents/overview",
               "guides/agents/setup"
-            ]
-          },
-          {
-            "group": "Operate",
-            "pages": [
-              "guides/agents/sample-queries"
             ]
           },
           {
             "group": "Build",
             "pages": [
               "guides/agents/ai-and-apps",
-              "guides/agents/skills"
+              "guides/agents/writing-policies",
+              "guides/agents/customizing-readmes"
+            ]
+          },
+          {
+            "group": "Operate",
+            "pages": [
+              "guides/agents/sample-queries"
             ]
           },
           {
@@ -445,6 +446,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/guides/agents/skills",
+      "destination": "/guides/agents/writing-policies"
+    },
     {
       "source": "/guides/app-install-life-cycle",
       "destination": "/concepts/installs"

@@ -470,3 +470,65 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
     transform: rotate(90deg);
   }
 }
+
+/* Agent prompts: Operate examples on the Agents overview (snippets/agent-prompts.jsx) */
+.nuon-prompts {
+  --pr-accent: #256a7f;
+  --pr-border: rgba(37, 106, 127, 0.22);
+  --pr-text: #1f2937;
+  --pr-muted: #6b7280;
+  --pr-bubble: rgba(37, 106, 127, 0.07);
+  display: grid;
+  gap: 0.625rem;
+  margin: 1rem 0 1.5rem;
+}
+.dark .nuon-prompts {
+  --pr-accent: #4cc9f0;
+  --pr-border: rgba(76, 201, 240, 0.25);
+  --pr-text: #e5e7eb;
+  --pr-muted: #9ca3af;
+  --pr-bubble: rgba(76, 201, 240, 0.08);
+}
+.nuon-prompts-row {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  grid-template-areas: "title quote" ". where";
+  gap: 0.25rem 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--pr-border);
+  border-radius: 12px;
+  color: var(--pr-text);
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+.nuon-prompts-row:hover {
+  border-color: var(--pr-accent);
+}
+.nuon-prompts-title {
+  grid-area: title;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding-top: 0.45rem;
+}
+.nuon-prompts-quote {
+  grid-area: quote;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px 10px 10px 2px;
+  background: var(--pr-bubble);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.nuon-prompts-where {
+  grid-area: where;
+  font-size: 0.8rem;
+  color: var(--pr-accent);
+}
+@media (max-width: 720px) {
+  .nuon-prompts-row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "title" "quote" "where";
+  }
+  .nuon-prompts-title {
+    padding-top: 0;
+  }
+}

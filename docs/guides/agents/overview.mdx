@@ -1,37 +1,46 @@
 ---
 title: "Agents"
-description: "Operate your installs from LLM clients."
-keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
+sidebarTitle: "Overview"
+description: "How to use an agent with Nuon."
+keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp", "coding agent", "skills"]
 ---
 
 import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
-import { ConceptMap } from "/snippets/concept-map.jsx";
+import { AgentPrompts } from "/snippets/agent-prompts.jsx";
 
-Your agent operates your customers' installs through Nuon. Each feature's guide shows it at the step where it helps.
+Connect your agent once. Use any coding agent to write your app config. Then let your agent operate your customers'
+installs through the Nuon MCP server.
 
-<ConceptMap
-  columns={[
-    {
-      title: "Run it for your customers",
-      tone: "nuon",
-      items: [
-        { label: "Approve a rollout across installs", href: "/concepts/app-branches#plans-diffs-and-approvals" },
-        { label: "Deploy and confirm it stays healthy", href: "/guides/health-checks#verified-deploys" },
-        { label: "Run a runbook on a customer's install", href: "/guides/runbooks#triggering-a-runbook" },
-        { label: "Run an action and read its output", href: "/guides/actions#running-and-monitoring-actions" },
-      ],
-    },
-  ]}
-/>
+## Set up
 
-## Connect your client
+A one-time step: register the Nuon MCP server with your client. See [Setup](/guides/agents/setup) for other clients
+and sign-in details.
 
 <McpInstallPicker />
 
-Changes need writes enabled and [Admin](/concepts/access-control) on your account.
+## Build
 
-<CardGroup cols={3}>
-  <Card title="Setup" icon="gear" href="/guides/agents/setup" />
-  <Card title="Tools" icon="wrench" href="/guides/agents/tools" />
-  <Card title="Sample queries" icon="comments" href="/guides/agents/sample-queries" />
-</CardGroup>
+Your app config is TOML in git, so any coding agent can write it. These pages are tips for doing that well:
+
+- [Start from the example app templates](/guides/agents/ai-and-apps)
+- [Writing policies](/guides/agents/writing-policies) with the `write-rego-policy` skill
+- [Customizing READMEs](/guides/agents/customizing-readmes) with the `write-readme` skill
+
+## Operate
+
+This is where your agent does the most for you. Once an install is running, ask it to do the day-2 work on your
+customers' installs:
+
+<AgentPrompts
+  items={[
+    { title: "Approve a rollout", prompt: "Show me the latest run of my Nuon app branch, summarize each install group's plan, and approve it if I agree.", where: "App Branches", href: "/concepts/app-branches" },
+    { title: "Review a plan", prompt: "Summarize the plan waiting on approval on my Nuon install, then approve it if I agree.", where: "Workflows", href: "/concepts/workflows" },
+    { title: "Deploy and verify", prompt: "Show me the components on my Nuon install, deploy the one I pick, and confirm it stays healthy.", where: "Health Checks", href: "/guides/health-checks" },
+    { title: "Run a runbook", prompt: "Show me the runbooks on my Nuon install, run the one I pick, and tell me if any step fails.", where: "Runbooks", href: "/guides/runbooks" },
+    { title: "Run an action", prompt: "Show me the actions on my Nuon install, run the one I pick, and summarize its output.", where: "Actions", href: "/guides/actions" },
+  ]}
+/>
+
+These prompts change your installs, so they need writes enabled and [Admin](/concepts/access-control) on your
+account. See [Sample queries](/guides/agents/sample-queries) for more, and the [tools catalog](/guides/agents/tools)
+for everything your agent can call.
