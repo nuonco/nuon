@@ -5,6 +5,7 @@ keywords: ["installs", "install", "what is an install", "create an install", "in
 ---
 
 import { ConceptMap } from "/snippets/concept-map.jsx";
+import { FlowSteps } from "/snippets/flow-steps.jsx";
 
 An install is one deployment of your App Template into a customer's cloud account. It inherits the sandbox and
 components your App Template defines, and deploys the latest build of each component.
@@ -36,3 +37,19 @@ components your App Template defines, and deploys the latest build of each compo
 
 Inputs are how you tailor an install to each customer. Fill them in when you create the install in the dashboard, or
 set them in an [install config](/guides/install-configs) when you create installs at scale.
+
+## Deploy it
+
+The first [workflow](/concepts/workflows), the install workflow, provisions everything in order:
+
+<FlowSteps
+  steps={[
+    { title: "Install stack", detail: "The customer applies it in their cloud account" },
+    { title: "Runner", detail: "Starts in the customer's cloud" },
+    { title: "Sandbox", detail: "Plan, approve, apply" },
+    { title: "Components", detail: "Plan, approve, deploy" },
+    { title: "Actions", detail: "Post-provision scripts run" },
+  ]}
+/>
+
+Terraform, Helm, and Kubernetes manifest steps pause on a plan for your approval before they apply.

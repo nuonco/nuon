@@ -109,6 +109,7 @@
           },
           {
             "group": "Updates and Operations",
+            "root": "concepts/updates-and-operations",
             "boost": 3,
             "pages": [
               "concepts/workflows",

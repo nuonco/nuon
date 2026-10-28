@@ -1,0 +1,46 @@
+---
+title: "Updates and Operations"
+description: "Ship changes across your installs with change controls, then keep each install healthy."
+keywords: ["updates", "operations", "day 2 operations", "change management", "change controls", "install groups", "plan approval", "auto approve", "policies", "health checks", "actions", "runbooks", "operation roles", "elevated access", "break glass", "remediation"]
+---
+
+import { ConceptMap } from "/snippets/concept-map.jsx";
+
+Because App Templates live in git, an update is a push. Once an install is running, Nuon gives you the tools to keep it
+healthy.
+
+<ConceptMap
+  arrows
+  columns={[
+    {
+      title: "Update",
+      caption: "Ship a change across your installs.",
+      items: [
+        { label: "App branches", href: "/concepts/app-branches", note: "A push builds what changed and rolls it out" },
+        { label: "Install groups", href: "/concepts/app-branches#install-groups", note: "Roll out one group of installs at a time" },
+        { label: "Plan approvals", href: "/concepts/workflows#workflow-approvals", note: "Review the Terraform plan or Helm diff first" },
+        { label: "Policies", href: "/concepts/policies", note: "OPA Rego or Kyverno checks before deploy" },
+      ],
+    },
+    {
+      title: "Operate",
+      caption: "Keep each install healthy.",
+      tone: "nuon",
+      items: [
+        { label: "Health checks", href: "/guides/health-checks", note: "Live health, with alerts to Slack and webhooks" },
+        { label: "Actions", href: "/guides/actions", note: "Scripts on a schedule, around a deploy, or by hand" },
+        { label: "Runbooks", href: "/guides/runbooks", note: "Multi-step procedures you run on demand" },
+        { label: "Operation roles", href: "/concepts/operation-roles", note: "Scoped permissions, with elevated roles on request" },
+      ],
+    },
+  ]}
+/>
+
+An update can be a new release of your product, a component upgrade, or an infrastructure change such as a new
+Kubernetes version. Every install group waits on a plan approval by default. You can
+[auto-approve plans](/concepts/workflows#workflow-approvals) on an install, or let a group approve itself when every
+policy check passes.
+
+When a fix needs more access than the runner normally has, the customer turns on an
+[elevated role](/concepts/operation-roles#elevated-access-and-break-glass-operations) for the task, then turns it off
+again. Every use shows up in their audit logs.
