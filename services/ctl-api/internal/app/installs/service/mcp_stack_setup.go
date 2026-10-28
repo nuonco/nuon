@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 type mcpStackSetup struct {
@@ -151,7 +152,23 @@ func (s *service) mcpStackSetup(ctx context.Context, orgID, versionID string) *m
 		}
 	}
 
+	redactStackSetupSecretsForReadOnly(ctx, setup)
 	return setup
+}
+
+// redactStackSetupSecretsForReadOnly strips plaintext secret-bearing fields from
+// MCP stack_setup responses for org_read_only tokens. Operational fields (status,
+// URLs, commands, provider tfvars) remain so agents can still guide operators.
+func redactStackSetupSecretsForReadOnly(ctx context.Context, setup *mcpStackSetup) {
+	if setup == nil {
+		return
+	}
+	if keys.TokenRoleFromContext(ctx) != string(app.RoleTypeOrgReadOnly) {
+		return
+	}
+	setup.SecretsTfvars = ""
+	setup.InputsTfvars = ""
+	setup.Outputs = nil
 }
 
 func (s *service) stackTfvars(ctx context.Context, version app.InstallStackVersion) (inputs, provider, secrets string) {
