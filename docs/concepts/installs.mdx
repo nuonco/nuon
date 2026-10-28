@@ -1,46 +1,49 @@
 ---
 title: "Installs"
 description: "One deployment of your App Template in a customer's cloud account."
-keywords: ["installs", "install", "what is an install", "create an install", "install inputs", "install config", "customer cloud account", "BYOC install", "install stack", "sandbox", "runner"]
+keywords: ["installs", "install", "what is an install", "create an install", "install inputs", "install config", "customer cloud account", "BYOC install", "install stack", "sandbox", "runner", "customer architectures", "overrides", "health checks", "drift detection", "break glass"]
 ---
 
 import { ConceptMap } from "/snippets/concept-map.jsx";
 import { FlowSteps } from "/snippets/flow-steps.jsx";
 
-An install is one deployment of your App Template into a customer's cloud account. It inherits the sandbox and
-components your App Template defines, and deploys the latest build of each component.
+An install is one instance of your App Template in a customer's cloud account.
 
 <ConceptMap
-  arrows
   columns={[
     {
-      title: "From your App Template",
-      caption: "The same for every install.",
+      title: "Made of",
       items: [
+        { label: "Stack", href: "/concepts/stacks", note: "Deployed first: the runner, network, and permissions" },
         { label: "Sandbox", href: "/concepts/sandboxes", note: "Base compute, such as an EKS, AKS, or GKE cluster" },
-        { label: "Components", href: "/concepts/components", note: "The latest build of each one" },
-        { label: "Input definitions", href: "/concepts/app-inputs", note: "The knobs each customer can set" },
+        { label: "Components", href: "/concepts/components", note: "Your product, deployed on top" },
+        { label: "Inputs and secrets", href: "/guides/configuring-inputs-and-secrets", note: "This customer's values" },
       ],
     },
     {
-      title: "Set per install",
-      caption: "What makes this install this customer's.",
-      tone: "nuon",
+      title: "Setup",
       items: [
-        { label: "Inputs", href: "/guides/configuring-inputs-and-secrets", note: "API keys, region, instance size, release to run" },
-        { label: "Install config", href: "/guides/install-configs", note: "The same values as a file, for installs at scale" },
-        { label: "Stack", href: "/concepts/stacks", note: "Applied in the customer's account: runner, network, permissions" },
+        { label: "Customer architectures", href: "/concepts/stacks", note: "A new VPC, the customer's VPC, or the customer's cluster" },
+        { label: "Install configuration", href: "/guides/install-configs", note: "Each install's settings as config files" },
+        { label: "Overrides", href: "/guides/component-overrides", note: "Per-install changes to a component" },
+      ],
+    },
+    {
+      title: "Health and debugging",
+      items: [
+        { label: "Health checks", href: "/guides/health-checks", note: "Live health for every component" },
+        { label: "Install telemetry", href: "/concepts/install-telemetry", note: "Logs, metrics, and traces to your backend" },
+        { label: "Drift detection", href: "/concepts/workflows#drift-detection", note: "Config versus what's running" },
+        { label: "Break-glass access", href: "/concepts/operation-roles#elevated-access-and-break-glass-operations", note: "Elevated access the customer enables" },
       ],
     },
   ]}
 />
 
-Inputs are how you tailor an install to each customer. Fill them in when you create the install in the dashboard, or
-set them in an [install config](/guides/install-configs) when you create installs at scale.
+## Made of
 
-## Deploy it
-
-The first [workflow](/concepts/workflows), the install workflow, provisions everything in order:
+An install inherits the sandbox and components your App Template defines, and deploys the latest build of each
+component. The first [workflow](/concepts/workflows), the install workflow, provisions everything in order:
 
 <FlowSteps
   steps={[
@@ -53,3 +56,23 @@ The first [workflow](/concepts/workflows), the install workflow, provisions ever
 />
 
 Terraform, Helm, and Kubernetes manifest steps pause on a plan for your approval before they apply.
+
+## Setup
+
+Inputs are how you tailor an install to each customer, such as API keys, cloud region, instance size, or the release
+to run. Fill them in when you create the install in the dashboard, or set them in an
+[install config](/guides/install-configs) when you create installs at scale.
+
+The [stack](/concepts/stacks) can create a fresh network or build on what the customer already has, such as their VPC
+or cluster. When one customer needs different Helm values or Terraform
+variables, a [component override](/guides/component-overrides) changes them for that install only.
+
+## Health and debugging
+
+[Health checks](/guides/health-checks) show whether every component is running, with alerts to Slack and webhooks.
+[Install telemetry](/concepts/install-telemetry) forwards logs, metrics, and traces to your observability backend, and
+[drift detection](/concepts/workflows#drift-detection) finds changes made outside Nuon.
+
+When a fix needs more access than the runner normally has, the customer turns on a
+[break-glass role](/concepts/operation-roles#elevated-access-and-break-glass-operations) for the task, then turns it off
+again.
