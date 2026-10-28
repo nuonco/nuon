@@ -389,6 +389,7 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   --cmap-bg: rgba(76, 201, 240, 0.04);
   --cmap-bg-strong: linear-gradient(160deg, rgba(76, 201, 240, 0.14), rgba(76, 201, 240, 0.04));
 }
+.nuon-cmap[data-cols="1"] { --cmap-cols: 1; }
 .nuon-cmap[data-cols="3"] { --cmap-cols: 3; }
 .nuon-cmap[data-arrows="true"] { gap: 0; }
 .nuon-cmap-cell {

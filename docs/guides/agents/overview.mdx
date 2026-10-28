@@ -1,6 +1,6 @@
 ---
 title: "Agents"
-description: "Build your app templates and operate your installs from LLM clients."
+description: "Operate your installs from LLM clients."
 keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
 ---
 
@@ -8,19 +8,10 @@ import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
 import { ConceptMap } from "/snippets/concept-map.jsx";
 
-Your agent works on your real app and your customers' installs, so each feature's guide shows it at the step where it
-helps.
+Your agent operates your customers' installs through Nuon. Each feature's guide shows it at the step where it helps.
 
 <ConceptMap
-  arrows
   columns={[
-    {
-      title: "Package your product",
-      items: [
-        { label: "Turn your Helm, Terraform, and images into an App Template", href: "/guides/agents/ai-and-apps" },
-        { label: "Write install READMEs and policies", href: "/guides/agents/skills" },
-      ],
-    },
     {
       title: "Run it for your customers",
       tone: "nuon",
@@ -41,18 +32,6 @@ helps.
 Changes need writes enabled and [Admin](/concepts/access-control) on your account.
 
 ## Try it
-
-<TryWithYourAgent
-  title="Summarize my app template"
-  tools={["get_app", "list_app_branches", "get_app_config_schema"]}
-  prompt={`Summarize my Nuon app template: its sandbox, components, and app branches.`}
-/>
-
-<TryWithYourAgent
-  title="Check my config sync"
-  tools={["list_app_branches", "get_app_branch_run", "get_build_logs", "get_workflow_step_logs"]}
-  prompt={`Did my latest Nuon app branch run sync and build? If a step failed, tell me what to fix.`}
-/>
 
 <TryWithYourAgent
   title="Summarize an install"
