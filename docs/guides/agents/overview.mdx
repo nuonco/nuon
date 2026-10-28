@@ -6,7 +6,6 @@ keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp", "
 ---
 
 import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
-import { AgentPrompts } from "/snippets/agent-prompts.jsx";
 import { AgentTimeline } from "/snippets/agent-timeline.jsx";
 
 ## Set up
@@ -26,29 +25,30 @@ Use your agent for everything from setup to managing a fleet of BYOC installs.
   ]}
 />
 
-## Build
+## Day 0: Write your app config
 
-Your app config is TOML in git, so any coding agent can write it. These pages are tips for doing that well:
+Your app config is TOML in git, so any coding agent can write it.
 
-- [Start from the example app templates](/guides/agents/ai-and-apps)
-- [Writing policies](/guides/agents/writing-policies) with the `write-rego-policy` skill
-- [Customizing READMEs](/guides/agents/customizing-readmes) with the `write-readme` skill
+- Turn your existing Helm charts, Terraform modules, and container images into components, starting from the
+  [example app templates](/guides/agents/ai-and-apps).
+- Check each file against the app config schema, then run `nuon apps validate` before you push.
+- Add [policies](/guides/agents/writing-policies) and install [READMEs](/guides/agents/customizing-readmes) with Nuon's
+  skills.
 
-## Operate
+## Day 1: Install for a customer
 
-This is where your agent does the most for you. Once an install is running, ask it to do the day-2 work on your
-customers' installs:
+- Set the new install's inputs, such as region or instance size.
+- Watch the install workflow as the stack, runner, sandbox, and components come up.
+- Review each plan before it applies, and approve it when it looks right.
+- When a step fails, read its logs, then retry or skip it.
 
-<AgentPrompts
-  items={[
-    { title: "Approve a rollout", prompt: "Show me the latest run of my Nuon app branch, summarize each install group's plan, and approve it if I agree.", where: "App Branches", href: "/concepts/app-branches" },
-    { title: "Review a plan", prompt: "Summarize the plan waiting on approval on my Nuon install, then approve it if I agree.", where: "Workflows", href: "/concepts/workflows" },
-    { title: "Deploy and verify", prompt: "Show me the components on my Nuon install, deploy the one I pick, and confirm it stays healthy.", where: "Health Checks", href: "/guides/health-checks" },
-    { title: "Run a runbook", prompt: "Show me the runbooks on my Nuon install, run the one I pick, and tell me if any step fails.", where: "Runbooks", href: "/guides/runbooks" },
-    { title: "Run an action", prompt: "Show me the actions on my Nuon install, run the one I pick, and summarize its output.", where: "Actions", href: "/guides/actions" },
-  ]}
-/>
+## Day 2 Operations: Operate your customers' installs
 
-These prompts change your installs, so they need writes enabled and [Admin](/concepts/access-control) on your
-account. See [Sample queries](/guides/agents/sample-queries) for more, and the [tools catalog](/guides/agents/tools)
-for everything your agent can call.
+- Roll a release out across [install groups](/concepts/app-branches), approving each group's plan.
+- Deploy a component and confirm it [stays healthy](/guides/health-checks).
+- Run [runbooks](/guides/runbooks) and [actions](/guides/actions) on a customer's install.
+- Find which installs are unhealthy or have failing workflows, and why.
+
+Anything that changes an install needs writes enabled and [Admin](/concepts/access-control) on your account. See
+[Sample queries](/guides/agents/sample-queries) for prompts, and the [tools catalog](/guides/agents/tools) for everything
+your agent can call.
