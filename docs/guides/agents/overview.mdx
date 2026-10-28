@@ -27,6 +27,8 @@ Use your agent for everything from setup to managing a fleet of BYOC installs.
 
 ## Day 0: Write your app config
 
+<Note>Find the docs here: [App Templates](/concepts/apps)</Note>
+
 Your app config is TOML in git, so any coding agent can write it.
 
 - Turn your existing Helm charts, Terraform modules, and container images into components, starting from the
@@ -37,12 +39,16 @@ Your app config is TOML in git, so any coding agent can write it.
 
 ## Day 1: Install for a customer
 
+<Note>Find the docs here: [Customer Installs](/concepts/installs)</Note>
+
 - Set the new install's inputs, such as region or instance size.
 - Watch the install workflow as the stack, runner, sandbox, and components come up.
 - Review each plan before it applies, and approve it when it looks right.
 - When a step fails, read its logs, then retry or skip it.
 
 ## Day 2 Operations: Operate your customers' installs
+
+<Note>Find the docs here: [Updates and Operations](/concepts/updates-and-operations)</Note>
 
 - Roll a release out across [install groups](/concepts/app-branches), approving each group's plan.
 - Deploy a component and confirm it [stays healthy](/guides/health-checks).
