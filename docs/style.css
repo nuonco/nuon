@@ -665,6 +665,7 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   font-weight: 400;
 }
 .nuon-infra-row {
+  --in-runner-top: 3.55rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1.4fr);
   align-items: stretch;
@@ -681,14 +682,13 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-infra-row > .nuon-infra-concept:first-child {
   position: relative;
-  align-self: start;
 }
 .nuon-infra-row > .nuon-infra-concept:first-child::before {
   content: "";
   position: absolute;
   left: 50%;
   top: -4.4rem;
-  bottom: calc(0.875rem + 3.25rem);
+  height: calc(4.4rem + var(--in-runner-top));
   border-left: 1.5px dashed var(--in-accent);
   z-index: 0;
 }
@@ -757,7 +757,8 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 .nuon-infra-arrow {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: calc(var(--in-runner-top) + 0.35rem);
   align-items: center;
   color: var(--in-accent);
   font-size: 0.72rem;
