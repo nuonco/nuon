@@ -32,23 +32,23 @@ Every change to an install runs as a [workflow](/concepts/workflows) with a plan
 
 ## Push updates
 
-Because App Templates live in git, an update is a push. A push to the tracked branch starts a branch run that builds
-what changed, then plans and deploys it across your installs one
-[install group](/concepts/app-branches#install-groups) at a time. An update can be a new release of your product, a
-component upgrade, or an infrastructure change such as a new Kubernetes version.
+Because App Templates live in git, an update is a push.
 
-Every install group waits on a plan approval by default, so you review the Terraform plan or Helm diff before anything
-reaches a customer. You can [auto-approve plans](/concepts/workflows#workflow-approvals) on an install, or let a group
-approve itself when every [policy](/concepts/policies) check passes.
-
-To change a single customer, edit that install's [config](/guides/install-configs), or
-[roll it back](/guides/rollback-install-config) to an earlier version.
+- **Roll out across installs.** A push to the tracked branch builds what changed, then plans and deploys it one
+  [install group](/concepts/app-branches#install-groups) at a time.
+- **Review before it ships.** Each install group waits for you to approve its Terraform plan or Helm diff.
+- **Approve automatically.** [Auto-approve plans](/concepts/workflows#workflow-approvals) on an install, or let a group
+  approve itself when every [policy](/concepts/policies) check passes.
+- **Change one customer.** Edit that install's [config](/guides/install-configs), or
+  [roll it back](/guides/rollback-install-config) to an earlier version.
 
 ## Migrations, runbooks, and debugging
 
-For work that isn't a config change, such as a database migration or a recovery procedure,
-[runbooks](/guides/runbooks) chain deploys and [actions](/concepts/actions) into one procedure you run against an
-install. Actions also run on a schedule or around a deploy, and can remediate what monitoring finds.
+For work that isn't a config change:
 
-Every run is a [workflow](/concepts/workflows) that records its steps and logs, so you can see what ran, when, and
-against which install.
+- **[Runbooks](/guides/runbooks)** chain deploys and actions into one procedure, such as a database migration or a
+  recovery.
+- **[Actions](/concepts/actions)** run scripts by hand, on a schedule, or around a deploy, and can fix what monitoring
+  finds.
+- **[Workflows](/concepts/workflows)** record every run's steps and logs, so you can see what ran, when, and against
+  which install.
