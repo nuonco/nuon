@@ -348,6 +348,15 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   font-size: 0.9rem;
   font-weight: 600;
 }
+.nuon-flow-title a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--try-border);
+}
+.nuon-flow-title a:hover {
+  color: var(--try-accent);
+  border-bottom-color: var(--try-accent);
+}
 .nuon-flow-detail {
   color: var(--try-muted);
   font-size: 0.82rem;

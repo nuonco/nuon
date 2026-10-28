@@ -12,7 +12,9 @@ export const FlowSteps = ({ steps = [], groups = [], loop }) => {
               <span className="nuon-flow-row">
                 <span className="nuon-flow-num">{i + 1}</span>
                 <span className="nuon-flow-text">
-                  <span className="nuon-flow-title">{step.title}</span>
+                  <span className="nuon-flow-title">
+                    {step.href ? <a href={step.href}>{step.title}</a> : step.title}
+                  </span>
                   {step.detail && <span className="nuon-flow-detail">{step.detail}</span>}
                 </span>
               </span>
