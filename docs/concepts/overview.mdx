@@ -1,0 +1,110 @@
+---
+title: "Concepts"
+sidebarTitle: "Overview"
+description: "How App Templates, installs, and updates fit together in Nuon."
+boost: 5
+keywords: ["concepts", "how Nuon works", "platform overview", "app template", "app templates", "what is an app", "apps", "app config", "app configuration", "configure an app", "application packaging", "installs", "what is an install", "updates", "change management", "BYOC", "bring your own cloud", "BYOC deployment platform", "managed BYOC"]
+---
+
+import { ConceptMap } from "/snippets/concept-map.jsx";
+
+Package your product once as a Nuon App Template. Nuon uses that template to create installs of your app in your customer's cloud.
+
+## [App Templates](/concepts/apps)
+
+How Nuon works with your App Template:
+
+<ConceptMap
+  arrows
+  columns={[
+    {
+      title: "You provide",
+      caption: "Your product, described in TOML in your own git repo.",
+      items: [
+        { label: "Components", href: "/concepts/components", note: "Helm charts, Terraform modules, Kubernetes manifests, container images" },
+        { label: "Inputs", href: "/concepts/app-inputs", note: "Values each customer sets, such as region or domain" },
+        { label: "Secrets", href: "/concepts/app-secrets", note: "Credentials and API keys each customer supplies" },
+      ],
+    },
+    {
+      title: "Nuon provides",
+      caption: "Everything that runs your product in each customer's cloud.",
+      tone: "nuon",
+      items: [
+        { label: "Automatic updates", href: "/concepts/app-branches", note: "App branches roll each push out across your installs" },
+        { label: "Secure execution", href: "/concepts/runners", note: "A runner in the customer's account, with scoped permissions" },
+        { label: "Day-2 tooling", href: "/concepts/actions", note: "Actions, runbooks, and drift detection" },
+      ],
+    },
+  ]}
+/>
+
+Your app template is a set of TOML files, the [app config](/configuration-files), in your own git repo. Most teams
+keep a few, one per flavor of BYOC, such as AWS and Azure.
+
+## [Installs](/concepts/installs)
+
+An install is one instance of your App Template in a customer's cloud account.
+
+<ConceptMap
+  columns={[
+    {
+      title: "Deploy",
+      items: [
+        { label: "Stack", href: "/concepts/stacks", note: "Deployed first: the runner, network, and permissions" },
+        { label: "Sandbox", href: "/concepts/sandboxes", note: "Base compute, such as an EKS, AKS, or GKE cluster" },
+        { label: "Components", href: "/concepts/components", note: "Your product, deployed on top" },
+      ],
+    },
+    {
+      title: "Setup",
+      items: [
+        { label: "Inputs and secrets", href: "/guides/configuring-inputs-and-secrets", note: "This customer's values" },
+        { label: "Customer architectures", href: "/concepts/stacks", note: "A new VPC, the customer's VPC, or the customer's cluster" },
+        { label: "Install configuration", href: "/guides/install-configs", note: "Each install's settings as config files" },
+        { label: "Overrides", href: "/guides/component-overrides", note: "Per-install changes to a component" },
+      ],
+    },
+    {
+      title: "Health and debugging",
+      items: [
+        { label: "Health checks", href: "/guides/health-checks", note: "Live health for every component" },
+        { label: "Install telemetry", href: "/concepts/install-telemetry", note: "Logs, metrics, and traces to your backend" },
+        { label: "Drift detection", href: "/concepts/workflows#drift-detection", note: "Config versus what's running" },
+        { label: "Break-glass access", href: "/concepts/operation-roles#elevated-access-and-break-glass-operations", note: "Elevated access the customer enables" },
+      ],
+    },
+  ]}
+/>
+
+The customer deploys the [stack](/concepts/stacks) first. The [sandbox](/concepts/sandboxes) then sets up compute,
+and your components deploy on top.
+
+## [Updates and Operations](/concepts/updates-and-operations)
+
+Every change to an install runs as a [workflow](/concepts/workflows) with a plan you can review, checked against your
+[policies](/concepts/policies).
+
+<ConceptMap
+  columns={[
+    {
+      title: "Push updates",
+      items: [
+        { label: "Across installs", href: "/concepts/app-branches", note: "Push to git and roll out to install groups in order" },
+        { label: "To one install", href: "/guides/install-configs", note: "Change a single install's config" },
+        { label: "Roll back", href: "/guides/rollback-install-config", note: "Re-apply an earlier config version" },
+      ],
+    },
+    {
+      title: "Migrations, runbooks, and debugging",
+      items: [
+        { label: "Runbooks", href: "/guides/runbooks", note: "Named, multi-step procedures run on demand" },
+        { label: "Actions", href: "/concepts/actions", note: "Scripts for migrations, checks, and one-off fixes" },
+        { label: "Workflows", href: "/concepts/workflows", note: "Every run's steps, logs, and approvals" },
+      ],
+    },
+  ]}
+/>
+
+Most updates start with a git push. For work that isn't a config change, such as a database migration, use a
+[runbook](/guides/runbooks).

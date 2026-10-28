@@ -80,7 +80,8 @@
       {
         "tab": "Concepts",
         "icon": "lightbulb",
-        "groups": [
+        "pages": [
+          "concepts/overview",
           {
             "group": "App Templates",
             "root": "concepts/apps",
@@ -455,12 +456,8 @@
       "destination": "/concepts/installs"
     },
     {
-      "source": "/concepts/overview",
-      "destination": "/concepts/apps"
-    },
-    {
       "source": "/get-started/overview",
-      "destination": "/concepts/apps"
+      "destination": "/concepts/overview"
     },
     {
       "source": "/guides/idempotent-triggers",
