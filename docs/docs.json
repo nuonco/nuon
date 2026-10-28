@@ -217,7 +217,7 @@
             ]
           },
           {
-            "group": "Administer Nuon",
+            "group": "Access and Permission",
             "boost": 2,
             "pages": [
               "guides/team-management"
