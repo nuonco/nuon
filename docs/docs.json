@@ -103,10 +103,7 @@
             "pages": [
               "concepts/stacks",
               "concepts/runners",
-              "concepts/sandboxes",
-              "concepts/stacks/stand-alone-vpc",
-              "concepts/stacks/customer-vpc",
-              "concepts/stacks/customer-cluster"
+              "concepts/sandboxes"
             ]
           },
           {
@@ -115,6 +112,9 @@
             "expanded": true,
             "boost": 3,
             "pages": [
+              "concepts/stacks/stand-alone-vpc",
+              "concepts/stacks/customer-vpc",
+              "concepts/stacks/customer-cluster",
               "concepts/install-telemetry"
             ]
           },
