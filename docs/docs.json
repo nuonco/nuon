@@ -82,7 +82,7 @@
         "icon": "lightbulb",
         "groups": [
           {
-            "group": "Apps",
+            "group": "App Templates",
             "root": "concepts/apps",
             "boost": 3,
             "pages": [
