@@ -16,7 +16,7 @@ import (
 )
 
 func NewAPIRouteClassifier(lc fx.Lifecycle, cfg *internal.Config, l *zap.Logger) *apiroutes.Classifier {
-	c := apiroutes.NewClassifier(cfg.APIUrl, l)
+	c := apiroutes.NewClassifier(cfg.ServerAPIURL(), l)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	lc.Append(fx.Hook{

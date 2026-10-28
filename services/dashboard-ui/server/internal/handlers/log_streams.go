@@ -185,7 +185,7 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 	}
 
 	client, err := nuon.New(
-		nuon.WithURL(h.cfg.APIUrl),
+		nuon.WithURL(h.cfg.ServerAPIURL()),
 		nuon.WithAuthToken(token),
 		nuon.WithOrgID(orgID),
 	)
@@ -438,7 +438,7 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 	}
 
 	client, err := nuon.New(
-		nuon.WithURL(h.cfg.APIUrl),
+		nuon.WithURL(h.cfg.ServerAPIURL()),
 		nuon.WithAuthToken(token),
 		nuon.WithOrgID(orgID),
 	)
