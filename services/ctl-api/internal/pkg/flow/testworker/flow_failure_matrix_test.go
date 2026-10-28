@@ -232,6 +232,36 @@ func (e *FlowTestSuite) TestGenerateStepsFailureDrains() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
+// The eager-step-groups update can be admitted before the generator runs; a
+// late generator failure must still reach the caller instead of timing out.
+func (e *FlowTestSuite) TestGenerateStepsLateFailureSurfaces() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+	ownerID, ownerType := fakeString(), "app_branches"
+	workflowType := app.WorkflowType("test_generate_steps_late_failure")
+
+	registerTestGenerator(ownerType, workflowType, func(ctx workflow.Context, _ *app.Workflow) (*app.GenerateStepsResult, error) {
+		if err := workflow.Sleep(ctx, 3*time.Second); err != nil {
+			return nil, err
+		}
+		return nil, errors.New("late step generation failure")
+	})
+
+	workflowQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflows")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-step-groups")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-generate-steps")
+
+	flw := e.createTestWorkflow(ctx, ownerID, ownerType, workflowType, &generateworkflowsteps.Signal{})
+	e.enqueueLifecycleFlow(ctx, workflowQueue.ID, flw, ownerID, ownerType)
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+
+	errMsg, _ := e.getWorkflow(ctx, flw.ID).Status.Metadata["error_message"].(string)
+	require.Contains(e.T(), errMsg, "late step generation failure")
+	e.assertTemporalDrained(ctx, flw.ID)
+}
+
 // Exhausted failure stops the workflow; only the runner ever writes success/failure target statuses.
 func (e *FlowTestSuite) TestFailStopTargetUntouched() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
