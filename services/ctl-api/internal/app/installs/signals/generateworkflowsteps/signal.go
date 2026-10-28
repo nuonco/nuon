@@ -222,8 +222,8 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		ctx, "eager-step-groups",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			defer func() { s.eagerStepGroupsCalled = true }()
-			// Block until eager step groups are ready.
-			if err := workflow.Await(ctx, func() bool { return s.eagerStepGroupsReady }); err != nil {
+			// Block until eager step groups are ready, or Execute failed before producing them.
+			if err := workflow.Await(ctx, func() bool { return s.eagerStepGroupsReady || s.done }); err != nil {
 				return nil, err
 			}
 			if s.err != nil {
