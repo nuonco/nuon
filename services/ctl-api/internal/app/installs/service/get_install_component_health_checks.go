@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -65,11 +66,12 @@ func (s *service) getInstallComponentHealthChecks(ctx context.Context, orgID, in
 			OrgID:              orgID,
 			InstallID:          installID,
 			InstallComponentID: ic.ID,
-			Provider:           customCheckProvider,
 		}).
+		Where("provider IN ?", []string{customCheckProvider, resourceProviderProbe}).
+		Where(app.LatestReportOnlySQL(), app.LatestReportOnlyArgs(orgID, installID)...).
 		Order("name").
 		Find(&checks).Error; err != nil {
-		return nil, fmt.Errorf("unable to query custom health checks: %w", err)
+		return nil, fmt.Errorf("unable to query component health checks: %w", err)
 	}
 
 	return s.withDeclaredChecks(ctx, orgID, installID, ic, checks)
@@ -94,30 +96,34 @@ func (s *service) withDeclaredChecks(
 		return observed, nil
 	}
 
-	declared := make([]string, 0, len(ccc.HealthRequiredChecks)+len(ccc.HealthProbes))
-	declared = append(declared, ccc.HealthRequiredChecks...)
+	type declaredCheck struct{ name, provider, kind string }
+	declared := make([]declaredCheck, 0, len(ccc.HealthRequiredChecks)+len(ccc.HealthProbes))
+	for _, name := range ccc.HealthRequiredChecks {
+		declared = append(declared, declaredCheck{name, customCheckProvider, "CustomCheck"})
+	}
 	for _, probe := range ccc.HealthProbes {
-		declared = append(declared, probe.Name)
+		declared = append(declared, declaredCheck{probe.Name, resourceProviderProbe, probeResourceKind(probe.Type)})
 	}
 
 	seen := make(map[string]bool, len(observed))
 	for _, c := range observed {
-		seen[c.Name] = true
+		seen[c.Provider+"/"+c.Name] = true
 	}
 
-	for _, name := range declared {
-		if name == "" || seen[name] {
+	for _, d := range declared {
+		key := d.provider + "/" + d.name
+		if d.name == "" || seen[key] {
 			continue
 		}
-		seen[name] = true
+		seen[key] = true
 		observed = append(observed, app.InstallComponentResourceState{
 			OrgID:              orgID,
 			InstallID:          installID,
 			InstallComponentID: ic.ID,
 			ComponentID:        ic.ComponentID,
-			Provider:           customCheckProvider,
-			Kind:               "CustomCheck",
-			Name:               name,
+			Provider:           d.provider,
+			Kind:               d.kind,
+			Name:               d.name,
 			Health:             string(app.InstallComponentHealthStatusUnknown),
 			Message:            "declared but not reported yet",
 		})
@@ -125,6 +131,17 @@ func (s *service) withDeclaredChecks(
 
 	sort.Slice(observed, func(i, j int) bool { return observed[i].Name < observed[j].Name })
 	return observed, nil
+}
+
+func probeResourceKind(probeType string) string {
+	switch strings.ToLower(strings.TrimSpace(probeType)) {
+	case "tcp":
+		return "TCPProbe"
+	case "exec":
+		return "ExecProbe"
+	default:
+		return "HTTPProbe"
+	}
 }
 
 func (s *service) currentComponentConfig(ctx context.Context, installID, componentID string) (*app.ComponentConfigConnection, error) {
