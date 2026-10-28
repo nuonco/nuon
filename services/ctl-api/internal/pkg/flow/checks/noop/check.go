@@ -88,8 +88,8 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		}
 	}
 
-	if !shouldSkip {
-		l.Debug("noop plan detected but skip_noops not enabled, proceeding to approval",
+	if !shouldSkip || directive.ResolveDrift(ctx, flw) {
+		l.Debug("noop plan detected, proceeding to approval",
 			zap.String("step_id", step.ID))
 
 		// Decorate the step with a noop label so the approval UI can display it,

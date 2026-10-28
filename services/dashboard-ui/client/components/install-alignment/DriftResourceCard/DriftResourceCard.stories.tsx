@@ -17,11 +17,29 @@ const links = {
   lastAttemptHref: '#last-attempt',
   deploymentHref: '#deployment',
   nameHref: '#component',
+  onResolve: () => {},
   onViewPlan: () => {},
 }
 
 export const NoOpenDeployment = () => (
   <DriftResourceCard {...links} resource={unappliedResource()} />
+)
+
+export const Resolving = () => (
+  <DriftResourceCard {...links} resource={unappliedResource()} resolving />
+)
+
+export const ResolveError = () => (
+  <DriftResourceCard
+    {...links}
+    resource={unappliedResource()}
+    resolveError={{
+      status: 409,
+      user_error: true,
+      error: 'Target changed',
+      description: 'Input values changed. Reload Resources and try again.',
+    }}
+  />
 )
 
 export const OpenDeployment = () => (

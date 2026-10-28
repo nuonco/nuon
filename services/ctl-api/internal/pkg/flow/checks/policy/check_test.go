@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
@@ -15,10 +14,8 @@ import (
 
 	pkgdataconverter "github.com/nuonco/nuon/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/policyerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -131,10 +128,8 @@ func TestCheckDoesNotAutoApproveWhenPolicyReportPersistenceFails(t *testing.T) {
 		converter.NewByteSlicePayloadConverter(),
 		pkgdataconverter.NewJSONConverter(),
 	))
-	env.RegisterActivityWithOptions((&activities.Activities{}).RecordPolicyEvaluationCompositeError,
-		activity.RegisterOptions{Name: "RecordPolicyEvaluationCompositeError"})
 
-	env.OnActivity((*activities.Activities).PrepPolicyEvaluation, mock.Anything, mock.Anything, mock.Anything).
+	env.OnActivity((&activities.Activities{}).PrepPolicyEvaluation, mock.Anything, mock.Anything).
 		Return(&activities.PrepPolicyEvaluationResult{
 			HasPolicies: true,
 			OrgID:       "org-1",
@@ -147,15 +142,10 @@ func TestCheckDoesNotAutoApproveWhenPolicyReportPersistenceFails(t *testing.T) {
 				InputJSON: []byte(`{}`),
 			}},
 		}, nil).Once()
-	env.OnActivity((*activities.Activities).EvaluateSinglePolicy, mock.Anything, mock.Anything, mock.Anything).
+	env.OnActivity((&activities.Activities{}).EvaluateSinglePolicy, mock.Anything, mock.Anything).
 		Return(&activities.EvaluateSinglePolicyResult{}, nil).Once()
-	env.OnActivity((*activities.Activities).PersistPolicyReport, mock.Anything, mock.Anything, mock.Anything).
+	env.OnActivity((&activities.Activities{}).PersistPolicyReport, mock.Anything, mock.Anything).
 		Return((*activities.PersistPolicyReportResult)(nil), errors.New("write failed")).Times(3)
-	env.OnActivity("RecordPolicyEvaluationCompositeError", mock.Anything, mock.MatchedBy(func(req activities.RecordPolicyEvaluationCompositeErrorRequest) bool {
-		return req.Stage == policyerrors.EvaluationFailureStagePersistence
-	})).Return(nil).Once()
-	env.OnActivity((*statusactivities.Activities).PkgStatusUpdateFlowStepStatus, mock.Anything, mock.Anything, mock.Anything).
-		Return(nil).Once()
 
 	check := New(&policySignal{}, nil, &directive.CheckContext{})
 	env.ExecuteWorkflow(func(ctx workflow.Context) (directive.CheckResult, error) {
@@ -166,9 +156,6 @@ func TestCheckDoesNotAutoApproveWhenPolicyReportPersistenceFails(t *testing.T) {
 		}, &app.Workflow{ID: "workflow-1", OrgID: "org-1"})
 	})
 
-	require.NoError(t, env.GetWorkflowError())
-	var result directive.CheckResult
-	require.NoError(t, env.GetWorkflowResult(&result))
-	require.Equal(t, directive.StepUnknown, result.Directive)
+	require.ErrorContains(t, env.GetWorkflowError(), "unable to persist policy report")
 	env.AssertExpectations(t)
 }

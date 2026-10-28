@@ -24,3 +24,16 @@ func (h *Helpers) getInstallInputs(ctx context.Context, installID string) ([]app
 
 	return install.InstallInputs, nil
 }
+
+func (h *Helpers) LatestInstallInputs(ctx context.Context, db *gorm.DB, installID string) (*app.InstallInputs, error) {
+	installInputs := app.InstallInputs{}
+	res := db.WithContext(ctx).
+		Where("install_id = ?", installID).
+		Order("created_at DESC").
+		First(&installInputs)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get install inputs: %w", res.Error)
+	}
+
+	return &installInputs, nil
+}
