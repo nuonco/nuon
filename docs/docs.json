@@ -84,6 +84,7 @@
           {
             "group": "App Templates",
             "root": "concepts/apps",
+            "expanded": true,
             "boost": 3,
             "pages": [
               "concepts/components",
@@ -98,6 +99,7 @@
           {
             "group": "Installs",
             "root": "concepts/installs",
+            "expanded": true,
             "boost": 3,
             "pages": [
               "concepts/stacks",
@@ -109,6 +111,7 @@
           {
             "group": "Updates and Operations",
             "root": "concepts/updates-and-operations",
+            "expanded": true,
             "boost": 3,
             "pages": [
               "concepts/workflows",
