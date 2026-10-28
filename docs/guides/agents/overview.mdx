@@ -8,37 +8,35 @@ import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
 import { ConceptMap } from "/snippets/concept-map.jsx";
 
-## What your agent can do
-
 <ConceptMap
   columns={[
     {
       title: "Build",
       items: [
-        { label: "Scaffold app config", href: "/guides/agents/ai-and-apps", note: "From the example repos" },
-        { label: "Validate it", href: "/guides/agents/ai-and-apps", note: "Against the config schema and the Nuon CLI" },
-        { label: "Write READMEs and policies", href: "/guides/agents/skills", note: "With Nuon skills" },
+        { label: "Scaffold app config", href: "/guides/agents/ai-and-apps" },
+        { label: "Validate it", href: "/guides/agents/ai-and-apps" },
+        { label: "Write READMEs and policies", href: "/guides/agents/skills" },
       ],
     },
     {
       title: "Operate",
       tone: "nuon",
       items: [
-        { label: "Ship changes", href: "/concepts/app-branches", note: "Review plan diffs and approve rollouts" },
-        { label: "Run actions and runbooks", href: "/guides/agents/sample-queries", note: "Deploy, reprovision, update inputs" },
-        { label: "Debug failures", href: "/guides/agents/tools", note: "Read logs and health, retry a step" },
+        { label: "Ship and approve changes", href: "/concepts/app-branches" },
+        { label: "Run actions and runbooks", href: "/guides/agents/sample-queries" },
+        { label: "Debug failures", href: "/guides/agents/tools" },
       ],
     },
   ]}
 />
 
-Reading works with any role. Changes need writes enabled and [Admin](/concepts/access-control) on your account.
-
 ## Connect your client
 
 <McpInstallPicker />
 
-## Try it on your App Template
+Changes need writes enabled and [Admin](/concepts/access-control) on your account.
+
+## Try it
 
 <TryWithYourAgent
   title="Summarize my app template"
@@ -52,18 +50,10 @@ Reading works with any role. Changes need writes enabled and [Admin](/concepts/a
   prompt={`Did my latest Nuon app branch run sync and build? If a step failed, tell me what to fix.`}
 />
 
-## Try it on an install
-
 <TryWithYourAgent
   title="Summarize an install"
   tools={["install_summary"]}
   prompt={`Summarize my Nuon install: what's deployed, its health, and any failing workflows.`}
-/>
-
-<TryWithYourAgent
-  title="Find failing workflows"
-  tools={["list_workflows", "get_pending_approvals", "get_workflow_step_logs"]}
-  prompt={`Which workflows on my Nuon install failed or are waiting on approval, and why?`}
 />
 
 <CardGroup cols={3}>
