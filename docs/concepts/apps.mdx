@@ -25,14 +25,12 @@ my-app/
 └── runbooks/       # procedures
 ```
 
-| Part | What it defines |
-| --- | --- |
-| [Sandbox](/concepts/sandboxes) | The base infrastructure every install gets, such as a network and a Kubernetes cluster. It can also reuse infrastructure the customer already has. |
-| [Components](/concepts/components) | Your product. Each component wraps an existing Helm chart, Terraform module, Kubernetes manifest, or container image. Components can depend on each other and share outputs. |
-| [Inputs](/concepts/app-inputs) | The knobs each customer sets for their install, such as region, instance size, or domain. |
-| [Secrets](/concepts/app-secrets) | Credentials and API keys each customer supplies. |
-| [Policies](/concepts/policies) | Checks that run before a build or deploy, written in OPA Rego or Kyverno. |
-| [Actions](/concepts/actions) and [runbooks](/guides/runbooks) | Scripts and procedures you run against installs after they ship. |
+- **[Sandbox](/concepts/sandboxes)**: base infrastructure, such as a network and cluster.
+- **[Components](/concepts/components)**: your Helm charts, Terraform modules, manifests, and images.
+- **[Inputs](/concepts/app-inputs)**: values each customer sets, such as region.
+- **[Secrets](/concepts/app-secrets)**: credentials each customer supplies.
+- **[Policies](/concepts/policies)**: checks that run before a build or deploy.
+- **[Actions](/concepts/actions) and [runbooks](/guides/runbooks)**: scripts and procedures for installs.
 
 ## One product, several templates
 
