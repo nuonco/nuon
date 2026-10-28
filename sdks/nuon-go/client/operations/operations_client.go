@@ -970,6 +970,8 @@ type ClientService interface {
 
 	ResetUserJourney(params *ResetUserJourneyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetUserJourneyOK, error)
 
+	ResolveInstallDrift(params *ResolveInstallDriftParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResolveInstallDriftOK, *ResolveInstallDriftCreated, error)
+
 	RespondInstallCreationApproval(params *RespondInstallCreationApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RespondInstallCreationApprovalAccepted, error)
 
 	RestartRunnerInstall(params *RestartRunnerInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartRunnerInstallOK, error)
@@ -20954,6 +20956,52 @@ func (a *Client) ResetUserJourney(params *ResetUserJourneyParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ResetUserJourney: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ResolveInstallDrift launches a deployment that resolves drift for one install resource
+
+Launches a fresh deployment of the selected target for one resource. approved_plan_id explicitly approves the inspected plan for reuse. Without it, only an already explicitly approved plan can be reused. The fresh plan must match and pass policy and safety checks; otherwise it waits for normal approval. Returns an existing open deployment (200) instead of creating a duplicate.
+*/
+func (a *Client) ResolveInstallDrift(params *ResolveInstallDriftParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResolveInstallDriftOK, *ResolveInstallDriftCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewResolveInstallDriftParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ResolveInstallDrift",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/resolve-drift",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ResolveInstallDriftReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *ResolveInstallDriftOK:
+		return value, nil, nil
+	case *ResolveInstallDriftCreated:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
