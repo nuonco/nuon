@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/agentclient"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
@@ -25,6 +26,7 @@ type Params struct {
 	fx.In
 
 	L               *zap.Logger
+	MW              metrics.Writer
 	Cfg             *internal.Config
 	DB              *gorm.DB `name:"psql"`
 	AuthzClient     *authz.Client
@@ -36,6 +38,7 @@ type Params struct {
 type middleware struct {
 	cfg             *internal.Config
 	l               *zap.Logger
+	mw              metrics.Writer
 	db              *gorm.DB
 	authzClient     *authz.Client
 	acctClient      *account.Client
@@ -101,6 +104,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			cctx.SetAccountGinContext(ctx, acct)
 			cctx.SetTokenTypeGinContext(ctx, acctToken.TokenType)
 			m.detectCLIUsage(ctx, acct)
+			m.recordPersonalStaticToken(ctx, acct, acctToken)
 			m.logAgentRequest(ctx, acct.ID)
 			ctx.Next()
 			return
@@ -129,6 +133,24 @@ func (m *middleware) detectCLIUsage(ctx *gin.Context, acct *app.Account) {
 	}
 }
 
+func (m *middleware) recordPersonalStaticToken(ctx *gin.Context, acct *app.Account, token *app.Token) {
+	if token.TokenType != app.TokenTypeStatic || acct.AccountType == app.AccountTypeService {
+		return
+	}
+
+	m.l.Info("personal static token used",
+		zap.String("account_id", acct.ID),
+		zap.String("token_id", token.ID),
+		zap.String("org_id", ctx.GetHeader("X-Nuon-Org-ID")),
+		zap.String("method", ctx.Request.Method),
+		zap.String("path", ctx.FullPath()),
+	)
+	m.mw.Incr("auth.personal_static_token", []string{
+		"method:" + ctx.Request.Method,
+		"path:" + ctx.FullPath(),
+	})
+}
+
 func (m *middleware) logAgentRequest(ctx *gin.Context, accountID string) {
 	agent := ctx.GetHeader(agentclient.Header)
 	if agent == "" {
@@ -150,6 +172,7 @@ func (m *middleware) Name() string {
 func New(params Params) *middleware {
 	return &middleware{
 		l:               params.L,
+		mw:              params.MW,
 		cfg:             params.Cfg,
 		db:              params.DB,
 		authzClient:     params.AuthzClient,

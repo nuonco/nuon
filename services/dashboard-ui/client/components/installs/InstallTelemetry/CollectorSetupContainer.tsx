@@ -18,7 +18,7 @@ import { getAccount } from '@/lib/ctl-api/accounts'
 import { getInstallStack } from '@/lib/ctl-api/installs/get-install-stack'
 import { getInstallTelemetryCollector } from '@/lib/ctl-api/installs/install-telemetry-collector'
 import { getInstallComponents } from '@/lib/ctl-api/installs/components/get-install-components'
-import { listStaticTokens } from '@/lib/ctl-api/tokens/list-static-tokens'
+import { listTokens } from '@/lib/ctl-api/tokens/list-tokens'
 import type { TInstall } from '@/types'
 import { CollectorCredentialModalContainer } from './CollectorCredentialContainer'
 import { RemoveCollectorAccessModal } from './RemoveCollectorAccess'
@@ -63,8 +63,9 @@ export const CollectorSetupContainer = ({
     retry: false,
   })
   const tokens = useQuery({
-    queryKey: ['static-tokens', orgId],
-    queryFn: () => listStaticTokens({ orgId }),
+    queryKey: ['tokens', orgId, collector.data?.account_id],
+    queryFn: () =>
+      listTokens({ orgId, accountId: collector.data?.account_id }),
     enabled: isOrgAdmin && !!collector.data?.account_id,
     retry: false,
   })
@@ -84,10 +85,7 @@ export const CollectorSetupContainer = ({
     /^https?:\/\/\S+$/.test(rawEndpoint.trim())
       ? rawEndpoint.trim()
       : undefined
-  const bootstrapTokens =
-    tokens.data?.filter(
-      (token) => token.account_id === collector.data?.account_id
-    ) ?? []
+  const bootstrapTokens = tokens.data ?? []
   const readError =
     collector.isError || components.isError || account.isError || tokens.isError
 

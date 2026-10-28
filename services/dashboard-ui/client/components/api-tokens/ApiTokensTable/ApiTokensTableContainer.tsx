@@ -1,8 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { useRoleTitles } from '@/hooks/use-roles'
-import { listStaticTokens } from '@/lib'
+import { listTokens } from '@/lib'
 import { ApiTokensTable, API_TOKENS_TABLE_LIMIT } from './ApiTokensTable'
 
 export const ApiTokensTableContainer = ({
@@ -14,27 +13,28 @@ export const ApiTokensTableContainer = ({
 } = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
-  const roleTitles = useRoleTitles()
   const offset = Number(searchParams.get('offset') ?? 0)
-  const query = (searchParams.get('q') ?? '').toLowerCase()
+  const q = searchParams.get('q') ?? ''
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['static-tokens', org.id],
-    queryFn: () => listStaticTokens({ orgId: org.id }),
+    queryKey: ['tokens', org.id, { q, offset }],
+    queryFn: () =>
+      listTokens({
+        orgId: org.id,
+        q,
+        offset,
+        limit: API_TOKENS_TABLE_LIMIT + 1,
+      }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
   })
 
-  const all = (result ?? []).filter((token) =>
-    query ? (token.name ?? '').toLowerCase().includes(query) : true
-  )
-  const tokens = all.slice(offset, offset + API_TOKENS_TABLE_LIMIT)
-  const hasNext = all.length > offset + API_TOKENS_TABLE_LIMIT
+  const tokens = (result ?? []).slice(0, API_TOKENS_TABLE_LIMIT)
+  const hasNext = (result?.length ?? 0) > API_TOKENS_TABLE_LIMIT
 
   return (
     <ApiTokensTable
       data={tokens}
-      roleTitles={roleTitles}
       isLoading={isLoading}
       pagination={{ hasNext, offset, limit: API_TOKENS_TABLE_LIMIT }}
     />
