@@ -246,7 +246,7 @@
         "icon": "robot",
         "pages": [
           {
-            "group": "Start Safely",
+            "group": "Start",
             "pages": [
               "guides/agents/overview",
               "guides/agents/setup"
