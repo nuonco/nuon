@@ -110,7 +110,7 @@
             ]
           },
           {
-            "group": "Installs",
+            "group": "Customer Installs",
             "root": "concepts/installs",
             "expanded": true,
             "boost": 3,
