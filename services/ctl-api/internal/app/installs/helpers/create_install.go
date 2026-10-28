@@ -124,7 +124,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if err != nil {
 		return nil, fmt.Errorf("unable to get pinned app input config: %w", err)
 	}
-	if pinnedAppInputConfig != nil &&
+	if pinnedAppInputConfig != nil && pinnedAppInputConfig.ID != "" &&
 		(pinnedAppInputConfig.OrgID != orgID ||
 			pinnedAppInputConfig.AppID != appID ||
 			pinnedAppInputConfig.AppConfigID != pin.AppConfig.ID) {
