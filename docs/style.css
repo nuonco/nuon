@@ -612,9 +612,20 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   --in-box-bg: rgba(15, 23, 42, 0.6);
   --in-inner-bg: rgba(76, 201, 240, 0.12);
 }
+.nuon-infra-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1.4fr);
+  gap: 0.75rem;
+  padding: 0 1rem;
+}
+.nuon-infra-top-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 .nuon-infra-cp {
+  white-space: nowrap;
   width: fit-content;
-  margin: 0 auto;
   padding: 0.5rem 1rem;
   border: 1px dashed var(--in-border);
   border-radius: 10px;
@@ -626,13 +637,14 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.25rem 0;
+  gap: 0.15rem;
 }
 .nuon-infra-line {
   height: 1.25rem;
   border-left: 1.5px dashed var(--in-accent);
 }
 .nuon-infra-tag {
+  white-space: nowrap;
   color: var(--in-accent);
   font-size: 0.75rem;
 }
@@ -644,6 +656,7 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-infra-account-head {
   margin-bottom: 0.875rem;
+  text-align: right;
   color: var(--in-muted);
   font-weight: 600;
 }
@@ -652,8 +665,9 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   font-weight: 400;
 }
 .nuon-infra-row {
+  --in-runner-top: 3.55rem;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1.4fr);
   align-items: stretch;
   gap: 0.75rem;
 }
@@ -666,8 +680,25 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   border-radius: 10px;
   background: var(--in-box-bg);
 }
+.nuon-infra-row > .nuon-infra-concept:first-child {
+  position: relative;
+}
+.nuon-infra-row > .nuon-infra-concept:first-child::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -4.4rem;
+  height: calc(4.4rem + var(--in-runner-top));
+  border-left: 1.5px dashed var(--in-accent);
+  z-index: 0;
+}
 .nuon-infra-inner {
-  margin-top: auto;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  height: 3.25rem;
+  justify-content: center;
+  margin-top: 0.75rem;
   background: var(--in-inner-bg);
   align-items: center;
 }
@@ -680,7 +711,7 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   border-bottom: 1px solid var(--in-border);
 }
 .nuon-infra-name:hover,
-.nuon-infra-components:hover {
+.nuon-infra-comps-title:hover {
   color: var(--in-accent);
 }
 .nuon-infra-note {
@@ -689,17 +720,48 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-infra-components {
   margin-top: auto;
-  padding: 0.5rem 0.6rem;
-  border: 1px dashed var(--in-border);
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--in-border);
   border-radius: 8px;
-  color: var(--in-muted);
-  text-align: center;
+  background: var(--in-inner-bg);
+}
+.nuon-infra-comps-title {
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--in-accent);
   text-decoration: none;
+}
+.nuon-infra-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.nuon-infra-eg {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--in-muted);
+}
+.nuon-infra-chip {
+  padding: 0.15rem 0.5rem;
+  border: 1px dashed var(--in-border);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: var(--in-muted);
 }
 .nuon-infra-arrow {
   display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: calc(var(--in-runner-top) + 0.35rem);
   align-items: center;
   color: var(--in-accent);
+  font-size: 0.72rem;
 }
 @media (max-width: 720px) {
   .nuon-infra-row {
