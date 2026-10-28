@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import {
   keepPreviousData,
@@ -11,7 +12,6 @@ import { PageSection } from '@/components/layout/PageSection'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { PullRequestDetail } from '@/components/playground/pull-request/PullRequestDetail'
 import { Toast } from '@/components/surfaces/Toast'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
@@ -22,7 +22,9 @@ import { getBranchWorkflowRuns, getPreviewSources, triggerBranchRun } from '@/li
 import type { TAPIError, TAppBranchPreviewConfig } from '@/types'
 import { latestBranchConfig } from '@/utils/branch-utils'
 import { EditPreviewConfigModal } from './EditPreviewConfigModal'
+import { PullRequestConfigChanges } from './PullRequestConfigChanges'
 import { pullRequestRuns, toPlaygroundPullRequest } from './map-pull-request'
+import { PullRequestPreview } from './PullRequestPreview'
 import { RerunPreviewModal } from './RerunPreviewModal'
 
 const RUN_LIMIT = 100
@@ -71,16 +73,22 @@ export const PullRequestPage = () => {
     (pullRequest) => pullRequest.pr_number === prNumber
   )
   const playgroundRuns = pullRequestRuns(runs.data?.data ?? [], prNumber)
-  const latestWorkflow = [...(runs.data?.data ?? [])]
-    .filter((workflow) => {
-      const branchRun = workflow.app_branch_runs?.[0]
-      const number = branchRun?.pr_number ?? branchRun?.metadata?.pr_number
-      return number === prNumber
-    })
-    .sort(
-      (a, b) =>
-        Date.parse(b.created_at || '') - Date.parse(a.created_at || '')
-    )[0]
+  const previewWorkflows = useMemo(
+    () =>
+      [...(runs.data?.data ?? [])]
+        .filter((workflow) => {
+          const branchRun = workflow.app_branch_runs?.[0]
+          const number = branchRun?.pr_number ?? branchRun?.metadata?.pr_number
+          return number === prNumber
+        })
+        .sort(
+          (a, b) =>
+            Date.parse(b.created_at || '') - Date.parse(a.created_at || '')
+        ),
+    [runs.data?.data, prNumber]
+  )
+  const latestWorkflow = previewWorkflows[0]
+  const latestRun = latestWorkflow?.app_branch_runs?.[0]
 
   const pullRequest =
     source && Number.isFinite(prNumber)
@@ -93,7 +101,7 @@ export const PullRequestPage = () => {
           baseRef: vcs?.branch,
           branchConfig: currentConfig?.preview_config,
           runs: playgroundRuns,
-          latest: latestWorkflow?.app_branch_runs?.[0],
+          latest: latestRun,
         })
       : undefined
 
@@ -177,9 +185,9 @@ export const PullRequestPage = () => {
           },
         ]}
       />
-      {sources.isPending || (Number.isFinite(prNumber) && runs.isPending) ? (
-        <PullRequestDetail runs={[]} isLoading backLink={backLink} />
-      ) : !pullRequest ? (
+      {sources.isPending ? (
+        <PullRequestPreview basePath={basePath} isLoading backLink={backLink} />
+      ) : !source ? (
         <PageSection>
           {backLink}
           <Text variant="body" theme="neutral">
@@ -187,29 +195,36 @@ export const PullRequestPage = () => {
           </Text>
         </PageSection>
       ) : (
-        <PullRequestDetail
-          pullRequest={pullRequest}
-          runs={playgroundRuns}
-          isLoading={runs.isPending}
-          configHint={
-            pullRequest.config_status === 'needs-input'
-              ? undefined
-              : pullRequest.config_status === 'configured'
-                ? 'The latest run used a one-off mode or install. Later pushes still follow the branch preview config.'
-                : 'Inherited from the branch config. Editing this starts one preview run. Later pushes still follow the branch config.'
-          }
+        <PullRequestPreview
+          source={source}
+          workflows={previewWorkflows}
+          repo={vcs?.repo}
+          baseRef={vcs?.branch}
+          branchConfig={currentConfig?.preview_config}
+          basePath={basePath}
           backLink={backLink}
-          onEditConfig={() =>
-            addModal(
-              <EditPreviewConfigModal
-                pullRequest={pullRequest}
-                orgId={orgId}
-                appId={appId}
+          isLoading={runs.isPending}
+          changes={
+            latestRun?.id ? (
+              <PullRequestConfigChanges
                 branchId={branchId}
-                configId={currentConfig?.id}
-                onSave={(override) => trigger.mutateAsync(override)}
+                appBranchRunId={latestRun.id}
               />
-            )
+            ) : null
+          }
+          onEditConfig={() =>
+            pullRequest
+              ? addModal(
+                  <EditPreviewConfigModal
+                    pullRequest={pullRequest}
+                    orgId={orgId}
+                    appId={appId}
+                    branchId={branchId}
+                    configId={currentConfig?.id}
+                    onSave={(override) => trigger.mutateAsync(override)}
+                  />
+                )
+              : undefined
           }
           onRerun={() =>
             addModal(
