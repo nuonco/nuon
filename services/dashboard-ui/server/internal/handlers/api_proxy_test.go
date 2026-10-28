@@ -52,3 +52,37 @@ func TestAPIProxyDropsUpstreamCORSHeaders(t *testing.T) {
 		t.Fatalf("expose-headers = %q, want upstream value dropped", got)
 	}
 }
+
+func TestAPIProxyDialsInternalAndKeepsPublicHost(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	var gotHost string
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotHost = r.Host
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(upstream.Close)
+
+	h := NewAPIProxyHandler(&internal.Config{
+		APIUrl:         "https://api.example.com",
+		InternalAPIUrl: upstream.URL,
+	}, zap.NewNop())
+	e := gin.New()
+	if err := h.RegisterRoutes(e); err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(e)
+	t.Cleanup(srv.Close)
+
+	resp, err := http.Get(srv.URL + "/v1/general/config-schema")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204", resp.StatusCode)
+	}
+	if gotHost != "api.example.com" {
+		t.Fatalf("host = %q, want api.example.com", gotHost)
+	}
+}
