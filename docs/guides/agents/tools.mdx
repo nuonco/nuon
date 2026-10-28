@@ -1,7 +1,6 @@
 ---
 title: "Tools"
 description: "Control-plane tools available to LLM clients via MCP."
-icon: "wrench"
 keywords: ["MCP", "tools", "agents", "whoami", "list_installs"]
 ---
 
@@ -10,6 +9,8 @@ Writes are hidden from the stdio proxy unless `--allow-writes` is set. Setup exa
 Timestamps in tool JSON are UTC (Zulu) RFC3339 and end in `Z` (for example `2026-09-04T04:23:00Z`). If you name a calendar day, clock time, or age, convert that UTC instant to the local machine’s timezone first. Do not say “today” or “yesterday” from the UTC date digits. That calendar day can be a day ahead of local time.
 
 List tools return a page (default 20, max 100) plus `has_more`. They do not keep fetching until the full set is loaded. If `has_more` is true, tell the user there are more results and only pass `offset=next_offset` when they need the next page.
+
+`get_install_inputs` redacts values for inputs marked sensitive. It is safe to use for inspection, but do not use its redacted values to construct an update.
 
 For prompts to paste into a client, see [Sample queries](/guides/agents/sample-queries). To connect, see [Setup](/guides/agents/setup). For skills covering specific tasks, see [Skills](/guides/agents/skills).
 
