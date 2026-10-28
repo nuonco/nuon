@@ -12,9 +12,6 @@
       "twitter:site": "@nuonco"
     }
   },
-  "contextual": {
-    "options": ["copy", "view", "cursor", "chatgpt", "claude"]
-  },
   "colors": {
     "primary": "#256A7F",
     "light": "#4CC9F0",
