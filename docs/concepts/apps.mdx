@@ -6,7 +6,8 @@ keywords: ["app template", "app templates", "what is an app", "what is an app te
 ---
 
 An App Template is a series of TOML files that describe how your app is structured and what it depends on.
-Each [install](/concepts/installs) is one deployment of an App Template.
+Each [install](/concepts/installs) is one deployment of an App Template. Most teams keep one template per cloud or
+architecture, such as AWS and Azure.
 
 ## What's in a template
 
@@ -42,11 +43,6 @@ my-app/
 - **[Stack](/concepts/stacks)**: what the customer applies first, such as the network and permissions.
 - **[Runner](/concepts/runners)**: settings for the runner in each customer's account.
 - **[Sandbox](/concepts/sandboxes)**: base infrastructure, such as a VPC and cluster.
-
-## One product, several templates
-
-Most teams create a few templates to offer different flavors of BYOC, such as an AWS and an Azure version, or one that
-creates a new VPC and one that deploys into the customer's existing VPC.
 
 ## How a template changes
 
