@@ -38,21 +38,8 @@ How Nuon works with your App Template:
   ]}
 />
 
-An app template is a set of TOML files, called the [app config](/configuration-files), that points Nuon at the code
-and artifacts behind your product. Nuon is built so you can lift and shift what you already have, so most teams create
-several app templates to offer different flavors of BYOC, such as AWS and Azure versions, or one that creates a VPC and
-one that reuses the customer's.
-
-**What you provide.** [Components](/concepts/components) connect your existing Helm charts, Terraform modules,
-Kubernetes manifests, and container images. Components can [depend on each other](/guides/component-dependencies) and
-pass outputs between them. [Inputs](/concepts/app-inputs) and [secrets](/concepts/app-secrets) are the knobs each
-customer sets for their install.
-
-**What Nuon provides.** An [app branch](/concepts/app-branches) tracks a git branch of your app config, so each push
-builds what changed and rolls it out to your installs. A [runner](/concepts/runners) in each customer's account does
-that work, using [operation roles](/concepts/operation-roles) scoped to each job. [Actions](/concepts/actions),
-[runbooks](/guides/runbooks), and [drift detection](/concepts/workflows#drift-detection) cover operating installs after
-they ship.
+Your app template is a set of TOML files, the [app config](/configuration-files), in your own git repo. Most teams
+keep a few, one per flavor of BYOC, such as AWS and Azure.
 
 ## Installs
 
@@ -89,14 +76,8 @@ An install is one instance of your App Template in a customer's cloud account.
   ]}
 />
 
-The customer deploys the install's [stack](/concepts/stacks) first. It creates the network, the runner, and the
-permissions the runner needs, either in a new network or in infrastructure the customer already has. The
-[sandbox](/concepts/sandboxes) then sets up the base compute, and your components deploy on top.
-
-Each install has its own [config](/guides/install-configs), so one app template can serve customers with different
-regions, sizes, or architectures. Once it's running, [health checks](/guides/health-checks) and
-[telemetry](/concepts/install-telemetry) show how it's doing, and [break-glass access](/concepts/operation-roles#elevated-access-and-break-glass-operations)
-covers the rare fix that needs more permissions.
+The customer deploys the [stack](/concepts/stacks) first. The [sandbox](/concepts/sandboxes) then sets up compute,
+and your components deploy on top.
 
 ## Updates and change management
 
@@ -124,7 +105,7 @@ Every change to an install runs as a [workflow](/concepts/workflows) with a plan
   ]}
 />
 
-Most updates start with a push. The [app branch](/concepts/app-branches) builds what changed and rolls it out to your
+
 install groups in order, pausing for approval at each one. To change a single customer, edit that install's
 [config](/guides/install-configs), or [roll it back](/guides/rollback-install-config) to an earlier version.
 
