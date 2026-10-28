@@ -7,6 +7,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -31,7 +32,7 @@ func fetchConfigCmd(m model) tea.Cmd {
 			return configFetchedMsg{err: err}
 		}
 
-		inputConfig, err := m.api.GetAppInputLatestConfig(m.ctx, install.AppID)
+		inputConfig, err := installcreate.InputConfigForInstall(m.ctx, m.api, install)
 		if err != nil {
 			return configFetchedMsg{err: err}
 		}
