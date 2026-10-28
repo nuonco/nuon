@@ -919,19 +919,25 @@ Accepts a list of inputs in key=value format, e.g.:
 
   nuon installs inputs set foo=bar baz=qux
 
-The current inputs are fetched first so changed values can be shown. Setting an
-input that is not declared on the app raises an error.
+The current inputs are fetched first so changed values can be shown. Names are
+checked against the install's pinned app config, so an install on a branch can
+use inputs that the latest config does not declare.
+
+If a changed input is used by the install stack, the command warns that it
+takes effect on the next stack reprovision (nuon installs stacks reprovision).
 
 Use --inputs-only to save the values without deploying components or
-reprovisioning the sandbox.`,
+reprovisioning the sandbox. Use --role to select an IAM role; omit it to use
+the default.`,
 		Args: cobra.MinimumNArgs(1),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			svc := c.installs
-			return svc.SetInputs(cmd.Context(), id, args, deployDependents, inputsOnly, requestID, PrintJSON)
+			return svc.SetInputs(cmd.Context(), id, args, deployDependents, inputsOnly, roleName, requestID, PrintJSON)
 		}),
 	}
 	inputsSetCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
 	inputsSetCmd.Flags().BoolVar(&inputsOnly, "inputs-only", false, "Record the new input values without deploying components or reprovisioning the sandbox")
+	addInstallRoleFlag(inputsSetCmd, &roleName)
 	addRequestIDFlag(inputsSetCmd, &requestID)
 	inputsCmd.AddCommand(inputsSetCmd)
 
