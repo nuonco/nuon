@@ -12,17 +12,17 @@ An install is one instance of your App Template in a customer's cloud account.
 <ConceptMap
   columns={[
     {
-      title: "Building blocks",
+      title: "Deploy",
       items: [
         { label: "Stack", href: "/concepts/stacks", note: "Deployed first: the runner, network, and permissions" },
         { label: "Sandbox", href: "/concepts/sandboxes", note: "Base compute, such as an EKS, AKS, or GKE cluster" },
         { label: "Components", href: "/concepts/components", note: "Your product, deployed on top" },
-        { label: "Inputs and secrets", href: "/guides/configuring-inputs-and-secrets", note: "This customer's values" },
       ],
     },
     {
       title: "Setup",
       items: [
+        { label: "Inputs and secrets", href: "/guides/configuring-inputs-and-secrets", note: "This customer's values" },
         { label: "Customer architectures", href: "/concepts/stacks", note: "A new VPC, the customer's VPC, or the customer's cluster" },
         { label: "Install configuration", href: "/guides/install-configs", note: "Each install's settings as config files" },
         { label: "Overrides", href: "/guides/component-overrides", note: "Per-install changes to a component" },
@@ -40,7 +40,7 @@ An install is one instance of your App Template in a customer's cloud account.
   ]}
 />
 
-## Building blocks
+## Deploy
 
 An install inherits the sandbox and components your App Template defines, and deploys the latest build of each
 component. The first [workflow](/concepts/workflows), the install workflow, provisions everything in order:
