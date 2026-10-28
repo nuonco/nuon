@@ -107,7 +107,7 @@
             ]
           },
           {
-            "group": "Updates and Change Management",
+            "group": "Updates and Operations",
             "boost": 3,
             "pages": [
               "concepts/workflows",
