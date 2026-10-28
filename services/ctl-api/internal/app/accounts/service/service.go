@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
@@ -20,34 +21,40 @@ type Params struct {
 	AcctClient       *account.Client
 	AuthzClient      *authz.Client
 	ProductAnalytics *productanalytics.Client
+	EndpointAudit    *api.EndpointAudit
+	Helpers          *accountshelpers.Helpers
 }
 
 type service struct {
+	api.RouteRegister
 	db               *gorm.DB
 	acctClient       *account.Client
 	authzClient      *authz.Client
 	productAnalytics *productanalytics.Client
+	helpers          *accountshelpers.Helpers
 }
 
 var _ api.Service = (*service)(nil)
 
 func New(params Params) *service {
 	return &service{
+		RouteRegister:    api.RouteRegister{EndpointAudit: params.EndpointAudit},
 		db:               params.DB,
 		acctClient:       params.AcctClient,
 		authzClient:      params.AuthzClient,
 		productAnalytics: params.ProductAnalytics,
+		helpers:          params.Helpers,
 	}
 }
-func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// accounts
-	account := api.Group("/v1/account")
+	account := ge.Group("/v1/account")
 	{
 		account.GET("", s.GetCurrentAccount)
 
-		require.NotFederatedTokenRoute(account, "create API tokens").POST("/static-token", s.CreateStaticToken)
-		account.GET("/static-tokens", s.ListStaticTokens)
-		account.DELETE("/static-tokens/:token_id", s.DeleteStaticToken)
+		s.POST(require.NotFederatedTokenRoute(account, "create API tokens"), "/static-token", s.CreateStaticToken, api.APIContextTypePublic, true)
+		s.GET(account, "/static-tokens", s.ListStaticTokens, api.APIContextTypePublic, true)
+		s.DELETE(account, "/static-tokens/:token_id", s.DeleteStaticToken, api.APIContextTypePublic, true)
 
 		// user journeys
 		userJourneys := account.Group("/user-journeys")
@@ -61,10 +68,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	}
 
 	// roles
-	api.GET("/v1/roles", s.ListRoles)
+	ge.GET("/v1/roles", s.ListRoles)
 
 	// service accounts
-	serviceAccounts := api.Group("/v1/service-accounts")
+	serviceAccounts := ge.Group("/v1/service-accounts")
 	{
 		serviceAccounts.GET("", s.ListServiceAccounts)
 		serviceAccounts.GET("/purposes", s.ListServiceAccountPurposes)
@@ -72,11 +79,11 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		serviceAccounts.PATCH("/:account_id", s.UpdateServiceAccount)
 		serviceAccounts.PATCH("/:account_id/role", s.UpdateServiceAccountRole)
 		serviceAccounts.DELETE("/:account_id", s.DeleteServiceAccount)
-		require.NotFederatedTokenRoute(serviceAccounts, "create API tokens").POST("/:account_id/tokens", s.CreateServiceAccountToken)
+		s.POST(require.NotFederatedTokenRoute(serviceAccounts, "create API tokens"), "/:account_id/tokens", s.CreateServiceAccountToken, api.APIContextTypePublic, true)
 	}
 
 	// auth/me - registered here instead of authservice so it's available in PublicServicesModule
-	auth := api.Group("/v1/auth")
+	auth := ge.Group("/v1/auth")
 	{
 		auth.GET("/me", s.GetAuthMe)
 		auth.GET("/validate", s.ValidateToken)

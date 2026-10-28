@@ -20,24 +20,13 @@ export const DURATION_OPTIONS = [
   { value: '8760h', label: '1 year' },
 ]
 
-export const TOKEN_IDENTITY_OPTIONS = [
-  {
-    value: 'personal',
-    label: 'Personal token',
-    description:
-      'Issued against your own account and uses your existing role. Has the same access as you and stops working if your account loses access.',
-  },
-  {
-    value: 'service_account',
-    label: 'Service account token',
-    description:
-      'Creates a dedicated service account in this org with the role you choose. Not tied to any team member.',
-  },
-]
-
 export const CreateApiTokenModal = ({
   isPending,
   error,
+  // Set when the service account was created but token creation then failed — the
+  // account still exists, so the error must point to the Service accounts page
+  // instead of implying the whole operation can simply be retried.
+  accountCreatedError,
   createdToken,
   roleOptions,
   rolesLoading,
@@ -47,6 +36,7 @@ export const CreateApiTokenModal = ({
 }: {
   isPending: boolean
   error: TAPIError | null
+  accountCreatedError: string | null
   createdToken: string | null
   roleOptions: { value: string; label: string; description?: string }[]
   rolesLoading?: boolean
@@ -60,7 +50,6 @@ export const CreateApiTokenModal = ({
   const form = useForm({
     defaultValues: {
       name: '',
-      identity: 'personal',
       role: defaultRole,
       duration: '720h',
     } as CreateApiTokenValues,
@@ -72,7 +61,6 @@ export const CreateApiTokenModal = ({
   })
 
   const canSubmit = useStore(form.store, (s) => s.canSubmit)
-  const identity = useStore(form.store, (s) => s.values.identity)
 
   if (createdToken) {
     return (
@@ -100,6 +88,33 @@ export const CreateApiTokenModal = ({
             </Text>
             <ClickToCopyButton textToCopy={createdToken} />
           </div>
+        </div>
+      </Modal>
+    )
+  }
+
+  if (accountCreatedError) {
+    return (
+      <Modal
+        heading={
+          <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
+            <Icon variant="WarningIcon" size="24" />
+            Token creation failed
+          </Text>
+        }
+        primaryActionTrigger={{
+          children: 'Done',
+          onClick: () => onDone(),
+          variant: 'primary',
+        }}
+        {...props}
+      >
+        <div className="flex flex-col gap-4">
+          <Banner theme="error">{accountCreatedError}</Banner>
+          <Text variant="body">
+            The service account was created. Go to the Service accounts page to
+            create a token for it.
+          </Text>
         </div>
       </Modal>
     )
@@ -135,17 +150,6 @@ export const CreateApiTokenModal = ({
       >
         <FormErrorBanner error={error} fallback="Unable to create API token" />
 
-        <form.Field name="identity">
-          {(field) => (
-            <FormSelect
-              field={field}
-              options={TOKEN_IDENTITY_OPTIONS}
-              disabled={isPending}
-              labelProps={{ labelText: 'Type' }}
-            />
-          )}
-        </form.Field>
-
         <form.Field name="name">
           {(field) => (
             <FormInput
@@ -159,28 +163,27 @@ export const CreateApiTokenModal = ({
           )}
         </form.Field>
 
-        {identity === 'service_account' &&
-          (rolesLoading ? (
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="token-role">
-                <Text variant="body" className="font-medium">
-                  Role
-                </Text>
-              </Label>
-              <Skeleton height="36px" />
-            </div>
-          ) : (
-            <form.Field name="role">
-              {(field) => (
-                <FormSelect
-                  field={field}
-                  options={roleOptions}
-                  disabled={isPending}
-                  labelProps={{ labelText: 'Role' }}
-                />
-              )}
-            </form.Field>
-          ))}
+        {rolesLoading ? (
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="token-role">
+              <Text variant="body" className="font-medium">
+                Role
+              </Text>
+            </Label>
+            <Skeleton height="36px" />
+          </div>
+        ) : (
+          <form.Field name="role">
+            {(field) => (
+              <FormSelect
+                field={field}
+                options={roleOptions}
+                disabled={isPending}
+                labelProps={{ labelText: 'Role' }}
+              />
+            )}
+          </form.Field>
+        )}
 
         <form.Field name="duration">
           {(field) => (

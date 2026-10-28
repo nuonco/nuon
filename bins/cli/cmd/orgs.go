@@ -65,7 +65,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:   "Get api token that is active for current org",
 		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			printDeprecatedCommandWarning(cmd, "Use `nuon orgs api-tokens` instead")
+			printDeprecatedCommandWarning(cmd, "Use `nuon service-accounts tokens` instead")
 
 			svc := c.orgs
 			return svc.APIToken(cmd.Context(), PrintJSON)
@@ -247,16 +247,23 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 
 	apiTokensCmd := &cobra.Command{
 		Use:               "api-tokens",
-		Short:             "Manage static API tokens for the current org",
-		Long:              "Create, list, and delete static API tokens scoped to the current org's service account",
+		Short:             "Manage static API tokens (deprecated)",
+		Long:              "Create, list, and delete static API tokens. Deprecated: use `nuon service-accounts` and `nuon service-accounts tokens` instead.",
+		Hidden:            true,
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 
 	createCmd := &cobra.Command{
 		Use:   "create",
-		Short: "Create a static API token for the current org",
-		Long:  "Create a static API token. By default the token is backed by a dedicated service account with the given role; use --personal to issue the token against your own account and its existing roles instead. The token is only shown once.",
+		Short: "Create a static API token (deprecated)",
+		Long:  "Create a static API token backed by a dedicated service account with the given role. The token is only shown once. Deprecated: use `nuon service-accounts create` and `nuon service-accounts tokens create` instead. The --personal flag is also deprecated: personal tokens carry all of your access.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			if personal {
+				printDeprecatedCommandWarning(cmd, "Personal tokens are deprecated because they carry all of your access; use `nuon service-accounts create` and `nuon service-accounts tokens create` instead")
+			} else {
+				printDeprecatedCommandWarning(cmd, "Use `nuon service-accounts create --name <name> --role <role>`, then `nuon service-accounts tokens create --id <account-id>` instead")
+			}
+
 			svc := c.orgs
 			return svc.CreateStaticToken(cmd.Context(), name, duration, role, personal, PrintJSON)
 		}),
@@ -265,14 +272,16 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
 	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (see 'nuon roles list')")
-	createCmd.Flags().BoolVar(&personal, "personal", false, "Issue the token against your own account instead of a dedicated service account")
+	createCmd.Flags().BoolVar(&personal, "personal", false, "(deprecated) Issue the token against your own account instead of a dedicated service account")
 	apiTokensCmd.AddCommand(createCmd)
 
 	listCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
-		Short:   "List static API tokens for the current org",
+		Short:   "List static API tokens (deprecated)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			printDeprecatedCommandWarning(cmd, "Use `nuon service-accounts tokens list` instead")
+
 			svc := c.orgs
 			return svc.ListStaticTokens(cmd.Context(), PrintJSON)
 		}),
@@ -281,8 +290,10 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{
 		Use:   "delete",
-		Short: "Delete a static API token for the current org",
+		Short: "Delete a static API token (deprecated)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			printDeprecatedCommandWarning(cmd, "Use `nuon service-accounts tokens delete --token-id <token-id>` instead")
+
 			svc := c.orgs
 			return svc.DeleteStaticToken(cmd.Context(), tokenID, PrintJSON)
 		}),
