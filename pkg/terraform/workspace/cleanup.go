@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/pkg/errors"
@@ -10,6 +11,12 @@ import (
 
 // cleanup cleans up the root directory and all contents
 func (w *workspace) Cleanup(ctx context.Context) error {
+	if c, ok := w.Backend.(io.Closer); ok && c != nil {
+		if err := c.Close(); err != nil {
+			return errors.Wrap(err, "unable to close terraform backend")
+		}
+	}
+
 	if w.DisableCleanup {
 		return nil
 	}

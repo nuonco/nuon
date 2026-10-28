@@ -6,23 +6,26 @@ package procisolation
 
 import (
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 )
 
-// secretEnvVars are read once into the runner config and must not reach child
-// processes, which inherit os.Environ().
-var secretEnvVars = []string{
-	"RUNNER_API_TOKEN",
-}
-
 // Apply must run after the runner config has been loaded from the environment.
-// Unsetting only hides the token from os.Environ(); /proc/<pid>/environ still
-// serves the original environment block, so the process is also marked
-// non-dumpable, which denies same-uid processes without CAP_SYS_PTRACE access
-// to its /proc/<pid>/environ and /proc/<pid>/mem.
+// Every RUNNER_* variable is dropped, including the API token, the runner id,
+// and the API URL. Child processes inherit os.Environ(), and fetch-token reads
+// those variables to mint a new token.
+//
+// Unsetting does not rewrite the original environment block /proc/<pid>/environ
+// serves, so the process is also marked non-dumpable. That denies same-uid
+// processes without CAP_SYS_PTRACE access to /proc/<pid>/environ and
+// /proc/<pid>/mem.
 func Apply() error {
-	for _, name := range secretEnvVars {
+	for _, envVar := range os.Environ() {
+		name, _, _ := strings.Cut(envVar, "=")
+		if !strings.HasPrefix(name, "RUNNER_") {
+			continue
+		}
 		if err := os.Unsetenv(name); err != nil {
 			return errors.Wrapf(err, "unable to unset %s", name)
 		}

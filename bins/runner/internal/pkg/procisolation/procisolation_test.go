@@ -9,17 +9,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestApplyRemovesTokenFromChildEnv(t *testing.T) {
+func TestApplyRemovesRunnerEnvFromChild(t *testing.T) {
 	t.Setenv("RUNNER_API_TOKEN", "test-token")
 	t.Setenv("RUNNER_ID", "runner-id")
+	t.Setenv("RUNNER_API_URL", "https://runner.example.com")
+	t.Setenv("PATH", os.Getenv("PATH"))
 
 	require.NoError(t, Apply())
 
-	_, ok := os.LookupEnv("RUNNER_API_TOKEN")
-	assert.False(t, ok)
-	assert.Equal(t, "runner-id", os.Getenv("RUNNER_ID"))
+	for _, name := range []string{"RUNNER_API_TOKEN", "RUNNER_ID", "RUNNER_API_URL"} {
+		_, ok := os.LookupEnv(name)
+		assert.False(t, ok, name)
+	}
+	assert.NotEmpty(t, os.Getenv("PATH"))
 
 	out, err := exec.Command("env").Output()
 	require.NoError(t, err)
 	assert.NotContains(t, string(out), "test-token")
+	assert.NotContains(t, string(out), "RUNNER_ID=")
+	assert.NotContains(t, string(out), "runner.example.com")
 }
