@@ -35,19 +35,29 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Quickstart",
+        "tab": "Getting Started",
         "icon": "rocket",
         "pages": [
-          "get-started/quickstart",
-          "get-started/create-your-first-app",
-          "get-started/app-branches-walkthrough",
-          "get-started/introduction",
+          {
+            "group": "Orientation",
+            "pages": [
+              "get-started/introduction",
+              "get-started/overview",
+              "get-started/glossary"
+            ]
+          },
+          {
+            "group": "Get Started",
+            "pages": [
+              "get-started/quickstart",
+              "get-started/create-your-first-app",
+              "get-started/app-branches-walkthrough"
+            ]
+          },
           {
             "group": "Deployment Options",
-            "root": "guides/deployment-options",
-            "boost": 5,
-            "expanded": true,
             "pages": [
+              "guides/deployment-options",
               "guides/nuon-cloud",
               {
                 "group": "BYOC",
@@ -72,26 +82,16 @@
         ]
       },
       {
-        "tab": "How it Works",
+        "tab": "Concepts",
         "icon": "lightbulb",
         "groups": [
           {
-            "group": "Overview",
-            "boost": 3,
-            "pages": ["concepts/overview", "concepts/glossary"]
-          },
-          {
-            "group": "Connect Your App",
+            "group": "App Templates",
             "boost": 3,
             "pages": [
               "concepts/apps",
-              {
-                "group": "Components",
-                "root": "concepts/components",
-                "icon": "object-group",
-                "boost": 3,
-                "pages": ["concepts/components/auto-retries"]
-              },
+              "concepts/components",
+              "concepts/components/auto-retries",
               "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",
@@ -100,36 +100,33 @@
             ]
           },
           {
-            "group": "Customer installs",
+            "group": "Installs and Stacks",
             "boost": 3,
             "pages": [
               "guides/app-install-life-cycle",
-              {
-                "group": "Stacks",
-                "root": "concepts/stacks",
-                "icon": "layer-group",
-                "expanded": true,
-                "pages": [
-                  "concepts/stacks/stand-alone-vpc",
-                  "concepts/stacks/customer-vpc",
-                  "concepts/stacks/customer-cluster"
-                ]
-              },
-              "concepts/cli"
+              "concepts/stacks",
+              "concepts/stacks/stand-alone-vpc",
+              "concepts/stacks/customer-vpc",
+              "concepts/stacks/customer-cluster"
             ]
           },
           {
-            "group": "Continuous Delivery",
+            "group": "Delivery and Operations",
             "boost": 3,
             "pages": [
-              "get-started/day-2-operations",
               "concepts/workflows",
               "concepts/app-branches",
               "concepts/actions",
               "concepts/policies",
               "concepts/operation-roles",
               "concepts/install-telemetry",
-              "concepts/triggers",
+              "concepts/triggers"
+            ]
+          },
+          {
+            "group": "Identity and Security",
+            "boost": 3,
+            "pages": [
               "concepts/access-control",
               "concepts/api-tokens",
               "concepts/service-accounts",
@@ -139,11 +136,11 @@
         ]
       },
       {
-        "tab": "How-tos",
+        "tab": "Guides",
         "icon": "screwdriver-wrench",
         "groups": [
           {
-            "group": "Connect Your App",
+            "group": "Build an App",
             "boost": 3,
             "pages": [
               "guides/managing-apps",
@@ -156,23 +153,24 @@
               "guides/cloud-connections",
               "guides/sandbox-builds",
               "guides/using-variables",
-              "guides/vcs",
-              {
-                "group": "Components",
-                "pages": [
-                  "guides/container-image-components",
-                  "guides/image-signature-verification",
-                  "guides/image-update-policies",
-                  "guides/helm-chart-components",
-                  "guides/kubernetes-manifest-components",
-                  "guides/pulumi-components",
-                  "guides/terraform-components"
-                ]
-              }
+              "guides/vcs"
             ]
           },
           {
-            "group": "Install with a Customer",
+            "group": "Manage Components",
+            "boost": 3,
+            "pages": [
+              "guides/container-image-components",
+              "guides/image-signature-verification",
+              "guides/image-update-policies",
+              "guides/helm-chart-components",
+              "guides/kubernetes-manifest-components",
+              "guides/pulumi-components",
+              "guides/terraform-components"
+            ]
+          },
+          {
+            "group": "Deliver to Customers",
             "boost": 3,
             "pages": [
               "guides/vendor-customers",
@@ -188,7 +186,7 @@
             ]
           },
           {
-            "group": "Day 2 Operations",
+            "group": "Operate Installs",
             "boost": 3,
             "pages": [
               "guides/app-branches",
@@ -201,12 +199,11 @@
               "guides/configuring-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
-              "guides/manage-install-telemetry",
-              "guides/team-management"
+              "guides/manage-install-telemetry"
             ]
           },
           {
-            "group": "Integrations",
+            "group": "Automate and Integrate",
             "boost": 2,
             "pages": [
               "guides/control-plane-integration",
@@ -217,6 +214,13 @@
               "guides/export-runner-audit-logs",
               "guides/health-checks",
               "guides/slack"
+            ]
+          },
+          {
+            "group": "Access and Permission",
+            "boost": 2,
+            "pages": [
+              "guides/team-management"
             ]
           },
           {
@@ -242,21 +246,29 @@
         "icon": "robot",
         "pages": [
           {
-            "group": "Agents",
-            "root": "guides/agents/overview",
-            "expanded": true,
+            "group": "Start",
             "pages": [
-              {
-                "group": "MCP",
-                "expanded": true,
-                "pages": [
-                  "guides/agents/setup",
-                  "guides/agents/tools",
-                  "guides/agents/sample-queries"
-                ]
-              },
-              "guides/agents/skills",
-              "guides/agents/ai-and-apps"
+              "guides/agents/overview",
+              "guides/agents/setup"
+            ]
+          },
+          {
+            "group": "Operate",
+            "pages": [
+              "guides/agents/sample-queries"
+            ]
+          },
+          {
+            "group": "Build",
+            "pages": [
+              "guides/agents/ai-and-apps",
+              "guides/agents/skills"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "guides/agents/tools"
             ]
           }
         ]
@@ -266,17 +278,7 @@
         "icon": "book",
         "pages": [
           {
-            "group": "Cloud Reference",
-            "boost": 1,
-            "pages": [
-              "platform-support/introduction",
-              "platform-support/aws",
-              "platform-support/azure",
-              "platform-support/gcp"
-            ]
-          },
-          {
-            "group": "Interface Reference",
+            "group": "Interfaces",
             "pages": [
               {
                 "group": "CLI",
@@ -289,11 +291,19 @@
             ]
           },
           {
-            "group": "Config Reference",
-            "root": "config-ref/index",
-            "boost": 0.25,
-            "expanded": true,
+            "group": "Cloud Reference",
+            "boost": 1,
             "pages": [
+              "platform-support/introduction",
+              "platform-support/aws",
+              "platform-support/azure",
+              "platform-support/gcp"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "config-ref/index",
               "configuration-files",
               {
                 "group": "Component Types",
@@ -388,11 +398,6 @@
           "updates/002-inputs-dependencies",
           "updates/001-install-workflows-actions"
         ]
-      },
-      {
-        "tab": "Knowledge Base",
-        "icon": "book-open",
-        "href": "https://support.nuon.co"
       }
     ],
     "global": {
