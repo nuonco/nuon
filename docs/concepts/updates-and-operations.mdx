@@ -24,7 +24,6 @@ What Nuon provides. These primitives are built in. Some, like actions and runboo
       title: "Secure execution",
       tone: "nuon",
       items: [
-        { label: "Runner", href: "/concepts/runners", note: "Does the work inside the customer's account" },
         { label: "Operation roles", href: "/concepts/operation-roles", note: "Scoped permissions per operation" },
         { label: "Break-glass access", href: "/concepts/operation-roles#elevated-access-and-break-glass-operations", note: "Elevated access the customer enables" },
       ],
@@ -55,8 +54,8 @@ Because App Templates live in git, an update is a push.
 
 ## Secure execution
 
-- **[Runner](/concepts/runners).** Each install has its own runner in the customer's cloud account. It does every
-  deploy, action, and runbook there.
+Every install's [runner](/concepts/runners) works inside the customer's account with only the access it needs.
+
 - **[Operation roles](/concepts/operation-roles).** The runner assumes a role scoped to each kind of work, and every
   workflow run records which role it used.
 - **[Break-glass access](/concepts/operation-roles#elevated-access-and-break-glass-operations).** When a fix needs more

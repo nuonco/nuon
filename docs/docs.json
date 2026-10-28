@@ -89,11 +89,22 @@
             "boost": 3,
             "pages": [
               "concepts/components",
-              "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",
-              "concepts/app-variables",
-              "concepts/runners"
+              "concepts/app-variables"
+            ]
+          },
+          {
+            "group": "Nuon Infrastructure",
+            "expanded": true,
+            "boost": 3,
+            "pages": [
+              "concepts/stacks",
+              "concepts/runners",
+              "concepts/sandboxes",
+              "concepts/stacks/stand-alone-vpc",
+              "concepts/stacks/customer-vpc",
+              "concepts/stacks/customer-cluster"
             ]
           },
           {
@@ -102,10 +113,7 @@
             "expanded": true,
             "boost": 3,
             "pages": [
-              "concepts/stacks",
-              "concepts/stacks/stand-alone-vpc",
-              "concepts/stacks/customer-vpc",
-              "concepts/stacks/customer-cluster"
+              "concepts/install-telemetry"
             ]
           },
           {
@@ -119,7 +127,6 @@
               "concepts/actions",
               "concepts/policies",
               "concepts/operation-roles",
-              "concepts/install-telemetry",
               "concepts/triggers"
             ]
           }

@@ -7,6 +7,7 @@ keywords: ["concepts", "how Nuon works", "platform overview", "app template", "a
 ---
 
 import { ConceptMap } from "/snippets/concept-map.jsx";
+import { FlowSteps } from "/snippets/flow-steps.jsx";
 
 Package your product once as a Nuon App Template. Nuon uses that template to create installs of your app in your customer's cloud.
 
@@ -33,6 +34,22 @@ An App Template is your product, described as TOML in your own git repo. You pro
 />
 
 Most teams keep a few templates, one per flavor of BYOC, such as AWS and Azure.
+
+## Nuon Infrastructure
+
+What Nuon runs in each customer's cloud account so your product can run there.
+
+<FlowSteps
+  steps={[
+    { title: "Stack", detail: "The customer applies it: network, permissions, and a VM for the runner" },
+    { title: "Runner", detail: "Starts on that VM and does every deploy, action, and runbook" },
+    { title: "Sandbox", detail: "Base compute your components deploy into, such as a Kubernetes cluster" },
+  ]}
+/>
+
+Read more about the [stack](/concepts/stacks), the [runner](/concepts/runners), and the [sandbox](/concepts/sandboxes).
+The stack can create a [new VPC](/concepts/stacks/stand-alone-vpc), or deploy into the
+[customer's VPC](/concepts/stacks/customer-vpc) or [cluster](/concepts/stacks/customer-cluster).
 
 ## [Installs](/concepts/installs)
 
@@ -90,7 +107,6 @@ What Nuon provides. These primitives are built in. Some, like actions and runboo
       title: "Secure execution",
       tone: "nuon",
       items: [
-        { label: "Runner", href: "/concepts/runners" },
         { label: "Operation roles", href: "/concepts/operation-roles" },
         { label: "Break-glass access", href: "/concepts/operation-roles#elevated-access-and-break-glass-operations" },
       ],
