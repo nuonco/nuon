@@ -89,7 +89,6 @@
             "boost": 3,
             "pages": [
               "concepts/components",
-              "concepts/components/auto-retries",
               "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",
@@ -157,7 +156,8 @@
               "guides/helm-chart-components",
               "guides/kubernetes-manifest-components",
               "guides/pulumi-components",
-              "guides/terraform-components"
+              "guides/terraform-components",
+              "concepts/components/auto-retries"
             ]
           },
           {
