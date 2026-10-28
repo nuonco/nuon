@@ -275,5 +275,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "151-runner-job-log-stream-index",
 			Fn:   m.Migration151RunnerJobLogStreamIndex,
 		},
+		migrations.Migration{
+			Name: "151-install-action-workflow-runs-latest-index",
+			Fn:   m.Migration151InstallActionWorkflowRunsLatestIndex,
+		},
 	)
 }
