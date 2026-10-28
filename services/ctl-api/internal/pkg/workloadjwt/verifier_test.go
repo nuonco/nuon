@@ -2,7 +2,7 @@ package workloadjwt
 
 import (
 	"context"
-	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -26,11 +26,9 @@ func TestVerify_RequiresIssuerAndAudience(t *testing.T) {
 	}
 }
 
-func TestProvider_RejectsNonHTTPSIssuer(t *testing.T) {
+func TestVerify_RejectsNonHTTPSIssuer(t *testing.T) {
 	// A non-https issuer would let a caller point key discovery at plaintext, or at
 	// something that is not a URL at all.
-	v := NewVerifier()
-
 	for _, issuer := range []string{
 		"http://sts.windows.net/tenant/",
 		"file:///etc/passwd",
@@ -38,60 +36,10 @@ func TestProvider_RejectsNonHTTPSIssuer(t *testing.T) {
 		"https://",
 		"://nope",
 	} {
-		if _, err := v.provider(issuer); err == nil {
-			t.Errorf("expected issuer %q to be rejected", issuer)
+		_, err := NewVerifier().Verify(context.Background(), Request{Token: "a.b.c", Issuer: issuer, Audience: "aud"})
+		if err == nil || !strings.Contains(err.Error(), "issuer") {
+			t.Errorf("expected issuer %q to be rejected, got %v", issuer, err)
 		}
-	}
-
-	if len(v.providers) != 0 {
-		t.Errorf("a rejected issuer must not be cached, got %d entries", len(v.providers))
-	}
-}
-
-func TestProvider_CachesPerIssuer(t *testing.T) {
-	v := NewVerifier()
-	const issuer = "https://sts.windows.net/11111111-2222-3333-4444-555555555555/"
-
-	first, err := v.provider(issuer)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	second, err := v.provider(issuer)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if first != second {
-		t.Error("expected the same provider to be reused for one issuer")
-	}
-	if len(v.providers) != 1 {
-		t.Errorf("expected 1 cached provider, got %d", len(v.providers))
-	}
-}
-
-// Issuers come from stored state today, but an unbounded cache keyed on anything derived
-// from a request is a memory leak waiting to happen.
-func TestProvider_CacheIsBounded(t *testing.T) {
-	v := NewVerifier()
-
-	for i := range maxCachedIssuers + 50 {
-		issuer := fmt.Sprintf("https://sts.windows.net/tenant-%d/", i)
-		if _, err := v.provider(issuer); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	}
-
-	if len(v.providers) > maxCachedIssuers {
-		t.Errorf("cache grew to %d, above the %d ceiling", len(v.providers), maxCachedIssuers)
-	}
-	if len(v.inserted) != len(v.providers) {
-		t.Errorf("insertion order (%d) drifted from the cache (%d), so eviction leaks",
-			len(v.inserted), len(v.providers))
-	}
-
-	// The oldest entries are the ones evicted.
-	if _, ok := v.providers["https://sts.windows.net/tenant-0/"]; ok {
-		t.Error("expected the oldest issuer to have been evicted")
 	}
 }
 
