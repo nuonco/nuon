@@ -150,13 +150,13 @@
               "guides/managing-components",
               "guides/component-dependencies",
               "guides/toggleable-components",
+              "guides/terraform-components",
+              "guides/helm-chart-components",
+              "guides/kubernetes-manifest-components",
               "guides/container-image-components",
               "guides/image-signature-verification",
               "guides/image-update-policies",
-              "guides/helm-chart-components",
-              "guides/kubernetes-manifest-components",
-              "guides/pulumi-components",
-              "guides/terraform-components"
+              "guides/pulumi-components"
             ]
           },
           {
