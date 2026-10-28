@@ -551,3 +551,37 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
     grid-template-columns: 1fr 1fr 1fr !important;
   }
 }
+
+/* Horizontal variant of the flow steps (snippets/flow-steps.jsx) */
+.nuon-flow[data-horizontal="true"] .nuon-flow-track {
+  display: flex;
+  align-items: center;
+}
+.nuon-flow[data-horizontal="true"] .nuon-flow-step {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+.nuon-flow[data-horizontal="true"] .nuon-flow-step:last-child {
+  flex: 0 0 auto;
+}
+.nuon-flow[data-horizontal="true"] .nuon-flow-step:not(:last-child)::before {
+  content: none;
+}
+.nuon-flow[data-horizontal="true"] .nuon-flow-step:not(:last-child)::after {
+  content: "";
+  flex: 1;
+  margin: 0 0.75rem;
+  border-top: 1.5px solid var(--try-border);
+}
+@media (max-width: 720px) {
+  .nuon-flow[data-horizontal="true"] .nuon-flow-track {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .nuon-flow[data-horizontal="true"] .nuon-flow-step:not(:last-child)::after {
+    content: none;
+  }
+}
