@@ -1,0 +1,30 @@
+---
+title: "Nuon Infrastructure"
+description: "What Nuon runs in each customer's cloud account so your product can run there."
+keywords: ["nuon infrastructure", "stack", "runner", "sandbox", "install stack", "customer cloud account", "BYOC architecture", "what gets deployed in customer account", "VPC", "customer VPC", "customer cluster"]
+---
+
+Every install runs on the same standard infrastructure in the customer's cloud account. The customer applies it with
+their own credentials, and no cross-account access is required.
+
+![What Nuon deploys in a customer's cloud account](/images/architecture/byoc-architecture.png)
+
+It builds from the bottom up:
+
+- **[Stack](/concepts/stacks).** The customer applies it first. It creates the network, the permissions, and a VM for
+  the runner. Nuon generates it in Terraform and in the cloud's native format, such as CloudFormation on AWS.
+- **[Runner](/concepts/runners).** Starts on that VM, picks up jobs from the Nuon control plane, and runs every deploy,
+  action, and runbook inside the customer's account.
+- **[Sandbox](/concepts/sandboxes).** The base compute your components deploy into, such as a Kubernetes cluster,
+  VMs, or serverless.
+
+Your [components](/concepts/components) deploy on top.
+
+## Fit the customer's architecture
+
+The stack adapts to what the customer already has:
+
+- **[Stand-alone VPC](/concepts/stacks/stand-alone-vpc).** Nuon creates a new network for the install.
+- **[Customer VPC](/concepts/stacks/customer-vpc).** The install deploys into a network the customer already has.
+- **[Customer cluster](/concepts/stacks/customer-cluster).** Your components deploy into the customer's existing
+  Kubernetes cluster.

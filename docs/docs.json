@@ -96,6 +96,7 @@
           },
           {
             "group": "Nuon Infrastructure",
+            "root": "concepts/nuon-infrastructure",
             "expanded": true,
             "boost": 3,
             "pages": [
