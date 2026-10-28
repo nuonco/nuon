@@ -1,6 +1,8 @@
 // PostHog analytics. Loaded automatically by Mintlify on every docs page.
-// Matches the marketing site (services/website PostHog.astro in mono):
-// cookieless_mode hashes visitors server-side, so no cookie banner is needed.
+// Direct US ingest (us.i.posthog.com) — not Mintlify's ph.mintlify.com proxy.
+// Do not set cookieless_mode: 'always': that strips $ip before GeoIP runs, so
+// country/city enrichment never lands (see PostHog cookieless docs). Prefer
+// project "Discard client IP data" if you need to drop raw IPs after enrichment.
 (function () {
   if (window.__posthogInitialized) return
   window.__posthogInitialized = true
@@ -19,7 +21,6 @@
       autocapture: true,
       capture_pageview: 'history_change',
       person_profiles: 'never',
-      cookieless_mode: 'always',
       disable_session_recording: true,
     })
   }
