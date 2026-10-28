@@ -3,15 +3,11 @@ package componenthealth
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
-	"os"
-	"os/exec"
-	"slices"
 	"strings"
 	"time"
 
@@ -37,21 +33,19 @@ const (
 	// verdict, drained only to free the connection.
 	probeBodyDrainLimit = 4 * 1024
 
-	// probeOutputLimit bounds how much of an exec probe's combined output travels
-	// as the failure message.
-	probeOutputLimit = 2 * 1024
-
 	probeUserAgent = "nuon-runner/component-health"
+
+	execProbeUnsupported = "exec probes are not supported"
 )
 
 // probeSpec is one synthetic probe declared on a component. Only specs built by
-// newProbeSpec or newExecProbeSpec run, so a probe can never reach an unnamed target.
+// newProbeSpec run, so a probe can never reach an unnamed target.
 type probeSpec struct {
 	kind   string
 	target string
 	// dialAddr is the host:port a tcp probe connects to, derived from target.
 	dialAddr string
-	// command is the argv an exec probe runs, never a shell string.
+	// command is kept so an unresolved exec probe can still be named. It is never executed.
 	command []string
 	// name is the vendor's display label; falls back to the target or argv[0].
 	name string
@@ -116,19 +110,6 @@ func tcpDialAddr(target string) (string, bool) {
 	return net.JoinHostPort(host, port), true
 }
 
-// newExecProbeSpec validates and normalizes a declared exec probe. The argv is
-// taken verbatim — it is never joined into a shell string.
-func newExecProbeSpec(command []string) (probeSpec, bool) {
-	if len(command) == 0 || strings.TrimSpace(command[0]) == "" {
-		return probeSpec{}, false
-	}
-
-	argv := slices.Clone(command)
-	argv[0] = strings.TrimSpace(argv[0])
-
-	return probeSpec{kind: probeKindExec, command: argv}, true
-}
-
 func (s probeSpec) resourceKind() string {
 	switch s.kind {
 	case probeKindTCP:
@@ -186,7 +167,7 @@ func runProbe(ctx context.Context, client *http.Client, spec probeSpec) probeRes
 	case probeKindTCP:
 		return runTCPProbe(ctx, spec.dialAddr)
 	case probeKindExec:
-		return runExecProbe(ctx, spec.command)
+		return probeResult{health: healthUnknown, message: execProbeUnsupported}
 	default:
 		return runHTTPProbe(ctx, client, spec.target)
 	}
@@ -232,72 +213,6 @@ func runTCPProbe(ctx context.Context, addr string) probeResult {
 	_ = conn.Close()
 
 	return probeResult{health: healthHealthy, latency: time.Since(started)}
-}
-
-// execProbeEnv is deliberately minimal — the runner's own env carries its
-// control-plane token and cloud credentials, which a probe must not inherit.
-func execProbeEnv() []string {
-	path := os.Getenv("PATH")
-	if path == "" {
-		path = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-	}
-	return []string{"PATH=" + path, "HOME=" + os.TempDir(), "TMPDIR=" + os.TempDir()}
-}
-
-// runExecProbe runs the declared argv directly — no shell, so nothing in the
-// config is interpreted as a pipeline, redirect or expansion.
-func runExecProbe(ctx context.Context, command []string) probeResult {
-	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
-	cmd.Env = execProbeEnv()
-
-	started := time.Now()
-	out, err := cmd.CombinedOutput()
-	res := probeResult{latency: time.Since(started)}
-	tail := outputTail(out)
-
-	if ctx.Err() != nil {
-		res.health = healthUnhealthy
-		res.message = joinProbeMessage(
-			fmt.Sprintf("timed out after %s", res.latency.Round(time.Millisecond)), tail)
-		return res
-	}
-
-	if err == nil {
-		res.health = healthHealthy
-		return res
-	}
-
-	res.health = healthUnhealthy
-
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		code := exitErr.ExitCode()
-		res.exitCode = &code
-		res.message = joinProbeMessage(fmt.Sprintf("exit code %d", code), tail)
-		return res
-	}
-
-	res.message = joinProbeMessage(err.Error(), tail)
-	return res
-}
-
-// outputTail returns the last probeOutputLimit bytes of an exec probe's output:
-// failures report at the end.
-func outputTail(out []byte) string {
-	if len(out) > probeOutputLimit {
-		out = out[len(out)-probeOutputLimit:]
-	}
-	return strings.TrimSpace(string(out))
-}
-
-func joinProbeMessage(reason, tail string) string {
-	if tail == "" {
-		return reason
-	}
-	return reason + ": " + tail
 }
 
 func probeResourceRow(spec probeSpec, res probeResult) *models.ServiceComponentHealthResource {
@@ -358,16 +273,12 @@ func probeSpecsFor(c *models.ServiceRunnerInstallComponent) []probeSpec {
 
 		kind := strings.ToLower(strings.TrimSpace(p.Type))
 
-		// Checked before validity, or an exec probe whose argv still holds a
-		// template would run with a literal "{{...}}" as input.
 		var (
 			spec probeSpec
 			ok   bool
 		)
-		if !probeTargetsResolved(p) {
+		if kind == probeKindExec || !probeTargetsResolved(p) {
 			ok = false
-		} else if kind == probeKindExec {
-			spec, ok = newExecProbeSpec(p.Command)
 		} else {
 			spec, ok = newProbeSpec(p.Type, p.URL)
 		}
@@ -392,13 +303,14 @@ func probeSpecsFor(c *models.ServiceRunnerInstallComponent) []probeSpec {
 
 // unresolvedProbeReason explains in the vendor's terms why a probe cannot run.
 func unresolvedProbeReason(p *models.ServiceRunnerComponentProbe) string {
+	if strings.EqualFold(strings.TrimSpace(p.Type), probeKindExec) {
+		return execProbeUnsupported
+	}
 	target := strings.TrimSpace(p.URL)
 	if strings.Contains(target, "{{") || anyTemplated(p.Command) {
 		return "probe target could not be resolved from install state yet — it references a value the install has not produced"
 	}
 	switch strings.ToLower(strings.TrimSpace(p.Type)) {
-	case probeKindExec:
-		return "probe declares no command to run"
 	case probeKindHTTP, "https", probeKindTCP:
 		if target == "" {
 			return "probe declares no url to check"

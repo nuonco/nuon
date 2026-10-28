@@ -15,14 +15,14 @@ func TestRunnerComponentProbes(t *testing.T) {
 	probes := runnerComponentProbes(app.ComponentHealthProbes{
 		{Type: "http", Name: "api", URL: "https://app.example.com/healthz"},
 		{Type: "exec", Command: []string{"check-api", "--fast"}},
+		{Type: "EXEC", Command: []string{"/bin/sh", "-c", "true"}},
 	})
-	require.Len(t, probes, 2)
+	require.Len(t, probes, 1)
 	assert.Equal(t, RunnerComponentProbe{
 		Type: "http",
 		Name: "api",
 		URL:  "https://app.example.com/healthz",
 	}, probes[0])
-	assert.Equal(t, []string{"check-api", "--fast"}, probes[1].Command)
 }
 
 func TestRenderProbe(t *testing.T) {

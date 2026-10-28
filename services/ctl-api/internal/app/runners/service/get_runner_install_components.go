@@ -131,6 +131,8 @@ func runnerComponentProbes(probes app.ComponentHealthProbes) []RunnerComponentPr
 		return nil
 	}
 
+	// Exec probes run inside the credentialed runner. Never hand the argv to it.
+	probes = probes.Runnable()
 	out := make([]RunnerComponentProbe, 0, len(probes))
 	for _, probe := range probes {
 		out = append(out, RunnerComponentProbe{
