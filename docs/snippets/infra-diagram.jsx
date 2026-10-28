@@ -29,7 +29,6 @@ export const InfraDiagram = () => (
         </div>
         <div className="nuon-infra-concept">
           <a className="nuon-infra-name" href="/concepts/sandboxes">Sandbox</a>
-          <span className="nuon-infra-note">Kubernetes, VMs, or serverless</span>
           <div className="nuon-infra-components">
             <a className="nuon-infra-comps-title" href="/concepts/components">Your components</a>
             <div className="nuon-infra-chips">
