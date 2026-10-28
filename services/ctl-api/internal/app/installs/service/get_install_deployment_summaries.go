@@ -17,6 +17,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -158,16 +159,6 @@ const (
 	installDeploymentsStatusExpr = "COALESCE(status->>'status', '')"
 	installDeploymentsRankExpr   = "CASE " + installDeploymentsStatusExpr + " WHEN 'in-progress' THEN 0 WHEN 'retrying' THEN 0 WHEN 'approval-awaiting' THEN 1 WHEN 'failed-pending-retry' THEN 2 ELSE 3 END"
 )
-
-var installDeploymentActiveStatuses = []string{
-	"",
-	string(app.StatusPending),
-	string(app.StatusQueued),
-	string(app.StatusInProgress),
-	string(app.StatusRetrying),
-	string(app.AwaitingApproval),
-	string(app.WorkflowStepApprovalStatusApproved),
-}
 
 func installDeploymentAttentionRank(status app.Status) int {
 	switch status {
@@ -382,9 +373,9 @@ func (s *service) getInstallDeploymentSummaries(
 
 	switch q.state {
 	case installDeploymentsStateActive:
-		base = base.Where(installDeploymentsStatusExpr+" IN ?", installDeploymentActiveStatuses)
+		base = base.Where(installDeploymentsStatusExpr+" IN ?", helpers.InstallDeploymentActiveStatuses)
 	case installDeploymentsStateFinished:
-		base = base.Where(installDeploymentsStatusExpr+" NOT IN ?", installDeploymentActiveStatuses)
+		base = base.Where(installDeploymentsStatusExpr+" NOT IN ?", helpers.InstallDeploymentActiveStatuses)
 	}
 
 	if len(q.filterStatuses) > 0 {

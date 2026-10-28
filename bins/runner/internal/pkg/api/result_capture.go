@@ -21,6 +21,14 @@ type resultCaptureClient struct {
 // logger's error-capture core) to a failed result under errcapture.MetadataKey,
 // unless the handler already set it. Successful results are passed through
 // untouched.
+func (c *resultCaptureClient) ForJob(jobID, token string) (nuonrunner.Client, error) {
+	inner, err := c.Client.ForJob(jobID, token)
+	if err != nil {
+		return nil, err
+	}
+	return &resultCaptureClient{Client: inner}, nil
+}
+
 func (c *resultCaptureClient) CreateJobExecutionResult(ctx context.Context, jobID, jobExecutionID string, req *models.ServiceCreateRunnerJobExecutionResultRequest) (*models.AppRunnerJobExecutionResult, error) {
 	if req != nil && !req.Success {
 		if out := errcapture.Output(ctx); out != "" {
