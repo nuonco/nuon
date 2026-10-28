@@ -15,6 +15,8 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		includeStacks  bool
 		duration       string
 		invalidate     bool
+		tokenID        string
+		search         string
 	)
 
 	serviceAccountsCmd := &cobra.Command{
@@ -97,7 +99,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 
 	tokensCmd := &cobra.Command{
 		Use:               "tokens",
-		Short:             "Manage API tokens for a service account",
+		Short:             "Manage API tokens for service accounts",
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 
@@ -107,14 +109,43 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		Long:  "Create an API token for a service account. The token is only shown once.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.serviceAccounts
-			return svc.CreateServiceAccountToken(cmd.Context(), id, duration, invalidate, PrintJSON)
+			return svc.CreateToken(cmd.Context(), id, name, duration, invalidate, PrintJSON)
 		}),
 	}
 	createTokenCmd.Flags().StringVar(&id, "id", "", "The ID of the service account")
 	createTokenCmd.MarkFlagRequired("id")
+	createTokenCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the token")
 	createTokenCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
 	createTokenCmd.Flags().BoolVar(&invalidate, "invalidate", false, "Invalidate the service account's existing tokens before creating the new one")
 	tokensCmd.AddCommand(createTokenCmd)
+
+	listTokensCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List API tokens for service accounts",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.serviceAccounts
+			return svc.ListTokens(cmd.Context(), id, search, offset, limit, PrintJSON)
+		}),
+	}
+	listTokensCmd.Flags().StringVar(&id, "id", "", "Only list tokens for this service account")
+	listTokensCmd.Flags().StringVar(&search, "search", "", "Search tokens by name or ID")
+	listTokensCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset of results to return")
+	listTokensCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The limit of results to return")
+	tokensCmd.AddCommand(listTokensCmd)
+
+	deleteTokensCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete a service account API token",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.serviceAccounts
+			return svc.DeleteToken(cmd.Context(), tokenID, PrintJSON)
+		}),
+	}
+	deleteTokensCmd.Flags().StringVar(&tokenID, "token-id", "", "The ID of the token to delete")
+	deleteTokensCmd.MarkFlagRequired("token-id")
+	tokensCmd.AddCommand(deleteTokensCmd)
+
 	serviceAccountsCmd.AddCommand(tokensCmd)
 
 	return serviceAccountsCmd

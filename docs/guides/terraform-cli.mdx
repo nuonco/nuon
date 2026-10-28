@@ -116,10 +116,11 @@ Download this file and place it in your Terraform module directory alongside the
 
 ## Set your Nuon API token
 
-Create a Nuon API token for your current org
+Create a service account for Terraform in your current org, then a token for it
 
 ```bash
-nuon orgs api-tokens create --name terraform-cli --output json | jq -r .api_token
+account_id=$(nuon service-accounts create --name terraform-cli --role org_read_only --output json | jq -r .id)
+nuon service-accounts tokens create --id "$account_id" --name terraform-cli --output json | jq -r .token
 ```
 
 Replace the three token `undefined` blocks in `nuon_backend.tf` with the token value. The token is only shown once, so copy it before continuing.
@@ -135,7 +136,7 @@ terraform init -reconfigure
 The `-reconfigure` flag is required to switch Terraform's backend to the Nuon HTTP backend. After initialization, your local Terraform is connected to the remote workspace state.
 
 <Note>
-`nuon orgs api-tokens create` generates a durable API token (valid one year by default) scoped to your currently selected org. Make sure you've selected the correct org with `nuon orgs select` before running this command. The token authenticates all Terraform backend requests (state, lock, and unlock). Revoke it any time with `nuon orgs api-tokens delete --id <token-id>`.
+The service account is created in your currently selected org, and the token (valid one year by default) has that service account's access. Make sure you've selected the correct org with `nuon orgs select` before running these commands. The token authenticates all Terraform backend requests (state, lock, and unlock). Revoke it any time with `nuon service-accounts tokens delete --token-id <token-id>`.
 </Note>
 
 ## Running Commands

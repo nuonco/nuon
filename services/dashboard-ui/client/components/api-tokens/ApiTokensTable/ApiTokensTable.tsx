@@ -6,12 +6,12 @@ import { Menu } from '@/components/common/Menu'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import type { TStaticToken } from '@/types'
+import type { TToken } from '@/types'
 import { DeleteApiTokenButton } from '@/components/api-tokens/DeleteApiToken'
 
 export const API_TOKENS_TABLE_LIMIT = 20
 
-const ActionCell = ({ token }: { token: TStaticToken }) => (
+const ActionCell = ({ token }: { token: TToken }) => (
   <Dropdown
     id={`action-${token.id}`}
     buttonText={<Icon variant="DotsThreeIcon" size={20} weight="bold" />}
@@ -30,16 +30,14 @@ const ActionCell = ({ token }: { token: TStaticToken }) => (
 
 export const ApiTokensTable = ({
   data,
-  roleTitles,
   isLoading,
   pagination,
 }: {
-  data: TStaticToken[]
-  roleTitles: (roleType: string | undefined) => string
+  data: TToken[]
   isLoading: boolean
   pagination: { hasNext: boolean; offset: number; limit: number }
 }) => {
-  const columns: ColumnDef<TStaticToken>[] = useMemo(
+  const columns: ColumnDef<TToken>[] = useMemo(
     () => [
       {
         header: 'Name',
@@ -51,25 +49,26 @@ export const ApiTokensTable = ({
         ),
       },
       {
-        id: 'identity',
-        header: 'Type',
+        id: 'account',
+        header: 'Account',
         cell: (props) => {
           const token = props.row.original
-          const isPersonal =
-            !!token.account_id && token.account_id === token.created_by_id
           return (
-            <Text variant="body">
-              {isPersonal ? 'Personal' : 'Service account'}
-            </Text>
+            <div className="flex flex-col">
+              <Text variant="body">{token.account_name || '—'}</Text>
+              {token.account_email ? (
+                <Text variant="subtext" theme="neutral">
+                  {token.account_email}
+                </Text>
+              ) : null}
+            </div>
           )
         },
       },
       {
         header: 'Role',
-        accessorKey: 'role',
-        cell: (props) => (
-          <Text variant="body">{roleTitles(props.getValue<string>())}</Text>
-        ),
+        accessorKey: 'account_role',
+        cell: (props) => <Text variant="body">{props.getValue<string>() || '—'}</Text>,
       },
       {
         header: 'Created',
@@ -91,11 +90,11 @@ export const ApiTokensTable = ({
         cell: (props) => <ActionCell token={props.row.original} />,
       },
     ],
-    [roleTitles]
+    []
   )
 
   return (
-    <Table<TStaticToken>
+    <Table<TToken>
       columns={columns}
       data={data}
       isLoading={isLoading}
