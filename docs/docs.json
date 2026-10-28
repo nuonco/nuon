@@ -134,8 +134,6 @@
             "boost": 3,
             "pages": [
               "guides/managing-apps",
-              "guides/component-dependencies",
-              "guides/toggleable-components",
               "guides/retaining-resources-on-teardown",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
@@ -150,6 +148,8 @@
             "boost": 3,
             "pages": [
               "guides/managing-components",
+              "guides/component-dependencies",
+              "guides/toggleable-components",
               "guides/container-image-components",
               "guides/image-signature-verification",
               "guides/image-update-policies",
