@@ -7,9 +7,7 @@ keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp", "
 
 import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
 import { AgentPrompts } from "/snippets/agent-prompts.jsx";
-
-Connect your agent once. Use any coding agent to write your app config. Then let your agent operate your customers'
-installs through the Nuon MCP server.
+import { AgentTimeline } from "/snippets/agent-timeline.jsx";
 
 ## Set up
 
@@ -17,6 +15,13 @@ A one-time step: register the Nuon MCP server with your client. See the [MCP Ins
 other clients and sign-in details.
 
 <McpInstallPicker />
+
+Once you're connected, an agent helps in two very different ways:
+
+<AgentTimeline
+  setup={{ when: "Day 0", what: "Write your app config", note: "Once, with any coding agent." }}
+  operate={{ when: "Day 2 and every day after", what: "Operate your customers' installs", note: "Ongoing, through the Nuon MCP server: rollouts, deploys, runbooks, and fixes across every customer." }}
+/>
 
 ## Build
 
