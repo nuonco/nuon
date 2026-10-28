@@ -132,7 +132,7 @@ func (s *AccountsServiceTestSuite) TestCreateServiceAccountTokenRejectsFederated
 	for name, tc := range testCases {
 		s.Run(name, func() {
 			router := s.routerWithTokenType(admin, tc.tokenType)
-			target, err := s.service.AccountsService.createTokenServiceAccount(cctx.SetAccountContext(s.ctx, s.testAcc), s.testOrg.ID, app.RoleTypeOrgAdmin)
+			target, err := s.service.AccountsService.createTokenServiceAccount(cctx.SetAccountContext(s.ctx, s.testAcc), s.testOrg.ID, "federated-target", app.RoleTypeOrgAdmin)
 			require.NoError(s.T(), err)
 			tokensBefore := s.countStaticTokens()
 
