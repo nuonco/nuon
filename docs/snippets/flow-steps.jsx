@@ -1,8 +1,8 @@
-export const FlowSteps = ({ steps = [], groups = [], loop }) => {
+export const FlowSteps = ({ steps = [], groups = [], loop, horizontal = false }) => {
   const groupStartingAt = (i) => groups.find((g) => g.from === i);
 
   return (
-    <div className="not-prose nuon-flow">
+    <div className="not-prose nuon-flow" data-horizontal={horizontal}>
       <ol className="nuon-flow-track">
         {steps.map((step, i) => {
           const group = groupStartingAt(i);
@@ -12,7 +12,9 @@ export const FlowSteps = ({ steps = [], groups = [], loop }) => {
               <span className="nuon-flow-row">
                 <span className="nuon-flow-num">{i + 1}</span>
                 <span className="nuon-flow-text">
-                  <span className="nuon-flow-title">{step.title}</span>
+                  <span className="nuon-flow-title">
+                    {step.href ? <a href={step.href}>{step.title}</a> : step.title}
+                  </span>
                   {step.detail && <span className="nuon-flow-detail">{step.detail}</span>}
                 </span>
               </span>

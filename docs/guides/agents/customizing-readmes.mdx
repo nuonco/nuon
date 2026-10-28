@@ -1,0 +1,31 @@
+---
+title: "Customizing READMEs"
+description: "Use the write-readme skill to have your coding agent write app and runbook READMEs."
+keywords: ["skills", "agents", "README", "READMEs", "write-readme", "nuon components"]
+---
+
+The `write-readme` skill teaches your coding agent to write app and runbook [READMEs](/guides/using-readmes). It covers
+the `<nuon-*>` display components and defensive rendering, so a README never fails to render.
+
+## Install the skill
+
+If your client is [connected to the Nuon MCP server](/guides/agents/setup), ask for the skill by name and it loads on
+demand.
+
+Otherwise, install the skills from [nuonco/skills](https://github.com/nuonco/skills) using npx.
+
+```sh
+npx skills add nuonco/skills
+```
+
+You can also install individual skills.
+
+```sh
+npx skills add nuonco/skills/write-readme
+```
+
+## Try it
+
+```
+Load the write-readme skill and add a section to my app README that shows each install's public URL.
+```
