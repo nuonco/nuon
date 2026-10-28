@@ -119,16 +119,6 @@
               "concepts/install-telemetry",
               "concepts/triggers"
             ]
-          },
-          {
-            "group": "Identity and Security",
-            "boost": 3,
-            "pages": [
-              "concepts/access-control",
-              "concepts/api-tokens",
-              "concepts/service-accounts",
-              "concepts/oidc-federation"
-            ]
           }
         ]
       },
@@ -217,7 +207,11 @@
             "group": "Access and Permission",
             "boost": 2,
             "pages": [
-              "guides/team-management"
+              "guides/team-management",
+              "concepts/access-control",
+              "concepts/api-tokens",
+              "concepts/service-accounts",
+              "concepts/oidc-federation"
             ]
           },
           {
