@@ -5807,7 +5807,7 @@ export interface components {
     "app.KustomizeConfig": {
       /** @description Enable Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description Load restrictor: "none" or "rootOnly" (default: "rootOnly") */
+      /** @description Load restrictor: only "rootOnly" is supported */
       load_restrictor?: string;
       /** @description Additional patch files to apply after kustomize build */
       patches?: string[];
@@ -7261,9 +7261,7 @@ export interface components {
       installWorkflowStepID?: string;
       owner_id?: string;
       owner_type?: string;
-      response?: {
-        [key: string]: string;
-      };
+      response?: components["schemas"]["app.WorkflowStepApprovalResponse"];
       runner_job?: components["schemas"]["app.RunnerJob"];
       /** @description the runner job where this approval was created */
       runner_job_id?: string;
@@ -7272,6 +7270,17 @@ export interface components {
       workflow_step?: components["schemas"]["app.WorkflowStep"];
       /** @description afterquery */
       workflow_step_id?: string;
+    };
+    "app.WorkflowStepApprovalResponse": {
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      id?: string;
+      install_workflow_step_approval_id?: string;
+      note?: string;
+      /** @description the response type */
+      type?: string;
+      updated_at?: string;
     };
     /** @enum {string} */
     "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan" | "app_branch_plan" | "install_creation";
@@ -7673,11 +7682,21 @@ export interface components {
       sha?: string;
     };
     "helpers.PreviewSourcePR": {
+      author?: string;
+      author_avatar_url?: string;
+      created_at?: string;
       head_ref?: string;
       head_sha?: string;
+      is_draft?: boolean;
+      labels?: components["schemas"]["helpers.PreviewSourcePRLabel"][];
       pr_number?: number;
       title?: string;
+      updated_at?: string;
       url?: string;
+    };
+    "helpers.PreviewSourcePRLabel": {
+      color?: string;
+      name?: string;
     };
     "helpers.PublicGitVCSConfigRequest": {
       branch: string;
@@ -8042,7 +8061,7 @@ export interface components {
     "plantypes.KustomizeBuildConfig": {
       /** @description EnableHelm enables Helm chart inflation during kustomize build */
       enable_helm?: boolean;
-      /** @description LoadRestrictor controls file loading: "none" or "rootOnly" (default) */
+      /** @description Ignored by the runner, which pins rootOnly so app config cannot widen worker file access */
       load_restrictor?: string;
       /** @description Patches are additional patch files to apply after kustomize build */
       patches?: string[];

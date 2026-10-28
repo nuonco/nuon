@@ -98,12 +98,23 @@ export type TAppBranchRunPreview = {
   send_statuses_on_ignore?: boolean
 }
 
+export type TPreviewSourcePRLabel = {
+  name: string
+  color?: string
+}
+
 export type TPreviewSourcePR = {
   pr_number: number
   title: string
   head_sha: string
   head_ref: string
   url: string
+  author?: string
+  author_avatar_url?: string
+  is_draft?: boolean
+  labels?: TPreviewSourcePRLabel[]
+  created_at?: string
+  updated_at?: string
 }
 
 export type TPreviewSourceBranch = {

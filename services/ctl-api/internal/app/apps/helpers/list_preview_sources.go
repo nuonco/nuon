@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v50/github"
 
@@ -11,11 +12,22 @@ import (
 )
 
 type PreviewSourcePR struct {
-	PRNumber int    `json:"pr_number"`
-	Title    string `json:"title"`
-	HeadSHA  string `json:"head_sha"`
-	HeadRef  string `json:"head_ref"`
-	URL      string `json:"url"`
+	PRNumber        int                    `json:"pr_number"`
+	Title           string                 `json:"title"`
+	HeadSHA         string                 `json:"head_sha"`
+	HeadRef         string                 `json:"head_ref"`
+	URL             string                 `json:"url"`
+	Author          string                 `json:"author,omitempty"`
+	AuthorAvatarURL string                 `json:"author_avatar_url,omitempty"`
+	IsDraft         bool                   `json:"is_draft"`
+	Labels          []PreviewSourcePRLabel `json:"labels"`
+	CreatedAt       *time.Time             `json:"created_at,omitempty"`
+	UpdatedAt       *time.Time             `json:"updated_at,omitempty"`
+}
+
+type PreviewSourcePRLabel struct {
+	Name  string `json:"name"`
+	Color string `json:"color,omitempty"`
 }
 
 type PreviewSourceBranch struct {
@@ -66,13 +78,37 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 				headRef = pr.Head.GetRef()
 				headSHA = pr.Head.GetSHA()
 			}
-			result.PullRequests = append(result.PullRequests, PreviewSourcePR{
-				PRNumber: pr.GetNumber(),
-				Title:    pr.GetTitle(),
-				HeadSHA:  headSHA,
-				HeadRef:  headRef,
-				URL:      pr.GetHTMLURL(),
-			})
+			labels := make([]PreviewSourcePRLabel, 0, len(pr.Labels))
+			for _, label := range pr.Labels {
+				name := label.GetName()
+				if name == "" {
+					continue
+				}
+				labels = append(labels, PreviewSourcePRLabel{
+					Name:  name,
+					Color: label.GetColor(),
+				})
+			}
+			entry := PreviewSourcePR{
+				PRNumber:        pr.GetNumber(),
+				Title:           pr.GetTitle(),
+				HeadSHA:         headSHA,
+				HeadRef:         headRef,
+				URL:             pr.GetHTMLURL(),
+				Author:          pr.GetUser().GetLogin(),
+				AuthorAvatarURL: pr.GetUser().GetAvatarURL(),
+				IsDraft:         pr.GetDraft(),
+				Labels:          labels,
+			}
+			if pr.CreatedAt != nil {
+				created := pr.CreatedAt.Time
+				entry.CreatedAt = &created
+			}
+			if pr.UpdatedAt != nil {
+				updated := pr.UpdatedAt.Time
+				entry.UpdatedAt = &updated
+			}
+			result.PullRequests = append(result.PullRequests, entry)
 		}
 
 		if resp.NextPage == 0 {
