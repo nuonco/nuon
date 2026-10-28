@@ -16,21 +16,32 @@ each file.
 ```
 my-app/
 ├── metadata.toml   # name and README
-├── sandbox.toml    # VPC, cluster
 ├── inputs.toml     # customer values
 ├── secrets.toml    # customer credentials
 ├── policies.toml   # policy checks
 ├── components/     # your product
 ├── actions/        # scripts
-└── runbooks/       # procedures
+├── runbooks/       # procedures
+│
+│   # Nuon infrastructure
+├── stack.toml      # install stack
+├── runner.toml     # runner settings
+└── sandbox.toml    # VPC, cluster
 ```
 
-- **[Sandbox](/concepts/sandboxes)**: base infrastructure, such as a network and cluster.
-- **[Components](/concepts/components)**: your Helm charts, Terraform modules, manifests, and images.
+- **[Metadata](/config-ref/metadata)**: the template's name and README.
 - **[Inputs](/concepts/app-inputs)**: values each customer sets, such as region.
 - **[Secrets](/concepts/app-secrets)**: credentials each customer supplies.
 - **[Policies](/concepts/policies)**: checks that run before a build or deploy.
-- **[Actions](/concepts/actions) and [runbooks](/guides/runbooks)**: scripts and procedures for installs.
+- **[Components](/concepts/components)**: your Helm charts, Terraform modules, manifests, and images.
+- **[Actions](/concepts/actions)**: scripts you run against installs.
+- **[Runbooks](/guides/runbooks)**: multi-step procedures for installs.
+
+[Nuon infrastructure](/concepts/nuon-infrastructure):
+
+- **[Stack](/concepts/stacks)**: what the customer applies first, such as the network and permissions.
+- **[Runner](/concepts/runners)**: settings for the runner in each customer's account.
+- **[Sandbox](/concepts/sandboxes)**: base infrastructure, such as a VPC and cluster.
 
 ## One product, several templates
 
