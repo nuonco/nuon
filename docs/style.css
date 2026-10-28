@@ -428,11 +428,11 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-cmap-list {
   list-style: none;
-  margin: 0.75rem 0 0;
+  margin: 0.875rem 0 0;
   padding: 0;
 }
 .nuon-cmap-list li {
-  padding: 0.45rem 0;
+  padding: 0.6rem 0;
   border-top: 1px solid var(--cmap-border);
   font-size: 0.9rem;
   line-height: 1.35;
