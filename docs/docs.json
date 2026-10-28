@@ -97,6 +97,7 @@
           },
           {
             "group": "Installs",
+            "root": "concepts/installs",
             "boost": 3,
             "pages": [
               "guides/app-install-life-cycle",
@@ -493,10 +494,6 @@
     {
       "source": "/architecture/byoc",
       "destination": "/architecture/app-deployment"
-    },
-    {
-      "source": "/concepts/installs",
-      "destination": "/guides/app-install-life-cycle"
     },
     {
       "source": "/deployment-options",

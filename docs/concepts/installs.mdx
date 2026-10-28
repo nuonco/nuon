@@ -1,0 +1,38 @@
+---
+title: "Installs"
+description: "One deployment of your App Template in a customer's cloud account."
+keywords: ["installs", "install", "what is an install", "create an install", "install inputs", "install config", "customer cloud account", "BYOC install", "install stack", "sandbox", "runner"]
+---
+
+import { ConceptMap } from "/snippets/concept-map.jsx";
+
+An install is one deployment of your App Template into a customer's cloud account. It inherits the sandbox and
+components your App Template defines, and deploys the latest build of each component.
+
+<ConceptMap
+  arrows
+  columns={[
+    {
+      title: "From your App Template",
+      caption: "The same for every install.",
+      items: [
+        { label: "Sandbox", href: "/concepts/sandboxes", note: "Base compute, such as an EKS, AKS, or GKE cluster" },
+        { label: "Components", href: "/concepts/components", note: "The latest build of each one" },
+        { label: "Input definitions", href: "/concepts/app-inputs", note: "The knobs each customer can set" },
+      ],
+    },
+    {
+      title: "Set per install",
+      caption: "What makes this install this customer's.",
+      tone: "nuon",
+      items: [
+        { label: "Inputs", href: "/guides/configuring-inputs-and-secrets", note: "API keys, region, instance size, release to run" },
+        { label: "Install config", href: "/guides/install-configs", note: "The same values as a file, for installs at scale" },
+        { label: "Stack", href: "/concepts/stacks", note: "Applied in the customer's account: runner, network, permissions" },
+      ],
+    },
+  ]}
+/>
+
+Inputs are how you tailor an install to each customer. Fill them in when you create the install in the dashboard, or
+set them in an [install config](/guides/install-configs) when you create installs at scale.
