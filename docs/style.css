@@ -612,9 +612,19 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   --in-box-bg: rgba(15, 23, 42, 0.6);
   --in-inner-bg: rgba(76, 201, 240, 0.12);
 }
+.nuon-infra-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0 1rem;
+}
+.nuon-infra-top-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 .nuon-infra-cp {
   width: fit-content;
-  margin: 0 auto;
   padding: 0.5rem 1rem;
   border: 1px dashed var(--in-border);
   border-radius: 10px;
@@ -626,7 +636,7 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.25rem 0;
+  gap: 0.15rem;
 }
 .nuon-infra-line {
   height: 1.25rem;
@@ -644,6 +654,7 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-infra-account-head {
   margin-bottom: 0.875rem;
+  text-align: right;
   color: var(--in-muted);
   font-weight: 600;
 }
@@ -653,7 +664,7 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-infra-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1fr);
   align-items: stretch;
   gap: 0.75rem;
 }
@@ -666,7 +677,24 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   border-radius: 10px;
   background: var(--in-box-bg);
 }
+.nuon-infra-row > .nuon-infra-concept:first-child {
+  position: relative;
+}
+.nuon-infra-row > .nuon-infra-concept:first-child::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -4.4rem;
+  bottom: calc(0.875rem + 3.25rem);
+  border-left: 1.5px dashed var(--in-accent);
+  z-index: 0;
+}
 .nuon-infra-inner {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  height: 3.25rem;
+  justify-content: center;
   margin-top: auto;
   background: var(--in-inner-bg);
   align-items: center;
@@ -698,8 +726,11 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-infra-arrow {
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
   color: var(--in-accent);
+  font-size: 0.72rem;
 }
 @media (max-width: 720px) {
   .nuon-infra-row {
