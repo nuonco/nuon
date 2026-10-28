@@ -12,9 +12,6 @@
       "twitter:site": "@nuonco"
     }
   },
-  "contextual": {
-    "options": ["copy", "view", "cursor", "chatgpt", "claude"]
-  },
   "colors": {
     "primary": "#256A7F",
     "light": "#4CC9F0",
@@ -42,7 +39,6 @@
             "group": "Orientation",
             "pages": [
               "get-started/introduction",
-              "get-started/overview",
               "get-started/glossary"
             ]
           },
@@ -87,9 +83,10 @@
         "groups": [
           {
             "group": "App Templates",
+            "root": "concepts/apps",
+            "expanded": true,
             "boost": 3,
             "pages": [
-              "concepts/apps",
               "concepts/components",
               "concepts/components/auto-retries",
               "concepts/sandboxes",
@@ -100,10 +97,11 @@
             ]
           },
           {
-            "group": "Installs and Stacks",
+            "group": "Installs",
+            "root": "concepts/installs",
+            "expanded": true,
             "boost": 3,
             "pages": [
-              "guides/app-install-life-cycle",
               "concepts/stacks",
               "concepts/stacks/stand-alone-vpc",
               "concepts/stacks/customer-vpc",
@@ -111,7 +109,9 @@
             ]
           },
           {
-            "group": "Delivery and Operations",
+            "group": "Updates and Operations",
+            "root": "concepts/updates-and-operations",
+            "expanded": true,
             "boost": 3,
             "pages": [
               "concepts/workflows",
@@ -121,16 +121,6 @@
               "concepts/operation-roles",
               "concepts/install-telemetry",
               "concepts/triggers"
-            ]
-          },
-          {
-            "group": "Identity and Security",
-            "boost": 3,
-            "pages": [
-              "concepts/access-control",
-              "concepts/api-tokens",
-              "concepts/service-accounts",
-              "concepts/oidc-federation"
             ]
           }
         ]
@@ -220,7 +210,11 @@
             "group": "Access and Permission",
             "boost": 2,
             "pages": [
-              "guides/team-management"
+              "guides/team-management",
+              "concepts/access-control",
+              "concepts/api-tokens",
+              "concepts/service-accounts",
+              "concepts/oidc-federation"
             ]
           },
           {
@@ -452,6 +446,18 @@
   },
   "redirects": [
     {
+      "source": "/guides/app-install-life-cycle",
+      "destination": "/concepts/installs"
+    },
+    {
+      "source": "/concepts/overview",
+      "destination": "/concepts/apps"
+    },
+    {
+      "source": "/get-started/overview",
+      "destination": "/concepts/apps"
+    },
+    {
       "source": "/guides/idempotent-triggers",
       "destination": "/guides/idempotent-operations"
     },
@@ -494,10 +500,6 @@
     {
       "source": "/architecture/byoc",
       "destination": "/architecture/app-deployment"
-    },
-    {
-      "source": "/concepts/installs",
-      "destination": "/guides/app-install-life-cycle"
     },
     {
       "source": "/deployment-options",
