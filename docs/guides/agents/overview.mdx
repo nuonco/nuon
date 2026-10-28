@@ -6,84 +6,68 @@ keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
 
 import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 import { McpInstallPicker } from "/snippets/mcp-install-picker.jsx";
-
-Use an LLM client to build your Nuon app templates and operate the installs they create.
+import { ConceptMap } from "/snippets/concept-map.jsx";
 
 ## What your agent can do
 
-<CardGroup cols={2}>
-  <Card title="Build your app template" icon="code" href="/guides/agents/ai-and-apps">
-    Scaffold app config from the example repos, check it against the config schema, and validate it with the
-    Nuon CLI. Skills cover READMEs and policies.
-  </Card>
-  <Card title="Ship changes" icon="code-branch" href="/concepts/app-branches">
-    Watch app branch runs, preview a change before it merges, review each plan diff, and approve the rollout.
-  </Card>
-  <Card title="Operate installs" icon="cube" href="/guides/agents/sample-queries">
-    Deploy components, update install inputs, run actions and runbooks, and reprovision an install.
-  </Card>
-  <Card title="Debug failures" icon="magnifying-glass" href="/guides/agents/tools">
-    Summarize an install, check component health, and read build, deploy, and workflow step logs. Retry or
-    skip a failed step.
-  </Card>
-</CardGroup>
+<ConceptMap
+  columns={[
+    {
+      title: "Build",
+      items: [
+        { label: "Scaffold app config", href: "/guides/agents/ai-and-apps", note: "From the example repos" },
+        { label: "Validate it", href: "/guides/agents/ai-and-apps", note: "Against the config schema and the Nuon CLI" },
+        { label: "Write READMEs and policies", href: "/guides/agents/skills", note: "With Nuon skills" },
+      ],
+    },
+    {
+      title: "Operate",
+      tone: "nuon",
+      items: [
+        { label: "Ship changes", href: "/concepts/app-branches", note: "Review plan diffs and approve rollouts" },
+        { label: "Run actions and runbooks", href: "/guides/agents/sample-queries", note: "Deploy, reprovision, update inputs" },
+        { label: "Debug failures", href: "/guides/agents/tools", note: "Read logs and health, retry a step" },
+      ],
+    },
+  ]}
+/>
 
-Reading works with any role. Changes need writes enabled on the MCP server and [Admin](/concepts/access-control)
-on your account. The [tools catalog](/guides/agents/tools) lists every read and write tool.
+Reading works with any role. Changes need writes enabled and [Admin](/concepts/access-control) on your account.
 
 ## Connect your client
 
 <McpInstallPicker />
 
-## Understanding your Nuon App Template
-
-Once the MCP server is connected, paste one of these into your client. Each one only reads from Nuon.
+## Try it on your App Template
 
 <TryWithYourAgent
   title="Summarize my app template"
   tools={["get_app", "list_app_branches", "get_app_config_schema"]}
-  prompt={`Summarize my Nuon app template: its sandbox, each component and its type, and the app branches that deploy it. For each component type, use the app config schema to explain the settings that matter most.`}
+  prompt={`Summarize my Nuon app template: its sandbox, components, and app branches.`}
 />
 
 <TryWithYourAgent
   title="Check my config sync"
   tools={["list_app_branches", "get_app_branch_run", "get_build_logs", "get_workflow_step_logs"]}
-  prompt={`I'm setting up my Nuon app template. Check whether it has an app branch, then look at the latest branch run: did the app config sync, and did every component build? If a step failed, pull its logs, explain the error, and tell me what to change in my config. If there is no app branch yet, walk me through creating one.`}
+  prompt={`Did my latest Nuon app branch run sync and build? If a step failed, tell me what to fix.`}
 />
 
-## Once you have an install
+## Try it on an install
 
 <TryWithYourAgent
   title="Summarize an install"
   tools={["install_summary"]}
-  prompt={`Give me a summary of my Nuon install: what's deployed, which commit it's on, its health, and any failing workflows.`}
-/>
-
-<TryWithYourAgent
-  title="Check install health"
-  tools={["get_install_health"]}
-  prompt={`Check the health of my Nuon install. List every component that isn't healthy and why, tell me when health was last reported, and tell me if Nuon can't reach the cluster.`}
+  prompt={`Summarize my Nuon install: what's deployed, its health, and any failing workflows.`}
 />
 
 <TryWithYourAgent
   title="Find failing workflows"
   tools={["list_workflows", "get_pending_approvals", "get_workflow_step_logs"]}
-  prompt={`Check my Nuon install for workflows that failed or are waiting on an approval. For any failed step, pull its logs and explain what went wrong.`}
+  prompt={`Which workflows on my Nuon install failed or are waiting on approval, and why?`}
 />
 
-<Card title="More sample queries" icon="comments" href="/guides/agents/sample-queries" horizontal />
-
-<CardGroup cols={2}>
-  <Card title="Setup" icon="gear" href="/guides/agents/setup">
-    Sign in and register the MCP server with your client.
-  </Card>
-  <Card title="Tools" icon="wrench" href="/guides/agents/tools">
-    Read and write tools exposed on the control plane.
-  </Card>
-  <Card title="Skills" icon="graduation-cap" href="/guides/agents/skills">
-    Guidance for writing READMEs and policies.
-  </Card>
-  <Card title="AI and app building" icon="code" href="/guides/agents/ai-and-apps">
-    Generate Nuon app config with Claude Code, Gemini, Amp, and skills.
-  </Card>
+<CardGroup cols={3}>
+  <Card title="Setup" icon="gear" href="/guides/agents/setup" />
+  <Card title="Tools" icon="wrench" href="/guides/agents/tools" />
+  <Card title="Sample queries" icon="comments" href="/guides/agents/sample-queries" />
 </CardGroup>
