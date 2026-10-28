@@ -7,14 +7,6 @@ boost: 3
 keywords: ["day 2 operations", "operate install", "post-deploy", "operations", "workflows actions policies", "rollback", "rollback a deployment", "how to update", "upgrade process", "monitoring BYOC installs", "logs and observability", "troubleshooting failed install", "release windows", "operate BYOC fleet"]
 ---
 
-import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
-
-<AskYourAgent
-  title="Summarize an install"
-  tools={["install_summary"]}
-  prompt={`Give me a summary of my Nuon install: what's deployed, which commit it's on, its health, and any failing workflows.`}
-/>
-
 ## Workflows
 
 A workflow is the lifecycle of an install or a component. It plans the change, surfaces a diff, runs through any approvals you've configured.
