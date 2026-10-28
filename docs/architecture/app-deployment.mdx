@@ -5,7 +5,7 @@ boost: 3
 keywords: ["what gets deployed in customer account", "what runs in vendor account vs customer account", "app deployment architecture", "deployment diagram", "deploy into customer cloud account", "tenant isolation models", "data residency BYOC", "data never leaves customer account", "customer-managed deployment", "single tenant"]
 ---
 
-When you install your app template through Nuon, your application runs inside your customer's cloud account instead of yours. Nuon makes this possible by layering infrastructure and execution components inside the customer's environment, all orchestrated remotely by the Nuon [Control Plane](/architecture/platform). Each deployment is called an [Install](/guides/app-install-life-cycle).
+When you install your app template through Nuon, your application runs inside your customer's cloud account instead of yours. Nuon makes this possible by layering infrastructure and execution components inside the customer's environment, all orchestrated remotely by the Nuon [Control Plane](/architecture/platform). Each deployment is called an [Install](/concepts/installs).
 
 ![Install Architecture](/images/architecture/byoc-architecture.png)
 
@@ -19,4 +19,4 @@ When an install is created, the layers build on each other from the bottom up:
 
 Everything is defined by the [App Config](/concepts/apps), a set of TOML files that define your app template: the stack, sandbox, components, inputs, secrets, and actions. Each install is an instance of this config deployed into a customer's cloud with their specific values.
 
-For how an install progresses from creation through ongoing updates, see the [App Install Life Cycle](/guides/app-install-life-cycle).
+For how an install progresses from creation through ongoing updates, see [Installs](/concepts/installs) and [Updates and Operations](/concepts/updates-and-operations).

@@ -4,13 +4,7 @@ description: "Health checks tell you whether every component on every install is
 keywords: ["health checks", "health check", "healthcheck", "healthchecks", "health-check", "health checking", "component health", "component health check", "kubernetes health check", "helm health check", "terraform health check", "install health", "liveness", "readiness", "probe", "probes", "http probe", "tcp probe", "exec probe", "custom health check", "required checks", "verified deploys", "deploy gate", "block_deploy", "stabilization window", "uptime", "uptime monitoring", "canary", "bake period", "degraded", "unhealthy", "monitoring", "alerting", "resource explorer"]
 ---
 
-import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
-
-<AskYourAgent
-  title="Check install health"
-  tools={["get_install_health"]}
-  prompt={`Check the health of my Nuon install. List every component that isn't healthy and why, tell me when health was last reported, and tell me if Nuon can't reach the cluster.`}
-/>
+import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 
 Nuon checks the components running on each install regularly, so you can see their live status.
 
@@ -328,6 +322,13 @@ See [Webhooks](/guides/webhooks) for the full subscription model.
 
 ## Verified deploys
 
+<TryWithYourAgent
+  title="Deploy and verify health"
+  tools={["list_install_components", "deploy_install_components", "watch_workflow", "get_install_health"]}
+  writes
+  prompt={`Show me the components on my Nuon install, deploy the one I pick, and confirm it stays healthy.`}
+/>
+
 By default a deploy finishes when the apply succeeds. Set `block_deploy` and it finishes only once
 the component has held `healthy` for `stabilization_window` afterwards.
 
@@ -346,10 +347,8 @@ This is off by default, and it's the only way health can affect whether a deploy
 Nuon can't observe never blocks a deploy.
 
 <Warning>
-**Gate a component only on what it provides.** Put a probe for a public endpoint on the load
-balancer component that exposes it, instead of the app behind it. If a component's gate depends
-on a downstream component, a first install deadlocks: the app's gate can't pass until the load
-balancer exists, and the load balancer never deploys because the app's gate is holding the workflow.
+**Gate a component only on what it provides.** If an app's gate probes an endpoint that a later
+component creates, like a load balancer, the first install deadlocks.
 </Warning>
 
 ## Canary and bake periods

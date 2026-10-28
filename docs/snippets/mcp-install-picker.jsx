@@ -94,7 +94,7 @@ export const McpInstallPicker = () => {
             <pre>{b.code}</pre>
             <button
               type="button"
-              className="nuon-ask-agent-btn nuon-ask-agent-primary nuon-mcp-picker-copy"
+              className="nuon-try-agent-btn nuon-try-agent-primary nuon-mcp-picker-copy"
               onClick={() => copy(b.code, i)}
             >
               {copied === i ? "Copied" : "Copy"}
