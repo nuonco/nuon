@@ -249,16 +249,12 @@
             "group": "Start Safely",
             "pages": [
               "guides/agents/overview",
-              "guides/agents/five-minute-quickstart",
-              "guides/agents/setup",
-              "guides/agents/safety-and-permissions"
+              "guides/agents/setup"
             ]
           },
           {
             "group": "Operate",
             "pages": [
-              "guides/agents/operate-with-mcp",
-              "guides/agents/use-the-cli-from-an-agent",
               "guides/agents/sample-queries"
             ]
           },
@@ -272,8 +268,7 @@
           {
             "group": "Reference",
             "pages": [
-              "guides/agents/tools",
-              "guides/agents/troubleshooting"
+              "guides/agents/tools"
             ]
           }
         ]
