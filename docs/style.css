@@ -532,3 +532,8 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
     padding-top: 0;
   }
 }
+
+/* Agents tab: hide sidebar group titles but keep the dividers between groups */
+.sidebar-group-header:has(+ .sidebar-group a[href^="/guides/agents/"]) {
+  display: none;
+}
