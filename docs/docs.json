@@ -47,7 +47,7 @@
             ]
           },
           {
-            "group": "First deployment",
+            "group": "Get Started",
             "pages": [
               "get-started/quickstart",
               "get-started/create-your-first-app",
