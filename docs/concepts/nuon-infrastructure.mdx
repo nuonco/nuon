@@ -11,16 +11,9 @@ their own credentials, and no cross-account access is required.
 
 <InfraDiagram />
 
-In order:
-
-- **[Stack](/concepts/stacks).** The customer applies it first. It creates the network, the permissions, and a VM for
-  the runner. Nuon generates it in Terraform and in the cloud's native format, such as CloudFormation on AWS.
-- **[Runner](/concepts/runners).** Starts on that VM, picks up jobs from the Nuon control plane, and runs every deploy,
-  action, and runbook inside the customer's account.
-- **[Sandbox](/concepts/sandboxes).** The base compute your components deploy into, such as a Kubernetes cluster,
-  VMs, or serverless.
-
-Your [components](/concepts/components) deploy on top.
+- **[Stack](/concepts/stacks)**: the customer applies it first. It creates the network, permissions, and runner.
+- **[Runner](/concepts/runners)**: runs every deploy, action, and runbook in the customer's account.
+- **[Sandbox](/concepts/sandboxes)**: base compute for your components, such as a Kubernetes cluster.
 
 ## Fit the customer's architecture
 
