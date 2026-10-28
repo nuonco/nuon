@@ -63,6 +63,33 @@ type CheckContext struct {
 	NoopPlan bool
 }
 
+const (
+	WorkflowMetadataResolveDrift    = app.WorkflowMetadataKeyResolveDrift
+	WorkflowMetadataReuseApprovalID = "reuse_approval_id"
+
+	resolveDriftApprovalReuseVersion  = "resolve-drift-approval-reuse-v1"
+	resolveDriftApprovalPolicyVersion = "resolve-drift-approval-policy-v1"
+)
+
+func ResolveDrift(ctx workflow.Context, flw *app.Workflow) bool {
+	v := flw.Metadata[WorkflowMetadataResolveDrift]
+	if v == nil || *v != "true" {
+		return false
+	}
+	return workflow.GetVersion(ctx, resolveDriftApprovalReuseVersion, workflow.DefaultVersion, 1) == 1
+}
+
+func ResolveDriftApprovalPolicy(ctx workflow.Context, flw *app.Workflow) bool {
+	return ResolveDrift(ctx, flw) && workflow.GetVersion(ctx, resolveDriftApprovalPolicyVersion, workflow.DefaultVersion, 1) == 1
+}
+
+func ReuseApprovalID(flw *app.Workflow) string {
+	if v := flw.Metadata[WorkflowMetadataReuseApprovalID]; v != nil {
+		return *v
+	}
+	return ""
+}
+
 // ApprovalCreateCheck runs BEFORE the approval is presented to the user.
 // Return StepUnknown to pass through; any other directive short-circuits.
 type ApprovalCreateCheck interface {

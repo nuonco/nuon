@@ -26,7 +26,8 @@ const (
 	WarnViolationsKey  = "warn_violations"
 	PassedPolicyIDsKey = "passed_policy_ids"
 
-	policyEvaluationMetric = "policy.evaluation"
+	policyEvaluationMetric      = "policy.evaluation"
+	policyErrorsTerminalVersion = "policy-check-errors-terminal-v1"
 )
 
 // Check implements directive.ApprovalCreateCheck for policy evaluation.
@@ -43,8 +44,14 @@ func New(sig signal.Signal, tmw tmetrics.Writer, checkCtx *directive.CheckContex
 func (c *Check) Name() string { return "policy" }
 
 func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
-	if flw.PlanOnly || c.checkCtx.NoopPlan {
+	if flw.PlanOnly {
 		return false
+	}
+	if c.checkCtx.NoopPlan {
+		resolve := flw.Metadata[directive.WorkflowMetadataResolveDrift]
+		if resolve == nil || *resolve != "true" {
+			return false
+		}
 	}
 	if c.requiresEvaluation() {
 		return true
@@ -79,10 +86,13 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	violations, policyContext, outcome, policyErr := checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
 	if policyErr != nil {
-		l.Error("failed to check policies; continuing with warning",
+		l.Error("failed to check policies",
 			zap.String("step_id", step.ID),
 			zap.Error(policyErr))
 		c.recordFailure(ctx, step, flw, policyErr)
+		if workflow.GetVersion(ctx, policyErrorsTerminalVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			return directive.Pass(), policyErr
+		}
 		recordEvaluationCompositeError(ctx, l, step, policyErr)
 		return directive.Pass(), nil
 	}
@@ -125,8 +135,11 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 			stage: string(policyerrors.EvaluationFailureStagePersistence),
 			err:   errors.Wrap(reportErr, "unable to persist policy report"),
 		}
-		l.Error("failed to persist policy report; continuing with warning", zap.Error(reportErr))
+		l.Error("failed to persist policy report", zap.Error(reportErr))
 		c.recordFailure(ctx, step, flw, policyErr)
+		if workflow.GetVersion(ctx, policyErrorsTerminalVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			return directive.Pass(), policyErr
+		}
 		recordEvaluationCompositeError(ctx, l, step, policyErr)
 	} else {
 		c.recordSuccess(ctx, step, flw, outcome)
