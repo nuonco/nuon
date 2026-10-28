@@ -82,13 +82,8 @@
         "icon": "lightbulb",
         "groups": [
           {
-            "group": "Overview",
-            "pages": [
-              "concepts/apps"
-            ]
-          },
-          {
             "group": "Apps",
+            "root": "concepts/apps",
             "boost": 3,
             "pages": [
               "concepts/components",
