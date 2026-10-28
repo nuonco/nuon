@@ -10,11 +10,13 @@ export const AgentTimeline = ({ segments = [] }) => {
           </div>
         ))}
       </div>
-      <div className="nuon-tl-notes" style={{ gridTemplateColumns: cols }}>
-        {segments.map((s) => (
-          <span key={s.when}>{s.note}</span>
-        ))}
-      </div>
+      {segments.some((s) => s.note) && (
+        <div className="nuon-tl-notes" style={{ gridTemplateColumns: cols }}>
+          {segments.map((s) => (
+            <span key={s.when}>{s.note}</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

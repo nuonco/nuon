@@ -16,13 +16,14 @@ other clients and sign-in details.
 
 <McpInstallPicker />
 
-Once you're connected, an agent helps at every stage:
+Once the MCP is set up, you can use your agent to help with everything from setting up your Nuon environment through
+to managing a fleet of BYOC installs.
 
 <AgentTimeline
   segments={[
-    { when: "Day 0", what: "Write your app config", note: "Once, with any coding agent." },
-    { when: "Day 1", what: "Install for a customer", note: "Watch the install workflow and approve each plan.", tone: "install", weight: 1.3 },
-    { when: "Day 2 Operations", what: "Operate your customers' installs", note: "Rollouts, deploys, runbooks, and fixes across every customer, through the Nuon MCP server.", tone: "operate", weight: 2.6 },
+    { when: "Day 0", what: "Write your app config" },
+    { when: "Day 1", what: "Install for a customer", tone: "install", weight: 1.3 },
+    { when: "Day 2 Operations", what: "Operate your customers' installs", tone: "operate", weight: 2.6 },
   ]}
 />
 
