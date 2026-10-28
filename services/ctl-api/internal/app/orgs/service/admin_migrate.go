@@ -63,12 +63,14 @@ func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 	role := app.Role{
 		OrgID:    generics.NewNullString(org.ID),
 		RoleType: app.RoleTypeRunner,
+		Version:  app.RoleVersionV2,
 		Policies: []app.Policy{
 			{
 				OrgID: generics.NewNullString(org.ID),
 				Name:  "admin",
 				Permissions: pgtype.Hstore(map[string]*string{
-					org.ID: permissions.PermissionAll.ToStrPtr(),
+					org.ID:                       permissions.PermissionAll.ToStrPtr(),
+					permissions.APIPermissionKey: generics.ToPtr(string(permissions.APIRunner)),
 				}),
 			},
 		},

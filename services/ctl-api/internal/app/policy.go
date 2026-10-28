@@ -32,6 +32,7 @@ const (
 	PolicyNameStack              PolicyName = "stack"
 	PolicyNameTelemetryCollector PolicyName = "telemetry_collector"
 	PolicyNamePhoneHome          PolicyName = "phone_home"
+	PolicyNameLogStream          PolicyName = "log_stream"
 )
 
 type Policy struct {

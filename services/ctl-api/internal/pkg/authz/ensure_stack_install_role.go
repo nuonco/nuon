@@ -24,10 +24,12 @@ func stackInstallRole(orgID, installID string) *app.Role {
 		RoleType:    app.RoleTypeStack,
 		Title:       "Stack",
 		Description: "Scoped access to install-stack endpoints for a single install.",
+		Version:     app.RoleVersionV2,
 		Policies: []app.Policy{{
 			OrgID: generics.NewNullString(orgID),
 			Name:  app.PolicyNameStack,
 			Permissions: pgtype.Hstore{
+				permissions.APIPermissionKey:              generics.ToPtr(string(permissions.APIStack)),
 				permissions.StackObject(orgID, installID): permissions.PermissionAll.ToStrPtr(),
 			},
 		}},
@@ -76,24 +78,29 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 			}
 			if len(existing) == 1 {
 				role := existing[0]
-				if len(role.Policies) != 1 || len(role.Policies[0].Permissions) != 1 {
+				if len(role.Policies) != 1 || !legacyStackPolicy(role.Policies[0].Permissions, permissions.StackObject(orgID, installID)) {
 					return fmt.Errorf("legacy stack role has an unexpected policy")
-				}
-				if _, ok := role.Policies[0].Permissions[permissions.StackObject(orgID, installID)]; !ok {
-					return fmt.Errorf("legacy stack role targets a different resource")
 				}
 				want.ID = role.ID
 			}
-		}
-		if want.ID == "" && binding.PrivateRoleID == nil {
-			want.Version = app.RoleVersionV2
-			want.Policies[0].Permissions[permissions.APIPermissionKey] = generics.ToPtr(string(permissions.APIStack))
 		}
 		if binding.AccountID != "" {
 			return New(Params{DB: tx}).EnsureManagedServiceAccountRole(ctx, accountID, want)
 		}
 		return ensurePrivateRole(tx, accountID, want)
 	})
+}
+
+func legacyStackPolicy(perms pgtype.Hstore, stackObject string) bool {
+	if _, ok := perms[stackObject]; !ok {
+		return false
+	}
+	for key := range perms {
+		if key != stackObject && key != permissions.APIPermissionKey {
+			return false
+		}
+	}
+	return true
 }
 
 func DeleteStackInstallRoles(tx *gorm.DB, accountID string) error {
