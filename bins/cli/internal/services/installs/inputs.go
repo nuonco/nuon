@@ -3,14 +3,17 @@ package installs
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/install/editor"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
@@ -22,22 +25,21 @@ type inputDef struct {
 	sensitive bool
 }
 
-// loadInputDefs fetches the install's app input config and returns the
-// declared inputs (name + default) along with the resolved install ID.
-func (s *Service) loadInputDefs(ctx context.Context, installID string) (string, []inputDef, error) {
+// loadInputDefs fetches the install and its declared app inputs (name + default).
+func (s *Service) loadInputDefs(ctx context.Context, installID string) (*models.AppInstall, []inputDef, error) {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
 
 	install, err := s.api.GetInstall(ctx, installID)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
 
-	cfg, err := s.api.GetAppInputLatestConfig(ctx, install.AppID)
+	cfg, err := installcreate.InputConfigForInstall(ctx, s.api, install)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
 
 	defs := make([]inputDef, 0, len(cfg.Inputs))
@@ -51,18 +53,18 @@ func (s *Service) loadInputDefs(ctx context.Context, installID string) (string, 
 	sort.Slice(defs, func(i, j int) bool {
 		return defs[i].name < defs[j].name
 	})
-	return installID, defs, nil
+	return install, defs, nil
 }
 
 // GetInputs prints the install's current inputs alongside their declared
 // defaults.
 func (s *Service) GetInputs(ctx context.Context, installID string, asJSON bool) error {
-	installID, defs, err := s.loadInputDefs(ctx, installID)
+	install, defs, err := s.loadInputDefs(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
-	current, err := s.api.GetInstallCurrentInputs(ctx, installID)
+	current, err := s.api.GetInstallCurrentInputs(ctx, install.ID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -94,16 +96,17 @@ func (s *Service) GetInputs(ctx context.Context, installID string, asJSON bool) 
 // SetInputs patches install inputs from a list of key=value pairs. It fetches
 // the current inputs first so it can show which values changed, and validates
 // that each key refers to a declared input.
-func (s *Service) SetInputs(ctx context.Context, installID string, args []string, deployDependents bool, inputsOnly bool, requestID string, asJSON bool) error {
+func (s *Service) SetInputs(ctx context.Context, installID string, args []string, deployDependents bool, inputsOnly bool, role string, requestID string, asJSON bool) error {
 	updates, err := parseInputArgs(args)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
-	installID, defs, err := s.loadInputDefs(ctx, installID)
+	install, defs, err := s.loadInputDefs(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
+	installID = install.ID
 
 	known := make(map[string]inputDef, len(defs))
 	for _, d := range defs {
@@ -148,6 +151,7 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 		Inputs:           updates,
 		DeployDependents: &deployDependents,
 		InputsOnly:       inputsOnly,
+		Role:             role,
 		RequestID:        requestID,
 	}
 	if config.Debug() {
@@ -162,7 +166,13 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 		return ui.PrintError(err)
 	}
 
+	warning := s.stackReprovisionWarning(ctx, install, changed)
+
 	if asJSON {
+		// Keep the JSON document on stdout intact.
+		if warning != "" {
+			fmt.Fprintln(os.Stderr, bubbles.WarningStyle.Render(warning))
+		}
 		ui.PrintJSON(resp)
 		return nil
 	}
@@ -195,6 +205,9 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 		data = append(data, []string{styles.TextPrimary.Render(k), displayPrev, displayNew, changedStr})
 	}
 	view.Render(data)
+	if warning != "" {
+		ui.PrintWarning(warning)
+	}
 	return nil
 }
 
