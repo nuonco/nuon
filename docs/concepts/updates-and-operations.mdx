@@ -1,0 +1,54 @@
+---
+title: "Updates and Operations"
+description: "Ship changes across your installs with change controls, then keep each install healthy."
+keywords: ["updates", "operations", "day 2 operations", "change management", "change controls", "install groups", "plan approval", "auto approve", "policies", "rollback", "actions", "runbooks", "workflows", "remediation"]
+---
+
+import { ConceptMap } from "/snippets/concept-map.jsx";
+
+Every change to an install runs as a [workflow](/concepts/workflows) with a plan you can review, checked against your
+[policies](/concepts/policies).
+
+<ConceptMap
+  columns={[
+    {
+      title: "Push updates",
+      items: [
+        { label: "Across installs", href: "/concepts/app-branches", note: "Push to git and roll out to install groups in order" },
+        { label: "To one install", href: "/guides/install-configs", note: "Change a single install's config" },
+        { label: "Roll back", href: "/guides/rollback-install-config", note: "Re-apply an earlier config version" },
+      ],
+    },
+    {
+      title: "Migrations, runbooks, and debugging",
+      items: [
+        { label: "Runbooks", href: "/guides/runbooks", note: "Named, multi-step procedures run on demand" },
+        { label: "Actions", href: "/concepts/actions", note: "Scripts for migrations, checks, and one-off fixes" },
+        { label: "Workflows", href: "/concepts/workflows", note: "Every run's steps, logs, and approvals" },
+      ],
+    },
+  ]}
+/>
+
+## Push updates
+
+Because App Templates live in git, an update is a push.
+
+- **Roll out across installs.** A push to the tracked branch builds what changed, then plans and deploys it one
+  [install group](/concepts/app-branches#install-groups) at a time.
+- **Review before it ships.** Each install group waits for you to approve its Terraform plan or Helm diff.
+- **Approve automatically.** [Auto-approve plans](/concepts/workflows#workflow-approvals) on an install, or let a group
+  approve itself when every [policy](/concepts/policies) check passes.
+- **Change one customer.** Edit that install's [config](/guides/install-configs), or
+  [roll it back](/guides/rollback-install-config) to an earlier version.
+
+## Migrations, runbooks, and debugging
+
+For work that isn't a config change:
+
+- **[Runbooks](/guides/runbooks)** chain deploys and actions into one procedure, such as a database migration or a
+  recovery.
+- **[Actions](/concepts/actions)** run scripts by hand, on a schedule, or around a deploy, and can fix what monitoring
+  finds.
+- **[Workflows](/concepts/workflows)** record every run's steps and logs, so you can see what ran, when, and against
+  which install.

@@ -12,7 +12,7 @@ someone renamed: all of it lands on infrastructure that has been running fine, a
 what the install was built with.
 
 Sandbox builds close that gap. Nuon packages your sandbox into an **immutable OCI artifact**, the
-same mechanism already behind [component builds](/guides/app-install-life-cycle#sync-and-build),
+same mechanism already behind [component builds](/guides/app-branches#what-a-run-rebuilds),
 and installs provision from the artifact instead of reaching for Git.
 
 <CardGroup cols={2}>
@@ -175,4 +175,4 @@ artifacts from." That is a much smaller ask of a customer with a restricted egre
 - [Sandboxes](/concepts/sandboxes): what a sandbox is and what it provisions
 - [Configuring Sandboxes](/guides/configuring-sandboxes): the `sandbox.toml` reference
 - [App Branches](/concepts/app-branches): the workflow that builds sandboxes on every push
-- [App and Install Life Cycle](/guides/app-install-life-cycle): how builds and deploys fit together
+- [App branches](/guides/app-branches#trigger-a-run): how builds and deploys fit together
