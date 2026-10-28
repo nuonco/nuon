@@ -17,6 +17,7 @@ export const Default = () => (
     <CreateApiTokenModal
       isPending={false}
       error={null}
+      accountCreatedError={null}
       createdToken={null}
       roleOptions={roleOptions}
       onSubmit={noop}
@@ -30,6 +31,7 @@ export const RolesLoading = () => (
     <CreateApiTokenModal
       isPending={false}
       error={null}
+      accountCreatedError={null}
       createdToken={null}
       roleOptions={[]}
       rolesLoading={true}
@@ -44,6 +46,7 @@ export const Pending = () => (
     <CreateApiTokenModal
       isPending={true}
       error={null}
+      accountCreatedError={null}
       createdToken={null}
       roleOptions={roleOptions}
       onSubmit={noop}
@@ -57,6 +60,7 @@ export const Created = () => (
     <CreateApiTokenModal
       isPending={false}
       error={null}
+      accountCreatedError={null}
       createdToken="nuon_tok_abc123def456ghi789"
       roleOptions={roleOptions}
       onSubmit={noop}
@@ -70,6 +74,21 @@ export const WithError = () => (
     <CreateApiTokenModal
       isPending={false}
       error={{ error: 'name is required', description: '', user_error: true }}
+      accountCreatedError={null}
+      createdToken={null}
+      roleOptions={roleOptions}
+      onSubmit={noop}
+      onDone={noop}
+    />
+  </ModalStory>
+)
+
+export const AccountCreatedTokenFailed = () => (
+  <ModalStory>
+    <CreateApiTokenModal
+      isPending={false}
+      error={null}
+      accountCreatedError="acme-ci was created as a service account, but creating a token for it failed."
       createdToken={null}
       roleOptions={roleOptions}
       onSubmit={noop}

@@ -72,7 +72,8 @@ type AppInstallerSDKGCPConfig struct {
 	// region
 	Region string `json:"region,omitempty"`
 
-	// runner api token
+	// Unused. GCP runners authenticate with instance identity. Left so older
+	// Terraform modules that still read it get an empty value.
 	RunnerAPIToken string `json:"runner_api_token,omitempty"`
 
 	// runner init script url

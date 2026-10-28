@@ -9,8 +9,11 @@ You'll need an access token to use the Nuon API. Create an [API token](/concepts
 
 ```sh
 nuon login
-nuon orgs api-tokens create --name my-token
+nuon service-accounts create --name my-service-account --role org_read_only
+nuon service-accounts tokens create --id <account-id> --name my-token
 ```
+
+With the API itself, create a service account with `POST /v1/service-accounts`, then a token for it with `POST /v1/tokens`.
 
 For automation and CI/CD, we recommend using [OIDC Federation](/concepts/oidc-federation) to avoid storing long-lived tokens.
 
