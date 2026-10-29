@@ -1195,7 +1195,7 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 .nuon-um {
   position: relative;
   overflow: hidden;
-  box-shadow: 0 14px 40px -22px rgba(76, 201, 240, 0.55);
+  box-shadow: -14px 0 22px -16px rgba(76, 201, 240, 0.55), 14px 0 22px -16px rgba(76, 201, 240, 0.55);
   border: 1px solid var(--in-border);
   border-radius: 12px;
   background: var(--in-box-bg);
