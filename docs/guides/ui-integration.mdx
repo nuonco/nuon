@@ -65,10 +65,12 @@ Save `id` with the customer's record. Every later call uses it.
 Your customer connects their account by running a setup template, called a [stack](/concepts/stacks), in their own
 cloud console. Before they click, tell them what it creates and why. Their security team will ask.
 
+This guide follows an AWS customer. Each cloud works a little differently, so pick one to see what your customer sees
+and what your app needs.
+
 <AcmeScreen screen="connect" />
 
-Get the template link from `GET /v1/installs/{install_id}/stack` and use it for the button. On AWS, the
-`quick_link_url` field opens the template in the AWS console, ready to run.
+Get the stack from `GET /v1/installs/{install_id}/stack`.
 
 The template creates the network, the permissions, and the [runner](/concepts/runners), the agent that deploys your
 product inside their account. [Positioning safety of BYOC](/guides/vendor-customers) covers the follow-up questions

@@ -1,4 +1,35 @@
 export const AcmeScreen = ({ screen }) => {
+  const [cloud, setCloud] = useState("aws");
+  const clouds = {
+    aws: {
+      tab: "AWS",
+      account: "AWS account",
+      where: "in your AWS console",
+      button: "Open in AWS console",
+      create: <><code>aws_account.region</code></>,
+      link: <>The <code>quick_link_url</code> on the install's stack opens CloudFormation quick-create, ready to run.</>,
+      guide: { href: "/platform-support/aws", label: "AWS platform guide" },
+    },
+    azure: {
+      tab: "Azure",
+      account: "Azure subscription",
+      where: "in the Azure portal",
+      button: "Deploy to Azure",
+      create: <><code>azure_account.location</code></>,
+      link: <>The <code>quick_link_url</code> opens Deploy to Azure. It's empty when the install is scoped to a resource group, so the customer deploys the Bicep template instead.</>,
+      guide: { href: "/platform-support/azure", label: "Azure platform guide" },
+    },
+    gcp: {
+      tab: "Google Cloud",
+      account: "Google Cloud project",
+      where: "with Terraform in your project",
+      button: "View setup steps",
+      create: <><code>gcp_account.project_id</code> and <code>gcp_account.region</code></>,
+      link: <>There's no one-click link. The customer applies the generated Terraform, for example with Google Cloud's Infrastructure Manager.</>,
+      guide: { href: "/platform-support/gcp", label: "Google Cloud platform guide" },
+    },
+  };
+  const c = clouds[cloud];
   const Frame = ({ path, label, children }) => (
     <div className="not-prose nuon-infra nuon-um" role="img" aria-label={label}>
       <div className="nuon-um-bar">
@@ -76,28 +107,58 @@ export const AcmeScreen = ({ screen }) => {
       </Frame>
     ),
     connect: (
-      <Frame
-        path="deployment/connect"
-        label="Acme Analytics asks the customer to connect their AWS account. It lists what the setup template creates: a network, permissions for Acme, and an agent that installs and updates Acme Analytics. An Open in AWS console button starts it, and the page shows that it is waiting for the AWS account."
-      >
-        <div className="nuon-um-title">Connect your AWS account</div>
-        <div className="nuon-um-sub">Run our setup template in your AWS console. It takes a few minutes.</div>
-        <div className="nuon-um-box">
-          <div className="nuon-um-label">The template creates</div>
-          <ul className="nuon-um-list">
-            <li>A private network for Acme Analytics</li>
-            <li>Permissions that only cover installing and updating Acme Analytics</li>
-            <li>An agent that runs those installs and updates from inside your account</li>
-          </ul>
+      <div className="nuon-um-picker">
+        <div className="nuon-um-tabs" role="tablist" aria-label="Customer's cloud">
+          {Object.keys(clouds).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={cloud === k}
+              className={cloud === k ? "nuon-um-tab nuon-um-tab-on" : "nuon-um-tab"}
+              onClick={() => setCloud(k)}
+            >
+              {clouds[k].tab}
+            </button>
+          ))}
         </div>
-        <div className="nuon-um-actions">
-          <span className="nuon-um-button">Open in AWS console</span>
-          <span className="nuon-um-status">
-            <span className="nuon-um-pulse" />
-            Waiting for your AWS account
-          </span>
+        <Frame
+          path="deployment/connect"
+          label={`Acme Analytics asks the customer to connect their ${c.account}. It lists what the setup template creates: a network, permissions for Acme, and an agent that installs and updates Acme Analytics. A ${c.button} button starts it.`}
+        >
+          <div className="nuon-um-title">Connect your {c.account}</div>
+          <div className="nuon-um-sub">Run our setup template {c.where}. It takes a few minutes.</div>
+          <div className="nuon-um-box">
+            <div className="nuon-um-label">The template creates</div>
+            <ul className="nuon-um-list">
+              <li>A private network for Acme Analytics</li>
+              <li>Permissions that only cover installing and updating Acme Analytics</li>
+              <li>An agent that runs those installs and updates from inside your account</li>
+            </ul>
+          </div>
+          <div className="nuon-um-actions">
+            <span className="nuon-um-button">{c.button}</span>
+            <span className="nuon-um-status">
+              <span className="nuon-um-pulse" />
+              Waiting for your {c.account}
+            </span>
+          </div>
+        </Frame>
+        <div className="not-prose nuon-infra nuon-um-notes">
+          <div>
+            <span className="nuon-um-notes-k">Create the install with</span>
+            <span>{c.create}</span>
+          </div>
+          <div>
+            <span className="nuon-um-notes-k">Setup link</span>
+            <span>{c.link}</span>
+          </div>
+          <div>
+            <span className="nuon-um-notes-k">More</span>
+            <span><a href={c.guide.href}>{c.guide.label}</a></span>
+          </div>
         </div>
-      </Frame>
+      </div>
     ),
     progress: (
       <Frame
