@@ -254,11 +254,6 @@
               "guides/nuon-stack-terraform-provider",
               "guides/customizing-terraform-stack-templates"
             ]
-          },
-          {
-            "group": "Advanced",
-            "boost": 2,
-            "pages": []
           }
         ]
       },
