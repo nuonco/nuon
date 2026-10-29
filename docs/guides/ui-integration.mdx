@@ -17,8 +17,8 @@ Create a [service account](/concepts/service-accounts) for your app and store it
 Every call in this guide uses that token.
 
 <Tip>
-Setup takes several minutes, and part of it waits on your customer. Run it as a background task in your app, and send
-a `request_id` with each call that starts work so a retry after a timeout can't start the same work twice. See
+Creating cloud resources in your customer's account takes a while. Run setup as a background job, and send a
+`request_id` on each call that starts work, so a retry after a timeout doesn't run it twice. See
 [Idempotent operations](/guides/idempotent-operations).
 </Tip>
 
