@@ -65,7 +65,7 @@ Browse our docs [here](https://docs.nuon.co) or visit a specific section below:
 - [Architecture](https://docs.nuon.co/runner-architecture): control plane, runner, [CLI](https://docs.nuon.co/cli),
   [API](https://docs.nuon.co/nuon-api)
 - [Deployment options](https://docs.nuon.co/deployment-options): Nuon Cloud, Nuon BYOC, and Nuon Self-Hosted
-- [Guides](https://docs.nuon.co/guides/app-install-life-cycle): technical info on component types, actions, variables,
+- [Guides](https://docs.nuon.co/guides): technical info on component types, actions, variables,
   and more
 
 Also browse the [Nuon blog](https://nuon.co/blog) for technical posts on specific features and example app guides.
