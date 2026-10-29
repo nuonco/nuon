@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/invopop/jsonschema"
@@ -187,5 +188,6 @@ func (a *ActionConfig) parse() error {
 		a.Dependencies = append(a.Dependencies, ref.Name)
 	}
 	a.Dependencies = generics.UniqueSlice(a.Dependencies)
+	sort.Strings(a.Dependencies)
 	return nil
 }

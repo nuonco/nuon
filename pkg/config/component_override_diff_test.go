@@ -1,7 +1,11 @@
 package config
 
 import (
+	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"hegel.dev/go/hegel"
 
 	"github.com/nuonco/nuon/pkg/config/diff"
 )
@@ -21,8 +25,8 @@ func TestStructuredHelmValuesDiff(t *testing.T) {
 			"\treplicaCount: '4' -> '5'\n" +
 			"\tresources:\n" +
 			"\t\trequests:\n" +
-			"\t\t\tcpu: '150m' (unchanged)\n" +
-			"\t\t\tmemory: '64Mi' (unchanged)\n"
+			"\t\t\tcpu: '\"150m\"' (unchanged)\n" +
+			"\t\t\tmemory: '\"64Mi\"' (unchanged)\n"
 		if got != want {
 			t.Fatalf("unexpected diff:\n got:\n%q\nwant:\n%q", got, want)
 		}
@@ -122,7 +126,7 @@ func TestStructuredTFVarsDiff(t *testing.T) {
 
 		got := d.String("")
 		want := "key:\n" +
-			"\tdomain_name: 'whoami.nuon.run' -> 'whoami.example.com'\n" +
+			"\tdomain_name: '\"whoami.nuon.run\"' -> '\"whoami.example.com\"'\n" +
 			"\treplicas: '2' (unchanged)\n"
 		if got != want {
 			t.Fatalf("unexpected diff:\n got:\n%q\nwant:\n%q", got, want)
@@ -144,8 +148,8 @@ func TestStructuredTFVarsDiff(t *testing.T) {
 		got := d.String("")
 		want := "key:\n" +
 			"\ttags:\n" +
-			"\t\tenv: 'dev' -> 'prod'\n" +
-			"\t\tteam: 'core' (unchanged)\n"
+			"\t\tenv: '\"dev\"' -> '\"prod\"'\n" +
+			"\t\tteam: '\"core\"' (unchanged)\n"
 		if got != want {
 			t.Fatalf("unexpected diff:\n got:\n%q\nwant:\n%q", got, want)
 		}
@@ -160,7 +164,7 @@ func TestStructuredTFVarsDiff(t *testing.T) {
 			t.Fatal("expected structured diff, got fallback")
 		}
 		got := d.String("")
-		want := "key:\n\tdomain_name: 'a.com' -> 'b.com'\n"
+		want := "key:\n\tdomain_name: '\"a.com\"' -> '\"b.com\"'\n"
 		if got != want {
 			t.Fatalf("unexpected diff:\n got: %q\nwant: %q", got, want)
 		}
@@ -211,4 +215,58 @@ func TestStructuredHelmValuesDiff_Unchanged(t *testing.T) {
 		t.Fatalf("expected no changes, got %+v", s)
 	}
 	_ = diff.OpNoop
+}
+
+func TestInstallDiff_StructuredValueTypeProperties(t *testing.T) {
+	hegel.Test(t, func(t *hegel.T) {
+		number := strconv.FormatInt(hegel.Draw(t, hegel.Integers[int64](0, 1<<60)), 10)
+		word := hegel.Draw(t, hegel.FromRegex(`[a-z]{1,12}`, true))
+		for _, literal := range []string{"true", "false", "null", number, "[]", "{}", `["` + word + `"]`, `{"item":"` + word + `"}`} {
+			oldValue, newValue := literal, strconv.Quote(literal)
+			for range hegel.Draw(t, hegel.Integers(0, 3)) {
+				oldValue, newValue = `{"nested":`+oldValue+`}`, `{"nested":`+newValue+`}`
+			}
+			oldDocument := `{"value":` + oldValue + `,"control":"unchanged"}`
+			newDocument := `{"value":` + newValue + `,"control":"unchanged"}`
+			for _, kind := range []ComponentOverrideKind{ComponentOverrideKindHelmValues, ComponentOverrideKindTFVars} {
+				makeInstall := func(document string) *Install {
+					override := ComponentOverride{HelmValues: document}
+					if kind == ComponentOverrideKindTFVars {
+						override = ComponentOverride{TFVars: document}
+					}
+					return &Install{Components: map[string]ComponentOverride{"api": override}}
+				}
+				old, new := makeInstall(oldDocument), makeInstall(newDocument)
+				for _, pair := range [][2]*Install{{old, new}, {new, old}} {
+					got, err := pair[1].Diff(pair[0])
+					require.NoError(t, err)
+					require.Equal(t, 1, got.Summary().Changed, "%s must distinguish %s from a string containing it", kind, literal)
+					require.NotEmpty(t, got.FormatChanged(""))
+				}
+				unchanged, err := old.Diff(makeInstall("\n  " + oldDocument + "\n"))
+				require.NoError(t, err)
+				require.False(t, unchanged.Summary().HasChanged, "formatting must not change typed literals")
+			}
+		}
+	})
+}
+
+func TestInstallDiff_StructuredFallback(t *testing.T) {
+	for name, fixture := range map[string]struct {
+		key, old, next string
+	}{
+		"multiple YAML documents": {HelmValuesOverrideInputName("api"), "replicas: 1\n---\nvalue: acme", "replicas: 1\n---\nvalue: changed_acme"},
+		"malformed YAML document": {HelmValuesOverrideInputName("api"), "replicas: 1\n---\nvalue: acme", "replicas: 1\n---\n{"},
+		"YAML list":               {HelmValuesOverrideInputName("api"), "- acme", "- changed_acme"},
+		"Terraform expression":    {TFVarsOverrideInputName("api"), "value = var.acme", "value = var.changed_acme"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			old := &Install{InputGroups: []InputGroup{{Inputs: map[string]string{fixture.key: fixture.old}}}}
+			next := &Install{InputGroups: []InputGroup{{Inputs: map[string]string{fixture.key: fixture.next}}}}
+			got, err := next.Diff(old)
+			require.NoError(t, err)
+			require.Equal(t, 1, got.Summary().Changed, "unsupported structured content must retain its textual change")
+			require.NotEmpty(t, got.FormatChanged(""))
+		})
+	}
 }
