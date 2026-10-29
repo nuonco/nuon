@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -48,7 +49,7 @@ func TestInstallPhoneHomeRejectsNonStringRequestType(t *testing.T) {
 	ctx.Request.Header.Set("Content-Type", "application/json")
 
 	require.NotPanics(t, func() {
-		(&service{}).InstallPhoneHome(ctx)
+		(&service{cfg: &internal.Config{}}).InstallPhoneHome(ctx)
 	})
 	require.Len(t, ctx.Errors, 1)
 	assert.Contains(t, ctx.Errors[0].Error(), "request type param must be a string")
@@ -216,7 +217,7 @@ func TestCheckObservedCloudAccount(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			reason, err := checkObservedCloudAccount(tc.install, tc.props)
+			reason, err := checkObservedCloudAccount(tc.install, tc.props, false)
 
 			assert.Equal(t, tc.wantReason, reason)
 			if tc.wantReason == phoneHomeAuthOK {
