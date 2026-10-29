@@ -2,7 +2,41 @@ package config
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"hegel.dev/go/hegel"
 )
+
+func TestOperationRoles_KeyedIdentityProperties(t *testing.T) {
+	hegel.Test(t, func(t *hegel.T) {
+		name := hegel.Draw(t, hegel.FromRegex(`[a-z]{1,8}`, true))
+		role := "role_" + name
+		cfg := &OperationRolesConfig{Type: OperationRuleConfigTypeMatrix, RuleMatrix: []*OperationRoleRule{
+			{Principal: "nuon::component:" + name, Operation: OperationDeploy, RoleName: role},
+			{Principal: "nuon::component:" + name, Operation: OperationTeardown, RoleName: role},
+			{Principal: "nuon::action:" + name, Operation: OperationTrigger, RoleName: role},
+		}}
+		require.NoError(t, cfg.Validate())
+		next := *cfg
+		next.RuleMatrix = drawPermutation(t, cfg.RuleMatrix)
+		require.NoError(t, next.Validate())
+		require.False(t, (&AppConfig{OperationRoles: &next}).Diff(&AppConfig{OperationRoles: cfg}).DirectSummary().HasChanged)
+		for _, sameRole := range []bool{false, true} {
+			duplicate := *cfg.RuleMatrix[0]
+			if !sameRole {
+				duplicate.RoleName = "other_" + role
+			}
+			next.RuleMatrix = append(append([]*OperationRoleRule{}, cfg.RuleMatrix...), &duplicate)
+			require.ErrorContains(t, next.Validate(), "duplicate rule", "identity is principal + operation, not role or position")
+		}
+		contexts := &KubernetesContextsConfig{Contexts: []*KubernetesContext{{Name: name, Component: "cluster_a"}, {Name: "other_" + name, Component: "cluster_b"}}}
+		require.NoError(t, contexts.Validate())
+		for _, component := range []string{"cluster_a", "cluster_b"} {
+			duplicate := &KubernetesContextsConfig{Contexts: append(append([]*KubernetesContext{}, contexts.Contexts...), &KubernetesContext{Name: name, Component: component})}
+			require.ErrorContains(t, duplicate.Validate(), "duplicate kubernetes_context")
+		}
+	})
+}
 
 func TestOperationRoleRule_ValidatePrincipal(t *testing.T) {
 	tests := []struct {
