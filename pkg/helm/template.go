@@ -12,6 +12,9 @@ func TemplateChart(chart *chart.Chart, values map[string]interface{}) (string, e
 	if chart == nil {
 		return "", nil
 	}
+	if err := checkPolicySchemaResources(chart, values); err != nil {
+		return "", errors.Wrap(err, "unable to confine helm policy schemas")
+	}
 
 	client := action.NewInstall(&action.Configuration{})
 	client.DryRunStrategy = action.DryRunClient

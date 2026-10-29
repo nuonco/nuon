@@ -1,10 +1,14 @@
 package helm
 
 import (
+	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
+
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
+	"github.com/nuonco/nuon/pkg/rootfs"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
 const (
@@ -24,9 +28,12 @@ type handlerState struct {
 	jobExecutionID string
 	jobID          string
 	regCfg         *configs.OCIRegistryRepository
+	source         *sourcefs.FS
+	output         *sourcefs.FS
+	outputRoot     *rootfs.FS
 
 	packagePath string
-	chartPath   string
+	chart       *chartv2.Chart
 
 	policyInput []AdmissionReviewInput
 }

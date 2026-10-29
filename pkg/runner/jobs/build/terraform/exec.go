@@ -8,7 +8,9 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
+	"github.com/nuonco/nuon/pkg/rootfs"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/runner/registry"
 )
@@ -20,16 +22,17 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	src := h.state.workspace.Source()
+	source := h.state.archiveSource
 
 	l.Info("fetching source files")
-	srcFiles, err := h.getSourceFiles(ctx, src.AbsPath())
+	srcFiles, err := ociarchive.SourceFiles(ctx, source, defaultFileType)
 	if err != nil {
 		l.Error("failed to get source files", zap.Error(err))
 		h.writeErrorResult(ctx, "fetch files", err)
 		return fmt.Errorf("unable to get source files: %w", err)
 	}
 
-	if err := h.validateSourceFiles(ctx, srcFiles); err != nil {
+	if err := h.validateSourceFiles(ctx, source, srcFiles); err != nil {
 		l.Warn("unable to validate terraform build", zap.Error(err))
 		// TODO(jm): fail when a validation error happens
 	}
@@ -40,6 +43,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	// `cfg.VendorProviders`. The install runner auto-detects the mirror
 	// at unpack time.
 	if h.state.cfg != nil && h.state.cfg.VendorProviders {
+		if _, ok := h.state.workspace.FS().(*rootfs.FS); !ok {
+			return fmt.Errorf("terraform provider vendoring requires a disk-backed workspace")
+		}
 		l.Info("vendoring terraform providers via filesystem mirror")
 		opVendorCtx, endVendor := op.Tool(ctx, "terraform", "vendor")
 		err := h.generateProviderMirror(opVendorCtx, src.AbsPath())
@@ -53,7 +59,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		// Re-walk the source dir so the mirror tree + .terraform.lock.hcl
 		// land in the OCI artifact alongside the source files.
 		l.Info("re-walking source files after provider mirror")
-		srcFiles, err = h.getSourceFiles(ctx, src.AbsPath())
+		srcFiles, err = ociarchive.SourceFiles(ctx, source, defaultFileType)
 		if err != nil {
 			l.Error("failed to re-walk source files after provider mirror", zap.Error(err))
 			h.writeErrorResult(ctx, "fetch files", err)
@@ -62,7 +68,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Info("packing terraform files into archive")
-	if err := h.state.arch.Pack(ctx, l, srcFiles); err != nil {
+	if err := h.state.arch.Pack(ctx, l, source, srcFiles); err != nil {
 		l.Error("failed to pack files", zap.Error(err))
 		h.writeErrorResult(ctx, "packing files", err)
 		return err

@@ -9,11 +9,15 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/storage/filesystem"
+	"github.com/spf13/afero"
 
 	// errs "github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/nuonco/nuon/pkg/rootfs"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/zapwriter"
@@ -50,9 +54,28 @@ func (w *workspace) clone(ctx context.Context) (retErr error) {
 	pWriter := zapwriter.New(l, zapcore.DebugLevel, "")
 
 	l.Info("cloning repository", zap.String("url", w.Src.URL))
-	repo, err := git.PlainCloneContext(ctx, w.rootDir(), false, &git.CloneOptions{
-		URL:      w.Src.URL,
-		Progress: pWriter,
+	entries, err := afero.ReadDir(w.fs, ".")
+	if err != nil {
+		return err
+	}
+	if len(entries) != 0 {
+		return fmt.Errorf("clone requires an empty workspace")
+	}
+	worktree := rootfs.NewBilly(w.fs)
+	defer func() { retErr = errors.Join(retErr, worktree.Close()) }()
+	if err := worktree.MkdirAll(".git", 0o700); err != nil {
+		return err
+	}
+	dotgit, err := worktree.Chroot(".git")
+	if err != nil {
+		return err
+	}
+	storage := filesystem.NewStorage(dotgit, cache.NewObjectLRUDefault())
+	defer func() { retErr = errors.Join(retErr, storage.Close()) }()
+	repo, err := git.CloneContext(ctx, storage, worktree, &git.CloneOptions{
+		URL:        w.Src.URL,
+		Progress:   pWriter,
+		NoCheckout: true,
 	})
 	if err != nil {
 		return CloneErr{

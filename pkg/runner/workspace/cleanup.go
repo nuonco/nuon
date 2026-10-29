@@ -2,11 +2,13 @@ package workspace
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 )
 
-func (w *workspace) Cleanup(ctx context.Context) error {
+func (w *workspace) Cleanup(ctx context.Context) (retErr error) {
+	defer func() { retErr = errors.Join(retErr, w.closeRoot()) }()
 	if os.Getenv("IS_NUONCTL") == "true" {
 		return nil
 	}

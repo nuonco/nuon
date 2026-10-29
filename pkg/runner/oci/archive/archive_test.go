@@ -9,7 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nuonco/nuon/pkg/sourcefs"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
@@ -26,13 +29,13 @@ func TestPackUnpackRoundTrip(t *testing.T) {
 	}
 
 	packed := newTestArchive(t, ctx)
-	if err := packed.Pack(ctx, zap.NewNop(), files); err != nil {
+	if err := packed.Pack(ctx, zap.NewNop(), newTestSource(t, afero.NewOsFs(), sourceDir), files); err != nil {
 		t.Fatalf("Pack() error = %v", err)
 	}
 	manifest := resolveTestManifest(t, ctx, packed)
-	layers := manifestLayers(t, ctx, packed.store, manifest)
-	if len(layers) != 2 {
-		t.Fatalf("layer count = %d, want 2", len(layers))
+	layers := manifestLayers(t, ctx, packed.Ref(), manifest)
+	if len(layers) != 3 {
+		t.Fatalf("layer count = %d, want 3", len(layers))
 	}
 	for _, layer := range layers {
 		if layer.MediaType != tarLayerMediaType {
@@ -41,14 +44,14 @@ func TestPackUnpackRoundTrip(t *testing.T) {
 	}
 
 	unpacked := newTestArchive(t, ctx)
-	_, err := oras.Copy(ctx, packed.store, defaultLocalTag, unpacked.store, defaultLocalTag, oras.DefaultCopyOptions)
+	_, err := oras.Copy(ctx, packed.Ref(), defaultLocalTag, unpacked.Ref().(oras.Target), defaultLocalTag, oras.DefaultCopyOptions)
 	if err != nil {
 		t.Fatalf("oras.Copy() error = %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(unpacked.BasePath(), "nested/main.tf")); err != nil {
 		t.Fatalf("legacy reader did not auto-unpack new tar layers: %v", err)
 	}
-	for _, file := range files[:2] {
+	for _, file := range files {
 		got, err := os.ReadFile(filepath.Join(unpacked.BasePath(), filepath.FromSlash(file.RelPath)))
 		if err != nil {
 			t.Fatalf("ReadFile(%q) error = %v", file.RelPath, err)
@@ -60,9 +63,6 @@ func TestPackUnpackRoundTrip(t *testing.T) {
 		if string(got) != string(want) {
 			t.Errorf("content for %q = %q, want %q", file.RelPath, got, want)
 		}
-	}
-	if _, err := os.Stat(filepath.Join(unpacked.BasePath(), "empty.txt")); !os.IsNotExist(err) {
-		t.Fatalf("empty file stat error = %v, want not found", err)
 	}
 	mode, err := os.Stat(filepath.Join(unpacked.BasePath(), "bin/terraform"))
 	if err != nil {
@@ -92,11 +92,11 @@ func TestPackDeterministic(t *testing.T) {
 	}
 
 	first := newTestArchive(t, ctx)
-	if err := first.Pack(ctx, zap.NewNop(), firstFiles); err != nil {
+	if err := first.Pack(ctx, zap.NewNop(), newTestSource(t, afero.NewOsFs(), firstDir), firstFiles); err != nil {
 		t.Fatal(err)
 	}
 	second := newTestArchive(t, ctx)
-	if err := second.Pack(ctx, zap.NewNop(), secondFiles); err != nil {
+	if err := second.Pack(ctx, zap.NewNop(), newTestSource(t, afero.NewOsFs(), secondDir), secondFiles); err != nil {
 		t.Fatal(err)
 	}
 
@@ -112,14 +112,14 @@ func TestPackReusesUnchangedDirectoryLayer(t *testing.T) {
 	firstDir := t.TempDir()
 	secondDir := t.TempDir()
 	first := newTestArchive(t, ctx)
-	if err := first.Pack(ctx, zap.NewNop(), []FileRef{
+	if err := first.Pack(ctx, zap.NewNop(), newTestSource(t, afero.NewOsFs(), firstDir), []FileRef{
 		writeTestFile(t, firstDir, "stable/main.tf", "unchanged", 0644),
 		writeTestFile(t, firstDir, "changed/main.tf", "before", 0644),
 	}); err != nil {
 		t.Fatal(err)
 	}
 	second := newTestArchive(t, ctx)
-	if err := second.Pack(ctx, zap.NewNop(), []FileRef{
+	if err := second.Pack(ctx, zap.NewNop(), newTestSource(t, afero.NewOsFs(), secondDir), []FileRef{
 		writeTestFile(t, secondDir, "stable/main.tf", "unchanged", 0644),
 		writeTestFile(t, secondDir, "changed/main.tf", "after", 0644),
 	}); err != nil {
@@ -146,14 +146,14 @@ func TestPackUnpackDirectorySymlink(t *testing.T) {
 	}
 
 	packed := newTestArchive(t, ctx)
-	if err := packed.Pack(ctx, zap.NewNop(), []FileRef{
+	if err := packed.Pack(ctx, zap.NewNop(), newTestSource(t, afero.NewOsFs(), sourceDir), []FileRef{
 		target,
 		{AbsPath: linkPath, RelPath: "linked", FileType: "application/octet-stream"},
 	}); err != nil {
 		t.Fatal(err)
 	}
 	unpacked := newTestArchive(t, ctx)
-	if _, err := oras.Copy(ctx, packed.store, defaultLocalTag, unpacked.store, defaultLocalTag, oras.DefaultCopyOptions); err != nil {
+	if _, err := oras.Copy(ctx, packed.Ref(), defaultLocalTag, unpacked.Ref().(oras.Target), defaultLocalTag, oras.DefaultCopyOptions); err != nil {
 		t.Fatal(err)
 	}
 
@@ -173,27 +173,22 @@ func TestPackUnpackDirectorySymlink(t *testing.T) {
 	}
 }
 
-func TestGroupArchiveLayersFallsBackAboveLimit(t *testing.T) {
+func TestPackLayerLimit(t *testing.T) {
+	ctx := context.Background()
+	fs := afero.NewMemMapFs()
 	files := make([]FileRef, maxArchiveLayers+1)
 	for i := range files {
-		files[i].RelPath = filepath.ToSlash(filepath.Join("dir-"+strconv.Itoa(i), "file"))
+		files[i] = writeInputFile(t, fs, "/source", "dir-"+strconv.Itoa(i)+"/file", "content", 0644)
 	}
-
-	atLimit := groupArchiveLayers(files[:maxArchiveLayers])
-	if len(atLimit) != maxArchiveLayers {
-		t.Fatalf("layer count at limit = %d, want %d", len(atLimit), maxArchiveLayers)
-	}
-
-	layers := groupArchiveLayers(files)
-	if len(layers) != 1 {
-		t.Fatalf("layer count = %d, want 1", len(layers))
-	}
-	if layers[0].title != tarLayerTitle {
-		t.Fatalf("layer title = %q, want %q", layers[0].title, tarLayerTitle)
-	}
-	if len(layers[0].files) != len(files) {
-		t.Fatalf("layer file count = %d, want %d", len(layers[0].files), len(files))
-	}
+	source := newTestSource(t, fs, "/source")
+	atLimit := newTestArchive(t, ctx)
+	require.NoError(t, atLimit.Pack(ctx, zap.NewNop(), source, files[:maxArchiveLayers]))
+	require.Len(t, manifestLayers(t, ctx, atLimit.Ref(), resolveTestManifest(t, ctx, atLimit)), maxArchiveLayers)
+	aboveLimit := newTestArchive(t, ctx)
+	require.NoError(t, aboveLimit.Pack(ctx, zap.NewNop(), source, files))
+	layers := manifestLayers(t, ctx, aboveLimit.Ref(), resolveTestManifest(t, ctx, aboveLimit))
+	require.Len(t, layers, 1)
+	require.Equal(t, tarLayerTitle, layers[0].Annotations[v1.AnnotationTitle])
 }
 
 func TestUnpackLegacyPerFileLayers(t *testing.T) {
@@ -224,7 +219,7 @@ func TestUnpackLegacyPerFileLayers(t *testing.T) {
 	}
 
 	unpacked := newTestArchive(t, ctx)
-	_, err = oras.Copy(ctx, legacyStore, defaultLocalTag, unpacked.store, defaultLocalTag, oras.DefaultCopyOptions)
+	_, err = oras.Copy(ctx, legacyStore, defaultLocalTag, unpacked.Ref().(oras.Target), defaultLocalTag, oras.DefaultCopyOptions)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,32 +238,42 @@ func newTestArchive(t *testing.T, ctx context.Context) *archive {
 	if err := a.Initialize(ctx); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = a.Cleanup(ctx) })
+	t.Cleanup(func() { require.NoError(t, a.Cleanup(ctx)) })
 	return a
 }
 
 func writeTestFile(t *testing.T, root, relPath, contents string, mode os.FileMode) FileRef {
 	t.Helper()
+	return writeInputFile(t, afero.NewOsFs(), root, relPath, contents, mode)
+}
+
+func writeInputFile(t *testing.T, fs afero.Fs, root, relPath, contents string, mode os.FileMode) FileRef {
+	t.Helper()
 	absPath := filepath.Join(root, filepath.FromSlash(relPath))
-	if err := os.MkdirAll(filepath.Dir(absPath), 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(absPath, []byte(contents), mode); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, fs.MkdirAll(filepath.Dir(absPath), 0755))
+	require.NoError(t, afero.WriteFile(fs, absPath, []byte(contents), mode))
+	require.NoError(t, fs.Chmod(absPath, mode))
 	return FileRef{AbsPath: absPath, RelPath: relPath, FileType: "application/octet-stream"}
+}
+
+func newTestSource(t *testing.T, fs afero.Fs, root string) *sourcefs.FS {
+	t.Helper()
+	source, err := sourcefs.New(fs, root)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, source.Close()) })
+	return source
 }
 
 func resolveTestManifest(t *testing.T, ctx context.Context, a *archive) v1.Descriptor {
 	t.Helper()
-	manifest, err := a.store.Resolve(ctx, defaultLocalTag)
+	manifest, err := a.Ref().Resolve(ctx, defaultLocalTag)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return manifest
 }
 
-func manifestLayers(t *testing.T, ctx context.Context, store *file.Store, manifest v1.Descriptor) []v1.Descriptor {
+func manifestLayers(t *testing.T, ctx context.Context, store content.Fetcher, manifest v1.Descriptor) []v1.Descriptor {
 	t.Helper()
 	data, err := content.FetchAll(ctx, store, manifest)
 	if err != nil {
@@ -283,7 +288,7 @@ func manifestLayers(t *testing.T, ctx context.Context, store *file.Store, manife
 
 func manifestLayersByTitle(t *testing.T, ctx context.Context, archive *archive) map[string]v1.Descriptor {
 	t.Helper()
-	layers := manifestLayers(t, ctx, archive.store, resolveTestManifest(t, ctx, archive))
+	layers := manifestLayers(t, ctx, archive.Ref(), resolveTestManifest(t, ctx, archive))
 	byTitle := make(map[string]v1.Descriptor, len(layers))
 	for _, layer := range layers {
 		byTitle[layer.Annotations[v1.AnnotationTitle]] = layer

@@ -3,6 +3,7 @@ package sandbox
 import (
 	"context"
 
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/pkg/errors"
 )
 
@@ -11,7 +12,7 @@ func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 		return map[string]interface{}{}, nil
 	}
 
-	srcFiles, err := h.getSourceFiles(ctx, h.state.workspace.Source().AbsPath())
+	srcFiles, err := ociarchive.SourceFiles(ctx, h.state.archiveSource, defaultFileType)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get source files")
 	}

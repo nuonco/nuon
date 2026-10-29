@@ -9,9 +9,15 @@ import (
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
-func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) (retErr error) {
+	defer func() {
+		if retErr != nil {
+			h.Cleanup(ctx, job, jobExecution)
+		}
+	}()
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
@@ -19,6 +25,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 
 	wkspace, err := workspace.New(h.v,
 		workspace.WithLogger(l),
+		workspace.WithFS(h.fs),
 		workspace.WithGitSource(h.state.plan.Src),
 		workspace.WithWorkspaceID(jobExecution.ID),
 	)
@@ -29,6 +36,14 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	h.state.workspace = wkspace
 	if err := h.state.workspace.Init(ctx); err != nil {
 		return err
+	}
+	h.state.source, err = sourcefs.From(wkspace.FS(), wkspace.Root())
+	if err != nil {
+		return fmt.Errorf("unable to open build source: %w", err)
+	}
+	h.state.archiveSource, err = h.state.source.Sub(wkspace.Source().AbsPath())
+	if err != nil {
+		return fmt.Errorf("unable to open archive source: %w", err)
 	}
 
 	arch := ociarchive.New()
