@@ -1503,18 +1503,21 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   content: "";
   position: absolute;
   inset: 0 0 auto;
-  height: 3px;
-  background: linear-gradient(90deg, #f72585, #3a00ff 53%, #4cc9f0);
+  height: 2px;
+  background: #4cc9f0;
 }
 .nuon-um-tag {
   flex: none;
   margin-left: auto;
   padding: 0.1rem 0.55rem;
+  border: 1px solid rgba(76, 201, 240, 0.64);
   border-radius: 999px;
-  background: linear-gradient(90deg, #3a00ff, #4cc9f0);
-  color: #ffffff;
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  background: #f2fcff;
+  color: #2b7894;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.dark .nuon-um-tag {
+  background: rgba(76, 201, 240, 0.16);
+  color: #4cc9f0;
 }
