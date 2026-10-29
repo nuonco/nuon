@@ -91,13 +91,12 @@
               "concepts/components",
               "concepts/app-inputs",
               "concepts/app-secrets",
-              "concepts/policies",
               "concepts/app-variables"
             ]
           },
           {
-            "group": "BYOC Management Infra",
-            "root": "concepts/nuon-infrastructure",
+            "group": "Installs",
+            "root": "concepts/installs",
             "expanded": true,
             "boost": 3,
             "pages": [
@@ -107,27 +106,16 @@
             ]
           },
           {
-            "group": "Customer Installs",
-            "root": "concepts/installs",
-            "expanded": true,
-            "boost": 3,
-            "pages": [
-              "concepts/stacks/stand-alone-vpc",
-              "concepts/stacks/customer-vpc",
-              "concepts/stacks/customer-cluster",
-              "concepts/install-telemetry"
-            ]
-          },
-          {
             "group": "Updates and Operations",
             "root": "concepts/updates-and-operations",
             "expanded": true,
             "boost": 3,
             "pages": [
-              "concepts/workflows",
               "concepts/app-branches",
+              "concepts/workflows",
+              "concepts/policies",
               "concepts/actions",
-              "concepts/operation-roles",
+              "concepts/runbooks",
               "concepts/triggers"
             ]
           }
@@ -173,6 +161,9 @@
             "group": "Stacks",
             "boost": 2,
             "pages": [
+              "concepts/stacks/stand-alone-vpc",
+              "concepts/stacks/customer-vpc",
+              "concepts/stacks/customer-cluster",
               "guides/custom-nested-stacks",
               "guides/nuon-stack-terraform-provider",
               "guides/customizing-terraform-stack-templates"
@@ -230,10 +221,12 @@
               "guides/rollback-install-config",
               "guides/reprovision-installs",
               "guides/runbooks",
+              "guides/health-checks",
               "guides/configuring-policies",
               "guides/external-image-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
+              "concepts/install-telemetry",
               "guides/manage-install-telemetry"
             ]
           },
@@ -241,12 +234,12 @@
             "group": "Automate and Integrate",
             "boost": 2,
             "pages": [
+              "guides/ui-integration",
               "guides/control-plane-integration",
               "guides/idempotent-operations",
               "guides/github-actions",
               "guides/webhooks",
               "guides/triggers",
-              "guides/health-checks",
               "guides/slack"
             ]
           },
@@ -306,7 +299,9 @@
               {
                 "group": "CLI",
                 "root": "cli",
-                "pages": ["cli-commands"]
+                "pages": [
+                  "cli-commands"
+                ]
               },
               "tui",
               "nuon-api",
@@ -367,6 +362,7 @@
               "architecture/platform",
               "architecture/app-deployment",
               "architecture/runner-auth",
+              "concepts/operation-roles",
               "security"
             ]
           }
@@ -474,6 +470,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/concepts/nuon-infrastructure",
+      "destination": "/concepts/installs"
+    },
     {
       "source": "/guides",
       "destination": "/guides/building-nuon-apps"
