@@ -5,9 +5,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,7 +17,9 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"helm.sh/helm/v4/pkg/chart/loader/archive"
 	"helm.sh/helm/v4/pkg/chart/v2/loader"
+	chartutil "helm.sh/helm/v4/pkg/chart/v2/util"
 
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -43,6 +47,7 @@ func TestHelmBuildRejectsUnsafeFilesystemWrappers(t *testing.T) {
 type chartArchiveEntry struct {
 	name, data, link string
 	kind             byte
+	pax              map[string]string
 }
 
 func chartArchiveFixture(t *testing.T, entries ...chartArchiveEntry) []byte {
@@ -55,10 +60,15 @@ func chartArchiveFixture(t *testing.T, entries ...chartArchiveEntry) []byte {
 		if kind == 0 {
 			kind = tar.TypeReg
 		}
-		require.NoError(t, tarWriter.WriteHeader(&tar.Header{
+		header := &tar.Header{
 			Name: entry.name, Typeflag: kind, Linkname: entry.link,
 			Size: int64(len(entry.data)), Mode: 0644, ModTime: time.Unix(1700000000, 0),
-		}))
+			PAXRecords: entry.pax,
+		}
+		if kind == tar.TypeXGlobalHeader {
+			header = &tar.Header{Name: entry.name, Typeflag: kind, PAXRecords: entry.pax}
+		}
+		require.NoError(t, tarWriter.WriteHeader(header))
 		_, err := tarWriter.Write([]byte(entry.data))
 		require.NoError(t, err)
 	}
@@ -106,8 +116,8 @@ func TestChartMetadataDataIgnoreAndSchemaSymlinks(t *testing.T) {
 				require.NoError(t, os.Remove(link))
 				require.NoError(t, os.Symlink(target, link))
 				_, source := pinnedChartSource(t, root)
-				h := &handler{state: &handlerState{source: source, cfg: &plantypes.HelmBuildPlan{}}}
-				_, err := h.loadAndPackageChart(zap.NewNop(), "chart", t.TempDir())
+				h := &handler{state: initializedChartState(t, source)}
+				_, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), "chart")
 				if !inside {
 					require.Error(t, err, "chart reads must not escape even to another file in the repository")
 					return
@@ -147,11 +157,59 @@ func TestChartRootSymlinkContainment(t *testing.T) {
 	}
 }
 
+func TestChartArchivePAXMetadata(t *testing.T) {
+	metadata := chartArchiveEntry{name: "../pax_global_header", kind: tar.TypeXGlobalHeader, pax: map[string]string{"comment": "synthetic archive"}}
+	for name, entry := range map[string]chartArchiveEntry{
+		"regular":   {name: "acme/README.md", data: "retained", pax: map[string]string{"comment": "extended header"}},
+		"traversal": {name: "acme/../../canary", data: "unsafe", pax: map[string]string{"comment": "extended header"}},
+		"symlink":   {name: "acme/link", kind: tar.TypeSymlink, link: "../../canary", pax: map[string]string{"comment": "extended link header"}},
+		"hardlink":  {name: "acme/link", kind: tar.TypeLink, link: "../../canary"},
+		"duplicate": {name: "acme/Chart.yaml", data: acmeChartMetadata},
+	} {
+		t.Run(name, func(t *testing.T) {
+			data := chartArchiveFixture(t, metadata,
+				chartArchiveEntry{name: "acme/Chart.yaml", data: acmeChartMetadata},
+				metadata, entry,
+			)
+			files, err := chartArchiveFiles(bytes.NewReader(data))
+			if name != "regular" {
+				require.Error(t, err, "PAX metadata must not bypass entry validation")
+				return
+			}
+			require.NoError(t, err)
+			want, err := loader.LoadArchive(bytes.NewReader(data))
+			require.NoError(t, err)
+			got, err := loadChartFiles(files)
+			require.NoError(t, err)
+			require.Equal(t, want, got)
+			require.Len(t, files, 2)
+			require.Equal(t, "README.md", files[1].Name)
+			require.Equal(t, "retained", string(files[1].Data))
+		})
+	}
+}
+
+func TestChartArchivePAXRetainsSizeLimits(t *testing.T) {
+	maxFile, maxChart := archive.MaxDecompressedFileSize, archive.MaxDecompressedChartSize
+	t.Cleanup(func() { archive.MaxDecompressedFileSize, archive.MaxDecompressedChartSize = maxFile, maxChart })
+	archive.MaxDecompressedFileSize, archive.MaxDecompressedChartSize = 128, 160
+	for name, entries := range map[string][]chartArchiveEntry{
+		"file":  {{name: "acme/large", data: strings.Repeat("x", 129)}},
+		"total": {{name: "acme/one", data: strings.Repeat("x", 100)}, {name: "acme/two", data: strings.Repeat("x", 100)}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			prefix := []chartArchiveEntry{
+				{name: "pax_global_header", kind: tar.TypeXGlobalHeader, pax: map[string]string{"comment": "synthetic archive"}},
+				{name: "acme/Chart.yaml", data: acmeChartMetadata},
+			}
+			data := chartArchiveFixture(t, append(prefix, entries...)...)
+			_, err := chartArchiveFiles(bytes.NewReader(data))
+			require.ErrorContains(t, err, "decompression limits")
+		})
+	}
+}
+
 func TestChartArchiveRejectsMaliciousEntriesBeforeMaterialization(t *testing.T) {
-	nested := chartArchiveFixture(t,
-		chartArchiveEntry{name: "child/Chart.yaml", data: "apiVersion: v2\nname: child\nversion: 0.1.0\n"},
-		chartArchiveEntry{name: "child/link", kind: tar.TypeSymlink, link: "../../canary"},
-	)
 	cases := map[string]chartArchiveEntry{
 		"parent":         {name: "acme/../../canary", data: "overwritten"},
 		"inner parent":   {name: "acme/templates/../canary", data: "overwritten"},
@@ -165,7 +223,25 @@ func TestChartArchiveRejectsMaliciousEntriesBeforeMaterialization(t *testing.T) 
 		"fifo":           {name: "acme/fifo", kind: tar.TypeFifo},
 		"duplicate":      {name: "acme/Chart.yaml", data: acmeChartMetadata},
 		"second base":    {name: "other/file", data: "overwritten"},
-		"nested archive": {name: "acme/charts/child.tgz", data: string(nested)},
+	}
+	for attack, entry := range map[string]chartArchiveEntry{
+		"traversal": {name: "child/templates/../../canary", data: "overwritten"},
+		"symlink":   {name: "child/link", kind: tar.TypeSymlink, link: "../../canary"},
+		"hardlink":  {name: "child/link", kind: tar.TypeLink, link: "../../canary"},
+		"metadata":  {name: "child/Chart.yaml", data: "invalid: ["},
+	} {
+		entries := []chartArchiveEntry{entry}
+		if attack != "metadata" {
+			entries = append(entries, chartArchiveEntry{name: "child/Chart.yaml", data: "apiVersion: v2\nname: child\nversion: 0.1.0\n"})
+		}
+		nested := chartArchiveFixture(t, entries...)
+		cases["nested archive/"+attack] = chartArchiveEntry{name: "acme/charts/child.tgz", data: string(nested)}
+		cases["directory subchart/"+attack] = chartArchiveEntry{name: "acme/charts/dir/charts/child.tgz", data: string(nested)}
+		outer := chartArchiveFixture(t,
+			chartArchiveEntry{name: "outer/Chart.yaml", data: "apiVersion: v2\nname: outer\nversion: 1.0.0\n"},
+			chartArchiveEntry{name: "outer/charts/child.tgz", data: string(nested)},
+		)
+		cases["archive subchart/"+attack] = chartArchiveEntry{name: "acme/charts/outer.tgz", data: string(outer)}
 	}
 	for name, entry := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -175,7 +251,11 @@ func TestChartArchiveRejectsMaliciousEntriesBeforeMaterialization(t *testing.T) 
 			canary := filepath.Join(parent, "canary")
 			require.NoError(t, os.WriteFile(canary, []byte("untouched"), 0600))
 			fs, _ := pinnedChartSource(t, root)
-			data := chartArchiveFixture(t, chartArchiveEntry{name: "acme/Chart.yaml", data: acmeChartMetadata}, entry)
+			data := chartArchiveFixture(t,
+				chartArchiveEntry{name: "acme/Chart.yaml", data: acmeChartMetadata},
+				chartArchiveEntry{name: "acme/charts/dir/Chart.yaml", data: "apiVersion: v2\nname: dir\nversion: 1.0.0\n"},
+				entry,
+			)
 			_, err := materializeChartArchive(fs, bytes.NewReader(data))
 			require.Error(t, err)
 			entries, err := afero.ReadDir(fs, ".")
@@ -209,8 +289,8 @@ func TestChartArchiveMaterializationPreservesHelmSemantics(t *testing.T) {
 	got, err := loadChart(source, dir)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
-	h := &handler{state: &handlerState{source: source, cfg: &plantypes.HelmBuildPlan{}}}
-	packagePath, err := h.loadAndPackageChart(zap.NewNop(), dir, t.TempDir())
+	h := &handler{state: initializedChartState(t, source)}
+	packagePath, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), dir)
 	require.NoError(t, err)
 	packaged, err := loader.Load(packagePath)
 	require.NoError(t, err)
@@ -221,6 +301,60 @@ func TestChartArchiveMaterializationPreservesHelmSemantics(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, inputs, 1)
 	require.Equal(t, "from-archive", inputs[0].Review.Object["metadata"].(map[string]interface{})["name"])
+}
+
+func TestSubchartTarAssetsRemainOpaque(t *testing.T) {
+	seed := chartArchiveFixture(t, chartArchiveEntry{name: "seed.sql", data: "SELECT 42;"})
+	childFiles := []chartArchiveEntry{
+		{name: "child/Chart.yaml", data: "apiVersion: v2\nname: child\nversion: 1.0.0\n"},
+		{name: "child/files/seed.tgz", data: string(seed)},
+		{name: "child/files/charts/opaque.tgz", data: "not a chart or gzip archive"},
+		{name: "child/templates/config.yaml", data: "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: seed\ndata:\n  checksum: {{ .Files.Get \"files/seed.tgz\" | sha256sum | quote }}\n"},
+	}
+	for _, packedChild := range []bool{false, true} {
+		for _, packedParent := range []bool{false, true} {
+			t.Run(fmt.Sprintf("child-archive=%t/parent-archive=%t", packedChild, packedParent), func(t *testing.T) {
+				entries := []chartArchiveEntry{{name: "acme/Chart.yaml", data: acmeChartMetadata}}
+				if packedChild {
+					entries = append(entries, chartArchiveEntry{name: "acme/charts/child.tgz", data: string(chartArchiveFixture(t, childFiles...))})
+				} else {
+					for _, file := range childFiles {
+						entries = append(entries, chartArchiveEntry{name: "acme/charts/" + file.name, data: file.data})
+					}
+				}
+				fs, source := pinnedChartSource(t, t.TempDir())
+				chartPath := "acme"
+				if packedParent {
+					chartPath = "input.tgz"
+					require.NoError(t, afero.WriteFile(fs, chartPath, chartArchiveFixture(t, entries...), 0600))
+				} else {
+					for _, file := range entries {
+						require.NoError(t, fs.MkdirAll(filepath.Dir(file.name), 0700))
+						require.NoError(t, afero.WriteFile(fs, file.name, []byte(file.data), 0600))
+					}
+				}
+				stock, err := loader.Load(filepath.Join(fs.Root(), chartPath))
+				require.NoError(t, err, "stock Helm accepts these contained assets")
+				_, err = chartutil.Save(stock, t.TempDir())
+				require.NoError(t, err)
+				h := &handler{state: initializedChartState(t, source)}
+				packagePath, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), chartPath)
+				require.NoError(t, err)
+				packaged, err := loader.Load(packagePath)
+				require.NoError(t, err)
+				require.Len(t, packaged.Dependencies(), 1)
+				files := map[string][]byte{}
+				for _, file := range packaged.Dependencies()[0].Files {
+					files[file.Name] = file.Data
+				}
+				require.Equal(t, map[string][]byte{"files/seed.tgz": seed, "files/charts/opaque.tgz": []byte("not a chart or gzip archive")}, files)
+				inputs, err := h.buildPolicyInput(context.Background(), zap.NewNop())
+				require.NoError(t, err)
+				require.Len(t, inputs, 1)
+				require.Equal(t, fmt.Sprintf("%x", sha256.Sum256(seed)), inputs[0].Review.Object["data"].(map[string]interface{})["checksum"])
+			})
+		}
+	}
 }
 
 func TestFileDependenciesCannotEscapeSourceEvenWhenVendored(t *testing.T) {
@@ -249,11 +383,10 @@ func TestFileDependenciesCannotEscapeSourceEvenWhenVendored(t *testing.T) {
 			metadata := acmeChartMetadata + fmt.Sprintf("dependencies:\n- name: %q\n  version: 0.1.0\n  repository: %q\n", depName, repository)
 			require.NoError(t, os.WriteFile(filepath.Join(chartDir, "Chart.yaml"), []byte(metadata), 0600))
 			_, source := pinnedChartSource(t, root)
-			h := &handler{state: &handlerState{source: source, cfg: &plantypes.HelmBuildPlan{}}}
-			dst := t.TempDir()
-			_, err := h.loadAndPackageChart(zap.NewNop(), chartDir, dst)
+			h := &handler{state: initializedChartState(t, source)}
+			_, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), chartDir)
 			require.Error(t, err)
-			_, err = os.Stat(filepath.Join(dst, defaultChartPackageFilename))
+			_, err = h.state.arch.FS().Stat(defaultChartPackageFilename)
 			require.True(t, os.IsNotExist(err))
 			canary, err := os.ReadFile(filepath.Join(outside, "canary"))
 			require.NoError(t, err)
@@ -284,8 +417,8 @@ func TestConfinedDependencyRefreshMemoryAndOS(t *testing.T) {
 				source, err := sourcefs.From(fs, root)
 				require.NoError(t, err)
 				defer source.Close()
-				h := &handler{state: &handlerState{source: source, cfg: &plantypes.HelmBuildPlan{}}}
-				packagePath, err := h.loadAndPackageChart(zap.NewNop(), "chart", t.TempDir())
+				h := &handler{state: initializedChartState(t, source)}
+				packagePath, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), "chart")
 				require.NoError(t, err)
 				packaged, err := loader.Load(packagePath)
 				require.NoError(t, err)
@@ -303,23 +436,27 @@ func TestConfinedDependencyRefreshMemoryAndOS(t *testing.T) {
 	}
 }
 
-func TestPackagePublicationDoesNotFollowOutputSymlink(t *testing.T) {
-	root := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(root, "Chart.yaml"), []byte(acmeChartMetadata), 0600))
-	_, source := pinnedChartSource(t, root)
-	dst := t.TempDir()
-	canary := filepath.Join(t.TempDir(), "canary")
-	require.NoError(t, os.WriteFile(canary, []byte("untouched"), 0600))
-	require.NoError(t, os.Symlink(canary, filepath.Join(dst, defaultChartPackageFilename)))
-	h := &handler{state: &handlerState{source: source, cfg: &plantypes.HelmBuildPlan{}}}
-	_, err := h.loadAndPackageChart(zap.NewNop(), ".", dst)
-	require.Error(t, err)
-	got, err := os.ReadFile(canary)
-	require.NoError(t, err)
-	require.Equal(t, "untouched", string(got))
-	entries, err := os.ReadDir(dst)
-	require.NoError(t, err)
-	require.Len(t, entries, 1, "private dependency/serializer staging must be removed on failure")
+func TestPackagePublicationDoesNotFollowOutputLinks(t *testing.T) {
+	for name, link := range map[string]func(string, string) error{"symlink": os.Symlink, "hardlink": os.Link} {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			require.NoError(t, os.WriteFile(filepath.Join(root, "Chart.yaml"), []byte(acmeChartMetadata), 0600))
+			_, source := pinnedChartSource(t, root)
+			h := &handler{state: initializedChartState(t, source)}
+			dst := h.state.arch.BasePath()
+			canary := filepath.Join(t.TempDir(), "canary")
+			require.NoError(t, os.WriteFile(canary, []byte("untouched"), 0600))
+			require.NoError(t, link(canary, filepath.Join(dst, defaultChartPackageFilename)))
+			_, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), ".")
+			require.Error(t, err)
+			got, err := os.ReadFile(canary)
+			require.NoError(t, err)
+			require.Equal(t, "untouched", string(got))
+			entries, err := os.ReadDir(dst)
+			require.NoError(t, err)
+			require.Len(t, entries, 1, "private dependency/serializer staging must be removed on failure")
+		})
+	}
 }
 
 func TestChartSourceSurvivesDisplayPathReplacement(t *testing.T) {
@@ -343,8 +480,8 @@ func TestHelmSettingsAreJobPrivate(t *testing.T) {
 	}
 	fs, source := pinnedChartSource(t, t.TempDir())
 	require.NoError(t, afero.WriteFile(fs, "Chart.yaml", []byte(acmeChartMetadata), 0600))
-	h := &handler{state: &handlerState{source: source, cfg: &plantypes.HelmBuildPlan{}}}
-	_, err := h.loadAndPackageChart(zap.NewNop(), ".", t.TempDir())
+	h := &handler{state: initializedChartState(t, source)}
+	_, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), ".")
 	require.NoError(t, err)
 	entries, err := os.ReadDir(outside)
 	require.NoError(t, err)
@@ -374,8 +511,8 @@ func TestPackagedPolicySchemaCannotReadExternalFiles(t *testing.T) {
 			}
 			h, err := New(HandlerParams{FS: fs})
 			require.NoError(t, err)
-			h.state = &handlerState{source: source, cfg: &plantypes.HelmBuildPlan{}}
-			_, err = h.loadAndPackageChart(zap.NewNop(), ".", t.TempDir())
+			h.state = initializedChartState(t, source)
+			_, err = h.loadAndPackageChart(t.Context(), zap.NewNop(), ".")
 			require.NoError(t, err)
 			inputs, err := h.buildPolicyInput(context.Background(), zap.NewNop())
 			require.ErrorContains(t, err, "external schema resource is not allowed")
@@ -409,8 +546,8 @@ func TestMissingLocalDependencyRetainsVendoredFallback(t *testing.T) {
 	require.NoError(t, afero.WriteFile(fs, "chart/Chart.yaml", []byte(metadata), 0600))
 	child := chartArchiveFixture(t, chartArchiveEntry{name: "child/Chart.yaml", data: "apiVersion: v2\nname: child\nversion: 0.1.0\n"})
 	require.NoError(t, afero.WriteFile(fs, "chart/charts/child-0.1.0.tgz", child, 0600))
-	h := &handler{state: &handlerState{source: source, cfg: &plantypes.HelmBuildPlan{}}}
-	packagePath, err := h.loadAndPackageChart(zap.NewNop(), "chart", t.TempDir())
+	h := &handler{state: initializedChartState(t, source)}
+	packagePath, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), "chart")
 	require.NoError(t, err)
 	packaged, err := loader.Load(packagePath)
 	require.NoError(t, err)
@@ -429,8 +566,8 @@ func TestPackagedChartInputRetainsArchiveIgnoreSemantics(t *testing.T) {
 		chartArchiveEntry{name: "acme/charts/child.tgz", data: string(child)},
 	)
 	require.NoError(t, afero.WriteFile(fs, "input.tgz", data, 0600))
-	h := &handler{state: &handlerState{source: source, cfg: &plantypes.HelmBuildPlan{}}}
-	packagePath, err := h.loadAndPackageChart(zap.NewNop(), "input.tgz", t.TempDir())
+	h := &handler{state: initializedChartState(t, source)}
+	packagePath, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), "input.tgz")
 	require.NoError(t, err)
 	packaged, err := loader.Load(packagePath)
 	require.NoError(t, err)
@@ -461,17 +598,18 @@ func TestHelmInitializedWorkspacePackagingAndCleanup(t *testing.T) {
 			require.NoError(t, h.Initialize(ctx, job, execution))
 			workspaceFS := h.state.workspace.FS()
 			require.NoError(t, afero.WriteFile(workspaceFS, "Chart.yaml", []byte(acmeChartMetadata), 0600))
-			packagePath, err := h.loadAndPackageChart(zap.NewNop(), ".", h.state.arch.TmpDir())
+			packagePath, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), ".")
 			require.NoError(t, err)
 			h.state.packagePath = packagePath
 			files, err := h.getSourceFiles()
 			require.NoError(t, err)
+			require.NoError(t, h.state.output.Close())
 			require.NoError(t, h.state.arch.Pack(ctx, zap.NewNop(), h.state.output, files))
 			archivePath := h.state.arch.TmpDir()
-			output := h.state.outputRoot
+			output := h.state.arch.FS()
 			require.NoError(t, h.Cleanup(ctx, job, execution))
 			_, err = output.Stat(".")
-			require.Error(t, err, "owned output handle must be closed")
+			require.Error(t, err, "archive-owned output handle must be closed")
 			_, err = workspaceFS.Stat(".")
 			require.Error(t, err, "workspace must be removed and its OS handle closed")
 			_, err = os.Stat(archivePath)

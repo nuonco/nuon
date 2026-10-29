@@ -55,6 +55,10 @@ func chartArchiveFiles(in io.ReadSeeker) ([]*archive.BufferedFile, error) {
 		if err != nil {
 			return nil, err
 		}
+		switch hdr.Typeflag {
+		case tar.TypeXGlobalHeader, tar.TypeXHeader:
+			continue
+		}
 		name := strings.TrimSuffix(hdr.Name, "/")
 		if err := chartFilePath(name); err != nil {
 			return nil, err
@@ -104,10 +108,23 @@ func checkChartFiles(files []*archive.BufferedFile) error {
 			return fmt.Errorf("duplicate chart file %q", file.Name)
 		}
 		names[file.Name] = true
-		if strings.HasPrefix(file.Name, "charts/") && strings.HasSuffix(file.Name, ".tgz") {
-			if _, err := chartArchiveFiles(bytes.NewReader(file.Data)); err != nil {
-				return fmt.Errorf("invalid dependency archive %q: %w", file.Name, err)
+		// Only charts/<child> at each chart boundary denotes a dependency;
+		// files/seed.tgz and other contained assets must remain opaque.
+		name := file.Name
+		for strings.HasPrefix(name, "charts/") {
+			child, rest, nested := strings.Cut(strings.TrimPrefix(name, "charts/"), "/")
+			if strings.IndexAny(child, "_.") == 0 {
+				break // Helm ignores these subcharts.
 			}
+			if !nested {
+				if strings.HasSuffix(child, ".tgz") {
+					if _, err := chartArchiveFiles(bytes.NewReader(file.Data)); err != nil {
+						return fmt.Errorf("invalid dependency archive %q: %w", file.Name, err)
+					}
+				}
+				break
+			}
+			name = rest
 		}
 	}
 	for name := range names {
@@ -217,9 +234,6 @@ func materializeChart(fs afero.Fs, dir string, chart *chartv2.Chart) error {
 }
 
 func loadChartFiles(files []*archive.BufferedFile) (*chartv2.Chart, error) {
-	if err := checkChartFiles(files); err != nil {
-		return nil, err
-	}
 	chart, err := loader.LoadFiles(files)
 	if err != nil {
 		return nil, err

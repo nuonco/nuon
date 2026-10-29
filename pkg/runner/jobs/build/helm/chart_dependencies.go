@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"helm.sh/helm/v4/pkg/chart/common"
+	"helm.sh/helm/v4/pkg/chart/loader/archive"
 	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
 	"sigs.k8s.io/yaml"
 
@@ -36,7 +38,7 @@ func localDependencyCharts(source *sourcefs.FS, chartDir string, deps []*chartv2
 		if _, err := source.Relative(target); err != nil {
 			return nil, err
 		}
-		resolved, _, err := source.Resolve(target)
+		resolved, err := source.Resolve(target)
 		if err != nil && !os.IsNotExist(err) {
 			return nil, fmt.Errorf("dependency %q escapes chart source: %w", dep.Name, err)
 		}
@@ -56,6 +58,7 @@ func localDependencyCharts(source *sourcefs.FS, chartDir string, deps []*chartv2
 func refreshChartDependencies(ctx context.Context, client *http.Client, locals map[string]*chartv2.Chart, chart *chartv2.Chart) error {
 	refreshed := map[string]*chartv2.Chart{}
 	locked := make([]*chartv2.Dependency, 0, len(chart.Metadata.Dependencies))
+	fetcher := newChartRepositoryFetcher(client)
 	for _, dep := range chart.Metadata.Dependencies {
 		constraint, err := semver.NewConstraint(dep.Version)
 		if err != nil {
@@ -80,7 +83,7 @@ func refreshChartDependencies(ctx context.Context, client *http.Client, locals m
 			}
 		default:
 			var data []byte
-			data, err = fetchRepositoryChart(ctx, client, dep.Repository, dep.Name, dep.Version)
+			data, err = fetcher.fetch(ctx, dep.Repository, dep.Name, dep.Version)
 			if err == nil {
 				files, archiveErr := chartArchiveFiles(bytes.NewReader(data))
 				err = archiveErr
@@ -118,6 +121,20 @@ func refreshChartDependencies(ctx context.Context, client *http.Client, locals m
 	if chart.Lock != nil && chart.Lock.Digest == lock.Digest {
 		lock = chart.Lock
 	}
+	// Helm prunes obsolete archives, not directory-backed children. Reload the
+	// retained raw files to preserve that distinction even when names differ
+	// from their source paths, without changing the vendored set on failure.
+	var retainedFiles []*archive.BufferedFile
+	for _, file := range chart.Raw {
+		if path.Dir(file.Name) == "charts" && strings.HasSuffix(file.Name, ".tgz") {
+			continue
+		}
+		retainedFiles = append(retainedFiles, &archive.BufferedFile{Name: file.Name, ModTime: file.ModTime, Data: file.Data})
+	}
+	retained, err := loadChartFiles(retainedFiles)
+	if err != nil {
+		return err
+	}
 	if chart.Metadata.APIVersion == chartv2.APIVersionV1 {
 		data, err := yaml.Marshal(lock)
 		if err != nil {
@@ -132,7 +149,7 @@ func refreshChartDependencies(ctx context.Context, client *http.Client, locals m
 		chart.Files = append(files, &common.File{Name: "requirements.lock", ModTime: lock.Generated, Data: data})
 	}
 	children := make([]*chartv2.Chart, 0, len(chart.Dependencies())+len(refreshed))
-	for _, child := range chart.Dependencies() {
+	for _, child := range retained.Dependencies() {
 		if refreshed[child.Name()] == nil {
 			children = append(children, child)
 		}

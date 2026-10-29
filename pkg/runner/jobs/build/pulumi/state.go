@@ -19,7 +19,6 @@ type handlerState struct {
 	workspace      workspace.Workspace
 	arch           ociarchive.Archive
 	source         *sourcefs.FS
-	archiveSource  *sourcefs.FS
 	resultTag      string
 	jobExecutionID string
 	jobID          string

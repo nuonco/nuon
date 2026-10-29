@@ -61,6 +61,8 @@ func TestBuildPackagingKeepsPinnedSource(t *testing.T) {
 	require.NoError(t, os.Mkdir(filepath.Join(repo, "component"), 0o700))
 	want := "terraform { backend s3 {} }\n# owned source\n"
 	require.NoError(t, os.WriteFile(filepath.Join(repo, "component/main.tf"), []byte(want), 0o600))
+	require.NoError(t, os.Mkdir(filepath.Join(repo, "shared"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(repo, "shared/common.tf"), []byte("shared repository input"), 0o600))
 	require.NoError(t, os.WriteFile(filepath.Join(repo, "not-in-component.txt"), []byte("not packaged"), 0o600))
 	for _, args := range [][]string{{"init", "-b", "main"}, {"add", "."}, {"commit", "-m", "fixture"}} {
 		cmd := exec.Command("git", append([]string{"-c", "user.name=Example", "-c", "user.email=example@example.com", "-c", "commit.gpgsign=false"}, args...)...)
@@ -114,6 +116,7 @@ func TestBuildPackagingKeepsPinnedSource(t *testing.T) {
 				if backend == "disk" {
 					require.NoError(t, os.Rename(root, root+"-moved"))
 					t.Cleanup(func() { require.NoError(t, os.RemoveAll(root+"-moved")) })
+					require.NoError(t, os.Symlink("../shared/common.tf", filepath.Join(root+"-moved", "component/shared.tf")))
 				} else {
 					_, err := os.Stat(root)
 					require.True(t, os.IsNotExist(err))
@@ -143,8 +146,18 @@ func TestBuildPackagingKeepsPinnedSource(t *testing.T) {
 				outputs, err := handler.Outputs(ctx)
 				require.NoError(t, err)
 				files := outputs["files"].([]ociarchive.FileRef)
-				require.Len(t, files, 1)
-				require.Equal(t, "main.tf", files[0].RelPath)
+				var names []string
+				for _, input := range files {
+					names = append(names, input.RelPath)
+				}
+				if backend == "disk" {
+					require.ElementsMatch(t, []string{"main.tf", "shared.tf"}, names)
+					contents, err := afero.ReadFile(unpacked.FS(), "shared.tf")
+					require.NoError(t, err)
+					require.Equal(t, "shared repository input", string(contents))
+				} else {
+					require.Equal(t, []string{"main.tf"}, names)
+				}
 				require.NoError(t, handler.Cleanup(ctx, job, execution))
 			})
 		}

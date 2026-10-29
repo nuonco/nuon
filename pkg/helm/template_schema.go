@@ -3,6 +3,7 @@ package helm
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/mitchellh/copystructure"
 	"github.com/santhosh-tekuri/jsonschema/v6"
@@ -13,8 +14,8 @@ import (
 // Helm's schema compiler can read host files and fetch URLs. Before entering it,
 // compile the same active schemas with no external resource loader. Successful
 // compilation proves their references (including metaschemas and rebased IDs)
-// are self-contained; Helm still performs its normal values validation below.
-func checkPolicySchemaResources(ch *chart.Chart, values map[string]interface{}) error {
+// are self-contained; Helm still performs its normal values validation afterward.
+func ValidateSchemaResources(ch *chart.Chart, values map[string]interface{}) error {
 	active, err := copyPolicyChart(ch)
 	if err != nil {
 		return err
@@ -67,7 +68,7 @@ func checkActiveSchemaResources(ch *chart.Chart) error {
 func checkSingleSchemaResources(data []byte) (retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
-			retErr = fmt.Errorf("unable to compile policy schema: %v", r)
+			retErr = fmt.Errorf("unable to compile Helm schema: %v", r)
 		}
 	}()
 	schema, err := jsonschema.UnmarshalJSON(bytes.NewReader(data))
@@ -88,5 +89,8 @@ func checkSingleSchemaResources(data []byte) (retErr error) {
 type policySchemaLoader struct{}
 
 func (policySchemaLoader) Load(address string) (any, error) {
-	return nil, fmt.Errorf("external schema resource is not allowed for policy rendering: %s", address)
+	if strings.HasPrefix(address, "urn:") {
+		return true, nil
+	}
+	return nil, fmt.Errorf("external schema resource is not allowed for Helm rendering: %s", address)
 }

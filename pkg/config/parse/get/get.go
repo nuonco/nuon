@@ -2,10 +2,12 @@ package get
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/publicnet"
 	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
@@ -18,8 +20,9 @@ type Options struct {
 }
 
 type get struct {
-	dst  any
-	opts *Options
+	dst        any
+	opts       *Options
+	httpClient *http.Client
 }
 
 func Parse(ctx context.Context, obj any, opts *Options) error {
@@ -35,6 +38,10 @@ func Parse(ctx context.Context, obj any, opts *Options) error {
 	getter := &get{
 		dst:  obj,
 		opts: &options,
+	}
+	if options.Source != nil {
+		getter.httpClient = publicnet.NewHTTPClient()
+		defer getter.httpClient.CloseIdleConnections()
 	}
 
 	if err := getter.GetAll(ctx); err != nil {

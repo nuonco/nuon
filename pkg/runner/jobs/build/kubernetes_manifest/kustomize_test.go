@@ -126,6 +126,76 @@ transformers:
 	require.Equal(t, map[string]any{"MODE": "memory", "URL": "https://example.com/api"}, objects["ConfigMap"]["data"])
 }
 
+func TestKustomizeVersionedLocalNames(t *testing.T) {
+	bin := t.TempDir()
+	marker := filepath.Join(t.TempDir(), "executed")
+	t.Setenv("NUON_TEST_EXEC_MARKER", marker)
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	require.NoError(t, os.WriteFile(filepath.Join(bin, "git"), []byte("#!/bin/sh\nprintf ran > \"$NUON_TEST_EXEC_MARKER\"\nexit 1\n"), 0700))
+	for _, backend := range []string{"memory", "rooted"} {
+		t.Run(backend, func(t *testing.T) {
+			var fs afero.Fs = afero.NewMemMapFs()
+			path := "/job"
+			if backend == "rooted" {
+				root, err := rootfs.Open(t.TempDir())
+				require.NoError(t, err)
+				t.Cleanup(func() { require.NoError(t, root.Close()) })
+				fs, path = root, root.Root()
+			}
+			kustomizeFixture(t, fs, map[string]string{
+				"kustomization.yaml": `resources: [service@1.2.3, "app:v1.yaml", "1svc@1.2.3/x"]
+components: [labels@1.2.3]
+configMapGenerator:
+- name: settings
+  files: [config@1.2.3.txt]
+generatorOptions:
+  disableNameSuffixHash: true
+`,
+				"service@1.2.3/kustomization.yaml": "resources: [resource.yaml]\n",
+				"service@1.2.3/resource.yaml":      "apiVersion: v1\nkind: ConfigMap\nmetadata: {name: versioned-resource}\n",
+				"app:v1.yaml":                      "apiVersion: v1\nkind: ConfigMap\nmetadata: {name: colon-resource}\n",
+				"1svc@1.2.3/x/kustomization.yaml":  "resources: [resource.yaml]\n",
+				"1svc@1.2.3/x/resource.yaml":       "apiVersion: v1\nkind: ConfigMap\nmetadata: {name: numeric-resource}\n",
+				"labels@1.2.3/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+labels:
+- pairs: {version: local}
+`,
+				"config@1.2.3.txt": "versioned generator",
+			})
+			h := kustomizeHandler(t, fs, path, nil)
+			data, err := h.buildKustomization(".")
+			require.NoError(t, err)
+			require.Contains(t, string(data), "name: versioned-resource")
+			require.Contains(t, string(data), "name: colon-resource")
+			require.Contains(t, string(data), "name: numeric-resource")
+			require.Contains(t, string(data), "version: local")
+			require.Contains(t, string(data), "config@1.2.3.txt: versioned generator")
+
+			kustomizeFixture(t, fs, map[string]string{
+				"service@1.2.3/org/repo/kustomization.yaml": "resources: [resource.yaml]\n",
+				"service@1.2.3/org/repo/resource.yaml":      "apiVersion: v1\nkind: ConfigMap\nmetadata: {name: explicit-local}\n",
+			})
+			for _, ref := range []string{"service@1.2.3/org/repo", "./service@1.2.3/org/repo", "missing@1.2.3"} {
+				require.NoError(t, afero.WriteFile(fs, "kustomization.yaml", []byte(fmt.Sprintf("resources: [%q]\n", ref)), 0600))
+				data, err := h.buildKustomization(".")
+				switch ref {
+				case "service@1.2.3/org/repo":
+					require.ErrorContains(t, err, "requires confined fetching")
+				case "./service@1.2.3/org/repo":
+					require.NoError(t, err)
+					require.Contains(t, string(data), "name: explicit-local")
+				default:
+					require.Error(t, err)
+					require.NotContains(t, err.Error(), "requires confined fetching")
+				}
+			}
+		})
+	}
+	_, err := os.Stat(marker)
+	require.True(t, os.IsNotExist(err), "local names and rejected remote names must not invoke Git: %v", err)
+}
+
 func TestKustomizeLoadRestriction(t *testing.T) {
 	for _, restrictor := range []string{"root-only", "none"} {
 		t.Run(restrictor, func(t *testing.T) {

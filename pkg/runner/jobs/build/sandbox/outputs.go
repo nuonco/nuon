@@ -13,7 +13,7 @@ func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 		return map[string]interface{}{}, nil
 	}
 
-	srcFiles, err := ociarchive.SourceFiles(ctx, h.state.archiveSource, defaultFileType)
+	srcFiles, err := ociarchive.SourceFiles(ctx, h.state.source, h.state.workspace.Source().AbsPath(), defaultFileType)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get source files")
 	}

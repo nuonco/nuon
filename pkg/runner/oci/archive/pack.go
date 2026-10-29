@@ -78,6 +78,9 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, source *sourcefs.FS
 		if closeErr != nil {
 			return fmt.Errorf("unable to close tar layer %q: %w", archiveLayer.title, closeErr)
 		}
+		if err := r.workFS.Remove(tarPath); err != nil {
+			return fmt.Errorf("unable to remove staged tar layer %q: %w", archiveLayer.title, err)
+		}
 		layer.Annotations[orasfile.AnnotationUnpack] = "true"
 		layers = append(layers, layer)
 	}

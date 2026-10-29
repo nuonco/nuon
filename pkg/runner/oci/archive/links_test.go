@@ -33,7 +33,7 @@ func TestPackDirectoryLinkCompatibility(t *testing.T) {
 				require.NoError(t, os.Symlink(target, filepath.Join(root, name)))
 			}
 			source := newTestSource(t, afero.NewOsFs(), root)
-			inputs, err := SourceFiles(ctx, source, "application/octet-stream")
+			inputs, err := SourceFiles(ctx, source, ".", "application/octet-stream")
 			require.NoError(t, err)
 			packed := newTestArchive(t, ctx)
 			require.NoError(t, packed.Pack(ctx, zap.NewNop(), source, inputs))
@@ -60,7 +60,7 @@ func TestPackDirectoryLinksToOmittedEmptyDirectory(t *testing.T) {
 	require.NoError(t, os.Symlink("./empty", filepath.Join(root, "a")))
 	require.NoError(t, os.Symlink("a", filepath.Join(root, "b")))
 	source := newTestSource(t, afero.NewOsFs(), root)
-	inputs, err := SourceFiles(ctx, source, "application/octet-stream")
+	inputs, err := SourceFiles(ctx, source, ".", "application/octet-stream")
 	require.NoError(t, err)
 	require.Len(t, inputs, 2)
 	packed := newTestArchive(t, ctx)

@@ -35,11 +35,14 @@ func TestPackMemoryMatchesDisk(t *testing.T) {
 			}
 			writeInputFile(t, fs, root, ".git/config", "ignored", 0644)
 			writeInputFile(t, fs, root, "nested/.git/HEAD", "ignored", 0644)
-			enumerated, err := SourceFiles(ctx, source, "application/octet-stream")
+			enumerated, err := SourceFiles(ctx, source, ".", "application/octet-stream")
 			require.NoError(t, err)
 			require.ElementsMatch(t, files, enumerated)
 			a := newTestArchive(t, ctx)
 			require.NoError(t, a.Pack(ctx, zap.NewNop(), source, enumerated))
+			staged, err := afero.ReadDir(a.workFS, "layers")
+			require.NoError(t, err)
+			require.Empty(t, staged, "ingested layers must not retain duplicate staging copies")
 			dgst := resolveTestManifest(t, ctx, a).Digest.String()
 			if packedDigest == "" {
 				packedDigest = dgst
@@ -120,7 +123,7 @@ func TestPackRejectsInvalidInputs(t *testing.T) {
 			require.ErrorContains(t, duplicate.Pack(ctx, zap.NewNop(), nil, nil), "source filesystem is required")
 			canceled, cancel := context.WithCancel(ctx)
 			cancel()
-			_, err := SourceFiles(canceled, source, "")
+			_, err := SourceFiles(canceled, source, ".", "")
 			require.ErrorIs(t, err, context.Canceled)
 			require.ErrorIs(t, newTestArchive(t, ctx).Pack(canceled, zap.NewNop(), source, []FileRef{input}), context.Canceled)
 		})
@@ -155,7 +158,7 @@ func TestPackOSFileAndDirectoryLinks(t *testing.T) {
 	require.NoError(t, os.Symlink("target/main.tf", filepath.Join(root, "relative")))
 	require.NoError(t, os.Symlink(filepath.Join(root, "target/main.tf"), filepath.Join(root, "absolute")))
 	source := newTestSource(t, afero.NewOsFs(), root)
-	files, err := SourceFiles(ctx, source, "application/octet-stream")
+	files, err := SourceFiles(ctx, source, ".", "application/octet-stream")
 	require.NoError(t, err)
 	require.Len(t, files, 4, "directory links must not be followed")
 	packed := newTestArchive(t, ctx)
@@ -175,6 +178,112 @@ func TestPackOSFileAndDirectoryLinks(t *testing.T) {
 	require.NotZero(t, info.Mode()&os.ModeSymlink)
 }
 
+func TestPackRelocatedNestedDirectoryLink(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	writeTestFile(t, root, "component/assets/main.tf", "component asset", 0755)
+	writeTestFile(t, root, "other/main.tf", "must not be packaged", 0644)
+	writeTestFile(t, root, "component/assets/.git/config", "must not be packaged", 0644)
+	require.NoError(t, os.Symlink("../shared", filepath.Join(root, "component/shared")))
+	require.NoError(t, os.Mkdir(filepath.Join(root, "shared"), 0755))
+	require.NoError(t, os.Symlink("../component/assets", filepath.Join(root, "shared/assets")))
+	source := newTestSource(t, afero.NewOsFs(), root)
+	inputs, err := SourceFiles(ctx, source, "component", "application/octet-stream")
+	require.NoError(t, err)
+	packed := newTestArchive(t, ctx)
+	require.NoError(t, packed.Pack(ctx, zap.NewNop(), source, inputs))
+	dst := newTestArchive(t, ctx)
+	require.NoError(t, copyFixture(ctx, packed.Ref(), dst))
+	for _, name := range []string{"assets/main.tf", "shared/assets/main.tf"} {
+		data, err := afero.ReadFile(dst.FS(), name)
+		require.NoError(t, err)
+		require.Equal(t, "component asset", string(data))
+		info, err := dst.FS().Stat(name)
+		require.NoError(t, err)
+		require.EqualValues(t, 0755, info.Mode().Perm())
+	}
+	for _, name := range []string{"other", "assets/.git", "shared/assets/.git", "component"} {
+		_, err := dst.FS().Stat(name)
+		require.True(t, os.IsNotExist(err), "%s must not be packaged", name)
+	}
+}
+
+func TestPackComponentRepositoryLinks(t *testing.T) {
+	for _, absolute := range []bool{false, true} {
+		t.Run(fmt.Sprintf("absolute=%t", absolute), func(t *testing.T) {
+			ctx := context.Background()
+			root := t.TempDir()
+			writeTestFile(t, root, "components/api/main.tf", "component", 0644)
+			writeTestFile(t, root, "shared/common.tf", "shared file", 0644)
+			writeTestFile(t, root, "shared/module/main.tf", "shared module", 0755)
+			writeTestFile(t, root, "shared/module/nested/values.yaml", "shared values", 0644)
+			writeTestFile(t, root, "shared/unreferenced.txt", "must not be packaged", 0644)
+			writeTestFile(t, root, "components/other/main.tf", "must not be packaged", 0644)
+			writeTestFile(t, root, "shared/module/.git/config", "must not be packaged", 0644)
+			for name, target := range map[string]string{
+				"components/api/common.tf": "../../shared/common.tf",
+				"components/api/module":    "../../shared/module",
+				"shared/module/common.tf":  "../common.tf",
+				"shared/module/values":     "nested",
+			} {
+				if absolute {
+					target = filepath.Join(root, filepath.Dir(name), target)
+				}
+				require.NoError(t, os.Symlink(target, filepath.Join(root, name)))
+			}
+			source := newTestSource(t, afero.NewOsFs(), root)
+			inputs, err := SourceFiles(ctx, source, "components/api", "application/octet-stream")
+			require.NoError(t, err)
+			var names []string
+			for _, input := range inputs {
+				names = append(names, input.RelPath)
+			}
+			require.ElementsMatch(t, []string{
+				"main.tf", "common.tf", "module/main.tf", "module/common.tf",
+				"module/nested/values.yaml", "module/values/values.yaml",
+			}, names)
+			packed := newTestArchive(t, ctx)
+			require.NoError(t, packed.Pack(ctx, zap.NewNop(), source, inputs))
+			dst := newTestArchive(t, ctx)
+			require.NoError(t, copyFixture(ctx, packed.Ref(), dst))
+			for name, expected := range map[string]string{
+				"main.tf":                   "component",
+				"common.tf":                 "shared file",
+				"module/main.tf":            "shared module",
+				"module/common.tf":          "shared file",
+				"module/nested/values.yaml": "shared values",
+				"module/values/values.yaml": "shared values",
+			} {
+				data, err := afero.ReadFile(dst.FS(), name)
+				require.NoError(t, err)
+				require.Equal(t, expected, string(data))
+			}
+			info, err := dst.FS().Stat("module/main.tf")
+			require.NoError(t, err)
+			require.EqualValues(t, 0755, info.Mode().Perm())
+
+			outside := t.TempDir()
+			canary := writeTestFile(t, outside, "secret", "outside repository", 0644)
+			for _, invalid := range []struct{ name, target, message string }{
+				{"outside-file", canary.AbsPath, "escapes repository"},
+				{"outside-directory", outside, "escapes repository"},
+				{"directory-cycle", ".", "directory symlink cycle"},
+			} {
+				t.Run(invalid.name, func(t *testing.T) {
+					link := filepath.Join(root, "shared/module/invalid")
+					require.NoError(t, os.Symlink(invalid.target, link))
+					defer os.Remove(link)
+					_, err := SourceFiles(ctx, source, "components/api", "application/octet-stream")
+					require.ErrorContains(t, err, invalid.message)
+					data, err := os.ReadFile(canary.AbsPath)
+					require.NoError(t, err)
+					require.Equal(t, "outside repository", string(data))
+				})
+			}
+		})
+	}
+}
+
 func TestPackOSRejectsEscapingLinks(t *testing.T) {
 	for _, link := range []string{"../outside/secret", "../outside", "$outside/secret", "$outside", "link", "missing"} {
 		t.Run(link, func(t *testing.T) {
@@ -185,7 +294,7 @@ func TestPackOSRejectsEscapingLinks(t *testing.T) {
 			canary := writeTestFile(t, outside, "secret", "not an input", 0644)
 			require.NoError(t, os.Symlink(strings.ReplaceAll(link, "$outside", outside), filepath.Join(root, "link")))
 			source := newTestSource(t, afero.NewOsFs(), root)
-			_, err := SourceFiles(ctx, source, "")
+			_, err := SourceFiles(ctx, source, ".", "")
 			require.Error(t, err)
 			for _, name := range []string{"link", "link/secret"} {
 				a := newTestArchive(t, ctx)
@@ -231,7 +340,7 @@ func TestPackDirectoryLinkToSourceRoot(t *testing.T) {
 	writeTestFile(t, root, "file", "input", 0644)
 	require.NoError(t, os.Symlink(".", filepath.Join(root, "root-link")))
 	source := newTestSource(t, afero.NewOsFs(), root)
-	files, err := SourceFiles(ctx, source, "application/octet-stream")
+	files, err := SourceFiles(ctx, source, ".", "application/octet-stream")
 	require.NoError(t, err)
 	require.Len(t, files, 2)
 	packed := newTestArchive(t, ctx)

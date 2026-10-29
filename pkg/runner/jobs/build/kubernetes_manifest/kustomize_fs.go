@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -17,6 +18,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/sourcefs"
 )
+
+var kustomizeRemoteReference = regexp.MustCompile(`(?i)^(https?:|ssh://|file://|git::|github[.]com[:/])|^[a-zA-Z][a-zA-Z0-9-]*@[^/\\]*[:/\\]`)
 
 // Kustomize's absolute paths are labels in this filesystem, not host paths.
 type kustomizeFS struct {
@@ -61,7 +64,7 @@ func (f *kustomizeFS) CleanedAbs(name string) (filesys.ConfirmedDir, string, err
 	if err != nil {
 		return "", "", err
 	}
-	rel, _, err := f.source.Resolve(name)
+	rel, err := f.source.Resolve(name)
 	if err != nil {
 		return "", "", err
 	}
@@ -94,7 +97,7 @@ func (f *kustomizeFS) IsDir(name string) bool {
 }
 
 func (f *kustomizeFS) Exists(name string) bool {
-	_, _, err := f.source.Resolve(name)
+	_, err := f.source.Resolve(name)
 	return err == nil
 }
 
@@ -293,7 +296,7 @@ func localKustomizeReference(name string) error {
 	if filepath.IsAbs(name) || strings.HasPrefix(name, "./") || strings.HasPrefix(name, "../") {
 		return nil
 	}
-	if strings.ContainsAny(name, ":@") || strings.HasPrefix(strings.ToLower(name), "github.com/") {
+	if kustomizeRemoteReference.MatchString(name) {
 		return fmt.Errorf("remote Kustomize reference %q requires confined fetching and is not supported in rooted builds; vendor it into the repository", name)
 	}
 	return nil

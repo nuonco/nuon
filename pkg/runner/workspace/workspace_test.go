@@ -77,6 +77,26 @@ func TestWorkspaceCheckoutOnDiskAndMemory(t *testing.T) {
 				}
 			})
 		}
+		for _, failure := range []struct{ name, url, ref string }{
+			{"missing-repository", filepath.Join(t.TempDir(), "missing"), "main"},
+			{"missing-ref", repo, "missing-branch"},
+		} {
+			t.Run(backend+"/"+failure.name, func(t *testing.T) {
+				var fs afero.Fs = afero.NewOsFs()
+				if backend == "memory" {
+					fs = afero.NewMemMapFs()
+				}
+				root := t.TempDir()
+				w, err := workspace.New(validator.New(), workspace.WithWorkspaceID("failed-clone"),
+					workspace.WithTmpRoot(root), workspace.WithFS(fs), workspace.WithLogger(zap.NewNop()),
+					workspace.WithGitSource(&plantypes.GitSource{URL: failure.url, Ref: failure.ref, Path: "."}))
+				require.NoError(t, err)
+				require.ErrorContains(t, w.Init(context.Background()), "unable to clone repo")
+				_, err = fs.Stat(w.Root())
+				require.True(t, os.IsNotExist(err), "failed clone must remove its partial checkout")
+				require.NoError(t, w.Cleanup(context.Background()))
+			})
+		}
 	}
 }
 

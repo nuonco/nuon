@@ -12,8 +12,8 @@ func TemplateChart(chart *chart.Chart, values map[string]interface{}) (string, e
 	if chart == nil {
 		return "", nil
 	}
-	if err := checkPolicySchemaResources(chart, values); err != nil {
-		return "", errors.Wrap(err, "unable to confine helm policy schemas")
+	if err := ValidateSchemaResources(chart, values); err != nil {
+		return "", errors.Wrap(err, "unable to confine helm schemas")
 	}
 
 	client := action.NewInstall(&action.Configuration{})
@@ -48,6 +48,9 @@ func RenderManifest(ch *chart.Chart, values map[string]interface{}, releaseName,
 	}
 	if values == nil {
 		values = map[string]interface{}{}
+	}
+	if err := ValidateSchemaResources(ch, values); err != nil {
+		return "", errors.Wrap(err, "unable to confine helm schemas")
 	}
 
 	client := action.NewInstall(&action.Configuration{})

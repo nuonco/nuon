@@ -12,13 +12,11 @@ import (
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
-
-	"github.com/nuonco/nuon/pkg/rootfs"
 )
 
 func (h *handler) packageChart(ctx context.Context, l *zap.Logger) (string, error) {
 	if h.state.plan.Src != nil && h.state.plan.Src.URL != "" {
-		return h.loadAndPackageChart(l, h.state.workspace.Source().AbsPath(), h.state.arch.TmpDir())
+		return h.loadAndPackageChart(ctx, l, h.state.workspace.Source().AbsPath())
 	}
 	return h.packageChartFromRepoConfig(ctx, l)
 }
@@ -44,15 +42,15 @@ func (h *handler) packageChartFromRepoConfig(ctx context.Context, l *zap.Logger)
 		return "", err
 	}
 	h.state.source = pulledSource
-	return h.loadAndPackageChart(l, ".", h.state.arch.TmpDir())
+	return h.loadAndPackageChart(ctx, l, ".")
 }
 
-func (h *handler) loadAndPackageChart(l *zap.Logger, chartDir, dstDir string) (string, error) {
+func (h *handler) loadAndPackageChart(ctx context.Context, l *zap.Logger, chartDir string) (string, error) {
 	chart, err := loadChart(h.state.source, chartDir)
 	if err != nil {
 		return "", fmt.Errorf("unable to load chart: %w", err)
 	}
-	resolved, _, err := h.state.source.Resolve(chartDir)
+	resolved, err := h.state.source.Resolve(chartDir)
 	if err != nil {
 		return "", err
 	}
@@ -67,7 +65,7 @@ func (h *handler) loadAndPackageChart(l *zap.Logger, chartDir, dstDir string) (s
 			return "", err
 		}
 		client := newChartRepositoryClient()
-		err = refreshChartDependencies(context.Background(), client, locals, chart)
+		err = refreshChartDependencies(ctx, client, locals, chart)
 		client.CloseIdleConnections()
 		if err != nil {
 			if missing := verifyDependenciesPresent(chart.Metadata.Dependencies, chart); missing != nil {
@@ -80,19 +78,11 @@ func (h *handler) loadAndPackageChart(l *zap.Logger, chartDir, dstDir string) (s
 	if err := verifyDependenciesPresent(chart.Metadata.Dependencies, chart); err != nil {
 		return "", err
 	}
-	output := h.state.outputRoot
-	if output == nil {
-		output, err = rootfs.Open(dstDir)
-		if err != nil {
-			return "", err
-		}
-		defer output.Close()
-	}
-	h.state.chart, err = publishChart(output, chart)
+	h.state.chart, err = publishChart(h.state.arch.FS(), chart)
 	if err != nil {
 		return "", fmt.Errorf("unable to package chart: %w", err)
 	}
-	packagePath := filepath.Join(output.Root(), defaultChartPackageFilename)
+	packagePath := filepath.Join(h.state.arch.BasePath(), defaultChartPackageFilename)
 	l.Info("successfully packaged chart", zap.String("path", packagePath))
 	return packagePath, nil
 }

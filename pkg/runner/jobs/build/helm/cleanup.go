@@ -27,14 +27,7 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 		record("unable to close chart source", h.state.source.Close())
 		h.state.source = nil
 	}
-	if h.state.output != nil {
-		record("unable to close chart output", h.state.output.Close())
-		h.state.output = nil
-	}
-	if h.state.outputRoot != nil {
-		record("unable to close chart output root", h.state.outputRoot.Close())
-		h.state.outputRoot = nil
-	}
+	h.state.output = nil
 	if h.state.arch != nil {
 		record("unable to cleanup archive", h.state.arch.Cleanup(ctx))
 		h.state.arch = nil

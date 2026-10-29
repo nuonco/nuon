@@ -23,10 +23,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	src := h.state.workspace.Source()
-	source := h.state.archiveSource
+	source := h.state.source
 
 	l.Info("fetching sandbox source files")
-	srcFiles, err := ociarchive.SourceFiles(ctx, source, defaultFileType)
+	srcFiles, err := ociarchive.SourceFiles(ctx, source, src.AbsPath(), defaultFileType)
 	if err != nil {
 		l.Error("failed to get source files", zap.Error(err))
 		h.writeErrorResult(ctx, "fetch files", err)
@@ -55,7 +55,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 
 		l.Info("re-walking sandbox source files after provider mirror")
-		srcFiles, err = ociarchive.SourceFiles(ctx, source, defaultFileType)
+		srcFiles, err = ociarchive.SourceFiles(ctx, source, src.AbsPath(), defaultFileType)
 		if err != nil {
 			l.Error("failed to re-walk source files after provider mirror", zap.Error(err))
 			h.writeErrorResult(ctx, "fetch files", err)

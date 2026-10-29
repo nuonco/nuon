@@ -141,10 +141,10 @@ func (h HelmRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 func (h *HelmChartComponentConfig) Parse() error {
-	return h.parse("")
+	return h.parse(ParseOptions{})
 }
 
-func (h *HelmChartComponentConfig) parse(rootDir string) error {
+func (h *HelmChartComponentConfig) parse(cfg ParseOptions) error {
 	if len(h.Values) > 0 {
 		return ErrConfig{
 			Description: "the value array is deprecated, please use values instead.",
@@ -162,7 +162,7 @@ func (h *HelmChartComponentConfig) parse(rootDir string) error {
 			continue
 		}
 
-		byts, err := source.ReadSourceFrom(sourceToUse, rootDir)
+		byts, err := source.ReadSourceFrom(sourceToUse, cfg.RootDir, cfg.Source)
 		if err != nil {
 			return ErrConfig{
 				Description: "error loading values file " + sourceToUse,

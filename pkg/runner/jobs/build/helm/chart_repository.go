@@ -21,15 +21,17 @@ import (
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
+	"oras.land/oras-go/v2/registry/remote/retry"
 	"sigs.k8s.io/yaml"
 )
 
 func newChartRepositoryClient() *http.Client {
 	return &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 120 * time.Second,
 		Transport: &http.Transport{
-			DialContext:         (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
-			TLSHandshakeTimeout: 10 * time.Second, ResponseHeaderTimeout: 10 * time.Second,
+			Proxy:                 http.ProxyFromEnvironment,
+			DialContext:           (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: time.Second,
 		},
 	}
@@ -64,11 +66,34 @@ func fetchChartData(ctx context.Context, client *http.Client, address string) ([
 }
 
 func fetchRepositoryChart(ctx context.Context, client *http.Client, repository, name, version string) ([]byte, error) {
+	return newChartRepositoryFetcher(client).fetch(ctx, repository, name, version)
+}
+
+// A refresh shares downloads, not resolved dependencies: each declaration must
+// still resolve its own version constraint and validate the returned chart.
+type chartRepositoryFetcher struct {
+	client    *http.Client
+	indexes   map[string]*repo.IndexFile
+	archives  map[string][]byte
+	ociLayers map[string][]byte
+}
+
+func newChartRepositoryFetcher(client *http.Client) *chartRepositoryFetcher {
+	return &chartRepositoryFetcher{
+		client: client, indexes: map[string]*repo.IndexFile{},
+		archives: map[string][]byte{}, ociLayers: map[string][]byte{},
+	}
+}
+
+func (f *chartRepositoryFetcher) fetch(ctx context.Context, repository, name, version string) ([]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if err := chartComponent(name); err != nil {
 		return nil, err
 	}
 	if registry.IsOCI(repository) {
-		return fetchOCIChart(ctx, client, strings.TrimSuffix(repository, "/")+"/"+name, version)
+		return f.fetchOCI(ctx, strings.TrimSuffix(repository, "/")+"/"+name, version)
 	}
 	for old, replacement := range map[string]string{
 		"//kubernetes-charts.storage.googleapis.com":           "https://charts.helm.sh/stable",
@@ -82,13 +107,17 @@ func fetchRepositoryChart(ctx context.Context, client *http.Client, repository, 
 	if err != nil {
 		return nil, err
 	}
-	data, err := fetchChartData(ctx, client, indexURL)
-	if err != nil {
-		return nil, err
-	}
-	index, err := chartRepositoryIndex(data)
-	if err != nil {
-		return nil, err
+	index := f.indexes[indexURL]
+	if index == nil {
+		data, err := fetchChartData(ctx, f.client, indexURL)
+		if err != nil {
+			return nil, err
+		}
+		index, err = chartRepositoryIndex(data)
+		if err != nil {
+			return nil, err
+		}
+		f.indexes[indexURL] = index
 	}
 	entry, err := index.Get(name, version)
 	if err != nil {
@@ -101,7 +130,14 @@ func fetchRepositoryChart(ctx context.Context, client *http.Client, repository, 
 	if err != nil {
 		return nil, err
 	}
-	return fetchChartData(ctx, client, address)
+	if data, ok := f.archives[address]; ok {
+		return data, nil
+	}
+	data, err := fetchChartData(ctx, f.client, address)
+	if err == nil {
+		f.archives[address] = data
+	}
+	return data, err
 }
 
 // Helm exposes IndexFile.Get/SortEntries but only a path-based index loader.
@@ -145,7 +181,7 @@ func chartRepositoryIndex(data []byte) (*repo.IndexFile, error) {
 	return index, nil
 }
 
-func fetchOCIChart(ctx context.Context, client *http.Client, reference, version string) ([]byte, error) {
+func (f *chartRepositoryFetcher) fetchOCI(ctx context.Context, reference, version string) ([]byte, error) {
 	// registry.NewClient always opens Helm and Docker credentials, even with an
 	// injected authorizer. ORAS remote repositories have no filesystem defaults.
 	r, err := remote.NewRepository(strings.TrimPrefix(reference, "oci://"))
@@ -153,7 +189,9 @@ func fetchOCIChart(ctx context.Context, client *http.Client, reference, version 
 		return nil, err
 	}
 	r.PlainHTTP = true // Retain this handler's existing plain-HTTP OCI behavior.
-	r.Client = &auth.Client{Client: client, Cache: auth.NewCache()}
+	ociClient := *f.client
+	ociClient.Transport = retry.NewTransport(f.client.Transport)
+	r.Client = &auth.Client{Client: &ociClient, Cache: auth.NewCache()}
 	tag := r.Reference.Reference
 	if version != "" {
 		if tag != "" && tag != version {
@@ -220,7 +258,18 @@ func fetchOCIChart(ctx context.Context, client *http.Client, reference, version 
 			if layer.Size < 0 || layer.Size > archive.MaxDecompressedChartSize {
 				return nil, fmt.Errorf("OCI chart layer exceeds Helm chart size limit")
 			}
-			return content.FetchAll(ctx, r, layer)
+			address := "oci://" + r.Reference.Registry + "/" + r.Reference.Repository + "@" + layer.Digest.String()
+			if data, ok := f.ociLayers[address]; ok {
+				if int64(len(data)) != layer.Size {
+					return nil, fmt.Errorf("OCI chart layer size does not match its descriptor")
+				}
+				return data, nil
+			}
+			data, err := content.FetchAll(ctx, r, layer)
+			if err == nil {
+				f.ociLayers[address] = data
+			}
+			return data, err
 		}
 	}
 	return nil, fmt.Errorf("OCI manifest does not contain a Helm chart layer")

@@ -12,10 +12,8 @@ import (
 
 	getter "github.com/hashicorp/go-getter"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 
 	"github.com/nuonco/nuon/pkg/config/features"
-	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
 func (g *get) GetAll(ctx context.Context) error {
@@ -197,7 +195,7 @@ func (g *get) isDir(name string) (bool, error) {
 		info, err := os.Stat(name)
 		return err == nil && info.IsDir(), nil
 	}
-	resolved, _, err := g.opts.Source.Resolve(name)
+	resolved, err := g.opts.Source.Resolve(name)
 	if os.IsNotExist(err) {
 		return false, nil
 	}
@@ -281,9 +279,19 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	}
 	if g.opts.Source != nil {
 		for remote := detected; ; {
-			u, err := url.Parse(remote)
+			raw := remote
+			if parts := forcedSourcePattern.FindStringSubmatch(remote); parts != nil {
+				if parts[1] != "http" && parts[1] != "https" {
+					return "", errors.New("remote field imports must use public HTTP(S), not Git or other getter protocols")
+				}
+				raw = parts[2]
+			}
+			u, err := url.Parse(raw)
 			if err != nil {
 				return "", err
+			}
+			if (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.Opaque != "" || u.User != nil {
+				return "", errors.New("remote field imports must use HTTP(S) URLs without credentials")
 			}
 			checksum := u.Query().Get("checksum")
 			if !strings.HasPrefix(checksum, "file:") {
@@ -406,15 +414,12 @@ func (g *get) remoteGetters() map[string]getter.Getter {
 	if g.opts.Source == nil {
 		return nil
 	}
-	// Checksum downloads inherit this map, so a remote URL cannot reopen a
-	// host file via checksum=file:file:///... .
-	getters := make(map[string]getter.Getter, len(getter.Getters))
-	for protocol, remoteGetter := range getter.Getters {
-		if protocol != "file" {
-			getters[protocol] = remoteGetter
-		}
+	httpGetter := &getter.HttpGetter{
+		Client:                g.httpClient,
+		XTerraformGetDisabled: true,
+		DoNotCheckHeadFirst:   true,
 	}
-	return getters
+	return map[string]getter.Getter{"http": httpGetter, "https": httpGetter}
 }
 
 func (g *get) recordLocalFile(inputVal, pwd string) error {
@@ -488,29 +493,14 @@ func (g *get) fetchGitFile(ctx context.Context, detected, tmpDir, pwd string) (s
 	}
 
 	target := filepath.Join(cloneDir, filepath.FromSlash(cleanSubdir))
-	stat, readFile := os.Stat, os.ReadFile
-	if g.opts.Source != nil {
-		// A remote repo can also contain links to host files. Confine its
-		// selected file to the checkout, independently of the borrowed source.
-		cloned, err := sourcefs.New(afero.NewOsFs(), cloneDir)
-		if err != nil {
-			return "", errors.Wrap(err, "unable to open git checkout")
-		}
-		defer cloned.Close()
-		target, _, err = cloned.Resolve(filepath.FromSlash(cleanSubdir))
-		if err != nil {
-			return "", errors.Wrap(err, "invalid git source path")
-		}
-		stat, readFile = cloned.Lstat, cloned.ReadFile
-	}
 
 	// A directory is a module address (e.g. a curated gcp custom stack), not
 	// inlinable file content — pass the original value through untouched.
-	if info, err := stat(target); err == nil && info.IsDir() {
+	if info, err := os.Stat(target); err == nil && info.IsDir() {
 		return "", errIsDirectory
 	}
 
-	content, err := readFile(target)
+	content, err := os.ReadFile(target)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read file from git source")
 	}

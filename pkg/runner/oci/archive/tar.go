@@ -65,7 +65,7 @@ func writeTarLayer(dst io.Writer, source *sourcefs.FS, files []FileRef) error {
 			return fmt.Errorf("unable to stat %s: %w", file.AbsPath, err)
 		}
 		if info.Mode()&os.ModeSymlink != 0 {
-			resolved, _, err := source.Resolve(file.AbsPath)
+			resolved, err := source.Resolve(file.AbsPath)
 			if err != nil {
 				return fmt.Errorf("unable to resolve symlink target for %s: %w", file.AbsPath, err)
 			}

@@ -8,10 +8,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httputil"
+	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -154,11 +158,12 @@ func TestChartRepositoryVersionsAndAnonymousOCI(t *testing.T) {
 		repository := chartRepositoryFixture(t, oci, false)
 		client := newChartRepositoryClient()
 		defer client.CloseIdleConnections()
+		fetcher := newChartRepositoryFetcher(client)
 		for constraint, expected := range map[string]string{
 			"": "1.2.3+meta", "1.0.0": "1.0.0", "^1.0.0": "1.2.3+meta", ">=2.0.0-0": "2.0.0-beta.1",
 		} {
 			t.Run(fmt.Sprintf("oci=%t/%s", oci, constraint), func(t *testing.T) {
-				data, err := fetchRepositoryChart(context.Background(), client, repository, "acme", constraint)
+				data, err := fetcher.fetch(t.Context(), repository, "acme", constraint)
 				require.NoError(t, err)
 				files, err := chartArchiveFiles(bytes.NewReader(data))
 				require.NoError(t, err)
@@ -167,7 +172,7 @@ func TestChartRepositoryVersionsAndAnonymousOCI(t *testing.T) {
 				require.Equal(t, expected, chart.Metadata.Version)
 			})
 		}
-		_, err := fetchRepositoryChart(context.Background(), client, repository, "acme", ">=9.0.0")
+		_, err := fetcher.fetch(t.Context(), repository, "acme", ">=9.0.0")
 		require.Error(t, err)
 	}
 	require.Same(t, defaultTransport, http.DefaultTransport)
@@ -177,12 +182,194 @@ func TestChartRepositoryVersionsAndAnonymousOCI(t *testing.T) {
 	require.Equal(t, "invalid Docker credentials", string(got))
 }
 
+func TestChartRepositoryCacheRetriesFailedDownloads(t *testing.T) {
+	for _, stage := range []string{"index", "archive"} {
+		t.Run(stage, func(t *testing.T) {
+			var indexes, archives atomic.Int32
+			data := chartArchiveFixture(t, chartArchiveEntry{name: "acme/Chart.yaml", data: acmeChartMetadata})
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/index.yaml" {
+					if indexes.Add(1) == 1 && stage == "index" {
+						http.Error(w, "unavailable", http.StatusServiceUnavailable)
+						return
+					}
+					fmt.Fprint(w, "apiVersion: v1\nentries:\n  acme:\n  - name: acme\n    version: 1.0.0\n    urls: [acme.tgz]\n")
+					return
+				}
+				if archives.Add(1) == 1 && stage == "archive" {
+					http.Error(w, "unavailable", http.StatusServiceUnavailable)
+					return
+				}
+				_, _ = w.Write(data)
+			}))
+			defer server.Close()
+			fetcher := newChartRepositoryFetcher(server.Client())
+			_, err := fetcher.fetch(t.Context(), server.URL, "acme", "1.0.0")
+			require.Error(t, err)
+			for range 2 {
+				got, err := fetcher.fetch(t.Context(), server.URL, "acme", "1.0.0")
+				require.NoError(t, err)
+				require.Equal(t, data, got)
+			}
+			if stage == "index" {
+				require.EqualValues(t, 2, indexes.Load())
+				require.EqualValues(t, 1, archives.Load())
+			} else {
+				require.EqualValues(t, 1, indexes.Load())
+				require.EqualValues(t, 2, archives.Load())
+			}
+			ctx, cancel := context.WithCancel(t.Context())
+			cancel()
+			_, err = fetcher.fetch(ctx, server.URL, "acme", "1.0.0")
+			require.ErrorIs(t, err, context.Canceled, "cached results must not ignore cancellation")
+		})
+	}
+}
+
+func TestChartRepositoryCacheSharesOCILayers(t *testing.T) {
+	repository := chartRepositoryFixture(t, true, false)
+	upstream, err := url.Parse("http://" + strings.TrimPrefix(repository, "oci://"))
+	require.NoError(t, err)
+	upstream.Path = ""
+	forward := httputil.NewSingleHostReverseProxy(upstream)
+	var requests sync.Map
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		count, _ := requests.LoadOrStore(r.URL.Path, &atomic.Int32{})
+		count.(*atomic.Int32).Add(1)
+		forward.ServeHTTP(w, r)
+	}))
+	defer server.Close()
+	fetcher := newChartRepositoryFetcher(server.Client())
+	var data []byte
+	for _, version := range []string{"^1.0.0", "1.2.3+meta"} {
+		got, err := fetcher.fetch(t.Context(), "oci://"+strings.TrimPrefix(server.URL, "http://")+"/charts", "acme", version)
+		require.NoError(t, err)
+		if data != nil {
+			require.Equal(t, data, got)
+		}
+		data = got
+	}
+	layerDigest := digest.FromBytes(data).String()
+	count, ok := requests.Load("/v2/charts/acme/blobs/" + layerDigest)
+	require.True(t, ok)
+	require.EqualValues(t, 1, count.(*atomic.Int32).Load(), "constraints sharing a resolved layer download it only once")
+	index := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		address := "oci://" + strings.TrimPrefix(server.URL, "http://") + "/charts/acme@" + layerDigest
+		fmt.Fprintf(w, "apiVersion: v1\nentries:\n  acme:\n  - name: acme\n    version: 1.2.3+meta\n    urls: [%q]\n", address)
+	}))
+	defer index.Close()
+	_, err = fetcher.fetch(t.Context(), index.URL, "acme", "1.2.3+meta")
+	require.ErrorContains(t, err, "explicit HTTP(S) URL", "an HTTP index cannot reference even a cached OCI layer")
+}
+
 func TestOCIChartRejectsCorruptContent(t *testing.T) {
 	repository := chartRepositoryFixture(t, true, true)
 	client := newChartRepositoryClient()
 	defer client.CloseIdleConnections()
 	_, err := fetchRepositoryChart(context.Background(), client, repository, "acme", "1.0.0")
 	require.Error(t, err)
+}
+
+func TestChartRepositoryEnvironmentProxy(t *testing.T) {
+	if repository := os.Getenv("NUON_HELM_TEST_PROXY_REPOSITORY"); repository != "" {
+		client := newChartRepositoryClient()
+		defer client.CloseIdleConnections()
+		data, err := fetchRepositoryChart(t.Context(), client, repository, "acme", "1.0.0")
+		require.NoError(t, err)
+		files, err := chartArchiveFiles(bytes.NewReader(data))
+		require.NoError(t, err)
+		chart, err := loadChartFiles(files)
+		require.NoError(t, err)
+		require.Equal(t, "1.0.0", chart.Metadata.Version)
+		return
+	}
+
+	for _, oci := range []bool{false, true} {
+		t.Run(fmt.Sprintf("oci=%t", oci), func(t *testing.T) {
+			repository := chartRepositoryFixture(t, oci, false)
+			upstream, err := url.Parse("http://" + strings.TrimPrefix(strings.TrimPrefix(repository, "oci://"), "http://"))
+			require.NoError(t, err)
+			upstream.Path = ""
+			forward := httputil.NewSingleHostReverseProxy(upstream)
+			forward.ModifyResponse = func(resp *http.Response) error {
+				if challenge := resp.Header.Get("WWW-Authenticate"); challenge != "" {
+					resp.Header.Set("WWW-Authenticate", strings.ReplaceAll(challenge, upstream.String(), "http://charts.example.invalid"))
+				}
+				return nil
+			}
+			var requests atomic.Int32
+			proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests.Add(1)
+				forward.ServeHTTP(w, r)
+			}))
+			defer proxy.Close()
+			scheme := "http"
+			if oci {
+				scheme = "oci"
+			}
+			ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+			defer cancel()
+			// Go caches proxy environment variables on first use; use a fresh process.
+			cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestChartRepositoryEnvironmentProxy$")
+			cmd.Env = append(os.Environ(),
+				"HTTP_PROXY="+proxy.URL, "http_proxy="+proxy.URL,
+				"HTTPS_PROXY="+proxy.URL, "https_proxy="+proxy.URL,
+				"NO_PROXY=", "no_proxy=", "REQUEST_METHOD=",
+				"NUON_HELM_TEST_PROXY_REPOSITORY="+scheme+"://charts.example.invalid/charts",
+			)
+			output, err := cmd.CombinedOutput()
+			require.NoError(t, err, "%s", output)
+			require.Positive(t, requests.Load())
+		})
+	}
+}
+
+func TestOCIChartRetriesTransientFailures(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		status   int
+		failures int32
+		attempts int32
+		wantErr  bool
+	}{
+		{name: "rate limited", status: http.StatusTooManyRequests, failures: 1, attempts: 2},
+		{name: "unavailable", status: http.StatusServiceUnavailable, failures: 1, attempts: 2},
+		{name: "forbidden", status: http.StatusForbidden, failures: 1, attempts: 1, wantErr: true},
+		{name: "retry limit", status: http.StatusServiceUnavailable, failures: 100, attempts: 6, wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			repository := chartRepositoryFixture(t, true, false)
+			upstream, err := url.Parse("http://" + strings.TrimPrefix(repository, "oci://"))
+			require.NoError(t, err)
+			upstream.Path = ""
+			forward := httputil.NewSingleHostReverseProxy(upstream)
+			var attempts atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/v2/charts/acme/manifests/1.0.0" && r.Header.Get("Authorization") == "Bearer fixture" {
+					if attempts.Add(1) <= tc.failures {
+						w.WriteHeader(tc.status)
+						return
+					}
+				}
+				forward.ServeHTTP(w, r)
+			}))
+			defer server.Close()
+			client := newChartRepositoryClient()
+			defer client.CloseIdleConnections()
+			data, err := fetchRepositoryChart(t.Context(), client, "oci://"+strings.TrimPrefix(server.URL, "http://")+"/charts", "acme", "1.0.0")
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				files, err := chartArchiveFiles(bytes.NewReader(data))
+				require.NoError(t, err)
+				chart, err := loadChartFiles(files)
+				require.NoError(t, err)
+				require.Equal(t, "1.0.0", chart.Metadata.Version)
+			}
+			require.Equal(t, tc.attempts, attempts.Load())
+		})
+	}
 }
 
 func TestChartRepositoryFailsClosed(t *testing.T) {

@@ -2,15 +2,14 @@ package get
 
 import (
 	"context"
-	"crypto/sha256"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -647,12 +646,10 @@ func TestGetAll_SourcePropagatesRecordingError(t *testing.T) {
 	require.Empty(t, opts.RootDir)
 }
 
-func TestGetAll_SourcePreservesHTTPAndRejectsLocalChecksums(t *testing.T) {
+func TestGetAll_SourceRejectsPrivateHTTPAndLocalChecksums(t *testing.T) {
+	var requests atomic.Int64
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/SHA256SUMS" {
-			_, _ = fmt.Fprintf(w, "%x  policy.json\n", sha256.Sum256([]byte("remote contents")))
-			return
-		}
+		requests.Add(1)
 		_, _ = w.Write([]byte("remote contents"))
 	}))
 	defer server.Close()
@@ -662,18 +659,20 @@ func TestGetAll_SourcePreservesHTTPAndRejectsLocalChecksums(t *testing.T) {
 	t.Cleanup(func() { require.NoError(t, source.Close()) })
 	opts := &Options{RootDir: root, Source: source, FieldTimeout: 5 * time.Second}
 	input := testStruct{Obj: server.URL + "/policy.json"}
-	require.NoError(t, Parse(context.Background(), &input, opts))
-	require.Equal(t, "remote contents", input.Obj)
+	require.ErrorContains(t, Parse(context.Background(), &input, opts), "non-public address")
 	input = testStruct{Obj: server.URL + "/policy.json?checksum=" + url.QueryEscape("file:"+server.URL+"/SHA256SUMS")}
-	require.NoError(t, Parse(context.Background(), &input, opts))
-	require.Equal(t, "remote contents", input.Obj)
+	require.ErrorContains(t, Parse(context.Background(), &input, opts), "non-public address")
 
 	for _, checksum := range []string{"./checksum", "file:///outside/checksum", "git::file:///outside//checksum", "file::https://example.com/outside/checksum", server.URL + "/SHA256SUMS?checksum=" + url.QueryEscape("file:file:///outside/checksum")} {
 		input := testStruct{Obj: server.URL + "/policy.json?checksum=" + url.QueryEscape("file:"+checksum)}
 		require.ErrorContains(t, Parse(context.Background(), &input, opts), "checksum must not reference a local file")
 	}
 	input = testStruct{Obj: "git@localhost:example"}
-	require.ErrorContains(t, Parse(context.Background(), &input, opts), "git source must include a `//path/to/file` reference")
+	require.ErrorContains(t, Parse(context.Background(), &input, opts), "remote field imports must use public HTTP(S)")
+	require.Zero(t, requests.Load())
+	input = testStruct{Obj: server.URL + "/policy.json"}
+	require.NoError(t, Parse(context.Background(), &input, &Options{RootDir: root, FieldTimeout: 5 * time.Second}))
+	require.Equal(t, "remote contents", input.Obj)
 
 	for _, backend := range []string{"replaced-os-root", "missing-memory-root"} {
 		t.Run(backend, func(t *testing.T) {
@@ -693,8 +692,7 @@ func TestGetAll_SourcePreservesHTTPAndRejectsLocalChecksums(t *testing.T) {
 
 			input := testStruct{Obj: server.URL + "/policy.json"}
 			opts := &Options{RootDir: root, Source: source, FieldTimeout: 5 * time.Second}
-			require.NoError(t, Parse(context.Background(), &input, opts))
-			require.Equal(t, "remote contents", input.Obj)
+			require.ErrorContains(t, Parse(context.Background(), &input, opts), "non-public address")
 			entries, err := source.ReadDir(".")
 			require.NoError(t, err)
 			require.Empty(t, entries)
@@ -714,49 +712,27 @@ func TestGetAll_SourcePreservesHTTPAndRejectsLocalChecksums(t *testing.T) {
 	}
 }
 
-func TestGetAll_SourcePreservesRemoteGitAndRejectsCheckoutSymlinkEscape(t *testing.T) {
-	gitBin, err := exec.LookPath("git")
-	if err != nil {
-		t.Skip("git binary not available")
-	}
-	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
-	t.Setenv("GIT_CONFIG_SYSTEM", os.DevNull)
-	t.Setenv("GIT_TERMINAL_PROMPT", "0")
-	repo := t.TempDir()
-	runGit := func(args ...string) {
-		t.Helper()
-		cmd := exec.Command(gitBin, args...)
-		cmd.Dir = repo
-		cmd.Env = append(os.Environ(),
-			"GIT_AUTHOR_NAME=test", "GIT_AUTHOR_EMAIL=test@example.com",
-			"GIT_COMMITTER_NAME=test", "GIT_COMMITTER_EMAIL=test@example.com",
-		)
-		out, err := cmd.CombinedOutput()
-		require.NoErrorf(t, err, "git %v failed: %s", args, out)
-	}
-	runGit("init", "-q", "-b", "main")
-	require.NoError(t, os.Mkdir(filepath.Join(repo, "module"), 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(repo, "module/policy.json"), []byte("remote git contents"), 0o644))
-	outside := filepath.Join(t.TempDir(), "outside.json")
-	require.NoError(t, os.WriteFile(outside, []byte("host outside canary"), 0o644))
-	require.NoError(t, os.Symlink(outside, filepath.Join(repo, "escape.json")))
-	runGit("add", ".")
-	runGit("commit", "-q", "-m", "test remote files")
-	runGit("update-server-info")
-	server := httptest.NewServer(http.FileServer(http.Dir(filepath.Join(repo, ".git"))))
-	defer server.Close()
+func TestGetAll_SourceRejectsGitBeforeExecutingIt(t *testing.T) {
+	bin := t.TempDir()
+	marker := filepath.Join(bin, "executed")
+	require.NoError(t, os.WriteFile(filepath.Join(bin, "git"), []byte("#!/bin/sh\nprintf invoked > '"+marker+"'\nexit 1\n"), 0o700))
+	t.Setenv("PATH", bin)
 	root := t.TempDir()
 	source, err := sourcefs.New(afero.NewOsFs(), root)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, source.Close()) })
 	opts := &Options{RootDir: root, Source: source, FieldTimeout: 10 * time.Second}
-
-	input := testStruct{Obj: "git::" + server.URL + "//module/policy.json"}
-	require.NoError(t, Parse(context.Background(), &input, opts))
-	require.Equal(t, "remote git contents", input.Obj)
-	input = testStruct{Obj: "git::" + server.URL + "//module"}
-	require.NoError(t, Parse(context.Background(), &input, opts))
-	require.Equal(t, "git::"+server.URL+"//module", input.Obj)
-	input = testStruct{Obj: "git::" + server.URL + "//escape.json"}
-	require.ErrorContains(t, Parse(context.Background(), &input, opts), "invalid git source path")
+	for _, reference := range []string{
+		"git::https://example.com/acme/repo.git//policy.json",
+		"git::http://127.0.0.1/repo.git//policy.json",
+		"git::file:///outside/repo//policy.json",
+		"git@localhost:acme/repo//policy.json",
+		"git::ext::helper//policy.json",
+		"https://example.com/policy.json?checksum=" + url.QueryEscape("file:git::https://example.com/acme/repo.git//checksum"),
+	} {
+		input := testStruct{Obj: reference}
+		require.Error(t, Parse(context.Background(), &input, opts), reference)
+	}
+	_, err = os.Stat(marker)
+	require.True(t, os.IsNotExist(err), "a denied import must not invoke git")
 }

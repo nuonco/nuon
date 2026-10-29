@@ -22,10 +22,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	src := h.state.workspace.Source()
-	source := h.state.archiveSource
+	source := h.state.source
 
 	l.Info("fetching source files")
-	srcFiles, err := ociarchive.SourceFiles(ctx, source, defaultFileType)
+	srcFiles, err := ociarchive.SourceFiles(ctx, source, src.AbsPath(), defaultFileType)
 	if err != nil {
 		l.Error("failed to get source files", zap.Error(err))
 		h.writeErrorResult(ctx, "fetch files", err)
@@ -59,7 +59,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		// Re-walk the source dir so the mirror tree + .terraform.lock.hcl
 		// land in the OCI artifact alongside the source files.
 		l.Info("re-walking source files after provider mirror")
-		srcFiles, err = ociarchive.SourceFiles(ctx, source, defaultFileType)
+		srcFiles, err = ociarchive.SourceFiles(ctx, source, src.AbsPath(), defaultFileType)
 		if err != nil {
 			l.Error("failed to re-walk source files after provider mirror", zap.Error(err))
 			h.writeErrorResult(ctx, "fetch files", err)

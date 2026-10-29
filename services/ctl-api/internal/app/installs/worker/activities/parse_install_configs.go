@@ -54,7 +54,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 		return nil, err
 	}
 
-	resolved, _, err := source.Resolve(installsPath)
+	resolved, err := source.Resolve(installsPath)
 	if os.IsNotExist(err) {
 		return &ParseInstallConfigsResponse{}, nil
 	}
@@ -118,7 +118,7 @@ func (a *Activities) parseSingleInstallConfig(ctx context.Context, source *sourc
 	fileName := installName + ".toml"
 	fullPath := filepath.Join(installsPath, fileName)
 
-	_, _, err := source.Resolve(fullPath)
+	_, err := source.Resolve(fullPath)
 	if os.IsNotExist(err) {
 		return &ParseInstallConfigsResponse{}, nil
 	}

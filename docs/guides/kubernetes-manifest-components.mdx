@@ -210,7 +210,7 @@ branch = "main"
 path = "."
 ```
 
-The directory at `directory` must contain a standard `kustomization.yaml`. Nuon runs `kustomize build` on it during deploy.
+The directory selected by `kustomize.path` must contain a standard `kustomization.yaml`. Nuon builds the overlay into a manifest artifact during the component build.
 
 ```yaml gke-simple/src/components/kustomize-demo/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -221,6 +221,40 @@ resources:
   - configmap.yaml
   - deployment.yaml
 ```
+
+### Supported Kustomize features
+
+Nuon supports local-only Kustomize builds. The initial Git checkout configured by `public_repo` or `connected_repo` is supported, but Kustomize cannot fetch additional sources from inside that checkout's configuration.
+
+Supported features include:
+
+- Local resources, bases, and components.
+- Local patches, replacements, and transformer configurations.
+- ConfigMap and Secret generators using local files, environment files, or literal values.
+- Labels, annotations, name prefixes and suffixes, image overrides, and replica counts.
+- Inline or local file-backed built-in generator and transformer configurations.
+
+Files and symlinks must stay within the build's checked-out source tree. Kustomize's `rootOnly` load restriction is always enforced: local base directories such as `../../base` can be used within that tree, but individual file inputs must also satisfy the load restriction of the Kustomization that reads them. `load_restrictor = "none"` is not supported.
+
+The following features are not supported:
+
+- **Nested remote references:** Git references and HTTP(S) URLs in Kustomize inputs, including resources, bases, components, patches, and generator inputs. This applies to public and private destinations alike. Vendor the required files or bases into the source tree and reference them locally instead.
+- **Helm chart inflation:** `helmCharts`, `helmChartInflationGenerator`, and `enable_helm = true`. Omit `enable_helm` or leave it `false`. Use a separate [Helm chart component](/config-ref/helm) to deploy Helm charts.
+- **Directory-backed plugin configurations:** Directories listed under `generators`, `transformers`, or `validators`. Use a local configuration file instead of a directory that builds the configuration.
+- **External executable or function plugins.**
+
+For example, keep a shared base in `vendor/shared-base/` alongside the local `base/` rather than referencing its Git repository or an HTTP URL:
+
+```yaml kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ./base
+  - ./vendor/shared-base
+```
+
+These restrictions keep Kustomize's file reads within the build source and prevent its remote loaders and subprocesses from bypassing that boundary.
 
 ### Template variables in Kustomize trees
 
@@ -289,5 +323,4 @@ spec:
 <Note>
 Kubernetes manifest components are processed in the order they appear in your repository. If you have dependencies between resources, ensure they are ordered appropriately or use proper Kubernetes resource dependencies.
 </Note>
-
 

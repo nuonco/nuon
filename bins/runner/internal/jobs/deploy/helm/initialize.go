@@ -34,8 +34,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	h.state.arch = arch
 	defer func() {
 		if retErr != nil {
-			retErr = errors.Join(retErr, arch.Cleanup(context.WithoutCancel(ctx)))
-			h.state.arch = nil
+			retErr = errors.Join(retErr, h.Cleanup(context.WithoutCancel(ctx), job, jobExecution))
 		}
 	}()
 

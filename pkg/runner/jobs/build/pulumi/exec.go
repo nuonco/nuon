@@ -19,10 +19,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	source := h.state.archiveSource
+	source := h.state.source
 
 	l.Info("fetching source files")
-	srcFiles, err := ociarchive.SourceFiles(ctx, source, defaultFileType)
+	srcFiles, err := ociarchive.SourceFiles(ctx, source, h.state.workspace.Source().AbsPath(), defaultFileType)
 	if err != nil {
 		l.Error("failed to get source files", zap.Error(err))
 		h.writeErrorResult(ctx, "fetch files", err)

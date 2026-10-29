@@ -16,7 +16,7 @@ import (
 
 // Helm's LoadFiles does not apply directory ignore rules, limits, or BOM stripping.
 func loadChart(source *sourcefs.FS, chartPath string) (*chartv2.Chart, error) {
-	root, _, err := source.Resolve(chartPath)
+	root, err := source.Resolve(chartPath)
 	if err != nil {
 		return nil, err
 	}
@@ -45,11 +45,11 @@ func loadChart(source *sourcefs.FS, chartPath string) (*chartv2.Chart, error) {
 			return nil, err
 		}
 		defer view.Close()
-		source, root = view, "."
+		source = view
 	}
 
 	rules := ignore.Empty()
-	ignorePath, _, err := source.ResolveWithin(root, filepath.Join(root, ignore.HelmIgnore))
+	ignorePath, err := source.Resolve(ignore.HelmIgnore)
 	if err == nil {
 		file, err := source.Open(ignorePath)
 		if err != nil {
@@ -69,7 +69,7 @@ func loadChart(source *sourcefs.FS, chartPath string) (*chartv2.Chart, error) {
 	directories := make(map[string]bool)
 	var walk func(string) error
 	walk = func(rel string) error {
-		name, _, err := source.ResolveWithin(root, filepath.Join(root, rel))
+		name, err := source.Resolve(rel)
 		if err != nil {
 			return err
 		}
@@ -121,6 +121,9 @@ func loadChart(source *sourcefs.FS, chartPath string) (*chartv2.Chart, error) {
 		return nil
 	}
 	if err := walk("."); err != nil {
+		return nil, err
+	}
+	if err := checkChartFiles(files); err != nil {
 		return nil, err
 	}
 	return loadChartFiles(files)

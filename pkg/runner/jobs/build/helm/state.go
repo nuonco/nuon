@@ -5,7 +5,6 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
-	"github.com/nuonco/nuon/pkg/rootfs"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
 	"github.com/nuonco/nuon/pkg/sourcefs"
@@ -30,7 +29,6 @@ type handlerState struct {
 	regCfg         *configs.OCIRegistryRepository
 	source         *sourcefs.FS
 	output         *sourcefs.FS
-	outputRoot     *rootfs.FS
 
 	packagePath string
 	chart       *chartv2.Chart
