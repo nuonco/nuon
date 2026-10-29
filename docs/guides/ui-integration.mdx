@@ -4,7 +4,7 @@ description: "Let customers set up your product in their own cloud account witho
 keywords: ["UI integration", "embed BYOC", "BYOC onboarding flow", "customer self-serve BYOC", "white label", "install progress", "polling", "webhooks", "service account", "API integration", "product integration"]
 ---
 
-import { AcmeScreen, UiIntegrationMock, AcmeStartScreen, AcmeTemplateScreen, AcmeProgressScreen, AcmeApproveScreen } from "/snippets/ui-integration-mock.jsx";
+import { AcmeScreen } from "/snippets/ui-integration-mock.jsx";
 
 A UI integration lets your customers deploy your product into their own cloud account from your app's settings page.
 They never see Nuon. Your app calls the Nuon [API](/concepts/api) in the background.
@@ -12,7 +12,7 @@ They never see Nuon. Your app calls the Nuon [API](/concepts/api) in the backgro
 The screens below come from Acme Analytics, an example product. Globex, one of Acme's customers, is setting it up in
 Globex's AWS account.
 
-<UiIntegrationMock />
+<AcmeScreen screen="deploy" />
 
 This guide covers first-time setup. To change or remove an install later, see
 [Add BYOC installation to your product](/guides/control-plane-integration).
@@ -30,7 +30,7 @@ a `request_id` with each call that starts work so a retry after a timeout can't 
 
 Ask only for what your product needs to run in their account, such as a region and a domain.
 
-<AcmeStartScreen />
+<AcmeScreen screen="start" />
 
 When the customer clicks **Start setup**, create an [install](/concepts/installs). An install is one copy of your
 product in one customer's account.
@@ -55,7 +55,7 @@ Save the install ID with the customer's record. You'll need it for every later c
 Your customer connects their account by running a setup template, called a [stack](/concepts/stacks), in their own
 cloud console. Before they click, tell them what it creates and why. Their security team will ask.
 
-<AcmeTemplateScreen />
+<AcmeScreen screen="connect" />
 
 Get the template link from `GET /v1/installs/{install_id}/stack` and use it for the button. On AWS, the
 `quick_link_url` field opens the template in the AWS console, ready to run.
@@ -69,7 +69,7 @@ customers usually ask.
 Once the template finishes, Nuon deploys your product without any more input from the customer. Show each stage as it
 completes, and let them leave the page.
 
-<AcmeProgressScreen />
+<AcmeScreen screen="progress" />
 
 To find out when a stage finishes, have Nuon call your app with [webhooks](/guides/webhooks), or check the install's
 status on a timer. If a stage fails, show its name and error message. Your customer and your support team then see the
@@ -80,7 +80,7 @@ same thing.
 You can set installs to pause before Nuon changes anything in the customer's account. If you do, show the customer
 what will change and let them approve it.
 
-<AcmeApproveScreen />
+<AcmeScreen screen="approve" />
 
 Wire the **Approve** button to `approve-all` on the install's workflow. See
 [Approve the provision](/guides/control-plane-integration#approve-the-provision).
