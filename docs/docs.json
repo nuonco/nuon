@@ -469,6 +469,10 @@
   },
   "redirects": [
     {
+      "source": "/guides",
+      "destination": "/guides/building-nuon-apps"
+    },
+    {
       "source": "/guides/managing-apps",
       "destination": "/guides/building-nuon-apps"
     },
@@ -478,7 +482,7 @@
     },
     {
       "source": "/guides/app-install-life-cycle",
-      "destination": "/concepts/installs"
+      "destination": "/concepts/overview"
     },
     {
       "source": "/get-started/overview",
