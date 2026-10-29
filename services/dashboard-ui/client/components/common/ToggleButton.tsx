@@ -59,10 +59,9 @@ export const ToggleButton = <T extends string>({
                 : undefined
             }
             className={cn(
-              'focus:z-10 !shadow-none',
-              isSelected
-                ? '!bg-primary-200 dark:!bg-primary-600/25 !text-primary-800 dark:!text-primary-400 !font-stronger'
-                : '!bg-transparent !text-cool-grey-800 dark:!text-cool-grey-400 hover:!bg-cool-grey-500/8 dark:hover:!bg-cool-grey-500/8',
+              'focus:z-10',
+              isSelected &&
+                '!border-primary-600 dark:!border-primary-700 !bg-primary-600 dark:!bg-primary-800 !text-on-primary !shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]',
               isFirst && '!rounded-e-none',
               isLast && '!rounded-s-none !border-l-0',
               !isFirst && !isLast && '!rounded-none !border-l-0',
