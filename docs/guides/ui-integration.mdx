@@ -102,10 +102,19 @@ Most software vendors track progress with [webhooks](/guides/webhooks):
 If your app can't receive webhooks, check the install's status on a timer instead with
 [`GET /v1/installs/{install_id}`](/api-ref/installs/get-an-install).
 
-## 4. Ask the customer to approve changes
+## 4. Getting customer approvals
 
-You can set installs to pause before Nuon changes anything in the customer's account. If you do, show the customer
+You can set installs to pause before Nuon does something your customers consider sensitive. If you do, show the customer
 what will change and let them approve it.
+
+Approvals happen on plan steps, before a Terraform, Helm, or Kubernetes manifest change applies. You choose which steps
+wait for the customer:
+
+- Set `approval_option = "prompt"` in the [install config](/config-ref/install) to require approval on the install.
+- Set `auto_approve_on_policies_passing = true` on a component or the sandbox to let its routine changes through. That
+  step only waits for the customer when a [policy](/concepts/policies) check fails.
+
+See [Workflow approvals](/concepts/workflows#workflow-approvals) for how approvals work.
 
 <AcmeScreen screen="approve" />
 
