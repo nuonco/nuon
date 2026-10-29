@@ -91,14 +91,15 @@ You can show your customer each stage as it completes, and let them leave the pa
 
 <AcmeScreen screen="progress" />
 
-Most apps track progress with [webhooks](/guides/webhooks):
+Most software vendors track progress with [webhooks](/guides/webhooks):
 
 1. Register a webhook for workflow step events on your installs.
 2. On each event, update the matching stage from `data.step.name` and `data.transition`.
 3. On a `failed` event, show the customer `data.step.name` and `data.outcome.error`. Your support team sees the same
    error in Nuon.
 
-If your app can't receive webhooks, check the install's status on a timer instead.
+If your app can't receive webhooks, check the install's status on a timer instead with
+[`GET /v1/installs/{install_id}`](/api-ref/installs/get-an-install).
 
 ## 4. Ask the customer to approve changes
 
