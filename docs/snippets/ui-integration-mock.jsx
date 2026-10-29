@@ -108,20 +108,6 @@ export const AcmeScreen = ({ screen }) => {
     ),
     connect: (
       <div className="nuon-um-picker">
-        <div className="nuon-um-tabs" role="tablist" aria-label="Customer's cloud">
-          {Object.keys(clouds).map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="tab"
-              aria-selected={cloud === k}
-              className={cloud === k ? "nuon-um-tab nuon-um-tab-on" : "nuon-um-tab"}
-              onClick={() => setCloud(k)}
-            >
-              {clouds[k].tab}
-            </button>
-          ))}
-        </div>
         <Frame
           path="deployment/connect"
           label={`Acme Analytics asks the customer to connect their ${c.account}. It lists what the setup template creates: a network, permissions for Acme, and an agent that installs and updates Acme Analytics. A ${c.button} button starts it.`}
@@ -144,6 +130,20 @@ export const AcmeScreen = ({ screen }) => {
             </span>
           </div>
         </Frame>
+        <div className="nuon-um-tabs" role="tablist" aria-label="Customer's cloud">
+          {Object.keys(clouds).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={cloud === k}
+              className={cloud === k ? "nuon-um-tab nuon-um-tab-on" : "nuon-um-tab"}
+              onClick={() => setCloud(k)}
+            >
+              {clouds[k].tab}
+            </button>
+          ))}
+        </div>
         <div className="not-prose nuon-infra nuon-um-notes">
           <div>
             <span className="nuon-um-notes-k">Create the install with</span>

@@ -1522,8 +1522,11 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   color: #4cc9f0;
 }
 .nuon-um-picker .nuon-um {
-  margin-top: 0.6rem;
-  margin-bottom: 0.6rem;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+.nuon-um-picker .nuon-um-tabs {
+  margin-bottom: 0.5rem;
 }
 .nuon-um-picker {
   margin: 1.25rem 0 1.75rem;
