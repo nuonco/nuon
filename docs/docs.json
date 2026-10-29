@@ -228,6 +228,11 @@
             ]
           },
           {
+            "group": "README",
+            "boost": 2,
+            "pages": []
+          },
+          {
             "group": "Advanced",
             "boost": 2,
             "pages": [
