@@ -50,31 +50,79 @@ const (
 // @Success				201	{object}	app.EmptyResponse
 // @Router					/v1/installs/{install_id}/phone-home/{phone_home_id} [post]
 func (s *service) InstallPhoneHome(ctx *gin.Context) {
+	if s.cfg.PhoneHomeAuthRequired {
+		s.installPhoneHomeRequired(ctx)
+		return
+	}
+
+	s.installPhoneHomeLegacy(ctx)
+}
+
+func (s *service) installPhoneHomeRequired(ctx *gin.Context) {
+	installID := ctx.Param("install_id")
+	phoneHomeID := ctx.Param("phone_home_id")
+	authHeader := ctx.GetHeader("Authorization")
+	fields := []zap.Field{zap.String("install_id", installID), zap.String("phone_home_id", phoneHomeID)}
+
+	metricTags, done := s.phoneHomeMetrics()
+	defer done()
+
+	if bearerToken(authHeader) == "" {
+		s.failPhoneHome(ctx, metricTags, phoneHomeRejectMissingToken,
+			rejectPhoneHome(phoneHomeRejectMissingToken, errors.New("no bearer token presented")), fields...)
+		return
+	}
+
+	req, requestType, err := bindPhoneHomeRequest(ctx)
+	if err != nil {
+		s.failPhoneHome(ctx, metricTags, phoneHomeFailInvalidRequest, err, fields...)
+		return
+	}
+	metricTags["request_type"] = requestType
+	fields = append(fields, zap.String("request_type", requestType))
+
+	stackVersion, install, err := s.getPhoneHomeTarget(ctx, installID, phoneHomeID)
+	if err != nil {
+		s.failPhoneHomeAuth(ctx, metricTags, nil, err, fields...)
+		return
+	}
+	metricTags["org_id"] = install.OrgID
+	metricTags["cloud_platform"] = string(install.CloudPlatform)
+	fields = append(fields, zap.String("org_id", install.OrgID), zap.String("stack_version_id", stackVersion.ID))
+
+	reason, err := s.verifyPhoneHomeCredential(ctx, install, stackVersion, authHeader)
+	if err == nil && requestType != phoneHomeRequestTypeDelete {
+		reason, err = checkObservedCloudAccount(install, req, true)
+	}
+	if err != nil {
+		s.failPhoneHomeAuth(ctx, metricTags, install, err, fields...)
+		return
+	}
+	metricTags["reason"] = reason
+	s.recordPhoneHomeAuthResult(ctx, install, true)
+
+	if requestType == phoneHomeRequestTypeDelete {
+		metricTags["status"] = "ok"
+		ctx.JSON(http.StatusOK, app.EmptyResponse{})
+		return
+	}
+
+	if err := s.updateInstallPhoneHome(ctx, stackVersion, requestType, &req); err != nil {
+		s.failPhoneHome(ctx, metricTags, phoneHomeFailWrite, errors.Wrap(err, "unable to update install phone home"), fields...)
+		return
+	}
+
+	metricTags["status"] = "ok"
+	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
+}
+
+func (s *service) installPhoneHomeLegacy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	phoneHomeID := ctx.Param("phone_home_id")
 
-	var req InstallPhoneHomeRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
-	}
-
-	var requestType string
-	if v, ok := req["request_type"]; ok {
-		requestType, ok = v.(string)
-		if !ok {
-			ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("request type param must be a string")))
-			return
-		}
-	} else {
-		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("request type param not present")))
-		return
-	}
-
-	switch requestType {
-	case phoneHomeRequestTypeCreate, phoneHomeRequestTypeUpdate, phoneHomeRequestTypeDelete:
-	default:
-		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("invalid request type %q", requestType)))
+	req, requestType, err := bindPhoneHomeRequest(ctx)
+	if err != nil {
+		ctx.Error(err)
 		return
 	}
 
@@ -87,35 +135,16 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	start := time.Now()
-	metricTags := map[string]string{
-		"request_type":   requestType,
-		"cloud_platform": "aws",
-		"status":         "error",
-		"reason":         "",
-		"org_id":         "",
-	}
-	defer func() {
-		if s.mw != nil {
-			s.mw.Timing("phone_home.auth.latency", time.Since(start), metrics.ToTags(metricTags))
-		}
-	}()
+	metricTags, done := s.phoneHomeMetrics()
+	defer done()
+	metricTags["request_type"] = requestType
 
 	// Hoisted out of updateInstallPhoneHome so authorization and the write share one
 	// lookup, and so a missing version is a 401 rather than the 500 it used to be —
 	// that 500 told an unauthenticated caller whether an install exists.
 	stackVersion, install, err := s.getPhoneHomeTarget(ctx, installID, phoneHomeID)
 	if err != nil {
-		var authErr errPhoneHomeAuth
-		if errors.As(err, &authErr) {
-			metricTags["reason"] = authErr.reason
-			s.l.Warn("rejected phone home",
-				zap.String("install_id", installID),
-				zap.String("phone_home_id", phoneHomeID),
-				zap.String("reason", authErr.reason),
-			)
-		}
-		ctx.Error(err)
+		s.rejectPhoneHomeTarget(ctx, metricTags, installID, phoneHomeID, err)
 		return
 	}
 	metricTags["org_id"] = install.OrgID
@@ -123,24 +152,11 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 
 	reason, err := s.authorizePhoneHome(ctx, install, stackVersion, ctx.GetHeader("Authorization"))
 	if err == nil && reason == phoneHomeAuthOK {
-		reason, err = checkObservedCloudAccount(install, req)
+		reason, err = checkObservedCloudAccount(install, req, false)
 	}
 	metricTags["reason"] = reason
 	if err != nil {
-		var authErr errPhoneHomeAuth
-		if errors.As(err, &authErr) {
-			// Warn rather than Info: a rejection fails open on the customer's side, so
-			// nothing else surfaces it. Never log the token.
-			s.l.Warn("rejected phone home",
-				zap.String("install_id", install.ID),
-				zap.String("org_id", install.OrgID),
-				zap.String("stack_version_id", stackVersion.ID),
-				zap.String("request_type", requestType),
-				zap.String("reason", authErr.reason),
-			)
-			s.recordPhoneHomeAuthResult(ctx, install, false)
-		}
-		ctx.Error(err)
+		s.rejectPhoneHomeCaller(ctx, install, stackVersion, requestType, err)
 		return
 	}
 	if reason == phoneHomeAuthOK {
@@ -154,6 +170,116 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 
 	metricTags["status"] = "ok"
 	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
+}
+
+func bindPhoneHomeRequest(ctx *gin.Context) (InstallPhoneHomeRequest, string, error) {
+	var req InstallPhoneHomeRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		return nil, "", stderr.NewInvalidRequest(err)
+	}
+
+	v, ok := req["request_type"]
+	if !ok {
+		return nil, "", stderr.NewInvalidRequest(fmt.Errorf("request type param not present"))
+	}
+	requestType, ok := v.(string)
+	if !ok {
+		return nil, "", stderr.NewInvalidRequest(fmt.Errorf("request type param must be a string"))
+	}
+
+	switch requestType {
+	case phoneHomeRequestTypeCreate, phoneHomeRequestTypeUpdate, phoneHomeRequestTypeDelete:
+	default:
+		return nil, "", stderr.NewInvalidRequest(fmt.Errorf("invalid request type %q", requestType))
+	}
+
+	return req, requestType, nil
+}
+
+func (s *service) phoneHomeMetrics() (map[string]string, func()) {
+	start := time.Now()
+	metricTags := map[string]string{
+		"request_type":   "",
+		"cloud_platform": "aws",
+		"status":         "error",
+		"reason":         "",
+		"org_id":         "",
+	}
+
+	return metricTags, func() {
+		if s.mw != nil {
+			s.mw.Timing("phone_home.auth.latency", time.Since(start), metrics.ToTags(metricTags))
+		}
+	}
+}
+
+func (s *service) rejectPhoneHomeTarget(
+	ctx *gin.Context, metricTags map[string]string, installID, phoneHomeID string, err error,
+) {
+	var authErr errPhoneHomeAuth
+	if errors.As(err, &authErr) {
+		metricTags["reason"] = authErr.reason
+		s.l.Warn("rejected phone home",
+			zap.String("install_id", installID),
+			zap.String("phone_home_id", phoneHomeID),
+			zap.String("reason", authErr.reason),
+		)
+	}
+	ctx.Error(err)
+}
+
+func (s *service) rejectPhoneHomeCaller(
+	ctx *gin.Context, install *app.Install, stackVersion *app.InstallStackVersion, requestType string, err error,
+) {
+	var authErr errPhoneHomeAuth
+	if errors.As(err, &authErr) {
+		// Warn rather than Info: a rejection fails open on the customer's side, so
+		// nothing else surfaces it. Never log the token.
+		s.l.Warn("rejected phone home",
+			zap.String("install_id", install.ID),
+			zap.String("org_id", install.OrgID),
+			zap.String("stack_version_id", stackVersion.ID),
+			zap.String("request_type", requestType),
+			zap.String("reason", authErr.reason),
+		)
+		s.recordPhoneHomeAuthResult(ctx, install, false)
+	}
+	ctx.Error(err)
+}
+
+// failPhoneHomeAuth reports an error from target lookup or authorization. A rejection
+// also stamps the install, when there is one; anything else is an internal failure.
+func (s *service) failPhoneHomeAuth(
+	ctx *gin.Context, metricTags map[string]string, install *app.Install, err error, fields ...zap.Field,
+) {
+	var authErr errPhoneHomeAuth
+	if !errors.As(err, &authErr) {
+		s.failPhoneHome(ctx, metricTags, phoneHomeFailInternal, err, fields...)
+		return
+	}
+
+	if install != nil {
+		s.recordPhoneHomeAuthResult(ctx, install, false)
+	}
+	s.failPhoneHome(ctx, metricTags, authErr.reason, err, fields...)
+}
+
+// failPhoneHome is the single exit for every failed phone home, so each one carries a
+// reason tag and a log line. Warn rather than Info for rejections: a rejection fails
+// open on the customer's side, so nothing else surfaces it. Never log the token.
+func (s *service) failPhoneHome(
+	ctx *gin.Context, metricTags map[string]string, reason string, err error, fields ...zap.Field,
+) {
+	metricTags["reason"] = reason
+	fields = append(fields, zap.String("reason", reason), zap.Error(err))
+
+	switch reason {
+	case phoneHomeFailInternal, phoneHomeFailWrite:
+		s.l.Error("phone home failed", fields...)
+	default:
+		s.l.Warn("rejected phone home", fields...)
+	}
+	ctx.Error(err)
 }
 
 // getPhoneHomeTarget resolves the stack version being called and its install. A miss on
