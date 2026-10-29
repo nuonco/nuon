@@ -191,6 +191,7 @@
             "boost": 3,
             "pages": [
               "guides/app-branches",
+              "guides/app-branch-migration",
               "guides/rollback-install-config",
               "guides/reprovision-installs",
               "guides/actions",
@@ -257,9 +258,7 @@
           {
             "group": "Advanced",
             "boost": 2,
-            "pages": [
-              "guides/app-branch-migration"
-            ]
+            "pages": []
           }
         ]
       },
