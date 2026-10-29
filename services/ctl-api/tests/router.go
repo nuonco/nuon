@@ -119,10 +119,8 @@ func testAccount(c *gin.Context, opts RouterOptions) *app.Account {
 			}
 		}
 	}
-	if opts.TestOrg != nil {
-		if _, ok := perms[opts.TestOrg.ID]; !ok {
-			perms[opts.TestOrg.ID] = permissions.PermissionAll
-		}
+	if opts.TestOrg != nil && len(perms) == 0 {
+		perms[opts.TestOrg.ID] = permissions.PermissionAll
 	}
 	acct.AllPermissions = perms
 
