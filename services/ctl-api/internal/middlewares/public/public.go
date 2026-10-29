@@ -4,8 +4,10 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -43,8 +45,21 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/v1/runners/:runner_id/public-settings"}: {},
 }
 
+// gated by PublicRunnerProcessShutdowns so pre-auth runners can still be shut down.
+var publicRunnerProcessShutdownsEndpoint = [2]string{
+	"GET", "/v1/runners/:runner_id/processes/:process_id/shutdowns",
+}
+
 type middleware struct {
-	l *zap.Logger
+	l                            *zap.Logger
+	publicRunnerProcessShutdowns bool
+}
+
+type Params struct {
+	fx.In
+
+	L   *zap.Logger
+	Cfg *internal.Config
 }
 
 func (m middleware) Name() string {
@@ -60,8 +75,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			method,
 			path,
 		}
-		_, found := publicEndpointList[key]
-		if found {
+		if m.isPublic(key) {
 			m.l.Debug("marking request as public", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
 			cctx.SetPublicContext(ctx, true)
 			return
@@ -71,8 +85,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			method,
 			"*",
 		}
-		_, found = publicEndpointList[wildcardKey]
-		if found {
+		if m.isPublic(wildcardKey) {
 			m.l.Debug("marking request as public due to wildcard", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
 			cctx.SetPublicContext(ctx, true)
 			return
@@ -82,8 +95,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			"*",
 			path,
 		}
-		_, found = publicEndpointList[wildcardKey]
-		if found {
+		if m.isPublic(wildcardKey) {
 			m.l.Debug("marking request as public due to wildcard", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
 			cctx.SetPublicContext(ctx, true)
 			return
@@ -93,8 +105,16 @@ func (m middleware) Handler() gin.HandlerFunc {
 	}
 }
 
-func New(l *zap.Logger) *middleware {
+func (m middleware) isPublic(key [2]string) bool {
+	if _, found := publicEndpointList[key]; found {
+		return true
+	}
+	return m.publicRunnerProcessShutdowns && key == publicRunnerProcessShutdownsEndpoint
+}
+
+func New(params Params) *middleware {
 	return &middleware{
-		l: l,
+		l:                            params.L,
+		publicRunnerProcessShutdowns: params.Cfg.PublicRunnerProcessShutdowns,
 	}
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -87,6 +88,11 @@ type CreateInstallParams struct {
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org: %w", err)
+	}
+
 	parentApp := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
@@ -99,12 +105,13 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			return db.Order("app_permissions_configs.created_at DESC").Limit(1)
 		}).
 		Preload("AppPermissionsConfigs.Roles").
+		Where(app.App{OrgID: orgID}).
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	pin, err := s.resolveCreateInstallPin(ctx, appID, req)
+	pin, err := s.resolveCreateInstallPin(ctx, orgID, appID, req)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +123,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	pinnedAppInputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, pin.AppConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get pinned app input config: %w", err)
+	}
+	if pinnedAppInputConfig != nil && pinnedAppInputConfig.ID != "" &&
+		(pinnedAppInputConfig.OrgID != orgID ||
+			pinnedAppInputConfig.AppID != appID ||
+			pinnedAppInputConfig.AppConfigID != pin.AppConfig.ID) {
+		return nil, fmt.Errorf("pinned app input config does not belong to app %s in org %s", appID, orgID)
 	}
 
 	if err := s.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs); err != nil {
@@ -139,6 +152,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 
 	install := app.Install{
 		AppID:              appID,
+		OrgID:              orgID,
 		Name:               req.Name,
 		SandboxMode:        pkggenerics.NewNullBool(req.SandboxMode),
 		AppSandboxConfigID: sandboxConfigID,

@@ -774,3 +774,73 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
     transform: rotate(90deg);
   }
 }
+
+/* App, branch, and rollout group diagram (snippets/app-branches-diagram.jsx) */
+.nuon-ab {
+  margin: 1rem 0 1.75rem;
+}
+.nuon-ab-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+.nuon-ab .nuon-infra-concept {
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 1.1rem;
+}
+.nuon-ab-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nuon-ab-kicker {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--in-accent);
+  text-decoration: none;
+}
+.nuon-ab-kicker-muted {
+  color: var(--in-muted);
+}
+.nuon-ab-app {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.nuon-ab-branch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--in-border);
+  border-radius: 8px;
+  background: var(--in-inner-bg);
+}
+.nuon-ab-branch-name {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8rem;
+}
+.nuon-ab-groups,
+.nuon-ab-group-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.nuon-ab-group {
+  padding: 0.15rem 0.5rem;
+  border: 1px dashed var(--in-strong);
+  border-radius: 6px;
+  background: var(--in-box-bg);
+  font-size: 0.78rem;
+}
+.nuon-ab-arrow {
+  color: var(--in-accent);
+}
+@media (max-width: 720px) {
+  .nuon-ab-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

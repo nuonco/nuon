@@ -138,10 +138,11 @@
         "icon": "screwdriver-wrench",
         "groups": [
           {
-            "group": "Build an App",
+            "group": "Apps",
             "boost": 3,
             "pages": [
-              "guides/managing-apps",
+              "guides/building-nuon-apps",
+              "guides/multiple-app-configurations",
               "guides/retaining-resources-on-teardown",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
@@ -152,7 +153,7 @@
             ]
           },
           {
-            "group": "Manage Components",
+            "group": "Components",
             "boost": 3,
             "pages": [
               "guides/managing-components",
@@ -169,7 +170,33 @@
             ]
           },
           {
-            "group": "Deliver to Customers",
+            "group": "Stacks",
+            "boost": 2,
+            "pages": [
+              "guides/custom-nested-stacks",
+              "guides/nuon-stack-terraform-provider",
+              "guides/customizing-terraform-stack-templates"
+            ]
+          },
+          {
+            "group": "CLI",
+            "boost": 2,
+            "pages": [
+              "guides/cli-extensions",
+              "guides/cli-versions",
+              "guides/terraform-cli"
+            ]
+          },
+          {
+            "group": "README",
+            "boost": 2,
+            "pages": [
+              "guides/using-readmes",
+              "guides/programmable-readmes"
+            ]
+          },
+          {
+            "group": "Installs",
             "boost": 3,
             "pages": [
               "guides/vendor-customers",
@@ -186,10 +213,11 @@
             ]
           },
           {
-            "group": "Operate Installs",
+            "group": "Updates and Operations",
             "boost": 3,
             "pages": [
               "guides/app-branches",
+              "guides/app-branch-migration",
               "guides/rollback-install-config",
               "guides/reprovision-installs",
               "guides/actions",
@@ -197,6 +225,7 @@
               "guides/container-actions",
               "guides/runbooks",
               "guides/configuring-policies",
+              "guides/external-image-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
               "guides/manage-install-telemetry"
@@ -224,22 +253,6 @@
               "concepts/api-tokens",
               "concepts/service-accounts",
               "concepts/oidc-federation"
-            ]
-          },
-          {
-            "group": "Advanced",
-            "boost": 2,
-            "pages": [
-              "guides/using-readmes",
-              "guides/programmable-readmes",
-              "guides/custom-nested-stacks",
-              "guides/nuon-stack-terraform-provider",
-              "guides/customizing-terraform-stack-templates",
-              "guides/cli-extensions",
-              "guides/cli-versions",
-              "guides/external-image-policies",
-              "guides/terraform-cli",
-              "guides/app-branch-migration"
             ]
           }
         ]
@@ -456,12 +469,20 @@
   },
   "redirects": [
     {
+      "source": "/guides",
+      "destination": "/guides/building-nuon-apps"
+    },
+    {
+      "source": "/guides/managing-apps",
+      "destination": "/guides/building-nuon-apps"
+    },
+    {
       "source": "/guides/agents/skills",
       "destination": "/guides/agents/writing-policies"
     },
     {
       "source": "/guides/app-install-life-cycle",
-      "destination": "/concepts/installs"
+      "destination": "/concepts/overview"
     },
     {
       "source": "/get-started/overview",
