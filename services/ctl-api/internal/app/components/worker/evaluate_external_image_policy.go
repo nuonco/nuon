@@ -159,7 +159,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 	for i, fut := range futures {
 		var result sharedactivities.EvaluateSinglePolicyResult
 		if err := fut.Get(ctx, &result); err != nil {
-			if workflow.GetVersion(ctx, "named-policy-errors-terminal-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion && policyopa.UsesNamedChecks(prepResult.Policies[i].Contents) {
+			if policyopa.UsesNamedChecks(prepResult.Policies[i].Contents) {
 				l.Error("named policy evaluation failed", zap.Error(err))
 				w.recordComponentPolicyEvaluationFailure(ctx, l, metadataJob.ID)
 				description := truncateErrorMessage("unable to evaluate named policy checks", err)

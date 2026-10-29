@@ -124,7 +124,7 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 	for i, fut := range futures {
 		var result sharedactivities.EvaluateSinglePolicyResult
 		if err := fut.Get(ctx, &result); err != nil {
-			if workflow.GetVersion(ctx, "named-policy-errors-terminal-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion && policyopa.UsesNamedChecks(policyItems[i].Contents) {
+			if policyopa.UsesNamedChecks(policyItems[i].Contents) {
 				l.Error("named policy evaluation failed", zap.Error(err))
 				w.recordComponentPolicyEvaluationFailure(ctx, l, buildJobID)
 				description := truncateErrorMessage("unable to evaluate named policy checks", err)
