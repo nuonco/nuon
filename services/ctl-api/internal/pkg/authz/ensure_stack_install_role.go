@@ -76,13 +76,25 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 			}
 			if len(existing) == 1 {
 				role := existing[0]
-				if len(role.Policies) != 1 || len(role.Policies[0].Permissions) != 1 {
+				if len(role.Policies) != 1 {
 					return fmt.Errorf("legacy stack role has an unexpected policy")
 				}
-				if _, ok := role.Policies[0].Permissions[permissions.StackObject(orgID, installID)]; !ok {
+				perms := role.Policies[0].Permissions
+				api, hasAPI := perms[permissions.APIPermissionKey]
+				if hasAPI && (api == nil || *api != string(permissions.APIStack)) {
+					return fmt.Errorf("legacy stack role has an unexpected policy")
+				}
+				if (hasAPI && len(perms) != 2) || (!hasAPI && len(perms) != 1) {
+					return fmt.Errorf("legacy stack role has an unexpected policy")
+				}
+				if _, ok := perms[permissions.StackObject(orgID, installID)]; !ok {
 					return fmt.Errorf("legacy stack role targets a different resource")
 				}
 				want.ID = role.ID
+				if hasAPI {
+					want.Version = role.Version
+					want.Policies[0].Permissions[permissions.APIPermissionKey] = api
+				}
 			}
 		}
 		if want.ID == "" && binding.PrivateRoleID == nil {
