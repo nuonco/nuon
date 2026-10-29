@@ -13,8 +13,8 @@ Your app calls the Nuon [API](/concepts/api) in the background.
 
 ## Before you start
 
-Create a [service account](/concepts/service-accounts) for your app and store its token with your other secrets.
-Every call in this guide uses that token.
+Create a [service account](/concepts/service-accounts) for your app with the least access that works, and store its
+token with your other secrets. Every call in this guide uses that token.
 
 <Tip>
 Creating cloud resources in your customer's account takes a while. Run setup as a background job, and send a
@@ -93,7 +93,8 @@ You can show your customer each stage as it completes, and let them leave the pa
 
 Most software vendors track progress with [webhooks](/guides/webhooks):
 
-1. Register a webhook for workflow step events on your installs.
+1. Register a webhook for workflow step events on your installs, with a secret so you can
+   [verify each request](/guides/webhooks#verifying-signatures) came from Nuon.
 2. On each event, update the matching stage from `data.step.name` and `data.transition`.
 3. On a `failed` event, show the customer `data.step.name` and `data.outcome.error`. Your support team sees the same
    error in Nuon.
@@ -110,12 +111,3 @@ what will change and let them approve it.
 
 Wire the **Approve** button to `approve-all` on the install's workflow. See
 [Approve changes](/guides/control-plane-integration#approve-changes).
-
-## Tips
-
-- Filter your webhooks. By default, a webhook receives every event in your Nuon org, so limit it to the installs and
-  events your app uses.
-- Check that each webhook request came from Nuon. Set a secret on the webhook and verify the `X-Nuon-Signature`
-  header. See [Verifying signatures](/guides/webhooks#verifying-signatures).
-- Give the service account the least access that works. See [Access control](/concepts/access-control).
-- Name each install after your customer, using your own customer ID, so support can find it in the Nuon dashboard.
