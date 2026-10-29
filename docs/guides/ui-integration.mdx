@@ -135,9 +135,6 @@ curl -X POST https://api.nuon.co/v1/workflows/$WORKFLOW_ID/steps/$STEP_ID/approv
   -d '{ "response_type": "approve" }'  # or "deny"
 ```
 
-Each step gets its own answer, so steps that auto-approve never reach the customer.
-
-<Tip>
-To hear about waiting steps without polling, turn on `approval_requests` in your [webhook](/guides/webhooks)
-subscription.
-</Tip>
+You don't have to check for waiting steps on a timer. Set `approval_requests` to `true` in your
+[webhook](/guides/webhooks#filtering-events-with-interests) subscription, and Nuon calls your app as soon as a step
+needs approval. That's your cue to show the customer this screen.
