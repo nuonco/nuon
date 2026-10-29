@@ -24,8 +24,8 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
 import { commitUrl } from './run-source'
 import type { TAPIError } from '@/types'
-import { BranchOverview, type TFailedBuildLink } from './BranchOverview'
-import { BranchOverviewV2 } from './BranchOverviewV2'
+import { BranchOverview } from './BranchOverview'
+import type { TFailedBuildLink } from './overview-shared'
 import {
   buildOverviewLoadingStages,
   groupCompositeError,
@@ -41,12 +41,7 @@ import {
   useRunTemplateBuilds,
 } from './use-run-template-builds'
 
-export const BranchOverviewContainer = ({
-  variant = 'current',
-}: {
-  variant?: 'current' | 'v2'
-}) => {
-  const Overview = variant === 'v2' ? BranchOverviewV2 : BranchOverview
+export const BranchOverviewContainer = () => {
   const { addPanel } = useSurfaces()
   const {
     app,
@@ -86,7 +81,7 @@ export const BranchOverviewContainer = ({
     appId,
     branchId,
     repoSlug,
-    enabled: variant === 'v2',
+    enabled: true,
   })
 
   const {
@@ -238,7 +233,7 @@ export const BranchOverviewContainer = ({
             : [branch?.name, app?.name]
         }
       />
-      <Overview
+      <BranchOverview
         hasPlan={hasPlan}
         showInstalls={showInstalls}
         showRolloutLink={!previewMode}
