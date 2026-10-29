@@ -16,7 +16,14 @@ type CLIConfig struct {
 
 	OIDCFederationEnabled bool `json:"oidc_federation_enabled"`
 
-	MinCLIVersion string `json:"min_cli_version"`
+	// Deprecated: older CLIs read this warning floor. New CLIs use min_cli_version_policy.
+	MinCLIVersion       string               `json:"min_cli_version"`
+	MinCLIVersionPolicy *MinCLIVersionPolicy `json:"min_cli_version_policy,omitempty"`
+}
+
+type MinCLIVersionPolicy struct {
+	Error string `json:"error,omitempty"`
+	Warn  string `json:"warn,omitempty"`
 }
 
 // @ID						GetCLIConfig
@@ -33,7 +40,7 @@ type CLIConfig struct {
 // @Success				200	{object}	CLIConfig
 // @Router					/v1/general/cli-config [GET]
 func (s *service) GetCLIConfig(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, &CLIConfig{
+	resp := &CLIConfig{
 		AuthDomain:      "",
 		AuthClientID:    "",
 		AuthAudience:    "",
@@ -42,6 +49,7 @@ func (s *service) GetCLIConfig(ctx *gin.Context) {
 		RootDomain:      s.cfg.RootDomain,
 
 		OIDCFederationEnabled: s.cfg.OIDCFederationEnabled,
-		MinCLIVersion:         s.resolveMinCLIVersion(ctx.Request.Context()),
-	})
+	}
+	resp.MinCLIVersion, resp.MinCLIVersionPolicy = s.resolveCLIVersionPolicy(ctx.Request.Context())
+	ctx.JSON(http.StatusOK, resp)
 }

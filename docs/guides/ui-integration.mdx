@@ -1,0 +1,140 @@
+---
+title: "Build a UI integration"
+description: "Build your own self-serve BYOC flow."
+keywords: ["UI integration", "embed BYOC", "BYOC onboarding flow", "customer self-serve BYOC", "white label", "install progress", "polling", "webhooks", "service account", "API integration", "product integration"]
+---
+
+import { AcmeScreen } from "/snippets/ui-integration-mock.jsx";
+
+Let your customers deploy your product into their own cloud account from your app's settings page.
+Your app calls the Nuon [API](/concepts/api) in the background.
+
+<AcmeScreen screen="deploy" />
+
+## Before you start
+
+Create a [service account](/concepts/service-accounts) for your app with the least access that works, and store its
+token with your other secrets. Every call in this guide uses that token.
+
+<Tip>
+Creating cloud resources in your customer's account takes a while. Run setup as a background job, and send a
+`request_id` on each call that starts work, so a retry after a timeout doesn't run it twice. See
+[Idempotent operations](/guides/idempotent-operations).
+</Tip>
+
+## 1. Collect the [customer's inputs](/concepts/app-inputs)
+
+<AcmeScreen screen="start" />
+
+When the customer clicks **Start setup**, create an [install](/concepts/installs) with their inputs. 
+
+```bash
+curl -X POST https://api.nuon.co/v1/installs \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "app...",
+    "name": "globex",
+    "aws_account": { "region": "us-west-2" },
+    "inputs": { "domain": "analytics.globex.example.com" }
+  }'
+```
+
+The response is the new install. Trimmed to the fields you'll use:
+
+```json Response
+{
+  "id": "inl...",
+  "name": "globex",
+  "app_id": "app...",
+  "workflow_id": "inw...",
+  "created_at": "2026-10-29T17:14:20Z"
+}
+```
+
+Save `id` with the customer's record. Every later call uses it.
+
+- To let customers change an input later, see [Change a setting](/guides/control-plane-integration#change-a-setting).
+- To set up inputs and secrets in your app template, see
+  [Configuring inputs and secrets](/guides/configuring-inputs-and-secrets).
+- For every input field, see the [inputs reference](/config-ref/inputs).
+
+## 2. Have the customer connect their account
+
+Your customer connects their account by creating your app's [stack](/concepts/stacks), in their own
+cloud console. It's a good idea to give a quick explainer for your customer's security team.
+
+<AcmeScreen screen="connect" />
+
+Call `GET /v1/installs/{install_id}/stack`. A trimmed example response:
+
+```json Response
+{
+  "install_id": "inl...",
+  "versions": [
+    { "quick_link_url": "https://console.aws.amazon.com/cloudformation/..." }
+  ]
+}
+```
+
+Point your connect button at the newest version's `quick_link_url`. When the customer runs it, the stack creates the
+network, the permissions, and the [runner](/concepts/runners) in their account.
+
+[Positioning safety of BYOC](/guides/vendor-customers) covers the follow-up questions customers usually ask.
+
+## 3. Show setup progress
+
+Once the customer initiates the install on their cloud account, Nuon deploys your product without any more input from the customer. 
+
+You can show your customer each stage as it completes, and let them leave the page.
+
+<AcmeScreen screen="progress" />
+
+Most software vendors track progress with [webhooks](/guides/webhooks):
+
+1. Register a webhook for workflow step events on your installs, with a secret so you can
+   [verify each request](/guides/webhooks#verifying-signatures) came from Nuon.
+2. On each event, update the matching stage from `data.step.name` and `data.transition`.
+3. On a `failed` event, show the customer `data.step.name` and `data.outcome.error`. Your support team sees the same
+   error in Nuon.
+
+If your app can't receive webhooks, check the install's status on a timer instead with
+[`GET /v1/installs/{install_id}`](/api-ref/installs/get-an-install).
+
+## 4. Getting customer approvals
+
+You can set installs to pause before anything your customers consider sensitive.
+
+Approvals happen on plan steps, before a Terraform, Helm, or Kubernetes manifest change applies. You choose which steps
+wait for the customer:
+
+- Set `approval_option = "prompt"` in the [install config](/config-ref/install) to require approval on the install.
+- Set `auto_approve_on_policies_passing = true` on a component or the sandbox to let its routine changes through. That
+  step only waits for the customer when a [policy](/concepts/policies) check fails.
+
+See [Workflow approvals](/concepts/workflows#workflow-approvals) for how approvals work.
+
+<AcmeScreen screen="approve" />
+
+When a step is waiting, find it with:
+
+```bash
+curl https://api.nuon.co/v1/workflows/pending-approvals \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID"
+```
+
+Then send the customer's approval:
+
+```bash
+curl -X POST https://api.nuon.co/v1/workflows/$WORKFLOW_ID/steps/$STEP_ID/approvals/$APPROVAL_ID/response \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "response_type": "approve" }'  # or "deny"
+```
+
+You don't have to check for waiting steps on a timer. Set `approval_requests` to `true` in your
+[webhook](/guides/webhooks#filtering-events-with-interests) subscription, and Nuon calls your app as soon as a step
+needs approval. That's your cue to show the customer this screen.

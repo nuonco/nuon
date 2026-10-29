@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 const (
@@ -26,20 +28,44 @@ type latestCLICache struct {
 	client    *http.Client
 }
 
-func (s *service) resolveMinCLIVersion(ctx context.Context) string {
+func (s *service) resolveCLIVersionPolicy(ctx context.Context) (string, *MinCLIVersionPolicy) {
 	if s.cfg == nil {
-		return ""
+		return "", nil
 	}
-	configured := strings.TrimSpace(s.cfg.MinCLIVersion)
-	if !strings.EqualFold(configured, cliLatestToken) {
-		return s.cfg.MinCLIVersion
+
+	errorFloor := s.cfg.MinCLIErrorFloor()
+	configuredError := strings.TrimSpace(s.cfg.MinCLIVersionError)
+	if configuredError != "" && errorFloor == "" && s.l != nil {
+		s.l.Warn("ignoring min_cli_version_error", zap.String("value", configuredError))
+	}
+
+	warnSetting := strings.TrimSpace(s.cfg.MinCLIVersionWarn)
+	if warnSetting == "" {
+		warnSetting = strings.TrimSpace(s.cfg.MinCLIVersion)
+	}
+	resolvedWarn := s.resolveVersionSetting(ctx, warnSetting)
+	warn := internal.WarnAboveError(resolvedWarn, errorFloor)
+	if resolvedWarn != "" && warn == "" && errorFloor != "" && s.l != nil {
+		s.l.Warn("min_cli_version_warn is below the error floor", zap.String("warn", resolvedWarn), zap.String("error", errorFloor))
+	}
+	if warn == "" && errorFloor == "" {
+		return "", nil
+	}
+
+	return warn, &MinCLIVersionPolicy{Error: errorFloor, Warn: warn}
+}
+
+func (s *service) resolveVersionSetting(ctx context.Context, configured string) string {
+	configured = strings.TrimSpace(configured)
+	if configured == "" || !strings.EqualFold(configured, cliLatestToken) {
+		return configured
 	}
 
 	version, err := s.latestCLI.resolve(ctx)
 	if err != nil && s.l != nil {
 		s.l.Warn("fetching latest cli version", zap.Error(err), zap.String("served", version))
 	}
-	return version
+	return strings.TrimSpace(version)
 }
 
 func (c *latestCLICache) resolve(ctx context.Context) (string, error) {

@@ -86,7 +86,7 @@ func (s *InstallsServiceTestSuite) TestAuthorizePhoneHomeRejectsPreviousToken() 
 	previous := &app.Token{
 		CreatedByID: s.testAcc.ID,
 		AccountID:   serviceAccount.ID,
-		Token:       "previous-phone-home-token",
+		Token:       "previous-phone-home-token-" + install.ID,
 		TokenType:   app.TokenTypeNuon,
 		ExpiresAt:   now.Add(time.Hour),
 		IssuedAt:    now,
@@ -95,7 +95,7 @@ func (s *InstallsServiceTestSuite) TestAuthorizePhoneHomeRejectsPreviousToken() 
 	current := &app.Token{
 		CreatedByID: s.testAcc.ID,
 		AccountID:   serviceAccount.ID,
-		Token:       "current-phone-home-token",
+		Token:       "current-phone-home-token-" + install.ID,
 		TokenType:   app.TokenTypeNuon,
 		ExpiresAt:   now.Add(time.Hour),
 		IssuedAt:    now,

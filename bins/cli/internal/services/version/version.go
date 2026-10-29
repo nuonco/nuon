@@ -19,14 +19,16 @@ var Version string = "development"
 const remoteLookupTimeout = 500 * time.Millisecond
 
 type info struct {
-	client  string
-	ctlAPI  string
-	minCLI  string
-	goVer   string
-	os      string
-	arch    string
-	commit  string
-	commitT string
+	client      string
+	ctlAPI      string
+	minCLI      string
+	minCLIError string
+	minCLIWarn  string
+	goVer       string
+	os          string
+	arch        string
+	commit      string
+	commitT     string
 }
 
 func (s *Service) Version(ctx context.Context, asJSON bool) error {
@@ -79,7 +81,7 @@ func (s *Service) collect(ctx context.Context) info {
 		if err != nil || cfg == nil {
 			return
 		}
-		got.minCLI = strings.TrimSpace(cfg.MinCliVersion)
+		got.minCLI, got.minCLIError, got.minCLIWarn = reportedFloors(cfg)
 	}()
 	wg.Wait()
 	return got
@@ -100,6 +102,16 @@ func (i info) text() string {
 		b.WriteString(i.minCLI)
 		b.WriteByte('\n')
 	}
+	if i.minCLIError != "" {
+		b.WriteString("min_cli_version_error: ")
+		b.WriteString(i.minCLIError)
+		b.WriteByte('\n')
+	}
+	if i.minCLIWarn != "" {
+		b.WriteString("min_cli_version_warn: ")
+		b.WriteString(i.minCLIWarn)
+		b.WriteByte('\n')
+	}
 	return b.String()
 }
 
@@ -112,6 +124,12 @@ func (i info) json() map[string]string {
 	}
 	if i.minCLI != "" {
 		out["min_cli_supported_version"] = i.minCLI
+	}
+	if i.minCLIError != "" {
+		out["min_cli_version_error"] = i.minCLIError
+	}
+	if i.minCLIWarn != "" {
+		out["min_cli_version_warn"] = i.minCLIWarn
 	}
 	if i.goVer != "" {
 		out["go_version"] = i.goVer
