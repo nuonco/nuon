@@ -170,7 +170,7 @@
             ]
           },
           {
-            "group": "Deliver to Customers",
+            "group": "Installs",
             "boost": 3,
             "pages": [
               "guides/vendor-customers",
