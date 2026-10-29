@@ -287,7 +287,7 @@ func (s *GetRunnerJobExecutionTestSuite) TestGetRunnerJobExecution() {
 			},
 		},
 		{
-			name: "query ignores runner_job_id path param",
+			name: "execution from a different job returns 404",
 			setupFunc: func() (string, string) {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -346,15 +346,9 @@ func (s *GetRunnerJobExecutionTestSuite) TestGetRunnerJobExecution() {
 					s.service.DB.Unscoped().Delete(job1)
 				})
 
-				// Return job1.ID but exec.ID - query should ignore job1.ID and find exec by ID only
 				return job1.ID, exec.ID
 			},
-			expectedCode: http.StatusOK,
-			validateFunc: func(exec *app.RunnerJobExecution) {
-				assert.Equal(s.T(), app.RunnerJobExecutionStatusFinished, exec.Status)
-				// The execution should be for job2, not job1, proving runner_job_id is ignored
-				// (can't verify RunnerJobID directly since we'd need to query DB again)
-			},
+			expectedCode: http.StatusNotFound,
 		},
 	}
 
