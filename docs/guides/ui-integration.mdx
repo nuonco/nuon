@@ -4,20 +4,12 @@ description: "Let customers set up your product in their own cloud account witho
 keywords: ["UI integration", "embed BYOC", "BYOC onboarding flow", "customer self-serve BYOC", "white label", "install progress", "polling", "webhooks", "service account", "API integration", "product integration"]
 ---
 
-import { FlowSteps } from "/snippets/flow-steps.jsx";
+import { UiIntegrationMock } from "/snippets/ui-integration-mock.jsx";
 
 With a UI integration, your customers set up your product in their own cloud account from inside your app. They never
 open Nuon. Your app talks to Nuon through the [API](/concepts/api) behind the scenes.
 
-<FlowSteps
-  horizontal
-  steps={[
-    { title: "Start the install" },
-    { title: "Customer runs the setup template" },
-    { title: "Show progress" },
-    { title: "Approve changes" },
-  ]}
-/>
+<UiIntegrationMock />
 
 This guide covers first-time setup. To change or remove an install later, see
 [Add BYOC installation to your product](/guides/control-plane-integration).
