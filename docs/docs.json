@@ -166,7 +166,8 @@
               "concepts/stacks/customer-cluster",
               "guides/custom-nested-stacks",
               "guides/nuon-stack-terraform-provider",
-              "guides/customizing-terraform-stack-templates"
+              "guides/customizing-terraform-stack-templates",
+              "guides/provision-stacks-with-cloudformation"
             ]
           },
           {
@@ -197,7 +198,6 @@
               "guides/runner-kill-switch",
               "guides/export-runner-audit-logs",
               "guides/custom-domains",
-              "guides/provision-stacks-with-cloudformation",
               "guides/provision-stacks-with-terraform-module",
               "guides/provision-stacks-with-terraform",
               "guides/provision-stacks-with-spacelift"
