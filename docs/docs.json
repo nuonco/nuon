@@ -238,7 +238,11 @@
           {
             "group": "CLI",
             "boost": 2,
-            "pages": []
+            "pages": [
+              "guides/cli-extensions",
+              "guides/cli-versions",
+              "guides/terraform-cli"
+            ]
           },
           {
             "group": "Advanced",
@@ -247,10 +251,7 @@
               "guides/custom-nested-stacks",
               "guides/nuon-stack-terraform-provider",
               "guides/customizing-terraform-stack-templates",
-              "guides/cli-extensions",
-              "guides/cli-versions",
               "guides/external-image-policies",
-              "guides/terraform-cli",
               "guides/app-branch-migration"
             ]
           }
