@@ -125,7 +125,7 @@ curl https://api.nuon.co/v1/workflows/pending-approvals \
   -H "X-Nuon-Org-ID: $NUON_ORG_ID"
 ```
 
-Then send the customer's answer:
+Then send the customer's approval:
 
 ```bash
 curl -X POST https://api.nuon.co/v1/workflows/$WORKFLOW_ID/steps/$STEP_ID/approvals/$APPROVAL_ID/response \
