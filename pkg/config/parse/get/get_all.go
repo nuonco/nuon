@@ -2,16 +2,20 @@ package get
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 
 	getter "github.com/hashicorp/go-getter"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 
 	"github.com/nuonco/nuon/pkg/config/features"
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
 func (g *get) GetAll(ctx context.Context) error {
@@ -42,7 +46,11 @@ func nextSubdir(current, fieldName string) string {
 }
 
 func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) error {
-	subdir = g.nextSourceFileSubdir(v, subdir)
+	var err error
+	subdir, err = g.nextSourceFileSubdir(v, subdir)
+	if err != nil {
+		return err
+	}
 
 	val := reflect.ValueOf(v)
 
@@ -156,28 +164,54 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 	return nil
 }
 
-func (g *get) nextSourceFileSubdir(v interface{}, current string) string {
+func (g *get) nextSourceFileSubdir(v interface{}, current string) (string, error) {
 	getter, ok := v.(sourceFileGetter)
 	if !ok {
-		return current
+		return current, nil
 	}
 
 	sourceFile := getter.GetSourceFile()
 	if sourceFile == "" {
-		return current
+		return current, nil
 	}
 
 	sourceDir := filepath.Dir(sourceFile)
 	if sourceDir == "." {
-		return current
+		return current, nil
 	}
 
 	sourceDirPath := filepath.Join(g.opts.RootDir, sourceDir)
-	if stat, err := os.Stat(sourceDirPath); err == nil && stat.IsDir() {
-		return sourceDir
+	isDir, err := g.isDir(sourceDirPath)
+	if err != nil {
+		return "", err
+	}
+	if isDir {
+		return sourceDir, nil
 	}
 
-	return current
+	return current, nil
+}
+
+func (g *get) isDir(name string) (bool, error) {
+	if g.opts.Source == nil {
+		info, err := os.Stat(name)
+		return err == nil && info.IsDir(), nil
+	}
+	resolved, _, err := g.opts.Source.Resolve(name)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	info, err := g.opts.Source.Lstat(resolved)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return info.IsDir(), nil
 }
 
 func (g *get) processField(ctx context.Context, inputVal string, subdir string) (string, error) {
@@ -188,7 +222,7 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 		"git",
 		"file",
 	}
-	isGettable := false
+	isGettable := g.opts.Source != nil && filepath.IsAbs(inputVal)
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(inputVal, prefix) {
 			isGettable = true
@@ -206,8 +240,38 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	pwd := g.opts.RootDir
 	if subdir != "" {
 		subdirPath := filepath.Join(g.opts.RootDir, subdir)
-		if stat, err := os.Stat(subdirPath); err == nil && stat.IsDir() {
+		isDir, err := g.isDir(subdirPath)
+		if err != nil {
+			return "", err
+		}
+		if isDir {
 			pwd = subdirPath
+		}
+	}
+
+	if g.opts.Source != nil {
+		localPath, local, err := confinedLocalPath(inputVal)
+		if err != nil {
+			return "", err
+		}
+		if local {
+			if !filepath.IsAbs(localPath) {
+				localPath = filepath.Join(pwd, localPath)
+			}
+			contents, err := g.opts.Source.ReadFile(localPath)
+			if err != nil {
+				return "", errors.Wrap(err, "unable to read local source file")
+			}
+			value := string(contents)
+			if g.opts.OnLocalFile != nil {
+				relative, err := filepath.Rel(g.opts.RootDir, localPath)
+				if err == nil && filepath.IsLocal(relative) {
+					if err := g.opts.OnLocalFile(filepath.ToSlash(relative), contents); err != nil {
+						return "", err
+					}
+				}
+			}
+			return value, nil
 		}
 	}
 
@@ -215,12 +279,36 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	if err != nil {
 		return inputVal, nil
 	}
+	if g.opts.Source != nil {
+		for remote := detected; ; {
+			u, err := url.Parse(remote)
+			if err != nil {
+				return "", err
+			}
+			checksum := u.Query().Get("checksum")
+			if !strings.HasPrefix(checksum, "file:") {
+				break
+			}
+			remote = strings.TrimPrefix(checksum, "file:")
+			if _, local, err := confinedLocalPath(remote); err != nil || local {
+				return "", errors.New("remote source checksum must not reference a local file")
+			}
+			remote, err = getter.Detect(remote, pwd, GetDetectors())
+			if err != nil {
+				return "", err
+			}
+		}
+	}
 	if err := g.recordLocalFile(inputVal, pwd); err != nil {
 		return "", err
 	}
 
-	// Create a temporary directory to store the downloaded file
-	tmpDir, err := os.MkdirTemp(pwd, ".nuon-get-*")
+	tmpParent := pwd
+	if g.opts.Source != nil {
+		// A borrowed source's display path is not authority for host writes.
+		tmpParent = ""
+	}
+	tmpDir, err := os.MkdirTemp(tmpParent, ".nuon-get-*")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp directory")
 	}
@@ -247,12 +335,13 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 
 	// Configure the client
 	client := &getter.Client{
-		Ctx:  ctx,
-		Src:  inputVal,
-		Dir:  true,
-		Dst:  tmpFP,
-		Pwd:  pwd,
-		Mode: getter.ClientModeFile,
+		Ctx:     ctx,
+		Src:     inputVal,
+		Dir:     true,
+		Dst:     tmpFP,
+		Pwd:     pwd,
+		Mode:    getter.ClientModeFile,
+		Getters: g.remoteGetters(),
 	}
 
 	if err := client.Get(); err != nil {
@@ -265,6 +354,67 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	}
 
 	return string(content), nil
+}
+
+var forcedSourcePattern = regexp.MustCompile(`^([A-Za-z0-9]+)::(.+)$`)
+
+func confinedLocalPath(input string) (string, bool, error) {
+	force, raw := "", input
+	if parts := forcedSourcePattern.FindStringSubmatch(input); parts != nil {
+		force, raw = parts[1], parts[2]
+	}
+	if force != "file" && !strings.HasPrefix(raw, "file:") {
+		// FileDetector probes the host Pwd. Only remote shorthand detection is
+		// safe before handing local names to the borrowed source.
+		var detectors []getter.Detector
+		for _, detector := range GetDetectors() {
+			if _, local := detector.(*getter.FileDetector); !local {
+				detectors = append(detectors, detector)
+			}
+		}
+		if _, err := getter.Detect(input, "", detectors); err == nil {
+			return "", false, nil
+		}
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return "", false, errors.Wrap(err, "invalid source URL")
+	}
+	if force == "file" && u.Scheme != "" && u.Scheme != "file" {
+		return "", false, errors.New("forced file source must use a local path or file URL")
+	}
+	if u.Scheme != "" && u.Scheme != "file" {
+		return "", false, nil
+	}
+	if force != "" && force != "file" {
+		return "", false, errors.New("local sources cannot use a forced remote getter")
+	}
+	if u.Host != "" && u.Host != "localhost" {
+		return "", false, errors.New("local file URL must not specify a remote host")
+	}
+	if u.RawQuery != "" || u.Fragment != "" {
+		return "", false, errors.New("local source query and fragment options are not supported")
+	}
+	name := u.Path
+	if u.Opaque != "" {
+		name = u.Opaque
+	}
+	return filepath.FromSlash(name), true, nil
+}
+
+func (g *get) remoteGetters() map[string]getter.Getter {
+	if g.opts.Source == nil {
+		return nil
+	}
+	// Checksum downloads inherit this map, so a remote URL cannot reopen a
+	// host file via checksum=file:file:///... .
+	getters := make(map[string]getter.Getter, len(getter.Getters))
+	for protocol, remoteGetter := range getter.Getters {
+		if protocol != "file" {
+			getters[protocol] = remoteGetter
+		}
+	}
+	return getters
 }
 
 func (g *get) recordLocalFile(inputVal, pwd string) error {
@@ -330,6 +480,7 @@ func (g *get) fetchGitFile(ctx context.Context, detected, tmpDir, pwd string) (s
 		Pwd:       pwd,
 		Mode:      getter.ClientModeDir,
 		Detectors: GetDetectors(),
+		Getters:   g.remoteGetters(),
 	}
 
 	if err := client.Get(); err != nil {
@@ -337,14 +488,29 @@ func (g *get) fetchGitFile(ctx context.Context, detected, tmpDir, pwd string) (s
 	}
 
 	target := filepath.Join(cloneDir, filepath.FromSlash(cleanSubdir))
+	stat, readFile := os.Stat, os.ReadFile
+	if g.opts.Source != nil {
+		// A remote repo can also contain links to host files. Confine its
+		// selected file to the checkout, independently of the borrowed source.
+		cloned, err := sourcefs.New(afero.NewOsFs(), cloneDir)
+		if err != nil {
+			return "", errors.Wrap(err, "unable to open git checkout")
+		}
+		defer cloned.Close()
+		target, _, err = cloned.Resolve(filepath.FromSlash(cleanSubdir))
+		if err != nil {
+			return "", errors.Wrap(err, "invalid git source path")
+		}
+		stat, readFile = cloned.Lstat, cloned.ReadFile
+	}
 
 	// A directory is a module address (e.g. a curated gcp custom stack), not
 	// inlinable file content — pass the original value through untouched.
-	if stat, err := os.Stat(target); err == nil && stat.IsDir() {
+	if info, err := stat(target); err == nil && info.IsDir() {
 		return "", errIsDirectory
 	}
 
-	content, err := os.ReadFile(target)
+	content, err := readFile(target)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read file from git source")
 	}

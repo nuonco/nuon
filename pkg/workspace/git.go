@@ -9,9 +9,13 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/storage/filesystem"
+	"github.com/spf13/afero"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/nuonco/nuon/pkg/rootfs"
 	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 
@@ -27,9 +31,26 @@ func (w *Workspace) clone(ctx context.Context) error {
 	pWriter := zapwriter.New(w.l, zapcore.DebugLevel, "")
 
 	w.l.Info("cloning repository", zap.String("url", w.src.URL))
-	repo, err := git.PlainCloneContext(ctx, w.rootDir(), false, &git.CloneOptions{
-		URL:      w.src.URL,
-		Progress: pWriter,
+	entries, err := afero.ReadDir(w.fs, ".")
+	if err != nil {
+		return err
+	}
+	if len(entries) != 0 {
+		return fmt.Errorf("clone requires an empty workspace")
+	}
+	w.gitFS = rootfs.NewBilly(w.fs)
+	if err := w.gitFS.MkdirAll(".git", 0o700); err != nil {
+		return err
+	}
+	dotgit, err := w.gitFS.Chroot(".git")
+	if err != nil {
+		return err
+	}
+	storage := filesystem.NewStorage(dotgit, cache.NewObjectLRUDefault())
+	repo, err := git.CloneContext(ctx, storage, w.gitFS, &git.CloneOptions{
+		URL:        w.src.URL,
+		Progress:   pWriter,
+		NoCheckout: true,
 	})
 	if err != nil {
 		return CloneErr{
@@ -38,6 +59,7 @@ func (w *Workspace) clone(ctx context.Context) error {
 			Err: err,
 		}
 	}
+	w.repo = repo
 
 	w.l.Info("fetching working tree",
 		zap.String("url", w.src.URL),

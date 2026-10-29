@@ -48,7 +48,7 @@ func (a *Activities) computeGitDiffBetweenSHAs(ctx context.Context, vcsConfigID,
 		return nil, fmt.Errorf("unable to init workspace: %w", err)
 	}
 
-	repo, err := git.PlainOpen(ws.Root())
+	repo, err := ws.Repository()
 	if err != nil {
 		return nil, fmt.Errorf("unable to open git repo: %w", err)
 	}

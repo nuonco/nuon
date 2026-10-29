@@ -2,13 +2,22 @@ package get
 
 import (
 	"context"
+	"crypto/sha256"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
 type testStruct struct {
@@ -459,4 +468,295 @@ func TestRecordLocalFile(t *testing.T) {
 
 		require.NoError(t, g.recordLocalFile("./values.yaml", root))
 	})
+}
+
+func TestGetAll_SourceUsesBorrowedFilesystem(t *testing.T) {
+	for _, backend := range []string{"os", "os-symlink", "memory"} {
+		t.Run(backend, func(t *testing.T) {
+			root := filepath.Join(t.TempDir(), "repo")
+			require.NoError(t, os.MkdirAll(filepath.Join(root, "policies"), 0o755))
+			require.NoError(t, os.WriteFile(filepath.Join(root, "policy.json"), []byte("host root canary"), 0o644))
+			require.NoError(t, os.WriteFile(filepath.Join(root, "policies/policy.json"), []byte("host nested canary"), 0o644))
+
+			var fs afero.Fs = afero.NewOsFs()
+			if backend == "memory" {
+				fs = afero.NewMemMapFs()
+			}
+			require.NoError(t, fs.MkdirAll(filepath.Join(root, "policies"), 0o755))
+			require.NoError(t, afero.WriteFile(fs, filepath.Join(root, "policy.json"), []byte("source root"), 0o644))
+			require.NoError(t, afero.WriteFile(fs, filepath.Join(root, "policies/policy.json"), []byte("source nested"), 0o644))
+			source, err := sourcefs.New(fs, root)
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, source.Close()) })
+			if backend != "memory" {
+				require.NoError(t, os.Rename(root, root+"-pinned"))
+				replacement := root
+				if backend == "os-symlink" {
+					replacement = root + "-outside"
+				}
+				require.NoError(t, os.MkdirAll(filepath.Join(replacement, "policies"), 0o755))
+				require.NoError(t, os.WriteFile(filepath.Join(replacement, "policy.json"), []byte("replacement root canary"), 0o644))
+				require.NoError(t, os.WriteFile(filepath.Join(replacement, "policies/policy.json"), []byte("replacement nested canary"), 0o644))
+				if backend == "os-symlink" {
+					require.NoError(t, os.Symlink(replacement, root))
+				}
+			}
+
+			for _, reference := range []string{"./policy.json", filepath.Join(root, "policy.json"), "file://" + filepath.Join(root, "policy.json"), "file::./policy.json", "file::file://" + filepath.Join(root, "policy.json")} {
+				t.Run(reference, func(t *testing.T) {
+					var recorded []string
+					input := testStruct{Obj: reference}
+					require.NoError(t, Parse(context.Background(), &input, &Options{
+						RootDir: root, Source: source, FieldTimeout: time.Second,
+						OnLocalFile: func(name string, contents []byte) error {
+							recorded = append(recorded, name+":"+string(contents))
+							contents[0] = 'X'
+							return nil
+						},
+					}))
+					require.Equal(t, "source root", input.Obj)
+					require.Equal(t, []string{"policy.json:source root"}, recorded)
+				})
+			}
+
+			input := sourceAwarePoliciesTestApp{Policies: []sourceAwarePolicyTestStruct{{
+				Contents: "./policy.json", SourceFile: "policies/config.toml",
+			}}}
+			require.NoError(t, Parse(context.Background(), &input, &Options{RootDir: root, Source: source}))
+			require.Equal(t, "source nested", input.Policies[0].Contents)
+			contents, err := source.ReadFile("policy.json")
+			require.NoError(t, err)
+			require.Equal(t, "source root", string(contents))
+			if backend == "memory" {
+				require.NoError(t, os.WriteFile(filepath.Join(root, "host-only.json"), []byte("host-only canary"), 0o644))
+				input := testStruct{Obj: "./host-only.json"}
+				require.Error(t, Parse(context.Background(), &input, &Options{RootDir: root, Source: source}))
+			}
+		})
+	}
+}
+
+func TestGetAll_SourceRepositoryBoundary(t *testing.T) {
+	for _, backend := range []string{"os", "memory"} {
+		t.Run(backend, func(t *testing.T) {
+			root := filepath.Join(t.TempDir(), "repo")
+			var fs afero.Fs = afero.NewOsFs()
+			if backend == "memory" {
+				fs = afero.NewMemMapFs()
+			}
+			require.NoError(t, fs.MkdirAll(filepath.Join(root, "installs"), 0o755))
+			require.NoError(t, afero.WriteFile(fs, filepath.Join(root, "ui.json"), []byte("repository UI"), 0o644))
+			outside := filepath.Join(filepath.Dir(root), "outside.json")
+			require.NoError(t, os.WriteFile(outside, []byte("host outside canary"), 0o644))
+			require.NoError(t, afero.WriteFile(fs, outside, []byte("source outside canary"), 0o644))
+			source, err := sourcefs.New(fs, root)
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, source.Close()) })
+			opts := &Options{RootDir: filepath.Join(root, "installs"), Source: source}
+
+			for _, reference := range []string{"../ui.json", "file::../ui.json", "file://" + filepath.Join(root, "ui.json")} {
+				input := testStruct{Obj: reference}
+				require.NoError(t, Parse(context.Background(), &input, opts), reference)
+				require.Equal(t, "repository UI", input.Obj)
+			}
+			for _, reference := range []string{
+				"../../outside.json",
+				"file::../../outside.json",
+				"file://" + outside,
+				"file::file://" + outside,
+				"file://" + root + "/%2e%2e/outside.json",
+				"file::https://example.com" + outside,
+				"git::file://" + filepath.Dir(root) + "//outside.json",
+				"git::../../outside.json",
+			} {
+				t.Run(reference, func(t *testing.T) {
+					input := testStruct{Obj: reference}
+					require.Error(t, Parse(context.Background(), &input, opts))
+					require.Equal(t, reference, input.Obj)
+				})
+			}
+		})
+	}
+}
+
+func TestGetAll_SourceSubdirSelectionDoesNotProbeHost(t *testing.T) {
+	root := t.TempDir()
+	fs := afero.NewMemMapFs()
+	require.NoError(t, fs.MkdirAll(filepath.Join(root, "permissions"), 0o755))
+	require.NoError(t, afero.WriteFile(fs, filepath.Join(root, "permissions/policy.json"), []byte("source permissions"), 0o644))
+	require.NoError(t, afero.WriteFile(fs, filepath.Join(root, "policy.json"), []byte("source root"), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "policies"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "policies/policy.json"), []byte("host canary"), 0o644))
+	source, err := sourcefs.New(fs, root)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, source.Close()) })
+
+	input := subdirIsolationTestStruct{
+		Permissions: &subdirPermissionsTestStruct{Obj: "./policy.json"},
+		Stack:       &subdirStackTestStruct{Template: "./policy.json"},
+	}
+	require.NoError(t, Parse(context.Background(), &input, &Options{RootDir: root, Source: source}))
+	require.Equal(t, "source permissions", input.Permissions.Obj)
+	require.Equal(t, "source root", input.Stack.Template)
+
+	policies := sourceAwarePoliciesTestApp{Policies: []sourceAwarePolicyTestStruct{{
+		Contents: "./policy.json", SourceFile: "policies/config.toml",
+	}}}
+	require.NoError(t, Parse(context.Background(), &policies, &Options{RootDir: root, Source: source}))
+	require.Equal(t, "source root", policies.Policies[0].Contents)
+}
+
+func TestGetAll_SourceRejectsSymlinkEscapesAndDirectoryReplacement(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "repo")
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "permissions"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "permissions/policy.json"), []byte("repository policy"), 0o644))
+	outside := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(outside, "policy.json"), []byte("outside canary"), 0o644))
+	require.NoError(t, os.Symlink(filepath.Join(outside, "policy.json"), filepath.Join(root, "link.json")))
+	source, err := sourcefs.New(afero.NewOsFs(), root)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, source.Close()) })
+	require.NoError(t, os.Rename(filepath.Join(root, "permissions"), filepath.Join(root, "old-permissions")))
+	require.NoError(t, os.Symlink(outside, filepath.Join(root, "permissions")))
+
+	for _, reference := range []string{"./link.json", "./permissions/policy.json", "file://" + filepath.Join(root, "link.json")} {
+		input := testStruct{Obj: reference}
+		require.Error(t, Parse(context.Background(), &input, &Options{RootDir: root, Source: source}), reference)
+		require.Equal(t, reference, input.Obj)
+	}
+	input := subdirIsolationTestStruct{Permissions: &subdirPermissionsTestStruct{Obj: "./policy.json"}}
+	require.Error(t, Parse(context.Background(), &input, &Options{RootDir: root, Source: source}))
+	policies := sourceAwarePoliciesTestApp{Policies: []sourceAwarePolicyTestStruct{{
+		Contents: "./policy.json", SourceFile: "permissions/config.toml",
+	}}}
+	require.Error(t, Parse(context.Background(), &policies, &Options{RootDir: root, Source: source}))
+}
+
+func TestGetAll_SourcePropagatesRecordingError(t *testing.T) {
+	root := t.TempDir()
+	fs := afero.NewMemMapFs()
+	require.NoError(t, fs.MkdirAll(root, 0o755))
+	require.NoError(t, afero.WriteFile(fs, filepath.Join(root, "policy.json"), []byte("source"), 0o644))
+	source, err := sourcefs.New(fs, root)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, source.Close()) })
+	recordErr := errors.New("recording failed")
+	opts := &Options{Source: source, OnLocalFile: func(string, []byte) error { return recordErr }}
+	input := testStruct{Obj: "./policy.json"}
+	require.ErrorIs(t, Parse(context.Background(), &input, opts), recordErr)
+	require.Empty(t, opts.RootDir)
+}
+
+func TestGetAll_SourcePreservesHTTPAndRejectsLocalChecksums(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/SHA256SUMS" {
+			_, _ = fmt.Fprintf(w, "%x  policy.json\n", sha256.Sum256([]byte("remote contents")))
+			return
+		}
+		_, _ = w.Write([]byte("remote contents"))
+	}))
+	defer server.Close()
+	root := t.TempDir()
+	source, err := sourcefs.New(afero.NewOsFs(), root)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, source.Close()) })
+	opts := &Options{RootDir: root, Source: source, FieldTimeout: 5 * time.Second}
+	input := testStruct{Obj: server.URL + "/policy.json"}
+	require.NoError(t, Parse(context.Background(), &input, opts))
+	require.Equal(t, "remote contents", input.Obj)
+	input = testStruct{Obj: server.URL + "/policy.json?checksum=" + url.QueryEscape("file:"+server.URL+"/SHA256SUMS")}
+	require.NoError(t, Parse(context.Background(), &input, opts))
+	require.Equal(t, "remote contents", input.Obj)
+
+	for _, checksum := range []string{"./checksum", "file:///outside/checksum", "git::file:///outside//checksum", "file::https://example.com/outside/checksum", server.URL + "/SHA256SUMS?checksum=" + url.QueryEscape("file:file:///outside/checksum")} {
+		input := testStruct{Obj: server.URL + "/policy.json?checksum=" + url.QueryEscape("file:"+checksum)}
+		require.ErrorContains(t, Parse(context.Background(), &input, opts), "checksum must not reference a local file")
+	}
+	input = testStruct{Obj: "git@localhost:example"}
+	require.ErrorContains(t, Parse(context.Background(), &input, opts), "git source must include a `//path/to/file` reference")
+
+	for _, backend := range []string{"replaced-os-root", "missing-memory-root"} {
+		t.Run(backend, func(t *testing.T) {
+			root := filepath.Join(t.TempDir(), "repo")
+			var fs afero.Fs = afero.NewOsFs()
+			if backend == "missing-memory-root" {
+				fs = afero.NewMemMapFs()
+			}
+			require.NoError(t, fs.MkdirAll(root, 0o755))
+			source, err := sourcefs.New(fs, root)
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, source.Close()) })
+			if backend == "replaced-os-root" {
+				require.NoError(t, os.Rename(root, root+"-pinned"))
+				require.NoError(t, os.WriteFile(root, []byte("replacement canary"), 0o644))
+			}
+
+			input := testStruct{Obj: server.URL + "/policy.json"}
+			opts := &Options{RootDir: root, Source: source, FieldTimeout: 5 * time.Second}
+			require.NoError(t, Parse(context.Background(), &input, opts))
+			require.Equal(t, "remote contents", input.Obj)
+			entries, err := source.ReadDir(".")
+			require.NoError(t, err)
+			require.Empty(t, entries)
+
+			input = testStruct{Obj: server.URL + "/policy.json"}
+			opts.Source = nil
+			require.ErrorContains(t, Parse(context.Background(), &input, opts), "failed to create temp directory")
+			if backend == "replaced-os-root" {
+				contents, err := os.ReadFile(root)
+				require.NoError(t, err)
+				require.Equal(t, "replacement canary", string(contents))
+			} else {
+				_, err := os.Stat(root)
+				require.True(t, os.IsNotExist(err))
+			}
+		})
+	}
+}
+
+func TestGetAll_SourcePreservesRemoteGitAndRejectsCheckoutSymlinkEscape(t *testing.T) {
+	gitBin, err := exec.LookPath("git")
+	if err != nil {
+		t.Skip("git binary not available")
+	}
+	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
+	t.Setenv("GIT_CONFIG_SYSTEM", os.DevNull)
+	t.Setenv("GIT_TERMINAL_PROMPT", "0")
+	repo := t.TempDir()
+	runGit := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command(gitBin, args...)
+		cmd.Dir = repo
+		cmd.Env = append(os.Environ(),
+			"GIT_AUTHOR_NAME=test", "GIT_AUTHOR_EMAIL=test@example.com",
+			"GIT_COMMITTER_NAME=test", "GIT_COMMITTER_EMAIL=test@example.com",
+		)
+		out, err := cmd.CombinedOutput()
+		require.NoErrorf(t, err, "git %v failed: %s", args, out)
+	}
+	runGit("init", "-q", "-b", "main")
+	require.NoError(t, os.Mkdir(filepath.Join(repo, "module"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(repo, "module/policy.json"), []byte("remote git contents"), 0o644))
+	outside := filepath.Join(t.TempDir(), "outside.json")
+	require.NoError(t, os.WriteFile(outside, []byte("host outside canary"), 0o644))
+	require.NoError(t, os.Symlink(outside, filepath.Join(repo, "escape.json")))
+	runGit("add", ".")
+	runGit("commit", "-q", "-m", "test remote files")
+	runGit("update-server-info")
+	server := httptest.NewServer(http.FileServer(http.Dir(filepath.Join(repo, ".git"))))
+	defer server.Close()
+	root := t.TempDir()
+	source, err := sourcefs.New(afero.NewOsFs(), root)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, source.Close()) })
+	opts := &Options{RootDir: root, Source: source, FieldTimeout: 10 * time.Second}
+
+	input := testStruct{Obj: "git::" + server.URL + "//module/policy.json"}
+	require.NoError(t, Parse(context.Background(), &input, opts))
+	require.Equal(t, "remote git contents", input.Obj)
+	input = testStruct{Obj: "git::" + server.URL + "//module"}
+	require.NoError(t, Parse(context.Background(), &input, opts))
+	require.Equal(t, "git::"+server.URL+"//module", input.Obj)
+	input = testStruct{Obj: "git::" + server.URL + "//escape.json"}
+	require.ErrorContains(t, Parse(context.Background(), &input, opts), "invalid git source path")
 }

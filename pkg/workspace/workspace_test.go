@@ -2,11 +2,18 @@ package workspace
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-playground/validator/v10"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -203,4 +210,114 @@ func TestCleanupExistingDir(t *testing.T) {
 		err = ws.cleanupExistingDir()
 		require.NoError(t, err)
 	})
+}
+
+func TestClonedWorkspace(t *testing.T) {
+	remote := t.TempDir()
+	repo, err := git.PlainInitWithOptions(remote, &git.PlainInitOptions{InitOptions: git.InitOptions{DefaultBranch: plumbing.NewBranchReferenceName("main")}})
+	require.NoError(t, err)
+	worktree, err := repo.Worktree()
+	require.NoError(t, err)
+	commit := func(contents string) plumbing.Hash {
+		t.Helper()
+		require.NoError(t, os.WriteFile(filepath.Join(remote, "input.txt"), []byte(contents), 0o644))
+		_, err := worktree.Add("input.txt")
+		require.NoError(t, err)
+		hash, err := worktree.Commit(contents, &git.CommitOptions{Author: &object.Signature{
+			Name: "Acme", Email: "acme@example.com", When: time.Unix(1700000000, 0),
+		}})
+		require.NoError(t, err)
+		return hash
+	}
+	base := commit("before\n")
+	_, err = repo.CreateTag("v1", base, nil)
+	require.NoError(t, err)
+	head := commit("after\n")
+
+	for _, memory := range []bool{false, true} {
+		for ref, expected := range map[string]plumbing.Hash{"main": head, "v1": base, head.String(): head} {
+			t.Run(fmt.Sprintf("memory=%v/ref=%s", memory, ref), func(t *testing.T) {
+				var backing afero.Fs = afero.NewOsFs()
+				if memory {
+					backing = afero.NewMemMapFs()
+				}
+				parent := t.TempDir()
+				ws, err := New(validator.New(), WithID("job"), WithTmpRoot(parent), WithFS(backing),
+					WithLogger(zap.NewNop()), WithGitSource(&GitSource{URL: remote, Ref: ref}))
+				require.NoError(t, err)
+				require.NoError(t, ws.Init(context.Background()))
+				t.Cleanup(func() { require.NoError(t, ws.Cleanup(context.Background())) })
+				cloned, err := ws.Repository()
+				require.NoError(t, err)
+				actual, err := cloned.Head()
+				require.NoError(t, err)
+				require.Equal(t, expected, actual.Hash())
+				contents, err := afero.ReadFile(ws.FS(), "input.txt")
+				require.NoError(t, err)
+				if expected == base {
+					require.Equal(t, "before\n", string(contents))
+				} else {
+					require.Equal(t, "after\n", string(contents))
+				}
+
+				if !memory {
+					neighbor := filepath.Join(parent, "neighbor")
+					require.NoError(t, os.MkdirAll(filepath.Join(neighbor, ".git"), 0o700))
+					require.NoError(t, os.WriteFile(filepath.Join(neighbor, ".git", "HEAD"), []byte(strings.Repeat("1", 40)+"\n"), 0o600))
+					require.NoError(t, os.WriteFile(filepath.Join(neighbor, ".git", "config"), []byte("[remote \"origin\"]\nurl = canary\n"), 0o600))
+					pinned := filepath.Join(parent, "pinned")
+					require.NoError(t, os.Rename(ws.Root(), pinned))
+					require.NoError(t, os.Symlink(neighbor, ws.Root()))
+					require.NoError(t, os.Rename(filepath.Join(pinned, ".git"), filepath.Join(pinned, ".git-pinned")))
+					require.NoError(t, os.Symlink(filepath.Join(neighbor, ".git"), filepath.Join(pinned, ".git")))
+					actual, err = cloned.Head()
+					require.NoError(t, err)
+					require.Equal(t, expected, actual.Hash())
+					cfg, err := cloned.Config()
+					require.NoError(t, err)
+					require.Equal(t, []string{remote}, cfg.Remotes["origin"].URLs)
+					t.Cleanup(func() {
+						canary, err := os.ReadFile(filepath.Join(neighbor, ".git", "HEAD"))
+						require.NoError(t, err)
+						require.Equal(t, strings.Repeat("1", 40)+"\n", string(canary))
+					})
+				}
+
+				before, err := cloned.CommitObject(base)
+				require.NoError(t, err)
+				after, err := cloned.CommitObject(head)
+				require.NoError(t, err)
+				patch, err := before.Patch(after)
+				require.NoError(t, err)
+				require.Len(t, patch.Stats(), 1)
+				require.Equal(t, "input.txt", patch.Stats()[0].Name)
+				require.Equal(t, 1, patch.Stats()[0].Addition)
+				require.Equal(t, 1, patch.Stats()[0].Deletion)
+				require.Contains(t, patch.String(), "-before\n+after\n")
+				require.NoError(t, ws.Close())
+				require.NoError(t, ws.Close())
+				_, err = ws.Repository()
+				require.Error(t, err)
+				_, err = backing.Stat(ws.Root())
+				require.NoError(t, err)
+				require.NoError(t, ws.Cleanup(context.Background()))
+				_, err = backing.Stat(ws.Root())
+				require.True(t, os.IsNotExist(err))
+			})
+		}
+	}
+}
+
+func TestWorkspaceRejectsTraversal(t *testing.T) {
+	for _, name := range []string{"..", "../neighbor", "/tmp/job", "nested/job", `nested\job`} {
+		t.Run(name, func(t *testing.T) {
+			parent := t.TempDir()
+			ws, err := New(validator.New(), WithID(name), WithTmpRoot(parent), WithLogger(zap.NewNop()))
+			require.NoError(t, err)
+			require.Error(t, ws.Init(context.Background()))
+			entries, err := os.ReadDir(parent)
+			require.NoError(t, err)
+			require.Empty(t, entries)
+		})
+	}
 }
