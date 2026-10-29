@@ -247,15 +247,16 @@
           {
             "group": "Stacks",
             "boost": 2,
-            "pages": []
+            "pages": [
+              "guides/custom-nested-stacks",
+              "guides/nuon-stack-terraform-provider",
+              "guides/customizing-terraform-stack-templates"
+            ]
           },
           {
             "group": "Advanced",
             "boost": 2,
             "pages": [
-              "guides/custom-nested-stacks",
-              "guides/nuon-stack-terraform-provider",
-              "guides/customizing-terraform-stack-templates",
               "guides/external-image-policies",
               "guides/app-branch-migration"
             ]
