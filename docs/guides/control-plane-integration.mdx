@@ -67,29 +67,27 @@ curl -X POST https://api.nuon.co/v1/installs/$INSTALL_ID/sync-secrets \
 
 ## Approve changes
 
-If installs pause for approval, give the customer an **Approve** button for each change, including new versions of
-your product. One button that maps to `approve-all` keeps it simple.
+New versions of your product, and any other change that waits for approval, reach the customer one step at a time.
+Find the waiting steps:
 
-<CodeGroup>
-```bash curl
-curl -X PATCH https://api.nuon.co/v1/workflows/$WORKFLOW_ID \
+```bash
+curl https://api.nuon.co/v1/workflows/pending-approvals \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID"
+```
+
+Then send the customer's answer:
+
+```bash
+curl -X POST https://api.nuon.co/v1/workflows/$WORKFLOW_ID/steps/$STEP_ID/approvals/$APPROVAL_ID/response \
   -H "Authorization: Bearer $NUON_API_TOKEN" \
   -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
   -H "Content-Type: application/json" \
-  -d '{"approval_option": "approve-all"}'
+  -d '{ "response_type": "approve" }'  # or "deny"
 ```
 
-```go Go
-approveAll := models.AppInstallApprovalOptionApproveDashAll
-workflow, err := client.UpdateWorkflow(
-    context.Background(),
-    workflowID,
-    &models.ServiceUpdateWorkflowRequest{
-        ApprovalOption: &approveAll,
-    },
-)
-```
-</CodeGroup>
+To choose which steps wait for the customer, see
+[Getting customer approvals](/guides/ui-integration#4-getting-customer-approvals).
 
 ## Remove your product
 
