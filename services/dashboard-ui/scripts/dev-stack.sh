@@ -263,6 +263,8 @@ printf 'Building Go BFF from %s…\n' "${NUON_DIR:-$REPO_DIR}"
 go build -C "${NUON_DIR:-$REPO_DIR}" -o "$BIN" ./services/dashboard-ui/server
 
 export HTTP_PORT="$PORT"
+export SERVICE_DEPLOYMENT=dashboard-local
+export CORS_ALLOW_LOOPBACK_ORIGINS=true
 
 set -m 2>/dev/null || true
 

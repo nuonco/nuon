@@ -50,8 +50,15 @@ func (s *service) GetRunnerJobs(ctx *gin.Context) {
 		return
 	}
 
-	statusStr := ctx.DefaultQuery("status", "available")
+	statusStr := ctx.DefaultQuery("status", string(app.RunnerJobStatusAvailable))
 	status := app.RunnerJobStatus(statusStr)
+	if status != app.RunnerJobStatusAvailable {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unsupported status %q", statusStr),
+			Description: "runner job list only supports status=available",
+		})
+		return
+	}
 
 	runnerJobs, err := s.getRunnerJobs(ctx, runnerID, status, grp, limit)
 	if err != nil {

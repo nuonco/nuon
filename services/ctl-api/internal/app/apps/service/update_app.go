@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -51,6 +52,11 @@ func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
 // @Success				200	{object}	app.App
 // @Router					/v1/apps/{app_id} [patch]
 func (s *service) UpdateApp(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	appID := ctx.Param("app_id")
 
 	var req UpdateAppRequest
@@ -63,7 +69,7 @@ func (s *service) UpdateApp(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.updateApp(ctx, appID, &req)
+	app, err := s.updateApp(ctx, org.ID, appID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update app %s: %w", appID, err))
 		return
@@ -72,9 +78,10 @@ func (s *service) UpdateApp(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, app)
 }
 
-func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppRequest) (*app.App, error) {
-	currentApp := app.App{
-		ID: appID,
+func (s *service) updateApp(ctx context.Context, orgID, appID string, req *UpdateAppRequest) (*app.App, error) {
+	currentApp, err := s.findApp(ctx, orgID, appID)
+	if err != nil {
+		return nil, err
 	}
 
 	updates := app.App{
@@ -89,13 +96,21 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 	}
 
 	res := s.db.WithContext(ctx).
-		Model(&currentApp).
+		Model(&app.App{}).
+		Where("id = ? AND org_id = ?", currentApp.ID, orgID).
 		Updates(updates)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
 		return nil, fmt.Errorf("app not found %s %w", appID, gorm.ErrRecordNotFound)
+	}
+	currentApp.Name = updates.Name
+	if req.Description != "" {
+		currentApp.Description = updates.Description
+	}
+	if req.DisplayName != "" {
+		currentApp.DisplayName = updates.DisplayName
 	}
 
 	if req.SlackWebhookURL != nil {
@@ -116,7 +131,7 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 	if req.LabelColors != nil {
 		res = s.db.WithContext(ctx).
 			Select("label_colors").
-			Model(&currentApp).
+			Model(currentApp).
 			Updates(app.App{
 				LabelColors: labels.Labels(req.LabelColors),
 			})
@@ -125,5 +140,5 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 		}
 	}
 
-	return &currentApp, nil
+	return currentApp, nil
 }

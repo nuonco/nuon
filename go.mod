@@ -35,7 +35,6 @@ require (
 	github.com/DataDog/dd-trace-go/v2 v2.8.1
 	github.com/Jeffail/gabs v1.4.0
 	github.com/Masterminds/semver/v3 v3.4.0
-	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/XSAM/otelsql v0.41.0
 	github.com/a-h/templ v0.3.977
@@ -119,6 +118,7 @@ require (
 	github.com/kyokomi/emoji v2.2.4+incompatible
 	github.com/lib/pq v1.12.0
 	github.com/lithammer/fuzzysearch v1.1.8
+	github.com/mailchimp/mailchimp-marketing-go-sdk v1.0.3
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mccutchen/go-httpbin/v2 v2.18.3
 	github.com/mholt/archiver/v4 v4.0.0-alpha.8
@@ -273,6 +273,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
@@ -381,7 +382,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.15 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
-	github.com/go-chi/chi/v5 v5.3.2 // indirect
+	github.com/go-chi/chi/v5 v5.4.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect

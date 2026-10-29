@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
@@ -103,39 +104,39 @@ const (
 var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	api.GET("/v1/runners/:runner_id", s.GetRunnerCtlAPI)
-	api.GET("/v1/runners/:runner_id/connected", s.GetRunnerConnectStatus)
-	api.GET("/v1/runners/:runner_id/jobs", s.GetRunnerJobsCtlAPI)
 	api.GET("/v1/runner-jobs", s.ListRunnerJobsCtlAPI)
 	api.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlanPublic)
 	api.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlan)
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
 	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJobPublic)
-	api.GET("/v1/runners/:runner_id/recent-health-checks", s.GetRunnerRecentHealthChecks)
-	api.GET("/v1/runners/:runner_id/latest-heart-beat", s.GetRunnerLatestHeartBeat)
-	api.GET("/v1/runners/:runner_id/heart-beats/latest", s.GetLatestRunnerHeartBeatFromView)
 
-	api.GET("/v1/runners/:runner_id/card-details", s.GetRunnerCardDetails)
+	runners := api.Group("/v1/runners/:runner_id", require.RunnerInOrg(s.db))
+	{
+		runners.GET("", s.GetRunnerCtlAPI)
+		runners.GET("/connected", s.GetRunnerConnectStatus)
+		runners.GET("/jobs", s.GetRunnerJobsCtlAPI)
+		runners.GET("/recent-health-checks", s.GetRunnerRecentHealthChecks)
+		runners.GET("/latest-heart-beat", s.GetRunnerLatestHeartBeat)
+		runners.GET("/heart-beats/latest", s.GetLatestRunnerHeartBeatFromView)
+		runners.GET("/card-details", s.GetRunnerCardDetails)
 
-	// runner process endpoints
-	api.GET("/v1/runners/:runner_id/processes", s.ListRunnerProcesses)
-	api.GET("/v1/runners/:runner_id/processes/current", s.GetCurrentRunnerProcesses)
-	api.GET("/v1/runners/:runner_id/processes/:process_id", s.GetRunnerProcessPublic)
-	api.GET("/v1/runners/:runner_id/processes/:process_id/heart-beats/latest", s.GetProcessLatestHeartBeat)
-	api.POST("/v1/runners/:runner_id/processes/:process_id/shutdown", s.ShutdownRunnerProcess)
+		runners.GET("/processes", s.ListRunnerProcesses)
+		runners.GET("/processes/current", s.GetCurrentRunnerProcesses)
+		runners.GET("/processes/:process_id", s.GetRunnerProcessPublic)
+		runners.GET("/processes/:process_id/heart-beats/latest", s.GetProcessLatestHeartBeat)
+		runners.POST("/processes/:process_id/shutdown", s.ShutdownRunnerProcess)
 
-	// trigger specific jobs
-	api.POST("/v1/runners/:runner_id/graceful-shutdown", s.GracefulShutDown)
-	api.POST("/v1/runners/:runner_id/force-shutdown", s.ForceShutDown)
-	api.POST("/v1/runners/:runner_id/mng/shutdown-vm", s.MngVMShutDown)
-	api.POST("/v1/runners/:runner_id/mng/shutdown", s.MngShutDown)
-	api.POST("/v1/runners/:runner_id/mng/update", s.MngUpdate)
-	api.POST("/v1/runners/:runner_id/mng/restart", s.MngRestart)
-	api.POST("/v1/runners/:runner_id/prune-tokens", s.PruneTokens)
+		runners.POST("/graceful-shutdown", s.GracefulShutDown)
+		runners.POST("/force-shutdown", s.ForceShutDown)
+		runners.POST("/mng/shutdown-vm", s.MngVMShutDown)
+		runners.POST("/mng/shutdown", s.MngShutDown)
+		runners.POST("/mng/update", s.MngUpdate)
+		runners.POST("/mng/restart", s.MngRestart)
+		runners.POST("/prune-tokens", s.PruneTokens)
 
-	// settings
-	api.GET("/v1/runners/:runner_id/settings", s.GetRunnerSettingsPublic)
-	api.PATCH("/v1/runners/:runner_id/settings", s.UpdateRunnerSettings)
+		runners.GET("/settings", s.GetRunnerSettingsPublic)
+		runners.PATCH("/settings", s.UpdateRunnerSettings)
+	}
 
 	tfWorkspacePath := "/v1/terraform-workspaces"
 	api.GET(tfWorkspacePath, s.GetTerraformWorkpaces)
@@ -299,7 +300,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	s.tailMetrics = newRunnerJobTailMetrics(s.meterProvider)
 	s.executionResults = newRunnerJobExecutionResults(s.meterProvider)
-	org := require.OrgRoute(api)
+	// In-job APIs: root runner has org all; job SA has install-scoped grants only.
+	org := require.OrgOrInstallRoute(api)
 	org.POST("/v1/telemetry/access-token", s.CreateTelemetryAccessToken)
 
 	runners := api.Group("/v1/runners/:runner_id")
@@ -317,38 +319,48 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.GET("/public-settings", s.GetRunnerPublicSettings)
 	runnerRoutes.POST("/traces", s.OtelWriteTraces)
 	runnerRoutes.POST("/metrics", s.OtelWriteMetrics)
-	runnerRoutes.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
-	runnerRoutes.GET("/jobs/:job_id", s.GetRunnerJobV2)
-	runnerRoutes.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
+	runnerRoutes.POST("/jobs/:job_id/token", s.ClaimRunnerJobToken)
+	// Job SA has object-scoped runner-job grants, not org-level read — these must use ResourceRoute.
+	jobByRunner := require.ResourceRoute(runners, permissions.KindRunnerJob, "job_id")
+	jobByRunner.GET("/jobs/:job_id", s.GetRunnerJobV2)
+	jobByRunner.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
+	jobByRunner.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
 
-	// sandbox configs
-	runnerRoutes.GET("/sandbox-configs", s.GetRunnerSandboxConfigs)
-	runnerRoutes.GET("/sandbox-config", s.GetRunnerSandboxConfig)
+	// sandbox configs — job token may load these during exec
+	sandboxConfigs := require.OrgOrInstallRoute(runners)
+	sandboxConfigs.GET("/sandbox-configs", s.GetRunnerSandboxConfigs)
+	sandboxConfigs.GET("/sandbox-config", s.GetRunnerSandboxConfig)
 
 	// runner process lifecycle
 	runnerRoutes.POST("/processes", s.CreateRunnerProcess)
 	runnerRoutes.GET("/processes/:process_id", s.GetRunnerProcess)
 	runnerRoutes.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
-	runners.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+	// When public, register outside OrgRoute so unauthenticated upgrade-path
+	// runners can poll; public middleware allowlists the path when the flag is on.
+	// cfg may be nil in route-registration tests that construct a bare service.
+	if s.cfg != nil && s.cfg.PublicRunnerProcessShutdowns {
+		runners.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+	} else {
+		runnerRoutes.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+	}
 	runnerRoutes.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
 	runnerRoutes.POST("/processes/:process_id/terminating", s.ReportRunnerProcessTerminating)
 
-	runnerJobs := org.Group("/v1/runner-jobs/:runner_job_id")
-	runnerJobs.GET("", s.GetRunnerJob)
-	runnerJobs.PATCH("", s.UpdateRunnerJob)
-	runnerJobs.GET("/plan", s.GetRunnerJobPlan)
-	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), runnerJobs.BasePath())
-	s.EndpointAudit.Add("PATCH", string(apiPkg.APIContextTypeRunner), runnerJobs.BasePath())
-	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), runnerJobs.BasePath()+"/plan")
-	runnerJobs.GET("/composite-plan", s.GetRunnerJobCompositePlan)
-
-	executions := runnerJobs.Group("/executions")
-	executions.POST("", s.CreateRunnerJobExecution)
-	executions.GET("", s.GetRunnerJobExecutions)
-	executions.GET("/:runner_job_execution_id", s.GetRunnerJobExecution)
-	executions.PATCH("/:runner_job_execution_id", s.UpdateRunnerJobExecution)
-	executions.POST("/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
-	executions.POST("/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
+	// Reads and writes share ResourceRoute so the job SA's org:runner-job/<id> grant applies.
+	jobRoutes := require.ResourceRoute(api, permissions.KindRunnerJob, "runner_job_id")
+	jobRoutes.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
+	jobRoutes.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlan)
+	jobRoutes.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlan)
+	jobRoutes.GET("/v1/runner-jobs/:runner_job_id/executions", s.GetRunnerJobExecutions)
+	jobRoutes.GET("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.GetRunnerJobExecution)
+	jobRoutes.PATCH("/v1/runner-jobs/:runner_job_id", s.UpdateRunnerJob)
+	jobRoutes.POST("/v1/runner-jobs/:runner_job_id/executions", s.CreateRunnerJobExecution)
+	jobRoutes.PATCH("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.UpdateRunnerJobExecution)
+	jobRoutes.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
+	jobRoutes.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
+	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), "/v1/runner-jobs/:runner_job_id")
+	s.EndpointAudit.Add("PATCH", string(apiPkg.APIContextTypeRunner), "/v1/runner-jobs/:runner_job_id")
+	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), "/v1/runner-jobs/:runner_job_id/plan")
 
 	// Terraform backend
 	tfBackend := org.Group("/v1/terraform-backend")

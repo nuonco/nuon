@@ -32,9 +32,6 @@ type AppAzureAccount struct {
 	// service principal app id
 	ServicePrincipalAppID string `json:"service_principal_app_id,omitempty"`
 
-	// service principal password
-	ServicePrincipalPassword string `json:"service_principal_password,omitempty"`
-
 	// subscription id
 	SubscriptionID string `json:"subscription_id,omitempty"`
 

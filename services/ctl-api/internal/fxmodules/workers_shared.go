@@ -38,6 +38,8 @@ import (
 	// Register install queue signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/tokencleanup"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/jobcompleted"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 
 	// Register notebook queue signals

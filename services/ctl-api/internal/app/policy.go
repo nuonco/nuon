@@ -25,6 +25,7 @@ const (
 	PolicyNameOrgBuilder PolicyName = "org_builder"
 	PolicyNameInstaller  PolicyName = "installer"
 	PolicyNameRunner     PolicyName = "runner"
+	PolicyNameRunnerJob  PolicyName = "runner_job"
 
 	// policy names for service accounts
 	PolicyNameHostedInstaller    PolicyName = "hosted_installer"

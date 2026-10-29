@@ -36,6 +36,7 @@ type UpdateRunnerProcessRequest struct {
 // @Router					/v1/runners/{runner_id}/processes/{process_id} [PATCH]
 func (s *service) UpdateRunnerProcess(ctx *gin.Context) {
 	processID := ctx.Param("process_id")
+	runnerID := ctx.Param("runner_id")
 
 	var req UpdateRunnerProcessRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -43,7 +44,7 @@ func (s *service) UpdateRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
-	process, err := s.updateRunnerProcess(ctx, processID, req)
+	process, err := s.updateRunnerProcess(ctx, runnerID, processID, req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update runner process: %w", err))
 		return
@@ -52,9 +53,8 @@ func (s *service) UpdateRunnerProcess(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, process)
 }
 
-func (s *service) updateRunnerProcess(ctx context.Context, processID string, req UpdateRunnerProcessRequest) (*app.RunnerProcess, error) {
-	// get current process for composite status history
-	current, err := s.getRunnerProcess(ctx, processID)
+func (s *service) updateRunnerProcess(ctx context.Context, runnerID, processID string, req UpdateRunnerProcessRequest) (*app.RunnerProcess, error) {
+	current, err := s.getRunnerProcessForRunner(ctx, runnerID, processID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,11 +71,12 @@ func (s *service) updateRunnerProcess(ctx context.Context, processID string, req
 	}
 
 	res := s.db.WithContext(ctx).
-		Model(&app.RunnerProcess{ID: processID}).
+		Model(&app.RunnerProcess{}).
+		Where(app.RunnerProcess{ID: processID, RunnerID: runnerID}).
 		Updates(updates)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner process: %w", res.Error)
 	}
 
-	return s.getRunnerProcess(ctx, processID)
+	return s.getRunnerProcessForRunner(ctx, runnerID, processID)
 }

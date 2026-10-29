@@ -23,18 +23,29 @@ func NewAPIProxyHandler(cfg *internal.Config, l *zap.Logger) *APIProxyHandler {
 }
 
 func (h *APIProxyHandler) RegisterRoutes(e *gin.Engine) error {
-	target, err := url.Parse(h.cfg.APIUrl)
+	target, err := url.Parse(h.cfg.ServerAPIURL())
 	if err != nil {
 		return err
 	}
+	public, err := url.Parse(h.cfg.APIUrl)
+	if err != nil {
+		return err
+	}
+	// Dial the in-cluster address, but keep the public API host on the request.
+	// ctl-api copies Host into the config schema $id, which the browser fetches.
+	host := target.Host
+	if public.Host != "" {
+		host = public.Host
+	}
 
 	proxy := &httputil.ReverseProxy{
+		ModifyResponse: stripUpstreamCORS,
 		Director: func(req *http.Request) {
 			token, _ := req.Cookie(authCookie)
 
 			req.URL.Scheme = target.Scheme
 			req.URL.Host = target.Host
-			req.Host = target.Host
+			req.Host = host
 			req.Header.Del("Cookie")
 			req.Header.Del("Accept-Encoding")
 
@@ -46,5 +57,16 @@ func (h *APIProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	}
 
 	e.Any(APIProxyRoutePattern, gin.WrapH(proxy))
+	return nil
+}
+
+func stripUpstreamCORS(resp *http.Response) error {
+	h := resp.Header
+	h.Del("Access-Control-Allow-Origin")
+	h.Del("Access-Control-Allow-Credentials")
+	h.Del("Access-Control-Allow-Methods")
+	h.Del("Access-Control-Allow-Headers")
+	h.Del("Access-Control-Expose-Headers")
+	h.Del("Access-Control-Max-Age")
 	return nil
 }

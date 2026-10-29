@@ -415,7 +415,7 @@ export const StartStepView = ({
               </Text>
             </div>
             <Button variant="secondary" size="sm" href={KITCHEN_SINK_URL} target="_blank" rel="noreferrer">
-              <Icon variant="GithubLogoIcon" size={14} /> View on GitHub
+              <Icon variant="GitHub" size={14} /> View on GitHub
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-3">

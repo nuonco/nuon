@@ -7,9 +7,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -120,7 +120,7 @@ func renderRunbookRuntimeField(field string, data map[string]any) (string, error
 
 func renderRunbookTemplate(field string, data map[string]any) (string, error) {
 	tmpl, err := template.New("runbook_input").
-		Funcs(sprig.TxtFuncMap()).
+		Funcs(render.TxtFuncMap()).
 		Option("missingkey=error").
 		Parse(field)
 	if err != nil {

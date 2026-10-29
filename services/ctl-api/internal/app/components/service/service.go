@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
@@ -58,7 +59,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/component-builds", s.ListOrgComponentBuilds)
 
 	// components belong to an app
-	apps := api.Group("/v1/apps/:app_id")
+	apps := api.Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
 		components := apps.Group("/components")
 		{
@@ -114,7 +115,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	}
 
 	// deprecated routes
-	deprecatedComponents := api.Group("/v1/components/:component_id")
+	deprecatedComponents := api.Group("/v1/components/:component_id", require.ComponentInOrg(s.db))
 	{
 		// crud ops for components
 		s.GET(deprecatedComponents, "", s.GetComponent, apiPkg.APIContextTypePublic, true)

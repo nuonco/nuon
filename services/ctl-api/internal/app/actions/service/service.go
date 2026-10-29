@@ -14,6 +14,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -52,7 +53,7 @@ var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// apps
-	apps := api.Group("/v1/apps/:app_id")
+	apps := api.Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
 		actions := apps.Group("/actions")
 		{
@@ -96,7 +97,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	// Deprecated routes
 	// work with actions apps path
-	deprecatedApps := api.Group("/v1/apps/:app_id")
+	deprecatedApps := api.Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
 		s.POST(deprecatedApps, "/action-workflows", s.CreateAppActionWorkflow, apiPkg.APIContextTypePublic, true)
 		s.GET(deprecatedApps, "/action-workflows", s.GetAppActionWorkflows, apiPkg.APIContextTypePublic, true)
@@ -148,15 +149,14 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	// action workflows
-	actionWorkflows := require.OrgRoute(api).Group("/v1/action-workflows")
+	// Job SA has install-scoped grants, not org-level read/update.
+	actionWorkflows := require.OrgOrInstallRoute(api).Group("/v1/action-workflows")
 	{
 		actionWorkflows.GET("/:workflow_id/latest-config", s.GetActionWorkflowLatestConfig)
 		actionWorkflows.GET("/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
 	}
 
-	// installs
-	installs := require.OrgRoute(api).Group("/v1/installs/:install_id")
+	installs := require.ResourceRoute(api, permissions.KindInstall, "install_id").Group("/v1/installs/:install_id")
 	{
 		installs.PUT("/action-workflow-runs/:workflow_run_id/steps/:step_id", s.UpdateInstallActionWorkflowRunStep)
 		installs.GET("/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)

@@ -82,6 +82,7 @@ func (c *client) DeleteServiceAccount(ctx context.Context, accountID string) err
 	return err
 }
 
+// Deprecated: use CreateToken instead.
 func (c *client) CreateServiceAccountToken(ctx context.Context, accountID string, req *models.ServiceCreateServiceAccountTokenRequest) (*models.ServiceCreateServiceAccountTokenResponse, error) {
 	resp, err := c.genClient.Operations.CreateServiceAccountToken(&operations.CreateServiceAccountTokenParams{
 		AccountID: accountID,

@@ -38,6 +38,7 @@ func TestGetRoleForActionRejectsUnknownRuntimeRole(t *testing.T) {
 		&state.State{ID: "inst_123", Name: "example"},
 		nil,
 		false,
+		false,
 	)
 
 	require.ErrorContains(t, err, `unable to use requested role "provision"`)

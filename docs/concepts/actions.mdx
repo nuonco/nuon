@@ -1,6 +1,5 @@
 ---
 title: "Actions"
-icon: "circle-play"
 description: "Automate operational tasks and workflows in installs."
 keywords: ["actions", "what are actions", "health checks", "cron schedule", "action triggers", "day 2 operations", "database migrations", "kubectl", "bash scripts", "operational runbooks", "post-deploy", "pre-provision", "break glass actions", "remediation actions", "one-off commands", "ad-hoc operations", "scripted operations", "container actions", "image-backed actions", "action image"]
 ---
@@ -33,7 +32,7 @@ each action. e.g., `alb_healthcheck.toml` `deployment_restart.toml`
 
 Actions along with components, the sandbox and app metadata are sent to the Nuon control plane by your [app branch](/concepts/app-branches): each push to the tracked git branch starts a run that uploads them. If you change or add actions, commit and push again to upload the changes. But unlike components, actions do not need to be built.
 
-![Actions list](../images/concepts/actions/actions-list.png)
+The app template's **App actions** page lists each action with its triggers and steps.
 
 If actions need to connect to a VCS, use either a public repo (using a
 `public_repo` block) or a private GitHub repo (using a `connected_repo` block).
@@ -118,8 +117,6 @@ Actions can be triggered in several ways:
 - Manually via the dashboard or CLI
 - On a schedule
 - In response to events
-
-![Action workflow](../images/concepts/actions/action-workflow.png)
 
 To run an action manually with the CLI:
 
@@ -212,9 +209,8 @@ Action Triggers are documented in the
 
 ## Action History
 
-You can view the history of action runs using the dashboard:
-
-![Action workflows & steps](../images/concepts/actions/action-workflows-steps.png)
+On an install's **Actions** tab, each action shows its last run, duration, most recent trigger and status. Open an
+action to see its run history, triggers and configured steps.
 
 You can view the history of action runs using the CLI:
 

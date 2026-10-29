@@ -24,7 +24,7 @@ import type {
   TInstallGroupRun,
   TInstallWorkflowStep,
 } from '@/types'
-import type { TOverviewRollout } from './BranchOverview'
+import type { TOverviewRollout } from './overview-shared'
 import { installGroupApprovalLabel } from '@/components/branches/install-group-approval'
 import { installGroupMatch } from './InstallGroupMatch'
 import type { TPreviewProgress } from './overview-loading'
@@ -392,6 +392,7 @@ export const useRolloutGroups = () => {
       groups,
       steps: rolloutRun?.steps ?? [],
       installsByGroup: membership.installsByGroup,
+      runStatus: rolloutRun?.status?.status,
     })
       .filter((stage) => stage.kind === 'group')
       .map((stage): TTrackGroup => {
@@ -433,6 +434,7 @@ export const useRolloutGroups = () => {
     groups,
     installsById,
     rolloutRun?.steps,
+    rolloutRun?.status?.status,
     membership,
     installLink,
   ])

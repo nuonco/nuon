@@ -1,7 +1,6 @@
 ---
 title: "Tools"
 description: "Control-plane tools available to LLM clients via MCP."
-icon: "wrench"
 keywords: ["MCP", "tools", "agents", "whoami", "list_installs"]
 ---
 
@@ -11,7 +10,9 @@ Timestamps in tool JSON are UTC (Zulu) RFC3339 and end in `Z` (for example `2026
 
 List tools return a page (default 20, max 100) plus `has_more`. They do not keep fetching until the full set is loaded. If `has_more` is true, tell the user there are more results and only pass `offset=next_offset` when they need the next page.
 
-For prompts to paste into a client, see [Sample queries](/guides/agents/sample-queries). To connect, see [Setup](/guides/agents/setup). For skills covering specific tasks, see [Skills](/guides/agents/skills).
+`get_install_inputs` redacts values for inputs marked sensitive. It is safe to use for inspection, but do not use its redacted values to construct an update.
+
+For prompts to paste into a client, see [Sample queries](/guides/agents/sample-queries). To connect, see [MCP Install Guide](/guides/agents/setup). For skills covering specific tasks, see [Writing policies](/guides/agents/writing-policies) and [Customizing READMEs](/guides/agents/customizing-readmes).
 
 ## Catalog
 

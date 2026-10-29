@@ -54,7 +54,7 @@ func sseAuth(c *gin.Context, cfg *internal.Config, l *zap.Logger) (nuon.Client, 
 	}
 
 	client, err := nuon.New(
-		nuon.WithURL(cfg.APIUrl),
+		nuon.WithURL(cfg.ServerAPIURL()),
 		nuon.WithAuthToken(token),
 		nuon.WithOrgID(c.Param("orgId")),
 	)

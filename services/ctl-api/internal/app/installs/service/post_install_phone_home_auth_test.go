@@ -11,10 +11,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 func TestBearerToken(t *testing.T) {
@@ -47,7 +49,7 @@ func TestInstallPhoneHomeRejectsNonStringRequestType(t *testing.T) {
 	ctx.Request.Header.Set("Content-Type", "application/json")
 
 	require.NotPanics(t, func() {
-		(&service{}).InstallPhoneHome(ctx)
+		(&service{cfg: &internal.Config{}}).InstallPhoneHome(ctx)
 	})
 	require.Len(t, ctx.Errors, 1)
 	assert.Contains(t, ctx.Errors[0].Error(), "request type param must be a string")
@@ -125,6 +127,25 @@ func (s *InstallsServiceTestSuite) TestAuthorizePhoneHomeRejectsPreviousToken() 
 	assert.NoError(s.T(), err)
 }
 
+// The stack's custom resource calls without an org or account, so the route must reach
+// the handler's own authentication instead of the install permission guard.
+func (s *InstallsServiceTestSuite) TestInstallPhoneHomeRouteIsReachableAnonymously() {
+	install := s.createTestInstall()
+
+	router := tests.NewTestRouter(tests.RouterOptions{L: s.deps.L, DB: s.deps.DB})
+	require.NoError(s.T(), s.installsService.RegisterPublicRoutes(router))
+
+	req := httptest.NewRequest(http.MethodPost,
+		"/v1/installs/"+install.ID+"/phone-home/unknown-phone-home-id",
+		bytes.NewBufferString(`{"request_type":"Create"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	assert.Equal(s.T(), http.StatusUnauthorized, rr.Code, rr.Body.String())
+	assert.Contains(s.T(), rr.Body.String(), "phone home authentication failed")
+}
+
 // The payload's account is compared against the coalesced expected identifier, so a
 // backfilled install (observed only) is protected the same as one pinned at creation.
 func TestCheckObservedCloudAccount(t *testing.T) {
@@ -196,7 +217,7 @@ func TestCheckObservedCloudAccount(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			reason, err := checkObservedCloudAccount(tc.install, tc.props)
+			reason, err := checkObservedCloudAccount(tc.install, tc.props, false)
 
 			assert.Equal(t, tc.wantReason, reason)
 			if tc.wantReason == phoneHomeAuthOK {

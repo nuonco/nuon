@@ -292,34 +292,49 @@ func headerToZapField(header string) zap.Field {
 
 func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string) {
 	cl := cctx.GetLogger(c, m.l)
-	// Log errors for status >= 500
-	if c.Writer.Status() >= 500 {
-		fields := []zap.Field{
-			zap.String("method", c.Request.Method),
-			zap.Int("status_code", c.Writer.Status()),
-			zap.String("host", c.Request.Host),
-			zap.String("url", c.Request.URL.String()),
-			zap.String("path", c.FullPath()),
-			zap.String("query", c.Request.URL.RawQuery),
-			zap.String("ip", c.ClientIP()),
-			zap.String("request_body", requestBody),
-			zap.String("response_body", responseBody),
-		}
+	status := c.Writer.Status()
+	hasErrors := len(c.Errors) > 0
 
-		for key, values := range c.Request.Header {
-			for _, value := range values {
-				fields = append(fields, headerToZapField(fmt.Sprintf("%s: %s", key, value)))
-			}
-		}
+	// Always log 5xx. Also log 4xx when gin recorded an error (e.g. Forbidden)
+	// so authz failures are visible without org debug mode.
+	if status < 400 || (status < 500 && !hasErrors) {
+		return
+	}
 
-		var msg string
-		if len(c.Errors) > 0 {
-			errorList := strings.Join(c.Errors.Errors(), ", ")
+	fields := []zap.Field{
+		zap.String("method", c.Request.Method),
+		zap.Int("status_code", status),
+		zap.String("host", c.Request.Host),
+		zap.String("url", c.Request.URL.String()),
+		zap.String("path", c.FullPath()),
+		zap.String("query", c.Request.URL.RawQuery),
+		zap.String("ip", c.ClientIP()),
+		zap.String("request_body", requestBody),
+		zap.String("response_body", responseBody),
+	}
+
+	for key, values := range c.Request.Header {
+		for _, value := range values {
+			fields = append(fields, headerToZapField(fmt.Sprintf("%s: %s", key, value)))
+		}
+	}
+
+	var msg string
+	if hasErrors {
+		errorList := strings.Join(c.Errors.Errors(), ", ")
+		if status >= 500 {
 			msg = fmt.Sprintf("stderr 5xx errors: %s", errorList)
 		} else {
-			msg = "internal server error."
+			msg = fmt.Sprintf("stderr 4xx errors: %s", errorList)
 		}
+	} else {
+		msg = "internal server error."
+	}
+
+	if status >= 500 {
 		cl.Error(msg, fields...)
+	} else {
+		cl.Warn(msg, fields...)
 	}
 }
 

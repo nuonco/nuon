@@ -66,6 +66,11 @@ func (a *Account) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 			},
 		},
+		{
+			Name:    indexes.Name(db, &Account{}, "live_nonservice"),
+			Columns: []string{"id"},
+			Option:  "WHERE deleted_at = 0 AND account_type <> 'service'",
+		},
 	}
 }
 

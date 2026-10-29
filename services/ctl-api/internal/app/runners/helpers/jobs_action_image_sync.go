@@ -39,6 +39,9 @@ func (h *Helpers) CreateActionImageSyncJob(ctx context.Context,
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
 		return nil, fmt.Errorf("unable to create action image sync job: %w", res.Error)
 	}
+	if err := h.provisionJobCredentials(ctx, job); err != nil {
+		return nil, err
+	}
 
 	return job, nil
 }

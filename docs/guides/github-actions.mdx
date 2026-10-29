@@ -1,7 +1,6 @@
 ---
 title: "GitHub Actions"
 description: "Integrate with Nuon from your GitHub Actions workflows."
-icon: "github"
 keywords:
   [
     "CLI",
@@ -210,10 +209,11 @@ patterns.
 If you can't use OIDC — for example, your organization disallows the `id-token: write` permission — you can
 authenticate using a long-lived [API token](/concepts/api-tokens).
 
-Create the token and save it in a GitHub Actions secret named `NUON_API_TOKEN`.
+Create a service account and a token for it, then save the token in a GitHub Actions secret named `NUON_API_TOKEN`.
 
 ```sh
-nuon orgs api-tokens create --name github-actions --role org_admin
+nuon service-accounts create --name github-actions --role org_admin
+nuon service-accounts tokens create --id <account-id> --name github-actions
 ```
 
 Then configure it on the workflow job step.

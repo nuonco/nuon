@@ -813,8 +813,134 @@ const listReply = (state: string, page: string, rows: unknown[]): TFixtureReply 
   return ok(rows, true)
 }
 
+const previewPullRequestRun = {
+  id: 'wf-pr-482',
+  name: 'Widen the worker pool',
+  type: 'app_branches_run',
+  created_at: '2026-10-04T16:04:00Z',
+  finished: true,
+  finished_at: '2026-10-04T16:10:00Z',
+  status: {
+    status: 'success',
+    status_human_description: 'Preview finished.',
+  },
+  steps: [
+    {
+      id: 'step-commit',
+      name: 'fetch commit',
+      idx: 0,
+      group_idx: 0,
+      group_retry_idx: 0,
+      finished: true,
+      status: { status: 'success' },
+    },
+    {
+      id: 'step-config',
+      name: 'fetch app config',
+      idx: 1,
+      group_idx: 1,
+      group_retry_idx: 0,
+      finished: true,
+      status: { status: 'success' },
+    },
+    {
+      id: 'step-diff',
+      name: 'compute differences',
+      idx: 2,
+      group_idx: 2,
+      group_retry_idx: 0,
+      finished: true,
+      status: { status: 'success' },
+    },
+    {
+      id: 'step-build',
+      name: 'building components and sandbox',
+      idx: 3,
+      group_idx: 3,
+      group_retry_idx: 0,
+      finished: true,
+      status: { status: 'success' },
+    },
+    {
+      id: 'step-plan',
+      name: 'plan preview install',
+      idx: 4,
+      group_idx: 4,
+      group_retry_idx: 0,
+      finished: true,
+      status: { status: 'success' },
+    },
+  ],
+  app_branch_runs: [
+    {
+      id: 'brun-pr-482',
+      pr_number: 482,
+      run_type: 'git-preview-run',
+      head_sha: '9f2c1ab7e4d05c3188a6b0f7e2d9c4a1b3e5f701',
+      created_at: '2026-10-04T16:04:00Z',
+      started_at: '2026-10-04T16:04:00Z',
+      completed_at: '2026-10-04T16:10:00Z',
+      status: 'success',
+      metadata: {
+        trigger: 'pull_request',
+        pr_number: 482,
+        head_sha: '9f2c1ab7e4d05c3188a6b0f7e2d9c4a1b3e5f701',
+      },
+      vcs_connection_commit: {
+        sha: '9f2c1ab7e4d05c3188a6b0f7e2d9c4a1b3e5f701',
+        message: 'Widen the worker pool to 8',
+        author_name: 'Dana Eng',
+        created_at: '2026-10-04T16:04:00Z',
+      },
+      preview: {
+        source: 'pr',
+        mode: 'plan-only',
+        install_id: 'inst-staging',
+        install_name: 'staging',
+        branch_preview_config: {
+          mode: 'plan-only',
+          install_id: 'inst-staging',
+          install_name: 'staging',
+          set_statuses: true,
+          comment: true,
+          ignore_drafts: true,
+        },
+        resolved_preview_config: {
+          mode: 'plan-only',
+          install_id: 'inst-staging',
+          install_name: 'staging',
+          set_statuses: true,
+          comment: true,
+          ignore_drafts: true,
+        },
+      },
+    },
+  ],
+}
+
+const branchWithPreviewConfig = (branch: {
+  configs?: Array<Record<string, unknown>>
+}) => ({
+  ...branch,
+  configs: branch.configs?.map((cfg, index) =>
+    index === 0
+      ? {
+          ...cfg,
+          preview_config: {
+            mode: 'plan-only',
+            install_id: 'inst-staging',
+            install_name: 'staging',
+            set_statuses: true,
+            comment: true,
+            ignore_drafts: true,
+          },
+        }
+      : cfg
+  ),
+})
+
 export const appFixture = (state: string): TFixture =>
-  withChrome(viewInstall(), (url) => {
+  withChrome(viewInstall(), (url, init) => {
     const path = url.pathname
     const params = url.searchParams
     const rollout = rolloutOf(state)
@@ -822,7 +948,17 @@ export const appFixture = (state: string): TFixture =>
     const current = rolloutData(rollout)
     const branch = planned ? bareBranch : mainBranch
     const configs = planned ? [bareConfig] : [mainConfig]
-    if (path.endsWith('/orgs/current')) return ok(appOrg)
+    if (path.endsWith('/orgs/current')) {
+      return ok({
+        ...appOrg,
+        features: {
+          ...appOrg.features,
+          ...(state.startsWith('pull-request')
+            ? { 'pr-preview-ui': true }
+            : {}),
+        },
+      })
+    }
     if (path === `/v1/apps/${VIEW_APP_ID}`) return ok(app)
     if (path === `/v1/apps/${VIEW_APP_ID}/labels`) {
       const labels = catalogOf(state, 'labels')
@@ -870,8 +1006,64 @@ export const appFixture = (state: string): TFixture =>
       const query = params.get('q') ?? ''
       return ok(rows.filter((item) => matches(item.name, query)), true)
     }
+    if (path.endsWith('/branches/br-1/preview-sources')) {
+      if (state === 'pull-request-loading') return pendingReply()
+      return ok({
+        pull_requests: [
+          {
+            pr_number: 482,
+            title: 'Bump the api component to node 22',
+            head_sha: '9f2c1ab7e4d05c3188a6b0f7e2d9c4a1b3e5f701',
+            head_ref: 'feat/node-22',
+            url: 'https://github.com/acme/payments/pull/482',
+            author: 'devon',
+            is_draft: true,
+            labels: [{ name: 'api', color: '1d76db' }],
+            created_at: '2026-10-26T15:04:00Z',
+            updated_at: '2026-10-27T18:12:00Z',
+          },
+          {
+            pr_number: 476,
+            title: 'Retry checkout when the provider times out',
+            head_sha: 'a1b2c3d4e5f67890abcd1234567890abcdef12',
+            head_ref: 'feat/checkout-retries',
+            url: 'https://github.com/acme/payments/pull/476',
+            author: 'rory',
+            labels: [{ name: 'payments', color: '0e8a16' }],
+            created_at: '2026-10-25T11:20:00Z',
+            updated_at: '2026-10-27T09:40:00Z',
+          },
+          {
+            pr_number: 470,
+            title: 'Show the receipt id on the order page',
+            head_sha: 'b2c3d4e5f67890abcdef1234567890abcdef12',
+            head_ref: 'feat/receipt-id',
+            url: 'https://github.com/acme/payments/pull/470',
+            author: 'devon',
+            labels: [{ name: 'ui', color: 'fbca04' }],
+            created_at: '2026-10-22T08:00:00Z',
+            updated_at: '2026-10-24T16:30:00Z',
+          },
+        ],
+        branches: [],
+      })
+    }
+    if (path.endsWith('/branches/br-1/preview-install-candidates')) {
+      return ok({
+        installs: [
+          {
+            id: 'inst-staging',
+            name: 'staging',
+            labels: { env: 'staging' },
+            aws_account: { region: 'us-east-1' },
+          },
+        ],
+      })
+    }
     if (path.startsWith(`/v1/apps/${VIEW_APP_ID}/branches/br-1`) && !path.includes('/runs') && !path.includes('/configs')) {
-      return ok(branch)
+      return ok(
+        state.startsWith('pull-request') ? branchWithPreviewConfig(branch) : branch
+      )
     }
     if (path.includes('/branches/br-1/configs')) {
       const inputs = catalogOf(state, 'inputs')
@@ -880,6 +1072,11 @@ export const appFixture = (state: string): TFixture =>
       return ok(configs)
     }
     if (path.endsWith('/branches/br-1/runs')) {
+      if (init?.method === 'POST') return ok(previewPullRequestRun)
+      if (params.get('limit') === '100') {
+        if (state === 'pull-request-loading') return pendingReply()
+        return ok([previewPullRequestRun], true)
+      }
       if (rollout === 'loading' || catalogOf(state, 'runs') === 'loading') return pendingReply()
       if (rollout === 'no-runs' || rollout === 'no-plan' || catalogOf(state, 'runs') === 'empty') return ok([], true)
       const latest = rollout === 'succeeded' ? workflowRun : current.run

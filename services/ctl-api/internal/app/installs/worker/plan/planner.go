@@ -9,6 +9,12 @@ type Planner struct {
 	v *validator.Validate
 }
 
+var gcpLegacyRoleFallback bool
+
+func SetGCPLegacyRoleFallback(enabled bool) {
+	gcpLegacyRoleFallback = enabled
+}
+
 type Params struct {
 	fx.In
 

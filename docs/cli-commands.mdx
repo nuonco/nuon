@@ -41,9 +41,10 @@ nuon actions create-run -i customer1 -w pg_status
 |---------|--------------|
 | `nuon orgs select` | Switch your active org. A new trial account has a single org that's selected automatically when you log in, so you only need this once you belong to more than one. |
 | `nuon orgs current` | Show the active org. |
-| `nuon orgs api-tokens create --name <name>` | Create a durable API token for the current org (shown once). Requires org admin. Add `--role` (defaults to `org_read_only`; run `nuon roles list` or see [Access control](/concepts/access-control)) to set the token's permissions, or `--personal` to issue the token against your own account and its existing roles instead. |
-| `nuon orgs api-tokens list` | List the current org's API tokens. |
-| `nuon orgs api-tokens delete --id <token-id>` | Revoke an API token. |
+| `nuon service-accounts create --name <name> --role <role>` | Create a [service account](/concepts/service-accounts) in the current org with a role (run `nuon roles list` or see [Access control](/concepts/access-control)). Requires org admin. |
+| `nuon service-accounts tokens create --id <account-id>` | Create a durable API token for a service account (shown once). Add `--name` to label it and `--duration` to change the one-year default. |
+| `nuon service-accounts tokens list` | List the org's service account API tokens. Add `--id <account-id>` to only list one service account's tokens, or `--search <text>` to search by name or ID. |
+| `nuon service-accounts tokens delete --token-id <token-id>` | Revoke a service account's API token. |
 | `nuon orgs update-user-role --user-id <id> --role <role>` | Change an org member's role (run `nuon roles list` or see [Access control](/concepts/access-control)). Requires org admin. |
 
 ## Apps & config
@@ -107,7 +108,7 @@ Operate Nuon from an LLM client. See [Agents](/guides/agents/overview).
 | Command | What it does |
 |---------|--------------|
 | `nuon agents help` | Setup guide. When an agent runs it, prints orientation markdown: auth, selected org/app/install, MCP HTTP URL, and the tool catalog. |
-| `nuon agents mcp` | Stdio MCP proxy (`--allow-writes` in examples so mutating tools are listed). Its URL is derived from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`). `--url` / `--name` override the upstream server and the name in the client's MCP list. Per-client registration: [Setup](/guides/agents/setup). |
+| `nuon agents mcp` | Stdio MCP proxy (`--allow-writes` in examples so mutating tools are listed). Its URL is derived from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`). `--url` / `--name` override the upstream server and the name in the client's MCP list. Per-client registration: [MCP Install Guide](/guides/agents/setup). |
 
 ## Help
 

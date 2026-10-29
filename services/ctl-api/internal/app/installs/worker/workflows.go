@@ -69,6 +69,8 @@ func (w *Workflows) All() []any {
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
+	plan.SetGCPLegacyRoleFallback(params.Cfg.GCPLegacyRoleFallback)
+
 	tmw, err := tmetrics.New(params.V,
 		tmetrics.WithMetricsWriter(params.MW),
 		tmetrics.WithTags(map[string]string{

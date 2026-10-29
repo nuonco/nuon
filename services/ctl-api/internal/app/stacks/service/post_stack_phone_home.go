@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -104,6 +105,7 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 	// this cannot probe install IDs in other orgs.
 	var install app.Install
 	if res := s.db.WithContext(ctx).
+		Preload("AppRunnerConfig").
 		Where(app.Install{ID: installID, OrgID: orgID}).
 		First(&install); res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
@@ -118,6 +120,20 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 	// deletable.
 	if requestType == installshelpers.PhoneHomeRequestTypeDelete {
 		ctx.JSON(http.StatusCreated, app.EmptyResponse{})
+		return
+	}
+
+	if err := installshelpers.CheckObservedCloudAccount(&install, req, s.cfg.PhoneHomeAuthRequired); err != nil {
+		s.l.Warn("rejected stack phone home",
+			zap.String("install_id", install.ID),
+			zap.String("org_id", install.OrgID),
+			zap.String("request_type", requestType),
+			zap.Error(err),
+		)
+		ctx.Error(stderr.ErrAuthorization{
+			Err:         errors.New("phone home account check failed"),
+			Description: "phone home account check failed",
+		})
 		return
 	}
 
@@ -183,4 +199,26 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
+}
+
+// @ID						PostStackPhoneHomeRunner
+// @Summary				phone home from an install stack
+// @Description			Deprecated. Use POST /v1/stacks/{install_id}/phone-home on the stack API.
+// @Param					install_id	path	string	true	"install ID"
+// @Param					req	body	StackPhoneHomeRequest	true	"Input"
+// @Tags					installs/runner
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Deprecated				true
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.EmptyResponse
+// @Router					/v1/stacks/{install_id}/phone-home [post]
+func (s *service) PostStackPhoneHomeRunner(ctx *gin.Context) {
+	s.PostStackPhoneHome(ctx)
 }

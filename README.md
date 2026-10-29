@@ -57,15 +57,13 @@ See the full [deployment options guide](https://docs.nuon.co/guides/deployment-o
 
 ## Documentation
 
-Checkout our [Knowledge Base](https://support.nuon.co) for commonly asked questions.
-
 Browse our docs [here](https://docs.nuon.co) or visit a specific section below:
 
 - [Concepts](https://docs.nuon.co/concepts/overview): apps, components, actions, inputs, installs, workflows
 - [Architecture](https://docs.nuon.co/runner-architecture): control plane, runner, [CLI](https://docs.nuon.co/cli),
   [API](https://docs.nuon.co/nuon-api)
 - [Deployment options](https://docs.nuon.co/deployment-options): Nuon Cloud, Nuon BYOC, and Nuon Self-Hosted
-- [Guides](https://docs.nuon.co/guides/app-install-life-cycle): technical info on component types, actions, variables,
+- [Guides](https://docs.nuon.co/guides): technical info on component types, actions, variables,
   and more
 
 Also browse the [Nuon blog](https://nuon.co/blog) for technical posts on specific features and example app guides.

@@ -21,6 +21,7 @@ func init() {
 	config.RegisterDefault("http_port", "8081")
 	config.RegisterDefault("internal_http_port", "8082")
 	config.RegisterDefault("runner_http_port", "8083")
+	config.RegisterDefault("stack_http_port", "8093")
 	config.RegisterDefault("auth_http_port", "8084")
 	config.RegisterDefault("admin_dashboard_http_port", "8087")
 	config.RegisterDefault("slack_http_port", "8089")
@@ -110,6 +111,7 @@ func init() {
 	config.RegisterDefault("runner_container_image_signature_issuer", "https://token.actions.githubusercontent.com")
 	config.RegisterDefault("runner_container_image_signature_identity_regexp", `^https://github\.com/nuonco/nuon/\.github/workflows/service\.yml@refs/heads/main$`)
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
+	config.RegisterDefault("stack_api_url", "http://localhost:8093")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
 	config.RegisterDefault("telemetry_jwks", "")
@@ -214,7 +216,10 @@ func init() {
 	// operation defaults are unaffected.
 	config.RegisterDefault("use_legacy_maintenance_role_default", false)
 
+	config.RegisterDefault("gcp_legacy_role_fallback", false)
+
 	config.RegisterDefault("cors_allow_all_origins", false)
+	config.RegisterDefault("cors_allow_loopback_origins", false)
 }
 
 type Config struct {
@@ -241,6 +246,7 @@ type Config struct {
 	HTTPPort               string `config:"http_port" validate:"required"`
 	InternalHTTPPort       string `config:"internal_http_port" validate:"required"`
 	RunnerHTTPPort         string `config:"runner_http_port" validate:"required"`
+	StackHTTPPort          string `config:"stack_http_port" validate:"required"`
 	AuthHTTPPort           string `config:"auth_http_port" validate:"required"`
 	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
 	AdminDashboardDistDir  string `config:"admin_dashboard_dist_dir"`
@@ -340,11 +346,15 @@ type Config struct {
 	Middlewares               []string `config:"middlewares"`
 	InternalMiddlewares       []string `config:"internal_middlewares"`
 	RunnerMiddlewares         []string `config:"runner_middlewares"`
+	StackMiddlewares          []string `config:"stack_middlewares"`
 	AuthMiddlewares           []string `config:"auth_middlewares"`
 	AdminDashboardMiddlewares []string `config:"admin_dashboard_middlewares"`
 	SlackMiddlewares          []string `config:"slack_middlewares"`
 	// Reflect any Origin and still send Allow-Credentials. Default false restricts Origin to app_url.
 	CORSAllowAllOrigins bool `config:"cors_allow_all_origins"`
+	// Also reflect plain-http loopback origins on any port. Default false.
+	// service_deployment=local turns this on without the flag.
+	CORSAllowLoopbackOrigins bool `config:"cors_allow_loopback_origins"`
 
 	// Slack app configuration (Phase 0–4 of slackbot integration).
 	// Tokens are stored plaintext in DB; these env-var-driven values back
@@ -371,6 +381,10 @@ type Config struct {
 	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)
 	OIDCFederationAllowInsecureIssuers bool `config:"oidc_federation_allow_insecure_issuers"` // allow http:// issuer URLs in trust policies (local dev only)
 
+	// When true, GET .../processes/:id/shutdowns is public so pre-auth runners
+	// can still observe shutdown requests during upgrades.
+	PublicRunnerProcessShutdowns bool `config:"public_runner_process_shutdowns"`
+
 	// OAuth 2.0 authorization server (MCP clients)
 	OAuthDCREnabled      bool `config:"oauth_dcr_enabled"`
 	OAuthAccessTokenTTL  int  `config:"oauth_access_token_ttl"`  // minutes
@@ -391,6 +405,7 @@ type Config struct {
 	// links
 	AppURL        string `config:"app_url" validate:"required"`
 	RunnerAPIURL  string `config:"runner_api_url" validate:"required"`
+	StackAPIURL   string `config:"stack_api_url"`
 	PublicAPIURL  string `config:"public_api_url" validate:"required"`
 	AdminAPIURL   string `config:"admin_api_url" validate:"required"`
 	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`
@@ -490,7 +505,8 @@ type Config struct {
 	// environment, below a per-app AppRunnerConfig.PhoneHomeScriptURL and above the
 	// pinned default. Exists so a dev or staging control plane can exercise an
 	// unreleased script without moving the default that production shares.
-	PhoneHomeScriptURL string `config:"phone_home_script_url"`
+	PhoneHomeScriptURL    string `config:"phone_home_script_url"`
+	PhoneHomeAuthRequired bool   `config:"phone_home_auth_required"`
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
@@ -622,6 +638,8 @@ type Config struct {
 	// UseLegacyMaintenanceRoleDefault keeps component and action defaults on
 	// maintenance instead of deriving them from the parent workflow type.
 	UseLegacyMaintenanceRoleDefault bool `config:"use_legacy_maintenance_role_default"`
+
+	GCPLegacyRoleFallback bool `config:"gcp_legacy_role_fallback"`
 }
 
 func (c *Config) IsAWS() bool {
@@ -696,6 +714,10 @@ func NewConfig() (*Config, error) {
 	v := validator.New()
 	if err := v.Struct(cfg); err != nil {
 		return nil, fmt.Errorf("unable to validate config: %w", err)
+	}
+
+	if cfg.CORSAllowLoopbackOrigins && cfg.ServiceDeployment != "local" {
+		return nil, fmt.Errorf("cors_allow_loopback_origins is only allowed when service_deployment=local")
 	}
 
 	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)

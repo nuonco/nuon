@@ -66,7 +66,7 @@ type WorkflowStepApproval struct {
 
 	// the response object must be created by the user in the UI or CLI
 
-	Response *WorkflowStepApprovalResponse `gorm:"foreignKey:InstallWorkflowStepApprovalID" json:"response,omitzero" temporaljson:"response,omitzero,omitempty" swaggertype:"object,string"`
+	Response *WorkflowStepApprovalResponse `gorm:"foreignKey:InstallWorkflowStepApprovalID" json:"response,omitzero" temporaljson:"response,omitzero,omitempty"`
 
 	// afterquery
 	WorkflowStepID string       `json:"workflow_step_id,omitzero" gorm:"-" temporaljson:"workflow_step_id,omitzero,omitempty"`

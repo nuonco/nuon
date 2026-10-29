@@ -1,26 +1,19 @@
 ---
 title: "Workflows"
-icon: "circle-nodes"
 description:
   "Workflows are scheduled and manual lifecycles of deploying, updating or tearing down installs of your app template, including components and actions."
 boost: 4
 keywords: ["workflows", "what are workflows", "deploy lifecycle", "approvals", "plan and apply", "diffs", "drift detection", "retry", "auto retry", "auto_retry", "max_auto_retries", "workflow states", "monitoring deploys", "rollback", "release pipeline", "approval workflow", "approval gates", "release windows", "manual deploy", "deployment workflow"]
 ---
 
-import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
-
-<AskYourAgent
-  title="Find failing workflows"
-  tools={["list_workflows", "get_pending_approvals", "get_workflow_step_logs"]}
-  prompt={`Check my Nuon install for workflows that failed or are waiting on an approval. For any failed step, pull its logs and explain what went wrong.`}
-/>
+import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 
 ## What is a Workflow?
 
 A workflow represents the complete lifecycle of deploying, updating or tearing down an install of your app template and its components. Workflows also manage the execution of actions.
 
 <Note>
-If new to Nuon, familiarize yourself with the [app and install life cycle](../guides/app-install-life-cycle) first.
+If new to Nuon, familiarize yourself with the [App Templates, installs, and updates](/concepts/overview) first.
 </Note>
 
 Each install has a **Workflows** tab that lists its workflows newest first, with each workflow's status and how long ago it ran. Open a workflow to see its steps in order, its pending approvals and how many steps have completed.
@@ -62,6 +55,13 @@ You can approve plan steps in bulk at two levels. To approve every plan step on 
 If a component using Terraform, Helm or a Kubernetes manifest has been changed by the user, re-synced to an app and therefore re-built, the plan step will visually show the diff, aka the before and after proposed change, and require the user to approve or reject/deny the change. Learn more about [Understanding diffs](../updates/012-approval-diffs-plan-only).
 
 A Helm plan, for example, opens with how many resources it will add, change and destroy, then shows the diff of each manifest.
+
+<TryWithYourAgent
+  title="Review and approve a plan"
+  tools={["get_pending_approvals", "get_approval_plan_diff", "approve_step", "reject_step"]}
+  writes
+  prompt={`Summarize the plan waiting on approval on my Nuon install, then approve it if I agree.`}
+/>
 
 ## Drift Detection
 
