@@ -211,6 +211,14 @@
             ]
           },
           {
+            "group": "Policies",
+            "boost": 3,
+            "pages": [
+              "guides/configuring-policies",
+              "guides/external-image-policies"
+            ]
+          },
+          {
             "group": "Updates and Operations",
             "boost": 3,
             "pages": [
@@ -226,14 +234,6 @@
               "guides/export-runner-audit-logs",
               "concepts/install-telemetry",
               "guides/manage-install-telemetry"
-            ]
-          },
-          {
-            "group": "Policies",
-            "boost": 3,
-            "pages": [
-              "guides/configuring-policies",
-              "guides/external-image-policies"
             ]
           },
           {
