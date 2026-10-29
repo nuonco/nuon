@@ -128,11 +128,17 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	l.Info("executing runner job")
+	waitTimeout := job.ActionWaitTimeout(planResponse.Plan.Timeout)
+	var jobOpts *workflow.ChildWorkflowOptions
+	if waitTimeout > 0 {
+		jobOpts = &workflow.ChildWorkflowOptions{WorkflowExecutionTimeout: waitTimeout}
+	}
 	jobStatus, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   run.Install.RunnerID,
-		JobID:      runnerJob.ID,
-		WorkflowID: "actions-install-run-exec-job" + run.ID,
-	})
+		RunnerID:    run.Install.RunnerID,
+		JobID:       runnerJob.ID,
+		WorkflowID:  "actions-install-run-exec-job" + run.ID,
+		WaitTimeout: waitTimeout,
+	}, jobOpts)
 	if err != nil {
 		status, description := actionRunFailureStatus(jobStatus, run)
 		w.updateActionRunStatus(ctx, run.ID, status, description)
@@ -166,5 +172,6 @@ func actionRunFailureStatus(jobStatus app.RunnerJobStatus, run *app.InstallActio
 	if timeout == 0 {
 		timeout = run.Timeout
 	}
+	timeout = run.Install.InstallConfig.ResolveActionTimeout(timeout)
 	return app.InstallActionRunStatusTimedOut, fmt.Sprintf("action timed out after %s", timeout)
 }
