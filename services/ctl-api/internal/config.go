@@ -505,7 +505,8 @@ type Config struct {
 	// environment, below a per-app AppRunnerConfig.PhoneHomeScriptURL and above the
 	// pinned default. Exists so a dev or staging control plane can exercise an
 	// unreleased script without moving the default that production shares.
-	PhoneHomeScriptURL string `config:"phone_home_script_url"`
+	PhoneHomeScriptURL    string `config:"phone_home_script_url"`
+	PhoneHomeAuthRequired bool   `config:"phone_home_auth_required"`
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
