@@ -89,6 +89,15 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 			want.Version = app.RoleVersionV2
 			want.Policies[0].Permissions[permissions.APIPermissionKey] = generics.ToPtr(string(permissions.APIStack))
 		}
+		if binding.PrivateRoleID != nil {
+			var private app.Role
+			if err := tx.Select("id", "version").Where(app.Role{ID: *binding.PrivateRoleID}).Take(&private).Error; err != nil {
+				return fmt.Errorf("load stack private role: %w", err)
+			}
+			if private.Version >= app.RoleVersionV2 {
+				want.Policies[0].Permissions[permissions.APIPermissionKey] = generics.ToPtr(string(permissions.APIStack))
+			}
+		}
 		if binding.AccountID != "" {
 			return New(Params{DB: tx}).EnsureManagedServiceAccountRole(ctx, accountID, want)
 		}
