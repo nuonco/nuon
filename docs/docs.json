@@ -198,6 +198,7 @@
               "guides/container-actions",
               "guides/runbooks",
               "guides/configuring-policies",
+              "guides/external-image-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
               "guides/manage-install-telemetry"
@@ -257,7 +258,6 @@
             "group": "Advanced",
             "boost": 2,
             "pages": [
-              "guides/external-image-policies",
               "guides/app-branch-migration"
             ]
           }
