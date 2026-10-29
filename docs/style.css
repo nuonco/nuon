@@ -875,7 +875,8 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 }
 .nuon-pd-link-label {
   position: absolute;
-  transform: translateY(calc(-100% - 3px));
+  transform: translateY(4px);
+  line-height: 1.2;
   white-space: nowrap;
   color: var(--in-muted);
   font-size: 0.7rem;
