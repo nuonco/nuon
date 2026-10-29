@@ -774,3 +774,840 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
     transform: rotate(90deg);
   }
 }
+
+/* App, branch, and rollout group diagram (snippets/app-branches-diagram.jsx) */
+.nuon-ab {
+  margin: 1rem 0 1.75rem;
+}
+.nuon-ab-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+.nuon-ab .nuon-infra-concept {
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 1.1rem;
+}
+.nuon-ab-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nuon-ab-kicker {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--in-accent);
+  text-decoration: none;
+}
+.nuon-ab-kicker-muted {
+  color: var(--in-muted);
+}
+.nuon-ab-app {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.nuon-ab-branch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--in-border);
+  border-radius: 8px;
+  background: var(--in-inner-bg);
+}
+.nuon-ab-branch-name {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8rem;
+}
+.nuon-ab-groups,
+.nuon-ab-group-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.nuon-ab-group {
+  padding: 0.15rem 0.5rem;
+  border: 1px dashed var(--in-strong);
+  border-radius: 6px;
+  background: var(--in-box-bg);
+  font-size: 0.78rem;
+}
+.nuon-ab-arrow {
+  color: var(--in-accent);
+}
+@media (max-width: 720px) {
+  .nuon-ab-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Concepts overview: where things run, and how they relate (snippets/platform-diagram.jsx) */
+.nuon-pd-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.75rem;
+}
+.nuon-pd-row {
+  position: relative;
+}
+.nuon-pd-cp {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.nuon-pd-cp span {
+  margin-left: 0;
+  color: var(--in-text);
+  font-weight: 600;
+}
+.nuon-pd-link {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--in-muted);
+  z-index: 2;
+}
+.nuon-pd-link-label {
+  position: absolute;
+  transform: translateY(4px);
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--in-muted);
+  font-size: 0.7rem;
+}
+.nuon-pd .nuon-pd-flows {
+  justify-content: flex-end;
+  padding-bottom: 6rem;
+}
+.nuon-pd-flows .nuon-pd-flow-back {
+  display: none;
+}
+.nuon-pd-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.875rem;
+  border-radius: 12px;
+}
+.nuon-pd-yours {
+  border: 1px dashed var(--in-border);
+  background: var(--in-cp-bg);
+}
+.nuon-pd-theirs {
+  border: 1px solid var(--in-border);
+  background: var(--in-account-bg);
+}
+.nuon-pd-zlabel {
+  color: var(--in-muted);
+  font-weight: 600;
+}
+.nuon-pd-logo {
+  display: block;
+  height: 1.6rem;
+  width: auto;
+  color: var(--in-text);
+}
+.nuon-pd-runner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: fit-content;
+  margin-top: 0.4rem;
+  padding: 0.45rem 0.8rem 0.45rem 0.6rem;
+  border-radius: 8px;
+  background: var(--in-text);
+  color: var(--in-box-bg);
+  text-decoration: none;
+  box-shadow: 0 0 0 3px var(--in-border);
+}
+.dark .nuon-pd-runner {
+  color: #0b1117;
+}
+.nuon-pd-runner-mark {
+  height: 1.35rem;
+  width: auto;
+  flex: none;
+}
+.nuon-pd-runner-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.nuon-pd-runner-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.nuon-pd-runner-note {
+  font-size: 0.68rem;
+  opacity: 0.75;
+}
+.nuon-pd-zlabel span {
+  margin-left: 0.3rem;
+  font-weight: 400;
+}
+.nuon-pd .nuon-infra-concept {
+  gap: 0.6rem;
+}
+.nuon-pd .nuon-infra-components {
+  margin-top: 0;
+}
+.nuon-pd .nuon-infra-chips {
+  margin-top: 0.35rem;
+}
+.nuon-pd-template {
+  flex: 1;
+  border-width: 2px;
+}
+.nuon-pd-template-name {
+  margin-top: -0.25rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.nuon-pd-template-sub {
+  margin-top: -0.5rem;
+  font-size: 0.82rem;
+  color: var(--in-muted);
+}
+.nuon-pd-where {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--in-muted);
+}
+.nuon-pd-faded {
+  opacity: 0.6;
+}
+.nuon-pd a.nuon-infra-chip,
+.nuon-pd a.nuon-ab-group {
+  color: var(--in-text);
+  text-decoration: none;
+}
+.nuon-pd a.nuon-infra-chip:hover,
+.nuon-pd a.nuon-ab-group:hover {
+  color: var(--in-accent);
+}
+.nuon-pd-flows {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.75rem;
+  color: var(--in-accent);
+  font-size: 0.72rem;
+  text-align: center;
+}
+.nuon-pd-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+.nuon-pd-flow-back {
+  color: var(--in-muted);
+}
+.nuon-pd-flow-back svg {
+  transform: scaleX(-1);
+}
+@media (max-width: 720px) {
+  .nuon-pd-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nuon-pd-flows .nuon-pd-flow-back {
+    display: flex;
+  }
+  .nuon-pd .nuon-pd-flows {
+    justify-content: center;
+    padding-bottom: 0;
+  }
+  .nuon-pd-flows {
+    flex-direction: row;
+    justify-content: center;
+  }
+  .nuon-pd-flow svg {
+    transform: rotate(90deg);
+  }
+  .nuon-pd-flow-back svg {
+    transform: rotate(-90deg);
+  }
+}
+
+.nuon-pt {
+  margin-top: 0.75rem;
+}
+.nuon-pt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--in-muted);
+}
+.nuon-pt-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 0.4rem;
+  border-radius: 3px;
+  vertical-align: -1px;
+}
+.nuon-pt-key-repo {
+  border: 1px dashed var(--in-border);
+  background: var(--in-cp-bg);
+}
+.nuon-pt-key-cust {
+  border: 1px solid var(--in-strong);
+  background: var(--in-inner-bg);
+}
+.nuon-pt-scroll {
+  overflow-x: auto;
+}
+.nuon-pt-tree {
+  --pt-gap: 1.75rem;
+  --pt-w1: 8.5rem;
+  --pt-w2: 11.5rem;
+  min-width: 44rem;
+}
+.nuon-pt-heads {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+.nuon-pt-h1 {
+  flex: 0 0 calc(var(--pt-w1) + var(--pt-gap));
+}
+.nuon-pt-h2 {
+  flex: 0 0 calc(var(--pt-w2) + var(--pt-gap));
+}
+.nuon-pt-item {
+  display: flex;
+  align-items: center;
+}
+.nuon-pt-card {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  box-sizing: border-box;
+  padding: 0.4rem 0.65rem;
+  border: 1px dashed var(--in-border);
+  border-radius: 8px;
+  background: var(--in-cp-bg);
+  font-size: 0.82rem;
+}
+.nuon-pt-l1 > .nuon-pt-card {
+  width: var(--pt-w1);
+}
+.nuon-pt-l2 > .nuon-pt-card,
+.nuon-pt-l3 > .nuon-pt-card {
+  width: var(--pt-w2);
+}
+.nuon-pt-name {
+  font-weight: 600;
+}
+.nuon-pt-file {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  color: var(--in-muted);
+}
+.nuon-pt-num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-right: 0.35rem;
+  border: 1px solid var(--in-strong);
+  border-radius: 50%;
+  color: var(--in-accent);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.nuon-pt-default {
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border: 1px solid var(--in-border);
+  border-radius: 4px;
+  color: var(--in-accent);
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+.nuon-pt-children {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-left: var(--pt-gap);
+}
+.nuon-pt-children::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: calc(var(--pt-gap) / 2);
+  border-top: 1.5px solid var(--in-border);
+}
+.nuon-pt-children > .nuon-pt-item {
+  position: relative;
+}
+.nuon-pt-children > .nuon-pt-item::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--pt-gap) / -2);
+  top: 50%;
+  width: calc(var(--pt-gap) / 2);
+  border-top: 1.5px solid var(--in-border);
+}
+.nuon-pt-children > .nuon-pt-item::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--pt-gap) / -2);
+  top: -0.375rem;
+  bottom: -0.375rem;
+  border-left: 1.5px solid var(--in-border);
+}
+.nuon-pt-children > .nuon-pt-item:first-child::after {
+  top: 50%;
+}
+.nuon-pt-children > .nuon-pt-item:last-child::after {
+  bottom: 50%;
+}
+.nuon-pt-children > .nuon-pt-item:only-child::after {
+  content: none;
+}
+.nuon-pt-installs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.nuon-pt-install {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--in-strong);
+  border-radius: 8px;
+  background: var(--in-inner-bg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+}
+
+/* UI integration guide: example vendor settings page (snippets/ui-integration-mock.jsx) */
+.nuon-um {
+  position: relative;
+  overflow: hidden;
+  box-shadow: -14px 0 22px -16px rgba(76, 201, 240, 0.55), 14px 0 22px -16px rgba(76, 201, 240, 0.55);
+  border: 1px solid var(--in-border);
+  border-radius: 12px;
+  background: var(--in-box-bg);
+}
+.nuon-um-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid var(--in-border);
+  background: var(--in-cp-bg);
+}
+.nuon-um-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--in-border);
+}
+.nuon-um-url {
+  margin-left: 0.6rem;
+  padding: 0.1rem 0.6rem;
+  border-radius: 6px;
+  background: var(--in-box-bg);
+  color: var(--in-muted);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nuon-um-body {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+}
+.nuon-um-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1rem 0.75rem;
+  border-right: 1px solid var(--in-border);
+  color: var(--in-muted);
+  font-size: 0.8rem;
+}
+.nuon-um-side span {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+.nuon-um-brand {
+  margin-bottom: 0.6rem;
+  padding: 0 0.5rem;
+  color: var(--in-text);
+  font-weight: 700;
+}
+.nuon-um-side .nuon-um-on {
+  background: var(--in-inner-bg);
+  color: var(--in-text);
+  font-weight: 600;
+}
+.nuon-um-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.25rem 1.5rem 1.5rem;
+  min-width: 0;
+}
+.nuon-um-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.nuon-um-sub {
+  margin-top: -0.4rem;
+  color: var(--in-muted);
+  font-size: 0.82rem;
+}
+.nuon-um-label {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.nuon-um-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.nuon-um-option {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--in-border);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+.nuon-um-option small {
+  display: block;
+  color: var(--in-muted);
+  font-size: 0.75rem;
+}
+.nuon-um-radio {
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-top: 0.15rem;
+  border: 1.5px solid var(--in-strong);
+  border-radius: 50%;
+}
+.nuon-um-picked {
+  border: 1.5px solid var(--in-accent);
+  background: var(--in-inner-bg);
+}
+.nuon-um-picked .nuon-um-radio {
+  border-color: var(--in-accent);
+  box-shadow: inset 0 0 0 3px var(--in-box-bg);
+  background: var(--in-accent);
+}
+.nuon-um-clouds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.nuon-um-cloud {
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--in-border);
+  border-radius: 999px;
+  color: var(--in-muted);
+  font-size: 0.78rem;
+}
+.nuon-um-cloud-on {
+  border-color: var(--in-accent);
+  color: var(--in-accent);
+  font-weight: 600;
+}
+.nuon-um-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+.nuon-um-button {
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  background: var(--in-text);
+  color: var(--in-box-bg);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.dark .nuon-um-button {
+  color: #0b1117;
+}
+.nuon-um-hint {
+  color: var(--in-muted);
+  font-size: 0.75rem;
+}
+@media (max-width: 720px) {
+  .nuon-um-body,
+  .nuon-um-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nuon-um-side {
+    display: none;
+  }
+}
+.nuon-um-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 22rem;
+}
+.nuon-um-field .nuon-um-label {
+  margin-top: 0;
+}
+.nuon-um-input {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--in-border);
+  border-radius: 8px;
+  background: var(--in-box-bg);
+  font-size: 0.82rem;
+}
+.nuon-um-box {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--in-border);
+  border-radius: 10px;
+  background: var(--in-inner-bg);
+}
+.nuon-um-box .nuon-um-label {
+  margin: 0 0 0.35rem;
+}
+.nuon-um-list,
+.nuon-um-diff {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+}
+.nuon-um-list li {
+  position: relative;
+  padding-left: 0.9rem;
+}
+.nuon-um-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--in-accent);
+}
+.nuon-um-diff li {
+  display: flex;
+  gap: 0.5rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+}
+.nuon-um-add {
+  color: #1a7f37;
+  font-weight: 700;
+}
+.nuon-um-chg {
+  color: #9a6700;
+  font-weight: 700;
+}
+.dark .nuon-um-add {
+  color: #3fb950;
+}
+.dark .nuon-um-chg {
+  color: #d29922;
+}
+.nuon-um-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--in-muted);
+  font-size: 0.78rem;
+}
+.nuon-um-pulse {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--in-accent);
+  animation: nuon-um-pulse 1.4s ease-in-out infinite;
+}
+@keyframes nuon-um-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nuon-um-pulse {
+    animation: none;
+  }
+}
+.nuon-um-ghost {
+  border: 1px solid var(--in-border);
+  background: transparent;
+  color: var(--in-text);
+}
+.dark .nuon-um-ghost {
+  color: var(--in-text);
+}
+.nuon-um-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+.nuon-um-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--in-muted);
+}
+.nuon-um-steps li::before {
+  content: "";
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1.5px solid var(--in-border);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.nuon-um-steps .nuon-um-done {
+  color: var(--in-text);
+}
+.nuon-um-steps .nuon-um-done::before {
+  border-color: var(--in-accent);
+  background: var(--in-accent);
+  box-shadow: inset 0 0 0 3px var(--in-box-bg);
+}
+.nuon-um-steps .nuon-um-now {
+  color: var(--in-text);
+  font-weight: 600;
+}
+.nuon-um-steps .nuon-um-now::before {
+  border-color: var(--in-accent);
+  border-right-color: transparent;
+}
+.nuon-um-steps small {
+  color: var(--in-muted);
+  font-weight: 400;
+}
+.nuon-um::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: #4cc9f0;
+}
+.nuon-um-tag {
+  flex: none;
+  margin-left: auto;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid rgba(76, 201, 240, 0.64);
+  border-radius: 999px;
+  background: #f2fcff;
+  color: #2b7894;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.dark .nuon-um-tag {
+  background: rgba(76, 201, 240, 0.16);
+  color: #4cc9f0;
+}
+.nuon-um-picker .nuon-um {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+.nuon-um-pickrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.nuon-um-picklabel {
+  color: #828282;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.nuon-um-picker {
+  margin: 1.25rem 0 1.75rem;
+}
+.nuon-um-tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 999px;
+}
+.dark .nuon-um-tabs {
+  border-color: #1f1f20;
+}
+.nuon-um-tab {
+  padding: 0.3rem 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.nuon-um-tab:hover {
+  opacity: 1;
+}
+.nuon-um-tab:focus-visible {
+  outline: 2px solid rgba(76, 201, 240, 0.64);
+  outline-offset: 2px;
+}
+.nuon-um-tab-on {
+  background: #f2fcff;
+  color: #2b7894;
+  box-shadow: inset 0 0 0 1px rgba(76, 201, 240, 0.64);
+  opacity: 1;
+}
+.dark .nuon-um-tab-on {
+  background: rgba(76, 201, 240, 0.16);
+  color: #4cc9f0;
+}
+.nuon-um-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--in-border);
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+.nuon-um-notes > div {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 0.75rem;
+}
+.nuon-um-notes-k {
+  color: var(--in-muted);
+}
+.nuon-um-notes code {
+  font-size: 0.78rem;
+}
+.nuon-um-notes a {
+  color: var(--in-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+@media (max-width: 720px) {
+  .nuon-um-notes > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.1rem;
+  }
+}

@@ -122,6 +122,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		orgs.POST("/admin-delete-canarys", s.AdminDeleteCanaryOrgs)
 		orgs.POST("/admin-delete-integrations", s.AdminDeleteIntegrationOrgs)
 		orgs.POST("/admin-restart-all", s.RestartAllOrgs)
+		orgs.POST("/admin-reconcile-roles", s.AdminReconcileOrgRoles)
 
 		// org features (all orgs)
 		orgs.GET("/admin-features", s.AdminGetOrgFeatures)

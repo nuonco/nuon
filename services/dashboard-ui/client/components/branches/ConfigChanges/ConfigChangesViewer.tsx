@@ -3,7 +3,6 @@ import { cn } from '@/utils/classnames'
 import { changeCounts, type TDiffOperation } from '@/lib/diffs'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import { Button } from '@/components/common/Button'
-import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -243,12 +242,9 @@ export const ConfigChangesViewer = ({
           <DiffSections
             className="md:min-h-0 md:flex-1"
             renderBody={(body) => (
-              <Card
-                elevation="0"
-                className="gap-1 bg-elevation-0 p-0 md:min-h-0 md:flex-1 md:overflow-y-auto"
-              >
+              <div className="flex flex-col gap-1 md:min-h-0 md:flex-1 md:overflow-y-auto">
                 {body}
-              </Card>
+              </div>
             )}
             toolbar={
               <>

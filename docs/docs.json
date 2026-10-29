@@ -91,13 +91,12 @@
               "concepts/components",
               "concepts/app-inputs",
               "concepts/app-secrets",
-              "concepts/policies",
               "concepts/app-variables"
             ]
           },
           {
-            "group": "BYOC Management Infra",
-            "root": "concepts/nuon-infrastructure",
+            "group": "Installs",
+            "root": "concepts/installs",
             "expanded": true,
             "boost": 3,
             "pages": [
@@ -107,27 +106,16 @@
             ]
           },
           {
-            "group": "Customer Installs",
-            "root": "concepts/installs",
-            "expanded": true,
-            "boost": 3,
-            "pages": [
-              "concepts/stacks/stand-alone-vpc",
-              "concepts/stacks/customer-vpc",
-              "concepts/stacks/customer-cluster",
-              "concepts/install-telemetry"
-            ]
-          },
-          {
             "group": "Updates and Operations",
             "root": "concepts/updates-and-operations",
             "expanded": true,
             "boost": 3,
             "pages": [
-              "concepts/workflows",
               "concepts/app-branches",
+              "concepts/workflows",
+              "concepts/policies",
               "concepts/actions",
-              "concepts/operation-roles",
+              "concepts/runbooks",
               "concepts/triggers"
             ]
           }
@@ -138,10 +126,11 @@
         "icon": "screwdriver-wrench",
         "groups": [
           {
-            "group": "Build an App",
+            "group": "Apps",
             "boost": 3,
             "pages": [
-              "guides/managing-apps",
+              "guides/building-nuon-apps",
+              "guides/multiple-app-configurations",
               "guides/retaining-resources-on-teardown",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
@@ -152,7 +141,7 @@
             ]
           },
           {
-            "group": "Manage Components",
+            "group": "Components",
             "boost": 3,
             "pages": [
               "guides/managing-components",
@@ -169,7 +158,36 @@
             ]
           },
           {
-            "group": "Deliver to Customers",
+            "group": "Stacks",
+            "boost": 2,
+            "pages": [
+              "concepts/stacks/stand-alone-vpc",
+              "concepts/stacks/customer-vpc",
+              "concepts/stacks/customer-cluster",
+              "guides/custom-nested-stacks",
+              "guides/nuon-stack-terraform-provider",
+              "guides/customizing-terraform-stack-templates"
+            ]
+          },
+          {
+            "group": "CLI",
+            "boost": 2,
+            "pages": [
+              "guides/cli-extensions",
+              "guides/cli-versions",
+              "guides/terraform-cli"
+            ]
+          },
+          {
+            "group": "README",
+            "boost": 2,
+            "pages": [
+              "guides/using-readmes",
+              "guides/programmable-readmes"
+            ]
+          },
+          {
+            "group": "Installs",
             "boost": 3,
             "pages": [
               "guides/vendor-customers",
@@ -186,19 +204,29 @@
             ]
           },
           {
-            "group": "Operate Installs",
+            "group": "Actions",
+            "boost": 3,
+            "pages": [
+              "guides/actions",
+              "guides/adhoc-actions",
+              "guides/container-actions"
+            ]
+          },
+          {
+            "group": "Updates and Operations",
             "boost": 3,
             "pages": [
               "guides/app-branches",
+              "guides/app-branch-migration",
               "guides/rollback-install-config",
               "guides/reprovision-installs",
-              "guides/actions",
-              "guides/adhoc-actions",
-              "guides/container-actions",
               "guides/runbooks",
+              "guides/health-checks",
               "guides/configuring-policies",
+              "guides/external-image-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
+              "concepts/install-telemetry",
               "guides/manage-install-telemetry"
             ]
           },
@@ -206,12 +234,12 @@
             "group": "Automate and Integrate",
             "boost": 2,
             "pages": [
+              "guides/ui-integration",
               "guides/control-plane-integration",
               "guides/idempotent-operations",
               "guides/github-actions",
               "guides/webhooks",
               "guides/triggers",
-              "guides/health-checks",
               "guides/slack"
             ]
           },
@@ -224,22 +252,6 @@
               "concepts/api-tokens",
               "concepts/service-accounts",
               "concepts/oidc-federation"
-            ]
-          },
-          {
-            "group": "Advanced",
-            "boost": 2,
-            "pages": [
-              "guides/using-readmes",
-              "guides/programmable-readmes",
-              "guides/custom-nested-stacks",
-              "guides/nuon-stack-terraform-provider",
-              "guides/customizing-terraform-stack-templates",
-              "guides/cli-extensions",
-              "guides/cli-versions",
-              "guides/external-image-policies",
-              "guides/terraform-cli",
-              "guides/app-branch-migration"
             ]
           }
         ]
@@ -287,7 +299,9 @@
               {
                 "group": "CLI",
                 "root": "cli",
-                "pages": ["cli-commands"]
+                "pages": [
+                  "cli-commands"
+                ]
               },
               "tui",
               "nuon-api",
@@ -348,6 +362,7 @@
               "architecture/platform",
               "architecture/app-deployment",
               "architecture/runner-auth",
+              "concepts/operation-roles",
               "security"
             ]
           }
@@ -456,12 +471,24 @@
   },
   "redirects": [
     {
+      "source": "/concepts/nuon-infrastructure",
+      "destination": "/concepts/installs"
+    },
+    {
+      "source": "/guides",
+      "destination": "/guides/building-nuon-apps"
+    },
+    {
+      "source": "/guides/managing-apps",
+      "destination": "/guides/building-nuon-apps"
+    },
+    {
       "source": "/guides/agents/skills",
       "destination": "/guides/agents/writing-policies"
     },
     {
       "source": "/guides/app-install-life-cycle",
-      "destination": "/concepts/installs"
+      "destination": "/concepts/overview"
     },
     {
       "source": "/get-started/overview",
