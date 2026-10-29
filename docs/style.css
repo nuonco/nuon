@@ -844,3 +844,348 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Concepts overview: where things run, and how they relate (snippets/platform-diagram.jsx) */
+.nuon-pd-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.75rem;
+}
+.nuon-pd-row {
+  position: relative;
+}
+.nuon-pd-cp {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.nuon-pd-cp span {
+  margin-left: 0;
+  color: var(--in-text);
+  font-weight: 600;
+}
+.nuon-pd-link {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--in-muted);
+  z-index: 2;
+}
+.nuon-pd-link-label {
+  position: absolute;
+  transform: translateY(calc(-100% - 3px));
+  white-space: nowrap;
+  color: var(--in-muted);
+  font-size: 0.7rem;
+}
+.nuon-pd .nuon-pd-flows {
+  justify-content: flex-end;
+  padding-bottom: 6rem;
+}
+.nuon-pd-flows .nuon-pd-flow-back {
+  display: none;
+}
+.nuon-pd-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.875rem;
+  border-radius: 12px;
+}
+.nuon-pd-yours {
+  border: 1px dashed var(--in-border);
+  background: var(--in-cp-bg);
+}
+.nuon-pd-theirs {
+  border: 1px solid var(--in-border);
+  background: var(--in-account-bg);
+}
+.nuon-pd-zlabel {
+  color: var(--in-muted);
+  font-weight: 600;
+}
+.nuon-pd-logo {
+  display: block;
+  height: 1.6rem;
+  width: auto;
+  color: var(--in-text);
+}
+.nuon-pd-runner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: fit-content;
+  margin-top: 0.4rem;
+  padding: 0.45rem 0.8rem 0.45rem 0.6rem;
+  border-radius: 8px;
+  background: var(--in-text);
+  color: var(--in-box-bg);
+  text-decoration: none;
+  box-shadow: 0 0 0 3px var(--in-border);
+}
+.dark .nuon-pd-runner {
+  color: #0b1117;
+}
+.nuon-pd-runner-mark {
+  height: 1.35rem;
+  width: auto;
+  flex: none;
+}
+.nuon-pd-runner-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.nuon-pd-runner-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.nuon-pd-runner-note {
+  font-size: 0.68rem;
+  opacity: 0.75;
+}
+.nuon-pd-zlabel span {
+  margin-left: 0.3rem;
+  font-weight: 400;
+}
+.nuon-pd .nuon-infra-concept {
+  gap: 0.6rem;
+}
+.nuon-pd .nuon-infra-components {
+  margin-top: 0;
+}
+.nuon-pd .nuon-infra-chips {
+  margin-top: 0.35rem;
+}
+.nuon-pd-template {
+  flex: 1;
+  border-width: 2px;
+}
+.nuon-pd-template-name {
+  margin-top: -0.25rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.nuon-pd-template-sub {
+  margin-top: -0.5rem;
+  font-size: 0.82rem;
+  color: var(--in-muted);
+}
+.nuon-pd-where {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--in-muted);
+}
+.nuon-pd-faded {
+  opacity: 0.6;
+}
+.nuon-pd a.nuon-infra-chip,
+.nuon-pd a.nuon-ab-group {
+  color: var(--in-text);
+  text-decoration: none;
+}
+.nuon-pd a.nuon-infra-chip:hover,
+.nuon-pd a.nuon-ab-group:hover {
+  color: var(--in-accent);
+}
+.nuon-pd-flows {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.75rem;
+  color: var(--in-accent);
+  font-size: 0.72rem;
+  text-align: center;
+}
+.nuon-pd-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+.nuon-pd-flow-back {
+  color: var(--in-muted);
+}
+.nuon-pd-flow-back svg {
+  transform: scaleX(-1);
+}
+@media (max-width: 720px) {
+  .nuon-pd-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nuon-pd-flows .nuon-pd-flow-back {
+    display: flex;
+  }
+  .nuon-pd .nuon-pd-flows {
+    justify-content: center;
+    padding-bottom: 0;
+  }
+  .nuon-pd-flows {
+    flex-direction: row;
+    justify-content: center;
+  }
+  .nuon-pd-flow svg {
+    transform: rotate(90deg);
+  }
+  .nuon-pd-flow-back svg {
+    transform: rotate(-90deg);
+  }
+}
+
+.nuon-pt {
+  margin-top: 0.75rem;
+}
+.nuon-pt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--in-muted);
+}
+.nuon-pt-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 0.4rem;
+  border-radius: 3px;
+  vertical-align: -1px;
+}
+.nuon-pt-key-repo {
+  border: 1px dashed var(--in-border);
+  background: var(--in-cp-bg);
+}
+.nuon-pt-key-cust {
+  border: 1px solid var(--in-strong);
+  background: var(--in-inner-bg);
+}
+.nuon-pt-scroll {
+  overflow-x: auto;
+}
+.nuon-pt-tree {
+  --pt-gap: 1.75rem;
+  --pt-w1: 8.5rem;
+  --pt-w2: 11.5rem;
+  min-width: 44rem;
+}
+.nuon-pt-heads {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+.nuon-pt-h1 {
+  flex: 0 0 calc(var(--pt-w1) + var(--pt-gap));
+}
+.nuon-pt-h2 {
+  flex: 0 0 calc(var(--pt-w2) + var(--pt-gap));
+}
+.nuon-pt-item {
+  display: flex;
+  align-items: center;
+}
+.nuon-pt-card {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  box-sizing: border-box;
+  padding: 0.4rem 0.65rem;
+  border: 1px dashed var(--in-border);
+  border-radius: 8px;
+  background: var(--in-cp-bg);
+  font-size: 0.82rem;
+}
+.nuon-pt-l1 > .nuon-pt-card {
+  width: var(--pt-w1);
+}
+.nuon-pt-l2 > .nuon-pt-card,
+.nuon-pt-l3 > .nuon-pt-card {
+  width: var(--pt-w2);
+}
+.nuon-pt-name {
+  font-weight: 600;
+}
+.nuon-pt-file {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  color: var(--in-muted);
+}
+.nuon-pt-num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-right: 0.35rem;
+  border: 1px solid var(--in-strong);
+  border-radius: 50%;
+  color: var(--in-accent);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.nuon-pt-default {
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border: 1px solid var(--in-border);
+  border-radius: 4px;
+  color: var(--in-accent);
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+.nuon-pt-children {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-left: var(--pt-gap);
+}
+.nuon-pt-children::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: calc(var(--pt-gap) / 2);
+  border-top: 1.5px solid var(--in-border);
+}
+.nuon-pt-children > .nuon-pt-item {
+  position: relative;
+}
+.nuon-pt-children > .nuon-pt-item::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--pt-gap) / -2);
+  top: 50%;
+  width: calc(var(--pt-gap) / 2);
+  border-top: 1.5px solid var(--in-border);
+}
+.nuon-pt-children > .nuon-pt-item::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--pt-gap) / -2);
+  top: -0.375rem;
+  bottom: -0.375rem;
+  border-left: 1.5px solid var(--in-border);
+}
+.nuon-pt-children > .nuon-pt-item:first-child::after {
+  top: 50%;
+}
+.nuon-pt-children > .nuon-pt-item:last-child::after {
+  bottom: 50%;
+}
+.nuon-pt-children > .nuon-pt-item:only-child::after {
+  content: none;
+}
+.nuon-pt-installs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.nuon-pt-install {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--in-strong);
+  border-radius: 8px;
+  background: var(--in-inner-bg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+}

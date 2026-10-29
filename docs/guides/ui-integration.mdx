@@ -1,0 +1,93 @@
+---
+title: "Build a UI integration"
+description: "Let your customers set up BYOC from inside your product: create the install, hand them the stack, and show progress until it's live."
+keywords: ["UI integration", "embed BYOC", "BYOC onboarding flow", "customer self-serve BYOC", "white label", "install progress", "polling", "webhooks", "service account", "API integration", "product integration"]
+---
+
+import { FlowSteps } from "/snippets/flow-steps.jsx";
+
+A UI integration puts BYOC setup inside your own product. Your customer starts setup from your app, applies the stack
+in their cloud account, and watches the install come up. Your backend drives Nuon through the [API](/concepts/api).
+
+This guide covers setup. For later changes, such as updating inputs or deprovisioning, see
+[Add BYOC installation to your product](/guides/control-plane-integration).
+
+<FlowSteps
+  horizontal
+  steps={[
+    { title: "Create the install" },
+    { title: "Customer applies the stack" },
+    { title: "Track the provision" },
+    { title: "Approve" },
+  ]}
+/>
+
+## Before you start
+
+- **A service account.** Your backend calls Nuon as a [service account](/concepts/service-accounts). Store its token
+  in your secret manager.
+- **Background jobs.** Setup takes several minutes and waits on your customer, so run it outside the web request.
+- **Safe retries.** Send a `request_id` on every call that starts a workflow, so a retry after a timeout returns the
+  original workflow. See [Idempotent operations](/guides/idempotent-operations).
+
+## 1. Create the install
+
+Create the install with your customer's [inputs](/concepts/app-inputs). Nuon starts the provision workflow, which waits
+for the customer's stack.
+
+```bash
+curl -X POST https://api.nuon.co/v1/installs \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "app...",
+    "name": "customer-acme",
+    "aws_account": { "region": "us-west-2" },
+    "inputs": { "domain": "acme.example.com" }
+  }'
+```
+
+Save the install ID and workflow ID with your customer's record.
+
+## 2. Hand the customer the stack
+
+Your customer applies the [stack](/concepts/stacks) in their own account, with their own credentials. Fetch it with
+`GET /v1/installs/{install_id}/stack` and show the link from the latest version. On AWS, `quick_link_url` opens the
+CloudFormation quick-create page.
+
+Tell your customer what the stack creates: the network, the IAM roles, and the [runner](/concepts/runners).
+[Positioning safety of BYOC](/guides/vendor-customers) covers the questions security reviewers ask.
+
+## 3. Track the provision
+
+Once the stack applies, the runner calls out to Nuon and the provision workflow continues: sandbox first, then your
+components.
+
+- **Webhooks.** Subscribe to the `runners`, `sandboxes`, and `components` events you want to show. See
+  [Webhooks](/guides/webhooks).
+- **Polling.** Poll the provision workflow, and back off between calls.
+
+Show your customer each stage as it completes:
+
+1. Stack applied and runner connected
+2. Sandbox provisioned
+3. Each component deployed
+
+When a step fails, show the step name and its error from the workflow, so your customer and your support team see the
+same thing.
+
+## 4. Approve
+
+If the install's steps wait for approval, approve them from your backend, or give your customer one **Approve** button
+that maps to `approve-all`. See [Approve the provision](/guides/control-plane-integration#approve-the-provision).
+
+## Things to know
+
+- **Scope your webhooks.** By default a webhook receives every event in your org. Use `interests` and `match` to limit
+  it to the installs and events your integration handles.
+- **Verify signatures.** Create the webhook with a secret and check the `X-Nuon-Signature` header on every request.
+  See [Verifying signatures](/guides/webhooks#verifying-signatures).
+- **Limit the service account.** Give it the narrowest role that works. See [Access control](/concepts/access-control).
+- **Name installs after your customer.** Use your own customer ID in the install name, so support can find it in the
+  Nuon dashboard.
