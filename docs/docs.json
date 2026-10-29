@@ -231,6 +231,11 @@
             ]
           },
           {
+            "group": "Policies",
+            "boost": 3,
+            "pages": []
+          },
+          {
             "group": "Automate and Integrate",
             "boost": 2,
             "pages": [
