@@ -381,6 +381,10 @@ type Config struct {
 	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)
 	OIDCFederationAllowInsecureIssuers bool `config:"oidc_federation_allow_insecure_issuers"` // allow http:// issuer URLs in trust policies (local dev only)
 
+	// When true, GET .../processes/:id/shutdowns is public so pre-auth runners
+	// can still observe shutdown requests during upgrades.
+	PublicRunnerProcessShutdowns bool `config:"public_runner_process_shutdowns"`
+
 	// OAuth 2.0 authorization server (MCP clients)
 	OAuthDCREnabled      bool `config:"oauth_dcr_enabled"`
 	OAuthAccessTokenTTL  int  `config:"oauth_access_token_ttl"`  // minutes
