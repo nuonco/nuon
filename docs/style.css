@@ -1525,8 +1525,17 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   margin-top: 0;
   margin-bottom: 0.75rem;
 }
-.nuon-um-picker .nuon-um-tabs {
+.nuon-um-pickrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
   margin-bottom: 0.5rem;
+}
+.nuon-um-picklabel {
+  color: #828282;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 .nuon-um-picker {
   margin: 1.25rem 0 1.75rem;
