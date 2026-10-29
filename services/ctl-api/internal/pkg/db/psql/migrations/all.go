@@ -267,5 +267,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "149-backfill-phone-home-roles",
 			Fn:   m.Migration148BackfillPhoneHomeRoles,
 		},
+		migrations.Migration{
+			Name: "150-rebackfill-role-metadata",
+			Fn:   m.Migration150RebackfillRoleMetadata,
+		},
 	)
 }
