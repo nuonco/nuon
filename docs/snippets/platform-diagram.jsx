@@ -108,7 +108,7 @@ export const PlatformDiagram = () => {
                 strokeWidth="1.5"
               />
             </svg>
-            <span className="nuon-pd-link-label" style={{ right: link.w - link.vx + 10, top: link.ey }}>
+            <span className="nuon-pd-link-label" style={{ right: link.w - link.vx + 38, top: link.ey }}>
               runner calls out, outbound only
             </span>
           </>
