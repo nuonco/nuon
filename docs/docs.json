@@ -141,7 +141,8 @@
             "group": "Build an App",
             "boost": 3,
             "pages": [
-              "guides/managing-apps",
+              "guides/building-nuon-apps",
+              "guides/multiple-app-configurations",
               "guides/retaining-resources-on-teardown",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
@@ -455,6 +456,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/guides/managing-apps",
+      "destination": "/guides/building-nuon-apps"
+    },
     {
       "source": "/guides/agents/skills",
       "destination": "/guides/agents/writing-policies"

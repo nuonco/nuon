@@ -1,0 +1,105 @@
+---
+title: "Multiple App Configurations"
+description: "Manage separate apps for each cloud and customer architecture."
+---
+
+import { AppBranchesDiagram } from "/snippets/app-branches-diagram.jsx";
+
+Most teams have one (or both) true of their BYOC customers:
+
+- Customers that span AWS, Azure, GCP etc.
+- Customers that need specific configurations like BYO-VPC vs fully managed BYOC
+
+You can handle this with multiple app configs such as `acme-aws` and `acme-azure`. Keep each app in its own directory, and give
+each one its own [app branch](/guides/app-branches) that points at that directory. Each branch rolls changes out to its
+installs in [install groups](/concepts/app-branches#install-groups):
+
+<AppBranchesDiagram />
+
+## Connecting each app to git
+
+Each app ships through an app branch:
+
+1. Add a branch file, such as `branches/main.toml`, that points at your repository, the app's directory, and a git
+   branch.
+2. Sync it once. After the first sync, the branch starts its first [run](/concepts/app-branches#what-triggers-an-app-branch-run).
+
+   ```sh
+   nuon branches sync --file branches/main.toml
+   ```
+
+3. Push to that git branch to ship each change after that.
+
+## Splitting an app branch into install groups
+
+Most teams don't ship a change to every customer at once. A common rollout:
+
+1. **Canary:** your internal and test installs get the change first.
+2. **Customers:** once the canary looks healthy, the change rolls out to customer installs, often in tiers.
+
+Each step is an [install group](/concepts/app-branches#install-groups) on the app branch. Groups deploy in `order`, and each one waits
+for your approval unless it auto-approves when [policies](/concepts/policies) pass.
+
+```toml branches/main.toml (excerpt)
+[[install_groups]]
+name  = "canary"
+order = 1
+auto_approve_on_policies_passing = true
+[install_groups.label_selector]
+tier = "canary"
+
+[[install_groups]]
+name    = "customers"
+order   = 2
+default = true
+[install_groups.label_selector]
+tier = "customer"
+```
+
+### Default labels
+
+Install groups pick installs by label. Default labels put a label on every install, so each new install joins the
+right group on its own. Set the value from an install input with [templating](/guides/using-variables):
+
+```toml metadata.toml
+[default_labels]
+tier = "{{ .nuon.install.inputs.tier }}"
+```
+
+- Change default labels in `metadata.toml`. You can't edit them on a single install.
+- The next app branch run updates every install.
+
+### Label colors
+
+Color-code labels in the dashboard by label key:
+
+```toml metadata.toml
+[label_colors]
+env      = "#FF5733"
+region   = "#33FF57"
+customer = "#3357FF"
+```
+
+Colors set in the dashboard are replaced by these on the next app branch run.
+
+## Telling apps apart in the dashboard
+
+Give each app a name and description in `metadata.toml`. Nuon shows them in the dashboard and CLI:
+
+```toml metadata.toml
+display_name = "Acme (AWS)"
+description  = "Acme for customers on AWS."
+readme       = "./README.md"
+```
+
+`readme` points to a Markdown file shown on each install. See [Using READMEs](/guides/using-readmes).
+
+## Inspecting an app's config
+
+```sh
+nuon apps select           # pick the app to inspect
+nuon apps configs          # list all config versions
+nuon apps runner-config    # print runner config
+nuon apps sandbox-config   # print sandbox config
+nuon apps input-config     # print input config
+```
