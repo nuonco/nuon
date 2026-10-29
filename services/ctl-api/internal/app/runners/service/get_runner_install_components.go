@@ -152,7 +152,7 @@ func (s *service) renderProbeTargets(ctx context.Context, installID string, comp
 		return
 	}
 
-	installState, err := s.installsHelpers.GetInstallState(ctx, installID, false, true)
+	installState, err := s.installsHelpers.GetInstallState(ctx, installID, true, true)
 	if err != nil {
 		s.l.Warn("unable to get install state to render health probe targets",
 			zap.String("install_id", installID), zap.Error(err))
