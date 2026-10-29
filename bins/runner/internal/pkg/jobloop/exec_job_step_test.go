@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -183,7 +185,7 @@ func TestTerminalJobExecutionStatusDetachesCanceledContext(t *testing.T) {
 			}
 			j := &jobLoop{apiClient: client}
 			if withCoalescer {
-				coalescer := newStatusCoalescer("job-id", "execution-id", zap.NewNop(), j.writeJobExecutionStatus)
+				coalescer := newStatusCoalescer(context.Background(), "job-id", "execution-id", zap.NewNop(), j.writeJobExecutionStatus)
 				j.attachCoalescer("execution-id", coalescer)
 				defer j.detachCoalescer("execution-id")
 				defer coalescer.Close()
@@ -200,5 +202,36 @@ func TestTerminalJobExecutionStatusDetachesCanceledContext(t *testing.T) {
 			)
 			require.NoError(t, err)
 		})
+	}
+}
+
+func TestCoalescedStatusUsesJobTokenAfterCancellation(t *testing.T) {
+	authorization := make(chan string, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authorization <- r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"id":"execution-id"}`)
+	}))
+	defer server.Close()
+
+	client, err := nuonrunner.New(nuonrunner.WithURL(server.URL), nuonrunner.WithRunnerID("runner-id"), nuonrunner.WithAuthToken("runner-token"))
+	require.NoError(t, err)
+	jobClient, err := client.ForJob("job-id", "job-token")
+	require.NoError(t, err)
+	ctx, cancel := context.WithCancel(nuonrunner.WithJobClient(context.Background(), jobClient))
+	defer cancel()
+	j := &jobLoop{apiClient: client}
+	coalescer := newStatusCoalescer(ctx, "job-id", "execution-id", zap.NewNop(), j.writeJobExecutionStatus)
+	j.attachCoalescer("execution-id", coalescer)
+	defer j.detachCoalescer("execution-id")
+	defer coalescer.Close()
+	cancel()
+
+	require.NoError(t, j.updateJobExecutionStatus(ctx, "job-id", "execution-id", models.AppRunnerJobExecutionStatusInDashProgress))
+	select {
+	case token := <-authorization:
+		require.Equal(t, "Bearer job-token", token)
+	case <-time.After(5 * time.Second):
+		t.Fatal("status update was not sent after job cancellation")
 	}
 }
