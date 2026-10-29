@@ -213,6 +213,15 @@
             ]
           },
           {
+            "group": "Actions",
+            "boost": 3,
+            "pages": [
+              "guides/actions",
+              "guides/adhoc-actions",
+              "guides/container-actions"
+            ]
+          },
+          {
             "group": "Updates and Operations",
             "boost": 3,
             "pages": [
@@ -226,15 +235,6 @@
               "guides/operation-roles",
               "guides/runner-management-mode",
               "guides/manage-install-telemetry"
-            ]
-          },
-          {
-            "group": "Actions",
-            "boost": 3,
-            "pages": [
-              "guides/actions",
-              "guides/adhoc-actions",
-              "guides/container-actions"
             ]
           },
           {
