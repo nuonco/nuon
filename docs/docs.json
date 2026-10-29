@@ -138,7 +138,7 @@
         "icon": "screwdriver-wrench",
         "groups": [
           {
-            "group": "Build an App",
+            "group": "Apps",
             "boost": 3,
             "pages": [
               "guides/building-nuon-apps",
