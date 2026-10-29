@@ -160,7 +160,7 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 					OrgID:             s.testOrg.ID,
 					RunnerID:          s.testRunner.ID,
 					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusInProgress,
+					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
 					Type:              app.RunnerJobTypeDockerBuild,
@@ -193,7 +193,7 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(job *app.RunnerJob) {
 				assert.NotNil(s.T(), job)
-				assert.Equal(s.T(), app.RunnerJobStatusInProgress, job.Status)
+				assert.Equal(s.T(), app.RunnerJobStatusAvailable, job.Status)
 				assert.Len(s.T(), job.Executions, 1, "should preload most recent execution")
 				assert.Equal(s.T(), app.RunnerJobExecutionStatusInProgress, job.Executions[0].Status)
 			},
@@ -283,7 +283,7 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 					OrgID:             s.testOrg.ID,
 					RunnerID:          s.testRunner.ID,
 					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusQueued,
+					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
 					Type:              app.RunnerJobTypeDockerBuild,
@@ -305,7 +305,7 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(job *app.RunnerJob) {
 				assert.NotNil(s.T(), job)
-				assert.Equal(s.T(), app.RunnerJobStatusQueued, job.Status)
+				assert.Equal(s.T(), app.RunnerJobStatusAvailable, job.Status)
 				assert.Empty(s.T(), job.Executions, "should have no executions")
 			},
 		},
@@ -320,7 +320,7 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 					OrgID:             s.testOrg.ID,
 					RunnerID:          s.testRunner.ID,
 					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusInProgress,
+					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
 					Type:              app.RunnerJobTypeDockerBuild,

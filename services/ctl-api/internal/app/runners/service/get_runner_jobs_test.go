@@ -279,63 +279,12 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 			},
 		},
 		{
-			name: "filters by status query param",
+			name: "non-available status returns 400",
 			setupFunc: func() string {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				// Create in-progress job
-				job1 := &app.RunnerJob{
-					ID:                domains.NewRunnerJobID(),
-					OrgID:             s.testOrg.ID,
-					RunnerID:          s.testRunner.ID,
-					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusInProgress,
-					StatusDescription: "in progress job",
-					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
-					Operation:         app.RunnerJobOperationTypeBuild,
-					QueueTimeout:      60,
-					AvailableTimeout:  60,
-					ExecutionTimeout:  300,
-					MaxExecutions:     3,
-				}
-				err := s.service.DB.WithContext(ctx).Create(job1).Error
-				require.NoError(s.T(), err)
-
-				// Create available job
-				job2 := &app.RunnerJob{
-					ID:                domains.NewRunnerJobID(),
-					OrgID:             s.testOrg.ID,
-					RunnerID:          s.testRunner.ID,
-					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusAvailable,
-					StatusDescription: "available job",
-					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
-					Operation:         app.RunnerJobOperationTypeBuild,
-					QueueTimeout:      60,
-					AvailableTimeout:  60,
-					ExecutionTimeout:  300,
-					MaxExecutions:     3,
-				}
-				err = s.service.DB.WithContext(ctx).Create(job2).Error
-				require.NoError(s.T(), err)
-
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(job1)
-					s.service.DB.Unscoped().Delete(job2)
-				})
-
 				return s.testRunner.ID
 			},
-			queryParams:   "?status=in-progress",
-			expectedCode:  http.StatusOK,
-			expectedCount: 1,
-			validateFunc: func(jobs []*app.RunnerJob) {
-				assert.Len(s.T(), jobs, 1)
-				assert.Equal(s.T(), app.RunnerJobStatusInProgress, jobs[0].Status)
-			},
+			queryParams:  "?status=in-progress",
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name: "runner not found still returns empty array",
@@ -357,51 +306,12 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name: "status=unknown shows all statuses",
+			name: "empty status returns 400",
 			setupFunc: func() string {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				// Create jobs with different statuses
-				statuses := []app.RunnerJobStatus{
-					app.RunnerJobStatusQueued,
-					app.RunnerJobStatusAvailable,
-					app.RunnerJobStatusInProgress,
-				}
-
-				for _, status := range statuses {
-					job := &app.RunnerJob{
-						ID:                domains.NewRunnerJobID(),
-						OrgID:             s.testOrg.ID,
-						RunnerID:          s.testRunner.ID,
-						LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-						Status:            status,
-						StatusDescription: "test job",
-						Group:             app.RunnerJobGroupBuild,
-						Type:              app.RunnerJobTypeDockerBuild,
-						Operation:         app.RunnerJobOperationTypeBuild,
-						QueueTimeout:      60,
-						AvailableTimeout:  60,
-						ExecutionTimeout:  300,
-						MaxExecutions:     3,
-					}
-					err := s.service.DB.WithContext(ctx).Create(job).Error
-					require.NoError(s.T(), err)
-
-					jobID := job.ID
-					s.T().Cleanup(func() {
-						s.service.DB.Unscoped().Where("id = ?", jobID).Delete(&app.RunnerJob{})
-					})
-				}
-
 				return s.testRunner.ID
 			},
-			queryParams:   "?status=",
-			expectedCode:  http.StatusOK,
-			expectedCount: 3,
-			validateFunc: func(jobs []*app.RunnerJob) {
-				assert.Len(s.T(), jobs, 3)
-			},
+			queryParams:  "?status=",
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name: "group=any shows all groups",

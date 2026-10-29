@@ -282,7 +282,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			},
 			expectedCode:   http.StatusNotFound,
 			expectedError:  true,
-			errorSubstring: "unable to get runner",
+			errorSubstring: "runner not found",
 		},
 		{
 			name: "runner with group but no settings",
@@ -336,7 +336,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			},
 			expectedCode:   http.StatusNotFound,
 			expectedError:  true,
-			errorSubstring: "unable to get runner",
+			errorSubstring: "runner not found",
 		},
 		{
 			name: "invalid AWS max instance lifetime - too low (deprecated)",
@@ -431,7 +431,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			},
 			expectedCode:   http.StatusNotFound,
 			expectedError:  true,
-			errorSubstring: "unable to get runner",
+			errorSubstring: "runner not found",
 		},
 	}
 
