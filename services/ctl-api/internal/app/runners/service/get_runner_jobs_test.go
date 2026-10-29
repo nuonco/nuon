@@ -151,56 +151,19 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 		validateFunc  func([]*app.RunnerJob)
 	}{
 		{
-			name: "returns jobs with default status=available",
-			setupFunc: func() string {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				// Create available job
-				job1 := &app.RunnerJob{
-					ID:                domains.NewRunnerJobID(),
-					OrgID:             s.testOrg.ID,
-					RunnerID:          s.testRunner.ID,
-					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusAvailable,
-					StatusDescription: "test job 1",
-					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
-					Operation:         app.RunnerJobOperationTypeBuild,
-					QueueTimeout:      60,
-					AvailableTimeout:  60,
-					ExecutionTimeout:  300,
-					MaxExecutions:     3,
-				}
-				err := s.service.DB.WithContext(ctx).Create(job1).Error
-				require.NoError(s.T(), err)
-
-				// Create queued job (should not be returned with default filter)
-				job2 := &app.RunnerJob{
-					ID:                domains.NewRunnerJobID(),
-					OrgID:             s.testOrg.ID,
-					RunnerID:          s.testRunner.ID,
-					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusQueued,
-					StatusDescription: "test job 2",
-					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
-					Operation:         app.RunnerJobOperationTypeBuild,
-					QueueTimeout:      60,
-					AvailableTimeout:  60,
-					ExecutionTimeout:  300,
-					MaxExecutions:     3,
-				}
-				err = s.service.DB.WithContext(ctx).Create(job2).Error
-				require.NoError(s.T(), err)
-
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(job1)
-					s.service.DB.Unscoped().Delete(job2)
-				})
-
-				return s.testRunner.ID
+			name:          "returns jobs with default status=available",
+			setupFunc:     s.seedMixedStatusJobs,
+			expectedCode:  http.StatusOK,
+			expectedCount: 1,
+			validateFunc: func(jobs []*app.RunnerJob) {
+				assert.Len(s.T(), jobs, 1)
+				assert.Equal(s.T(), app.RunnerJobStatusAvailable, jobs[0].Status)
 			},
+		},
+		{
+			name:          "explicit status=available returns only available jobs",
+			setupFunc:     s.seedMixedStatusJobs,
+			queryParams:   "?status=available",
 			expectedCode:  http.StatusOK,
 			expectedCount: 1,
 			validateFunc: func(jobs []*app.RunnerJob) {
@@ -425,4 +388,36 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 			}
 		})
 	}
+}
+
+func (s *GetRunnerJobsTestSuite) seedMixedStatusJobs() string {
+	ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
+
+	for _, status := range []app.RunnerJobStatus{
+		app.RunnerJobStatusAvailable,
+		app.RunnerJobStatusQueued,
+		app.RunnerJobStatusInProgress,
+	} {
+		job := &app.RunnerJob{
+			ID:                domains.NewRunnerJobID(),
+			OrgID:             s.testOrg.ID,
+			RunnerID:          s.testRunner.ID,
+			LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+			Status:            status,
+			StatusDescription: "test job",
+			Group:             app.RunnerJobGroupBuild,
+			Type:              app.RunnerJobTypeDockerBuild,
+			Operation:         app.RunnerJobOperationTypeBuild,
+			QueueTimeout:      60,
+			AvailableTimeout:  60,
+			ExecutionTimeout:  300,
+			MaxExecutions:     3,
+		}
+		require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(job).Error)
+		s.T().Cleanup(func() {
+			s.service.DB.Unscoped().Delete(job)
+		})
+	}
+
+	return s.testRunner.ID
 }
