@@ -8,6 +8,8 @@ Public API endpoints that create a workflow accept an optional `request_id` (JSO
 
 Calls that omit `request_id` start a new workflow every time. The CLI and the dashboard omit it.
 
+If you're building customer-facing setup in your own product, start with [Build a UI integration](/guides/ui-integration). It shows where `request_id` fits in that flow.
+
 The id is unique for one org, one install, and one workflow type, for as long as that workflow exists. Generate a new id for each workflow you intend to start once, and store it before the POST so a timeout retry uses the same id.
 
 ## Example
