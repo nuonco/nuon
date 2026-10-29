@@ -136,7 +136,6 @@ type probeResult struct {
 	health     string
 	message    string
 	statusCode int
-	exitCode   *int
 	latency    time.Duration
 }
 
@@ -166,8 +165,6 @@ func runProbe(ctx context.Context, client *http.Client, spec probeSpec) probeRes
 	switch spec.kind {
 	case probeKindTCP:
 		return runTCPProbe(ctx, spec.dialAddr)
-	case probeKindExec:
-		return probeResult{health: healthUnknown, message: execProbeUnsupported}
 	default:
 		return runHTTPProbe(ctx, client, spec.target)
 	}
@@ -227,9 +224,6 @@ func probeResourceRow(spec probeSpec, res probeResult) *models.ServiceComponentH
 	}
 	if res.statusCode > 0 {
 		detail["status_code"] = res.statusCode
-	}
-	if res.exitCode != nil {
-		detail["exit_code"] = *res.exitCode
 	}
 	if res.latency > 0 {
 		detail["latency_ms"] = res.latency.Milliseconds()

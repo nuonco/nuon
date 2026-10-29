@@ -137,8 +137,6 @@ func probeResourceKind(probeType string) string {
 	switch strings.ToLower(strings.TrimSpace(probeType)) {
 	case "tcp":
 		return "TCPProbe"
-	case "exec":
-		return "ExecProbe"
 	default:
 		return "HTTPProbe"
 	}

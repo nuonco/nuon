@@ -45,15 +45,6 @@ func TestRenderProbe(t *testing.T) {
 		assert.Equal(t, "https://app.customer.com/healthz", got.URL)
 	})
 
-	t.Run("renders command args", func(t *testing.T) {
-		got, err := renderProbe(RunnerComponentProbe{
-			Type:    "exec",
-			Command: []string{"check-api", "--host", "{{.nuon.install.sandbox.outputs.public_domain}}"},
-		}, stateData)
-		require.NoError(t, err)
-		assert.Equal(t, []string{"check-api", "--host", "app.customer.com"}, got.Command)
-	})
-
 	t.Run("errors on unresolvable target", func(t *testing.T) {
 		_, err := renderProbe(RunnerComponentProbe{
 			Type: "http",

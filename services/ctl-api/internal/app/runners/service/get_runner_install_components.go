@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -136,10 +135,9 @@ func runnerComponentProbes(probes app.ComponentHealthProbes) []RunnerComponentPr
 	out := make([]RunnerComponentProbe, 0, len(probes))
 	for _, probe := range probes {
 		out = append(out, RunnerComponentProbe{
-			Type:    probe.Type,
-			Name:    probe.Name,
-			URL:     probe.URL,
-			Command: probe.Command,
+			Type: probe.Type,
+			Name: probe.Name,
+			URL:  probe.URL,
 		})
 	}
 	return out
@@ -189,20 +187,6 @@ func renderProbe(probe RunnerComponentProbe, stateData map[string]any) (RunnerCo
 		probe.URL = url
 	}
 
-	if len(probe.Command) > 0 {
-		// Clone first: probe.Command aliases the source config's backing array;
-		// writing through it would mutate that config on a later render failure.
-		command := slices.Clone(probe.Command)
-		for idx, arg := range command {
-			rendered, err := render.RenderV2(arg, stateData)
-			if err != nil {
-				return probe, fmt.Errorf("unable to render probe command: %w", err)
-			}
-			command[idx] = rendered
-		}
-		probe.Command = command
-	}
-
 	return probe, nil
 }
 
@@ -218,15 +202,7 @@ func anyTemplatedProbe(comps []RunnerInstallComponent) bool {
 }
 
 func probeIsTemplated(probe RunnerComponentProbe) bool {
-	if strings.Contains(probe.URL, "{{") {
-		return true
-	}
-	for _, arg := range probe.Command {
-		if strings.Contains(arg, "{{") {
-			return true
-		}
-	}
-	return false
+	return strings.Contains(probe.URL, "{{")
 }
 
 // resolveComponentConfigs maps component ID to config connection, falling back
