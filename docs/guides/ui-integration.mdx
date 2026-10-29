@@ -24,14 +24,7 @@ Creating cloud resources in your customer's account takes a while. Run setup as 
 
 ## 1. Collect the customer's inputs
 
-Your app template's [inputs](/concepts/app-inputs) list the values each install needs, such as a domain or a node
-count. Build this form from them. Each input in `inputs.toml` already has a `display_name`, a `description`, and
-whether it's `required` or `sensitive`, so use those for the field label, help text, validation, and masking. Inputs in
-the same `group` belong together on the form.
-
-Ask the customer only for the inputs they need to decide. Fill in the rest from what your app already knows about
-them, or leave the defaults. The cloud region isn't an input. It goes on the install itself, as shown in the call
-below.
+Build this form from your app's [inputs](/concepts/app-inputs). Ask only for the ones the customer has to decide.
 
 <AcmeScreen screen="start" />
 
