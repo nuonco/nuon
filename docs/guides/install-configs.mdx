@@ -51,7 +51,7 @@ region = "{{ .nuon.cloud_account.aws.region }}"
 tier   = "{{ .nuon.install.inputs.tier }}"
 ```
 
-Dynamic values are rendered when the install install state changes — deploys, input updates, and config updates all trigger a refresh.
+Dynamic values are rendered when the install state changes — deploys, input updates, and config updates all trigger a refresh.
 The rendered value is displayed in the dashboard and what [webhook and Slack label selectors](/guides/webhooks) match against.
 
 If a template references state that doesn't exist yet (for example, a component output before its first
