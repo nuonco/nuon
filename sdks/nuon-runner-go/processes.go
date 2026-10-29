@@ -57,7 +57,7 @@ func (c *client) GetProcessShutdowns(ctx context.Context, processID string) ([]*
 	}
 
 	if httpResp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status %d: %s", httpResp.StatusCode, string(body))
+		return nil, statusError(httpResp.StatusCode, string(body))
 	}
 
 	var shutdowns []*models.AppRunnerProcessShutdown

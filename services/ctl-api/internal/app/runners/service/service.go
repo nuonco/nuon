@@ -335,7 +335,13 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runnerRoutes.POST("/processes", s.CreateRunnerProcess)
 	runnerRoutes.GET("/processes/:process_id", s.GetRunnerProcess)
 	runnerRoutes.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
-	runnerRoutes.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+	// When public, register outside OrgRoute so unauthenticated upgrade-path
+	// runners can poll; public middleware allowlists the path when the flag is on.
+	if s.cfg.PublicRunnerProcessShutdowns {
+		runners.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+	} else {
+		runnerRoutes.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+	}
 	runnerRoutes.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
 	runnerRoutes.POST("/processes/:process_id/terminating", s.ReportRunnerProcessTerminating)
 
