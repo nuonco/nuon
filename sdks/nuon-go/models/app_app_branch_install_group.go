@@ -34,6 +34,9 @@ type AppAppBranchInstallGroup struct {
 	// default
 	Default bool `json:"default,omitempty"`
 
+	// do not deploy
+	DoNotDeploy *bool `json:"do_not_deploy,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 

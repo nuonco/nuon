@@ -184,6 +184,7 @@ func installGroupRequests(ctx context.Context, resolver *branchNameResolver, cfg
 			Order:                        &order,
 			Default:                      group.Default,
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
+			DoNotDeploy:                  group.DoNotDeploy,
 		}
 
 		if len(group.LabelSelector) > 0 {

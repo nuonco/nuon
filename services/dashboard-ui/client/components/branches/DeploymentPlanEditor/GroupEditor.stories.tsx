@@ -34,6 +34,7 @@ const labelGroup: IInstallGroup = {
   order: 0,
   max_parallel: 1,
   auto_approve_on_policies_passing: false,
+    do_not_deploy: false,
 }
 
 const defaultGroup: IInstallGroup = {
@@ -45,6 +46,7 @@ const defaultGroup: IInstallGroup = {
   order: 1,
   max_parallel: 1,
   auto_approve_on_policies_passing: false,
+    do_not_deploy: false,
 }
 
 const Wrap = ({ children }: { children: React.ReactNode }) => (

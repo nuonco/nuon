@@ -20,6 +20,7 @@ import (
 const (
 	InstallGroupRunPhaseDeploy  = "deploy"
 	InstallGroupRunPhaseRunbook = "runbook"
+	InstallGroupRunPhasePin     = "pin"
 )
 
 type InstallGroupRunInstall struct {

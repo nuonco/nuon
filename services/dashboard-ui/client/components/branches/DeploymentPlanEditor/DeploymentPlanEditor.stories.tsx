@@ -43,6 +43,7 @@ const groups: IInstallGroup[] = [
     order: 0,
     max_parallel: 1,
     auto_approve_on_policies_passing: false,
+    do_not_deploy: false,
   },
   {
     id: 'group-default',
@@ -53,6 +54,7 @@ const groups: IInstallGroup[] = [
     order: 1,
     max_parallel: 1,
     auto_approve_on_policies_passing: false,
+    do_not_deploy: false,
   },
 ]
 
@@ -88,6 +90,7 @@ export const MultipleGroups = () => (
           order: 2,
           max_parallel: 2,
           auto_approve_on_policies_passing: false,
+    do_not_deploy: false,
         },
       ]}
       {...baseProps}
@@ -148,6 +151,7 @@ export const NoInstallsWithDefaultGroup = () => (
           order: 0,
           max_parallel: 1,
           auto_approve_on_policies_passing: false,
+    do_not_deploy: false,
         },
       ]}
       availableInstalls={[]}
@@ -176,6 +180,7 @@ export const DefaultGroup = () => (
           order: 0,
           max_parallel: 2,
           auto_approve_on_policies_passing: false,
+    do_not_deploy: false,
         },
       ]}
       {...baseProps}

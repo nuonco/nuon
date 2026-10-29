@@ -154,3 +154,31 @@ export const PreviewApplyInProgress = () => (
     rows={[rows[1]]}
   />
 )
+
+const pinRows: IInstallDeployRow[] = [
+  {
+    installId: 'ins_acme',
+    install: mkInstall(),
+    deployStatus: 'pinned',
+    workflowHref: wfHref,
+    installHref,
+  },
+  {
+    installId: 'ins_globex',
+    install: azureInstall,
+    deployStatus: 'pinned',
+    workflowHref: wfHref,
+    installHref,
+  },
+]
+
+export const GroupPinned = () => (
+  <StepInCard
+    variant="pin"
+    groupName="Legacy region"
+    totalInstalls={2}
+    deployedCount={2}
+    rows={pinRows}
+  />
+)
+GroupPinned.storyName = 'Do not deploy: app version pinned'

@@ -74,7 +74,8 @@ export const WorkflowStepDetail = ({
     }
     if (
       name.includes('deploy install group') ||
-      name === 'apply preview install'
+      name === 'apply preview install' ||
+      name.includes('update app version')
     ) {
       return <DeployGroupStep step={step} metadata={metadata} />
     }

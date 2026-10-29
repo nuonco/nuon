@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { Duration } from '@/components/common/Duration'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -37,15 +38,18 @@ const tally = (group: TTrackGroup) => {
 export const groupCaption = (group: TTrackGroup) => {
   const { success, error, total } = tally(group)
   if (isSkipped(group.status)) return 'Skipped'
+  const verb = group.doNotDeploy ? 'pinned' : 'updated'
   switch (stepStatusCategory(group.status)) {
     case 'awaiting':
       return 'Waiting for approval'
     case 'error':
-      return `${error} failed · ${success} of ${total} updated`
+      return `${error} failed · ${success} of ${total} ${verb}`
     case 'active':
-      return `${success} of ${total} updated`
+      return `${success} of ${total} ${verb}`
     case 'success':
-      return `${pluralize(total, 'install')} updated`
+      return group.doNotDeploy
+        ? `${pluralize(total, 'install')} pinned, awaiting reconcile`
+        : `${pluralize(total, 'install')} updated`
     default:
       return total ? `${pluralize(total, 'install')} queued` : 'No installs'
   }
@@ -69,6 +73,11 @@ export const GroupHeading = ({ group }: { group: TTrackGroup }) => {
         <Text variant="base" weight="strong">
           {group.name}
         </Text>
+        {group.doNotDeploy ? (
+          <Badge size="sm" theme="neutral">
+            Do not deploy
+          </Badge>
+        ) : null}
         <Status status={group.status} />
         <Text
           variant="subtext"

@@ -33,6 +33,7 @@ const toEditorGroups = (config?: TAppBranchConfig): IInstallGroup[] =>
       order: g.order ?? idx,
       max_parallel: g.max_parallel || 1,
       auto_approve_on_policies_passing: !!g.auto_approve_on_policies_passing,
+      do_not_deploy: !!g.do_not_deploy,
     }
   }) || []
 
@@ -109,6 +110,7 @@ export const DeploymentPlanEditorContainer = ({
           max_parallel: group.max_parallel || 1,
           auto_approve_on_policies_passing:
             group.auto_approve_on_policies_passing,
+          do_not_deploy: group.do_not_deploy,
         }
       })
 

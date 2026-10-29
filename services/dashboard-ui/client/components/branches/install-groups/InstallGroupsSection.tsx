@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useInstallHref } from '@/hooks/use-install-path'
+import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { EmptyState } from '@/components/common/EmptyState'
 import { LabelBadge } from '@/components/common/LabelBadge'
@@ -129,6 +130,11 @@ export const InstallGroupsSection = ({
                   <Text variant="subtext" theme="neutral">
                     Default
                   </Text>
+                )}
+                {group.do_not_deploy && (
+                  <Badge size="sm" theme="neutral">
+                    Do not deploy
+                  </Badge>
                 )}
                 {labelEntries.map(([k, v]) => (
                   <LabelBadge

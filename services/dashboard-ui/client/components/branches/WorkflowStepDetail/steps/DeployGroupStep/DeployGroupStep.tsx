@@ -10,7 +10,7 @@ export interface IDeployGroupStep {
   deployedCount: number
   rows: IInstallDeployRow[]
   emptyMessage?: string
-  variant?: 'group' | 'preview'
+  variant?: 'group' | 'preview' | 'pin'
 }
 
 export const DeployGroupStep = ({
@@ -26,6 +26,13 @@ export const DeployGroupStep = ({
       <span className="font-semibold text-cool-grey-900 dark:text-white">
         Preview install
       </span>
+    ) : variant === 'pin' ? (
+      <>
+        update app version:{' '}
+        <span className="font-semibold text-cool-grey-900 dark:text-white">
+          {groupName}
+        </span>
+      </>
     ) : (
       <>
         install group:{' '}
@@ -54,7 +61,8 @@ export const DeployGroupStep = ({
           </div>
           {totalInstalls > 0 && (
             <Text variant="subtext" family="mono" theme="neutral">
-              {deployedCount} / {totalInstalls} deployed
+              {deployedCount} / {totalInstalls}{' '}
+              {variant === 'pin' ? 'pinned' : 'deployed'}
             </Text>
           )}
         </div>

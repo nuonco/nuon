@@ -48,6 +48,7 @@ export type TTrackGroup = {
   maxParallel?: number
   startedAt?: string
   error?: TCompositeError
+  doNotDeploy?: boolean
 }
 
 export interface IRolloutTrack {

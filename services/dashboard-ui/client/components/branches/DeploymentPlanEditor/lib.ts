@@ -13,6 +13,7 @@ export const newGroup = (
   order: existingCount,
   max_parallel: 1,
   auto_approve_on_policies_passing: false,
+  do_not_deploy: false,
 })
 
 export const selectorKey = (

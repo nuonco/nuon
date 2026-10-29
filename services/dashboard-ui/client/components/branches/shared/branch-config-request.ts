@@ -10,6 +10,7 @@ export const installGroupsForApi = (
     max_parallel: g.max_parallel || 1,
     auto_approve_on_policies_passing:
       g.auto_approve_on_policies_passing ?? undefined,
+    do_not_deploy: g.do_not_deploy ?? undefined,
     ...(g.default ? { default: true } : { label_selector: g.label_selector }),
   }))
 

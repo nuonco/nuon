@@ -96,6 +96,11 @@ const InstallGroupCard = ({
                 <Text variant="body" weight="strong" className="truncate">
                   {group.name}
                 </Text>
+                {group.doNotDeploy ? (
+                  <Badge size="sm" theme="neutral">
+                    Do not deploy
+                  </Badge>
+                ) : null}
               </span>
               <span className="flex shrink-0 items-center gap-3">
                 {commit ? <CommitRange commit={commit} /> : null}

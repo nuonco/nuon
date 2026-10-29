@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { CompositeError } from '@/components/common/CompositeError'
 import { Link } from '@/components/common/Link'
 import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
@@ -57,6 +58,11 @@ export const InstallGroupPanelBody = ({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
             <Status status={group.status} />
+            {group.doNotDeploy ? (
+              <Badge size="sm" theme="neutral">
+                Do not deploy
+              </Badge>
+            ) : null}
             {commit ? <CommitRange commit={commit} /> : null}
             {group.maxParallel != null ? (
               <Text variant="subtext" theme="neutral">

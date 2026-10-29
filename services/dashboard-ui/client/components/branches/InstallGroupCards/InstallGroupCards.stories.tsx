@@ -55,6 +55,24 @@ const groups: TTrackGroup[] = [
     plannedCount: 8,
     installs: [],
   },
+  {
+    id: 'legacy',
+    name: 'Legacy region',
+    status: 'success',
+    doNotDeploy: true,
+    match: { kind: 'labels', labels: { env: 'prod', tier: 'legacy' } },
+    installs: [
+      { id: 'hotel', name: 'hotel', status: 'pinned' },
+      { id: 'india', name: 'india', status: 'pinned' },
+    ],
+  },
+  {
+    id: 'skipped-group',
+    name: 'Skipped region',
+    status: 'user-skipped',
+    match: { kind: 'labels', labels: { env: 'staging' } },
+    installs: [],
+  },
 ]
 
 export const Cards = () => <InstallGroupCards groups={groups} commit={commit} />

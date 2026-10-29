@@ -26,6 +26,10 @@ type InstallGroupRequest struct {
 	// AutoApproveOnPoliciesPassing approves this group's plan step without user
 	// input when its policy checks pass. Omit to leave it unset (off).
 	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
+
+	// DoNotDeploy updates the app config version for this group's installs
+	// during branch runs without reprovisioning or redeploying them.
+	DoNotDeploy *bool `json:"do_not_deploy,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 }
 
 type CreateAppBranchConfigRequest struct {
@@ -86,6 +90,13 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 			}
 		}
 		orders[group.Order] = true
+
+		if group.DoNotDeploy != nil && *group.DoNotDeploy && group.AutoApproveOnPoliciesPassing != nil && *group.AutoApproveOnPoliciesPassing {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("install group %q sets both do_not_deploy and auto_approve_on_policies_passing", group.Name),
+				Description: fmt.Sprintf("install group %q cannot set both do_not_deploy and auto_approve_on_policies_passing", group.Name),
+			}
+		}
 
 		hasSelector := group.LabelSelector != nil && len(group.LabelSelector.MatchLabels) > 0
 		if group.Default {
@@ -156,6 +167,7 @@ func installGroupsFromRequest(reqGroups []InstallGroupRequest) []app.AppBranchIn
 			LabelSelector:                selector,
 			Default:                      g.Default,
 			AutoApproveOnPoliciesPassing: g.AutoApproveOnPoliciesPassing,
+			DoNotDeploy:                  g.DoNotDeploy,
 		}
 	}
 	return installGroups

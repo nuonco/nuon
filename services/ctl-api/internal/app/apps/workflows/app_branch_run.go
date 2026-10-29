@@ -15,6 +15,7 @@ import (
 	comparison "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/comparison"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/ignorechanges"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/pininstallgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/postdeployrunbooks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/previewimpact"
@@ -25,6 +26,7 @@ import (
 const (
 	ignoreChangesStepVersion  = "app-branch-ignore-changes-step-v1"
 	setupPreviewHiddenVersion = "app-branch-setup-preview-hidden-v1"
+	doNotDeployGroupVersion   = "app-branch-do-not-deploy-group-v1"
 )
 
 // AppBranchRun builds the workflow steps for an app branch run
@@ -265,7 +267,26 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 	}
 	hasPostDeployRunbooks := len(branchConfig.PostDeployRunbookIDs) > 0
 
+	// GetVersion is called once, outside the loop: calling it per-iteration would
+	// record a separate changeID marker for each group and break replay once a
+	// branch's group count changes between deploys.
+	doNotDeployActive := workflow.GetVersion(ctx, doNotDeployGroupVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+
 	for _, group := range allInstallGroups {
+		if doNotDeployActive && group.GetDoNotDeploy() {
+			sg.nextGroup()
+			pinStep, err := sg.appBranchSignalStep(ctx, appBranchID, "update app version: "+group.Name, pgtype.Hstore{}, &pininstallgroup.Signal{
+				InstallGroupID: group.ID,
+				AppBranchID:    appBranchID,
+				RunID:          runID,
+			}, WithSkippable(true))
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to create pin step for group %s", group.Name)
+			}
+			steps = append(steps, pinStep)
+			continue
+		}
+
 		sg.nextGroup()
 		planStep, err := sg.appBranchSignalStep(ctx, appBranchID, "plan install group: "+group.Name, pgtype.Hstore{}, &planinstallgroup.Signal{
 			InstallGroupID: group.ID,

@@ -14,6 +14,7 @@ const group = (
   order: 0,
   max_parallel: 1,
   auto_approve_on_policies_passing: false,
+  do_not_deploy: false,
   label_selector: labels ? { match_labels: labels } : null,
 })
 

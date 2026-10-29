@@ -194,6 +194,39 @@ export const GroupEditor = ({
             }}
           />
         </div>
+
+        <div className="border-t pt-3">
+          <CheckboxInput
+            id={`group-do-not-deploy-${group.id}`}
+            checked={group.do_not_deploy}
+            disabled={disabled || group.auto_approve_on_policies_passing}
+            onChange={(e) => onUpdate({ do_not_deploy: e.target.checked })}
+            labelProps={{
+              labelText: (
+                <span className="flex flex-col gap-1">
+                  <Text
+                    variant="subtext"
+                    weight="strong"
+                    className="!leading-none"
+                  >
+                    Do not deploy
+                  </Text>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="!leading-none"
+                  >
+                    {group.auto_approve_on_policies_passing
+                      ? 'Turn off auto-approve on this group to enable do not deploy.'
+                      : "Updates the app version on this group's installs without reprovisioning or redeploying them."}
+                  </Text>
+                </span>
+              ),
+              className: '!p-1 !gap-1.5 items-start',
+              labelTextProps: { as: 'div' },
+            }}
+          />
+        </div>
       </div>
     </Card>
   )

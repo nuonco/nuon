@@ -268,6 +268,7 @@ func buildInstallGroups(branchCfg *config.AppBranchConfig) []app.AppBranchInstal
 			Order:                        order,
 			Default:                      group.Default,
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
+			DoNotDeploy:                  group.DoNotDeploy,
 		}
 
 		if len(group.LabelSelector) > 0 {

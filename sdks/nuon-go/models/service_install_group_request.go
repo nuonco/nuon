@@ -27,6 +27,10 @@ type ServiceInstallGroupRequest struct {
 	// default
 	Default bool `json:"default,omitempty"`
 
+	// DoNotDeploy updates the app config version for this group's installs
+	// during branch runs without reprovisioning or redeploying them.
+	DoNotDeploy *bool `json:"do_not_deploy,omitempty"`
+
 	// label selector
 	LabelSelector *GithubComNuoncoNuonPkgLabelsSelector `json:"label_selector,omitempty"`
 

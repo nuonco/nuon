@@ -4,7 +4,7 @@ import {
   stepStatusCategory,
 } from '@/components/branches/shared/step-status'
 import type { TCompositeError, TInstallWorkflowStep } from '@/types'
-import { deployStepForGroup } from './rollout-stages'
+import { deployStepForGroup, pinStepForGroup } from './rollout-stages'
 import type { TTrackGroup } from './RolloutTrack'
 
 export type TOverviewStageStatus =
@@ -148,7 +148,7 @@ export const buildOverviewLoadingStages = ({
 }
 
 const isDeployGroup = (name?: string) =>
-  !!name && /^deploy install group:/i.test(name)
+  !!name && /^(?:deploy install group|update app version):/i.test(name)
 
 export const overviewCompositeError = (
   steps: TInstallWorkflowStep[],
@@ -202,7 +202,8 @@ export const groupCompositeError = (
   group: Pick<TTrackGroup, 'name' | 'status' | 'installs'>,
   runError?: TCompositeError
 ): TCompositeError | undefined => {
-  const deploy = deployStepForGroup(steps, group.name)
+  const deploy =
+    deployStepForGroup(steps, group.name) ?? pinStepForGroup(steps, group.name)
   if (deploy && stepStageStatus(deploy) === 'error') {
     const stepError = deploy.status?.composite_error
     if (stepError?.message || stepError?.type) {

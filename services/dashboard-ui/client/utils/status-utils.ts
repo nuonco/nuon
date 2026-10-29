@@ -26,6 +26,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   verified: 'success',
   approved: 'success',
   success: 'success',
+  pinned: 'success',
 
   failed: 'error',
   error: 'error',
@@ -40,6 +41,8 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'health-failed': 'error',
 
   'approval-denied': 'neutral',
+  skipped: 'neutral',
+  'user-skipped': 'neutral',
   'approval-awaiting': 'warn',
   'awaiting-approval': 'warn',
   'pending-customer': 'warn',
@@ -104,6 +107,7 @@ const STATUS_ICON_MAP: Record<string, TStatusIconVariant> = {
   verified: 'CheckCircleIcon',
   approved: 'CheckCircleIcon',
   success: 'CheckCircleIcon',
+  pinned: 'CheckCircleIcon',
 
   failed: 'XCircleIcon',
   error: 'XCircleIcon',
@@ -160,6 +164,7 @@ const STATUS_ICON_MAP: Record<string, TStatusIconVariant> = {
 
   'auto-skipped': 'MinusCircleIcon',
   'user-skipped': 'MinusCircleIcon',
+  skipped: 'MinusCircleIcon',
   retried: 'RepeatIcon',
 
   special: 'ProhibitIcon',

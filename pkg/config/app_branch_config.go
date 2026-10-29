@@ -17,6 +17,7 @@ type AppBranchInstallGroupConfig struct {
 	Default       bool              `mapstructure:"default,omitempty" toml:"default,omitempty"`
 
 	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty"`
+	DoNotDeploy                  *bool `mapstructure:"do_not_deploy,omitempty" toml:"do_not_deploy,omitempty"`
 }
 
 type AppBranchPreviewConfig struct {
@@ -59,6 +60,7 @@ func (c AppBranchInstallGroupConfig) JSONSchemaExtend(schema *jsonschema.Schema)
 	addDescription(schema, "label_selector", "label key-value pairs to dynamically match installs")
 	addDescription(schema, "default", "whether unmatched installs owned by this branch deploy in this group")
 	addDescription(schema, "auto_approve_on_policies_passing", "Auto-approve this group's plan when all policy checks pass. Defaults to false")
+	addDescription(schema, "do_not_deploy", "during app branch runs, update the app config version for installs in this group without reprovisioning or redeploying. New installs still provision. Defaults to false")
 }
 
 type AppBranchConfig struct {
@@ -151,6 +153,11 @@ func (c *AppBranchConfig) Validate() error {
 			}
 		}
 		groupNames[g.Name] = struct{}{}
+		if g.DoNotDeploy != nil && *g.DoNotDeploy && g.AutoApproveOnPoliciesPassing != nil && *g.AutoApproveOnPoliciesPassing {
+			return ErrConfig{
+				Description: fmt.Sprintf("branch %q: install group %q cannot set both do_not_deploy and auto_approve_on_policies_passing", c.Name, g.Name),
+			}
+		}
 		if key := labels.CanonicalMap(g.LabelSelector); key != "" {
 			if existing, ok := selectors[key]; ok {
 				return ErrConfig{

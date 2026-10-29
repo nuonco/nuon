@@ -87,6 +87,7 @@ func normalizeRemoteBranch(ctx context.Context, resolver *branchNameResolver, na
 			Order:                        int(group.Order),
 			Default:                      group.Default,
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
+			DoNotDeploy:                  group.DoNotDeploy,
 		}
 		if group.LabelSelector != nil && len(group.LabelSelector.MatchLabels) > 0 {
 			cfg.LabelSelector = map[string]string(group.LabelSelector.MatchLabels)
@@ -206,6 +207,9 @@ func cloneAppBranchConfig(in *config.AppBranchConfig) *config.AppBranchConfig {
 			g.LabelSelector = copyStringMap(group.LabelSelector)
 			if group.AutoApproveOnPoliciesPassing != nil {
 				g.AutoApproveOnPoliciesPassing = generics.ToPtr(*group.AutoApproveOnPoliciesPassing)
+			}
+			if group.DoNotDeploy != nil {
+				g.DoNotDeploy = generics.ToPtr(*group.DoNotDeploy)
 			}
 			out.InstallGroups[i] = g
 		}

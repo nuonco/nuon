@@ -2,7 +2,7 @@ import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { pluralize } from '@/components/branches/BranchOverview/rollout-stages'
 import type { TWorkflow } from '@/types'
 
-const DEPLOY_GROUP = /^deploy install group:\s*(.+)$/i
+const DEPLOY_GROUP = /^deploy install group:\s*(.+)$|^update app version:\s*(.+)$/i
 
 const installStatuses = (metadata?: Record<string, unknown>) => {
   const installs = metadata?.installs
@@ -18,7 +18,8 @@ export const branchRunOutcome = (
   workflow: TWorkflow
 ): { text: string; failed: boolean } | undefined => {
   const groups = (workflow.steps ?? []).flatMap((step) => {
-    const name = step.name?.match(DEPLOY_GROUP)?.[1]?.trim()
+    const match = step.name?.match(DEPLOY_GROUP)
+    const name = (match?.[1] ?? match?.[2])?.trim()
     if (!name) return []
     return [
       {
@@ -45,7 +46,8 @@ export const branchRunOutcome = (
     (sum, group) =>
       sum +
       group.installs.filter(
-        (status) => stepStatusCategory(status) === 'success'
+        (status) =>
+          stepStatusCategory(status) === 'success' || status === 'pinned'
       ).length,
     0
   )

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { statusAccent } from '@/components/branches/graph/accents'
@@ -166,9 +167,16 @@ export const RolloutGroupsCard = ({
               )}
             >
               <span className="flex items-baseline justify-between gap-2">
-                <Text variant="subtext" weight="strong" className="truncate">
-                  {group.name}
-                </Text>
+                <span className="flex min-w-0 items-center gap-2">
+                  <Text variant="subtext" weight="strong" className="truncate">
+                    {group.name}
+                  </Text>
+                  {group.doNotDeploy ? (
+                    <Badge size="sm" theme="neutral">
+                      Do not deploy
+                    </Badge>
+                  ) : null}
+                </span>
                 <Text
                   variant="label"
                   family="mono"

@@ -39,6 +39,7 @@ interface GroupNodeData {
   isDefault: boolean
   maxParallel: number
   approval?: string
+  doNotDeploy?: boolean
   compact: boolean
   orgId: string
   panelKey: string
@@ -73,13 +74,30 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
         <span className="flex shrink-0 items-center gap-1">
           {compact ? (
             <span className="text-[9px] opacity-70">{installs.length}</span>
-          ) : data.maxParallel > 1 ? (
-            <span
-              className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}
-            >
-              {data.maxParallel}x parallel
-            </span>
-          ) : null}
+          ) : (
+            <>
+              {data.doNotDeploy ? (
+                <span
+                  className={cn(
+                    'rounded px-1.5 py-0.5 text-[10px]',
+                    accent.pill
+                  )}
+                >
+                  Do not deploy
+                </span>
+              ) : null}
+              {data.maxParallel > 1 ? (
+                <span
+                  className={cn(
+                    'rounded px-1.5 py-0.5 text-[10px]',
+                    accent.pill
+                  )}
+                >
+                  {data.maxParallel}x parallel
+                </span>
+              ) : null}
+            </>
+          )}
         </span>
       }
     >
@@ -201,6 +219,7 @@ export const DeploymentPlanGraph = ({
           isDefault,
           maxParallel: group.max_parallel ?? 1,
           approval: installGroupApprovalLabel(group),
+          doNotDeploy: !!group.do_not_deploy,
           compact,
           orgId,
           panelKey: `install-group-plan:${groupId}`,

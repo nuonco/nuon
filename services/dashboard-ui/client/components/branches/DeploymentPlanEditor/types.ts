@@ -14,4 +14,5 @@ export interface IInstallGroup {
   order: number
   max_parallel: number
   auto_approve_on_policies_passing: boolean
+  do_not_deploy: boolean
 }

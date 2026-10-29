@@ -236,6 +236,9 @@ func diffBranchInstallGroup(old, new AppBranchInstallGroupConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("auto_approve_on_policies_passing"), diff.WithOptionalBoolDiff(
 			old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing,
 		)),
+		diff.NewDiff(diff.WithKey("do_not_deploy"), diff.WithOptionalBoolDiff(
+			old.DoNotDeploy, new.DoNotDeploy,
+		)),
 	}
 	if d := diff.MapDiff("label_selector", old.LabelSelector, new.LabelSelector); d != nil {
 		children = append(children, d)

@@ -33,6 +33,7 @@ export interface TRolloutStage {
 const SKIPPED = new Set([
   'auto-skipped',
   'user-skipped',
+  'skipped',
   'not-attempted',
   'noop',
 ])
@@ -44,7 +45,9 @@ const COMPLETE = new Set([
   'succeeded',
   'auto-skipped',
   'user-skipped',
+  'skipped',
   'noop',
+  'pinned',
 ])
 
 export const isRolloutGroupComplete = (status?: string) =>
@@ -67,9 +70,11 @@ const CATEGORY_STATUS: Record<TStepStatusCategory, string> = {
   success: 'success',
 }
 
-const GROUP_STEP = /^(?:plan|deploy) install group:\s*(.+)$/i
+const GROUP_STEP =
+  /^(?:plan|deploy) install group:\s*(.+)$|^update app version:\s*(.+)$/i
 const PLAN_GROUP_STEP = /^plan install group:\s*(.+)$/i
 const DEPLOY_GROUP_STEP = /^deploy install group:\s*(.+)$/i
+const PIN_GROUP_STEP = /^update app version:\s*(.+)$/i
 const RUNBOOK_STEP = /^run post-deploy runbooks:\s*(.+)$/i
 
 export const pluralize = (count: number, noun: string) =>
@@ -82,7 +87,9 @@ const isBuildStep = (name?: string) => !!name && /build/i.test(name)
 
 const groupNameFromStep = (name?: string) => {
   if (!name) return undefined
-  return (name.match(GROUP_STEP) ?? name.match(RUNBOOK_STEP))?.[1]?.trim()
+  const groupMatch = name.match(GROUP_STEP)
+  if (groupMatch) return (groupMatch[1] ?? groupMatch[2])?.trim()
+  return name.match(RUNBOOK_STEP)?.[1]?.trim()
 }
 
 const sameGroup = (stepName: string | undefined, groupName: string) => {
@@ -109,6 +116,11 @@ export const deployStepForGroup = (
   steps: TInstallWorkflowStep[],
   groupName: string
 ) => stepForGroup(steps, DEPLOY_GROUP_STEP, groupName)
+
+export const pinStepForGroup = (
+  steps: TInstallWorkflowStep[],
+  groupName: string
+) => stepForGroup(steps, PIN_GROUP_STEP, groupName)
 
 const normalizeInstallStatus = (status?: string) => {
   if (!status || status === 'deployed' || status === 'succeeded') {
@@ -207,8 +219,10 @@ export const buildRolloutStages = ({
     ...orderedGroups.map(({ group, installs: known }, index) => {
       const name = group.name || 'Install group'
       const groupSteps = ordered.filter((step) => sameGroup(step.name, name))
-      const deployStep = groupSteps.find((step) =>
-        /^deploy install group:/i.test(step.name ?? '')
+      const deployStep = groupSteps.find(
+        (step) =>
+          /^deploy install group:/i.test(step.name ?? '') ||
+          PIN_GROUP_STEP.test(step.name ?? '')
       )
       const entries = deployEntries(deployStep)
       const knownById = new Map(known.map((install) => [install.id, install]))

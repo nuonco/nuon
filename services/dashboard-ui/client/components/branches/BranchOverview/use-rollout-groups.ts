@@ -31,6 +31,7 @@ import type { TPreviewProgress } from './overview-loading'
 import {
   buildRolloutStages,
   deployStepForGroup,
+  pinStepForGroup,
   planStepForGroup,
 } from './rollout-stages'
 import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
@@ -137,6 +138,7 @@ const fromGroupRun = (
     match: installGroupMatch(group),
     approval: installGroupApprovalLabel(group),
     maxParallel: group ? (group.max_parallel ?? 1) : undefined,
+    doNotDeploy: !!group?.do_not_deploy,
     installs: (groupRun.installs ?? []).map((install) => {
       const id = install.install_id ?? ''
       return {
@@ -196,7 +198,8 @@ const groupBelongsToRun = (
   }
   return (
     !!planStepForGroup(steps, group.name) ||
-    !!deployStepForGroup(steps, group.name)
+    !!deployStepForGroup(steps, group.name) ||
+    !!pinStepForGroup(steps, group.name)
   )
 }
 
@@ -418,6 +421,7 @@ export const useRolloutGroups = () => {
           match: installGroupMatch(group),
           approval: installGroupApprovalLabel(group),
           maxParallel: group ? (group.max_parallel ?? 1) : undefined,
+          doNotDeploy: !!group?.do_not_deploy,
           installs: installs.map((install) => ({
             id: install.id,
             name: install.name,
