@@ -187,7 +187,7 @@
             ]
           },
           {
-            "group": "Operate Installs",
+            "group": "Updates and Operations",
             "boost": 3,
             "pages": [
               "guides/app-branches",
