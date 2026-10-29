@@ -204,6 +204,15 @@
             ]
           },
           {
+            "group": "Actions",
+            "boost": 3,
+            "pages": [
+              "guides/actions",
+              "guides/adhoc-actions",
+              "guides/container-actions"
+            ]
+          },
+          {
             "group": "Updates and Operations",
             "boost": 3,
             "pages": [
@@ -211,9 +220,6 @@
               "guides/app-branch-migration",
               "guides/rollback-install-config",
               "guides/reprovision-installs",
-              "guides/actions",
-              "guides/adhoc-actions",
-              "guides/container-actions",
               "guides/runbooks",
               "guides/health-checks",
               "guides/configuring-policies",
