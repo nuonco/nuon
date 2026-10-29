@@ -220,7 +220,6 @@
               "guides/reprovision-installs",
               "guides/runbooks",
               "guides/health-checks",
-              "guides/external-image-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
               "guides/runner-kill-switch",
@@ -233,7 +232,8 @@
             "group": "Policies",
             "boost": 3,
             "pages": [
-              "guides/configuring-policies"
+              "guides/configuring-policies",
+              "guides/external-image-policies"
             ]
           },
           {
