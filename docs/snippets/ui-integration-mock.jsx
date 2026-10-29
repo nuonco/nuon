@@ -24,9 +24,9 @@ export const AcmeScreen = ({ screen }) => {
       account: "Google Cloud project",
       where: "with Terraform",
       button: "View setup steps",
-      create: <><code>gcp_account.project_id</code> and <code>gcp_account.region</code>, or leave them out and the customer enters them when applying</>,
-      link: <>There's no one-click link. The customer applies the generated Terraform locally with the Google Cloud SDK.</>,
-      guide: { href: "/platform-support/gcp", label: "Google Cloud platform guide" },
+      create: <><code>gcp_account.project_id</code> and <code>gcp_account.region</code>, or leave them out and the customer passes them on the first apply</>,
+      link: <>There's no one-click link. The customer applies the <code>nuonco/stack/gcp</code> Terraform module, either directly or through Infrastructure Manager.</>,
+      guide: { href: "/guides/provision-stacks-with-terraform-module", label: "Terraform module guide" },
     },
   };
   const c = clouds[cloud];
