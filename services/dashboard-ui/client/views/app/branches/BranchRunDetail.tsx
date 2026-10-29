@@ -34,10 +34,6 @@ import { getRunTitle } from '@/components/branches/shared/run-title'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { WorkflowChangesLink } from '@/components/workflows/WorkflowChangesSummary'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
-import {
-  branchOverviewVariant,
-  useBranchOverviewV2,
-} from '@/hooks/use-branch-overview-v2'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
@@ -349,14 +345,10 @@ const BranchRunDetailContent = () => {
 }
 
 export const BranchRunDetail = () => {
-  const variant = branchOverviewVariant(
-    useNewAppIA(),
-    useBranchOverviewV2()
-  )
   const params = useParams()
   const branchId = params.branchId as string
 
-  if (variant !== 'legacy') return <BranchOverview variant={variant} />
+  if (useNewAppIA()) return <BranchOverview />
 
   return (
     <BranchProvider branchId={branchId}>
