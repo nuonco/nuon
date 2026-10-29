@@ -75,6 +75,7 @@ timeout = "5m"
 | `description` | string | No | Short description of what the runbook does. |
 | `readme` | string | No | Markdown documentation for the runbook. Supports Go templating and external file sources (HTTP(S) URLs, git, or local paths). |
 | `labels` | map | No | Key/value labels for organizing runbooks. |
+| `triggers` | array | No | How the runbook starts: `manual`, `cron`, or both. Defaults to manual. See [Run a runbook on a schedule](#run-a-runbook-on-a-schedule). |
 | `steps` | array | Yes | Ordered list of steps to execute. See below. |
 
 ### Step
