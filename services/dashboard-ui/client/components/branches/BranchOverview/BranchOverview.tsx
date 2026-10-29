@@ -32,6 +32,7 @@ import type { TChangedBuildRow } from './changed-builds'
 import { GroupApprovedVersion } from './GroupApprovedVersion'
 import { OverviewLoadingTrack } from './OverviewLoadingTrack'
 import type { TGroupApprovedVersion } from './group-approved-version'
+import { isRolloutGroupComplete } from './rollout-stages'
 import type { IGroupPlanApproval } from './RolloutGroupsCard'
 import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
 import { RunCommitSummary, RunSourceMark } from './RunSourceCard'
@@ -339,13 +340,15 @@ const ActiveGroup = ({
           >
             {group.status === 'cancelled'
               ? 'Rollout cancelled'
-              : category === 'awaiting'
-                ? 'Waiting for approval'
-                : category === 'error'
-                  ? 'Rollout failed'
-                  : category === 'pending'
-                    ? 'Not started'
-                    : 'Deploying'}
+              : isRolloutGroupComplete(group.status)
+                ? 'Group complete'
+                : category === 'awaiting'
+                  ? 'Waiting for approval'
+                  : category === 'error'
+                    ? 'Rollout failed'
+                    : category === 'pending'
+                      ? 'Not started'
+                      : 'Deploying'}
             <Text as="span" variant="subtext" theme="neutral">
               {' '}
               · Group {index + 1} of {total}
@@ -627,7 +630,7 @@ export const BranchOverview = ({
   cancelRollout,
 }: IBranchOverview) => {
   const currentIndex = groups.findIndex(
-    (group) => stepStatusCategory(group.status) !== 'success'
+    (group) => !isRolloutGroupComplete(group.status)
   )
   const current = currentIndex >= 0 ? groups[currentIndex] : undefined
   const doneGroups = current ? currentIndex : groups.length
