@@ -1193,7 +1193,9 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 
 /* UI integration guide: example vendor settings page (snippets/ui-integration-mock.jsx) */
 .nuon-um {
+  position: relative;
   overflow: hidden;
+  box-shadow: 0 14px 40px -22px rgba(76, 201, 240, 0.55);
   border: 1px solid var(--in-border);
   border-radius: 12px;
   background: var(--in-box-bg);
@@ -1496,4 +1498,23 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
 .nuon-um-steps small {
   color: var(--in-muted);
   font-weight: 400;
+}
+.nuon-um::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #f72585, #3a00ff 53%, #4cc9f0);
+}
+.nuon-um-tag {
+  flex: none;
+  margin-left: auto;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3a00ff, #4cc9f0);
+  color: #ffffff;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }

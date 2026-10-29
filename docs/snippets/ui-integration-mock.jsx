@@ -6,6 +6,7 @@ export const AcmeScreen = ({ screen }) => {
         <span className="nuon-um-dot" />
         <span className="nuon-um-dot" />
         <span className="nuon-um-url">app.acme.example.com/settings/{path}</span>
+        <span className="nuon-um-tag">Example UI</span>
       </div>
       <div className="nuon-um-body">
         <div className="nuon-um-side">
