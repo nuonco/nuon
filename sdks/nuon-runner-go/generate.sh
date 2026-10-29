@@ -6,6 +6,8 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+# shellcheck source=../format-generated-client.sh
+source "${REPO_DIR}/sdks/format-generated-client.sh"
 SWAGGER_FILE="${SCRIPT_DIR}/../../services/ctl-api/docs/runner/runner_swagger.json"
 STAMP_FILE="${SCRIPT_DIR}/.swagger.stamp"
 
@@ -33,7 +35,10 @@ if [ "$swagger_hash" != "$previous_hash" ]; then
     generate \
     client \
     --skip-tag-packages \
+    --skip-validation \
+    -C "${REPO_DIR}/sdks/swagger-client-layout.yml" \
     -f "$SWAGGER_FILE"
+  format_generated_client
   echo "$swagger_hash" > "$STAMP_FILE"
 else
   echo >&2 "swagger spec unchanged, skipping client generation"

@@ -1,0 +1,33 @@
+# go-swagger v0.33.1 default client layout, with formatting turned off.
+# sdks/formatgen fixes imports afterwards. Per-file goimports inside
+# swagger generate is the slow part of client regeneration.
+layout:
+  application:
+    - name: facade
+      source: asset:clientFacade
+      target: "{{ joinFilePath .Target (toPackagePath .ClientPackage) }}"
+      file_name: "{{ snakize .Name }}Client.go"
+      skip_format: true
+  models:
+    - name: definition
+      source: asset:model
+      target: "{{ joinFilePath .Target (toPackagePath .ModelPackage) }}"
+      file_name: "{{ (snakize (pascalize .Name)) }}.go"
+      skip_format: true
+  operations:
+    - name: parameters
+      source: asset:clientParameter
+      target: "{{ joinFilePath .Target (toPackagePath .ClientPackage) (toPackagePath .Package) }}"
+      file_name: "{{ (snakize (pascalize .Name)) }}_parameters.go"
+      skip_format: true
+    - name: responses
+      source: asset:clientResponse
+      target: "{{ joinFilePath .Target (toPackagePath .ClientPackage) (toPackagePath .Package) }}"
+      file_name: "{{ (snakize (pascalize .Name)) }}_responses.go"
+      skip_format: true
+  operation_groups:
+    - name: client
+      source: asset:clientClient
+      target: "{{ joinFilePath .Target (toPackagePath .ClientPackage) (toPackagePath .Name)}}"
+      file_name: "{{ (snakize (pascalize .Name)) }}_client.go"
+      skip_format: true
