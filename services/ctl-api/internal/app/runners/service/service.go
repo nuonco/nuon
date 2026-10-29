@@ -388,7 +388,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	org.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
 
 	// TODO(jm): these will be moved to the otel namespace
-	org.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
+	require.OrgInstallOrLogStreamRoute(api, "log_stream_id").POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
 	// installs
 	installs := org.Group("/v1/installs")

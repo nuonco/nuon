@@ -36,6 +36,7 @@ const (
 	RoleTypeStack              RoleType = "stack"
 	RoleTypeTelemetryCollector RoleType = "telemetry_collector"
 	RoleTypePhoneHome          RoleType = "phone_home"
+	RoleTypeLogStream          RoleType = "log_stream"
 )
 
 // Role contexts name the assignment surfaces a role may be offered on. A role

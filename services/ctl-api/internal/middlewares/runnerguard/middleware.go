@@ -10,15 +10,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-)
-
-const (
-	runnerPrefix = "run"
-	jobPrefix    = "job"
 )
 
 type Middleware struct {
@@ -46,8 +40,7 @@ func (m *Middleware) JobHandler() gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
-		prefix, prefixErr := shortid.GetPrefix(acct.Subject)
-		jobAccount := prefixErr == nil && prefix == jobPrefix
+		jobAccount := hasRoleType(acct, app.RoleTypeRunnerJob)
 		method := ctx.Request.Method
 		path := ctx.FullPath()
 		if isJobTokenExchange(method, path) {
@@ -84,14 +77,22 @@ func (m *Middleware) InstallHandler() gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
-		prefix, prefixErr := shortid.GetPrefix(acct.Subject)
-		if prefixErr != nil || (prefix != runnerPrefix && prefix != jobPrefix) {
+		isLogStream := hasRoleType(acct, app.RoleTypeLogStream)
+		isJob := hasRoleType(acct, app.RoleTypeRunnerJob)
+		isRunner := hasRoleType(acct, app.RoleTypeRunner)
+
+		if !isJob && !isRunner && !isLogStream {
 			ctx.Next()
 			return
 		}
 
+		if isLogStream {
+			m.authorizeLogToken(ctx, acct.Subject)
+			return
+		}
+
 		runnerID := acct.Subject
-		if prefix == jobPrefix {
+		if isJob {
 			var job app.RunnerJob
 			if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
 				Where(app.RunnerJob{ID: acct.Subject}).Take(&job).Error; err != nil {
@@ -139,6 +140,25 @@ func (m *Middleware) InstallHandler() gin.HandlerFunc {
 		cctx.SetRunnerGinContext(ctx, &runner)
 		ctx.Next()
 	}
+}
+
+func hasRoleType(acct *app.Account, roleType app.RoleType) bool {
+	for _, role := range acct.Roles {
+		if role.RoleType == roleType {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Middleware) authorizeLogToken(ctx *gin.Context, subject string) {
+	if ctx.Request.Method == http.MethodPost &&
+		ctx.FullPath() == "/v1/log-streams/:log_stream_id/logs" &&
+		ctx.Param("log_stream_id") == subject {
+		ctx.Next()
+		return
+	}
+	notFound(ctx, fmt.Errorf("log token %s", subject))
 }
 
 func (m *Middleware) authorizeJob(ctx *gin.Context, runnerID string) error {
@@ -242,7 +262,7 @@ func (m *Middleware) authorizeLogStream(ctx *gin.Context, orgID, installID, logS
 			return err
 		}
 		runnerID := acct.Subject
-		if prefix, err := shortid.GetPrefix(acct.Subject); err == nil && prefix == jobPrefix {
+		if hasRoleType(acct, app.RoleTypeRunnerJob) {
 			var job app.RunnerJob
 			if err := m.db.WithContext(ctx.Request.Context()).Select("id", "runner_id").
 				Where(app.RunnerJob{ID: acct.Subject}).Take(&job).Error; err != nil {
@@ -310,7 +330,8 @@ func deny(ctx *gin.Context, description string) {
 }
 
 func notFound(ctx *gin.Context, err error) {
-	cctx.GetLogger(ctx, zap.NewNop()).Info("runner install authorization denied",
+	cctx.GetLogger(ctx, zap.NewNop()).Info(
+		"runner install authorization denied",
 		zap.String("route", ctx.FullPath()),
 		zap.Error(err),
 	)

@@ -26,8 +26,11 @@ func TestStackInstallRole(t *testing.T) {
 	assert.Empty(t, role.Contexts)
 
 	require.Len(t, role.Policies, 1, "policies carry a unique index on role_id")
-	require.Len(t, role.Policies[0].Permissions, 1)
+	require.Len(t, role.Policies[0].Permissions, 2)
+	assert.Equal(t, app.RoleVersionV2, role.Version)
 	assert.Equal(t, app.PolicyNameStack, role.Policies[0].Name)
+	require.NotNil(t, role.Policies[0].Permissions[permissions.APIPermissionKey])
+	assert.Equal(t, string(permissions.APIStack), *role.Policies[0].Permissions[permissions.APIPermissionKey])
 	assert.Equal(t, permissions.PermissionAll.ToStrPtr(),
 		role.Policies[0].Permissions[permissions.StackObject(orgID, installID)])
 
