@@ -170,6 +170,32 @@
             ]
           },
           {
+            "group": "Stacks",
+            "boost": 2,
+            "pages": [
+              "guides/custom-nested-stacks",
+              "guides/nuon-stack-terraform-provider",
+              "guides/customizing-terraform-stack-templates"
+            ]
+          },
+          {
+            "group": "CLI",
+            "boost": 2,
+            "pages": [
+              "guides/cli-extensions",
+              "guides/cli-versions",
+              "guides/terraform-cli"
+            ]
+          },
+          {
+            "group": "README",
+            "boost": 2,
+            "pages": [
+              "guides/using-readmes",
+              "guides/programmable-readmes"
+            ]
+          },
+          {
             "group": "Installs",
             "boost": 3,
             "pages": [
@@ -227,32 +253,6 @@
               "concepts/api-tokens",
               "concepts/service-accounts",
               "concepts/oidc-federation"
-            ]
-          },
-          {
-            "group": "README",
-            "boost": 2,
-            "pages": [
-              "guides/using-readmes",
-              "guides/programmable-readmes"
-            ]
-          },
-          {
-            "group": "CLI",
-            "boost": 2,
-            "pages": [
-              "guides/cli-extensions",
-              "guides/cli-versions",
-              "guides/terraform-cli"
-            ]
-          },
-          {
-            "group": "Stacks",
-            "boost": 2,
-            "pages": [
-              "guides/custom-nested-stacks",
-              "guides/nuon-stack-terraform-provider",
-              "guides/customizing-terraform-stack-templates"
             ]
           }
         ]
