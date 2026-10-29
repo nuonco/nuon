@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 
@@ -93,7 +94,15 @@ func parseYAMLMapping(s string) (map[string]interface{}, bool) {
 	}
 
 	var v interface{}
-	if err := yaml.Unmarshal([]byte(s), &v); err != nil {
+	decoder := yaml.NewDecoder(strings.NewReader(s))
+	if err := decoder.Decode(&v); err != nil {
+		if err == io.EOF {
+			return map[string]interface{}{}, true
+		}
+		return nil, false
+	}
+	var extra interface{}
+	if err := decoder.Decode(&extra); err != io.EOF {
 		return nil, false
 	}
 	if v == nil {
@@ -266,10 +275,7 @@ func scalarToString(v interface{}, present bool) string {
 
 	switch t := v.(type) {
 	case string:
-		if t == "" {
-			return `""`
-		}
-		return t
+		return fmt.Sprintf("%q", t)
 	case map[string]interface{}, []interface{}:
 		if b, err := json.Marshal(t); err == nil {
 			return string(b)

@@ -2,18 +2,20 @@ package config
 
 import (
 	"fmt"
+	"maps"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/nuonco/nuon/pkg/config/diff"
+	"github.com/nuonco/nuon/pkg/oci/signature"
 )
 
 // Diff compares the receiver (new config) against old (previous config) and
 // returns a hierarchical diff tree. The structure mirrors terraform plan output:
 // each section shows added, removed, changed, or unchanged fields.
-func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
+func (a *AppConfig) Diff(old *AppConfig, changedInputs ...diff.NodeID) *diff.Diff {
 	if old == nil {
 		old = &AppConfig{}
 	}
@@ -28,8 +30,20 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("slack_webhook_url"), diff.WithStringDiff(old.SlackWebhookURL, a.SlackWebhookURL)),
 		diff.NewDiff(diff.WithKey("readme"), diff.WithStringDiff(old.Readme, a.Readme)),
 	)
+	if d := diff.MapDiff("label_colors", old.LabelColors, a.LabelColors); d != nil {
+		children = append(children, d)
+	}
+	if d := diff.MapDiff("default_labels", old.DefaultLabels, a.DefaultLabels); d != nil {
+		children = append(children, d)
+	}
 
 	if d := diffBranch(old.Branch, a.Branch); d != nil {
+		children = append(children, d)
+	}
+	if d := diffBranches(old.Branches, a.Branches); d != nil {
+		children = append(children, d)
+	}
+	if d := diffKubernetesContexts(old.KubernetesContexts, a.KubernetesContexts); d != nil {
 		children = append(children, d)
 	}
 	if d := diffSandbox(old.Sandbox, a.Sandbox); d != nil {
@@ -84,7 +98,7 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 		diff.WithChildren(children...),
 	)
 	graph := appConfigDependencyGraph(old, a)
-	result.ApplyImpacts(graph.Propagate(changedResourceIDs(result)...))
+	result.ApplyImpacts(graph.Propagate(append(changedResourceIDs(result), changedInputs...)...))
 	return result
 }
 
@@ -95,6 +109,54 @@ func diffBranch(old, new *AppBranchConfig) *diff.Diff {
 		return nil
 	}
 	return branchDiff("branch", old, new)
+}
+
+func diffBranches(old, new []*AppBranchConfig) *diff.Diff {
+	if len(old) == 0 && len(new) == 0 {
+		return nil
+	}
+	oldByName, newByName := map[string]*AppBranchConfig{}, map[string]*AppBranchConfig{}
+	names := map[string]bool{}
+	for _, branch := range old {
+		oldByName[branch.Name], names[branch.Name] = branch, true
+	}
+	for _, branch := range new {
+		newByName[branch.Name], names[branch.Name] = branch, true
+	}
+	var children []*diff.Diff
+	for _, name := range slices.Sorted(maps.Keys(names)) {
+		children = append(children, branchDiff("branch."+name, oldByName[name], newByName[name]))
+	}
+	return diff.NewDiff(diff.WithKey("branches"), diff.WithChildren(children...))
+}
+
+func diffKubernetesContexts(old, new *KubernetesContextsConfig) *diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &KubernetesContextsConfig{}
+	}
+	if new == nil {
+		new = &KubernetesContextsConfig{}
+	}
+	oldByName, newByName := map[string]KubernetesContext{}, map[string]KubernetesContext{}
+	names := map[string]bool{}
+	for _, context := range old.Contexts {
+		oldByName[context.Name], names[context.Name] = *context, true
+	}
+	for _, context := range new.Contexts {
+		newByName[context.Name], names[context.Name] = *context, true
+	}
+	var children []*diff.Diff
+	for _, name := range slices.Sorted(maps.Keys(names)) {
+		before, after := oldByName[name], newByName[name]
+		children = append(children, diff.NewDiff(diff.WithKey("kubernetes_context."+name), diff.WithChildren(
+			diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(before.Name, after.Name)),
+			diff.NewDiff(diff.WithKey("component"), diff.WithStringDiff(before.Component, after.Component)),
+		)))
+	}
+	return diff.NewDiff(diff.WithKey("kubernetes_contexts"), diff.WithChildren(children...))
 }
 
 // Diff compares the receiver (desired config) against old (the config currently
@@ -127,12 +189,7 @@ func branchDiff(key string, old, new *AppBranchConfig) *diff.Diff {
 		children = append(children, d)
 	}
 	children = append(children,
-		// post_deploy_runbooks runs in the order listed, so compare the sequence
-		// rather than the set.
-		diff.NewDiff(diff.WithKey("post_deploy_runbooks"), diff.WithStringDiff(
-			strings.Join(old.PostDeployRunbooks, ", "),
-			strings.Join(new.PostDeployRunbooks, ", "),
-		)),
+		diff.NewDiff(diff.WithKey("post_deploy_runbooks"), diff.WithOrderedStringSliceDiff(old.PostDeployRunbooks, new.PostDeployRunbooks)),
 		diff.NewDiff(diff.WithKey("ignore_changes_regex"), diff.WithStringDiff(old.IgnoreChangesRegex, new.IgnoreChangesRegex)),
 		diff.NewDiff(diff.WithKey("send_statuses_on_ignore"), diff.WithBoolDiff(old.SendStatusesOnIgnore, new.SendStatusesOnIgnore)),
 	)
@@ -202,10 +259,10 @@ func diffBranchPreview(old, new *AppBranchPreviewConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("mode"), diff.WithStringDiff(old.Mode, new.Mode)),
 		diff.NewDiff(diff.WithKey("install_id"), diff.WithStringDiff(old.InstallID, new.InstallID)),
 		diff.NewDiff(diff.WithKey("install_name"), diff.WithStringDiff(old.InstallName, new.InstallName)),
-		diff.NewDiff(diff.WithKey("set_statuses"), diff.WithOptionalBoolDiff(old.SetStatuses, new.SetStatuses)),
-		diff.NewDiff(diff.WithKey("comment"), diff.WithOptionalBoolDiff(old.Comment, new.Comment)),
-		diff.NewDiff(diff.WithKey("ignore_drafts"), diff.WithOptionalBoolDiff(old.IgnoreDrafts, new.IgnoreDrafts)),
-		diff.NewDiff(diff.WithKey("react"), diff.WithOptionalBoolDiff(old.React, new.React)),
+		diff.NewDiff(diff.WithKey("set_statuses"), withTrueDefaultBoolDiff(old.SetStatuses, new.SetStatuses)),
+		diff.NewDiff(diff.WithKey("comment"), withTrueDefaultBoolDiff(old.Comment, new.Comment)),
+		diff.NewDiff(diff.WithKey("ignore_drafts"), withTrueDefaultBoolDiff(old.IgnoreDrafts, new.IgnoreDrafts)),
+		diff.NewDiff(diff.WithKey("react"), withTrueDefaultBoolDiff(old.React, new.React)),
 	}
 	if d := diff.MapDiff("label_selector", old.LabelSelector, new.LabelSelector); d != nil {
 		children = append(children, d)
@@ -262,8 +319,10 @@ func sectionTOML(v any) string {
 // field children are retained for change counting.
 func sectionDiff(key string, old, new any, children []*diff.Diff) *diff.Diff {
 	opts := []diff.DiffOption{diff.WithKey(key), diff.WithChildren(children...)}
-	if oldTOML, newTOML := sectionTOML(old), sectionTOML(new); oldTOML != newTOML {
-		opts = append(opts, diff.WithContentDiff(oldTOML, newTOML))
+	if !reflect.DeepEqual(old, new) {
+		if oldTOML, newTOML := sectionTOML(old), sectionTOML(new); oldTOML != newTOML {
+			opts = append(opts, diff.WithContentDiff(oldTOML, newTOML))
+		}
 	}
 	return diff.NewDiff(opts...)
 }
@@ -280,8 +339,19 @@ func diffSandbox(old, new *AppSandboxConfig) *diff.Diff {
 	}
 
 	children := []*diff.Diff{
+		diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(old.Type, new.Type)),
 		diff.NewDiff(diff.WithKey("terraform_version"), diff.WithStringDiff(old.TerraformVersion, new.TerraformVersion)),
+		diff.NewDiff(diff.WithKey("runtime"), diff.WithStringDiff(old.Runtime, new.Runtime)),
+		diff.NewDiff(diff.WithKey("pulumi_version"), diff.WithStringDiff(old.PulumiVersion, new.PulumiVersion)),
 		diff.NewDiff(diff.WithKey("drift_schedule"), diff.WithOptionalStringDiff(old.DriftSchedule, new.DriftSchedule)),
+	}
+	children = append(children, diffDeployOptions(old.MaxAutoRetries, new.MaxAutoRetries, old.SkipNoops, new.SkipNoops, old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing)...)
+	children = append(children, diffEntityOperationRoles(old.OperationRoles, new.OperationRoles))
+	if d := diffTerraformVariablesFiles(old.VariablesFiles, new.VariablesFiles); d != nil {
+		children = append(children, d)
+	}
+	if d := diff.MapDiff("pulumi_config", old.PulumiConfig, new.PulumiConfig); d != nil {
+		children = append(children, d)
 	}
 	children = append(children, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
 	children = append(children, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
@@ -292,7 +362,9 @@ func diffSandbox(old, new *AppSandboxConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	result := sectionDiff("sandbox", old, new, children)
+	oldSandbox, newSandbox := *old, *new
+	oldSandbox.References, newSandbox.References = nil, nil
+	result := sectionDiff("sandbox", &oldSandbox, &newSandbox, children)
 	result.ResourceID = SandboxResourceID
 	return result
 }
@@ -313,6 +385,9 @@ func diffRunner(old, new *AppRunnerConfig) *diff.Diff {
 	children := []*diff.Diff{
 		diff.NewDiff(diff.WithKey("runner_type"), diff.WithStringDiff(old.RunnerType, new.RunnerType)),
 		diff.NewDiff(diff.WithKey("helm_driver"), diff.WithStringDiff(old.HelmDriver, new.HelmDriver)),
+		diff.NewDiff(diff.WithKey("instance_type"), diff.WithStringDiff(old.InstanceType, new.InstanceType)),
+		diff.NewDiff(diff.WithKey("runner_api_url"), diff.WithStringDiff(old.RunnerAPIURL, new.RunnerAPIURL)),
+		diff.NewDiff(diff.WithKey("public_api_url"), diff.WithStringDiff(old.PublicAPIURL, new.PublicAPIURL)),
 		diff.NewDiff(diff.WithKey("init_script_url"), diff.WithStringDiff(old.InitScriptURL, new.InitScriptURL)),
 		diff.NewDiff(diff.WithKey("phone_home_script_url"), diff.WithStringDiff(old.PhoneHomeScriptURL, new.PhoneHomeScriptURL)),
 		diff.NewDiff(diff.WithKey("image_auto_update"), diff.WithBoolDiff(old.ImageAutoUpdate, new.ImageAutoUpdate)),
@@ -348,6 +423,7 @@ func diffStack(old, new *StackConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("runner_nested_template_url"), diff.WithStringDiff(old.RunnerNestedTemplateURL, new.RunnerNestedTemplateURL)),
 		diff.NewDiff(diff.WithKey("deployment_scope"), diff.WithStringDiff(old.DeploymentScope, new.DeploymentScope)),
 		diff.NewDiff(diff.WithKey("ui_definition"), diff.WithStringDiff(old.UIDefinition, new.UIDefinition)),
+		diff.NewDiff(diff.WithKey("ui_definition_contents"), diff.WithContentDiff(old.UIDefinitionContents, new.UIDefinitionContents)),
 	}
 
 	// Custom nested stacks matched by name
@@ -374,6 +450,7 @@ func diffCustomNestedStacks(old, new []CustomNestedStack) []*diff.Diff {
 			stackChildren = append(stackChildren,
 				diff.NewDiff(diff.WithKey("template_url"), diff.WithStringDiff(os.TemplateURL, s.TemplateURL)),
 				diff.NewDiff(diff.WithKey("index"), diff.WithStringDiff(fmt.Sprintf("%d", os.Index), fmt.Sprintf("%d", s.Index))),
+				diff.NewDiff(diff.WithKey("contents"), diff.WithContentDiff(os.Contents, s.Contents)),
 			)
 			if d := diff.MapDiff("parameters", os.Parameters, s.Parameters); d != nil {
 				stackChildren = append(stackChildren, d)
@@ -414,7 +491,14 @@ func diffInputs(old, new *AppInputConfig) *diff.Diff {
 	// Inputs matched by name
 	children = append(children, diffAppInputs(old.Inputs, new.Inputs)...)
 
-	return sectionDiff("inputs", old, new, children)
+	before, after := *old, *new
+	before.Inputs, after.Inputs = slices.Clone(old.Inputs), slices.Clone(new.Inputs)
+	for _, inputs := range [][]AppInput{before.Inputs, after.Inputs} {
+		for i := range inputs {
+			inputs[i].Internal = false
+		}
+	}
+	return sectionDiff("inputs", &before, &after, children)
 }
 
 func diffInputGroups(old, new []AppInputGroup) []*diff.Diff {
@@ -462,6 +546,13 @@ func diffAppInputs(old, new []AppInput) []*diff.Diff {
 
 	var diffs []*diff.Diff
 	seen := make(map[string]bool)
+	defaultText := func(value any) string {
+		encoded, err := ToJSON(value)
+		if err != nil {
+			return fmt.Sprintf("%T:%#v", value, value)
+		}
+		return string(encoded)
+	}
 
 	diffInput := func(oi, i AppInput) *diff.Diff {
 		return diff.NewDiff(
@@ -471,7 +562,7 @@ func diffAppInputs(old, new []AppInput) []*diff.Diff {
 				diff.NewDiff(diff.WithKey("display_name"), diff.WithStringDiff(oi.DisplayName, i.DisplayName)),
 				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(oi.Description, i.Description)),
 				diff.NewDiff(diff.WithKey("group"), diff.WithStringDiff(oi.Group, i.Group)),
-				diff.NewDiff(diff.WithKey("default"), diff.WithStringDiff(fmt.Sprintf("%v", oi.Default), fmt.Sprintf("%v", i.Default))),
+				diff.NewDiff(diff.WithKey("default"), diff.WithStringDiff(defaultText(oi.Default), defaultText(i.Default))),
 				diff.NewDiff(diff.WithKey("required"), diff.WithBoolDiff(oi.Required, i.Required)),
 				diff.NewDiff(diff.WithKey("sensitive"), diff.WithBoolDiff(oi.Sensitive, i.Sensitive)),
 				diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(oi.Type, i.Type)),
@@ -542,18 +633,27 @@ func diffIAMRole(key string, old, new *AppAWSIAMRole) *diff.Diff {
 		new = &AppAWSIAMRole{}
 	}
 
+	oldEnabled, newEnabled := "inherit", "inherit"
+	if old.EnabledInStack != nil {
+		oldEnabled = strconv.FormatBool(*old.EnabledInStack)
+	}
+	if new.EnabledInStack != nil {
+		newEnabled = strconv.FormatBool(*new.EnabledInStack)
+	}
 	result := sectionDiff(
 		key,
 		old,
 		new,
 		[]*diff.Diff{
+			diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(old.Type, new.Type)),
 			diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(old.Name, new.Name)),
 			diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(old.Description, new.Description)),
 			diff.NewDiff(diff.WithKey("display_name"), diff.WithStringDiff(old.DisplayName, new.DisplayName)),
 			diff.NewDiff(diff.WithKey("cloud_platform"), diff.WithStringDiff(old.CloudPlatform, new.CloudPlatform)),
 			diff.NewDiff(diff.WithKey("permissions_boundary"), diff.WithStringDiff(old.PermissionsBoundary, new.PermissionsBoundary)),
-			diff.NewDiff(diff.WithKey("enabled_in_stack"), diff.WithOptionalBoolDiff(old.EnabledInStack, new.EnabledInStack)),
+			diff.NewDiff(diff.WithKey("enabled_in_stack"), diff.WithStringDiff(oldEnabled, newEnabled)),
 			diff.NewDiff(diff.WithKey("named_policies"), diff.WithStringSliceDiff(NamedPolicyRefNames(old.NamedPolicies), NamedPolicyRefNames(new.NamedPolicies))),
+			diffIAMPolicies(old.Policies, new.Policies),
 		},
 	)
 	result.ResourceID = roleNodeID(old, new)
@@ -716,6 +816,7 @@ func diffSecrets(old, new *SecretsConfig) *diff.Diff {
 				diff.NewDiff(diff.WithKey("kubernetes_sync"), diff.WithOptionalBoolDiff(os.KubernetesSync, s.KubernetesSync)),
 				diff.NewDiff(diff.WithKey("kubernetes_secret_namespace"), diff.WithStringDiff(os.KubernetesSecretNamespace, s.KubernetesSecretNamespace)),
 				diff.NewDiff(diff.WithKey("kubernetes_secret_name"), diff.WithStringDiff(os.KubernetesSecretName, s.KubernetesSecretName)),
+				diffSecretTargets(os.KubernetesSyncTargets, s.KubernetesSyncTargets),
 			},
 		)
 		result.ResourceID = SecretResourceID(s.Name)
@@ -871,6 +972,10 @@ func diffComponent(old, new *Component) *diff.Diff {
 		diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(string(old.Type), string(new.Type))),
 		diff.NewDiff(diff.WithKey("var_name"), diff.WithStringDiff(old.VarName, new.VarName)),
 		diff.NewDiff(diff.WithKey("dependencies"), diff.WithStringSliceDiff(old.Dependencies, new.Dependencies)),
+		diff.NewDiff(diff.WithKey("toggleable"), diff.WithOptionalBoolDiff(old.Toggleable, new.Toggleable)),
+		diff.NewDiff(diff.WithKey("default_enabled"), diff.WithOptionalBoolDiff(old.DefaultEnabled, new.DefaultEnabled)),
+		diff.NewDiff(diff.WithKey("kubernetes_context"), diff.WithStringDiff(old.KubernetesContext, new.KubernetesContext)),
+		diffEntityOperationRoles(old.OperationRoles, new.OperationRoles),
 	)
 
 	if d := diff.MapDiff("labels", old.Labels, new.Labels); d != nil {
@@ -886,7 +991,14 @@ func diffComponent(old, new *Component) *diff.Diff {
 	children = append(children, diffJob(old.Job, new.Job)...)
 	children = append(children, diffPulumi(old.Pulumi, new.Pulumi)...)
 
-	result := sectionDiff("component."+new.Name, old, new, children)
+	oldComponent, newComponent := *old, *new
+	oldComponent.Checksum, newComponent.Checksum = "", ""
+	oldComponent.References, newComponent.References = nil, nil
+	oldComponent.Dependencies = slices.Clone(old.Dependencies)
+	newComponent.Dependencies = slices.Clone(new.Dependencies)
+	sort.Strings(oldComponent.Dependencies)
+	sort.Strings(newComponent.Dependencies)
+	result := sectionDiff("component."+new.Name, &oldComponent, &newComponent, children)
 	result.ResourceID = ComponentResourceID(new.Name)
 	return result
 }
@@ -905,6 +1017,8 @@ func diffHelmChart(old, new *HelmChartComponentConfig) []*diff.Diff {
 	}
 
 	var diffs []*diff.Diff
+	diffs = append(diffs, diffDeployOptions(old.MaxAutoRetries, new.MaxAutoRetries, old.SkipNoops, new.SkipNoops, old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing)...)
+	diffs = append(diffs, diffComponentHealth(old.Health, new.Health)...)
 	diffs = append(diffs,
 		diff.NewDiff(diff.WithKey("chart_name"), diff.WithStringDiff(old.ChartName, new.ChartName)),
 		diff.NewDiff(diff.WithKey("namespace"), diff.WithStringDiff(old.Namespace, new.Namespace)),
@@ -985,6 +1099,7 @@ func diffTerraformModule(old, new *TerraformModuleComponentConfig) []*diff.Diff 
 	}
 
 	var diffs []*diff.Diff
+	diffs = append(diffs, diffDeployOptions(old.MaxAutoRetries, new.MaxAutoRetries, old.SkipNoops, new.SkipNoops, old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing)...)
 	diffs = append(diffs,
 		diff.NewDiff(diff.WithKey("terraform_version"), diff.WithStringDiff(old.TerraformVersion, new.TerraformVersion)),
 		diff.NewDiff(diff.WithKey("drift_schedule"), diff.WithOptionalStringDiff(old.DriftSchedule, new.DriftSchedule)),
@@ -1069,6 +1184,7 @@ func diffDockerBuild(old, new *DockerBuildComponentConfig) []*diff.Diff {
 	}
 
 	var diffs []*diff.Diff
+	diffs = append(diffs, diffDeployOptions(old.MaxAutoRetries, new.MaxAutoRetries, old.SkipNoops, new.SkipNoops, old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing)...)
 	diffs = append(diffs,
 		diff.NewDiff(diff.WithKey("dockerfile"), diff.WithStringDiff(old.Dockerfile, new.Dockerfile)),
 		diff.NewDiff(diff.WithKey("build_timeout"), diff.WithStringDiff(old.BuildTimeout, new.BuildTimeout)),
@@ -1108,6 +1224,8 @@ func diffExternalImage(old, new *ExternalImageComponentConfig) []*diff.Diff {
 	diffs = append(diffs, diffGCPGAR(old.GCPGARImageConfig, new.GCPGARImageConfig)...)
 	// Public image
 	diffs = append(diffs, diffPublicImage(old.PublicImageConfig, new.PublicImageConfig)...)
+	diffs = append(diffs, diffAzureACR(old.AzureACRImageConfig, new.AzureACRImageConfig)...)
+	diffs = append(diffs, diffImageVerification(old.Verification, new.Verification)...)
 
 	return diffs
 }
@@ -1128,6 +1246,7 @@ func diffAWSECR(old, new *AWSECRConfig) []*diff.Diff {
 			diff.NewDiff(diff.WithKey("region"), diff.WithStringDiff(old.AWSRegion, new.AWSRegion)),
 			diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),
 			diff.NewDiff(diff.WithKey("tag"), diff.WithStringDiff(old.Tag, new.Tag)),
+			diff.NewDiff(diff.WithKey("update_policy"), diff.WithStringDiff(old.UpdatePolicy, new.UpdatePolicy)),
 		)),
 	}
 }
@@ -1149,6 +1268,8 @@ func diffGCPGAR(old, new *GCPGARConfig) []*diff.Diff {
 			diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),
 			diff.NewDiff(diff.WithKey("tag"), diff.WithStringDiff(old.Tag, new.Tag)),
 			diff.NewDiff(diff.WithKey("service_account_email"), diff.WithStringDiff(old.ServiceAccountEmail, new.ServiceAccountEmail)),
+			diff.NewDiff(diff.WithKey("workload_identity_provider"), diff.WithStringDiff(old.WorkloadIdentityProvider, new.WorkloadIdentityProvider)),
+			diff.NewDiff(diff.WithKey("update_policy"), diff.WithStringDiff(old.UpdatePolicy, new.UpdatePolicy)),
 		)),
 	}
 }
@@ -1167,6 +1288,7 @@ func diffPublicImage(old, new *PublicImageConfig) []*diff.Diff {
 		diff.NewDiff(diff.WithKey("public_image"), diff.WithChildren(
 			diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),
 			diff.NewDiff(diff.WithKey("tag"), diff.WithStringDiff(old.Tag, new.Tag)),
+			diff.NewDiff(diff.WithKey("update_policy"), diff.WithStringDiff(old.UpdatePolicy, new.UpdatePolicy)),
 		)),
 	}
 }
@@ -1183,6 +1305,8 @@ func diffKubernetesManifest(old, new *KubernetesManifestComponentConfig) []*diff
 	}
 
 	var diffs []*diff.Diff
+	diffs = append(diffs, diffDeployOptions(old.MaxAutoRetries, new.MaxAutoRetries, old.SkipNoops, new.SkipNoops, old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing)...)
+	diffs = append(diffs, diffComponentHealth(old.Health, new.Health)...)
 	diffs = append(diffs,
 		diff.NewDiff(diff.WithKey("manifest"), diff.WithContentDiff(old.Manifest, new.Manifest)),
 		diff.NewDiff(diff.WithKey("namespace"), diff.WithStringDiff(old.Namespace, new.Namespace)),
@@ -1234,8 +1358,8 @@ func diffJob(old, new *JobComponentConfig) []*diff.Diff {
 	diffs = append(diffs,
 		diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),
 		diff.NewDiff(diff.WithKey("tag"), diff.WithStringDiff(old.Tag, new.Tag)),
-		diff.NewDiff(diff.WithKey("cmd"), diff.WithStringSliceDiff(old.Cmd, new.Cmd)),
-		diff.NewDiff(diff.WithKey("args"), diff.WithStringSliceDiff(old.Args, new.Args)),
+		diff.NewDiff(diff.WithKey("cmd"), diff.WithOrderedStringSliceDiff(old.Cmd, new.Cmd)),
+		diff.NewDiff(diff.WithKey("args"), diff.WithOrderedStringSliceDiff(old.Args, new.Args)),
 		diff.NewDiff(diff.WithKey("build_timeout"), diff.WithStringDiff(old.BuildTimeout, new.BuildTimeout)),
 		diff.NewDiff(diff.WithKey("deploy_timeout"), diff.WithStringDiff(old.DeployTimeout, new.DeployTimeout)),
 	)
@@ -1259,6 +1383,7 @@ func diffPulumi(old, new *PulumiComponentConfig) []*diff.Diff {
 	}
 
 	var diffs []*diff.Diff
+	diffs = append(diffs, diffDeployOptions(old.MaxAutoRetries, new.MaxAutoRetries, old.SkipNoops, new.SkipNoops, old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing)...)
 	diffs = append(diffs,
 		diff.NewDiff(diff.WithKey("runtime"), diff.WithStringDiff(old.Runtime, new.Runtime)),
 		diff.NewDiff(diff.WithKey("pulumi_version"), diff.WithStringDiff(old.PulumiVersion, new.PulumiVersion)),
@@ -1313,9 +1438,10 @@ func diffInstalls(old, new []*Install) *diff.Diff {
 	for _, i := range old {
 		if !seen[i.Name] {
 			// Removed install — diff showing all fields being removed
-			empty := &Install{Name: i.Name}
+			empty := &Install{}
 			d, _ := empty.Diff(i)
 			if d != nil {
+				d.Key = i.Name
 				children = append(children, d)
 			}
 		}
@@ -1383,7 +1509,11 @@ func diffAction(old, new *ActionConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("timeout"), diff.WithStringDiff(old.Timeout, new.Timeout)),
 		diff.NewDiff(diff.WithKey("role"), diff.WithStringDiff(old.Role, new.Role)),
 		diff.NewDiff(diff.WithKey("break_glass_role"), diff.WithStringDiff(old.BreakGlassRole, new.BreakGlassRole)),
-		diff.NewDiff(diff.WithKey("enable_kube_config"), diff.WithOptionalBoolDiff(old.EnableKubeConfig, new.EnableKubeConfig)),
+		diff.NewDiff(diff.WithKey("enable_kube_config"), withTrueDefaultBoolDiff(old.EnableKubeConfig, new.EnableKubeConfig)),
+		diff.NewDiff(diff.WithKey("dependencies"), diff.WithStringSliceDiff(old.Dependencies, new.Dependencies)),
+		diff.NewDiff(diff.WithKey("is_healthcheck"), diff.WithBoolDiff(old.IsHealthcheck, new.IsHealthcheck)),
+		diff.NewDiff(diff.WithKey("image"), diff.WithStringDiff(old.Image, new.Image)),
+		diff.NewDiff(diff.WithKey("kubernetes_context"), diff.WithStringDiff(old.KubernetesContext, new.KubernetesContext)),
 	)
 
 	if d := diff.MapDiff("labels", old.Labels, new.Labels); d != nil {
@@ -1396,7 +1526,22 @@ func diffAction(old, new *ActionConfig) *diff.Diff {
 	// Triggers matched by index
 	children = append(children, diffActionTriggers(old.Triggers, new.Triggers)...)
 
-	result := sectionDiff("action."+new.Name, old, new, children)
+	// Persisted configs can predate deterministic dependency ordering.
+	oldAction, newAction := *old, *new
+	for _, action := range []*ActionConfig{&oldAction, &newAction} {
+		action.References = nil
+		action.Steps = slices.Clone(action.Steps)
+		for i, step := range action.Steps {
+			stepCopy := *step
+			stepCopy.References = nil
+			action.Steps[i] = &stepCopy
+		}
+	}
+	oldAction.Dependencies = slices.Clone(old.Dependencies)
+	newAction.Dependencies = slices.Clone(new.Dependencies)
+	sort.Strings(oldAction.Dependencies)
+	sort.Strings(newAction.Dependencies)
+	result := sectionDiff("action."+new.Name, &oldAction, &newAction, children)
 	result.ResourceID = ActionResourceID(new.Name)
 	return result
 }
@@ -1456,6 +1601,7 @@ func diffActionTriggers(old, new []*ActionTriggerConfig) []*diff.Diff {
 				diff.WithKey(key),
 				diff.WithChildren(
 					diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(old[i].Type, new[i].Type)),
+					diff.NewDiff(diff.WithKey("index"), diff.WithStringDiff(strconv.FormatInt(old[i].Index, 10), strconv.FormatInt(new[i].Index, 10))),
 					diff.NewDiff(diff.WithKey("cron_schedule"), diff.WithStringDiff(old[i].CronSchedule, new[i].CronSchedule)),
 					diff.NewDiff(diff.WithKey("component_name"), diff.WithStringDiff(old[i].ComponentName, new[i].ComponentName)),
 				),
@@ -1496,7 +1642,7 @@ func diffRunbooks(old, new []*RunbookConfig) *diff.Diff {
 
 	for _, r := range old {
 		if !seen[r.Name] {
-			children = append(children, diffRunbook(r, &RunbookConfig{Name: r.Name}))
+			children = append(children, diffRunbook(r, &RunbookConfig{}))
 		}
 	}
 
@@ -1506,16 +1652,36 @@ func diffRunbooks(old, new []*RunbookConfig) *diff.Diff {
 func diffRunbook(old, new *RunbookConfig) *diff.Diff {
 	var children []*diff.Diff
 	children = append(children,
+		diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(old.Name, new.Name)),
 		diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(old.Description, new.Description)),
+		diff.NewDiff(diff.WithKey("readme"), diff.WithStringDiff(old.Readme, new.Readme)),
+		diff.NewDiff(diff.WithKey("dependencies"), diff.WithStringSliceDiff(old.Dependencies, new.Dependencies)),
+		diff.NewDiff(diff.WithKey("triggers"), diff.WithContentDiff(toTOMLString(map[string]any{"triggers": old.Triggers}), toTOMLString(map[string]any{"triggers": new.Triggers}))),
+		diff.NewDiff(diff.WithKey("input"), diff.WithContentDiff(toTOMLString(map[string]any{"input": old.Inputs}), toTOMLString(map[string]any{"input": new.Inputs}))),
 	)
 
 	if d := diff.MapDiff("labels", old.Labels, new.Labels); d != nil {
 		children = append(children, d)
 	}
 
+	oldOrder, newOrder := make([]string, len(old.Steps)), make([]string, len(new.Steps))
+	for i, step := range old.Steps {
+		oldOrder[i] = step.Name
+	}
+	for i, step := range new.Steps {
+		newOrder[i] = step.Name
+	}
+	children = append(children, diff.NewDiff(
+		diff.WithKey("step_order"),
+		diff.WithOrderedStringSliceDiff(oldOrder, newOrder),
+	))
 	children = append(children, diffRunbookSteps(old.Steps, new.Steps)...)
 
-	return diff.NewDiff(diff.WithKey("runbook."+new.Name), diff.WithChildren(children...))
+	name := new.Name
+	if name == "" {
+		name = old.Name
+	}
+	return diff.NewDiff(diff.WithKey("runbook."+name), diff.WithChildren(children...))
 }
 
 func diffRunbookSteps(old, new []*RunbookStepConfig) []*diff.Diff {
@@ -1528,15 +1694,34 @@ func diffRunbookSteps(old, new []*RunbookStepConfig) []*diff.Diff {
 	seen := make(map[string]bool)
 
 	diffStep := func(os, s *RunbookStepConfig) *diff.Diff {
+		name := s.Name
+		if name == "" {
+			name = os.Name
+		}
+		children := []*diff.Diff{
+			diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(os.Name, s.Name)),
+			diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(string(os.Type), string(s.Type))),
+			diff.NewDiff(diff.WithKey("plan_only"), diff.WithBoolDiff(os.PlanOnly, s.PlanOnly)),
+			diff.NewDiff(diff.WithKey("component_name"), diff.WithStringDiff(os.ComponentName, s.ComponentName)),
+			diff.NewDiff(diff.WithKey("deploy_dependents"), diff.WithBoolDiff(os.DeployDependents, s.DeployDependents)),
+			diff.NewDiff(diff.WithKey("tear_down_dependents"), diff.WithBoolDiff(os.TearDownDependents, s.TearDownDependents)),
+			diff.NewDiff(diff.WithKey("skip_component_deploys"), diff.WithBoolDiff(os.SkipComponentDeploys, s.SkipComponentDeploys)),
+			diff.NewDiff(diff.WithKey("action_name"), diff.WithStringDiff(os.ActionName, s.ActionName)),
+			diff.NewDiff(diff.WithKey("command"), diff.WithStringDiff(os.Command, s.Command)),
+			diff.NewDiff(diff.WithKey("inline_contents"), diff.WithContentDiff(os.InlineContents, s.InlineContents)),
+			diff.NewDiff(diff.WithKey("timeout"), diff.WithStringDiff(os.Timeout, s.Timeout)),
+			diff.NewDiff(diff.WithKey("role"), diff.WithStringDiff(os.Role, s.Role)),
+			diff.NewDiff(diff.WithKey("trigger"), diff.WithStringDiff(os.Trigger, s.Trigger)),
+			diff.NewDiff(diff.WithKey("event_types"), diff.WithStringSliceDiff(os.EventTypes, s.EventTypes)),
+			diff.NewDiff(diff.WithKey("filters"), diff.WithContentDiff(toTOMLString(map[string]any{"filters": os.Filters}), toTOMLString(map[string]any{"filters": s.Filters}))),
+			diff.NewDiff(diff.WithKey("match_all"), diff.WithBoolDiff(os.MatchAll, s.MatchAll)),
+		}
+		if d := diff.MapDiff("env_vars", os.EnvVarMap, s.EnvVarMap); d != nil {
+			children = append(children, d)
+		}
 		return diff.NewDiff(
-			diff.WithKey("step."+s.Name),
-			diff.WithChildren(
-				diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(string(os.Type), string(s.Type))),
-				diff.NewDiff(diff.WithKey("component_name"), diff.WithStringDiff(os.ComponentName, s.ComponentName)),
-				diff.NewDiff(diff.WithKey("action_name"), diff.WithStringDiff(os.ActionName, s.ActionName)),
-				diff.NewDiff(diff.WithKey("command"), diff.WithStringDiff(os.Command, s.Command)),
-				diff.NewDiff(diff.WithKey("role"), diff.WithStringDiff(os.Role, s.Role)),
-			),
+			diff.WithKey("step."+name),
+			diff.WithChildren(children...),
 		)
 	}
 
@@ -1551,7 +1736,7 @@ func diffRunbookSteps(old, new []*RunbookStepConfig) []*diff.Diff {
 
 	for _, s := range old {
 		if !seen[s.Name] {
-			diffs = append(diffs, diffStep(s, &RunbookStepConfig{Name: s.Name}))
+			diffs = append(diffs, diffStep(s, &RunbookStepConfig{}))
 		}
 	}
 
@@ -1615,4 +1800,169 @@ func diffHelmRepo(old, new *HelmRepoConfig) []*diff.Diff {
 			diff.NewDiff(diff.WithKey("version"), diff.WithStringDiff(old.Version, new.Version)),
 		)),
 	}
+}
+
+func diffDeployOptions(oldRetries, newRetries *int, oldSkip, newSkip, oldApprove, newApprove *bool) []*diff.Diff {
+	before, after := 0, 0
+	if oldRetries != nil {
+		before = *oldRetries
+	}
+	if newRetries != nil {
+		after = *newRetries
+	}
+	return []*diff.Diff{
+		diff.NewDiff(diff.WithKey("max_auto_retries"), diff.WithStringDiff(strconv.Itoa(before), strconv.Itoa(after))),
+		diff.NewDiff(diff.WithKey("skip_noops"), diff.WithOptionalBoolDiff(oldSkip, newSkip)),
+		diff.NewDiff(diff.WithKey("auto_approve_on_policies_passing"), diff.WithOptionalBoolDiff(oldApprove, newApprove)),
+	}
+}
+
+func diffEntityOperationRoles(old, new []EntityOperationRole) *diff.Diff {
+	var children []*diff.Diff
+	for i := 0; i < max(len(old), len(new)); i++ {
+		var before, after EntityOperationRole
+		if i < len(old) {
+			before = old[i]
+		}
+		if i < len(new) {
+			after = new[i]
+		}
+		children = append(children, diff.NewDiff(diff.WithKey(fmt.Sprintf("operation_role.%d", i)), diff.WithChildren(
+			diff.NewDiff(diff.WithKey("operation"), diff.WithStringDiff(string(before.Operation), string(after.Operation))),
+			diff.NewDiff(diff.WithKey("role"), diff.WithStringDiff(before.RoleName, after.RoleName)),
+		)))
+	}
+	return diff.NewDiff(diff.WithKey("operation_roles"), diff.WithChildren(children...))
+}
+
+func diffIAMPolicies(old, new []AppAWSIAMPolicy) *diff.Diff {
+	var children []*diff.Diff
+	for i := 0; i < max(len(old), len(new)); i++ {
+		var before, after AppAWSIAMPolicy
+		if i < len(old) {
+			before = old[i]
+		}
+		if i < len(new) {
+			after = new[i]
+		}
+		children = append(children, diff.NewDiff(diff.WithKey(fmt.Sprintf("policy.%d", i)), diff.WithChildren(
+			diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(before.Name, after.Name)),
+			diff.NewDiff(diff.WithKey("managed_policy_name"), diff.WithStringDiff(before.ManagedPolicyName, after.ManagedPolicyName)),
+			diff.NewDiff(diff.WithKey("contents"), diff.WithContentDiff(before.Contents, after.Contents)),
+			diff.NewDiff(diff.WithKey("gcp_permissions"), diff.WithStringSliceDiff(before.GCPPermissions, after.GCPPermissions)),
+			diff.NewDiff(diff.WithKey("gcp_predefined_role"), diff.WithStringDiff(before.GCPPredefinedRole, after.GCPPredefinedRole)),
+			diff.NewDiff(diff.WithKey("azure_actions"), diff.WithStringSliceDiff(before.AzureActions, after.AzureActions)),
+			diff.NewDiff(diff.WithKey("azure_built_in_roles"), diff.WithStringSliceDiff(before.AzureBuiltInRoles, after.AzureBuiltInRoles)),
+		)))
+	}
+	return diff.NewDiff(diff.WithKey("policies"), diff.WithChildren(children...))
+}
+
+func diffSecretTargets(old, new []*KubernetesSyncTarget) *diff.Diff {
+	var children []*diff.Diff
+	for i := 0; i < max(len(old), len(new)); i++ {
+		before, after := &KubernetesSyncTarget{}, &KubernetesSyncTarget{}
+		if i < len(old) && old[i] != nil {
+			before = old[i]
+		}
+		if i < len(new) && new[i] != nil {
+			after = new[i]
+		}
+		children = append(children, diff.NewDiff(diff.WithKey(fmt.Sprintf("target.%d", i)), diff.WithChildren(
+			diff.NewDiff(diff.WithKey("namespaces"), diff.WithStringSliceDiff(before.Namespaces, after.Namespaces)),
+			diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(before.Name, after.Name)),
+			diff.NewDiff(diff.WithKey("key"), diff.WithStringDiff(before.Key, after.Key)),
+		)))
+	}
+	return diff.NewDiff(diff.WithKey("kubernetes_sync_targets"), diff.WithChildren(children...))
+}
+
+func diffComponentHealth(old, new *ComponentHealthConfig) []*diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &ComponentHealthConfig{}
+	}
+	if new == nil {
+		new = &ComponentHealthConfig{}
+	}
+	children := []*diff.Diff{
+		diff.NewDiff(diff.WithKey("enabled"), withTrueDefaultBoolDiff(old.Enabled, new.Enabled)),
+		diff.NewDiff(diff.WithKey("stabilization_window"), diff.WithStringDiff(old.StabilizationWindow, new.StabilizationWindow)),
+		diff.NewDiff(diff.WithKey("block_deploy"), diff.WithOptionalBoolDiff(old.BlockDeploy, new.BlockDeploy)),
+		diff.NewDiff(diff.WithKey("required_checks"), diff.WithStringSliceDiff(old.RequiredChecks, new.RequiredChecks)),
+	}
+	for i := 0; i < max(len(old.Probes), len(new.Probes)); i++ {
+		var before, after ComponentHealthProbeConfig
+		if i < len(old.Probes) {
+			before = old.Probes[i]
+		}
+		if i < len(new.Probes) {
+			after = new.Probes[i]
+		}
+		children = append(children, diff.NewDiff(diff.WithKey(fmt.Sprintf("probe.%d", i)), diff.WithChildren(
+			diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(before.Type, after.Type)),
+			diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(before.Name, after.Name)),
+			diff.NewDiff(diff.WithKey("url"), diff.WithStringDiff(before.URL, after.URL)),
+			diff.NewDiff(diff.WithKey("command"), diff.WithOrderedStringSliceDiff(before.Command, after.Command)),
+		)))
+	}
+	return []*diff.Diff{diff.NewDiff(diff.WithKey("health"), diff.WithChildren(children...))}
+}
+
+func diffAzureACR(old, new *AzureACRConfig) []*diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &AzureACRConfig{}
+	}
+	if new == nil {
+		new = &AzureACRConfig{}
+	}
+	return []*diff.Diff{diff.NewDiff(diff.WithKey("azure_acr"), diff.WithChildren(
+		diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),
+		diff.NewDiff(diff.WithKey("tag"), diff.WithStringDiff(old.Tag, new.Tag)),
+		diff.NewDiff(diff.WithKey("registry_url"), diff.WithStringDiff(old.RegistryURL, new.RegistryURL)),
+		diff.NewDiff(diff.WithKey("tenant_id"), diff.WithStringDiff(old.TenantID, new.TenantID)),
+		diff.NewDiff(diff.WithKey("client_id"), diff.WithStringDiff(old.ClientID, new.ClientID)),
+		diff.NewDiff(diff.WithKey("client_secret_name"), diff.WithStringDiff(old.ClientSecretName, new.ClientSecretName)),
+		diff.NewDiff(diff.WithKey("client_certificate_name"), diff.WithStringDiff(old.ClientCertificateName, new.ClientCertificateName)),
+		diff.NewDiff(diff.WithKey("update_policy"), diff.WithStringDiff(old.UpdatePolicy, new.UpdatePolicy)),
+	))}
+}
+
+func diffImageVerification(old, new *signature.Verification) []*diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &signature.Verification{}
+	}
+	if new == nil {
+		new = &signature.Verification{}
+	}
+	children := []*diff.Diff{diff.NewDiff(diff.WithKey("require_signature"), diff.WithBoolDiff(old.RequireSignature, new.RequireSignature))}
+	for i := 0; i < max(len(old.Authorities), len(new.Authorities)); i++ {
+		var before, after signature.Authority
+		if i < len(old.Authorities) {
+			before = old.Authorities[i]
+		}
+		if i < len(new.Authorities) {
+			after = new.Authorities[i]
+		}
+		children = append(children, diff.NewDiff(diff.WithKey(fmt.Sprintf("authority.%d", i)), diff.WithChildren(
+			diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(string(before.Type), string(after.Type))),
+			diff.NewDiff(diff.WithKey("issuer"), diff.WithStringDiff(before.Issuer, after.Issuer)),
+			diff.NewDiff(diff.WithKey("subject"), diff.WithStringDiff(before.Subject, after.Subject)),
+			diff.NewDiff(diff.WithKey("subject_regexp"), diff.WithStringDiff(before.SubjectRegexp, after.SubjectRegexp)),
+			diff.NewDiff(diff.WithKey("public_key"), diff.WithContentDiff(before.PublicKey, after.PublicKey)),
+		)))
+	}
+	return []*diff.Diff{diff.NewDiff(diff.WithKey("verification"), diff.WithChildren(children...))}
+}
+
+func withTrueDefaultBoolDiff(old, new *bool) diff.DiffOption {
+	return diff.WithBoolDiff(old == nil || *old, new == nil || *new)
 }
