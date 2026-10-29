@@ -55,8 +55,8 @@ func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID stri
 }
 
 // LatestActiveBranchAppConfig returns the app config a branch currently
-// deploys: its newest active config that is not a pull request preview. An
-// install joining the branch starts here.
+// deploys: its newest active config that is not a pull request preview and
+// whose builds are locked. An install joining the branch starts here.
 func (s *Helpers) LatestActiveBranchAppConfig(ctx context.Context, appID, branchID string) (*app.AppConfig, error) {
 	return s.latestActiveAppConfig(ctx, "", appID, branchID)
 }
@@ -81,13 +81,25 @@ func (s *Helpers) latestActiveAppConfig(ctx context.Context, orgID, appID, branc
 		query = query.Where(app.AppConfig{AppBranchID: pkggenerics.NewNullString(branchID)})
 	}
 
+	deployable := query.Session(&gorm.Session{}).Where(
+		"("+views.TableOrViewName(s.db, &app.AppConfig{}, ".builds_pinned = ?")+" OR "+views.TableOrViewName(s.db, &app.AppConfig{}, ".builds_locked = ?")+")",
+		false, true,
+	)
+
 	var cfg app.AppConfig
-	if err := query.First(&cfg).Error; err != nil {
+	if err := deployable.First(&cfg).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if branchID == "" {
 				return nil, stderr.ErrUser{
 					Err:         fmt.Errorf("no active app config found for app %s", appID),
 					Description: "No active app config found. Please sync your app configuration before creating an install.",
+				}
+			}
+			var building app.AppConfig
+			if err := query.Session(&gorm.Session{}).First(&building).Error; err == nil {
+				return nil, stderr.ErrUser{
+					Err:         fmt.Errorf("app config %s for app branch %s has not finished its builds", building.ID, branchID),
+					Description: "The selected app branch is still building. Retry once its branch run completes.",
 				}
 			}
 			return nil, stderr.ErrUser{

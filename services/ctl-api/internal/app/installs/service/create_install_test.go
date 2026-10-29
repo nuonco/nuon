@@ -246,3 +246,59 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2PersistsExplicitBranchOwne
 		}).
 		First(&connection).Error)
 }
+
+func (s *InstallsServiceTestSuite) createBranchConfig(branch *app.AppBranch, locked bool) *app.AppConfig {
+	cfg := s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(cfg).
+		Updates(map[string]any{"app_branch_id": branch.ID, "builds_pinned": true, "builds_locked": locked}).Error)
+	return cfg
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2RejectsBranchStillBuilding() {
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	s.createBranchConfig(branch, false)
+
+	body := CreateInstallV2Request{
+		AppID: s.testApp.ID,
+		CreateInstallParams: helpers.CreateInstallParams{
+			Name:        "branch-building",
+			AppBranchID: branch.ID,
+			AWSAccount:  &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
+		},
+	}
+
+	rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Contains(s.T(), rr.Body.String(), "still building")
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2PinsLatestLockedBranchConfig() {
+	s.expectQueueCreation()
+
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	locked := s.createBranchConfig(branch, true)
+	s.createBranchConfig(branch, false)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.AppBranchConfig{
+		AppBranchID:   branch.ID,
+		InstallGroups: []app.AppBranchInstallGroup{{Name: "Default", Order: 0, Default: true}},
+	}).Error)
+
+	body := CreateInstallV2Request{
+		AppID: s.testApp.ID,
+		CreateInstallParams: helpers.CreateInstallParams{
+			Name:        "branch-locked",
+			AppBranchID: branch.ID,
+			AWSAccount:  &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
+		},
+	}
+
+	rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
+	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+
+	var install app.Install
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
+	assert.Equal(s.T(), locked.ID, install.AppConfigID)
+}
