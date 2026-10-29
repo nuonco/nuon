@@ -92,7 +92,6 @@ func (s *service) OAuthAuthorize(c *gin.Context) {
 		return
 	}
 
-	// Bind rid to this browser so /oauth/finish?rid=... alone cannot be phished.
 	s.setOAuthRequestCookie(c, requestID)
 
 	finishURL := fmt.Sprintf("%s/oauth/finish?rid=%s", s.oauthIssuer(), url.QueryEscape(requestID))

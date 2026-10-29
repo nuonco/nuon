@@ -201,7 +201,6 @@ func init() {
 
 	// OAuth 2.0 authorization server (used by MCP clients)
 	config.RegisterDefault("oauth_dcr_enabled", true) // allow dynamic client registration (RFC 7591)
-	// HTTPS hosts for DCR; http loopback (localhost / IsLoopback) is always allowed.
 	config.RegisterDefault("oauth_dcr_redirect_hosts", []string{
 		"claude.ai", "www.claude.ai", "claude.com",
 		"cursor.com", "www.cursor.com",
@@ -393,9 +392,9 @@ type Config struct {
 
 	// OAuth 2.0 authorization server (MCP clients)
 	OAuthDCREnabled       bool     `config:"oauth_dcr_enabled"`
-	OAuthDCRRedirectHosts []string `config:"oauth_dcr_redirect_hosts"` // https host allowlist for DCR; loopback http always allowed
-	OAuthAccessTokenTTL   int      `config:"oauth_access_token_ttl"`   // minutes
-	OAuthRefreshTokenTTL  int      `config:"oauth_refresh_token_ttl"`  // minutes
+	OAuthDCRRedirectHosts []string `config:"oauth_dcr_redirect_hosts"`
+	OAuthAccessTokenTTL   int      `config:"oauth_access_token_ttl"`  // minutes
+	OAuthRefreshTokenTTL  int      `config:"oauth_refresh_token_ttl"` // minutes
 
 	// Nuon Auth: Default Provider ConfigS
 	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA

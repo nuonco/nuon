@@ -40,16 +40,16 @@ func TestIsAllowedRedirectURI(t *testing.T) {
 		{"https://claude.com/api/mcp/auth_callback", true},
 		{"https://www.cursor.com/agents/mcp/oauth/callback", true},
 		{"https://vscode.dev/redirect", true},
-		{"https://example.com/oauth/cb", false}, // https not on allowlist
+		{"https://example.com/oauth/cb", false},
 		{"http://localhost:8765/callback", true},
 		{"http://127.0.0.1:53210/cb", true},
-		{"http://127.0.0.42:9/cb", true}, // any 127/8 via IsLoopback
+		{"http://127.0.0.42:9/cb", true},
 		{"http://[::1]:5000/cb", true},
-		{"http://evil.com/callback", false}, // http non-loopback
-		{"https://localhost/cb", false},     // loopback only over http
-		{"ftp://localhost/cb", false},       // unsupported scheme
+		{"http://evil.com/callback", false},
+		{"https://localhost/cb", false},
+		{"ftp://localhost/cb", false},
 		{"not a url", false},
-		{"https://", false}, // no host
+		{"https://", false},
 		{"", false},
 	}
 	for _, tc := range cases {

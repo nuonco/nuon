@@ -38,8 +38,6 @@ func isLoopbackHTTPRedirect(u *url.URL) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-// isAllowedRedirectURI permits http loopback URLs (native/CLI MCP agents) and
-// https URLs whose host is on the configured allowlist.
 func isAllowedRedirectURI(raw string, httpsHosts []string) bool {
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" {
