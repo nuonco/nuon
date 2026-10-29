@@ -251,23 +251,22 @@ func TestInstallDiff_StructuredValueTypeProperties(t *testing.T) {
 	})
 }
 
-func TestInstallDiff_StructuredFallbackProperties(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		value := hegel.Draw(t, hegel.FromRegex(`[a-z]{1,12}`, true))
-		for _, fixture := range []struct {
-			key, old, next string
-		}{
-			{HelmValuesOverrideInputName("api"), "replicas: 1\n---\nvalue: " + value, "replicas: 1\n---\nvalue: changed_" + value},
-			{HelmValuesOverrideInputName("api"), "replicas: 1\n---\nvalue: " + value, "replicas: 1\n---\n{"},
-			{HelmValuesOverrideInputName("api"), "- " + value, "- changed_" + value},
-			{TFVarsOverrideInputName("api"), "value = var." + value, "value = var.changed_" + value},
-		} {
+func TestInstallDiff_StructuredFallback(t *testing.T) {
+	for name, fixture := range map[string]struct {
+		key, old, next string
+	}{
+		"multiple YAML documents": {HelmValuesOverrideInputName("api"), "replicas: 1\n---\nvalue: acme", "replicas: 1\n---\nvalue: changed_acme"},
+		"malformed YAML document": {HelmValuesOverrideInputName("api"), "replicas: 1\n---\nvalue: acme", "replicas: 1\n---\n{"},
+		"YAML list":               {HelmValuesOverrideInputName("api"), "- acme", "- changed_acme"},
+		"Terraform expression":    {TFVarsOverrideInputName("api"), "value = var.acme", "value = var.changed_acme"},
+	} {
+		t.Run(name, func(t *testing.T) {
 			old := &Install{InputGroups: []InputGroup{{Inputs: map[string]string{fixture.key: fixture.old}}}}
 			next := &Install{InputGroups: []InputGroup{{Inputs: map[string]string{fixture.key: fixture.next}}}}
 			got, err := next.Diff(old)
 			require.NoError(t, err)
 			require.Equal(t, 1, got.Summary().Changed, "unsupported structured content must retain its textual change")
 			require.NotEmpty(t, got.FormatChanged(""))
-		}
-	})
+		})
+	}
 }

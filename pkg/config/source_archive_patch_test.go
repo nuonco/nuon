@@ -132,7 +132,7 @@ func TestSourceArchivePatchPreservesExactText(t *testing.T) {
 		{"remove_final_newline", "same\n", "same"},
 		{"add_final_newline", "same", "same\n"},
 		{"empty_to_newline", "", "\n"},
-		{"crlf_unicode_headers", "--- old\r\n@@ -1 +1 @@\r\n雪", "+++ new\r\n\\ No newline at end of file\r\n🙂"},
+		{"crlf_unicode_headers", "--- old\r\n@@ -1 +1 @@\r\n\u20ac", "+++ new\r\n\\ No newline at end of file\r\n\U00010400"},
 		{"separate_hunks", "old\n" + strings.Repeat("context\n", 16) + "tail", "new\n" + strings.Repeat("context\n", 16) + "TAIL"},
 	} {
 		t.Run(pair.name, func(t *testing.T) {
@@ -153,7 +153,7 @@ func sourceArchiveText() hegel.Generator[string] {
 	return hegel.Composite(func(t hegel.TestCase) string {
 		line := hegel.OneOf[string](
 			hegel.Text().MaxSize(24).ExcludeCharacters("\r\n"),
-			hegel.SampledFrom([]string{"", "--- a/file", "+++ b/file", "@@ -1 +1 @@", "\\ No newline at end of file", "雪🙂é", "\x00"}),
+			hegel.SampledFrom([]string{"", "--- a/file", "+++ b/file", "@@ -1 +1 @@", "\\ No newline at end of file", "\u20ac\U00010400\u00e9", "\x00"}),
 		)
 		lines := hegel.Draw(t, hegel.Lists(line).MaxSize(14))
 		ending := hegel.Draw(t, hegel.SampledFrom([]string{"\n", "\r\n"}))

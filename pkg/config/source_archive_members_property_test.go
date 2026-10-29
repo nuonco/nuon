@@ -166,76 +166,81 @@ func TestSourceArchiveMemberIndexAndTransportProperties(t *testing.T) {
 	}, hegel.WithTestCases(40))
 }
 
-func TestSourceArchiveLegacyDuplicateIdentityProperties(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		name := hegel.Draw(t, hegel.FromRegex(`[a-z]{1,8}`, true))
-		for _, pair := range []struct {
-			kind, directory, first, second string
-		}{
-			{"component", "components", fmt.Sprintf("name = %q\n", name), fmt.Sprintf("name = %q\n", name)},
-			{"action", "actions", fmt.Sprintf("name = %q\n", name), fmt.Sprintf("name = %q\n", name)},
-			{"runbook", "runbooks", fmt.Sprintf("name = %q\n", name), fmt.Sprintf("name = %q\n", name)},
-			{"permission", "permissions", fmt.Sprintf("type = \"custom\"\nname = %q\n", name), fmt.Sprintf("name = %q\n", name)},
-			{"permission", "permissions", "type = \"maintenance\"\nname = \"first\"\n", "type = \"maintenance\"\nname = \"second\"\n"},
-			{"policy", "policies", "engine = \"opa\"\n", "name = \"a\"\n"},
-		} {
-			files := map[string]string{pair.directory + "/a.toml": pair.first, pair.directory + "/b.toml": pair.second}
-			for _, version := range []int{0, 1, 2} {
-				var previousError string
-				for attempt := 0; attempt < 2; attempt++ {
-					archive := &SourceArchive{SchemaVersion: version, Files: map[string]string{}, Members: map[string]string{"previous:index": "old.toml"}}
-					for _, path := range drawPermutation(t, slices.Sorted(maps.Keys(files))) {
-						archive.Files[path] = files[path]
-					}
-					err := archive.ReindexMembers()
-					require.ErrorContains(t, err, "both define "+pair.kind+":")
-					if attempt > 0 {
-						require.Equal(t, previousError, err.Error())
-					}
-					previousError = err.Error()
-					require.Equal(t, map[string]string{"previous:index": "old.toml"}, archive.Members)
-					require.Equal(t, files, archive.Files)
+func TestSourceArchiveLegacyDuplicateIdentities(t *testing.T) {
+	name := "acme"
+	for _, pair := range []struct {
+		kind, directory, first, second string
+	}{
+		{"component", "components", fmt.Sprintf("name = %q\n", name), fmt.Sprintf("name = %q\n", name)},
+		{"action", "actions", fmt.Sprintf("name = %q\n", name), fmt.Sprintf("name = %q\n", name)},
+		{"runbook", "runbooks", fmt.Sprintf("name = %q\n", name), fmt.Sprintf("name = %q\n", name)},
+		{"permission", "permissions", fmt.Sprintf("type = \"custom\"\nname = %q\n", name), fmt.Sprintf("name = %q\n", name)},
+		{"permission", "permissions", "type = \"maintenance\"\nname = \"first\"\n", "type = \"maintenance\"\nname = \"second\"\n"},
+		{"policy", "policies", "engine = \"opa\"\n", "name = \"a\"\n"},
+	} {
+		files := map[string]string{pair.directory + "/a.toml": pair.first, pair.directory + "/b.toml": pair.second}
+		for _, version := range []int{0, 1, 2} {
+			var previousError string
+			for attempt := 0; attempt < 2; attempt++ {
+				archive := &SourceArchive{SchemaVersion: version, Files: map[string]string{}, Members: map[string]string{"previous:index": "old.toml"}}
+				paths := slices.Sorted(maps.Keys(files))
+				if attempt > 0 {
+					slices.Reverse(paths)
 				}
+				for _, path := range paths {
+					archive.Files[path] = files[path]
+				}
+				err := archive.ReindexMembers()
+				require.ErrorContains(t, err, "both define "+pair.kind+":")
+				if attempt > 0 {
+					require.Equal(t, previousError, err.Error())
+				}
+				previousError = err.Error()
+				require.Equal(t, map[string]string{"previous:index": "old.toml"}, archive.Members)
+				require.Equal(t, files, archive.Files)
 			}
-			stored := &SourceArchive{SchemaVersion: 3, Files: files, Members: map[string]string{
-				pair.kind + ":stored_a": pair.directory + "/a.toml",
-				pair.kind + ":stored_b": pair.directory + "/b.toml",
-			}}
-			snapshot := maps.Clone(stored.Members)
-			require.NoError(t, stored.ReindexMembers())
-			require.Equal(t, snapshot, stored.Members)
 		}
-	}, hegel.WithTestCases(30))
+		stored := &SourceArchive{SchemaVersion: 3, Files: files, Members: map[string]string{
+			pair.kind + ":stored_a": pair.directory + "/a.toml",
+			pair.kind + ":stored_b": pair.directory + "/b.toml",
+		}}
+		snapshot := maps.Clone(stored.Members)
+		require.NoError(t, stored.ReindexMembers())
+		require.Equal(t, snapshot, stored.Members)
+	}
 }
 
-func TestSourceArchiveIndexValidationProperties(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		invalid := hegel.Draw(t, hegel.SampledFrom([]string{"name = [", "name = 42", "name = \"\"\n"}))
-		for _, directory := range []string{"components", "actions", "runbooks", "permissions"} {
-			path := directory + "/file.toml"
-			legacy := &SourceArchive{SchemaVersion: hegel.Draw(t, hegel.Integers(0, 2)), Files: map[string]string{path: invalid}, Members: map[string]string{"previous:index": "old.toml"}}
-			snapshot := maps.Clone(legacy.Members)
-			require.Error(t, legacy.ReindexMembers())
-			require.Equal(t, snapshot, legacy.Members)
-			stored := &SourceArchive{SchemaVersion: 3, Files: maps.Clone(legacy.Files), Members: map[string]string{"action:stored": path}}
-			require.NoError(t, stored.ReindexMembers())
-			contents, ok := stored.MemberSource("action:stored")
-			require.True(t, ok)
-			require.Equal(t, invalid, contents)
-		}
-		for _, entry := range []struct {
-			key, path, message string
-		}{
-			{"no_colon", "file.toml", "invalid member identity"},
-			{":name", "file.toml", "invalid member identity"},
-			{"action:", "file.toml", "invalid member identity"},
-			{"action:name", "", "invalid member identity"},
-			{"action:name", "missing.toml", "references missing file"},
-		} {
-			archive := &SourceArchive{SchemaVersion: 3, Files: map[string]string{"file.toml": ""}, Members: map[string]string{entry.key: entry.path}}
-			snapshot := maps.Clone(archive.Members)
-			require.ErrorContains(t, archive.ReindexMembers(), entry.message)
-			require.Equal(t, snapshot, archive.Members)
-		}
-	}, hegel.WithTestCases(20))
+func TestSourceArchiveIndexValidation(t *testing.T) {
+	for name, invalid := range map[string]string{"malformed": "name = [", "wrong type": "name = 42", "empty name": "name = \"\"\n"} {
+		t.Run(name, func(t *testing.T) {
+			for _, version := range []int{0, 1, 2} {
+				for _, directory := range []string{"components", "actions", "runbooks", "permissions"} {
+					path := directory + "/file.toml"
+					legacy := &SourceArchive{SchemaVersion: version, Files: map[string]string{path: invalid}, Members: map[string]string{"previous:index": "old.toml"}}
+					snapshot := maps.Clone(legacy.Members)
+					require.Error(t, legacy.ReindexMembers())
+					require.Equal(t, snapshot, legacy.Members)
+					stored := &SourceArchive{SchemaVersion: 3, Files: maps.Clone(legacy.Files), Members: map[string]string{"action:stored": path}}
+					require.NoError(t, stored.ReindexMembers())
+					contents, ok := stored.MemberSource("action:stored")
+					require.True(t, ok)
+					require.Equal(t, invalid, contents)
+				}
+			}
+		})
+	}
+	for _, entry := range []struct {
+		key, path, message string
+	}{
+		{"no_colon", "file.toml", "invalid member identity"},
+		{":name", "file.toml", "invalid member identity"},
+		{"action:", "file.toml", "invalid member identity"},
+		{"action:name", "", "invalid member identity"},
+		{"action:name", "missing.toml", "references missing file"},
+	} {
+		archive := &SourceArchive{SchemaVersion: 3, Files: map[string]string{"file.toml": ""}, Members: map[string]string{entry.key: entry.path}}
+		snapshot := maps.Clone(archive.Members)
+		require.ErrorContains(t, archive.ReindexMembers(), entry.message)
+		require.Equal(t, snapshot, archive.Members)
+	}
 }

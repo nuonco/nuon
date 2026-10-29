@@ -42,7 +42,7 @@ func TestSourceArchiveAcceptsFileLargerThanPreviewLimit(t *testing.T) {
 
 func TestSourceArchiveAggregateByteLimitBoundaries(t *testing.T) {
 	block := strings.Repeat("x", 1<<20)
-	contents := "雪🙂"
+	contents := "\u20ac\U00010400"
 	for _, delta := range []int{-1, 0, 1} {
 		archive := NewSourceArchive()
 		remaining := maxSourceArchiveBytes - len(contents) + delta

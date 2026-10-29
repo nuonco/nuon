@@ -114,10 +114,10 @@ func TestNormalizeIntermediateConfig_RoundTripProperties(t *testing.T) {
 	})
 }
 
-func TestRunbookParse_LegacyRoundTripProperties(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		name := hegel.Draw(t, hegel.FromRegex(`[a-z]{1,8}`, true))
-		for _, dependents := range []bool{false, true} {
+func TestRunbookParse_LegacyRoundTrip(t *testing.T) {
+	name := "api"
+	for label, dependents := range map[string]bool{"without dependents": false, "with dependents": true} {
+		t.Run(label, func(t *testing.T) {
 			legacy := &RunbookConfig{Name: "release", Steps: []*RunbookStepConfig{{Name: "deploy", Type: RunbookStepTypeDeployLegacy, ComponentName: name, DeployDependenciesLegacy: dependents}}}
 			canonical := &RunbookConfig{Name: "release", Steps: []*RunbookStepConfig{{Name: "deploy", Type: RunbookStepTypeComponentDeploy, ComponentName: name, DeployDependents: dependents}}}
 			require.NoError(t, legacy.parse())
@@ -130,6 +130,6 @@ func TestRunbookParse_LegacyRoundTripProperties(t *testing.T) {
 			require.False(t, next.Diff(old).DirectSummary().HasChanged, "repeated parsing must preserve canonical meaning")
 			legacy.Steps[0].PlanOnly = true
 			require.True(t, next.Diff(old).DirectSummary().HasChanged)
-		}
-	})
+		})
+	}
 }

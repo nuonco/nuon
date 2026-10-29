@@ -257,9 +257,8 @@ func assertSourceFileObservation(t require.TestingT, file SourceFileDiff, old, n
 }
 
 func TestSourceArchiveDiffRenameAndEmptyPresence(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		contents := hegel.Draw(t, sourceArchiveText())
-		for _, text := range []string{"", contents} {
+	for name, text := range map[string]string{"empty file": "", "nonempty file": "hello\n"} {
+		t.Run(name, func(t *testing.T) {
 			old := &SourceArchive{Files: map[string]string{"old.txt": text}}
 			head := &SourceArchive{Files: map[string]string{"new.txt": text}}
 			got := head.Diff(old)
@@ -275,44 +274,46 @@ func TestSourceArchiveDiffRenameAndEmptyPresence(t *testing.T) {
 			unchanged := head.Diff(head)
 			require.Equal(t, 1, unchanged.Unchanged)
 			assertSourceFileObservation(t, unchanged.Files[0], head.Files, head.Files)
-		}
-	})
+		})
+	}
 }
 
-func TestSourceArchiveDiffPatchCapBoundaryProperties(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		prefix := hegel.Draw(t, hegel.SampledFrom([]string{"x", "é", "雪🙂", "--- header", "@@ -1 +1 @@"}))
-		ending := hegel.Draw(t, hegel.SampledFrom([]string{"\n", "\r\n", ""}))
-		for _, modified := range []bool{false, true} {
-			before := ""
-			header := "--- a/cap.txt\n+++ b/cap.txt\n@@ -0,0 +1 @@\n"
-			if modified {
-				before = "old\n"
-				header = "--- a/cap.txt\n+++ b/cap.txt\n@@ -1 +1 @@\n-old\n"
-			}
-			suffix := ending
-			if ending == "" {
-				suffix = "\n\\ No newline at end of file\n"
-			}
-			for _, delta := range []int{-2, -1, 0, 1, 2} {
-				padding := MaxSourceDiffPatchBytes - len(header) - 1 - len(prefix) - len(suffix) + delta
-				after := prefix + strings.Repeat("x", padding) + ending
-				fullPatch := header + "+" + prefix + strings.Repeat("x", padding) + suffix
-				old, head := NewSourceArchive(), NewSourceArchive()
+func TestSourceArchiveDiffPatchCapBoundaries(t *testing.T) {
+	for _, prefix := range []string{"x", "\u00e9", "\u20ac\U00010400", "--- header", "@@ -1 +1 @@"} {
+		for _, ending := range []string{"\n", "\r\n", ""} {
+			for _, modified := range []bool{false, true} {
+				before := ""
+				header := "--- a/cap.txt\n+++ b/cap.txt\n@@ -0,0 +1 @@\n"
 				if modified {
-					require.NoError(t, old.AddFile("cap.txt", []byte(before)))
+					before = "old\n"
+					header = "--- a/cap.txt\n+++ b/cap.txt\n@@ -1 +1 @@\n-old\n"
 				}
-				require.NoError(t, head.AddFile("cap.txt", []byte(after)))
-				file := head.Diff(old).Files[0]
-				assertSourceFileObservation(t, file, old.Files, head.Files)
-				require.Equal(t, delta > 0, file.PatchTruncated)
-				if delta <= 0 {
-					require.Equal(t, fullPatch, file.Patch)
-				} else {
-					require.True(t, strings.HasPrefix(fullPatch, file.Patch))
-					require.True(t, strings.HasSuffix(file.Patch, "\n"))
+				suffix := ending
+				if ending == "" {
+					suffix = "\n\\ No newline at end of file\n"
+				}
+				for _, delta := range []int{-2, -1, 0, 1, 2} {
+					t.Run(fmt.Sprintf("%q/%q/modified=%t/delta=%d", prefix, ending, modified, delta), func(t *testing.T) {
+						padding := MaxSourceDiffPatchBytes - len(header) - 1 - len(prefix) - len(suffix) + delta
+						after := prefix + strings.Repeat("x", padding) + ending
+						fullPatch := header + "+" + prefix + strings.Repeat("x", padding) + suffix
+						old, head := NewSourceArchive(), NewSourceArchive()
+						if modified {
+							require.NoError(t, old.AddFile("cap.txt", []byte(before)))
+						}
+						require.NoError(t, head.AddFile("cap.txt", []byte(after)))
+						file := head.Diff(old).Files[0]
+						assertSourceFileObservation(t, file, old.Files, head.Files)
+						require.Equal(t, delta > 0, file.PatchTruncated)
+						if delta <= 0 {
+							require.Equal(t, fullPatch, file.Patch)
+						} else {
+							require.True(t, strings.HasPrefix(fullPatch, file.Patch))
+							require.True(t, strings.HasSuffix(file.Patch, "\n"))
+						}
+					})
 				}
 			}
 		}
-	}, hegel.WithTestCases(30))
+	}
 }

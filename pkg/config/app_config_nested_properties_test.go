@@ -581,10 +581,10 @@ func TestAppConfigDiff_NestedClassificationInventory(t *testing.T) {
 			require.Contains(t, contracts, child, "%v.%s needs a nested inventory", typ, field)
 		}
 	}
-	t.Logf("%d types; %d fixture paths; %d one-field property instances; classifications: %v", len(contracts), len(nestedDiffFixtures()), oneFieldCases, counts)
+	t.Logf("%d types; %d fixture paths; %d one-field regression cases; classifications: %v", len(contracts), len(nestedDiffFixtures()), oneFieldCases, counts)
 }
 
-func TestAppConfigDiff_NestedOneFieldProperties(t *testing.T) {
+func TestAppConfigDiff_NestedOneFieldRegressions(t *testing.T) {
 	t.Parallel()
 	contracts := map[reflect.Type]string{}
 	for _, c := range nestedFieldContracts {
@@ -600,60 +600,56 @@ func TestAppConfigDiff_NestedOneFieldProperties(t *testing.T) {
 			}
 			t.Run(fixture.input+"/"+field, func(t *testing.T) {
 				t.Parallel()
-				hegel.Test(t, func(t *hegel.T) {
-					word := "edit" + hegel.Draw(t, hegel.FromRegex(`[a-z]{1,8}`, true))
-					number := hegel.Draw(t, hegel.Integers(1, 19))
-					old, next := nestedFixtureConfig(fixture, field), nestedFixtureConfig(fixture, field)
-					before, after := nestedValue(old, fixture.input), nestedValue(next, fixture.input)
-					nestedEditValue(after.FieldByName(field), typ, field, word, number)
-					if reflect.DeepEqual(before.FieldByName(field).Interface(), after.FieldByName(field).Interface()) {
-						t.Fatalf("non-discriminating edit for %v.%s", typ, field)
+				old, next := nestedFixtureConfig(fixture, field), nestedFixtureConfig(fixture, field)
+				before, after := nestedValue(old, fixture.input), nestedValue(next, fixture.input)
+				nestedEditValue(after.FieldByName(field), typ, field, "edited", 7)
+				if reflect.DeepEqual(before.FieldByName(field).Interface(), after.FieldByName(field).Interface()) {
+					t.Fatalf("non-discriminating edit for %v.%s", typ, field)
+				}
+				nestedValidate(t, old)
+				nestedValidate(t, next)
+				for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
+					result := pair[1].Diff(pair[0])
+					if expected == "derived" || expected == "provenance" || expected == "legacy-ignored" {
+						require.False(t, result.DirectSummary().HasChanged, "%v.%s is not semantic", typ, field)
+						continue
 					}
-					nestedValidate(t, old)
-					nestedValidate(t, next)
-					for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
-						result := pair[1].Diff(pair[0])
-						if expected == "derived" || expected == "provenance" || expected == "legacy-ignored" {
-							require.False(t, result.DirectSummary().HasChanged, "%v.%s is not semantic", typ, field)
-							continue
-						}
-						section, _, _ := strings.Cut(fixture.owner, "/")
-						var changed []string
-						for _, child := range result.Children {
-							if child.DirectSummary().HasChanged {
-								changed = append(changed, child.Key)
-							}
-						}
-						require.Equal(t, []string{section}, changed, "%v.%s must be visible and section-local", typ, field)
-						rekeys := field == "Name" && ((typ == reflect.TypeFor[AppBranchConfig]() && strings.HasPrefix(fixture.input, "Branches.")) || (typ == reflect.TypeFor[AppAWSIAMRole]() && (strings.Contains(fixture.input, "CustomRoles.") || strings.HasPrefix(fixture.input, "BreakGlass.Roles."))))
-						if expected == "identity" || rekeys {
-							separator := strings.LastIndex(fixture.owner, "/")
-							parent, oldKey := fixture.owner[:separator+1], fixture.owner[separator+1:]
-							newKey := ""
-							if typ == reflect.TypeFor[OperationRoleRule]() {
-								newKey = "rule." + after.FieldByName("Principal").String() + "." + after.FieldByName("Operation").String()
-							} else {
-								newKey = strings.TrimSuffix(oldKey, before.FieldByName("Name").String()) + after.FieldByName("Name").String()
-							}
-							for _, key := range []string{oldKey, newKey} {
-								require.True(t, nestedDiffAt(t, result, parent+key).DirectSummary().HasChanged, "%v.%s must expose both membership edits", typ, field)
-							}
-							continue
-						}
-						owner := nestedDiffAt(t, result, fixture.owner)
-						if typ == reflect.TypeFor[TerraformVariablesFile]() || typ == reflect.TypeFor[HelmValuesFile]() {
-							require.True(t, owner.DirectSummary().HasChanged, "%s must expose %s", fixture.owner, field)
-							continue
-						}
-						leaf := nestedDiffAt(t, owner, expected)
-						require.True(t, leaf.DirectSummary().HasChanged, "%v.%s owns behavior at %s", typ, field, expected)
-						for _, sibling := range owner.Children {
-							if sibling.Key != expected {
-								require.False(t, sibling.DirectSummary().HasChanged, "%v.%s leaked into %s", typ, field, sibling.Key)
-							}
+					section, _, _ := strings.Cut(fixture.owner, "/")
+					var changed []string
+					for _, child := range result.Children {
+						if child.DirectSummary().HasChanged {
+							changed = append(changed, child.Key)
 						}
 					}
-				}, hegel.WithDerandomize(true), hegel.WithTestCases(8), hegel.WithDatabase(hegel.DatabaseDisabled()))
+					require.Equal(t, []string{section}, changed, "%v.%s must be visible and section-local", typ, field)
+					rekeys := field == "Name" && ((typ == reflect.TypeFor[AppBranchConfig]() && strings.HasPrefix(fixture.input, "Branches.")) || (typ == reflect.TypeFor[AppAWSIAMRole]() && (strings.Contains(fixture.input, "CustomRoles.") || strings.HasPrefix(fixture.input, "BreakGlass.Roles."))))
+					if expected == "identity" || rekeys {
+						separator := strings.LastIndex(fixture.owner, "/")
+						parent, oldKey := fixture.owner[:separator+1], fixture.owner[separator+1:]
+						newKey := ""
+						if typ == reflect.TypeFor[OperationRoleRule]() {
+							newKey = "rule." + after.FieldByName("Principal").String() + "." + after.FieldByName("Operation").String()
+						} else {
+							newKey = strings.TrimSuffix(oldKey, before.FieldByName("Name").String()) + after.FieldByName("Name").String()
+						}
+						for _, key := range []string{oldKey, newKey} {
+							require.True(t, nestedDiffAt(t, result, parent+key).DirectSummary().HasChanged, "%v.%s must expose both membership edits", typ, field)
+						}
+						continue
+					}
+					owner := nestedDiffAt(t, result, fixture.owner)
+					if typ == reflect.TypeFor[TerraformVariablesFile]() || typ == reflect.TypeFor[HelmValuesFile]() {
+						require.True(t, owner.DirectSummary().HasChanged, "%s must expose %s", fixture.owner, field)
+						continue
+					}
+					leaf := nestedDiffAt(t, owner, expected)
+					require.True(t, leaf.DirectSummary().HasChanged, "%v.%s owns behavior at %s", typ, field, expected)
+					for _, sibling := range owner.Children {
+						if sibling.Key != expected {
+							require.False(t, sibling.DirectSummary().HasChanged, "%v.%s leaked into %s", typ, field, sibling.Key)
+						}
+					}
+				}
 			})
 		}
 	}
@@ -703,99 +699,112 @@ func TestAppConfigDiff_NestedTypedDefaultProperties(t *testing.T) {
 			old  any
 			next any
 		}{
-			{"bool", true, "true"},
 			{"number", json.Number(number), number},
-			{"string", nil, "<nil>"},
 			{"yaml", []string{word, "second"}, "[" + word + " second]"},
 			{"yaml", map[string]string{"key": word}, "map[key:" + word + "]"},
 		}
 		for _, tc := range cases {
-			makeConfig := func(value any) *AppConfig {
-				return &AppConfig{Inputs: &AppInputConfig{Inputs: []AppInput{{Name: "setting", Type: tc.kind, Default: value}}}}
-			}
-			old, next := makeConfig(tc.old), makeConfig(tc.next)
-			require.NoError(t, old.Inputs.ValidateInputs())
-			require.NoError(t, next.Inputs.ValidateInputs())
-			require.NoError(t, ValidateInputValueSyntax(tc.kind, fmt.Sprint(tc.old)))
-			require.NoError(t, ValidateInputValueSyntax(tc.kind, fmt.Sprint(tc.next)))
-			require.Equal(t, fmt.Sprint(tc.old), fmt.Sprint(tc.next))
-			for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
-				result := pair[1].Diff(pair[0])
-				leaf := nestedDiffAt(t, result, "inputs/input.setting/default")
-				require.True(t, leaf.DirectSummary().HasChanged, "%s authored defaults retain JSON type, not the builder's effective string", tc.kind)
-				require.NotEmpty(t, leaf.FormatChanged(""))
-			}
+			nestedAssertTypedDefaultChange(t, tc.kind, tc.old, tc.next)
 		}
 	}, hegel.WithDerandomize(true), hegel.WithTestCases(32), hegel.WithDatabase(hegel.DatabaseDisabled()))
 }
 
-func TestAppConfigDiff_NestedOmittedBooleanProperties(t *testing.T) {
-	type boundary struct {
-		fixture      nestedDiffFixture
-		field        string
-		key          string
-		defaultValue bool
-	}
-	cases := []boundary{
-		{nestedDiffFixture{"Actions.0", "actions/action.inspect"}, "EnableKubeConfig", "enable_kube_config", true},
-		{nestedDiffFixture{"Components.0", "components/component.helm"}, "DefaultEnabled", "default_enabled", false},
-		{nestedDiffFixture{"Components.0", "components/component.helm"}, "Toggleable", "toggleable", false},
-		{nestedDiffFixture{"Policies.Policies.0", "policies/policy.guard"}, "ApplyOnTeardown", "apply_on_teardown", true},
-		{nestedDiffFixture{"Permissions.ProvisionRole", "permissions/provision_role"}, "EnabledInStack", "enabled_in_stack", true},
-		{nestedDiffFixture{"BreakGlass.Roles.0", "break_glass/role.emergency"}, "EnabledInStack", "enabled_in_stack", false},
-	}
-	for _, fixture := range nestedDiffFixtures() {
-		typ := nestedValue(nestedFixtureConfig(fixture, ""), fixture.input).Type()
-		if typ == reflect.TypeFor[ComponentHealthConfig]() {
-			cases = append(cases, boundary{fixture, "Enabled", "enabled", true}, boundary{fixture, "BlockDeploy", "block_deploy", false})
-		}
-		if typ == reflect.TypeFor[AppBranchPreviewConfig]() {
-			for _, pair := range [][2]string{{"SetStatuses", "set_statuses"}, {"Comment", "comment"}, {"IgnoreDrafts", "ignore_drafts"}, {"React", "react"}} {
-				cases = append(cases, boundary{fixture, pair[0], pair[1], true})
-			}
-		}
-		if _, ok := typ.FieldByName("SkipNoops"); ok {
-			for _, pair := range [][2]string{{"SkipNoops", "skip_noops"}, {"AutoApproveOnPoliciesPassing", "auto_approve_on_policies_passing"}} {
-				cases = append(cases, boundary{fixture, pair[0], pair[1], false})
-			}
-		}
-	}
-	for _, tc := range cases {
-		t.Run(tc.fixture.input+"/"+tc.field, func(t *testing.T) {
-			hegel.Test(t, func(t *hegel.T) {
-				states := []*bool{nil, boolPtr(false), boolPtr(true)}
-				for _, before := range drawPermutation(t, states) {
-					for _, after := range states {
-						old, next := nestedFixtureConfig(tc.fixture, tc.field), nestedFixtureConfig(tc.fixture, tc.field)
-						nestedValue(old, tc.fixture.input).FieldByName(tc.field).Set(reflect.ValueOf(before))
-						nestedValue(next, tc.fixture.input).FieldByName(tc.field).Set(reflect.ValueOf(after))
-						oldEffective, nextEffective := tc.defaultValue, tc.defaultValue
-						if before != nil {
-							oldEffective = *before
-						}
-						if after != nil {
-							nextEffective = *after
-						}
-						leaf := nestedDiffAt(t, next.Diff(old), tc.fixture.owner+"/"+tc.key)
-						if oldEffective != nextEffective {
-							require.True(t, leaf.DirectSummary().HasChanged, "omission must use its actual runtime default")
-						} else if (before == nil && after == nil) || (before != nil && after != nil) {
-							require.False(t, leaf.DirectSummary().HasChanged)
-						}
-						if before == nil && after == nil {
-							require.False(t, next.Diff(old).DirectSummary().HasChanged)
-						}
-						if before != nil && after != nil && *before != *after {
-							require.NotEmpty(t, leaf.FormatChanged(""))
-						}
-					}
-				}
-			}, hegel.WithDerandomize(true), hegel.WithTestCases(2), hegel.WithDatabase(hegel.DatabaseDisabled()))
+func TestAppConfigDiff_NestedTypedDefaultRegressions(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		kind string
+		old  any
+		next any
+	}{
+		{"bool_vs_string", "bool", true, "true"},
+		{"nil_vs_string", "string", nil, "<nil>"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			nestedAssertTypedDefaultChange(t, tc.kind, tc.old, tc.next)
 		})
 	}
 }
 
-func TestAppConfigDiff_NestedOrderedAndDefaultGroupProperties(t *testing.T) {
+func nestedAssertTypedDefaultChange(t require.TestingT, kind string, before, after any) {
+	makeConfig := func(value any) *AppConfig {
+		return &AppConfig{Inputs: &AppInputConfig{Inputs: []AppInput{{Name: "setting", Type: kind, Default: value}}}}
+	}
+	old, next := makeConfig(before), makeConfig(after)
+	require.NoError(t, old.Inputs.ValidateInputs())
+	require.NoError(t, next.Inputs.ValidateInputs())
+	require.Equal(t, fmt.Sprint(before), fmt.Sprint(after))
+	require.NoError(t, ValidateInputValueSyntax(kind, fmt.Sprint(before)))
+	for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
+		leaf := nestedDiffAt(t, pair[1].Diff(pair[0]), "inputs/input.setting/default")
+		require.True(t, leaf.DirectSummary().HasChanged, "%s authored defaults retain JSON type, not the builder's effective string", kind)
+		require.NotEmpty(t, leaf.FormatChanged(""))
+	}
+}
+
+func TestAppConfigDiff_NestedOmittedBooleans(t *testing.T) {
+	// Rows and columns are nil, false, true. Inherited role settings retain authored intent.
+	falseDefault := [3][3]bool{{false, false, true}, {false, false, true}, {true, true, false}}
+	trueDefault := [3][3]bool{{false, true, false}, {true, false, true}, {false, true, false}}
+	inherit := [3][3]bool{{false, true, true}, {true, false, true}, {true, true, false}}
+	type boundary struct {
+		fixture nestedDiffFixture
+		field   string
+		key     string
+		changes [3][3]bool
+	}
+	cases := []boundary{
+		{nestedDiffFixture{"Actions.0", "actions/action.inspect"}, "EnableKubeConfig", "enable_kube_config", trueDefault},
+		{nestedDiffFixture{"Components.0", "components/component.helm"}, "DefaultEnabled", "default_enabled", falseDefault},
+		{nestedDiffFixture{"Components.0", "components/component.helm"}, "Toggleable", "toggleable", falseDefault},
+		{nestedDiffFixture{"Policies.Policies.0", "policies/policy.guard"}, "ApplyOnTeardown", "apply_on_teardown", trueDefault},
+		{nestedDiffFixture{"Permissions.ProvisionRole", "permissions/provision_role"}, "EnabledInStack", "enabled_in_stack", inherit},
+		{nestedDiffFixture{"BreakGlass.Roles.0", "break_glass/role.emergency"}, "EnabledInStack", "enabled_in_stack", inherit},
+	}
+	for _, fixture := range nestedDiffFixtures() {
+		typ := nestedValue(nestedFixtureConfig(fixture, ""), fixture.input).Type()
+		if typ == reflect.TypeFor[ComponentHealthConfig]() {
+			cases = append(cases, boundary{fixture, "Enabled", "enabled", trueDefault}, boundary{fixture, "BlockDeploy", "block_deploy", falseDefault})
+		}
+		if typ == reflect.TypeFor[AppBranchPreviewConfig]() {
+			for _, pair := range [][2]string{{"SetStatuses", "set_statuses"}, {"Comment", "comment"}, {"IgnoreDrafts", "ignore_drafts"}, {"React", "react"}} {
+				cases = append(cases, boundary{fixture, pair[0], pair[1], trueDefault})
+			}
+		}
+		if _, ok := typ.FieldByName("SkipNoops"); ok {
+			for _, pair := range [][2]string{{"SkipNoops", "skip_noops"}, {"AutoApproveOnPoliciesPassing", "auto_approve_on_policies_passing"}} {
+				cases = append(cases, boundary{fixture, pair[0], pair[1], falseDefault})
+			}
+		}
+	}
+	states := []struct {
+		name  string
+		value *bool
+	}{{"nil", nil}, {"false", boolPtr(false)}, {"true", boolPtr(true)}}
+	for _, tc := range cases {
+		t.Run(tc.fixture.input+"/"+tc.field, func(t *testing.T) {
+			for i, before := range states {
+				for j, after := range states {
+					t.Run(before.name+"_to_"+after.name, func(t *testing.T) {
+						old, next := nestedFixtureConfig(tc.fixture, tc.field), nestedFixtureConfig(tc.fixture, tc.field)
+						nestedValue(old, tc.fixture.input).FieldByName(tc.field).Set(reflect.ValueOf(before.value))
+						nestedValue(next, tc.fixture.input).FieldByName(tc.field).Set(reflect.ValueOf(after.value))
+						result := next.Diff(old)
+						leaf := nestedDiffAt(t, result, tc.fixture.owner+"/"+tc.key)
+						require.Equal(t, tc.changes[i][j], leaf.DirectSummary().HasChanged)
+						if before.value == nil && after.value == nil {
+							require.False(t, result.DirectSummary().HasChanged)
+						}
+						if tc.changes[i][j] {
+							require.NotEmpty(t, leaf.FormatChanged(""))
+						}
+					})
+				}
+			}
+		})
+	}
+}
+
+func TestAppConfigDiff_NestedOrderedAndUnorderedProperties(t *testing.T) {
 	hegel.Test(t, func(t *hegel.T) {
 		values := drawDistinctStrings(t, hegel.FromRegex(`[a-z]{1,8}`, true), 2, 5)
 		permuted := drawPermutation(t, values)
@@ -809,74 +818,85 @@ func TestAppConfigDiff_NestedOrderedAndDefaultGroupProperties(t *testing.T) {
 		next.Secrets.Secrets[0].KubernetesSyncTargets[0].Namespaces = permuted
 		leaf = nestedDiffAt(t, next.Diff(old), "secrets/secret.api_key/kubernetes_sync_targets/target.0/namespaces")
 		require.False(t, leaf.DirectSummary().HasChanged)
-		for _, branchFixture := range []nestedDiffFixture{{"Branch", "branch"}, {"Branches.0", "branches/branch.stable"}} {
-			old, next = nestedBaseline(), nestedBaseline()
-			before := nestedValue(old, branchFixture.input).Addr().Interface().(*AppBranchConfig)
-			after := nestedValue(next, branchFixture.input).Addr().Interface().(*AppBranchConfig)
-			before.InstallGroups = []AppBranchInstallGroupConfig{{Name: values[0], Default: true}, {Name: values[1], Default: false}}
-			after.InstallGroups = []AppBranchInstallGroupConfig{{Name: values[0], Default: false}, {Name: values[1], Default: true}}
-			require.NoError(t, before.Validate())
-			require.NoError(t, after.Validate())
-			for _, name := range values[:2] {
-				leaf = nestedDiffAt(t, next.Diff(old), branchFixture.owner+"/install_groups/install_group."+name+"/default")
-				require.True(t, leaf.DirectSummary().HasChanged)
-			}
-		}
 	}, hegel.WithDerandomize(true), hegel.WithTestCases(32), hegel.WithDatabase(hegel.DatabaseDisabled()))
 }
 
-func TestAppConfigDiff_NestedOmittedRetryProperties(t *testing.T) {
+func TestAppConfigDiff_NestedDefaultInstallGroupSwitch(t *testing.T) {
+	for _, branchFixture := range []nestedDiffFixture{{"Branch", "branch"}, {"Branches.0", "branches/branch.stable"}} {
+		t.Run(branchFixture.input, func(t *testing.T) {
+			old, next := nestedBaseline(), nestedBaseline()
+			before := nestedValue(old, branchFixture.input).Addr().Interface().(*AppBranchConfig)
+			after := nestedValue(next, branchFixture.input).Addr().Interface().(*AppBranchConfig)
+			before.InstallGroups = []AppBranchInstallGroupConfig{{Name: "primary", Default: true}, {Name: "secondary", Default: false}}
+			after.InstallGroups = []AppBranchInstallGroupConfig{{Name: "primary", Default: false}, {Name: "secondary", Default: true}}
+			require.NoError(t, before.Validate())
+			require.NoError(t, after.Validate())
+			for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
+				result := pair[1].Diff(pair[0])
+				for _, name := range []string{"primary", "secondary"} {
+					leaf := nestedDiffAt(t, result, branchFixture.owner+"/install_groups/install_group."+name+"/default")
+					require.True(t, leaf.DirectSummary().HasChanged)
+				}
+			}
+		})
+	}
+}
+
+func TestAppConfigDiff_NestedOmittedRetryBoundaries(t *testing.T) {
+	zero, one, low, high, maximum := 0, 1, 3, 11, 20
+	states := []struct {
+		name      string
+		value     *int
+		effective int
+	}{
+		{"nil", nil, 0},
+		{"zero", &zero, 0},
+		{"one", &one, 1},
+		{"three", &low, 3},
+		{"eleven", &high, 11},
+		{"maximum", &maximum, 20},
+	}
 	for _, fixture := range nestedDiffFixtures() {
 		typ := nestedValue(nestedFixtureConfig(fixture, ""), fixture.input).Type()
 		if _, ok := typ.FieldByName("MaxAutoRetries"); !ok {
 			continue
 		}
 		t.Run(fixture.input, func(t *testing.T) {
-			hegel.Test(t, func(t *hegel.T) {
-				zero, one, maximum := 0, 1, 20
-				middle := hegel.Draw(t, hegel.Integers(2, 19))
-				states := []*int{nil, &zero, &one, &maximum, &middle}
-				for _, before := range drawPermutation(t, states) {
-					for _, after := range states {
+			for _, before := range states {
+				for _, after := range states {
+					t.Run(before.name+"_to_"+after.name, func(t *testing.T) {
 						old, next := nestedFixtureConfig(fixture, "MaxAutoRetries"), nestedFixtureConfig(fixture, "MaxAutoRetries")
-						nestedValue(old, fixture.input).FieldByName("MaxAutoRetries").Set(reflect.ValueOf(before))
-						nestedValue(next, fixture.input).FieldByName("MaxAutoRetries").Set(reflect.ValueOf(after))
+						nestedValue(old, fixture.input).FieldByName("MaxAutoRetries").Set(reflect.ValueOf(before.value))
+						nestedValue(next, fixture.input).FieldByName("MaxAutoRetries").Set(reflect.ValueOf(after.value))
 						nestedValidate(t, old)
 						nestedValidate(t, next)
-						oldEffective, nextEffective := 0, 0
-						if before != nil {
-							oldEffective = *before
-						}
-						if after != nil {
-							nextEffective = *after
-						}
 						leaf := nestedDiffAt(t, next.Diff(old), fixture.owner+"/max_auto_retries")
-						if oldEffective != nextEffective {
-							require.True(t, leaf.DirectSummary().HasChanged)
+						changed := before.effective != after.effective
+						require.Equal(t, changed, leaf.DirectSummary().HasChanged)
+						if changed {
 							require.NotEmpty(t, leaf.FormatChanged(""))
-						} else if (before == nil && after == nil) || (before != nil && after != nil) {
-							require.False(t, leaf.DirectSummary().HasChanged)
 						}
-					}
+					})
 				}
-			}, hegel.WithDerandomize(true), hegel.WithTestCases(2), hegel.WithDatabase(hegel.DatabaseDisabled()))
+			}
 		})
 	}
 }
 
-func TestAppConfigDiff_NestedConstrainedTransitionProperties(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		word := "edit" + hegel.Draw(t, hegel.FromRegex(`[a-z]{1,8}`, true))
+func TestAppConfigDiff_NestedConstrainedTransitions(t *testing.T) {
+	t.Run("helm_to_job", func(t *testing.T) {
 		old, next := nestedBaseline(), nestedBaseline()
 		next.Components[0].Type, next.Components[0].HelmChart = JobComponentType, nil
-		next.Components[0].Job = &JobComponentConfig{ImageURL: "docker.io/acme/" + word, Tag: "1.0.0"}
+		next.Components[0].Job = &JobComponentConfig{ImageURL: "docker.io/acme/job", Tag: "1.0.0"}
 		nestedValidate(t, old)
 		nestedValidate(t, next)
 		for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
 			require.True(t, nestedDiffAt(t, pair[1].Diff(pair[0]), "components/component.helm/type").DirectSummary().HasChanged)
 		}
-		old, next = nestedBaseline(), nestedBaseline()
-		next.Components[3].ExternalImage.Verification.Authorities[0] = signature.Authority{Type: signature.AuthorityTypePublicKey, PublicKey: nestedPublicKey(word)}
+	})
+	t.Run("keyless_to_public_key", func(t *testing.T) {
+		old, next := nestedBaseline(), nestedBaseline()
+		next.Components[3].ExternalImage.Verification.Authorities[0] = signature.Authority{Type: signature.AuthorityTypePublicKey, PublicKey: nestedPublicKey("public-key")}
 		nestedValidate(t, old)
 		nestedValidate(t, next)
 		for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
@@ -885,9 +905,11 @@ func TestAppConfigDiff_NestedConstrainedTransitionProperties(t *testing.T) {
 				require.True(t, nestedDiffAt(t, owner, key).DirectSummary().HasChanged)
 			}
 		}
-		old, next = nestedBaseline(), nestedBaseline()
+	})
+	t.Run("opa_to_kyverno", func(t *testing.T) {
+		old, next := nestedBaseline(), nestedBaseline()
 		next.Policies.Policies[0].Type, next.Policies.Policies[0].Engine = AppPolicyTypeKubernetesCluster, AppPolicyEngineKyverno
-		next.Policies.Policies[0].Contents = "apiVersion: kyverno.io/v1\nkind: ClusterPolicy\nmetadata:\n  name: " + word + "\nspec:\n  validationFailureAction: Enforce\n  rules: []"
+		next.Policies.Policies[0].Contents = "apiVersion: kyverno.io/v1\nkind: ClusterPolicy\nmetadata:\n  name: guard\nspec:\n  validationFailureAction: Enforce\n  rules: []"
 		nestedValidate(t, old)
 		nestedValidate(t, next)
 		for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
@@ -896,5 +918,5 @@ func TestAppConfigDiff_NestedConstrainedTransitionProperties(t *testing.T) {
 				require.True(t, nestedDiffAt(t, owner, key).DirectSummary().HasChanged)
 			}
 		}
-	}, hegel.WithDerandomize(true), hegel.WithTestCases(32), hegel.WithDatabase(hegel.DatabaseDisabled()))
+	})
 }

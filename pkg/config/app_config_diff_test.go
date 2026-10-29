@@ -1372,145 +1372,139 @@ func TestAppConfigDiff_OrderedSequenceProperties(t *testing.T) {
 	})
 }
 
-func TestAppConfigDiff_ComponentLifecycleProperties(t *testing.T) {
+func TestAppConfigDiff_ComponentLifecycle(t *testing.T) {
 	t.Parallel()
-	hegel.Test(t, func(t *hegel.T) {
-		name := hegel.Draw(t, hegel.FromRegex(`[a-z]{1,8}`, true))
-		value := hegel.Draw(t, hegel.FromRegex(`[a-z]{1,12}`, true))
-		fixtures := []struct {
-			kind ComponentType
-			make func() *Component
-			key  string
-		}{
-			{TerraformModuleComponentType, func() *Component {
-				return &Component{TerraformModule: &TerraformModuleComponentConfig{TerraformVersion: "1.6.0"}}
-			}, "terraform_version"},
-			{HelmChartComponentType, func() *Component {
-				return &Component{HelmChart: &HelmChartComponentConfig{ChartName: "chart_" + value}}
-			}, "chart_name"},
-			{DockerBuildComponentType, func() *Component {
-				return &Component{DockerBuild: &DockerBuildComponentConfig{Dockerfile: "Dockerfile_" + value}}
-			}, "dockerfile"},
-			{ContainerImageComponentType, func() *Component {
-				return &Component{ExternalImage: &ExternalImageComponentConfig{PublicImageConfig: &PublicImageConfig{ImageURL: "example.com/" + value, Tag: "v1"}}}
-			}, "public_image"},
-			{KubernetesManifestComponentType, func() *Component {
-				return &Component{KubernetesManifest: &KubernetesManifestComponentConfig{Manifest: "kind: ConfigMap\nmetadata:\n  name: " + value}}
-			}, "manifest"},
-			{JobComponentType, func() *Component { return &Component{Job: &JobComponentConfig{Cmd: []string{"echo", value}}} }, "cmd"},
-			{PulumiComponentType, func() *Component { return &Component{Pulumi: &PulumiComponentConfig{Runtime: "python"}} }, "runtime"},
-		}
-		makeConfig := func(index int, resourceName string) *AppConfig {
-			component := fixtures[index].make()
-			component.Name, component.Type = resourceName, fixtures[index].kind
-			return &AppConfig{Components: ComponentList{component, {Name: "control_" + name, Type: TerraformModuleComponentType, TerraformModule: &TerraformModuleComponentConfig{TerraformVersion: "1.5.0"}}}, Actions: []*ActionConfig{{Name: name, Steps: []*ActionStepConfig{{Name: "inspect", Command: "echo ready"}}}}}
-		}
-		for i := range fixtures {
-			old := makeConfig(i, name)
-			for j := range fixtures {
-				next := makeConfig(j, name)
-				result := next.Diff(old)
-				require.Equal(t, i != j, result.FindResource(ComponentResourceID(name)).DirectSummary().HasChanged)
-				require.False(t, result.FindResource(ComponentResourceID("control_"+name)).Summary().HasChanged)
-				require.False(t, result.FindResource(ActionResourceID(name)).Summary().HasChanged, "resource namespaces must not alias")
-				if i != j {
-					require.Equal(t, diff.OpChange, findChild(result.FindResource(ComponentResourceID(name)), "type").Diff.Op)
-					require.True(t, findChild(result.FindResource(ComponentResourceID(name)), fixtures[i].key).DirectSummary().HasChanged, "old %s payload removal", fixtures[i].kind)
-					require.True(t, findChild(result.FindResource(ComponentResourceID(name)), fixtures[j].key).DirectSummary().HasChanged, "new %s payload addition", fixtures[j].kind)
-				}
-			}
-			renamed := makeConfig(i, "renamed_"+name).Diff(old)
-			require.True(t, renamed.FindResource(ComponentResourceID(name)).DirectSummary().HasChanged)
-			require.True(t, renamed.FindResource(ComponentResourceID("renamed_"+name)).DirectSummary().HasChanged)
-			for _, pair := range [][2]*AppConfig{{{}, old}, {old, {}}} {
-				result := pair[1].Diff(pair[0])
-				require.True(t, result.FindResource(ComponentResourceID(name)).DirectSummary().HasChanged)
-				require.NotEmpty(t, result.FormatChanged(""))
-			}
-		}
-	})
-}
-
-func TestAppConfigDiff_ResourceLifecycleProperties(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		name := hegel.Draw(t, hegel.FromRegex(`[a-z]{1,8}`, true))
-		for _, resource := range []struct {
-			section string
-			set     func(*AppConfig, string)
-		}{
-			{"inputs", func(c *AppConfig, name string) {
-				c.Inputs = &AppInputConfig{Inputs: []AppInput{{Name: name, Type: "string", Description: "region", DisplayName: "Region", Group: "deployment"}}}
-			}},
-			{"secrets", func(c *AppConfig, name string) {
-				c.Secrets = &SecretsConfig{Secrets: []*AppSecret{{Name: name, Description: "token"}}}
-			}},
-			{"actions", func(c *AppConfig, name string) {
-				c.Actions = []*ActionConfig{{Name: name, Steps: []*ActionStepConfig{{Name: "inspect", Command: "echo ready"}}}}
-			}},
-			{"runbooks", func(c *AppConfig, name string) {
-				c.Runbooks = []*RunbookConfig{{Name: name, Steps: []*RunbookStepConfig{{Name: "inspect", Type: RunbookStepTypeAction, Command: "echo ready"}}}}
-			}},
-			{"installs", func(c *AppConfig, name string) { c.Installs = []*Install{{Name: name}} }},
-			{"branches", func(c *AppConfig, name string) { c.Branches = []*AppBranchConfig{{Name: name}} }},
-			{"policies", func(c *AppConfig, name string) {
-				c.Policies = &PoliciesConfig{Policies: []AppPolicy{{Name: name, Type: AppPolicyTypeKubernetesCluster, Engine: AppPolicyEngineOPA, Contents: "package acme\n"}}}
-			}},
-			{"kubernetes_contexts", func(c *AppConfig, name string) {
-				c.KubernetesContexts = &KubernetesContextsConfig{Contexts: []*KubernetesContext{{Name: name, Component: "cluster"}}}
-			}},
-		} {
-			old, renamed := &AppConfig{}, &AppConfig{}
-			resource.set(old, name)
-			resource.set(renamed, "renamed_"+name)
-			for _, pair := range [][2]*AppConfig{{{}, old}, {old, {}}, {old, renamed}} {
-				result := pair[1].Diff(pair[0])
-				require.True(t, findChild(result, resource.section).DirectSummary().HasChanged, "%s membership must be observable, including minimally populated members", resource.section)
-				require.NotEmpty(t, result.FormatChanged(""))
-			}
-			require.False(t, old.Diff(old).Summary().HasChanged)
-		}
-	})
-}
-
-func TestAppConfigDiff_SharedStorageProperties(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		value := hegel.Draw(t, hegel.FromRegex(`[a-z]{1,12}`, true))
-		for _, changed := range []bool{false, true} {
-			dependencies := []string{"zulu", "alpha", "unused"}
-			labels := map[string]string{"region": value}
-			role := &AppAWSIAMRole{Name: "maintenance", Description: value}
-			references := []refs.Ref{{Type: refs.RefTypeInputs, Name: "region", Input: "nuon.inputs.inputs.region"}}
-			old := &AppConfig{
-				Components:  ComponentList{{Name: "api", Type: TerraformModuleComponentType, Dependencies: dependencies[:2], Labels: labels, SourceFile: value + ".toml", Checksum: value, References: references, TerraformModule: &TerraformModuleComponentConfig{VarsMap: labels}}},
-				Permissions: &PermissionsConfig{MaintenanceRole: role, Roles: []*AppAWSIAMRole{role}},
-				Actions:     []*ActionConfig{{Name: "inspect", Labels: labels, Dependencies: dependencies[:2], References: references, Steps: []*ActionStepConfig{{Name: "inspect", Command: "echo ready", EnvVarMap: labels, References: references}}}},
-			}
-			next := *old
-			component := *old.Components[0]
-			next.Components = ComponentList{&component}
-			component.Dependencies = dependencies[1:2]
-			if changed {
-				component.VarName = "changed_" + value
-			}
-			beforeOld, err := copystructure.Copy(old)
-			require.NoError(t, err)
-			beforeNext, err := copystructure.Copy(&next)
-			require.NoError(t, err)
+	name := "acme"
+	value := "example"
+	fixtures := []struct {
+		kind ComponentType
+		make func() *Component
+		key  string
+	}{
+		{TerraformModuleComponentType, func() *Component {
+			return &Component{TerraformModule: &TerraformModuleComponentConfig{TerraformVersion: "1.6.0"}}
+		}, "terraform_version"},
+		{HelmChartComponentType, func() *Component {
+			return &Component{HelmChart: &HelmChartComponentConfig{ChartName: "chart_" + value}}
+		}, "chart_name"},
+		{DockerBuildComponentType, func() *Component {
+			return &Component{DockerBuild: &DockerBuildComponentConfig{Dockerfile: "Dockerfile_" + value}}
+		}, "dockerfile"},
+		{ContainerImageComponentType, func() *Component {
+			return &Component{ExternalImage: &ExternalImageComponentConfig{PublicImageConfig: &PublicImageConfig{ImageURL: "example.com/" + value, Tag: "v1"}}}
+		}, "public_image"},
+		{KubernetesManifestComponentType, func() *Component {
+			return &Component{KubernetesManifest: &KubernetesManifestComponentConfig{Manifest: "kind: ConfigMap\nmetadata:\n  name: " + value}}
+		}, "manifest"},
+		{JobComponentType, func() *Component { return &Component{Job: &JobComponentConfig{Cmd: []string{"echo", value}}} }, "cmd"},
+		{PulumiComponentType, func() *Component { return &Component{Pulumi: &PulumiComponentConfig{Runtime: "python"}} }, "runtime"},
+	}
+	makeConfig := func(index int, resourceName string) *AppConfig {
+		component := fixtures[index].make()
+		component.Name, component.Type = resourceName, fixtures[index].kind
+		return &AppConfig{Components: ComponentList{component, {Name: "control_" + name, Type: TerraformModuleComponentType, TerraformModule: &TerraformModuleComponentConfig{TerraformVersion: "1.5.0"}}}, Actions: []*ActionConfig{{Name: name, Steps: []*ActionStepConfig{{Name: "inspect", Command: "echo ready"}}}}}
+	}
+	for i := range fixtures {
+		old := makeConfig(i, name)
+		for j := range fixtures {
+			next := makeConfig(j, name)
 			result := next.Diff(old)
-			require.Equal(t, beforeNext.(*AppConfig).Diff(beforeOld.(*AppConfig)), result, "alias layout must not affect observations")
-			require.Equal(t, beforeOld, old, "transient as well as serialized state must be unchanged")
-			require.Equal(t, beforeNext, &next)
-			require.Equal(t, []string{"zulu", "alpha", "unused"}, dependencies, "overlapping backing array must remain untouched")
-			require.Equal(t, result, next.Diff(old))
-			require.False(t, old.Diff(old).Summary().HasChanged)
-			snapshot, err := copystructure.Copy(result)
-			require.NoError(t, err)
-			result.FindResource(ComponentResourceID("api")).Diff.Before = "corrupted result"
-			require.Equal(t, snapshot, next.Diff(old), "returned trees must not share storage")
-			require.Equal(t, beforeOld, old)
-			require.Equal(t, beforeNext, &next)
+			require.Equal(t, i != j, result.FindResource(ComponentResourceID(name)).DirectSummary().HasChanged)
+			require.False(t, result.FindResource(ComponentResourceID("control_"+name)).Summary().HasChanged)
+			require.False(t, result.FindResource(ActionResourceID(name)).Summary().HasChanged, "resource namespaces must not alias")
+			if i != j {
+				require.Equal(t, diff.OpChange, findChild(result.FindResource(ComponentResourceID(name)), "type").Diff.Op)
+				require.True(t, findChild(result.FindResource(ComponentResourceID(name)), fixtures[i].key).DirectSummary().HasChanged, "old %s payload removal", fixtures[i].kind)
+				require.True(t, findChild(result.FindResource(ComponentResourceID(name)), fixtures[j].key).DirectSummary().HasChanged, "new %s payload addition", fixtures[j].kind)
+			}
 		}
-	})
+		renamed := makeConfig(i, "renamed_"+name).Diff(old)
+		require.True(t, renamed.FindResource(ComponentResourceID(name)).DirectSummary().HasChanged)
+		require.True(t, renamed.FindResource(ComponentResourceID("renamed_"+name)).DirectSummary().HasChanged)
+		for _, pair := range [][2]*AppConfig{{{}, old}, {old, {}}} {
+			result := pair[1].Diff(pair[0])
+			require.True(t, result.FindResource(ComponentResourceID(name)).DirectSummary().HasChanged)
+			require.NotEmpty(t, result.FormatChanged(""))
+		}
+	}
+}
+
+func TestAppConfigDiff_ResourceLifecycle(t *testing.T) {
+	name := "acme"
+	for _, resource := range []struct {
+		section string
+		set     func(*AppConfig, string)
+	}{
+		{"inputs", func(c *AppConfig, name string) {
+			c.Inputs = &AppInputConfig{Inputs: []AppInput{{Name: name, Type: "string", Description: "region", DisplayName: "Region", Group: "deployment"}}}
+		}},
+		{"secrets", func(c *AppConfig, name string) {
+			c.Secrets = &SecretsConfig{Secrets: []*AppSecret{{Name: name, Description: "token"}}}
+		}},
+		{"actions", func(c *AppConfig, name string) {
+			c.Actions = []*ActionConfig{{Name: name, Steps: []*ActionStepConfig{{Name: "inspect", Command: "echo ready"}}}}
+		}},
+		{"runbooks", func(c *AppConfig, name string) {
+			c.Runbooks = []*RunbookConfig{{Name: name, Steps: []*RunbookStepConfig{{Name: "inspect", Type: RunbookStepTypeAction, Command: "echo ready"}}}}
+		}},
+		{"installs", func(c *AppConfig, name string) { c.Installs = []*Install{{Name: name}} }},
+		{"branches", func(c *AppConfig, name string) { c.Branches = []*AppBranchConfig{{Name: name}} }},
+		{"policies", func(c *AppConfig, name string) {
+			c.Policies = &PoliciesConfig{Policies: []AppPolicy{{Name: name, Type: AppPolicyTypeKubernetesCluster, Engine: AppPolicyEngineOPA, Contents: "package acme\n"}}}
+		}},
+		{"kubernetes_contexts", func(c *AppConfig, name string) {
+			c.KubernetesContexts = &KubernetesContextsConfig{Contexts: []*KubernetesContext{{Name: name, Component: "cluster"}}}
+		}},
+	} {
+		old, renamed := &AppConfig{}, &AppConfig{}
+		resource.set(old, name)
+		resource.set(renamed, "renamed_"+name)
+		for _, pair := range [][2]*AppConfig{{{}, old}, {old, {}}, {old, renamed}} {
+			result := pair[1].Diff(pair[0])
+			require.True(t, findChild(result, resource.section).DirectSummary().HasChanged, "%s membership must be observable, including minimally populated members", resource.section)
+			require.NotEmpty(t, result.FormatChanged(""))
+		}
+		require.False(t, old.Diff(old).Summary().HasChanged)
+	}
+}
+
+func TestAppConfigDiff_SharedStorage(t *testing.T) {
+	value := "acme"
+	for _, changed := range []bool{false, true} {
+		dependencies := []string{"zulu", "alpha", "unused"}
+		labels := map[string]string{"region": value}
+		role := &AppAWSIAMRole{Name: "maintenance", Description: value}
+		references := []refs.Ref{{Type: refs.RefTypeInputs, Name: "region", Input: "nuon.inputs.inputs.region"}}
+		old := &AppConfig{
+			Components:  ComponentList{{Name: "api", Type: TerraformModuleComponentType, Dependencies: dependencies[:2], Labels: labels, SourceFile: value + ".toml", Checksum: value, References: references, TerraformModule: &TerraformModuleComponentConfig{VarsMap: labels}}},
+			Permissions: &PermissionsConfig{MaintenanceRole: role, Roles: []*AppAWSIAMRole{role}},
+			Actions:     []*ActionConfig{{Name: "inspect", Labels: labels, Dependencies: dependencies[:2], References: references, Steps: []*ActionStepConfig{{Name: "inspect", Command: "echo ready", EnvVarMap: labels, References: references}}}},
+		}
+		next := *old
+		component := *old.Components[0]
+		next.Components = ComponentList{&component}
+		component.Dependencies = dependencies[1:2]
+		if changed {
+			component.VarName = "changed_" + value
+		}
+		beforeOld, err := copystructure.Copy(old)
+		require.NoError(t, err)
+		beforeNext, err := copystructure.Copy(&next)
+		require.NoError(t, err)
+		result := next.Diff(old)
+		require.Equal(t, beforeNext.(*AppConfig).Diff(beforeOld.(*AppConfig)), result, "alias layout must not affect observations")
+		require.Equal(t, beforeOld, old, "transient as well as serialized state must be unchanged")
+		require.Equal(t, beforeNext, &next)
+		require.Equal(t, []string{"zulu", "alpha", "unused"}, dependencies, "overlapping backing array must remain untouched")
+		require.Equal(t, result, next.Diff(old))
+		require.False(t, old.Diff(old).Summary().HasChanged)
+		snapshot, err := copystructure.Copy(result)
+		require.NoError(t, err)
+		result.FindResource(ComponentResourceID("api")).Diff.Before = "corrupted result"
+		require.Equal(t, snapshot, next.Diff(old), "returned trees must not share storage")
+		require.Equal(t, beforeOld, old)
+		require.Equal(t, beforeNext, &next)
+	}
 }
 
 func drawPermutation[T any](t hegel.TestCase, values []T) []T {
