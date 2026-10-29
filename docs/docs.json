@@ -230,14 +230,15 @@
           {
             "group": "README",
             "boost": 2,
-            "pages": []
+            "pages": [
+              "guides/using-readmes",
+              "guides/programmable-readmes"
+            ]
           },
           {
             "group": "Advanced",
             "boost": 2,
             "pages": [
-              "guides/using-readmes",
-              "guides/programmable-readmes",
               "guides/custom-nested-stacks",
               "guides/nuon-stack-terraform-provider",
               "guides/customizing-terraform-stack-templates",
