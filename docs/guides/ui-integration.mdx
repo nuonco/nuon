@@ -16,9 +16,11 @@ Your app calls the Nuon [API](/concepts/api) in the background.
 Create a [service account](/concepts/service-accounts) for your app and store its token with your other secrets.
 Every call in this guide uses that token.
 
+<Tip>
 Setup takes several minutes, and part of it waits on your customer. Run it as a background task in your app, and send
 a `request_id` with each call that starts work so a retry after a timeout can't start the same work twice. See
 [Idempotent operations](/guides/idempotent-operations).
+</Tip>
 
 ## 1. Collect the customer's settings
 
