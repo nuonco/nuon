@@ -8520,9 +8520,14 @@ export interface components {
       auth_domain?: string;
       dashboard_url?: string;
       min_cli_version?: string;
+      min_cli_version_policy?: components["schemas"]["service.MinCLIVersionPolicy"];
       nuon_auth_enabled?: boolean;
       oidc_federation_enabled?: boolean;
       root_domain?: string;
+    };
+    "service.MinCLIVersionPolicy": {
+      error?: string;
+      warn?: string;
     };
     "service.CancelRunnerJobRequest": Record<string, never>;
     "service.CancelWorkflowError": {

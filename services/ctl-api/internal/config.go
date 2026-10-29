@@ -576,7 +576,11 @@ type Config struct {
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
 
+	// Deprecated: set min_cli_version_warn. Still read when that is empty, and still returned for older CLIs.
 	MinCLIVersion string `config:"min_cli_version"`
+
+	MinCLIVersionWarn  string `config:"min_cli_version_warn"`
+	MinCLIVersionError string `config:"min_cli_version_error"`
 
 	// below this the CLI syncs app configs client-side, which never sends action or
 	// runbook ids, so those are silently dropped from installs

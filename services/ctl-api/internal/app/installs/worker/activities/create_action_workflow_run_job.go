@@ -29,6 +29,7 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 	if cfg.Timeout == 0 {
 		cfg.Timeout = run.Timeout
 	}
+	cfg.Timeout = run.Install.InstallConfig.ResolveActionTimeout(cfg.Timeout)
 	if run.InstallWorkflowID != nil {
 		ctx = cctx.SetFlowWorkflowIDContext(ctx, *run.InstallWorkflowID)
 	}

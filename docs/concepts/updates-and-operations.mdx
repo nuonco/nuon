@@ -1,73 +1,44 @@
 ---
 title: "Updates and Operations"
-description: "The primitives Nuon provides to update and operate every install: automatic updates, secure execution, and day-2 tooling."
+description: "Ship a change to every install with a git push, change one install, and run migrations with actions and runbooks."
 keywords: ["updates", "operations", "day 2 operations", "change management", "change controls", "app branches", "install groups", "plan approval", "auto approve", "policies", "rollback", "runner", "operation roles", "break glass", "actions", "runbooks", "drift detection", "workflows"]
 ---
 
-import { ConceptMap } from "/snippets/concept-map.jsx";
+import { FlowSteps } from "/snippets/flow-steps.jsx";
 
-What Nuon provides. These primitives are built in. Some, like actions and runbooks, take a little configuration.
+To update your installs, push a change to the git branch your app branch tracks.
 
-<ConceptMap
-  columns={[
-    {
-      title: "Automatic updates",
-      tone: "nuon",
-      items: [
-        { label: "App branches", href: "/concepts/app-branches", note: "A push rolls out to install groups in order" },
-        { label: "Plan approvals", href: "/concepts/workflows#workflow-approvals", note: "Review the Terraform plan or Helm diff first" },
-        { label: "Policies", href: "/concepts/policies", note: "OPA Rego or Kyverno checks before deploy" },
-        { label: "Roll back", href: "/guides/rollback-install-config", note: "Re-apply an earlier config version" },
-      ],
-    },
-    {
-      title: "Secure execution",
-      tone: "nuon",
-      items: [
-        { label: "Operation roles", href: "/concepts/operation-roles", note: "Scoped permissions per operation" },
-        { label: "Break-glass access", href: "/concepts/operation-roles#elevated-access-and-break-glass-operations", note: "Elevated access the customer enables" },
-      ],
-    },
-    {
-      title: "Day-2 tooling",
-      tone: "nuon",
-      items: [
-        { label: "Actions", href: "/concepts/actions", note: "Scripts by hand, on a schedule, or around a deploy" },
-        { label: "Runbooks", href: "/guides/runbooks", note: "Multi-step procedures run on demand" },
-        { label: "Drift detection", href: "/concepts/workflows#drift-detection", note: "Config versus what's running" },
-      ],
-    },
+<FlowSteps
+  horizontal
+  steps={[
+    { title: "git push" },
+    { title: "App branch", href: "/concepts/app-branches" },
+    { title: "Install groups", href: "/concepts/app-branches#install-groups" },
+    { title: "Installs", href: "/concepts/installs" },
   ]}
 />
 
-## Automatic updates
+## Ship to every install
 
-Because App Templates live in git, an update is a push.
+- **Push to git.** A push to the tracked branch runs the [app branch](/concepts/app-branches). It builds what changed,
+  then plans and deploys it one [install group](/concepts/app-branches#install-groups) at a time.
+- **Review before it ships.** Each install group waits for you to approve its Terraform plan or Helm diff, or approves
+  itself when every [policy](/concepts/policies) check passes.
 
-- **Roll out across installs.** A push to the tracked branch builds what changed, then plans and deploys it one
-  [install group](/concepts/app-branches#install-groups) at a time.
-- **Review before it ships.** Each install group waits for you to approve its Terraform plan or Helm diff.
-- **Approve automatically.** [Auto-approve plans](/concepts/workflows#workflow-approvals) on an install, or let a group
-  approve itself when every [policy](/concepts/policies) check passes.
-- **Change one customer.** Edit that install's [config](/guides/install-configs), or
-  [roll it back](/guides/rollback-install-config) to an earlier version.
+## Change one install
 
-## Secure execution
+- **Edit its config.** Change that install's [config](/guides/install-configs), such as its inputs or a
+  [component override](/guides/component-overrides).
+- **Roll back.** [Re-apply an earlier config version](/guides/rollback-install-config) on that install.
 
-Every install's [runner](/concepts/runners) works inside the customer's account with only the access it needs.
+## Run migrations and day-2 work
 
-- **[Operation roles](/concepts/operation-roles).** The runner assumes a role scoped to each kind of work, and every
-  workflow run records which role it used.
-- **[Break-glass access](/concepts/operation-roles#elevated-access-and-break-glass-operations).** When a fix needs more
-  access, the customer turns on an elevated role for the task, then turns it off again.
-
-## Day-2 tooling
-
-- **[Actions](/concepts/actions)** run scripts by hand, on a schedule, or around a deploy, and can fix what monitoring
-  finds.
-- **[Runbooks](/guides/runbooks)** chain deploys and actions into one procedure, such as a database migration or a
-  recovery.
-- **[Drift detection](/concepts/workflows#drift-detection)** finds changes made outside Nuon.
+- **[Actions](/concepts/actions)** run scripts by hand, on a schedule, or around a deploy.
+- **[Runbooks](/guides/runbooks)** chain deploys and actions into one procedure, such as a database migration. Run one
+  against a single install, or list it in the app branch's `post_deploy_runbooks` to run it on each install after its
+  deploy.
+- **[Health checks](/guides/health-checks)** show whether every component is running, with alerts to Slack and
+  webhooks.
 
 Every run is a [workflow](/concepts/workflows) that records its steps and logs, so you can see what ran, when, and
 against which install.

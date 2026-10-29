@@ -298,19 +298,8 @@ func (s *GetAppActionsTestSuite) TestGetAppActionsDifferentOrg() {
 	ctx2, _ = s.service.Seeder.EnsureOrg(ctx2, s.T())
 	otherApp := s.service.Seeder.CreateApp(ctx2, s.T())
 
-	// Note: Current handler behavior has security issue - findApp uses Or("id = ?", appID)
-	// without org_id check. However, findActionWorkflows filters by org_id from context,
-	// so it returns empty array (no actions in requesting org for that app).
 	rr := s.makeRequest(http.MethodGet, "/v1/apps/"+otherApp.ID+"/actions", nil)
 
-	if rr.Code != http.StatusOK {
-		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-	}
-	require.Equal(s.T(), http.StatusOK, rr.Code)
-
-	// Verify empty array is returned (no actions in requesting org for this app)
-	var response []app.ActionWorkflow
-	err := json.Unmarshal(rr.Body.Bytes(), &response)
-	require.NoError(s.T(), err)
-	assert.Len(s.T(), response, 0)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
+	assert.Contains(s.T(), rr.Body.String(), "app not found")
 }
