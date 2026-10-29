@@ -4,10 +4,19 @@ description: "Let customers set up your product in their own cloud account witho
 keywords: ["UI integration", "embed BYOC", "BYOC onboarding flow", "customer self-serve BYOC", "white label", "install progress", "polling", "webhooks", "service account", "API integration", "product integration"]
 ---
 
-import { UiIntegrationMock } from "/snippets/ui-integration-mock.jsx";
+import {
+  UiIntegrationMock,
+  AcmeStartScreen,
+  AcmeTemplateScreen,
+  AcmeProgressScreen,
+  AcmeApproveScreen,
+} from "/snippets/ui-integration-mock.jsx";
 
-With a UI integration, your customers set up your product in their own cloud account from inside your app. They never
-open Nuon. Your app talks to Nuon through the [API](/concepts/api) behind the scenes.
+A UI integration lets your customers deploy your product into their own cloud account from your app's settings page.
+They never see Nuon. Your app calls the Nuon [API](/concepts/api) in the background.
+
+The screens below come from Acme Analytics, an example product. Globex, one of Acme's customers, is setting it up in
+Globex's AWS account.
 
 <UiIntegrationMock />
 
@@ -16,16 +25,21 @@ This guide covers first-time setup. To change or remove an install later, see
 
 ## Before you start
 
-- **An API token for your app.** Create a [service account](/concepts/service-accounts) for your app and keep its
-  token with your other secrets.
-- **A way to run long tasks.** Setup takes several minutes, so run it as a background task in your app.
-- **Safe retries.** If a call times out, you can send it again with the same `request_id` without starting a second
-  copy. See [Idempotent operations](/guides/idempotent-operations).
+Create a [service account](/concepts/service-accounts) for your app and store its token with your other secrets.
+Every call in this guide uses that token.
 
-## 1. Start the install
+Setup takes several minutes, and part of it waits on your customer. Run it as a background task in your app, and send
+a `request_id` with each call that starts work so a retry after a timeout can't start the same work twice. See
+[Idempotent operations](/guides/idempotent-operations).
 
-An [install](/concepts/installs) is one copy of your product in one customer's account. Create it with the customer's
-settings, such as their domain:
+## 1. Collect the customer's settings
+
+Ask only for what your product needs to run in their account, such as a region and a domain.
+
+<AcmeStartScreen />
+
+When the customer clicks **Start setup**, create an [install](/concepts/installs). An install is one copy of your
+product in one customer's account.
 
 ```bash
 curl -X POST https://api.nuon.co/v1/installs \
@@ -34,50 +48,54 @@ curl -X POST https://api.nuon.co/v1/installs \
   -H "Content-Type: application/json" \
   -d '{
     "app_id": "app...",
-    "name": "customer-acme",
+    "name": "globex",
     "aws_account": { "region": "us-west-2" },
-    "inputs": { "domain": "acme.example.com" }
+    "inputs": { "domain": "analytics.globex.example.com" }
   }'
 ```
 
-Save the install ID with your customer's record. You'll use it in every later call.
+Save the install ID with the customer's record. You'll need it for every later call.
 
-## 2. Customer runs the setup template
+## 2. Have the customer connect their account
 
-Nuon gives each install a setup template, called a [stack](/concepts/stacks). Your customer runs it in their own cloud
-account. It creates the network, the permissions, and the [runner](/concepts/runners) that deploys your product.
+Your customer connects their account by running a setup template, called a [stack](/concepts/stacks), in their own
+cloud console. Before they click, tell them what it creates and why. Their security team will ask.
 
-Get the link with `GET /v1/installs/{install_id}/stack` and show it in your app. On AWS, the `quick_link_url` field
-opens the template in the AWS console, ready to run.
+<AcmeTemplateScreen />
 
-Customers often ask what the template creates and what access you get. See
-[Positioning safety of BYOC](/guides/vendor-customers) for answers.
+Get the template link from `GET /v1/installs/{install_id}/stack` and use it for the button. On AWS, the
+`quick_link_url` field opens the template in the AWS console, ready to run.
 
-## 3. Show progress
+The template creates the network, the permissions, and the [runner](/concepts/runners), the agent that deploys your
+product inside their account. [Positioning safety of BYOC](/guides/vendor-customers) covers the follow-up questions
+customers usually ask.
 
-Once the template runs, Nuon takes over and deploys your product. Show your customer each stage as it finishes:
+## 3. Show setup progress
 
-1. Account connected
-2. Base infrastructure ready, such as the Kubernetes cluster
-3. Each part of your product deployed
+Once the template finishes, Nuon deploys your product without any more input from the customer. Show each stage as it
+completes, and let them leave the page.
 
-To know when a stage finishes, either have Nuon notify your app with [webhooks](/guides/webhooks), or check the
-install's status every so often.
+<AcmeProgressScreen />
 
-If a stage fails, show its name and the error message, so your customer and your support team see the same thing.
+To find out when a stage finishes, have Nuon call your app with [webhooks](/guides/webhooks), or check the install's
+status on a timer. If a stage fails, show its name and error message. Your customer and your support team then see the
+same thing.
 
-## 4. Approve changes
+## 4. Ask the customer to approve changes
 
-Nuon can pause before it changes anything in your customer's account. If you turned that on, approve from your app,
-or give your customer one **Approve** button. See
+You can set installs to pause before Nuon changes anything in the customer's account. If you do, show the customer
+what will change and let them approve it.
+
+<AcmeApproveScreen />
+
+Wire the **Approve** button to `approve-all` on the install's workflow. See
 [Approve the provision](/guides/control-plane-integration#approve-the-provision).
 
 ## Tips
 
-- **Only get the webhooks you need.** By default, a webhook gets every event in your Nuon org. Filter it to the
-  installs and events your app uses.
-- **Check that webhooks come from Nuon.** Set a secret on the webhook and check the `X-Nuon-Signature` header. See
-  [Verifying signatures](/guides/webhooks#verifying-signatures).
-- **Limit the token.** Give the service account the least access that works. See
-  [Access control](/concepts/access-control).
-- **Name installs after your customer.** Put your own customer ID in the install name, so support can find it quickly.
+- Filter your webhooks. By default, a webhook receives every event in your Nuon org, so limit it to the installs and
+  events your app uses.
+- Check that each webhook request came from Nuon. Set a secret on the webhook and verify the `X-Nuon-Signature`
+  header. See [Verifying signatures](/guides/webhooks#verifying-signatures).
+- Give the service account the least access that works. See [Access control](/concepts/access-control).
+- Name each install after your customer, using your own customer ID, so support can find it in the Nuon dashboard.

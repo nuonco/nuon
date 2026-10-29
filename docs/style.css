@@ -1354,3 +1354,145 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
     display: none;
   }
 }
+.nuon-um-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 22rem;
+}
+.nuon-um-field .nuon-um-label {
+  margin-top: 0;
+}
+.nuon-um-input {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--in-border);
+  border-radius: 8px;
+  background: var(--in-box-bg);
+  font-size: 0.82rem;
+}
+.nuon-um-box {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--in-border);
+  border-radius: 10px;
+  background: var(--in-inner-bg);
+}
+.nuon-um-box .nuon-um-label {
+  margin: 0 0 0.35rem;
+}
+.nuon-um-list,
+.nuon-um-diff {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+}
+.nuon-um-list li {
+  position: relative;
+  padding-left: 0.9rem;
+}
+.nuon-um-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--in-accent);
+}
+.nuon-um-diff li {
+  display: flex;
+  gap: 0.5rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+}
+.nuon-um-add {
+  color: #1a7f37;
+  font-weight: 700;
+}
+.nuon-um-chg {
+  color: #9a6700;
+  font-weight: 700;
+}
+.dark .nuon-um-add {
+  color: #3fb950;
+}
+.dark .nuon-um-chg {
+  color: #d29922;
+}
+.nuon-um-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--in-muted);
+  font-size: 0.78rem;
+}
+.nuon-um-pulse {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--in-accent);
+  animation: nuon-um-pulse 1.4s ease-in-out infinite;
+}
+@keyframes nuon-um-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nuon-um-pulse {
+    animation: none;
+  }
+}
+.nuon-um-ghost {
+  border: 1px solid var(--in-border);
+  background: transparent;
+  color: var(--in-text);
+}
+.dark .nuon-um-ghost {
+  color: var(--in-text);
+}
+.nuon-um-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+.nuon-um-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--in-muted);
+}
+.nuon-um-steps li::before {
+  content: "";
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1.5px solid var(--in-border);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.nuon-um-steps .nuon-um-done {
+  color: var(--in-text);
+}
+.nuon-um-steps .nuon-um-done::before {
+  border-color: var(--in-accent);
+  background: var(--in-accent);
+  box-shadow: inset 0 0 0 3px var(--in-box-bg);
+}
+.nuon-um-steps .nuon-um-now {
+  color: var(--in-text);
+  font-weight: 600;
+}
+.nuon-um-steps .nuon-um-now::before {
+  border-color: var(--in-accent);
+  border-right-color: transparent;
+}
+.nuon-um-steps small {
+  color: var(--in-muted);
+  font-weight: 400;
+}
