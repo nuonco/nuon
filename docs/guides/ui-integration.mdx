@@ -81,20 +81,24 @@ Call `GET /v1/installs/{install_id}/stack`. Trimmed response:
 Point your connect button at the newest version's `quick_link_url`. When the customer runs it, the stack creates the
 network, the permissions, and the [runner](/concepts/runners) in their account.
 
-<Tip>
 [Positioning safety of BYOC](/guides/vendor-customers) covers the follow-up questions customers usually ask.
-</Tip>
 
 ## 3. Show setup progress
 
-Once the template finishes, Nuon deploys your product without any more input from the customer. Show each stage as it
-completes, and let them leave the page.
+Once the customer initiates the install on their cloud account, Nuon deploys your product without any more input from the customer. 
+
+You can show your customer each stage as it completes, and let them leave the page.
 
 <AcmeScreen screen="progress" />
 
-To find out when a stage finishes, have Nuon call your app with [webhooks](/guides/webhooks), or check the install's
-status on a timer. If a stage fails, show its name and error message. Your customer and your support team then see the
-same thing.
+Most apps track progress with [webhooks](/guides/webhooks):
+
+1. Register a webhook for workflow step events on your installs.
+2. On each event, update the matching stage from `data.step.name` and `data.transition`.
+3. On a `failed` event, show the customer `data.step.name` and `data.outcome.error`. Your support team sees the same
+   error in Nuon.
+
+If your app can't receive webhooks, check the install's status on a timer instead.
 
 ## 4. Ask the customer to approve changes
 
