@@ -28,6 +28,7 @@ func (a *Activities) getInstallActionWorkflowRun(ctx context.Context, runID stri
 		Preload("ActionWorkflowConfig.Steps").
 		Preload("LogStream").
 		Preload("Install").
+		Preload("Install.InstallConfig").
 		Preload("Install.RunnerGroup").
 		Preload("Install.RunnerGroup.Runners").
 		First(&run, "id = ?", runID)
