@@ -17,6 +17,7 @@ import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TDiffNode } from '@/lib/ctl-api/apps/get-app-config-diff'
+import { formatEmbeddedTomlContent } from '@/lib/diffs/embedded-toml'
 import { diffLines } from '@/utils/code-utils'
 import { cn } from '@/utils/classnames'
 import { scrollElementIntoView } from '@/utils/scroll'
@@ -458,43 +459,6 @@ function langForFile(name: string): string {
     return 'bash'
   }
   return 'yaml'
-}
-
-const EMBEDDED_CONTENT_KEYS = new Set([
-  'content',
-  'contents',
-  'inline_contents',
-  'var_file',
-])
-
-function decodeEscapedContent(value: string, quote: string): string {
-  return value
-    .replace(/\\r\\n/g, '\n')
-    .replace(/\\n/g, '\n')
-    .replace(/\\r/g, '\n')
-    .replace(/\\t/g, '  ')
-    .replace(new RegExp(`\\\\${quote}`, 'g'), quote)
-}
-
-export function formatEmbeddedTomlContent(source: string): string {
-  return source
-    .split('\n')
-    .map((line) => {
-      const match = line.match(
-        /^(\s*)([A-Za-z0-9_-]+)(\s*=\s*)(["'])(.*)\4\s*$/
-      )
-      if (!match) return line
-
-      const [, indent, key, assignment, quote, value] = match
-      if (!EMBEDDED_CONTENT_KEYS.has(key) || !/\\[nrt]/.test(value)) {
-        return line
-      }
-
-      const decoded = decodeEscapedContent(value, quote)
-      const fence = quote.repeat(3)
-      return `${indent}${key}${assignment}${fence}\n${decoded}\n${indent}${fence}`
-    })
-    .join('\n')
 }
 
 const FileDiffRow = ({
