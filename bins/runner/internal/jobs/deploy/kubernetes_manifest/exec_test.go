@@ -5,11 +5,6 @@ import (
 	"os"
 	"testing"
 
-	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/plugins/configs"
-	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
-	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -18,6 +13,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
+
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 // func Test_handler_execApply(t *testing.T) {

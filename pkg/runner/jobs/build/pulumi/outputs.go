@@ -3,8 +3,9 @@ package pulumi
 import (
 	"context"
 
-	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/pkg/errors"
+
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 )
 
 func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {

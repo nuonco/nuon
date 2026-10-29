@@ -11,13 +11,14 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/nuonco/nuon/pkg/rootfs"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/afero"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/errdef"
+
+	"github.com/nuonco/nuon/pkg/rootfs"
 )
 
 // contentStore is a private, job-lifetime CAS. References stay in memory: the

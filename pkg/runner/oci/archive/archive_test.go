@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nuonco/nuon/pkg/sourcefs"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
@@ -17,6 +16,8 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/file"
+
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
 func TestPackUnpackRoundTrip(t *testing.T) {

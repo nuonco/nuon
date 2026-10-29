@@ -8,12 +8,13 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/nuonco/nuon/pkg/rootfs"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/errdef"
+
+	"github.com/nuonco/nuon/pkg/rootfs"
 )
 
 // Blobs never share a directory with extracted names. Tag is the publication
