@@ -18,6 +18,12 @@ func TestValidateOPAPolicy(t *testing.T) {
 		require.NoError(t, ValidateOPAPolicy("package nuon\nwarn := []"))
 	})
 
+	t.Run("accepts named checks with the Nuon library", func(t *testing.T) {
+		require.NoError(t, ValidateOPAPolicy(`package nuon.checks
+import data.nuon.lib.check
+check_example contains check.finding("review")`))
+	})
+
 	t.Run("rejects another package", func(t *testing.T) {
 		err := ValidateOPAPolicy("package other\ndeny := []")
 		require.Error(t, err)

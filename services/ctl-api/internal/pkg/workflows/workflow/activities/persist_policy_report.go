@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	policyopa "github.com/nuonco/nuon/pkg/policies/opa"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
@@ -16,22 +17,23 @@ import (
 )
 
 type PersistPolicyReportRequest struct {
-	OrgID                          string            `json:"org_id" validate:"required"`
-	AppID                          string            `json:"app_id" validate:"required"`
-	InstallID                      *string           `json:"install_id"`
-	InstallSandboxID               *string           `json:"install_sandbox_id"`
-	ComponentID                    *string           `json:"component_id"`
-	ComponentBuildID               *string           `json:"component_build_id"`
-	WorkflowStepPolicyValidationID *string           `json:"workflow_step_policy_validation_id"`
-	RunnerJobID                    *string           `json:"runner_job_id"`
-	OwnerID                        string            `json:"owner_id" validate:"required"`
-	OwnerType                      string            `json:"owner_type" validate:"required"`
-	Violations                     []PolicyViolation `json:"violations"`
-	PolicyIDs                      []string          `json:"policy_ids"`
-	PolicyInputCounts              map[string]int    `json:"policy_input_counts"`
-	DenyCount                      int               `json:"deny_count"`
-	WarnCount                      int               `json:"warn_count"`
-	PassCount                      int               `json:"pass_count"`
+	OrgID                          string                        `json:"org_id" validate:"required"`
+	AppID                          string                        `json:"app_id" validate:"required"`
+	InstallID                      *string                       `json:"install_id"`
+	InstallSandboxID               *string                       `json:"install_sandbox_id"`
+	ComponentID                    *string                       `json:"component_id"`
+	ComponentBuildID               *string                       `json:"component_build_id"`
+	WorkflowStepPolicyValidationID *string                       `json:"workflow_step_policy_validation_id"`
+	RunnerJobID                    *string                       `json:"runner_job_id"`
+	OwnerID                        string                        `json:"owner_id" validate:"required"`
+	OwnerType                      string                        `json:"owner_type" validate:"required"`
+	Violations                     []PolicyViolation             `json:"violations"`
+	CheckResults                   map[string][]policyopa.Result `json:"check_results,omitempty"`
+	PolicyIDs                      []string                      `json:"policy_ids"`
+	PolicyInputCounts              map[string]int                `json:"policy_input_counts"`
+	DenyCount                      int                           `json:"deny_count"`
+	WarnCount                      int                           `json:"warn_count"`
+	PassCount                      int                           `json:"pass_count"`
 
 	// Human-readable names for display in reports
 	OrgName       string `json:"org_name"`
@@ -81,6 +83,11 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		}
 	}
 
+	// TODO: Design policy-level diagnostics for parse/compile failures and activity timeouts.
+	// Install/build collectors currently return early or skip reports on activity failure,
+	// losing sibling results. Preserve completed results without counting missing inputs as
+	// passes, and settle legacy build fail-closed behavior and Temporal replay compatibility
+	// before enabling partial reports.
 	policyResults := buildPolicyResults(req.PolicyIDs, req.PolicyInputCounts, req.Violations)
 	if passCount == 0 && denyCount == 0 && warnCount == 0 {
 		for _, result := range policyResults {
@@ -93,6 +100,9 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 	violations := req.Violations
 
 	policies := helpers.ToAppResultsFromInternal(toInternalResults(policyResults))
+	for i := range policies {
+		policies[i].Checks = policyopa.Aggregate(req.CheckResults[policies[i].PolicyID])
+	}
 
 	inputs := buildPolicyInputRefs(req)
 	appInputs := helpers.ToAppInputRefsFromInternal(toInternalInputRefs(inputs))
