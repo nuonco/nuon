@@ -1,12 +1,14 @@
 package policy
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
@@ -158,4 +160,136 @@ func TestCheckDoesNotAutoApproveWhenPolicyReportPersistenceFails(t *testing.T) {
 
 	require.ErrorContains(t, env.GetWorkflowError(), "unable to persist policy report")
 	env.AssertExpectations(t)
+}
+
+func TestCheckNamedPolicyReportingAndEnforcement(t *testing.T) {
+	const warningPolicy = `# METADATA
+# custom:
+#   action: warn
+package nuon.checks
+import data.nuon.lib.check
+# METADATA
+# title: Review changes
+check_shared contains check.finding("review changes") if { json.unmarshal(input.document) }`
+	const passingPolicy = `package nuon.checks
+import data.nuon.lib.check
+# METADATA
+# title: Restricted changes
+check_shared contains check.finding("blocked") if { input.blocked }`
+	for name, tt := range map[string]struct {
+		secondInput    string
+		secondDecision string
+		blocked        bool
+	}{
+		"warnings allow approval": {`{"document":"false"}`, "pass", false},
+		"errors block approval":   {`{"document":"invalid"}`, "error", true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var suite testsuite.WorkflowTestSuite
+			env := suite.NewTestWorkflowEnvironment()
+			env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+			env.SetDataConverter(converter.NewCompositeDataConverter(
+				converter.NewNilPayloadConverter(),
+				converter.NewByteSlicePayloadConverter(),
+				pkgdataconverter.NewJSONConverter(),
+			))
+			env.RegisterActivity((&activities.Activities{}).EvaluateSinglePolicy)
+			env.RegisterActivityWithOptions(func(context.Context, any) error { return nil },
+				activity.RegisterOptions{Name: "PkgStatusUpdateFlowStepStatus"})
+			prep := &activities.PrepPolicyEvaluationResult{
+				HasPolicies: true, OrgID: "org-1", AppID: "app-1",
+				PolicyIDs: []string{"policy-a", "policy-b"}, InputCount: 2,
+			}
+			for i, input := range []string{`{"document":"true"}`, tt.secondInput} {
+				for _, policy := range []struct{ id, contents string }{
+					{"policy-a", warningPolicy}, {"policy-b", passingPolicy},
+				} {
+					prep.Policies = append(prep.Policies, activities.PolicyToEvaluate{
+						PolicyID: policy.id, Contents: policy.contents,
+						InputJSON: []byte(input), InputIndex: i,
+						InputIdentity: []string{"Deployment/default/first", "Deployment/default/second"}[i],
+					})
+				}
+			}
+			env.OnActivity((&activities.Activities{}).PrepPolicyEvaluation, mock.Anything, mock.Anything).
+				Return(prep, nil)
+			reports := make(chan *activities.PersistPolicyReportRequest, 1)
+			env.OnActivity((&activities.Activities{}).PersistPolicyReport, mock.Anything, mock.Anything).
+				Return(func(_ context.Context, req *activities.PersistPolicyReportRequest) (*activities.PersistPolicyReportResult, error) {
+					reports <- req
+					return &activities.PersistPolicyReportResult{ReportID: "report-1", PassedPolicyIDs: []string{"policy-b"}}, nil
+				})
+
+			check := New(&policySignal{}, nil, &directive.CheckContext{})
+			env.ExecuteWorkflow(func(ctx workflow.Context) (directive.CheckResult, error) {
+				return check.Run(ctx, &app.WorkflowStep{
+					ID: "step-1", StepTargetID: "deploy-1",
+					StepTargetType: string(app.WorkflowStepTargetTypeInstallDeploy),
+				}, &app.Workflow{ID: "workflow-1", OrgID: "org-1"})
+			})
+			if tt.blocked {
+				require.ErrorContains(t, env.GetWorkflowError(), "policy violations found")
+			} else {
+				require.NoError(t, env.GetWorkflowError())
+				var result directive.CheckResult
+				require.NoError(t, env.GetWorkflowResult(&result))
+				require.Equal(t, directive.StepContinue, result.Directive)
+				require.Equal(t, app.WorkflowStepApprovalStatusApproved, result.Status)
+			}
+			var report *activities.PersistPolicyReportRequest
+			select {
+			case report = <-reports:
+			default:
+				t.Fatal("workflow did not submit a policy report")
+			}
+			require.Equal(t, map[string]int{"policy-a": 2, "policy-b": 2}, report.PolicyInputCounts)
+			require.Len(t, report.CheckResults, 2)
+			for policyID, title := range map[string]string{"policy-a": "Review changes", "policy-b": "Restricted changes"} {
+				checks := report.CheckResults[policyID]
+				require.Len(t, checks, 2)
+				decisions := make([]string, 0, 2)
+				findings := make(map[int]string)
+				evaluationErrors := make(map[int]string)
+				for _, result := range checks {
+					require.Equal(t, "check_shared", result.CheckID)
+					require.Equal(t, title, result.Title)
+					require.Equal(t, 1, result.InputCount)
+					decisions = append(decisions, result.Decision)
+					for _, finding := range result.Findings {
+						findings[finding.InputIndex] = finding.Message
+						require.Equal(t, "Deployment/default/first", finding.InputIdentity)
+					}
+					for _, evaluationErr := range result.Errors {
+						evaluationErrors[evaluationErr.InputIndex] = evaluationErr.Code
+						require.Equal(t, "Deployment/default/second", evaluationErr.InputIdentity)
+					}
+				}
+				if policyID == "policy-a" {
+					require.ElementsMatch(t, []string{"warn", tt.secondDecision}, decisions)
+					require.Equal(t, map[int]string{0: "review changes"}, findings)
+				} else {
+					require.Equal(t, []string{"pass", "pass"}, decisions)
+					require.Empty(t, findings)
+				}
+				if policyID == "policy-a" && tt.blocked {
+					require.Equal(t, map[int]string{1: "evaluation_failed"}, evaluationErrors)
+				} else {
+					require.Empty(t, evaluationErrors)
+				}
+			}
+			severities := make(map[int]string)
+			for _, violation := range report.Violations {
+				require.Equal(t, "policy-a", violation.PolicyID)
+				require.Equal(t, "check_shared", violation.CheckID)
+				require.Equal(t, []string{"Deployment/default/first", "Deployment/default/second"}[violation.InputIndex], violation.InputIdentity)
+				severities[violation.InputIndex] = violation.Severity
+			}
+			expected := map[int]string{0: "warn"}
+			if tt.blocked {
+				expected[1] = "deny"
+			}
+			require.Len(t, report.Violations, len(expected))
+			require.Equal(t, expected, severities)
+		})
+	}
 }
