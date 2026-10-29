@@ -228,8 +228,8 @@
             "group": "Automate and Integrate",
             "boost": 2,
             "pages": [
-              "guides/control-plane-integration",
               "guides/ui-integration",
+              "guides/control-plane-integration",
               "guides/idempotent-operations",
               "guides/github-actions",
               "guides/webhooks",
