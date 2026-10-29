@@ -201,8 +201,12 @@ func init() {
 
 	// OAuth 2.0 authorization server (used by MCP clients)
 	config.RegisterDefault("oauth_dcr_enabled", true) // allow dynamic client registration (RFC 7591)
-	// HTTPS redirect hosts accepted by DCR. http://localhost and net.IP.IsLoopback hosts are always allowed.
-	config.RegisterDefault("oauth_dcr_redirect_hosts", []string{"claude.ai", "www.claude.ai"})
+	// HTTPS hosts for DCR; http loopback (localhost / IsLoopback) is always allowed.
+	config.RegisterDefault("oauth_dcr_redirect_hosts", []string{
+		"claude.ai", "www.claude.ai", "claude.com",
+		"cursor.com", "www.cursor.com",
+		"vscode.dev", "insiders.vscode.dev",
+	})
 	config.RegisterDefault("oauth_access_token_ttl", 60)        // minutes
 	config.RegisterDefault("oauth_refresh_token_ttl", 30*24*60) // minutes (30 days)
 

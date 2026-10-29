@@ -27,13 +27,19 @@ func TestVerifyPKCE(t *testing.T) {
 }
 
 func TestIsAllowedRedirectURI(t *testing.T) {
-	hosts := []string{"claude.ai", "www.claude.ai"}
+	hosts := []string{
+		"claude.ai", "www.claude.ai", "claude.com",
+		"cursor.com", "www.cursor.com",
+		"vscode.dev", "insiders.vscode.dev",
+	}
 	cases := []struct {
 		uri  string
 		want bool
 	}{
-		{"https://claude.ai/callback", true},
-		{"https://www.claude.ai/callback", true},
+		{"https://claude.ai/api/mcp/auth_callback", true},
+		{"https://claude.com/api/mcp/auth_callback", true},
+		{"https://www.cursor.com/agents/mcp/oauth/callback", true},
+		{"https://vscode.dev/redirect", true},
 		{"https://example.com/oauth/cb", false}, // https not on allowlist
 		{"http://localhost:8765/callback", true},
 		{"http://127.0.0.1:53210/cb", true},
