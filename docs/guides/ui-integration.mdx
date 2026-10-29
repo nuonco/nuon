@@ -67,11 +67,23 @@ cloud console. Before they click, tell them what it creates and why.
 
 <AcmeScreen screen="connect" />
 
-Get the stack from `GET /v1/installs/{install_id}/stack`.
+Call `GET /v1/installs/{install_id}/stack`. Trimmed response:
 
-The template creates the network, the permissions, and the [runner](/concepts/runners), the agent that deploys your
-product inside their account. [Positioning safety of BYOC](/guides/vendor-customers) covers the follow-up questions
-customers usually ask.
+```json Response
+{
+  "install_id": "inl...",
+  "versions": [
+    { "quick_link_url": "https://console.aws.amazon.com/cloudformation/..." }
+  ]
+}
+```
+
+Point your connect button at the newest version's `quick_link_url`. When the customer runs it, the stack creates the
+network, the permissions, and the [runner](/concepts/runners) in their account.
+
+<Tip>
+[Positioning safety of BYOC](/guides/vendor-customers) covers the follow-up questions customers usually ask.
+</Tip>
 
 ## 3. Show setup progress
 
