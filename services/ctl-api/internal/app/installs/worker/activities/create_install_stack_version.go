@@ -22,6 +22,8 @@ type CreateInstallStackVersionRequest struct {
 	PublicAPIURL          string `json:"public_api_url"`
 	DeploymentScope       string `json:"deployment_scope"`
 	HasCustomNestedStacks bool   `json:"has_custom_nested_stacks"`
+
+	CustomerSecrets []app.InstallStackVersionSecret `json:"customer_secrets"`
 }
 
 // azurePortalCustomDeployBaseURL is the documented Deploy-to-Azure form. The
@@ -132,7 +134,8 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 			req.InstallID,
 			phoneHomeID,
 		),
-		Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusGenerating),
+		Status:          app.NewCompositeStatus(ctx, app.InstallStackVersionStatusGenerating),
+		CustomerSecrets: req.CustomerSecrets,
 	}
 
 	// GCP uses static Terraform modules with tfvars, no S3 upload needed.

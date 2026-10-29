@@ -5748,6 +5748,8 @@ export interface components {
       custom_stacks_input_parameters_map?: Record<string, never>;
       custom_stacks_output_map?: Record<string, never>;
       custom_stacks_template_url?: string;
+      /** @description Rendered against install state when the version is generated. */
+      customer_secrets?: components["schemas"]["app.InstallStackVersionSecret"][];
       id?: string;
       install_id?: string;
       install_stack_id?: string;
@@ -5797,6 +5799,11 @@ export interface components {
       role_diff?: components["schemas"]["app.StackVersionRunRoleDiff"];
       run_type?: components["schemas"]["app.StackVersionRunType"];
       updated_at?: string;
+    };
+    "app.InstallStackVersionSecret": {
+      description?: string;
+      name?: string;
+      required?: boolean;
     };
     "app.InstallState": {
       archived?: boolean;

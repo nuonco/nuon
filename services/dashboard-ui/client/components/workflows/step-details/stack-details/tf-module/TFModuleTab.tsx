@@ -18,6 +18,7 @@ import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOIDCTrustPolicies } from '@/hooks/use-oidc-trust-policies'
 import { useStackServiceAccount } from '@/hooks/use-stack-service-account'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import type { TInstallStackVersionSecret } from '@/types'
 import {
   OIDC_AUTH_ENABLED,
   OIDCAuthPane,
@@ -43,12 +44,15 @@ export interface IMainTfParts {
 export interface ITFModuleTab {
   orgId: string
   installId?: string
+  // Absent on stack versions generated before ctl-api recorded them.
+  customerSecrets?: TInstallStackVersionSecret[]
   buildMainTf: (parts: IMainTfParts) => string
 }
 
 export const TFModuleTab = ({
   orgId,
   installId,
+  customerSecrets: renderedSecrets,
   buildMainTf,
 }: ITFModuleTab) => {
   const queryClient = useQueryClient()
@@ -109,14 +113,14 @@ export const TFModuleTab = ({
     })
   }, [appConfig?.input?.inputs, appConfig?.input?.input_groups])
 
-  // Secrets carry no vendor/customer flag: everything not auto-generated is the
-  // customer's to provide.
+  // The app config fallback is unrendered, so it's wrong for templated names.
   const customerSecrets = useMemo(
     () =>
+      renderedSecrets ??
       (appConfig?.secrets?.secrets ?? []).filter(
         (secret) => !!secret.name && !secret.auto_generate
       ),
-    [appConfig?.secrets?.secrets]
+    [renderedSecrets, appConfig?.secrets?.secrets]
   )
 
   const inputsBlock = useMemo(

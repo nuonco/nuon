@@ -11,6 +11,7 @@ import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { createFileDownload } from '@/utils/file-download'
 import { TFModuleTab } from '../tf-module'
+import type { TInstallStackVersionSecret } from '@/types'
 import type { IMainTfParts } from '../tf-module'
 import type { IStackDetails } from '../types'
 
@@ -182,6 +183,7 @@ export const AwaitGCPDetails = ({
               installId={installId}
               gcpProjectId={gcpProjectId}
               gcpRegion={gcpRegion}
+              customerSecrets={version?.customer_secrets}
             />
           ),
           terraform: (
@@ -740,6 +742,7 @@ interface IGCPTFModuleTab {
   installId?: string
   gcpProjectId?: string
   gcpRegion?: string
+  customerSecrets?: TInstallStackVersionSecret[]
 }
 
 // The GCP half of the TF Module tab: which providers to require, and the module
@@ -756,6 +759,7 @@ const GCPTFModuleTab = ({
   installId,
   gcpProjectId,
   gcpRegion,
+  customerSecrets,
 }: IGCPTFModuleTab) => {
   const project = gcpProjectId || '<gcp-project-id>'
   const region = gcpRegion || '<gcp-region>'
@@ -795,6 +799,7 @@ module "gcp_stack" {
     <TFModuleTab
       orgId={orgId}
       installId={installId}
+      customerSecrets={customerSecrets}
       buildMainTf={buildMainTf}
     />
   )

@@ -981,6 +981,8 @@ export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
 export type TReadme = components['schemas']['service.Readme']
 export type TStackServiceAccount =
   components['schemas']['service.StackServiceAccountResponse']
+export type TInstallStackVersionSecret =
+  components['schemas']['app.InstallStackVersionSecret']
 
 export type TWaitlist = components['schemas']['app.Waitlist']
 
