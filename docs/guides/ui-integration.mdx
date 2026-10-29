@@ -117,9 +117,27 @@ See [Workflow approvals](/concepts/workflows#workflow-approvals) for how approva
 
 <AcmeScreen screen="approve" />
 
-When a step is waiting, find it with `GET /v1/workflows/pending-approvals`. Wire **Approve** and **Deny** to
-`POST /v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/response`, with `response_type` set to
-`approve` or `deny`. Each step gets its own answer, so steps that auto-approve never reach the customer.
+When a step is waiting, find it:
 
+```bash
+curl https://api.nuon.co/v1/workflows/pending-approvals \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID"
+```
+
+Then send the customer's answer for that step. Use `approve` for **Approve** and `deny` for **Deny**:
+
+```bash
+curl -X POST https://api.nuon.co/v1/workflows/$WORKFLOW_ID/steps/$STEP_ID/approvals/$APPROVAL_ID/response \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "response_type": "approve" }'
+```
+
+Each step gets its own answer, so steps that auto-approve never reach the customer.
+
+<Tip>
 To hear about waiting steps without polling, turn on `approval_requests` in your [webhook](/guides/webhooks)
 subscription.
+</Tip>
