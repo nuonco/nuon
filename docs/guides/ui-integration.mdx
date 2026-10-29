@@ -119,7 +119,7 @@ See [Workflow approvals](/concepts/workflows#workflow-approvals) for how approva
 
 When a step is waiting, find it with `GET /v1/workflows/pending-approvals`. Wire **Approve** and **Deny** to
 `POST /v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/response`, with `response_type` set to
-`approve` or `deny`. Each step gets its own answer, so steps you set to auto-approve never reach the customer.
+`approve` or `deny`. Each step gets its own answer, so steps that auto-approve never reach the customer.
 
 To hear about waiting steps without polling, turn on `approval_requests` in your [webhook](/guides/webhooks)
 subscription.
