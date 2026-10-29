@@ -1,13 +1,17 @@
 package config
 
 import (
+	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"hegel.dev/go/hegel"
 )
 
 func TestInstallValidate_CloudFormation(t *testing.T) {
@@ -998,5 +1002,122 @@ func TestInstallStackOverrides_HasOverrides_RunnerImage(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tc.want, tc.overrides.HasOverrides())
 		})
+	}
+}
+
+func TestInstallDiff_PatchOmissions(t *testing.T) {
+	value := "acme"
+	for _, hasInput := range []bool{false, true} {
+		for _, hasOverride := range []bool{false, true} {
+			for _, enabled := range []bool{false, true} {
+				upstream := &Install{
+					InputGroups: []InputGroup{{Inputs: map[string]string{"region": value}}},
+					Components:  map[string]ComponentOverride{"api": {TFVars: "region = " + strconv.Quote(value)}},
+					Telemetry:   &InstallTelemetry{Enabled: boolPtr(enabled)},
+				}
+				local := &Install{}
+				if hasInput {
+					local.InputGroups = []InputGroup{{Inputs: map[string]string{"region": value}}}
+				}
+				if hasOverride {
+					local.Components = upstream.Components
+				}
+				before, err := json.Marshal(upstream)
+				require.NoError(t, err)
+				got, err := local.Diff(upstream)
+				require.NoError(t, err)
+				require.Equal(t, !hasOverride, got.Summary().HasChanged, "omitted inputs and telemetry preserve state; omitted overrides clear")
+				require.Equal(t, map[bool]int{true: 0, false: 1}[hasOverride], got.Summary().Removed)
+				local.Telemetry = &InstallTelemetry{Enabled: boolPtr(!enabled)}
+				got, err = local.Diff(upstream)
+				require.NoError(t, err)
+				require.Equal(t, 1, got.Summary().Changed, "explicit telemetry false must be observable")
+				after, err := json.Marshal(upstream)
+				require.NoError(t, err)
+				require.Equal(t, before, after)
+			}
+		}
+	}
+}
+
+func TestInstallDiff_MapPresenceAndDeterminismProperties(t *testing.T) {
+	hegel.Test(t, func(t *hegel.T) {
+		labels := hegel.Draw(t, hegel.Maps(hegel.FromRegex(`[a-z]{1,8}`, true), hegel.Text()).MinSize(2).MaxSize(8))
+		inputs := hegel.Draw(t, hegel.Maps(hegel.FromRegex(`[a-z]{1,8}`, true), hegel.Text()).MinSize(2).MaxSize(8))
+		old := &Install{Labels: maps.Clone(labels), InputGroups: []InputGroup{{Inputs: maps.Clone(inputs)}}}
+		local := &Install{Labels: labels, InputGroups: []InputGroup{{Inputs: inputs}}}
+		first, err := local.Diff(old)
+		require.NoError(t, err)
+		require.False(t, first.Summary().HasChanged)
+		for range 3 {
+			next, err := local.Diff(old)
+			require.NoError(t, err)
+			require.Equal(t, first, next, "map insertion history cannot change machine output")
+		}
+		for _, pair := range [][2]*Install{
+			{{}, {Labels: map[string]string{"empty": ""}}},
+			{{Labels: map[string]string{"empty": ""}}, {}},
+			{{}, {InputGroups: []InputGroup{{Inputs: map[string]string{"empty": ""}}}}},
+		} {
+			got, err := pair[1].Diff(pair[0])
+			require.NoError(t, err)
+			require.True(t, got.Summary().HasChanged, "an empty value is present, not absent")
+		}
+	})
+}
+
+func TestInstallDiff_OptionalBooleans(t *testing.T) {
+	name := "api"
+	for label, tc := range map[string]struct {
+		old, desired                    *bool
+		telemetryChanged, toggleChanged bool
+	}{
+		"both omitted":     {},
+		"omitted to false": {nil, boolPtr(false), true, true},
+		"omitted to true":  {nil, boolPtr(true), true, true},
+		"false to omitted": {boolPtr(false), nil, false, true},
+		"false unchanged":  {boolPtr(false), boolPtr(false), false, false},
+		"false to true":    {boolPtr(false), boolPtr(true), true, true},
+		"true to omitted":  {boolPtr(true), nil, false, true},
+		"true to false":    {boolPtr(true), boolPtr(false), true, true},
+		"true unchanged":   {boolPtr(true), boolPtr(true), false, false},
+	} {
+		t.Run(label, func(t *testing.T) {
+			makeInstall := func(state *bool) *Install {
+				result := &Install{Name: "acme"}
+				if state != nil {
+					result.Telemetry = &InstallTelemetry{Enabled: state}
+					result.ComponentToggles = map[string]bool{name: *state}
+				}
+				return result
+			}
+			old, next := makeInstall(tc.old), makeInstall(tc.desired)
+			result, err := next.Diff(old)
+			require.NoError(t, err)
+			telemetry := findChild(result, "telemetry.enabled")
+			if tc.desired == nil {
+				require.Nil(t, telemetry, "omitted telemetry preserves upstream setting")
+			} else {
+				require.Equal(t, tc.telemetryChanged, telemetry.DirectSummary().HasChanged)
+				require.Contains(t, telemetry.Diff.Diff, "'"+strconv.FormatBool(*tc.desired)+"'")
+			}
+			toggle := findChild(findChild(result, "inputs"), EnabledOverrideInputName(name))
+			if tc.old == nil && tc.desired == nil {
+				require.Nil(t, toggle)
+			} else {
+				require.Equal(t, tc.toggleChanged, toggle.DirectSummary().HasChanged, "false is explicit, omission clears the override")
+			}
+			require.Equal(t, tc.telemetryChanged || tc.toggleChanged, result.DirectSummary().HasChanged)
+			encoded, err := json.Marshal(next)
+			require.NoError(t, err)
+			var decoded Install
+			require.NoError(t, json.Unmarshal(encoded, &decoded))
+			roundTrip, err := decoded.Diff(old)
+			require.NoError(t, err)
+			require.Equal(t, result, roundTrip, "transport must retain explicit false")
+		})
+	}
+	for _, pair := range [][2]*OperationRolesConfig{{nil, {Type: OperationRuleConfigTypeMatrix}}, {{Type: OperationRuleConfigTypeMatrix}, nil}} {
+		require.False(t, (&AppConfig{OperationRoles: pair[1]}).Diff(&AppConfig{OperationRoles: pair[0]}).Summary().HasChanged, "absent operation rules use the parser's empty matrix default")
 	}
 }

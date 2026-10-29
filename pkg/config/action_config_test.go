@@ -1,9 +1,13 @@
 package config
 
 import (
+	"fmt"
+	"slices"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"hegel.dev/go/hegel"
 )
 
 func TestActionConfig_ParseImageSteps(t *testing.T) {
@@ -75,5 +79,37 @@ func TestActionConfig_ParseImageSteps(t *testing.T) {
 		err := cfg.parse()
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "must use command, inline_contents, or a repo")
+	})
+}
+
+func TestActionConfig_DependencyProperties(t *testing.T) {
+	hegel.Test(t, func(t *hegel.T) {
+		names := drawDistinctStrings(t, hegel.FromRegex(`[a-z]{1,8}`, true), 0, 12)
+		expected := append(slices.Clone(names), "explicit_dependency")
+		sort.Strings(expected)
+		command := "echo"
+		for _, name := range names {
+			command += fmt.Sprintf(" {{.nuon.components.%s.outputs.value}} {{.nuon.components.%s.outputs.other}}", name, name)
+		}
+
+		var previous *AppConfig
+		for range 3 {
+			cfg := baseConfig()
+			action := &ActionConfig{
+				Name:         "inspect",
+				Dependencies: []string{"explicit_dependency", "explicit_dependency"},
+				Steps:        []*ActionStepConfig{{Name: "inspect", Command: command}},
+			}
+			cfg.Actions = []*ActionConfig{action}
+			require.NoError(t, cfg.Parse())
+			require.Equal(t, expected, action.Dependencies)
+			require.NoError(t, cfg.Parse())
+			require.Equal(t, expected, action.Dependencies)
+
+			if previous != nil {
+				require.False(t, cfg.Diff(previous).Summary().HasChanged)
+			}
+			previous = cfg
+		}
 	})
 }
