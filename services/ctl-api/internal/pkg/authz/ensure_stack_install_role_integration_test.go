@@ -205,3 +205,37 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureRestoresStrippedAPIForBoundA
 	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
 	s.requireStackAPI(accountID)
 }
+
+func (s *EnsureStackInstallRoleTestSuite) TestEnsureLeavesV1BoundRoleUnscoped() {
+	t := s.T()
+	ctx := context.Background()
+	orgID, installID, accountID := s.boundStackAccount()
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
+	role := s.requireStackAPI(accountID)
+	require.NoError(t, s.deps.DB.Model(&app.Role{}).Where("id = ?", role.ID).Update("version", app.RoleVersionV1).Error)
+	require.NoError(t, s.deps.DB.
+		Model(&app.Policy{}).
+		Where("id = ?", role.Policies[0].ID).
+		Update("permissions", pgtype.Hstore(map[string]*string{
+			permissions.StackObject(orgID, installID): permissions.PermissionAll.ToStrPtr(),
+		})).Error)
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
+
+	roles := s.rolesFor(accountID)
+	require.Len(t, roles, 1)
+	assert.Equal(t, role.ID, roles[0].ID)
+	assert.Equal(t, app.RoleVersionV1, roles[0].Version)
+	require.Len(t, roles[0].Policies, 1)
+	assert.NotContains(t, roles[0].Policies[0].Permissions, permissions.APIPermissionKey)
+
+	_, enforced, err := authz.APIFromRole(&roles[0])
+	require.NoError(t, err)
+	assert.False(t, enforced)
+
+	set := permissions.Set(permissions.NewSet())
+	require.NoError(t, set.Add(roles[0].Policies[0].Permissions))
+	require.NoError(t, set.CanPerform(permissions.StackObject(orgID, installID), permissions.PermissionCreate))
+	require.Error(t, set.CanPerform(orgID, permissions.PermissionRead))
+}
