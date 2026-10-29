@@ -2,6 +2,7 @@ package diff
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -29,10 +30,21 @@ func MapDiff(key string, old, new map[string]string) *Diff {
 
 	children := make([]*Diff, 0, len(sorted))
 	for _, k := range sorted {
-		children = append(children, NewDiff(
-			WithKey(k),
-			WithStringDiff(old[k], new[k]),
-		))
+		oldValue, oldPresent := old[k]
+		newValue, newPresent := new[k]
+		child := NewDiff(WithKey(k), WithStringDiff(oldValue, newValue))
+		switch {
+		case !oldPresent:
+			child.Diff.Op = OpAdd
+		case !newPresent:
+			child.Diff.Op = OpRemove
+		case oldValue != newValue:
+			child.Diff.Op = OpChange
+		}
+		if child.Diff.Op != OpNoop {
+			child.Diff.Diff = fmt.Sprintf("'%s' -> '%s'", oldValue, newValue)
+		}
+		children = append(children, child)
 	}
 
 	return NewDiff(
@@ -102,8 +114,7 @@ func WithOptionalBoolDiff(old, new *bool) DiffOption {
 	return WithBoolDiff(oldVal, newVal)
 }
 
-// WithStringSliceDiff creates a DiffOption that compares two string slices
-// by sorting and joining them.
+// WithStringSliceDiff compares unordered string slices, preserving multiplicity.
 func WithStringSliceDiff(old, new []string) DiffOption {
 	oldSorted := make([]string, len(old))
 	copy(oldSorted, old)
@@ -113,5 +124,37 @@ func WithStringSliceDiff(old, new []string) DiffOption {
 	copy(newSorted, new)
 	sort.Strings(newSorted)
 
-	return WithStringDiff(strings.Join(oldSorted, ", "), strings.Join(newSorted, ", "))
+	oldText, newText := strings.Join(oldSorted, ", "), strings.Join(newSorted, ", ")
+	op := OpChange
+	text := fmt.Sprintf("'%s' -> '%s'", oldText, newText)
+	switch {
+	case slices.Equal(oldSorted, newSorted):
+		op = OpNoop
+		text = fmt.Sprintf("'%s' (unchanged)", oldText)
+	case len(old) == 0:
+		op = OpAdd
+	case len(new) == 0:
+		op = OpRemove
+	}
+	return func(dt *Diff) {
+		dt.Diff = &DiffKey{Op: op, Diff: text}
+	}
+}
+
+func WithOrderedStringSliceDiff(old, new []string) DiffOption {
+	oldText, newText := fmt.Sprintf("%q", old), fmt.Sprintf("%q", new)
+	op := OpChange
+	text := fmt.Sprintf("'%s' -> '%s'", oldText, newText)
+	switch {
+	case slices.Equal(old, new):
+		op = OpNoop
+		text = fmt.Sprintf("'%s' (unchanged)", oldText)
+	case len(old) == 0:
+		op = OpAdd
+	case len(new) == 0:
+		op = OpRemove
+	}
+	return func(dt *Diff) {
+		dt.Diff = &DiffKey{Op: op, Diff: text}
+	}
 }

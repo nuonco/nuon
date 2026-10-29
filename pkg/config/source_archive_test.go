@@ -2,6 +2,8 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
+	"maps"
 	"strings"
 	"testing"
 
@@ -36,6 +38,40 @@ func TestSourceArchiveAcceptsFileLargerThanPreviewLimit(t *testing.T) {
 
 	require.NoError(t, archive.AddFile("large.rego", []byte(contents)))
 	require.Equal(t, contents, archive.Files["large.rego"])
+}
+
+func TestSourceArchiveAggregateByteLimitBoundaries(t *testing.T) {
+	block := strings.Repeat("x", 1<<20)
+	contents := "\u20ac\U00010400"
+	for _, delta := range []int{-1, 0, 1} {
+		archive := NewSourceArchive()
+		remaining := maxSourceArchiveBytes - len(contents) + delta
+		for i := 0; remaining > 0; i++ {
+			size := min(remaining, len(block))
+			archive.Files[fmt.Sprintf("existing_%03d.txt", i)] = block[:size]
+			remaining -= size
+		}
+		snapshot := maps.Clone(archive.Files)
+		err := archive.AddFile("last.txt", []byte(contents))
+		if delta > 0 {
+			require.ErrorContains(t, err, "source archive exceeds")
+			require.Equal(t, snapshot, archive.Files)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, contents, archive.Files["last.txt"])
+			delete(archive.Files, "last.txt")
+			require.Equal(t, snapshot, archive.Files)
+		}
+	}
+}
+
+func TestSourceArchiveEmptyMemberIsPresent(t *testing.T) {
+	archive := &SourceArchive{SchemaVersion: 3, Files: map[string]string{"empty.toml": ""}, Members: map[string]string{"action:empty": "empty.toml"}}
+	require.NoError(t, archive.ReindexMembers())
+	contents, present := archive.MemberSource("action:empty")
+	require.True(t, present)
+	require.Empty(t, contents)
+	assertSourceArchiveTransport(t, archive)
 }
 
 func TestSourceArchiveReindexMembersIgnoresNonTOMLFilesInDefinitionDirectories(t *testing.T) {
