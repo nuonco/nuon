@@ -27,23 +27,27 @@ func TestVerifyPKCE(t *testing.T) {
 }
 
 func TestIsAllowedRedirectURI(t *testing.T) {
+	hosts := []string{"claude.ai", "www.claude.ai"}
 	cases := []struct {
 		uri  string
 		want bool
 	}{
 		{"https://claude.ai/callback", true},
-		{"https://example.com/oauth/cb", true},
+		{"https://www.claude.ai/callback", true},
+		{"https://example.com/oauth/cb", false}, // https not on allowlist
 		{"http://localhost:8765/callback", true},
 		{"http://127.0.0.1:53210/cb", true},
+		{"http://127.0.0.42:9/cb", true}, // any 127/8 via IsLoopback
 		{"http://[::1]:5000/cb", true},
 		{"http://evil.com/callback", false}, // http non-loopback
+		{"https://localhost/cb", false},     // loopback only over http
 		{"ftp://localhost/cb", false},       // unsupported scheme
 		{"not a url", false},
 		{"https://", false}, // no host
 		{"", false},
 	}
 	for _, tc := range cases {
-		assert.Equalf(t, tc.want, isAllowedRedirectURI(tc.uri), "uri=%q", tc.uri)
+		assert.Equalf(t, tc.want, isAllowedRedirectURI(tc.uri, hosts), "uri=%q", tc.uri)
 	}
 }
 
