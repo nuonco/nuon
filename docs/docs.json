@@ -457,6 +457,10 @@
   },
   "redirects": [
     {
+      "source": "/guides",
+      "destination": "/guides/building-nuon-apps"
+    },
+    {
       "source": "/guides/managing-apps",
       "destination": "/guides/building-nuon-apps"
     },
