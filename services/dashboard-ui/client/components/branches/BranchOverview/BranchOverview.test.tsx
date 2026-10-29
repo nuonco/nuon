@@ -202,6 +202,46 @@ test('shows the active group above the plan and pending groups as pending', () =
   expect(later?.textContent).not.toContain('Waiting')
 })
 
+test('advances past an empty auto-skipped group to the next group', () => {
+  renderOverview({
+    groups: [
+      {
+        id: 'preview',
+        name: 'preview',
+        status: 'auto-skipped',
+        plannedCount: 0,
+        installs: [],
+      },
+      {
+        id: 'push',
+        name: 'push',
+        status: 'in-progress',
+        installs: [
+          {
+            id: 'ins_push',
+            name: 'acme-push',
+            status: 'in-progress',
+            workflowId: 'wf_push',
+          },
+        ],
+      },
+      {
+        id: 'default',
+        name: 'default',
+        status: 'pending',
+        installs: [],
+      },
+    ],
+  })
+
+  const active = screen.getByText(/Group 2 of 3/)
+  expect(active).toBeTruthy()
+  expect(active.parentElement?.textContent).toContain('Deploying')
+  expect(active.parentElement?.parentElement?.textContent).toContain('push')
+  expect(screen.queryByText(/Not started/)).toBeNull()
+  expect(screen.queryByText(/Group 1 of 3/)).toBeNull()
+})
+
 test('shows a loader instead of the run source while fetching the commit', () => {
   renderOverview({
     loadingStages: [
