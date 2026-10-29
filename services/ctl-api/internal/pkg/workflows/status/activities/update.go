@@ -310,7 +310,8 @@ func (a *Activities) syncReleasedInstallGroupRun(ctx context.Context, flw *app.W
 }
 
 func (a *Activities) syncInstallActualAppConfigFromFlow(ctx context.Context, flw *app.Workflow) {
-	if flw.OwnerType != "installs" || flw.Type != app.WorkflowTypeAppBranchConfigUpdate || flw.PlanOnly {
+	isReconcile := flw.Type == app.WorkflowTypeReconcileAppVersion
+	if flw.OwnerType != "installs" || flw.PlanOnly || (flw.Type != app.WorkflowTypeAppBranchConfigUpdate && !isReconcile) {
 		return
 	}
 	newAppConfigID := ""
@@ -344,6 +345,46 @@ func (a *Activities) syncInstallActualAppConfigFromFlow(ctx context.Context, flw
 		AppliedConfigByType: app.AppConfigRefByTypeInstallWorkflows,
 		AppliedConfigByID:   flw.ID,
 	}
+
+	// A reconcile targets the config the install was pinned to when the
+	// workflow was created. A later pin moves install.AppConfigID forward
+	// without cancelling the running reconcile (by design), so by the time
+	// this reconcile finishes applying its (now stale) target, the install may
+	// already be pinned further ahead. Finishing must not clobber that newer
+	// expectation back to the stale target -- only AppliedConfigID (what was
+	// actually applied) should move; ExpectedConfigID stays whatever the
+	// latest pin set it to.
+	if isReconcile {
+		var install app.Install
+		if err := a.db.WithContext(ctx).
+			Select("id", "app_config_id").
+			Where(app.Install{ID: flw.OwnerID}).
+			First(&install).Error; err != nil {
+			a.l.Warn("unable to load install for reconcile app config sync",
+				zap.String("workflow_id", flw.ID),
+				zap.String("install_id", flw.OwnerID),
+				zap.Error(err),
+			)
+			return
+		}
+		if install.AppConfigID != newAppConfigID {
+			if err := a.db.WithContext(ctx).
+				Model(&app.Install{}).
+				Where(app.Install{ID: flw.OwnerID}).
+				Update("app_config_ref", gorm.Expr(
+					"COALESCE(NULLIF(app_config_ref, 'null'::jsonb), '{}'::jsonb) || jsonb_build_object('applied_config_id', ?::text, 'applied_config_at', ?::text, 'applied_config_by_type', ?::text, 'applied_config_by_id', ?::text)",
+					newAppConfigID, now.Format(time.RFC3339), app.AppConfigRefByTypeInstallWorkflows, flw.ID,
+				)).Error; err != nil {
+				a.l.Warn("unable to record install actual app config",
+					zap.String("workflow_id", flw.ID),
+					zap.String("install_id", flw.OwnerID),
+					zap.Error(err),
+				)
+			}
+			return
+		}
+	}
+
 	if err := a.db.WithContext(ctx).
 		Model(&app.Install{}).
 		Where(app.Install{ID: flw.OwnerID}).

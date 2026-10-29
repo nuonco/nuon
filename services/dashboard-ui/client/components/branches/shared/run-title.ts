@@ -14,6 +14,7 @@ export const WORKFLOW_TYPE_LABELS: Record<string, string> = {
   app_branches_config_repo_update: 'Config update',
   app_branches_component_repo_update: 'Component update',
   app_branch_config_update: 'Config update',
+  reconcile_app_version: 'Reconcile app version',
 }
 
 export const getRunTrigger = (

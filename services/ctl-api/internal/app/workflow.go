@@ -41,6 +41,7 @@ const (
 	WorkflowTypeAppBranchesConfigRepoUpdate    WorkflowType = "app_branches_config_repo_update"
 	WorkflowTypeAppBranchesComponentRepoUpdate WorkflowType = "app_branches_component_repo_update"
 	WorkflowTypeAppBranchConfigUpdate          WorkflowType = "app_branch_config_update"
+	WorkflowTypeReconcileAppVersion            WorkflowType = "reconcile_app_version"
 
 	// app install sync workflows
 	WorkflowTypeAppInstallSync WorkflowType = "app_install_sync"
@@ -83,6 +84,7 @@ func AllWorkflowTypes() []WorkflowType {
 		WorkflowTypeAppBranchesConfigRepoUpdate,
 		WorkflowTypeAppBranchesComponentRepoUpdate,
 		WorkflowTypeAppBranchConfigUpdate,
+		WorkflowTypeReconcileAppVersion,
 		WorkflowTypeAppInstallSync,
 		WorkflowTypeReprovision,
 		WorkflowTypeReprovisionStack,
@@ -114,6 +116,7 @@ func (i WorkflowType) DeploymentType() string {
 	case WorkflowTypeReprovisionStack:
 		return "stack_update"
 	case WorkflowTypeAppBranchConfigUpdate,
+		WorkflowTypeReconcileAppVersion,
 		WorkflowTypeAppBranchesRun,
 		WorkflowTypeAppBranchesConfigRepoUpdate,
 		WorkflowTypeAppBranchesComponentRepoUpdate,
@@ -224,7 +227,7 @@ func (w *Workflow) TriggeredByID() (string, bool) {
 // change. That apply can restore a runner that is offline or disabled, so the
 // runner gates defer until AwaitInstallStackStepName finishes.
 func (w *Workflow) IsStackChanged() bool {
-	return w.Type == WorkflowTypeAppBranchConfigUpdate &&
+	return (w.Type == WorkflowTypeAppBranchConfigUpdate || w.Type == WorkflowTypeReconcileAppVersion) &&
 		generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyStackChanged]) == "true"
 }
 
@@ -272,6 +275,8 @@ func (i WorkflowType) PastTenseName() string {
 		return "Component repo updated"
 	case WorkflowTypeAppBranchConfigUpdate:
 		return "Branch config updated"
+	case WorkflowTypeReconcileAppVersion:
+		return "Reconciled app version"
 	default:
 	}
 
@@ -322,6 +327,8 @@ func (i WorkflowType) Name() string {
 		return "Component repo update"
 	case WorkflowTypeAppBranchConfigUpdate:
 		return "Branch config update"
+	case WorkflowTypeReconcileAppVersion:
+		return "Reconciling app version"
 	default:
 	}
 
@@ -360,6 +367,8 @@ func (i WorkflowType) Description() string {
 		return "Disables a toggleable component by tearing it down."
 	case WorkflowTypeRecoverHelmRelease:
 		return "Returns a Helm release left mid-operation to a usable state, so the component can be deployed again. Deploys nothing."
+	case WorkflowTypeReconcileAppVersion:
+		return "Deploys the changes between the install's applied app config and its pinned app config."
 	}
 
 	return "unknown"

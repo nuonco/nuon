@@ -21,6 +21,7 @@ const WORKFLOW_TYPE_OPTIONS = [
   'drift_run',
   'reprovision',
   'reprovision_stack',
+  'reconcile_app_version',
 ] as const
 
 interface IWorkflowTypeFilter {

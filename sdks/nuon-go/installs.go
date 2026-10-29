@@ -175,6 +175,22 @@ func (c *client) ReprovisionInstallStack(ctx context.Context, installID string, 
 	return resp.Payload, nil
 }
 
+func (c *client) ReconcileInstallAppVersion(ctx context.Context, installID string, planOnly bool, requestID ...string) (*models.AppInstallAppConfigVersion, error) {
+	resp, err := c.genClient.Operations.ReconcileInstallAppVersion(&operations.ReconcileInstallAppVersionParams{
+		InstallID: installID,
+		Context:   ctx,
+		Req: &models.ServiceReconcileInstallAppVersionRequest{
+			PlanOnly:  planOnly,
+			RequestID: optionalRequestID(requestID),
+		},
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) DeprovisionInstall(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf("%s/v1/installs/%s/deprovision", c.APIURL, url.PathEscape(installID))

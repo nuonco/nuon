@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Link } from '@/components/common/Link'
@@ -11,6 +12,7 @@ export interface IInstallBranchBanner {
   error?: TAPIError | null
   onRetry?: () => void
   onViewRuns?: () => void
+  reconcileAction?: ReactNode
 }
 
 export const InstallBranchBanner = ({
@@ -20,6 +22,7 @@ export const InstallBranchBanner = ({
   error,
   onRetry,
   onViewRuns,
+  reconcileAction,
 }: IInstallBranchBanner) => {
   if (error) {
     return (
@@ -60,11 +63,14 @@ export const InstallBranchBanner = ({
           </strong>{' '}
           {branchHref ? <Link href={branchHref}>{branch}</Link> : branch}.
         </Text>
-        {onViewRuns ? (
-          <Button size="sm" onClick={onViewRuns}>
-            View runs
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-2 shrink-0">
+          {onViewRuns ? (
+            <Button size="sm" onClick={onViewRuns}>
+              View runs
+            </Button>
+          ) : null}
+          {reconcileAction}
+        </div>
       </div>
     </Banner>
   )

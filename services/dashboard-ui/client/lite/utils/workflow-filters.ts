@@ -26,6 +26,7 @@ export type TWorkflowTypeGroup =
   | 'branch-config-repo'
   | 'branch-component-repo'
   | 'branch-config'
+  | 'reconcile-app-version'
   | 'install-sync'
   | 'config-build'
 
@@ -102,6 +103,7 @@ export const WORKFLOW_TYPE_GROUPS: Record<TWorkflowType, TWorkflowTypeGroup> = {
   app_branches_config_repo_update: 'branch-config-repo',
   app_branches_component_repo_update: 'branch-component-repo',
   app_branch_config_update: 'branch-config',
+  reconcile_app_version: 'reconcile-app-version',
   app_install_sync: 'install-sync',
   app_config_build: 'config-build',
 }
@@ -122,6 +124,7 @@ export const WORKFLOW_TYPE_LABELS: Record<TWorkflowTypeGroup, string> = {
   'branch-config-repo': 'Config repo push',
   'branch-component-repo': 'Component repo push',
   'branch-config': 'Config change',
+  'reconcile-app-version': 'Reconcile app version',
   'install-sync': 'Install sync',
   'config-build': 'Config build',
 }
@@ -138,6 +141,7 @@ const INSTALL_TYPE_GROUPS: readonly TWorkflowTypeGroup[] = [
   'secrets',
   'component-toggle',
   'recovery',
+  'reconcile-app-version',
 ]
 
 const APP_TYPE_GROUPS: readonly TWorkflowTypeGroup[] = [

@@ -950,6 +950,8 @@ type ClientService interface {
 
 	PutInstallComponentHealthCheck(params *PutInstallComponentHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutInstallComponentHealthCheckOK, error)
 
+	ReconcileInstallAppVersion(params *ReconcileInstallAppVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReconcileInstallAppVersionCreated, error)
+
 	RecoverInstallComponentHelmRelease(params *RecoverInstallComponentHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RecoverInstallComponentHelmReleaseCreated, error)
 
 	RefreshInstallHealthClusterAccess(params *RefreshInstallHealthClusterAccessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RefreshInstallHealthClusterAccessOK, error)
@@ -20505,6 +20507,58 @@ func (a *Client) PutInstallComponentHealthCheck(params *PutInstallComponentHealt
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for PutInstallComponentHealthCheck: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	ReconcileInstallAppVersion reconciles an install s applied app config to its pinned app config
+
+	Creates a workflow that deploys the difference between the install's applied app config and its
+
+currently pinned app config (install.app_config_id). Branch runs with a do_not_deploy install group pin
+an install's app config without deploying it; this endpoint catches that install up. It generates the
+same steps and plan approvals an app branch config update would, minus install-group rollout
+coordination. Returns 409 if the install is already on its pinned config, or if a reconcile or app branch
+config update workflow is already queued or in progress for the install.
+*/
+func (a *Client) ReconcileInstallAppVersion(params *ReconcileInstallAppVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReconcileInstallAppVersionCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewReconcileInstallAppVersionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ReconcileInstallAppVersion",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/reconcile-app-version",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ReconcileInstallAppVersionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ReconcileInstallAppVersionCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ReconcileInstallAppVersion: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

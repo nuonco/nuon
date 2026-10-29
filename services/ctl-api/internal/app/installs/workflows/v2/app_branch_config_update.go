@@ -50,6 +50,55 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	appBranchRunID := generics.FromPtrStr(flw.Metadata["app_branch_run_id"])
 	installGroupID := generics.FromPtrStr(flw.Metadata["install_group_id"])
 
+	return buildConfigUpdateSteps(ctx, configUpdateInput{
+		flw:            flw,
+		installID:      installID,
+		newAppConfigID: newAppConfigID,
+		diff:           diff,
+		install:        install,
+		appBranchRunID: appBranchRunID,
+		installGroupID: installGroupID,
+		triggeredBy:    "app-branch",
+		metadataSource: "app-branch",
+		checkEmptyDiff: useGroupDirective,
+	})
+}
+
+// configUpdateInput is the shared input to buildConfigUpdateSteps, which both
+// AppBranchConfigUpdate and ReconcileAppVersion use to generate the "roll an
+// install from one app config onto another" steps. The two generators diverge
+// only in how they classify/gate the update (branch rollout coordination vs
+// none) and what diff/baseline they compute going in.
+type configUpdateInput struct {
+	flw            *app.Workflow
+	installID      string
+	newAppConfigID string
+	diff           *app.InstallConfigDiff
+	install        *app.Install
+	appBranchRunID string
+	installGroupID string
+	triggeredBy    string
+	metadataSource string
+	// checkEmptyDiff, when true, stops after the "update app config" step if
+	// the diff has no changes to deploy. Branch rollouts opt into this because
+	// the group-directive classification already decided this install should
+	// move; reconcile skips it because the creation path already rejects an
+	// install whose applied config matches its pinned one.
+	checkEmptyDiff bool
+}
+
+// buildConfigUpdateSteps generates the steps that pin an install's app_config_id
+// and then deploy the diff between its previously-applied config and the new
+// one. It must generate byte-for-byte the same steps, in the same order, for
+// any given input -- callers that need Temporal GetVersion gating (branch
+// rollout coordination) must do it before calling in, not inside here.
+func buildConfigUpdateSteps(ctx workflow.Context, in configUpdateInput) (*app.GenerateStepsResult, error) {
+	flw := in.flw
+	installID := in.installID
+	newAppConfigID := in.newAppConfigID
+	diff := in.diff
+	install := in.install
+
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)
 
@@ -58,17 +107,17 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		InstallID:      installID,
 		NewAppConfigID: newAppConfigID,
 		DryRun:         flw.PlanOnly,
-		AppBranchRunID: appBranchRunID,
-		InstallGroupID: installGroupID,
-		TriggeredBy:    "app-branch",
-		Metadata:       map[string]string{"source": "app-branch"},
+		AppBranchRunID: in.appBranchRunID,
+		InstallGroupID: in.installGroupID,
+		TriggeredBy:    in.triggeredBy,
+		Metadata:       map[string]string{"source": in.metadataSource},
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create update app config step")
 	}
 	steps = append(steps, configStep)
 
-	if useGroupDirective && installConfigDiffEmpty(diff) {
+	if in.checkEmptyDiff && installConfigDiffEmpty(diff) {
 		return sg.Result(steps), nil
 	}
 
@@ -188,7 +237,7 @@ func installConfigDiffEmpty(diff *app.InstallConfigDiff) bool {
 }
 
 // filterComponentsByDiff narrows a dependency-ordered component list to the ones
-// this config update touches. componentIDs must be ordered against newAppCfg —
+// this config update touches. componentIDs must be ordered against newAppCfg --
 // the result can only ever be a subset of it, so anything the update adds is
 // silently dropped if the caller ordered against the install's current config.
 func filterComponentsByDiff(componentIDs []string, newAppCfg *app.AppConfig, diff *app.InstallConfigDiff) []string {
@@ -225,7 +274,7 @@ func filterComponentsByDiff(componentIDs []string, newAppCfg *app.AppConfig, dif
 }
 
 // getStackVersionSteps emits a new install stack version and the wait for its run.
-// This regenerates the stack template only — see getStackReprovisionSteps for the
+// This regenerates the stack template only -- see getStackReprovisionSteps for the
 // full stack recreation, which also recycles the runner service account and install
 // state around it.
 func getStackVersionSteps(ctx workflow.Context, sg *stepGroup, installID string, planOnly bool) ([]*app.WorkflowStep, error) {

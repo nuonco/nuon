@@ -49,6 +49,7 @@ func installGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
 		app.WorkflowTypeSyncSecrets:                v2workflows.SyncSecrets,
 		app.WorkflowTypeRunbookRun:                 v2workflows.RunRunbook,
 		app.WorkflowTypeAppBranchConfigUpdate:      v2workflows.AppBranchConfigUpdate,
+		app.WorkflowTypeReconcileAppVersion:        v2workflows.ReconcileAppVersion,
 		app.WorkflowTypeComponentEnabled:           v2workflows.ComponentEnabledSteps,
 		app.WorkflowTypeComponentDisabled:          v2workflows.ComponentDisabledSteps,
 		app.WorkflowTypeRecoverHelmRelease:         v2workflows.RecoverHelmRelease,

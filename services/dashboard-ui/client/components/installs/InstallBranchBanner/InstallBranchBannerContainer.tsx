@@ -1,5 +1,6 @@
 import { Link } from '@/components/common/Link'
 import { Panel } from '@/components/surfaces/Panel'
+import { ReconcileAppVersionButton } from '@/components/installs/management/ReconcileAppVersion'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useOrg } from '@/hooks/use-org'
@@ -41,6 +42,7 @@ export const InstallBranchBannerContainer = ({
         runsBehind={tracking?.runs_behind}
         branchName={branchName}
         branchHref={branchHref}
+        reconcileAction={<ReconcileAppVersionButton size="sm" variant="secondary" />}
         onViewRuns={() =>
           addPanel(
             <Panel

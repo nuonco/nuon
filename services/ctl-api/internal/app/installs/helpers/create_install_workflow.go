@@ -183,6 +183,6 @@ func requiresLiveInstallRunner(workflowType app.WorkflowType, metadata map[strin
 // config update whose stack apply can bring the install runner back. Creation
 // must not reject it for an offline or disabled runner.
 func stackChangeDefersRunnerGate(workflowType app.WorkflowType, metadata map[string]string) bool {
-	return workflowType == app.WorkflowTypeAppBranchConfigUpdate &&
+	return (workflowType == app.WorkflowTypeAppBranchConfigUpdate || workflowType == app.WorkflowTypeReconcileAppVersion) &&
 		metadata[app.WorkflowMetadataKeyStackChanged] == "true"
 }

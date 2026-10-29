@@ -1020,6 +1020,29 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 	addRequestIDFlag(reprovisionInstallCmd, &requestID)
 	installsCmds.AddCommand(reprovisionInstallCmd)
 
+	reconcileAppVersionCmd := &cobra.Command{
+		Use:   "reconcile-app-version",
+		Short: "Reconcile install to its pinned app config",
+		Long: `Bring an install from its applied app config up to its currently pinned app
+config (install.app_config_id), deploying only the difference. A branch run
+with a do_not_deploy install group pins an install's app config without
+deploying it; this command catches the install up. A never-provisioned
+install is provisioned. This generates the same steps and plan approvals an
+app branch config update would, minus install-group rollout coordination.
+
+Fails if the install is already on its pinned app config, or if a reconcile
+or app branch config update workflow is already in flight for the install.`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.installs
+			return svc.ReconcileAppVersion(cmd.Context(), id, planOnly, requestID, PrintJSON)
+		}),
+	}
+	reconcileAppVersionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	reconcileAppVersionCmd.MarkFlagRequired("install-id")
+	reconcileAppVersionCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan the reconcile, do not apply it")
+	addRequestIDFlag(reconcileAppVersionCmd, &requestID)
+	installsCmds.AddCommand(reconcileAppVersionCmd)
+
 	deprovisionInstallCmd := &cobra.Command{
 		Use:   "deprovision",
 		Short: "Deprovision install",

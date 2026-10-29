@@ -17,6 +17,7 @@ import { EditLabelsButton } from '@/components/installs/management/EditLabels'
 import { EnableConfigSyncButton } from '@/components/installs/management/EnableConfigSync'
 import { ForgetButton } from '@/components/installs/management/Forget'
 import { GenerateInstallConfigButton } from '@/components/installs/management/GenerateInstallConfig'
+import { ReconcileAppVersionButton } from '@/components/installs/management/ReconcileAppVersion'
 import { ReprovisionButton } from '@/components/installs/management/Reprovision'
 import { ReprovisionStackButton } from '@/components/installs/management/ReprovisionStack'
 import { SyncSecretsButton } from '@/components/installs/management/SyncSecrets'
@@ -115,6 +116,12 @@ const InstallSettingsPanelContentInner = () => {
           description="See a complete record of activity on this install."
         >
           <AuditHistoryButton />
+        </ActionCard>
+        <ActionCard
+          title="Reconcile app version"
+          description="Deploy the changes between the applied app config and the pinned app config."
+        >
+          <ReconcileAppVersionButton />
         </ActionCard>
         <ActionCard
           title="Reprovision"

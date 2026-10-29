@@ -41,6 +41,10 @@ type AppBranchConfigUpdateInput struct {
 	PlanOnly       bool
 	Callback       callback.Ref
 	DeferDiff      bool
+	// WorkflowType defaults to WorkflowTypeAppBranchConfigUpdate when empty.
+	// ReconcileAppVersion reuses this same workflow body (install config diff +
+	// install_app_config_version bookkeeping), without branch-rollout fields.
+	WorkflowType app.WorkflowType
 }
 
 // AppBranchConfigUpdate is the workflow and version created for a config update.
@@ -211,6 +215,11 @@ func CreateInstallAppConfigVersionRow(ctx context.Context, db *gorm.DB, version 
 // CreateAppBranchConfigUpdateWorkflow records an install app config version for
 // the new config and enqueues the workflow that rolls the install onto it.
 func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input AppBranchConfigUpdateInput) (*AppBranchConfigUpdate, error) {
+	workflowType := input.WorkflowType
+	if workflowType == "" {
+		workflowType = app.WorkflowTypeAppBranchConfigUpdate
+	}
+
 	var install app.Install
 	if err := h.db.WithContext(ctx).First(&install, "id = ?", input.InstallID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
@@ -269,7 +278,7 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 		metadata[app.WorkflowMetadataKeyStackChanged] = "true"
 	}
 
-	wf, err := h.CreateWorkflow(ctx, input.InstallID, app.WorkflowTypeAppBranchConfigUpdate, metadata, input.PlanOnly, nil)
+	wf, err := h.CreateWorkflow(ctx, input.InstallID, workflowType, metadata, input.PlanOnly, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install config update workflow: %w", err)
 	}
@@ -403,6 +412,70 @@ func (h *Helpers) installCompositeBaselines(ctx context.Context, install *app.In
 		}
 	}
 	return baselines, nil
+}
+
+// ErrInstallAlreadyOnPinnedConfig is returned by CreateReconcileAppVersionWorkflow
+// when the install's applied config already matches its pinned app_config_id --
+// there is nothing to reconcile.
+var ErrInstallAlreadyOnPinnedConfig = errors.New("install is already on its pinned app config")
+
+// ErrInstallConfigUpdateInFlight is returned by CreateReconcileAppVersionWorkflow
+// when a reconcile_app_version or app_branch_config_update workflow is already
+// queued or in progress for the install.
+var ErrInstallConfigUpdateInFlight = errors.New("an app config update workflow is already in progress for this install")
+
+// CreateReconcileAppVersionWorkflowInput describes a reconcile request. It is
+// deliberately narrow (installID + planOnly) so it is reusable from both the
+// HTTP endpoint and a future scheduled signal (Part 3).
+type CreateReconcileAppVersionWorkflowInput struct {
+	InstallID string
+	PlanOnly  bool
+	Callback  callback.Ref
+}
+
+// CreateReconcileAppVersionWorkflow brings installID from its applied app
+// config up to its currently pinned one (install.AppConfigID), generating the
+// same steps and plan approvals an app-branch config update would, minus the
+// install-group rollout coordination. It targets the pin as of this call --
+// a later pin does not retroactively change what this reconcile deploys, and a
+// finished reconcile must not clobber a newer pin's expectation (see
+// syncInstallActualAppConfigFromFlow).
+func (h *Helpers) CreateReconcileAppVersionWorkflow(ctx context.Context, input CreateReconcileAppVersionWorkflowInput) (*AppBranchConfigUpdate, error) {
+	var install app.Install
+	if err := h.db.WithContext(ctx).First(&install, "id = ?", input.InstallID).Error; err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+
+	if install.AppConfigID == "" {
+		return nil, fmt.Errorf("install %s has no pinned app config", input.InstallID)
+	}
+
+	if install.AppliedAppConfigID() == install.AppConfigID {
+		return nil, ErrInstallAlreadyOnPinnedConfig
+	}
+
+	var inFlight int64
+	if err := h.db.WithContext(ctx).
+		Model(&app.Workflow{}).
+		Where(app.Workflow{OwnerID: input.InstallID, OwnerType: "installs"}).
+		Where("type IN ?", []app.WorkflowType{app.WorkflowTypeReconcileAppVersion, app.WorkflowTypeAppBranchConfigUpdate}).
+		Where("plan_only = ?", false).
+		Where("finished_at IS NULL").
+		Where("status->>'status' NOT IN ?", []string{string(app.StatusError), string(app.StatusCancelled)}).
+		Count(&inFlight).Error; err != nil {
+		return nil, fmt.Errorf("unable to check for in-flight app config updates: %w", err)
+	}
+	if inFlight > 0 {
+		return nil, ErrInstallConfigUpdateInFlight
+	}
+
+	return h.CreateAppBranchConfigUpdateWorkflow(ctx, AppBranchConfigUpdateInput{
+		InstallID:      input.InstallID,
+		NewAppConfigID: install.AppConfigID,
+		PlanOnly:       input.PlanOnly,
+		Callback:       input.Callback,
+		WorkflowType:   app.WorkflowTypeReconcileAppVersion,
+	})
 }
 
 func (h *Helpers) getActiveStackVersion(ctx context.Context, installID string) (*app.InstallStackVersion, error) {

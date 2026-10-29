@@ -240,6 +240,7 @@ type Client interface {
 	ForgetInstall(ctx context.Context, installID string) (bool, error)
 	ReprovisionInstall(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error)
 	ReprovisionInstallStack(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error)
+	ReconcileInstallAppVersion(ctx context.Context, installID string, planOnly bool, requestID ...string) (*models.AppInstallAppConfigVersion, error)
 	DeprovisionInstall(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error)
 	AddInstallLabels(ctx context.Context, installID string, labels map[string]string) (*models.AppInstall, error)
 	RemoveInstallLabels(ctx context.Context, installID string, keys []string) (*models.AppInstall, error)

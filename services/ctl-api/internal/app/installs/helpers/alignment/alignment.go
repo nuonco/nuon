@@ -948,6 +948,7 @@ func workflowCoversKind(wf *app.Workflow, kind InstallAlignmentResourceKind) boo
 	case app.WorkflowTypeProvision,
 		app.WorkflowTypeReprovision,
 		app.WorkflowTypeAppBranchConfigUpdate,
+		app.WorkflowTypeReconcileAppVersion,
 		app.WorkflowTypeAppBranchesRun,
 		app.WorkflowTypeAppBranchesConfigRepoUpdate,
 		app.WorkflowTypeAppBranchesComponentRepoUpdate,

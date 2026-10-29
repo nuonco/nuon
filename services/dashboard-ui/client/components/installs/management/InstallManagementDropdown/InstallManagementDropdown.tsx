@@ -14,6 +14,7 @@ import { EditLabelsButton } from '../EditLabels'
 import { EnableConfigSyncButton } from '../EnableConfigSync'
 import { ForgetButton } from '../Forget'
 import { GenerateInstallConfigButton } from '../GenerateInstallConfig'
+import { ReconcileAppVersionButton } from '../ReconcileAppVersion'
 import { ReprovisionButton } from '../Reprovision'
 import { ReprovisionStackButton } from '../ReprovisionStack'
 import { SyncSecretsButton } from '../SyncSecrets'
@@ -46,6 +47,7 @@ const InstallManagementDropdownContent = () => {
           Controls
         </Text>
         <RunAdhocActionButton isMenuButton />
+        <ReconcileAppVersionButton isMenuButton />
         <ReprovisionButton isMenuButton />
         <ReprovisionStackButton isMenuButton />
         <ReprovisionSandboxButton isMenuButton />

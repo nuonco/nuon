@@ -29,6 +29,7 @@ const BRANCH_RUN_TYPES = new Set([
   'app_branches_config_repo_update',
   'app_branches_component_repo_update',
   'app_branch_update',
+  'reconcile_app_version',
 ])
 
 export const isBranchRunDeployment = (type?: string) =>

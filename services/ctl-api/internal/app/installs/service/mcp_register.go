@@ -184,6 +184,18 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	), s.mcpReprovisionSandbox)
 
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
+		"reconcile_install_app_version",
+		"Reconcile install app version",
+		"WRITE OPERATION: Bring an install from its applied app config up to its pinned app config (install.app_config_id), deploying only the difference. "+
+			"A branch run with a do_not_deploy install group pins an install's app config without deploying it; this catches the install up. "+
+			"A never-provisioned install is provisioned. Generates the same steps and plan approvals an app branch config update would, minus install-group rollout coordination. "+
+			"Set plan_only to generate plans without applying. Fails with an error if the install is already on its pinned config, or if a reconcile or app branch config update workflow is already in flight. "+
+			mcpWatchAfterStart,
+		true,
+		false,
+	), s.mcpReconcileInstallAppVersion)
+
+	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"deprovision_install",
 		"Deprovision install",
 		"WRITE OPERATION: Deprovision an install (tear down components and cloud resources). This is destructive. "+
