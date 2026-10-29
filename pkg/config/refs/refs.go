@@ -81,34 +81,32 @@ func Parse(obj any) ([]Ref, error) {
 	return result, nil
 }
 
+// Order matters: more-specific patterns (workflows, legacy install.* paths) run first.
+var orderedPatterns = []struct {
+	refType RefType
+	pattern *regexp.Regexp
+}{
+	{RefTypeActions, regexp.MustCompile(`nuon\.actions\.workflows\.([^.}\s]+)`)},
+	{RefTypeComponents, regexp.MustCompile(`nuon\.install\.components\.([^.}]+)\.outputs\.([^}\s]+)`)},
+	{RefTypeSandbox, regexp.MustCompile(`nuon\.install\.sandbox\.outputs\.([^}\s]+)`)},
+	{RefTypeComponents, regexp.MustCompile(`nuon\.components\.([^.}]+)\.outputs\.([^}\s]+)`)},
+	{RefTypeActions, regexp.MustCompile(`nuon\.actions\.([^.}]+)\.outputs\.([^.}\s]+)`)},
+	{RefTypeSecrets, regexp.MustCompile(`nuon\.secrets\.([^.}\s]+)`)},
+	{RefTypeInputs, regexp.MustCompile(`nuon\.inputs\.inputs\.([^.}\s]+)`)},
+	{RefTypeInstallInputs, regexp.MustCompile(`nuon\.install\.inputs\.([^.}\s]+)`)},
+	{RefTypeInstallStack, regexp.MustCompile(`nuon\.install_stack\.outputs\.([^.}\s]+)`)},
+	{RefTypeSandbox, regexp.MustCompile(`nuon\.sandbox\.outputs\.([^.}\s]+)`)},
+}
+
 // NOTE(jm): this was the fastest way to build out a list of all references, however long term we would like to switch
 // to use an AST to identify all references in a "smarter" and less-brittle way.
 //
 // https://pkg.go.dev/text/template/parse
 func ParseFieldRefs(inputVar string) []Ref {
-	// Order matters: more-specific patterns (workflows, legacy install.* paths) run first.
-	orderedPatterns := []struct {
-		refType RefType
-		pattern string
-	}{
-		{RefTypeActions, `nuon\.actions\.workflows\.([^.}\s]+)`},
-		{RefTypeComponents, `nuon\.install\.components\.([^.}]+)\.outputs\.([^}\s]+)`},
-		{RefTypeSandbox, `nuon\.install\.sandbox\.outputs\.([^}\s]+)`},
-		{RefTypeComponents, `nuon\.components\.([^.}]+)\.outputs\.([^}\s]+)`},
-		{RefTypeActions, `nuon\.actions\.([^.}]+)\.outputs\.([^.}\s]+)`},
-		{RefTypeSecrets, `nuon\.secrets\.([^.}\s]+)`},
-		{RefTypeInputs, `nuon\.inputs\.inputs\.([^.}\s]+)`},
-		{RefTypeInstallInputs, `nuon\.install\.inputs\.([^.}\s]+)`},
-		{RefTypeInstallStack, `nuon\.install_stack\.outputs\.([^.}\s]+)`},
-		{RefTypeSandbox, `nuon\.sandbox\.outputs\.([^.}\s]+)`},
-	}
-
 	refs := make([]Ref, 0)
 	for _, entry := range orderedPatterns {
 		refType := entry.refType
-		pattern := entry.pattern
-		re := regexp.MustCompile(pattern)
-		matches := re.FindAllStringSubmatch(inputVar, -1)
+		matches := entry.pattern.FindAllStringSubmatch(inputVar, -1)
 
 		for _, match := range matches {
 			if len(match) < 2 {
