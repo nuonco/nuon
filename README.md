@@ -57,8 +57,6 @@ See the full [deployment options guide](https://docs.nuon.co/guides/deployment-o
 
 ## Documentation
 
-Checkout our [Knowledge Base](https://support.nuon.co) for commonly asked questions.
-
 Browse our docs [here](https://docs.nuon.co) or visit a specific section below:
 
 - [Concepts](https://docs.nuon.co/concepts/overview): apps, components, actions, inputs, installs, workflows
