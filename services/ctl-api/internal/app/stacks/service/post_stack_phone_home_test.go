@@ -20,6 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -29,6 +30,7 @@ import (
 type stackPhoneHomeDeps struct {
 	fx.In
 
+	Cfg             *internal.Config
 	DB              *gorm.DB `name:"psql"`
 	L               *zap.Logger
 	V               *validator.Validate
@@ -85,6 +87,7 @@ func (s *StackPhoneHomeTestSuite) SetupTest() {
 	s.otherOrg = s.deps.Seeder.CreateOrg(s.ctx, s.T())
 
 	s.svc = New(Params{
+		Cfg:             s.deps.Cfg,
 		V:               s.deps.V,
 		DB:              s.deps.DB,
 		L:               s.deps.L,

@@ -160,7 +160,7 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 					OrgID:             s.testOrg.ID,
 					RunnerID:          s.testRunner.ID,
 					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusInProgress,
+					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
 					Type:              app.RunnerJobTypeDockerBuild,
@@ -193,7 +193,7 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(job *app.RunnerJob) {
 				assert.NotNil(s.T(), job)
-				assert.Equal(s.T(), app.RunnerJobStatusInProgress, job.Status)
+				assert.Equal(s.T(), app.RunnerJobStatusAvailable, job.Status)
 				assert.Len(s.T(), job.Executions, 1, "should preload most recent execution")
 				assert.Equal(s.T(), app.RunnerJobExecutionStatusInProgress, job.Executions[0].Status)
 			},
@@ -283,7 +283,7 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 					OrgID:             s.testOrg.ID,
 					RunnerID:          s.testRunner.ID,
 					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusQueued,
+					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
 					Type:              app.RunnerJobTypeDockerBuild,
@@ -305,9 +305,75 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(job *app.RunnerJob) {
 				assert.NotNil(s.T(), job)
-				assert.Equal(s.T(), app.RunnerJobStatusQueued, job.Status)
+				assert.Equal(s.T(), app.RunnerJobStatusAvailable, job.Status)
 				assert.Empty(s.T(), job.Executions, "should have no executions")
 			},
+		},
+		{
+			name: "queued job returns 409",
+			setupFunc: func() (string, string) {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusQueued,
+					StatusDescription: "test job",
+					Group:             app.RunnerJobGroupBuild,
+					Type:              app.RunnerJobTypeDockerBuild,
+					Operation:         app.RunnerJobOperationTypeBuild,
+					QueueTimeout:      60,
+					AvailableTimeout:  60,
+					ExecutionTimeout:  300,
+					MaxExecutions:     3,
+				}
+				err := s.service.DB.WithContext(ctx).Create(job).Error
+				require.NoError(s.T(), err)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return s.testRunner.ID, job.ID
+			},
+			expectedCode:     http.StatusConflict,
+			expectedNotFound: true,
+		},
+		{
+			name: "in-progress job returns 409",
+			setupFunc: func() (string, string) {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusInProgress,
+					StatusDescription: "test job",
+					Group:             app.RunnerJobGroupBuild,
+					Type:              app.RunnerJobTypeDockerBuild,
+					Operation:         app.RunnerJobOperationTypeBuild,
+					QueueTimeout:      60,
+					AvailableTimeout:  60,
+					ExecutionTimeout:  300,
+					MaxExecutions:     3,
+				}
+				err := s.service.DB.WithContext(ctx).Create(job).Error
+				require.NoError(s.T(), err)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return s.testRunner.ID, job.ID
+			},
+			expectedCode:     http.StatusConflict,
+			expectedNotFound: true,
 		},
 		{
 			name: "job with multiple executions returns only most recent",
@@ -320,7 +386,7 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 					OrgID:             s.testOrg.ID,
 					RunnerID:          s.testRunner.ID,
 					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusInProgress,
+					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
 					Type:              app.RunnerJobTypeDockerBuild,
