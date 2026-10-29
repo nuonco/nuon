@@ -17,6 +17,9 @@ import (
 // swagger:model app.PolicyViolation
 type AppPolicyViolation struct {
 
+	// check id
+	CheckID string `json:"check_id,omitempty"`
+
 	// Human-readable input reference (e.g., "Deployment/default/nginx")
 	InputIdentity string `json:"input_identity,omitempty"`
 

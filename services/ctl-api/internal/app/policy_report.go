@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	policyopa "github.com/nuonco/nuon/pkg/policies/opa"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -28,17 +29,19 @@ type PolicyViolation struct {
 	InputIdentity string `json:"input_identity,omitempty" temporaljson:"input_identity,omitempty"` // Human-readable input reference (e.g., "Deployment/default/nginx")
 	Message       string `json:"message" temporaljson:"message,omitempty"`
 	Severity      string `json:"severity" temporaljson:"severity,omitempty"` // "deny" or "warn"
+	CheckID       string `json:"check_id,omitempty" temporaljson:"check_id,omitempty"`
 }
 
 // PolicyResult represents the evaluation result for a single policy.
 type PolicyResult struct {
-	PolicyID   string `json:"policy_id"`
-	PolicyName string `json:"policy_name,omitempty"`
-	Status     string `json:"status"` // "deny", "warn", or "pass"
-	DenyCount  int    `json:"deny_count"`
-	WarnCount  int    `json:"warn_count"`
-	PassCount  int    `json:"pass_count"`
-	InputCount int    `json:"input_count"`
+	PolicyID   string             `json:"policy_id"`
+	PolicyName string             `json:"policy_name,omitempty"`
+	Status     string             `json:"status"` // "deny", "warn", or "pass"
+	DenyCount  int                `json:"deny_count"`
+	WarnCount  int                `json:"warn_count"`
+	PassCount  int                `json:"pass_count"`
+	InputCount int                `json:"input_count"`
+	Checks     []policyopa.Result `json:"checks,omitempty"`
 }
 
 // PolicyInputRef represents a reference to an input that was evaluated.
