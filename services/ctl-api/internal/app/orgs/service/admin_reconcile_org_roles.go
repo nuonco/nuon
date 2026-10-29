@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -43,18 +41,12 @@ func (s *service) AdminReconcileOrgRoles(ctx *gin.Context) {
 		return
 	}
 
-	orgIDs, err := normalizeReconcileOrgIDs(req.OrgIDs)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	s.l.Info("reconciling org roles",
-		zap.Bool("all_orgs", len(orgIDs) == 0),
-		zap.Int("requested", len(orgIDs)),
+		zap.Bool("all_orgs", len(req.OrgIDs) == 0),
+		zap.Int("requested", len(req.OrgIDs)),
 	)
 
-	reconciled, err := s.reconcileOrgRoles(ctx, orgIDs)
+	reconciled, err := s.reconcileOrgRoles(ctx, req.OrgIDs)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -64,93 +56,19 @@ func (s *service) AdminReconcileOrgRoles(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, AdminReconcileOrgRolesResponse{Reconciled: reconciled})
 }
 
-func normalizeReconcileOrgIDs(ids []string) ([]string, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	seen := make(map[string]struct{}, len(ids))
-	out := make([]string, 0, len(ids))
-	for _, id := range ids {
-		if id == "" {
-			return nil, stderr.NewInvalidRequest(fmt.Errorf("org_ids contains an empty id"))
-		}
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
-		out = append(out, id)
-	}
-	return out, nil
-}
-
 func (s *service) reconcileOrgRoles(ctx context.Context, orgIDs []string) (int, error) {
-	if len(orgIDs) > 0 {
-		orgs, err := s.loadOrgsByID(ctx, orgIDs)
-		if err != nil {
-			return 0, err
-		}
-		return reconcileOrgs(ctx, s.db, orgs)
-	}
-
-	const batchSize = 50
-	var reconciled int
-	var lastID string
-	var lastCreatedAt time.Time
-	for {
-		var orgs []app.Org
-		q := s.db.WithContext(ctx).
-			Select("id", "created_by_id", "created_at").
-			Order("created_at ASC").
-			Order("id ASC").
-			Limit(batchSize)
-		if lastID != "" {
-			q = q.Where("(created_at > ?) OR (created_at = ? AND id > ?)", lastCreatedAt, lastCreatedAt, lastID)
-		}
-		if err := q.Find(&orgs).Error; err != nil {
-			return reconciled, fmt.Errorf("unable to load orgs: %w", err)
-		}
-		if len(orgs) == 0 {
-			return reconciled, nil
-		}
-
-		n, err := reconcileOrgs(ctx, s.db, orgs)
-		reconciled += n
-		if err != nil {
-			return reconciled, err
-		}
-		last := orgs[len(orgs)-1]
-		lastID = last.ID
-		lastCreatedAt = last.CreatedAt
-	}
-}
-
-func (s *service) loadOrgsByID(ctx context.Context, orgIDs []string) ([]app.Org, error) {
-	var orgs []app.Org
-	if err := s.db.WithContext(ctx).
+	q := s.db.WithContext(ctx).
 		Select("id", "created_by_id").
-		Where("id IN ?", orgIDs).
-		Find(&orgs).Error; err != nil {
-		return nil, fmt.Errorf("unable to load orgs: %w", err)
+		Order("created_at ASC, id ASC")
+	if len(orgIDs) > 0 {
+		q = q.Where("id IN ?", orgIDs)
 	}
 
-	found := make(map[string]struct{}, len(orgs))
-	for _, org := range orgs {
-		found[org.ID] = struct{}{}
+	var orgs []app.Org
+	if err := q.Find(&orgs).Error; err != nil {
+		return 0, fmt.Errorf("unable to load orgs: %w", err)
 	}
-	var missing []string
-	for _, id := range orgIDs {
-		if _, ok := found[id]; !ok {
-			missing = append(missing, id)
-		}
-	}
-	if len(missing) > 0 {
-		return nil, stderr.ErrNotFound{
-			Err:         fmt.Errorf("orgs not found: %s", strings.Join(missing, ", ")),
-			Description: "one or more org ids were not found",
-		}
-	}
-	return orgs, nil
+	return reconcileOrgs(ctx, s.db, orgs)
 }
 
 func reconcileOrgs(ctx context.Context, db *gorm.DB, orgs []app.Org) (int, error) {
