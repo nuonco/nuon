@@ -62,12 +62,12 @@ Save `id` with the customer's record. Every later call uses it.
 
 ## 2. Have the customer connect their account
 
-Your customer connects their account by running a setup template, called a [stack](/concepts/stacks), in their own
-cloud console. Before they click, tell them what it creates and why.
+Your customer connects their account by creating your app's [stack](/concepts/stacks), in their own
+cloud console. It's a good idea to give a quick explainer for your customer's security team.
 
 <AcmeScreen screen="connect" />
 
-Call `GET /v1/installs/{install_id}/stack`. Trimmed response:
+Call `GET /v1/installs/{install_id}/stack`. A trimmed example response:
 
 ```json Response
 {
@@ -117,5 +117,9 @@ See [Workflow approvals](/concepts/workflows#workflow-approvals) for how approva
 
 <AcmeScreen screen="approve" />
 
-Wire the **Approve** button to `approve-all` on the install's workflow. See
-[Approve changes](/guides/control-plane-integration#approve-changes).
+When a step is waiting, find it with `GET /v1/workflows/pending-approvals`. Wire **Approve** and **Deny** to
+`POST /v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/response`, with `response_type` set to
+`approve` or `deny`. Each step gets its own answer, so steps you set to auto-approve never reach the customer.
+
+To hear about waiting steps without polling, turn on `approval_requests` in your [webhook](/guides/webhooks)
+subscription.

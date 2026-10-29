@@ -183,7 +183,7 @@ export const AcmeScreen = ({ screen }) => {
     approve: (
       <Frame
         path="deployment/review"
-        label="Acme Analytics asks the customer to review changes before applying them to their AWS account: create a database, create two storage buckets, update the API service. Buttons: Approve and Not now."
+        label="Acme Analytics asks the customer to review changes before applying them to their AWS account: create a database, create two storage buckets, update the API service. Buttons: Approve and Deny."
       >
         <div className="nuon-um-title">Review changes to your AWS account</div>
         <div className="nuon-um-sub">Nothing changes until you approve.</div>
@@ -196,7 +196,7 @@ export const AcmeScreen = ({ screen }) => {
         </div>
         <div className="nuon-um-actions">
           <span className="nuon-um-button">Approve</span>
-          <span className="nuon-um-button nuon-um-ghost">Not now</span>
+          <span className="nuon-um-button nuon-um-ghost">Deny</span>
         </div>
       </Frame>
     ),
