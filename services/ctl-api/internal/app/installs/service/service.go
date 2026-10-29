@@ -228,9 +228,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/telemetry/collector", s.GetInstallTelemetryCollector)
 		installs.DELETE("/telemetry/collector", s.DeleteInstallTelemetryCollector)
 
-		// phone home
-		s.POST(installs, "/phone-home/:phone_home_id", s.InstallPhoneHome, api.APIContextTypePublic, true)
-
 		// runner bootstrap token
 		installs.POST("/runner-bootstrap-token", s.CreateRunnerBootstrapToken)
 
@@ -282,6 +279,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// install cli config
 		installs.GET("/generate-cli-install-config", s.GenerateCLIInstallConfig)
 	}
+
+	s.POST(ge, "/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome, api.APIContextTypePublic, true)
 
 	// stack lookup by stack_id
 	org.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
