@@ -22,14 +22,21 @@ Creating cloud resources in your customer's account takes a while. Run setup as 
 [Idempotent operations](/guides/idempotent-operations).
 </Tip>
 
-## 1. Collect the customer's settings
+## 1. Collect the customer's inputs
 
-Ask only for what your product needs to run in their account, such as a region and a domain.
+Your app template's [inputs](/concepts/app-inputs) list the values each install needs, such as a domain or a node
+count. Build this form from them. Each input in `inputs.toml` already has a `display_name`, a `description`, and
+whether it's `required` or `sensitive`, so use those for the field label, help text, validation, and masking. Inputs in
+the same `group` belong together on the form.
+
+Ask the customer only for the inputs they need to decide. Fill in the rest from what your app already knows about
+them, or leave the defaults. The cloud region isn't an input. It goes on the install itself, as shown in the call
+below.
 
 <AcmeScreen screen="start" />
 
-When the customer clicks **Start setup**, create an [install](/concepts/installs). An install is one copy of your
-product in one customer's account.
+When the customer clicks **Start setup**, create an [install](/concepts/installs) with their inputs. An install is one
+copy of your product in one customer's account.
 
 ```bash
 curl -X POST https://api.nuon.co/v1/installs \
@@ -44,7 +51,9 @@ curl -X POST https://api.nuon.co/v1/installs \
   }'
 ```
 
-Save the install ID with the customer's record. You'll need it for every later call.
+Save the install ID with the customer's record. You'll need it for every later call. If a customer needs to change an
+input later, see [Change a setting](/guides/control-plane-integration#change-a-setting). For every input option, see
+[Configuring inputs and secrets](/guides/configuring-inputs-and-secrets) and the [inputs reference](/config-ref/inputs).
 
 ## 2. Have the customer connect their account
 
