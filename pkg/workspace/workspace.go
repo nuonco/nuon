@@ -2,19 +2,23 @@ package workspace
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/go-playground/validator/v10"
+	"github.com/spf13/afero"
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/rootfs"
 )
 
 const defaultTmpRootDir string = "/tmp"
-const defaultDirPermissions fs.FileMode = 0o777
+const defaultDirPermissions fs.FileMode = 0o700
 
 // GitSource defines the git repository to clone.
 type GitSource struct {
@@ -46,6 +50,12 @@ type Workspace struct {
 	l *zap.Logger `validate:"required"`
 
 	cleanupBeforeInit bool // Remove existing directory before Init()
+	backing           afero.Fs
+	fs                afero.Fs
+	parent            *rootfs.FS
+	owned             *rootfs.FS
+	gitFS             *rootfs.Billy
+	repo              *git.Repository
 }
 
 // Option configures a Workspace.
@@ -98,6 +108,23 @@ func WithLogger(l *zap.Logger) Option {
 	}
 }
 
+// WithFS selects a pinned OS backend or a private in-memory namespace.
+// The backing filesystem is borrowed and is never closed by the workspace.
+func WithFS(fs afero.Fs) Option {
+	return func(w *Workspace) { w.backing = fs }
+}
+
+// FS borrows the job filesystem until Close or Cleanup.
+func (w *Workspace) FS() afero.Fs { return w.fs }
+
+// Repository borrows the cloned repository until Close or Cleanup.
+func (w *Workspace) Repository() (*git.Repository, error) {
+	if w.repo == nil {
+		return nil, fmt.Errorf("workspace has no open repository")
+	}
+	return w.repo, nil
+}
+
 // WithCleanup configures whether to remove the workspace directory before initialization.
 // If true, Init() will delete any existing directory at the workspace path before creating it.
 // This is useful when re-using workspace IDs or recovering from failed clones.
@@ -108,36 +135,32 @@ func WithCleanup(cleanup bool) Option {
 }
 
 // cleanupExistingDir removes the workspace directory if it exists.
-// This is called by Init() when cleanupBeforeInit is true.
 func (w *Workspace) cleanupExistingDir() error {
-	rootDir := w.rootDir()
-	if _, err := os.Stat(rootDir); err == nil {
-		// Directory exists, remove it
-		w.l.Info("removing existing workspace directory",
-			zap.String("path", rootDir))
-		if err := os.RemoveAll(rootDir); err != nil {
-			w.l.Error("unable to remove existing directory",
-				zap.String("path", rootDir),
-				zap.Error(err))
-			return fmt.Errorf("unable to remove existing directory: %w", err)
-		}
+	if err := w.validatePaths(); err != nil {
+		return err
 	}
-	return nil
+	return rootfs.RemoveFS(w.backing, w.tmpRootDir, w.id)
 }
 
 // Init creates the workspace directory and clones the git source if configured.
-func (w *Workspace) Init(ctx context.Context) error {
-	// Check if cleanup is requested
-	if w.cleanupBeforeInit {
-		if err := w.cleanupExistingDir(); err != nil {
-			return err
-		}
+func (w *Workspace) Init(ctx context.Context) (retErr error) {
+	if err := w.validatePaths(); err != nil {
+		return err
 	}
-
-	if err := os.MkdirAll(w.rootDir(), defaultDirPermissions); err != nil {
-		w.l.Error("unable to initialize root dir", zap.Error(err))
+	if w.fs != nil {
+		return fmt.Errorf("workspace already initialized")
+	}
+	parent, child, err := rootfs.PrepareFS(w.backing, w.tmpRootDir, w.id, w.cleanupBeforeInit)
+	if err != nil {
 		return fmt.Errorf("unable to initialize root dir: %w", err)
 	}
+	w.parent, w.fs = parent, child
+	w.owned, _ = child.(*rootfs.FS)
+	defer func() {
+		if retErr != nil {
+			retErr = errors.Join(retErr, w.Close())
+		}
+	}()
 
 	if w.src == nil || w.src.URL == "" {
 		return nil
@@ -152,10 +175,53 @@ func (w *Workspace) Init(ctx context.Context) error {
 
 // Cleanup removes the workspace directory.
 func (w *Workspace) Cleanup(ctx context.Context) error {
-	if err := os.RemoveAll(w.rootDir()); err != nil {
-		return fmt.Errorf("unable to cleanup directory: %w", err)
+	var err error
+	if w.parent != nil {
+		err = w.parent.RemoveAll(w.id)
+	} else if w.fs != nil {
+		err = w.fs.RemoveAll(".")
+	} else {
+		err = w.cleanupExistingDir()
 	}
-	return nil
+	return errors.Join(err, w.Close())
+}
+
+// Close releases handles without removing the workspace directory.
+func (w *Workspace) Close() error {
+	var errs []error
+	if w.gitFS != nil {
+		errs = append(errs, w.gitFS.Close())
+		w.gitFS = nil
+	}
+	w.repo = nil
+	if w.owned != nil {
+		errs = append(errs, w.owned.Close())
+		w.owned = nil
+	}
+	if w.parent != nil {
+		errs = append(errs, w.parent.Close())
+		w.parent = nil
+	}
+	w.fs = nil
+	return errors.Join(errs...)
+}
+
+func (w *Workspace) validatePaths() error {
+	if !filepath.IsLocal(w.id) || w.id == "." || strings.ContainsAny(w.id, `/\`) {
+		return fmt.Errorf("invalid workspace ID %q", w.id)
+	}
+	if w.src != nil {
+		// A leading slash historically means repository-relative, not host-rooted.
+		path := strings.TrimLeft(w.src.Path, "/")
+		if path != "" && !filepath.IsLocal(path) {
+			return fmt.Errorf("invalid repository path %q", w.src.Path)
+		}
+	}
+	abs, err := filepath.Abs(w.tmpRootDir)
+	if err == nil {
+		w.tmpRootDir = abs
+	}
+	return err
 }
 
 // Root returns the workspace root directory path.
@@ -179,8 +245,10 @@ func (w *Workspace) AbsPath(path string) string {
 
 // IsFile returns true if the path exists and is a file.
 func (w *Workspace) IsFile(path string) bool {
-	fp := w.AbsPath(path)
-	stat, err := os.Stat(fp)
+	if w.fs == nil {
+		return false
+	}
+	stat, err := w.fs.Stat(relativePath(path))
 	if err != nil {
 		return false
 	}
@@ -189,8 +257,10 @@ func (w *Workspace) IsFile(path string) bool {
 
 // IsDir returns true if the path exists and is a directory.
 func (w *Workspace) IsDir(path string) bool {
-	fp := w.AbsPath(path)
-	stat, err := os.Stat(fp)
+	if w.fs == nil {
+		return false
+	}
+	stat, err := w.fs.Stat(relativePath(path))
 	if err != nil {
 		return false
 	}
@@ -202,13 +272,15 @@ func (w *Workspace) RmDir(path string) error {
 	if !w.IsDir(path) {
 		return nil
 	}
-	return os.RemoveAll(w.AbsPath(path))
+	return w.fs.RemoveAll(relativePath(path))
 }
 
 // IsExecutable returns true if the path exists and is executable.
 func (w *Workspace) IsExecutable(path string) bool {
-	fp := w.AbsPath(path)
-	stat, err := os.Stat(fp)
+	if w.fs == nil {
+		return false
+	}
+	stat, err := w.fs.Stat(relativePath(path))
 	if err != nil {
 		return false
 	}
@@ -219,5 +291,16 @@ func (w *Workspace) IsExecutable(path string) bool {
 }
 
 func (w *Workspace) rootDir() string {
+	if w.owned != nil {
+		return w.owned.Root()
+	}
 	return filepath.Join(w.tmpRootDir, w.id)
+}
+
+func relativePath(name string) string {
+	name = strings.TrimLeft(name, "/")
+	if name == "" {
+		return "."
+	}
+	return name
 }

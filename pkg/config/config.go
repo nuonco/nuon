@@ -147,11 +147,11 @@ func (a *AppConfig) Parse(opts ...ParseOption) error {
 	parseFns := []parseFn{
 		{
 			"sandbox",
-			func() error { return a.Sandbox.parse(cfg.RootDir) },
+			func() error { return a.Sandbox.parse(cfg) },
 		},
 		{
 			"runner",
-			func() error { return a.Runner.parse(cfg.RootDir) },
+			func() error { return a.Runner.parse(cfg) },
 		},
 	}
 
@@ -164,7 +164,7 @@ func (a *AppConfig) Parse(opts ...ParseOption) error {
 	if a.Inputs != nil {
 		parseFns = append(parseFns, parseFn{
 			"inputs",
-			func() error { return a.Inputs.parse(cfg.RootDir) },
+			func() error { return a.Inputs.parse(cfg) },
 		})
 	}
 	if a.Permissions != nil {
@@ -182,7 +182,7 @@ func (a *AppConfig) Parse(opts ...ParseOption) error {
 	if a.Policies != nil {
 		parseFns = append(parseFns, parseFn{
 			"policies",
-			a.Policies.parse,
+			func() error { return a.Policies.parse(cfg) },
 		})
 	}
 	if a.Stack != nil {
@@ -208,7 +208,7 @@ func (a *AppConfig) Parse(opts ...ParseOption) error {
 	for idx, comp := range a.Components {
 		parseFns = append(parseFns, parseFn{
 			fmt.Sprintf("components.%d", idx),
-			func() error { return comp.parse(cfg.RootDir) },
+			func() error { return comp.parse(cfg) },
 		})
 	}
 

@@ -13,8 +13,9 @@ import (
 )
 
 type ParseConfig struct {
-	Filename string
-	Dirname  string
+	Filename   string
+	Dirname    string
+	SourceRoot string
 
 	Bytes []byte
 

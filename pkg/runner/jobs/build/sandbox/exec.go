@@ -8,8 +8,10 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
+	"github.com/nuonco/nuon/pkg/rootfs"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	terraformbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/runner/registry"
 )
@@ -21,9 +23,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	src := h.state.workspace.Source()
+	source := h.state.source
 
 	l.Info("fetching sandbox source files")
-	srcFiles, err := h.getSourceFiles(ctx, src.AbsPath())
+	srcFiles, err := ociarchive.SourceFiles(ctx, source, src.AbsPath(), defaultFileType)
 	if err != nil {
 		l.Error("failed to get source files", zap.Error(err))
 		h.writeErrorResult(ctx, "fetch files", err)
@@ -31,6 +34,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	if h.state.cfg != nil && h.state.cfg.VendorProviders {
+		if _, ok := h.state.workspace.FS().(*rootfs.FS); !ok {
+			return fmt.Errorf("terraform provider vendoring requires a disk-backed workspace")
+		}
 		l.Info("vendoring terraform providers via filesystem mirror")
 		opVendorCtx, endVendor := op.Tool(ctx, "terraform", "vendor")
 		var mirrorPlatforms []string
@@ -49,7 +55,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 
 		l.Info("re-walking sandbox source files after provider mirror")
-		srcFiles, err = h.getSourceFiles(ctx, src.AbsPath())
+		srcFiles, err = ociarchive.SourceFiles(ctx, source, src.AbsPath(), defaultFileType)
 		if err != nil {
 			l.Error("failed to re-walk source files after provider mirror", zap.Error(err))
 			h.writeErrorResult(ctx, "fetch files", err)
@@ -58,7 +64,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Info("packing sandbox terraform files into archive")
-	if err := h.state.arch.Pack(ctx, l, srcFiles); err != nil {
+	if err := h.state.arch.Pack(ctx, l, source, srcFiles); err != nil {
 		l.Error("failed to pack files", zap.Error(err))
 		h.writeErrorResult(ctx, "packing files", err)
 		return err
