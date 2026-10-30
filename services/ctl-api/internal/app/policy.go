@@ -52,6 +52,7 @@ type Policy struct {
 
 	// Permissions are used to track granular permissions for each domain
 	Permissions pgtype.Hstore `json:"permissions" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"permissions,omitzero,omitempty"`
+	Document    []byte        `json:"-" gorm:"type:jsonb" temporaljson:"document,omitzero,omitempty"`
 }
 
 func (a *Policy) Indexes(db *gorm.DB) []migrations.Index {

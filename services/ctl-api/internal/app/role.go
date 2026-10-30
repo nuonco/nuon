@@ -51,6 +51,7 @@ const (
 const (
 	RoleVersionV1 = 1
 	RoleVersionV2 = 2
+	RoleVersionV3 = 3
 )
 
 type Role struct {
@@ -67,8 +68,9 @@ type Role struct {
 	OrgID generics.NullString `json:"org_id,omitzero" swaggertype:"string" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org                `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RoleType RoleType `json:"role_type,omitzero" gorm:"defaultnull;notnull" temporaljson:"role_type,omitzero,omitempty"`
-	Version  int      `json:"version,omitzero" gorm:"not null;default:1" temporaljson:"version,omitzero,omitempty"`
+	RoleType        RoleType `json:"role_type,omitzero" gorm:"defaultnull;notnull" temporaljson:"role_type,omitzero,omitempty"`
+	Version         int      `json:"version,omitzero" gorm:"not null;default:1" temporaljson:"version,omitzero,omitempty"`
+	CatalogRevision int      `json:"-" temporaljson:"catalog_revision,omitzero,omitempty"`
 
 	// display + assignability metadata; the single source of truth read by
 	// GET /v1/roles and every role picker. Managed roles are kept in sync

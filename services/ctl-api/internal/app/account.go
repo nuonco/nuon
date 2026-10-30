@@ -92,7 +92,9 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 	visited := make(map[string]struct{}, 0)
 	for _, role := range a.Roles {
 		for _, policy := range role.Policies {
-			a.AllPermissions.Add(policy.Permissions)
+			if role.Version == RoleVersionV1 || role.Version == RoleVersionV2 {
+				a.AllPermissions.Add(policy.Permissions)
+			}
 		}
 
 		if role.OrgID.Empty() {
