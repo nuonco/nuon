@@ -13,6 +13,9 @@ func APIFromRole(role *app.Role) (permissions.API, bool, error) {
 	if role == nil || role.Version < app.RoleVersionV2 {
 		return "", false, nil
 	}
+	if role.Version != app.RoleVersionV2 {
+		return "", true, fmt.Errorf("role format %d is not supported by legacy API authorization", role.Version)
+	}
 	var found permissions.API
 	var ok bool
 	for _, policy := range role.Policies {
