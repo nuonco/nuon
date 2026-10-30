@@ -2,14 +2,23 @@ package kubernetes_manifest
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
+
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 // func Test_handler_execApply(t *testing.T) {
@@ -209,4 +218,38 @@ func Test_handler_execDelete(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestManifestDeploymentReleasesArchive(t *testing.T) {
+	ctx := pkgctx.SetLogger(context.Background(), zap.NewNop())
+	root := t.TempDir()
+	t.Setenv("TMPDIR", root)
+	job := &models.AppRunnerJob{}
+	execution := &models.AppRunnerJobExecution{}
+	t.Run("failed initialization", func(t *testing.T) {
+		h := &handler{state: &handlerState{plan: &plantypes.DeployPlan{
+			Src:                          &configs.OCIRegistryRepository{},
+			KubernetesManifestDeployPlan: &plantypes.KubernetesManifestDeployPlan{},
+		}}}
+		require.NoError(t, h.Validate(ctx, job, execution))
+		require.ErrorContains(t, h.Initialize(ctx, job, execution), "invalid registry type")
+		entries, err := os.ReadDir(root)
+		require.NoError(t, err)
+		require.Empty(t, entries)
+		require.NoError(t, h.Cleanup(ctx, job, execution))
+	})
+	t.Run("cleanup", func(t *testing.T) {
+		archive := ociarchive.New()
+		require.NoError(t, archive.Initialize(ctx))
+		t.Cleanup(func() { require.NoError(t, archive.Cleanup(ctx)) })
+		fs := archive.FS()
+		h := &handler{state: &handlerState{arch: archive}}
+		require.NoError(t, h.Cleanup(ctx, job, execution))
+		_, err := fs.Stat(".")
+		require.ErrorIs(t, err, os.ErrClosed)
+		entries, err := os.ReadDir(root)
+		require.NoError(t, err)
+		require.Empty(t, entries)
+		require.NoError(t, h.Cleanup(ctx, job, execution))
+	})
 }

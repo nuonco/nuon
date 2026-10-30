@@ -2,7 +2,11 @@ package github
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
+
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 
 	"github.com/nuonco/nuon/pkg/generics"
 )
@@ -41,4 +45,36 @@ func ParseRepo(repo string) (string, string, error) {
 
 func RepoPath(owner, repo, token string) string {
 	return fmt.Sprintf("https://%s:%s@github.com/%s/%s.git", owner, token, owner, repo)
+}
+
+// CloneURLAuth separates transport credentials from the URL stored by go-git.
+func CloneURLAuth(raw string) (string, transport.AuthMethod, error) {
+	if !strings.Contains(raw, "://") {
+		return raw, nil, nil
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return "", nil, fmt.Errorf("invalid clone URL")
+	}
+	if u.User == nil {
+		return raw, nil, nil
+	}
+	user := u.User.Username()
+	password, hasPassword := u.User.Password()
+	switch u.Scheme {
+	case "http", "https":
+		u.User = nil
+		if user == "" {
+			user = "git"
+		}
+		return u.String(), &http.BasicAuth{Username: user, Password: password}, nil
+	case "file":
+		u.User = nil
+		return u.String(), nil, nil
+	default:
+		if hasPassword {
+			return "", nil, fmt.Errorf("password clone authentication requires HTTP(S)")
+		}
+		return raw, nil, nil
+	}
 }

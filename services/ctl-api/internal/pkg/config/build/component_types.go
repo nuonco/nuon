@@ -152,6 +152,9 @@ func KubernetesManifestComponentConfig(obj *config.KubernetesManifestComponentCo
 		if err := obj.Kustomize.ValidateLoadRestrictor(); err != nil {
 			return nil, err
 		}
+		if err := obj.Kustomize.ValidateEnableHelm(); err != nil {
+			return nil, err
+		}
 	}
 	if hasManifest && (vcs.Github != nil || vcs.Public != nil) {
 		return nil, errors.New("VCS config is only valid for kustomize sources, not inline manifests")

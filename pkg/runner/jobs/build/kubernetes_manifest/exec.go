@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/api/types"
-	"sigs.k8s.io/kustomize/kyaml/filesys"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
@@ -45,7 +44,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	l.Info("manifest ready", zap.Int("yaml_size", len(manifestYAML)))
 
 	manifestPath := filepath.Join(h.state.arch.BasePath(), defaultManifestFilename)
-	if err := h.writeManifest(manifestPath, manifestYAML); err != nil {
+	if err := h.writeManifest(manifestYAML); err != nil {
 		return fmt.Errorf("failed to write manifest: %w", err)
 	}
 
@@ -58,7 +57,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Info("packing manifest into archive")
-	if err := h.state.arch.Pack(ctx, l, srcFiles); err != nil {
+	if err := h.state.arch.Pack(ctx, l, h.state.archiveSource, srcFiles); err != nil {
 		return fmt.Errorf("unable to pack archive: %w", err)
 	}
 
@@ -85,16 +84,27 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 func (h *handler) buildKustomization(kustomizePath string) ([]byte, error) {
 	opts := krusty.MakeDefaultOptions()
-	// Builds run on the shared control-plane worker; an app-controlled restrictor would let
-	// kustomize read worker files (service-account tokens, /proc/self/environ) into the artifact.
 	opts.LoadRestrictions = types.LoadRestrictionsRootOnly
+	fs := &kustomizeFS{source: h.state.source}
+	root, base, err := fs.CleanedAbs(kustomizePath)
+	if err != nil {
+		return nil, err
+	}
+	if base != "" {
+		return nil, fmt.Errorf("kustomize path must be a directory: %s", kustomizePath)
+	}
 
-	if h.state.cfg.KustomizeConfig != nil && h.state.cfg.KustomizeConfig.EnableHelm {
-		opts.PluginConfig.HelmConfig.Enabled = true
+	if h.state.cfg.KustomizeConfig != nil {
+		if h.state.cfg.KustomizeConfig.EnableHelm {
+			return nil, fmt.Errorf("Kustomize enable_helm requires confined subprocess execution and is not supported in rooted builds")
+		}
 	}
 
 	k := krusty.MakeKustomizer(opts)
-	resMap, err := k.Run(filesys.MakeFsOnDisk(), kustomizePath)
+	resMap, err := k.Run(fs, root.String())
+	if fs.err != nil {
+		return nil, fs.err
+	}
 	if err != nil {
 		return nil, err
 	}
