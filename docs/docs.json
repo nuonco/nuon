@@ -102,8 +102,7 @@
             "pages": [
               "concepts/stacks",
               "concepts/runners",
-              "concepts/sandboxes",
-              "concepts/install-telemetry"
+              "concepts/sandboxes"
             ]
           },
           {
@@ -117,7 +116,8 @@
               "concepts/policies",
               "concepts/actions",
               "concepts/runbooks",
-              "concepts/triggers"
+              "concepts/triggers",
+              "concepts/install-telemetry"
             ]
           }
         ]
