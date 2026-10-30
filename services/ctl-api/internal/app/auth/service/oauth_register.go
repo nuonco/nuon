@@ -1,6 +1,7 @@
 package service
 
 import (
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -25,22 +26,36 @@ func oauthError(c *gin.Context, status int, code, desc string) {
 	c.JSON(status, gin.H{"error": code, "error_description": desc})
 }
 
-// isAllowedRedirectURI permits https URLs and http loopback URLs (localhost /
-// 127.0.0.1), which is what native/CLI-style public clients (e.g. MCP agents) use.
-func isAllowedRedirectURI(raw string) bool {
+func isLoopbackHTTPRedirect(u *url.URL) bool {
+	if u.Scheme != "http" {
+		return false
+	}
+	host := u.Hostname()
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
+
+func isAllowedRedirectURI(raw string, httpsHosts []string) bool {
 	u, err := url.Parse(raw)
-	if err != nil {
+	if err != nil || u.Host == "" {
 		return false
 	}
-	switch u.Scheme {
-	case "https":
-		return u.Host != ""
-	case "http":
-		host := u.Hostname()
-		return host == "localhost" || host == "127.0.0.1" || host == "::1"
-	default:
+	if isLoopbackHTTPRedirect(u) {
+		return true
+	}
+	if u.Scheme != "https" {
 		return false
 	}
+	host := strings.ToLower(u.Hostname())
+	for _, allowed := range httpsHosts {
+		if host == strings.ToLower(strings.TrimSpace(allowed)) {
+			return true
+		}
+	}
+	return false
 }
 
 // OAuthRegister handles POST /oauth/register — OAuth 2.0 Dynamic Client
@@ -63,8 +78,8 @@ func (s *service) OAuthRegister(c *gin.Context) {
 		return
 	}
 	for _, uri := range req.RedirectURIs {
-		if !isAllowedRedirectURI(uri) {
-			oauthError(c, http.StatusBadRequest, "invalid_redirect_uri", "redirect_uri must be https or an http loopback address: "+uri)
+		if !isAllowedRedirectURI(uri, s.cfg.OAuthDCRRedirectHosts) {
+			oauthError(c, http.StatusBadRequest, "invalid_redirect_uri", "redirect_uri must be an http loopback address or an allowlisted https host: "+uri)
 			return
 		}
 	}
