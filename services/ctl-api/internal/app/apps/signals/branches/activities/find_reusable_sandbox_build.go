@@ -76,7 +76,7 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 	if build == nil || buildsource.SandboxChecksum(cfg) != buildsource.SandboxChecksum(&build.AppSandboxConfig) {
 		return out, nil
 	}
-	identity, err := buildsource.SandboxSelection(ctx, a.db, a.vcsHelpers, &app.AppSandboxBuild{AppSandboxConfig: *cfg, AppBranchRunID: &runID})
+	identity, err := buildsource.Sandbox(ctx, a.db, a.vcsHelpers, &app.AppSandboxBuild{AppSandboxConfig: *cfg, AppBranchRunID: &runID})
 	if err != nil {
 		return nil, err
 	}

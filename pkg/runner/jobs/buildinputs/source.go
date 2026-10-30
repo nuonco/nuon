@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
-	"slices"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/sourcefs"
@@ -76,37 +75,4 @@ func apiIdentity(i *sourceidentity.Identity) (*models.SourceidentityIdentity, er
 		return nil, err
 	}
 	return &out, nil
-}
-
-func Image(expected *sourceidentity.Identity, digest string) (*sourceidentity.Identity, error) {
-	if expected == nil {
-		return nil, nil
-	}
-	if err := expected.Validate(); err != nil {
-		return nil, err
-	}
-	if expected.Kind != "image" {
-		return nil, fmt.Errorf("image source identity is required")
-	}
-	if expected.Digest != "" && expected.Digest != digest {
-		return nil, fmt.Errorf("image digest differs from prepared source")
-	}
-	if expected.Captured {
-		return expected, nil
-	}
-	i := *expected
-	i.Files = slices.Clone(expected.Files)
-	i.Coverage, i.Reasons = sourceidentity.Complete, nil
-	for _, reason := range expected.Reasons {
-		if reason != "source_requires_runner_resolution" {
-			i.MarkUnknown(reason)
-		}
-	}
-	i.Digest = digest
-	i.Captured = true
-	i.Seal()
-	if err := i.Validate(); err != nil {
-		return nil, err
-	}
-	return &i, nil
 }

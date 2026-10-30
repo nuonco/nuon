@@ -58,7 +58,11 @@ func (h *handler) packageChartFromRepoConfig(ctx context.Context, l *zap.Logger)
 			return "", err
 		}
 		selected := *expected
+		selected.Reasons = append([]string(nil), expected.Reasons...)
 		selected.ChartVersion = chart.Metadata.Version
+		if len(chart.Metadata.Dependencies) > 0 {
+			selected.MarkUnknown("helm_dependencies_resolved_at_build")
+		}
 		captured, err := sourceidentity.Capture(h.state.source, &selected)
 		if err != nil {
 			return "", err

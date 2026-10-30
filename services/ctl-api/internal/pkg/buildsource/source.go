@@ -1,35 +1,48 @@
+/*
+Package buildsource prepares pinned build inputs and checks build reuse.
+
+Git-backed component and sandbox flow:
+
+	Ref -> pinned commit -> configured directory's tree/blob ID
+	                                  |
+	                    Compare source + build config
+	                   with a verified successful build
+	                                  |
+	             +--------------------+--------------------+
+	             |                                         |
+	          Unchanged                     Changed / insufficient evidence
+	             |                                         |
+	         Reuse build                     Runner checkout at pinned commit
+	                                                       |
+	                                            sourceidentity.Verify
+	                                                       |
+	                                                  Build tools
+
+Selection uses cached Git metadata, not checkouts or blob downloads. The configured
+directory is the change-detection boundary; dependencies outside it are not tracked.
+Runner verification hashes the already-required checkout before build tools modify it.
+*/
 package buildsource
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/oci/imageref"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/sourcefs"
 	"github.com/nuonco/nuon/pkg/sourceidentity"
-	"github.com/nuonco/nuon/pkg/workspace"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
 
 func Component(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app.ComponentBuild) (*sourceidentity.Identity, error) {
-	return component(ctx, db, vcs, b, true)
-}
-
-func ComponentSelection(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app.ComponentBuild) (*sourceidentity.Identity, error) {
-	return component(ctx, db, vcs, b, false)
-}
-
-func component(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app.ComponentBuild, capture bool) (*sourceidentity.Identity, error) {
 	c := &b.ComponentConfigConnection
 	kind := string(c.Type)
 	if c.TerraformModuleComponentConfig != nil {
@@ -57,21 +70,6 @@ func component(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app
 	}
 	if c.DockerBuildComponentConfig != nil {
 		i.MarkUnknown("deprecated_docker_build_unsupported")
-	}
-	if c.TerraformModuleComponentConfig != nil && len(c.TerraformModuleComponentConfig.VariablesFiles) != 0 {
-		i.MarkUnknown("configured_file_inputs_uninspected")
-	}
-	if c.HelmComponentConfig != nil && len(c.HelmComponentConfig.ValuesFiles) != 0 {
-		i.MarkUnknown("configured_file_inputs_uninspected")
-	}
-	if cfg := c.KubernetesManifestComponentConfig; cfg != nil && cfg.Kustomize != nil {
-		path := filepath.Clean(cfg.Kustomize.Path)
-		if filepath.IsAbs(path) || path == ".." || strings.HasPrefix(path, "../") {
-			i.MarkUnknown("kustomize_root_outside_captured_source")
-		}
-		if len(cfg.Kustomize.Patches) != 0 || cfg.Kustomize.EnableHelm {
-			i.MarkUnknown("kustomize_config_dependencies_uninspected")
-		}
 	}
 	if cfg := c.ExternalImageComponentConfig; cfg != nil {
 		i.Kind = "image"
@@ -101,18 +99,10 @@ func component(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app
 	if b.VCSConnectionCommit != nil && b.VCSConnectionCommit.SHA != "" {
 		ref = b.VCSConnectionCommit.SHA
 	}
-	return prepareGit(ctx, db, vcs, i, connected, public, b.AppBranchRunID, ref, capture)
+	return prepareGit(ctx, db, vcs, i, connected, public, b.AppBranchRunID, ref)
 }
 
 func Sandbox(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app.AppSandboxBuild) (*sourceidentity.Identity, error) {
-	return sandbox(ctx, db, vcs, b, true)
-}
-
-func SandboxSelection(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app.AppSandboxBuild) (*sourceidentity.Identity, error) {
-	return sandbox(ctx, db, vcs, b, false)
-}
-
-func sandbox(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app.AppSandboxBuild, capture bool) (*sourceidentity.Identity, error) {
 	if b.SourceIdentity != nil {
 		return b.SourceIdentity, b.SourceIdentity.Validate()
 	}
@@ -121,17 +111,14 @@ func sandbox(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app.A
 	if c.Type == "pulumi" {
 		i.Kind = "pulumi"
 	}
-	if len(c.VariablesFiles) != 0 {
-		i.MarkUnknown("configured_file_inputs_uninspected")
-	}
 	ref := ""
 	if b.VCSConnectionCommit != nil {
 		ref = b.VCSConnectionCommit.SHA
 	}
-	return prepareGit(ctx, db, vcs, i, c.ConnectedGithubVCSConfig, c.PublicGitVCSConfig, b.AppBranchRunID, ref, capture)
+	return prepareGit(ctx, db, vcs, i, c.ConnectedGithubVCSConfig, c.PublicGitVCSConfig, b.AppBranchRunID, ref)
 }
 
-func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *sourceidentity.Identity, connected *app.ConnectedGithubVCSConfig, public *app.PublicGitVCSConfig, runID *string, ref string, capture bool) (*sourceidentity.Identity, error) {
+func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *sourceidentity.Identity, connected *app.ConnectedGithubVCSConfig, public *app.PublicGitVCSConfig, runID *string, ref string) (*sourceidentity.Identity, error) {
 	branch := ""
 	if connected != nil {
 		i.Repository = connected.Repo
@@ -186,32 +173,33 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 	if i.Root == "." {
 		i.Root = ""
 	}
-	if !capture {
+	orgID, connection, err := sourceAccess(connected, public)
+	if err != nil {
+		return nil, err
+	}
+	tree, err := vcs.GetSourceTree(ctx, orgID, i.Repository, i.Commit, connection)
+	if errors.Is(err, vcshelpers.ErrSourceTreeTruncated) {
+		i.MarkUnknown("git_tree_metadata_truncated")
 		i.Seal()
-		return i, nil
+		return i, i.Validate()
 	}
-	src, err := GitSource(ctx, vcs, connected, public, i)
 	if err != nil {
 		return nil, err
 	}
-	tmp, err := os.MkdirTemp("", "nuon-source-")
+	for _, entry := range tree.Entries {
+		if entry.GetMode() == "160000" && (i.Root == "" || entry.GetPath() == i.Root || strings.HasPrefix(entry.GetPath(), i.Root+"/")) {
+			i.MarkUnknown("git_submodules_not_materialized")
+			i.Seal()
+			return i, i.Validate()
+		}
+	}
+	i.Digest, err = treeScope(tree, i.Root)
 	if err != nil {
 		return nil, err
 	}
-	defer os.RemoveAll(tmp)
-	ws, err := workspace.New(validator.New(), workspace.WithGitSource(workspace.GitSourceFromPlanTypes(src)), workspace.WithTmpRoot(tmp), workspace.WithID("capture"))
-	if err != nil {
-		return nil, err
-	}
-	if err := ws.Init(ctx); err != nil {
-		return nil, err
-	}
-	defer ws.Cleanup(ctx)
-	source, err := sourcefs.From(ws.FS(), ws.Root())
-	if err != nil {
-		return nil, err
-	}
-	return sourceidentity.Capture(source, i)
+	i.Captured = true
+	i.Seal()
+	return i, i.Validate()
 }
 
 func GitSource(ctx context.Context, vcs *vcshelpers.Helpers, connected *app.ConnectedGithubVCSConfig, public *app.PublicGitVCSConfig, i *sourceidentity.Identity) (*plantypes.GitSource, error) {

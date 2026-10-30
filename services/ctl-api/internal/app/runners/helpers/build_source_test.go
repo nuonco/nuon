@@ -55,7 +55,7 @@ func TestBuildSourceClaimKeepsSelection(t *testing.T) {
 				}
 				actual.Seal()
 				require.NoError(t, actual.Validate())
-				require.Error(t, checkedBuildSource(expected, actual, true), field)
+				require.Error(t, sourceidentity.ValidateTransition(expected, actual, true), field)
 			})
 		})
 	}
@@ -100,9 +100,9 @@ func TestBuildSourcePreparedClaimedReportedModel(t *testing.T) {
 			}
 			claimed.Seal()
 			before := cloneBuildSource(prepared)
-			require.NoError(t, checkedBuildSource(prepared, claimed, true))
-			require.Equal(t, captured, checkedBuildSource(prepared, claimed, false) == nil)
-			require.NoError(t, checkedBuildSource(claimed, claimed, false))
+			require.NoError(t, sourceidentity.ValidateTransition(prepared, claimed, true))
+			require.Equal(t, captured, sourceidentity.ValidateTransition(prepared, claimed, false) == nil)
+			require.NoError(t, sourceidentity.ValidateTransition(claimed, claimed, false))
 			for _, mutation := range []string{"config", "kind", "root", "digest", "repository", "commit", "files", "reasons", "captured", "integrity"} {
 				changed := cloneBuildSource(claimed)
 				switch mutation {
@@ -129,12 +129,12 @@ func TestBuildSourcePreparedClaimedReportedModel(t *testing.T) {
 				if mutation == "integrity" {
 					changed.Checksum += "!"
 				}
-				require.Error(t, checkedBuildSource(claimed, changed, true), mutation)
-				require.Error(t, checkedBuildSource(claimed, changed, false), mutation)
+				require.Error(t, sourceidentity.ValidateTransition(claimed, changed, true), mutation)
+				require.Error(t, sourceidentity.ValidateTransition(claimed, changed, false), mutation)
 				allowedInitial := !captured && mutation == "files"
-				require.Equal(t, allowedInitial, checkedBuildSource(prepared, changed, true) == nil, mutation)
+				require.Equal(t, allowedInitial, sourceidentity.ValidateTransition(prepared, changed, true) == nil, mutation)
 			}
-			require.NoError(t, checkedBuildSource(prepared, nil, false))
+			require.NoError(t, sourceidentity.ValidateTransition(prepared, nil, false))
 			missing := reportedBuildSource(prepared, nil)
 			require.Empty(t, missing.EligibleChecksum())
 			require.Contains(t, missing.Reasons, "runner_source_evidence_missing")
@@ -142,12 +142,12 @@ func TestBuildSourcePreparedClaimedReportedModel(t *testing.T) {
 			require.NoError(t, err)
 			var transported sourceidentity.Identity
 			require.NoError(t, json.Unmarshal(data, &transported))
-			require.NoError(t, checkedBuildSource(claimed, &transported, false))
+			require.NoError(t, sourceidentity.ValidateTransition(claimed, &transported, false))
 			require.Equal(t, before, prepared)
 		}
-		require.NoError(t, checkedBuildSource(nil, nil, false))
+		require.NoError(t, sourceidentity.ValidateTransition(nil, nil, false))
 		require.Nil(t, reportedBuildSource(nil, nil))
-		require.Error(t, checkedBuildSource(nil, base, true))
+		require.Error(t, sourceidentity.ValidateTransition(nil, base, true))
 	})
 }
 
@@ -163,8 +163,8 @@ func TestBuildSourceUnpreparedClosureCannotBecomeComplete(t *testing.T) {
 			actual.Captured, actual.Coverage, actual.Reasons = true, sourceidentity.Complete, nil
 			actual.Seal()
 			require.NoError(t, actual.Validate())
-			require.Equal(t, kind == "image", checkedBuildSource(expected, actual, true) == nil, kind)
-			require.Error(t, checkedBuildSource(expected, actual, false), kind)
+			require.Equal(t, kind == "image", sourceidentity.ValidateTransition(expected, actual, true) == nil, kind)
+			require.Error(t, sourceidentity.ValidateTransition(expected, actual, false), kind)
 			require.Equal(t, before, expected)
 		}
 	})

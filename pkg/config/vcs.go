@@ -17,7 +17,7 @@ func (p PublicRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("https://github.com/user/repo.git").
 		Example("https://github.com/user/terraform-modules.git").
 		Field("directory").Short("directory path").Required().
-		Long("Path within the repository to the configuration files").
+		Long("Path within the repository to the configuration files. For component and sandbox sources, this is both the build root and the Git change-detection boundary; dependencies outside it are not tracked for automatic rebuilds").
 		Example("terraform").
 		Example("infra/terraform").
 		Field("branch").Short("Git branch").Required().
@@ -40,7 +40,7 @@ func (c ConnectedRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("my-repo").
 		Example("production-infrastructure").
 		Field("directory").Short("directory path").Required().
-		Long("Path within the repository to the configuration files").
+		Long("Path within the repository to the configuration files. For component and sandbox sources, this is both the build root and the Git change-detection boundary; dependencies outside it are not tracked for automatic rebuilds").
 		Example("terraform").
 		Example("infra/terraform").
 		Field("branch").Short("Git branch").Required().
