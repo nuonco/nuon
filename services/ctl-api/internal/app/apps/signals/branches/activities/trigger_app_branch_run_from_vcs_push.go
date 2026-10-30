@@ -224,7 +224,11 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 	case "push":
 		switch runConfig.Mode {
 		case app.AppBranchRunModePush:
-			return metadata, true, nil
+			dir := appBranchConfigDirectory(config)
+			if normalizeRepoPath(dir) == "" {
+				return metadata, true, nil
+			}
+			return metadata, anyPathMatchesDirectory(req.ChangedFiles, dir), nil
 		case app.AppBranchRunModeGithubLabel:
 			baseBranch, vcsConfigID, err := branchVCSIdentity(config)
 			if err != nil {
@@ -269,6 +273,19 @@ func branchVCSIdentity(config *app.AppBranchConfig) (string, string, error) {
 		return config.PublicGitVCSConfig.Branch, config.PublicGitVCSConfig.ID, nil
 	}
 	return "", "", fmt.Errorf("app branch config has no VCS config")
+}
+
+func appBranchConfigDirectory(config *app.AppBranchConfig) string {
+	if config == nil {
+		return ""
+	}
+	if config.ConnectedGithubVCSConfig != nil {
+		return config.ConnectedGithubVCSConfig.Directory
+	}
+	if config.PublicGitVCSConfig != nil {
+		return config.PublicGitVCSConfig.Directory
+	}
+	return ""
 }
 
 func (a *Activities) resolvePusherAccount(ctx context.Context, orgID string, emails []string, fallbackCreatedByID string) context.Context {
