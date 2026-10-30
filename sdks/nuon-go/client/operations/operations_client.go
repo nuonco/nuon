@@ -136,6 +136,8 @@ type ClientService interface {
 
 	CancelAppComponentBuild(params *CancelAppComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelAppComponentBuildAccepted, error)
 
+	CancelInstallScheduledReconcile(params *CancelInstallScheduledReconcileParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallScheduledReconcileOK, error)
+
 	CancelInstallWorkflow(params *CancelInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallWorkflowAccepted, error)
 
 	CancelRunnerJob(params *CancelRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelRunnerJobAccepted, error)
@@ -263,6 +265,8 @@ type ClientService interface {
 	CreateInstallDeploy(params *CreateInstallDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallDeployCreated, error)
 
 	CreateInstallInputs(params *CreateInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallInputsCreated, error)
+
+	CreateInstallScheduledReconcile(params *CreateInstallScheduledReconcileParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallScheduledReconcileCreated, error)
 
 	CreateInstallV2(params *CreateInstallV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallV2Created, error)
 
@@ -703,6 +707,8 @@ type ClientService interface {
 	GetInstallSandboxRunV2(params *GetInstallSandboxRunV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSandboxRunV2OK, error)
 
 	GetInstallSandboxRuns(params *GetInstallSandboxRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSandboxRunsOK, error)
+
+	GetInstallScheduledReconciles(params *GetInstallScheduledReconcilesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallScheduledReconcilesOK, error)
 
 	GetInstallStack(params *GetInstallStackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStackOK, error)
 
@@ -1558,6 +1564,54 @@ func (a *Client) CancelAppComponentBuild(params *CancelAppComponentBuildParams, 
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CancelAppComponentBuild: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	CancelInstallScheduledReconcile cancels a pending scheduled reconcile
+
+	Cancels a pending scheduled reconcile for an install and deletes its backing emitter. Returns 409
+
+if the schedule is not pending.
+*/
+func (a *Client) CancelInstallScheduledReconcile(params *CancelInstallScheduledReconcileParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallScheduledReconcileOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelInstallScheduledReconcileParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelInstallScheduledReconcile",
+		Method:             "DELETE",
+		PathPattern:        "/v1/installs/{install_id}/scheduled-reconciles/{scheduled_reconcile_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelInstallScheduledReconcileReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelInstallScheduledReconcileOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelInstallScheduledReconcile: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -4561,6 +4615,56 @@ func (a *Client) CreateInstallInputs(params *CreateInstallInputsParams, authInfo
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateInstallInputs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	CreateInstallScheduledReconcile schedules a reconcile app version for a future time
+
+	Schedules a reconcile-app-version for the install at scheduled_at (RFC3339), which must be between
+
+1 minute and 90 days from now. The install's pinned app config is read when the schedule fires, not
+when it is created, so a later re-pin is honored. Returns 409 if the install already has a pending
+scheduled reconcile.
+*/
+func (a *Client) CreateInstallScheduledReconcile(params *CreateInstallScheduledReconcileParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallScheduledReconcileCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateInstallScheduledReconcileParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateInstallScheduledReconcile",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/scheduled-reconciles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateInstallScheduledReconcileReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateInstallScheduledReconcileCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateInstallScheduledReconcile: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14838,6 +14942,54 @@ func (a *Client) GetInstallSandboxRuns(params *GetInstallSandboxRunsParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallSandboxRuns: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	GetInstallScheduledReconciles lists scheduled reconciles for an install
+
+	Returns scheduled reconciles for an install, newest first. Optional status filter (pending, fired,
+
+no-changes, cancelled, failed).
+*/
+func (a *Client) GetInstallScheduledReconciles(params *GetInstallScheduledReconcilesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallScheduledReconcilesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallScheduledReconcilesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallScheduledReconciles",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/scheduled-reconciles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallScheduledReconcilesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallScheduledReconcilesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallScheduledReconciles: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

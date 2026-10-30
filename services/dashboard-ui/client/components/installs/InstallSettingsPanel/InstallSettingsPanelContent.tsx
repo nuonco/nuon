@@ -17,7 +17,10 @@ import { EditLabelsButton } from '@/components/installs/management/EditLabels'
 import { EnableConfigSyncButton } from '@/components/installs/management/EnableConfigSync'
 import { ForgetButton } from '@/components/installs/management/Forget'
 import { GenerateInstallConfigButton } from '@/components/installs/management/GenerateInstallConfig'
-import { ReconcileAppVersionButton } from '@/components/installs/management/ReconcileAppVersion'
+import {
+  PendingScheduledReconcile,
+  ReconcileAppVersionButton,
+} from '@/components/installs/management/ReconcileAppVersion'
 import { ReprovisionButton } from '@/components/installs/management/Reprovision'
 import { ReprovisionStackButton } from '@/components/installs/management/ReprovisionStack'
 import { SyncSecretsButton } from '@/components/installs/management/SyncSecrets'
@@ -121,7 +124,10 @@ const InstallSettingsPanelContentInner = () => {
           title="Reconcile app version"
           description="Deploy the changes between the applied app config and the pinned app config."
         >
-          <ReconcileAppVersionButton />
+          <div className="flex flex-col gap-3">
+            <PendingScheduledReconcile size="sm" />
+            <ReconcileAppVersionButton />
+          </div>
         </ActionCard>
         <ActionCard
           title="Reprovision"

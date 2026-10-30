@@ -103,6 +103,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/restartchildren"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/rolechange"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/runbookcron"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/scheduledreconcile"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/syncsecrets"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/tokencleanup"

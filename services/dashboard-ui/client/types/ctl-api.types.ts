@@ -629,6 +629,10 @@ export type TInstallTelemetrySettings =
 export type TManagedServiceAccount =
   components['schemas']['app.ManagedServiceAccount']
 export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
+export type TInstallScheduledReconcile =
+  components['schemas']['app.InstallScheduledReconcile']
+export type TInstallScheduledReconcileStatus =
+  components['schemas']['app.InstallScheduledReconcileStatus']
 export type TDriftedObject = components['schemas']['app.DriftedObject']
 export type TInstallResource =
   components['schemas']['app.InstallComponentResourceState'] & {

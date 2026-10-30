@@ -276,6 +276,14 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.POST("/app-config-updates", s.CreateInstallAppConfigUpdate)
 		installs.POST("/reconcile-app-version", s.ReconcileInstallAppVersion)
 
+		// scheduled reconciles
+		scheduledReconciles := installs.Group("/scheduled-reconciles")
+		{
+			scheduledReconciles.POST("", s.CreateInstallScheduledReconcile)
+			scheduledReconciles.GET("", s.GetInstallScheduledReconciles)
+			scheduledReconciles.DELETE("/:scheduled_reconcile_id", s.CancelInstallScheduledReconcile)
+		}
+
 		// install audit logs
 		installs.GET("/audit_logs", s.GetInstallAuditLogs)
 

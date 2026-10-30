@@ -271,5 +271,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "150-rebackfill-role-metadata",
 			Fn:   m.Migration150RebackfillRoleMetadata,
 		},
+		migrations.Migration{
+			Name: "151-install-scheduled-reconciles-pending-unique-index",
+			Fn:   m.Migration151InstallScheduledReconcilesPendingUniqueIndex,
+		},
 	)
 }

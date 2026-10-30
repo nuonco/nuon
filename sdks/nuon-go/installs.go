@@ -191,6 +191,54 @@ func (c *client) ReconcileInstallAppVersion(ctx context.Context, installID strin
 	return resp.Payload, nil
 }
 
+func (c *client) CreateInstallScheduledReconcile(ctx context.Context, installID string, scheduledAt string, planOnly bool) (*models.AppInstallScheduledReconcile, error) {
+	resp, err := c.genClient.Operations.CreateInstallScheduledReconcile(&operations.CreateInstallScheduledReconcileParams{
+		InstallID: installID,
+		Context:   ctx,
+		Req: &models.ServiceCreateInstallScheduledReconcileRequest{
+			ScheduledAt: &scheduledAt,
+			PlanOnly:    planOnly,
+		},
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetInstallScheduledReconciles(ctx context.Context, installID string, status string, limit, offset *int64) ([]*models.AppInstallScheduledReconcile, error) {
+	params := &operations.GetInstallScheduledReconcilesParams{
+		InstallID: installID,
+		Context:   ctx,
+		Limit:     limit,
+		Offset:    offset,
+	}
+	if status != "" {
+		params.Status = &status
+	}
+
+	resp, err := c.genClient.Operations.GetInstallScheduledReconciles(params, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) CancelInstallScheduledReconcile(ctx context.Context, installID, scheduledReconcileID string) (*models.AppInstallScheduledReconcile, error) {
+	resp, err := c.genClient.Operations.CancelInstallScheduledReconcile(&operations.CancelInstallScheduledReconcileParams{
+		InstallID:            installID,
+		ScheduledReconcileID: scheduledReconcileID,
+		Context:              ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) DeprovisionInstall(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf("%s/v1/installs/%s/deprovision", c.APIURL, url.PathEscape(installID))

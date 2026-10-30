@@ -2386,6 +2386,30 @@ export interface paths {
      */
     get: operations["GetInstallSandboxRunV2"];
   };
+  "/v1/installs/{install_id}/scheduled-reconciles": {
+    /**
+     * list scheduled reconciles for an install
+     * @description Returns scheduled reconciles for an install, newest first. Optional status filter (pending, fired,
+     * no-changes, cancelled, failed).
+     */
+    get: operations["GetInstallScheduledReconciles"];
+    /**
+     * schedule a reconcile-app-version for a future time
+     * @description Schedules a reconcile-app-version for the install at scheduled_at (RFC3339), which must be between
+     * 1 minute and 90 days from now. The install's pinned app config is read when the schedule fires, not
+     * when it is created, so a later re-pin is honored. Returns 409 if the install already has a pending
+     * scheduled reconcile.
+     */
+    post: operations["CreateInstallScheduledReconcile"];
+  };
+  "/v1/installs/{install_id}/scheduled-reconciles/{scheduled_reconcile_id}": {
+    /**
+     * cancel a pending scheduled reconcile
+     * @description Cancels a pending scheduled reconcile for an install and deletes its backing emitter. Returns 409
+     * if the schedule is not pending.
+     */
+    delete: operations["CancelInstallScheduledReconcile"];
+  };
   "/v1/installs/{install_id}/stack": {
     /**
      * get an install stack by install ID
@@ -5710,6 +5734,24 @@ export interface components {
       /** @description Fields that are de-nested at read time using AfterQuery */
       workflow_id?: string;
     };
+    "app.InstallScheduledReconcile": {
+      created_at?: string;
+      created_by_id?: string;
+      /** @description EmitterID is the fire-once queue emitter that dispatches this schedule. */
+      emitter_id?: string;
+      id?: string;
+      install_id?: string;
+      org_id?: string;
+      plan_only?: boolean;
+      scheduled_at?: string;
+      status?: components["schemas"]["app.InstallScheduledReconcileStatus"];
+      status_reason?: string;
+      updated_at?: string;
+      /** @description WorkflowID is set once the reconcile workflow has been created (status fired). */
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "app.InstallScheduledReconcileStatus": "pending" | "fired" | "no-changes" | "cancelled" | "failed";
     "app.InstallStack": {
       app_config_ref?: components["schemas"]["app.AppConfigRef"];
       created_at?: string;
@@ -9130,6 +9172,10 @@ export interface components {
        * and components stay unprovisioned until the install is provisioned again.
        */
       stack_only?: boolean;
+    };
+    "service.CreateInstallScheduledReconcileRequest": {
+      plan_only?: boolean;
+      scheduled_at: string;
     };
     "service.CreateInstallV2Request": {
       app_branch_group?: string;
@@ -28463,6 +28509,183 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * list scheduled reconciles for an install
+   * @description Returns scheduled reconciles for an install, newest first. Optional status filter (pending, fired,
+   * no-changes, cancelled, failed).
+   */
+  GetInstallScheduledReconciles: {
+    parameters: {
+      query?: {
+        /** @description filter by status */
+        status?: string;
+        /** @description page size (default 20, max 100) */
+        limit?: number;
+        /** @description page offset */
+        offset?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallScheduledReconcile"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * schedule a reconcile-app-version for a future time
+   * @description Schedules a reconcile-app-version for the install at scheduled_at (RFC3339), which must be between
+   * 1 minute and 90 days from now. The install's pinned app config is read when the schedule fires, not
+   * when it is created, so a later re-pin is honored. Returns 409 if the install already has a pending
+   * scheduled reconcile.
+   */
+  CreateInstallScheduledReconcile: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallScheduledReconcileRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallScheduledReconcile"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * cancel a pending scheduled reconcile
+   * @description Cancels a pending scheduled reconcile for an install and deletes its backing emitter. Returns 409
+   * if the schedule is not pending.
+   */
+  CancelInstallScheduledReconcile: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description scheduled reconcile ID */
+        scheduled_reconcile_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallScheduledReconcile"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

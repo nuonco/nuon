@@ -57,6 +57,10 @@ func NewInstallAppConfigVersionID() string {
 	return shortid.NewNanoID("icu")
 }
 
+func NewInstallScheduledReconcileID() string {
+	return shortid.NewNanoID("isr")
+}
+
 func NewInstallGroupRunID() string {
 	return shortid.NewNanoID("igr")
 }

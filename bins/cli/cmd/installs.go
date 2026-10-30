@@ -50,6 +50,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		dryRun              bool
 		skipConfirm         bool
 		requestID           string
+		scheduledAt         string
 	)
 
 	installsCmds := &cobra.Command{
@@ -1031,7 +1032,12 @@ install is provisioned. This generates the same steps and plan approvals an
 app branch config update would, minus install-group rollout coordination.
 
 Fails if the install is already on its pinned app config, or if a reconcile
-or app branch config update workflow is already in flight for the install.`,
+or app branch config update workflow is already in flight for the install.
+
+With --at (RFC3339), the reconcile is scheduled to fire at that time instead
+of running immediately. --at must be between 1 minute and 90 days from now,
+and only one pending schedule is allowed per install at a time. See
+nuon installs scheduled-reconciles to list or cancel schedules.`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
 			return svc.ReconcileAppVersion(cmd.Context(), id, planOnly, requestID, PrintJSON)
@@ -1040,8 +1046,50 @@ or app branch config update workflow is already in flight for the install.`,
 	reconcileAppVersionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	reconcileAppVersionCmd.MarkFlagRequired("install-id")
 	reconcileAppVersionCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan the reconcile, do not apply it")
+	reconcileAppVersionCmd.Flags().StringVar(&scheduledAt, "at", "", "Schedule the reconcile to fire at this RFC3339 time instead of running it immediately (must be 1 minute to 90 days from now)")
 	addRequestIDFlag(reconcileAppVersionCmd, &requestID)
 	installsCmds.AddCommand(reconcileAppVersionCmd)
+
+	scheduledReconcilesCmd := &cobra.Command{
+		Use:   "scheduled-reconciles",
+		Short: "Manage scheduled install reconciles",
+		Long:  "View and cancel reconcile-app-version requests scheduled for a future time (see nuon installs reconcile-app-version --at)",
+	}
+	scheduledReconcilesCmd.PersistentFlags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+
+	var scheduledReconcileStatus string
+	scheduledReconcilesListCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List scheduled reconciles for an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.installs
+			return svc.ListScheduledReconciles(cmd.Context(), id, scheduledReconcileStatus, PrintJSON)
+		}),
+	}
+	scheduledReconcilesListCmd.Flags().StringVar(&scheduledReconcileStatus, "status", "", "Filter by status: pending, fired, no-changes, cancelled, failed")
+	scheduledReconcilesCmd.AddCommand(scheduledReconcilesListCmd)
+
+	var scheduledReconcileID string
+	scheduledReconcilesCancelCmd := &cobra.Command{
+		Use:   "cancel [scheduled-reconcile-id]",
+		Short: "Cancel a pending scheduled reconcile",
+		Args:  cobra.MaximumNArgs(1),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := c.installs
+			target := scheduledReconcileID
+			if len(args) > 0 {
+				target = args[0]
+			}
+			if target == "" {
+				return ui.PrintError(&ui.CLIUserError{Msg: "scheduled reconcile ID is required: pass it as an argument or with --id"})
+			}
+			return svc.CancelScheduledReconcile(cmd.Context(), id, target, PrintJSON)
+		}),
+	}
+	scheduledReconcilesCancelCmd.Flags().StringVar(&scheduledReconcileID, "id", "", "The ID of the scheduled reconcile to cancel")
+	scheduledReconcilesCmd.AddCommand(scheduledReconcilesCancelCmd)
+
+	installsCmds.AddCommand(scheduledReconcilesCmd)
 
 	deprovisionInstallCmd := &cobra.Command{
 		Use:   "deprovision",

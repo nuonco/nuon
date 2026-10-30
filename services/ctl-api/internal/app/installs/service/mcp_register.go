@@ -195,6 +195,20 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		false,
 	), s.mcpReconcileInstallAppVersion)
 
+	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"list_scheduled_reconciles",
+		"List scheduled reconciles",
+		"List scheduled reconcile-app-version requests for an install, newest first. Optional status filter (pending, fired, no-changes, cancelled, failed)."+apiPkg.MCPListToolHint,
+	), s.mcpListScheduledReconciles)
+
+	mcp.AddTool(server, apiPkg.MCPWriteTool(
+		"cancel_scheduled_reconcile",
+		"Cancel scheduled reconcile",
+		"WRITE OPERATION: Cancel a pending scheduled reconcile for an install and delete its backing emitter. Fails if the scheduled reconcile is not pending (already fired, cancelled, or failed).",
+		false,
+		false,
+	), s.mcpCancelScheduledReconcile)
+
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"deprovision_install",
 		"Deprovision install",

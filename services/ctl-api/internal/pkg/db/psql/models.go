@@ -73,6 +73,7 @@ func AllModels() []any {
 		&app.EventRunbookWaiter{},
 		&app.InstallGroupRun{},
 		&app.InstallAppConfigVersion{},
+		&app.InstallScheduledReconcile{},
 		&app.InstallConfigSync{},
 		&app.InstallConfigVersion{},
 		&app.AppInstallsConfig{},
