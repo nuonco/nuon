@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/publicnet"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -305,6 +306,14 @@ func (s *service) createCurrentOrgWebhook(ctx context.Context, orgID string, acc
 		}
 	}
 
+	parsed, _ := url.ParseRequestURI(normalizedWebhookURL)
+	if err := publicnet.RequirePublicHost(ctx, parsed.Hostname()); err != nil {
+		return nil, stderr.ErrUser{
+			Err:         err,
+			Description: "webhook_url must resolve only to public IP addresses",
+		}
+	}
+
 	normalizedWebhookSecret := strings.TrimSpace(req.WebhookSecret)
 
 	// Conflict check now keys on (org_id, webhook_url, match_canonical) to
@@ -395,6 +404,10 @@ func normalizeWebhookURL(rawWebhookURL string) (string, error) {
 
 	if parsed.Host == "" {
 		return "", fmt.Errorf("webhook_url must include a host")
+	}
+
+	if parsed.User != nil {
+		return "", fmt.Errorf("webhook_url must not include credentials")
 	}
 
 	scheme := strings.ToLower(parsed.Scheme)
