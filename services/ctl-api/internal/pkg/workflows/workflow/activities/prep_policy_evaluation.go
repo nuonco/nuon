@@ -35,16 +35,20 @@ type PolicyToEvaluate struct {
 }
 
 type PrepPolicyEvaluationResult struct {
-	Policies         []PolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
-	HasPolicies      bool               `json:"has_policies" temporaljson:"has_policies,omitempty"`
-	OrgID            string             `json:"org_id" temporaljson:"org_id,omitempty"`
-	AppID            string             `json:"app_id" temporaljson:"app_id,omitempty"`
-	InstallID        *string            `json:"install_id" temporaljson:"install_id,omitempty"`
-	InstallSandboxID *string            `json:"install_sandbox_id" temporaljson:"install_sandbox_id,omitempty"`
-	ComponentID      *string            `json:"component_id" temporaljson:"component_id,omitempty"`
-	ComponentBuildID *string            `json:"component_build_id" temporaljson:"component_build_id,omitempty"`
-	PolicyIDs        []string           `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
-	InputCount       int                `json:"input_count" temporaljson:"input_count,omitempty"`
+	Policies             []PolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
+	HasPolicies          bool               `json:"has_policies" temporaljson:"has_policies,omitempty"`
+	OrgID                string             `json:"org_id" temporaljson:"org_id,omitempty"`
+	AppID                string             `json:"app_id" temporaljson:"app_id,omitempty"`
+	InstallID            *string            `json:"install_id" temporaljson:"install_id,omitempty"`
+	InstallSandboxID     *string            `json:"install_sandbox_id" temporaljson:"install_sandbox_id,omitempty"`
+	ComponentID          *string            `json:"component_id" temporaljson:"component_id,omitempty"`
+	ComponentBuildID     *string            `json:"component_build_id" temporaljson:"component_build_id,omitempty"`
+	PolicyIDs            []string           `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
+	InputCount           int                `json:"input_count" temporaljson:"input_count,omitempty"`
+	AllowSkipApply       bool               `json:"allow_skip_apply" temporaljson:"allow_skip_apply,omitempty"`
+	AppConfigID          string             `json:"app_config_id" temporaljson:"app_config_id,omitempty"`
+	RunnerJobID          string             `json:"runner_job_id" temporaljson:"runner_job_id,omitempty"`
+	RunnerJobExecutionID string             `json:"runner_job_execution_id" temporaljson:"runner_job_execution_id,omitempty"`
 
 	// Human-readable names for display in reports
 	OrgName       string `json:"org_name" temporaljson:"org_name,omitempty"`
@@ -141,10 +145,15 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		ComponentBuildID: policyContext.ComponentBuildID,
 		PolicyIDs:        policyIDs,
 		InputCount:       len(policyInputs),
-		OrgName:          policyContext.OrgName,
-		AppName:          policyContext.AppName,
-		InstallName:      policyContext.InstallName,
-		ComponentName:    policyContext.ComponentName,
+		AllowSkipApply: (!policyContext.IsSandbox && policyContext.ComponentType == app.ComponentTypeTerraformModule && approvalPlan.RunnerJobType == app.RunnerJobTypeTerraformDeploy) ||
+			(policyContext.IsSandbox && (approvalPlan.RunnerJobType == app.RunnerJobTypeSandboxTerraform || approvalPlan.RunnerJobType == app.RunnerJobTypeSandboxTerraformPlan)),
+		AppConfigID:          policyContext.AppConfigID,
+		RunnerJobID:          approvalPlan.RunnerJobID,
+		RunnerJobExecutionID: approvalPlan.RunnerJobExecutionID,
+		OrgName:              policyContext.OrgName,
+		AppName:              policyContext.AppName,
+		InstallName:          policyContext.InstallName,
+		ComponentName:        policyContext.ComponentName,
 	}, nil
 }
 

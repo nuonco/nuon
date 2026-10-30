@@ -19,6 +19,19 @@ func ValidateOPAPolicy(contents string) error {
 	return err
 }
 
+func ValidateOPAPolicyForType(contents string, policyType config.AppPolicyType) error {
+	policy, err := policyopa.Parse(contents)
+	if err != nil {
+		return err
+	}
+	for _, check := range policy.Checks {
+		if check.Action == "skip_apply" && policyType != config.AppPolicyTypeTerraformModule && policyType != config.AppPolicyTypeSandbox {
+			return fmt.Errorf("check %s: skip_apply is only supported for terraform_module and sandbox policies", check.ID)
+		}
+	}
+	return nil
+}
+
 func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 	if a.Policies == nil || len(a.Policies.Policies) < 1 {
 		l.Debug("no policies to validate")
@@ -35,7 +48,7 @@ func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 		)
 
 		if policy.Engine == config.AppPolicyEngineOPA {
-			if err := ValidateOPAPolicy(policy.Contents); err != nil {
+			if err := ValidateOPAPolicyForType(policy.Contents, policy.Type); err != nil {
 				policyLogger.Error("invalid OPA rego policy", zap.Error(err))
 				return config.ErrConfig{
 					Description: fmt.Sprintf("policy %d (%s) was invalid rego", idx, policy.Type),

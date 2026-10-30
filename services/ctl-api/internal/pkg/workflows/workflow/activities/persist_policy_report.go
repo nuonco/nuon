@@ -25,9 +25,12 @@ type PersistPolicyReportRequest struct {
 	ComponentBuildID               *string                       `json:"component_build_id"`
 	WorkflowStepPolicyValidationID *string                       `json:"workflow_step_policy_validation_id"`
 	RunnerJobID                    *string                       `json:"runner_job_id"`
+	RunnerJobExecutionID           string                        `json:"runner_job_execution_id,omitempty"`
+	AppConfigID                    string                        `json:"app_config_id,omitempty"`
 	OwnerID                        string                        `json:"owner_id" validate:"required"`
 	OwnerType                      string                        `json:"owner_type" validate:"required"`
 	Violations                     []PolicyViolation             `json:"violations"`
+	SkipFindings                   []PolicyViolation             `json:"skip_findings,omitempty"`
 	CheckResults                   map[string][]policyopa.Result `json:"check_results,omitempty"`
 	PolicyIDs                      []string                      `json:"policy_ids"`
 	PolicyInputCounts              map[string]int                `json:"policy_input_counts"`
@@ -83,20 +86,30 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		}
 	}
 
-	// TODO: Design policy-level diagnostics for parse/compile failures and activity timeouts.
-	// Install/build collectors currently return early or skip reports on activity failure,
-	// losing sibling results. Preserve completed results without counting missing inputs as
-	// passes, and settle legacy build fail-closed behavior and Temporal replay compatibility
-	// before enabling partial reports.
 	policyResults := buildPolicyResults(req.PolicyIDs, req.PolicyInputCounts, req.Violations)
-	if passCount == 0 && denyCount == 0 && warnCount == 0 {
+	skipFindings := req.SkipFindings
+	skipPolicies := make(map[string]bool)
+	for _, finding := range skipFindings {
+		skipPolicies[finding.PolicyID] = true
+	}
+	for i := range policyResults {
+		result := &policyResults[i]
+		if skipPolicies[result.PolicyID] {
+			result.PassCount = 0
+			if result.DenyCount == 0 {
+				result.Status = "skip_apply"
+			}
+		}
+	}
+	skipCount := len(skipFindings)
+	if skipCount > 0 || (passCount == 0 && denyCount == 0 && warnCount == 0) {
+		denyCount, warnCount, passCount = 0, 0, 0
 		for _, result := range policyResults {
 			denyCount += result.DenyCount
 			warnCount += result.WarnCount
 			passCount += result.PassCount
 		}
 	}
-
 	violations := req.Violations
 
 	policies := helpers.ToAppResultsFromInternal(toInternalResults(policyResults))
@@ -106,6 +119,27 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 
 	inputs := buildPolicyInputRefs(req)
 	appInputs := helpers.ToAppInputRefsFromInternal(toInternalInputRefs(inputs))
+
+	status := buildPolicyReportStatus(ctx, denyCount, warnCount, passCount)
+	if req.AppConfigID != "" {
+		status.Metadata["app_config_id"] = req.AppConfigID
+	}
+	if req.RunnerJobExecutionID != "" {
+		status.Metadata["runner_job_execution_id"] = req.RunnerJobExecutionID
+	}
+	if skipCount > 0 {
+		status.Metadata["skip_count"] = skipCount
+		status.Metadata["skip_findings"] = skipFindings
+		if denyCount > 0 {
+			status.Metadata["resolved_action"] = "deny"
+		} else {
+			status.Metadata["resolved_action"] = "skip_apply"
+			status.StatusHumanDescription = "Policy decision: skip component apply"
+			if req.OwnerType == "install_sandbox_runs" {
+				status.StatusHumanDescription = "Policy decision: skip sandbox apply"
+			}
+		}
+	}
 
 	report := &app.PolicyReport{
 		OrgID:                          req.OrgID,
@@ -124,7 +158,7 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		DenyCount:                      denyCount,
 		WarnCount:                      warnCount,
 		PassCount:                      passCount,
-		Status:                         buildPolicyReportStatus(ctx, denyCount, warnCount, passCount),
+		Status:                         status,
 		// Human-readable names for display in reports
 		OrgName:       req.OrgName,
 		AppName:       req.AppName,
@@ -162,6 +196,7 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 			"policy_report.deny":       strconv.Itoa(denyCount),
 			"policy_report.warn":       strconv.Itoa(warnCount),
 			"policy_report.pass":       strconv.Itoa(passCount),
+			"policy_report.skip":       strconv.Itoa(skipCount),
 			"policy_report.owner_id":   req.OwnerID,
 			"policy_report.owner_type": req.OwnerType,
 			"runner_job.id":            generics.FromPtrStr(req.RunnerJobID),
@@ -321,7 +356,7 @@ func buildPolicyReportStatus(ctx context.Context, denyCount, warnCount, passCoun
 
 	if denyCount > 0 {
 		status = app.StatusError
-		statusDescription = "policy checks failed"
+		statusDescription = "Change denied by policy"
 	} else if warnCount > 0 {
 		status = app.StatusWarning
 		statusDescription = "policy warnings detected"
