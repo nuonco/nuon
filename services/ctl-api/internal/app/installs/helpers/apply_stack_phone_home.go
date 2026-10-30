@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -48,55 +49,64 @@ func (h *Helpers) RecordStackPhoneHome(
 	}
 	hstoreData := generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data)))
 
-	var current app.InstallStackVersion
-	if err := h.db.WithContext(ctx).First(&current, "id = ?", stackVersion.ID).Error; err != nil {
-		return nil, fmt.Errorf("unable to load stack version: %w", err)
-	}
-	wasCancelled := current.Status.Status == app.StatusCancelled
-
-	// Drop the await hook so a cancelled provision workflow is not resumed.
-	if wasCancelled {
-		if res := h.db.WithContext(ctx).
-			Model(&app.InstallStackVersion{}).
-			Where("id = ?", stackVersion.ID).
-			Update("callback_ref", callback.Ref{}); res.Error != nil {
-			return nil, fmt.Errorf("unable to clear await callback: %w", res.Error)
+	var run app.InstallStackVersionRun
+	var clearedAwait bool
+	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var current app.InstallStackVersion
+		if err := tx.First(&current, "id = ?", stackVersion.ID).Error; err != nil {
+			return fmt.Errorf("unable to load stack version: %w", err)
 		}
+		wasCancelled := current.Status.Status == app.StatusCancelled
+
+		// Drop the await hook so a cancelled provision workflow is not resumed.
+		if wasCancelled {
+			if res := tx.Model(&app.InstallStackVersion{}).
+				Where("id = ?", stackVersion.ID).
+				Update("callback_ref", callback.Ref{}); res.Error != nil {
+				return fmt.Errorf("unable to clear await callback: %w", res.Error)
+			}
+			clearedAwait = true
+		}
+
+		updatedStack := app.InstallStackVersion{
+			ID: stackVersion.ID,
+		}
+		if res := tx.Model(&updatedStack).
+			Updates(app.InstallStackVersion{
+				Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
+				Runs: []app.InstallStackVersionRun{
+					{
+						Data: hstoreData,
+					},
+				},
+			}); res.Error != nil {
+			return fmt.Errorf("unable to update stack version: %w", res.Error)
+		}
+
+		run = app.InstallStackVersionRun{
+			OrgID:                 stackVersion.OrgID,
+			CreatedByID:           stackVersion.CreatedByID,
+			InstallStackVersionID: stackVersion.ID,
+			Data:                  hstoreData,
+		}
+		if res := tx.Create(&run); res.Error != nil {
+			return fmt.Errorf("unable to create install stack version run: %w", res.Error)
+		}
+
+		requestType, _ := req["request_type"].(string)
+		if err := h.RecordInstallStackVersionApplied(ctx, tx, stackVersion, requestType); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	if clearedAwait {
 		h.l.Info("cleared await callback before phone-home on cancelled stack version",
 			zap.String("install_stack_version_id", stackVersion.ID),
 			zap.String("install_id", stackVersion.InstallID),
 		)
-	}
-
-	updatedStack := app.InstallStackVersion{
-		ID: stackVersion.ID,
-	}
-	if res := h.db.WithContext(ctx).
-		Model(&updatedStack).
-		Updates(app.InstallStackVersion{
-			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
-			Runs: []app.InstallStackVersionRun{
-				{
-					Data: hstoreData,
-				},
-			},
-		}); res.Error != nil {
-		return nil, fmt.Errorf("unable to update stack version: %w", res.Error)
-	}
-
-	run := app.InstallStackVersionRun{
-		OrgID:                 stackVersion.OrgID,
-		CreatedByID:           stackVersion.CreatedByID,
-		InstallStackVersionID: stackVersion.ID,
-		Data:                  hstoreData,
-	}
-	if res := h.db.WithContext(ctx).Create(&run); res.Error != nil {
-		return nil, fmt.Errorf("unable to create install stack version run: %w", res.Error)
-	}
-
-	requestType, _ := req["request_type"].(string)
-	if err := h.RecordInstallStackVersionApplied(ctx, stackVersion, requestType); err != nil {
-		return nil, err
 	}
 
 	return &run, nil

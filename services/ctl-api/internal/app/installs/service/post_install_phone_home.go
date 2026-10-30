@@ -329,57 +329,64 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 	if err != nil {
 		return errors.Wrap(err, "unable to convert to mapstructure")
 	}
+	hstoreData := generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data)))
 
-	var current app.InstallStackVersion
-	if err := s.db.WithContext(ctx).First(&current, "id = ?", stackVersion.ID).Error; err != nil {
-		return errors.Wrap(err, "unable to load stack version")
-	}
-	wasCancelled := current.Status.Status == app.StatusCancelled
-	// Drop the await hook so a cancelled provision workflow is not resumed.
-	if wasCancelled {
-		if res := s.db.WithContext(ctx).
-			Model(&app.InstallStackVersion{}).
-			Where("id = ?", stackVersion.ID).
-			Update("callback_ref", callback.Ref{}); res.Error != nil {
-			return errors.Wrap(res.Error, "unable to clear await callback")
+	var run app.InstallStackVersionRun
+	var clearedAwait bool
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var current app.InstallStackVersion
+		if err := tx.First(&current, "id = ?", stackVersion.ID).Error; err != nil {
+			return errors.Wrap(err, "unable to load stack version")
 		}
+		wasCancelled := current.Status.Status == app.StatusCancelled
+		// Drop the await hook so a cancelled provision workflow is not resumed.
+		if wasCancelled {
+			if res := tx.Model(&app.InstallStackVersion{}).
+				Where("id = ?", stackVersion.ID).
+				Update("callback_ref", callback.Ref{}); res.Error != nil {
+				return errors.Wrap(res.Error, "unable to clear await callback")
+			}
+			clearedAwait = true
+		}
+
+		updatedStack := app.InstallStackVersion{
+			ID: stackVersion.ID,
+		}
+		if res := tx.Model(&updatedStack).
+			Updates(app.InstallStackVersion{
+				Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
+				Runs: []app.InstallStackVersionRun{
+					{
+						Data: hstoreData,
+					},
+				},
+			}); res.Error != nil {
+			return errors.Wrap(res.Error, "unable to update stack version")
+		}
+
+		run = app.InstallStackVersionRun{
+			OrgID:                 stackVersion.OrgID,
+			CreatedByID:           stackVersion.CreatedByID,
+			InstallStackVersionID: stackVersion.ID,
+			Data:                  hstoreData,
+		}
+		if res := tx.Create(&run); res.Error != nil {
+			return errors.Wrap(res.Error, "unable to create install stack version run")
+		}
+
+		if err := s.helpers.RecordInstallStackVersionApplied(ctx, tx, stackVersion, requestType); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if clearedAwait {
 		s.l.Info("cleared await callback before phone-home on cancelled stack version",
 			zap.String("install_stack_version_id", stackVersion.ID),
 			zap.String("install_id", installID),
 		)
-	}
-
-	hstoreData := generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data)))
-	updatedStack := app.InstallStackVersion{
-		ID: stackVersion.ID,
-	}
-	res := s.db.WithContext(ctx).
-		Model(&updatedStack).
-		Updates(app.InstallStackVersion{
-			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
-			Runs: []app.InstallStackVersionRun{
-				{
-					Data: hstoreData,
-				},
-			},
-		})
-	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update stack version")
-	}
-
-	run := app.InstallStackVersionRun{
-		OrgID:                 stackVersion.OrgID,
-		CreatedByID:           stackVersion.CreatedByID,
-		InstallStackVersionID: stackVersion.ID,
-		Data:                  hstoreData,
-	}
-	if res = s.db.WithContext(ctx).
-		Create(&run); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to create install stack version run")
-	}
-
-	if err := s.helpers.RecordInstallStackVersionApplied(ctx, stackVersion, requestType); err != nil {
-		return err
 	}
 
 	ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
