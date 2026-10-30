@@ -96,6 +96,84 @@ export const FailedBuild = () => (
   />
 )
 
+const inProgressRun: TInstallWorkflow = {
+  id: 'wf-128-running',
+  created_at: '2026-10-28T09:40:00Z',
+  finished: false,
+  status: {
+    status: 'building',
+    status_human_description: 'synced 3 components, 1 action, 0 runbooks',
+  },
+  steps: [
+    {
+      id: 'step-commit',
+      name: 'fetch commit',
+      idx: 0,
+      group_idx: 0,
+      finished: true,
+      status: { status: 'success' },
+    },
+    {
+      id: 'step-config',
+      name: 'fetch app config',
+      idx: 1,
+      group_idx: 1,
+      finished: true,
+      status: { status: 'success' },
+    },
+    {
+      id: 'step-build',
+      name: 'building components and sandbox',
+      idx: 2,
+      group_idx: 2,
+      status: { status: 'building' },
+    },
+    {
+      id: 'step-plan',
+      name: 'plan preview install',
+      idx: 3,
+      group_idx: 3,
+      status: { status: 'pending' },
+    },
+  ],
+  app_branch_runs: [
+    {
+      id: 'brun-128-running',
+      pr_number: 128,
+      created_at: '2026-10-28T09:40:00Z',
+      status: 'running',
+      head_sha: 'a1b2c3d4e5f67890abcd1234567890abcdef12',
+      preview: {
+        mode: 'plan-only',
+        install_name: 'staging',
+        resolved_preview_config: {
+          mode: 'plan-only',
+          install_name: 'staging',
+        },
+        branch_preview_config: {
+          mode: 'plan-only',
+          install_name: 'staging',
+        },
+      },
+    },
+  ],
+}
+
+export const InProgress = () => (
+  <PullRequestPreview
+    source={source}
+    workflows={[inProgressRun]}
+    repo="acme/payments"
+    baseRef="main"
+    basePath="/org-1/apps/app-1/branches/br-1"
+    branchConfig={{
+      mode: 'plan-only',
+      install_id: 'inst-staging',
+      install_name: 'staging',
+    }}
+  />
+)
+
 export const NoRuns = () => (
   <PullRequestPreview
     source={{ ...source, is_draft: false, labels: [] }}

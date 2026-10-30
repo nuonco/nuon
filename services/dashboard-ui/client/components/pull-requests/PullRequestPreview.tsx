@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import '@/components/common/LabelBadge.css'
@@ -103,6 +104,36 @@ const runContextSentence = ({
     : `${base}. This is the branch default.`
 }
 
+const NARRATION_FADE_MS = 150
+
+const StepNarration = ({ text }: { text?: string }) => {
+  const [shown, setShown] = useState(text)
+  const [visible, setVisible] = useState(!!text)
+
+  useEffect(() => {
+    if (text === shown) return
+    setVisible(false)
+    const swap = setTimeout(() => {
+      setShown(text)
+      setVisible(!!text)
+    }, NARRATION_FADE_MS)
+    return () => clearTimeout(swap)
+  }, [text, shown])
+
+  if (!shown) return null
+
+  return (
+    <Text
+      variant="subtext"
+      theme="neutral"
+      className="transition-opacity duration-150 motion-reduce:transition-none"
+      style={{ opacity: visible ? 1 : 0 }}
+    >
+      {shown}
+    </Text>
+  )
+}
+
 export interface IPullRequestPreview {
   source?: TPreviewSourcePR
   workflows?: TInstallWorkflow[]
@@ -151,6 +182,7 @@ export const PullRequestPreview = ({
 
   return (
     <DetailPage
+      className="flex-1"
       header={
         <>
           {backLink}
@@ -254,9 +286,9 @@ export const PullRequestPreview = ({
         </>
       }
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3">
-          {isLoading || latest ? (
+      <div className="flex flex-1 flex-col gap-4">
+        {isLoading || latest ? (
+          <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               {isLoading ? (
                 <Text
@@ -274,28 +306,43 @@ export const PullRequestPreview = ({
                 <Link href={`${basePath}/runs/${latest.id}`}>View run</Link>
               ) : null}
             </div>
-          ) : (
+
+            <StepNarration
+              text={
+                latest && !latest.finished
+                  ? latest.status?.status_human_description
+                  : undefined
+              }
+            />
+
+            {failure ? <CompositeError error={failure} /> : null}
+
+            {stale ? (
+              <Text variant="subtext" theme="neutral">
+                This run is for an older commit than the pull request.
+              </Text>
+            ) : null}
+
+            <Text variant="subtext" theme="neutral" loading={isLoading}>
+              {runContextSentence({ mode, install, needsInput, oneOff })}
+            </Text>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center">
             <EmptyState
               variant="history"
               emptyTitle="No preview runs yet"
               emptyMessage="A run starts when this pull request is opened or pushed to."
+              action={
+                needsInput ? (
+                  <Button variant="secondary" onClick={onEditConfig}>
+                    Choose an install
+                  </Button>
+                ) : undefined
+              }
             />
-          )}
-
-          {failure ? <CompositeError error={failure} /> : null}
-
-          {stale ? (
-            <Text variant="subtext" theme="neutral">
-              This run is for an older commit than the pull request.
-            </Text>
-          ) : null}
-
-          {latest ? (
-            <Text variant="subtext" theme="neutral" loading={isLoading}>
-              {runContextSentence({ mode, install, needsInput, oneOff })}
-            </Text>
-          ) : null}
-        </div>
+          </div>
+        )}
 
         {changes}
 

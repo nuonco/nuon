@@ -247,8 +247,19 @@ const unquote = (value: string) => value.trim().replace(/^'([\s\S]*)'$/, '$1')
 const presented = (value: string, language: string) =>
   language === 'toml' ? formatEmbeddedTomlContent(value) : value
 
+const isJsonString = (value: string) => {
+  if (!/^"[\s\S]*"$/.test(value)) return false
+  try {
+    return typeof JSON.parse(value) === 'string'
+  } catch {
+    return false
+  }
+}
+
 const tomlValue = (value: string) =>
-  /^(true|false|-?\d+(\.\d+)?)$/.test(value) ? value : JSON.stringify(value)
+  /^(true|false|-?\d+(\.\d+)?)$/.test(value) || isJsonString(value)
+    ? value
+    : JSON.stringify(value)
 
 const splitField = ({ diff, op }: DiffFieldEntry) => {
   const index = diff.indexOf(' -> ')
