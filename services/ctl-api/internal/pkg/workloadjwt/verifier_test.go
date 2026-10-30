@@ -66,10 +66,23 @@ func TestUnverifiedClaims_RejectsMalformed(t *testing.T) {
 		"only.two",
 		"a.b.c.d",
 		"a.!!!notbase64!!!.c",
+		// Flattened JSON JWS: go-jose would verify protected/payload/signature while
+		// a naive Split on '.' can treat a dotted unknown property as the payload.
+		`{"protected":"eyJhbGciOiJSUzI1NiJ9","payload":"eyJ0aWQiOiJ0YXJnZXQifQ","signature":"sig"}`,
+		`{"protected":"eyJhbGciOiJSUzI1NiJ9","payload":"eyJ0aWQiOiJ0YXJnZXQifQ","signature":"sig","extra":".eyJ0aWQiOiJhdHRhY2tlciJ9."}`,
 	} {
 		if _, err := UnverifiedClaims(token); err == nil {
 			t.Errorf("expected %q to be rejected", token)
 		}
+	}
+}
+
+func TestRequireCompactJWT(t *testing.T) {
+	if err := RequireCompactJWT("eyJhbGciOiJSUzI1NiJ9.eyJ0aWQiOiJhYmMifQ.sig"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := RequireCompactJWT(`{"payload":"x"}`); err == nil {
+		t.Fatal("expected JSON serialization to be rejected")
 	}
 }
 

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -100,4 +102,53 @@ func TestMatchAzureRunnerClaims(t *testing.T) {
 			assert.Contains(t, err.Error(), tc.wantSubstring)
 		})
 	}
+}
+
+func TestParseUnverifiedTenantID_AcceptsCompactGUID(t *testing.T) {
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"tid":"` + runnerTenantID + `"}`))
+	token := "eyJhbGciOiJSUzI1NiJ9." + payload + ".sig"
+
+	got, err := parseUnverifiedTenantID(token)
+	require.NoError(t, err)
+	assert.Equal(t, runnerTenantID, got)
+}
+
+func TestParseUnverifiedTenantID_RejectsNUO1188Shapes(t *testing.T) {
+	attackerTenant := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	smuggled := base64.RawURLEncoding.EncodeToString([]byte(
+		`{"tid":"` + attackerTenant + `?appid=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb#"}`,
+	))
+	signedTarget := base64.RawURLEncoding.EncodeToString([]byte(`{"tid":"` + runnerTenantID + `"}`))
+
+	flattened, err := json.Marshal(map[string]string{
+		"protected": "eyJhbGciOiJSUzI1NiJ9",
+		"payload":   signedTarget,
+		"signature": "sig",
+		"extra":     "." + smuggled + ".",
+	})
+	require.NoError(t, err)
+
+	compactInjected := "eyJhbGciOiJSUzI1NiJ9." + smuggled + ".sig"
+
+	for _, tc := range []struct {
+		name  string
+		token string
+	}{
+		{"flattened JSON with dotted extra", string(flattened)},
+		{"compact tid with appid query", compactInjected},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := parseUnverifiedTenantID(tc.token)
+			require.Error(t, err)
+		})
+	}
+}
+
+func TestBindAzureKeyTenant(t *testing.T) {
+	require.NoError(t, bindAzureKeyTenant(runnerTenantID, &azureClaims{TenantID: runnerTenantID}))
+	require.NoError(t, bindAzureKeyTenant(runnerTenantID, &azureClaims{TenantID: strings.ToUpper(runnerTenantID)}))
+
+	err := bindAzureKeyTenant(runnerTenantID, &azureClaims{TenantID: "ffffffff-2222-3333-4444-555555555555"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "does not match key tenant")
 }

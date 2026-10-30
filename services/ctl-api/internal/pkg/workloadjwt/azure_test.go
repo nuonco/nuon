@@ -22,13 +22,17 @@ func uamiMIRID(sub, name string) string {
 
 func TestAzureIssuer_RejectsNonGUIDTenant(t *testing.T) {
 	// A tenant is interpolated into the issuer URL, so anything but a GUID is refused
-	// before it can reshape the URL.
+	// before it can reshape the URL. Query/fragment forms are the app-specific JWKS
+	// injection shape (NUO-1188).
 	for _, tenant := range []string{
 		"",
 		"not-a-guid",
 		"../../evil.com",
 		"11111111-2222-3333-4444-555555555555/../..",
 		"11111111-2222-3333-4444-555555555555@evil.com",
+		"11111111-2222-3333-4444-555555555555?appid=00000000-0000-0000-0000-000000000001",
+		"11111111-2222-3333-4444-555555555555?appid=00000000-0000-0000-0000-000000000001#",
+		"11111111-2222-3333-4444-555555555555#",
 	} {
 		if _, err := AzureIssuer(tenant); err == nil {
 			t.Errorf("expected %q to be rejected as an issuer tenant", tenant)

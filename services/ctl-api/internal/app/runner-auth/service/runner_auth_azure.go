@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -21,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 )
 
 const (
@@ -71,12 +70,12 @@ func newAzureJWKSProvider() *azureJWKSProvider {
 	}
 }
 
-func (p *azureJWKSProvider) getProvider(tenantID string) *jwks.CachingProvider {
+func (p *azureJWKSProvider) getProvider(tenantID string) (*jwks.CachingProvider, error) {
 	p.mu.RLock()
 	provider, ok := p.providers[tenantID]
 	p.mu.RUnlock()
 	if ok {
-		return provider
+		return provider, nil
 	}
 
 	p.mu.Lock()
@@ -84,58 +83,67 @@ func (p *azureJWKSProvider) getProvider(tenantID string) *jwks.CachingProvider {
 
 	// Double-check after acquiring write lock.
 	if provider, ok := p.providers[tenantID]; ok {
-		return provider
+		return provider, nil
 	}
 
-	issuerURL, _ := url.Parse(fmt.Sprintf("https://sts.windows.net/%s/", tenantID))
+	issuer, err := workloadjwt.AzureIssuer(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	issuerURL, err := url.Parse(issuer)
+	if err != nil {
+		return nil, fmt.Errorf("invalid issuer url: %w", err)
+	}
+
 	provider = jwks.NewCachingProvider(issuerURL, azureJWKSCacheDuration)
 	p.providers[tenantID] = provider
-	return provider
+	return provider, nil
 }
 
 var azureJWKS = newAzureJWKSProvider()
 
-// parseUnverifiedTenantID extracts the tid claim from a JWT without signature verification.
-// This is needed to determine which tenant's JWKS endpoint to use for verification.
+// parseUnverifiedTenantID extracts the tid claim from a compact JWT without signature
+// verification, only to select which tenant's JWKS to use. The value must be a GUID so
+// it cannot reshape the discovery URL, and is re-checked against verified claims after.
 func parseUnverifiedTenantID(tokenStr string) (string, error) {
-	parts := strings.Split(tokenStr, ".")
-	if len(parts) != 3 {
-		return "", errors.New("invalid JWT format")
-	}
-
-	// Decode the payload (second part).
-	payload, err := decodeJWTSegment(parts[1])
+	claims, err := workloadjwt.UnverifiedClaims(tokenStr)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode JWT payload: %w", err)
+		return "", err
 	}
 
-	var claims struct {
-		TenantID string `json:"tid"`
-	}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return "", fmt.Errorf("failed to parse JWT claims: %w", err)
-	}
-	if claims.TenantID == "" {
+	tenantID, ok := workloadjwt.StringClaim(claims, "tid")
+	if !ok {
 		return "", errors.New("JWT missing tid claim")
 	}
 
-	return claims.TenantID, nil
-}
+	if _, err := workloadjwt.AzureIssuer(tenantID); err != nil {
+		return "", err
+	}
 
-// decodeJWTSegment decodes a base64url-encoded JWT segment.
-func decodeJWTSegment(seg string) ([]byte, error) {
-	return base64.RawURLEncoding.DecodeString(seg)
+	return tenantID, nil
 }
 
 // verifyAzureJWT verifies an Azure managed identity JWT and returns the parsed claims.
 func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureClaims, error) {
+	tokenStr = strings.TrimSpace(tokenStr)
+	if err := workloadjwt.RequireCompactJWT(tokenStr); err != nil {
+		return nil, err
+	}
+
 	tenantID, err := parseUnverifiedTenantID(tokenStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract tenant ID: %w", err)
 	}
 
-	provider := azureJWKS.getProvider(tenantID)
-	issuerURL := fmt.Sprintf("https://sts.windows.net/%s/", tenantID)
+	provider, err := azureJWKS.getProvider(tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve tenant JWKS: %w", err)
+	}
+
+	issuerURL, err := workloadjwt.AzureIssuer(tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build issuer: %w", err)
+	}
 
 	customClaimsFn := func() validator.CustomClaims {
 		return &azureClaims{}
@@ -168,7 +176,26 @@ func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureCl
 		return nil, errors.New("unexpected custom claims type")
 	}
 
+	// Key selection and verified claims must name the same tenant. Without this,
+	// a confused parser could fetch keys for one tenant while accepting tid/oid
+	// for another (NUO-1188).
+	if err := bindAzureKeyTenant(tenantID, azClaims); err != nil {
+		return nil, err
+	}
+
 	return azClaims, nil
+}
+
+// bindAzureKeyTenant requires the verified tid to identify the tenant whose JWKS
+// verified the signature. iss is already constrained to that tenant by the validator.
+func bindAzureKeyTenant(keyTenantID string, claims *azureClaims) error {
+	if claims == nil {
+		return errors.New("missing azure claims")
+	}
+	if !strings.EqualFold(claims.TenantID, keyTenantID) {
+		return fmt.Errorf("verified tid %q does not match key tenant %q", claims.TenantID, keyTenantID)
+	}
+	return nil
 }
 
 // extractRunnerIDFromXMSMirID parses the Azure managed identity resource ID to extract the runner ID.
