@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -466,6 +467,17 @@ func (s *service) createPolicyServiceAccount(tx *gorm.DB, orgID string, roleType
 }
 
 func (s *service) deletePolicyServiceAccount(tx *gorm.DB, orgID, accountID string) error {
+	if accountID == "" {
+		return gorm.ErrRecordNotFound
+	}
+	var acct app.Account
+	if err := tx.Unscoped().Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where(app.Account{ID: accountID, AccountType: app.AccountTypeService}).Take(&acct).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("unable to lock policy service account: %w", err)
+	}
 	if err := tx.Unscoped().
 		Where(app.AccountRole{OrgID: generics.NewNullString(orgID), AccountID: accountID}).
 		Delete(&app.AccountRole{}).Error; err != nil {

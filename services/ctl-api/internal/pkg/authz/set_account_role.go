@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 // SetAccountOrgRole replaces an account's role(s) in an org with a single role
@@ -19,6 +20,9 @@ func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string,
 		return fmt.Errorf("org ID and role type are required")
 	}
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockRoleOrg(tx, orgID); err != nil {
+			return err
+		}
 		if err := lockLegacyRoleSubject(tx, accountID); err != nil {
 			return err
 		}
@@ -29,10 +33,15 @@ func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string,
 				OrgID:    generics.NewNullString(orgID),
 				RoleType: roleType,
 			}).
+			Where(tx.Where(app.Role{Version: app.RoleVersionV1}).Or(app.Role{Version: app.RoleVersionV2})).
 			First(&role).Error; err != nil {
 			return fmt.Errorf("unable to find role: %w", err)
 		}
 
+		role, err := legacyMutationRole(tx, accountID, role)
+		if err != nil {
+			return err
+		}
 		if err := tx.
 			Unscoped().
 			Where(app.AccountRole{
@@ -51,10 +60,18 @@ func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string,
 			RoleID:    role.ID,
 			AccountID: accountID,
 		}
+		if role.Version == app.RoleVersionV3 {
+			acctRole.ScopeKind = permissions.KindOrg
+			acctRole.ScopeID = orgID
+		}
 		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&acctRole).Error; err != nil {
 			return fmt.Errorf("unable to add role for account: %w", err)
 		}
 
+		if role.Version == app.RoleVersionV3 {
+			_, err = loadScopedGrants(tx, accountID, orgID)
+			return err
+		}
 		return nil
 	})
 }

@@ -13,7 +13,17 @@ func APIFromRole(role *app.Role) (permissions.API, bool, error) {
 	if role == nil || role.Version < app.RoleVersionV2 {
 		return "", false, nil
 	}
-	if role.Version != app.RoleVersionV2 {
+	version := role.Version
+	if version == app.RoleVersionV3 {
+		if err := role.ValidateLegacyCompatibility(); err != nil {
+			return "", true, err
+		}
+		version = role.LegacyVersion
+		if version == app.RoleVersionV1 {
+			return "", false, nil
+		}
+	}
+	if version != app.RoleVersionV2 {
 		return "", true, fmt.Errorf("role format %d is not supported by legacy API authorization", role.Version)
 	}
 	var found permissions.API
@@ -56,12 +66,21 @@ func APIForRoles(roles []app.Role) (permissions.API, bool, error) {
 }
 
 func assertRoleAPICompatible(db *gorm.DB, accountID string, role *app.Role) error {
-	if role == nil || (role.Version != app.RoleVersionV1 && role.Version != app.RoleVersionV2) {
-		return fmt.Errorf("legacy assignment requires a v1 or v2 role")
+	if role == nil {
+		return fmt.Errorf("legacy assignment requires a role")
 	}
-	for _, policy := range role.Policies {
-		if len(policy.Document) != 0 {
-			return fmt.Errorf("legacy assignment cannot use a structured policy")
+	if role.Version == app.RoleVersionV3 {
+		if err := role.ValidateLegacyCompatibility(); err != nil {
+			return err
+		}
+	} else {
+		if role.Version != app.RoleVersionV1 && role.Version != app.RoleVersionV2 {
+			return fmt.Errorf("unsupported legacy assignment format")
+		}
+		for _, policy := range role.Policies {
+			if len(policy.Document) != 0 {
+				return fmt.Errorf("legacy assignment cannot use a structured policy")
+			}
 		}
 	}
 	api, v2, err := APIFromRole(role)

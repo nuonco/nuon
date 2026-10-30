@@ -108,7 +108,7 @@ func (s *service) UpdateOrgAccountRole(ctx *gin.Context) {
 	}
 
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, accountID); err != nil {
+		if err := authz.RequireUserManagedInOrg(tx, accountID, org.ID); err != nil {
 			return err
 		}
 		return authz.New(authz.Params{DB: tx}).SetAccountOrgRole(ctx, org.ID, accountID, req.RoleType)

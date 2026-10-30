@@ -18,7 +18,7 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 	}
 
 	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := RequireUserManaged(tx, acct.ID); err != nil {
+		if err := RequireUserManagedInOrg(tx, acct.ID, invite.OrgID); err != nil {
 			return err
 		}
 		if err := New(Params{DB: tx}).AddAccountOrgRole(ctx, roleType, invite.OrgID, acct.ID); err != nil {

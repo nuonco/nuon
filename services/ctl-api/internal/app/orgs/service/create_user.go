@@ -49,7 +49,7 @@ func (s *service) CreateUser(ctx *gin.Context) {
 
 	// Add the authenticated user to the org (UserID field is ignored)
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
+		if err := authz.RequireUserManagedInOrg(tx, acct.ID, org.ID); err != nil {
 			return err
 		}
 		return authz.New(authz.Params{DB: tx}).AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID)

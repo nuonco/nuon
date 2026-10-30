@@ -1,6 +1,9 @@
 package permissions
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const CatalogRevision = 1
 
@@ -23,6 +26,12 @@ type RoleDefinition struct {
 	Revision    int
 	ScopeKind   ResourceKind
 	Permissions PermissionSet
+}
+
+func (r RoleDefinition) MarshalPolicy() ([]byte, error) {
+	return json.Marshal(bundleDocument{
+		Kind: PolicyKindBundle, API: APICtl, BindingKind: r.ScopeKind, Permissions: r.Permissions.Values(),
+	})
 }
 
 func CurrentCustomerRole(name CustomerRoleName) (RoleDefinition, error) {

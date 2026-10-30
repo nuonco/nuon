@@ -20,6 +20,7 @@ func ReconcileOrgRoles(ctx context.Context, db *gorm.DB, org app.Org) error {
 	var existingRoles []app.Role
 	if err := db.WithContext(ctx).
 		Where(app.Role{OrgID: generics.NewNullString(org.ID)}).
+		Where(db.Where(app.Role{Version: app.RoleVersionV1}).Or(app.Role{Version: app.RoleVersionV2})).
 		Find(&existingRoles).Error; err != nil {
 		return fmt.Errorf("unable to load roles for org %s: %w", org.ID, err)
 	}

@@ -15,6 +15,7 @@ func (c *Client) AssignableRoles(ctx context.Context, orgID, roleContext string)
 	var roles []app.Role
 	res := c.db.WithContext(ctx).
 		Where(app.Role{OrgID: generics.NewNullString(orgID)}).
+		Where(c.db.Where(app.Role{Version: app.RoleVersionV1}).Or(app.Role{Version: app.RoleVersionV2})).
 		Order("role_type").
 		Find(&roles)
 	if res.Error != nil {

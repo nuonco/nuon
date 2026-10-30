@@ -38,6 +38,25 @@ func TestCustomerRole(t *testing.T) {
 				got = append(got, string(permission))
 			}
 			assert.Equal(t, strings.Fields(tt.want), got)
+			document, err := role.MarshalPolicy()
+			require.NoError(t, err)
+			policy, err := p.DecodePolicy(p.PolicyFormatV3, document)
+			require.NoError(t, err)
+			assert.Equal(t, p.APICtl, policy.API())
+			assert.Equal(t, p.PolicyKindBundle, policy.Kind())
+			scope := p.Scope{Kind: tt.kind, OrgID: "org_acme", ID: "resource_one"}
+			if tt.kind == p.KindOrg {
+				scope.ID = scope.OrgID
+			}
+			grants, err := policy.Compile(scope.OrgID, scope)
+			require.NoError(t, err)
+			require.Len(t, grants, 1)
+			assert.Equal(t, scope, grants[0].Scope)
+			var persisted []string
+			for _, permission := range grants[0].Permissions.Values() {
+				persisted = append(persisted, string(permission))
+			}
+			assert.Equal(t, strings.Fields(tt.want), persisted)
 			delete(role.Permissions, p.InstallRead)
 			role.Permissions[p.RunnerWrite] = struct{}{}
 			again, err := p.CurrentCustomerRole(tt.name)
