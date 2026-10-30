@@ -11,10 +11,13 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
+
+var compactJWT = regexp.MustCompile(`^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$`)
 
 type Request struct {
 	Token    string
@@ -64,14 +67,14 @@ func (v *Verifier) Verify(ctx context.Context, req Request) (map[string]any, err
 	return v.oidc.Verify(ctx, req.Token, req.Issuer, req.Audience)
 }
 
-// UnverifiedClaims decodes claims without checking the signature. Only for selecting
-// which key set to verify against; never for authorization.
+// UnverifiedClaims decodes claims without checking the signature.
 func UnverifiedClaims(token string) (map[string]any, error) {
-	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
-		return nil, errors.New("malformed jwt")
+	token = strings.TrimSpace(token)
+	if err := RequireCompactJWT(token); err != nil {
+		return nil, err
 	}
 
+	parts := strings.Split(token, ".")
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode jwt payload: %w", err)
@@ -83,6 +86,13 @@ func UnverifiedClaims(token string) (map[string]any, error) {
 	}
 
 	return claims, nil
+}
+
+func RequireCompactJWT(token string) error {
+	if !compactJWT.MatchString(strings.TrimSpace(token)) {
+		return errors.New("token must be compact jwt")
+	}
+	return nil
 }
 
 // StringClaim reads a string claim. A claim of any other type is treated as absent
