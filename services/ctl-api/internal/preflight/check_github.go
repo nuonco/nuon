@@ -3,6 +3,7 @@ package preflight
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 
@@ -19,6 +20,12 @@ var githubCheck = Check{
 			{Name: "github_app_id", Value: cfg.GithubAppID, Required: true},
 			{Name: "github_app_key", Value: cfg.GithubAppKey, Required: true, Secret: true},
 			{Name: "github_app_key_secret_name", Value: cfg.GithubAppKeySecretName},
+			// The connection callback exchanges a user-authorization code with
+			// these credentials to prove the caller owns the installation, so
+			// a deployment that runs the check cannot boot without them.
+			{Name: "github_app_client_id", Value: cfg.GithubAppClientID, Required: !cfg.DisableVCSConnectionOwnershipCheck},
+			{Name: "github_app_client_secret", Value: cfg.GithubAppClientSecret, Required: !cfg.DisableVCSConnectionOwnershipCheck, Secret: true},
+			{Name: "disable_vcs_connection_ownership_check", Value: strconv.FormatBool(cfg.DisableVCSConnectionOwnershipCheck)},
 			{Name: "integration_github_install_id", Value: cfg.IntegrationGithubInstallID},
 		}
 	},
