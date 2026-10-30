@@ -11,13 +11,11 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
 
+	"github.com/nuonco/nuon/pkg/jwtcompact"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
-
-var compactJWT = regexp.MustCompile(`^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$`)
 
 type Request struct {
 	Token    string
@@ -89,10 +87,7 @@ func UnverifiedClaims(token string) (map[string]any, error) {
 }
 
 func RequireCompactJWT(token string) error {
-	if !compactJWT.MatchString(strings.TrimSpace(token)) {
-		return errors.New("token must be compact jwt")
-	}
-	return nil
+	return jwtcompact.Require(token)
 }
 
 // StringClaim reads a string claim. A claim of any other type is treated as absent
