@@ -168,6 +168,8 @@ func (s *AdminCreateHealthCheckJobTestSuite) TestAdminCreateHealthCheckJob() {
 				assert.Equal(s.T(), app.RunnerJobStatusAvailable, job.Status)
 				assert.Equal(s.T(), app.RunnerJobTypeHealthCheck, job.Type)
 				assert.Equal(s.T(), app.RunnerJobGroupOperations, job.Group)
+				assert.Equal(s.T(), runnerID, job.OwnerID)
+				assert.Equal(s.T(), "runners", job.OwnerType)
 				assert.NotNil(s.T(), job.LogStreamID)
 
 				var logStream app.LogStream
