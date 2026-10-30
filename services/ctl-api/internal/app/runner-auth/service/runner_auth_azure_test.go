@@ -144,6 +144,25 @@ func TestParseUnverifiedTenantID_RejectsNUO1188Shapes(t *testing.T) {
 	}
 }
 
+func TestAzureClaimsFromVerified(t *testing.T) {
+	got, err := azureClaimsFromVerified(map[string]any{
+		"tid":       runnerTenantID,
+		"oid":       runnerPrincipalID,
+		"sub":       "subject",
+		"xms_mirid": "/subscriptions/" + runnerSubID + "/resourcegroups/rg/providers/Microsoft.Compute/virtualMachineScaleSets/inst123-vmss",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, runnerTenantID, got.TenantID)
+	assert.Equal(t, runnerPrincipalID, got.ObjectID)
+	assert.Equal(t, "subject", got.Subject)
+	assert.Contains(t, got.XMSMirID, "virtualMachineScaleSets")
+
+	_, err = azureClaimsFromVerified(map[string]any{"tid": runnerTenantID})
+	require.Error(t, err)
+	_, err = azureClaimsFromVerified(map[string]any{"oid": runnerPrincipalID})
+	require.Error(t, err)
+}
+
 func TestBindAzureKeyTenant(t *testing.T) {
 	require.NoError(t, bindAzureKeyTenant(runnerTenantID, &azureClaims{TenantID: runnerTenantID}))
 	require.NoError(t, bindAzureKeyTenant(runnerTenantID, &azureClaims{TenantID: strings.ToUpper(runnerTenantID)}))

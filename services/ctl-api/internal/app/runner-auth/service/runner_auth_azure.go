@@ -5,13 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/auth0/go-jwt-middleware/v2/jwks"
-	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -20,11 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
-)
-
-const (
-	azureJWKSCacheDuration  = 5 * time.Minute
-	azureManagementAudience = "https://management.azure.com/"
 )
 
 type RunnerAuthAzureRequest struct {
@@ -48,60 +39,6 @@ type azureClaims struct {
 	XMSMirID string `json:"xms_mirid"`
 }
 
-func (a *azureClaims) Validate(_ context.Context) error {
-	if a.TenantID == "" {
-		return errors.New("missing tid claim")
-	}
-	if a.ObjectID == "" {
-		return errors.New("missing oid claim")
-	}
-	return nil
-}
-
-// azureJWKSProvider caches JWKS providers per tenant to avoid repeated discovery.
-type azureJWKSProvider struct {
-	mu        sync.RWMutex
-	providers map[string]*jwks.CachingProvider
-}
-
-func newAzureJWKSProvider() *azureJWKSProvider {
-	return &azureJWKSProvider{
-		providers: make(map[string]*jwks.CachingProvider),
-	}
-}
-
-func (p *azureJWKSProvider) getProvider(tenantID string) (*jwks.CachingProvider, error) {
-	p.mu.RLock()
-	provider, ok := p.providers[tenantID]
-	p.mu.RUnlock()
-	if ok {
-		return provider, nil
-	}
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	// Double-check after acquiring write lock.
-	if provider, ok := p.providers[tenantID]; ok {
-		return provider, nil
-	}
-
-	issuer, err := workloadjwt.AzureIssuer(tenantID)
-	if err != nil {
-		return nil, err
-	}
-	issuerURL, err := url.Parse(issuer)
-	if err != nil {
-		return nil, fmt.Errorf("invalid issuer url: %w", err)
-	}
-
-	provider = jwks.NewCachingProvider(issuerURL, azureJWKSCacheDuration)
-	p.providers[tenantID] = provider
-	return provider, nil
-}
-
-var azureJWKS = newAzureJWKSProvider()
-
 // parseUnverifiedTenantID extracts the tid claim from a compact JWT without signature
 // verification, only to select which tenant's JWKS to use. The value must be a GUID so
 // it cannot reshape the discovery URL, and is re-checked against verified claims after.
@@ -123,7 +60,28 @@ func parseUnverifiedTenantID(tokenStr string) (string, error) {
 	return tenantID, nil
 }
 
-// verifyAzureJWT verifies an Azure managed identity JWT and returns the parsed claims.
+func azureClaimsFromVerified(claims map[string]any) (*azureClaims, error) {
+	tenantID, ok := workloadjwt.StringClaim(claims, "tid")
+	if !ok {
+		return nil, errors.New("missing tid claim")
+	}
+	objectID, ok := workloadjwt.StringClaim(claims, "oid")
+	if !ok {
+		return nil, errors.New("missing oid claim")
+	}
+	subject, _ := workloadjwt.StringClaim(claims, "sub")
+	mirID, _ := workloadjwt.StringClaim(claims, "xms_mirid")
+
+	return &azureClaims{
+		TenantID: tenantID,
+		ObjectID: objectID,
+		Subject:  subject,
+		XMSMirID: mirID,
+	}, nil
+}
+
+// verifyAzureJWT verifies an Azure managed identity JWT the same way phone-home does:
+// compact peek for tid → AzureIssuer → go-oidc JWKS verify → bind tid to key tenant.
 func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureClaims, error) {
 	tokenStr = strings.TrimSpace(tokenStr)
 	if err := workloadjwt.RequireCompactJWT(tokenStr); err != nil {
@@ -135,45 +93,23 @@ func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureCl
 		return nil, fmt.Errorf("failed to extract tenant ID: %w", err)
 	}
 
-	provider, err := azureJWKS.getProvider(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve tenant JWKS: %w", err)
-	}
-
 	issuerURL, err := workloadjwt.AzureIssuer(tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build issuer: %w", err)
 	}
 
-	customClaimsFn := func() validator.CustomClaims {
-		return &azureClaims{}
-	}
-
-	tokenValidator, err := validator.New(
-		provider.KeyFunc,
-		validator.RS256,
-		issuerURL,
-		[]string{azureManagementAudience},
-		validator.WithAllowedClockSkew(time.Minute),
-		validator.WithCustomClaims(customClaimsFn),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create JWT validator: %w", err)
-	}
-
-	validToken, err := tokenValidator.ValidateToken(ctx, tokenStr)
+	verified, err := s.workloadJWT.Verify(ctx, workloadjwt.Request{
+		Token:    tokenStr,
+		Issuer:   issuerURL,
+		Audience: workloadjwt.AzureManagementAudience,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("JWT validation failed: %w", err)
 	}
 
-	validatedClaims, ok := validToken.(*validator.ValidatedClaims)
-	if !ok {
-		return nil, errors.New("unexpected token validation response")
-	}
-
-	azClaims, ok := validatedClaims.CustomClaims.(*azureClaims)
-	if !ok {
-		return nil, errors.New("unexpected custom claims type")
+	azClaims, err := azureClaimsFromVerified(verified)
+	if err != nil {
+		return nil, err
 	}
 
 	// Key selection and verified claims must name the same tenant. Without this,
