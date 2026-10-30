@@ -10,6 +10,7 @@ import type {
   TInstallDeploymentSummary,
 } from '@/types'
 import { DeploymentDetailPanel } from './DeploymentDetailPanel'
+import { DeploymentPolicySummary } from './DeploymentPolicySummary'
 import {
   DeploymentsListPresenter,
   type IDeploymentFilter,
@@ -149,6 +150,28 @@ const ACTIVE_DEPLOYMENTS: TInstallDeploymentSummary[] = [
 export default {
   title: 'Features / Installs / Deployments list',
 }
+
+export const PolicySkipCounts = () => (
+  <div className="flex flex-col gap-4">
+    <DeploymentPolicySummary
+      history
+      steps={[
+        { policy: { deny_count: 0, warn_count: 0, skipped_by_policy: true } },
+      ]}
+    />
+    <DeploymentPolicySummary
+      history
+      steps={[
+        { policy: { deny_count: 0, warn_count: 2, skipped_by_policy: true } },
+        { policy: { deny_count: 0, warn_count: 0, skipped_by_policy: true } },
+      ]}
+    />
+    <DeploymentPolicySummary
+      history
+      steps={[{ policy: { deny_count: 2, warn_count: 1 } }]}
+    />
+  </div>
+)
 
 export const Default = () => {
   const [limit, setLimit] = useState(4)
