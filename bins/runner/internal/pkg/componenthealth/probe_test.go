@@ -207,122 +207,6 @@ func TestRunTCPProbe(t *testing.T) {
 	})
 }
 
-func TestNewExecProbeSpec(t *testing.T) {
-	tests := []struct {
-		name    string
-		command []string
-		wantOK  bool
-	}{
-		{name: "argv", command: []string{"true"}, wantOK: true},
-		{name: "argv_with_args", command: []string{"ls", "-la"}, wantOK: true},
-		{name: "trims_binary", command: []string{"  true  "}, wantOK: true},
-		{name: "empty", command: nil},
-		{name: "blank_binary", command: []string{"   ", "-la"}},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			spec, ok := newExecProbeSpec(tc.command)
-			if !tc.wantOK {
-				assert.False(t, ok)
-				assert.Empty(t, spec.command)
-				return
-			}
-			require.True(t, ok)
-			assert.Equal(t, probeKindExec, spec.kind)
-			assert.Equal(t, resourceKindExecProbe, spec.resourceKind())
-			assert.Equal(t, strings.TrimSpace(tc.command[0]), spec.command[0])
-			assert.Empty(t, spec.target)
-		})
-	}
-
-	t.Run("does_not_alias_config_argv", func(t *testing.T) {
-		command := []string{"true", "--flag"}
-		spec, ok := newExecProbeSpec(command)
-		require.True(t, ok)
-
-		spec.command[1] = "--mutated"
-		assert.Equal(t, "--flag", command[1])
-	})
-}
-
-func TestRunExecProbe(t *testing.T) {
-	tests := []struct {
-		name         string
-		command      []string
-		ctxTimeout   time.Duration
-		wantHealth   string
-		wantExitCode *int
-		wantMessage  []string
-	}{
-		{
-			name:       "exit_zero_is_healthy",
-			command:    []string{"true"},
-			wantHealth: healthHealthy,
-		},
-		{
-			name:         "exit_non_zero_is_unhealthy",
-			command:      []string{"false"},
-			wantHealth:   healthUnhealthy,
-			wantExitCode: ptr(1),
-			wantMessage:  []string{"exit code 1"},
-		},
-		{
-			name:        "exit_non_zero_carries_output_tail",
-			command:     []string{"ls", "/nuon-component-health-does-not-exist"},
-			wantHealth:  healthUnhealthy,
-			wantMessage: []string{"exit code", "/nuon-component-health-does-not-exist"},
-		},
-		{
-			name:        "timeout_is_unhealthy",
-			command:     []string{"sleep", "30"},
-			ctxTimeout:  50 * time.Millisecond,
-			wantHealth:  healthUnhealthy,
-			wantMessage: []string{"timed out"},
-		},
-		{
-			name:        "missing_binary_is_unhealthy",
-			command:     []string{"nuon-component-health-missing-binary"},
-			wantHealth:  healthUnhealthy,
-			wantMessage: []string{"nuon-component-health-missing-binary"},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			if tc.ctxTimeout > 0 {
-				var cancel context.CancelFunc
-				ctx, cancel = context.WithTimeout(ctx, tc.ctxTimeout)
-				defer cancel()
-			}
-
-			res := runExecProbe(ctx, tc.command)
-			assert.Equal(t, tc.wantHealth, res.health)
-			if tc.wantHealth == healthHealthy {
-				assert.Empty(t, res.message)
-				assert.Nil(t, res.exitCode)
-				return
-			}
-			if tc.wantExitCode != nil {
-				require.NotNil(t, res.exitCode)
-				assert.Equal(t, *tc.wantExitCode, *res.exitCode)
-			}
-			for _, want := range tc.wantMessage {
-				assert.Contains(t, res.message, want)
-			}
-		})
-	}
-
-	t.Run("output_tail_is_bounded", func(t *testing.T) {
-		res := runExecProbe(context.Background(), []string{"awk", "BEGIN { for (i = 0; i < 5000; i++) print \"noisy-output-line\"; exit 3 }"})
-		assert.Equal(t, healthUnhealthy, res.health)
-		require.NotNil(t, res.exitCode)
-		assert.Equal(t, 3, *res.exitCode)
-		assert.LessOrEqual(t, len(res.message), probeOutputLimit+len("exit code 3: "))
-	})
-}
-
 func TestProbeSpecsFor(t *testing.T) {
 	c := &models.ServiceRunnerInstallComponent{
 		Probes: []*models.ServiceRunnerComponentProbe{
@@ -337,14 +221,12 @@ func TestProbeSpecsFor(t *testing.T) {
 	}
 
 	specs := probeSpecsFor(c)
-	// Every declared probe is reported: the three runnable ones plus the three
-	// that cannot run, which report unknown with a reason rather than vanishing.
 	require.Len(t, specs, 6)
 
-	for _, i := range []int{0, 1, 2} {
+	for _, i := range []int{0, 1} {
 		assert.Empty(t, specs[i].unresolved, "spec %d should be runnable", i)
 	}
-	for _, i := range []int{3, 4, 5} {
+	for _, i := range []int{2, 3, 4, 5} {
 		assert.NotEmpty(t, specs[i].unresolved, "spec %d should report why it cannot run", i)
 	}
 
@@ -356,8 +238,10 @@ func TestProbeSpecsFor(t *testing.T) {
 	assert.Equal(t, "db.internal:5432", specs[1].displayName())
 
 	assert.Equal(t, probeKindExec, specs[2].kind)
-	assert.Equal(t, []string{"check-api", "--fast"}, specs[2].command)
+	assert.Contains(t, specs[2].unresolved, "not supported")
 	assert.Equal(t, "check-api", specs[2].displayName())
+	res := runProbe(context.Background(), nil, specs[2])
+	assert.Equal(t, healthUnknown, res.health)
 
 	assert.Nil(t, probeSpecsFor(nil))
 	assert.Nil(t, probeSpecsFor(&models.ServiceRunnerInstallComponent{}))
@@ -407,31 +291,6 @@ func TestProbeResourceRow(t *testing.T) {
 		assert.Equal(t, "db.internal:5432", probe["target"])
 	})
 
-	t.Run("unhealthy_exec_carries_diagnosis", func(t *testing.T) {
-		spec, ok := newExecProbeSpec([]string{"check-api", "--fast"})
-		require.True(t, ok)
-
-		row := probeResourceRow(spec, probeResult{
-			health:   healthUnhealthy,
-			message:  "exit code 2: boom",
-			exitCode: ptr(2),
-		})
-		assert.Equal(t, providerProbe, row.Provider)
-		assert.Equal(t, resourceKindExecProbe, row.Kind)
-		assert.Equal(t, "check-api", row.Name)
-
-		details := map[string]any{}
-		require.NoError(t, json.Unmarshal([]byte(row.Details), &details))
-		diagnosis, ok := details["diagnosis"].(map[string]any)
-		require.True(t, ok)
-		probe, ok := diagnosis["probe"].(map[string]any)
-		require.True(t, ok)
-		assert.Equal(t, "exec", probe["type"])
-		assert.NotContains(t, probe, "target")
-		assert.EqualValues(t, 2, probe["exit_code"])
-		assert.Equal(t, []any{"check-api", "--fast"}, probe["command"])
-	})
-
 	t.Run("named_probe_uses_config_name", func(t *testing.T) {
 		spec, ok := newProbeSpec("http", "https://app.example.com/healthz")
 		require.True(t, ok)
@@ -440,10 +299,6 @@ func TestProbeResourceRow(t *testing.T) {
 		row := probeResourceRow(spec, probeResult{health: healthHealthy, statusCode: 200})
 		assert.Equal(t, "api-healthz", row.Name)
 	})
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }
 
 // closedAddr returns a loopback address with nothing listening on it.
@@ -455,18 +310,6 @@ func closedAddr(t *testing.T) string {
 	addr := ln.Addr().String()
 	require.NoError(t, ln.Close())
 	return addr
-}
-
-// A vendor's health check must not inherit the runner's control-plane token or
-// cloud credential env vars.
-func TestRunExecProbeEnvIsolation(t *testing.T) {
-	t.Setenv("NUON_TEST_SECRET_SENTINEL", "leaked")
-
-	res := runExecProbe(context.Background(), []string{"sh", "-c", `test -z "$NUON_TEST_SECRET_SENTINEL"`})
-	require.Equal(t, healthHealthy, res.health, "runner env leaked into the probe: %s", res.message)
-
-	res = runExecProbe(context.Background(), []string{"sh", "-c", `test -n "$PATH" && test -n "$HOME"`})
-	require.Equal(t, healthHealthy, res.health, "probe env is missing PATH/HOME: %s", res.message)
 }
 
 // A declared probe that cannot run must still report — as unknown, with the
@@ -487,9 +330,9 @@ func TestUnrunnableProbesReportUnknownRatherThanVanish(t *testing.T) {
 			wantName:   "public-endpoint",
 		},
 		{
-			name:       "unresolved template in exec argv",
-			probe:      &models.ServiceRunnerComponentProbe{Type: "exec", Name: "check", Command: []string{"/bin/check", "--host={{.nuon.install.sandbox.outputs.host}}"}},
-			wantReason: "could not be resolved from install state",
+			name:       "exec probe with a command",
+			probe:      &models.ServiceRunnerComponentProbe{Type: "exec", Name: "check", Command: []string{"/bin/sh", "-c", "true"}},
+			wantReason: "not supported",
 			wantKind:   resourceKindExecProbe,
 			wantName:   "check",
 		},
@@ -503,7 +346,7 @@ func TestUnrunnableProbesReportUnknownRatherThanVanish(t *testing.T) {
 		{
 			name:       "exec probe with no command",
 			probe:      &models.ServiceRunnerComponentProbe{Type: "exec", Name: "no-cmd"},
-			wantReason: "no command to run",
+			wantReason: "not supported",
 			wantKind:   resourceKindExecProbe,
 			wantName:   "no-cmd",
 		},
@@ -538,11 +381,14 @@ func TestUnrunnableProbesReportUnknownRatherThanVanish(t *testing.T) {
 	}
 }
 
-// A valid probe must be unaffected by the unresolved path.
 func TestValidProbeStillRuns(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer ln.Close()
+
 	specs := probeSpecsFor(&models.ServiceRunnerInstallComponent{
 		Probes: []*models.ServiceRunnerComponentProbe{
-			{Type: "exec", Name: "ok", Command: []string{"true"}},
+			{Type: "tcp", Name: "ok", URL: ln.Addr().String()},
 		},
 	})
 	require.Len(t, specs, 1)
