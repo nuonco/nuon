@@ -87,13 +87,12 @@ It walks the following chain from highest to lowest priority and uses the first 
    table)
 5. **Default role:** the standard role from `permissions.toml` for the operation type
 
-The first level that names a role wins. If that role is off, a run-time pick fails and any other level falls back to
-the default role.
+Nuon uses the first level that names a role. If that role is off, a run that picked it at run time fails, and any
+other run uses the default role instead.
 
-**Custom roles:** Nuon has three built-in role types (`provision`, `deprovision`, and `maintenance`), plus
-[break glass roles](/concepts/break-glass) for elevated access. Custom roles extend this with `type = "custom"`,
-letting you define additional roles beyond those three and use them in operation role assignments. Any role
-referenced in an operation role assignment must be declared in the app config.
+**Your own operation roles:** Nuon has three built-in operation roles (`provision`, `deprovision`, and
+`maintenance`). Define more in `permissions.toml` with `type = "custom"` and use them in operation role assignments.
+For access you only need in an incident, use [break glass roles](/concepts/break-glass) instead.
 
 ## Elevated Access and Break-Glass Operations
 

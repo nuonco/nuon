@@ -27,7 +27,7 @@ Nuon records when access was granted, what ran, and when it was removed, so you 
   <Step title="Your customer switches it on">
     When you have an incident, they enable the role.
   </Step>
-  <Step title="You run the work">
+  <Step title="You run an action">
     Run an [action](/concepts/actions) or [runbook](/concepts/runbooks) with the role.
   </Step>
   <Step title="Your customer switches it off">
@@ -92,7 +92,7 @@ contents = """
 This role is for AWS. For other clouds, add `cloud_platform = "azure"` or `"gcp"`. See the
 [config reference](/config-ref/break-glass) for every field.
 
-## Run work with a break glass role
+## Use a break glass role
 
 Set an action's `role` to the break glass role:
 
@@ -115,7 +115,7 @@ CLUSTER_NAME = "{{.nuon.sandbox.outputs.cluster.name}}"
 To use the role for a single run, pick it in the dashboard's role selector or pass `--role-name` to
 `nuon actions create-run`.
 
-## Run work as soon as access is granted
+## Run actions when access is granted
 
 A `role-enabled` trigger runs an action as soon as your customer switches a role on, so they don't wait on you.
 
