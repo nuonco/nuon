@@ -23,6 +23,9 @@ type ServiceInstallDeploymentPolicySummary struct {
 	// first warn message
 	FirstWarnMessage string `json:"first_warn_message,omitempty"`
 
+	// skipped by policy
+	SkippedByPolicy bool `json:"skipped_by_policy,omitempty"`
+
 	// warn count
 	WarnCount int64 `json:"warn_count,omitempty"`
 }

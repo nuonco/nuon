@@ -9775,6 +9775,7 @@ export interface components {
     "service.InstallDeploymentPolicySummary": {
       deny_count?: number;
       first_warn_message?: string;
+      skipped_by_policy?: boolean;
       warn_count?: number;
     };
     "service.InstallDeploymentStep": {

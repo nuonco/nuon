@@ -84,6 +84,7 @@ func TestPackageActionInheritance(t *testing.T) {
 		{name: "no action", decision: "deny"},
 		{name: "deny default", metadata: "# custom:\n#   action: deny\n", decision: "deny"},
 		{name: "warn default", metadata: "# custom:\n#   action: warn\n", decision: "warn"},
+		{name: "skip default", metadata: "# custom:\n#   action: skip_apply\n", decision: "skip_apply"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			policy, err := policyopa.Parse(`# METADATA
@@ -143,8 +144,35 @@ check_bare contains check.finding("separate policy")`)
 	}
 }
 
+func TestSkipApplyAggregation(t *testing.T) {
+	policy, err := policyopa.Parse(`package nuon.checks
+import data.nuon.lib.check
+# METADATA
+# custom:
+#   action: skip_apply
+check_replacement contains check.finding(input.name) if { json.unmarshal(input.replacement) }
+`)
+	require.NoError(t, err)
+	pass := policy.Evaluate(context.Background(), []byte(`{"name":"unchanged","replacement":"false"}`), 0, "first")
+	skip := policy.Evaluate(context.Background(), []byte(`{"name":"database","replacement":"true"}`), 1, "second")
+	failed := policy.Evaluate(context.Background(), []byte(`{"name":"broken","replacement":"invalid"}`), 2, "third")
+	for _, results := range [][]policyopa.Result{append(pass, skip...), append(skip, pass...)} {
+		merged := policyopa.Aggregate(results)
+		require.Len(t, merged, 1)
+		assert.Equal(t, "skip_apply", merged[0].Decision)
+		assert.Equal(t, 2, merged[0].InputCount)
+		require.Len(t, merged[0].Findings, 1)
+		assert.Equal(t, "database", merged[0].Findings[0].Message)
+		assert.Equal(t, "second", merged[0].Findings[0].InputIdentity)
+		merged = policyopa.Aggregate(append(results, failed...))
+		assert.Equal(t, "error", merged[0].Decision)
+		assert.Len(t, merged[0].Findings, 1)
+		assert.Len(t, merged[0].Errors, 1)
+	}
+}
+
 func TestActionMetadataValidation(t *testing.T) {
-	for _, action := range []string{"skip_apply", "null", "true", "[deny]", "{name: deny}"} {
+	for _, action := range []string{"require_approval", "null", "true", "[deny]", "{name: deny}"} {
 		for _, target := range []string{"package", "check"} {
 			t.Run(target+"/"+action, func(t *testing.T) {
 				metadata := fmt.Sprintf("# METADATA\n# custom:\n#   action: %s\n", action)
@@ -153,7 +181,7 @@ func TestActionMetadataValidation(t *testing.T) {
 					source = "package nuon.checks\n" + metadata + "check_example contains {}"
 				}
 				_, err := policyopa.Parse(source)
-				require.ErrorContains(t, err, "custom.action must be deny or warn")
+				require.ErrorContains(t, err, "custom.action must be deny, warn, or skip_apply")
 			})
 		}
 	}

@@ -112,6 +112,7 @@ type InstallDeployment struct {
 type InstallDeploymentPolicySummary struct {
 	DenyCount        int    `json:"deny_count"`
 	WarnCount        int    `json:"warn_count"`
+	SkippedByPolicy  bool   `json:"skipped_by_policy,omitempty"`
 	FirstWarnMessage string `json:"first_warn_message,omitempty"`
 }
 
@@ -596,12 +597,14 @@ func (s *service) installDeploymentSteps(ctx *gin.Context, workflowIDs []string)
 func installDeploymentPolicySummary(metadata map[string]any) *InstallDeploymentPolicySummary {
 	denials, _ := metadata["deny_violations"].([]any)
 	warnings, _ := metadata["warn_violations"].([]any)
-	if len(denials)+len(warnings) == 0 {
+	skippedByPolicy := metadata["check"] == "policy-skip-apply"
+	if len(denials)+len(warnings) == 0 && !skippedByPolicy {
 		return nil
 	}
 	summary := &InstallDeploymentPolicySummary{
-		DenyCount: len(denials),
-		WarnCount: len(warnings),
+		DenyCount:       len(denials),
+		WarnCount:       len(warnings),
+		SkippedByPolicy: skippedByPolicy,
 	}
 	if len(warnings) > 0 {
 		first, _ := warnings[0].(map[string]any)
