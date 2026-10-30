@@ -202,7 +202,7 @@ func (h *Helpers) RecordInstallGroupDirective(ctx context.Context, appBranchRunI
 func (h *Helpers) RecordReleasedInstallTerminal(ctx context.Context, appBranchRunID, installID, status string) error {
 	return installgrouprelease.SetInstallStatus(ctx, h.db, appBranchRunID, installID, func(install *app.InstallGroupRunInstall) {
 		switch install.Status {
-		case installgrouprelease.StatusPendingCustomer, installgrouprelease.StatusQueued:
+		case installgrouprelease.StatusPendingCustomer, installgrouprelease.StatusQueued, installgrouprelease.StatusError:
 			install.Status = status
 		}
 	})
