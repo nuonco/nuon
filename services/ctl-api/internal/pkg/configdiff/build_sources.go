@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	pkgdiff "github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -21,7 +22,7 @@ func ComponentSourcesEqual(old, next *app.ComponentBuild) bool {
 		return true
 	}
 	if old.SourceChecksum != "" && old.SourceChecksum == next.SourceChecksum &&
-		old.SourceIdentity.EligibleChecksum() == old.SourceChecksum && next.SourceIdentity.EligibleChecksum() == next.SourceChecksum {
+		sourceidentity.Equivalent(old.SourceIdentity, next.SourceIdentity) && old.SourceIdentity.Checksum == old.SourceChecksum {
 		return true
 	}
 	return old.SourceIdentity == nil && next.SourceIdentity == nil && old.SourceDigest != "" && strings.HasPrefix(old.SourceDigest, "sha256:") &&
@@ -32,7 +33,7 @@ func SandboxSourcesEqual(old, next *app.AppSandboxBuild) bool {
 	return old != nil && next != nil &&
 		((old.ID != "" && old.ID == next.ID) ||
 			(old.SourceChecksum != "" && old.SourceChecksum == next.SourceChecksum &&
-				old.SourceIdentity.EligibleChecksum() == old.SourceChecksum && next.SourceIdentity.EligibleChecksum() == next.SourceChecksum))
+				sourceidentity.Equivalent(old.SourceIdentity, next.SourceIdentity) && old.SourceIdentity.Checksum == old.SourceChecksum))
 }
 
 type configBuildSources struct {

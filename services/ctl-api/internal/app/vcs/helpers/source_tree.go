@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/go-github/v50/github"
@@ -9,6 +10,8 @@ import (
 	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
+
+var ErrSourceTreeTruncated = errors.New("pinned source tree is truncated")
 
 func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit string, connection *app.VCSConnection) (*github.Tree, error) {
 	if !sourceidentity.IsCommit(commit) {
@@ -58,8 +61,11 @@ func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit s
 		if err != nil {
 			return nil, fmt.Errorf("unable to read pinned source tree: %w", err)
 		}
-		if tree == nil || tree.GetTruncated() {
-			return nil, fmt.Errorf("pinned source tree is missing or truncated")
+		if tree == nil {
+			return nil, fmt.Errorf("pinned source tree is missing")
+		}
+		if tree.GetTruncated() {
+			return nil, ErrSourceTreeTruncated
 		}
 		if h.sourceTrees != nil {
 			h.sourceTrees.Add(key, tree)

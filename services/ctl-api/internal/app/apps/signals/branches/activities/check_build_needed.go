@@ -108,7 +108,7 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 	if input.RunID != "" {
 		candidate.AppBranchRunID = &input.RunID
 	}
-	identity, err := buildsource.ComponentSelection(ctx, a.db, a.vcsHelpers, &candidate)
+	identity, err := buildsource.Component(ctx, a.db, a.vcsHelpers, &candidate)
 	if err != nil {
 		return nil, err
 	}

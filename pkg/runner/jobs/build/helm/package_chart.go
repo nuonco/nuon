@@ -83,7 +83,11 @@ func capturePulledChart(data []byte, expected *sourceidentity.Identity) (*source
 	}
 	defer source.Close()
 	selected := *expected
+	selected.Reasons = append([]string(nil), expected.Reasons...)
 	selected.ChartVersion = chart.Metadata.Version
+	if len(chart.Metadata.Dependencies) > 0 {
+		selected.MarkUnknown("helm_dependencies_resolved_at_build")
+	}
 	return sourceidentity.Capture(source, &selected)
 }
 

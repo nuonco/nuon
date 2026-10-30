@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/jobs/buildinputs"
 	signatureverify "github.com/nuonco/nuon/pkg/runner/oci/signature"
 	"github.com/nuonco/nuon/pkg/runner/registry"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -76,7 +77,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	resolvedDigest := string(desc.Digest)
-	identity, err := buildinputs.Image(h.state.plan.SourceIdentity, resolvedDigest)
+	identity, err := sourceidentity.ResolveImage(h.state.plan.SourceIdentity, resolvedDigest)
 	if err != nil {
 		return err
 	}

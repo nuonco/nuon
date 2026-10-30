@@ -208,145 +208,50 @@ func TestCaptureDriftProperties(t *testing.T) {
 	})
 }
 
-type closureFixture struct {
-	name, kind, path, data string
-	extra                  []diskFile
-	reasons                []string
+var captureFixtures = []struct{ kind, path, data string }{
+	{"terraform", "main.tf", `module "x" { source = "../../outside" }`},
+	{"helm", "Chart.yaml", "dependencies:\n - name: child\n   version: 1.0.0\n   repository: file://child\n"},
+	{"kustomize", "kustomization.yaml", "resources: [../../outside.yaml]\n"},
+	{"pulumi", "Pulumi.yaml", "name: acme\nruntime: nodejs\n"},
 }
 
-var closureFixtures = []closureFixture{
-	{"tf-output", "terraform", "main.tf", `output "x" { value = 1 }`, nil, nil},
-	{"tf-local-module", "terraform", "main.tf", `module "x" { source = "./child" }`, []diskFile{{"child/main.tf", `output "x" { value = 1 }`, 0644}}, nil},
-	{"tf-git-module", "terraform", "main.tf", `module "x" { source = "./.git/child" }`, []diskFile{{".git/child/main.tf", `output "x" { value = 1 }`, 0644}}, []string{"terraform_module_outside_captured_source"}},
-	{"tf-nested-git-module", "terraform", "main.tf", `module "x" { source = "./nested/.git/child" }`, []diskFile{{"nested/.git/child/main.tf", `output "x" { value = 1 }`, 0644}}, []string{"terraform_module_outside_captured_source"}},
-	{"tf-remote-module", "terraform", "main.tf", `module "x" { source = "example.com/acme/module" }`, nil, []string{"terraform_module_outside_captured_source"}},
-	{"tf-outside-module", "terraform", "main.tf", `module "x" { source = "../../outside" }`, nil, []string{"terraform_module_outside_captured_source"}},
-	{"tf-dynamic-module", "terraform", "main.tf", `module "x" { source = var.source }`, nil, []string{"terraform_module_source_unknown"}},
-	{"tf-missing-source", "terraform", "main.tf", `module "x" {}`, nil, []string{"terraform_module_source_unknown"}},
-	{"tf-malformed", "terraform", "main.tf", `module "x" {`, nil, []string{"terraform_dependencies_unparseable"}},
-	{"tf-filesystem", "terraform", "main.tf", `output "x" { value = file("outside.txt") }`, nil, []string{"terraform_filesystem_expression_uninspected"}},
-	{"tf-unlocked", "terraform", "main.tf", `resource "example_thing" "x" {}`, nil, []string{"terraform_provider_closure_uninspected", "terraform_providers_not_locked"}},
-	{"tf-locked", "terraform", "main.tf", `provider "example" {}`, []diskFile{{".terraform.lock.hcl", "# lock", 0644}}, []string{"terraform_provider_closure_uninspected"}},
-	{"tf-data", "terraform", "main.tf", `data "example_thing" "x" {}`, nil, []string{"terraform_provider_closure_uninspected", "terraform_providers_not_locked", "terraform_runtime_inputs_uninspected"}},
-	{"tf-json", "terraform", "main.tf.json", `{}`, nil, []string{"terraform_json_dependencies_uninspected"}},
-	{"helm-local", "helm", "Chart.yaml", "apiVersion: v2\nname: acme\nversion: 1.0.0\ndependencies: []\n", nil, nil},
-	{"helm-dependency", "helm", "Chart.yaml", "dependencies:\n - name: child\n   version: 1.0.0\n   repository: file://child\n", nil, []string{"helm_dependencies_resolved_at_build"}},
-	{"helm-requirements", "helm", "requirements.yaml", "dependencies: [{name: child}]\n", nil, []string{"helm_dependencies_resolved_at_build"}},
-	{"helm-malformed", "helm", "Chart.yaml", "dependencies: [", nil, []string{"helm_dependencies_unparseable"}},
-	{"helm-values-control", "helm", "values.yaml", "dependencies: [{name: child}]\n", nil, nil},
-	{"kustomize-local", "kustomize", "kustomization.yaml", "resources: [input.yaml]\n", []diskFile{{"input.yaml", "kind: ConfigMap\n", 0644}}, nil},
-	{"kustomize-generator", "kustomize", "Kustomization", "configMapGenerator:\n - name: acme\n   files: [settings=input.txt]\n", []diskFile{{"input.txt", "value", 0644}}, nil},
-	{"kustomize-patch", "kustomize", "kustomization.yml", "patches:\n - path: patch.yaml\n", []diskFile{{"patch.yaml", "kind: ConfigMap\n", 0644}}, nil},
-	{"kustomize-missing", "kustomize", "kustomization.yaml", "resources: [missing.yaml]\n", nil, []string{"kustomize_input_not_materialized"}},
-	{"kustomize-remote", "kustomize", "kustomization.yaml", "resources: [https://example.com/acme/resource.yaml]\n", nil, []string{"kustomize_remote_input"}},
-	{"kustomize-outside", "kustomize", "kustomization.yaml", "resources: [../../outside.yaml]\n", nil, []string{"kustomize_input_outside_captured_source"}},
-	{"kustomize-absolute", "kustomize", "kustomization.yaml", "resources: [/outside.yaml]\n", nil, []string{"kustomize_input_outside_captured_source"}},
-	{"kustomize-git", "kustomize", "kustomization.yaml", "resources: [.git/HEAD]\n", []diskFile{{".git/HEAD", "metadata", 0644}}, []string{"kustomize_git_metadata_input"}},
-	{"kustomize-external", "kustomize", "kustomization.yaml", "helmCharts: []\n", nil, []string{"kustomize_external_dependencies_uninspected"}},
-	{"kustomize-unknown-field", "kustomize", "kustomization.yaml", "futureField: true\n", nil, []string{"kustomize_field_uninspected:futureField"}},
-	{"kustomize-multiline", "kustomize", "kustomization.yaml", "resources:\n - |\n    kind: ConfigMap\n", nil, []string{"kustomize_multiline_input_uninspected"}},
-	{"kustomize-malformed", "kustomize", "kustomization.yaml", "resources: [", nil, []string{"kustomize_dependencies_unparseable"}},
-	{"pulumi-runtime", "pulumi", "Pulumi.yaml", "name: acme\nruntime: nodejs\n", nil, []string{"pulumi_runtime_dependencies_uninspected"}},
-}
-
-func TestCaptureClosureControls(t *testing.T) {
-	for _, fixture := range closureFixtures {
-		t.Run(fixture.name, func(t *testing.T) {
+func TestCaptureDoesNotDiscoverDependencies(t *testing.T) {
+	for _, fixture := range captureFixtures {
+		t.Run(fixture.kind, func(t *testing.T) {
 			fs, repo := afero.NewMemMapFs(), "/repo"
-			files := append([]diskFile{{fixture.path, fixture.data, 0644}}, fixture.extra...)
+			files := []diskFile{{fixture.path, fixture.data, 0644}}
 			writeTree(t, fs, repo, "src", files)
 			expected := sourceidentity.New(fixture.kind, "config")
 			expected.Root = "src"
 			source := rootedSource(t, fs, repo)
 			actual, err := sourceidentity.Capture(source, expected)
 			require.NoError(t, err)
-			checkCapture(t, actual, expected, files, fixture.reasons)
+			checkCapture(t, actual, expected, files, nil)
 			require.NoError(t, sourceidentity.Verify(source, actual))
 		})
 	}
 }
 
-func TestCaptureTerraformModuleCoverageProperties(t *testing.T) {
-	hegel.Test(t, func(t *hegel.T) {
-		fs, repo := afero.NewMemMapFs(), "/repo"
-		hidden := hegel.Draw(t, hegel.Booleans())
-		depth := hegel.Draw(t, hegel.Integers(0, 2))
-		module := strings.Repeat("nested/", depth) + "child"
-		var reasons []string
-		if hidden {
-			module = strings.Repeat("nested/", depth) + ".git/child"
-			reasons = []string{"terraform_module_outside_captured_source"}
-		}
-		files := []diskFile{
-			{"main.tf", fmt.Sprintf(`module "child" { source = "./%s" }`, module), 0644},
-			{module + "/main.tf", `output "x" { value = 1 }`, 0644},
-		}
-		writeTree(t, fs, repo, "src", files)
-		expected := sourceidentity.New("terraform", "config")
-		expected.Root = "src"
-		source := rootedSource(t, fs, repo)
-		prepared, err := sourceidentity.Capture(source, expected)
-		require.NoError(t, err)
-		checkCapture(t, prepared, expected, files, reasons)
-		files[1].data = `output "x" { value = 2 }`
-		writeDiskFile(t, fs, filepath.Join(repo, "src"), files[1])
-		changed, err := sourceidentity.Capture(source, expected)
-		require.NoError(t, err)
-		checkCapture(t, changed, expected, files, reasons)
-		require.Equal(t, !hidden, prepared.Checksum != changed.Checksum)
-		if hidden {
-			require.Empty(t, prepared.EligibleChecksum())
-			require.Empty(t, changed.EligibleChecksum())
-		} else {
-			require.Error(t, sourceidentity.Verify(source, prepared))
-		}
-	})
-}
-
-func TestCaptureClosureProperties(t *testing.T) {
+func TestCapturePreservesCoverageProperties(t *testing.T) {
 	t.Parallel()
-	for _, kind := range []string{"terraform", "helm", "kustomize", "pulumi"} {
-		t.Run(kind, func(t *testing.T) {
-			var choices []closureFixture
-			for _, fixture := range closureFixtures {
-				if fixture.kind == kind {
-					choices = append(choices, fixture)
-				}
-			}
+	for _, fixture := range captureFixtures {
+		t.Run(fixture.kind, func(t *testing.T) {
 			hegel.Test(t, func(t *hegel.T) {
 				fs, repo := afero.NewMemMapFs(), "/repo"
-				expected := sourceidentity.New(kind, "config")
+				expected := sourceidentity.New(fixture.kind, "config")
 				expected.Root = "src"
 				var files []diskFile
 				var reasons []string
 				count := hegel.Draw(t, hegel.Integers(1, 3))
 				for n := 0; n < count; n++ {
-					fixture := hegel.Draw(t, hegel.SampledFrom(choices))
 					prefix := fmt.Sprintf("part-%d/", n)
 					files = append(files, diskFile{prefix + fixture.path, fixture.data, 0644})
-					for _, extra := range fixture.extra {
-						extra.path = prefix + extra.path
-						files = append(files, extra)
-					}
-					reasons = append(reasons, fixture.reasons...)
-				}
-				if kind == "terraform" {
-					locked := hegel.Draw(t, hegel.Booleans())
-					if locked {
-						files = append(files, diskFile{".terraform.lock.hcl", "# root lock", 0644})
-					}
-					reasons = slices.DeleteFunc(reasons, func(reason string) bool { return reason == "terraform_providers_not_locked" })
-					if !locked && slices.Contains(reasons, "terraform_provider_closure_uninspected") {
-						reasons = append(reasons, "terraform_providers_not_locked")
-					}
 				}
 				if hegel.Draw(t, hegel.Booleans()) {
 					files = append(files, diskFile{"pointer.txt", "version https://git-lfs.github.com/spec/v1\noid sha256:abc\nsize 1\n", 0644})
-					reasons = append(reasons, "git_lfs_not_materialized")
 				}
 				if hegel.Draw(t, hegel.Booleans()) {
 					writeDiskFile(t, fs, repo, diskFile{".gitmodules", "[submodule \"acme\"]\npath = child\n", 0644})
-					reasons = append(reasons, "git_submodules_uninspected")
 				}
 				if hegel.Draw(t, hegel.Booleans()) {
 					expected.Coverage = "unknown"
@@ -392,7 +297,7 @@ func TestCaptureAliasingProperties(t *testing.T) {
 		source := rootedSource(t, fs, repo)
 		actual, err := sourceidentity.Capture(source, expected)
 		require.NoError(t, err)
-		reasons := []string{"preexisting_unknown", "terraform_module_outside_captured_source"}
+		reasons := []string{"preexisting_unknown"}
 		checkCapture(t, actual, expected, files, reasons)
 		repeated, err := sourceidentity.Capture(source, expected)
 		require.NoError(t, err)
@@ -666,4 +571,71 @@ func TestCaptureBoundaries(t *testing.T) {
 	require.NoError(t, sourceidentity.Verify(nil, uncaptured))
 	uncaptured.Checksum = "invalid"
 	require.Error(t, sourceidentity.Verify(nil, uncaptured))
+}
+
+func TestVerifyGitDirectoryBoundary(t *testing.T) {
+	for _, change := range []struct {
+		name    string
+		changed bool
+	}{
+		{"none", false}, {"metadata", false}, {"sibling", false}, {"link-target", false},
+		{"bytes", true}, {"add", true}, {"remove", true}, {"rename", true}, {"executable", true}, {"link", true},
+	} {
+		t.Run(change.name, func(t *testing.T) {
+			fs, repo := afero.NewOsFs(), t.TempDir()
+			writeTree(t, fs, repo, "src", []diskFile{
+				{"a/file.txt", "nested\n", 0644},
+				{"a.txt", "peer\n", 0644},
+				{"main.tf", "resource \"example_thing\" \"x\" {}\nmodule \"shared\" { source = \"../shared\" }\n", 0644},
+				{"run.sh", "#!/bin/sh\nexit 0\n", 0755},
+			})
+			writeDiskFile(t, fs, repo, diskFile{"shared/input.txt", "outside\n", 0644})
+			writeDiskFile(t, fs, repo, diskFile{"chart.tgz", "archive\n", 0644})
+			require.NoError(t, os.Symlink("../shared/input.txt", filepath.Join(repo, "src/link")))
+			require.NoError(t, os.Symlink("src", filepath.Join(repo, "alias")))
+			source := rootedSource(t, fs, repo)
+			identities := []struct {
+				kind, root, digest string
+				changed            bool
+			}{
+				{"terraform", "src", "git:040000:73ee2590b8610e6395d5edfa0e21e1867de54435", change.changed},
+				{"terraform", "", "git:040000:eda3ad63ea08c446f504b35fc905cf72d6c36622", change.name != "none" && change.name != "metadata"},
+				{"terraform", "alias/a", "git:120000:e8310385c56dc4bbe379f43400f3181f6a59f260", false},
+				{"helm", "chart.tgz", "git:100644:f1d43c64193cbab8bf697493d49d8210ccff3108", false},
+			}
+			for _, scope := range identities {
+				i := sourceidentity.New(scope.kind, "build-inputs")
+				i.Root, i.Digest, i.Commit, i.Repository, i.Captured = scope.root, scope.digest, strings.Repeat("a", 40), "https://github.com/acme/app", true
+				i.Seal()
+				require.NoError(t, sourceidentity.Verify(source, i), "initial scope %s", scope.root)
+			}
+			switch change.name {
+			case "metadata":
+				writeDiskFile(t, fs, repo, diskFile{".git/HEAD", "ignored", 0644})
+			case "sibling":
+				writeDiskFile(t, fs, repo, diskFile{"README.md", "outside the component", 0644})
+			case "link-target":
+				writeDiskFile(t, fs, repo, diskFile{"shared/input.txt", "new sibling bytes\n", 0644})
+			case "bytes":
+				writeDiskFile(t, fs, repo, diskFile{"src/main.tf", "changed\n", 0644})
+			case "add":
+				writeDiskFile(t, fs, repo, diskFile{"src/new.tf", "new\n", 0644})
+			case "remove":
+				require.NoError(t, os.Remove(filepath.Join(repo, "src/a.txt")))
+			case "rename":
+				require.NoError(t, os.Rename(filepath.Join(repo, "src/a.txt"), filepath.Join(repo, "src/b.txt")))
+			case "executable":
+				require.NoError(t, os.Chmod(filepath.Join(repo, "src/run.sh"), 0644))
+			case "link":
+				require.NoError(t, os.Remove(filepath.Join(repo, "src/link")))
+				require.NoError(t, os.Symlink("../chart.tgz", filepath.Join(repo, "src/link")))
+			}
+			for _, scope := range identities {
+				i := sourceidentity.New(scope.kind, "build-inputs")
+				i.Root, i.Digest, i.Commit, i.Repository, i.Captured = scope.root, scope.digest, strings.Repeat("a", 40), "https://github.com/acme/app", true
+				i.Seal()
+				require.Equal(t, scope.changed, sourceidentity.Verify(source, i) != nil, "scope %s", scope.root)
+			}
+		})
+	}
 }

@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
 
-	"github.com/google/go-github/v50/github"
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 
@@ -44,11 +42,10 @@ func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []c
 				changed[i] = true
 				return nil
 			}
-			paths, err := a.changedSourcePaths(groupCtx, connected, public, previous, latest)
+			changed[i], err = buildsource.DirectoryChanged(groupCtx, a.vcsHelpers, connected, public, src.Directory, previous, latest)
 			if err != nil {
 				return fmt.Errorf("component %s: %w", src.Name, err)
 			}
-			changed[i] = anyPathMatchesDirectory(paths, src.Directory)
 			return nil
 		})
 	}
@@ -84,61 +81,6 @@ func (a *Activities) loadSourceVCSConfig(ctx context.Context, vcsConfigID string
 		return nil, nil, fmt.Errorf("vcs config %s not found: %w", vcsConfigID, err)
 	}
 	return nil, &public, nil
-}
-
-func (a *Activities) changedSourcePaths(ctx context.Context, connected *app.ConnectedGithubVCSConfig, public *app.PublicGitVCSConfig, baseSHA, headSHA string) ([]string, error) {
-	if baseSHA == "" || headSHA == "" {
-		return nil, fmt.Errorf("base and head commits are required")
-	}
-	if baseSHA == headSHA {
-		return nil, nil
-	}
-
-	var orgID, repo string
-	var connection *app.VCSConnection
-	if connected != nil {
-		orgID, repo, connection = connected.OrgID, connected.Repo, &connected.VCSConnection
-	} else if public != nil {
-		orgID, repo = public.OrgID, public.Repo
-	} else {
-		return nil, fmt.Errorf("source has no repository config")
-	}
-	baseTree, err := a.vcsHelpers.GetSourceTree(ctx, orgID, repo, baseSHA, connection)
-	if err != nil {
-		return nil, err
-	}
-	headTree, err := a.vcsHelpers.GetSourceTree(ctx, orgID, repo, headSHA, connection)
-	if err != nil {
-		return nil, err
-	}
-	return changedPathsFromSourceTrees(baseTree, headTree), nil
-}
-
-func changedPathsFromSourceTrees(base, head *github.Tree) []string {
-	entries := func(tree *github.Tree) map[string]*github.TreeEntry {
-		out := make(map[string]*github.TreeEntry)
-		for _, entry := range tree.Entries {
-			if entry.GetType() != "tree" {
-				out[entry.GetPath()] = entry
-			}
-		}
-		return out
-	}
-	before, after := entries(base), entries(head)
-	var paths []string
-	for name, entry := range before {
-		other, ok := after[name]
-		if !ok || entry.GetSHA() != other.GetSHA() || entry.GetMode() != other.GetMode() || entry.GetType() != other.GetType() {
-			paths = append(paths, name)
-		}
-	}
-	for name := range after {
-		if _, ok := before[name]; !ok {
-			paths = append(paths, name)
-		}
-	}
-	sort.Strings(paths)
-	return paths
 }
 
 // comparisonChangedPaths reads the git diff already stored for the run.

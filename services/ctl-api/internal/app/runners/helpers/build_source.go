@@ -62,64 +62,12 @@ func ResumeBuildSource(ctx context.Context, db *gorm.DB, jobID string, plan *pla
 		return nil, fmt.Errorf("source metadata requires a build owner")
 	}
 	if identity != nil && identity.Captured {
-		if err := checkedBuildSource(plan.BuildPlan.SourceIdentity, identity, true); err != nil {
+		if err := sourceidentity.ValidateTransition(plan.BuildPlan.SourceIdentity, identity, true); err != nil {
 			return nil, err
 		}
 		plan.BuildPlan.SourceIdentity = identity
 	}
 	return plan, nil
-}
-
-func checkedBuildSource(expected, actual *sourceidentity.Identity, claim bool) error {
-	if actual == nil {
-		return nil
-	}
-	if err := actual.Validate(); err != nil {
-		return err
-	}
-	if expected == nil {
-		return fmt.Errorf("source metadata was not prepared")
-	}
-	if err := expected.Validate(); err != nil {
-		return err
-	}
-	if expected.Captured || !claim {
-		if !sourceidentity.Matches(expected, actual) {
-			return fmt.Errorf("runner source differs from prepared inputs")
-		}
-		return nil
-	}
-	if actual.ConfigChecksum != expected.ConfigChecksum || actual.Kind != expected.Kind || actual.Root != expected.Root || !actual.Captured || actual.Commit != expected.Commit || actual.Repository != expected.Repository {
-		return fmt.Errorf("invalid source capture")
-	}
-	if expected.Digest != "" && actual.Digest != expected.Digest {
-		return fmt.Errorf("source capture changed a prepared digest")
-	}
-	if expected.ChartVersion != "" && actual.ChartVersion != expected.ChartVersion {
-		return fmt.Errorf("source capture changed a prepared chart version")
-	}
-	if actual.Kind == "image" {
-		if actual.Digest == "" {
-			return fmt.Errorf("image digest is required")
-		}
-	} else if actual.Coverage != sourceidentity.Unknown {
-		return fmt.Errorf("unprepared dependency closure cannot become complete")
-	}
-	for _, reason := range expected.Reasons {
-		if reason == "source_requires_runner_resolution" {
-			continue
-		}
-		found := false
-		for _, actualReason := range actual.Reasons {
-			if reason == actualReason {
-				found = true
-			}
-		}
-		if !found {
-			return fmt.Errorf("source capture lost an unknown input")
-		}
-	}
-	return nil
 }
 
 func reportedBuildSource(expected, actual *sourceidentity.Identity) *sourceidentity.Identity {
@@ -142,7 +90,7 @@ func applyBuildSource(tx *gorm.DB, job *app.RunnerJob, source *app.ComponentBuil
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.ComponentBuild{ID: job.OwnerID}).First(&b).Error; err != nil {
 			return err
 		}
-		if err := checkedBuildSource(b.SourceIdentity, actual, claim); err != nil {
+		if err := sourceidentity.ValidateTransition(b.SourceIdentity, actual, claim); err != nil {
 			return err
 		}
 		actual = reportedBuildSource(b.SourceIdentity, actual)
@@ -167,7 +115,7 @@ func applyBuildSource(tx *gorm.DB, job *app.RunnerJob, source *app.ComponentBuil
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.AppSandboxBuild{ID: job.OwnerID}).First(&b).Error; err != nil {
 			return err
 		}
-		if err := checkedBuildSource(b.SourceIdentity, actual, claim); err != nil {
+		if err := sourceidentity.ValidateTransition(b.SourceIdentity, actual, claim); err != nil {
 			return err
 		}
 		actual = reportedBuildSource(b.SourceIdentity, actual)

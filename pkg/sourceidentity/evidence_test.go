@@ -67,7 +67,7 @@ func TestIdentityPairwiseReceiptAndReuseModel(t *testing.T) {
 				require.Equal(t, wantReceipt, sourceidentity.Matches(left, right))
 				require.Equal(t, wantReceipt, sourceidentity.Matches(right, left))
 				wantReuse := leftState.eligible && rightState.eligible && identityPreimage(left) == identityPreimage(right)
-				gotReuse := left.EligibleChecksum() != "" && left.EligibleChecksum() == right.EligibleChecksum()
+				gotReuse := sourceidentity.Equivalent(left, right)
 				require.Equal(t, wantReuse, gotReuse)
 				require.Equal(t, leftBefore, left)
 				require.Equal(t, rightBefore, right)
