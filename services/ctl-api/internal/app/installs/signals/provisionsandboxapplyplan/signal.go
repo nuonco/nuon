@@ -207,9 +207,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
-	_ = activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
+	if err := activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
 		SandboxRunID: sandboxRun.ID,
-	})
+	}); err != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		return errors.Wrap(err, "unable to record applied sandbox baseline")
+	}
 
 	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{

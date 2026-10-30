@@ -6,6 +6,7 @@ import { Button } from '@/components/common/Button'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Diff } from '@/components/diffs/Diff'
 import { DiffEmptyState } from '@/components/diffs/DiffEmptyState'
 import { DiffFilter } from '@/components/diffs/DiffFilter'
 import { DiffSection } from '@/components/diffs/DiffSection'
@@ -73,7 +74,7 @@ const OutlineItem = ({ section, active, onSelect }: IOutlineItem) => {
       <Text
         variant="subtext"
         theme="neutral"
-        family={section.kind === 'file' ? 'mono' : undefined}
+        family={section.kind === 'file' || section.build ? 'mono' : undefined}
         className={cn('min-w-0 flex-1 truncate', active && 'text-foreground')}
       >
         {section.title}
@@ -286,32 +287,59 @@ export const ConfigChangesViewer = ({
                     {group}
                   </Text>
                 </span>,
-                ...items.map((section) => (
-                  <DiffSection
-                    key={section.id}
-                    data-config-change={section.id}
-                    open={open[section.id] ?? true}
-                    onOpenChange={(next) => setSectionOpen(section.id, next)}
-                    title={section.title}
-                    description={section.description}
-                    operation={section.operation}
-                    before={section.before}
-                    after={section.after}
-                    language={section.language}
-                    filename={section.filename}
-                    error={section.error}
-                    note={
-                      section.build ? (
-                        <BuildChangeDetail build={section.build} />
-                      ) : undefined
-                    }
-                    className={cn(
-                      'shrink-0 scroll-mt-2',
-                      section.id === activeId &&
-                        'outline outline-1 outline-primary-400/60'
-                    )}
-                  />
-                )),
+                ...items.map((section) =>
+                  section.build ? (
+                    <div
+                      key={section.id}
+                      data-config-change={section.id}
+                      className={cn(
+                        'flex shrink-0 scroll-mt-2 flex-col gap-3 border-t px-1 py-3',
+                        section.id === activeId &&
+                          'outline outline-1 outline-primary-400/60'
+                      )}
+                    >
+                      <BuildChangeDetail build={section.build} />
+                      {section.description ? (
+                        <Text variant="subtext" theme="neutral">
+                          {section.description}
+                        </Text>
+                      ) : null}
+                      {section.error ? (
+                        <Text variant="subtext" theme="neutral">
+                          {section.error}
+                        </Text>
+                      ) : null}
+                      {section.before || section.after ? (
+                        <Diff
+                          before={section.before}
+                          after={section.after}
+                          language={section.language}
+                          filename={section.filename}
+                        />
+                      ) : null}
+                    </div>
+                  ) : (
+                    <DiffSection
+                      key={section.id}
+                      data-config-change={section.id}
+                      open={open[section.id] ?? true}
+                      onOpenChange={(next) => setSectionOpen(section.id, next)}
+                      title={section.title}
+                      description={section.description}
+                      operation={section.operation}
+                      before={section.before}
+                      after={section.after}
+                      language={section.language}
+                      filename={section.filename}
+                      error={section.error}
+                      className={cn(
+                        'shrink-0 scroll-mt-2',
+                        section.id === activeId &&
+                          'outline outline-1 outline-primary-400/60'
+                      )}
+                    />
+                  )
+                ),
               ])
             ) : (
               <DiffEmptyState />

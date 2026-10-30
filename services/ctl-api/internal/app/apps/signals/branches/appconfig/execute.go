@@ -193,7 +193,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	isPreview := run.IsPreview()
 
 	// For preview runs, diff intermediate configs before creating the DB AppConfig.
-	// If nothing changed, short-circuit and skip the rest of the workflow.
 	var previewDiff *activities.ComputeAppConfigDiffOutput
 	var previewBaselineConfigID string
 	if isPreview {
@@ -214,7 +213,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 		if diffErr != nil {
 			l.Warn("unable to diff intermediate configs, continuing", "error", diffErr)
-		} else if !diffResult.Changed && !run.Force {
+		} else if !diffResult.Changed && !run.Force && workflow.GetVersion(ctx, "app-branch-preview-check-source-refs-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 			_ = activities.AwaitUpdateAppBranchRunNoConfigChanges(ctx, &activities.UpdateAppBranchRunNoConfigChangesInput{
 				RunID: s.RunID,
 			})

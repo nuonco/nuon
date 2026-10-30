@@ -404,6 +404,7 @@ func (s *service) insertInstallDeploy(
 		Status:             "queued",
 		StatusDescription:  "waiting to be deployed to install",
 		ComponentBuildID:   req.BuildID,
+		AppConfigID:        install.AppConfigID,
 		InstallComponentID: installCmp.ID,
 		Type:               typ,
 		Role:               req.Role,

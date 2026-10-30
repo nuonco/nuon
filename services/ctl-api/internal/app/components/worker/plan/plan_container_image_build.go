@@ -17,10 +17,17 @@ import (
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.ComponentBuild) (*plantypes.ContainerImagePullPlan, error) {
+	inputs, err := buildsource.ComponentInputs(&bld.ComponentConfigConnection)
+	if err != nil {
+		return nil, err
+	}
+	plan := inputs.ContainerImagePullPlan
+
 	srcRepo, err := p.getSourceRepository(
 		bld.ComponentConfigConnection.ExternalImageComponentConfig,
 		bld.ComponentConfigConnection.ComponentID,
@@ -29,14 +36,7 @@ func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.C
 		return nil, errors.Wrap(err, "unable to get source repository")
 	}
 
-	plan := &plantypes.ContainerImagePullPlan{
-		Image:        bld.ComponentConfigConnection.ExternalImageComponentConfig.ImageURL,
-		Tag:          bld.ComponentConfigConnection.ExternalImageComponentConfig.Tag,
-		UpdatePolicy: bld.ComponentConfigConnection.ExternalImageComponentConfig.UpdatePolicy,
-		Verification: bld.ComponentConfigConnection.ExternalImageComponentConfig.Verification,
-
-		RepoCfg: srcRepo,
-	}
+	plan.RepoCfg = srcRepo
 
 	// Look up the most recent prior Active build's SourceDigest so the runner
 	// can detect a no-op (upstream digest unchanged) and skip the artifact

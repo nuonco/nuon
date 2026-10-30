@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"gorm.io/gorm"
 
@@ -43,6 +44,12 @@ func (h *Helpers) LookupVCSConnection(ctx context.Context,
 	return conn.ID, nil
 }
 
+type repoAccessCacheKey struct{}
+
+func WithRepoAccessCache(ctx context.Context) context.Context {
+	return context.WithValue(ctx, repoAccessCacheKey{}, &sync.Map{})
+}
+
 func connectionForRepoOwner(owner string, vcsConnections []app.VCSConnection) *app.VCSConnection {
 	for i := range vcsConnections {
 		if strings.EqualFold(vcsConnections[i].GithubAccountName, owner) {
@@ -53,6 +60,14 @@ func connectionForRepoOwner(owner string, vcsConnections []app.VCSConnection) *a
 }
 
 func (h *Helpers) repoAccess(ctx context.Context, conn *app.VCSConnection, owner, name string) error {
+	cache, _ := ctx.Value(repoAccessCacheKey{}).(*sync.Map)
+	key := strings.Join([]string{conn.OrgID, conn.ID, conn.GithubInstallID, strings.ToLower(owner), strings.ToLower(name)}, "\n")
+	if cache != nil {
+		if _, ok := cache.Load(key); ok {
+			return nil
+		}
+	}
+
 	client, err := h.GetVCSConnectionClient(ctx, conn)
 	if err != nil {
 		var notFound stderr.ErrNotFound
@@ -71,6 +86,9 @@ func (h *Helpers) repoAccess(ctx context.Context, conn *app.VCSConnection, owner
 			}
 		}
 		return err
+	}
+	if cache != nil {
+		cache.Store(key, struct{}{})
 	}
 	return nil
 }

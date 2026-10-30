@@ -3,6 +3,8 @@ import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { InstallDeploymentSourceDiffPanel } from '@/components/installs/InstallDeploymentSourceDiff'
+import { panelTriggerClass } from '@/components/surfaces/panel-trigger'
 import {
   changeReasonBadgeTheme,
   changeReasonLabel,
@@ -17,9 +19,28 @@ export const BuildChangeDetail = ({
   const subject = build.commit?.message?.split('\n')[0]
 
   return (
-    <span className="flex flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-2">
       <span className="flex flex-wrap items-center justify-between gap-3">
-        <span className="flex flex-wrap items-center gap-3">
+        <span className="flex min-w-0 flex-wrap items-center gap-3">
+          {build.sourceDiffTarget ? (
+            <InstallDeploymentSourceDiffPanel
+              target={build.sourceDiffTarget}
+              triggerButton={{
+                variant: 'ghost',
+                className: panelTriggerClass,
+                'aria-label': `View source changes for ${build.name}`,
+                children: (
+                  <Text family="mono" className="break-all">
+                    {build.name}
+                  </Text>
+                ),
+              }}
+            />
+          ) : (
+            <Text family="mono" className="break-all">
+              {build.name}
+            </Text>
+          )}
           {build.changeReason ? (
             <Badge size="sm" theme={changeReasonBadgeTheme(build.changeReason)}>
               {changeReasonLabel(build.changeReason)}
@@ -44,6 +65,6 @@ export const BuildChangeDetail = ({
           ) : null}
         </span>
       ) : null}
-    </span>
+    </div>
   )
 }

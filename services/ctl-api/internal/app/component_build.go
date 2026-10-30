@@ -8,6 +8,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -78,11 +79,10 @@ type ComponentBuild struct {
 	// IsPreview is true when this build came from a preview branch run.
 	IsPreview bool `gorm:"-" json:"is_preview" temporaljson:"is_preview,omitempty"`
 
-	// checksum of our intermediate component config
 	Checksum string `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
 
-	// checksum of the component's source directory at build time
-	SourceChecksum string `json:"source_checksum,omitzero" gorm:"default null" temporaljson:"source_checksum,omitzero,omitempty"`
+	SourceChecksum string                   `json:"source_checksum,omitzero" gorm:"default null" temporaljson:"source_checksum,omitzero,omitempty"`
+	SourceIdentity *sourceidentity.Identity `json:"source_identity,omitempty" gorm:"type:jsonb;serializer:json" temporaljson:"source_identity,omitempty"`
 
 	// Source identity for image-type builds.
 	//

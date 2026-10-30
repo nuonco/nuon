@@ -209,9 +209,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	l.Debug("finished executing sandbox apply plan", zap.String("install_run.id", sandboxRun.ID))
 
-	_ = activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
+	if err := activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
 		SandboxRunID: sandboxRun.ID,
-	})
+	}); err != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		return errors.Wrap(err, "unable to record applied sandbox baseline")
+	}
 
 	l.Info("updating install sandbox run status", zap.String("install_run.id", sandboxRun.ID))
 	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")

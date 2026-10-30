@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 )
 
 type CheckSandboxBuildNeededInput struct {
@@ -15,13 +16,14 @@ type CheckSandboxBuildNeededInput struct {
 }
 
 type CheckSandboxBuildNeededOutput struct {
-	NeedsBuild      bool   `json:"needs_build"`
-	ExistingBuildID string `json:"existing_build_id,omitempty"`
-	ChangeReason    string `json:"change_reason,omitempty"`
+	NeedsBuild      bool                     `json:"needs_build"`
+	ExistingBuildID string                   `json:"existing_build_id,omitempty"`
+	ChangeReason    string                   `json:"change_reason,omitempty"`
+	SourceIdentity  *sourceidentity.Identity `json:"source_identity,omitempty"`
 }
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 1m
+// @start-to-close-timeout 5m
 func (a *Activities) CheckSandboxBuildNeeded(ctx context.Context, input *CheckSandboxBuildNeededInput) (*CheckSandboxBuildNeededOutput, error) {
 	if input.Force || input.OldAppConfigID == "" {
 		return &CheckSandboxBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
@@ -37,7 +39,7 @@ func (a *Activities) CheckSandboxBuildNeeded(ctx context.Context, input *CheckSa
 		return &CheckSandboxBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
 	}
 
-	if !configdiff.SandboxConfigsEqual(*oldCfg, *newCfg) {
+	if buildsource.SandboxChecksum(oldCfg) != buildsource.SandboxChecksum(newCfg) {
 		return &CheckSandboxBuildNeededOutput{
 			NeedsBuild:   true,
 			ChangeReason: ChangeReasonConfigChanged,
@@ -56,7 +58,7 @@ func (a *Activities) CheckSandboxBuildNeeded(ctx context.Context, input *CheckSa
 		return reuseExistingSandboxBuild(reused.BuildID), nil
 	}
 
-	return &CheckSandboxBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
+	return &CheckSandboxBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged, SourceIdentity: reused.SourceIdentity}, nil
 }
 
 func reuseExistingSandboxBuild(existingBuildID string) *CheckSandboxBuildNeededOutput {

@@ -70,6 +70,7 @@ func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID
 		StatusDescription:           "queued and waiting for runner to pick up",
 		GitRef:                      gitRef,
 		ComponentConfigConnectionID: configConn.ID,
+		Checksum:                    configConn.Checksum,
 		StoredComponentID:           cmp.ID,
 		Request:                     wfRequest,
 	}

@@ -82,7 +82,7 @@ func (h *Helpers) EffectiveComponentTargets(ctx context.Context, db *gorm.DB, ap
 	if len(buildIDs) > 0 {
 		var builds []app.ComponentBuild
 		if err := db.WithContext(ctx).
-			Select("id", "status", "status_v2", "component_config_connection_id").
+			Select("id", "status", "status_v2", "component_config_connection_id", "source_checksum", "source_digest", "source_identity").
 			Preload("ComponentConfigConnection", loadConfig).
 			Preload("ComponentConfigConnection.Component", loadComponent).
 			Where("id IN ?", buildIDs).Find(&builds).Error; err != nil {
@@ -152,7 +152,7 @@ func (h *Helpers) AppliedInstallDeploys(ctx context.Context, db *gorm.DB, instal
 		return applied, nil
 	}
 
-	var deploys []app.InstallDeploy
+	var deploys []*app.InstallDeploy
 	if err := db.WithContext(ctx).
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
@@ -166,7 +166,7 @@ func (h *Helpers) AppliedInstallDeploys(ctx context.Context, db *gorm.DB, instal
 		if deploys[i].Type == app.InstallDeployTypeTeardown {
 			continue
 		}
-		applied[deploys[i].InstallComponentID] = &deploys[i]
+		applied[deploys[i].InstallComponentID] = deploys[i]
 	}
 	return applied, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/syncerr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
@@ -245,7 +246,8 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 // the incoming checksum is unchanged. Walks same-checksum CCCs newest-first so
 // a concurrent branch sync with a different checksum does not block reuse.
 func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incoming *app.ComponentConfigConnection) (bool, string, error) {
-	if incoming.Checksum == "" || build.RequiresFreshBuild(incoming) {
+	expected := localSourceChecksum(ctx, db, incoming)
+	if expected == "" {
 		return false, "", nil
 	}
 
@@ -267,7 +269,7 @@ func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incom
 		if prev.LatestBuildID.Valid {
 			var bld app.ComponentBuild
 			res = db.WithContext(ctx).
-				Select("id", "status").
+				Select("id", "status", "source_checksum", "source_identity").
 				Where(app.ComponentBuild{ID: prev.LatestBuildID.String}).
 				First(&bld)
 			if res.Error != nil {
@@ -279,7 +281,7 @@ func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incom
 					Err:         res.Error,
 				}
 			}
-			if bld.Status == app.ComponentBuildStatusActive {
+			if bld.Status == app.ComponentBuildStatusActive && bld.SourceChecksum == expected && bld.SourceIdentity.EligibleChecksum() == expected {
 				return true, bld.ID, nil
 			}
 			continue
@@ -289,7 +291,7 @@ func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incom
 		// (broken pin from concurrent create). Recover by looking up the build.
 		var bld app.ComponentBuild
 		res = db.WithContext(ctx).
-			Select("id").
+			Select("id", "source_checksum", "source_identity").
 			Where(app.ComponentBuild{
 				ComponentConfigConnectionID: prev.ID,
 				Status:                      app.ComponentBuildStatusActive,
@@ -305,7 +307,9 @@ func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incom
 				Err:         res.Error,
 			}
 		}
-		return true, bld.ID, nil
+		if bld.SourceChecksum == expected && bld.SourceIdentity.EligibleChecksum() == expected {
+			return true, bld.ID, nil
+		}
 	}
 
 	return false, "", nil
@@ -317,7 +321,8 @@ func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incom
 // every config connection has a build behind it, which CCC pinning depends on.
 func reusableConfigID(ctx context.Context, db *gorm.DB, cmpID string, incoming *app.ComponentConfigConnection) (string, error) {
 	checksum := incoming.Checksum
-	if checksum == "" || build.RequiresFreshBuild(incoming) {
+	expected := localSourceChecksum(ctx, db, incoming)
+	if expected == "" {
 		return "", nil
 	}
 
@@ -343,7 +348,7 @@ func reusableConfigID(ctx context.Context, db *gorm.DB, cmpID string, incoming *
 
 	var bld app.ComponentBuild
 	res = db.WithContext(ctx).
-		Select("id", "status").
+		Select("id", "status", "source_checksum", "source_identity").
 		Where(app.ComponentBuild{ID: latest.LatestBuildID.String}).
 		First(&bld)
 	if res.Error != nil {
@@ -356,11 +361,22 @@ func reusableConfigID(ctx context.Context, db *gorm.DB, cmpID string, incoming *
 		}
 	}
 
-	if bld.Status == "error" {
+	if bld.Status != app.ComponentBuildStatusActive || bld.SourceChecksum != expected || bld.SourceIdentity.EligibleChecksum() != expected {
 		return "", nil
 	}
 
 	return latest.ID, nil
+}
+
+func localSourceChecksum(ctx context.Context, db *gorm.DB, incoming *app.ComponentConfigConnection) string {
+	if incoming.ExternalImageComponentConfig == nil && (incoming.KubernetesManifestComponentConfig == nil || incoming.KubernetesManifestComponentConfig.Kustomize != nil) {
+		return ""
+	}
+	identity, err := buildsource.Component(ctx, db, nil, &app.ComponentBuild{ComponentConfigConnection: *incoming})
+	if err != nil {
+		return ""
+	}
+	return identity.EligibleChecksum()
 }
 
 func appendScheduled(result *sync.Result, state sync.ComponentState) *sync.Result {

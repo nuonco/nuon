@@ -11,14 +11,17 @@ import (
 	"gorm.io/gorm"
 
 	pkgconfig "github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type ComputeAndStoreAppBranchRunComparisonInput struct {
-	AppBranchID string `json:"app_branch_id" validate:"required"`
-	RunID       string `json:"run_id" validate:"required"`
+	AppBranchID          string `json:"app_branch_id" validate:"required"`
+	RunID                string `json:"run_id" validate:"required"`
+	DeferExternalSources bool   `json:"defer_external_sources,omitempty"`
+	ExternalSourcesOnly  bool   `json:"external_sources_only,omitempty"`
 }
 
 type ComputeAndStoreAppBranchRunComparisonOutput struct {
@@ -72,6 +75,9 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	if err := a.v.Struct(input); err != nil {
 		return nil, fmt.Errorf("invalid input: %w", err)
 	}
+	if input.DeferExternalSources && input.ExternalSourcesOnly {
+		return nil, fmt.Errorf("defer_external_sources and external_sources_only are mutually exclusive")
+	}
 
 	out := &ComputeAndStoreAppBranchRunComparisonOutput{
 		HeadRunID: input.RunID,
@@ -91,8 +97,24 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	if err := a.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
 		Preload("Preview").
+		Preload("Workflow").
 		First(&headRun, "id = ?", input.RunID).Error; err != nil {
 		return nil, fmt.Errorf("unable to load head run: %w", err)
+	}
+
+	if input.ExternalSourcesOnly {
+		return a.enrichStoredExternalSourceChanges(ctx, input, &comparison, &headRun)
+	}
+	deferExternalSources := input.DeferExternalSources && (!headRun.NoConfigChanges || headRun.Force)
+	if headRun.Workflow != nil && generics.FromPtrStr(headRun.Workflow.Metadata["skip_builds"]) == "true" {
+		deferExternalSources = false
+	}
+	if deferExternalSources && headRun.AppConfigID != "" {
+		var config app.AppConfig
+		if err := a.db.WithContext(ctx).Select("builds_locked").Where(app.AppConfig{ID: headRun.AppConfigID}).First(&config).Error; err != nil {
+			return nil, err
+		}
+		deferExternalSources = !config.BuildsLocked
 	}
 
 	if comparison.BaseRunID == nil || *comparison.BaseRunID == "" {
@@ -204,14 +226,6 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 
 	configDiff := a.computeAndEnrichConfigDiff(ctx, branch, fullDiff, componentSources, changedPaths, headRun.AppConfigID, baseRun.AppConfigID)
 	if configDiff != nil {
-		baseSHAs := map[string]string{}
-		if !noBase && baseRun.AppConfigID != "" {
-			loaded, shaErr := a.loadComponentBuildSHAs(ctx, baseRun.AppConfigID)
-			if shaErr != nil {
-				return nil, fmt.Errorf("unable to load base component build commits: %w", shaErr)
-			}
-			baseSHAs = loaded
-		}
 		repo, branchName := branchRepoAndBranch(branch)
 		if headRun.Preview != nil && headRun.Preview.GitRef != "" {
 			branchName = headRun.Preview.GitRef
@@ -223,8 +237,10 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 				}
 			}
 		}
-		if err := a.applyExternalSourceChanges(ctx, componentSources, repo, branchName, configDiff, baseSHAs); err != nil {
-			return nil, err
+		if !deferExternalSources {
+			if err := a.applyRunExternalSourceChanges(ctx, branch, &headRun, baseRun.AppConfigID, componentSources, configDiff); err != nil {
+				return nil, err
+			}
 		}
 	}
 	if err := a.uploadComparisonBlob(ctx, comparison.ID, "config_diff", configDiff, &comparison.ConfigDiff); err != nil {
@@ -250,6 +266,74 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	}
 
 	return out, nil
+}
+
+func (a *Activities) enrichStoredExternalSourceChanges(ctx context.Context, input *ComputeAndStoreAppBranchRunComparisonInput, comparison *app.AppBranchRunComparison, headRun *app.AppBranchRun) (*ComputeAndStoreAppBranchRunComparisonOutput, error) {
+	out := &ComputeAndStoreAppBranchRunComparisonOutput{
+		HeadRunID: input.RunID,
+		HeadSHA:   runCommitSHA(headRun),
+	}
+	if comparison.ConfigDiff == nil || !comparison.ConfigDiff.IsSet() || headRun.AppConfigID == "" {
+		out.Skipped = true
+		out.SkipReason = "no stored config diff"
+		return out, nil
+	}
+	raw, err := comparison.ConfigDiff.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load stored config diff: %w", err)
+	}
+	var configDiff *ConfigDiffWithSourceOutput
+	if err := json.Unmarshal([]byte(raw), &configDiff); err != nil {
+		return nil, fmt.Errorf("unable to parse stored config diff: %w", err)
+	}
+	if configDiff == nil {
+		out.Skipped = true
+		out.SkipReason = "no stored config diff"
+		return out, nil
+	}
+
+	var baseRun app.AppBranchRun
+	if comparison.BaseRunID != nil && *comparison.BaseRunID != "" {
+		out.BaseRunID = *comparison.BaseRunID
+		if err := a.db.WithContext(ctx).
+			Preload("VCSConnectionCommit").
+			Where(app.AppBranchRun{ID: out.BaseRunID}).First(&baseRun).Error; err != nil {
+			return nil, fmt.Errorf("unable to load base run: %w", err)
+		}
+		out.BaseSHA = runCommitSHA(&baseRun)
+	}
+	branch, err := a.getAppBranchByID(ctx, input.AppBranchID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load app branch: %w", err)
+	}
+	sources, err := a.loadComponentSources(ctx, headRun.AppConfigID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load component sources: %w", err)
+	}
+	if err := a.applyRunExternalSourceChanges(ctx, branch, headRun, baseRun.AppConfigID, sources, configDiff); err != nil {
+		return nil, err
+	}
+	if err := a.uploadComparisonBlob(ctx, comparison.ID, "config_diff", configDiff, &comparison.ConfigDiff); err != nil {
+		return nil, fmt.Errorf("unable to store config diff blob: %w", err)
+	}
+	if err := a.persistComparisonBlobs(ctx, &app.AppBranchRunComparison{ID: comparison.ID, ConfigDiff: comparison.ConfigDiff}); err != nil {
+		return nil, err
+	}
+	out.Additions, out.Removals, out.Changed = configDiff.Additions, configDiff.Removals, configDiff.Changed
+	out.ConfigDiffStored = true
+	return out, nil
+}
+
+func (a *Activities) applyRunExternalSourceChanges(ctx context.Context, branch *app.AppBranch, headRun *app.AppBranchRun, baseConfigID string, sources []componentSource, configDiff *ConfigDiffWithSourceOutput) error {
+	baseSHAs, err := a.loadComponentBuildSHAs(ctx, baseConfigID)
+	if err != nil {
+		return fmt.Errorf("unable to load base component build commits: %w", err)
+	}
+	repo, branchName := branchRepoAndBranch(branch)
+	if headRun.Preview != nil && headRun.Preview.GitRef != "" {
+		branchName = headRun.Preview.GitRef
+	}
+	return a.applyExternalSourceChanges(ctx, sources, repo, branchName, configDiff, baseSHAs, headRun.ID)
 }
 
 func runCommitSHA(run *app.AppBranchRun) string {

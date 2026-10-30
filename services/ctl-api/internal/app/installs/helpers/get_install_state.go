@@ -503,6 +503,7 @@ func ToSecretsState(parsedOutputs map[string]interface{}) *state.SecretsState {
 func ToSandboxState(run *app.InstallSandboxRun) *state.SandboxState {
 	st := state.NewSandboxState()
 	st.Populated = true
+	st.BuildID = run.AppSandboxBuildID
 	st.Status = string(run.Status)
 	st.Outputs = run.Outputs
 	if run.AppSandboxConfig.PublicGitVCSConfig != nil {

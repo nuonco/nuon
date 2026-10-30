@@ -20,6 +20,9 @@ import (
 // swagger:model state.SandboxState
 type StateSandboxState struct {
 
+	// build id
+	BuildID string `json:"build_id,omitempty"`
+
 	// outputs
 	Outputs any `json:"outputs,omitempty"`
 

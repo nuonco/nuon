@@ -332,7 +332,7 @@ func (h *Helpers) SaveInstallConfigDiffBlob(ctx context.Context, installConfigVe
 // AppBranchConfigDiff diffs newAppConfigID against each entity's applied app
 // config. install.AppConfigID is the early pin and is not a baseline.
 func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install, newAppConfigID string) (*app.InstallConfigDiff, error) {
-	baselines, err := h.installCompositeBaselines(ctx, install)
+	baselines, err := h.InstallCompositeBaselines(ctx, h.db, install)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +346,7 @@ func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install,
 // CompositeAppConfigTree is the hierarchical diff for an install. Each entity
 // is compared to its own applied app config.
 func (h *Helpers) CompositeAppConfigTree(ctx context.Context, install *app.Install, newAppConfigID string) (*pkgdiff.Diff, error) {
-	baselines, err := h.installCompositeBaselines(ctx, install)
+	baselines, err := h.InstallCompositeBaselines(ctx, h.db, install)
 	if err != nil {
 		return nil, err
 	}
@@ -357,22 +357,25 @@ func (h *Helpers) CompositeAppConfigTree(ctx context.Context, install *app.Insta
 	return tree, nil
 }
 
-func (h *Helpers) installCompositeBaselines(ctx context.Context, install *app.Install) (configdiff.CompositeBaselines, error) {
+func (h *Helpers) InstallCompositeBaselines(ctx context.Context, db *gorm.DB, install *app.Install) (configdiff.CompositeBaselines, error) {
 	fallback := install.AppliedAppConfigID()
+	unknownSandboxBuild := ""
 	baselines := configdiff.CompositeBaselines{
-		Fallback:   fallback,
-		Stack:      fallback,
-		Sandbox:    fallback,
-		Components: map[string]string{},
+		Fallback:           fallback,
+		Stack:              fallback,
+		SandboxBuildID:     &unknownSandboxBuild,
+		Components:         map[string]string{},
+		ComponentBuilds:    map[string]*app.ComponentBuild{},
+		DependencyBuildIDs: map[string]map[string]string{},
 	}
 
 	var stack app.InstallStack
-	err := h.db.WithContext(ctx).Where(app.InstallStack{InstallID: install.ID}).First(&stack).Error
+	err := db.WithContext(ctx).Where(app.InstallStack{InstallID: install.ID}).First(&stack).Error
 	switch {
 	case err == nil && stack.AppConfigRef.AppliedConfigID != "":
 		baselines.Stack = stack.AppConfigRef.AppliedConfigID
 	case err == nil || errors.Is(err, gorm.ErrRecordNotFound):
-		active, activeErr := h.getActiveStackVersion(ctx, install.ID)
+		active, activeErr := h.getActiveStackVersion(ctx, db, install.ID)
 		if activeErr != nil {
 			return baselines, activeErr
 		}
@@ -384,7 +387,7 @@ func (h *Helpers) installCompositeBaselines(ctx context.Context, install *app.In
 	}
 
 	var sandbox app.InstallSandbox
-	err = h.db.WithContext(ctx).Where(app.InstallSandbox{InstallID: install.ID}).First(&sandbox).Error
+	err = db.WithContext(ctx).Where(app.InstallSandbox{InstallID: install.ID}).First(&sandbox).Error
 	switch {
 	case err == nil && sandbox.AppConfigRef.AppliedConfigID != "":
 		baselines.Sandbox = sandbox.AppConfigRef.AppliedConfigID
@@ -392,22 +395,59 @@ func (h *Helpers) installCompositeBaselines(ctx context.Context, install *app.In
 	default:
 		return baselines, fmt.Errorf("unable to get install sandbox: %w", err)
 	}
+	if sandbox.ID != "" {
+		applied, err := h.AppliedInstallSandboxRun(ctx, db, &sandbox)
+		if err != nil {
+			return baselines, err
+		}
+		if applied != nil {
+			baselines.Sandbox = applied.AppSandboxConfig.AppConfigID
+			buildID := applied.AppSandboxBuildID
+			var cfg app.AppConfig
+			if err := db.WithContext(ctx).Unscoped().Where(app.AppConfig{ID: baselines.Sandbox}).First(&cfg).Error; err != nil {
+				return baselines, err
+			}
+			if buildID == "" && cfg.BuildsPinned && cfg.BuildsLocked && cfg.SandboxBuildID.Valid {
+				buildID = cfg.SandboxBuildID.String
+			}
+			baselines.SandboxBuildID = &buildID
+		}
+	}
 
 	var components []app.InstallComponent
-	if err := h.db.WithContext(ctx).Where(app.InstallComponent{InstallID: install.ID}).Find(&components).Error; err != nil {
+	if err := db.WithContext(ctx).Where(app.InstallComponent{InstallID: install.ID}).Find(&components).Error; err != nil {
 		return baselines, fmt.Errorf("unable to get install components: %w", err)
 	}
-	for _, component := range components {
+	applied, err := h.AppliedInstallDeploys(ctx, db, components)
+	if err != nil {
+		return baselines, err
+	}
+	for i := range components {
+		component := &components[i]
+		baselines.Components[component.ComponentID] = ""
+		baselines.ComponentBuilds[component.ComponentID] = nil
 		if component.AppConfigRef.AppliedConfigID != "" {
 			baselines.Components[component.ComponentID] = component.AppConfigRef.AppliedConfigID
+		}
+		if deploy := applied[component.ID]; deploy != nil {
+			baselines.ComponentBuilds[component.ComponentID] = &deploy.ComponentBuild
+			baselines.DependencyBuildIDs[component.ComponentID] = deploy.DependencyBuildIDs
+			baseline := deploy.AppConfigID
+			if baseline == "" {
+				baseline = component.AppConfigRef.AppliedConfigID
+			}
+			if baseline == "" {
+				baseline = deploy.ComponentBuild.ComponentConfigConnection.AppConfigID
+			}
+			baselines.Components[component.ComponentID] = baseline
 		}
 	}
 	return baselines, nil
 }
 
-func (h *Helpers) getActiveStackVersion(ctx context.Context, installID string) (*app.InstallStackVersion, error) {
+func (h *Helpers) getActiveStackVersion(ctx context.Context, db *gorm.DB, installID string) (*app.InstallStackVersion, error) {
 	var versions []app.InstallStackVersion
-	if err := h.db.WithContext(ctx).
+	if err := db.WithContext(ctx).
 		Where(app.InstallStackVersion{InstallID: installID}).
 		Where("status->>'status' = ?", app.InstallStackVersionStatusActive).
 		Order("created_at DESC").

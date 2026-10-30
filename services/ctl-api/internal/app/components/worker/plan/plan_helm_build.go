@@ -3,41 +3,23 @@ package plan
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 )
 
-func (p *Planner) createHelmBuildPlan(ctx workflow.Context, bld *app.ComponentBuild, helmCompCfg *app.HelmComponentConfig) (*plantypes.HelmBuildPlan, error) {
-
-	var helmCfg *config.HelmRepoConfig
-	if helmCompCfg.HelmConfig.HelmRepoConfig != nil {
-		helmCfg = &config.HelmRepoConfig{
-			Chart:   helmCompCfg.HelmConfig.HelmRepoConfig.Chart,
-			RepoURL: helmCompCfg.HelmConfig.HelmRepoConfig.RepoURL,
-			Version: helmCompCfg.HelmConfig.HelmRepoConfig.Version,
-		}
+func (p *Planner) createHelmBuildPlan(_ workflow.Context, bld *app.ComponentBuild, helmCompCfg *app.HelmComponentConfig) (*plantypes.HelmBuildPlan, error) {
+	connection := bld.ComponentConfigConnection
+	connection.HelmComponentConfig = helmCompCfg
+	inputs, err := buildsource.ComponentInputs(&connection)
+	if err != nil {
+		return nil, err
+	}
+	plan := inputs.HelmBuildPlan
+	plan.Labels = map[string]string{
+		"component_id":       bld.ComponentID,
+		"component_build_id": bld.ID,
 	}
 
-	values := make([]plantypes.HelmValue, 0)
-	for key, value := range helmCompCfg.HelmConfig.Values {
-		if value == nil {
-			continue
-		}
-		values = append(values, plantypes.HelmValue{
-			Name:  key,
-			Value: *value,
-			Type:  "auto",
-		})
-	}
-
-	return &plantypes.HelmBuildPlan{
-		Labels: map[string]string{
-			"component_id":       bld.ComponentID,
-			"component_build_id": bld.ID,
-		},
-		HelmRepoConfig: helmCfg,
-		ValuesFiles:    helmCompCfg.HelmConfig.ValuesFiles,
-		Values:         values,
-	}, nil
+	return plan, nil
 }

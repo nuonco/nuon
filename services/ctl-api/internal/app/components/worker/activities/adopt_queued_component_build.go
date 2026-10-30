@@ -7,13 +7,16 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 )
 
 type AdoptQueuedComponentBuildRequest struct {
 	ComponentID    string `validate:"required"`
 	AppConfigID    string `validate:"required"`
 	AppBranchRunID string
+	SourceIdentity *sourceidentity.Identity
 }
 
 type AdoptQueuedComponentBuildOutput struct {
@@ -76,6 +79,10 @@ func (a *Activities) AdoptQueuedComponentBuild(ctx context.Context, req AdoptQue
 		return nil, err
 	}
 
+	if out.BuildID != "" && req.SourceIdentity != nil {
+		_, err := buildsource.SaveComponent(ctx, a.db, out.BuildID, req.SourceIdentity)
+		return out, err
+	}
 	if err := a.pinBuildToBranchRunCommit(ctx, out.BuildID, req.AppConfigID); err != nil {
 		return nil, err
 	}
