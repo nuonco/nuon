@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -124,14 +125,35 @@ func (s *service) OAuthFinish(c *gin.Context) {
 		return
 	}
 
+	var client app.OAuthClient
+	err := s.db.WithContext(c.Request.Context()).Where(&app.OAuthClient{ID: authCode.ClientID}).First(&client).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		s.respondError(c, http.StatusBadRequest, fmt.Errorf("unknown client"))
+		return
+	}
+	if err != nil {
+		s.l.Error("failed to look up oauth client", zap.Error(err))
+		s.respondError(c, http.StatusInternalServerError, fmt.Errorf("failed to look up client"))
+		return
+	}
+
+	clientName := strings.TrimSpace(client.ClientName)
+	if clientName == "" {
+		clientName = "An application"
+	}
+	redirectHost := authCode.RedirectURI
+	if u, parseErr := url.Parse(authCode.RedirectURI); parseErr == nil && u.Host != "" {
+		redirectHost = u.Host
+	}
+
 	c.HTML(http.StatusOK, "auth/oauth_consent.tmpl", gin.H{
 		"RequestID":     requestID,
 		"Email":         tokenInfo.Email,
-		"ClientID":      authCode.ClientID,
+		"ClientName":    clientName,
+		"RedirectURI":   authCode.RedirectURI,
+		"RedirectHost":  redirectHost,
 		"AdminScope":    string(app.RoleTypeOrgAdmin),
 		"ReadOnlyScope": string(app.RoleTypeOrgReadOnly),
-		// Pre-select the scope the client requested, defaulting to read-only.
-		"DefaultAdmin": authCode.Scope == string(app.RoleTypeOrgAdmin),
 	})
 }
 

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { createServiceAccountToken } from '@/lib/ctl-api/service-accounts/create-service-account-token'
+import { createToken } from '@/lib/ctl-api/tokens/create-token'
 import { ensureInstallTelemetryCollector } from '@/lib/ctl-api/installs/install-telemetry-collector'
 import {
   CollectorCredentialModal,
@@ -34,10 +34,10 @@ export const CollectorCredentialModalContainer = ({
       })
       if (!collector.account_id)
         throw { error: 'Collector account was not returned', user_error: false }
-      const result = await createServiceAccountToken({
+      const result = await createToken({
         orgId,
-        accountId: collector.account_id,
         body: {
+          account_id: collector.account_id,
           name: `telemetry-${installId}`,
           duration: values.duration,
           invalidate: false,
@@ -52,7 +52,7 @@ export const CollectorCredentialModalContainer = ({
       setCredential({ ...values, token: result.token })
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['static-tokens', orgId] })
+      queryClient.invalidateQueries({ queryKey: ['tokens', orgId] })
       queryClient.invalidateQueries({ queryKey: ['service-accounts', orgId] })
     },
   })

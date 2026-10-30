@@ -1,16 +1,10 @@
 ---
 title: 'Health Checks'
 description: "Health checks tell you whether every component on every install is running right now."
-keywords: ["health checks", "health check", "healthcheck", "healthchecks", "health-check", "health checking", "component health", "component health check", "kubernetes health check", "helm health check", "terraform health check", "install health", "liveness", "readiness", "probe", "probes", "http probe", "tcp probe", "exec probe", "custom health check", "required checks", "verified deploys", "deploy gate", "block_deploy", "stabilization window", "uptime", "uptime monitoring", "canary", "bake period", "degraded", "unhealthy", "monitoring", "alerting", "resource explorer"]
+keywords: ["health checks", "health check", "healthcheck", "healthchecks", "health-check", "health checking", "component health", "component health check", "kubernetes health check", "helm health check", "terraform health check", "install health", "liveness", "readiness", "probe", "probes", "http probe", "tcp probe", "custom health check", "required checks", "verified deploys", "deploy gate", "block_deploy", "stabilization window", "uptime", "uptime monitoring", "canary", "bake period", "degraded", "unhealthy", "monitoring", "alerting", "resource explorer"]
 ---
 
-import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
-
-<AskYourAgent
-  title="Check install health"
-  tools={["get_install_health"]}
-  prompt={`Check the health of my Nuon install. List every component that isn't healthy and why, tell me when health was last reported, and tell me if Nuon can't reach the cluster.`}
-/>
+import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 
 Nuon checks the components running on each install regularly, so you can see their live status.
 
@@ -75,7 +69,7 @@ flowchart LR
     v{"Component health<br/>debounced"}
 
     k8s["Kubernetes resources<br/>automatic"] --> v
-    probes["Probes<br/>http, tcp, exec"] --> v
+    probes["Probes<br/>http, tcp"] --> v
     custom["Custom checks<br/>your systems"] --> v
 
     v --> badge["Health badge<br/>and Resources tab"]
@@ -118,13 +112,13 @@ of them.
 
 | | Use it when | Runs where | Can gate a deploy |
 | --- | --- | --- | --- |
-| **Probe** | Nuon can reach the target: an endpoint, a port or a command | Nuon, every cycle | Yes |
+| **Probe** | Nuon can reach the target: an endpoint or a port | Nuon, every cycle | Yes |
 | **Custom check** | Only your systems know the result: CI, a business metric, a nightly audit | Your systems, on your schedule | Yes, with `required_checks` |
 | **Required check** | A deploy must not finish until an external system says so | — | Yes |
 
 <Note>
 Probes work on every component type, including Terraform. They don't need a Kubernetes footprint or
-an action. If Nuon can reach the target over HTTP or TCP, or check it with a command, a probe is the
+an action. If Nuon can reach the target over HTTP or TCP, a probe is the
 simplest option.
 </Note>
 
@@ -142,11 +136,6 @@ url  = "https://{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}/he
 [[components.api.health.probes]]
 type = "tcp"
 url  = "db.internal:5432"
-
-[[components.api.health.probes]]
-type = "exec"
-name = "migrations-current"
-command = ["/usr/local/bin/check-migrations", "--strict"]
 ```
 
 ```toml Terraform component
@@ -160,11 +149,8 @@ url  = "http://{{.nuon.components.ec2.outputs.public_ip}}/status/200"
 
 - **`http`** passes on 2xx/3xx and never follows redirects.
 - **`tcp`** passes if the port accepts a connection.
-- **`exec`** passes on exit code 0 and reports the command's output when it fails.
 
-`exec` commands are an argv, never a shell string, and run with a minimal environment (`PATH`,
-`HOME`, `TMPDIR`), so they can't see the runner's credentials. Every probe is bounded by a short
-timeout and runs once per cycle.
+Every probe is bounded by a short timeout and runs once per cycle.
 
 Probe results count toward component health, alerts and history the same way as every other
 observation.
@@ -328,6 +314,13 @@ See [Webhooks](/guides/webhooks) for the full subscription model.
 
 ## Verified deploys
 
+<TryWithYourAgent
+  title="Deploy and verify health"
+  tools={["list_install_components", "deploy_install_components", "watch_workflow", "get_install_health"]}
+  writes
+  prompt={`Show me the components on my Nuon install, deploy the one I pick, and confirm it stays healthy.`}
+/>
+
 By default a deploy finishes when the apply succeeds. Set `block_deploy` and it finishes only once
 the component has held `healthy` for `stabilization_window` afterwards.
 
@@ -346,10 +339,8 @@ This is off by default, and it's the only way health can affect whether a deploy
 Nuon can't observe never blocks a deploy.
 
 <Warning>
-**Gate a component only on what it provides.** Put a probe for a public endpoint on the load
-balancer component that exposes it, instead of the app behind it. If a component's gate depends
-on a downstream component, a first install deadlocks: the app's gate can't pass until the load
-balancer exists, and the load balancer never deploys because the app's gate is holding the workflow.
+**Gate a component only on what it provides.** If an app's gate probes an endpoint that a later
+component creates, like a load balancer, the first install deadlocks.
 </Warning>
 
 ## Canary and bake periods

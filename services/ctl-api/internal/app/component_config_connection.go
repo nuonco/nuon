@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -147,6 +148,19 @@ func (p ComponentHealthProbes) Value() (driver.Value, error) {
 
 func (ComponentHealthProbes) GormDataType() string {
 	return "jsonb"
+}
+
+// Runnable drops exec probes. Configs stored before exec was removed can still
+// carry them, and nothing runs them anymore, so nothing should wait on them.
+func (p ComponentHealthProbes) Runnable() ComponentHealthProbes {
+	out := make(ComponentHealthProbes, 0, len(p))
+	for _, probe := range p {
+		if strings.EqualFold(strings.TrimSpace(probe.Type), config.HealthProbeTypeExec) {
+			continue
+		}
+		out = append(out, probe)
+	}
+	return out
 }
 
 // ComponentHealthRequiredChecks are pushed check names a deploy gate waits for.

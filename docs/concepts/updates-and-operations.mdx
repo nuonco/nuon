@@ -1,0 +1,44 @@
+---
+title: "Updates and Operations"
+description: "Ship a change to every install with a git push, change one install, and run migrations with actions and runbooks."
+keywords: ["updates", "operations", "day 2 operations", "change management", "change controls", "app branches", "install groups", "plan approval", "auto approve", "policies", "rollback", "runner", "operation roles", "break glass", "actions", "runbooks", "drift detection", "workflows"]
+---
+
+import { FlowSteps } from "/snippets/flow-steps.jsx";
+
+To update your installs, push a change to the git branch your app branch tracks.
+
+<FlowSteps
+  horizontal
+  steps={[
+    { title: "git push" },
+    { title: "App branch", href: "/concepts/app-branches" },
+    { title: "Install groups", href: "/concepts/app-branches#install-groups" },
+    { title: "Installs", href: "/concepts/installs" },
+  ]}
+/>
+
+## Ship to every install
+
+- **Push to git.** A push to the tracked branch runs the [app branch](/concepts/app-branches). It builds what changed,
+  then plans and deploys it one [install group](/concepts/app-branches#install-groups) at a time.
+- **Review before it ships.** Each install group waits for you to approve its Terraform plan or Helm diff, or approves
+  itself when every [policy](/concepts/policies) check passes.
+
+## Change one install
+
+- **Edit its config.** Change that install's [config](/guides/install-configs), such as its inputs or a
+  [component override](/guides/component-overrides).
+- **Roll back.** [Re-apply an earlier config version](/guides/rollback-install-config) on that install.
+
+## Run migrations and day-2 work
+
+- **[Actions](/concepts/actions)** run scripts by hand, on a schedule, or around a deploy.
+- **[Runbooks](/guides/runbooks)** chain deploys and actions into one procedure, such as a database migration. Run one
+  against a single install, or list it in the app branch's `post_deploy_runbooks` to run it on each install after its
+  deploy.
+- **[Health checks](/guides/health-checks)** show whether every component is running, with alerts to Slack and
+  webhooks.
+
+Every run is a [workflow](/concepts/workflows) that records its steps and logs, so you can see what ran, when, and
+against which install.

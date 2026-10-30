@@ -16,7 +16,7 @@ import { OrgContext } from '@/providers/org-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastContext } from '@/providers/toast-provider'
 import { InstallSettingsPanelContent } from '@/components/installs/InstallSettingsPanel/InstallSettingsPanelContent'
-import type { TInstall, TStaticToken } from '@/types'
+import type { TInstall, TToken } from '@/types'
 import { InstallTelemetryContainer } from './InstallTelemetryContainer'
 
 const orgId = 'org-acme'
@@ -40,7 +40,7 @@ function setup({
   configId = 'config-acme',
   writeStatus = 200,
   renderPanel = false,
-  tokens = [] as TStaticToken[],
+  tokens = [] as TToken[],
   loadSettings = false,
 } = {}) {
   const client = new QueryClient({
@@ -112,8 +112,9 @@ function setup({
             ]
             return Response.json({ token: 'example-one-time-token' })
           }
-          if (url.includes('/static-tokens/')) {
-            tokens = tokens.filter((token) => !url.endsWith(token.id))
+          if (url.includes('/tokens/')) {
+            const tokenId = url.split('/tokens/').at(-1)
+            tokens = tokens.filter((token) => token.id !== tokenId)
             return new Response(null, { status: 204 })
           }
           throw new Error(`Unexpected write: ${url}`)
@@ -136,7 +137,14 @@ function setup({
               ? [{ component_id: 'component-collector', enabled: false }]
               : []
           )
-        if (url.endsWith('/account/static-tokens')) return Response.json(tokens)
+        if (url.includes('/tokens?')) {
+          const accountId = new URL(url, 'https://example.com').searchParams.get(
+            'account_id'
+          )
+          return Response.json(
+            accountId ? tokens.filter((t) => t.account_id === accountId) : tokens
+          )
+        }
         if (url.endsWith('/account'))
           return Response.json({
             roles: [{ org_id: adminOrg, role_type: 'org_admin' }],
@@ -321,7 +329,7 @@ test('org admin in a different org cannot manage collector tokens or query org t
     screen.queryByRole('button', { name: 'Create bootstrap credential' })
   ).toBeNull()
   expect(
-    fetch.mock.calls.some(([url]) => String(url).includes('static-tokens'))
+    fetch.mock.calls.some(([url]) => String(url).includes('/tokens'))
   ).toBe(false)
 })
 
@@ -407,7 +415,7 @@ test('rotation keeps old tokens and offers a one-time input token without cachin
       options: { method: 'POST' },
     },
     {
-      url: '/v1/service-accounts/account-collector/tokens',
+      url: '/v1/tokens',
       body: { duration: '2160h', invalidate: false },
     },
   ])
@@ -441,7 +449,7 @@ test('rotation keeps old tokens and offers a one-time input token without cachin
     screen.queryByText('token-old', { exact: true })
   )
   expect(writes.at(-1)).toMatchObject({
-    url: '/v1/account/static-tokens/token-old',
+    url: '/v1/tokens/token-old',
     options: { method: 'DELETE' },
   })
 })

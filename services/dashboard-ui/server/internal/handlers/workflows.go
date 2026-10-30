@@ -77,7 +77,7 @@ func (h *WorkflowsHandler) GetApprovalContents(c *gin.Context) {
 	}
 
 	client, err := nuon.New(
-		nuon.WithURL(h.cfg.APIUrl),
+		nuon.WithURL(h.cfg.ServerAPIURL()),
 		nuon.WithAuthToken(token),
 		nuon.WithOrgID(orgID),
 	)

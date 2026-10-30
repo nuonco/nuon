@@ -115,6 +115,14 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 
 	shutdowns, err := sp.apiClient.GetProcessShutdowns(ctx, processID)
 	if err != nil {
+		if nuonrunner.IsUnauthorized(err) || nuonrunner.IsForbidden(err) {
+			sp.l.Error("shutdown poll unauthorized; shutting down process",
+				zap.String("process_id", processID),
+				zap.Error(err),
+			)
+			sp.exitProcess()
+			return
+		}
 		sp.l.Warn("unable to poll process for shutdown", zap.Error(err))
 		return
 	}
@@ -167,41 +175,51 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 				)
 			}
 
-			if sp.podShutdown != nil {
-				if err := sp.podShutdown.execute(ctx); err != nil {
-					sp.l.Warn("pod shutdown failed", zap.Error(err))
-				}
-			}
-
-			if sp.registrar.ProcessType() == "mng" {
-				if sp.settings.Platform == "azure" {
-					if sp.health != nil {
-						sp.l.Info("mng process shutdown - marking vm as unhealthy; letting azure vmss replace the instance")
-						sp.health.SetUnhealthy()
-						return
-					}
-					sp.l.Error("mng process shutdown on azure but health server is nil; falling back to vm poweroff")
-					if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
-						sp.l.Warn("VM shutdown failed", zap.Error(err))
-					}
-				} else {
-					sp.l.Info("mng process shutdown: powering off VM")
-					if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
-						sp.l.Warn("VM shutdown failed", zap.Error(err))
-					}
-				}
-			}
-
-			go func() {
-				time.Sleep(forceExitTimeout)
-				sp.l.Warn("graceful shutdown did not complete in time, forcing exit",
-					zap.Duration("timeout", forceExitTimeout),
-				)
-				os.Exit(1)
-			}()
-
-			sp.shutdowner.Shutdown(fx.ExitCode(1))
+			sp.finishShutdown(ctx)
 			return
 		}
 	}
+}
+
+// exitProcess leaves without drain/complete API calls — used when the token is
+// already rejected so further authenticated calls would also fail.
+func (sp *ShutdownPoller) exitProcess() {
+	go func() {
+		time.Sleep(forceExitTimeout)
+		sp.l.Warn("graceful shutdown did not complete in time, forcing exit",
+			zap.Duration("timeout", forceExitTimeout),
+		)
+		os.Exit(1)
+	}()
+
+	_ = sp.shutdowner.Shutdown(fx.ExitCode(1))
+}
+
+func (sp *ShutdownPoller) finishShutdown(ctx context.Context) {
+	if sp.podShutdown != nil {
+		if err := sp.podShutdown.execute(ctx); err != nil {
+			sp.l.Warn("pod shutdown failed", zap.Error(err))
+		}
+	}
+
+	if sp.registrar.ProcessType() == "mng" {
+		if sp.settings.Platform == "azure" {
+			if sp.health != nil {
+				sp.l.Info("mng process shutdown - marking vm as unhealthy; letting azure vmss replace the instance")
+				sp.health.SetUnhealthy()
+				return
+			}
+			sp.l.Error("mng process shutdown on azure but health server is nil; falling back to vm poweroff")
+			if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
+				sp.l.Warn("VM shutdown failed", zap.Error(err))
+			}
+		} else {
+			sp.l.Info("mng process shutdown: powering off VM")
+			if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
+				sp.l.Warn("VM shutdown failed", zap.Error(err))
+			}
+		}
+	}
+
+	sp.exitProcess()
 }

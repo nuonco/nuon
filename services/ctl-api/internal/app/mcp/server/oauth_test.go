@@ -61,7 +61,7 @@ func TestWriteUnauthorizedSetsWWWAuthenticate(t *testing.T) {
 func TestWriteForbidden(t *testing.T) {
 	w := httptest.NewRecorder()
 
-	(&Server{implementationName: "nuonctl"}).writeForbidden(w)
+	(&Server{implementationName: "nuonctl", requireEmployee: true}).writeForbidden(w, "nuonctl MCP is limited to Nuon employees")
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.JSONEq(t, `{
@@ -79,13 +79,15 @@ func TestAccountHasOrgAccess(t *testing.T) {
 }
 
 func TestAccountAllowed(t *testing.T) {
-	employee := &app.Account{IsEmployee: true}
-	external := &app.Account{IsEmployee: false}
+	employee := &app.Account{AccountType: app.AccountTypeAuth, IsEmployee: true}
+	external := &app.Account{AccountType: app.AccountTypeAuth, IsEmployee: false}
+	session := &app.Token{TokenType: app.TokenTypeNuon}
 
-	assert.True(t, (&Server{}).accountAllowed(employee))
-	assert.True(t, (&Server{}).accountAllowed(external))
-	assert.True(t, (&Server{requireEmployee: true}).accountAllowed(employee))
-	assert.False(t, (&Server{requireEmployee: true}).accountAllowed(external))
+	assert.True(t, (&Server{}).tokenAllowed(employee, session))
+	assert.True(t, (&Server{}).tokenAllowed(external, session))
+	assert.True(t, (&Server{requireEmployee: true}).tokenAllowed(employee, session))
+	assert.False(t, (&Server{requireEmployee: true}).tokenAllowed(external, session))
+	assert.False(t, (&Server{}).tokenAllowed(employee, &app.Token{TokenType: app.TokenTypeStatic}))
 }
 
 func TestResolveOrg(t *testing.T) {

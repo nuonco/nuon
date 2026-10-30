@@ -87,6 +87,8 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
+	s.POST(ge, "/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome, api.APIContextTypePublic, true)
+
 	org := require.OrgRoute(ge)
 
 	// get all installs across orgs
@@ -227,9 +229,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.POST("/telemetry/collector", s.EnsureInstallTelemetryCollector)
 		installs.GET("/telemetry/collector", s.GetInstallTelemetryCollector)
 		installs.DELETE("/telemetry/collector", s.DeleteInstallTelemetryCollector)
-
-		// phone home
-		s.POST(installs, "/phone-home/:phone_home_id", s.InstallPhoneHome, api.APIContextTypePublic, true)
 
 		// runner bootstrap token
 		installs.POST("/runner-bootstrap-token", s.CreateRunnerBootstrapToken)

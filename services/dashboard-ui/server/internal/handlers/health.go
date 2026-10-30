@@ -40,7 +40,7 @@ type versionInfo struct {
 
 func (h *HealthHandler) Version(c *gin.Context) {
 	apiVersion := versionInfo{}
-	if resp, err := http.Get(h.cfg.APIUrl + "/version"); err == nil {
+	if resp, err := http.Get(h.cfg.ServerAPIURL() + "/version"); err == nil {
 		defer resp.Body.Close()
 		json.NewDecoder(resp.Body).Decode(&apiVersion)
 	}

@@ -381,6 +381,10 @@ type Config struct {
 	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)
 	OIDCFederationAllowInsecureIssuers bool `config:"oidc_federation_allow_insecure_issuers"` // allow http:// issuer URLs in trust policies (local dev only)
 
+	// When true, GET .../processes/:id/shutdowns is public so pre-auth runners
+	// can still observe shutdown requests during upgrades.
+	PublicRunnerProcessShutdowns bool `config:"public_runner_process_shutdowns"`
+
 	// OAuth 2.0 authorization server (MCP clients)
 	OAuthDCREnabled      bool `config:"oauth_dcr_enabled"`
 	OAuthAccessTokenTTL  int  `config:"oauth_access_token_ttl"`  // minutes
@@ -501,7 +505,8 @@ type Config struct {
 	// environment, below a per-app AppRunnerConfig.PhoneHomeScriptURL and above the
 	// pinned default. Exists so a dev or staging control plane can exercise an
 	// unreleased script without moving the default that production shares.
-	PhoneHomeScriptURL string `config:"phone_home_script_url"`
+	PhoneHomeScriptURL    string `config:"phone_home_script_url"`
+	PhoneHomeAuthRequired bool   `config:"phone_home_auth_required"`
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
@@ -564,7 +569,11 @@ type Config struct {
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
 
+	// Deprecated: set min_cli_version_warn. Still read when that is empty, and still returned for older CLIs.
 	MinCLIVersion string `config:"min_cli_version"`
+
+	MinCLIVersionWarn  string `config:"min_cli_version_warn"`
+	MinCLIVersionError string `config:"min_cli_version_error"`
 
 	// below this the CLI syncs app configs client-side, which never sends action or
 	// runbook ids, so those are silently dropped from installs

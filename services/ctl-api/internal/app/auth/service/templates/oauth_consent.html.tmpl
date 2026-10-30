@@ -13,9 +13,13 @@
                 {{template "logo.tmpl"}}
             </div>
             <div class="bg-white dark:bg-dark-grey-900 rounded-lg shadow-sm p-8">
-                <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-2">Authorize MCP Access</h2>
+                <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-2">Authorize {{ .ClientName }}</h2>
                 <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-6">
-                    An MCP client is requesting access to your Nuon account. Choose the level of access to grant.
+                    <span class="font-semibold text-cool-grey-950 dark:text-cool-grey-50">{{ .ClientName }}</span>
+                    ({{ .RedirectHost }}) is requesting access to your Nuon account.
+                    Nuon will send the authorization code to
+                    <span class="break-all">{{ .RedirectURI }}</span>.
+                    Choose the level of access to grant.
                 </p>
 
                 <div class="bg-cool-grey-50 dark:bg-dark-grey-800 rounded-md p-4 mb-6">
@@ -30,14 +34,14 @@
 
                     <div class="space-y-3 mb-6">
                         <label class="flex items-start gap-3 p-4 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md cursor-pointer hover:bg-cool-grey-50 dark:hover:bg-dark-grey-800">
-                            <input type="radio" name="scope" value="{{ .ReadOnlyScope }}" class="mt-1" {{ if not .DefaultAdmin }}checked{{ end }}>
+                            <input type="radio" name="scope" value="{{ .ReadOnlyScope }}" class="mt-1" checked>
                             <span>
                                 <span class="block text-sm font-semibold text-cool-grey-950 dark:text-cool-grey-50">Read only</span>
                                 <span class="block text-xs text-cool-grey-500 dark:text-cool-grey-400">View apps, installs, and components. Cannot make changes.</span>
                             </span>
                         </label>
                         <label class="flex items-start gap-3 p-4 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md cursor-pointer hover:bg-cool-grey-50 dark:hover:bg-dark-grey-800">
-                            <input type="radio" name="scope" value="{{ .AdminScope }}" class="mt-1" {{ if .DefaultAdmin }}checked{{ end }}>
+                            <input type="radio" name="scope" value="{{ .AdminScope }}" class="mt-1">
                             <span>
                                 <span class="block text-sm font-semibold text-cool-grey-950 dark:text-cool-grey-50">Admin</span>
                                 <span class="block text-xs text-cool-grey-500 dark:text-cool-grey-400">Full access, including approving and deploying changes.</span>

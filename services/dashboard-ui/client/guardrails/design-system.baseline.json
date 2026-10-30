@@ -400,7 +400,7 @@
     "components/branches/BranchConfigDetails/BranchConfigDetails.tsx": 1,
     "components/branches/BranchConfigsTable/BranchConfigsTable.tsx": 1,
     "components/branches/BranchOverview/BranchOverviewContainer.tsx": 1,
-    "components/branches/BranchOverview/BranchOverviewV2.tsx": 4,
+    "components/branches/BranchOverview/BranchOverview.tsx": 4,
     "components/branches/BranchOverview/BranchRolloutGroupContainer.tsx": 1,
     "components/branches/BranchOverview/InstallGroupMatch.tsx": 1,
     "components/branches/BranchOverview/InstallRolloutPanel.tsx": 1,

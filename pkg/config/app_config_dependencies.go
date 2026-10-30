@@ -97,6 +97,26 @@ func addAppConfigDependencyEdges(graph *diff.Graph, cfg *AppConfig) {
 		}
 	}
 
+	if cfg.Stack != nil {
+		if references, err := refs.Parse(cfg.Stack); err == nil {
+			for _, ref := range references {
+				addReferenceDependency(graph, StackResourceID, ref)
+			}
+		}
+	}
+	if cfg.Sandbox != nil {
+		if references, err := refs.Parse(cfg.Sandbox); err == nil {
+			allReferences := append([]refs.Ref(nil), cfg.Sandbox.References...)
+			allReferences = append(allReferences, references...)
+			for _, ref := range allReferences {
+				addReferenceDependency(graph, SandboxResourceID, ref)
+			}
+		}
+		for _, role := range cfg.Sandbox.OperationRoles {
+			graph.AddDependency(SandboxResourceID, RoleResourceID(role.RoleName), diff.EdgeReasonOperationRole)
+		}
+	}
+
 	for _, component := range cfg.Components {
 		if component == nil || component.Name == "" {
 			continue

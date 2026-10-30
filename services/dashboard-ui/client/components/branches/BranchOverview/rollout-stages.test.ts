@@ -7,6 +7,7 @@ import type {
 import {
   buildRolloutStages,
   deployStepForGroup,
+  isRolloutGroupComplete,
   planStepForGroup,
 } from './rollout-stages'
 
@@ -180,6 +181,40 @@ describe('buildRolloutStages', () => {
     })
 
     expect(stages[2].status).toBe('in-progress')
+  })
+
+  test('marks a group with only skipped plan and deploy steps as auto-skipped', () => {
+    const stages = buildRolloutStages({
+      groups: [group('preview', 0)],
+      steps: [
+        step({
+          name: 'plan install group: preview',
+          status: { status: 'auto-skipped' },
+          finished: true,
+        }),
+        step({
+          name: 'deploy install group: preview',
+          status: { status: 'user-skipped' },
+          finished: true,
+        }),
+      ],
+      installsByGroup: [[]],
+    })
+
+    expect(stages[2]).toMatchObject({ name: 'preview', status: 'auto-skipped' })
+    expect(isRolloutGroupComplete(stages[2].status)).toBe(true)
+  })
+})
+
+describe('isRolloutGroupComplete', () => {
+  test('treats empty-group skip statuses as finished so rollout can advance', () => {
+    expect(isRolloutGroupComplete('success')).toBe(true)
+    expect(isRolloutGroupComplete('auto-skipped')).toBe(true)
+    expect(isRolloutGroupComplete('user-skipped')).toBe(true)
+    expect(isRolloutGroupComplete('noop')).toBe(true)
+    expect(isRolloutGroupComplete('pending')).toBe(false)
+    expect(isRolloutGroupComplete('in-progress')).toBe(false)
+    expect(isRolloutGroupComplete('approval-awaiting')).toBe(false)
   })
 })
 

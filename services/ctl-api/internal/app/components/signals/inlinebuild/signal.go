@@ -24,6 +24,8 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
+const managementACRRegistryVersion = "inline-build-management-acr-registry-v1"
+
 type Signal struct {
 	ComponentID string `json:"component_id" validate:"required"`
 	BuildID     string `json:"build_id"` // optional; if set, skip build creation and trigger pre-created build
@@ -192,12 +194,21 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 
 	cloudProvider, _ := activities.AwaitGetCloudProvider(ctx, &activities.GetCloudProviderRequest{})
 	managementIAMRoleARN, _ := activities.AwaitGetManagementIAMRoleARN(ctx, &activities.GetManagementIAMRoleARNRequest{})
+	var managementACRRegistryURL string
+	if workflow.GetVersion(ctx, managementACRRegistryVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		managementACRRegistryURL, err = activities.AwaitGetManagementACRRegistryURL(ctx, &activities.GetManagementACRRegistryURLRequest{})
+		if err != nil {
+			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
+			return notify(errors.Wrap(err, "unable to get management acr registry url"))
+		}
+	}
 	runPlan, err := plan.AwaitCreateComponentBuildPlan(ctx, &plan.CreateComponentBuildPlanRequest{
-		ComponentID:          fullComp.ID,
-		ComponentBuildID:     buildID,
-		WorkflowID:           fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
-		CloudProvider:        cloudProvider,
-		ManagementIAMRoleARN: managementIAMRoleARN,
+		ComponentID:              fullComp.ID,
+		ComponentBuildID:         buildID,
+		WorkflowID:               fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		CloudProvider:            cloudProvider,
+		ManagementIAMRoleARN:     managementIAMRoleARN,
+		ManagementACRRegistryURL: managementACRRegistryURL,
 	})
 	if err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")

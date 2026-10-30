@@ -11,7 +11,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -79,7 +78,7 @@ func parseTokenDuration(raw string) (time.Duration, error) {
 
 // @ID						CreateStaticToken
 // @Summary				create a static API token for your org
-// @Description			Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
+// @Description			Deprecated: create a service account with POST /v1/service-accounts, then a token with POST /v1/tokens. Personal tokens (token_identity "personal") are deprecated because they carry all of the creator's access. Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
 // @Param					req	body	CreateStaticTokenRequest	true	"Input"
 // @Tags					accounts
 // @Security				APIKey
@@ -87,6 +86,7 @@ func parseTokenDuration(raw string) (time.Duration, error) {
 // @Accept					json
 // @Produce				json
 // @Success				201	{object}	StaticTokenResponse
+// @Deprecated				true
 // @Router					/v1/account/static-token [POST]
 func (s *service) CreateStaticToken(ctx *gin.Context) {
 	var req CreateStaticTokenRequest
@@ -106,7 +106,7 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -124,7 +124,7 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createStaticToken(ctx, acct, org.ID, caller.ID, req.Name, role, duration)
+	token, err := s.helpers.CreateStaticToken(ctx, acct, org.ID, caller.ID, req.Name, role, duration)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create static token: %w", err))
 		return
@@ -148,7 +148,7 @@ func (s *service) resolveTokenAccount(ctx *gin.Context, orgID string, caller *ap
 		if err != nil {
 			return nil, "", stderr.NewInvalidRequest(err)
 		}
-		acct, err := s.createTokenServiceAccount(ctx, orgID, role)
+		acct, err := s.createTokenServiceAccount(ctx, orgID, req.Name, role)
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to create service account: %w", err)
 		}
@@ -160,15 +160,16 @@ func (s *service) resolveTokenAccount(ctx *gin.Context, orgID string, caller *ap
 
 // @ID						ListStaticTokens
 // @Summary				list your org's static API tokens
-// @Description			Lists the static API tokens for your current org. Token secrets are never returned.
+// @Description			Deprecated: use GET /v1/tokens instead. Lists the static API tokens for your current org. Token secrets are never returned.
 // @Tags					accounts
 // @Security				APIKey
 // @Security				OrgID
 // @Produce				json
 // @Success				200	{array}	app.Token
+// @Deprecated				true
 // @Router					/v1/account/static-tokens [GET]
 func (s *service) ListStaticTokens(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -192,18 +193,19 @@ func (s *service) ListStaticTokens(ctx *gin.Context) {
 
 // @ID						DeleteStaticToken
 // @Summary				delete a static API token
-// @Description			Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
+// @Description			Deprecated: use DELETE /v1/tokens/{token_id} instead. Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
 // @Param					token_id	path	string	true	"token ID"
 // @Tags					accounts
 // @Security				APIKey
 // @Security				OrgID
 // @Produce				json
 // @Success				204
+// @Deprecated				true
 // @Router					/v1/account/static-tokens/{token_id} [DELETE]
 func (s *service) DeleteStaticToken(ctx *gin.Context) {
 	tokenID := ctx.Param("token_id")
 
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -239,49 +241,20 @@ func (s *service) DeleteStaticToken(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-func (s *service) requireOrgAdmin(ctx *gin.Context) (*app.Org, error) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	acct, err := cctx.AccountFromGinContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if !s.isOrgAdmin(acct, org.ID) {
-		return nil, stderr.ErrAuthorization{
-			Err:         fmt.Errorf("only org admins can manage static tokens"),
-			Description: "only org admins can manage static tokens",
-		}
-	}
-
-	return org, nil
-}
-
-func (s *service) isOrgAdmin(acct *app.Account, orgID string) bool {
-	for _, role := range acct.Roles {
-		if role.RoleType == app.RoleTypeOrgAdmin && role.OrgID.ValueString() == orgID {
-			return true
-		}
-	}
-	return false
-}
-
 // dedicatedTokenSubjectPrefix marks an account that exists only to hold one static
 // token, so deleting the token deletes the account.
 func dedicatedTokenSubjectPrefix(orgID string) string {
 	return fmt.Sprintf("%s-token-", orgID)
 }
 
-func (s *service) createTokenServiceAccount(ctx context.Context, orgID string, roleType app.RoleType) (*app.Account, error) {
-	name := dedicatedTokenSubjectPrefix(orgID) + domains.NewAccountID()
-	email := account.ServiceAccountEmail(name)
+func (s *service) createTokenServiceAccount(ctx context.Context, orgID, tokenName string, roleType app.RoleType) (*app.Account, error) {
+	subject := dedicatedTokenSubjectPrefix(orgID) + domains.NewAccountID()
+	email := account.ServiceAccountEmail(subject)
 
 	newAcct := app.Account{
 		Email:       email,
-		Subject:     name,
+		Subject:     subject,
+		Name:        tokenName,
 		AccountType: app.AccountTypeService,
 	}
 	if res := s.db.WithContext(ctx).Create(&newAcct); res.Error != nil {
@@ -327,32 +300,4 @@ func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountI
 	}
 
 	return nil
-}
-
-func (s *service) createStaticToken(ctx context.Context, acct *app.Account, orgID, createdByID, name string, role app.RoleType, duration time.Duration) (*app.Token, error) {
-	token := app.Token{
-		CreatedByID: createdByID,
-		Name:        name,
-		Role:        string(role),
-		OrgID:       orgID,
-		Token:       domains.NewUserTokenID(),
-		TokenType:   app.TokenTypeStatic,
-		ExpiresAt:   time.Now().Add(duration),
-		IssuedAt:    time.Now(),
-		Issuer:      acct.ID,
-		AccountID:   acct.ID,
-	}
-
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var liveAccount struct{ ID string }
-		if err := tx.Model(&app.Account{}).Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where(app.Account{ID: acct.ID}).Take(&liveAccount).Error; err != nil {
-			return fmt.Errorf("lock account for token issuance: %w", err)
-		}
-		return tx.Create(&token).Error
-	}); err != nil {
-		return nil, fmt.Errorf("unable to create static token: %w", err)
-	}
-
-	return &token, nil
 }

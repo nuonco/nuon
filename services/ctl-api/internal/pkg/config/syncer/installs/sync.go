@@ -221,7 +221,8 @@ func createInstall(ctx context.Context, installHelpers *installhelpers.Helpers, 
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() ||
 		installCfg.CloudFormation != nil ||
-		len(installCfg.ComponentToggles) > 0 || installCfg.Telemetry != nil {
+		len(installCfg.ComponentToggles) > 0 || installCfg.Telemetry != nil ||
+		installCfg.ActionTimeout != "" {
 		params := build.InstallConfigInputFromConfig(installCfg)
 		req.InstallConfig = &params
 	}
@@ -342,6 +343,9 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}
 	if installConfig.RunnerImageID != nil {
 		fields = append(fields, "runner_image_id")
+	}
+	if installConfig.ActionTimeout != nil {
+		fields = append(fields, "action_timeout")
 	}
 	if len(fields) > 0 {
 		if existing.InstallConfig != nil {
@@ -579,6 +583,9 @@ func existingToConfig(install *app.Install) *config.Install {
 			NestedStacks: install.InstallConfig.AWSNestedStackParameters,
 		}
 		cfg.ComponentToggles = install.InstallConfig.ComponentToggles
+		if install.InstallConfig.ActionTimeout != nil {
+			cfg.ActionTimeout = config.FormatActionTimeout(*install.InstallConfig.ActionTimeout)
+		}
 	}
 
 	return cfg

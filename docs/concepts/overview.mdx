@@ -1,0 +1,30 @@
+---
+title: "Nuon Overview"
+sidebarTitle: "Nuon Overview"
+description: "Nuon primitives that enable you to scale a BYOC-deployed version of your app to any customer on any cloud."
+boost: 5
+mode: "wide"
+keywords: ["concepts", "how Nuon works", "platform overview", "app template", "app templates", "what is an app", "apps", "app config", "app configuration", "configure an app", "application packaging", "installs", "what is an install", "updates", "change management", "BYOC", "bring your own cloud", "BYOC deployment platform", "managed BYOC"]
+---
+
+import { PlatformDiagram, RelationshipTree } from "/snippets/platform-diagram.jsx";
+
+You define your app once. Each customer runs their own copy in their own cloud account.
+
+<PlatformDiagram />
+
+- **[App templates](/concepts/apps)**: your product as TOML in your git repo. It lists your
+  [components](/concepts/components), plus the [inputs](/concepts/app-inputs) and [secrets](/concepts/app-secrets)
+  that change per customer.
+- **[Installs](/concepts/installs)**: one copy of your app in a customer's cloud account. The customer applies
+  the [stack](/concepts/stacks) with their own credentials, and the [runner](/concepts/runners) deploys the
+  [sandbox](/concepts/sandboxes) and your components.
+- **[Updates and operations](/concepts/updates-and-operations)**: push to git and an
+  [app branch](/concepts/app-branches) rolls the change out in order, with a plan you can review first.
+  [Actions](/concepts/actions) and [runbooks](/concepts/runbooks) handle migrations and day-2 work.
+
+## How the pieces relate
+
+An app template has app branches. Each app branch splits its installs into install groups that deploy in order.
+
+<RelationshipTree />

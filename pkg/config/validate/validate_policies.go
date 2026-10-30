@@ -3,11 +3,11 @@ package validate
 import (
 	"fmt"
 
-	"github.com/open-policy-agent/opa/v1/ast"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
 	"github.com/nuonco/nuon/pkg/config"
+	policyopa "github.com/nuonco/nuon/pkg/policies/opa"
 )
 
 func ValidatePolicies(a *config.AppConfig) error {
@@ -15,19 +15,8 @@ func ValidatePolicies(a *config.AppConfig) error {
 }
 
 func ValidateOPAPolicy(contents string) error {
-	module, err := ast.ParseModule("policy.rego", contents)
-	if err != nil {
-		return err
-	}
-	if module.Package.Path.String() != "data.nuon" {
-		return fmt.Errorf("OPA policy must use package nuon, got %s", module.Package.Path.String())
-	}
-	for _, rule := range module.Rules {
-		if rule.Head.Name == "deny" || rule.Head.Name == "warn" {
-			return nil
-		}
-	}
-	return fmt.Errorf("OPA policy must define at least one deny or warn rule")
+	_, err := policyopa.Parse(contents)
+	return err
 }
 
 func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {

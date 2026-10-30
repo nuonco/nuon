@@ -98,12 +98,23 @@ export type TAppBranchRunPreview = {
   send_statuses_on_ignore?: boolean
 }
 
+export type TPreviewSourcePRLabel = {
+  name: string
+  color?: string
+}
+
 export type TPreviewSourcePR = {
   pr_number: number
   title: string
   head_sha: string
   head_ref: string
   url: string
+  author?: string
+  author_avatar_url?: string
+  is_draft?: boolean
+  labels?: TPreviewSourcePRLabel[]
+  created_at?: string
+  updated_at?: string
 }
 
 export type TPreviewSourceBranch = {
@@ -1001,16 +1012,27 @@ export interface TStaticToken {
   updated_at?: string
 }
 
-export interface TCreateStaticTokenBody {
-  name: string
-  duration?: string
-  role?: string
-  token_identity?: 'personal' | 'service_account'
-}
-
 export interface TCreateStaticTokenResponse {
   id?: string
   api_token?: string
+}
+
+export type TToken = components['schemas']['service.TokenResponse']
+
+export interface TCreateTokenBody {
+  account_id: string
+  name?: string
+  duration?: string
+  invalidate?: boolean
+}
+
+export interface TCreateTokenResponse {
+  id?: string
+  name?: string
+  account_id?: string
+  expires_at?: string
+  created_at?: string
+  token?: string
 }
 
 export interface TRoleInfo {
@@ -1040,16 +1062,6 @@ export interface TUpdateServiceAccountRoleBody {
 
 export interface TUpdateServiceAccountBody {
   name: string
-}
-
-export interface TCreateServiceAccountTokenBody {
-  duration?: string
-  name?: string
-  invalidate?: boolean
-}
-
-export interface TCreateServiceAccountTokenResponse {
-  token: string
 }
 
 export interface TUserJourneyStep {

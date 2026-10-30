@@ -6,6 +6,8 @@ keywords: ["inputs", "variables", "variables guide", "Go template syntax", "Nuon
 
 The Components of your app template can get custom configuration settings applied by using variables. Each deployed Component instance can make use of a set of name/value variables to handle configuration settings that need to be set differently on each customer's instance. Nuon brings in a tree of information from the sources detailed below, which can then be accessed by the Component using a templating syntax inspired by Go templates. This variable replacement templating syntax is used by several other infrastructure management tools.
 
+To learn more about app variables, see the [App Variables](/concepts/app-variables) concept page.
+
 You can set these variables as vars in your Terraform configuration. For example, if you wanted to set values in a Helm chart:
 
 ```toml components/helm_chart.toml
@@ -57,7 +59,7 @@ cluster_name    = "n-{{.nuon.install.id}}"
 
 ## Labels
 
-Templating also works in [install labels](/guides/install-configs#dynamic-labels) and app-level [default labels](/guides/managing-apps#default-labels).
+Templating also works in [install labels](/guides/install-configs#dynamic-labels) and app-level [default labels](/guides/multiple-app-configurations#default-labels).
 Label values re-render automatically as the install state changes.
 
 ## Variable Data Sources

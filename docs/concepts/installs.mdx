@@ -1,0 +1,45 @@
+---
+title: "Installs"
+description: "One deployment of your App Template in a customer's cloud account."
+keywords: ["installs", "install", "what is an install", "create an install", "install inputs", "install config", "customer cloud account", "BYOC install", "install stack", "sandbox", "runner", "customer architectures", "overrides", "health checks", "drift detection", "break glass", "nuon infrastructure", "BYOC management infra", "stack", "runner", "what gets deployed in customer account", "BYOC architecture"]
+---
+
+import { InfraDiagram } from "/snippets/infra-diagram.jsx";
+import { FlowSteps } from "/snippets/flow-steps.jsx";
+
+An install is one copy of your App Template in a customer's cloud account. Every install runs on the same standard
+infrastructure, which the customer applies with their own credentials. No cross-account access is required.
+
+<InfraDiagram />
+
+- **[Stack](/concepts/stacks)**: the customer applies it first. It creates the network, permissions, and runner.
+- **[Runner](/concepts/runners)**: runs every deploy, action, and runbook in the customer's account.
+- **[Sandbox](/concepts/sandboxes)**: base compute for your components, such as a Kubernetes cluster.
+
+## How an install deploys
+
+The first [workflow](/concepts/workflows) provisions everything in order:
+
+<FlowSteps
+  horizontal
+  steps={[
+    { title: "Stack", href: "/concepts/stacks" },
+    { title: "Runner", href: "/concepts/runners" },
+    { title: "Sandbox", href: "/concepts/sandboxes" },
+    { title: "Components", href: "/concepts/components" },
+  ]}
+/>
+
+Terraform, Helm, and Kubernetes manifest steps pause on a plan for your approval before they apply.
+
+## Fit the customer's architecture
+
+The stack adapts to what the customer already has:
+
+- **[Stand-alone VPC](/concepts/stacks/stand-alone-vpc).** Nuon creates a new network for the install.
+- **[Customer VPC](/concepts/stacks/customer-vpc).** The install deploys into a network the customer already has.
+- **[Customer cluster](/concepts/stacks/customer-cluster).** Your components deploy into the customer's existing
+  Kubernetes cluster.
+
+Each install also gets its own [inputs](/concepts/app-inputs), such as region or an API key. To create and configure
+installs, see [Creating Installs](/guides/install-configs).

@@ -45,13 +45,14 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		return directive.Pass(), nil
 	}
 
-	l.Debug("install group has no installs, auto-skipping plan and deploy",
+	l.Debug("install group has no installs, completing plan and skipping deploy",
 		zap.String("step_id", step.ID),
 		zap.String("workflow_id", flw.ID))
 
 	// Skip the paired deploy step: it's in a separate step group the skip-group
 	// directive won't reach, so OnSkip marks it explicitly. applyCheckResult
-	// marks the plan step itself.
+	// marks the plan step itself. StatusSuccess (not auto-skipped) so the
+	// rollout overview treats the empty group as done and advances.
 	if sk, ok := c.sig.(signal.SignalWithOnSkip); ok {
 		if err := sk.OnSkip(ctx); err != nil {
 			return directive.Pass(), errors.Wrap(err, "unable to skip deploy step for empty install group")
@@ -64,10 +65,10 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	return directive.CheckResult{
 		Directive: directive.StepSkipGroup,
-		Status:    app.StatusAutoSkipped,
+		Status:    app.StatusSuccess,
 		Reason: directive.CheckReason{
 			Check:   "empty_group",
-			Summary: "Install group has no installs, automatically skipped",
+			Summary: "Install group has no installs",
 		},
 	}, nil
 }
