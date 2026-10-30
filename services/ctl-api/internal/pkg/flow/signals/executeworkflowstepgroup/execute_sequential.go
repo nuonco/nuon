@@ -61,11 +61,11 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			if siblingStatus == "" {
 				siblingStatus = app.StatusDiscarded
 			}
-			s.cancelRemainingSteps(ctx, l, steps, step.ID, siblingStatus)
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, siblingStatus, result.Cause)
 			return s.writeStepGroupDirective(ctx, directive.GroupStop)
 
 		case actionRetryGroup:
-			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded, result.Cause)
 			return s.writeStepGroupDirective(ctx, directive.GroupRetryGroup)
 
 		case actionSkipGroup:
@@ -73,7 +73,7 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			if siblingStatus == "" {
 				siblingStatus = app.StatusDiscarded
 			}
-			s.cancelRemainingSteps(ctx, l, steps, step.ID, siblingStatus)
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, siblingStatus, result.Cause)
 			return s.writeStepGroupDirective(ctx, directive.GroupSkipGroup)
 
 		case actionAwaitApproval:

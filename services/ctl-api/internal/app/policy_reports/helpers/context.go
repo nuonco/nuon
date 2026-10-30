@@ -15,8 +15,10 @@ type PolicyEvaluationContext struct {
 	ComponentBuildID *string
 
 	// Policy evaluation metadata
-	PolicyIDs  []string
-	InputCount int
+	PolicyIDs            []string
+	InputCount           int
+	RunnerJobID          string
+	RunnerJobExecutionID string
 
 	// Human-readable names for display in reports
 	OrgName       string

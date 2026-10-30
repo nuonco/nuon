@@ -15,6 +15,51 @@ const baseStep = {
 
 export const InProgress = () => <StepBanner step={baseStep} />
 
+export const ApplySkippedByPolicy = () => (
+  <StepBanner
+    step={{
+      ...baseStep,
+      name: 'reprovision sandbox apply plan',
+      status: {
+        status: 'auto-skipped',
+        status_human_description:
+          'Sandbox apply automatically skipped by policy; existing sandbox state retained',
+        metadata: {
+          cause_check: 'policy-skip-apply',
+          cause_step_id: 'sandbox-plan',
+          policy_report_id: 'report-skip',
+          policy_action: 'skip_apply',
+        },
+      },
+    }}
+  />
+)
+
+export const SkippedByPolicy = () => (
+  <StepBanner
+    step={
+      {
+        ...baseStep,
+        status: {
+          status: 'auto-skipped',
+          status_human_description:
+            'Apply automatically skipped by policy; existing deployment retained',
+          metadata: {
+            check: 'policy-skip-apply',
+            skip_findings: [
+              {
+                policy_id: 'policy-skip',
+                message: 'Database replacement requires a maintenance window.',
+              },
+            ],
+            passed_policy_ids: ['policy-tags'],
+          },
+        },
+      } as TWorkflowStep
+    }
+  />
+)
+
 export const Error = () => (
   <StepBanner
     step={
@@ -36,7 +81,10 @@ const logLine = (level: string, message: string) =>
 const longUnbrokenDescription = [
   'Step encountered an error: job did not finish successfully:',
   logLine('info', 'acme_widget.example: Destroying...'),
-  logLine('error', 'acme_widget.example: deletion denied by policy acme/example'),
+  logLine(
+    'error',
+    'acme_widget.example: deletion denied by policy acme/example'
+  ),
 ].join(' ')
 
 export const ErrorWithLongUnbrokenDescription = () => (
