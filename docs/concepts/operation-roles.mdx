@@ -79,43 +79,30 @@ It walks the following chain from highest to lowest priority and uses the first 
 
 1. **Runtime override:** a role passed explicitly via the `--role` CLI flag or selected in the dashboard
    before triggering a run
-2. **Break-glass role** _(actions only, deprecated):_ the `break_glass_role` field on an action config
+2. **Break glass role field** _(actions only, deprecated):_ the `break_glass_role` field on an action config. Use
+   the `role` field instead.
 3. **Entity role:** the `operation_roles` block on a sandbox or component config, or the `role` field on
    an action config
 4. **Matrix rule:** a matching rule in `operation_roles.toml` (the app-level principal + operation lookup
    table)
 5. **Default role:** the standard role from `permissions.toml` for the operation type
 
-If no match is found at any level, the operation fails.
+The first level that names a role wins. If that role is off, a run-time pick fails and any other level falls back to
+the default role.
 
-**Custom roles:** Nuon previously supported three built-in role types (`provision`, `deprovision`, and
-`maintenance`) plus `break_glass` for emergency access. Custom roles extend this with `type = "custom"`,
+**Custom roles:** Nuon has three built-in role types (`provision`, `deprovision`, and `maintenance`), plus
+[break glass roles](/concepts/break-glass) for elevated access. Custom roles extend this with `type = "custom"`,
 letting you define additional roles beyond those three and use them in operation role assignments. Any role
-referenced in an operation role assignment must be declared in the app config with `type = "custom"` so
-that it is provisioned in the customer's CloudFormation stack.
+referenced in an operation role assignment must be declared in the app config.
 
 ## Elevated Access and Break-Glass Operations
 
 Some operations are too sensitive for day-to-day role permissions but still need to run occasionally under
-controlled conditions. Operation roles support this through roles that exist in the stack but are not
-provisioned by default. They can be enabled and provisioned by the customer when there is a requirement
-for them.
+controlled conditions. Use [break glass roles](/concepts/break-glass) for these. A break glass role is off by default, and the
+customer turns it on with a stack update when the vendor needs it.
 
-### Roles Defined But Disabled by Default
-
-A custom role can be declared in the app config and provisioned into the customer's CloudFormation stack,
-but marked as disabled. In this state the role exists but cannot be assumed by the runner, so it has no
-effect during normal operations. When an elevated operation is required the role is enabled, the operation
-runs, and the role is disabled again by the customer. This means:
-
-- The role is already present in the install stack from day one, so no stack update or reprovisioning is
-  needed at the moment of use
-- Under normal conditions the role is disabled, so it cannot be assumed accidentally or without explicit
-  intent
-- Enabling and disabling the role is a deliberate, auditable action scoped to the window of use
-
-The customer retains full control. They can see the role in their install stack, enable or disable
-it at any time, and audit every assumption via audit logs.
+The customer keeps full control. They can see the role's definition in their install stack before it is ever
+used, turn it on or off at any time, and audit every time it's assumed in their cloud audit logs.
 
 ### Introducing New Components with New Permission Sets
 
@@ -137,13 +124,12 @@ available during a standard deploy.
 
 The pattern with operation roles:
 
-1. Define a `type = "custom"` role (e.g., `{{.nuon.install.id}}-eks-upgrade-role`) with the permissions
-   needed for a cluster upgrade. The role is provisioned into the install stack but disabled by default.
-2. When an upgrade is needed, the customer enables the role in their install stack.
-3. An operator triggers the upgrade operation via the CLI or dashboard, selecting the upgrade role as a
-   runtime override: `--role {{install-id}}-eks-upgrade-role`.
+1. Define a [break glass role](/concepts/break-glass) (e.g., `{{.nuon.install.id}}-eks-upgrade-role`) with the
+   permissions needed for a cluster upgrade. It's off by default.
+2. When an upgrade is needed, the customer turns the role on with a stack update.
+3. An operator runs the upgrade action from the CLI or dashboard and picks the upgrade role for that run.
 4. The runner assumes the elevated role, performs the upgrade, and exits.
-5. The customer disables the role again, returning it to its default inactive state.
+5. The customer turns the role off again with another stack update.
 
 The upgrade is fully auditable. Audit trail records show exactly which role was assumed, when, and by
 which operation, and the elevated permissions exist in the customer's account for only as long as

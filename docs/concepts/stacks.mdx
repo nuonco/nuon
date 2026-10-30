@@ -34,9 +34,9 @@ No cross-account access is required. The customer retains full ownership and vis
 The Stack gives the customer full control over the Runner's access to their cloud account. Through the Stack parameters, the customer can:
 
 - **Enable or disable the Runner** to stop it from executing jobs
-- **Configure IAM roles and policies** to control what the Runner can do
-- **Grant break glass roles** for temporary elevated access during emergencies, which the customer can revoke at any time
-- **Trigger automated actions** when roles are enabled or disabled — use the `role-enabled` and `role-disabled` [action triggers](/concepts/actions#role-change-triggers) to run auditing, validation, or setup tasks in response to role changes
+- **Configure [operation roles](/concepts/operation-roles)** and their policies to control what the Runner can do
+- **Turn on [break glass roles](/concepts/break-glass)** when the vendor needs urgent access, and turn them off when it's done
+- **Trigger automated actions** when roles are enabled or disabled. Use the `role-enabled` and `role-disabled` [action triggers](/concepts/actions#role-change-triggers) to run auditing, validation, or setup tasks
 
 This means the customer always has a killswitch. See [Customer-Controlled Runner Shutdown](/guides/runner-kill-switch).
 

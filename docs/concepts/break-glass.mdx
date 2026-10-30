@@ -1,0 +1,144 @@
+---
+title: "Break Glass"
+description: "Customers can grant you elevated access when you need it."
+boost: 2
+keywords: ["break glass", "break-glass", "break glass role", "break glass access", "elevated access", "emergency access", "temporary elevated permissions", "customer-approved access", "vendor access to customer account", "just-in-time access BYOC", "break_glass.toml", "role-enabled trigger", "least privilege BYOC"]
+---
+
+Break glass helps when things go wrong, without compromising the data sovereignty many BYOC customers expect.
+
+## Why break glass matters
+
+When you have a critical dependency for your app that goes down, you often need deeper access. With that access comes more scrutiny.
+
+Plan in advance with your customer's security team for how you will handle an outage.
+
+Nuon records when access was granted, what ran, and when it was removed, so you can show the customer what happened.
+
+## How it works
+
+<Steps>
+  <Step title="You define the role">
+    Declare the role and the access you'll need when something goes wrong.
+  </Step>
+  <Step title="Your customer reviews">
+    Your customer's security team can review the role before it's ever created.
+  </Step>
+  <Step title="Your customer switches it on">
+    When you have an incident, they enable the role.
+  </Step>
+  <Step title="You run the work">
+    Run an [action](/concepts/actions) or [runbook](/concepts/runbooks) with the role.
+  </Step>
+  <Step title="Your customer switches it off">
+    The customer disables or removes the role from their account.
+  </Step>
+</Steps>
+
+## When to use break glass
+
+Use break glass when you need more access than your everyday roles have to service your customer, often urgently:
+
+- Debugging an incident
+- Recovering an install a normal deploy can't fix
+- Restoring a database
+- Upgrading a Kubernetes cluster
+
+If your customer switches the same role on every week, ask them to approve it as a standing
+[operation role](/concepts/operation-roles) instead.
+
+## Break glass and operation roles
+
+|  | Operation role | Break glass role |
+| --- | --- | --- |
+| Access | Standing. Your customer approves it once. | Granted when you need it, with a record of every use. |
+| In your customer's account | On by default once your app uses it. | Off by default. Created only when your customer switches it on. |
+| Where it's declared | `permissions.toml` | `break_glass.toml` |
+| How it's shown | Like any other role. | Labeled as break glass in the dashboard and in Slack notifications. |
+
+## Define a break glass role
+
+Declare roles in `break_glass.toml`, or one file per role in a `break_glass/` directory. Your customer sees each role's
+`display_name` and `description` when deciding whether to turn it on.
+
+```toml break_glass.toml
+[[role]]
+name         = "{{.nuon.install.id}}-eks-upgrade"
+display_name = "EKS cluster upgrade"
+description  = "Lets the vendor upgrade the EKS cluster."
+
+[[role.policies]]
+name     = "eks-upgrade"
+contents = """
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "eks:DescribeCluster",
+        "eks:DescribeUpdate",
+        "eks:UpdateClusterVersion",
+        "eks:DescribeNodegroup",
+        "eks:UpdateNodegroupVersion"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+"""
+```
+
+This role is for AWS. For other clouds, add `cloud_platform = "azure"` or `"gcp"`. See the
+[config reference](/config-ref/break-glass) for every field.
+
+## Run work with a break glass role
+
+Set an action's `role` to the break glass role:
+
+```toml actions/eks-upgrade.toml
+name    = "eks-upgrade"
+timeout = "30m"
+role    = "{{.nuon.install.id}}-eks-upgrade"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "upgrade cluster"
+command = "aws eks update-cluster-version --name $CLUSTER_NAME --kubernetes-version 1.31"
+
+[steps.env_vars]
+CLUSTER_NAME = "{{.nuon.sandbox.outputs.cluster.name}}"
+```
+
+To use the role for a single run, pick it in the dashboard's role selector or pass `--role-name` to
+`nuon actions create-run`.
+
+## Run work as soon as access is granted
+
+A `role-enabled` trigger runs an action as soon as your customer switches a role on, so they don't wait on you.
+
+```toml
+[[triggers]]
+type = "role-enabled"
+```
+
+It fires for any role, so check `ROLE_NAME` first. See [Role change triggers](/concepts/actions#role-change-triggers).
+
+## How your customer turns it on
+
+- **CloudFormation:** update the stack with the current template and set the role's `Enable…` parameter.
+- **Azure:** redeploy the stack with the role's enable parameter set.
+- **Terraform module:** set the role in the module's `roles` map and apply. See
+  [Provision stacks with the Terraform module](/guides/provision-stacks-with-terraform-module#vendor-changes-roles-or-permissions).
+
+## Audit
+
+Every break glass session leaves a record:
+
+- **Access granted and removed:** each time a role is switched on or off, Nuon sends a
+  [Slack notification](/guides/slack#role-change-notifications) and a [webhook](/guides/webhooks) event.
+- **Work done:** each run shows the role it used in the dashboard.
+- **Actions in the account:** your customer's cloud audit logs, such as AWS CloudTrail, record each time the runner
+  assumes the role.

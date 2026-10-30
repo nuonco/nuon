@@ -30,7 +30,7 @@ Some concrete use cases:
 
 - **Separate deploy vs teardown:** prevent accidental deletion by ensuring your deploy role cannot delete resources
 - **Tighter sandbox permissions:** provision with a broad Terraform role and deprovision with a narrow destroy-only role
-- **Emergency break-glass:** run a privileged action role for incident response without elevating all action runs
+- **Break glass:** run a privileged role the customer turns on when you need more access to service their install. See [Break Glass](/concepts/break-glass)
 - **Audit-friendly access:** separate CloudTrail events per role make it easy to see which operation touched which
   resource
 
@@ -41,7 +41,7 @@ When a run starts, the runner selects a role by walking this chain from highest 
 | Priority    | Source                                                                                        | Scope         |
 | ----------- | --------------------------------------------------------------------------------------------- | ------------- |
 | 1 (highest) | Runtime override (`--role` flag / dashboard selection)                                        | Any operation |
-| 2           | Break-glass role (`break_glass_role` field on action config, deprecated)                      | Actions only  |
+| 2           | `break_glass_role` field on action config (deprecated; use `role`)                             | Actions only  |
 | 3           | Entity role (inline `operation_roles` block or `role` field)                                  | Single entity |
 | 4           | Matrix rule (`operation_roles.toml` principal + operation)                                    | App-wide      |
 | 5 (lowest)  | Default role (`permissions.toml` `provision_role`, `deprovision_role`, or `maintenance_role`) | App-wide      |
@@ -50,8 +50,7 @@ The first match wins. If nothing matches the run fails.
 
 ## Defining Custom Roles
 
-Any role used in an operation role assignment must be declared in `permissions.toml` with `type = "custom"` so it is
-provisioned in the customer's CloudFormation stack:
+Declare custom roles in `permissions.toml` with `type = "custom"`:
 
 ```toml permissions.toml
 [[roles]]
@@ -154,8 +153,8 @@ Valid operations for components: `deploy` and `teardown`.
 
 ### Actions (`actions/<name>.toml`)
 
-Actions use a single top-level `role` field (not an array). `break_glass_role` is deprecated and should no longer be
-used.
+Actions use a single top-level `role` field (not an array). To run an action with a
+[break glass role](/concepts/break-glass), set `role` to its name. The older `break_glass_role` field is deprecated.
 
 ```toml actions/db_migration.toml
 name    = "db_migration"
