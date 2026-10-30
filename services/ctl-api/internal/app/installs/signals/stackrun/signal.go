@@ -85,13 +85,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return err
 	}
+	// Cancelled versions still get outputs applied. Drop the await callback so the
+	// cancelled provision workflow is not resumed; recording already clears it in
+	// the common path, this covers races and direct stackrun retries.
 	if version.Status.Status == app.StatusCancelled {
 		if err := activities.AwaitClearInstallStackVersionCallback(ctx, activities.ClearInstallStackVersionCallbackRequest{
 			VersionID: version.ID,
 		}); err != nil {
 			l.Warn("unable to clear callback ref for cancelled stack version", zap.Error(err))
 		}
-		return nil
 	}
 
 	runType := s.determineRunType(ctx, version, install)
@@ -254,15 +256,6 @@ func (s *Signal) resolveVersion(ctx workflow.Context, install *app.Install) (*ap
 }
 
 func (s *Signal) handleProvisionComplete(ctx workflow.Context, install *app.Install, version *app.InstallStackVersion, l log.Logger) {
-	if version.Status.Status == app.StatusCancelled {
-		if err := activities.AwaitClearInstallStackVersionCallback(ctx, activities.ClearInstallStackVersionCallbackRequest{
-			VersionID: version.ID,
-		}); err != nil {
-			l.Warn("unable to clear callback ref for cancelled stack version", zap.Error(err))
-		}
-		return
-	}
-
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   install.RunnerID,
 		OwnerType: "runners",
