@@ -7,27 +7,24 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
+	"strings"
 	"time"
+
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
-func writeTarLayer(dst string, files []FileRef) (retErr error) {
+func writeTarLayer(dst io.Writer, source *sourcefs.FS, files []FileRef) error {
+	if source == nil {
+		return fmt.Errorf("archive source filesystem is required")
+	}
 	sorted := append([]FileRef(nil), files...)
 	sort.Slice(sorted, func(i, j int) bool {
 		return sorted[i].RelPath < sorted[j].RelPath
 	})
 
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := out.Close(); retErr == nil {
-			retErr = err
-		}
-	}()
-
-	gz := gzip.NewWriter(out)
+	gz := gzip.NewWriter(dst)
 	gz.Header.ModTime = time.Unix(0, 0)
 	gz.Header.OS = 255
 	tw := tar.NewWriter(gz)
@@ -63,19 +60,28 @@ func writeTarLayer(dst string, files []FileRef) (retErr error) {
 	}
 
 	for _, file := range sorted {
-		info, err := os.Lstat(file.AbsPath)
+		info, err := source.Lstat(file.AbsPath)
 		if err != nil {
 			return fmt.Errorf("unable to stat %s: %w", file.AbsPath, err)
 		}
 		if info.Mode()&os.ModeSymlink != 0 {
-			stat, err := os.Stat(file.AbsPath)
+			resolved, err := source.Resolve(file.AbsPath)
+			if err != nil {
+				return fmt.Errorf("unable to resolve symlink target for %s: %w", file.AbsPath, err)
+			}
+			stat, err := source.Lstat(resolved)
 			if err != nil {
 				return fmt.Errorf("unable to stat symlink target for %s: %w", file.AbsPath, err)
 			}
 			if stat.IsDir() {
-				link, err := os.Readlink(file.AbsPath)
+				link, err := source.Readlink(file.AbsPath)
 				if err != nil {
 					return fmt.Errorf("unable to read symlink %s: %w", file.AbsPath, err)
+				}
+				link = filepath.ToSlash(link)
+				resolvedLink := path.Join(path.Dir(file.RelPath), link)
+				if path.IsAbs(link) || resolvedLink == file.RelPath || validateTarPath(resolvedLink) != nil && resolvedLink != "." {
+					return fmt.Errorf("unsafe archive symlink %q -> %q", file.RelPath, link)
 				}
 				header, err := tar.FileInfoHeader(info, link)
 				if err != nil {
@@ -117,7 +123,7 @@ func writeTarLayer(dst string, files []FileRef) (retErr error) {
 			return fmt.Errorf("unable to write header for %s: %w", file.RelPath, err)
 		}
 
-		in, err := os.Open(file.AbsPath)
+		in, err := source.Open(file.AbsPath)
 		if err != nil {
 			return fmt.Errorf("unable to open %s: %w", file.AbsPath, err)
 		}
@@ -138,7 +144,7 @@ func writeTarLayer(dst string, files []FileRef) (retErr error) {
 }
 
 func validateTarPath(name string) error {
-	if name == "" || path.IsAbs(name) || path.Clean(name) != name || name == ".." || len(name) >= 3 && name[:3] == "../" {
+	if name == "" || name == "." || path.IsAbs(name) || path.Clean(name) != name || name == ".." || strings.HasPrefix(name, "../") || strings.ContainsAny(name, "\\\x00") || len(name) >= 2 && name[1] == ':' {
 		return fmt.Errorf("invalid relative archive path %q", name)
 	}
 	return nil

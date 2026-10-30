@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/spf13/afero"
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/rootfs"
 )
 
 const (
@@ -100,6 +104,7 @@ type Workspace interface {
 
 	// helpers
 	Root() string
+	FS() afero.Fs
 	AbsPath(string) string
 	IsFile(string) bool
 	IsDir(string) bool
@@ -116,6 +121,11 @@ type workspace struct {
 	ID         string `validate:"required"`
 
 	L *zap.Logger `validate:"required"`
+
+	backing afero.Fs
+	fs      afero.Fs
+	parent  *rootfs.FS
+	owned   *rootfs.FS
 }
 
 var _ Workspace = (*workspace)(nil)
@@ -166,4 +176,32 @@ func WithLogger(l *zap.Logger) workspaceOption {
 	return func(obj *workspace) {
 		obj.L = l
 	}
+}
+
+// WithFS selects a pinned OS backend or a private in-memory job namespace.
+// The backing filesystem is borrowed, never closed by the workspace.
+func WithFS(fs afero.Fs) workspaceOption {
+	return func(w *workspace) { w.backing = fs }
+}
+
+// FS borrows the pinned job root. It is valid from Init until Cleanup.
+func (w *workspace) FS() afero.Fs { return w.fs }
+
+func (w *workspace) validatePaths() error {
+	id := strings.TrimPrefix(w.ID, workspaceDirPrefix)
+	if !filepath.IsLocal(id) || id == "." || strings.ContainsAny(id, `/\`) {
+		return fmt.Errorf("invalid workspace ID %q", w.ID)
+	}
+	if w.Src != nil {
+		// A leading slash historically means repository-relative, not host-rooted.
+		path := strings.TrimLeft(w.Src.Path, "/")
+		if path != "" && !filepath.IsLocal(path) {
+			return fmt.Errorf("invalid repository path %q", w.Src.Path)
+		}
+	}
+	abs, err := filepath.Abs(w.TmpRootDir)
+	if err == nil {
+		w.TmpRootDir = abs
+	}
+	return err
 }
