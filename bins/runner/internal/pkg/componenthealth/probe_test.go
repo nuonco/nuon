@@ -104,8 +104,7 @@ func TestNewProbeSpec(t *testing.T) {
 }
 
 func TestRunHTTPProbe(t *testing.T) {
-	client := newProbeHTTPClient()
-	defer client.CloseIdleConnections()
+	p := loopbackProber(t)
 
 	t.Run("2xx_is_healthy", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +114,7 @@ func TestRunHTTPProbe(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		res := runHTTPProbe(context.Background(), client, srv.URL+"/healthz")
+		res := p.runHTTP(context.Background(), srv.URL+"/healthz")
 		assert.Equal(t, healthHealthy, res.health)
 		assert.Empty(t, res.message)
 		assert.Equal(t, http.StatusNoContent, res.statusCode)
@@ -134,7 +133,7 @@ func TestRunHTTPProbe(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		res := runHTTPProbe(context.Background(), client, srv.URL+"/healthz")
+		res := p.runHTTP(context.Background(), srv.URL+"/healthz")
 		assert.Equal(t, healthHealthy, res.health)
 		assert.Equal(t, http.StatusFound, res.statusCode)
 		assert.Zero(t, followed.Load())
@@ -146,7 +145,7 @@ func TestRunHTTPProbe(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		res := runHTTPProbe(context.Background(), client, srv.URL+"/healthz")
+		res := p.runHTTP(context.Background(), srv.URL+"/healthz")
 		assert.Equal(t, healthUnhealthy, res.health)
 		assert.Equal(t, http.StatusNotFound, res.statusCode)
 		assert.Contains(t, res.message, "404")
@@ -159,7 +158,7 @@ func TestRunHTTPProbe(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		res := runHTTPProbe(context.Background(), client, srv.URL+"/")
+		res := p.runHTTP(context.Background(), srv.URL+"/")
 		assert.Equal(t, healthUnhealthy, res.health)
 		assert.Contains(t, res.message, "502")
 	})
@@ -176,14 +175,14 @@ func TestRunHTTPProbe(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		defer cancel()
 
-		res := runHTTPProbe(ctx, client, srv.URL+"/healthz")
+		res := p.runHTTP(ctx, srv.URL+"/healthz")
 		assert.Equal(t, healthUnhealthy, res.health)
 		assert.Contains(t, strings.ToLower(res.message), "deadline")
 		assert.Zero(t, res.statusCode)
 	})
 
 	t.Run("transport_error_is_unhealthy", func(t *testing.T) {
-		res := runHTTPProbe(context.Background(), client, "http://"+closedAddr(t)+"/healthz")
+		res := p.runHTTP(context.Background(), "http://"+closedAddr(t)+"/healthz")
 		assert.Equal(t, healthUnhealthy, res.health)
 		assert.NotEmpty(t, res.message)
 	})
@@ -195,13 +194,13 @@ func TestRunTCPProbe(t *testing.T) {
 		require.NoError(t, err)
 		defer ln.Close()
 
-		res := runTCPProbe(context.Background(), ln.Addr().String())
+		res := loopbackProber(t).runTCP(context.Background(), ln.Addr().String())
 		assert.Equal(t, healthHealthy, res.health)
 		assert.Empty(t, res.message)
 	})
 
 	t.Run("refused_is_unhealthy", func(t *testing.T) {
-		res := runTCPProbe(context.Background(), closedAddr(t))
+		res := loopbackProber(t).runTCP(context.Background(), closedAddr(t))
 		assert.Equal(t, healthUnhealthy, res.health)
 		assert.NotEmpty(t, res.message)
 	})
@@ -240,7 +239,7 @@ func TestProbeSpecsFor(t *testing.T) {
 	assert.Equal(t, probeKindExec, specs[2].kind)
 	assert.Contains(t, specs[2].unresolved, "not supported")
 	assert.Equal(t, "check-api", specs[2].displayName())
-	res := runProbe(context.Background(), nil, specs[2])
+	res := newProber().run(context.Background(), specs[2])
 	assert.Equal(t, healthUnknown, res.health)
 
 	assert.Nil(t, probeSpecsFor(nil))
@@ -368,7 +367,7 @@ func TestUnrunnableProbesReportUnknownRatherThanVanish(t *testing.T) {
 			require.NotEmpty(t, specs[0].unresolved)
 			require.Contains(t, specs[0].unresolved, tt.wantReason)
 
-			res := runProbe(context.Background(), nil, specs[0])
+			res := newProber().run(context.Background(), specs[0])
 			require.Equal(t, healthUnknown, res.health, "an unrunnable probe is unknown, never healthy and never a failure")
 			require.Contains(t, res.message, tt.wantReason)
 
@@ -393,5 +392,5 @@ func TestValidProbeStillRuns(t *testing.T) {
 	})
 	require.Len(t, specs, 1)
 	require.Empty(t, specs[0].unresolved)
-	require.Equal(t, healthHealthy, runProbe(context.Background(), nil, specs[0]).health)
+	require.Equal(t, healthHealthy, loopbackProber(t).run(context.Background(), specs[0]).health)
 }
