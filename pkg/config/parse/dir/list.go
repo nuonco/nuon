@@ -54,8 +54,10 @@ func (p *parser) listDirFrom(path string, ancestors []os.FileInfo) ([]string, er
 		if entry.Mode()&os.ModeSymlink != 0 {
 			target, err := p.fs.Stat(fp)
 			if err != nil {
-				// Dangling or unreadable link; there is nothing to collect.
-				continue
+				if os.IsNotExist(err) {
+					continue
+				}
+				return nil, errors.Wrapf(err, "unable to resolve config symlink %q; use a relative symlink whose target stays within the repository", fp)
 			}
 
 			info = target

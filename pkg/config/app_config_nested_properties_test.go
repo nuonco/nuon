@@ -42,7 +42,7 @@ var nestedFieldContracts = []nestedFieldContract{
 	{reflect.TypeFor[HelmRepoConfig](), "RepoURL:repo_url Chart:chart Version:version"},
 	{reflect.TypeFor[PublicRepoConfig](), "Repo:repo Directory:directory Branch:branch"},
 	{reflect.TypeFor[ConnectedRepoConfig](), "Repo:repo Directory:directory Branch:branch"},
-	{reflect.TypeFor[KustomizeConfig](), "Path:path Patches:patches EnableHelm:enable_helm LoadRestrictor:load_restrictor"},
+	{reflect.TypeFor[KustomizeConfig](), "Path:path Patches:patches EnableHelm:singleton LoadRestrictor:load_restrictor"},
 	{reflect.TypeFor[ComponentHealthConfig](), "Enabled:enabled StabilizationWindow:stabilization_window BlockDeploy:block_deploy Probes:nested RequiredChecks:required_checks"},
 	{reflect.TypeFor[ComponentHealthProbeConfig](), "Type:type Name:name URL:url Command:legacy-rejected"},
 	{reflect.TypeFor[ComponentTeardownConfig](), "Retain:retain"},
@@ -881,6 +881,15 @@ func TestAppConfigDiff_NestedOmittedRetryBoundaries(t *testing.T) {
 }
 
 func TestAppConfigDiff_NestedConstrainedTransitions(t *testing.T) {
+	t.Run("unsupported_helm_inflation", func(t *testing.T) {
+		old, next := nestedBaseline(), nestedBaseline()
+		next.Components[4].KubernetesManifest.Kustomize.EnableHelm = true
+		nestedValidate(t, old)
+		require.ErrorContains(t, next.Components[4].Validate(), "kustomize.enable_helm")
+		for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
+			require.True(t, nestedDiffAt(t, pair[1].Diff(pair[0]), "components/component.manifest/kustomize/enable_helm").DirectSummary().HasChanged)
+		}
+	})
 	t.Run("helm_to_job", func(t *testing.T) {
 		old, next := nestedBaseline(), nestedBaseline()
 		next.Components[0].Type, next.Components[0].HelmChart = JobComponentType, nil

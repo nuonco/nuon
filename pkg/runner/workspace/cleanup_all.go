@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // CleanupByID removes a single workspace directory by its ID.
@@ -15,6 +16,9 @@ import (
 // generic per-job backstop that doesn't know which root the handler chose. A
 // missing directory is not an error.
 func CleanupByID(workspaceID string) error {
+	if !filepath.IsLocal(workspaceID) || workspaceID == "." || strings.ContainsAny(workspaceID, `/\`) {
+		return fmt.Errorf("invalid workspace ID %q", workspaceID)
+	}
 	var errs []error
 	for _, root := range HostActionRoots() {
 		dirPath := filepath.Join(root, "workspace-"+workspaceID)

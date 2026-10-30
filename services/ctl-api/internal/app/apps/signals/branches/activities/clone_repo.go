@@ -37,6 +37,7 @@ func (a *Activities) cloneRepo(ctx context.Context, runID string, vcsConfigID st
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
 	}
+	defer ws.Close()
 
 	if err := ws.Init(ctx); err != nil {
 		return nil, fmt.Errorf("unable to init workspace: %w", err)

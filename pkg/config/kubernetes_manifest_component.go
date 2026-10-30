@@ -40,7 +40,7 @@ type KustomizeConfig struct {
 	// Additional patch files to apply after kustomize build
 	Patches []string `mapstructure:"patches,omitempty" toml:"patches,omitempty"`
 
-	// Enable Helm chart inflation during kustomize build
+	// Helm chart inflation is unsupported; leave false.
 	EnableHelm bool `mapstructure:"enable_helm,omitempty" toml:"enable_helm,omitempty"`
 
 	// Load restrictor: only rootOnly is supported
@@ -56,6 +56,13 @@ func (k KustomizeConfig) ValidateLoadRestrictor() error {
 	}
 }
 
+func (k KustomizeConfig) ValidateEnableHelm() error {
+	if k.EnableHelm {
+		return errors.New("kustomize.enable_helm is not supported; omit it or set it to false and use a separate helm_chart component")
+	}
+	return nil
+}
+
 func (k KustomizeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("path").Short("kustomization directory path").
@@ -64,8 +71,8 @@ func (k KustomizeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("patches").Short("additional patch files").
 		Long("Additional patch files to apply after kustomize build.").
 		Example("patches/namespace.yaml").
-		Field("enable_helm").Short("enable Helm chart inflation").
-		Long("Enable Helm chart inflation during kustomize build.").
+		Field("enable_helm").Short("unsupported Helm chart inflation").
+		Long("Must be omitted or false. Helm chart inflation is not supported; use a separate helm_chart component.").
 		Field("load_restrictor").Short("file load restrictor").
 		Long("Controls how kustomize loads files. Only rootOnly is supported. Default: rootOnly.").
 		Example("rootOnly")
@@ -77,8 +84,8 @@ func (k KubernetesManifestComponentConfig) JSONSchemaExtend(schema *jsonschema.S
 		Long("Path to a YAML manifest file or inline manifest content for Kubernetes resources. Supports templating with variables like {{.nuon.install.id}}. Mutually exclusive with kustomize").
 		Example("./manifests/deployment.yaml").
 		OneOfRequired("manifest_source").
-		Field("kustomize").Short("Kustomize configuration").
-		Long("Configuration for building manifests from a kustomize overlay. Mutually exclusive with manifest. Requires either public_repo or connected_repo").
+		Field("kustomize").Short("local-only Kustomize configuration").
+		Long("Requires public_repo or connected_repo; excludes manifest. Remote inputs, Helm inflation, and directory-backed plugin configurations are unsupported.").
 		OneOfRequired("manifest_source").
 		Field("public_repo").Short("public repository with kustomize source").
 		Long("Configuration for a public Git repository containing kustomize overlays. Only valid when using kustomize, not inline manifests").
@@ -139,6 +146,9 @@ func (t *KubernetesManifestComponentConfig) Validate() error {
 			return errors.New("kustomize requires either 'public_repo' or 'connected_repo' to be specified")
 		}
 		if err := t.Kustomize.ValidateLoadRestrictor(); err != nil {
+			return err
+		}
+		if err := t.Kustomize.ValidateEnableHelm(); err != nil {
 			return err
 		}
 	}

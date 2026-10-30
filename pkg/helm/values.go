@@ -5,8 +5,12 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"helm.sh/helm/v4/pkg/action"
 	chartcommon "helm.sh/helm/v4/pkg/chart/common"
 	chartutil "helm.sh/helm/v4/pkg/chart/common/util"
+	rcommon "helm.sh/helm/v4/pkg/release/common"
+	release "helm.sh/helm/v4/pkg/release/v1"
+	"helm.sh/helm/v4/pkg/storage/driver"
 	"helm.sh/helm/v4/pkg/strvals"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -62,4 +66,27 @@ func ChartValues(values []string, helmSet []plantypes.HelmValue, override string
 	}
 
 	return base, nil
+}
+
+// UpgradeValues resolves Helm's default empty-input fallback before schema
+// confinement. Run the upgrade with ResetValues so it uses this same selection.
+func UpgradeValues(cfg *action.Configuration, last *release.Release, values map[string]interface{}) (map[string]interface{}, error) {
+	if len(values) > 0 {
+		return values, nil
+	}
+	current := last
+	if last.Info.Status != rcommon.StatusDeployed {
+		deployed, err := cfg.Releases.Deployed(last.Name)
+		if err != nil {
+			if !errors.Is(err, driver.ErrNoDeployedReleases) || (last.Info.Status != rcommon.StatusFailed && last.Info.Status != rcommon.StatusSuperseded) {
+				return nil, err
+			}
+		} else {
+			current, err = AsRelease(deployed)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return current.Config, nil
 }
