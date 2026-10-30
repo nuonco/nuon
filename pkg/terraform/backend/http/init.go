@@ -2,6 +2,6 @@ package http
 
 import "context"
 
-func (s *http) Init(ctx context.Context) error {
-	return nil
+func (s *http) Init(context.Context) error {
+	return s.startProxy()
 }
