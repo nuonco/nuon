@@ -59,8 +59,8 @@ test('cancelled and skipped categories are labelled explicitly', () => {
         status: 'cancelled',
         outcomes: [
           {
-            category: 'Sandbox',
-            name: 'Sandbox',
+            category: 'Secrets',
+            name: 'Secrets',
             status: 'cancelled',
             detail: 'Cancelled',
           },
@@ -70,13 +70,22 @@ test('cancelled and skipped categories are labelled explicitly', () => {
             status: 'user-skipped',
             detail: 'Skipped by operator',
           },
+          {
+            category: 'Sandbox',
+            name: 'Sandbox',
+            status: 'auto-skipped',
+            detail: 'Apply skipped by policy',
+          },
         ],
       }}
     />
   )
-  expect(screen.getByRole('group', { name: 'Sandbox: Cancelled' })).toBeTruthy()
+  expect(screen.getByRole('group', { name: 'Secrets: Cancelled' })).toBeTruthy()
   expect(
     screen.getByRole('group', { name: 'Components: Skipped' })
+  ).toBeTruthy()
+  expect(
+    screen.getByRole('group', { name: 'Sandbox: Skipped by policy' })
   ).toBeTruthy()
 })
 

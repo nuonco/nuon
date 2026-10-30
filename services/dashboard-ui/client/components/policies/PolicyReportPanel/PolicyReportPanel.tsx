@@ -1,5 +1,6 @@
 import { Link } from '@/components/common/Link'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { Divider } from '@/components/common/Divider'
 import { Icon } from '@/components/common/Icon'
@@ -16,6 +17,13 @@ import { cn } from '@/utils/classnames'
 import type { TPolicyReport, TPolicyResult, TPolicyViolation } from '@/types'
 
 function getPolicyStatusBadge(policy: TPolicyResult) {
+  if (policy.status === 'skip_apply') {
+    return (
+      <Badge theme="neutral" size="sm">
+        Skip apply
+      </Badge>
+    )
+  }
   if (policy.status === 'deny') {
     return (
       <Badge theme="error" size="sm">
@@ -92,6 +100,8 @@ export const PolicyReportDetails = ({
   const passedPolicies = policies.filter(
     (p: TPolicyResult) => p.status === 'pass'
   )
+  const skipFindings =
+    (report.status?.metadata?.skip_findings as TPolicyViolation[]) || []
 
   const hasViolations = deniedPolicies.length > 0 || warnedPolicies.length > 0
 
@@ -104,6 +114,16 @@ export const PolicyReportDetails = ({
 
   return (
     <>
+      {skipFindings.length > 0 ? (
+        <Banner theme={deniedPolicies.length ? 'error' : 'neutral'}>
+          <Text variant="subtext">
+            {report.status?.status_human_description ||
+              (deniedPolicies.length
+                ? 'Change denied by policy'
+                : 'Policy decision: skip apply')}
+          </Text>
+        </Banner>
+      ) : null}
       <div className="grid grid-cols-3 gap-4 text-center">
         <div className="flex flex-col gap-1 p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
           <Text
@@ -192,6 +212,9 @@ export const PolicyReportDetails = ({
                 const hasPolicyViolations =
                   policyDenyViolations.length > 0 ||
                   policyWarnViolations.length > 0
+                const policySkipFindings = skipFindings.filter(
+                  (finding) => finding.policy_id === policy.policy_id
+                )
 
                 const policyName =
                   policy.policy_name ||
@@ -223,6 +246,19 @@ export const PolicyReportDetails = ({
                       </div>
                     </div>
 
+                    {policySkipFindings.length > 0 ? (
+                      <div className="flex flex-col gap-2 px-4 pb-4">
+                        {policySkipFindings.map((finding, index) => (
+                          <Text
+                            key={`skip-${index}`}
+                            variant="subtext"
+                            theme="neutral"
+                          >
+                            {finding.message}
+                          </Text>
+                        ))}
+                      </div>
+                    ) : null}
                     {hasPolicyViolations && (
                       <div className="px-4 pb-4 space-y-2">
                         {[...policyDenyViolations, ...policyWarnViolations].map(
@@ -382,6 +418,8 @@ const PolicyReportHistoryRow = ({
 }) => {
   const denyCount = report?.deny_count ?? 0
   const warnCount = report?.warn_count ?? 0
+  const skipCount = Number(report?.status?.metadata?.skip_count ?? 0)
+  const skipsApply = report?.status?.metadata?.resolved_action === 'skip_apply'
 
   return (
     <div className="flex items-center justify-between gap-4 py-2">
@@ -416,7 +454,14 @@ const PolicyReportHistoryRow = ({
             {warnCount} warning{warnCount === 1 ? '' : 's'}
           </Badge>
         ) : null}
-        {!denyCount && !warnCount ? (
+        {skipCount > 0 ? (
+          <Badge size="sm" theme="neutral">
+            {skipsApply
+              ? 'Skip apply'
+              : `${skipCount} skip finding${skipCount === 1 ? '' : 's'}`}
+          </Badge>
+        ) : null}
+        {!denyCount && !warnCount && !skipCount ? (
           <Text variant="subtext" theme="neutral">
             Passed
           </Text>
