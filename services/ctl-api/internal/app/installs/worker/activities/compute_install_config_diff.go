@@ -9,6 +9,7 @@ import (
 )
 
 type ComputeInstallConfigDiffInput struct {
+	InstallID      string `json:"install_id,omitempty"`
 	OldAppConfigID string `json:"old_app_config_id"`
 	NewAppConfigID string `json:"new_app_config_id" validate:"required"`
 }
@@ -20,7 +21,17 @@ type ComputeInstallConfigDiffOutput struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (a *Activities) ComputeInstallConfigDiff(ctx context.Context, input *ComputeInstallConfigDiffInput) (*ComputeInstallConfigDiffOutput, error) {
-	diff, err := configdiff.ComputeInstallConfigDiff(ctx, a.db, input.OldAppConfigID, input.NewAppConfigID)
+	var diff *app.InstallConfigDiff
+	var err error
+	if input.InstallID != "" {
+		var install app.Install
+		if err := a.db.WithContext(ctx).Where(app.Install{ID: input.InstallID}).First(&install).Error; err != nil {
+			return nil, fmt.Errorf("unable to get install: %w", err)
+		}
+		diff, err = a.helpers.AppBranchConfigDiff(ctx, &install, input.NewAppConfigID)
+	} else {
+		diff, err = configdiff.ComputeInstallConfigDiff(ctx, a.db, input.OldAppConfigID, input.NewAppConfigID)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute install config diff: %w", err)
 	}
