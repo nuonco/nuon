@@ -58,21 +58,19 @@ func (c ComponentHealthConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 func (p ComponentHealthProbeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("type").Short("probe type").
-		Long("How the probe checks the component. http issues a GET and treats any 2xx/3xx as healthy, tcp opens a connection, exec runs a command inside the runner and treats exit code 0 as healthy").
-		Enum(HealthProbeTypeHTTP, HealthProbeTypeTCP, HealthProbeTypeExec).
+		Long("How the probe checks the component. http issues a GET and treats any 2xx/3xx as healthy. tcp opens a connection.").
+		Enum(HealthProbeTypeHTTP, HealthProbeTypeTCP).
 		Example("http").
 		Example("tcp").
-		Example("exec").
 		Field("name").Short("probe display name").
-		Long("Name shown for this probe in the dashboard and CLI. Defaults to the url, or the first element of command for exec probes").
+		Long("Name shown for this probe in the dashboard and CLI. Defaults to the url").
 		Example("api-healthz").
 		Field("url").Short("probe target").
 		Long("Target for http and tcp probes. http requires a full URL, tcp accepts host:port or a URL whose scheme implies the port. Supports Nuon templating").
 		Example("https://{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}/healthz").
 		Example("db.internal:5432").
-		Field("command").Short("exec probe command").
-		Long("Command to run for an exec probe, as an argv array. Executed directly with no shell, so pipes and redirection are not interpreted. Exit code 0 is healthy. Supports Nuon templating").
-		Example([]string{"/usr/local/bin/check-api", "--timeout", "2s"})
+		Field("command").Short("unused").
+		Long("Not supported. Exec probes are rejected.")
 }
 
 // Validate checks the probes declared on the health block. Anything it rejects
@@ -98,15 +96,13 @@ func (p ComponentHealthProbeConfig) Validate() error {
 			return fmt.Errorf("%s probes require a url", p.Type)
 		}
 	case HealthProbeTypeExec:
-		if len(p.Command) == 0 || strings.TrimSpace(p.Command[0]) == "" {
-			return fmt.Errorf("exec probes require a command")
-		}
+		return fmt.Errorf("exec probes are not supported")
 	case "":
-		return fmt.Errorf("type is required, and must be one of %s, %s, %s",
-			HealthProbeTypeHTTP, HealthProbeTypeTCP, HealthProbeTypeExec)
+		return fmt.Errorf("type is required, and must be one of %s, %s",
+			HealthProbeTypeHTTP, HealthProbeTypeTCP)
 	default:
-		return fmt.Errorf("invalid type %q, must be one of %s, %s, %s",
-			p.Type, HealthProbeTypeHTTP, HealthProbeTypeTCP, HealthProbeTypeExec)
+		return fmt.Errorf("invalid type %q, must be one of %s, %s",
+			p.Type, HealthProbeTypeHTTP, HealthProbeTypeTCP)
 	}
 
 	return nil

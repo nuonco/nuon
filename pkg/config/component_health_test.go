@@ -45,7 +45,7 @@ command = ["check-api", "--fast"]
 	require.Equal(t, "exec", out.Health.Probes[1].Type)
 	require.Equal(t, "custom", out.Health.Probes[1].Name)
 	require.Equal(t, []string{"check-api", "--fast"}, out.Health.Probes[1].Command)
-	require.NoError(t, out.Validate())
+	require.ErrorContains(t, out.Validate(), "exec probes are not supported")
 }
 
 func TestComponentHealthConfigValidate(t *testing.T) {
@@ -77,8 +77,9 @@ func TestComponentHealthConfigValidate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:  "exec with command",
-			probe: ComponentHealthProbeConfig{Type: "exec", Command: []string{"check-api", "--fast"}},
+			name:    "exec with command",
+			probe:   ComponentHealthProbeConfig{Type: "exec", Command: []string{"check-api", "--fast"}},
+			wantErr: true,
 		},
 		{
 			name:    "exec without command",
