@@ -303,6 +303,17 @@ export const PullRequestPreview = ({
             <Text variant="subtext" theme="neutral" loading={isLoading}>
               {runContextSentence({ mode, install, needsInput, oneOff })}
             </Text>
+
+            {running && diffReady ? (
+              <PreviewRunProgress
+                variant="inline"
+                stages={stages}
+                description={latest?.status?.status_human_description}
+                sha={sha}
+                baseRef={baseRef}
+                install={install}
+              />
+            ) : null}
           </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center">
@@ -321,7 +332,7 @@ export const PullRequestPreview = ({
           </div>
         )}
 
-        {running ? (
+        {running && !diffReady ? (
           <div className="flex flex-1 flex-col items-center justify-center py-12">
             <PreviewRunProgress
               stages={stages}

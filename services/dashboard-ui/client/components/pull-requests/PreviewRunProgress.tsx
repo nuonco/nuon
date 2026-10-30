@@ -26,6 +26,7 @@ export interface IPreviewRunProgress {
   install?: string
   orgId?: string
   appId?: string
+  variant?: 'page' | 'inline'
 }
 
 const activeStage = (stages: TOverviewStage[]) =>
@@ -89,6 +90,7 @@ export const PreviewRunProgress = ({
   install,
   orgId,
   appId,
+  variant = 'page',
 }: IPreviewRunProgress) => {
   const stage = activeStage(stages)
   const stageId = stage?.id ?? 'starting'
@@ -114,6 +116,26 @@ export const PreviewRunProgress = ({
     description.toLowerCase() !== copy.title.toLowerCase()
       ? description
       : undefined
+
+  if (variant === 'inline') {
+    return (
+      <div
+        aria-live="polite"
+        className="flex w-full items-center gap-2 transition-opacity duration-200 motion-reduce:transition-none"
+        style={{ opacity: visible ? 1 : 0 }}
+      >
+        <Icon variant="Loading" size={14} className="shrink-0" />
+        <Text variant="body" weight="strong">
+          {copy.title}
+        </Text>
+        {detail ? (
+          <Text variant="subtext" theme="neutral" family="mono">
+            {detail}
+          </Text>
+        ) : null}
+      </div>
+    )
+  }
 
   return (
     <div
