@@ -25,7 +25,7 @@ Every variable in [env.ts](./env.ts):
 | `E2E_PUBLIC_API_URL` | `http://127.0.0.1:8081` | ctl-api public API. |
 | `E2E_ORG_ID` | unset | Reuse an existing org instead of creating one. |
 | `E2E_APP_CONFIG` | `httpbin` | Which `nuonco/example-app-configs` directory global setup seeds. |
-| `E2E_GITHUB_INSTALL_ID` | unset | GitHub App installation the onboarding own-app specs connect. Locally, `POST :8082/v1/general/seed-user` returns it as `github_install_id`. |
+| `E2E_GITHUB_INSTALL_ID` | unset | GitHub App installation the onboarding own-app specs connect. Locally, `POST :8082/v1/general/seed-user` returns it as `github_install_id`. The spec posts it straight to `/v1/vcs/connection-callback` without a GitHub user-authorization code, so the ctl-api it targets must run with `disable_vcs_connection_ownership_check=true`; against a stack that verifies ownership the spec fails with `403`. |
 | `E2E_ONBOARDING_REPO_AWS` | unset | `owner/repo` with an AWS app config at its root, visible to that installation. Locally `nuonco/kitchen-sink` works. |
 | `E2E_ONBOARDING_REPO_GCP` | unset | Same, for GCP. |
 | `E2E_ONBOARDING_REPO_AZURE` | unset | Same, for Azure. |
