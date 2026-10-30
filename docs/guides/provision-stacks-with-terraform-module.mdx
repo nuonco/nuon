@@ -302,8 +302,8 @@ Removing a secret is the reverse: delete the `variable` block, the `secrets` ent
 
 #### Vendor changes roles or permissions
 
-Operation-role permissions, break-glass roles, and custom roles are read from the control plane, and are pulled in
-automatically by the next `terraform plan`. Whether a break-glass or custom role is enabled is also served by the
+Operation roles and break glass roles are read from the control plane, and are pulled in
+automatically by the next `terraform plan`. Whether a break glass role or your own operation role is enabled is also served by the
 control plane, but your customer can override it with the module's `roles` map:
 
 ```hcl
