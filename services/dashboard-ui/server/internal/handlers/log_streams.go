@@ -264,9 +264,11 @@ func (s *streamSession) runTail(ctx context.Context) {
 
 		resp, err := s.client.LogStreamTailLogs(ctx, s.logStreamID, since, wait, s.filters)
 		if err != nil {
-			s.l.Warn("log tail poll failed",
-				zap.String("logStreamID", s.logStreamID),
-				zap.Error(err))
+			if ctx.Err() == nil {
+				s.l.Warn("log tail poll failed",
+					zap.String("logStreamID", s.logStreamID),
+					zap.Error(err))
+			}
 			if isTerminalAPIError(err) {
 				s.sendError(apiErrorMessage(err))
 				return

@@ -363,6 +363,11 @@ func (a *RunnerJob) Indexes(db *gorm.DB) []migrations.Index {
 				"created_at DESC",
 			},
 		},
+		{
+			Name:    indexes.Name(db, &RunnerJob{}, "log_stream_id"),
+			Columns: []string{"log_stream_id"},
+			Option:  "WHERE deleted_at = 0",
+		},
 	}
 }
 
