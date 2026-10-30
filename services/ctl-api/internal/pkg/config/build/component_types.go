@@ -6,6 +6,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/nuonco/nuon/pkg/azure/acr"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
@@ -240,6 +241,12 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 	if src := obj.AzureACRImageConfig; src != nil {
 		sources++
 		if err := src.ValidateCredentials(); err != nil {
+			return nil, err
+		}
+		if err := acr.ValidateLoginServer(src.RegistryURL); err != nil {
+			return nil, err
+		}
+		if err := acr.ValidateImageHost(src.RegistryURL, src.ImageURL); err != nil {
 			return nil, err
 		}
 		cfg.ImageURL = src.ImageURL

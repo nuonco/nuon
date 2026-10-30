@@ -105,8 +105,8 @@ func Parse(contents string) (*Policy, error) {
 			if path != "data.nuon.checks" && !ok {
 				return nil, fmt.Errorf("%s custom.action is only supported on package nuon.checks or a check_* finding set", path)
 			}
-			if action != "deny" && action != "warn" {
-				return nil, fmt.Errorf("%s custom.action must be deny or warn", path)
+			if action != "deny" && action != "warn" && action != "skip_apply" {
+				return nil, fmt.Errorf("%s custom.action must be deny, warn, or skip_apply", path)
 			}
 		}
 		if path == "data.nuon.checks" {
@@ -253,8 +253,10 @@ func Aggregate(results []Result) []Result {
 func decisionRank(decision string) int {
 	switch decision {
 	case "error":
-		return 3
+		return 4
 	case "deny":
+		return 3
+	case "skip_apply":
 		return 2
 	case "warn":
 		return 1
