@@ -74,6 +74,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	diffResult, err := activities.AwaitComputeInstallConfigDiff(ctx, &activities.ComputeInstallConfigDiffInput{
+		InstallID:      s.InstallID,
 		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: s.NewAppConfigID,
 	})
