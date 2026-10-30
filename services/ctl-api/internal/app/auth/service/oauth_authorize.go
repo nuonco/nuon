@@ -92,6 +92,8 @@ func (s *service) OAuthAuthorize(c *gin.Context) {
 		return
 	}
 
+	s.setOAuthRequestCookie(c, requestID)
+
 	finishURL := fmt.Sprintf("%s/oauth/finish?rid=%s", s.oauthIssuer(), url.QueryEscape(requestID))
 
 	// If the user already has a valid session, skip straight to finishing.
@@ -115,6 +117,9 @@ func (s *service) OAuthAuthorize(c *gin.Context) {
 // submitted to POST /oauth/consent.
 func (s *service) OAuthFinish(c *gin.Context) {
 	requestID := c.Query("rid")
+	if !s.requireOAuthRequestCookie(c, requestID) {
+		return
+	}
 	authCode, ok := s.loadPendingAuthCode(c, requestID)
 	if !ok {
 		return
@@ -162,6 +167,9 @@ func (s *service) OAuthFinish(c *gin.Context) {
 // and redirects back to the client.
 func (s *service) OAuthConsent(c *gin.Context) {
 	requestID := c.PostForm("rid")
+	if !s.requireOAuthRequestCookie(c, requestID) {
+		return
+	}
 	authCode, ok := s.loadPendingAuthCode(c, requestID)
 	if !ok {
 		return
@@ -218,6 +226,8 @@ func (s *service) OAuthConsent(c *gin.Context) {
 		zap.String("client_id", authCode.ClientID),
 		zap.String("account_id", authCode.AccountID),
 		zap.String("scope", scope))
+
+	s.clearOAuthRequestCookie(c)
 
 	redirect := s.buildRedirectWithParams(authCode.RedirectURI, map[string]string{
 		"code":  code,
