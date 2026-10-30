@@ -34,6 +34,10 @@ func (h *Helpers) getInstallActionWorkflows(ctx context.Context, installID strin
 	}
 	for i := range acts {
 		acts[i].Runs = runsByWorkflow[acts[i].ID]
+		// Find already ran AfterQuery, before Runs was set.
+		if err := acts[i].AfterQuery(h.db); err != nil {
+			return nil, errors.Wrap(err, "unable to hydrate install action workflow")
+		}
 	}
 
 	return acts, nil

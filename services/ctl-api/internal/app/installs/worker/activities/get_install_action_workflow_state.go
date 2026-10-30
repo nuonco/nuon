@@ -29,6 +29,10 @@ func (a *Activities) GetInstallActionWorkflowState(ctx context.Context, req GetI
 		return nil, errors.Wrap(err, "unable to get latest install action workflow runs")
 	}
 	act.Runs = runsByWorkflow[act.ID]
+	// Find already ran AfterQuery, before Runs was set.
+	if err := act.AfterQuery(a.db); err != nil {
+		return nil, errors.Wrap(err, "unable to hydrate install action workflow")
+	}
 
 	return &act, nil
 }
