@@ -200,7 +200,12 @@ func init() {
 	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
 
 	// OAuth 2.0 authorization server (used by MCP clients)
-	config.RegisterDefault("oauth_dcr_enabled", true)           // allow dynamic client registration (RFC 7591)
+	config.RegisterDefault("oauth_dcr_enabled", true) // allow dynamic client registration (RFC 7591)
+	config.RegisterDefault("oauth_dcr_redirect_hosts", []string{
+		"claude.ai", "www.claude.ai", "claude.com",
+		"cursor.com", "www.cursor.com",
+		"vscode.dev", "insiders.vscode.dev",
+	})
 	config.RegisterDefault("oauth_access_token_ttl", 60)        // minutes
 	config.RegisterDefault("oauth_refresh_token_ttl", 30*24*60) // minutes (30 days)
 
@@ -386,9 +391,10 @@ type Config struct {
 	PublicRunnerProcessShutdowns bool `config:"public_runner_process_shutdowns"`
 
 	// OAuth 2.0 authorization server (MCP clients)
-	OAuthDCREnabled      bool `config:"oauth_dcr_enabled"`
-	OAuthAccessTokenTTL  int  `config:"oauth_access_token_ttl"`  // minutes
-	OAuthRefreshTokenTTL int  `config:"oauth_refresh_token_ttl"` // minutes
+	OAuthDCREnabled       bool     `config:"oauth_dcr_enabled"`
+	OAuthDCRRedirectHosts []string `config:"oauth_dcr_redirect_hosts"`
+	OAuthAccessTokenTTL   int      `config:"oauth_access_token_ttl"`  // minutes
+	OAuthRefreshTokenTTL  int      `config:"oauth_refresh_token_ttl"` // minutes
 
 	// Nuon Auth: Default Provider ConfigS
 	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA
