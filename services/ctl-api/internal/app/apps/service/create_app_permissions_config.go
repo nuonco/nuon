@@ -185,7 +185,7 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to create app permissions config")
 		}
-		if err := s.installsHelpers.MigrateInstallRoles(ctx, tx, appID, *obj); err != nil {
+		if err := s.installsHelpers.WithDB(tx).MigrateInstallRoles(ctx, appID, *obj); err != nil {
 			return errors.Wrap(err, "failed to migrate install roles")
 		}
 		return nil

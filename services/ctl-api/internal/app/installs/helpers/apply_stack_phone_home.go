@@ -94,7 +94,7 @@ func (h *Helpers) RecordStackPhoneHome(
 		}
 
 		requestType, _ := req["request_type"].(string)
-		if err := h.RecordInstallStackVersionApplied(ctx, tx, stackVersion, requestType); err != nil {
+		if err := h.WithDB(tx).RecordInstallStackVersionApplied(ctx, stackVersion, requestType); err != nil {
 			return err
 		}
 		return nil
