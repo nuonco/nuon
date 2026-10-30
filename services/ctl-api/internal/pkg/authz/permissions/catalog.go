@@ -40,60 +40,49 @@ const (
 	OperationExecute    PermissionID = "operation.execute"
 )
 
+var permissionTargets = map[PermissionID][]ResourceKind{
+	OrgRead:             {KindOrg},
+	OrgWrite:            {KindOrg},
+	AppRead:             {KindApp},
+	AppWrite:            {KindApp, KindOrg},
+	AppAccessManage:     {KindApp},
+	InstallRead:         {KindInstall},
+	InstallWrite:        {KindInstall, KindApp},
+	InstallAccessManage: {KindInstall},
+	RunnerRead:          {KindRunner},
+	RunnerConfigRead:    {KindRunner},
+	RunnerWrite:         {KindRunner},
+	RunnerJobRead:       {KindRunnerJob},
+	RunnerJobConfigRead: {KindRunnerJob},
+	RunnerJobClaim:      {KindRunnerJob},
+	RunnerJobWrite:      {KindRunnerJob},
+	TelemetryRead:       {KindTelemetry},
+	TelemetryConfigRead: {KindTelemetry},
+	TelemetryIssue:      {KindTelemetry},
+	TelemetryWrite:      {KindTelemetry},
+	LogStreamRead:       {KindLogStream},
+	LogStreamWrite:      {KindLogStream},
+	StackRead:           {KindStack},
+	StackReport:         {KindStack, KindPhoneHome},
+	ExecutionStateRead:  {KindExecutionState},
+	ExecutionStateWrite: {KindExecutionState},
+	EventSubmit:         {KindEvent},
+	NotificationRead:    {KindNotification},
+	NotificationWrite:   {KindNotification},
+	NotificationDeliver: {KindNotification},
+	OperationExecute:    {KindOperation},
+}
+
 func ParsePermissionID(value string) (PermissionID, error) {
 	p := PermissionID(value)
-	if p.resourceKind() == "" {
+	if _, ok := permissionTargets[p]; !ok {
 		return "", fmt.Errorf("invalid permission ID %q", value)
 	}
 	return p, nil
 }
 
-func (p PermissionID) resourceKind() ResourceKind {
-	switch p {
-	case OrgRead, OrgWrite:
-		return KindOrg
-	case AppRead, AppWrite, AppAccessManage:
-		return KindApp
-	case InstallRead, InstallWrite, InstallAccessManage:
-		return KindInstall
-	case RunnerRead, RunnerConfigRead, RunnerWrite:
-		return KindRunner
-	case RunnerJobRead, RunnerJobConfigRead, RunnerJobClaim, RunnerJobWrite:
-		return KindRunnerJob
-	case TelemetryRead, TelemetryConfigRead, TelemetryIssue, TelemetryWrite:
-		return KindTelemetry
-	case LogStreamRead, LogStreamWrite:
-		return KindLogStream
-	case StackRead, StackReport:
-		return KindStack
-	case ExecutionStateRead, ExecutionStateWrite:
-		return KindExecutionState
-	case EventSubmit:
-		return KindEvent
-	case NotificationRead, NotificationWrite, NotificationDeliver:
-		return KindNotification
-	case OperationExecute:
-		return KindOperation
-	default:
-		return ""
-	}
-}
-
-func (p PermissionID) appliesTo(kind ResourceKind) bool {
-	return p.resourceKind() != "" && (p.resourceKind() == kind ||
-		(p == AppWrite && kind == KindOrg) ||
-		(p == InstallWrite && kind == KindApp) ||
-		(p == StackReport && kind == KindPhoneHome))
-}
-
-func (p PermissionID) customerPermission() bool {
-	switch p {
-	case OrgRead, OrgWrite, AppRead, AppWrite, AppAccessManage, InstallRead, InstallWrite,
-		InstallAccessManage, RunnerRead, RunnerJobRead, TelemetryRead, LogStreamRead:
-		return true
-	default:
-		return false
-	}
+func (p PermissionID) AppliesTo(kind ResourceKind) bool {
+	return slices.Contains(permissionTargets[p], kind)
 }
 
 type PermissionSet map[PermissionID]struct{}

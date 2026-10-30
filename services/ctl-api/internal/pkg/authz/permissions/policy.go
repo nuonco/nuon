@@ -74,11 +74,6 @@ func DecodePolicy(version int, data []byte) (Policy, error) {
 		if err != nil {
 			return Policy{}, err
 		}
-		for permission := range set {
-			if !permission.customerPermission() {
-				return Policy{}, fmt.Errorf("permission %q is not a customer permission", permission)
-			}
-		}
 		policy = Policy{kind: doc.Kind, api: doc.API, bindingKind: doc.BindingKind, permissions: set}
 	case PolicyKindResourceRules:
 		var doc resourceDocument
@@ -104,7 +99,7 @@ func DecodePolicy(version int, data []byte) (Policy, error) {
 				return Policy{}, err
 			}
 			for permission := range set {
-				if !permission.appliesTo(rule.Scope.Kind) {
+				if !permission.AppliesTo(rule.Scope.Kind) {
 					return Policy{}, fmt.Errorf("permission %q does not apply to %q", permission, rule.Scope.Kind)
 				}
 			}
