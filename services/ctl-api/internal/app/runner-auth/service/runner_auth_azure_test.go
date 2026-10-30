@@ -156,46 +156,37 @@ func TestBindAzureKeyTenant(t *testing.T) {
 func TestResolveAzureRunnerIdentity(t *testing.T) {
 	mirID := "/subscriptions/" + runnerSubID +
 		"/resourcegroups/rg-1/providers/Microsoft.Compute/virtualMachineScaleSets/" + runnerInstallID + "-vmss"
-	claims := &azureClaims{XMSMirID: mirID}
 
-	runnerID, subID, installID, err := resolveAzureRunnerIdentity(claims, "run123")
+	runnerID, subID, installID, err := resolveAzureRunnerIdentity(&azureClaims{XMSMirID: mirID}, "run123")
 	require.NoError(t, err)
 	assert.Equal(t, "run123", runnerID)
 	assert.Equal(t, runnerSubID, subID)
 	assert.Equal(t, runnerInstallID, installID)
 }
 
-func TestResolveAzureRunnerIdentity_RejectsMissingOrWrongMirid(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
-		claims   *azureClaims
-		runnerID string
-	}{
-		{"missing runner_id", &azureClaims{XMSMirID: "x"}, ""},
-		{"missing mirid", &azureClaims{}, "run123"},
-		{"omit mirid (NUO-1188 shape)", &azureClaims{XMSMirID: ""}, "run123"},
-		{
-			"other install vmss",
-			&azureClaims{XMSMirID: "/subscriptions/" + runnerSubID +
-				"/resourcegroups/rg-1/providers/Microsoft.Compute/virtualMachineScaleSets/otherinst-vmss"},
-			"run123",
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.name == "other install vmss" {
-				// Resolve still succeeds; bindAzureRunnerInstall rejects the mismatch.
-				_, _, installID, err := resolveAzureRunnerIdentity(tc.claims, tc.runnerID)
-				require.NoError(t, err)
-				require.Error(t, bindAzureRunnerInstall(runnerInstallID, installID))
-				return
-			}
-			_, _, _, err := resolveAzureRunnerIdentity(tc.claims, tc.runnerID)
-			require.Error(t, err)
-		})
-	}
+func TestResolveAzureRunnerIdentity_AbsentMiridSkipsVMSSBind(t *testing.T) {
+	runnerID, subID, installID, err := resolveAzureRunnerIdentity(&azureClaims{}, "run123")
+	require.NoError(t, err)
+	assert.Equal(t, "run123", runnerID)
+	assert.Empty(t, subID)
+	assert.Empty(t, installID)
+	require.NoError(t, bindAzureRunnerInstall(runnerInstallID, installID))
+}
+
+func TestResolveAzureRunnerIdentity_RejectsMissingRunnerOrBadMirid(t *testing.T) {
+	_, _, _, err := resolveAzureRunnerIdentity(&azureClaims{XMSMirID: "x"}, "")
+	require.Error(t, err)
+
+	// Present but not a runner VMSS — fail closed rather than skipping.
+	_, _, _, err = resolveAzureRunnerIdentity(&azureClaims{
+		XMSMirID: "/subscriptions/" + runnerSubID +
+			"/resourcegroups/rg-1/providers/Microsoft.ManagedIdentity/userAssignedIdentities/foo",
+	}, "run123")
+	require.Error(t, err)
 }
 
 func TestBindAzureRunnerInstall(t *testing.T) {
+	require.NoError(t, bindAzureRunnerInstall(runnerInstallID, ""))
 	require.NoError(t, bindAzureRunnerInstall(runnerInstallID, runnerInstallID))
 	require.NoError(t, bindAzureRunnerInstall(runnerInstallID, strings.ToUpper(runnerInstallID)))
 

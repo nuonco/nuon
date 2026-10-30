@@ -198,16 +198,16 @@ func bindAzureKeyTenant(keyTenantID string, claims *azureClaims) error {
 	return nil
 }
 
-// resolveAzureRunnerIdentity requires a request runner_id (not present in xms_mirid)
-// and a system-assigned VMSS xms_mirid that names {installID}-vmss. Subscription and
-// install id from the mirid are returned so auth can reject cross-install tokens that
-// share tenant / subscription / principal shape.
+// resolveAzureRunnerIdentity requires a request runner_id (not present in xms_mirid).
+// When xms_mirid is present it must name the install runner VMSS ({installID}-vmss);
+// subscription and install id are returned for later binds. When absent, those binds
+// are skipped so older/odd tokens still authenticate on tid/oid alone.
 func resolveAzureRunnerIdentity(claims *azureClaims, requestRunnerID string) (runnerID, subscriptionID, installID string, err error) {
 	if requestRunnerID == "" {
 		return "", "", "", errors.New("runner_id is required")
 	}
 	if claims == nil || claims.XMSMirID == "" {
-		return "", "", "", errors.New("token is missing the xms_mirid claim")
+		return requestRunnerID, "", "", nil
 	}
 
 	vmss, err := workloadjwt.ParseAzureRunnerVMSS(claims.XMSMirID)
@@ -219,9 +219,13 @@ func resolveAzureRunnerIdentity(claims *azureClaims, requestRunnerID string) (ru
 }
 
 // bindAzureRunnerInstall requires the VMSS named in xms_mirid to belong to the same
-// install as the Nuon runner being authenticated.
+// install as the Nuon runner being authenticated. An empty miridInstallID means the
+// claim was absent and the check is skipped.
 func bindAzureRunnerInstall(installID, miridInstallID string) error {
-	if installID == "" || miridInstallID == "" {
+	if miridInstallID == "" {
+		return nil
+	}
+	if installID == "" {
 		return errors.New("missing install id for runner vmss bind")
 	}
 	if !strings.EqualFold(installID, miridInstallID) {
