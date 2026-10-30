@@ -8,13 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
@@ -481,31 +481,6 @@ func (s *service) deletePolicyServiceAccount(tx *gorm.DB, orgID, accountID strin
 	return nil
 }
 
-// setAccountOrgRole replaces the account's roles in the org. It writes through
-// the caller's transaction, unlike authz.Client.SetAccountOrgRole which opens
-// its own.
 func (s *service) setAccountOrgRole(tx *gorm.DB, orgID, accountID string, roleType app.RoleType) error {
-	var role app.Role
-	if err := tx.
-		Where(app.Role{OrgID: generics.NewNullString(orgID), RoleType: roleType}).
-		First(&role).Error; err != nil {
-		return fmt.Errorf("unable to find role: %w", err)
-	}
-
-	if err := tx.Unscoped().
-		Where(app.AccountRole{OrgID: generics.NewNullString(orgID), AccountID: accountID}).
-		Delete(&app.AccountRole{}).Error; err != nil {
-		return fmt.Errorf("unable to remove existing roles: %w", err)
-	}
-
-	acctRole := &app.AccountRole{
-		OrgID:     generics.NewNullString(orgID),
-		RoleID:    role.ID,
-		AccountID: accountID,
-	}
-	if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&acctRole).Error; err != nil {
-		return fmt.Errorf("unable to add role: %w", err)
-	}
-
-	return nil
+	return authz.New(authz.Params{DB: tx}).SetAccountOrgRole(tx.Statement.Context, orgID, accountID, roleType)
 }

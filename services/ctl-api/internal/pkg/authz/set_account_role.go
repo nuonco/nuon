@@ -15,9 +15,16 @@ import (
 // of the given type. Unlike RemoveAccountOrgRoles it does not touch the
 // account's OrgInvite records, so it is safe for in-place role changes.
 func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string, roleType app.RoleType) error {
+	if orgID == "" || roleType == "" {
+		return fmt.Errorf("org ID and role type are required")
+	}
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockLegacyRoleSubject(tx, accountID); err != nil {
+			return err
+		}
 		var role app.Role
 		if err := tx.
+			Preload("Policies").
 			Where(app.Role{
 				OrgID:    generics.NewNullString(orgID),
 				RoleType: roleType,
@@ -36,6 +43,9 @@ func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string,
 			return fmt.Errorf("unable to remove existing roles for account: %w", err)
 		}
 
+		if err := assertRoleAPICompatible(tx, accountID, &role); err != nil {
+			return err
+		}
 		acctRole := &app.AccountRole{
 			OrgID:     generics.NewNullString(orgID),
 			RoleID:    role.ID,

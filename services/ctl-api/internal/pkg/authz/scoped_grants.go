@@ -71,16 +71,9 @@ func loadScopedGrants(db *gorm.DB, accountID, orgID string) (PrincipalGrants, er
 		if binding.OrgID.ValueString() != orgID || role.OrgID.ValueString() != orgID || role.ID == "" || binding.RoleID != role.ID {
 			return PrincipalGrants{}, fmt.Errorf("role binding does not belong to the selected tenant")
 		}
-		if role.Version != app.RoleVersionV3 || len(role.Policies) != 1 {
-			return PrincipalGrants{}, fmt.Errorf("scoped grants require a v3 role with one policy")
-		}
-		stored := role.Policies[0]
-		if stored.OrgID.ValueString() != orgID || stored.RoleID != role.ID || len(stored.Permissions) != 0 {
-			return PrincipalGrants{}, fmt.Errorf("policy must belong to its role tenant and contain no legacy authority")
-		}
-		policy, err := permissions.DecodePolicy(role.Version, stored.Document)
+		policy, err := decodeScopedRole(role, orgID)
 		if err != nil {
-			return PrincipalGrants{}, fmt.Errorf("decode role policy: %w", err)
+			return PrincipalGrants{}, err
 		}
 		scope := permissions.Scope{Kind: binding.ScopeKind, OrgID: orgID, ID: binding.ScopeID}
 		grants, err := policy.Compile(orgID, scope)
@@ -124,21 +117,39 @@ func loadScopedGrants(db *gorm.DB, accountID, orgID string) (PrincipalGrants, er
 	return result, nil
 }
 
+func decodeScopedRole(role app.Role, orgID string) (permissions.Policy, error) {
+	if role.ID == "" || role.OrgID.ValueString() != orgID || role.Version != app.RoleVersionV3 || len(role.Policies) != 1 {
+		return permissions.Policy{}, fmt.Errorf("scoped grants require a tenant-owned v3 role with one policy")
+	}
+	stored := role.Policies[0]
+	if stored.OrgID.ValueString() != orgID || stored.RoleID != role.ID || len(stored.Permissions) != 0 {
+		return permissions.Policy{}, fmt.Errorf("policy must belong to its role tenant and contain no legacy authority")
+	}
+	policy, err := permissions.DecodePolicy(role.Version, stored.Document)
+	if err != nil {
+		return permissions.Policy{}, fmt.Errorf("decode role policy: %w", err)
+	}
+	return policy, nil
+}
+
 func bindingTargetMissing(db *gorm.DB, scope permissions.Scope) (bool, error) {
 	var query *gorm.DB
 	switch scope.Kind {
+	case permissions.KindOrg:
+		query = db.Model(&app.Org{}).Select("id AS org_id", "deleted_at").Where(app.Org{ID: scope.ID})
 	case permissions.KindApp:
-		query = db.Model(&app.App{}).Where(app.App{ID: scope.ID})
+		query = db.Model(&app.App{}).Select("org_id", "deleted_at").Where(app.App{ID: scope.ID})
 	case permissions.KindInstall:
-		query = db.Model(&app.Install{}).Where(app.Install{ID: scope.ID})
+		query = db.Model(&app.Install{}).Select("org_id", "app_id", "deleted_at").Where(app.Install{ID: scope.ID})
 	default:
 		return false, nil
 	}
 	var target struct {
 		OrgID     string
+		AppID     string
 		DeletedAt soft_delete.DeletedAt
 	}
-	err := query.Unscoped().Scopes(scopes.WithDisableViews).Select("org_id", "deleted_at").Take(&target).Error
+	err := query.Unscoped().Scopes(scopes.WithDisableViews).Take(&target).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return true, nil
 	}
@@ -148,7 +159,27 @@ func bindingTargetMissing(db *gorm.DB, scope permissions.Scope) (bool, error) {
 	if target.OrgID != scope.OrgID {
 		return false, fmt.Errorf("binding target belongs to a different tenant")
 	}
-	return target.DeletedAt != 0, nil
+	if target.DeletedAt == 0 {
+		return false, nil
+	}
+	if scope.Kind == permissions.KindInstall {
+		parentScope := permissions.Scope{Kind: permissions.KindApp, OrgID: scope.OrgID, ID: target.AppID}
+		if err := parentScope.ValidateShape(); err != nil {
+			return false, err
+		}
+		var parent struct{ OrgID string }
+		err := db.Unscoped().Model(&app.App{}).Select("org_id").Where(app.App{ID: target.AppID}).Take(&parent).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return true, nil
+		}
+		if err != nil {
+			return false, fmt.Errorf("check deleted binding target parent: %w", err)
+		}
+		if parent.OrgID != scope.OrgID {
+			return false, fmt.Errorf("binding target parent belongs to a different tenant")
+		}
+	}
+	return true, nil
 }
 
 func validateManagedGrants(db *gorm.DB, managed app.ManagedServiceAccount, grants []permissions.ScopedPermissions) error {

@@ -59,6 +59,12 @@ func (c *AccountRole) BeforeSave(tx *gorm.DB) error {
 func (a *AccountRole) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
+			Name:        indexes.Name(db, &AccountRole{}, "scoped_binding"),
+			Columns:     []string{"account_id", "role_id", "scope_kind", "scope_id"},
+			UniqueValue: generics.NewNullBool(true),
+			Option:      "WHERE deleted_at = 0 AND scope_kind <> '' AND scope_id <> ''",
+		},
+		{
 			Name: indexes.Name(db, &AccountRole{}, "account_id"),
 			Columns: []string{
 				"account_id",

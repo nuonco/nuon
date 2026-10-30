@@ -74,6 +74,12 @@ func (h *Client) EnsureManagedServiceAccountRole(ctx context.Context, accountID 
 }
 
 func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
+	if err := lockLegacyRoleSubject(tx, accountID); err != nil {
+		return err
+	}
+	if want.Version < 0 || want.Version > app.RoleVersionV2 || len(want.Policies) != 1 || len(want.Policies[0].Document) != 0 {
+		return fmt.Errorf("legacy private-role reconciliation cannot write structured policies")
+	}
 	if want.ID == "" {
 		want.Policies[0].OrgID = want.OrgID
 		if err := tx.Create(want).Error; err != nil {
@@ -86,6 +92,14 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 		}
 		if err := validatePrivateRole(tx, accountID, want.OrgID.ValueString(), &role); err != nil {
 			return err
+		}
+		if role.Version != app.RoleVersionV1 && role.Version != app.RoleVersionV2 {
+			return fmt.Errorf("legacy private-role reconciliation cannot change role format %d", role.Version)
+		}
+		for _, policy := range role.Policies {
+			if len(policy.Document) != 0 {
+				return fmt.Errorf("legacy private-role reconciliation cannot change structured policies")
+			}
 		}
 		if role.RoleType != want.RoleType {
 			return fmt.Errorf("private service account role has a different role type")
@@ -112,7 +126,11 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 		return fmt.Errorf("load private role assignment: %w", err)
 	}
 	if count == 0 {
-		if err := assertRoleAPICompatible(tx, accountID, want); err != nil {
+		var stored app.Role
+		if err := tx.Preload("Policies").Where(app.Role{ID: want.ID}).Take(&stored).Error; err != nil {
+			return err
+		}
+		if err := assertRoleAPICompatible(tx, accountID, &stored); err != nil {
 			return err
 		}
 		if err := tx.Create(&app.AccountRole{
