@@ -17,9 +17,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
 
-// Three base64url segments only. Flattened/general JSON JWS is refused so a
-// dotted unknown property cannot be misread as the compact payload while a
-// JOSE library verifies a different payload.
 var compactJWT = regexp.MustCompile(`^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$`)
 
 type Request struct {
@@ -70,8 +67,7 @@ func (v *Verifier) Verify(ctx context.Context, req Request) (map[string]any, err
 	return v.oidc.Verify(ctx, req.Token, req.Issuer, req.Audience)
 }
 
-// UnverifiedClaims decodes claims without checking the signature. Only for selecting
-// which key set to verify against; never for authorization.
+// UnverifiedClaims decodes claims without checking the signature.
 func UnverifiedClaims(token string) (map[string]any, error) {
 	token = strings.TrimSpace(token)
 	if err := RequireCompactJWT(token); err != nil {
@@ -92,9 +88,6 @@ func UnverifiedClaims(token string) (map[string]any, error) {
 	return claims, nil
 }
 
-// RequireCompactJWT rejects any token that is not header.payload.signature.
-// Call this before handing a token to a JOSE library that also accepts JSON
-// serializations, so key selection and signature verification see one payload.
 func RequireCompactJWT(token string) error {
 	if !compactJWT.MatchString(strings.TrimSpace(token)) {
 		return errors.New("token must be compact jwt")

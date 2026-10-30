@@ -101,13 +101,10 @@ func AzurePhoneHomeIdentityName(installID string) string {
 	return installID + "-phone-home"
 }
 
-// AzureRunnerVMSSName is the ARM VMSS name for an install's runner. The system-assigned
-// identity's xms_mirid ends with this name, so auth can recover the install id.
 func AzureRunnerVMSSName(installID string) string {
 	return installID + "-vmss"
 }
 
-// AzureRunnerVMSS is the compute resource named in a runner IMDS token's xms_mirid.
 type AzureRunnerVMSS struct {
 	SubscriptionID string
 	ResourceGroup  string
@@ -115,13 +112,8 @@ type AzureRunnerVMSS struct {
 	Name           string
 }
 
-// ParseAzureRunnerVMSS reads a system-assigned runner identity resource id.
-//
-// Expected shape (casing ignored):
+// ParseAzureRunnerVMSS reads
 // /subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.Compute/virtualMachineScaleSets/{installID}-vmss
-//
-// The runner id is not in this path; callers still take it from the request and then
-// require the resolved install to match InstallID.
 func ParseAzureRunnerVMSS(mirID string) (*AzureRunnerVMSS, error) {
 	if mirID == "" {
 		return nil, fmt.Errorf("xms_mirid is empty")

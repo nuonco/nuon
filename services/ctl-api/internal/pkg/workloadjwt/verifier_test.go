@@ -66,8 +66,6 @@ func TestUnverifiedClaims_RejectsMalformed(t *testing.T) {
 		"only.two",
 		"a.b.c.d",
 		"a.!!!notbase64!!!.c",
-		// Flattened JSON JWS: go-jose would verify protected/payload/signature while
-		// a naive Split on '.' can treat a dotted unknown property as the payload.
 		`{"protected":"eyJhbGciOiJSUzI1NiJ9","payload":"eyJ0aWQiOiJ0YXJnZXQifQ","signature":"sig"}`,
 		`{"protected":"eyJhbGciOiJSUzI1NiJ9","payload":"eyJ0aWQiOiJ0YXJnZXQifQ","signature":"sig","extra":".eyJ0aWQiOiJhdHRhY2tlciJ9."}`,
 	} {

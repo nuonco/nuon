@@ -113,10 +113,10 @@ func TestParseUnverifiedTenantID_AcceptsCompactGUID(t *testing.T) {
 	assert.Equal(t, runnerTenantID, got)
 }
 
-func TestParseUnverifiedTenantID_RejectsNUO1188Shapes(t *testing.T) {
-	attackerTenant := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+func TestParseUnverifiedTenantID_RejectsNonGUIDAndNonCompact(t *testing.T) {
+	otherTenant := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	smuggled := base64.RawURLEncoding.EncodeToString([]byte(
-		`{"tid":"` + attackerTenant + `?appid=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb#"}`,
+		`{"tid":"` + otherTenant + `?appid=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb#"}`,
 	))
 	signedTarget := base64.RawURLEncoding.EncodeToString([]byte(`{"tid":"` + runnerTenantID + `"}`))
 
@@ -196,7 +196,6 @@ func TestResolveAzureRunnerIdentity_RejectsMissingRunnerOrBadMirid(t *testing.T)
 	_, _, _, err := resolveAzureRunnerIdentity(&azureClaims{XMSMirID: "x"}, "")
 	require.Error(t, err)
 
-	// Present but not a runner VMSS — fail closed rather than skipping.
 	_, _, _, err = resolveAzureRunnerIdentity(&azureClaims{
 		XMSMirID: "/subscriptions/" + runnerSubID +
 			"/resourcegroups/rg-1/providers/Microsoft.ManagedIdentity/userAssignedIdentities/foo",

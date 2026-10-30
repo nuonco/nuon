@@ -31,7 +31,6 @@ type RunnerAuthAzureResponse struct {
 	Token         string `json:"token,omitempty"`
 }
 
-// azureClaims holds the custom claims we extract from Azure managed identity JWTs.
 type azureClaims struct {
 	TenantID string `json:"tid"`
 	ObjectID string `json:"oid"`
@@ -39,9 +38,6 @@ type azureClaims struct {
 	XMSMirID string `json:"xms_mirid"`
 }
 
-// parseUnverifiedTenantID extracts the tid claim from a compact JWT without signature
-// verification, only to select which tenant's JWKS to use. The value must be a GUID so
-// it cannot reshape the discovery URL, and is re-checked against verified claims after.
 func parseUnverifiedTenantID(tokenStr string) (string, error) {
 	claims, err := workloadjwt.UnverifiedClaims(tokenStr)
 	if err != nil {
@@ -80,8 +76,6 @@ func azureClaimsFromVerified(claims map[string]any) (*azureClaims, error) {
 	}, nil
 }
 
-// verifyAzureJWT verifies an Azure managed identity JWT the same way phone-home does:
-// compact peek for tid → AzureIssuer → go-oidc JWKS verify → bind tid to key tenant.
 func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureClaims, error) {
 	tokenStr = strings.TrimSpace(tokenStr)
 	if err := workloadjwt.RequireCompactJWT(tokenStr); err != nil {
@@ -112,9 +106,6 @@ func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureCl
 		return nil, err
 	}
 
-	// Key selection and verified claims must name the same tenant. Without this,
-	// a confused parser could fetch keys for one tenant while accepting tid/oid
-	// for another (NUO-1188).
 	if err := bindAzureKeyTenant(tenantID, azClaims); err != nil {
 		return nil, err
 	}
@@ -122,8 +113,6 @@ func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureCl
 	return azClaims, nil
 }
 
-// bindAzureKeyTenant requires the verified tid to identify the tenant whose JWKS
-// verified the signature. iss is already constrained to that tenant by the validator.
 func bindAzureKeyTenant(keyTenantID string, claims *azureClaims) error {
 	if claims == nil {
 		return errors.New("missing azure claims")
@@ -134,10 +123,6 @@ func bindAzureKeyTenant(keyTenantID string, claims *azureClaims) error {
 	return nil
 }
 
-// resolveAzureRunnerIdentity requires a request runner_id (not present in xms_mirid).
-// When xms_mirid is present it must name the install runner VMSS ({installID}-vmss);
-// subscription and install id are returned for later binds. When absent, those binds
-// are skipped so older/odd tokens still authenticate on tid/oid alone.
 func resolveAzureRunnerIdentity(claims *azureClaims, requestRunnerID string) (runnerID, subscriptionID, installID string, err error) {
 	if requestRunnerID == "" {
 		return "", "", "", errors.New("runner_id is required")
@@ -154,9 +139,6 @@ func resolveAzureRunnerIdentity(claims *azureClaims, requestRunnerID string) (ru
 	return requestRunnerID, vmss.SubscriptionID, vmss.InstallID, nil
 }
 
-// bindAzureRunnerInstall requires the VMSS named in xms_mirid to belong to the same
-// install as the Nuon runner being authenticated. An empty miridInstallID means the
-// claim was absent and the check is skipped.
 func bindAzureRunnerInstall(installID, miridInstallID string) error {
 	if miridInstallID == "" {
 		return nil
