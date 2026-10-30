@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -54,6 +56,15 @@ func (h *APIProxyHandler) RegisterRoutes(e *gin.Engine) error {
 			}
 		},
 		ErrorLog: zap.NewStdLog(h.l),
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			if errors.Is(err, context.Canceled) {
+				w.WriteHeader(499)
+				return
+			}
+
+			h.l.Error("http: proxy error", zap.Error(err))
+			w.WriteHeader(http.StatusBadGateway)
+		},
 	}
 
 	e.Any(APIProxyRoutePattern, gin.WrapH(proxy))
