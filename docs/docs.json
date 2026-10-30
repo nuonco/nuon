@@ -145,7 +145,7 @@
                   "guides/using-variables",
                   "guides/vcs"
                 ],
-                "expanded": false
+                "expanded": true
               },
               {
                 "group": "Components",
