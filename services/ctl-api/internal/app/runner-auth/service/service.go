@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/azure"
 	"github.com/nuonco/nuon/pkg/metrics"
 	runneraws "github.com/nuonco/nuon/pkg/runner/auth/aws"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -44,6 +45,9 @@ func New(params Params) *service {
 		certStore, err = runneraws.NewIIDCertStore(params.L, params.Cfg.AWSIIDCertsDir)
 		if err != nil {
 			params.L.Warn("failed to initialize AWS IID cert store, IID auth will be unavailable", zap.Error(err))
+		}
+		if params.Cfg.AzureRunnerAuthAudience != "" && azure.ConfiguredRunnerAudience(params.Cfg.AzureRunnerAuthAudience) == "" {
+			params.L.Warn("azure runner auth audience is set but is not api://<client-id>; only the ARM audience will be accepted")
 		}
 	}
 
