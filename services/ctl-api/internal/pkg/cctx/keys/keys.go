@@ -36,6 +36,7 @@ const (
 	QueueIDCtxKey           string = "queue_id"
 	TokenRoleCtxKey         string = "token_role"
 	TokenTypeCtxKey         string = "token_type"
+	VerifiedCredentialKey   string = "verified_credential"
 )
 
 type WorkflowTelemetry struct {

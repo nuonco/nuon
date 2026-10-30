@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -28,9 +30,21 @@ type AccountRole struct {
 
 	AccountID string  `json:"account_id,omitzero" gorm:"primary_key;index:idx_account_role:unique" temporaljson:"account_id,omitzero,omitempty"`
 	Account   Account `json:"account,omitzero" temporaljson:"account,omitzero,omitempty"`
+
+	ScopeKind permissions.ResourceKind `json:"-" temporaljson:"scope_kind,omitzero,omitempty"`
+	ScopeID   string                   `json:"-" temporaljson:"scope_id,omitzero,omitempty"`
 }
 
 func (c *AccountRole) BeforeSave(tx *gorm.DB) error {
+	if c.ScopeKind != "" || c.ScopeID != "" {
+		scope := permissions.Scope{Kind: c.ScopeKind, OrgID: c.OrgID.ValueString(), ID: c.ScopeID}
+		if err := scope.ValidateShape(); err != nil {
+			return err
+		}
+		if c.ScopeKind != permissions.KindOrg && c.ScopeKind != permissions.KindApp && c.ScopeKind != permissions.KindInstall {
+			return fmt.Errorf("role binding requires an org, app or install scope")
+		}
+	}
 	if c.ID == "" {
 		c.ID = domains.NewAccountID()
 	}
