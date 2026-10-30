@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import type { TCollectionView } from '@/components/common/CollectionViewToggle'
@@ -12,6 +13,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ComponentType } from '@/components/components/ComponentType'
 import type {
+  TAPIError,
   TComponentType,
   TInstallAlignmentResource,
   TInstallAlignmentResourceKind,
@@ -32,7 +34,10 @@ export interface IDriftResourceCard {
   lastAttemptHref?: string
   metadata?: ReactNode
   nameHref?: string
+  onResolve?: () => void
   onViewPlan?: () => void
+  resolveError?: TAPIError | null
+  resolving?: boolean
   resource: TInstallAlignmentResource
   view?: TCollectionView
 }
@@ -77,7 +82,10 @@ export const DriftResourceCard = ({
   lastAttemptHref,
   metadata,
   nameHref,
+  onResolve,
   onViewPlan,
+  resolveError,
+  resolving = false,
   resource,
   view = 'list',
 }: IDriftResourceCard) => {
@@ -198,9 +206,32 @@ export const DriftResourceCard = ({
             <Button variant="secondary" href={deploymentHref}>
               {isImage ? 'View sync' : 'View deployment'}
             </Button>
+          ) : !openDeployment && isDrifted(resource) && onResolve ? (
+            <Button
+              variant="secondary"
+              onClick={onResolve}
+              disabled={resolving}
+              aria-busy={resolving}
+            >
+              <Icon variant={resolving ? 'Loading' : 'PlayIcon'} size={16} />
+              {resolving
+                ? isImage
+                  ? 'Starting sync'
+                  : 'Starting deployment'
+                : 'Resolve drift'}
+            </Button>
           ) : null}
         </div>
       </div>
+
+      {resolveError ? (
+        <Banner theme="error" role="alert">
+          <Text variant="subtext">
+            Drift resolution failed.{' '}
+            {resolveError.description || resolveError.error}
+          </Text>
+        </Banner>
+      ) : null}
 
       <Expand
         id={detailsId}

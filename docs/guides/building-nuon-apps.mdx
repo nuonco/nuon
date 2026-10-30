@@ -1,0 +1,77 @@
+---
+title: "Building Nuon Apps"
+description: "Create your first app with the Nuon CLI and get to a valid config."
+---
+
+The [CLI](/cli) is the primary interface for managing apps. To see all available commands, run `nuon apps --help`.
+
+## Creating an App
+
+Create a directory for your app config files in a GitHub repository, then create the app:
+
+```sh
+mkdir your-app
+cd your-app
+nuon apps create --name=your-app
+```
+
+The directory can have any name. The app branch's `directory` setting tells Nuon where to find it. `nuon apps create`
+also selects the new app.
+
+## Adding the Required Files
+
+A valid app needs these three files. The [sandbox](/concepts/sandboxes) and [runner](/concepts/runners) are part of
+Nuon's [install infrastructure](/concepts/installs).
+
+```toml metadata.toml
+# App details. Only the config version is required.
+version = "v2"
+```
+
+```toml sandbox.toml
+# Base infrastructure for each install, such as a VPC and cluster
+terraform_version = "1.11.4"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-min-sandbox"
+branch    = "main"
+```
+
+```toml runner.toml
+# The runner that deploys into each customer's cloud account
+runner_type = "aws"
+```
+
+Then add a [component](/concepts/components) for each Helm chart, Terraform module, or container image you deploy. The
+[configuration reference](/config-ref) covers every file and field.
+
+## Validating the Config
+
+Check the directory before you push:
+
+```sh
+nuon apps validate
+```
+
+It looks up the app by the directory's name, so it works when the directory and the app share a name.
+
+## Selecting an App
+
+Select an app to make it the default for all app commands, avoiding the need to pass `-a` each time:
+
+```sh
+nuon apps select
+nuon apps get       # show the selected app
+nuon apps deselect  # clear the selection
+```
+
+## Common Commands
+
+```sh
+nuon apps list                    # list all apps
+nuon apps get                     # get info about the selected app
+nuon apps rename --name=new-name  # rename an app
+```
+
+Next, ship your config with an app branch. See [Multiple App Configurations](/guides/multiple-app-configurations).

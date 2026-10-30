@@ -67,8 +67,16 @@ func accountHasOrgAccess(acct *app.Account, orgID string) bool {
 	return false
 }
 
-func (s *Server) accountAllowed(acct *app.Account) bool {
-	return !s.requireEmployee || acct.IsEmployee
+func (s *Server) tokenAllowed(acct *app.Account, tok *app.Token) bool {
+	if tok.TokenType == app.TokenTypeStatic {
+		return false
+	}
+	switch acct.AccountType {
+	case app.AccountTypeAuth, app.AccountTypeAuth0:
+		return !s.requireEmployee || acct.IsEmployee
+	default:
+		return false
+	}
 }
 
 func extractBearerToken(r *http.Request) string {

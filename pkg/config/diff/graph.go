@@ -102,6 +102,15 @@ func (g *Graph) Propagate(changed ...NodeID) map[NodeID][]ImpactReason {
 		}
 	}
 
+	for _, reasons := range impacts {
+		sort.Slice(reasons, func(i, j int) bool {
+			if reasons[i].From != reasons[j].From {
+				return reasons[i].From < reasons[j].From
+			}
+			return reasons[i].Edge < reasons[j].Edge
+		})
+	}
+
 	return impacts
 }
 

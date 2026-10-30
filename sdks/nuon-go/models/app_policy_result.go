@@ -7,7 +7,10 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -16,6 +19,9 @@ import (
 //
 // swagger:model app.PolicyResult
 type AppPolicyResult struct {
+
+	// checks
+	Checks []*GithubComNuoncoNuonPkgPoliciesOpaResult `json:"checks"`
 
 	// deny count
 	DenyCount int64 `json:"deny_count,omitempty"`
@@ -41,11 +47,88 @@ type AppPolicyResult struct {
 
 // Validate validates this app policy result
 func (m *AppPolicyResult) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateChecks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app policy result based on context it is used
+func (m *AppPolicyResult) validateChecks(formats strfmt.Registry) error {
+	if swag.IsZero(m.Checks) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Checks); i++ {
+		if swag.IsZero(m.Checks[i]) { // not required
+			continue
+		}
+
+		if m.Checks[i] != nil {
+			if err := m.Checks[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("checks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("checks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app policy result based on the context it is used
 func (m *AppPolicyResult) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateChecks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppPolicyResult) contextValidateChecks(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Checks); i++ {
+
+		if m.Checks[i] != nil {
+
+			if swag.IsZero(m.Checks[i]) { // not required
+				return nil
+			}
+
+			if err := m.Checks[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("checks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("checks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

@@ -12,20 +12,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"sync"
-	"time"
 
-	"github.com/auth0/go-jwt-middleware/v2/jwks"
-	"github.com/auth0/go-jwt-middleware/v2/validator"
-)
-
-const (
-	jwksCacheTTL     = 5 * time.Minute
-	allowedClockSkew = time.Minute
-
-	// Bounds memory and outbound discovery if a caller ever passes an issuer it did
-	// not fully constrain.
-	maxCachedIssuers = 256
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
 
 type Request struct {
@@ -44,20 +32,27 @@ func (r Request) validate() error {
 		return errors.New("audience is required")
 	}
 
+	issuerURL, err := url.Parse(r.Issuer)
+	if err != nil {
+		return fmt.Errorf("invalid issuer url: %w", err)
+	}
+	if issuerURL.Scheme != "https" || issuerURL.Host == "" {
+		return fmt.Errorf("issuer %q must be an https url", r.Issuer)
+	}
+
 	return nil
 }
 
 type Verifier struct {
-	mu        sync.Mutex
-	providers map[string]*jwks.CachingProvider
-	inserted  []string
+	oidc *oidcverify.Verifier
 }
 
 func NewVerifier() *Verifier {
-	return &Verifier{providers: map[string]*jwks.CachingProvider{}}
+	return &Verifier{oidc: oidcverify.NewVerifier(func() bool { return false })}
 }
 
-// Verify checks signature, issuer, audience and time claims.
+// Verify checks signature, issuer, audience and time claims, and returns the claims
+// from the signed payload.
 //
 // A valid signature only establishes which cloud tenant minted the token, not that it is
 // the right one, so callers must bind the returned claims to stored state.
@@ -66,73 +61,12 @@ func (v *Verifier) Verify(ctx context.Context, req Request) (map[string]any, err
 		return nil, err
 	}
 
-	provider, err := v.provider(req.Issuer)
-	if err != nil {
-		return nil, err
-	}
-
-	tokenValidator, err := validator.New(
-		provider.KeyFunc,
-		validator.RS256,
-		req.Issuer,
-		[]string{req.Audience},
-		validator.WithAllowedClockSkew(allowedClockSkew),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to build token validator: %w", err)
-	}
-
-	if _, err := tokenValidator.ValidateToken(ctx, req.Token); err != nil {
-		return nil, fmt.Errorf("token validation failed: %w", err)
-	}
-
-	// Decoded rather than read off the validator, which only surfaces registered claims
-	// unless a concrete type is registered up front. Safe: the signature over this
-	// payload is already checked.
-	claims, err := decodeClaims(req.Token)
-	if err != nil {
-		return nil, err
-	}
-
-	return claims, nil
-}
-
-func (v *Verifier) provider(issuer string) (*jwks.CachingProvider, error) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-
-	if provider, ok := v.providers[issuer]; ok {
-		return provider, nil
-	}
-
-	issuerURL, err := url.Parse(issuer)
-	if err != nil {
-		return nil, fmt.Errorf("invalid issuer url: %w", err)
-	}
-	if issuerURL.Scheme != "https" || issuerURL.Host == "" {
-		return nil, fmt.Errorf("issuer %q must be an https url", issuer)
-	}
-
-	if len(v.inserted) >= maxCachedIssuers {
-		oldest := v.inserted[0]
-		v.inserted = v.inserted[1:]
-		delete(v.providers, oldest)
-	}
-
-	provider := jwks.NewCachingProvider(issuerURL, jwksCacheTTL)
-	v.providers[issuer] = provider
-	v.inserted = append(v.inserted, issuer)
-
-	return provider, nil
+	return v.oidc.Verify(ctx, req.Token, req.Issuer, req.Audience)
 }
 
 // UnverifiedClaims decodes claims without checking the signature. Only for selecting
 // which key set to verify against; never for authorization.
 func UnverifiedClaims(token string) (map[string]any, error) {
-	return decodeClaims(token)
-}
-
-func decodeClaims(token string) (map[string]any, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return nil, errors.New("malformed jwt")

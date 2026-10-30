@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -104,6 +105,7 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 	// this cannot probe install IDs in other orgs.
 	var install app.Install
 	if res := s.db.WithContext(ctx).
+		Preload("AppRunnerConfig").
 		Where(app.Install{ID: installID, OrgID: orgID}).
 		First(&install); res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
@@ -118,6 +120,20 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 	// deletable.
 	if requestType == installshelpers.PhoneHomeRequestTypeDelete {
 		ctx.JSON(http.StatusCreated, app.EmptyResponse{})
+		return
+	}
+
+	if err := installshelpers.CheckObservedCloudAccount(&install, req, s.cfg.PhoneHomeAuthRequired); err != nil {
+		s.l.Warn("rejected stack phone home",
+			zap.String("install_id", install.ID),
+			zap.String("org_id", install.OrgID),
+			zap.String("request_type", requestType),
+			zap.Error(err),
+		)
+		ctx.Error(stderr.ErrAuthorization{
+			Err:         errors.New("phone home account check failed"),
+			Description: "phone home account check failed",
+		})
 		return
 	}
 

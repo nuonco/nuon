@@ -127,6 +127,79 @@ func TestEvaluateSinglePolicyAllowsOneDecisionType(t *testing.T) {
 	assert.Empty(t, result.Violations)
 }
 
+func TestEvaluateSinglePolicyReportContract(t *testing.T) {
+	for name, tt := range map[string]struct {
+		contents   string
+		decisions  map[string]string
+		violations map[string]string
+	}{
+		"named errors block despite warning default": {
+			contents: `# METADATA
+# custom:
+#   action: warn
+package nuon.checks
+import data.nuon.lib.check
+check_warning contains check.finding("review")
+check_pass contains check.finding("never") if { false }
+check_error contains check.finding("parsed") if { json.unmarshal(input.document) }`,
+			decisions:  map[string]string{"check_warning": "warn", "check_pass": "pass", "check_error": "error"},
+			violations: map[string]string{"check_warning": "warn", "check_error": "deny"},
+		},
+		"legacy findings retain their severity": {
+			contents: `package nuon
+deny contains "blocked"
+warn contains {"msg": "review"}`,
+			decisions:  map[string]string{},
+			violations: map[string]string{"blocked": "deny", "review": "warn"},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			result, err := executeEvaluateSinglePolicy(t, &EvaluateSinglePolicyRequest{
+				PolicyID: "policy-1", PolicyName: "example",
+				Contents: tt.contents, InputJSON: []byte(`{"document":"invalid"}`),
+				InputIndex: 2, InputIdentity: "Deployment/default/example",
+			})
+			require.NoError(t, err)
+			decisions := make(map[string]string)
+			for _, check := range result.Checks {
+				decisions[check.CheckID] = check.Decision
+				assert.Equal(t, 1, check.InputCount)
+				if check.Decision == "error" {
+					require.Len(t, check.Errors, 1)
+					assert.Equal(t, "evaluation_failed", check.Errors[0].Code)
+					assert.Equal(t, 2, check.Errors[0].InputIndex)
+					assert.Equal(t, "Deployment/default/example", check.Errors[0].InputIdentity)
+					assert.NotEmpty(t, check.Errors[0].Message)
+				} else if check.Decision == "warn" {
+					require.Len(t, check.Findings, 1)
+					assert.Equal(t, "review", check.Findings[0].Message)
+					assert.Equal(t, 2, check.Findings[0].InputIndex)
+					assert.Equal(t, "Deployment/default/example", check.Findings[0].InputIdentity)
+				}
+			}
+			assert.Equal(t, tt.decisions, decisions)
+			require.Len(t, result.Violations, len(tt.violations))
+			violations := make(map[string]string)
+			for _, violation := range result.Violations {
+				assert.Equal(t, "policy-1", violation.PolicyID)
+				assert.Equal(t, "example", violation.PolicyName)
+				assert.Equal(t, 2, violation.InputIndex)
+				assert.Equal(t, "Deployment/default/example", violation.InputIdentity)
+				assert.NotEmpty(t, violation.Message)
+				key := violation.CheckID
+				if len(tt.decisions) == 0 {
+					assert.Empty(t, violation.CheckID)
+					key = violation.Message
+				} else if key == "check_warning" {
+					assert.Equal(t, "review", violation.Message)
+				}
+				violations[key] = violation.Severity
+			}
+			assert.Equal(t, tt.violations, violations)
+		})
+	}
+}
+
 func executeEvaluateSinglePolicy(t *testing.T, req *EvaluateSinglePolicyRequest) (*EvaluateSinglePolicyResult, error) {
 	t.Helper()
 

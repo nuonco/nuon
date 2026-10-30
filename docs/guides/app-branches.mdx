@@ -1,7 +1,6 @@
 ---
 title: "Configure app branches"
 description: "Connect a git branch to your app template, organize installs into install groups, and roll changes out across your fleet from a git push."
-icon: "code-branch"
 keywords: ["configure app branches", "branch.toml", "install_groups", "install groups", "label installs", "nuon branches sync", "nuon branches trigger", "nuon branches preview", "PR preview setup", "staged rollout setup", "ignore_changes_regex"]
 ---
 
@@ -251,6 +250,38 @@ branch run.
 
 Watch runs with `nuon branches runs --branch-id main` (workflow TUI) or in the dashboard **Branches** view. See the
 [TUI reference](/tui).
+
+### What a run rebuilds
+
+A run rebuilds what changed in the files Nuon watches. Some changes live outside those files, so a run can't see them:
+
+| What changed | What rebuilds it |
+| --- | --- |
+| TOML files, or files they reference such as Helm values | The next branch run, automatically |
+| Source in another git repository, such as a Terraform module or Helm chart | A forced rebuild |
+| Source in your app repository whose config did not change | A forced rebuild, after you push the branch |
+
+<Tip>
+When a component's source lives in your app repository, set its `branch` to the branch your
+[branch file](#write-a-branch-config) tracks. Each branch run then builds the component from that run's commit. With a
+different `branch`, the component builds from the latest commit on that branch instead.
+</Tip>
+
+<CodeGroup>
+```toml branches/main.toml
+[connected_repo]
+repo      = "acmeco/my-app"
+directory = "."
+branch    = "main"
+```
+
+```toml components/api.toml
+[connected_repo]
+repo      = "acmeco/my-app"
+directory = "api"
+branch    = "main"   # same branch as branches/main.toml
+```
+</CodeGroup>
 
 ## Approve or skip an install group
 

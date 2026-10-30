@@ -37,6 +37,20 @@ const SKIPPED = new Set([
   'noop',
 ])
 
+// Empty / skipped groups are finished work: the rollout must advance past them
+// instead of parking on "Group N" as if they were still pending.
+const COMPLETE = new Set([
+  'success',
+  'succeeded',
+  'auto-skipped',
+  'user-skipped',
+  'noop',
+])
+
+export const isRolloutGroupComplete = (status?: string) =>
+  !!status &&
+  (COMPLETE.has(status) || stepStatusCategory(status) === 'success')
+
 const CATEGORY_RANK: Record<TStepStatusCategory, number> = {
   error: 4,
   awaiting: 3,

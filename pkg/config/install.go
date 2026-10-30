@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -230,6 +231,8 @@ type Install struct {
 	// Absent keys fall through to the component's default_enabled setting.
 	ComponentToggles map[string]bool `mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
 
+	ActionTimeout string `mapstructure:"action_timeout,omitempty" toml:"action_timeout,omitempty" jsonschema:"-"`
+
 	// Components holds per-component install-level overrides, keyed by component
 	// name. Each override deep-merges over the component's app-config values and
 	// wins. It is carried through the install input system under a reserved
@@ -324,6 +327,14 @@ func (i *Install) Validate() error {
 	if i.AppBranchGroup != "" && i.AppBranch == "" {
 		return ErrConfig{
 			Description: fmt.Sprintf("install %q: app_branch_group requires app_branch", i.Name),
+		}
+	}
+	if i.ActionTimeout != "" {
+		if _, err := ParseActionTimeout(i.ActionTimeout); err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("install %q: %s", i.Name, err),
+				Err:         err,
+			}
 		}
 	}
 
@@ -475,6 +486,13 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		))
 	}
 
+	if i.ActionTimeout != "" && !ActionTimeoutsEqual(upstreamInstall.ActionTimeout, i.ActionTimeout) {
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("action_timeout"),
+			diff.WithStringDiff(upstreamInstall.ActionTimeout, i.ActionTimeout),
+		))
+	}
+
 	if i.Telemetry != nil && i.Telemetry.Enabled != nil {
 		previous := "inherit"
 		if upstreamInstall.Telemetry != nil && upstreamInstall.Telemetry.Enabled != nil {
@@ -572,12 +590,13 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		if upstream == nil {
 			upstream = &CloudFormation{}
 		}
-		for key, values := range map[string]struct {
+		for _, values := range []struct {
+			key               string
 			changed           bool
 			previous, current any
 		}{
-			"root.parameters": {curr.Root.Parameters != nil && !maps.Equal(upstream.Root.Parameters, curr.Root.Parameters), upstream.Root.Parameters, curr.Root.Parameters},
-			"nested_stacks":   {curr.NestedStacks != nil && !maps.EqualFunc(upstream.NestedStacks, curr.NestedStacks, func(a, b CloudFormationStack) bool { return maps.Equal(a.Parameters, b.Parameters) }), upstream.NestedStacks, curr.NestedStacks},
+			{"root.parameters", curr.Root.Parameters != nil && !maps.Equal(upstream.Root.Parameters, curr.Root.Parameters), upstream.Root.Parameters, curr.Root.Parameters},
+			{"nested_stacks", curr.NestedStacks != nil && !maps.EqualFunc(upstream.NestedStacks, curr.NestedStacks, func(a, b CloudFormationStack) bool { return maps.Equal(a.Parameters, b.Parameters) }), upstream.NestedStacks, curr.NestedStacks},
 		} {
 			if !values.changed {
 				continue
@@ -585,37 +604,14 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 			previous, _ := json.Marshal(values.previous)
 			current, _ := json.Marshal(values.current)
 			diffs = append(diffs, diff.NewDiff(
-				diff.WithKey("cloudformation."+key),
+				diff.WithKey("cloudformation."+values.key),
 				diff.WithStringDiff(string(previous), string(current)),
 			))
 		}
 	}
 
-	if len(i.Labels) > 0 || len(upstreamInstall.Labels) > 0 {
-		labelDiffs := make([]*diff.Diff, 0)
-		seen := make(map[string]bool)
-		for k, v := range i.Labels {
-			seen[k] = true
-			labelDiffs = append(labelDiffs, diff.NewDiff(
-				diff.WithKey(k),
-				diff.WithStringDiff(upstreamInstall.Labels[k], v),
-			))
-		}
-		for k, v := range upstreamInstall.Labels {
-			if seen[k] {
-				continue
-			}
-			labelDiffs = append(labelDiffs, diff.NewDiff(
-				diff.WithKey(k),
-				diff.WithStringDiff(v, ""),
-			))
-		}
-		if len(labelDiffs) > 0 {
-			diffs = append(diffs, diff.NewDiff(
-				diff.WithKey("labels"),
-				diff.WithChildren(labelDiffs...),
-			))
-		}
+	if d := diff.MapDiff("labels", upstreamInstall.Labels, i.Labels); d != nil {
+		diffs = append(diffs, d)
 	}
 
 	if i.AWSAccount != nil {
@@ -657,20 +653,27 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		)
 	}
 
-	inputDiffs := make([]*diff.Diff, len(i.InputGroups))
+	inputDiffs := make([]*diff.Diff, 0)
 	installInputs := i.FlattenedInputs()
 	upstreamInputs := upstreamInstall.FlattenedInputs()
 
-	for key, val := range installInputs {
-		// upstreamInputs[key] is "" when absent, e.g. for new installs.
-		inputDiffs = append(inputDiffs, inputDiffNode(key, upstreamInputs[key], val))
+	for _, key := range slices.Sorted(maps.Keys(installInputs)) {
+		val := installInputs[key]
+		current, present := upstreamInputs[key]
+		node := inputDiffNode(key, current, val)
+		if !present && val == "" && !IsComponentOverrideInputName(key) {
+			node.Diff.Op = diff.OpAdd
+			node.Diff.Diff = "'' -> ''"
+		}
+		inputDiffs = append(inputDiffs, node)
 	}
 
 	// Detect cleared component overrides: present upstream but no longer set
 	// locally. Normal inputs are additive (omitting one does not clear it), so
 	// this removal pass is scoped to reserved synthetic override keys, which
 	// revert their component to app-config values when set back to empty.
-	for key, current := range upstreamInputs {
+	for _, key := range slices.Sorted(maps.Keys(upstreamInputs)) {
+		current := upstreamInputs[key]
 		if _, ok := installInputs[key]; ok {
 			continue
 		}

@@ -1,12 +1,13 @@
 ---
 title: "Creating Installs"
 description: "Configuring the installs for your customers"
-icon: "code"
 boost: 10
 keywords: ["Install Configs", "creating installs", "install-config", "install config", "install configuration", "install.toml", "install schema", "install file", "install configuration reference", "install config reference", "configure install", "programmatic install", "json install config", "automated install onboarding", "generate install config", "monitor workflows", "deploy notifications"]
 ---
 
 When you ship your app template to customers through Nuon, you create one install per customer. This page covers configuring those installs, labeling them so they're easy to identify, and monitoring their workflows once they're running.
+
+To learn more about installs, see the [App and Install Life Cycle](/guides/app-install-life-cycle) concept page.
 
 ## Install Configs
 
@@ -59,7 +60,7 @@ available.
 
 ### Default labels
 
-Labels defined in the app's [`default_labels`](/guides/managing-apps#default-labels) apply to every install
+Labels defined in the app's [`default_labels`](/guides/multiple-app-configurations#default-labels) apply to every install
 and are owned by the app config — an install config cannot override or remove those keys, and a sync that
 tries to set a different value for one fails with an error.
 

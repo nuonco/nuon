@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -162,6 +163,34 @@ func TestVerifyRejectsAlgorithmsDiscoveryAdvertises(t *testing.T) {
 
 	_, err := v.Verify(context.Background(), token, idp.issuer(), "nuon-test")
 	require.Error(t, err)
+}
+
+func TestVerifyIgnoresClaimsOutsideTheSignedPayload(t *testing.T) {
+	idp := newFakeIDP(t)
+	v := NewVerifier(func() bool { return true })
+
+	token := idp.signToken(t, jwt.MapClaims{"sub": "signed-subject", "oid": "signed-oid"})
+	parts := strings.Split(token, ".")
+	require.Len(t, parts, 3)
+
+	forged := base64.RawURLEncoding.EncodeToString([]byte(
+		`{"iss":"` + idp.issuer() + `","aud":"nuon-test","sub":"forged-subject","oid":"forged-oid","exp":` +
+			strconv.FormatInt(time.Now().Add(5*time.Minute).Unix(), 10) + `}`,
+	))
+	wrapped, err := json.Marshal(map[string]string{
+		"protected": parts[0],
+		"payload":   parts[1],
+		"signature": parts[2],
+		"fake":      "." + forged + ".",
+	})
+	require.NoError(t, err)
+
+	claims, err := v.Verify(context.Background(), string(wrapped), idp.issuer(), "nuon-test")
+	if err != nil {
+		return
+	}
+	require.Equal(t, "signed-subject", claims["sub"])
+	require.Equal(t, "signed-oid", claims["oid"])
 }
 
 func TestDiscoverCachesProvider(t *testing.T) {

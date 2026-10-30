@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/driftresolution"
 )
 
 // LockInstallInputs serializes an install's inputs writers for the rest of the
@@ -12,6 +14,9 @@ import (
 // unserialized read-modify-append drops concurrent writes. The lock releases at the
 // outermost commit, so callers taking several must order them.
 func LockInstallInputs(ctx context.Context, tx *gorm.DB, installID string) error {
+	if _, err := driftresolution.LockInstall(ctx, tx, installID); err != nil {
+		return err
+	}
 	if err := tx.WithContext(ctx).
 		Exec("select pg_advisory_xact_lock(hashtext(?)::bigint)", "install_inputs:"+installID).
 		Error; err != nil {

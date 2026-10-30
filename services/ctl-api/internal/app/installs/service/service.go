@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/alignment"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -67,6 +68,7 @@ type service struct {
 	cfg                  *internal.Config
 	componentHelpers     *componenthelpers.Helpers
 	helpers              *helpers.Helpers
+	alignment            *alignment.Helpers
 	accountsHelpers      *accountshelpers.Helpers
 	acctClient           *account.Client
 	appsHelpers          *appshelpers.Helpers
@@ -85,6 +87,8 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
+	s.POST(ge, "/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome, api.APIContextTypePublic, true)
+
 	org := require.OrgRoute(ge)
 
 	// get all installs across orgs
@@ -226,9 +230,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/telemetry/collector", s.GetInstallTelemetryCollector)
 		installs.DELETE("/telemetry/collector", s.DeleteInstallTelemetryCollector)
 
-		// phone home
-		s.POST(installs, "/phone-home/:phone_home_id", s.InstallPhoneHome, api.APIContextTypePublic, true)
-
 		// runner bootstrap token
 		installs.POST("/runner-bootstrap-token", s.CreateRunnerBootstrapToken)
 
@@ -266,6 +267,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/deployments/:workflow_id", s.GetInstallDeployment)
 		installs.GET("/deployment-summaries", s.GetInstallDeploymentSummaries)
 		installs.GET("/overview", s.GetInstallOverview)
+		installs.POST("/resolve-drift", s.ResolveInstallDrift)
 		installs.GET("/activity", s.GetInstallActivity)
 		installs.GET("/updates", s.GetInstallUpdates)
 		installs.GET("/config-versions", s.GetInstallConfigVersions)
@@ -419,6 +421,7 @@ func New(params Params) (*service, error) {
 		mw:                   params.MW,
 		componentHelpers:     params.ComponentHelpers,
 		helpers:              params.Helpers,
+		alignment:            alignment.New(params.DB, params.Helpers, params.BlobService, params.L),
 		accountsHelpers:      params.AccountsHelpers,
 		acctClient:           params.AcctClient,
 		queueClient:          params.QueueClient,

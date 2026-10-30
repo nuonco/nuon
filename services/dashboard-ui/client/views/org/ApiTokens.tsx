@@ -3,6 +3,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { ApiTokensTable } from '@/components/api-tokens/ApiTokensTable'
 import { CreateApiTokenButton } from '@/components/api-tokens/CreateApiToken'
+import { LegacyPersonalTokens } from '@/components/api-tokens/LegacyPersonalTokens'
 
 import { useOrg } from '@/hooks/use-org'
 
@@ -35,6 +36,7 @@ export const ApiTokens = () => {
       >
         <ApiTokensTable shouldPoll />
       </ListPage>
+      <LegacyPersonalTokens />
     </>
   )
 }

@@ -52,6 +52,30 @@ func TestVersionReportUsesSDK(t *testing.T) {
 	assert.Equal(t, "0.19.1102", out["min_cli_supported_version"])
 }
 
+func TestVersionReportIncludesPolicy(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/version":
+			_, _ = w.Write([]byte(`{"version":"0.19.1109"}`))
+		case "/v1/general/cli-config":
+			_, _ = w.Write([]byte(`{"min_cli_version":"0.19.1400","min_cli_version_policy":{"error":"0.19.1102","warn":"0.19.1400"}}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	api, err := nuon.New(nuon.WithURL(srv.URL))
+	require.NoError(t, err)
+
+	got := New(api, configuredConfig(srv.URL)).collect(context.Background())
+	assert.Equal(t, "client: "+Version+"\nctl-api: 0.19.1109\nmin_cli_supported_version: 0.19.1102\nmin_cli_version_error: 0.19.1102\nmin_cli_version_warn: 0.19.1400\n", got.text())
+	assert.Equal(t, "0.19.1102", got.json()["min_cli_supported_version"])
+	assert.Equal(t, "0.19.1102", got.json()["min_cli_version_error"])
+	assert.Equal(t, "0.19.1400", got.json()["min_cli_version_warn"])
+}
+
 func TestVersionReportOmitsUnsetMinCLI(t *testing.T) {
 	api := &stubAPI{version: &nuon.APIVersion{Version: "0.19.1109"}}
 	got := New(api, configuredConfig("https://api.example.com")).collect(context.Background())

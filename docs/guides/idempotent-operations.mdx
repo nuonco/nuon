@@ -1,13 +1,14 @@
 ---
 title: "Idempotent operations"
 description: "Pass request_id on endpoints that create a workflow so a retry returns the original workflow instead of starting a second one."
-icon: "repeat"
 keywords: ["request_id", "idempotency", "retry", "duplicate workflow", "deploy-all", "reprovision", "action run", "runbook run", "programmatic", "API"]
 ---
 
 Public API endpoints that create a workflow accept an optional `request_id` (JSON body field, at most 255 characters). Use it from your own automation when a lost response must not start a second workflow. Nuon stores that id with the workflow. Send the same id and the same body again and the API returns the original `workflow_id` (and run id where applicable).
 
 Calls that omit `request_id` start a new workflow every time. The CLI and the dashboard omit it.
+
+If you're building customer-facing setup in your own product, start with [Build a UI integration](/guides/ui-integration). It shows where `request_id` fits in that flow.
 
 The id is unique for one org, one install, and one workflow type, for as long as that workflow exists. Generate a new id for each workflow you intend to start once, and store it before the POST so a timeout retry uses the same id.
 

@@ -123,8 +123,8 @@ func sourceFilePatch(before, after, path string) (string, bool) {
 		return "", false
 	}
 	patch, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-		A:        difflib.SplitLines(before),
-		B:        difflib.SplitLines(after),
+		A:        sourcePatchLines(before),
+		B:        sourcePatchLines(after),
 		FromFile: "a/" + path,
 		ToFile:   "b/" + path,
 		Context:  3,
@@ -140,4 +140,14 @@ func sourceFilePatch(before, after, path string) (string, bool) {
 		return patch, true
 	}
 	return patch, false
+}
+
+func sourcePatchLines(contents string) []string {
+	lines := strings.SplitAfter(contents, "\n")
+	last := len(lines) - 1
+	if lines[last] == "" {
+		return lines[:last]
+	}
+	lines[last] += "\n\\ No newline at end of file\n"
+	return lines
 }

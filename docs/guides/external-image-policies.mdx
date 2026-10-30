@@ -1,13 +1,14 @@
 ---
 title: 'External Image Policies'
 description: 'Write OPA policies to enforce security requirements on external container images'
-icon: "shield-halved"
 keywords: ["policies", "image policies guide", "image scanning", "SBOM", "image signatures", "cosign", "image attestation", "container security", "Rego image policy"]
 ---
 
 External image policies allow you to enforce security requirements on container images pulled from public or private registries before they are deployed to customer installs.
 
 Nuon automatically fetches rich metadata about container images including SBOMs, signatures, attestations, and in-toto statements, making this data available to your OPA policies.
+
+To learn more about policies, see the [Policies](/concepts/policies) concept page.
 
 <Warning>
 OPA policies inspect the metadata Nuon discovers, but they do not cryptographically verify a signature. To prove that a trusted identity or key signed the resolved image digest, configure [native container image signature verification](/guides/image-signature-verification). Use OPA for additional requirements such as SBOM presence, provenance contents, registry allowlists, and tag rules.

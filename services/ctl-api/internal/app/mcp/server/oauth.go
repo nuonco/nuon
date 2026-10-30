@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // authServerURL returns the OAuth 2.0 authorization server (Nuon Auth) base URL,
@@ -65,11 +67,21 @@ func (s *Server) writeUnauthorized(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) writeForbidden(w http.ResponseWriter) {
+func (s *Server) forbiddenDescription(acct *app.Account, tok *app.Token) string {
+	if s.requireEmployee && !acct.IsEmployee {
+		return fmt.Sprintf("%s MCP is limited to Nuon employees", s.implementationName)
+	}
+	if tok.TokenType == app.TokenTypeStatic {
+		return fmt.Sprintf("%s MCP does not accept API tokens", s.implementationName)
+	}
+	return fmt.Sprintf("%s MCP only supports user accounts", s.implementationName)
+}
+
+func (s *Server) writeForbidden(w http.ResponseWriter, description string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusForbidden)
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"error":             "access_denied",
-		"error_description": fmt.Sprintf("%s MCP is limited to Nuon employees", s.implementationName),
+		"error_description": description,
 	})
 }
