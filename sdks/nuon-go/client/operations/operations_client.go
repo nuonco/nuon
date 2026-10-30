@@ -3877,7 +3877,7 @@ func (a *Client) CreateCLIEvent(params *CreateCLIEventParams, authInfo runtime.C
 /*
 CreateCloudConnection creates a cloud connection
 
-Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+Create an org-bound AWS, GCP, or Azure identity. Optional repository arrays generate initial read-only setup material but are not stored or used as an allowlist. ECR and GAR use default_region for image connection matching. ACR requires a subscription UUID, existing Entra application client ID and service principal, tenant UUID, registry ARM ID, and bare login server. Its registry must already use RBAC Registry + ABAC Repository Permissions; setup never changes registry mode. Cloud IAM authorizes image pulls. Custom renders AWS trust only.
 */
 func (a *Client) CreateCloudConnection(params *CreateCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCloudConnectionCreated, error) {
 	// NOTE: parameters are not validated before sending

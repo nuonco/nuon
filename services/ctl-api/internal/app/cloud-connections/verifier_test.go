@@ -211,7 +211,7 @@ func TestVerificationErrorMessage(t *testing.T) {
 		},
 		"unexpected error": {
 			err:  fmt.Errorf("a long internal diagnostic"),
-			want: "Verification failed: unable to complete the AWS verification request",
+			want: "Verification failed: unable to complete the cloud verification request",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

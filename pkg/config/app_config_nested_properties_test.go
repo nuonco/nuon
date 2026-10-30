@@ -46,8 +46,8 @@ var nestedFieldContracts = []nestedFieldContract{
 	{reflect.TypeFor[ComponentHealthConfig](), "Enabled:enabled StabilizationWindow:stabilization_window BlockDeploy:block_deploy Probes:nested RequiredChecks:required_checks"},
 	{reflect.TypeFor[ComponentHealthProbeConfig](), "Type:type Name:name URL:url Command:legacy-rejected"},
 	{reflect.TypeFor[ComponentTeardownConfig](), "Retain:retain"},
-	{reflect.TypeFor[AWSECRConfig](), "IAMRoleARN:iam_role_arn AWSRegion:region ImageURL:image_url Tag:tag UpdatePolicy:update_policy"},
-	{reflect.TypeFor[GCPGARConfig](), "GCPProjectID:gcp_project_id GCPRegion:region ImageURL:image_url Tag:tag ServiceAccountEmail:service_account_email WorkloadIdentityProvider:workload_identity_provider UpdatePolicy:update_policy"},
+	{reflect.TypeFor[AWSECRConfig](), "IAMRoleARN:legacy-rejected AWSRegion:region ImageURL:image_url Tag:tag UpdatePolicy:update_policy"},
+	{reflect.TypeFor[GCPGARConfig](), "GCPProjectID:gcp_project_id GCPRegion:region ImageURL:image_url Tag:tag ServiceAccountEmail:legacy-rejected WorkloadIdentityProvider:legacy-rejected UpdatePolicy:update_policy"},
 	{reflect.TypeFor[AzureACRConfig](), "ImageURL:image_url Tag:tag RegistryURL:registry_url TenantID:tenant_id ClientID:client_id ClientSecretName:client_secret_name ClientCertificateName:client_certificate_name UpdatePolicy:update_policy"},
 	{reflect.TypeFor[PublicImageConfig](), "ImageURL:image_url Tag:tag UpdatePolicy:update_policy"},
 	{reflect.TypeFor[signature.Verification](), "RequireSignature:require_signature Authorities:nested"},
@@ -240,7 +240,7 @@ func nestedFixtureConfig(f nestedDiffFixture, field string) *AppConfig {
 	switch f.input {
 	case "Components.3.ExternalImage.AWSECRImageConfig":
 		e.PublicImageConfig = nil
-		e.AWSECRImageConfig = &AWSECRConfig{IAMRoleARN: "arn:aws:iam::123456789012:role/pull", AWSRegion: "us-east-1", ImageURL: "123456789012.dkr.ecr.us-east-1.amazonaws.com/app", Tag: "1.0.0"}
+		e.AWSECRImageConfig = &AWSECRConfig{AWSRegion: "us-east-1", ImageURL: "123456789012.dkr.ecr.us-east-1.amazonaws.com/app", Tag: "1.0.0"}
 	case "Components.3.ExternalImage.GCPGARImageConfig":
 		e.PublicImageConfig = nil
 		e.GCPGARImageConfig = &GCPGARConfig{GCPProjectID: "acme-prod", GCPRegion: "us-east1", ImageURL: "us-east1-docker.pkg.dev/acme-prod/app/api", Tag: "1.0.0"}

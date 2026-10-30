@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"go.uber.org/zap"
 
@@ -48,7 +49,17 @@ func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService
 		return "", fmt.Errorf("unable to get credential: %w", err)
 	}
 
-	// use the credentials to get an Entra ID token
+	tenantID := ""
+	if cfg != nil {
+		tenantID = cfg.TenantID
+	}
+	return GetRepositoryTokenWithCredential(ctx, credential, tenantID, acrService)
+}
+
+func GetRepositoryTokenWithCredential(ctx context.Context, credential azcore.TokenCredential, tenantID, acrService string) (string, error) {
+	if err := ValidateLoginServer(acrService); err != nil {
+		return "", err
+	}
 	aadToken, err := credential.GetToken(ctx, policy.TokenRequestOptions{
 		Scopes: []string{"https://management.azure.com/.default"}},
 	)
@@ -61,12 +72,8 @@ func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService
 		return "", fmt.Errorf("unable to parse entra id token for claims: %w", err)
 	}
 
-	// The exchange must name the tenant that owns the registry. Normally that
-	// is the token's own tenant, but an app registration authenticating into a
-	// vendor tenant is configured with it explicitly, so prefer that.
-	tenantID := claims.TenantID
-	if cfg != nil && cfg.TenantID != "" {
-		tenantID = cfg.TenantID
+	if tenantID == "" {
+		tenantID = claims.TenantID
 	}
 
 	formData := url.Values{

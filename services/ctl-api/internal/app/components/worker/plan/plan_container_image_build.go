@@ -9,8 +9,6 @@ import (
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 
-	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
-	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/azure/acr"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -91,45 +89,20 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 	}
 
 	if cfg.AWSECRImageConfig != nil {
-		assumeRole := &credentials.AssumeRoleConfig{
-			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
-			SessionName:            "container-image-build",
-			SessionDurationSeconds: 30 * 60,
-			UseGCPOIDC:             b.cloudProvider == "gcp",
-		}
-
-		// Control-plane builds run as the ctl-api pod identity, which the
-		// vendor's ECR pull role does not trust — vendors grant the Nuon
-		// management account, so hop through the management role first. AWS
-		// is the default cloud provider, so it is represented as anything
-		// other than gcp/azure (including an empty string).
-		if b.cloudProvider != "gcp" && b.cloudProvider != "azure" && b.managementIAMRoleARN != "" {
-			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
-				IAMRoleARN: b.managementIAMRoleARN,
-			}
-		}
-
 		return &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeECR,
 			Repository:   cfg.ImageURL,
 			Region:       cfg.AWSECRImageConfig.AWSRegion,
-
-			ECRAuth: &credentials.Config{
-				Region:     cfg.AWSECRImageConfig.AWSRegion,
-				AssumeRole: assumeRole,
-			},
 		}, nil
 	}
 
 	if cfg.GCPGARImageConfig != nil {
 		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
 		return &configs.OCIRegistryRepository{
-			RegistryType:             configs.OCIRegistryTypeGAR,
-			Repository:               cfg.ImageURL,
-			Region:                   cfg.GCPGARImageConfig.GCPRegion,
-			LoginServer:              garLoginServer,
-			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
-			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
+			RegistryType: configs.OCIRegistryTypeGAR,
+			Repository:   cfg.ImageURL,
+			Region:       cfg.GCPGARImageConfig.GCPRegion,
+			LoginServer:  garLoginServer,
 		}, nil
 	}
 
@@ -141,6 +114,13 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 			return nil, err
 		}
 
+		if cfg.AzureACRImageConfig.UsesCloudConnection() {
+			return &configs.OCIRegistryRepository{
+				RegistryType: configs.OCIRegistryTypeACR,
+				Repository:   cfg.ImageURL,
+				LoginServer:  cfg.AzureACRImageConfig.RegistryURL,
+			}, nil
+		}
 		acrCfg := &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeACR,
 			Repository:   cfg.ImageURL,
@@ -150,14 +130,6 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 			},
 		}
 
-		// Naming an app registration is what makes a registry in someone else's
-		// tenant reachable; without one the ambient identity is all there is,
-		// which only works when the registry shares our tenant.
-		//
-		// Any field being set is enough to attach it. A half-specified
-		// registration is rejected at sync, but attaching it here too means a
-		// config that slipped through fails loudly in the token activity rather
-		// than quietly falling back to an identity that cannot see the registry.
 		if acr := cfg.AzureACRImageConfig; acr.ClientID != "" || acr.TenantID != "" ||
 			acr.ClientSecretName != "" || acr.ClientCertificateName != "" {
 			acrCfg.ACRAppRegistration = &configs.ACRAppRegistration{

@@ -17,6 +17,9 @@ import (
 // swagger:model service.ConnectionUsage
 type ServiceConnectionUsage struct {
 
+	// image configs
+	ImageConfigs int64 `json:"image_configs,omitempty"`
+
 	// installs
 	Installs int64 `json:"installs,omitempty"`
 }

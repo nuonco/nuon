@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/pkg/aws/credentials"
-	ecr "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
 	"github.com/nuonco/nuon/pkg/oci/metadata"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -61,7 +58,7 @@ func (a *Activities) FetchImageMetadata(ctx context.Context, req *FetchImageMeta
 
 	if extImgCfg.AWSECRImageConfig != nil {
 		l.Debug("fetching ECR credentials for private registry")
-		auth, err := a.getECRAuth(ctx, extImgCfg.AWSECRImageConfig)
+		auth, err := a.getECRAuth(ctx, build.OrgID, extImgCfg.AWSECRImageConfig, extImgCfg.ImageURL)
 		if err != nil {
 			l.Error("unable to get ECR authorization", zap.Error(err))
 			return nil, errors.Wrap(err, "unable to get ECR authorization")
@@ -71,7 +68,7 @@ func (a *Activities) FetchImageMetadata(ctx context.Context, req *FetchImageMeta
 
 	if extImgCfg.GCPGARImageConfig != nil {
 		l.Debug("fetching GAR credentials for private registry")
-		auth, err := a.getGARAuth(ctx, extImgCfg.GCPGARImageConfig)
+		auth, err := a.getGARAuth(ctx, build.OrgID, extImgCfg.GCPGARImageConfig, extImgCfg.ImageURL)
 		if err != nil {
 			l.Error("unable to get GAR authorization", zap.Error(err))
 			return nil, errors.Wrap(err, "unable to get GAR authorization")
@@ -81,7 +78,7 @@ func (a *Activities) FetchImageMetadata(ctx context.Context, req *FetchImageMeta
 
 	if extImgCfg.AzureACRImageConfig != nil {
 		l.Debug("fetching ACR credentials for private registry")
-		auth, err := a.getACRAuth(ctx, extImgCfg.AzureACRImageConfig, build.ComponentConfigConnection.ComponentID)
+		auth, err := a.getACRAuth(ctx, build.OrgID, extImgCfg.AzureACRImageConfig, extImgCfg.ImageURL, build.ComponentConfigConnection.ComponentID)
 		if err != nil {
 			l.Error("unable to get ACR authorization", zap.Error(err))
 			return nil, errors.Wrap(err, "unable to get ACR authorization")
@@ -121,13 +118,10 @@ func (a *Activities) getComponentBuildWithExternalImageConfig(ctx context.Contex
 	return &bld, nil
 }
 
-// getACRAuth goes through the shared activity rather than calling the token
-// exchange directly, because that is what resolves the app registration's
-// secret out of the AppSecret it is named after. Building a credential from
-// the stored columns alone would authenticate as whatever ambient identity the
-// control plane has, which is none for a vendor's tenant — the metadata fetch
-// would then fail before the build ever got a chance to.
-func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageConfig, componentID string) (*metadata.RegistryAuth, error) {
+func (a *Activities) getACRAuth(ctx context.Context, orgID string, acrCfg *app.AzureACRImageConfig, imageURL, componentID string) (*metadata.RegistryAuth, error) {
+	if acrCfg.UsesCloudConnection() {
+		return a.cloudConnectionsHelpers.ACRAuthorization(ctx, orgID, acrCfg, imageURL)
+	}
 	tok, err := a.sharedActs.GetACRAccessToken(ctx, &sharedactivities.GetACRAccessTokenRequest{
 		ComponentID:           componentID,
 		LoginServer:           acrCfg.RegistryURL,
@@ -147,11 +141,8 @@ func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageCo
 	}, nil
 }
 
-func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConfig) (*metadata.RegistryAuth, error) {
-	tok, err := a.sharedActs.GetGARAccessToken(ctx, &sharedactivities.GetGARAccessTokenRequest{
-		ServiceAccountEmail:      garCfg.ServiceAccountEmail,
-		WorkloadIdentityProvider: garCfg.WorkloadIdentityProvider,
-	})
+func (a *Activities) getGARAuth(ctx context.Context, orgID string, garCfg *app.GCPGARImageConfig, imageURL string) (*metadata.RegistryAuth, error) {
+	tok, err := a.cloudConnectionsHelpers.GARAuthorization(ctx, orgID, garCfg, imageURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get GAR access token")
 	}
@@ -159,31 +150,13 @@ func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConf
 	host := garCfg.GCPRegion + "-docker.pkg.dev"
 	return &metadata.RegistryAuth{
 		ServerAddress: "https://" + host,
-		Username:      tok.Username,
-		Password:      tok.Password,
+		Username:      "oauth2accesstoken",
+		Password:      tok.AccessToken,
 	}, nil
 }
 
-func (a *Activities) getECRAuth(ctx context.Context, ecrCfg *app.AWSECRImageConfig) (*metadata.RegistryAuth, error) {
-	v := validator.New()
-
-	credsCfg := &credentials.Config{
-		Region: ecrCfg.AWSRegion,
-		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     ecrCfg.IAMRoleARN,
-			SessionName: "ctl-api-image-metadata-fetch",
-			UseGCPOIDC:  a.cfg.IsGCP(),
-		},
-	}
-
-	ecrClient, err := ecr.New(v,
-		ecr.WithCredentials(credsCfg),
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create ECR client")
-	}
-
-	auth, err := ecrClient.GetAuthorization(ctx)
+func (a *Activities) getECRAuth(ctx context.Context, orgID string, ecrCfg *app.AWSECRImageConfig, imageURL string) (*metadata.RegistryAuth, error) {
+	auth, err := a.cloudConnectionsHelpers.ECRAuthorization(ctx, orgID, ecrCfg, imageURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get ECR authorization")
 	}

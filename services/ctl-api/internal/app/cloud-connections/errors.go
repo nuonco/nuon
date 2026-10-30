@@ -34,5 +34,9 @@ func VerificationErrorMessage(err error) string {
 	if errors.Is(err, context.Canceled) {
 		return "Verification failed: request canceled"
 	}
-	return "Verification failed: unable to complete the AWS verification request"
+	var azureErr *acrVerificationError
+	if errors.As(err, &azureErr) {
+		return azureErr.Error()
+	}
+	return "Verification failed: unable to complete the cloud verification request"
 }

@@ -8,8 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
-	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/azure/acr"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -78,43 +76,20 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 
 func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
 	if cfg.AWSECRImageConfig != nil {
-		assumeRole := &credentials.AssumeRoleConfig{
-			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
-			SessionName:            "fetch-image-metadata",
-			SessionDurationSeconds: 30 * 60,
-			UseGCPOIDC:             a.cfg.IsGCP(),
-		}
-
-		// Control-plane jobs run as the ctl-api pod identity, which the
-		// vendor's ECR pull role does not trust — vendors grant the Nuon
-		// management account, so hop through the management role first.
-		if a.cfg.IsAWS() && a.cfg.ManagementIAMRoleARN != "" {
-			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
-				IAMRoleARN: a.cfg.ManagementIAMRoleARN,
-			}
-		}
-
 		return &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeECR,
 			Repository:   cfg.ImageURL,
 			Region:       cfg.AWSECRImageConfig.AWSRegion,
-
-			ECRAuth: &credentials.Config{
-				Region:     cfg.AWSECRImageConfig.AWSRegion,
-				AssumeRole: assumeRole,
-			},
 		}, nil
 	}
 
 	if cfg.GCPGARImageConfig != nil {
 		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
 		return &configs.OCIRegistryRepository{
-			RegistryType:             configs.OCIRegistryTypeGAR,
-			Repository:               cfg.ImageURL,
-			Region:                   cfg.GCPGARImageConfig.GCPRegion,
-			LoginServer:              garLoginServer,
-			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
-			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
+			RegistryType: configs.OCIRegistryTypeGAR,
+			Repository:   cfg.ImageURL,
+			Region:       cfg.GCPGARImageConfig.GCPRegion,
+			LoginServer:  garLoginServer,
 		}, nil
 	}
 
@@ -126,6 +101,13 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, 
 			return nil, err
 		}
 
+		if cfg.AzureACRImageConfig.UsesCloudConnection() {
+			return &configs.OCIRegistryRepository{
+				RegistryType: configs.OCIRegistryTypeACR,
+				Repository:   cfg.ImageURL,
+				LoginServer:  cfg.AzureACRImageConfig.RegistryURL,
+			}, nil
+		}
 		acrCfg := &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeACR,
 			Repository:   cfg.ImageURL,

@@ -222,8 +222,7 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 		cfg.Tag = src.Tag
 		cfg.UpdatePolicy = src.UpdatePolicy
 		cfg.AWSECRImageConfig = &app.AWSECRImageConfig{
-			IAMRoleARN: src.IAMRoleARN,
-			AWSRegion:  src.AWSRegion,
+			AWSRegion: src.AWSRegion,
 		}
 	}
 	if src := obj.GCPGARImageConfig; src != nil {
@@ -273,6 +272,17 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 	case 1:
 	default:
 		return nil, errors.New("external_image must specify exactly one of aws_ecr, gcp_gar, azure_acr, or public image source configuration")
+	}
+
+	if obj.AWSECRImageConfig != nil {
+		if err := obj.AWSECRImageConfig.ValidateCredentials(); err != nil {
+			return nil, err
+		}
+	}
+	if obj.GCPGARImageConfig != nil {
+		if err := obj.GCPGARImageConfig.ValidateCredentials(); err != nil {
+			return nil, err
+		}
 	}
 
 	return cfg, nil

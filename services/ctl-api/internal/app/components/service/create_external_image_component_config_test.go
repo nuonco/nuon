@@ -47,15 +47,20 @@ func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigSuccess() {
 func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigWithAWSECR() {
 	s.Run("creates config with AWS ECR image config", func() {
 		comp := s.createComponent(s.testApp.ID, app.ComponentTypeExternalImage)
+		connection := app.CloudConnection{
+			Name: "acme-ecr", Platform: app.CloudPlatformAWS, TargetID: "123456789012",
+			Principal: "arn:aws:iam::123456789012:role/ecr-access", DefaultRegion: "us-west-2",
+			Status: app.CloudConnectionStatusVerified, Preset: app.CloudConnectionPresetECR,
+		}
+		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&connection).Error)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/external-image", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateExternalImageComponentConfigRequest{
-			ImageURL:    "123456789.dkr.ecr.us-west-2.amazonaws.com/my-repo",
+			ImageURL:    "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-repo",
 			Tag:         "v1.0.0",
 			AppConfigID: s.testAppConfig.ID,
 			AWSECRImageConfig: &awsECRImageConfigRequest{
-				IAMRoleARN: "arn:aws:iam::123456789:role/ecr-access",
-				AWSRegion:  "us-west-2",
+				AWSRegion: "us-west-2",
 			},
 		})
 

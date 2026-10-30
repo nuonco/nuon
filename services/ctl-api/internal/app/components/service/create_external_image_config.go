@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/oci/updatepolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
@@ -278,6 +279,9 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		return nil, stderr.NewInvalidRequest(err)
 	}
 	componentConfigConnection.ExternalImageComponentConfig = cfg
+	if err := cloudconnections.ResolveImageConnection(ctx, s.db, parentCmp.OrgID, componentConfigConnection); err != nil {
+		return nil, stderr.NewInvalidRequest(err)
+	}
 
 	if res := s.db.WithContext(ctx).Create(componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create external image component config connection: %w", res.Error)

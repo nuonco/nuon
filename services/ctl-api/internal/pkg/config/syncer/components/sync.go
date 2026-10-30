@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
@@ -171,6 +172,9 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 			Description: err.Error(),
 			Err:         err,
 		}
+	}
+	if err := cloudconnections.ResolveImageConnection(ctx, db, apiComp.OrgID, ccc); err != nil {
+		return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "invalid image repository cloud connection", err)
 	}
 
 	if params.DispatchBuilds {

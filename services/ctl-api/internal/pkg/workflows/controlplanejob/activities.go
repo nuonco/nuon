@@ -25,6 +25,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all"
 	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
@@ -37,14 +38,15 @@ import (
 )
 
 type Activities struct {
-	db               *gorm.DB
-	chDB             *gorm.DB
-	cfg              *internal.Config
-	l                *zap.Logger
-	mw               metrics.Writer
-	blobSvc          blobstore.Service
-	statusActivities *statusactivities.Activities
-	kafka            *kafka.Producer
+	db                      *gorm.DB
+	chDB                    *gorm.DB
+	cfg                     *internal.Config
+	l                       *zap.Logger
+	mw                      metrics.Writer
+	blobSvc                 blobstore.Service
+	statusActivities        *statusactivities.Activities
+	kafka                   *kafka.Producer
+	cloudConnectionsHelpers *cloudconnectionshelpers.Helpers
 }
 
 type ActivityParams struct {
@@ -56,21 +58,23 @@ type ActivityParams struct {
 	L    *zap.Logger
 	MW   metrics.Writer
 
-	BlobSvc          blobstore.Service
-	StatusActivities *statusactivities.Activities
-	Kafka            *kafka.Producer
+	BlobSvc                 blobstore.Service
+	StatusActivities        *statusactivities.Activities
+	Kafka                   *kafka.Producer
+	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
 }
 
 func NewActivities(params ActivityParams) *Activities {
 	return &Activities{
-		db:               params.DB,
-		chDB:             params.CHDB,
-		cfg:              params.Cfg,
-		l:                params.L,
-		mw:               params.MW,
-		blobSvc:          params.BlobSvc,
-		statusActivities: params.StatusActivities,
-		kafka:            params.Kafka,
+		db:                      params.DB,
+		chDB:                    params.CHDB,
+		cfg:                     params.Cfg,
+		l:                       params.L,
+		mw:                      params.MW,
+		blobSvc:                 params.BlobSvc,
+		statusActivities:        params.StatusActivities,
+		kafka:                   params.Kafka,
+		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
 	}
 }
 
@@ -315,6 +319,16 @@ func (a *Activities) GetJobCompositePlan(ctx context.Context, jobID string) (*mo
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if err := a.authorizeECRSource(ctx, jobID, compositePlan); err != nil {
+		return nil, err
+	}
+	if err := a.authorizeGARSource(ctx, jobID, compositePlan); err != nil {
+		return nil, err
+	}
+	if err := a.authorizeACRSource(ctx, jobID, compositePlan); err != nil {
+		return nil, err
 	}
 
 	contents, err := json.Marshal(compositePlan)

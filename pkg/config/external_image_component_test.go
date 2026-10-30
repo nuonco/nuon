@@ -59,7 +59,7 @@ func TestAzureACRConfigValidateCredentials(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "nothing set uses ambient credentials",
+			name: "nothing set uses repository connection matching",
 			cfg:  AzureACRConfig{},
 		},
 		{

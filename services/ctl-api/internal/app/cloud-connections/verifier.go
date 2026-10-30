@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
+	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	stsTypes "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/aws/smithy-go"
@@ -55,6 +56,12 @@ func NewAWSVerifier(issuer *oidcissuer.Issuer, l *zap.Logger) Verifier {
 }
 
 func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
+	if connection.Platform == app.CloudPlatformAzure {
+		return v.verifyACR(ctx, connection, options)
+	}
+	if connection.Platform == app.CloudPlatformGCP {
+		return v.verifyGAR(ctx, connection, options)
+	}
 	if connection.Platform != app.CloudPlatformAWS {
 		return VerificationResult{}, fmt.Errorf("only aws cloud connections are supported")
 	}
@@ -111,6 +118,16 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 			}
 			return VerificationResult{}, fmt.Errorf("probe CloudFormation access: %w", err)
 		}
+	}
+	if connection.Preset == app.CloudConnectionPresetECR {
+		client := ecr.NewFromConfig(assumed)
+		if _, err := client.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{}); err != nil {
+			if IsAccessDenied(err) {
+				return verificationFailure("The role lacks ecr:GetAuthorizationToken. Attach the ECR permissions policy in step 3."), nil
+			}
+			return VerificationResult{}, fmt.Errorf("probe ECR authorization: %w", err)
+		}
+		return VerificationResult{Status: app.CloudConnectionStatusVerified, Message: "AWS role trust, foreign-subject rejection, and ECR token retrieval passed. Cloud IAM controls repository access; component builds check image pull permissions."}, nil
 	}
 	return VerificationResult{Status: app.CloudConnectionStatusVerified, Message: "Cloud connection verified."}, nil
 }
