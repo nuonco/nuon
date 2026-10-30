@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -46,9 +48,15 @@ type ServiceCreateRunnerJobExecutionResultRequest struct {
 	// refs.
 	ResolvedTag string `json:"resolved_tag,omitempty"`
 
+	// source capture
+	SourceCapture *SourceidentityIdentity `json:"source_capture,omitempty"`
+
 	// SourceDigest is the manifest list digest of the resolved source ref.
 	// Used for build dedup against the prior Active build.
 	SourceDigest string `json:"source_digest,omitempty"`
+
+	// source identity
+	SourceIdentity *SourceidentityIdentity `json:"source_identity,omitempty"`
 
 	// SourceImage is the repository portion of SourceRef (no tag/digest).
 	SourceImage string `json:"source_image,omitempty"`
@@ -72,11 +80,133 @@ type ServiceCreateRunnerJobExecutionResultRequest struct {
 
 // Validate validates this service create runner job execution result request
 func (m *ServiceCreateRunnerJobExecutionResultRequest) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateSourceCapture(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSourceIdentity(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this service create runner job execution result request based on context it is used
+func (m *ServiceCreateRunnerJobExecutionResultRequest) validateSourceCapture(formats strfmt.Registry) error {
+	if swag.IsZero(m.SourceCapture) { // not required
+		return nil
+	}
+
+	if m.SourceCapture != nil {
+		if err := m.SourceCapture.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_capture")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_capture")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateRunnerJobExecutionResultRequest) validateSourceIdentity(formats strfmt.Registry) error {
+	if swag.IsZero(m.SourceIdentity) { // not required
+		return nil
+	}
+
+	if m.SourceIdentity != nil {
+		if err := m.SourceIdentity.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_identity")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_identity")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this service create runner job execution result request based on the context it is used
 func (m *ServiceCreateRunnerJobExecutionResultRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateSourceCapture(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSourceIdentity(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceCreateRunnerJobExecutionResultRequest) contextValidateSourceCapture(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SourceCapture != nil {
+
+		if swag.IsZero(m.SourceCapture) { // not required
+			return nil
+		}
+
+		if err := m.SourceCapture.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_capture")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_capture")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateRunnerJobExecutionResultRequest) contextValidateSourceIdentity(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SourceIdentity != nil {
+
+		if swag.IsZero(m.SourceIdentity) { // not required
+			return nil
+		}
+
+		if err := m.SourceIdentity.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_identity")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_identity")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

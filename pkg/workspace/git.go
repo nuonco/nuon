@@ -17,6 +17,7 @@ import (
 
 	github "github.com/nuonco/nuon/pkg/github/repo"
 	"github.com/nuonco/nuon/pkg/rootfs"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 
@@ -86,6 +87,9 @@ func (w *Workspace) clone(ctx context.Context) (retErr error) {
 	}
 
 	coOpts := &git.CheckoutOptions{}
+	if sourceidentity.IsCommit(w.src.Ref) {
+		return sourceidentity.Checkout(ctx, repo, w.src.Ref, auth)
+	}
 
 	// first, if it looks like a commit hash, attempt to check out as a reference
 	if IsCommitHash(w.src.Ref) {

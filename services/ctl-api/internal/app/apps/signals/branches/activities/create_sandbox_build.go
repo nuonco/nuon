@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -19,8 +20,9 @@ type CreateSandboxBuildRequest struct {
 	OrgID              string `json:"org_id" validate:"required"`
 	CreatedByID        string `json:"created_by_id" validate:"required"`
 
-	VCSConnectionCommitID *string `json:"vcs_connection_commit_id"`
-	AppBranchRunID        string  `json:"app_branch_run_id"`
+	VCSConnectionCommitID *string                  `json:"vcs_connection_commit_id"`
+	AppBranchRunID        string                   `json:"app_branch_run_id"`
+	SourceIdentity        *sourceidentity.Identity `json:"source_identity,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -35,6 +37,13 @@ func (a *Activities) CreateSandboxBuild(ctx context.Context, req CreateSandboxBu
 		AppSandboxConfigID: req.AppSandboxConfigID,
 		Status:             app.AppSandboxBuildStatusQueued,
 		StatusDescription:  "queued and waiting for runner",
+		SourceIdentity:     req.SourceIdentity,
+	}
+	if req.SourceIdentity != nil {
+		if err := req.SourceIdentity.Validate(); err != nil {
+			return nil, err
+		}
+		build.Checksum = req.SourceIdentity.ConfigChecksum
 	}
 	if req.VCSConnectionCommitID != nil {
 		build.VCSConnectionCommitID = req.VCSConnectionCommitID

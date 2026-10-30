@@ -21,6 +21,11 @@ type FS struct {
 	close func() error
 }
 
+type Link struct {
+	Path, Target string
+	Absolute     bool
+}
+
 // New pins an OS source root or scopes an in-memory filesystem. Other backends
 // must already be confined and explicitly borrowed with From.
 func New(fs afero.Fs, root string) (*FS, error) {
@@ -140,6 +145,24 @@ func (f *FS) Resolve(name string) (string, error) {
 		return "", err
 	}
 	return resolve(f.fs, ".", rel, f.root, f.base)
+}
+
+func (f *FS) ResolveWithLinks(name string) (string, []Link, error) {
+	return f.ResolveWithin(".", name)
+}
+
+func (f *FS) ResolveWithin(root, name string) (string, []Link, error) {
+	rel, err := f.Relative(name)
+	if err != nil {
+		return "", nil, err
+	}
+	scope, err := f.Resolve(root)
+	if err != nil {
+		return "", nil, err
+	}
+	var links []Link
+	resolved, err := resolveTrace(f.fs, scope, rel, &links, f.root, f.base)
+	return resolved, links, err
 }
 
 func (f *FS) Lstat(name string) (os.FileInfo, error) {
@@ -312,6 +335,10 @@ func readlink(fs afero.Fs, name string) (string, error) {
 }
 
 func resolve(fs afero.Fs, root, name string, absoluteRoots ...string) (string, error) {
+	return resolveTrace(fs, root, name, nil, absoluteRoots...)
+}
+
+func resolveTrace(fs afero.Fs, root, name string, links *[]Link, absoluteRoots ...string) (string, error) {
 	if !within(root, name) {
 		return "", fmt.Errorf("source path escapes repository: %s", name)
 	}
@@ -352,7 +379,8 @@ func resolve(fs afero.Fs, root, name string, absoluteRoots ...string) (string, e
 			if err != nil {
 				return "", err
 			}
-			if filepath.IsAbs(target) {
+			absolute := filepath.IsAbs(target)
+			if absolute {
 				matched := false
 				for _, absoluteRoot := range absoluteRoots {
 					boundary := root
@@ -371,6 +399,13 @@ func resolve(fs afero.Fs, root, name string, absoluteRoots ...string) (string, e
 					return "", fmt.Errorf("source symlink escapes repository: %s", next)
 				}
 				resolved = root
+			}
+			if links != nil {
+				linkPath, err := filepath.Rel(root, next)
+				if err != nil {
+					return "", err
+				}
+				*links = append(*links, Link{Path: filepath.ToSlash(linkPath), Target: filepath.ToSlash(target), Absolute: absolute})
 			}
 			pending = append(strings.Split(target, string(filepath.Separator)), pending...)
 			continue

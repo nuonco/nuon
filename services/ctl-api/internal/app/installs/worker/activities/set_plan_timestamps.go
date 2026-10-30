@@ -76,8 +76,17 @@ func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployApplie
 				ExpectedConfigID: installComponent.AppConfigRef.ExpectedConfigID,
 			}
 		default:
-			appConfigID := ""
-			if deploy.ComponentBuild != nil {
+			appConfigID := deploy.AppConfigID
+			if appConfigID == "" && deploy.InstallWorkflowID != nil {
+				var flow app.Workflow
+				if err := tx.WithContext(ctx).Where(app.Workflow{ID: *deploy.InstallWorkflowID}).First(&flow).Error; err != nil {
+					return fmt.Errorf("unable to get deploy workflow: %w", err)
+				}
+				if flow.Type == app.WorkflowTypeAppBranchConfigUpdate && flow.Metadata["new_app_config_id"] != nil {
+					appConfigID = *flow.Metadata["new_app_config_id"]
+				}
+			}
+			if appConfigID == "" && deploy.ComponentBuild != nil {
 				appConfigID = deploy.ComponentBuild.ComponentConfigConnection.AppConfigID
 			}
 			if appConfigID == "" {

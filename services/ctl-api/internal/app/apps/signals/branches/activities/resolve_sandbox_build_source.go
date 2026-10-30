@@ -9,8 +9,10 @@ import (
 	"gorm.io/gorm"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/vcserrors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
@@ -45,84 +47,48 @@ type ResolveSandboxBuildSourceInput struct {
 }
 
 type ResolveSandboxBuildSourceOutput struct {
-	SandboxConfig         *app.AppSandboxConfig `json:"sandbox_config,omitempty"`
-	GitSource             *plantypes.GitSource  `json:"git_source,omitempty"`
-	VCSConnectionCommitID *string               `json:"vcs_connection_commit_id,omitempty"`
-	Skipped               bool                  `json:"skipped,omitempty"`
+	SandboxConfig         *app.AppSandboxConfig    `json:"sandbox_config,omitempty"`
+	GitSource             *plantypes.GitSource     `json:"git_source,omitempty"`
+	VCSConnectionCommitID *string                  `json:"vcs_connection_commit_id,omitempty"`
+	SourceIdentity        *sourceidentity.Identity `json:"source_identity,omitempty"`
+	Skipped               bool                     `json:"skipped,omitempty"`
 }
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 1m
+// @start-to-close-timeout 5m
 func (a *Activities) ResolveSandboxBuildSource(ctx context.Context, input *ResolveSandboxBuildSourceInput) (*ResolveSandboxBuildSourceOutput, error) {
 	sandboxConfig, err := a.getAppSandboxConfigByAppConfigID(ctx, input.AppConfigID)
 	if err != nil {
-		return &ResolveSandboxBuildSourceOutput{Skipped: true}, nil
-	}
-
-	sandboxRepo, sandboxVCSID := sandboxConfigRepo(sandboxConfig)
-
-	gitSource, err := a.GetSandboxBuildGitSource(ctx, GetSandboxBuildGitSourceRequest{
-		SandboxConfigID: sandboxConfig.ID,
-	})
-	if err != nil {
-		if vcserrors.IsGitRefNotFound(err) {
-			return nil, a.failSandboxBuildSource(ctx, input.BuildID, sandboxRepo, sandboxConfigBranch(sandboxConfig), err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &ResolveSandboxBuildSourceOutput{Skipped: true}, nil
 		}
-		return nil, fmt.Errorf("unable to get sandbox build git source: %w", err)
+		return nil, err
 	}
-
-	out := &ResolveSandboxBuildSourceOutput{
-		SandboxConfig: sandboxConfig,
-		GitSource:     gitSource,
-	}
-
+	build := app.AppSandboxBuild{AppSandboxConfig: *sandboxConfig}
 	if input.RunID != "" {
-		run, err := a.getAppBranchRunByID(ctx, input.RunID)
+		build.AppBranchRunID = &input.RunID
+	}
+	if input.BuildID != "" {
+		if err := a.db.WithContext(ctx).Preload("VCSConnectionCommit").Where(app.AppSandboxBuild{ID: input.BuildID}).First(&build).Error; err != nil {
+			return nil, err
+		}
+		build.AppSandboxConfig = *sandboxConfig
+	}
+	identity, err := buildsource.Sandbox(ctx, a.db, a.vcsHelpers, &build)
+	if err != nil {
+		return nil, err
+	}
+	if input.BuildID != "" {
+		identity, err = buildsource.SaveSandbox(ctx, a.db, input.BuildID, identity)
 		if err != nil {
 			return nil, err
 		}
-
-		branchRepo := ""
-		if run.AppBranchConfig.ConnectedGithubVCSConfig != nil {
-			branchRepo = run.AppBranchConfig.ConnectedGithubVCSConfig.Repo
-		} else if run.AppBranchConfig.PublicGitVCSConfig != nil {
-			branchRepo = run.AppBranchConfig.PublicGitVCSConfig.Repo
-		}
-
-		if repoURLsEqual(sandboxRepo, branchRepo) {
-			if run.VCSConnectionCommit != nil && run.VCSConnectionCommit.SHA != "" {
-				gitSource.Ref = run.VCSConnectionCommit.SHA
-				out.VCSConnectionCommitID = &run.VCSConnectionCommit.ID
-			} else if run.HeadSHA != "" {
-				gitSource.Ref = run.HeadSHA
-				if run.VCSConnectionCommitID != nil {
-					out.VCSConnectionCommitID = run.VCSConnectionCommitID
-				}
-			}
-			return out, a.attachSandboxBuildCommit(ctx, input.BuildID, out.VCSConnectionCommitID)
-		}
 	}
-
-	if sandboxVCSID == "" || gitSource.Ref == "" {
-		return out, nil
+	src, err := buildsource.GitSource(ctx, a.vcsHelpers, sandboxConfig.ConnectedGithubVCSConfig, sandboxConfig.PublicGitVCSConfig, identity)
+	if err != nil {
+		return nil, err
 	}
-
-	commit, fetchErr := a.FetchCommitBySHA(ctx, &FetchCommitBySHAInput{
-		VcsConfigID: sandboxVCSID,
-		SHA:         gitSource.Ref,
-	})
-	if fetchErr != nil {
-		if vcserrors.IsGitRefNotFound(fetchErr) {
-			return nil, a.failSandboxBuildSource(ctx, input.BuildID, sandboxRepo, gitSource.Ref, fetchErr)
-		}
-		return nil, fmt.Errorf("unable to fetch sandbox repo commit: %w", fetchErr)
-	}
-	if err := a.db.WithContext(ctx).Create(commit).Error; err != nil {
-		return nil, fmt.Errorf("unable to persist sandbox commit: %w", err)
-	}
-	gitSource.Ref = commit.SHA
-	out.VCSConnectionCommitID = &commit.ID
-	return out, a.attachSandboxBuildCommit(ctx, input.BuildID, out.VCSConnectionCommitID)
+	return &ResolveSandboxBuildSourceOutput{SandboxConfig: sandboxConfig, GitSource: src, SourceIdentity: identity, VCSConnectionCommitID: build.VCSConnectionCommitID}, nil
 }
 
 func SandboxSourceFailureDescription(err error) string {

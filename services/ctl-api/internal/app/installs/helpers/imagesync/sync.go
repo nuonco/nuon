@@ -142,6 +142,12 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 		return errors.Wrap(err, "unable to create oci artifact")
 	}
 
+	if workflow.GetVersion(ctx, "image-sync-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{DeployID: installDeploy.ID}); err != nil {
+			return errors.Wrap(err, "unable to record applied image sync")
+		}
+	}
+
 	return nil
 }
 

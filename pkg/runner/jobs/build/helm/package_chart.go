@@ -12,10 +12,17 @@ import (
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
+
+	"github.com/nuonco/nuon/pkg/runner/jobs/buildinputs"
+	"github.com/nuonco/nuon/pkg/sourcefs"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 )
 
 func (h *handler) packageChart(ctx context.Context, l *zap.Logger) (string, error) {
 	if h.state.plan.Src != nil && h.state.plan.Src.URL != "" {
+		if err := buildinputs.Verify(h.state.plan, h.state.source); err != nil {
+			return "", err
+		}
 		return h.loadAndPackageChart(ctx, l, h.state.workspace.Source().AbsPath())
 	}
 	return h.packageChartFromRepoConfig(ctx, l)
@@ -25,9 +32,26 @@ func (h *handler) packageChartFromRepoConfig(ctx context.Context, l *zap.Logger)
 	cfg := h.state.cfg.HelmRepoConfig
 	client := newChartRepositoryClient()
 	defer client.CloseIdleConnections()
-	data, err := fetchRepositoryChart(ctx, client, cfg.RepoURL, cfg.Chart, cfg.Version)
+	version := cfg.Version
+	if expected := h.state.plan.SourceIdentity; expected != nil && expected.Captured && expected.ChartVersion != "" {
+		version = expected.ChartVersion
+	}
+	data, err := fetchRepositoryChart(ctx, client, cfg.RepoURL, cfg.Chart, version)
 	if err != nil {
 		return "", fmt.Errorf("unable to pull helm chart: %w", err)
+	}
+	if expected := h.state.plan.SourceIdentity; expected != nil {
+		captured, err := capturePulledChart(data, expected)
+		if err != nil {
+			return "", err
+		}
+		if expected.Captured && !sourceidentity.Matches(expected, captured) {
+			return "", fmt.Errorf("remote chart differs from captured source")
+		}
+		if err := buildinputs.Claim(ctx, h.apiClient, h.state.jobID, h.state.jobExecutionID, captured); err != nil {
+			return "", err
+		}
+		h.state.plan.SourceIdentity = captured
 	}
 	h.state.chart, err = publishPulledChart(h.state.arch.FS(), data)
 	if err != nil {
@@ -36,6 +60,31 @@ func (h *handler) packageChartFromRepoConfig(ctx context.Context, l *zap.Logger)
 	packagePath := filepath.Join(h.state.arch.BasePath(), defaultChartPackageFilename)
 	l.Info("published pulled chart", zap.String("path", packagePath))
 	return packagePath, nil
+}
+
+func capturePulledChart(data []byte, expected *sourceidentity.Identity) (*sourceidentity.Identity, error) {
+	files, err := chartArchiveFiles(bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("invalid pulled chart: %w", err)
+	}
+	chart, err := loadChartFiles(files)
+	if err != nil {
+		return nil, fmt.Errorf("invalid pulled chart: %w", err)
+	}
+	fs := afero.NewMemMapFs()
+	for _, file := range files {
+		if err := afero.WriteFile(fs, filepath.Join("/chart", filepath.FromSlash(file.Name)), file.Data, 0600); err != nil {
+			return nil, err
+		}
+	}
+	source, err := sourcefs.New(fs, "/chart")
+	if err != nil {
+		return nil, err
+	}
+	defer source.Close()
+	selected := *expected
+	selected.ChartVersion = chart.Metadata.Version
+	return sourceidentity.Capture(source, &selected)
 }
 
 // A pulled chart is already packaged with its dependencies vendored, and its

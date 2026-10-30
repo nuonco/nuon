@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/plans"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/jobs/buildinputs"
 	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/runner/registry"
 )
@@ -60,7 +61,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	l.Info("writing job result")
 	resultReq := registry.ToAPIResult(res)
 	h.appendPolicyInputToResult(ctx, l, resultReq)
-	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {
+	if err := buildinputs.Report(ctx, h.apiClient, job.ID, jobExecution.ID, resultReq, h.state.plan.SourceIdentity); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}
 	return nil

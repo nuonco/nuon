@@ -1,10 +1,14 @@
 package helpers
 
 import (
+	"time"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/google/go-github/v50/github"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -31,6 +35,8 @@ type Helpers struct {
 	l             *zap.Logger
 	queueClient   *queueclient.Client
 	emitterClient *emitterclient.Client
+	sourceTrees   *expirable.LRU[string, *github.Tree]
+	sourceFetches singleflight.Group
 }
 
 func New(params Params) *Helpers {
@@ -41,6 +47,7 @@ func New(params Params) *Helpers {
 		l:             params.L,
 		queueClient:   params.QueueClient,
 		emitterClient: params.EmitterClient,
+		sourceTrees:   expirable.NewLRU[string, *github.Tree](16, nil, 5*time.Minute),
 	}
 }
 
