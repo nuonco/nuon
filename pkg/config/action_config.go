@@ -87,7 +87,7 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("bucket-operations-break-glass").
 		Example("database-migration-break-glass").
 		Field("role").Short("role name for action execution").
-		Long("A custom or break glass role in the install stack. If not set, operation_roles rules apply, then the default role. If the role is off, the default role is used").
+		Long("An operation or break glass role in the install stack. If not set, operation_roles rules apply, then the default role. If the role is off, the default role is used").
 		Example("{{.nuon.install.id}}-maintenance").
 		Field("is_healthcheck").Short("whether this action is an install health check").
 		Long("When true, the install health view lists this action and a failed run marks the install unhealthy. Defaults to false").
