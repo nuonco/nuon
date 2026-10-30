@@ -97,23 +97,32 @@ export const PolicyReportsTable = ({
         accessorFn: (row) => row.report?.status?.status ?? '',
         header: 'Status',
         enableSorting: false,
-        cell: ({ row }) => (
-          <Status
-            variant="badge"
-            status={row.original.report?.status?.status ?? 'unknown'}
-          />
-        ),
+        cell: ({ row }) =>
+          row.original.report?.status?.metadata?.resolved_action ===
+          'skip_apply' ? (
+            <Badge theme="neutral" size="sm">
+              Skip apply
+            </Badge>
+          ) : (
+            <Status
+              variant="badge"
+              status={row.original.report?.status?.status ?? 'unknown'}
+            />
+          ),
       },
       {
         id: 'violations',
         accessorFn: (row) =>
           (row.report?.deny_count ?? 0) * 1000 + (row.report?.warn_count ?? 0),
-        header: 'Violations',
+        header: 'Findings',
         cell: ({ row }) => {
           const denyCount = row.original.report?.deny_count ?? 0
           const warnCount = row.original.report?.warn_count ?? 0
+          const skipCount = Number(
+            row.original.report?.status?.metadata?.skip_count ?? 0
+          )
 
-          if (!denyCount && !warnCount) {
+          if (!denyCount && !warnCount && !skipCount) {
             return (
               <Text variant="subtext" theme="neutral">
                 None
@@ -131,6 +140,11 @@ export const PolicyReportsTable = ({
               {warnCount ? (
                 <Badge size="sm" theme="warn">
                   {warnCount} warning{warnCount === 1 ? '' : 's'}
+                </Badge>
+              ) : null}
+              {skipCount ? (
+                <Badge size="sm" theme="neutral">
+                  {skipCount} skip finding{skipCount === 1 ? '' : 's'}
                 </Badge>
               ) : null}
             </span>

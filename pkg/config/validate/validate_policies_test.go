@@ -60,6 +60,33 @@ func TestValidatePolicyType(t *testing.T) {
 	}
 }
 
+func TestSkipApplyPolicyScope(t *testing.T) {
+	contents := `package nuon.checks
+import data.nuon.lib.check
+# METADATA
+# custom:
+#   action: skip_apply
+check_defer contains check.finding("defer replacement") if { input.replace }
+`
+	for _, policyType := range []config.AppPolicyType{
+		config.AppPolicyTypeTerraformModule, config.AppPolicyTypeSandbox,
+		config.AppPolicyTypeHelmChart, config.AppPolicyTypeContainerImage,
+	} {
+		for _, teardown := range []*bool{nil, new(true), new(false)} {
+			cfg := &config.AppConfig{Policies: &config.PoliciesConfig{Policies: []config.AppPolicy{{
+				Type: policyType, Engine: config.AppPolicyEngineOPA,
+				Contents: contents, ApplyOnTeardown: teardown,
+			}}}}
+			err := ValidatePolicies(cfg)
+			if policyType == config.AppPolicyTypeTerraformModule || policyType == config.AppPolicyTypeSandbox {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, "skip_apply is only supported for terraform_module")
+			}
+		}
+	}
+}
+
 func TestValidatePolicyEngine(t *testing.T) {
 	tests := map[string]struct {
 		input    config.AppPolicyEngine
