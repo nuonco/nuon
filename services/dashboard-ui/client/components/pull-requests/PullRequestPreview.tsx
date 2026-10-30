@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import '@/components/common/LabelBadge.css'
@@ -16,6 +15,7 @@ import { DetailPage } from '@/components/layout/DetailPage'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { OverviewLoadingTrack } from '@/components/branches/BranchOverview/OverviewLoadingTrack'
 import {
+  buildComponentsStep,
   buildOverviewLoadingStages,
   preRolloutCompositeError,
   type TPreviewProgress,
@@ -26,6 +26,10 @@ import {
 } from '@/components/branches/shared/step-status'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
 import { previewConfigStatus } from '@/components/pull-requests/map-pull-request'
+import {
+  PreviewRunProgress,
+  type TPreviewRunBuild,
+} from '@/components/pull-requests/PreviewRunProgress'
 import type {
   TAppBranchPreviewConfig,
   TAppBranchRun,
@@ -104,36 +108,6 @@ const runContextSentence = ({
     : `${base}. This is the branch default.`
 }
 
-const NARRATION_FADE_MS = 150
-
-const StepNarration = ({ text }: { text?: string }) => {
-  const [shown, setShown] = useState(text)
-  const [visible, setVisible] = useState(!!text)
-
-  useEffect(() => {
-    if (text === shown) return
-    setVisible(false)
-    const swap = setTimeout(() => {
-      setShown(text)
-      setVisible(!!text)
-    }, NARRATION_FADE_MS)
-    return () => clearTimeout(swap)
-  }, [text, shown])
-
-  if (!shown) return null
-
-  return (
-    <Text
-      variant="subtext"
-      theme="neutral"
-      className="transition-opacity duration-150 motion-reduce:transition-none"
-      style={{ opacity: visible ? 1 : 0 }}
-    >
-      {shown}
-    </Text>
-  )
-}
-
 export interface IPullRequestPreview {
   source?: TPreviewSourcePR
   workflows?: TInstallWorkflow[]
@@ -141,6 +115,8 @@ export interface IPullRequestPreview {
   baseRef?: string
   branchConfig?: TAppBranchPreviewConfig
   basePath: string
+  orgId?: string
+  appId?: string
   backLink?: ReactNode
   changes?: ReactNode
   isLoading?: boolean
@@ -155,6 +131,8 @@ export const PullRequestPreview = ({
   baseRef,
   branchConfig,
   basePath,
+  orgId,
+  appId,
   backLink,
   changes,
   isLoading = false,
@@ -179,6 +157,13 @@ export const PullRequestPreview = ({
   const failure = latest
     ? previewRunFailure(steps, latestRun?.composite_error)
     : undefined
+  const running = !!latest && !latest.finished && !failure
+  const diffReady =
+    stages.find((stage) => stage.id === 'build-components')?.status ===
+    'success'
+  const buildMetadata = buildComponentsStep(steps)?.status?.metadata as
+    | { builds?: TPreviewRunBuild[]; sandbox_build_id?: string }
+    | undefined
 
   return (
     <DetailPage
@@ -307,14 +292,6 @@ export const PullRequestPreview = ({
               ) : null}
             </div>
 
-            <StepNarration
-              text={
-                latest && !latest.finished
-                  ? latest.status?.status_human_description
-                  : undefined
-              }
-            />
-
             {failure ? <CompositeError error={failure} /> : null}
 
             {stale ? (
@@ -344,7 +321,23 @@ export const PullRequestPreview = ({
           </div>
         )}
 
-        {changes}
+        {running ? (
+          <div className="flex flex-1 flex-col items-center justify-center py-12">
+            <PreviewRunProgress
+              stages={stages}
+              description={latest?.status?.status_human_description}
+              builds={buildMetadata?.builds}
+              sandboxBuildId={buildMetadata?.sandbox_build_id}
+              sha={sha}
+              baseRef={baseRef}
+              install={install}
+              orgId={orgId}
+              appId={appId}
+            />
+          </div>
+        ) : null}
+
+        {!running || diffReady ? changes : null}
 
         {workflows.length > 1 ? (
           <div className="flex flex-col gap-2">
