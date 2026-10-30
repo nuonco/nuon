@@ -20,6 +20,8 @@ type PrincipalGrants struct {
 	Grants []permissions.ScopedPermissions
 }
 
+var errNoScopedGrants = errors.New("account has no valid role binding in the selected tenant")
+
 func (c *Client) LoadScopedGrants(ctx context.Context, accountID, orgID string) (PrincipalGrants, error) {
 	var result PrincipalGrants
 	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -117,7 +119,7 @@ func loadScopedGrants(db *gorm.DB, accountID, orgID string) (PrincipalGrants, er
 		result.Grants = append(result.Grants, grants...)
 	}
 	if result.API == "" {
-		return PrincipalGrants{}, fmt.Errorf("account has no valid role binding in the selected tenant")
+		return PrincipalGrants{}, errNoScopedGrants
 	}
 	return result, nil
 }

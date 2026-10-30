@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -56,6 +57,45 @@ func resolveTenantTarget(db *gorm.DB, scope permissions.Scope) (permissions.Reso
 			return permissions.ResolvedTarget{}, err
 		}
 		target.AppID, target.InstallID = parent.AppID, scope.ID
+		return target, nil
+	case permissions.KindRunner:
+		var runner struct{ RunnerGroupID string }
+		if err := db.Model(&app.Runner{}).Select("runner_group_id").
+			Where(app.Runner{ID: scope.ID, OrgID: scope.OrgID}).Take(&runner).Error; err != nil {
+			return permissions.ResolvedTarget{}, fmt.Errorf("resolve runner group: %w", err)
+		}
+		if runner.RunnerGroupID == "" {
+			return permissions.ResolvedTarget{}, fmt.Errorf("runner requires a group")
+		}
+		var group struct {
+			OwnerID, OwnerType string
+			Type               app.RunnerGroupType
+		}
+		if err := db.Model(&app.RunnerGroup{}).Select("owner_id", "owner_type", "type").
+			Where(app.RunnerGroup{ID: runner.RunnerGroupID, OrgID: scope.OrgID}).Take(&group).Error; err != nil {
+			return permissions.ResolvedTarget{}, fmt.Errorf("resolve runner group owner: %w", err)
+		}
+		if group.Type != app.RunnerGroupTypeInstall || group.OwnerType != plugins.TableName(db, app.Install{}) {
+			return permissions.ResolvedTarget{}, fmt.Errorf("runner requires an install-owned group")
+		}
+		parent, err := resolveTarget(db, permissions.Scope{Kind: permissions.KindInstall, OrgID: scope.OrgID, ID: group.OwnerID})
+		if err != nil {
+			return permissions.ResolvedTarget{}, err
+		}
+		target.AppID, target.InstallID = parent.AppID, parent.InstallID
+		return target, nil
+	case permissions.KindRunnerJob, permissions.KindLogStream:
+		var parent permissions.ResolvedTarget
+		var err error
+		if scope.Kind == permissions.KindRunnerJob {
+			parent, err = resolveJobOwner(db, scope.OrgID, scope.ID)
+		} else {
+			parent, err = resolveLogStreamOwner(db, scope.OrgID, scope.ID)
+		}
+		if err != nil {
+			return permissions.ResolvedTarget{}, err
+		}
+		target.AppID, target.InstallID = parent.AppID, parent.InstallID
 		return target, nil
 	case permissions.KindPhoneHome:
 		var version struct{ InstallID, InstallStackID string }

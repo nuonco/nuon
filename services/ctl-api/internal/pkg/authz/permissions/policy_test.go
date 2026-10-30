@@ -29,6 +29,15 @@ func TestPolicyCompilation(t *testing.T) {
 			bundle, org.ID, app,
 			[]p.ScopedPermissions{{Scope: app, Permissions: p.PermissionSet{p.AppRead: {}, p.LogStreamRead: {}}}}, false,
 		},
+		"telemetry bot bundle retains read and ingestion at its install": {
+			`{"kind":"bundle","api":"ctl-api","binding_kind":"install","permissions":["telemetry.read","telemetry.write"]}`,
+			org.ID, p.Scope{Kind: p.KindInstall, OrgID: org.ID, ID: "install_one"},
+			[]p.ScopedPermissions{{Scope: p.Scope{Kind: p.KindInstall, OrgID: org.ID, ID: "install_one"}, Permissions: p.PermissionSet{p.TelemetryRead: {}, p.TelemetryWrite: {}}}}, false,
+		},
+		"protocol permission is not excluded from bundles": {
+			`{"kind":"bundle","api":"ctl-api","binding_kind":"org","permissions":["runner_job.claim"]}`, org.ID, org,
+			[]p.ScopedPermissions{{Scope: org, Permissions: p.PermissionSet{p.RunnerJobClaim: {}}}}, false,
+		},
 		"workload keeps permission resource pairs": {
 			workload, org.ID, org,
 			[]p.ScopedPermissions{
@@ -85,6 +94,37 @@ func TestPolicyCompilation(t *testing.T) {
 	}
 }
 
+func TestTelemetryBundleRespectsScopeAndCeiling(t *testing.T) {
+	policy, err := p.DecodePolicy(3, []byte(`{"kind":"bundle","api":"ctl-api","binding_kind":"install","permissions":["telemetry.read","telemetry.write"]}`))
+	require.NoError(t, err)
+	grants, err := policy.Compile("org_acme", p.Scope{Kind: p.KindInstall, OrgID: "org_acme", ID: "install_one"})
+	require.NoError(t, err)
+	for name, tc := range map[string]struct {
+		permission p.PermissionID
+		orgID      string
+		installID  string
+		ceiling    p.PermissionSet
+		want       p.PermissionMatch
+	}{
+		"read":                     {p.TelemetryRead, "org_acme", "install_one", p.PermissionSet{p.TelemetryRead: {}}, p.PermissionMatch{Matched: true, Reason: p.ReasonMatched}},
+		"ingest":                   {p.TelemetryWrite, "org_acme", "install_one", p.PermissionSet{p.TelemetryWrite: {}}, p.PermissionMatch{Matched: true, Reason: p.ReasonMatched}},
+		"sibling install":          {p.TelemetryWrite, "org_acme", "install_two", p.PermissionSet{p.TelemetryWrite: {}}, p.PermissionMatch{Reason: p.ReasonNoGrant}},
+		"other tenant":             {p.TelemetryWrite, "org_other", "install_one", p.PermissionSet{p.TelemetryWrite: {}}, p.PermissionMatch{Reason: p.ReasonNoGrant}},
+		"read-only credential":     {p.TelemetryWrite, "org_acme", "install_one", p.PermissionSet{p.TelemetryRead: {}}, p.PermissionMatch{Reason: p.ReasonCeilingExceeded}},
+		"no implied config access": {p.TelemetryConfigRead, "org_acme", "install_one", p.PermissionSet{p.TelemetryConfigRead: {}}, p.PermissionMatch{Reason: p.ReasonNoGrant}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			got := p.MatchPermissions(p.PermissionCheck{
+				Permission: tc.permission,
+				Target:     p.ResolvedTarget{Scope: p.Scope{Kind: p.KindTelemetry, OrgID: tc.orgID, ID: tc.installID}, AppID: "app_one", InstallID: tc.installID},
+				Grants:     grants,
+				Ceiling:    []p.ScopedPermissions{{Scope: p.Scope{Kind: p.KindOrg, OrgID: tc.orgID, ID: tc.orgID}, Permissions: tc.ceiling}},
+			})
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func TestPolicyRejectsInvalidDocuments(t *testing.T) {
 	tests := map[string]struct{ doc string }{
 		"null":                         {`null`},
@@ -96,7 +136,6 @@ func TestPolicyRejectsInvalidDocuments(t *testing.T) {
 		"space separated string":       {`{"kind":"bundle","api":"ctl-api","binding_kind":"org","permissions":"app.read install.read"}`},
 		"unknown permission":           {`{"kind":"bundle","api":"ctl-api","binding_kind":"org","permissions":["app.read","app.future"]}`},
 		"legacy all":                   {`{"kind":"bundle","api":"ctl-api","binding_kind":"org","permissions":["all"]}`},
-		"protocol bundle":              {`{"kind":"bundle","api":"ctl-api","binding_kind":"org","permissions":["runner_job.claim"]}`},
 		"wrong bundle api":             {`{"kind":"bundle","api":"runner","binding_kind":"org","permissions":[]}`},
 		"unknown binding kind":         {`{"kind":"bundle","api":"ctl-api","binding_kind":"runner","permissions":[]}`},
 		"unknown field":                {`{"kind":"bundle","api":"ctl-api","binding_kind":"org","permissions":[],"skip_tenant_check":true}`},

@@ -30,14 +30,13 @@ type PermissionMatch struct {
 }
 
 func MatchPermissions(input PermissionCheck) PermissionMatch {
-	kind := input.Permission.resourceKind()
-	if kind == "" {
+	if _, err := ParsePermissionID(string(input.Permission)); err != nil {
 		return PermissionMatch{Reason: ReasonInvalidPermission}
 	}
 	if err := input.Target.ValidateShape(); err != nil {
 		return PermissionMatch{Reason: ReasonInvalidTarget}
 	}
-	if !input.Permission.appliesTo(input.Target.Kind) {
+	if !input.Permission.AppliesTo(input.Target.Kind) {
 		return PermissionMatch{Reason: ReasonInvalidTarget}
 	}
 	if !validGrants(input.Grants) {
@@ -61,7 +60,7 @@ func validGrants(grants []ScopedPermissions) bool {
 			return false
 		}
 		for permission := range grant.Permissions {
-			if permission.resourceKind() == "" {
+			if _, err := ParsePermissionID(string(permission)); err != nil {
 				return false
 			}
 		}
