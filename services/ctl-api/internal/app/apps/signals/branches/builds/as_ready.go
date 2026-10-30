@@ -17,7 +17,7 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-const componentSelectionConcurrency = 5
+const componentSelectionConcurrency = 10
 
 func (s *Signal) buildsAsReady(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID, previousAppConfigID string, force bool) ([]buildEntry, error) {
 	builds := make([]buildEntry, len(appConfig.ComponentIDs)+1)
@@ -90,7 +90,11 @@ func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []
 
 	next, completed := 0, 0
 	selectionErrors := make([]error, len(builds))
-	workers := min(componentSelectionConcurrency, len(builds))
+	concurrency := componentSelectionConcurrency
+	if workflow.GetVersion(ctx, "component-selection-concurrency-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		concurrency = 5
+	}
+	workers := min(concurrency, len(builds))
 	for range workers {
 		workflow.Go(ctx, func(ctx workflow.Context) {
 			defer func() { completed++ }()
