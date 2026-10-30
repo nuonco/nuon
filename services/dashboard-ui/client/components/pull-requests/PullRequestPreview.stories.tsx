@@ -349,6 +349,17 @@ const mockDiff: DiffSectionData[] = [
           { key: 'chart_version', op: 'change', diff: "'2.3.0' -> '2.4.1'" },
         ],
       },
+      ...['billing', 'ledger', 'notifier', 'scheduler', 'webhook-relay'].map(
+        (name) => ({
+          name,
+          op: 'change' as const,
+          componentType: 'terraform_module' as const,
+          fields: [
+            { key: 'timeout', op: 'change' as const, diff: "'5m' -> '10m'" },
+            { key: 'retries', op: 'change' as const, diff: "'1' -> '3'" },
+          ],
+        })
+      ),
     ],
   },
   {
