@@ -41,17 +41,16 @@ const TERMINAL = new Set(['success', 'failed', 'error', 'cancelled'])
 const installRolloutDetail = (
   install: NonNullable<TInstallGroupRun['installs']>[number]
 ) => {
+  switch (install.release_reason) {
+    case 'runner_offline':
+      return 'Runner offline'
+    case 'runner_error':
+      return 'Runner error'
+    case 'runner_disabled':
+      return 'Runner disabled'
+  }
   if (install.status === 'pending_customer') {
-    switch (install.release_reason) {
-      case 'runner_offline':
-        return 'Runner offline'
-      case 'runner_error':
-        return 'Runner error'
-      case 'runner_disabled':
-        return 'Runner disabled'
-      default:
-        return 'Waiting on customer'
-    }
+    return 'Waiting on customer'
   }
   if (install.status === 'queued') {
     return install.waiting_on_run_id
