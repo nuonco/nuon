@@ -1,8 +1,6 @@
 package http
 
 import (
-	nethttp "net/http"
-
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/pkg/terraform/backend"
@@ -28,12 +26,6 @@ type http struct {
 	v *validator.Validate
 
 	Config *NuonWorkspaceConfig `validate:"required"`
-
-	// localBase is the localhost proxy address written into backend.json.
-	// The runner token stays on the proxy and never lands in the workspace.
-	localBase  string
-	srv        *nethttp.Server
-	httpClient *nethttp.Client
 }
 
 var _ backend.Backend = (*http)(nil)
