@@ -48,9 +48,7 @@ func (s *componentBuildsSuite) SetupTest() {
 	s.orgID = org.ID
 
 	// add a vcs connection to the org
-	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
-	_, err = s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
-	require.Nil(s.T(), err)
+	s.createVCSConnection(org.ID, *generics.GetFakeObj[*string]())
 
 	// create an app
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
