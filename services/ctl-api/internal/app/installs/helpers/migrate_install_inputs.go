@@ -17,7 +17,6 @@ import (
 // match, drops fields removed in new config.
 func (h *Helpers) MigrateInstallInputsToNewConfig(
 	ctx context.Context,
-	txn *gorm.DB,
 	installConfigMap map[string]string, // installID -> old appConfigID
 	newAppConfigID string,
 ) error {
@@ -26,7 +25,7 @@ func (h *Helpers) MigrateInstallInputsToNewConfig(
 	}
 
 	var newAppConfig app.AppConfig
-	res := txn.WithContext(ctx).
+	res := h.db.WithContext(ctx).
 		Where("id = ?", newAppConfigID).
 		Preload("InputConfig").
 		Preload("InputConfig.AppInputs").
@@ -49,12 +48,12 @@ func (h *Helpers) MigrateInstallInputsToNewConfig(
 	sort.Strings(installIDs)
 
 	// own transaction so the locks are real when handed a plain handle
-	return txn.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, installID := range installIDs {
 			if err := LockInstallInputs(ctx, tx, installID); err != nil {
 				return err
 			}
-			if err := h.migrateInstallInputs(ctx, tx, installID, newAppConfig.InputConfig.ID, validInputs); err != nil {
+			if err := h.WithDB(tx).migrateInstallInputs(ctx, installID, newAppConfig.InputConfig.ID, validInputs); err != nil {
 				return fmt.Errorf("unable to migrate inputs for install %s: %w", installID, err)
 			}
 		}
@@ -64,14 +63,13 @@ func (h *Helpers) MigrateInstallInputsToNewConfig(
 
 func (h *Helpers) migrateInstallInputs(
 	ctx context.Context,
-	txn *gorm.DB,
 	installID string,
 	newAppInputConfigID string,
 	validInputs map[string]bool,
 ) error {
 	// a writer already targeted the incoming config; migrating on top would revert it
 	var onNewConfig int64
-	if err := txn.WithContext(ctx).
+	if err := h.db.WithContext(ctx).
 		Model(&app.InstallInputs{}).
 		Where(app.InstallInputs{
 			InstallID:        installID,
@@ -84,7 +82,7 @@ func (h *Helpers) migrateInstallInputs(
 	if onNewConfig == 0 {
 		// newest row, not the outgoing config's: that read cannot see a write pinned to the new one
 		var existingInputs app.InstallInputs
-		res := txn.WithContext(ctx).
+		res := h.db.WithContext(ctx).
 			Where(app.InstallInputs{
 				InstallID: installID,
 			}).
@@ -110,7 +108,7 @@ func (h *Helpers) migrateInstallInputs(
 				AppInputConfigID: newAppInputConfigID,
 				Values:           migratedValues,
 			}
-			if err := txn.WithContext(ctx).Create(&newInputs).Error; err != nil {
+			if err := h.db.WithContext(ctx).Create(&newInputs).Error; err != nil {
 				return fmt.Errorf("unable to create migrated inputs: %w", err)
 			}
 		}

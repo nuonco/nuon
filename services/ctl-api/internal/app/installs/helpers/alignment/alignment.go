@@ -142,10 +142,10 @@ type installAlignmentState struct {
 	appConfigs       map[string]*app.AppConfig
 }
 
-func (s *Helpers) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, install *app.Install) (*installAlignmentState, error) {
+func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.Install) (*installAlignmentState, error) {
 	st := &installAlignmentState{install: install}
 
-	if err := db.WithContext(ctx).
+	if err := s.db.WithContext(ctx).
 		Preload("Component").
 		Where(app.InstallComponent{InstallID: install.ID, OrgID: install.OrgID}).
 		Order("created_at ASC").
@@ -153,14 +153,14 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 		return nil, fmt.Errorf("unable to list install components: %w", err)
 	}
 
-	targets, err := s.installs.EffectiveComponentTargets(ctx, db, install.AppConfigID)
+	targets, err := s.installs.EffectiveComponentTargets(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, err
 	}
 	st.targets = targets
 
 	var enabledInputs map[string]*string
-	inputs, err := s.installs.LatestInstallInputs(ctx, db, install.ID)
+	inputs, err := s.installs.LatestInstallInputs(ctx, install.ID)
 	if err != nil && !isNotFound(err) {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 		}
 	}
 	var appConfigs []app.AppConfig
-	if err := db.WithContext(ctx).Scopes(scopes.WithDisableViews).Select("id").
+	if err := s.db.WithContext(ctx).Scopes(scopes.WithDisableViews).Select("id").
 		Preload("InputConfig.AppInputs").
 		Where("id IN ?", configIDs).Find(&appConfigs).Error; err != nil {
 		return nil, fmt.Errorf("unable to get alignment input defaults: %w", err)
@@ -190,7 +190,7 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 	}
 	st.enablement = appconfiggraph.NewComponentEnablementResolver(configs, enabledInputs)
 
-	st.appliedDeploys, err = s.installs.AppliedInstallDeploys(ctx, db, st.components)
+	st.appliedDeploys, err = s.installs.AppliedInstallDeploys(ctx, st.components)
 	if err != nil {
 		return nil, err
 	}
@@ -200,14 +200,14 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 		for _, ic := range st.components {
 			ids = append(ids, ic.ID)
 		}
-		st.latestDeploys, err = s.latestInstallDeploysByComponent(ctx, db, ids, false)
+		st.latestDeploys, err = s.latestInstallDeploysByComponent(ctx, ids, false)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	var sandbox app.InstallSandbox
-	err = db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Where(app.InstallSandbox{InstallID: install.ID, OrgID: install.OrgID}).
 		First(&sandbox).Error
 	if err != nil && !isNotFound(err) {
@@ -215,13 +215,13 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 	}
 	if err == nil {
 		st.sandbox = &sandbox
-		st.appliedSandbox, err = s.installs.AppliedInstallSandboxRun(ctx, db, &sandbox)
+		st.appliedSandbox, err = s.installs.AppliedInstallSandboxRun(ctx, &sandbox)
 		if err != nil {
 			return nil, err
 		}
 		if install.AppConfigID != "" {
 			var cfg app.AppSandboxConfig
-			err = db.WithContext(ctx).
+			err = s.db.WithContext(ctx).
 				Where(app.AppSandboxConfig{AppConfigID: install.AppConfigID}).
 				Order("created_at DESC").
 				First(&cfg).Error
@@ -235,7 +235,7 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 	}
 
 	var stack app.InstallStack
-	err = db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Where(app.InstallStack{InstallID: install.ID, OrgID: install.OrgID}).
 		First(&stack).Error
 	if err != nil && !isNotFound(err) {
@@ -244,7 +244,7 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 	if err == nil {
 		st.stack = &stack
 		var count int64
-		if err := db.WithContext(ctx).
+		if err := s.db.WithContext(ctx).
 			Model(&app.InstallStackVersion{}).
 			Where(app.InstallStackVersion{InstallStackID: stack.ID}).
 			Count(&count).Error; err != nil {
@@ -255,10 +255,10 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, db *gorm.DB, in
 
 	if install.AppConfigID != "" {
 		diffCtx := blobstore.WithBlobService(ctx, s.blobSvc)
-		baselines, err := s.installs.InstallCompositeBaselines(diffCtx, db, install)
+		baselines, err := s.installs.InstallCompositeBaselines(diffCtx, install)
 		st.compositeErr = err
 		if err == nil {
-			st.compositeDiff, st.compositeErr = configdiff.ComputeCompositeInstallConfigDiff(diffCtx, db, baselines, install.AppConfigID)
+			st.compositeDiff, st.compositeErr = configdiff.ComputeCompositeInstallConfigDiff(diffCtx, s.db, baselines, install.AppConfigID)
 		}
 		if st.compositeErr != nil {
 			s.l.Warn("unable to compute install alignment config diff",
@@ -498,7 +498,7 @@ func (st *installAlignmentState) stackResource() *InstallAlignmentResource {
 }
 
 func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlignment, error) {
-	st, err := s.loadInstallAlignmentState(ctx, s.db, install)
+	st, err := s.loadInstallAlignmentState(ctx, install)
 	if err != nil {
 		return nil, err
 	}
@@ -514,11 +514,11 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 		alignment.Resources = append(alignment.Resources, st.componentResource(&st.components[i]))
 	}
 
-	ev, err := s.loadAlignmentEvidence(ctx, s.db, st)
+	ev, err := s.loadAlignmentEvidence(ctx, st)
 	if err != nil {
 		return nil, err
 	}
-	open, err := s.openDeployments(ctx, s.db, st)
+	open, err := s.openDeployments(ctx, st)
 	if err != nil {
 		return nil, err
 	}
@@ -533,7 +533,7 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 		}
 		res.applyDriftEvidence(ev)
 	}
-	if err := s.explainInstallAlignment(ctx, s.db, st, alignment); err != nil {
+	if err := s.explainInstallAlignment(ctx, st, alignment); err != nil {
 		return nil, err
 	}
 	return alignment, nil
@@ -560,7 +560,7 @@ type alignmentEvidence struct {
 	inputsAligned map[string]bool
 }
 
-func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *installAlignmentState) (*alignmentEvidence, error) {
+func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmentState) (*alignmentEvidence, error) {
 	ev := &alignmentEvidence{
 		lastAttempts:  map[string]*InstallAlignmentAttempt{},
 		plans:         map[string]*InstallAlignmentPlan{},
@@ -600,7 +600,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 			}
 		}
 
-		scans, err := s.latestInstallDeploysByComponent(ctx, db, icIDs, true)
+		scans, err := s.latestInstallDeploysByComponent(ctx, icIDs, true)
 		if err != nil {
 			return nil, err
 		}
@@ -618,7 +618,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 			ev.drifted[icID] = scan.Status == app.InstallDeployStatus(app.WorkflowStepDrifted)
 		}
 
-		plans, err := s.latestPlansByOwner(ctx, db, `
+		plans, err := s.latestPlansByOwner(ctx, `
 			SELECT DISTINCT ON (d.install_component_id) a.id AS approval_id, d.install_component_id AS resource_id
 			FROM install_workflow_step_approvals a
 			JOIN install_deploys d ON d.id = a.owner_id AND d.deleted_at = 0
@@ -635,7 +635,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 	}
 
 	if st.sandbox != nil {
-		last, err := s.latestSandboxRun(ctx, db, st.sandbox.ID, false)
+		last, err := s.latestSandboxRun(ctx, st.sandbox.ID, false)
 		if err != nil {
 			return nil, err
 		}
@@ -657,7 +657,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 				ev.inputsAligned[st.sandbox.ID] = last.PlannedInputsDigest == installhelpers.InputsDigest(installhelpers.InputNames(st.expectedSandbox.Refs), st.desiredInputs(""))
 			}
 		}
-		scan, err := s.latestSandboxRun(ctx, db, st.sandbox.ID, true)
+		scan, err := s.latestSandboxRun(ctx, st.sandbox.ID, true)
 		if err != nil {
 			return nil, err
 		}
@@ -667,7 +667,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 			ev.drifted[st.sandbox.ID] = scan.Status == app.SandboxRunStatus(app.WorkflowStepDrifted)
 		}
 
-		plans, err := s.latestPlansByOwner(ctx, db, `
+		plans, err := s.latestPlansByOwner(ctx, `
 			SELECT DISTINCT ON (r.install_sandbox_id) a.id AS approval_id, r.install_sandbox_id AS resource_id
 			FROM install_workflow_step_approvals a
 			JOIN install_sandbox_runs r ON r.id = a.owner_id AND r.deleted_at = 0
@@ -685,7 +685,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 
 	if st.stack != nil {
 		var version app.InstallStackVersion
-		err := db.WithContext(ctx).
+		err := s.db.WithContext(ctx).
 			Select("id", "status", "created_at").
 			Where(app.InstallStackVersion{InstallStackID: st.stack.ID}).
 			Order("created_at DESC").
@@ -700,7 +700,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 				CreatedAt: version.CreatedAt,
 			}
 			var step app.WorkflowStep
-			err = db.WithContext(ctx).
+			err = s.db.WithContext(ctx).
 				Select("id", "install_workflow_id").
 				Where(app.WorkflowStep{StepTargetID: version.ID, StepTargetType: string(app.WorkflowStepTargetTypeInstallStackVersions)}).
 				Order("created_at DESC").
@@ -716,12 +716,12 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 		}
 	}
 
-	if err := s.addInputWorkflowAttempts(ctx, db, st, ev); err != nil {
+	if err := s.addInputWorkflowAttempts(ctx, st, ev); err != nil {
 		return nil, err
 	}
 	if len(attemptWorkflowIDs) > 0 {
 		var workflows []app.Workflow
-		if err := db.WithContext(ctx).Select("id", "type").
+		if err := s.db.WithContext(ctx).Select("id", "type").
 			Where("id IN ?", attemptWorkflowIDs).Find(&workflows).Error; err != nil {
 			return nil, fmt.Errorf("unable to get attempt workflow types: %w", err)
 		}
@@ -735,7 +735,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 			}
 		}
 		var versions []app.InstallAppConfigVersion
-		if err := db.WithContext(ctx).
+		if err := s.db.WithContext(ctx).
 			Preload("AppBranchRun").
 			Preload("AppBranchRun.VCSConnectionCommit").
 			Where(app.InstallAppConfigVersion{InstallID: st.install.ID, OrgID: st.install.OrgID}).
@@ -774,7 +774,7 @@ func sandboxScanMatchesApplied(st *installAlignmentState, scan *app.InstallSandb
 		!st.compositeDiff.SandboxChanged
 }
 
-func (s *Helpers) latestInstallDeploysByComponent(ctx context.Context, db *gorm.DB, icIDs []string, planOnly bool) (map[string]*app.InstallDeploy, error) {
+func (s *Helpers) latestInstallDeploysByComponent(ctx context.Context, icIDs []string, planOnly bool) (map[string]*app.InstallDeploy, error) {
 	if len(icIDs) == 0 {
 		return map[string]*app.InstallDeploy{}, nil
 	}
@@ -785,7 +785,7 @@ func (s *Helpers) latestInstallDeploysByComponent(ctx context.Context, db *gorm.
 		filter = "w.plan_only = true"
 	}
 	var ids []string
-	if err := db.WithContext(ctx).Raw(`
+	if err := s.db.WithContext(ctx).Raw(`
 		SELECT latest.id
 		FROM unnest(?::text[]) AS component_ids(id)
 		CROSS JOIN LATERAL (
@@ -804,7 +804,7 @@ func (s *Helpers) latestInstallDeploysByComponent(ctx context.Context, db *gorm.
 		return out, nil
 	}
 	var deploys []app.InstallDeploy
-	if err := db.WithContext(ctx).Preload("InstallWorkflow", func(db *gorm.DB) *gorm.DB {
+	if err := s.db.WithContext(ctx).Preload("InstallWorkflow", func(db *gorm.DB) *gorm.DB {
 		return db.Select("id", "type")
 	}).Where("id IN ?", ids).Find(&deploys).Error; err != nil {
 		return nil, fmt.Errorf("unable to load install deploys: %w", err)
@@ -815,8 +815,8 @@ func (s *Helpers) latestInstallDeploysByComponent(ctx context.Context, db *gorm.
 	return out, nil
 }
 
-func (s *Helpers) latestSandboxRun(ctx context.Context, db *gorm.DB, sandboxID string, planOnly bool) (*app.InstallSandboxRun, error) {
-	query := db.WithContext(ctx).
+func (s *Helpers) latestSandboxRun(ctx context.Context, sandboxID string, planOnly bool) (*app.InstallSandboxRun, error) {
+	query := s.db.WithContext(ctx).
 		Where(app.InstallSandboxRun{InstallSandboxID: &sandboxID})
 	if planOnly {
 		query = query.
@@ -838,12 +838,12 @@ func (s *Helpers) latestSandboxRun(ctx context.Context, db *gorm.DB, sandboxID s
 	return &run, nil
 }
 
-func (s *Helpers) latestPlansByOwner(ctx context.Context, db *gorm.DB, query string, ids []string) (map[string]*InstallAlignmentPlan, error) {
+func (s *Helpers) latestPlansByOwner(ctx context.Context, query string, ids []string) (map[string]*InstallAlignmentPlan, error) {
 	var rows []struct {
 		ApprovalID string
 		ResourceID string
 	}
-	if err := db.WithContext(ctx).Raw(query, ids).Scan(&rows).Error; err != nil {
+	if err := s.db.WithContext(ctx).Raw(query, ids).Scan(&rows).Error; err != nil {
 		return nil, fmt.Errorf("unable to get latest plans: %w", err)
 	}
 	out := map[string]*InstallAlignmentPlan{}
@@ -854,7 +854,7 @@ func (s *Helpers) latestPlansByOwner(ctx context.Context, db *gorm.DB, query str
 	for _, row := range rows {
 		approvalIDs = append(approvalIDs, row.ApprovalID)
 	}
-	approvals, err := s.loadAlignmentApprovals(ctx, db, approvalIDs)
+	approvals, err := s.loadAlignmentApprovals(ctx, approvalIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -871,9 +871,9 @@ type alignmentApproval struct {
 	workflow *app.Workflow
 }
 
-func (s *Helpers) loadAlignmentApprovals(ctx context.Context, db *gorm.DB, ids []string) (map[string]*alignmentApproval, error) {
+func (s *Helpers) loadAlignmentApprovals(ctx context.Context, ids []string) (map[string]*alignmentApproval, error) {
 	var approvals []app.WorkflowStepApproval
-	if err := db.WithContext(ctx).
+	if err := s.db.WithContext(ctx).
 		Select("id", "org_id", "install_workflow_step_id", "owner_id", "owner_type", "type", "created_at",
 			"changes_create", "changes_update", "changes_delete", "changes_replace", "changes_noop").
 		Preload("InstallWorkflowStep", func(db *gorm.DB) *gorm.DB {
@@ -890,7 +890,7 @@ func (s *Helpers) loadAlignmentApprovals(ctx context.Context, db *gorm.DB, ids [
 	workflowsByID := map[string]*app.Workflow{}
 	if len(workflowIDs) > 0 {
 		var workflows []app.Workflow
-		if err := db.WithContext(ctx).
+		if err := s.db.WithContext(ctx).
 			Select("id", "plan_only").
 			Where("id IN ?", workflowIDs).
 			Find(&workflows).Error; err != nil {
@@ -977,11 +977,11 @@ func workflowCoversKind(wf *app.Workflow, kind InstallAlignmentResourceKind) boo
 	}
 }
 
-func (s *Helpers) openDeployments(ctx context.Context, db *gorm.DB, st *installAlignmentState) (map[string]*InstallAlignmentOpenDeployment, error) {
+func (s *Helpers) openDeployments(ctx context.Context, st *installAlignmentState) (map[string]*InstallAlignmentOpenDeployment, error) {
 	out := map[string]*InstallAlignmentOpenDeployment{}
 
 	var workflows []app.Workflow
-	if err := db.WithContext(ctx).
+	if err := s.db.WithContext(ctx).
 		Select("id", "type", "status", "metadata", "created_at", "plan_only", "finished_at").
 		Where(app.Workflow{OwnerID: st.install.ID, OrgID: st.install.OrgID, OwnerType: "installs"}).
 		Where("plan_only = ?", false).
@@ -999,7 +999,7 @@ func (s *Helpers) openDeployments(ctx context.Context, db *gorm.DB, st *installA
 	}
 
 	var steps []alignmentStep
-	if err := db.WithContext(ctx).
+	if err := s.db.WithContext(ctx).
 		Model(&app.WorkflowStep{}).
 		Select("id", "install_workflow_id", "status", "step_target_type", "step_target_id", "metadata", "retried",
 			"queue_signal->>'type' AS signal_type",
@@ -1014,7 +1014,7 @@ func (s *Helpers) openDeployments(ctx context.Context, db *gorm.DB, st *installA
 	}
 
 	var deploys []app.InstallDeploy
-	if err := db.WithContext(ctx).
+	if err := s.db.WithContext(ctx).
 		Select("id", "install_component_id", "install_workflow_id").
 		Where("install_workflow_id IN ?", workflowIDs).
 		Find(&deploys).Error; err != nil {

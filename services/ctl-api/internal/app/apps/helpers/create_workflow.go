@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -30,7 +29,7 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 	planOnly bool,
 ) (*app.Workflow, error) {
 	metadata["app_branch_id"] = appBranchID
-	return s.createWorkflow(ctx, appBranchID, "app_branches", workflowType, metadata, planOnly, nil)
+	return s.CreateWorkflowForOwner(ctx, appBranchID, "app_branches", workflowType, metadata, planOnly, app.InstallApprovalOptionPrompt, "")
 }
 
 func (s *Helpers) CreateAppWorkflow(ctx context.Context,
@@ -39,7 +38,7 @@ func (s *Helpers) CreateAppWorkflow(ctx context.Context,
 	metadata map[string]string,
 	planOnly bool,
 ) (*app.Workflow, error) {
-	return s.createWorkflow(ctx, appID, "apps", workflowType, metadata, planOnly, nil)
+	return s.CreateWorkflowForOwner(ctx, appID, "apps", workflowType, metadata, planOnly, app.InstallApprovalOptionPrompt, "")
 }
 
 func (s *Helpers) CreateAppWorkflowWithRequest(ctx context.Context,
@@ -49,20 +48,10 @@ func (s *Helpers) CreateAppWorkflowWithRequest(ctx context.Context,
 	planOnly bool,
 	wfRequest *app.WorkflowRequest,
 ) (*app.Workflow, error) {
-	return s.createWorkflow(ctx, appID, "apps", workflowType, metadata, planOnly, wfRequest)
+	return s.createWorkflow(ctx, appID, "apps", workflowType, metadata, planOnly, app.InstallApprovalOptionPrompt, "", wfRequest)
 }
 
 func (s *Helpers) createWorkflow(ctx context.Context,
-	ownerID, ownerType string,
-	workflowType app.WorkflowType,
-	metadata map[string]string,
-	planOnly bool,
-	wfRequest *app.WorkflowRequest,
-) (*app.Workflow, error) {
-	return s.createWorkflowWithDB(ctx, s.db, ownerID, ownerType, workflowType, metadata, planOnly, app.InstallApprovalOptionPrompt, "", wfRequest)
-}
-
-func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 	ownerID, ownerType string,
 	workflowType app.WorkflowType,
 	metadata map[string]string,
@@ -92,7 +81,7 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 		},
 	}
 
-	res := db.WithContext(ctx).Create(&wf)
+	res := s.db.WithContext(ctx).Create(&wf)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create workflow")
 	}
@@ -100,6 +89,6 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 	return &wf, nil
 }
 
-func (s *Helpers) CreateWorkflowWithDB(ctx context.Context, db *gorm.DB, ownerID, ownerType string, workflowType app.WorkflowType, metadata map[string]string, planOnly bool, approvalOption app.InstallApprovalOption, role string) (*app.Workflow, error) {
-	return s.createWorkflowWithDB(ctx, db, ownerID, ownerType, workflowType, metadata, planOnly, approvalOption, role, nil)
+func (s *Helpers) CreateWorkflowForOwner(ctx context.Context, ownerID, ownerType string, workflowType app.WorkflowType, metadata map[string]string, planOnly bool, approvalOption app.InstallApprovalOption, role string) (*app.Workflow, error) {
+	return s.createWorkflow(ctx, ownerID, ownerType, workflowType, metadata, planOnly, approvalOption, role, nil)
 }

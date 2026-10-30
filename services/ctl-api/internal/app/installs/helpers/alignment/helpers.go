@@ -21,6 +21,13 @@ func New(db *gorm.DB, installs *installhelpers.Helpers, blobSvc blobstore.Servic
 	return &Helpers{db: db, installs: installs, blobSvc: blobSvc, l: l}
 }
 
+func (s *Helpers) WithDB(db *gorm.DB) *Helpers {
+	scoped := *s
+	scoped.db = db
+	scoped.installs = s.installs.WithDB(db)
+	return &scoped
+}
+
 func isNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
 }

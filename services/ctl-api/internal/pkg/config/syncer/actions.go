@@ -37,7 +37,7 @@ func (s *syncer) ensureAction(ctx context.Context, action *config.ActionConfig) 
 		}
 	}
 
-	_, err = s.actionsHelpers.CreateActionWithDB(ctx, s.db, &actionshelpers.CreateActionParams{
+	_, err = s.actionsHelpers.WithDB(s.db).CreateAction(ctx, &actionshelpers.CreateActionParams{
 		AppID:  s.appID,
 		OrgID:  s.orgID,
 		Name:   action.Name,
@@ -214,7 +214,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 
 	depIDs := []string{}
 	if len(action.Dependencies) > 0 {
-		depIDs, err = s.componentHelpers.GetComponentIDsWithDB(ctx, s.db, s.appID, action.Dependencies)
+		depIDs, err = s.componentHelpers.WithDB(s.db).GetComponentIDs(ctx, s.appID, action.Dependencies)
 		if err != nil {
 			return syncerr.From(fmt.Sprintf("action-%s", action.Name), "unable to resolve dependencies", err)
 		}

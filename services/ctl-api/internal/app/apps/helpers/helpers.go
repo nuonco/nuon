@@ -53,6 +53,12 @@ func New(params Params) *Helpers {
 	}
 }
 
+func (h *Helpers) WithDB(db *gorm.DB) *Helpers {
+	helper := *h
+	helper.db = db
+	return &helper
+}
+
 // VCSHelpers returns the VCS helpers for git source resolution and token creation.
 func (h *Helpers) VCSHelpers() *vcshelpers.Helpers {
 	return h.vcsHelpers
@@ -67,7 +73,7 @@ func (h *Helpers) QueueClient() *queueclient.Client {
 // templates and persists the resulting hashes and ready status. This runs inline
 // with the config write so a stack generated from the config always finds its
 // templates already in S3.
-func (h *Helpers) UploadCustomNestedStackTemplates(ctx context.Context, db *gorm.DB, stackConfig *app.AppStackConfig) error {
+func (h *Helpers) UploadCustomNestedStackTemplates(ctx context.Context, stackConfig *app.AppStackConfig) error {
 	if len(stackConfig.CustomNestedStacks) == 0 && !stackUINeedsUpload(stackConfig.UIDefinition) {
 		return nil
 	}
@@ -92,7 +98,7 @@ func (h *Helpers) UploadCustomNestedStackTemplates(ctx context.Context, db *gorm
 		return nil
 	}
 
-	if res := db.WithContext(ctx).
+	if res := h.db.WithContext(ctx).
 		Model(stackConfig).
 		Select(columns).
 		Updates(stackConfig); res.Error != nil {

@@ -36,7 +36,7 @@ type Helpers struct {
 	queueClient   *queueclient.Client
 	emitterClient *emitterclient.Client
 	sourceTrees   *expirable.LRU[string, *github.Tree]
-	sourceFetches singleflight.Group
+	sourceFetches *singleflight.Group
 }
 
 func New(params Params) *Helpers {
@@ -48,7 +48,14 @@ func New(params Params) *Helpers {
 		queueClient:   params.QueueClient,
 		emitterClient: params.EmitterClient,
 		sourceTrees:   expirable.NewLRU[string, *github.Tree](16, nil, 5*time.Minute),
+		sourceFetches: &singleflight.Group{},
 	}
+}
+
+func (h *Helpers) WithDB(db *gorm.DB) *Helpers {
+	scoped := *h
+	scoped.db = db
+	return &scoped
 }
 
 // Logger returns the helpers logger (may be nil in tests).

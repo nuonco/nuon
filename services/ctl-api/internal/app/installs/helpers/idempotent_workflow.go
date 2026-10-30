@@ -68,7 +68,7 @@ func (h *Helpers) RunIdempotentInstallWorkflow(ctx context.Context, req Idempote
 			return nil, false, fmt.Errorf("unable to get install: %w", reloadErr)
 		}
 		install.AppConfigID = current.AppConfigID
-		found, lookupErr := h.lookupIdempotentWorkflow(ctx, h.db, &install, req)
+		found, lookupErr := h.lookupIdempotentWorkflow(ctx, &install, req)
 		if lookupErr == nil {
 			if err = checkIdempotentWorkflow(found.Request, req, install.AppConfigID); err != nil {
 				return nil, false, err
@@ -106,7 +106,7 @@ func (h *Helpers) attemptIdempotentInstallWorkflow(ctx context.Context, install 
 		}
 		install.AppConfigID = current.AppConfigID
 
-		existing, err := h.lookupIdempotentWorkflow(ctx, tx, install, req)
+		existing, err := h.WithDB(tx).lookupIdempotentWorkflow(ctx, install, req)
 		if err == nil {
 			if err := checkIdempotentWorkflow(existing.Request, req, install.AppConfigID); err != nil {
 				return err
@@ -133,11 +133,15 @@ func (h *Helpers) attemptIdempotentInstallWorkflow(ctx context.Context, install 
 			}
 		}
 
-		createdWorkflow, err := h.insertInstallWorkflow(ctx, tx, install.ID, req.WorkflowType, md, req.PlanOnly, req.Role, &app.WorkflowRequest{
+		preparedWorkflow, installName, err := h.prepareInstallWorkflow(ctx, install.ID, req.WorkflowType, md, req.PlanOnly, req.Role, &app.WorkflowRequest{
 			RequestID:         req.RequestID,
 			RequestHash:       req.RequestHash,
 			PinnedAppConfigID: install.AppConfigID,
 		})
+		if err != nil {
+			return err
+		}
+		createdWorkflow, err := h.WithDB(tx).insertInstallWorkflow(ctx, preparedWorkflow, installName)
 		if err != nil {
 			return err
 		}
@@ -175,9 +179,9 @@ func checkIdempotentWorkflow(idem *app.WorkflowRequest, req IdempotentInstallWor
 	return request.Check(idem, req.RequestHash, currentAppConfigID)
 }
 
-func (h *Helpers) lookupIdempotentWorkflow(ctx context.Context, db *gorm.DB, install *app.Install, req IdempotentInstallWorkflowRequest) (*app.Workflow, error) {
+func (h *Helpers) lookupIdempotentWorkflow(ctx context.Context, install *app.Install, req IdempotentInstallWorkflowRequest) (*app.Workflow, error) {
 	var existing app.Workflow
-	err := db.WithContext(ctx).
+	err := h.db.WithContext(ctx).
 		Where(app.Workflow{
 			OrgID:     install.OrgID,
 			OwnerID:   install.ID,

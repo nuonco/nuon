@@ -47,17 +47,17 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	return snapshot, nil
 }
 
-func (h *Helpers) GetInstallInputsState(ctx context.Context, db *gorm.DB, installID string, redacted, skipVersionCheck bool) (*state.InputsState, error) {
+func (h *Helpers) GetInstallInputsState(ctx context.Context, installID string, redacted, skipVersionCheck bool) (*state.InputsState, error) {
 	ctx = routing.WithoutReplica(ctx)
 	var inputs app.InstallInputs
-	if err := db.WithContext(ctx).Where(app.InstallInputs{InstallID: installID}).Order("created_at DESC").First(&inputs).Error; err != nil {
+	if err := h.db.WithContext(ctx).Where(app.InstallInputs{InstallID: installID}).Order("created_at DESC").First(&inputs).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return &state.InputsState{}, nil
 		}
 		return nil, errors.Wrap(err, "unable to get install inputs")
 	}
 	var install app.Install
-	if err := db.WithContext(ctx).Select("id", "app_config_id").Where(app.Install{ID: installID}).First(&install).Error; err != nil {
+	if err := h.db.WithContext(ctx).Select("id", "app_config_id").Where(app.Install{ID: installID}).First(&install).Error; err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 	cfg, err := h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, skipVersionCheck)
@@ -67,9 +67,9 @@ func (h *Helpers) GetInstallInputsState(ctx context.Context, db *gorm.DB, instal
 	return ToInputState(&inputs, cfg, redacted), nil
 }
 
-func (h *Helpers) getStateInstall(ctx context.Context, db *gorm.DB, installID string) (*app.Install, error) {
+func (h *Helpers) getStateInstall(ctx context.Context, installID string) (*app.Install, error) {
 	var install app.Install
-	res := db.WithContext(ctx).
+	res := h.db.WithContext(ctx).
 		Preload("App").
 		Preload("App.AppSecrets").
 		Preload("Org").
@@ -221,7 +221,7 @@ func (h *Helpers) RegenerateInstallState(ctx context.Context, req *pkgstate.Exec
 		if err := h.waitForInstallStateSources(ctx, baseline.Head.OrgID); err != nil {
 			return nil, errors.Wrap(err, "unable to wait for install state source transactions")
 		}
-		install, err := h.getStateInstall(ctx, h.db, req.InstallID)
+		install, err := h.getStateInstall(ctx, req.InstallID)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get install")
 		}
@@ -233,7 +233,7 @@ func (h *Helpers) RegenerateInstallState(ctx context.Context, req *pkgstate.Exec
 				continue
 			}
 			started := time.Now()
-			if err := h.regenerateStalePartial(ctx, h.db, install, partial, is, skipVersionCheck); err != nil {
+			if err := h.regenerateStalePartial(ctx, install, partial, is, skipVersionCheck); err != nil {
 				return nil, errors.Wrapf(err, "unable to regenerate partial %s", partial)
 			}
 			h.stateMetrics.Record(ctx, "partial."+string(partial), started, nil)
@@ -301,7 +301,7 @@ func redactStateInput(es *state.State, name string) {
 const redactedInputValue = "********"
 
 // regenerateStalePartial refreshes a single partial into state, reusing the same data fetch path as state gen signal.
-func (h *Helpers) regenerateStalePartial(ctx context.Context, db *gorm.DB, install *app.Install, partial pkgstate.PartialName, is *state.State, skipVersionCheck bool) error {
+func (h *Helpers) regenerateStalePartial(ctx context.Context, install *app.Install, partial pkgstate.PartialName, is *state.State, skipVersionCheck bool) error {
 	switch partial {
 	case pkgstate.PartialOrg:
 		is.Org = h.ToOrgState(install.Org)
@@ -315,7 +315,7 @@ func (h *Helpers) regenerateStalePartial(ctx context.Context, db *gorm.DB, insta
 	case pkgstate.PartialCloud:
 		is.Cloud = h.ToCloudAccount(install)
 	case pkgstate.PartialInputs:
-		inputs, err := h.GetInstallInputsState(ctx, db, install.ID, false, skipVersionCheck)
+		inputs, err := h.GetInstallInputsState(ctx, install.ID, false, skipVersionCheck)
 		if err != nil {
 			return err
 		}

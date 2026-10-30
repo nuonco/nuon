@@ -34,7 +34,7 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 		}
 	}
 
-	newComp, err := helpers.CreateComponentWithDB(ctx, db, &componenthelpers.CreateComponentParams{
+	newComp, err := helpers.WithDB(db).CreateComponent(ctx, &componenthelpers.CreateComponentParams{
 		AppID:            appID,
 		Name:             comp.Name,
 		VarName:          comp.VarName,
@@ -122,7 +122,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 
 	depIDs := []string{}
 	if len(comp.Dependencies) > 0 {
-		depIDs, err = helpers.GetComponentIDsWithDB(ctx, db, appID, comp.Dependencies)
+		depIDs, err = helpers.WithDB(db).GetComponentIDs(ctx, appID, comp.Dependencies)
 		if err != nil {
 			return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve dependencies", err)
 		}
@@ -222,7 +222,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 				}
 			}
 		} else if comp.ExternalImage != nil {
-			if _, err := helpers.CreateComponentBuildInTx(ctx, db, apiComp.ID, ccc.ID, false, nil); err != nil {
+			if _, err := helpers.WithDB(db).CreateComponentBuildForConfigConnection(ctx, apiComp.ID, ccc.ID, nil); err != nil {
 				return sync.SyncInternalErr{
 					Description: fmt.Sprintf("unable to queue build for component %s", comp.Name),
 					Err:         err,
@@ -449,19 +449,19 @@ func EnsureComponentDependencies(ctx context.Context, db *gorm.DB, helpers *comp
 		}
 	}
 
-	depIDs, err := helpers.GetComponentIDsWithDB(ctx, db, appID, comp.Dependencies)
+	depIDs, err := helpers.WithDB(db).GetComponentIDs(ctx, appID, comp.Dependencies)
 	if err != nil {
 		return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve dependencies", err)
 	}
 
-	if err := helpers.ClearComponentDependenciesWithDB(ctx, db, apiComp.ID); err != nil {
+	if err := helpers.WithDB(db).ClearComponentDependencies(ctx, apiComp.ID); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to clear existing dependencies for component %s", comp.Name),
 			Err:         err,
 		}
 	}
 
-	if err := helpers.CreateComponentDependenciesWithDB(ctx, db, apiComp.ID, depIDs); err != nil {
+	if err := helpers.WithDB(db).CreateComponentDependencies(ctx, apiComp.ID, depIDs); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create dependencies for component %s", comp.Name),
 			Err:         err,

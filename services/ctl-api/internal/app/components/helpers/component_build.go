@@ -13,27 +13,21 @@ import (
 )
 
 func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, s.db, "", cmpID, "", useLatest, gitRef, nil)
+	return s.createComponentBuild(ctx, "", cmpID, "", useLatest, gitRef, nil)
 }
 
 func (s *Helpers) CreateComponentBuildWithRequest(ctx context.Context, cmpID string, useLatest bool, gitRef *string, wfRequest *app.WorkflowRequest) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, s.db, "", cmpID, "", useLatest, gitRef, wfRequest)
+	return s.createComponentBuild(ctx, "", cmpID, "", useLatest, gitRef, wfRequest)
 }
 
 func (s *Helpers) CreateComponentBuildWithID(ctx context.Context, buildID, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, s.db, buildID, cmpID, "", useLatest, gitRef, nil)
+	return s.createComponentBuild(ctx, buildID, cmpID, "", useLatest, gitRef, nil)
 }
 
 // CreateComponentBuildForConfigConnection creates a build attached to a specific
 // CCC (e.g. a branch run's app-config CCC) instead of the global LatestConfig.
 func (s *Helpers) CreateComponentBuildForConfigConnection(ctx context.Context, cmpID, componentConfigConnectionID string, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, s.db, "", cmpID, componentConfigConnectionID, false, gitRef, nil)
-}
-
-// CreateComponentBuildInTx creates the build through the caller's transaction.
-// When componentConfigConnectionID is set, the build is attached to that CCC.
-func (s *Helpers) CreateComponentBuildInTx(ctx context.Context, tx *gorm.DB, cmpID, componentConfigConnectionID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, tx, "", cmpID, componentConfigConnectionID, useLatest, gitRef, nil)
+	return s.createComponentBuild(ctx, "", cmpID, componentConfigConnectionID, false, gitRef, nil)
 }
 
 func DockerBuildUnsupported() stderr.ErrUser {
@@ -45,8 +39,8 @@ func DockerBuildUnsupported() stderr.ErrUser {
 	}
 }
 
-func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID, cmpID, componentConfigConnectionID string, _ bool, gitRef *string, wfRequest *app.WorkflowRequest) (*app.ComponentBuild, error) {
-	cmp, err := s.getComponent(ctx, db, cmpID)
+func (s *Helpers) createComponentBuild(ctx context.Context, buildID, cmpID, componentConfigConnectionID string, _ bool, gitRef *string, wfRequest *app.WorkflowRequest) (*app.ComponentBuild, error) {
+	cmp, err := s.GetComponent(ctx, cmpID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component: %w", err)
 	}
@@ -55,7 +49,7 @@ func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID
 		return nil, DockerBuildUnsupported()
 	}
 
-	configConn, err := s.resolveBuildConfigConnection(ctx, db, cmp, componentConfigConnectionID)
+	configConn, err := s.resolveBuildConfigConnection(ctx, cmp, componentConfigConnectionID)
 	if err != nil {
 		return nil, err
 	}
@@ -92,9 +86,9 @@ func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID
 		return nil
 	}
 	if configConn.AppConfigID == "" {
-		err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error { return create(tx, &app.AppConfig{}) })
+		err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error { return create(tx, &app.AppConfig{}) })
 	} else {
-		err = buildselection.WithMutableConfig(ctx, db, configConn.AppConfigID, create)
+		err = buildselection.WithMutableConfig(ctx, s.db, configConn.AppConfigID, create)
 	}
 	if err != nil {
 		return nil, err
@@ -103,8 +97,8 @@ func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID
 	return &bld, nil
 }
 
-func (s *Helpers) resolveBuildConfigConnection(ctx context.Context, db *gorm.DB, cmp *app.Component, componentConfigConnectionID string) (*app.ComponentConfigConnection, error) {
-	query := db.WithContext(ctx).
+func (s *Helpers) resolveBuildConfigConnection(ctx context.Context, cmp *app.Component, componentConfigConnectionID string) (*app.ComponentConfigConnection, error) {
+	query := s.db.WithContext(ctx).
 		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("HelmComponentConfig.PublicGitVCSConfig").
 		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
@@ -121,7 +115,7 @@ func (s *Helpers) resolveBuildConfigConnection(ctx context.Context, db *gorm.DB,
 		if cmp.LatestConfig.AppConfigID == "" {
 			return cmp.LatestConfig, nil
 		}
-		legacyConfigs := db.WithContext(ctx).Model(&app.AppConfig{}).Select("id").Where(map[string]any{"builds_pinned": false})
+		legacyConfigs := s.db.WithContext(ctx).Model(&app.AppConfig{}).Select("id").Where(map[string]any{"builds_pinned": false})
 		query = query.
 			Where("(app_config_id IN (?) OR app_config_id IS NULL OR app_config_id = '')", legacyConfigs).
 			Order("created_at DESC, id DESC")
