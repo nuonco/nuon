@@ -36,10 +36,6 @@ func ValidPhoneHomeRequestType(s string) bool {
 // RecordStackPhoneHome marks the version active and appends a run. Returns the run
 // for the caller to enqueue a signal against; doing it here would be an import cycle.
 //
-// Cancelled versions are treated the same as live ones for recording and applying
-// outputs. Their await callback is cleared first so the cancelled provision workflow
-// is not woken when stackrun completes.
-//
 // Serves the authenticated route only — the legacy one keeps its own copy.
 func (h *Helpers) RecordStackPhoneHome(
 	ctx context.Context,
@@ -58,6 +54,7 @@ func (h *Helpers) RecordStackPhoneHome(
 	}
 	wasCancelled := current.Status.Status == app.StatusCancelled
 
+	// Drop the await hook so a cancelled provision workflow is not resumed.
 	if wasCancelled {
 		if res := h.db.WithContext(ctx).
 			Model(&app.InstallStackVersion{}).

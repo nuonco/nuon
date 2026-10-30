@@ -335,6 +335,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 		return errors.Wrap(err, "unable to load stack version")
 	}
 	wasCancelled := current.Status.Status == app.StatusCancelled
+	// Drop the await hook so a cancelled provision workflow is not resumed.
 	if wasCancelled {
 		if res := s.db.WithContext(ctx).
 			Model(&app.InstallStackVersion{}).

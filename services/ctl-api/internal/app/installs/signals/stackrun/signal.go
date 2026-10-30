@@ -85,9 +85,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return err
 	}
-	// Cancelled versions still get outputs applied. Drop the await callback so the
-	// cancelled provision workflow is not resumed; recording already clears it in
-	// the common path, this covers races and direct stackrun retries.
+	// Drop the await hook so a cancelled provision workflow is not resumed.
 	if version.Status.Status == app.StatusCancelled {
 		if err := activities.AwaitClearInstallStackVersionCallback(ctx, activities.ClearInstallStackVersionCallbackRequest{
 			VersionID: version.ID,
