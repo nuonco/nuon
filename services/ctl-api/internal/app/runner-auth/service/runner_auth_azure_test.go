@@ -152,3 +152,54 @@ func TestBindAzureKeyTenant(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "does not match key tenant")
 }
+
+func TestResolveAzureRunnerIdentity(t *testing.T) {
+	mirID := "/subscriptions/" + runnerSubID +
+		"/resourcegroups/rg-1/providers/Microsoft.Compute/virtualMachineScaleSets/" + runnerInstallID + "-vmss"
+	claims := &azureClaims{XMSMirID: mirID}
+
+	runnerID, subID, installID, err := resolveAzureRunnerIdentity(claims, "run123")
+	require.NoError(t, err)
+	assert.Equal(t, "run123", runnerID)
+	assert.Equal(t, runnerSubID, subID)
+	assert.Equal(t, runnerInstallID, installID)
+}
+
+func TestResolveAzureRunnerIdentity_RejectsMissingOrWrongMirid(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		claims   *azureClaims
+		runnerID string
+	}{
+		{"missing runner_id", &azureClaims{XMSMirID: "x"}, ""},
+		{"missing mirid", &azureClaims{}, "run123"},
+		{"omit mirid (NUO-1188 shape)", &azureClaims{XMSMirID: ""}, "run123"},
+		{
+			"other install vmss",
+			&azureClaims{XMSMirID: "/subscriptions/" + runnerSubID +
+				"/resourcegroups/rg-1/providers/Microsoft.Compute/virtualMachineScaleSets/otherinst-vmss"},
+			"run123",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.name == "other install vmss" {
+				// Resolve still succeeds; bindAzureRunnerInstall rejects the mismatch.
+				_, _, installID, err := resolveAzureRunnerIdentity(tc.claims, tc.runnerID)
+				require.NoError(t, err)
+				require.Error(t, bindAzureRunnerInstall(runnerInstallID, installID))
+				return
+			}
+			_, _, _, err := resolveAzureRunnerIdentity(tc.claims, tc.runnerID)
+			require.Error(t, err)
+		})
+	}
+}
+
+func TestBindAzureRunnerInstall(t *testing.T) {
+	require.NoError(t, bindAzureRunnerInstall(runnerInstallID, runnerInstallID))
+	require.NoError(t, bindAzureRunnerInstall(runnerInstallID, strings.ToUpper(runnerInstallID)))
+
+	err := bindAzureRunnerInstall(runnerInstallID, "otherinst")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "does not match runner install")
+}

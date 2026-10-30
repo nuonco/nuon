@@ -198,60 +198,36 @@ func bindAzureKeyTenant(keyTenantID string, claims *azureClaims) error {
 	return nil
 }
 
-// extractRunnerIDFromXMSMirID parses the Azure managed identity resource ID to extract the runner ID.
-// The format is: /subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{name}
-// The identity name is expected to contain or be the runner ID.
-// For system-assigned identities (e.g. VMSS), xms_mirid points to the compute resource
-// rather than a ManagedIdentity resource — those are not supported here.
-func extractRunnerIDFromXMSMirID(xmsMirID string) (runnerID string, subscriptionID string, err error) {
-	if xmsMirID == "" {
-		return "", "", errors.New("empty xms_mirid claim")
+// resolveAzureRunnerIdentity requires a request runner_id (not present in xms_mirid)
+// and a system-assigned VMSS xms_mirid that names {installID}-vmss. Subscription and
+// install id from the mirid are returned so auth can reject cross-install tokens that
+// share tenant / subscription / principal shape.
+func resolveAzureRunnerIdentity(claims *azureClaims, requestRunnerID string) (runnerID, subscriptionID, installID string, err error) {
+	if requestRunnerID == "" {
+		return "", "", "", errors.New("runner_id is required")
+	}
+	if claims == nil || claims.XMSMirID == "" {
+		return "", "", "", errors.New("token is missing the xms_mirid claim")
 	}
 
-	lower := strings.ToLower(xmsMirID)
-	parts := strings.Split(strings.TrimPrefix(lower, "/"), "/")
-
-	// Expected: subscriptions/{sub}/resourcegroups/{rg}/providers/microsoft.managedidentity/userassignedidentities/{name}
-	if len(parts) < 8 {
-		return "", "", fmt.Errorf("unexpected xms_mirid format: %s", xmsMirID)
+	vmss, err := workloadjwt.ParseAzureRunnerVMSS(claims.XMSMirID)
+	if err != nil {
+		return "", "", "", err
 	}
 
-	if parts[0] != "subscriptions" {
-		return "", "", fmt.Errorf("unexpected xms_mirid format, expected 'subscriptions' prefix: %s", xmsMirID)
-	}
-
-	subscriptionID = parts[1]
-
-	// Only extract runner ID from user-assigned managed identity resources.
-	// System-assigned identities (e.g. VMSS, VM) have a different resource type
-	// and the last segment is not a runner ID.
-	if !strings.Contains(lower, "microsoft.managedidentity/userassignedidentities") {
-		return "", subscriptionID, fmt.Errorf("xms_mirid is not a user-assigned managed identity: %s", xmsMirID)
-	}
-
-	// The identity name is the last segment.
-	originalParts := strings.Split(strings.TrimPrefix(xmsMirID, "/"), "/")
-	identityName := originalParts[len(originalParts)-1]
-
-	return identityName, subscriptionID, nil
+	return requestRunnerID, vmss.SubscriptionID, vmss.InstallID, nil
 }
 
-// extractRunnerIDFromClaims extracts the runner ID from Azure JWT claims.
-// It first tries xms_mirid, then falls back to the request-provided runner_id.
-func extractRunnerIDFromClaims(claims *azureClaims, requestRunnerID string) (runnerID string, subscriptionID string, err error) {
-	if claims.XMSMirID != "" {
-		runnerID, subscriptionID, err = extractRunnerIDFromXMSMirID(claims.XMSMirID)
-		if err == nil && runnerID != "" {
-			return runnerID, subscriptionID, nil
-		}
+// bindAzureRunnerInstall requires the VMSS named in xms_mirid to belong to the same
+// install as the Nuon runner being authenticated.
+func bindAzureRunnerInstall(installID, miridInstallID string) error {
+	if installID == "" || miridInstallID == "" {
+		return errors.New("missing install id for runner vmss bind")
 	}
-
-	// Fallback to request-provided runner ID.
-	if requestRunnerID != "" {
-		return requestRunnerID, subscriptionID, nil
+	if !strings.EqualFold(installID, miridInstallID) {
+		return fmt.Errorf("vmss install %q does not match runner install %q", miridInstallID, installID)
 	}
-
-	return "", "", errors.New("unable to determine runner ID: xms_mirid claim missing or invalid and no runner_id provided")
+	return nil
 }
 
 // @ID						RunnerAuthAzure
@@ -307,9 +283,9 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		return
 	}
 
-	runnerID, subscriptionID, err := extractRunnerIDFromClaims(azClaims, req.RunnerID)
+	runnerID, subscriptionID, miridInstallID, err := resolveAzureRunnerIdentity(azClaims, req.RunnerID)
 	if err != nil {
-		s.l.Warn("runner auth azure: failed to extract runner ID",
+		s.l.Warn("runner auth azure: failed to resolve runner identity",
 			zap.String("xms_mirid", azClaims.XMSMirID),
 			zap.Error(err))
 		ctx.Error(stderr.ErrAuthentication{
@@ -351,6 +327,21 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 	metricTags["install_id"] = install.ID
 	metricTags["install_name"] = install.Name
 	metricTags["org_id"] = install.OrgID
+
+	if err := bindAzureRunnerInstall(install.ID, miridInstallID); err != nil {
+		s.l.Warn("runner auth azure: vmss install mismatch",
+			zap.String("runner_id", runnerID),
+			zap.String("install_id", install.ID),
+			zap.String("mirid_install_id", miridInstallID),
+			zap.String("xms_mirid", azClaims.XMSMirID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthorization{
+			Err:         errors.New("authorization failed"),
+			Description: "runner identity does not match expected configuration",
+		})
+		ctx.Abort()
+		return
+	}
 
 	if err := s.validateRunnerAzureIdentity(reqCtx, install, azClaims, subscriptionID); err != nil {
 		s.l.Warn("runner auth azure: identity validation failed",
