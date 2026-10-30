@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -30,10 +32,12 @@ func ValidPhoneHomeRequestType(s string) bool {
 	}
 }
 
-// RecordStackPhoneHome marks the version active and appends a run. Returns the run
-// for the caller to enqueue a signal against; doing it here would be an import cycle.
+// RecordStackPhoneHome appends a run with the reported outputs. When the version is
+// still live it is marked active and applied; when it is already cancelled the run is
+// still stored so the payload is not lost, but the version is not reactivated.
 //
-// Serves the authenticated route only — the legacy one keeps its own copy.
+// Returns the run for the caller to enqueue a signal against; doing it here would be
+// an import cycle. Serves the authenticated route only — the legacy one keeps its own copy.
 func (h *Helpers) RecordStackPhoneHome(
 	ctx context.Context,
 	stackVersion *app.InstallStackVersion,
@@ -45,6 +49,16 @@ func (h *Helpers) RecordStackPhoneHome(
 	}
 	hstoreData := generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data)))
 
+	run := app.InstallStackVersionRun{
+		OrgID:                 stackVersion.OrgID,
+		CreatedByID:           stackVersion.CreatedByID,
+		InstallStackVersionID: stackVersion.ID,
+		Data:                  hstoreData,
+	}
+	if res := h.db.WithContext(ctx).Create(&run); res.Error != nil {
+		return nil, fmt.Errorf("unable to create install stack version run: %w", res.Error)
+	}
+
 	updatedStack := app.InstallStackVersion{
 		ID: stackVersion.ID,
 	}
@@ -53,11 +67,6 @@ func (h *Helpers) RecordStackPhoneHome(
 		Where("status->>'status' <> ?", app.StatusCancelled).
 		Updates(app.InstallStackVersion{
 			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
-			Runs: []app.InstallStackVersionRun{
-				{
-					Data: hstoreData,
-				},
-			},
 		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update stack version: %w", res.Error)
@@ -68,18 +77,13 @@ func (h *Helpers) RecordStackPhoneHome(
 			return nil, fmt.Errorf("unable to reload stack version: %w", err)
 		}
 		if current.Status.Status == app.StatusCancelled {
-			return nil, nil
+			h.l.Warn("recorded phone-home run on cancelled stack version without reactivating",
+				zap.String("install_stack_version_id", stackVersion.ID),
+				zap.String("install_stack_version_run_id", run.ID),
+				zap.String("install_id", stackVersion.InstallID),
+			)
+			return &run, nil
 		}
-	}
-
-	run := app.InstallStackVersionRun{
-		OrgID:                 stackVersion.OrgID,
-		CreatedByID:           stackVersion.CreatedByID,
-		InstallStackVersionID: stackVersion.ID,
-		Data:                  hstoreData,
-	}
-	if res := h.db.WithContext(ctx).Create(&run); res.Error != nil {
-		return nil, fmt.Errorf("unable to create install stack version run: %w", res.Error)
 	}
 
 	requestType, _ := req["request_type"].(string)

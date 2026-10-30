@@ -329,6 +329,17 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 		return errors.Wrap(err, "unable to convert to mapstructure")
 	}
 
+	hstoreData := generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data)))
+	run := app.InstallStackVersionRun{
+		OrgID:                 stackVersion.OrgID,
+		CreatedByID:           stackVersion.CreatedByID,
+		InstallStackVersionID: stackVersion.ID,
+		Data:                  hstoreData,
+	}
+	if res := s.db.WithContext(ctx).Create(&run); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to create install stack version run")
+	}
+
 	updatedStack := app.InstallStackVersion{
 		ID: stackVersion.ID,
 	}
@@ -337,38 +348,31 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 		Where("status->>'status' <> ?", app.StatusCancelled).
 		Updates(app.InstallStackVersion{
 			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
-			Runs: []app.InstallStackVersionRun{
-				{
-					Data: generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data))),
-				},
-			},
 		})
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to update stack version")
 	}
+
+	cancelled := false
 	if res.RowsAffected == 0 {
 		var current app.InstallStackVersion
 		if err := s.db.WithContext(ctx).First(&current, "id = ?", stackVersion.ID).Error; err != nil {
 			return errors.Wrap(err, "unable to reload stack version")
 		}
 		if current.Status.Status == app.StatusCancelled {
-			return nil
+			cancelled = true
+			s.l.Warn("recorded phone-home run on cancelled stack version without reactivating",
+				zap.String("install_stack_version_id", stackVersion.ID),
+				zap.String("install_stack_version_run_id", run.ID),
+				zap.String("install_id", installID),
+			)
 		}
 	}
 
-	run := app.InstallStackVersionRun{
-		OrgID:                 stackVersion.OrgID,
-		CreatedByID:           stackVersion.CreatedByID,
-		InstallStackVersionID: stackVersion.ID,
-		Data:                  generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data))),
-	}
-	if res = s.db.WithContext(ctx).
-		Create(&run); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to create install stack version run")
-	}
-
-	if err := s.helpers.RecordInstallStackVersionApplied(ctx, stackVersion, requestType); err != nil {
-		return err
+	if !cancelled {
+		if err := s.helpers.RecordInstallStackVersionApplied(ctx, stackVersion, requestType); err != nil {
+			return err
+		}
 	}
 
 	ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
@@ -377,6 +381,8 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 	if err != nil {
 		return err
 	}
+	// Still enqueue for cancelled versions so stackrun can clear the await callback;
+	// it will not reactivate or apply the cancelled version.
 	if err := s.enqueueInstallSignal(ctx, queueID, &stackrun.Signal{
 		InstallStackID:        stackVersion.InstallStackID,
 		InstallStackVersionID: stackVersion.ID,
