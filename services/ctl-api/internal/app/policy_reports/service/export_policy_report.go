@@ -41,6 +41,7 @@ type PolicyReportTemplateData struct {
 	DenyCount     int
 	WarnCount     int
 	PassCount     int
+	SkipCount     int
 	TotalCount    int
 	Status        string
 	Violations    []helpers.PolicyViolationDisplay
@@ -148,6 +149,7 @@ type PolicyReportJSON struct {
 	DenyCount   int                   `json:"deny_count"`
 	WarnCount   int                   `json:"warn_count"`
 	PassCount   int                   `json:"pass_count"`
+	Status      app.CompositeStatus   `json:"status"`
 }
 
 // @ID						ExportPolicyReport
@@ -226,10 +228,32 @@ func toJSONFormat(report *app.PolicyReport) PolicyReportJSON {
 		DenyCount:   report.DenyCount,
 		WarnCount:   report.WarnCount,
 		PassCount:   report.PassCount,
+		Status:      report.Status,
 	}
 }
 
-func toSARIFFormat(report *app.PolicyReport) SARIFReport {
+func exportFindings(report *app.PolicyReport) ([]app.PolicyViolation, int, error) {
+	data, err := json.Marshal(report.Status.Metadata["skip_findings"])
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "unable to encode policy skip findings")
+	}
+	var skips []app.PolicyViolation
+	if err := json.Unmarshal(data, &skips); err != nil {
+		return nil, 0, errors.Wrap(err, "unable to decode policy skip findings")
+	}
+	findings := append([]app.PolicyViolation{}, report.Violations...)
+	for _, finding := range skips {
+		finding.Severity = "skip_apply"
+		findings = append(findings, finding)
+	}
+	return findings, len(skips), nil
+}
+
+func toSARIFFormat(report *app.PolicyReport) (SARIFReport, error) {
+	findings, skipCount, err := exportFindings(report)
+	if err != nil {
+		return SARIFReport{}, err
+	}
 	// Build artifacts from inputs
 	artifacts := make([]SARIFArtifact, len(report.Inputs))
 	for i, input := range report.Inputs {
@@ -296,11 +320,13 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 	}
 
 	// Build results with locations referencing artifacts
-	results := make([]SARIFResult, len(report.Violations))
-	for i, v := range report.Violations {
+	results := make([]SARIFResult, len(findings))
+	for i, v := range findings {
 		level := "warning"
 		if v.Severity == "deny" {
 			level = "error"
+		} else if v.Severity == "skip_apply" {
+			level = "note"
 		}
 
 		result := SARIFResult{
@@ -332,6 +358,13 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 				"input_identity": v.InputIdentity,
 			}
 		}
+		if v.Severity == "skip_apply" {
+			if result.Properties == nil {
+				result.Properties = SARIFPropertyBag{}
+			}
+			result.Properties["action"] = "skip_apply"
+			result.Properties["check_id"] = v.CheckID
+		}
 
 		results[i] = result
 	}
@@ -354,6 +387,10 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 		"total_inputs":     len(report.Inputs),
 		"total_policies":   len(report.PolicyIDs),
 	}
+	if skipCount > 0 {
+		runProperties["skip_count"] = skipCount
+		runProperties["resolved_action"] = report.Status.Metadata["resolved_action"]
+	}
 
 	return SARIFReport{
 		Version: SARIFVersion,
@@ -374,7 +411,7 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 				Properties:  runProperties,
 			},
 		},
-	}
+	}, nil
 }
 
 func (s *service) serveJSONReport(ctx *gin.Context, report *app.PolicyReport) {
@@ -391,7 +428,11 @@ func (s *service) serveJSONReport(ctx *gin.Context, report *app.PolicyReport) {
 }
 
 func (s *service) serveSARIFReport(ctx *gin.Context, report *app.PolicyReport) {
-	sarifReport := toSARIFFormat(report)
+	sarifReport, err := toSARIFFormat(report)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	content, err := json.Marshal(sarifReport)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to marshal SARIF report"))
@@ -404,7 +445,12 @@ func (s *service) serveSARIFReport(ctx *gin.Context, report *app.PolicyReport) {
 }
 
 func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
-	violations := helpers.ToViolationDisplays(report.Violations)
+	findings, skipCount, err := exportFindings(report)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	violations := helpers.ToViolationDisplays(findings)
 	policies := helpers.ToResultDisplays(report.Policies)
 	inputs := helpers.ToInputDisplays(report.Inputs)
 
@@ -419,7 +465,9 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 
 	status := "passed"
 	if report.DenyCount > 0 {
-		status = "failed"
+		status = "denied"
+	} else if report.Status.Metadata["resolved_action"] == "skip_apply" {
+		status = "skip apply"
 	} else if report.WarnCount > 0 {
 		status = "warning"
 	}
@@ -446,7 +494,8 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 		DenyCount:     denyCount,
 		WarnCount:     warnCount,
 		PassCount:     passCount,
-		TotalCount:    denyCount + warnCount + passCount,
+		SkipCount:     skipCount,
+		TotalCount:    denyCount + warnCount + passCount + skipCount,
 		Status:        status,
 		Violations:    violations,
 		HasViolations: len(violations) > 0,
@@ -482,10 +531,12 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 
 	// Status badge
 	statusColor := colorPass
-	if data.Status == "failed" {
+	if data.Status == "denied" {
 		statusColor = colorDeny
 	} else if data.Status == "warning" {
 		statusColor = colorWarn
+	} else if data.Status == "skip apply" {
+		statusColor = colorText
 	}
 	pdf.SetTextColor(statusColor[0], statusColor[1], statusColor[2])
 	pdf.SetFont("Helvetica", "B", 12)
@@ -531,6 +582,10 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
 	pdf.Cell(0, 5, fmt.Sprintf("Total: %d", data.TotalCount))
 	pdf.Ln(10)
+	if data.SkipCount > 0 {
+		pdf.Cell(0, 5, fmt.Sprintf("Skip findings: %d", data.SkipCount))
+		pdf.Ln(10)
+	}
 
 	// Policies Evaluated section
 	if len(data.Policies) > 0 {
@@ -597,7 +652,7 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 	// Violations section
 	pdf.SetFont("Helvetica", "B", 11)
 	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
-	pdf.Cell(0, 6, "Violations")
+	pdf.Cell(0, 6, "Findings")
 	pdf.Ln(6)
 
 	if !data.HasViolations {
@@ -612,7 +667,11 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 			severityColor := getStatusColor(v.Severity)
 			pdf.SetTextColor(severityColor[0], severityColor[1], severityColor[2])
 			pdf.SetFont("Helvetica", "B", 9)
-			pdf.Cell(15, 5, fmt.Sprintf("[%s]", v.Severity))
+			label := v.Severity
+			if label == "skip_apply" {
+				label = "skip"
+			}
+			pdf.Cell(15, 5, fmt.Sprintf("[%s]", label))
 
 			// Message
 			pdf.SetTextColor(colorText[0], colorText[1], colorText[2])

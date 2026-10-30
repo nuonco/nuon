@@ -373,6 +373,9 @@ func hasUnappliedStep(steps []app.WorkflowStep) bool {
 		if step.Retried {
 			continue
 		}
+		if step.Status.Status == app.StatusAutoSkipped && step.Status.Metadata["check"] == "policy-skip-apply" {
+			return true
+		}
 		if unappliedStepStatuses[step.Status.Status] {
 			return true
 		}

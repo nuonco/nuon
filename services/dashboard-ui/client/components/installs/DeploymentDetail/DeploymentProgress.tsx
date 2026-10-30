@@ -45,6 +45,7 @@ const CATEGORY_LABELS = {
   'not-started': 'Not started',
   cancelled: 'Cancelled',
   'user-skipped': 'Skipped',
+  'auto-skipped': 'Skipped by policy',
   unknown: 'Outcome unknown',
 }
 
@@ -83,9 +84,11 @@ export const resourceCategories = (
                 ? 'not-started'
                 : every('cancelled', 'not-started')
                   ? 'cancelled'
-                  : every('user-skipped')
-                    ? 'user-skipped'
-                    : 'unknown'
+                  : every('auto-skipped')
+                    ? 'auto-skipped'
+                    : every('user-skipped', 'auto-skipped')
+                      ? 'user-skipped'
+                      : 'unknown'
       return { category, status, label: CATEGORY_LABELS[status] }
     }
   )

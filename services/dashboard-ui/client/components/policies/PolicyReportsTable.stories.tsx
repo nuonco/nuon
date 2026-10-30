@@ -45,7 +45,8 @@ const v = (
   input_identity: inputIdentity,
 })
 
-const minutesAgo = (n: number) => new Date(Date.now() - n * 60_000).toISOString()
+const minutesAgo = (n: number) =>
+  new Date(Date.now() - n * 60_000).toISOString()
 
 const reportWithDeny: TPolicyReport = {
   id: 'rpt-q7fplr1up5atx5zpxotbabm',
@@ -229,6 +230,26 @@ export const ReprovisionHistory = () => (
 export const Empty = () => (
   <PolicyReportsTable
     reports={[]}
+    orgId="org-1"
+    policyNameMap={policyNameMap}
+  />
+)
+
+export const SkipRequested = () => (
+  <PolicyReportsTable
+    reports={[
+      {
+        ...reportAllPassed,
+        id: 'report-skip',
+        component_name: 'database',
+        pass_count: 0,
+        policies: [{ policy_id: 'policy-skip', status: 'skip_apply' }],
+        status: {
+          status: 'success',
+          metadata: { resolved_action: 'skip_apply', skip_count: 2 },
+        },
+      },
+    ]}
     orgId="org-1"
     policyNameMap={policyNameMap}
   />
