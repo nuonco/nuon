@@ -569,6 +569,25 @@ describe('workflow-utils', () => {
       expect(banner).toBeUndefined()
     })
 
+    test('attributes auto-skipped applies to policy without relabelling no-ops', () => {
+      expect(
+        getStepBanner({
+          status: {
+            status: 'auto-skipped',
+            metadata: { cause_check: 'policy-skip-apply' },
+          },
+        } as TWorkflowStep)
+      ).toMatchObject({
+        title: 'Apply skipped by policy',
+        theme: 'neutral',
+      })
+      expect(
+        getStepBanner({
+          status: { status: 'auto-skipped', metadata: { check: 'noop' } },
+        } as TWorkflowStep)
+      ).toBeUndefined()
+    })
+
     test('should return undefined for step without status', () => {
       const step: TWorkflowStep = {} as TWorkflowStep
 

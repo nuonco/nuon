@@ -27,7 +27,7 @@ func TestAppRunnerConfig_Parse_ImageID(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cfg := &AppRunnerConfig{RunnerType: tc.runnerType, ImageID: tc.imageID}
 
-			err := cfg.parse("")
+			err := cfg.parse(ParseOptions{})
 
 			if tc.wantErr {
 				assert.Error(t, err)

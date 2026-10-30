@@ -8,18 +8,6 @@ import (
 )
 
 // vcs connections
-func (c *client) CreateVCSConnection(ctx context.Context, req *models.ServiceCreateConnectionRequest) (*models.AppVCSConnection, error) {
-	resp, err := c.genClient.Operations.CreateVCSConnection(&operations.CreateVCSConnectionParams{
-		Req:     req,
-		Context: ctx,
-	}, c.getOrgIDAuthInfo())
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
-}
-
 func (c *client) CreateVCSConnectionCallback(ctx context.Context, req *models.ServiceCreateConnectionCallbackRequest) (*models.AppVCSConnection, error) {
 	resp, err := c.genClient.Operations.CreateVCSConnectionCallback(&operations.CreateVCSConnectionCallbackParams{
 		Req:     req,

@@ -139,7 +139,9 @@ export function getWorkflowHref(
     const run = workflow?.app_branch_runs?.[0]
     const appId = run?.app_branch?.app_id ?? workflow.metadata?.app_id
     const branchId =
-      run?.app_branch?.id ?? workflow.metadata?.app_branch_id ?? workflow?.owner_id
+      run?.app_branch?.id ??
+      workflow.metadata?.app_branch_id ??
+      workflow?.owner_id
     if (!appId || !branchId || !workflow?.id) return ''
     return `/${orgId}/apps/${appId}/branches/${branchId}/runs/${workflow.id}`
   }
@@ -480,6 +482,17 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     }
   }
 
+  if (
+    status === 'auto-skipped' &&
+    step.status.metadata?.cause_check === 'policy-skip-apply'
+  ) {
+    return {
+      copy: status_human_description || 'No changes were applied by this step.',
+      theme: 'neutral',
+      title: 'Apply skipped by policy',
+    }
+  }
+
   if (status === 'not-attempted') {
     return {
       copy: `Step was not attempted ${status_human_description ? `: ${status_human_description}` : ''}`,
@@ -542,6 +555,7 @@ export interface PolicyViolation {
 export interface PolicyViolationCounts {
   denyViolations: PolicyViolation[]
   warnViolations: PolicyViolation[]
+  skipFindings: Omit<PolicyViolation, 'severity'>[]
   passedPolicyIds: string[]
   denyCount: number
   warnCount: number
@@ -556,6 +570,8 @@ export function getPolicyViolationCounts(
   const metadata = step?.status?.metadata
   const denyViolations = (metadata?.deny_violations as PolicyViolation[]) || []
   const warnViolations = (metadata?.warn_violations as PolicyViolation[]) || []
+  const skipFindings =
+    (metadata?.skip_findings as Omit<PolicyViolation, 'severity'>[]) || []
   const passedPolicyIds = (metadata?.passed_policy_ids as string[]) || []
   const denyCount = denyViolations.length
   const warnCount = warnViolations.length
@@ -563,12 +579,14 @@ export function getPolicyViolationCounts(
   const hasPolicyData =
     metadata?.deny_violations !== undefined ||
     metadata?.warn_violations !== undefined ||
+    metadata?.skip_findings !== undefined ||
     metadata?.passed_policy_ids !== undefined
   const hasViolations = denyCount > 0 || warnCount > 0
 
   return {
     denyViolations,
     warnViolations,
+    skipFindings,
     passedPolicyIds,
     denyCount,
     warnCount,

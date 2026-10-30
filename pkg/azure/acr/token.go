@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"go.uber.org/zap"
@@ -17,6 +19,15 @@ const (
 	DefaultACRUsername string = "00000000-0000-0000-0000-000000000000"
 )
 
+// exchangeClient never follows redirects: the request body carries an Entra
+// token, and a redirect would replay it to whatever host the registry names.
+var exchangeClient = &http.Client{
+	Timeout: 30 * time.Second,
+	CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
+
 // GetRepositoryToken exchanges an Azure credential for a refresh token that can be used to authenticate with
 // the registry. It has a timeout of 60 minutes.
 //
@@ -27,6 +38,10 @@ const (
 // NOTE: we do this, instead of using the ACR repository client to simplify our dependencies, however, at some point we
 // plan on moving this into a package, like we have with `pkg/aws`.
 func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService string, logger *zap.Logger) (string, error) {
+	if err := ValidateLoginServer(acrService); err != nil {
+		return "", err
+	}
+
 	// get a credential
 	credential, err := credentials.Fetch(ctx, cfg, logger)
 	if err != nil {
@@ -60,10 +75,23 @@ func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService
 		"tenant":       {tenantID},
 		"access_token": {aadToken.Token},
 	}
-	jsonResponse, err := http.PostForm(fmt.Sprintf("https://%s/oauth2/exchange", acrService), formData)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		fmt.Sprintf("https://%s/oauth2/exchange", acrService), strings.NewReader(formData.Encode()))
+	if err != nil {
+		return "", fmt.Errorf("unable to build token exchange request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	jsonResponse, err := exchangeClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("unable to get credential: %w", err)
 	}
+	defer jsonResponse.Body.Close()
+
+	if jsonResponse.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("acr token exchange with %s returned status %d", acrService, jsonResponse.StatusCode)
+	}
+
 	var response map[string]interface{}
 	decoder := json.NewDecoder(jsonResponse.Body)
 	if err := decoder.Decode(&response); err != nil {

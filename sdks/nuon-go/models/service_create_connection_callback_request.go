@@ -19,6 +19,11 @@ import (
 // swagger:model service.CreateConnectionCallbackRequest
 type ServiceCreateConnectionCallbackRequest struct {
 
+	// Code is the GitHub user-authorization code issued after the install.
+	// It proves the caller can see github_install_id; the id alone can be
+	// spoofed.
+	Code string `json:"code,omitempty"`
+
 	// github install id
 	// Required: true
 	GithubInstallID *string `json:"github_install_id"`

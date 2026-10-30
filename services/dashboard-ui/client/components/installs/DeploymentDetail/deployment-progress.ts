@@ -167,7 +167,7 @@ export const recoveredDeploymentResources = (
 export type TDeploymentStep = {
   id?: string
   name?: string
-  status?: { status?: string }
+  status?: { status?: string; metadata?: Record<string, unknown> }
   execution_type?: string
   retried?: boolean
   group_idx?: number
@@ -426,6 +426,22 @@ const outcomeForSteps = (
       detail: applied
         ? 'Previously applied; awaiting plan approval'
         : 'Not started — awaiting plan approval',
+      applied,
+    }
+  if (
+    steps.some(
+      (step) =>
+        step.status?.status === 'auto-skipped' &&
+        (step.policy?.skipped_by_policy ||
+          step.status.metadata?.check === 'policy-skip-apply' ||
+          step.status.metadata?.cause_check === 'policy-skip-apply')
+    )
+  )
+    return {
+      category,
+      name,
+      status: applied ? 'warn' : 'auto-skipped',
+      detail: `${applied ? 'Previously applied; apply' : 'Apply'} skipped by policy`,
       applied,
     }
   if (cancelled)

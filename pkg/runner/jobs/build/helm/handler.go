@@ -2,8 +2,10 @@ package helm
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/spf13/afero"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -22,6 +24,7 @@ type handler struct {
 	errRecorder *errs.Recorder
 	cfg         *runnerconfig.Config
 	ociCopy     ocicopy.Copier
+	fs          afero.Fs
 
 	// state is reused between function calls, but can _not_ be reused with different jobs.
 	//
@@ -40,15 +43,25 @@ type HandlerParams struct {
 	Config      *runnerconfig.Config
 	OCICopy     ocicopy.Copier
 	ErrRecorder *errs.Recorder
+	FS          afero.Fs `optional:"true"`
 }
 
 func New(params HandlerParams) (*handler, error) {
+	if params.FS == nil {
+		params.FS = afero.NewOsFs()
+	}
+	switch params.FS.(type) {
+	case *afero.OsFs, *afero.MemMapFs:
+	default:
+		return nil, fmt.Errorf("unsupported helm build filesystem %T", params.FS)
+	}
 	return &handler{
 		v:           params.V,
 		apiClient:   params.APIClient,
 		cfg:         params.Config,
 		ociCopy:     params.OCICopy,
 		errRecorder: params.ErrRecorder,
+		fs:          params.FS,
 	}, nil
 }
 

@@ -26,9 +26,9 @@ const (
 	DenyViolationsKey  = "deny_violations"
 	WarnViolationsKey  = "warn_violations"
 	PassedPolicyIDsKey = "passed_policy_ids"
+	SkipFindingsKey    = "skip_findings"
 
-	policyEvaluationMetric      = "policy.evaluation"
-	policyErrorsTerminalVersion = "policy-check-errors-terminal-v1"
+	policyEvaluationMetric = "policy.evaluation"
 )
 
 // Check implements directive.ApprovalCreateCheck for policy evaluation.
@@ -85,17 +85,15 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		zap.String("step_target_type", step.StepTargetType),
 		zap.String("workflow_id", flw.ID))
 
-	violations, checkResults, policyContext, outcome, policyErr := checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
+	violations, skipFindings, checkResults, policyContext, outcome, policyErr := checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
 	if policyErr != nil {
 		l.Error("failed to check policies",
 			zap.String("step_id", step.ID),
 			zap.Error(policyErr))
 		c.recordFailure(ctx, step, flw, policyErr)
-		if workflow.GetVersion(ctx, policyErrorsTerminalVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if policyContext == nil {
 			return directive.Pass(), policyErr
 		}
-		recordEvaluationCompositeError(ctx, l, step, policyErr)
-		return directive.Pass(), nil
 	}
 
 	if policyContext == nil {
@@ -113,6 +111,10 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	if step.PolicyValidation != nil {
 		validationID = &step.PolicyValidation.ID
 	}
+	var runnerJobID *string
+	if policyContext.RunnerJobID != "" {
+		runnerJobID = &policyContext.RunnerJobID
+	}
 	reportResult, reportErr := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
 		OrgID:                          policyContext.OrgID,
 		AppID:                          policyContext.AppID,
@@ -121,9 +123,13 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		ComponentID:                    policyContext.ComponentID,
 		ComponentBuildID:               policyContext.ComponentBuildID,
 		WorkflowStepPolicyValidationID: validationID,
+		RunnerJobID:                    runnerJobID,
+		RunnerJobExecutionID:           policyContext.RunnerJobExecutionID,
+		AppConfigID:                    policyContext.AppConfigID,
 		OwnerID:                        step.StepTargetID,
 		OwnerType:                      step.StepTargetType,
 		Violations:                     violations,
+		SkipFindings:                   skipFindings,
 		CheckResults:                   checkResults,
 		PolicyIDs:                      policyContext.PolicyIDs,
 		PolicyInputCounts:              policyInputCounts,
@@ -139,11 +145,8 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		}
 		l.Error("failed to persist policy report", zap.Error(reportErr))
 		c.recordFailure(ctx, step, flw, policyErr)
-		if workflow.GetVersion(ctx, policyErrorsTerminalVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-			return directive.Pass(), policyErr
-		}
-		recordEvaluationCompositeError(ctx, l, step, policyErr)
-	} else {
+		return directive.Pass(), policyErr
+	} else if policyErr == nil {
 		c.recordSuccess(ctx, step, flw, outcome)
 	}
 
@@ -151,20 +154,44 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	if reportResult != nil {
 		passedPolicyIDs = reportResult.PassedPolicyIDs
 	}
-	if err := processPolicyViolations(ctx, l, step, flw, violations, passedPolicyIDs); err != nil {
+	if err := processPolicyViolations(ctx, l, step, flw, violations, passedPolicyIDs, skipFindings); err != nil {
 		return directive.Pass(), errors.Wrap(err, "unable to process check for policy violation")
+	}
+	if policyErr != nil {
+		return directive.Pass(), policyErr
 	}
 
 	l.Debug("policy check completed successfully",
 		zap.String("step_id", step.ID),
 		zap.String("workflow_id", flw.ID))
 
+	if outcome == policyEvaluationOutcomeSkipApply {
+		summary := "Apply automatically skipped by policy; existing deployment retained"
+		if step.StepTargetType == "install_sandbox_runs" {
+			summary = "Sandbox apply automatically skipped by policy; existing sandbox state retained"
+		}
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+			StepID: step.ID, Status: app.StatusAutoSkipped, StatusDescription: summary,
+			Metadata: map[string]any{"policy_action": "skip_apply", "policy_report_id": reportResult.ReportID},
+		}); err != nil {
+			return directive.Pass(), errors.Wrap(err, "unable to mark deployment as skipped by policy")
+		}
+		return directive.CheckResult{
+			Directive:     directive.StepSkipGroup,
+			Status:        app.StatusAutoSkipped,
+			SiblingStatus: app.StatusAutoSkipped,
+			Reason: directive.CheckReason{
+				Check:   "policy-skip-apply",
+				Summary: summary,
+				Labels:  map[string]string{"policy_report_id": reportResult.ReportID, "policy_action": "skip_apply"},
+			},
+		}, nil
+	}
+
 	// If the signal opts into auto-approve on policies passing and there are
 	// no deny violations, short-circuit the pipeline with a continue directive.
-	if reportErr == nil {
-		if result, autoApproved := c.autoApprove(ctx, l, step); autoApproved {
-			return result, nil
-		}
+	if result, autoApproved := c.autoApprove(ctx, l, step); autoApproved {
+		return result, nil
 	}
 
 	return directive.Pass(), nil
@@ -201,9 +228,10 @@ func (c *Check) autoApprove(ctx workflow.Context, l *zap.Logger, step *app.Workf
 type policyEvaluationOutcome string
 
 const (
-	policyEvaluationOutcomePass policyEvaluationOutcome = "pass"
-	policyEvaluationOutcomeWarn policyEvaluationOutcome = "warn"
-	policyEvaluationOutcomeDeny policyEvaluationOutcome = "deny"
+	policyEvaluationOutcomePass      policyEvaluationOutcome = "pass"
+	policyEvaluationOutcomeWarn      policyEvaluationOutcome = "warn"
+	policyEvaluationOutcomeDeny      policyEvaluationOutcome = "deny"
+	policyEvaluationOutcomeSkipApply policyEvaluationOutcome = "skip_apply"
 )
 
 type policyEvaluationError struct {
@@ -214,20 +242,20 @@ type policyEvaluationError struct {
 func (e *policyEvaluationError) Error() string { return e.err.Error() }
 func (e *policyEvaluationError) Unwrap() error { return e.err }
 
-func checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, map[string][]policyopa.Result, *policyhelpers.PolicyEvaluationContext, policyEvaluationOutcome, error) {
+func checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, []activities.PolicyViolation, map[string][]policyopa.Result, *policyhelpers.PolicyEvaluationContext, policyEvaluationOutcome, error) {
 	prepResult, err := activities.AwaitPrepPolicyEvaluation(ctx, &activities.PrepPolicyEvaluationRequest{
 		StepTargetID:   stepTargetID,
 		StepTargetType: stepTargetType,
 	})
 	if err != nil {
-		return nil, nil, nil, "", &policyEvaluationError{
+		return nil, nil, nil, nil, "", &policyEvaluationError{
 			stage: "preparation",
 			err:   errors.Wrap(err, "unable to prepare policy evaluation"),
 		}
 	}
 
 	if !prepResult.HasPolicies {
-		return nil, nil, nil, "", nil
+		return nil, nil, nil, nil, "", nil
 	}
 
 	ao := workflow.ActivityOptions{
@@ -240,27 +268,41 @@ func checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([
 	var futures []workflow.Future
 	for _, p := range prepResult.Policies {
 		fut := workflow.ExecuteActivity(policyCtx, (&activities.Activities{}).EvaluateSinglePolicy, &activities.EvaluateSinglePolicyRequest{
-			PolicyID:      p.PolicyID,
-			PolicyName:    p.PolicyName,
-			Contents:      p.Contents,
-			InputJSON:     p.InputJSON,
-			InputIndex:    p.InputIndex,
-			InputIdentity: p.InputIdentity,
+			PolicyID:       p.PolicyID,
+			PolicyName:     p.PolicyName,
+			Contents:       p.Contents,
+			InputJSON:      p.InputJSON,
+			InputIndex:     p.InputIndex,
+			InputIdentity:  p.InputIdentity,
+			AllowSkipApply: prepResult.AllowSkipApply,
 		})
 		futures = append(futures, fut)
 	}
 
-	var allViolations []activities.PolicyViolation
+	var allViolations, skipFindings []activities.PolicyViolation
 	var checkResults map[string][]policyopa.Result
+	var evaluationErr error
 	outcome := policyEvaluationOutcomePass
 	for i, fut := range futures {
 		var result activities.EvaluateSinglePolicyResult
 		if err := fut.Get(ctx, &result); err != nil {
-			return nil, nil, nil, "", &policyEvaluationError{
+			evaluationErr = &policyEvaluationError{
 				stage: "evaluation",
 				err:   errors.Wrap(err, "policy evaluation failed"),
 			}
+			if !prepResult.AllowSkipApply {
+				return nil, nil, nil, nil, "", evaluationErr
+			}
+			p := prepResult.Policies[i]
+			allViolations = append(allViolations, activities.PolicyViolation{
+				PolicyID: p.PolicyID, PolicyName: p.PolicyName,
+				InputIndex: p.InputIndex, InputIdentity: p.InputIdentity,
+				Severity: "deny", Message: "Policy evaluation failed: " + err.Error(),
+			})
+			outcome = policyEvaluationOutcomeDeny
+			continue
 		}
+		skipFindings = append(skipFindings, result.SkipFindings...)
 		if len(result.Checks) > 0 {
 			if checkResults == nil {
 				checkResults = make(map[string][]policyopa.Result)
@@ -268,30 +310,38 @@ func checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([
 			policyID := prepResult.Policies[i].PolicyID
 			checkResults[policyID] = append(checkResults[policyID], result.Checks...)
 		}
+		for _, check := range result.Checks {
+			if check.Decision == "skip_apply" && outcome != policyEvaluationOutcomeDeny {
+				outcome = policyEvaluationOutcomeSkipApply
+			}
+		}
 		for _, violation := range result.Violations {
 			if violation.Severity == "deny" {
 				outcome = policyEvaluationOutcomeDeny
-			} else if outcome != policyEvaluationOutcomeDeny {
+			} else if outcome == policyEvaluationOutcomePass {
 				outcome = policyEvaluationOutcomeWarn
 			}
 		}
 		allViolations = append(allViolations, result.Violations...)
 	}
 
-	return allViolations, checkResults, &policyhelpers.PolicyEvaluationContext{
-		OrgID:            prepResult.OrgID,
-		AppID:            prepResult.AppID,
-		InstallID:        prepResult.InstallID,
-		InstallSandboxID: prepResult.InstallSandboxID,
-		ComponentID:      prepResult.ComponentID,
-		ComponentBuildID: prepResult.ComponentBuildID,
-		PolicyIDs:        prepResult.PolicyIDs,
-		InputCount:       prepResult.InputCount,
-		OrgName:          prepResult.OrgName,
-		AppName:          prepResult.AppName,
-		InstallName:      prepResult.InstallName,
-		ComponentName:    prepResult.ComponentName,
-	}, outcome, nil
+	return allViolations, skipFindings, checkResults, &policyhelpers.PolicyEvaluationContext{
+		OrgID:                prepResult.OrgID,
+		AppID:                prepResult.AppID,
+		InstallID:            prepResult.InstallID,
+		InstallSandboxID:     prepResult.InstallSandboxID,
+		ComponentID:          prepResult.ComponentID,
+		ComponentBuildID:     prepResult.ComponentBuildID,
+		PolicyIDs:            prepResult.PolicyIDs,
+		InputCount:           prepResult.InputCount,
+		AppConfigID:          prepResult.AppConfigID,
+		RunnerJobID:          prepResult.RunnerJobID,
+		RunnerJobExecutionID: prepResult.RunnerJobExecutionID,
+		OrgName:              prepResult.OrgName,
+		AppName:              prepResult.AppName,
+		InstallName:          prepResult.InstallName,
+		ComponentName:        prepResult.ComponentName,
+	}, outcome, evaluationErr
 }
 
 func (c *Check) recordFailure(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, policyErr error) {
@@ -316,19 +366,6 @@ func policyEvaluationErrorStage(policyErr error) string {
 	return "unknown"
 }
 
-func recordEvaluationCompositeError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, policyErr error) {
-	if err := activities.AwaitRecordPolicyEvaluationCompositeError(ctx, activities.RecordPolicyEvaluationCompositeErrorRequest{
-		WorkflowStepID: step.ID,
-		StepTargetID:   step.StepTargetID,
-		StepTargetType: step.StepTargetType,
-		Stage:          policyerrors.EvaluationFailureStage(policyEvaluationErrorStage(policyErr)),
-	}); err != nil {
-		l.Warn("failed to record policy evaluation composite error",
-			zap.String("step_id", step.ID),
-			zap.Error(err))
-	}
-}
-
 func (c *Check) recordSuccess(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, outcome policyEvaluationOutcome) {
 	if c.tmw == nil {
 		return
@@ -343,7 +380,7 @@ func (c *Check) recordSuccess(ctx workflow.Context, step *app.WorkflowStep, flw 
 	c.tmw.Incr(ctx, policyEvaluationMetric, metrics.ToTags(tags, "outcome", string(outcome))...)
 }
 
-func processPolicyViolations(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, violations []activities.PolicyViolation, passedPolicyIDs []string) error {
+func processPolicyViolations(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, violations []activities.PolicyViolation, passedPolicyIDs []string, skipFindings []activities.PolicyViolation) error {
 	var denyViolations, warnViolations []activities.PolicyViolation
 	for _, v := range violations {
 		if v.Severity == "deny" {
@@ -369,6 +406,7 @@ func processPolicyViolations(ctx workflow.Context, l *zap.Logger, step *app.Work
 					DenyViolationsKey:  denyViolations,
 					WarnViolationsKey:  warnViolations,
 					PassedPolicyIDsKey: passedPolicyIDs,
+					SkipFindingsKey:    skipFindings,
 				},
 				StatusHumanDescription: "Policy check failed",
 			},
@@ -386,9 +424,13 @@ func processPolicyViolations(ctx workflow.Context, l *zap.Logger, step *app.Work
 				DenyViolationsKey:  denyViolations,
 				WarnViolationsKey:  warnViolations,
 				PassedPolicyIDsKey: passedPolicyIDs,
+				SkipFindingsKey:    skipFindings,
 			},
 		},
 	}); updateErr != nil {
+		if len(skipFindings) > 0 {
+			return errors.Wrap(updateErr, "unable to record policy skip findings")
+		}
 		l.Warn("failed to update step with policy metadata", zap.Error(updateErr))
 	}
 

@@ -12,7 +12,7 @@ import (
 // FileProcessor is a function to process config files before they're marshalled into a config struct and synced to the api.
 type FileProcessor func(string, map[string]any) map[string]any
 
-func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcessor, rootDir string) error {
+func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcessor, opts ...config.ParseOption) error {
 
 	tomlDec := toml.NewDecoder(rw)
 
@@ -34,7 +34,7 @@ func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcess
 	obj = processor(name, obj)
 
 	// go from map[string]interface{} => config.AppConfig
-	mapDecCfg := config.DecoderConfig(config.WithRootDir(rootDir))
+	mapDecCfg := config.DecoderConfig(opts...)
 	mapDecCfg.Result = out
 	mapDec, err := mapstructure.NewDecoder(mapDecCfg)
 	if err != nil {

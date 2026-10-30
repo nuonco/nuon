@@ -3,8 +3,39 @@ package helm
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	"helm.sh/helm/v4/pkg/action"
+	rcommon "helm.sh/helm/v4/pkg/release/common"
+	release "helm.sh/helm/v4/pkg/release/v1"
+	"helm.sh/helm/v4/pkg/storage"
+	"helm.sh/helm/v4/pkg/storage/driver"
+
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
+
+func TestUpgradeValues(t *testing.T) {
+	for _, status := range []rcommon.Status{rcommon.StatusDeployed, rcommon.StatusFailed, rcommon.StatusSuperseded} {
+		t.Run(string(status), func(t *testing.T) {
+			store := storage.Init(driver.NewMemory())
+			current := &release.Release{Name: "acme", Namespace: "default", Version: 1, Info: &release.Info{Status: status}, Config: map[string]interface{}{"enabled": true}}
+			require.NoError(t, store.Create(current))
+			cfg := &action.Configuration{Releases: store}
+			values, err := UpgradeValues(cfg, current, nil)
+			require.NoError(t, err)
+			require.Equal(t, map[string]interface{}{"enabled": true}, values)
+			values, err = UpgradeValues(cfg, current, map[string]interface{}{"enabled": false})
+			require.NoError(t, err)
+			require.Equal(t, map[string]interface{}{"enabled": false}, values)
+			if status == rcommon.StatusDeployed {
+				last := &release.Release{Name: "acme", Namespace: "default", Version: 2, Info: &release.Info{Status: rcommon.StatusFailed}, Config: map[string]interface{}{"enabled": false}}
+				require.NoError(t, store.Create(last))
+				values, err = UpgradeValues(cfg, last, nil)
+				require.NoError(t, err)
+				require.Equal(t, map[string]interface{}{"enabled": true}, values)
+			}
+		})
+	}
+}
 
 func TestChartValues_OverrideWinsOverFilesAndSet(t *testing.T) {
 	valuesFile := `

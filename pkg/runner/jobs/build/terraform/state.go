@@ -5,6 +5,7 @@ import (
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
 const (
@@ -19,6 +20,7 @@ type handlerState struct {
 	// fields set by the plugin execution
 	workspace      workspace.Workspace
 	arch           ociarchive.Archive
+	source         *sourcefs.FS
 	resultTag      string
 	jobExecutionID string
 	jobID          string

@@ -6,9 +6,10 @@ import (
 )
 
 type Planner struct {
-	v                    *validator.Validate
-	cloudProvider        string
-	managementIAMRoleARN string
+	v                        *validator.Validate
+	cloudProvider            string
+	managementIAMRoleARN     string
+	managementACRRegistryURL string
 }
 
 type Params struct {

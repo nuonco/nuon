@@ -18,6 +18,7 @@ import (
 	"google.golang.org/api/idtoken"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/jwtcompact"
 	"github.com/nuonco/nuon/pkg/metrics"
 	gcptypes "github.com/nuonco/nuon/pkg/types/gcp"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -94,6 +95,17 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 	reqCtx := ctx.Request.Context()
 
 	// Step 1: Verify identity token (JWT) — proves project, SA, instance ID.
+	// Compact serialization only: peeks below must not diverge from what
+	// idtoken.Validate verifies.
+	if err := jwtcompact.Require(req.IdentityToken); err != nil {
+		s.l.Warn("runner auth gcp: identity token is not compact jwt", zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "invalid GCP identity token",
+		})
+		ctx.Abort()
+		return
+	}
 	// Resolve the expected audience: if the token carries a custom (white-label)
 	// audience that is registered as a runner group URL, use that; otherwise
 	// fall back to the global runner API URL.
@@ -379,11 +391,15 @@ func extractRunnerIDFromMetadata(instance *gcpInstanceResponse) string {
 // and checks if it is a registered custom runner URL. If so, that URL is returned
 // as the expected audience so white-labeled deployments can authenticate without
 // exposing Nuon's URL. Falls back to cfg.RunnerAPIURL for standard deployments.
+//
+// The peeked aud only chooses which expected audience idtoken.Validate checks;
+// a valid Google signature for that audience is still required. Non-compact
+// tokens fall back so a flattened JWS cannot steer the choice.
 func (s *service) resolveGCPTokenAudience(ctx context.Context, token string) string {
-	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
+	if err := jwtcompact.Require(token); err != nil {
 		return s.cfg.RunnerAPIURL
 	}
+	parts := strings.Split(strings.TrimSpace(token), ".")
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		return s.cfg.RunnerAPIURL
