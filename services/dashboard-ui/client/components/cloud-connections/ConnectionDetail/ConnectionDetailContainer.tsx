@@ -5,6 +5,7 @@ import { Toast } from '@/components/surfaces/Toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import type { TAPIError, TCloudConnection } from '@/types'
+import { AddRepositoryAccess } from '../AddRepositoryAccess'
 import { DeleteConnection } from '../DeleteConnection'
 import { useVerifyCloudConnection } from '../queries'
 import { ConnectionDetail, type TConnectionTab } from './ConnectionDetail'
@@ -58,6 +59,15 @@ export const ConnectionDetailContainer = ({
       error={error || verify.error}
       isVerifying={verify.isPending || isVerifying}
       verificationTimedOut={verificationTimedOut}
+      repositoryAccess={
+        connection && ['ecr', 'gar', 'acr'].includes(connection.preset) ? (
+          <AddRepositoryAccess
+            key={connection.id}
+            connection={connection}
+            orgId={orgId}
+          />
+        ) : undefined
+      }
       onVerify={() =>
         verify.mutate(undefined, {
           onError: (error) =>

@@ -1123,7 +1123,7 @@ export interface paths {
     get: operations["ListCloudConnections"];
     /**
      * create a cloud connection
-     * @description Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+     * @description Create an org-bound AWS, GCP, or Azure identity. Optional repository arrays generate initial read-only setup material but are not stored or used as an allowlist. ECR and GAR use default_region for image connection matching. ACR requires a subscription UUID, existing Entra application client ID and service principal, tenant UUID, registry ARM ID, and bare login server. Its registry must already use RBAC Registry + ABAC Repository Permissions; setup never changes registry mode. Cloud IAM authorizes image pulls. Custom renders AWS trust only.
      */
     post: operations["CreateCloudConnection"];
   };
@@ -3622,12 +3622,13 @@ export interface components {
     };
     "app.AWSECRImageConfig": {
       aws_region?: string;
+      /** @description actual configuration */
+      cloud_connection_id?: string;
       /** @description connection to parent model */
       component_config_id?: string;
       component_config_type?: string;
       created_at?: string;
       created_by_id?: string;
-      /** @description actual configuration */
       iam_role_arn?: string;
       id?: string;
       updated_at?: string;
@@ -4506,13 +4507,14 @@ export interface components {
        * never the material itself.
        */
       client_secret_name?: string;
+      /** @description actual configuration */
+      cloud_connection_id?: string;
       /** @description connection to parent model */
       component_config_id?: string;
       component_config_type?: string;
       created_at?: string;
       created_by_id?: string;
       id?: string;
-      /** @description actual configuration */
       registry_url?: string;
       tenant_id?: string;
       updated_at?: string;
@@ -4575,15 +4577,19 @@ export interface components {
       subscription_tenant_id?: string;
     };
     "app.CloudConnection": {
+      azure_registry_id?: string;
+      azure_registry_login_server?: string;
+      azure_tenant_id?: string;
       created_at?: string;
       created_by_id?: string;
       default_region?: string;
+      gcp_project_number?: string;
       id?: string;
       last_verified_at?: string;
       name?: string;
       org_id?: string;
       /** @enum {string} */
-      platform?: "aws";
+      platform?: "aws" | "gcp" | "azure";
       preset?: components["schemas"]["app.CloudConnectionPreset"];
       principal?: string;
       queues?: components["schemas"]["app.Queue"][];
@@ -4594,7 +4600,7 @@ export interface components {
       verification_requested_at?: string;
     };
     /** @enum {string} */
-    "app.CloudConnectionPreset": "stacks" | "custom";
+    "app.CloudConnectionPreset": "stacks" | "ecr" | "gar" | "acr" | "custom";
     /** @enum {string} */
     "app.CloudConnectionStatus": "pending" | "verified" | "error";
     /** @enum {string} */
@@ -4913,6 +4919,7 @@ export interface components {
       updated_at?: string;
     };
     "app.GCPGARImageConfig": {
+      cloud_connection_id?: string;
       component_config_id?: string;
       component_config_type?: string;
       created_at?: string;
@@ -8636,15 +8643,19 @@ export interface components {
       repo: string;
     };
     "service.ConnectionListResponse": {
+      azure_registry_id?: string;
+      azure_registry_login_server?: string;
+      azure_tenant_id?: string;
       created_at?: string;
       created_by_id?: string;
       default_region?: string;
+      gcp_project_number?: string;
       id?: string;
       last_verified_at?: string;
       name?: string;
       org_id?: string;
       /** @enum {string} */
-      platform?: "aws";
+      platform?: "aws" | "gcp" | "azure";
       preset?: components["schemas"]["app.CloudConnectionPreset"];
       principal?: string;
       queues?: components["schemas"]["app.Queue"][];
@@ -8657,15 +8668,19 @@ export interface components {
       verification_requested_at?: string;
     };
     "service.ConnectionResponse": {
+      azure_registry_id?: string;
+      azure_registry_login_server?: string;
+      azure_tenant_id?: string;
       created_at?: string;
       created_by_id?: string;
       default_region?: string;
+      gcp_project_number?: string;
       id?: string;
       last_verified_at?: string;
       name?: string;
       org_id?: string;
       /** @enum {string} */
-      platform?: "aws";
+      platform?: "aws" | "gcp" | "azure";
       preset?: components["schemas"]["app.CloudConnectionPreset"];
       principal?: string;
       queues?: components["schemas"]["app.Queue"][];
@@ -8679,6 +8694,7 @@ export interface components {
       verification_requested_at?: string;
     };
     "service.ConnectionUsage": {
+      image_configs?: number;
       installs?: number;
     };
     "service.CreateActionWorkflowConfigRequest": {
@@ -9292,10 +9308,17 @@ export interface components {
       version?: string;
     };
     "service.CreateRequest": {
+      acr_repositories?: string[];
+      azure_registry_id?: string;
+      azure_registry_login_server?: string;
+      azure_tenant_id?: string;
       default_region?: string;
+      ecr_repository_arns?: string[];
+      gar_repositories?: string[];
+      gcp_project_number?: string;
       name?: string;
       /** @enum {string} */
-      platform?: "aws";
+      platform?: "aws" | "gcp" | "azure";
       preset?: components["schemas"]["app.CloudConnectionPreset"];
       principal?: string;
       target_id?: string;
@@ -10263,6 +10286,7 @@ export interface components {
       cli?: string;
       cloudformation?: string;
       issuer_url?: string;
+      permissions_cli?: string;
       permissions_policy?: {
         [key: string]: unknown;
       };
@@ -19989,8 +20013,12 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search by name, account, or role ARN */
+        /** @description search by name, account, project, subscription, or principal */
         q?: string;
+        /** @description cloud platform */
+        platform?: "aws" | "gcp" | "azure";
+        /** @description comma-separated access presets: stacks, ecr, gar, acr, custom */
+        preset?: string;
       };
     };
     responses: {
@@ -20004,7 +20032,7 @@ export interface operations {
   };
   /**
    * create a cloud connection
-   * @description Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+   * @description Create an org-bound AWS, GCP, or Azure identity. Optional repository arrays generate initial read-only setup material but are not stored or used as an allowlist. ECR and GAR use default_region for image connection matching. ACR requires a subscription UUID, existing Entra application client ID and service principal, tenant UUID, registry ARM ID, and bare login server. Its registry must already use RBAC Registry + ABAC Repository Permissions; setup never changes registry mode. Cloud IAM authorizes image pulls. Custom renders AWS trust only.
    */
   CreateCloudConnection: {
     /** @description Input */
@@ -20099,6 +20127,10 @@ export interface operations {
   /** get cloud connection setup material */
   GetCloudConnectionSetup: {
     parameters: {
+      query?: {
+        /** @description Transient exact ECR ARN, GAR resource, or ACR repository path for read-only grant generation; not stored */
+        repository?: string[];
+      };
       path: {
         /** @description connection ID */
         connection_id: string;

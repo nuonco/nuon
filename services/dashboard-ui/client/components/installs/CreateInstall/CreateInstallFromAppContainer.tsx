@@ -606,6 +606,8 @@ export const CreateInstallFromAppContainer = ({
                   (connection) =>
                     connection.platform === installPlatform &&
                     connection.platform === 'aws' &&
+                    (connection.preset === 'stacks' ||
+                      connection.preset === 'custom') &&
                     connection.status === 'verified'
                 )
               : undefined

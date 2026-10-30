@@ -20,7 +20,8 @@ import type { TCloudConnectionSummary } from '@/types'
 import { CreateInstallWizardSession } from './CreateInstallWizardSession'
 
 const errorMessage = (err: unknown) =>
-  (err as { error?: string } | null)?.error || 'Unable to load app configuration'
+  (err as { error?: string } | null)?.error ||
+  'Unable to load app configuration'
 
 interface ICreateInstallWizardContainer {
   installsPath: string
@@ -76,26 +77,27 @@ export const CreateInstallWizardContainer = ({
     enabled: !!org.id && !!configId,
   })
 
-  const { data: cloudConnections, isLoading: cloudConnectionsLoading } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['cloud-connections', org.id, 'all'],
-    queryFn: async () => {
-      const all: TCloudConnectionSummary[] = []
-      let offset = 0
-      for (;;) {
-        const { data, pagination } = await getCloudConnections({
-          orgId: org.id,
-          offset,
-          limit: 100,
-        })
-        const page = data ?? []
-        all.push(...page)
-        if (!pagination?.hasNext || page.length === 0) return all
-        offset += page.length
-      }
-    },
-    enabled: !!org.id && cloudConnectionsEnabled,
-  })
+  const { data: cloudConnections, isLoading: cloudConnectionsLoading } =
+    useQuery({
+      placeholderData: keepPreviousData,
+      queryKey: ['cloud-connections', org.id, 'all'],
+      queryFn: async () => {
+        const all: TCloudConnectionSummary[] = []
+        let offset = 0
+        for (;;) {
+          const { data, pagination } = await getCloudConnections({
+            orgId: org.id,
+            offset,
+            limit: 100,
+          })
+          const page = data ?? []
+          all.push(...page)
+          if (!pagination?.hasNext || page.length === 0) return all
+          offset += page.length
+        }
+      },
+      enabled: !!org.id && cloudConnectionsEnabled,
+    })
 
   const componentIds = config?.component_ids ?? []
   const actionIds = config?.action_ids ?? []
@@ -161,8 +163,9 @@ export const CreateInstallWizardContainer = ({
         input_groups: (config.input.input_groups || []).map((group) => ({
           ...group,
           app_inputs:
-            config.input?.inputs?.filter((input) => input.group_id === group.id) ||
-            [],
+            config.input?.inputs?.filter(
+              (input) => input.group_id === group.id
+            ) || [],
         })),
       }
     : undefined
@@ -203,7 +206,10 @@ export const CreateInstallWizardContainer = ({
         platform === 'aws'
           ? (cloudConnections || []).filter(
               (connection) =>
-                connection.platform === 'aws' && connection.status === 'verified'
+                connection.platform === 'aws' &&
+                (connection.preset === 'stacks' ||
+                  connection.preset === 'custom') &&
+                connection.status === 'verified'
             )
           : undefined
       }

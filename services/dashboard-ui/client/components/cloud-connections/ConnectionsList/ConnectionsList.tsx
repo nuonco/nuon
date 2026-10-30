@@ -2,8 +2,9 @@ import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Button } from '@/components/common/Button'
-import { ClickToCopy } from '@/components/common/ClickToCopy'
+import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { Link } from '@/components/common/Link'
+import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
@@ -26,49 +27,93 @@ export const ConnectionsList = ({
   pagination?: TPaginationMeta & { offset?: number }
 }) => {
   const createHref = `/${orgId}/settings/cloud-connections/create`
-  const [params] = useSearchParams()
-  const search = (params.get('q') || '').toLowerCase()
+  const [params, setParams] = useSearchParams()
+  const search = params.get('q') || ''
+  const platform = params.get('platform') || undefined
+  const preset = params.get('preset') || undefined
+  const isFiltered = !!(search || platform || preset)
+  const setFilter = (key: string, value?: string) => {
+    setParams((previous) => {
+      const next = new URLSearchParams(previous)
+      if (value) next.set(key, value)
+      else next.delete(key)
+      next.delete('offset')
+      return next
+    })
+  }
   const columns = useMemo<ColumnDef<TCloudConnectionSummary>[]>(
     () => [
       {
         accessorKey: 'name',
         header: 'Name',
         cell: ({ row }) => (
-          <div className="flex min-w-0 max-w-lg flex-col gap-1">
-            <Link
-              href={`/${orgId}/settings/cloud-connections/${row.original.id}`}
-            >
-              <Text family="mono" weight="strong">
-                {row.original.name}
-              </Text>
-            </Link>
-            <ClickToCopy>
-              <Text
-                family="mono"
-                variant="subtext"
-                theme="neutral"
-                className="max-w-96 truncate"
-              >
-                {row.original.principal}
-              </Text>
-            </ClickToCopy>
-          </div>
+          <Link
+            href={`/${orgId}/settings/cloud-connections/${row.original.id}`}
+          >
+            <Text family="mono" weight="strong" className="break-all">
+              {row.original.name}
+            </Text>
+          </Link>
+        ),
+      },
+      {
+        accessorKey: 'platform',
+        header: 'Cloud',
+        cell: ({ row }) => (
+          <CloudPlatform
+            platform={row.original.platform}
+            displayVariant={row.original.platform === 'gcp' ? 'name' : 'abbr'}
+            colorVariant="color"
+            variant="subtext"
+          />
         ),
       },
       {
         accessorKey: 'target_id',
-        header: 'Account',
+        header: 'Account / project / subscription',
         cell: ({ row }) => (
-          <Text family="mono" variant="subtext">
-            {row.original.target_id}
+          <div className="flex flex-col gap-1">
+            <Text family="mono" variant="subtext">
+              {row.original.target_id}
+            </Text>
             {row.original.default_region ? (
-              <Text as="span" theme="neutral" family="mono" variant="subtext">
-                {' '}
-                · {row.original.default_region}
+              <Text theme="neutral" family="mono" variant="subtext">
+                {row.original.default_region}
               </Text>
             ) : null}
-          </Text>
+          </div>
         ),
+      },
+      {
+        accessorKey: 'preset',
+        header: 'Access',
+        cell: ({ row }) => {
+          const connection = row.original
+          const isImage =
+            connection.preset === 'ecr' ||
+            connection.preset === 'gar' ||
+            connection.preset === 'acr'
+          return (
+            <div className="flex flex-col gap-1">
+              <Text variant="subtext">
+                {isImage
+                  ? 'Image repositories'
+                  : connection.preset === 'stacks'
+                    ? 'Install stacks'
+                    : 'Custom'}
+              </Text>
+              {isImage && (
+                <Text variant="subtext" theme="neutral">
+                  {connection.preset === 'acr'
+                    ? 'Azure ACR'
+                    : connection.preset === 'gar'
+                      ? 'Artifact Registry'
+                      : 'Amazon ECR'}
+                </Text>
+              )}
+            </div>
+          )
+        },
       },
       {
         accessorKey: 'status',
@@ -81,7 +126,7 @@ export const ConnectionsList = ({
   return (
     <ListPage
       title="Cloud connections"
-      description="Manage the AWS roles Nuon can assume to operate installs in this org."
+      description="Manage cloud identities Nuon can use for install stacks and image repository access in this org."
       createAction={
         <Button variant="primary" href={createHref}>
           Create cloud connection
@@ -97,18 +142,45 @@ export const ConnectionsList = ({
         data={connections}
         isLoading={isLoading}
         pagination={pagination}
-        enableSearch={connections.length > 0 || isLoading || !!search}
-        searchPlaceholder="Search by name, account, or role ARN..."
+        enableSearch={connections.length > 0 || isLoading || isFiltered}
+        searchPlaceholder="Search connections..."
+        filterActions={
+          <>
+            <RadioFilterDropdown
+              id="cloud-connections-filter-cloud"
+              label="Cloud"
+              options={[
+                { value: 'aws', label: 'AWS' },
+                { value: 'gcp', label: 'Google Cloud' },
+                { value: 'azure', label: 'Azure' },
+              ]}
+              selected={platform}
+              onChange={(value) => setFilter('platform', value)}
+            />
+            <RadioFilterDropdown
+              id="cloud-connections-filter-access"
+              label="Access"
+              options={[
+                { value: 'stacks', label: 'Install stacks' },
+                { value: 'ecr,gar,acr', label: 'Image repositories' },
+                { value: 'custom', label: 'Custom' },
+              ]}
+              selected={preset}
+              onChange={(value) => setFilter('preset', value)}
+            />
+          </>
+        }
         emptyStateProps={
-          search
+          isFiltered
             ? {
                 emptyTitle: 'No cloud connections found',
-                emptyMessage: 'Try another name, account, or role ARN.',
+                emptyMessage:
+                  'Change the cloud or access filters, or try another search.',
               }
             : {
                 emptyTitle: 'No cloud connections yet',
                 emptyMessage:
-                  'A cloud connection lets Nuon assume a role you control to manage resources in an AWS account. Create a connection to use it when creating an install.',
+                  'A cloud connection gives Nuon access to cloud resources through an identity you control. Create a connection for install stacks or private image repositories.',
                 action: (
                   <Button variant="secondary" href={createHref}>
                     Create cloud connection

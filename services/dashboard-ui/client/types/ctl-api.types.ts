@@ -870,27 +870,32 @@ export type TCloudConnection = {
   created_at: string
   updated_at: string
   name: string
-  platform: 'aws'
+  platform: 'aws' | 'gcp' | 'azure'
   target_id: string
   principal: string
   default_region?: string
+  gcp_project_number?: string
+  azure_tenant_id?: string
+  azure_registry_id?: string
+  azure_registry_login_server?: string
   status: 'pending' | 'verified' | 'error'
   status_message?: string
   last_verified_at?: string
   verification_requested_at?: string
   verification_in_progress: boolean
-  preset: 'stacks' | 'custom'
-  used_by: { installs: number }
+  preset: 'stacks' | 'ecr' | 'gar' | 'acr' | 'custom'
+  used_by: { installs: number; image_configs?: number }
   setup: {
     issuer_url: string
     subject: string
     audience: string
     trust_policy: Record<string, unknown>
     permissions_policy?: Record<string, unknown>
+    permissions_cli?: string
     terraform: string
     cli: string
-    cloudformation: string
-    preset: 'stacks' | 'custom'
+    cloudformation?: string
+    preset: 'stacks' | 'ecr' | 'gar' | 'acr' | 'custom'
   }
 }
 
@@ -899,8 +904,21 @@ export type TCloudConnectionSummary = Omit<TCloudConnection, 'setup'>
 export type TCloudConnectionSetup = TCloudConnection['setup']
 export type TCreateCloudConnectionRequest = Pick<
   TCloudConnection,
-  'name' | 'platform' | 'target_id' | 'principal' | 'preset'
->
+  | 'name'
+  | 'platform'
+  | 'target_id'
+  | 'principal'
+  | 'preset'
+  | 'default_region'
+  | 'gcp_project_number'
+  | 'azure_tenant_id'
+  | 'azure_registry_id'
+  | 'azure_registry_login_server'
+> & {
+  ecr_repository_arns?: string[]
+  gar_repositories?: string[]
+  acr_repositories?: string[]
+}
 
 export type TVCSWebhookSubscription = {
   id: string
