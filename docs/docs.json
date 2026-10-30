@@ -116,7 +116,8 @@
               "concepts/policies",
               "concepts/actions",
               "concepts/runbooks",
-              "concepts/triggers"
+              "concepts/triggers",
+              "concepts/install-telemetry"
             ]
           }
         ]
@@ -232,7 +233,6 @@
               "guides/runner-management-mode",
               "guides/runner-kill-switch",
               "guides/export-runner-audit-logs",
-              "concepts/install-telemetry",
               "guides/manage-install-telemetry"
             ]
           },
