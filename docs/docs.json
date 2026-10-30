@@ -379,7 +379,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
-          "updates/044-act-on-detected-drift",
+          "updates/044-scoped-credentials-fix-drift",
           "updates/043-release-rollouts-runner-control",
           "updates/042-deprovisions-and-new-dashboard",
           "updates/041-agents-health-checks-and-triggers",
