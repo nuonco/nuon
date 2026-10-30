@@ -119,6 +119,13 @@ nuon installs workflows steps reject  -i <install-id> --workflow-id <wf> --step-
 nuon installs workflows steps retry   -i <install-id> --workflow-id <wf> --step-id <step>
 ```
 
+To review a plan before you approve it, `diff` prints the changes in a step's Terraform, Helm, or Kubernetes plan, and `contents` prints the raw plan JSON. Both work in `--read-only` mode.
+
+```bash
+nuon installs workflows steps diff     --workflow-id <wf> --step-id <step>
+nuon installs workflows steps contents --workflow-id <wf> --step-id <step>
+```
+
 ### Reprovision, deprovision, forget
 
 ```bash
