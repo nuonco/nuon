@@ -146,6 +146,33 @@ describe('configChanges', () => {
     expect(changes.sections[0].before).toContain('contents = """')
   })
 
+  test('does not re-quote input defaults the differ already JSON-encoded', () => {
+    const changes = configChanges([
+      section({
+        name: 'Install inputs',
+        sectionKey: 'inputs',
+        grouped: true,
+        entities: [
+          {
+            name: 'input.instance_type',
+            op: 'change',
+            fields: [
+              {
+                key: 'default',
+                op: 'change',
+                diff: `'"t3a.medium"' -> '"t3a.large"'`,
+              },
+            ],
+          },
+        ],
+      }),
+    ])
+
+    expect(changes.sections[0].before).toContain('default = "t3a.medium"')
+    expect(changes.sections[0].after).toContain('default = "t3a.large"')
+    expect(changes.sections[0].after).not.toContain('\\"')
+  })
+
   test('attaches builds to the matching component and sandbox rows', () => {
     const changes = configChanges(
       [

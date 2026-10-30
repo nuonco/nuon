@@ -100,3 +100,63 @@ func ParseAzureManagedIdentity(claims map[string]any) (*AzureManagedIdentity, er
 func AzurePhoneHomeIdentityName(installID string) string {
 	return installID + "-phone-home"
 }
+
+func AzureRunnerVMSSName(installID string) string {
+	return installID + "-vmss"
+}
+
+type AzureRunnerVMSS struct {
+	SubscriptionID string
+	ResourceGroup  string
+	InstallID      string
+	Name           string
+}
+
+// ParseAzureRunnerVMSS reads
+// /subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.Compute/virtualMachineScaleSets/{installID}-vmss
+func ParseAzureRunnerVMSS(mirID string) (*AzureRunnerVMSS, error) {
+	if mirID == "" {
+		return nil, fmt.Errorf("xms_mirid is empty")
+	}
+
+	parts := strings.Split(strings.TrimPrefix(mirID, "/"), "/")
+	if len(parts) != azureMIRIDSegments {
+		return nil, fmt.Errorf("xms_mirid is not a runner vmss resource id")
+	}
+
+	for i, want := range map[int]string{
+		0: "subscriptions",
+		2: "resourcegroups",
+		4: "providers",
+		5: "Microsoft.Compute",
+		6: "virtualMachineScaleSets",
+	} {
+		if !strings.EqualFold(parts[i], want) {
+			return nil, fmt.Errorf("xms_mirid is not a runner vmss resource id")
+		}
+	}
+
+	if !azureGUID.MatchString(parts[1]) {
+		return nil, fmt.Errorf("xms_mirid subscription %q is not a guid", parts[1])
+	}
+	if parts[3] == "" || parts[7] == "" {
+		return nil, fmt.Errorf("xms_mirid is missing a resource group or vmss name")
+	}
+
+	name := parts[7]
+	const suffix = "-vmss"
+	if !strings.HasSuffix(strings.ToLower(name), suffix) {
+		return nil, fmt.Errorf("xms_mirid vmss name %q is not an install runner name", name)
+	}
+	installID := name[:len(name)-len(suffix)]
+	if installID == "" {
+		return nil, fmt.Errorf("xms_mirid vmss name %q is missing an install id", name)
+	}
+
+	return &AzureRunnerVMSS{
+		SubscriptionID: parts[1],
+		ResourceGroup:  parts[3],
+		InstallID:      installID,
+		Name:           name,
+	}, nil
+}

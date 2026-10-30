@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 )
 
 type Params struct {
@@ -26,13 +27,14 @@ type Params struct {
 }
 
 type service struct {
-	v          *validator.Validate
-	l          *zap.Logger
-	db         *gorm.DB
-	cfg        *internal.Config
-	acctClient *account.Client
-	mw         metrics.Writer
-	certStore  *runneraws.IIDCertStore
+	v           *validator.Validate
+	l           *zap.Logger
+	db          *gorm.DB
+	cfg         *internal.Config
+	acctClient  *account.Client
+	mw          metrics.Writer
+	certStore   *runneraws.IIDCertStore
+	workloadJWT *workloadjwt.Verifier
 }
 
 var _ api.Service = (*service)(nil)
@@ -48,13 +50,14 @@ func New(params Params) *service {
 	}
 
 	return &service{
-		v:          params.V,
-		l:          params.L,
-		db:         params.DB,
-		cfg:        params.Cfg,
-		acctClient: params.AcctClient,
-		mw:         params.MW,
-		certStore:  certStore,
+		v:           params.V,
+		l:           params.L,
+		db:          params.DB,
+		cfg:         params.Cfg,
+		acctClient:  params.AcctClient,
+		mw:          params.MW,
+		certStore:   certStore,
+		workloadJWT: workloadjwt.NewVerifier(),
 	}
 }
 

@@ -12,6 +12,8 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/sync/singleflight"
+
+	"github.com/nuonco/nuon/pkg/jwtcompact"
 )
 
 const (
@@ -142,12 +144,13 @@ func (v *Verifier) provider(ctx context.Context, issuer string) (*oidc.Provider,
 
 // UnverifiedIssuer extracts the iss claim without checking the signature. It
 // exists to select stored configuration; authorization must use Verify.
+// Only compact JWTs are accepted so a flattened JWS cannot steer discovery.
 func UnverifiedIssuer(rawToken string) (string, error) {
-	parts := strings.Split(rawToken, ".")
-	if len(parts) != 3 {
-		return "", errors.New("malformed jwt")
+	if err := jwtcompact.Require(rawToken); err != nil {
+		return "", err
 	}
 
+	parts := strings.Split(strings.TrimSpace(rawToken), ".")
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		return "", fmt.Errorf("malformed jwt payload: %w", err)

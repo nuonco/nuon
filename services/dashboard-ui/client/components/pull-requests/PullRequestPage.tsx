@@ -202,6 +202,8 @@ export const PullRequestPage = () => {
           baseRef={vcs?.branch}
           branchConfig={currentConfig?.preview_config}
           basePath={basePath}
+          orgId={orgId}
+          appId={appId}
           backLink={backLink}
           isLoading={runs.isPending}
           changes={

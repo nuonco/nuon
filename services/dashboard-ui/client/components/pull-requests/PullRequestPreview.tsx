@@ -15,6 +15,7 @@ import { DetailPage } from '@/components/layout/DetailPage'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { OverviewLoadingTrack } from '@/components/branches/BranchOverview/OverviewLoadingTrack'
 import {
+  buildComponentsStep,
   buildOverviewLoadingStages,
   preRolloutCompositeError,
   type TPreviewProgress,
@@ -25,6 +26,10 @@ import {
 } from '@/components/branches/shared/step-status'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
 import { previewConfigStatus } from '@/components/pull-requests/map-pull-request'
+import {
+  PreviewRunProgress,
+  type TPreviewRunBuild,
+} from '@/components/pull-requests/PreviewRunProgress'
 import type {
   TAppBranchPreviewConfig,
   TAppBranchRun,
@@ -110,6 +115,8 @@ export interface IPullRequestPreview {
   baseRef?: string
   branchConfig?: TAppBranchPreviewConfig
   basePath: string
+  orgId?: string
+  appId?: string
   backLink?: ReactNode
   changes?: ReactNode
   isLoading?: boolean
@@ -124,6 +131,8 @@ export const PullRequestPreview = ({
   baseRef,
   branchConfig,
   basePath,
+  orgId,
+  appId,
   backLink,
   changes,
   isLoading = false,
@@ -148,9 +157,17 @@ export const PullRequestPreview = ({
   const failure = latest
     ? previewRunFailure(steps, latestRun?.composite_error)
     : undefined
+  const running = !!latest && !latest.finished && !failure
+  const diffReady =
+    stages.find((stage) => stage.id === 'build-components')?.status ===
+    'success'
+  const buildMetadata = buildComponentsStep(steps)?.status?.metadata as
+    | { builds?: TPreviewRunBuild[]; sandbox_build_id?: string }
+    | undefined
 
   return (
     <DetailPage
+      className="flex-1"
       header={
         <>
           {backLink}
@@ -254,9 +271,9 @@ export const PullRequestPreview = ({
         </>
       }
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3">
-          {isLoading || latest ? (
+      <div className="flex flex-1 flex-col gap-4">
+        {isLoading || latest ? (
+          <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               {isLoading ? (
                 <Text
@@ -274,30 +291,64 @@ export const PullRequestPreview = ({
                 <Link href={`${basePath}/runs/${latest.id}`}>View run</Link>
               ) : null}
             </div>
-          ) : (
+
+            {failure ? <CompositeError error={failure} /> : null}
+
+            {stale ? (
+              <Text variant="subtext" theme="neutral">
+                This run is for an older commit than the pull request.
+              </Text>
+            ) : null}
+
+            <Text variant="subtext" theme="neutral" loading={isLoading}>
+              {runContextSentence({ mode, install, needsInput, oneOff })}
+            </Text>
+
+            {running && diffReady ? (
+              <PreviewRunProgress
+                variant="inline"
+                stages={stages}
+                description={latest?.status?.status_human_description}
+                sha={sha}
+                baseRef={baseRef}
+                install={install}
+              />
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center">
             <EmptyState
               variant="history"
               emptyTitle="No preview runs yet"
               emptyMessage="A run starts when this pull request is opened or pushed to."
+              action={
+                needsInput ? (
+                  <Button variant="secondary" onClick={onEditConfig}>
+                    Choose an install
+                  </Button>
+                ) : undefined
+              }
             />
-          )}
+          </div>
+        )}
 
-          {failure ? <CompositeError error={failure} /> : null}
+        {running && !diffReady ? (
+          <div className="flex flex-1 flex-col items-center justify-center py-12">
+            <PreviewRunProgress
+              stages={stages}
+              description={latest?.status?.status_human_description}
+              builds={buildMetadata?.builds}
+              sandboxBuildId={buildMetadata?.sandbox_build_id}
+              sha={sha}
+              baseRef={baseRef}
+              install={install}
+              orgId={orgId}
+              appId={appId}
+            />
+          </div>
+        ) : null}
 
-          {stale ? (
-            <Text variant="subtext" theme="neutral">
-              This run is for an older commit than the pull request.
-            </Text>
-          ) : null}
-
-          {latest ? (
-            <Text variant="subtext" theme="neutral" loading={isLoading}>
-              {runContextSentence({ mode, install, needsInput, oneOff })}
-            </Text>
-          ) : null}
-        </div>
-
-        {changes}
+        {!running || diffReady ? changes : null}
 
         {workflows.length > 1 ? (
           <div className="flex flex-col gap-2">
