@@ -123,7 +123,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"source_dir", sourceDir)
 
 	intermediateConfig, err := activities.LocalAwaitFetchIntermediateConfig(ctx, activities.FetchIntermediateConfigRequest{
-		SourceDir: sourceDir,
+		SourceDir:   sourceDir,
+		WorkspaceID: cloneResult.WorkspaceID,
 	})
 	if err != nil {
 		if detail, ok := branchrunerrors.ValidationDetail(err); ok {

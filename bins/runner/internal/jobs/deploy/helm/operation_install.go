@@ -33,6 +33,9 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
 	l.Debug("rendered values", zap.Any("values", values))
+	if err := helm.ValidateSchemaResources(chart, values); err != nil {
+		return nil, fmt.Errorf("unable to confine helm schemas: %w", err)
+	}
 
 	// get the default client
 	client := helm.DefaultInstall(actionCfg)

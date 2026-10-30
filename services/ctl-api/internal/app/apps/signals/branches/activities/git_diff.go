@@ -9,8 +9,10 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"go.uber.org/zap"
 
+	github "github.com/nuonco/nuon/pkg/github/repo"
 	"github.com/nuonco/nuon/pkg/workspace"
 )
 
@@ -48,22 +50,26 @@ func (a *Activities) computeGitDiffBetweenSHAs(ctx context.Context, vcsConfigID,
 		return nil, fmt.Errorf("unable to init workspace: %w", err)
 	}
 
-	repo, err := git.PlainOpen(ws.Root())
+	repo, err := ws.Repository()
 	if err != nil {
 		return nil, fmt.Errorf("unable to open git repo: %w", err)
 	}
 
-	if err := ensureCommitPresent(ctx, repo, baseSHA, a.l); err != nil {
+	_, auth, err := github.CloneURLAuth(gitSource.URL)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCommitPresent(ctx, repo, baseSHA, auth, a.l); err != nil {
 		return nil, fmt.Errorf("unable to resolve base commit %s: %w", baseSHA, err)
 	}
-	if err := ensureCommitPresent(ctx, repo, headSHA, a.l); err != nil {
+	if err := ensureCommitPresent(ctx, repo, headSHA, auth, a.l); err != nil {
 		return nil, fmt.Errorf("unable to resolve head commit %s: %w", headSHA, err)
 	}
 
 	return diffCommits(ctx, repo, baseSHA, headSHA)
 }
 
-func ensureCommitPresent(ctx context.Context, repo *git.Repository, sha string, l *zap.Logger) error {
+func ensureCommitPresent(ctx context.Context, repo *git.Repository, sha string, auth transport.AuthMethod, l *zap.Logger) error {
 	hash := plumbing.NewHash(sha)
 	_, err := repo.CommitObject(hash)
 	if err == nil {
@@ -77,6 +83,7 @@ func ensureCommitPresent(ctx context.Context, repo *git.Repository, sha string, 
 
 	l.Info("fetching origin to resolve missing commit", zap.String("sha", sha))
 	fetchErr := remote.FetchContext(ctx, &git.FetchOptions{
+		Auth: auth,
 		RefSpecs: []config.RefSpec{
 			config.RefSpec("+refs/heads/*:refs/heads/*"),
 			config.RefSpec("+refs/tags/*:refs/tags/*"),
