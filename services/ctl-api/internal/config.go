@@ -338,6 +338,10 @@ type Config struct {
 	GithubAppID            string `config:"github_app_id" validate:"required"`
 	GithubAppKey           string `config:"github_app_key" validate:"required"`
 	GithubAppKeySecretName string `config:"github_app_key_secret_name" validate:"required"`
+	// OAuth client of the same GitHub App, used to confirm that the user who
+	// finished an install actually owns the installation_id they report.
+	GithubAppClientID     string `config:"github_app_client_id"`
+	GithubAppClientSecret string `config:"github_app_client_secret"`
 
 	// base urls for filling in various fields on objects
 	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url" validate:"required"`
@@ -376,6 +380,9 @@ type Config struct {
 	DisableOrgCreation   bool `config:"disable_org_creation"`
 
 	DisableVCSConnectionCallback bool `config:"disable_vcs_connection_callback"`
+	// Skips the GitHub user-authorization check on the connection callback.
+	// For local stacks and e2e runs without an OAuth client; never set in prod.
+	DisableVCSConnectionOwnershipCheck bool `config:"disable_vcs_connection_ownership_check"`
 
 	// OIDC workload identity federation
 	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)

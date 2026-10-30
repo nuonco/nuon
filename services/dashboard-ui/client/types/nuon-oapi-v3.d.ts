@@ -1302,6 +1302,8 @@ export interface paths {
     /**
      * Get config for cli
      * @description Returns CLI configuration and settings.
+     *
+     * `min_cli_version` is deprecated. It remains the warning floor for older CLIs. Prefer `min_cli_version_policy.warn`. `min_cli_version_policy.error` is the oldest CLI this control plane will run. An empty warn means the CLI does not warn.
      */
     get: operations["GetCLIConfig"];
   };
@@ -3362,6 +3364,8 @@ export interface paths {
     /**
      * create a vcs connection from the github app install callback
      * @description Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
+     *
+     * `code` is the user-authorization code GitHub issues when the installing user completes the app's OAuth web flow. The API exchanges it and only attaches `github_install_id` if that user can see the installation; otherwise it responds `403`. The installation id on its own is not trusted because GitHub lets it be spoofed.
      */
     post: operations["CreateVCSConnectionCallback"];
   };
@@ -3371,11 +3375,6 @@ export interface paths {
      * @description Returns all VCS connections for the provided organization.
      */
     get: operations["GetOrgVCSConnections"];
-    /**
-     * create a vcs connection for Github
-     * @description Create a VCS connection for version control integration.
-     */
-    post: operations["CreateVCSConnection"];
   };
   "/v1/vcs/connections/{connection_id}": {
     /**
@@ -5343,6 +5342,7 @@ export interface components {
       stale_after_seconds?: number;
     };
     "app.InstallConfig": {
+      action_timeout?: number | null;
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       component_toggles?: {
         [key: string]: boolean;
@@ -6239,6 +6239,7 @@ export interface components {
     /** @enum {string} */
     "app.PolicyReportOwnerType": "install_deploys" | "install_sandbox_runs" | "component_builds";
     "app.PolicyResult": {
+      checks?: components["schemas"]["github_com_nuonco_nuon_pkg_policies_opa.Result"][];
       deny_count?: number;
       input_count?: number;
       pass_count?: number;
@@ -6249,6 +6250,7 @@ export interface components {
       warn_count?: number;
     };
     "app.PolicyViolation": {
+      check_id?: string;
       /** @description Human-readable input reference (e.g., "Deployment/default/nginx") */
       input_identity?: string;
       input_index?: number;
@@ -7645,6 +7647,15 @@ export interface components {
       match_labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       not_match_labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
     };
+    "github_com_nuonco_nuon_pkg_policies_opa.Result": {
+      check_id?: string;
+      decision?: string;
+      description?: string;
+      errors?: components["schemas"]["opa.EvaluationError"][];
+      findings?: components["schemas"]["opa.Finding"][];
+      input_count?: number;
+      title?: string;
+    };
     "github_com_nuonco_nuon_pkg_types_state.State": {
       actions?: components["schemas"]["state.ActionsState"];
       app?: components["schemas"]["state.AppState"];
@@ -7706,6 +7717,7 @@ export interface components {
       subscription_id?: string;
     };
     "helpers.CreateInstallConfigParams": {
+      action_timeout?: number | null;
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
       labels?: {
@@ -7819,6 +7831,17 @@ export interface components {
       kty?: string;
       n?: string;
       use?: string;
+    };
+    "opa.EvaluationError": {
+      code?: string;
+      input_identity?: string;
+      input_index?: number;
+      message?: string;
+    };
+    "opa.Finding": {
+      input_identity?: string;
+      input_index?: number;
+      message?: string;
     };
     "outputs.SecretSyncOutput": {
       arn?: string;
@@ -8519,15 +8542,12 @@ export interface components {
       auth_client_id?: string;
       auth_domain?: string;
       dashboard_url?: string;
+      /** @description Deprecated: older CLIs read this warning floor. New CLIs use min_cli_version_policy. */
       min_cli_version?: string;
       min_cli_version_policy?: components["schemas"]["service.MinCLIVersionPolicy"];
       nuon_auth_enabled?: boolean;
       oidc_federation_enabled?: boolean;
       root_domain?: string;
-    };
-    "service.MinCLIVersionPolicy": {
-      error?: string;
-      warn?: string;
     };
     "service.CancelRunnerJobRequest": Record<string, never>;
     "service.CancelWorkflowError": {
@@ -8916,11 +8936,14 @@ export interface components {
       var_name?: string;
     };
     "service.CreateConnectionCallbackRequest": {
+      /**
+       * @description Code is the GitHub user-authorization code issued after the install.
+       * It proves the caller can see github_install_id; the id alone can be
+       * spoofed.
+       */
+      code?: string;
       github_install_id: string;
       org_id: string;
-    };
-    "service.CreateConnectionRequest": {
-      github_install_id: string;
     };
     "service.CreateCurrentOrgWebhookRequest": {
       interests?: Record<string, never>;
@@ -9044,6 +9067,7 @@ export interface components {
       role?: string;
     };
     "service.CreateInstallConfigRequest": {
+      action_timeout?: number | null;
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
       labels?: {
@@ -10003,6 +10027,10 @@ export interface components {
       logs?: components["schemas"]["app.OtelLogRecord"][];
       next?: string;
     };
+    "service.MinCLIVersionPolicy": {
+      error?: string;
+      warn?: string;
+    };
     "service.MngRestartRequest": Record<string, never>;
     "service.MngShutDownRequest": Record<string, never>;
     "service.MngUpdateRequest": Record<string, never>;
@@ -10403,6 +10431,7 @@ export interface components {
       webhook_secret?: string;
     };
     "service.UpdateInstallConfigRequest": {
+      action_timeout?: number | null;
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
       labels?: {
@@ -21264,6 +21293,8 @@ export interface operations {
   /**
    * Get config for cli
    * @description Returns CLI configuration and settings.
+   *
+   * `min_cli_version` is deprecated. It remains the warning floor for older CLIs. Prefer `min_cli_version_policy.warn`. `min_cli_version_policy.error` is the oldest CLI this control plane will run. An empty warn means the CLI does not warn.
    */
   GetCLIConfig: {
     responses: {
@@ -34983,6 +35014,8 @@ export interface operations {
   /**
    * create a vcs connection from the github app install callback
    * @description Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
+   *
+   * `code` is the user-authorization code GitHub issues when the installing user completes the app's OAuth web flow. The API exchanges it and only attaches `github_install_id` if that user can see the installation; otherwise it responds `403`. The installation id on its own is not trusted because GitHub lets it be spoofed.
    */
   CreateVCSConnectionCallback: {
     /** @description Input */
@@ -35078,62 +35111,6 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * create a vcs connection for Github
-   * @description Create a VCS connection for version control integration.
-   */
-  CreateVCSConnection: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.CreateConnectionRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["app.VCSConnection"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Conflict */
-      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
