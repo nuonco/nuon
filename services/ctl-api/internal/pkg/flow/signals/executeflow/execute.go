@@ -879,15 +879,20 @@ func (s *Signal) markResumeRequested(ctx workflow.Context, runType app.WorkflowR
 // appended step that errored) are skipped, so one failed step never wedges the
 // host.
 func (s *Signal) residentScheduleDecision(ctx workflow.Context) residentScheduleDecision {
+	decision, _ := s.readResidentSchedule(ctx)
+	return decision
+}
+
+func (s *Signal) readResidentSchedule(ctx workflow.Context) (residentScheduleDecision, error) {
 	groups, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
 	if err != nil || len(groups) == 0 {
-		return residentScheduleDecision{State: residentScheduleRunnable}
+		return residentScheduleDecision{State: residentScheduleRunnable}, err
 	}
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})
 	if err != nil {
-		return residentScheduleDecision{State: residentScheduleComplete}
+		return residentScheduleDecision{State: residentScheduleComplete}, err
 	}
 
 	pending := make(map[int]bool)
@@ -910,18 +915,18 @@ func (s *Signal) residentScheduleDecision(ctx workflow.Context) residentSchedule
 		// errored step rather than run past it.
 		if g.Status.Status == app.StatusFailedPendingRetry ||
 			(g.Status.Status == app.StatusError && unresolved[g.GroupIdx]) {
-			return residentScheduleDecision{State: residentScheduleBlocked}
+			return residentScheduleDecision{State: residentScheduleBlocked}, nil
 		}
 		// A parked approval holds its group until a response is persisted;
 		// the group then re-dispatches the step to apply it.
 		if unanswered[g.GroupIdx] {
-			return residentScheduleDecision{State: residentScheduleAwaitingApproval}
+			return residentScheduleDecision{State: residentScheduleAwaitingApproval}, nil
 		}
 		if pending[g.GroupIdx] {
-			return residentScheduleDecision{State: residentScheduleRunnable, Position: pos}
+			return residentScheduleDecision{State: residentScheduleRunnable, Position: pos}, nil
 		}
 	}
-	return residentScheduleDecision{State: residentScheduleComplete}
+	return residentScheduleDecision{State: residentScheduleComplete}, nil
 }
 
 func (s *Signal) firstPendingGroupPosition(ctx workflow.Context) (int, bool) {
