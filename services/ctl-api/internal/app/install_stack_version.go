@@ -69,6 +69,9 @@ type InstallStackVersion struct {
 	CustomStacksOutputMap          map[string]map[string]string `json:"custom_stacks_output_map,omitzero" gorm:"type:jsonb;serializer:json" swaggertype:"object" temporaljson:"custom_stacks_output_map,omitzero,omitempty"`
 	CustomStacksInputParametersMap map[string]map[string]string `json:"custom_stacks_input_parameters_map,omitzero" gorm:"type:jsonb;serializer:json" swaggertype:"object" temporaljson:"custom_stacks_input_parameters_map,omitzero,omitempty"`
 
+	// Rendered against install state when the version is generated.
+	CustomerSecrets []InstallStackVersionSecret `json:"customer_secrets,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"customer_secrets,omitzero,omitempty"`
+
 	// QuickLinkURL opens the cloud console pre-loaded with this version's stack:
 	// CloudFormation quick-create on AWS, Deploy to Azure on Azure. Empty on GCP,
 	// on any install whose template bucket is unconfigured, and on an Azure install

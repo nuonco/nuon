@@ -189,6 +189,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		PublicAPIURL:          cfg.RunnerConfig.PublicAPIURL,
 		DeploymentScope:       string(cfg.StackConfig.DeploymentScope),
 		HasCustomNestedStacks: len(cfg.StackConfig.CustomNestedStacks) > 0,
+		CustomerSecrets:       app.CustomerStackSecrets(cfg.SecretsConfig.Secrets),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")

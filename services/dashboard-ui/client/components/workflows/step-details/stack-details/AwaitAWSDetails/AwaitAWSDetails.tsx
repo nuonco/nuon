@@ -10,6 +10,7 @@ import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { createFileDownload } from '@/utils/file-download'
 import { TFModuleTab as SharedTFModuleTab } from '../tf-module'
+import type { TInstallStackVersionSecret } from '@/types'
 import type { IMainTfParts } from '../tf-module'
 import type { IStackDetails } from '../types'
 
@@ -154,6 +155,7 @@ export const AwaitAWSDetails = ({
                 orgId={orgId}
                 installId={installId}
                 installAwsRegion={installAwsRegion}
+                customerSecrets={version?.customer_secrets}
               />
             ),
           }}
@@ -548,11 +550,17 @@ interface ITFModuleTab {
   orgId: string
   installId?: string
   installAwsRegion?: string
+  customerSecrets?: TInstallStackVersionSecret[]
 }
 
 // The AWS half of the TF Module tab: which providers to require, and the module
 // source. Auth, inputs, secrets and the step layout are shared.
-const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
+const TFModuleTab = ({
+  orgId,
+  installId,
+  installAwsRegion,
+  customerSecrets,
+}: ITFModuleTab) => {
   const region = installAwsRegion ?? '<your-install-region>'
 
   const buildMainTf = ({
@@ -585,6 +593,7 @@ module "aws_stack" {
     <SharedTFModuleTab
       orgId={orgId}
       installId={installId}
+      customerSecrets={customerSecrets}
       buildMainTf={buildMainTf}
     />
   )

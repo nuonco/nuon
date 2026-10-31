@@ -198,6 +198,29 @@ func (s *InstallerSDKConfigTestSuite) TestClusterNameFromCurrentInputs() {
 	assert.Equal(t, "my-cluster", cfg.AWS.ClusterName)
 }
 
+func (s *InstallerSDKConfigTestSuite) TestRendersNestedTemplateURLs() {
+	t := s.T()
+
+	s.customerInput("stack_type", "default", false)
+	var stackConfig app.AppStackConfig
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).
+		Where("app_config_id = ?", s.appCfg.ID).
+		First(&stackConfig).Error)
+	stackConfig.VPCNestedTemplateURL = "https://example.com/vpc/{{ .nuon.install.inputs.stack_type }}/stack.yaml"
+	stackConfig.RunnerNestedTemplateURL = "https://example.com/runner/{{ .nuon.install.id }}/stack.yaml"
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).Save(&stackConfig).Error)
+
+	install := s.seedInstallWithRunner()
+	s.deps.Seed.CreateInstallInputs(s.ctx, t, install.ID, s.inputCfg.ID, map[string]*string{
+		"stack_type": generics.ToPtr("multi-nat"),
+	})
+
+	cfg := s.build(install.ID)
+	require.NotNil(t, cfg.AWS)
+	assert.Equal(t, "https://example.com/vpc/multi-nat/stack.yaml", cfg.AWS.VPCNestedTemplateURL)
+	assert.Equal(t, "https://example.com/runner/"+install.ID+"/stack.yaml", cfg.AWS.RunnerNestedTemplateURL)
+}
+
 func (s *InstallerSDKConfigTestSuite) TestCustomStacksEmptyWhenAbsent() {
 	install := s.seedInstallWithRunner()
 
