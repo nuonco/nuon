@@ -654,6 +654,8 @@ type ClientService interface {
 
 	GetInstallDeployment(params *GetInstallDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentOK, error)
 
+	GetInstallDeploymentSourceDiff(params *GetInstallDeploymentSourceDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentSourceDiffOK, error)
+
 	GetInstallDeploymentSummaries(params *GetInstallDeploymentSummariesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentSummariesOK, error)
 
 	GetInstallDeployments(params *GetInstallDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentsOK, error)
@@ -13672,6 +13674,52 @@ func (a *Client) GetInstallDeployment(params *GetInstallDeploymentParams, authIn
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallDeployment: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallDeploymentSourceDiff compares captured source for a deployment resource
+
+Compare the resource's frozen previously applied and selected builds. File content is fetched only when path is provided.
+*/
+func (a *Client) GetInstallDeploymentSourceDiff(params *GetInstallDeploymentSourceDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentSourceDiffOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallDeploymentSourceDiffParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallDeploymentSourceDiff",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/deployments/{workflow_id}/source-diff",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallDeploymentSourceDiffReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallDeploymentSourceDiffOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallDeploymentSourceDiff: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

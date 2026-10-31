@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all" // register all errparse parsers
@@ -23,7 +24,9 @@ import (
 )
 
 type CreateRunnerJobExecutionResultRequest struct {
-	Success bool `json:"success"`
+	Success        bool                     `json:"success"`
+	SourceIdentity *sourceidentity.Identity `json:"source_identity,omitempty"`
+	SourceCapture  *sourceidentity.Identity `json:"source_capture,omitempty"`
 
 	ErrorMetadata map[string]*string `json:"error_metadata"`
 	ErrorCode     int                `json:"error_code"`
@@ -89,77 +92,37 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
+	if req.SourceCapture != nil {
+		job, err := s.getRunnerJob(ctx, runnerJobID)
+		if err == nil {
+			err = helpers.ClaimBuildSource(ctx, s.db, job, runnerJobExecutionID, req.SourceCapture)
+		}
+		if err != nil {
+			ctx.Error(stderr.NewInvalidRequest(err))
+			return
+		}
+		ctx.JSON(http.StatusCreated, &app.RunnerJobExecutionResult{})
+		return
+	}
 
 	// branch on wether or not the content received is compressed.
 	var result *app.RunnerJobExecutionResult
-	var created bool
 	var err error
 	if req.ContentsCompressed != "" || req.ContentsDisplayCompressed != "" {
-		result, created, err = s.createRunnerJobExecutionResultFromCompressed(ctx, runnerJobID, runnerJobExecutionID, &req)
+		result, _, err = s.createRunnerJobExecutionResultFromCompressed(ctx, runnerJobID, runnerJobExecutionID, &req)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 			return
 		}
 	} else {
-		result, created, err = s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
+		result, _, err = s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 			return
 		}
 	}
 
-	if created {
-		if err := s.applyComponentBuildSourceIdentity(ctx, runnerJobID, &req); err != nil {
-			// Non-fatal: source-identity persistence shouldn't fail the result
-			// write. The build's status workflow runs independently.
-			s.l.Warn("unable to apply component build source identity", zap.Error(err))
-		}
-	}
-
 	ctx.JSON(http.StatusCreated, result)
-}
-
-// applyComponentBuildSourceIdentity persists source-identity fields
-// onto the ComponentBuild row when the runner job's owner is a ComponentBuild
-// and the runner reported a SourceDigest. Skipped otherwise.
-func (s *service) applyComponentBuildSourceIdentity(ctx context.Context, runnerJobID string, req *CreateRunnerJobExecutionResultRequest) error {
-	if req.SourceDigest == "" {
-		return nil
-	}
-
-	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get runner job")
-	}
-
-	// Only image-type builds emit source identity; the owner type is the
-	// ComponentBuild table name. Matches the value used when the build job is
-	// created in components/worker/activities/create_build_job.go.
-	if runnerJob.OwnerType != "component_builds" {
-		return nil
-	}
-	if runnerJob.OwnerID == "" {
-		return nil
-	}
-
-	build := app.ComponentBuild{ID: runnerJob.OwnerID}
-	updates := app.ComponentBuild{
-		SourceRef:       req.SourceRef,
-		SourceImage:     req.SourceImage,
-		ResolvedTag:     req.ResolvedTag,
-		SourceDigest:    req.SourceDigest,
-		SourceMediaType: req.SourceMediaType,
-		ResolvedAt:      req.ResolvedAt,
-		NoOp:            req.NoOp,
-	}
-	res := s.db.WithContext(ctx).
-		Model(&build).
-		Select("source_ref", "source_image", "resolved_tag", "source_digest", "source_media_type", "resolved_at", "no_op").
-		Updates(updates)
-	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update component build source identity")
-	}
-	return nil
 }
 
 // metricCompositeErrorParse counts every persisted failed-result parse, tagged
@@ -343,7 +306,7 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		CompositeError:       compositeError,
 	}
 
-	persisted, created, err := helpers.CreateJobExecutionResultIfAbsent(ctx, s.db, &result)
+	persisted, created, err := s.persistBuildResult(ctx, runnerJob, &result, req)
 	if err != nil {
 		return nil, false, err
 	}
@@ -354,6 +317,14 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 	}
 
 	return persisted, created, nil
+}
+
+func (s *service) persistBuildResult(ctx context.Context, job *app.RunnerJob, result *app.RunnerJobExecutionResult, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, bool, error) {
+	return helpers.PersistBuildResult(ctx, s.db, job, result, &app.ComponentBuild{
+		SourceIdentity: req.SourceIdentity, SourceRef: req.SourceRef, SourceImage: req.SourceImage,
+		ResolvedTag: req.ResolvedTag, SourceDigest: req.SourceDigest, SourceMediaType: req.SourceMediaType,
+		ResolvedAt: req.ResolvedAt, NoOp: req.NoOp,
+	})
 }
 
 func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, bool, error) {
@@ -385,7 +356,7 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		CompositeError:       compositeError,
 	}
 
-	persisted, created, err := helpers.CreateJobExecutionResultIfAbsent(ctx, s.db, &result)
+	persisted, created, err := s.persistBuildResult(ctx, runnerJob, &result, req)
 	if err != nil {
 		return nil, false, err
 	}

@@ -2,23 +2,29 @@ package activities
 
 import (
 	"context"
+	"errors"
 
+	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 )
 
 type CheckBuildNeededInput struct {
 	ComponentID    string `json:"component_id"`
 	NewAppConfigID string `json:"new_app_config_id"`
 	OldAppConfigID string `json:"old_app_config_id"`
+	RunID          string `json:"run_id,omitempty"`
 	SourceChanged  *bool  `json:"source_changed,omitempty"`
 }
 
 type CheckBuildNeededOutput struct {
-	NeedsBuild      bool   `json:"needs_build"`
-	ExistingBuildID string `json:"existing_build_id,omitempty"`
-	ChangeReason    string `json:"change_reason,omitempty"`
+	NeedsBuild      bool                     `json:"needs_build"`
+	ExistingBuildID string                   `json:"existing_build_id,omitempty"`
+	ChangeReason    string                   `json:"change_reason,omitempty"`
+	SourceIdentity  *sourceidentity.Identity `json:"source_identity,omitempty"`
 }
 
 const (
@@ -31,135 +37,87 @@ const (
 func configChecksumChanged(oldChecksum, newChecksum string) bool {
 	return oldChecksum != "" && newChecksum != "" && oldChecksum != newChecksum
 }
-
 func sourceCommitChanged(input *CheckBuildNeededInput) bool {
 	return input != nil && input.SourceChanged != nil && *input.SourceChanged
 }
-
 func buildChangeReason(sourceChanged bool, oldChecksum, newChecksum string) string {
-	configChanged := configChecksumChanged(oldChecksum, newChecksum)
 	switch {
-	case sourceChanged && configChanged:
+	case sourceChanged && configChecksumChanged(oldChecksum, newChecksum):
 		return ChangeReasonSourceAndConfig
-	case configChanged:
+	case configChecksumChanged(oldChecksum, newChecksum):
 		return ChangeReasonConfigChanged
 	default:
 		return ChangeReasonSourceChanged
 	}
 }
-
-func reuseExistingBuild(existingBuildID string) *CheckBuildNeededOutput {
-	return &CheckBuildNeededOutput{
-		NeedsBuild:      false,
-		ExistingBuildID: existingBuildID,
-		ChangeReason:    ChangeReasonNoChanges,
-	}
+func reuseExistingBuild(id string) *CheckBuildNeededOutput {
+	return &CheckBuildNeededOutput{ExistingBuildID: id, ChangeReason: ChangeReasonNoChanges}
 }
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 1m
+// @start-to-close-timeout 5m
 func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeededInput) (*CheckBuildNeededOutput, error) {
+	var cfg app.ComponentConfigConnection
+	if err := a.db.WithContext(ctx).Scopes(buildsource.PreloadConnection).Where(app.ComponentConfigConnection{AppConfigID: input.NewAppConfigID, ComponentID: input.ComponentID}).First(&cfg).Error; err != nil {
+		return nil, err
+	}
+	out := &CheckBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}
 	if input.OldAppConfigID == "" {
-		return &CheckBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
+		return out, nil
 	}
-
-	var oldConn app.ComponentConfigConnection
-	err := a.db.WithContext(ctx).
-		Where(app.ComponentConfigConnection{
-			AppConfigID: input.OldAppConfigID,
-			ComponentID: input.ComponentID,
-		}).
-		First(&oldConn).Error
+	var old app.ComponentConfigConnection
+	if err := a.db.WithContext(ctx).Where(app.ComponentConfigConnection{AppConfigID: input.OldAppConfigID, ComponentID: input.ComponentID}).First(&old).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return out, nil
+		}
+		return nil, err
+	}
+	existing, err := buildselection.Component(ctx, a.db, old.ID)
 	if err != nil {
-		return &CheckBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
+		return nil, err
 	}
-
-	var newConfigConnection app.ComponentConfigConnection
-	err = a.db.WithContext(ctx).
-		Preload("AppConfig").
-		Preload("ExternalImageComponentConfig").
-		Where(app.ComponentConfigConnection{
-			AppConfigID: input.NewAppConfigID,
-			ComponentID: input.ComponentID,
-		}).
-		First(&newConfigConnection).Error
+	if existing == nil {
+		return out, nil
+	}
+	var completed app.ComponentBuild
+	if err := a.db.WithContext(ctx).
+		Preload("ComponentConfigConnection", buildsource.PreloadConnection).
+		Where(app.ComponentBuild{ID: existing.ID}).First(&completed).Error; err != nil {
+		return nil, err
+	}
+	if completed.Status != app.ComponentBuildStatusActive {
+		return out, nil
+	}
+	if cfg.Checksum == "" || completed.ComponentConfigConnection.Checksum == "" || cfg.Checksum != completed.ComponentConfigConnection.Checksum {
+		out.ChangeReason = buildChangeReason(sourceCommitChanged(input), completed.ComponentConfigConnection.Checksum, cfg.Checksum)
+		return out, nil
+	}
+	oldChecksum, err := buildsource.ComponentChecksum(&completed.ComponentConfigConnection)
 	if err != nil {
-		return &CheckBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
+		return nil, err
 	}
-
-	if newConfigConnection.AppConfig.BuildsPinned {
-		if !build.RequiresFreshBuild(&newConfigConnection) && input.SourceChanged != nil && !*input.SourceChanged &&
-			oldConn.Checksum != "" && oldConn.Checksum == newConfigConnection.Checksum && oldConn.LatestBuildID.Valid {
-			existing, err := buildselection.Component(ctx, a.db, oldConn.ID)
-			if err == nil && existing != nil && existing.ID == oldConn.LatestBuildID.String {
-				return reuseExistingBuild(existing.ID), nil
-			}
-		}
-		return &CheckBuildNeededOutput{
-			NeedsBuild:   true,
-			ChangeReason: buildChangeReason(sourceCommitChanged(input), oldConn.Checksum, newConfigConnection.Checksum),
-		}, nil
+	newChecksum, err := buildsource.ComponentChecksum(&cfg)
+	if err != nil {
+		return nil, err
 	}
-
-	if build.RequiresFreshBuild(&newConfigConnection) {
-		return &CheckBuildNeededOutput{
-			NeedsBuild: true,
-			ChangeReason: buildChangeReason(
-				sourceCommitChanged(input),
-				oldConn.Checksum,
-				newConfigConnection.Checksum,
-			),
-		}, nil
+	out.ChangeReason = buildChangeReason(sourceCommitChanged(input), oldChecksum, newChecksum)
+	if oldChecksum != newChecksum {
+		return out, nil
 	}
-
-	// Sync pins the previous build when the config checksum is unchanged. A
-	// source-only change still has to build, so this runs before that pin.
-	if sourceCommitChanged(input) {
-		return &CheckBuildNeededOutput{
-			NeedsBuild: true,
-			ChangeReason: buildChangeReason(
-				true,
-				oldConn.Checksum,
-				newConfigConnection.Checksum,
-			),
-		}, nil
+	candidate := app.ComponentBuild{ComponentConfigConnection: cfg}
+	if input.RunID != "" {
+		candidate.AppBranchRunID = &input.RunID
 	}
-
-	if newConfigConnection.LatestBuildID.Valid {
-		var pinned app.ComponentBuild
-		err = a.db.WithContext(ctx).
-			Select("id", "status").
-			Where(app.ComponentBuild{ID: newConfigConnection.LatestBuildID.String}).
-			First(&pinned).Error
-		if err == nil && pinned.Status == app.ComponentBuildStatusActive {
-			return reuseExistingBuild(pinned.ID), nil
-		}
-		return &CheckBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
+	identity, err := buildsource.Component(ctx, a.db, a.vcsHelpers, &candidate)
+	if err != nil {
+		return nil, err
 	}
-
-	if oldConn.Checksum != "" && newConfigConnection.Checksum != "" && oldConn.Checksum == newConfigConnection.Checksum {
-		if sourceCommitChanged(input) {
-			return &CheckBuildNeededOutput{
-				NeedsBuild:   true,
-				ChangeReason: ChangeReasonSourceChanged,
-			}, nil
-		}
-
-		var existingBuild app.ComponentBuild
-		err = a.db.WithContext(ctx).
-			Where(app.ComponentBuild{
-				ComponentConfigConnectionID: oldConn.ID,
-				Status:                      app.ComponentBuildStatusActive,
-			}).
-			Order("created_at DESC").
-			First(&existingBuild).Error
-		if err == nil {
-			return reuseExistingBuild(existingBuild.ID), nil
-		}
+	equal, err := buildsource.SourcesEqual(ctx, a.vcsHelpers, cfg.ConnectedGithubVCSConfig, cfg.PublicGitVCSConfig, completed.SourceIdentity, identity)
+	if err != nil {
+		return nil, err
 	}
-
-	return &CheckBuildNeededOutput{
-		NeedsBuild:   true,
-		ChangeReason: buildChangeReason(sourceCommitChanged(input), oldConn.Checksum, newConfigConnection.Checksum),
-	}, nil
+	if !equal {
+		return out, nil
+	}
+	return reuseExistingBuild(existing.ID), nil
 }

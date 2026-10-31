@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
@@ -60,26 +59,29 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	role string,
 	request *app.WorkflowRequest,
 ) (*app.Workflow, error) {
-	return s.insertInstallWorkflow(ctx, s.db, installID, workflowType, metadata, planOnly, role, request)
+	installWorkflow, installName, err := s.prepareInstallWorkflow(ctx, installID, workflowType, metadata, planOnly, role, request)
+	if err != nil {
+		return nil, err
+	}
+	return s.insertInstallWorkflow(ctx, installWorkflow, installName)
 }
 
-func (s *Helpers) insertInstallWorkflow(ctx context.Context,
-	db *gorm.DB,
+func (s *Helpers) prepareInstallWorkflow(ctx context.Context,
 	installID string,
 	workflowType app.WorkflowType,
 	metadata map[string]string,
 	planOnly bool,
 	role string,
 	request *app.WorkflowRequest,
-) (*app.Workflow, error) {
+) (*app.Workflow, string, error) {
 	if err := s.CheckInstallRunnerForWorkflow(ctx, installID, workflowType, metadata); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	approvalOption := app.InstallApprovalOptionPrompt
 	installConfig, err := s.GetLatestInstallConfig(ctx, installID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to set approval option")
+		return nil, "", errors.Wrap(err, "unable to set approval option")
 	}
 
 	if installConfig != nil {
@@ -119,21 +121,25 @@ func (s *Helpers) insertInstallWorkflow(ctx context.Context,
 		},
 	}
 
-	res := db.WithContext(ctx).Create(&installWorkflow)
+	return &installWorkflow, install.Name, nil
+}
+
+func (s *Helpers) insertInstallWorkflow(ctx context.Context, installWorkflow *app.Workflow, installName string) (*app.Workflow, error) {
+	res := s.db.WithContext(ctx).Create(installWorkflow)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create install workflow")
 	}
 
 	cctx.GetLogger(ctx, s.l).Info("flow telemetry",
 		zap.String("flow_event", "workflow.created"),
-		zap.String("install_id", installID),
-		zap.String("install_name", install.Name),
+		zap.String("install_id", installWorkflow.OwnerID),
+		zap.String("install_name", installName),
 		zap.String("workflow_id", installWorkflow.ID),
-		zap.String("workflow_type", string(workflowType)),
-		zap.Bool("plan_only", planOnly),
+		zap.String("workflow_type", string(installWorkflow.Type)),
+		zap.Bool("plan_only", installWorkflow.PlanOnly),
 	)
 
-	return &installWorkflow, nil
+	return installWorkflow, nil
 }
 
 // CheckInstallRunnerForWorkflow returns the conflict that creating this

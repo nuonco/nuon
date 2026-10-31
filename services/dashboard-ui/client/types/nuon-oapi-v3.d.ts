@@ -2043,6 +2043,13 @@ export interface paths {
      */
     get: operations["GetInstallDeployment"];
   };
+  "/v1/installs/{install_id}/deployments/{workflow_id}/source-diff": {
+    /**
+     * compare captured source for a deployment resource
+     * @description Compare the resource's frozen previously applied and selected builds. File content is fetched only when path is provided.
+     */
+    get: operations["GetInstallDeploymentSourceDiff"];
+  };
   "/v1/installs/{install_id}/deploys": {
     /**
      * get all deploys to an install
@@ -4364,6 +4371,7 @@ export interface components {
       app_config_id?: string;
       app_id?: string;
       app_sandbox_config_id?: string;
+      checksum?: string;
       composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
@@ -4371,6 +4379,8 @@ export interface components {
       id?: string;
       log_stream?: components["schemas"]["app.LogStream"];
       runner_job?: components["schemas"]["app.RunnerJob"];
+      source_checksum?: string;
+      source_identity?: components["schemas"]["sourceidentity.Identity"];
       status?: string;
       status_description?: string;
       status_v2?: components["schemas"]["app.CompositeStatus"];
@@ -4631,7 +4641,6 @@ export interface components {
       app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
       build_runner_job_id?: string;
-      /** @description checksum of our intermediate component config */
       checksum?: string;
       component_config_connection?: components["schemas"]["app.ComponentConfigConnection"];
       /** @description DEPRECATED: will retain the field to connect against the last component config connection that set this build */
@@ -4684,7 +4693,6 @@ export interface components {
       runner_job?: components["schemas"]["app.RunnerJob"];
       /** @description SignatureVerification is empty when the outcome is unknown (older builds, or failures before verification ran). */
       signature_verification?: string;
-      /** @description checksum of the component's source directory at build time */
       source_checksum?: string;
       /**
        * @description SourceDigest is the manifest list digest of the resolved source ref,
@@ -4692,6 +4700,7 @@ export interface components {
        * pulled and is used for build dedup.
        */
       source_digest?: string;
+      source_identity?: components["schemas"]["sourceidentity.Identity"];
       /** @description SourceImage is the repository portion of SourceRef without tag/digest, e.g. "nginx". */
       source_image?: string;
       /**
@@ -7922,6 +7931,7 @@ export interface components {
       kubernetes_manifest_build_plan?: components["schemas"]["plantypes.KubernetesManifestBuildPlan"];
       pulumi_build_plan?: components["schemas"]["plantypes.PulumiBuildPlan"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      source_identity?: components["schemas"]["sourceidentity.Identity"];
       terraform_build_plan?: components["schemas"]["plantypes.TerraformBuildPlan"];
     };
     "plantypes.CompositePlan": {
@@ -7968,6 +7978,9 @@ export interface components {
       apply_plan_display?: string;
       component_id?: string;
       component_name?: string;
+      dependency_build_ids?: {
+        [key: string]: string;
+      };
       helm?: components["schemas"]["plantypes.HelmDeployPlan"];
       inputs_digest?: string;
       install_id?: string;
@@ -9802,6 +9815,41 @@ export interface components {
       skipped_by_policy?: boolean;
       warn_count?: number;
     };
+    "service.InstallDeploymentSourceBuild": {
+      commit?: string;
+      coverage?: string;
+      digest?: string;
+      id?: string;
+      repository?: string;
+      root?: string;
+    };
+    "service.InstallDeploymentSourceDiff": {
+      after?: components["schemas"]["service.InstallDeploymentSourceBuild"];
+      before?: components["schemas"]["service.InstallDeploymentSourceBuild"];
+      files?: components["schemas"]["service.InstallDeploymentSourceFile"][];
+      /** @enum {string} */
+      kind?: "component" | "sandbox";
+      message?: string;
+      name?: string;
+      partial?: boolean;
+      reasons?: string[];
+      selected_file?: components["schemas"]["service.InstallDeploymentSourceFileContent"];
+      /** @enum {string} */
+      status?: "available" | "unavailable" | "unsupported";
+    };
+    "service.InstallDeploymentSourceFile": {
+      after_executable?: boolean;
+      before_executable?: boolean;
+      /** @enum {string} */
+      change?: "added" | "modified" | "removed";
+      path?: string;
+    };
+    "service.InstallDeploymentSourceFileContent": {
+      after?: string;
+      before?: string;
+      path?: string;
+      unavailable_reason?: string;
+    };
     "service.InstallDeploymentStep": {
       approval_response_id?: string;
       component_name?: string;
@@ -10688,6 +10736,26 @@ export interface components {
       authorities?: components["schemas"]["signature.Authority"][];
       require_signature?: boolean;
     };
+    "sourceidentity.File": {
+      executable?: boolean;
+      path?: string;
+      sha256?: string;
+    };
+    "sourceidentity.Identity": {
+      captured?: boolean;
+      chart_version?: string;
+      checksum?: string;
+      commit?: string;
+      config_checksum?: string;
+      coverage?: string;
+      digest?: string;
+      files?: components["schemas"]["sourceidentity.File"][];
+      kind?: string;
+      reasons?: string[];
+      repository?: string;
+      root?: string;
+      version?: number;
+    };
     "sql.NullBool": {
       bool?: boolean;
       /** @description Valid is true if Bool is not NULL */
@@ -10780,6 +10848,7 @@ export interface components {
       status?: string;
     };
     "state.SandboxState": {
+      build_id?: string;
       outputs?: {
         [key: string]: unknown;
       };
@@ -25651,6 +25720,66 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["service.InstallDeployment"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * compare captured source for a deployment resource
+   * @description Compare the resource's frozen previously applied and selected builds. File content is fetched only when path is provided.
+   */
+  GetInstallDeploymentSourceDiff: {
+    parameters: {
+      query: {
+        /** @description resource kind */
+        kind: "component" | "sandbox";
+        /** @description resource name */
+        name: string;
+        /** @description changed source file path */
+        path?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallDeploymentSourceDiff"];
         };
       };
       /** @description Bad Request */

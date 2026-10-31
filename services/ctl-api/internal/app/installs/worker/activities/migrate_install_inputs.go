@@ -18,7 +18,7 @@ func (a *Activities) MigrateInstallInputs(ctx context.Context, input *MigrateIns
 		input.InstallID: input.OldAppConfigID,
 	}
 
-	if err := a.helpers.MigrateInstallInputsToNewConfig(ctx, a.db, installConfigMap, input.NewAppConfigID); err != nil {
+	if err := a.helpers.MigrateInstallInputsToNewConfig(ctx, installConfigMap, input.NewAppConfigID); err != nil {
 		return fmt.Errorf("unable to migrate install inputs: %w", err)
 	}
 

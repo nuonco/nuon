@@ -11,8 +11,10 @@ import (
 	signaturecfg "github.com/nuonco/nuon/pkg/oci/signature"
 	"github.com/nuonco/nuon/pkg/oci/updatepolicy"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/jobs/buildinputs"
 	signatureverify "github.com/nuonco/nuon/pkg/runner/oci/signature"
 	"github.com/nuonco/nuon/pkg/runner/registry"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -36,7 +38,11 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		UpdatePolicy: h.state.cfg.UpdatePolicy,
 	}
 	var selected string
-	if spec.UpdatePolicy != "" {
+	pinned := ""
+	if i := h.state.plan.SourceIdentity; i != nil {
+		pinned = i.Digest
+	}
+	if spec.UpdatePolicy != "" && pinned == "" {
 		l.Info(fmt.Sprintf("resolving image source %s with update_policy %q", spec.Image, spec.UpdatePolicy))
 		tags, terr := h.ociResolve.Tags(ctx, srcCfg)
 		if terr != nil {
@@ -52,6 +58,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l.Info(fmt.Sprintf("update_policy %q selected tag %q from %d source tags", spec.UpdatePolicy, selected, len(tags)))
 	}
 	srcTag := spec.PullRef(selected)
+	if pinned != "" {
+		srcTag = pinned
+	}
 
 	// Resolve the upstream source ref to its manifest descriptor BEFORE
 	// pulling/pushing any blobs. The descriptor's digest is the canonical
@@ -68,6 +77,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	resolvedDigest := string(desc.Digest)
+	identity, err := sourceidentity.ResolveImage(h.state.plan.SourceIdentity, resolvedDigest)
+	if err != nil {
+		return err
+	}
+	if err := buildinputs.Claim(ctx, h.apiClient, job.ID, jobExecution.ID, identity); err != nil {
+		return err
+	}
+	h.state.plan.SourceIdentity = identity
 	if err := signatureverify.Verify(ctx, srcCfg, resolvedDigest, h.state.cfg.Verification); err != nil {
 		h.writeErrorResult(ctx, signaturecfg.VerifyStep, err)
 		return fmt.Errorf("unable to verify image signature: %w", err)
@@ -109,9 +126,8 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	resultReq.ResolvedAt = resolvedAt.Format(time.RFC3339Nano)
 	resultReq.NoOp = noOp
 
-	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {
+	if err := buildinputs.Report(ctx, h.apiClient, job.ID, jobExecution.ID, resultReq, identity); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}
-
 	return nil
 }

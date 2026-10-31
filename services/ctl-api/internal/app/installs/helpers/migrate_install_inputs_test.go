@@ -115,7 +115,7 @@ func (s *MigrateInstallInputsTestSuite) TestMigratesValuesTiedToOutgoingConfig()
 		map[string]*string{"region": ptrTo("us-west-2")})
 
 	newCfg := s.seedAppConfigWithInputs(ctx, testApp.ID)
-	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx, s.deps.DB,
+	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx,
 		map[string]string{install.ID: oldCfg.ID}, newCfg.ID))
 
 	got := s.latestInstallInputs(ctx, install.ID)
@@ -146,7 +146,7 @@ func (s *MigrateInstallInputsTestSuite) TestMigratesValuesNotTiedToOutgoingConfi
 		map[string]*string{"region": ptrTo("eu-central-1")})
 
 	newCfg := s.seedAppConfigWithInputs(ctx, testApp.ID)
-	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx, s.deps.DB,
+	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx,
 		map[string]string{install.ID: oldCfg.ID}, newCfg.ID))
 
 	got := s.latestInstallInputs(ctx, install.ID)
@@ -173,7 +173,7 @@ func (s *MigrateInstallInputsTestSuite) TestDropsValuesRemovedFromNewConfig() {
 	})
 
 	newCfg := s.seedAppConfigWithInputs(ctx, testApp.ID)
-	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx, s.deps.DB,
+	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx,
 		map[string]string{install.ID: oldCfg.ID}, newCfg.ID))
 
 	got := s.latestInstallInputs(ctx, install.ID)
@@ -253,7 +253,7 @@ func (s *MigrateInstallInputsTestSuite) TestMigrationDoesNotRevertUpdateOnNewCon
 		"gate":   ptrTo("true"),
 	})
 
-	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx, s.deps.DB,
+	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx,
 		map[string]string{install.ID: oldCfg.ID}, newCfg.ID))
 
 	got := s.latestInstallInputs(ctx, install.ID)
@@ -278,7 +278,7 @@ func (s *MigrateInstallInputsTestSuite) TestMigrationBeforeUpdateStillCarriesVal
 		map[string]*string{"region": ptrTo("eu-west-1")})
 
 	newCfg := s.seedAppConfigWithInputs(ctx, testApp.ID)
-	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx, s.deps.DB,
+	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx,
 		map[string]string{install.ID: oldCfg.ID}, newCfg.ID))
 
 	got := s.latestInstallInputs(ctx, install.ID)
@@ -330,7 +330,7 @@ func (s *MigrateInstallInputsTestSuite) TestConcurrentUpdateIsNotLost() {
 
 	<-held
 	go func() {
-		migrateDone <- s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx, s.deps.DB,
+		migrateDone <- s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx,
 			map[string]string{install.ID: oldCfg.ID}, newCfg.ID)
 	}()
 

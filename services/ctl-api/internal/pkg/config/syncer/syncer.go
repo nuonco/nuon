@@ -121,6 +121,7 @@ func (s *syncer) Sync(ctx context.Context) error {
 	if err := s.validateFeatureCompatibility(ctx); err != nil {
 		return err
 	}
+	ctx = vcshelpers.WithRepoAccessCache(ctx)
 
 	// Initialize state
 	s.state = &sync.State{

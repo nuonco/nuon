@@ -7,8 +7,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -37,7 +39,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	var (
 		sandboxConfig *app.AppSandboxConfig
 		source        *activities.ResolveSandboxBuildSourceOutput
+		prepared      *sourceidentity.Identity
 	)
+	prepared = s.SourceIdentity
 	if sourceAfterBuild {
 		sandbox, err := activities.AwaitGetSandboxBuildConfig(ctx, &activities.GetSandboxBuildConfigInput{
 			AppConfigID: run.AppConfigID,
@@ -73,7 +77,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	if workflow.GetVersion(ctx, reuseSandboxBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
+	if !s.ReuseChecked && prepared == nil && workflow.GetVersion(ctx, reuseSandboxBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
 		(!run.Force || workflow.GetVersion(ctx, "sandbox-build-respect-force-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion) {
 		reused, reuseErr := activities.AwaitFindReusableSandboxBuild(ctx, &activities.FindReusableSandboxBuildInput{
 			AppID:       appConfig.AppID,
@@ -82,6 +86,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 		if reuseErr != nil {
 			return fmt.Errorf("unable to look up an existing sandbox build: %w", reuseErr)
+		}
+		if reused != nil {
+			prepared = reused.SourceIdentity
 		}
 		if reused != nil && reused.BuildID != "" {
 			l.Info("reusing sandbox build", "build_id", reused.BuildID)
@@ -110,9 +117,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		OrgID:              run.OrgID,
 		CreatedByID:        run.CreatedByID,
 		AppBranchRunID:     s.RunID,
+		SourceIdentity:     prepared,
 	}
 	if !sourceAfterBuild {
 		createReq.VCSConnectionCommitID = source.VCSConnectionCommitID
+		createReq.SourceIdentity = source.SourceIdentity
 	}
 	build, err := activities.AwaitCreateSandboxBuild(ctx, createReq)
 	if err != nil {
@@ -189,13 +198,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get OCI registry for sandbox build: %w", err)
 	}
 
-	tfPlan := &plantypes.TerraformBuildPlan{
-		Labels: map[string]string{
-			"app_id":               appConfig.AppID,
-			"app_sandbox_build_id": build.ID,
-		},
-		VendorProviders:  true,
-		TerraformVersion: sandboxConfig.TerraformVersion,
+	tfPlan := buildsource.SandboxInputs(sandboxConfig)
+	tfPlan.Labels = map[string]string{
+		"app_id":               appConfig.AppID,
+		"app_sandbox_build_id": build.ID,
 	}
 
 	isSandboxOrg, err := activities.AwaitIsOrgSandboxMode(ctx, activities.IsOrgSandboxModeRequest{
@@ -208,6 +214,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	compositePlan := plantypes.CompositePlan{
 		BuildPlan: &plantypes.BuildPlan{
 			Src:                gitSource,
+			SourceIdentity:     source.SourceIdentity,
 			Dst:                dstCfg,
 			DstTag:             build.ID,
 			TerraformBuildPlan: tfPlan,

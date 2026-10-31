@@ -97,7 +97,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 
 	var branchID string
 	if !found {
-		branch, err := appsHelper.CreateAppBranchWithDB(ctx, db, appID, branchCfg.Name, app.AppBranchManagedByConfig)
+		branch, err := appsHelper.WithDB(db).CreateAppBranchRecord(ctx, appID, branchCfg.Name, app.AppBranchManagedByConfig)
 		if err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
 				return sync.SyncErr{
@@ -227,7 +227,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		runConfig.GithubLabel = branchCfg.Run.GithubLabel
 	}
 
-	branchConfig, err := appsHelper.CreateAppBranchConfigWithDB(ctx, db, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, ignoreChanges, previewConfig, previewConfig == nil, runConfig)
+	branchConfig, err := appsHelper.WithDB(db).CreateAppBranchConfigRecord(ctx, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, ignoreChanges, previewConfig, previewConfig == nil, runConfig)
 	if err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),

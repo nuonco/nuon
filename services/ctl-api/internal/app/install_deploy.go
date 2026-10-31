@@ -78,6 +78,9 @@ type InstallDeploy struct {
 	ComponentBuildID string         `json:"build_id,omitzero" gorm:"notnull" temporaljson:"component_build_id,omitzero,omitempty"`
 	ComponentBuild   ComponentBuild `faker:"-" json:"component_build,omitzero" temporaljson:"component_build,omitzero,omitempty"`
 
+	AppConfigID        string            `json:"-" gorm:"default null" temporaljson:"app_config_id,omitempty"`
+	DependencyBuildIDs map[string]string `json:"-" gorm:"type:jsonb;serializer:json" temporaljson:"dependency_build_ids,omitempty"`
+
 	InstallComponentID string           `json:"install_component_id,omitzero" gorm:"notnull" temporaljson:"install_component_id,omitzero,omitempty"`
 	InstallComponent   InstallComponent `faker:"-" json:"-" temporaljson:"install_component,omitzero,omitempty"`
 

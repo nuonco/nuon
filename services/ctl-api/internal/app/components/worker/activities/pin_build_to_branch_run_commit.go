@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/vcserrors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
@@ -77,6 +78,16 @@ func (a *Activities) resolveBuildOwnCommit(ctx context.Context, build *app.Compo
 	if ref == "" {
 		return nil
 	}
+
+	runID := ""
+	if build.AppBranchRunID != nil {
+		runID = *build.AppBranchRunID
+	}
+	pinned, err := buildsource.ResolveRef(ctx, a.db, a.vcsHelpers, connectedCfg, publicCfg, runID, ref)
+	if err != nil {
+		return a.failBuildSource(ctx, build.ID, repo, ref, err)
+	}
+	ref = pinned
 
 	var (
 		vcsCommit *app.VCSConnectionCommit

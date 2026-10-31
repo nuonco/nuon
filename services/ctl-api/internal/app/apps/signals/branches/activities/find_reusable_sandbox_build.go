@@ -4,18 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
-	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lib/pq"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 )
 
@@ -26,7 +24,8 @@ type FindReusableSandboxBuildInput struct {
 }
 
 type FindReusableSandboxBuildOutput struct {
-	BuildID string `json:"build_id,omitempty"`
+	BuildID        string                   `json:"build_id,omitempty"`
+	SourceIdentity *sourceidentity.Identity `json:"source_identity,omitempty"`
 }
 
 func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindReusableSandboxBuildInput) (*FindReusableSandboxBuildOutput, error) {
@@ -45,7 +44,6 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 
 func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID string, cfg *app.AppSandboxConfig) (*FindReusableSandboxBuildOutput, error) {
 	out := &FindReusableSandboxBuildOutput{}
-
 	run, err := a.getAppBranchRunByID(ctx, runID)
 	if err != nil {
 		return nil, err
@@ -63,7 +61,10 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 			return out, nil
 		}
 		build, err = configdiff.LatestActiveSandboxBuild(ctx, a.db, run.Comparison.BaseRun.AppConfigID)
-		if err != nil || build == nil || !configdiff.SandboxConfigsEqual(*cfg, build.AppSandboxConfig) {
+		if err != nil {
+			return nil, err
+		}
+		if build == nil {
 			return out, nil
 		}
 	} else {
@@ -72,55 +73,19 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 			return nil, err
 		}
 	}
-	if build == nil {
+	if build == nil || buildsource.SandboxChecksum(cfg) != buildsource.SandboxChecksum(&build.AppSandboxConfig) {
 		return out, nil
 	}
-
-	sandboxRepo, sandboxVCSID := sandboxConfigRepo(cfg)
-	branchRepo, branchName := "", ""
-	if run.AppBranchConfig.ConnectedGithubVCSConfig != nil {
-		branchRepo = run.AppBranchConfig.ConnectedGithubVCSConfig.Repo
-		branchName = run.AppBranchConfig.ConnectedGithubVCSConfig.Branch
-	} else if run.AppBranchConfig.PublicGitVCSConfig != nil {
-		branchRepo = run.AppBranchConfig.PublicGitVCSConfig.Repo
-		branchName = run.AppBranchConfig.PublicGitVCSConfig.Branch
-	}
-	if run.Preview != nil && run.Preview.GitRef != "" {
-		branchName = run.Preview.GitRef
-	}
-	directory := sandboxConfigDirectory(cfg)
-
-	if repoURLsEqual(sandboxRepo, branchRepo) && sandboxConfigBranch(cfg) == branchName {
-		paths, ok, pathErr := a.comparisonChangedPaths(ctx, runID)
-		if pathErr != nil {
-			return nil, pathErr
-		}
-		if !ok || anyPathMatchesDirectory(paths, directory) {
-			return out, nil
-		}
-		out.BuildID = build.ID
-		return out, buildselection.PinSandbox(ctx, a.db, cfg.AppConfigID, build.ID)
-	}
-
-	if sandboxVCSID == "" {
-		return nil, fmt.Errorf("sandbox source %s has no vcs config", sandboxRepo)
-	}
-	latest, err := a.latestVCSCommitSHA(ctx, sandboxVCSID, sandboxConfigBranch(cfg))
+	identity, err := buildsource.Sandbox(ctx, a.db, a.vcsHelpers, &app.AppSandboxBuild{AppSandboxConfig: *cfg, AppBranchRunID: &runID})
 	if err != nil {
-		return nil, fmt.Errorf("unable to resolve sandbox commit: %w", err)
+		return nil, err
 	}
-	if build.VCSConnectionCommit == nil || build.VCSConnectionCommit.SHA == "" {
+	equal, err := buildsource.SourcesEqual(ctx, a.vcsHelpers, cfg.ConnectedGithubVCSConfig, cfg.PublicGitVCSConfig, build.SourceIdentity, identity)
+	if err != nil {
+		return nil, err
+	}
+	if !equal {
 		return out, nil
-	}
-	previous := build.VCSConnectionCommit.SHA
-	if previous != latest {
-		paths, pathErr := a.changedPathsBetween(ctx, sandboxVCSID, previous, latest)
-		if pathErr != nil {
-			return nil, pathErr
-		}
-		if anyPathMatchesDirectory(paths, directory) {
-			return out, nil
-		}
 	}
 	out.BuildID = build.ID
 	return out, buildselection.PinSandbox(ctx, a.db, cfg.AppConfigID, build.ID)
@@ -162,10 +127,7 @@ func sandboxConfigsEquivalent(a, b *app.AppSandboxConfig) bool {
 	if normalizeRepoPath(sandboxConfigDirectory(a)) != normalizeRepoPath(sandboxConfigDirectory(b)) {
 		return false
 	}
-	if a.TerraformVersion != b.TerraformVersion {
-		return false
-	}
-	return hstoreCanon(a.Variables) == hstoreCanon(b.Variables) && stringListCanon(a.VariablesFiles) == stringListCanon(b.VariablesFiles)
+	return buildsource.SandboxChecksum(a) == buildsource.SandboxChecksum(b)
 }
 
 func sandboxConfigDirectory(cfg *app.AppSandboxConfig) string {
@@ -181,40 +143,10 @@ func sandboxConfigDirectory(cfg *app.AppSandboxConfig) string {
 	return ""
 }
 
-func hstoreCanon(h pgtype.Hstore) string {
-	if len(h) == 0 {
-		return ""
-	}
-	keys := make([]string, 0, len(h))
-	for key := range h {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	var b strings.Builder
-	for _, key := range keys {
-		b.WriteString(key)
-		b.WriteByte('=')
-		if h[key] != nil {
-			b.WriteString(*h[key])
-		}
-		b.WriteByte('\n')
-	}
-	return b.String()
-}
-
-func stringListCanon(values pq.StringArray) string {
-	if len(values) == 0 {
-		return ""
-	}
-	copied := append(pq.StringArray(nil), values...)
-	sort.Strings(copied)
-	return strings.Join(copied, "\n")
-}
-
 func AwaitFindReusableSandboxBuild(ctx workflow.Context, input *FindReusableSandboxBuildInput, opts ...*workflow.ActivityOptions) (*FindReusableSandboxBuildOutput, error) {
 	var result *FindReusableSandboxBuildOutput
 	options := workflow.GetActivityOptions(ctx)
-	options.StartToCloseTimeout = time.Minute
+	options.StartToCloseTimeout = 5 * time.Minute
 	options.RetryPolicy = &temporal.RetryPolicy{MaximumAttempts: 3}
 	for _, opt := range opts {
 		if opt != nil && opt.StartToCloseTimeout != 0 {

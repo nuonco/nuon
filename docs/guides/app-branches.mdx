@@ -253,19 +253,32 @@ Watch runs with `nuon branches runs --branch-id main` (workflow TUI) or in the d
 
 ### What a run rebuilds
 
-A run rebuilds what changed in the files Nuon watches. Some changes live outside those files, so a run can't see them:
+A run compares each component's configuration and Git source with its previous successful build. For Git-backed
+components and sandboxes, the source boundary is the configured `public_repo.directory` or `connected_repo.directory`.
+Nuon resolves the tracked ref to a commit and compares that directory's Git tree ID, without cloning the repository
+to decide whether a build is needed.
 
 | What changed | What rebuilds it |
 | --- | --- |
-| TOML files, or files they reference such as Helm values | The next branch run, automatically |
-| Source in another git repository, such as a Terraform module or Helm chart | A forced rebuild |
-| Source in your app repository whose config did not change | A forced rebuild, after you push the branch |
+| A component's TOML configuration, or referenced configuration contents such as Helm values | The next branch run |
+| Files inside a component or sandbox's source directory, in the app repo or another configured Git repo | The next branch run |
+| Files elsewhere in the repository, including sibling dependencies and symlink targets outside the source directory | No automatic rebuild; use a forced rebuild |
+| Remote dependencies whose declarations inside the source directory did not change | A forced rebuild |
 
 <Tip>
 When a component's source lives in your app repository, set its `branch` to the branch your
 [branch file](#write-a-branch-config) tracks. Each branch run then builds the component from that run's commit. With a
 different `branch`, the component builds from the latest commit on that branch instead.
 </Tip>
+
+Keep build inputs within the selected source directory for automatic change detection. Nuon does not discover or
+watch sibling dependencies. Choosing `directory = "."` tracks the whole repository, but that directory must also be
+a valid build root: for example, the Helm chart or Terraform module must live there. Changes in a different source
+repository are checked when a branch run starts; they do not independently trigger an app branch run.
+
+Build reuse requires verified source evidence from a successful build. Older builds without that evidence may need
+one rebuild before they can be reused. Non-Git sources, such as container images and Helm repositories, use their
+own source-resolution rules.
 
 <CodeGroup>
 ```toml branches/main.toml

@@ -27,3 +27,9 @@ func New(params Params) *Helpers {
 		db:  params.DB,
 	}
 }
+
+func (h *Helpers) WithDB(db *gorm.DB) *Helpers {
+	scoped := *h
+	scoped.db = db
+	return &scoped
+}

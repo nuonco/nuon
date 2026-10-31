@@ -126,7 +126,7 @@ func (s *MigrateInstallRolesTestSuite) TestRepointsLiveRolesInPlace() {
 		"maintenance": app.AWSIAMRoleTypeRunnerMaintenance,
 		"read-only":   app.AWSIAMRoleTypeCustom,
 	})
-	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, s.deps.DB, testApp.ID, *newPerm))
+	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, testApp.ID, *newPerm))
 
 	after := s.liveRolesByName(ctx, install.ID)
 	s.Require().Len(after, 3)
@@ -172,7 +172,7 @@ func (s *MigrateInstallRolesTestSuite) TestRemovesRolesDroppedFromConfig() {
 	newPerm := s.seedPermissions(ctx, testApp.ID, newCfg.ID, map[string]app.AWSIAMRoleType{
 		"provision": app.AWSIAMRoleTypeRunnerProvision,
 	})
-	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, s.deps.DB, testApp.ID, *newPerm))
+	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, testApp.ID, *newPerm))
 
 	after := s.liveRolesByName(ctx, install.ID)
 	s.Require().Len(after, 1)
@@ -198,8 +198,8 @@ func (s *MigrateInstallRolesTestSuite) TestResyncOfSameConfigIsANoop() {
 	s.seedProvisionedInstallRoles(ctx, install.ID, perm)
 	before := s.liveRolesByName(ctx, install.ID)
 
-	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, s.deps.DB, testApp.ID, *perm))
-	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, s.deps.DB, testApp.ID, *perm))
+	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, testApp.ID, *perm))
+	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, testApp.ID, *perm))
 
 	after := s.liveRolesByName(ctx, install.ID)
 	s.Require().Len(after, len(before))

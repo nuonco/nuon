@@ -12,10 +12,16 @@ import (
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
+
+	"github.com/nuonco/nuon/pkg/runner/jobs/buildinputs"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 )
 
 func (h *handler) packageChart(ctx context.Context, l *zap.Logger) (string, error) {
 	if h.state.plan.Src != nil && h.state.plan.Src.URL != "" {
+		if err := buildinputs.Verify(h.state.plan, h.state.source); err != nil {
+			return "", err
+		}
 		return h.loadAndPackageChart(ctx, l, h.state.workspace.Source().AbsPath())
 	}
 	return h.packageChartFromRepoConfig(ctx, l)
@@ -25,7 +31,11 @@ func (h *handler) packageChartFromRepoConfig(ctx context.Context, l *zap.Logger)
 	cfg := h.state.cfg.HelmRepoConfig
 	client := newChartRepositoryClient()
 	defer client.CloseIdleConnections()
-	data, err := fetchRepositoryChart(ctx, client, cfg.RepoURL, cfg.Chart, cfg.Version)
+	version := cfg.Version
+	if expected := h.state.plan.SourceIdentity; expected != nil && expected.Captured && expected.ChartVersion != "" {
+		version = expected.ChartVersion
+	}
+	data, err := fetchRepositoryChart(ctx, client, cfg.RepoURL, cfg.Chart, version)
 	if err != nil {
 		return "", fmt.Errorf("unable to pull helm chart: %w", err)
 	}
@@ -42,6 +52,29 @@ func (h *handler) packageChartFromRepoConfig(ctx context.Context, l *zap.Logger)
 		return "", err
 	}
 	h.state.source = pulledSource
+	if expected := h.state.plan.SourceIdentity; expected != nil {
+		chart, err := loadChart(h.state.source, ".")
+		if err != nil {
+			return "", err
+		}
+		selected := *expected
+		selected.Reasons = append([]string(nil), expected.Reasons...)
+		selected.ChartVersion = chart.Metadata.Version
+		if len(chart.Metadata.Dependencies) > 0 {
+			selected.MarkUnknown("helm_dependencies_resolved_at_build")
+		}
+		captured, err := sourceidentity.Capture(h.state.source, &selected)
+		if err != nil {
+			return "", err
+		}
+		if expected.Captured && !sourceidentity.Matches(expected, captured) {
+			return "", fmt.Errorf("remote chart differs from captured source")
+		}
+		if err := buildinputs.Claim(ctx, h.apiClient, h.state.jobID, h.state.jobExecutionID, captured); err != nil {
+			return "", err
+		}
+		h.state.plan.SourceIdentity = captured
+	}
 	return h.loadAndPackageChart(ctx, l, ".")
 }
 

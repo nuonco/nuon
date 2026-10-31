@@ -228,9 +228,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
-	_ = activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
+	if err := activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
 		DeployID: installDeploy.ID,
-	})
+	}); err != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		return errors.Wrap(err, "unable to record component teardown baseline")
+	}
 
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
 	s.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")

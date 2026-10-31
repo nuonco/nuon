@@ -132,7 +132,7 @@ func installConfigDiffEmpty(diff *app.InstallConfigDiff) bool {
 	if diff == nil {
 		return false
 	}
-	return !diff.StackChanged && !diff.SandboxChanged && !diff.SandboxBuildChanged &&
+	return !diff.StackChanged && !diff.SandboxChanged &&
 		len(diff.Added) == 0 && len(diff.Changed) == 0 && len(diff.Removed) == 0
 }
 
@@ -140,7 +140,7 @@ func installDiffNeedsRunner(diff *app.InstallConfigDiff) bool {
 	if diff == nil {
 		return false
 	}
-	return diff.SandboxChanged || diff.SandboxBuildChanged || len(diff.Added) > 0 || len(diff.Changed) > 0 || len(diff.Removed) > 0
+	return diff.SandboxChanged || len(diff.Added) > 0 || len(diff.Changed) > 0 || len(diff.Removed) > 0
 }
 
 func (h *Helpers) stackPendingCustomer(ctx context.Context, installID string) (bool, error) {

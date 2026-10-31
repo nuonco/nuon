@@ -39,6 +39,7 @@ import (
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/errs"
 	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
@@ -504,4 +505,68 @@ func TestHelmExecPreservesResultReportingSemantics(t *testing.T) {
 	require.NotEmpty(t, replacement.results[0].ContentsCompressed)
 	require.EqualValues(t, 1, copier.calls.Load())
 	require.Equal(t, 1, logs.FilterMessage("write job execution result").Len())
+}
+
+func TestRepositoryRetryKeepsClaimedChartVersion(t *testing.T) {
+	upstream, err := url.Parse(strings.TrimSuffix(chartRepositoryFixture(t, false, false), "/charts"))
+	require.NoError(t, err)
+	proxy := httputil.NewSingleHostReverseProxy(upstream)
+	var advanced, overwritten atomic.Bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/charts/index.yaml" {
+			versions := []string{"1.0.0"}
+			if advanced.Load() {
+				versions = append(versions, "1.2.3+meta")
+			}
+			entries := make([]map[string]any, 0, len(versions))
+			for _, version := range versions {
+				entries = append(entries, map[string]any{"apiVersion": "v2", "name": "acme", "version": version, "urls": []string{"archives/acme-" + version + ".tgz"}})
+			}
+			json.NewEncoder(w).Encode(map[string]any{"apiVersion": "v1", "entries": map[string]any{"acme": entries}})
+			return
+		}
+		if overwritten.Load() && r.URL.Path == "/charts/archives/acme-1.0.0.tgz" {
+			w.Write(chartArchiveFixture(t, chartArchiveEntry{name: "acme/Chart.yaml", data: "apiVersion: v2\nname: acme\nversion: 1.0.0\ndescription: overwritten\n"}))
+			return
+		}
+		proxy.ServeHTTP(w, r)
+	}))
+	t.Cleanup(server.Close)
+	ctx := pkgctx.SetLogger(context.Background(), zap.NewNop())
+	api := &chartResultClient{}
+	packageChart := func(identity *sourceidentity.Identity) (*handler, error) {
+		h, err := New(HandlerParams{V: validator.New(), FS: afero.NewMemMapFs(), APIClient: api})
+		require.NoError(t, err)
+		h.state = &handlerState{plan: &plantypes.BuildPlan{SourceIdentity: identity}, cfg: &plantypes.HelmBuildPlan{HelmRepoConfig: &config.HelmRepoConfig{
+			RepoURL: server.URL + "/charts", Chart: "acme", Version: "^1.0.0",
+		}}}
+		job, execution := &models.AppRunnerJob{ID: "job"}, &models.AppRunnerJobExecution{ID: fmt.Sprintf("retry-%d", time.Now().UnixNano())}
+		require.NoError(t, h.Initialize(ctx, job, execution))
+		t.Cleanup(func() { require.NoError(t, h.Cleanup(ctx, job, execution)) })
+		_, err = h.packageChart(ctx, zap.NewNop())
+		return h, err
+	}
+	prepared := sourceidentity.New("helm", "config")
+	prepared.MarkUnknown("source_requires_runner_resolution")
+	prepared.Seal()
+	first, err := packageChart(prepared)
+	require.NoError(t, err)
+	require.Equal(t, "1.0.0", first.state.chart.Metadata.Version)
+	require.Len(t, api.results, 1)
+	data, err := json.Marshal(api.results[0].SourceCapture)
+	require.NoError(t, err)
+	var resumed sourceidentity.Identity
+	require.NoError(t, json.Unmarshal(data, &resumed))
+	require.Equal(t, "1.0.0", resumed.ChartVersion)
+	require.True(t, sourceidentity.Matches(first.state.plan.SourceIdentity, &resumed))
+	advanced.Store(true)
+	retried, err := packageChart(&resumed)
+	require.NoError(t, err)
+	require.Equal(t, "1.0.0", retried.state.chart.Metadata.Version)
+	fresh, err := packageChart(prepared)
+	require.NoError(t, err)
+	require.Equal(t, "1.2.3+meta", fresh.state.chart.Metadata.Version)
+	overwritten.Store(true)
+	_, err = packageChart(&resumed)
+	require.ErrorContains(t, err, "remote chart differs from captured source")
 }

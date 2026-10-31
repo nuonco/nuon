@@ -17,17 +17,14 @@ type ComponentTarget struct {
 	Build  *app.ComponentBuild
 }
 
-func (h *Helpers) EffectiveComponentTargets(ctx context.Context, db *gorm.DB, appConfigID string) (map[string]*ComponentTarget, error) {
+func (h *Helpers) EffectiveComponentTargets(ctx context.Context, appConfigID string) (map[string]*ComponentTarget, error) {
 	targets := map[string]*ComponentTarget{}
 	if appConfigID == "" {
 		return targets, nil
 	}
-	if db == nil {
-		db = h.db
-	}
 
 	var appCfg app.AppConfig
-	if err := db.WithContext(ctx).
+	if err := h.db.WithContext(ctx).
 		Scopes(scopes.WithDisableViews).
 		Select("id", "component_ids", "builds_pinned").
 		Where(app.AppConfig{ID: appConfigID}).
@@ -42,7 +39,7 @@ func (h *Helpers) EffectiveComponentTargets(ctx context.Context, db *gorm.DB, ap
 	}
 	loadComponent := func(db *gorm.DB) *gorm.DB { return db.Select("id", "name", "type") }
 	var conns []app.ComponentConfigConnection
-	if err := loadConfig(db.WithContext(ctx)).
+	if err := loadConfig(h.db.WithContext(ctx)).
 		Preload("Component", loadComponent).
 		Where(app.ComponentConfigConnection{AppConfigID: appConfigID}).
 		Find(&conns).Error; err != nil {
@@ -67,7 +64,7 @@ func (h *Helpers) EffectiveComponentTargets(ctx context.Context, db *gorm.DB, ap
 		configs = append(configs, *target.Config)
 	}
 
-	selected, err := buildselection.Components(ctx, db, configs)
+	selected, err := buildselection.Components(ctx, h.db, configs)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +78,8 @@ func (h *Helpers) EffectiveComponentTargets(ctx context.Context, db *gorm.DB, ap
 	}
 	if len(buildIDs) > 0 {
 		var builds []app.ComponentBuild
-		if err := db.WithContext(ctx).
-			Select("id", "status", "status_v2", "component_config_connection_id").
+		if err := h.db.WithContext(ctx).
+			Select("id", "status", "status_v2", "component_config_connection_id", "source_checksum", "source_digest", "source_identity").
 			Preload("ComponentConfigConnection", loadConfig).
 			Preload("ComponentConfigConnection.Component", loadComponent).
 			Where("id IN ?", buildIDs).Find(&builds).Error; err != nil {
@@ -101,13 +98,10 @@ func (h *Helpers) EffectiveComponentTargets(ctx context.Context, db *gorm.DB, ap
 	return targets, nil
 }
 
-func (h *Helpers) AppliedInstallDeploys(ctx context.Context, db *gorm.DB, installComponents []app.InstallComponent) (map[string]*app.InstallDeploy, error) {
+func (h *Helpers) AppliedInstallDeploys(ctx context.Context, installComponents []app.InstallComponent) (map[string]*app.InstallDeploy, error) {
 	applied := map[string]*app.InstallDeploy{}
 	if len(installComponents) == 0 {
 		return applied, nil
-	}
-	if db == nil {
-		db = h.db
 	}
 
 	refDeployIDs := make([]string, 0, len(installComponents))
@@ -127,7 +121,7 @@ func (h *Helpers) AppliedInstallDeploys(ctx context.Context, db *gorm.DB, instal
 
 	if len(legacyIDs) > 0 {
 		var latest []string
-		if err := db.WithContext(ctx).Raw(`
+		if err := h.db.WithContext(ctx).Raw(`
 			SELECT DISTINCT ON (install_component_id) id
 			FROM install_deploys
 			WHERE deleted_at = 0
@@ -152,8 +146,8 @@ func (h *Helpers) AppliedInstallDeploys(ctx context.Context, db *gorm.DB, instal
 		return applied, nil
 	}
 
-	var deploys []app.InstallDeploy
-	if err := db.WithContext(ctx).
+	var deploys []*app.InstallDeploy
+	if err := h.db.WithContext(ctx).
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
 			return db.Unscoped()
@@ -166,20 +160,17 @@ func (h *Helpers) AppliedInstallDeploys(ctx context.Context, db *gorm.DB, instal
 		if deploys[i].Type == app.InstallDeployTypeTeardown {
 			continue
 		}
-		applied[deploys[i].InstallComponentID] = &deploys[i]
+		applied[deploys[i].InstallComponentID] = deploys[i]
 	}
 	return applied, nil
 }
 
-func (h *Helpers) AppliedInstallSandboxRun(ctx context.Context, db *gorm.DB, sandbox *app.InstallSandbox) (*app.InstallSandboxRun, error) {
+func (h *Helpers) AppliedInstallSandboxRun(ctx context.Context, sandbox *app.InstallSandbox) (*app.InstallSandboxRun, error) {
 	if sandbox == nil || sandbox.ID == "" {
 		return nil, nil
 	}
-	if db == nil {
-		db = h.db
-	}
 	ref := sandbox.AppConfigRef
-	query := db.WithContext(ctx).
+	query := h.db.WithContext(ctx).
 		Preload("AppSandboxConfig", func(db *gorm.DB) *gorm.DB {
 			return db.Unscoped()
 		})

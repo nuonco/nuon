@@ -55,6 +55,9 @@ type PlantypesBuildPlan struct {
 	// sandbox mode
 	SandboxMode *PlantypesSandboxMode `json:"sandbox_mode,omitempty"`
 
+	// source identity
+	SourceIdentity *SourceidentityIdentity `json:"source_identity,omitempty"`
+
 	// terraform build plan
 	TerraformBuildPlan *PlantypesTerraformBuildPlan `json:"terraform_build_plan,omitempty"`
 }
@@ -96,6 +99,10 @@ func (m *PlantypesBuildPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSandboxMode(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSourceIdentity(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -303,6 +310,29 @@ func (m *PlantypesBuildPlan) validateSandboxMode(formats strfmt.Registry) error 
 	return nil
 }
 
+func (m *PlantypesBuildPlan) validateSourceIdentity(formats strfmt.Registry) error {
+	if swag.IsZero(m.SourceIdentity) { // not required
+		return nil
+	}
+
+	if m.SourceIdentity != nil {
+		if err := m.SourceIdentity.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_identity")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_identity")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesBuildPlan) validateTerraformBuildPlan(formats strfmt.Registry) error {
 	if swag.IsZero(m.TerraformBuildPlan) { // not required
 		return nil
@@ -359,6 +389,10 @@ func (m *PlantypesBuildPlan) ContextValidate(ctx context.Context, formats strfmt
 	}
 
 	if err := m.contextValidateSandboxMode(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSourceIdentity(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -559,6 +593,31 @@ func (m *PlantypesBuildPlan) contextValidateSandboxMode(ctx context.Context, for
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("sandbox_mode")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesBuildPlan) contextValidateSourceIdentity(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SourceIdentity != nil {
+
+		if swag.IsZero(m.SourceIdentity) { // not required
+			return nil
+		}
+
+		if err := m.SourceIdentity.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_identity")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_identity")
 			}
 
 			return err
