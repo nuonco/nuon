@@ -193,6 +193,8 @@ func (e *FlowTestSuite) TestSkipParkedStep() {
 			Retryable:   true,
 			Skippable:   true,
 			QueueSignal: &signaldb.SignalData{Signal: &ManualRetryGroupCountdownSignal{}}},
+		{Name: "same-group-after-skip", Idx: 101, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
+			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 		{Name: "after-skip", Idx: 200, GroupIdx: 2, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 	})
@@ -228,7 +230,7 @@ func (e *FlowTestSuite) TestSkipParkedStep() {
 			require.Equal(e.T(), app.StatusUserSkipped, step.Status.Status,
 				"skipped step should have user-skipped status")
 		}
-		if step.Name == "after-skip" {
+		if step.Name == "after-skip" || step.Name == "same-group-after-skip" {
 			require.Equal(e.T(), app.StatusSuccess, step.Status.Status,
 				"step after skip should have succeeded")
 		}

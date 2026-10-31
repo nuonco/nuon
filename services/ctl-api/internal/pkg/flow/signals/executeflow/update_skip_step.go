@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -61,6 +62,9 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	}
 
 	if s.Resident {
+		if workflow.GetVersion(ctx, "resident-flow-owned-skip-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return s.skipStepResidentLegacy(ctx, req, step)
+		}
 		return s.skipStepResident(ctx, req, step)
 	}
 
@@ -197,11 +201,50 @@ func (s *Signal) discardRemainingGroupSteps(ctx workflow.Context, skipped *app.W
 	}
 }
 
-// skipStepResident handles skip on a resident host. A step parked in
-// await-retry or await-approval has no live group loop, so the flow marks it
-// skipped, writes the step and group directives the resident conductor reads,
-// and seeds the resume. Any other state still forwards through the group.
 func (s *Signal) skipStepResident(ctx workflow.Context, req SkipStepRequest, step *app.WorkflowStep) (*SkipStepResponse, error) {
+	if s.cancelRequested {
+		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
+	}
+	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get workflow %s: %w", s.WorkflowID, err)
+	}
+	if flw.Status.Status == app.StatusCancelled {
+		s.cancelRequested = true
+		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
+	}
+	if step.Retried || !step.Skippable || (step.Status.Status != app.StatusError && step.Status.Status != app.AwaitingApproval) {
+		return &SkipStepResponse{WorkflowID: s.WorkflowID, Skippable: false}, nil
+	}
+
+	settled, err := workflow.AwaitWithTimeout(ctx, skipConductorParkWait, func() bool {
+		return s.activeGroupQueueSignalID == "" || s.cancelRequested
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to wait for workflow %s to settle: %w", s.WorkflowID, err)
+	}
+	if !settled {
+		return nil, fmt.Errorf("workflow %s still has an executing group", s.WorkflowID)
+	}
+	step, err = workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
+	}
+	if s.cancelRequested {
+		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
+	}
+	if step.Retried || !step.Skippable || (step.Status.Status != app.StatusError && step.Status.Status != app.AwaitingApproval) {
+		return &SkipStepResponse{WorkflowID: s.WorkflowID, Skippable: false}, nil
+	}
+
+	if err := executeworkflowstepgroup.SkipSettledStep(ctx, step); err != nil {
+		return nil, err
+	}
+	s.markResumeRequested(ctx, app.WorkflowRunTypeSkip, req.StepID)
+	return &SkipStepResponse{WorkflowID: s.WorkflowID, Skippable: true}, nil
+}
+
+func (s *Signal) skipStepResidentLegacy(ctx workflow.Context, req SkipStepRequest, step *app.WorkflowStep) (*SkipStepResponse, error) {
 	if s.cancelRequested {
 		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
 	}
