@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -236,24 +237,8 @@ func (s *Signal) skipStepResident(ctx workflow.Context, req SkipStepRequest, ste
 		return &SkipStepResponse{WorkflowID: s.WorkflowID, Skippable: false}, nil
 	}
 
-	skipDirective := residentSkipDirective(step)
-	if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowStepResultDirective(ctx, workflowactivities.UpdateFlowStepResultDirectiveRequest{
-		StepID: step.ID, Directive: string(skipDirective),
-	}); err != nil {
-		return nil, fmt.Errorf("unable to write skip directive: %w", err)
-	}
-	if err := s.repairResidentSkippedGroup(ctx, step, skipDirective); err != nil {
+	if err := executeworkflowstepgroup.SkipSettledStep(ctx, step); err != nil {
 		return nil, err
-	}
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: step.ID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusUserSkipped,
-			StatusHumanDescription: "Step was skipped by the user.",
-			Metadata:               map[string]any{"skipped": true},
-		},
-	}); err != nil {
-		return nil, fmt.Errorf("unable to mark step %s as skipped: %w", step.ID, err)
 	}
 	s.markResumeRequested(ctx, app.WorkflowRunTypeSkip, req.StepID)
 	return &SkipStepResponse{WorkflowID: s.WorkflowID, Skippable: true}, nil

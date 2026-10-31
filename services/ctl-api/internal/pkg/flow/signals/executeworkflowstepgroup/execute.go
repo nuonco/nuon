@@ -281,8 +281,9 @@ func hasApprovalResponse(step *app.WorkflowStep) bool {
 // cancelRemainingSteps marks all non-terminal steps after the given step with
 // the provided status. Use StatusDiscarded for both stop and skip-group
 // directives.
-func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps []app.WorkflowStep, afterStepID string, status app.Status, cause app.CompositeStatus) {
+func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps []app.WorkflowStep, afterStepID string, status app.Status, cause app.CompositeStatus) error {
 	pastTrigger := false
+	var firstErr error
 	for _, step := range steps {
 		if step.ID == afterStepID {
 			pastTrigger = true
@@ -314,8 +315,12 @@ func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps
 			},
 		}); err != nil {
 			l.Warn("failed to cancel remaining step", zap.String("step_id", step.ID), zap.Error(err))
+			if firstErr == nil {
+				firstErr = err
+			}
 		}
 	}
+	return firstErr
 }
 
 // handleStepDispatchError handles errors from step dispatch or await.
