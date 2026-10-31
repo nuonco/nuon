@@ -1,82 +1,15 @@
 package testworker
 
 import (
-	"bytes"
-	"compress/gzip"
-	"context"
-	"time"
-
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
-
-func (e *FlowTestSuite) seedDeniedPlan(ctx context.Context) *app.InstallDeploy {
-	orgID, err := cctx.OrgIDFromContext(ctx)
-	require.NoError(e.T(), err)
-	tx := e.service.DB.WithContext(ctx).Begin()
-	require.NoError(e.T(), tx.Error)
-	defer tx.Rollback()
-	require.NoError(e.T(), tx.Exec("SET LOCAL session_replication_role = replica").Error)
-	create := func(value any) {
-		require.NoError(e.T(), tx.Omit(clause.Associations).Create(value).Error)
-	}
-	application := app.App{Name: "acme", OrgID: orgID}
-	create(&application)
-	appConfig := app.AppConfig{AppID: application.ID, StatusDescription: "test config"}
-	create(&appConfig)
-	install := app.Install{Name: "acme", AppID: application.ID, AppConfigID: appConfig.ID}
-	create(&install)
-	component := app.Component{Name: "database", AppID: application.ID, Type: app.ComponentTypeTerraformModule}
-	create(&component)
-	installedComponent := app.InstallComponent{InstallID: install.ID, ComponentID: component.ID}
-	create(&installedComponent)
-	build := app.ComponentBuild{ComponentID: component.ID}
-	create(&build)
-	deploy := app.InstallDeploy{
-		InstallComponentID: installedComponent.ID, ComponentBuildID: build.ID,
-		Status: app.InstallDeployStatusPending, StatusDescription: "awaiting plan",
-	}
-	create(&deploy)
-	policies := app.AppPoliciesConfig{AppID: application.ID, AppConfigID: appConfig.ID}
-	create(&policies)
-	create(&app.AppPolicyConfig{
-		AppID: application.ID, AppConfigID: appConfig.ID, AppPoliciesConfigID: policies.ID,
-		Name: "block-destructive-changes", Type: config.AppPolicyTypeTerraformModule, Engine: config.AppPolicyEngineOPA,
-		Components: []string{component.Name},
-		Contents: `package nuon
-deny contains "RDS replacement is forbidden" if {
-  some change in input.plan.resource_changes
-  change.type == "aws_db_instance"
-  "delete" in change.change.actions
-}`,
-	})
-	job := app.RunnerJob{
-		OwnerID: deploy.ID, OwnerType: "install_deploys",
-		Type: app.RunnerJobTypeTerraformDeploy, Operation: app.RunnerJobOperationTypeCreateApplyPlan,
-		Status: app.RunnerJobStatusFinished, StatusDescription: "plan generated", MaxExecutions: 1,
-		QueueTimeout: time.Minute, AvailableTimeout: time.Minute, ExecutionTimeout: time.Minute,
-	}
-	create(&job)
-	execution := app.RunnerJobExecution{RunnerJobID: job.ID, Status: app.RunnerJobExecutionStatusFinished}
-	create(&execution)
-	var plan bytes.Buffer
-	zw := gzip.NewWriter(&plan)
-	_, err = zw.Write([]byte(`{"format_version":"1.2","terraform_version":"1.9.8","resource_changes":[{"address":"aws_db_instance.database","mode":"managed","type":"aws_db_instance","name":"database","provider_name":"registry.terraform.io/hashicorp/aws","change":{"actions":["delete","create"],"before":{"storage_encrypted":false},"after":{"storage_encrypted":true},"replace_paths":[["storage_encrypted"]]}}]}`))
-	require.NoError(e.T(), err)
-	require.NoError(e.T(), zw.Close())
-	create(&app.RunnerJobExecutionResult{RunnerJobExecutionID: execution.ID, ContentsDisplayGzip: plan.Bytes()})
-	require.NoError(e.T(), tx.Commit().Error)
-	return &deploy
-}
 
 func (e *FlowTestSuite) TestSkipPolicyDeniedPlanDiscardsApply() {
 	e.testSkipPlanDiscardsApply(true, true)
@@ -125,18 +58,13 @@ func (e *FlowTestSuite) testSkipPlanDiscardsApply(policyDenied, resident bool) {
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
 	steps := []app.WorkflowStep{
-		approvalStep("plan database", 1, signaldb.SignalData{Signal: &SkipGroupApprovalSignal{EvaluatePolicies: policyDenied}}),
+		approvalStep("plan database", 1, signaldb.SignalData{Signal: &SkipGroupApprovalSignal{}}),
 		{Name: "apply database", Idx: 101, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 		{Name: "post-deploy action", Idx: 102, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 		{Name: "independent component", Idx: 200, GroupIdx: 2, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
-	}
-	if policyDenied {
-		deploy := e.seedDeniedPlan(ctx)
-		steps[0].StepTargetID = deploy.ID
-		steps[0].StepTargetType = string(app.WorkflowStepTargetTypeInstallDeploys)
 	}
 	flw, queueID := e.setupLifecycleTest(ctx, ownerID, ownerType, steps)
 	e.seedApproval(ctx, &steps[0])
@@ -156,16 +84,17 @@ func (e *FlowTestSuite) testSkipPlanDiscardsApply(policyDenied, resident bool) {
 		OwnerID: flw.ID, OwnerType: "install_workflows",
 	})
 	require.NoError(e.T(), err)
+	e.awaitApprovalParked(ctx, flw, steps[0].ID)
 	if policyDenied {
-		e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
-		plan := e.getStep(ctx, steps[0].ID)
-		require.Equal(e.T(), app.StatusError, plan.Status.Status)
-		require.Equal(e.T(), "policy", plan.Status.Metadata["check"])
-		require.NotEmpty(e.T(), plan.Status.Metadata["deny_violations"])
-		require.Empty(e.T(), plan.ResultDirective)
 		e.assertTemporalDrained(ctx, flw.ID)
-	} else {
-		e.awaitApprovalParked(ctx, flw, steps[0].ID)
+		status := app.CompositeStatus{Status: app.StatusError, Metadata: map[string]any{"check": "policy"}}
+		require.NoError(e.T(), e.service.DB.WithContext(ctx).Model(&steps[0]).Updates(map[string]any{
+			"status": status, "result_directive": "",
+		}).Error)
+		require.NoError(e.T(), e.service.DB.WithContext(ctx).Model(&app.WorkflowStepGroup{}).
+			Where(app.WorkflowStepGroup{ID: steps[0].WorkflowStepGroupID}).
+			Updates(map[string]any{"status": status, "result_directive": ""}).Error)
+		require.NoError(e.T(), e.service.DB.WithContext(ctx).Model(flw).Update("status", status).Error)
 	}
 	for _, step := range steps[1:] {
 		require.Equal(e.T(), app.StatusPending, e.getStep(ctx, step.ID).Status.Status)

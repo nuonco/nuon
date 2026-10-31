@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
@@ -14,25 +15,28 @@ import (
 type GetInstallDeployForApplyStep struct {
 	InstallWorkflowID string `validate:"required"`
 	ComponentID       string `validate:"required"`
-	ApplyStepID       *string
 }
 
 // @temporal-gen-v2 activity
 func (a *Activities) GetInstallDeployForApplyStep(ctx context.Context, req GetInstallDeployForApplyStep) (*app.InstallDeploy, error) {
-	if req.ApplyStepID != nil {
-		return a.getApprovedInstallDeployForApplyStep(ctx, req)
-	}
 	return a.getInstallDeployForApplyStep(ctx, req.InstallWorkflowID, req.ComponentID)
 }
 
-func (a *Activities) getApprovedInstallDeployForApplyStep(ctx context.Context, req GetInstallDeployForApplyStep) (*app.InstallDeploy, error) {
+type GetApprovedInstallDeployForApplyStepRequest struct {
+	InstallWorkflowID string `validate:"required"`
+	ComponentID       string `validate:"required"`
+	ApplyStepID       string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) GetApprovedInstallDeployForApplyStep(ctx context.Context, req GetApprovedInstallDeployForApplyStepRequest) (*app.InstallDeploy, error) {
 	ctx = routing.WithoutReplica(ctx)
-	if *req.ApplyStepID == "" {
+	if req.ApplyStepID == "" {
 		return nil, temporal.NewNonRetryableApplicationError("refusing apply without a workflow step", "ApplyPlanNotAuthorized", nil)
 	}
 	var applyStep app.WorkflowStep
 	if err := a.db.WithContext(ctx).Where(app.WorkflowStep{
-		ID: *req.ApplyStepID, InstallWorkflowID: req.InstallWorkflowID,
+		ID: req.ApplyStepID, InstallWorkflowID: req.InstallWorkflowID,
 	}).First(&applyStep).Error; err != nil {
 		return nil, errors.Wrap(err, "unable to get apply step")
 	}
@@ -54,7 +58,11 @@ func (a *Activities) getApprovedInstallDeployForApplyStep(ctx context.Context, r
 		ExecutionType:       app.WorkflowStepExecutionTypeApproval,
 	}, "InstallWorkflowID", "WorkflowStepGroupID", "GroupRetryIdx", "ExecutionType").
 		Where("idx < ?", applyStep.Idx).
-		Order("idx DESC").Preload("Approval.Response").First(&planStep).Error; err != nil {
+		Order("idx DESC").
+		Preload("Approval", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "install_workflow_step_id")
+		}).
+		Preload("Approval.Response").First(&planStep).Error; err != nil {
 		return nil, errors.Wrap(err, "unable to find the matching plan step for apply")
 	}
 	if planStep.Retried || planStep.StepTargetType != string(app.WorkflowStepTargetTypeInstallDeploys) || planStep.StepTargetID == "" ||

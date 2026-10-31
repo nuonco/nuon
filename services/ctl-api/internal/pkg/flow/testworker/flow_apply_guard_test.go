@@ -11,14 +11,47 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 func executeComponentApply(ctx workflow.Context, sig componentdeployapplyplan.Signal) error {
 	return sig.Execute(ctx)
+}
+
+func (e *FlowTestSuite) seedApplyGuardDeploy(ctx context.Context) *app.InstallDeploy {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	require.NoError(e.T(), err)
+	tx := e.service.DB.WithContext(ctx).Begin()
+	require.NoError(e.T(), tx.Error)
+	defer tx.Rollback()
+	require.NoError(e.T(), tx.Exec("SET LOCAL session_replication_role = replica").Error)
+	create := func(value any) {
+		require.NoError(e.T(), tx.Omit(clause.Associations).Create(value).Error)
+	}
+	application := app.App{Name: "acme", OrgID: orgID}
+	create(&application)
+	appConfig := app.AppConfig{AppID: application.ID, StatusDescription: "test config"}
+	create(&appConfig)
+	install := app.Install{Name: "acme", AppID: application.ID, AppConfigID: appConfig.ID}
+	create(&install)
+	component := app.Component{Name: "database", AppID: application.ID, Type: app.ComponentTypeTerraformModule}
+	create(&component)
+	installedComponent := app.InstallComponent{InstallID: install.ID, ComponentID: component.ID}
+	create(&installedComponent)
+	build := app.ComponentBuild{ComponentID: component.ID}
+	create(&build)
+	deploy := app.InstallDeploy{
+		InstallComponentID: installedComponent.ID, ComponentBuildID: build.ID,
+		Status: app.InstallDeployStatusPendingApproval, StatusDescription: "awaiting approval",
+	}
+	create(&deploy)
+	require.NoError(e.T(), tx.Commit().Error)
+	return &deploy
 }
 
 func (e *FlowTestSuite) TestApplyRequiresAuthorizedPlan() {
@@ -30,6 +63,7 @@ func (e *FlowTestSuite) TestApplyRequiresAuthorizedPlan() {
 	w.RegisterWorkflow(executeComponentApply)
 	w.RegisterActivity(acts.GetInstallForInstallComponent)
 	w.RegisterActivity(acts.GetInstallDeployForApplyStep)
+	w.RegisterActivity(acts.GetApprovedInstallDeployForApplyStep)
 	w.RegisterActivityWithOptions(func(_ context.Context, req installactivities.GetLogStreamRequest) (*app.LogStream, error) {
 		return nil, temporal.NewNonRetryableApplicationError("runner preparation reached: "+req.LogStreamID, "RunnerPreparationReached", nil)
 	}, activity.RegisterOptions{Name: "GetLogStream"})
@@ -76,7 +110,7 @@ func (e *FlowTestSuite) TestApplyRequiresAuthorizedPlan() {
 			e := &FlowTestSuite{t: t, service: e.service}
 			ctx := e.service.Seed.EnsureAccount(t.Context(), t)
 			ctx = e.service.Seed.EnsureOrg(ctx, t)
-			deploy := e.seedDeniedPlan(ctx)
+			deploy := e.seedApplyGuardDeploy(ctx)
 			var component app.InstallComponent
 			require.NoError(t, e.service.DB.WithContext(ctx).First(&component, "id = ?", deploy.InstallComponentID).Error)
 			flw := app.Workflow{OwnerID: component.InstallID, OwnerType: "installs", Type: "test_apply_guard", PlanOnly: tc.planOnly}

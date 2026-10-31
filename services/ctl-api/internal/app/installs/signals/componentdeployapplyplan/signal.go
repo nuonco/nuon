@@ -187,18 +187,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	req := activities.GetInstallDeployForApplyStep{
-		InstallWorkflowID: s.FlowID,
-		ComponentID:       s.ComponentID,
-	}
-	if workflow.GetVersion(ctx, "component-apply-plan-authorization-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		req.ApplyStepID = &s.InstallWorkflowStepID
-	}
-	installDeploy, err := activities.AwaitGetInstallDeployForApplyStep(ctx, req)
-	if err != nil {
-		if req.ApplyStepID == nil {
+	var installDeploy *app.InstallDeploy
+	if workflow.GetVersion(ctx, "component-apply-plan-authorization-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		installDeploy, err = activities.AwaitGetInstallDeployForApplyStep(ctx, activities.GetInstallDeployForApplyStep{
+			InstallWorkflowID: s.FlowID,
+			ComponentID:       s.ComponentID,
+		})
+		if err != nil {
 			s.updateDeployStatus(ctx, "", app.InstallDeployStatusError, "unable to get install deploy from previous step")
 		}
+	} else {
+		installDeploy, err = activities.AwaitGetApprovedInstallDeployForApplyStep(ctx, activities.GetApprovedInstallDeployForApplyStepRequest{
+			InstallWorkflowID: s.FlowID,
+			ComponentID:       s.ComponentID,
+			ApplyStepID:       s.InstallWorkflowStepID,
+		})
+	}
+	if err != nil {
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
