@@ -13,9 +13,6 @@ type SkipStepRequest struct{}
 // SkipStepResponse is the response from the step-level "skip-step" update handler.
 type SkipStepResponse struct{}
 
-// skipStepHandler marks the step as user-skipped and writes a continue directive.
-// This unblocks handleStepError's Await without going through Cancel, which
-// would overwrite the skip status and directive.
 func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*SkipStepResponse, error) {
 	// Mark step as user-skipped.
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -29,8 +26,9 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		},
 	})
 
-	// Write continue directive so the group proceeds.
-	_ = setResultDirective(ctx, s.StepID, DirectiveContinue)
+	if workflow.GetVersion(ctx, "preserve-group-skip-directive-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		_ = setResultDirective(ctx, s.StepID, DirectiveContinue)
+	}
 
 	// Unblock handleStepError's Await.
 	s.skipped = true

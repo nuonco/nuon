@@ -375,7 +375,9 @@ func (s *ApprovalInnerSignal) SleepAfter() time.Duration       { return 250 * ti
 
 const SkipGroupApprovalSignalType signal.SignalType = "test-flow-skipgroup-approval"
 
-type SkipGroupApprovalSignal struct{}
+type SkipGroupApprovalSignal struct {
+	EvaluatePolicies bool `json:"evaluate_policies,omitempty"`
+}
 
 func init() {
 	catalog.Register(SkipGroupApprovalSignalType, func() signal.Signal { return &SkipGroupApprovalSignal{} })
@@ -386,6 +388,7 @@ func (s *SkipGroupApprovalSignal) Validate(workflow.Context) error { return nil 
 func (s *SkipGroupApprovalSignal) Execute(workflow.Context) error  { return nil }
 func (s *SkipGroupApprovalSignal) SkipGroup() bool                 { return true }
 func (s *SkipGroupApprovalSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
+func (s *SkipGroupApprovalSignal) RequiresPolicyEvaluation() bool  { return s.EvaluatePolicies }
 
 var _ signal.SignalWithSkipGroup = (*SkipGroupApprovalSignal)(nil)
 
