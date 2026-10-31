@@ -63,12 +63,6 @@ const retryStepFlowOwnedVersion = "retry-step-flow-owned"
 func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*RetryStepResponse, error) {
 	defer s.beginUpdate()()
 
-	unlock, err := s.lockStepMutation(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer unlock()
-
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)

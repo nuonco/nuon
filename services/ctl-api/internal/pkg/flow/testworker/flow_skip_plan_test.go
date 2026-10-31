@@ -2,7 +2,6 @@ package testworker
 
 import (
 	"context"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -312,95 +311,6 @@ func (e *FlowTestSuite) TestSkipDuplicatePreservesLaterFailure() {
 			}, 5*time.Second, pollInterval, "a duplicate skip must not dispatch past a later failure")
 			require.Equal(t, app.StatusError, e.getStep(ctx, steps[1].ID).Status.Status)
 			require.Equal(t, app.StatusPending, e.getStep(ctx, steps[2].ID).Status.Status)
-		})
-	}
-}
-
-func (e *FlowTestSuite) TestSkipSerializesConcurrentRetry() {
-	for _, updateName := range []string{"retry-step", "retry-group"} {
-		e.T().Run(updateName, func(t *testing.T) {
-			e := &FlowTestSuite{t: t, service: e.service, queueCache: map[string]*app.Queue{}}
-			ctx := e.service.Seed.EnsureAccount(t.Context(), t)
-			ctx = e.service.Seed.EnsureOrg(ctx, t)
-			ownerID, ownerType := newTestOwner()
-			steps := []app.WorkflowStep{
-				approvalStep("plan database", 1, signaldb.SignalData{Signal: &SkipGroupApprovalSignal{}}),
-				{Name: "apply database", Idx: 110, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
-					QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
-			}
-			flw, _ := e.setupLifecycleTest(ctx, ownerID, ownerType, steps)
-			e.seedApproval(ctx, &steps[0])
-			readDone, releaseRead := make(chan struct{}), make(chan struct{})
-			var reads atomic.Int32
-			var releaseOnce sync.Once
-			release := func() { releaseOnce.Do(func() { close(releaseRead) }) }
-			defer release()
-			ns, run := e.startIsolatedSkipFlow(ctx, flw, func(w worker.Worker) {
-				for _, acts := range e.service.Activities.AllActivities() {
-					if a, ok := acts.(*workflowactivities.Activities); ok {
-						w.RegisterActivityWithOptions(func(ctx context.Context, req workflowactivities.GetFlowStepRequest) (*app.WorkflowStep, error) {
-							step, err := a.PkgWorkflowsFlowGetFlowsStep(ctx, req)
-							if err == nil && req.FlowStepID == steps[0].ID && reads.Add(1) == 2 {
-								close(readDone)
-								select {
-								case <-releaseRead:
-								case <-ctx.Done():
-									return nil, ctx.Err()
-								}
-							}
-							return step, err
-						}, activity.RegisterOptions{Name: "PkgWorkflowsFlowGetFlowsStep", DisableAlreadyRegisteredCheck: true})
-					}
-				}
-			})
-			e.awaitApprovalParked(ctx, flw, steps[0].ID)
-			skip, err := ns.UpdateWorkflow(ctx, tclient.UpdateWorkflowOptions{
-				WorkflowID: run.GetID(), UpdateName: "skip-step", WaitForStage: tclient.WorkflowUpdateStageAccepted,
-				Args: []any{executeflow.SkipStepRequest{StepID: steps[0].ID}},
-			})
-			require.NoError(t, err)
-			select {
-			case <-readDone:
-			case <-time.After(pollTimeout):
-				t.Fatal("skip did not reach its eligibility read")
-			}
-			retry, err := ns.UpdateWorkflow(ctx, tclient.UpdateWorkflowOptions{
-				WorkflowID: run.GetID(), UpdateName: updateName, WaitForStage: tclient.WorkflowUpdateStageAccepted,
-				Args: []any{executeflow.RetryStepRequest{StepID: steps[0].ID}},
-			})
-			require.NoError(t, err)
-			var retryResponse executeflow.RetryStepResponse
-			retryDone := make(chan error, 1)
-			go func() { retryDone <- retry.Get(ctx, &retryResponse) }()
-			select {
-			case err := <-retryDone:
-				require.NoError(t, err)
-				t.Fatal("retry completed while skip still held its pre-retry snapshot")
-			case <-time.After(10 * time.Second):
-			}
-			release()
-			var skipResponse executeflow.SkipStepResponse
-			require.NoError(t, skip.Get(ctx, &skipResponse))
-			require.True(t, skipResponse.Skippable)
-			require.NoError(t, <-retryDone)
-			if updateName == "retry-step" {
-				require.False(t, retryResponse.Retryable)
-				e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
-				require.Len(t, e.getStepsByWorkflow(ctx, flw.ID), 2)
-				require.Equal(t, app.StatusDiscarded, e.getStep(ctx, steps[1].ID).Status.Status)
-			} else {
-				require.True(t, retryResponse.Retryable)
-				current := e.getStepsByWorkflow(ctx, flw.ID)
-				require.Len(t, current, 4)
-				for _, step := range current {
-					if step.GroupRetryIdx == 1 {
-						require.NotEqual(t, app.StatusDiscarded, step.Status.Status)
-						if step.Name == "apply database" {
-							require.True(t, step.StartedAt.IsZero())
-						}
-					}
-				}
-			}
 		})
 	}
 }

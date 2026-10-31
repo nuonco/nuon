@@ -56,12 +56,6 @@ const skipStepFlowOwnedVersion = "skip-step-flow-owned"
 func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*SkipStepResponse, error) {
 	defer s.beginUpdate()()
 
-	unlock, err := s.lockStepMutation(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer unlock()
-
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
@@ -211,7 +205,7 @@ func (s *Signal) skipStepResident(ctx workflow.Context, req SkipStepRequest, ste
 	if s.cancelRequested {
 		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
 	}
-	recoverSkipped := workflow.GetVersion(ctx, residentStepMutationsVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	recoverSkipped := workflow.GetVersion(ctx, "resident-skip-recovery-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	canSkip := func(step *app.WorkflowStep) bool {
 		if step.Retried || !step.Skippable {
 			return false

@@ -22,8 +22,6 @@ import (
 
 const SignalType qsignal.SignalType = "execute-workflow"
 
-const residentStepMutationsVersion = "resident-step-mutations-v1"
-
 type Signal struct {
 	// WorkflowID is the ID of the workflow to execute.
 	WorkflowID string `json:"workflow_id"`
@@ -89,7 +87,6 @@ type Signal struct {
 	// into re-driving the conductor (see AutoExecuteReady).
 	mutatingUpdatesStarted int
 	retryInFlight          map[string]bool
-	stepMutationLock       workflow.Mutex
 
 	// Cancel state — set by cancel update handlers.
 	cancelRequested bool
@@ -208,19 +205,6 @@ func (s *Signal) beginUpdate() func() {
 	s.mutatingUpdatesStarted++
 	s.updatesInFlight++
 	return func() { s.updatesInFlight-- }
-}
-
-func (s *Signal) lockStepMutation(ctx workflow.Context) (func(), error) {
-	if !s.Resident || workflow.GetVersion(ctx, residentStepMutationsVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return func() {}, nil
-	}
-	if s.stepMutationLock == nil {
-		s.stepMutationLock = workflow.NewMutex(ctx)
-	}
-	if err := s.stepMutationLock.Lock(ctx); err != nil {
-		return nil, err
-	}
-	return s.stepMutationLock.Unlock, nil
 }
 
 // beginReadOnlyUpdate tracks an update that observes flow state without
