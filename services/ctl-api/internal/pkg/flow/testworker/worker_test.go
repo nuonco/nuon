@@ -81,6 +81,7 @@ type TestService struct {
 	QueueClient *queueclient.Client
 	FlowClient  *flowclient.Client
 	TClient     temporalclient.Client
+	Activities  *workflows.Activities
 }
 
 // FlowTestSuite is one test case's handle on the shared app. Each case gets
