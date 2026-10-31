@@ -87,11 +87,14 @@ func SkipSettledStep(ctx workflow.Context, step *app.WorkflowStep) error {
 	}); err != nil {
 		return err
 	}
+	groupDirective := directive.GroupContinue
 	if skipDirective == directive.StepSkipGroup {
-		if err := s.skipGroup(ctx, l, steps, step.ID, app.StatusDiscarded, app.CompositeStatus{}); err != nil {
+		if err := s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded, app.CompositeStatus{}); err != nil {
 			return err
 		}
-	} else if err := s.writeStepGroupDirective(ctx, directive.GroupContinue); err != nil {
+		groupDirective = directive.GroupSkipGroup
+	}
+	if err := s.writeStepGroupDirective(ctx, groupDirective); err != nil {
 		return err
 	}
 

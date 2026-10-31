@@ -73,9 +73,6 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			if siblingStatus == "" {
 				siblingStatus = app.StatusDiscarded
 			}
-			if workflow.GetVersion(ctx, "group-owned-skip-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-				return s.skipGroup(ctx, l, steps, step.ID, siblingStatus, result.Cause)
-			}
 			s.cancelRemainingSteps(ctx, l, steps, step.ID, siblingStatus, result.Cause)
 			return s.writeStepGroupDirective(ctx, directive.GroupSkipGroup)
 
@@ -86,11 +83,4 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			return s.writeStepGroupDirective(ctx, directive.GroupAwaitRetry)
 		}
 	}
-}
-
-func (s *Signal) skipGroup(ctx workflow.Context, l *zap.Logger, steps []app.WorkflowStep, stepID string, status app.Status, cause app.CompositeStatus) error {
-	if err := s.cancelRemainingSteps(ctx, l, steps, stepID, status, cause); err != nil {
-		return err
-	}
-	return s.writeStepGroupDirective(ctx, directive.GroupSkipGroup)
 }
