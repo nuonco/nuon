@@ -12,7 +12,8 @@ import (
 
 // ForwardSkipStepRequest is the input for forwarding a skip to a step handler workflow.
 type ForwardSkipStepRequest struct {
-	StepID string `json:"step_id" validate:"required"`
+	StepID    string `json:"step_id" validate:"required"`
+	Directive string `json:"directive,omitempty"`
 }
 
 // ForwardSkipStepResponse is the output from forwarding a skip.
@@ -39,7 +40,9 @@ func (a *Activities) ForwardSkipStep(ctx context.Context, req ForwardSkipStepReq
 	handle, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
 		UpdateName:   "skip-step",
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args:         []any{&struct{}{}},
+		Args: []any{&struct {
+			Directive string `json:"directive,omitempty"`
+		}{Directive: req.Directive}},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send skip-step update to step %s: %w", req.StepID, err)
