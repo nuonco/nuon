@@ -92,6 +92,19 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 
 	app.ApplyInstallStackOverrides(&install, &appCfg.StackConfig)
 
+	// Not the whole StackConfig: custom nested stack parameters must stay raw for
+	// the input mapping below.
+	for _, url := range []*string{
+		&appCfg.StackConfig.VPCNestedTemplateURL,
+		&appCfg.StackConfig.RunnerNestedTemplateURL,
+	} {
+		rendered, err := render.RenderTextV2(*url, stateData)
+		if err != nil {
+			return nil, fmt.Errorf("render stack template url: %w", err)
+		}
+		*url = rendered
+	}
+
 	// Real values, not names: the read is authenticated. Current value per
 	// customer-source input, falling back to the app input's default.
 	var currentInputs map[string]*string

@@ -7,7 +7,11 @@ import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
-import type { TAppInput, TAppSecretConfig } from '@/types'
+import type {
+  TAppInput,
+  TAppSecretConfig,
+  TInstallStackVersionSecret,
+} from '@/types'
 import { createFileDownload } from '@/utils/file-download'
 import { TFModuleTab } from '../tf-module'
 import type { IMainTfParts } from '../tf-module'
@@ -464,6 +468,7 @@ export const AwaitAzureDetails = ({
             orgId={orgId}
             installId={installId}
             azureSubscriptionId={azureSubscriptionId}
+            customerSecrets={stack?.versions?.at(0)?.customer_secrets}
           />
         ),
         arm: armFlow,
@@ -476,6 +481,7 @@ interface IAzureTFModuleTab {
   orgId: string
   installId?: string
   azureSubscriptionId?: string
+  customerSecrets?: TInstallStackVersionSecret[]
 }
 
 // The Azure half of the TF Module tab: which providers to require, and the
@@ -489,6 +495,7 @@ const AzureTFModuleTab = ({
   orgId,
   installId,
   azureSubscriptionId,
+  customerSecrets,
 }: IAzureTFModuleTab) => {
   const subscription = azureSubscriptionId || '<azure-subscription-id>'
 
@@ -528,6 +535,7 @@ module "azure_stack" {
     <TFModuleTab
       orgId={orgId}
       installId={installId}
+      customerSecrets={customerSecrets}
       buildMainTf={buildMainTf}
     />
   )
