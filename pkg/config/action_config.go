@@ -82,12 +82,12 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("dependencies").Short("component dependencies referenced in this action").
 		Long("Automatically extracted from template references in steps (e.g., {{.component.component_name}})").
 		Example("database").Example("api-server").
-		Field("break_glass_role").Short("IAM role for break-glass access to this action").
-		Long("When set, allows the action to use a break glass role for elevated permissions during critical operations. Break glass roles are defined in CloudFormation stacks deployed to the customer's AWS account and provide temporary elevated access for emergency situations, migrations, or customer-initiated opt-in operations. See https://docs.nuon.co/updates/020-break-glass-actions for configuration details").
+		Field("break_glass_role").Short("deprecated: use role").
+		Long("Deprecated. Set role to the break glass role name instead. If both are set, break_glass_role wins. See https://docs.nuon.co/concepts/break-glass").
 		Example("bucket-operations-break-glass").
 		Example("database-migration-break-glass").
-		Field("role").Short("IAM role name for action execution").
-		Long("Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, the default maintenance role is used. This is the preferred way to specify custom roles; break_glass_role is deprecated").
+		Field("role").Short("role name for action execution").
+		Long("An operation or break glass role in the install stack. If not set, operation_roles rules apply, then the default role. If the role is off, the default role is used").
 		Example("{{.nuon.install.id}}-maintenance").
 		Field("is_healthcheck").Short("whether this action is an install health check").
 		Long("When true, the install health view lists this action and a failed run marks the install unhealthy. Defaults to false").

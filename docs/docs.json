@@ -118,6 +118,7 @@
               "concepts/policies",
               "concepts/actions",
               "concepts/runbooks",
+              "concepts/break-glass",
               "concepts/triggers",
               "concepts/install-telemetry"
             ]
