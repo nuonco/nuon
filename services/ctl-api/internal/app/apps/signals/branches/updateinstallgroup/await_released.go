@@ -157,7 +157,11 @@ func (s *Signal) awaitInstallUpdatesReleased(
 		released[directive.InstallID] = true
 		installEntries[i].ReleaseReason = directive.Reason
 		installEntries[i].WaitingOnRunID = directive.WaitingOnRunID
-		finish(i, directive.InstallID, enqueued[i].workflowID, installgrouprelease.StatusForRelease(directive.Reason), directive.Reason, nil)
+		status := installgrouprelease.StatusForRelease(directive.Reason)
+		delete(waiting, directive.InstallID)
+		installEntries[i].Status = status
+		s.updateInstallAppConfigVersionStatus(ctx, directive.InstallID, app.StatusInProgress, directive.Reason)
+		refresh()
 	})
 
 	timerCtx, timerCancel := workflow.WithCancel(ctx)

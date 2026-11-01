@@ -66,7 +66,7 @@ describe('mergeGroupRuns install detail', () => {
             },
             {
               install_id: 'ins_runner',
-              status: 'pending_customer',
+              status: 'error',
               release_reason: 'runner_offline',
             },
             {
