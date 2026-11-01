@@ -60,7 +60,7 @@ func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context,
 		return nil, err
 	}
 
-	vcsConnID, err := vcsHelpers.LookupVCSConnection(ctx, owner, repo, parentCmp.App.Org.VCSConnections)
+	vcsConnID, err := vcsHelpers.LookupVCSConnection(ctx, owner, repo, componentVCSConnections(parentCmp))
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (b *basicVCSConfigRequest) publicGitVCSConfig(
 		return nil, err
 	}
 
-	_, err = vcsHelpers.LookupVCSConnection(ctx, owner, repoName, parentCmp.App.Org.VCSConnections)
+	_, err = vcsHelpers.LookupVCSConnection(ctx, owner, repoName, componentVCSConnections(parentCmp))
 	if err == nil {
 		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("repo is connected using vcs connection"),
@@ -110,4 +110,11 @@ func (b *basicVCSConfigRequest) publicGitVCSConfig(
 		Directory: b.PublicGitVCSConfig.Directory,
 		Branch:    b.PublicGitVCSConfig.Branch,
 	}, nil
+}
+
+func componentVCSConnections(cmp *app.Component) []app.VCSConnection {
+	if cmp.App == nil {
+		return nil
+	}
+	return cmp.App.Org.VCSConnections
 }

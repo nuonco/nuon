@@ -351,7 +351,9 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 	applied := st.appliedDeploys[ic.ID]
 	if applied != nil {
 		res.AppliedBuildID = applied.ComponentBuildID
-		res.AppliedConfigID = applied.ComponentBuild.ComponentConfigConnection.AppConfigID
+		if applied.ComponentBuild != nil {
+			res.AppliedConfigID = applied.ComponentBuild.ComponentConfigConnection.AppConfigID
+		}
 		res.appliedAt = applied.AppliedAt
 	}
 	inactive := ic.Status == app.InstallComponentStatusInactive || ic.Status == app.InstallComponentStatusDeleted || ic.Status == app.InstallComponentStatusDisabled

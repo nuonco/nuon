@@ -45,7 +45,7 @@ func (s *service) GetInstallComponentDeploy(ctx *gin.Context) {
 	}
 
 	componentID := ctx.Param("component_id")
-	if installDeploy.InstallComponent.ComponentID != componentID {
+	if installDeploy.InstallComponent == nil || installDeploy.InstallComponent.ComponentID != componentID {
 		ctx.Error(stderr.ErrNotFound{
 			Err:         gorm.ErrRecordNotFound,
 			Description: fmt.Sprintf("deploy %s does not belong to component %s", deployID, componentID),
