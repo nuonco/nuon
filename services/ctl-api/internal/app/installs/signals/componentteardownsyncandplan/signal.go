@@ -262,7 +262,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Check if component type requires teardown
-	_, err = activities.AwaitGetComponentByComponentID(ctx, installDeploy.InstallComponent.ComponentID)
+	componentID := ""
+	if installDeploy.InstallComponent != nil {
+		componentID = installDeploy.InstallComponent.ComponentID
+	}
+	_, err = activities.AwaitGetComponentByComponentID(ctx, componentID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get component")
 	}

@@ -200,20 +200,29 @@ func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID st
 		return nil, errors.Wrap(res.Error, "unable to get deploy")
 	}
 
+	installComponent := deploy.InstallComponent
+	if installComponent == nil {
+		installComponent = &app.InstallComponent{}
+	}
+	install := installComponent.Install
+	if install == nil {
+		install = &app.Install{}
+	}
+
 	return &policyContext{
-		AppConfigID:      deploy.InstallComponent.Install.AppConfigID,
-		OrgID:            deploy.InstallComponent.Install.App.OrgID,
-		AppID:            deploy.InstallComponent.Install.AppID,
-		InstallID:        &deploy.InstallComponent.InstallID,
-		ComponentID:      &deploy.InstallComponent.ComponentID,
+		AppConfigID:      install.AppConfigID,
+		OrgID:            install.App.OrgID,
+		AppID:            install.AppID,
+		InstallID:        &installComponent.InstallID,
+		ComponentID:      &installComponent.ComponentID,
 		ComponentBuildID: &deploy.ComponentBuildID,
-		ComponentType:    deploy.InstallComponent.Component.Type,
-		ComponentName:    deploy.InstallComponent.Component.Name,
+		ComponentType:    installComponent.Component.Type,
+		ComponentName:    installComponent.Component.Name,
 		IsSandbox:        false,
 		IsTeardown:       deploy.Type == app.InstallDeployTypeTeardown,
-		OrgName:          deploy.InstallComponent.Install.App.Org.Name,
-		AppName:          deploy.InstallComponent.Install.App.Name,
-		InstallName:      deploy.InstallComponent.Install.Name,
+		OrgName:          install.App.Org.Name,
+		AppName:          install.App.Name,
+		InstallName:      install.Name,
 	}, nil
 }
 

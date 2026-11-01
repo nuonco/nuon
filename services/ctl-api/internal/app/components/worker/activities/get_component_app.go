@@ -23,5 +23,8 @@ func (a *Activities) GetComponentApp(ctx context.Context, req *GetComponentAppRe
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
 
-	return &cmp.App, nil
+	if cmp.App == nil {
+		return &app.App{}, nil
+	}
+	return cmp.App, nil
 }

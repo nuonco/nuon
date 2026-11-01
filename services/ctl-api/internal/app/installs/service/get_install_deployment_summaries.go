@@ -759,8 +759,9 @@ func buildInstallDeployment(wf *app.Workflow, version *app.InstallAppConfigVersi
 	}
 
 	if len(wf.InstallDeploys) == 1 {
-		dep := &wf.InstallDeploys[0]
-		d.ComponentName = dep.InstallComponent.Component.Name
+		if ic := wf.InstallDeploys[0].InstallComponent; ic != nil {
+			d.ComponentName = ic.Component.Name
+		}
 	}
 
 	if version != nil && version.AppBranchRunID != nil {
@@ -796,9 +797,13 @@ func collectComponentNames(deploys []app.InstallDeploy) []string {
 	seen := make(map[string]struct{})
 	names := make([]string, 0)
 	for i := range deploys {
-		name := deploys[i].InstallComponent.Component.Name
+		ic := deploys[i].InstallComponent
+		if ic == nil {
+			continue
+		}
+		name := ic.Component.Name
 		if name == "" {
-			name = deploys[i].InstallComponent.ComponentID
+			name = ic.ComponentID
 		}
 		if name == "" {
 			continue
@@ -1160,10 +1165,10 @@ func applyDeploymentImage(deployment *InstallDeployment, wf *app.Workflow) {
 	}
 	for i := range wf.InstallDeploys {
 		dep := &wf.InstallDeploys[i]
-		if !dep.InstallComponent.Component.Type.IsImage() {
+		if dep.InstallComponent == nil || !dep.InstallComponent.Component.Type.IsImage() || dep.ComponentBuild == nil {
 			continue
 		}
-		image := imageFromBuilds(app.ComponentBuild{}, dep.ComponentBuild)
+		image := imageFromBuilds(app.ComponentBuild{}, *dep.ComponentBuild)
 		if image == nil {
 			continue
 		}

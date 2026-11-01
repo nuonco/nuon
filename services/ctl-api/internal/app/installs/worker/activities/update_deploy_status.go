@@ -42,8 +42,9 @@ func (a *Activities) UpdateDeployStatus(ctx context.Context, req UpdateDeploySta
 	}
 
 	if !req.SkipStatusSync {
-		installComponent := app.InstallComponent{
-			ID: extantInstallDeploy.InstallComponent.ID,
+		installComponent := app.InstallComponent{}
+		if extantInstallDeploy.InstallComponent != nil {
+			installComponent.ID = extantInstallDeploy.InstallComponent.ID
 		}
 		res = a.db.WithContext(ctx).
 			Model(&installComponent).
