@@ -108,12 +108,14 @@ func mcpDeploySummaryFrom(installID string, d app.InstallDeploy) mcpDeploySummar
 		Status:            string(d.Status),
 		StatusDescription: d.StatusDescription,
 		Commit:            mcpDeployCommitFrom(d.ComponentBuild),
-		AppBranchRun:      mcpDeployBranchRunFrom(d.ComponentBuild.AppBranchRun),
 		CreatedAt:         apiPkg.MCPTime(d.CreatedAt),
 		NextActions:       mcpDeployActions(installID, d),
 		ID:                d.ID,
 	}
-	if d.InstallComponent.Component.ID != "" {
+	if d.ComponentBuild != nil {
+		summary.AppBranchRun = mcpDeployBranchRunFrom(d.ComponentBuild.AppBranchRun)
+	}
+	if d.InstallComponent != nil && d.InstallComponent.Component.ID != "" {
 		summary.ComponentName = d.InstallComponent.Component.Name
 		summary.ComponentType = string(d.InstallComponent.Component.Type)
 	}
@@ -147,7 +149,10 @@ func mcpDeployActions(installID string, d app.InstallDeploy) []mcpNextAction {
 	return actions
 }
 
-func mcpDeployCommitFrom(build app.ComponentBuild) *mcpDeployCommit {
+func mcpDeployCommitFrom(build *app.ComponentBuild) *mcpDeployCommit {
+	if build == nil {
+		return nil
+	}
 	commit := &mcpDeployCommit{SourceRef: build.SourceRef}
 	if build.GitRef != nil {
 		commit.GitRef = *build.GitRef

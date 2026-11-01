@@ -135,7 +135,8 @@ func CompilePlanEnvelope(ctx context.Context, db *gorm.DB, v *validator.Validate
 		deployID := virtualID("vdep", appID+":"+connection.ComponentID)
 		ic := app.InstallComponent{ID: installComponentID, InstallID: installID, ComponentID: connection.ComponentID, Component: connection.Component}
 		installComponents = append(installComponents, ic)
-		deploy := &app.InstallDeploy{ID: deployID, OrgID: orgID, InstallID: installID, InstallComponentID: installComponentID, InstallComponent: ic, ComponentBuildID: build.ID, ComponentBuild: *build, ComponentID: connection.ComponentID, ComponentName: connection.ComponentName, Type: app.InstallDeployTypeApply}
+		deployBuild := *build
+		deploy := &app.InstallDeploy{ID: deployID, OrgID: orgID, InstallID: installID, InstallComponentID: installComponentID, InstallComponent: &ic, ComponentBuildID: build.ID, ComponentBuild: &deployBuild, ComponentID: connection.ComponentID, ComponentName: connection.ComponentName, Type: app.InstallDeployTypeApply}
 		dst, err := compileInstallRegistry(planner, logger, deploy, stack, stateData, role)
 		if err != nil {
 			return nil, fmt.Errorf("render install registry for component %s: %w", connection.ComponentName, err)
