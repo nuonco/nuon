@@ -92,6 +92,8 @@ deprecated alias; use `nuon branches`.
 | `nuon installs labels unset --install-id <install> <key> ...` | Remove labels from an install. |
 | `nuon installs components deploy-all` | Deploy all components to an install. |
 | `nuon installs outputs` | View an install's outputs. |
+| `nuon installs workflows steps diff -w <workflow-id> -s <step-id>` | Show the resource or release changes in a step's Terraform, Helm, or Kubernetes plan. Without `-w` and `-s`, uses the selected workflow and its latest step. |
+| `nuon installs workflows steps contents -w <workflow-id> -s <step-id>` | Print the raw approval contents (the stored plan) for a workflow step as JSON. Use it when `diff` cannot parse a plan. |
 
 ## Operate
 
