@@ -37,7 +37,9 @@ func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployApplie
 	appliedAt := time.Now().UTC()
 	var deploy app.InstallDeploy
 	if err := a.db.WithContext(ctx).
-		Preload("InstallComponent").
+		Preload("InstallComponent", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).
 		Preload("ComponentBuild.ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
 			return db.Unscoped()
 		}).
@@ -47,7 +49,7 @@ func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployApplie
 	}
 	installComponent := deploy.InstallComponent
 	if installComponent == nil {
-		installComponent = &app.InstallComponent{}
+		return fmt.Errorf("install component %s not found for deploy %s", deploy.InstallComponentID, deploy.ID)
 	}
 
 	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

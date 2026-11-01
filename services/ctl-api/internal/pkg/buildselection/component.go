@@ -169,14 +169,10 @@ func ValidateDeploy(ctx context.Context, db *gorm.DB, deploy *app.InstallDeploy)
 		return nil
 	}
 	installComponent := deploy.InstallComponent
-	if installComponent == nil {
-		installComponent = &app.InstallComponent{}
+	if installComponent == nil || installComponent.Install == nil {
+		return fmt.Errorf("deploy %s has no install component or install loaded", deploy.ID)
 	}
-	install := installComponent.Install
-	if install == nil {
-		install = &app.Install{}
-	}
-	appConfigID, err := InstallConfigID(ctx, db, install, generics.FromPtrStr(deploy.InstallWorkflowID))
+	appConfigID, err := InstallConfigID(ctx, db, installComponent.Install, generics.FromPtrStr(deploy.InstallWorkflowID))
 	if err != nil {
 		return err
 	}

@@ -193,6 +193,9 @@ func (a *Activities) resolvePolicyContext(ctx context.Context, stepTargetID, ste
 func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID string) (*policyContext, error) {
 	var deploy app.InstallDeploy
 	res := a.db.WithContext(ctx).
+		Preload("InstallComponent", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).
 		Preload("InstallComponent.Install.App.Org").
 		Preload("InstallComponent.Component").
 		First(&deploy, "id = ?", deployID)
@@ -201,13 +204,10 @@ func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID st
 	}
 
 	installComponent := deploy.InstallComponent
-	if installComponent == nil {
-		installComponent = &app.InstallComponent{}
+	if installComponent == nil || installComponent.Install == nil {
+		return nil, errors.Errorf("deploy %s has no install component or install", deployID)
 	}
 	install := installComponent.Install
-	if install == nil {
-		install = &app.Install{}
-	}
 
 	return &policyContext{
 		AppConfigID:      install.AppConfigID,
