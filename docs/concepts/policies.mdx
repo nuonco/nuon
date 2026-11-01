@@ -4,14 +4,15 @@ description: "Enforce compliance, security, and operational standards across you
 keywords: ["policies", "what are policies", "OPA Rego", "Kyverno", "compliance enforcement", "security policies", "deny rules", "warn rules", "policy reports", "build-time validation", "deploy-time validation", "compliance policies", "drift detection policy", "guardrails", "policy as code", "image policies"]
 ---
 
-Policies allow you to enforce compliance, security, and operational standards across your infrastructure deployments. Policies are evaluated during builds and deploys, blocking or warning when violations are detected.
+Policies allow you to enforce compliance, security, and operational standards across your infrastructure deployments. Policies are evaluated during builds and deploys to block changes, issue warnings, or automatically skip supported infrastructure applies.
 
 ## What are Policies?
 
-Policies are rules written in [OPA Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) or [Kyverno](https://kyverno.io/) that validate your infrastructure before deployment. Each policy can either:
+Policies are rules written in [OPA Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) or [Kyverno](https://kyverno.io/) that validate your infrastructure before deployment. Supported actions are:
 
 - **Deny** - Block the build or deployment when a violation is detected
 - **Warn** - Log a warning but allow the build or deployment to continue
+- **Skip apply** - Automatically skip a Terraform component or sandbox apply, retaining existing applied state. Available only through OPA named checks with `custom.action: skip_apply`
 
 Policies are evaluated at different phases depending on the component type:
 
@@ -36,7 +37,7 @@ Nuon supports policies for different component types, each with its own input fo
 
 ### OPA (Open Policy Agent)
 
-OPA policies are written in [Rego](https://www.openpolicyagent.org/docs/latest/policy-language/), a declarative query language. Policies must be in the `nuon` package and use `deny` or `warn` rules.
+OPA policies are written in [Rego](https://www.openpolicyagent.org/docs/latest/policy-language/), a declarative query language. Existing policies use `package nuon` with `deny` or `warn` rules. For individually named checks with structured results, use `package nuon.checks`; see [Named checks](/guides/configuring-policies#named-checks). Both formats can coexist in an app.
 
 The input structure varies by policy type:
 
@@ -189,22 +190,26 @@ Deploy-time policies are evaluated after the plan is generated, before applying 
 
 If a `deny` rule matches during deploy-time evaluation, the workflow step fails and changes are not applied.
 
+For Terraform components, a matching `skip_apply` check automatically skips the entire apply rather than failing the workflow. Existing applied state is retained; the proposed configuration is not recorded as applied. Denials and evaluation errors still block changes, and warnings can accompany a skip. See [Automatically skipping apply](/guides/configuring-policies#automatically-skipping-apply) for an example.
 
 ### Sandbox Evaluation
 
-Sandbox policies (`type = "sandbox"`) are evaluated during sandbox infrastructure runs. They receive the Terraform JSON plan for the sandbox infrastructure.
+Sandbox policies (`type = "sandbox"`) are evaluated during sandbox infrastructure runs. They receive the Terraform JSON plan for the sandbox infrastructure. A matching `skip_apply` check can automatically skip the sandbox apply, retaining its existing state, just as it can for a Terraform component.
+
+Skip checks also run during teardown by default and can skip component teardown or sandbox deprovision. You can optionally [disable policy evaluation during teardown](#skipping-policies-during-teardown) with `apply_on_teardown = false`.
 
 ## Viewing Policy Results
 
 ### Dashboard
 
-Policy violations are displayed in the workflow step details. The Policy Report card shows:
+Policy results are displayed in the workflow step details. The Policy Report card shows:
 
 - **Passed**: All policy checks passed successfully
 - **Denies**: Policy violations that blocked the workflow (red)
 - **Warnings**: Policy warnings that were logged but didn't block (orange)
+- **Automatically skipped by policy**: The component or sandbox apply was skipped, with findings explaining why
 
-Each violation includes the policy name and the specific message from your `deny` or `warn` rule.
+Findings include the policy name and the authored message from your rule or named check. Skip findings are reported separately from warnings and denials. Deployment history identifies policy-skipped applies and shows the skip finding count, which counts findings rather than skipped resources or applies.
 
 ![Workflow policy violations](../images/concepts/policies/workflow-policy-violations.png)
 
