@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/temporal"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
@@ -55,7 +56,12 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 	cfg.SourceArchive = parseResult.Source
 
 	if err := validate.Validate(ctx, v, cfg); err != nil {
-		return nil, configValidationFailed(err)
+		if !config.IsWarningErr(err) {
+			return nil, configValidationFailed(err)
+		}
+		a.l.Warn("app config validation warnings",
+			zap.String("workspace_id", workspaceID),
+			zap.Error(err))
 	}
 
 	return cfg, nil
