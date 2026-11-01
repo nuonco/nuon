@@ -159,6 +159,10 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 				policyInputCounts[policyID] = len(payload.PolicyInput)
 			}
 			componentID := build.ComponentConfigConnection.ComponentID
+			componentApp := build.ComponentConfigConnection.Component.App
+			if componentApp == nil {
+				componentApp = &app.App{}
+			}
 			if _, err := sharedactivities.AwaitPersistPolicyReport(ctx, &sharedactivities.PersistPolicyReportRequest{
 				OrgID:             orgID,
 				AppID:             build.ComponentConfigConnection.Component.AppID,
@@ -170,8 +174,8 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 				CheckResults:      checkResults,
 				PolicyIDs:         policyIDs,
 				PolicyInputCounts: policyInputCounts,
-				OrgName:           build.ComponentConfigConnection.Component.App.Org.Name,
-				AppName:           build.ComponentConfigConnection.Component.App.Name,
+				OrgName:           componentApp.Org.Name,
+				AppName:           componentApp.Name,
 				ComponentName:     build.ComponentConfigConnection.Component.Name,
 			}); err != nil {
 				l.Warn("failed to persist policy report", zap.Error(err))

@@ -37,7 +37,7 @@ func (a *Activities) CreateDeployJob(ctx context.Context, req *CreateDeployJobRe
 	if deploy.InstallWorkflowID != nil && *deploy.InstallWorkflowID != "" {
 		ctx = cctx.SetFlowWorkflowIDContext(ctx, *deploy.InstallWorkflowID)
 	}
-	if deploy.InstallComponent.InstallID != "" {
+	if deploy.InstallComponent != nil && deploy.InstallComponent.InstallID != "" {
 		ctx = cctx.SetFlowInstallIDContext(ctx, deploy.InstallComponent.InstallID)
 	}
 
