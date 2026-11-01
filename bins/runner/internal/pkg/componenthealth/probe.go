@@ -3,6 +3,7 @@ package componenthealth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -139,38 +140,21 @@ type probeResult struct {
 	latency    time.Duration
 }
 
-// newProbeHTTPClient never follows redirects, so a probe cannot be bounced to an
-// unnamed host, and owns its transport because the runner mutates the default one.
-func newProbeHTTPClient() *http.Client {
-	return &http.Client{
-		Timeout: probeTimeout,
-		CheckRedirect: func(*http.Request, []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-		Transport: &http.Transport{
-			Proxy:                 http.ProxyFromEnvironment,
-			DialContext:           (&net.Dialer{Timeout: probeTimeout}).DialContext,
-			TLSHandshakeTimeout:   probeTimeout,
-			ResponseHeaderTimeout: probeTimeout,
-			DisableKeepAlives:     true,
-		},
-	}
-}
-
-func runProbe(ctx context.Context, client *http.Client, spec probeSpec) probeResult {
+func (p *prober) run(ctx context.Context, spec probeSpec) probeResult {
 	if spec.unresolved != "" {
 		return probeResult{health: healthUnknown, message: spec.unresolved}
 	}
 
 	switch spec.kind {
 	case probeKindTCP:
-		return runTCPProbe(ctx, spec.dialAddr)
+		return p.runTCP(ctx, spec.dialAddr)
 	default:
-		return runHTTPProbe(ctx, client, spec.target)
+		return p.runHTTP(ctx, spec.target)
 	}
 }
 
-func runHTTPProbe(ctx context.Context, client *http.Client, target string) probeResult {
+// runHTTP never follows redirects, so a probe cannot be bounced to an unnamed host.
+func (p *prober) runHTTP(ctx context.Context, target string) probeResult {
 	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
 
@@ -181,7 +165,10 @@ func runHTTPProbe(ctx context.Context, client *http.Client, target string) probe
 	req.Header.Set("User-Agent", probeUserAgent)
 
 	started := time.Now()
-	resp, err := client.Do(req)
+	resp, err := p.client.Do(req)
+	if errors.Is(err, errProbeDestinationBlocked) {
+		return blockedProbeResult()
+	}
 	if err != nil {
 		return probeResult{health: healthUnhealthy, message: err.Error(), latency: time.Since(started)}
 	}
@@ -198,12 +185,15 @@ func runHTTPProbe(ctx context.Context, client *http.Client, target string) probe
 	return res
 }
 
-func runTCPProbe(ctx context.Context, addr string) probeResult {
+func (p *prober) runTCP(ctx context.Context, addr string) probeResult {
 	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
 
 	started := time.Now()
-	conn, err := (&net.Dialer{Timeout: probeTimeout}).DialContext(ctx, "tcp", addr)
+	conn, err := p.dialer.DialContext(ctx, "tcp", addr)
+	if errors.Is(err, errProbeDestinationBlocked) {
+		return blockedProbeResult()
+	}
 	if err != nil {
 		return probeResult{health: healthUnhealthy, message: err.Error(), latency: time.Since(started)}
 	}
