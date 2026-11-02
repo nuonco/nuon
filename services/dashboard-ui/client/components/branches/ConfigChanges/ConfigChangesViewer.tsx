@@ -14,6 +14,10 @@ import { DiffSummary } from '@/components/diffs/DiffSummary'
 import { usePlanDiffFilter } from '@/components/diffs/use-plan-diff-filter'
 import { CommitRange } from '@/components/branches/InstallGroupCards'
 import { RunSourceMark } from '@/components/branches/BranchOverview/RunSourceCard'
+import {
+  ConfigChangesBaseline,
+  type IConfigChangesBaseline,
+} from './ConfigChangesBaseline'
 import type { TRunSource } from '@/components/branches/BranchOverview/run-source'
 import { BuildChangeDetail } from './BuildChangeDetail'
 import {
@@ -105,6 +109,7 @@ export interface IConfigChangesViewer {
   author?: string
   createdAt?: string
   source?: TRunSource
+  baseline?: IConfigChangesBaseline | null
   emptyMessage?: string
 }
 
@@ -119,6 +124,7 @@ export const ConfigChangesViewer = ({
   author,
   createdAt,
   source,
+  baseline,
   emptyMessage = 'This run matches the previous version.',
 }: IConfigChangesViewer) => {
   const changes = useMemo(
@@ -154,37 +160,43 @@ export const ConfigChangesViewer = ({
 
   if (!changes.sections.length) {
     return (
-      <div className="rounded-lg bg-cool-grey-100 dark:bg-dark-grey-800 px-4 py-8 text-center">
-        <Text as="p" variant="body" weight="strong">
-          No changes
-        </Text>
-        <Text as="p" variant="subtext" theme="neutral">
-          {emptyMessage}
-        </Text>
+      <div className="flex flex-col gap-3">
+        <ConfigChangesBaseline baseline={baseline} hasChanges={false} />
+        <div className="rounded-lg bg-cool-grey-100 dark:bg-dark-grey-800 px-4 py-8 text-center">
+          <Text as="p" variant="body" weight="strong">
+            No changes
+          </Text>
+          <Text as="p" variant="subtext" theme="neutral">
+            {emptyMessage}
+          </Text>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-6 md:min-h-0 md:flex-1">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          {versionLabel ? (
-            <Text variant="subtext" theme="neutral" family="mono">
-              {versionLabel}
-            </Text>
-          ) : null}
-          {sha || previousSha ? (
-            <CommitRange
-              commit={{ sha, previousSha, message, author, createdAt }}
-            />
-          ) : null}
-          {source ? <RunSourceMark source={source} /> : null}
-        </span>
-        <DiffSummary
-          summary={changes.summary}
-          operations={CONFIG_CHANGE_OPERATIONS}
-        />
+      <header className="flex shrink-0 flex-col gap-2">
+        <ConfigChangesBaseline baseline={baseline} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {versionLabel ? (
+              <Text variant="subtext" theme="neutral" family="mono">
+                {versionLabel}
+              </Text>
+            ) : null}
+            {sha || previousSha ? (
+              <CommitRange
+                commit={{ sha, previousSha, message, author, createdAt }}
+              />
+            ) : null}
+            {source ? <RunSourceMark source={source} /> : null}
+          </span>
+          <DiffSummary
+            summary={changes.summary}
+            operations={CONFIG_CHANGE_OPERATIONS}
+          />
+        </div>
       </header>
 
       <div
