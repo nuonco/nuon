@@ -22,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -54,6 +55,7 @@ type Params struct {
 	TClient                 temporalclient.Client
 	SecretsService          secretsmanager.Service
 	StatusActivities        *statusactivities.Activities
+	QueueClient             *queueclient.Client
 	MeterProvider           metric.MeterProvider `optional:"true"`
 }
 
@@ -81,6 +83,7 @@ type Activities struct {
 	tClient                 temporalclient.Client
 	secretsSvc              secretsmanager.Service
 	statusActivities        *statusactivities.Activities
+	queueClient             *queueclient.Client
 	stateMetrics            *state.Metrics
 	healthMetrics           *componentHealthEvaluationMetrics
 }
@@ -110,6 +113,7 @@ func New(params Params) *Activities {
 		tClient:                 params.TClient,
 		secretsSvc:              params.SecretsService,
 		statusActivities:        params.StatusActivities,
+		queueClient:             params.QueueClient,
 		stateMetrics:            state.NewMetrics(params.MeterProvider),
 		healthMetrics:           newComponentHealthEvaluationMetrics(params.MeterProvider),
 	}

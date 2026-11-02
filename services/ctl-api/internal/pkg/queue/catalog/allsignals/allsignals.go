@@ -141,6 +141,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/terminate_workflows"
 
 	// runners signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/signals/credentialcleanup"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/delete"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/flushorphanedjobs"

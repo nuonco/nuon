@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -28,6 +29,7 @@ type Params struct {
 	Cfg           *internal.Config
 	Features      *features.Features
 	SharedActs    *sharedactivities.Activities
+	QueueClient   *queueclient.Client
 }
 
 type Activities struct {
@@ -41,6 +43,7 @@ type Activities struct {
 	cfg            *internal.Config
 	features       *features.Features
 	sharedActs     *sharedactivities.Activities
+	queueClient    *queueclient.Client
 }
 
 func New(params Params) *Activities {
@@ -55,5 +58,6 @@ func New(params Params) *Activities {
 		authzClient:    params.AuthzClient,
 		features:       params.Features,
 		sharedActs:     params.SharedActs,
+		queueClient:    params.QueueClient,
 	}
 }

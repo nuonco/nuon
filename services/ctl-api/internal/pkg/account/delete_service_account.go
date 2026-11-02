@@ -55,6 +55,22 @@ func (c *Client) DeleteServiceAccountByID(ctx context.Context, accountID string)
 	})
 }
 
+func (c *Client) RevokeServiceAccountCredentials(ctx context.Context, svcAcctID string) error {
+	acct, err := c.FindAccount(ctx, ServiceAccountEmail(svcAcctID))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return errors.Wrap(err, "unable to look up service account")
+	}
+	if acct.AccountType != app.AccountTypeService {
+		return errors.Errorf("account %s is not a service account", acct.ID)
+	}
+	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return revokeAccountCredentials(tx, acct.ID)
+	})
+}
+
 func deleteServiceAccount(tx *gorm.DB, accountID string) error {
 	var acct app.Account
 	if err := tx.Unscoped().Select("id", "account_type").
