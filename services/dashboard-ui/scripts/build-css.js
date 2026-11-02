@@ -14,9 +14,20 @@ const ENTRIES = [
 
 const isWatch = process.argv.includes("--watch");
 
+const classWordAttribute = /\[class~=(["']?)(-?[A-Za-z_][\w-]*)\1\]/g;
+
+const classWordAttributeToClass = {
+  postcssPlugin: "class-word-attribute-to-class",
+  Rule(rule) {
+    if (rule.selector.includes("[class~=")) {
+      rule.selector = rule.selector.replace(classWordAttribute, ".$2");
+    }
+  },
+};
+
 async function buildEntry({ input, output }) {
   const source = await Bun.file(input).text();
-  const result = await postcss([tailwindcss()]).process(source, {
+  const result = await postcss([tailwindcss(), classWordAttributeToClass]).process(source, {
     from: input,
     to: output,
   });
