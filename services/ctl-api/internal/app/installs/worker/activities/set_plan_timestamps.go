@@ -37,7 +37,9 @@ func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployApplie
 	appliedAt := time.Now().UTC()
 	var deploy app.InstallDeploy
 	if err := a.db.WithContext(ctx).
-		Preload("InstallComponent").
+		Preload("InstallComponent", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).
 		Preload("ComponentBuild.ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
 			return db.Unscoped()
 		}).
@@ -45,9 +47,13 @@ func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployApplie
 		First(&deploy).Error; err != nil {
 		return fmt.Errorf("unable to get install deploy: %w", err)
 	}
+	installComponent := deploy.InstallComponent
+	if installComponent == nil {
+		return fmt.Errorf("install component %s not found for deploy %s", deploy.InstallComponentID, deploy.ID)
+	}
 
 	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if _, err := driftresolution.LockInstall(ctx, tx, deploy.InstallComponent.InstallID); err != nil {
+		if _, err := driftresolution.LockInstall(ctx, tx, installComponent.InstallID); err != nil {
 			return err
 		}
 		if err := tx.Select("applied_at").Where(app.InstallDeploy{ID: deploy.ID}).First(&deploy).Error; err != nil {
@@ -67,10 +73,13 @@ func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployApplie
 		case app.InstallDeployTypeTeardown:
 			operation = "clear"
 			ref = app.AppConfigRef{
-				ExpectedConfigID: deploy.InstallComponent.AppConfigRef.ExpectedConfigID,
+				ExpectedConfigID: installComponent.AppConfigRef.ExpectedConfigID,
 			}
 		default:
-			appConfigID := deploy.ComponentBuild.ComponentConfigConnection.AppConfigID
+			appConfigID := ""
+			if deploy.ComponentBuild != nil {
+				appConfigID = deploy.ComponentBuild.ComponentConfigConnection.AppConfigID
+			}
 			if appConfigID == "" {
 				return fmt.Errorf("component build %s has no app config", deploy.ComponentBuildID)
 			}

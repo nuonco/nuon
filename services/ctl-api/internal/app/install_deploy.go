@@ -75,11 +75,11 @@ type InstallDeploy struct {
 
 	QueueSignals []QueueSignal `json:"queue_signals,omitzero" gorm:"polymorphic:Owner;polymorphicValue:install_deploys" temporaljson:"queue_signals,omitzero,omitempty"`
 
-	ComponentBuildID string         `json:"build_id,omitzero" gorm:"notnull" temporaljson:"component_build_id,omitzero,omitempty"`
-	ComponentBuild   ComponentBuild `faker:"-" json:"component_build,omitzero" temporaljson:"component_build,omitzero,omitempty"`
+	ComponentBuildID string          `json:"build_id,omitzero" gorm:"notnull" temporaljson:"component_build_id,omitzero,omitempty"`
+	ComponentBuild   *ComponentBuild `faker:"-" json:"component_build,omitzero" temporaljson:"component_build,omitzero,omitempty"`
 
-	InstallComponentID string           `json:"install_component_id,omitzero" gorm:"notnull" temporaljson:"install_component_id,omitzero,omitempty"`
-	InstallComponent   InstallComponent `faker:"-" json:"-" temporaljson:"install_component,omitzero,omitempty"`
+	InstallComponentID string            `json:"install_component_id,omitzero" gorm:"notnull" temporaljson:"install_component_id,omitzero,omitempty"`
+	InstallComponent   *InstallComponent `faker:"-" json:"-" temporaljson:"install_component,omitzero,omitempty"`
 
 	ComponentReleaseStepID *string               `json:"release_id,omitzero" temporaljson:"component_release_step_id,omitzero,omitempty"`
 	ComponentReleaseStep   *ComponentReleaseStep `json:"-" temporaljson:"component_release_step,omitzero,omitempty"`
@@ -182,10 +182,17 @@ func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
-	c.InstallID = c.InstallComponent.InstallID
-	c.ComponentID = c.InstallComponent.ComponentID
-	c.ComponentName = c.InstallComponent.Component.Name
-	c.ComponentConfigVersion = c.ComponentBuild.ComponentConfigVersion
+	c.InstallID, c.ComponentID, c.ComponentName = "", "", ""
+	if c.InstallComponent != nil {
+		c.InstallID = c.InstallComponent.InstallID
+		c.ComponentID = c.InstallComponent.ComponentID
+		c.ComponentName = c.InstallComponent.Component.Name
+	}
+
+	c.ComponentConfigVersion = 0
+	if c.ComponentBuild != nil {
+		c.ComponentConfigVersion = c.ComponentBuild.ComponentConfigVersion
+	}
 	c.WorkflowID = c.InstallWorkflowID
 	c.Workflow = c.InstallWorkflow
 

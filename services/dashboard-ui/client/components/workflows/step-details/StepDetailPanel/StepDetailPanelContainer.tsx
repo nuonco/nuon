@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router'
-import { useCallback, useContext, useEffect, useRef, type ReactNode } from 'react'
+import { useCallback, useContext, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -198,48 +198,21 @@ export const useStepDetailPanel = () => {
 
 const StepPanelButton = ({
   step,
-  approvalPrompt,
   planOnly = false,
 }: {
-  approvalPrompt?: boolean
   step: TWorkflowStep
   planOnly?: boolean
 }) => {
-  const { addPanelIfEmpty, removePanel, panels } = useSurfaces()
-  const { workflow } = useWorkflow()
-  const { buildPanel, openPanel } = useStepDetailPanel()
+  const { panels } = useSurfaces()
+  const { openPanel } = useStepDetailPanel()
   const [searchParams] = useSearchParams()
-  const autoOpened = useRef(false)
-  const autoOpenedPanelIdRef = useRef<string | null>(null)
 
   const handleAddPanel = () => {
     openPanel(step, planOnly)
   }
 
-  const isPendingApproval =
-    approvalPrompt &&
-    step.execution_type === 'approval' &&
-    !!step.approval &&
-    !step.approval.response &&
-    step.status?.status !== 'discarded'
-
-  const isPendingAwaitStack =
-    step.step_target_type === 'install_stack_versions' &&
-    step.name !== 'generate install stack' &&
-    !!step.started_at &&
-    !step.finished
-
-  const workflowStatus = workflow?.status?.status
-  const workflowBlocked =
-    workflowStatus === 'cancelled' || workflowStatus === 'error'
-  const suppressAutoOpen =
-    planOnly ||
-    workflow?.type === 'drift_run' ||
-    workflow?.type === 'drift_run_reprovision_sandbox'
-
   useEffect(() => {
     if (
-      !suppressAutoOpen &&
       step.id &&
       hasPanelKey(searchParams, step.id) &&
       !panels.some((p) => p.key === step.id)
@@ -247,36 +220,6 @@ const StepPanelButton = ({
       handleAddPanel()
     }
   }, [])
-
-  useEffect(() => {
-    if (autoOpened.current || !workflow) return
-    if (
-      !workflowBlocked &&
-      !suppressAutoOpen &&
-      (isPendingApproval || isPendingAwaitStack)
-    ) {
-      autoOpened.current = true
-      autoOpenedPanelIdRef.current =
-        addPanelIfEmpty(buildPanel(step, planOnly), step.id) ?? null
-    }
-  }, [
-    workflow?.id,
-    workflowBlocked,
-    suppressAutoOpen,
-    isPendingApproval,
-    isPendingAwaitStack,
-    buildPanel,
-    step,
-    planOnly,
-    addPanelIfEmpty,
-  ])
-
-  useEffect(() => {
-    if (autoOpenedPanelIdRef.current && step.finished) {
-      removePanel(autoOpenedPanelIdRef.current, step.id)
-      autoOpenedPanelIdRef.current = null
-    }
-  }, [step.finished])
 
   return (
     <Button
@@ -294,7 +237,6 @@ export const StepDetailPanelButton = ({
   step,
   ...props
 }: {
-  approvalPrompt?: boolean
   step: TWorkflowStep
   planOnly?: boolean
 }) => <StepPanelButton step={step} {...props} />
