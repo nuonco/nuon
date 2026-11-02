@@ -130,7 +130,11 @@ func (p *Planner) RenderHelmDeployPlan(
 
 	var helmChartID string
 	if driver == "nuon" {
-		helmChartID, err = in.GetHelmChartID(in.InstallDeploy.InstallComponent.ID)
+		installComponentID := ""
+		if in.InstallDeploy.InstallComponent != nil {
+			installComponentID = in.InstallDeploy.InstallComponent.ID
+		}
+		helmChartID, err = in.GetHelmChartID(installComponentID)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get helm chart")
 		}

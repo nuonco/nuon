@@ -257,19 +257,22 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 }
 
 // nextExecutableStep finds the next step in the group that is pending, queued, or not-attempted.
-func (s *Signal) nextExecutableStep(steps []app.WorkflowStep) (*app.WorkflowStep, bool) {
+func (s *Signal) nextExecutableStep(steps []app.WorkflowStep, holdUnanswered bool) (*app.WorkflowStep, bool, bool) {
 	for i := range steps {
 		step := &steps[i]
 		switch step.Status.Status {
 		case app.StatusPending, app.StatusNotAttempted, app.StatusQueued:
-			return step, true
+			return step, true, false
 		case app.AwaitingApproval:
 			if s.ResidentFlow && hasApprovalResponse(step) {
-				return step, true
+				return step, true, false
+			}
+			if holdUnanswered {
+				return nil, false, true
 			}
 		}
 	}
-	return nil, false
+	return nil, false, false
 }
 
 // hasApprovalResponse reports whether a parked approval step has been answered
@@ -281,8 +284,9 @@ func hasApprovalResponse(step *app.WorkflowStep) bool {
 // cancelRemainingSteps marks all non-terminal steps after the given step with
 // the provided status. Use StatusDiscarded for both stop and skip-group
 // directives.
-func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps []app.WorkflowStep, afterStepID string, status app.Status, cause app.CompositeStatus) {
+func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps []app.WorkflowStep, afterStepID string, status app.Status, cause app.CompositeStatus) error {
 	pastTrigger := false
+	var firstErr error
 	for _, step := range steps {
 		if step.ID == afterStepID {
 			pastTrigger = true
@@ -314,8 +318,12 @@ func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps
 			},
 		}); err != nil {
 			l.Warn("failed to cancel remaining step", zap.String("step_id", step.ID), zap.Error(err))
+			if firstErr == nil {
+				firstErr = err
+			}
 		}
 	}
+	return firstErr
 }
 
 // handleStepDispatchError handles errors from step dispatch or await.

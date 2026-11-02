@@ -4,7 +4,6 @@ import React, {
   useState,
   useCallback,
   useEffect,
-  useRef,
   type ReactElement,
   type ReactNode,
 } from 'react'
@@ -35,11 +34,6 @@ type TSurfacesContext = {
   panels: TPanels
   modals: TModals
   addPanel: (content: TPanelEl, panelKey?: string, panelId?: string) => string
-  addPanelIfEmpty: (
-    content: TPanelEl,
-    panelKey?: string,
-    panelId?: string
-  ) => string | undefined
   updatePanel: (id: string, content: TPanelEl) => void
   clearPanels: () => void
   removePanel: (id: string, panelKey?: string) => void
@@ -78,7 +72,6 @@ export const withoutPanelKey = (params: URLSearchParams, key: string) => {
 
 export function SurfacesProvider({ children }: { children: ReactNode }) {
   const [panels, setPanels] = useState<TPanels>([])
-  const autoOpenPending = useRef(false)
   const { pathname } = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -120,23 +113,6 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       return id
     },
     [pathname, searchParams, setSearchParams]
-  )
-
-  useEffect(() => {
-    if (panels.length === 0) autoOpenPending.current = false
-  }, [panels.length])
-
-  const addPanelIfEmpty = useCallback(
-    (
-      content: TPanelEl,
-      panelKey?: string,
-      panelId?: string
-    ): string | undefined => {
-      if (panels.length > 0 || autoOpenPending.current) return undefined
-      autoOpenPending.current = true
-      return addPanel(content, panelKey, panelId)
-    },
-    [addPanel, panels.length]
   )
 
   const updatePanel = useCallback((id: string, content: TPanelEl) => {
@@ -228,7 +204,6 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
         panels,
         modals,
         addPanel,
-        addPanelIfEmpty,
         updatePanel,
         clearPanels,
         removePanel,

@@ -11,6 +11,7 @@ import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummar
 import {
   TemplateChangesButton,
   TemplateChangesContent,
+  configChangesBaseline,
   useConfigVersionLabel,
 } from '@/components/branches/ConfigChanges'
 import { BuildPanel } from '@/components/builds/BuildPanel'
@@ -195,6 +196,7 @@ export const BranchOverviewContainer = () => {
     author: rollout?.commit?.author ?? rollout?.author,
     createdAt: rollout?.commit?.createdAt,
     source: rollout?.source,
+    baseline: configChangesBaseline(comparison, { orgId, appId, branchId }),
     isPending: changesPending,
     isLoading: configSections.isLoading || buildsPending,
     isError: configSections.isError,
