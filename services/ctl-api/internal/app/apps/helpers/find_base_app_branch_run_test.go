@@ -111,3 +111,72 @@ func (s *FindBaseAppBranchRunTestSuite) TestPreviewUsesLatestRunOnTargetBranch()
 	s.Require().NoError(err)
 	s.Equal(mainRun.ID, baseRun.ID)
 }
+
+func (s *FindBaseAppBranchRunTestSuite) TestPrefersRunAppliedToAnInstall() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+	install := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+
+	branch := &app.AppBranch{AppID: testApp.ID, Name: "main"}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branch).Error)
+	branchConfig := &app.AppBranchConfig{AppBranchID: branch.ID}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branchConfig).Error)
+
+	builtRun := func(status, appConfigID string) *app.AppBranchRun {
+		run := &app.AppBranchRun{
+			AppBranchID:       branch.ID,
+			AppBranchConfigID: branchConfig.ID,
+			RunType:           app.AppBranchRunTypeGit,
+			Status:            status,
+			AppConfigID:       appConfigID,
+			Labeled: labels.Labeled{Labels: labels.Labels{
+				app.AppBranchRunLabelBuildsCompleted: "true",
+			}},
+		}
+		s.Require().NoError(s.deps.DB.WithContext(ctx).Create(run).Error)
+		return run
+	}
+
+	applied := builtRun("success", "appapplied0000000000000000")
+	builtRun("failed", "appdenied00000000000000000")
+	builtRun("running", "appawaiting000000000000000")
+
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Model(&app.Install{}).
+		Where(app.Install{ID: install.ID}).
+		Update("app_config_ref", app.AppConfigRef{AppliedConfigID: applied.AppConfigID}).Error)
+
+	baseRun, err := s.deps.Helpers.FindBaseAppBranchRun(ctx, branch.ID)
+	s.Require().NoError(err)
+	s.Equal(applied.ID, baseRun.ID)
+}
+
+func (s *FindBaseAppBranchRunTestSuite) TestFallsBackToLatestBuiltRunWhenNothingApplied() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+
+	branch := &app.AppBranch{AppID: testApp.ID, Name: "main"}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branch).Error)
+	branchConfig := &app.AppBranchConfig{AppBranchID: branch.ID}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branchConfig).Error)
+
+	run := &app.AppBranchRun{
+		AppBranchID:       branch.ID,
+		AppBranchConfigID: branchConfig.ID,
+		RunType:           app.AppBranchRunTypeGit,
+		Status:            "running",
+		AppConfigID:       "appawaiting000000000000000",
+		Labeled: labels.Labeled{Labels: labels.Labels{
+			app.AppBranchRunLabelBuildsCompleted: "true",
+		}},
+	}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(run).Error)
+
+	baseRun, err := s.deps.Helpers.FindBaseAppBranchRun(ctx, branch.ID)
+	s.Require().NoError(err)
+	s.Equal(run.ID, baseRun.ID)
+}

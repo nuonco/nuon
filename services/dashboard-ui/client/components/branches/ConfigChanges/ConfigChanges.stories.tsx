@@ -228,6 +228,44 @@ export const ManyChangesPanel = () => (
 )
 ManyChangesPanel.storyName = 'Many changes panel'
 
+const comparedTo = {
+  href: '/org-1/apps/app-1/branches/br-1/runs/wf-1',
+  message: 'Widen the acme VPC CIDR range',
+  sha: '9f8e7d6c5b4a3928',
+}
+
+export const ComparedToRun = () => (
+  <ConfigChangesViewer
+    sections={sections}
+    versionLabel="v13 → v14"
+    previousSha="9f8e7d6c5b4a"
+    sha="a1b2c3d4e5f6"
+    baseline={{ run: { ...comparedTo, status: 'success' } }}
+  />
+)
+ComparedToRun.storyName = 'Compared to a run'
+
+export const ComparedToUnfinishedRun = () => (
+  <ConfigChangesViewer
+    sections={sections}
+    versionLabel="v13 → v14"
+    previousSha="9f8e7d6c5b4a"
+    sha="a1b2c3d4e5f6"
+    baseline={{ run: { ...comparedTo, status: 'running' } }}
+  />
+)
+ComparedToUnfinishedRun.storyName = 'Compared to an unfinished run'
+
+export const NoPreviousRun = () => (
+  <ConfigChangesViewer
+    sections={sections}
+    versionLabel="v14"
+    sha="a1b2c3d4e5f6"
+    baseline={{ run: null }}
+  />
+)
+NoPreviousRun.storyName = 'No previous run'
+
 export const NoChanges = () => <ConfigChangesViewer sections={[]} />
 NoChanges.storyName = 'No changes'
 
