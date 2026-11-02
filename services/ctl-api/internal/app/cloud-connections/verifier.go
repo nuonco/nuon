@@ -114,7 +114,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if connection.Preset == app.CloudConnectionPresetStacks {
 		if _, err := cloudformation.NewFromConfig(assumed).DescribeStacks(ctx, &cloudformation.DescribeStacksInput{}); err != nil {
 			if IsAccessDenied(err) {
-				return verificationFailure("The role lacks CloudFormation read access required to manage install stacks."), nil
+				return verificationFailure("The role lacks CloudFormation read access required to manage install stacks. " + VerificationErrorMessage(err)), nil
 			}
 			return VerificationResult{}, fmt.Errorf("probe CloudFormation access: %w", err)
 		}
@@ -123,7 +123,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 		client := ecr.NewFromConfig(assumed)
 		if _, err := client.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{}); err != nil {
 			if IsAccessDenied(err) {
-				return verificationFailure("The role lacks ecr:GetAuthorizationToken. Attach the ECR permissions policy in step 3."), nil
+				return verificationFailure("The role lacks ecr:GetAuthorizationToken. Attach the ECR permissions policy in step 3. " + VerificationErrorMessage(err)), nil
 			}
 			return VerificationResult{}, fmt.Errorf("probe ECR authorization: %w", err)
 		}

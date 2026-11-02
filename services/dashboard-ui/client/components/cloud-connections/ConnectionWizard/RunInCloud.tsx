@@ -20,26 +20,31 @@ export const RunInCloud = ({
   setup,
   hasInitialSetup = false,
   repositoryAccess,
+  setupMode,
 }: {
   connection: TCloudConnection
-  setup: TCloudConnectionSetup
+  setup?: TCloudConnectionSetup
   hasInitialSetup?: boolean
   repositoryAccess?: ReactNode
+  setupMode?: ReactNode
 }) => {
   const { hash } = useLocation()
   const isGCP = connection.platform === 'gcp'
   const isAzure = connection.platform === 'azure'
   const isAWS = connection.platform === 'aws'
   const isImage = ['ecr', 'gar', 'acr'].includes(connection.preset)
-  const hasInitialGrants = hasInitialSetup && !!setup.permissions_policy
+  const hasInitialGrants = hasInitialSetup && !!setup?.permissions_policy
   useEffect(() => {
     if (hash)
       document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })
   }, [hash, setup])
   const snippet = (format: 'cli' | 'terraform' | 'cloudformation') =>
     (isAWS
-      ? setup[format]?.replaceAll('<role-name>', roleName(connection.principal))
-      : setup[format]) || ''
+      ? setup?.[format]?.replaceAll(
+          '<role-name>',
+          roleName(connection.principal)
+        )
+      : setup?.[format]) || ''
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <SectionHeader
@@ -108,14 +113,14 @@ export const RunInCloud = ({
             {isAzure
               ? 'Check the existing identity and registry prerequisites'
               : isGCP
-                ? 'Create the service account and workload identity pool and provider'
+                ? 'Configure the service account and connection-specific federation'
                 : 'Create the OIDC provider'}
           </Text>
           <Text as="div" variant="subtext" theme="neutral">
             {isAzure
               ? 'Confirm the Entra application and its service principal exist in the selected tenant, the registry uses RBAC + ABAC repository permissions, and you can manage federated credentials and registry role assignments.'
               : isGCP
-                ? 'Create the service account and configure the provider with the Nuon issuer, audience, attribute mapping, and exact connection subject condition.'
+                ? 'Create or reuse the service account, then configure this connection’s provider with the Nuon issuer, audience, attribute mapping, and exact subject condition.'
                 : 'Add the Nuon issuer to this AWS account once. If it already exists, reuse it.'}
           </Text>
         </li>
@@ -125,14 +130,14 @@ export const RunInCloud = ({
               ? 'Add federation for this exact connection subject'
               : isGCP
                 ? 'Grant service account impersonation to this connection'
-                : 'Create the role with the trust policy'}
+                : 'Add this connection to the role trust policy'}
           </Text>
           <Text as="div" variant="subtext" theme="neutral">
             {isAzure
               ? 'Add a federated identity credential to the existing application with the exact Nuon issuer and subject and audience api://AzureADTokenExchange. The issuer discovery and signing keys must be publicly reachable by Microsoft Entra.'
               : isGCP
                 ? 'Grant roles/iam.workloadIdentityUser on the service account to the exact subject rendered by Nuon, not the entire pool.'
-                : 'Use the exact audience and connection subject rendered by Nuon.'}
+                : 'Use the exact audience and connection subject rendered by Nuon. Preserve trust statements for other connections and services.'}
           </Text>
         </li>
         {(connection.preset === 'stacks' || (isImage && hasInitialGrants)) && (
@@ -154,46 +159,52 @@ export const RunInCloud = ({
           </li>
         )}
       </ol>
+      {setupMode}
       <Expand
         id={`identity-setup-${connection.id}`}
         heading="View identity setup commands"
       >
-        <Tabs
-          naturalHeight
-          initActiveTab="cli"
-          tabLabels={{
-            cli: isAzure ? 'Azure CLI' : isGCP ? 'gcloud CLI' : 'AWS CLI',
-            terraform: 'Terraform',
-            ...(isAWS ? { cloudformation: 'CloudFormation' } : {}),
-          }}
-          tabs={{
-            cli: (
-              <CodeBlock language="bash" showCopy wrapLongLines>
-                {snippet('cli')}
-              </CodeBlock>
-            ),
-            terraform: (
-              <CodeBlock language="hcl" showCopy>
-                {snippet('terraform')}
-              </CodeBlock>
-            ),
-            ...(isAWS
-              ? {
-                  cloudformation: (
-                    <div className="flex flex-col gap-3">
-                      <Text variant="subtext" theme="neutral">
-                        Add these resources under the Resources section of a
-                        CloudFormation template.
-                      </Text>
-                      <CodeBlock language="yaml" showCopy>
-                        {snippet('cloudformation')}
-                      </CodeBlock>
-                    </div>
-                  ),
-                }
-              : {}),
-          }}
-        />
+        {!setup ? (
+          <Text theme="neutral">Setup commands are not available yet.</Text>
+        ) : (
+          <Tabs
+            naturalHeight
+            initActiveTab="cli"
+            tabLabels={{
+              cli: isAzure ? 'Azure CLI' : isGCP ? 'gcloud CLI' : 'AWS CLI',
+              terraform: 'Terraform',
+              ...(isAWS ? { cloudformation: 'CloudFormation' } : {}),
+            }}
+            tabs={{
+              cli: (
+                <CodeBlock language="bash" showCopy wrapLongLines>
+                  {snippet('cli')}
+                </CodeBlock>
+              ),
+              terraform: (
+                <CodeBlock language="hcl" showCopy>
+                  {snippet('terraform')}
+                </CodeBlock>
+              ),
+              ...(isAWS
+                ? {
+                    cloudformation: (
+                      <div className="flex flex-col gap-3">
+                        <Text variant="subtext" theme="neutral">
+                          For an existing role, merge the trust contribution
+                          into its owning stack and add only the permission
+                          resources. Do not create another role resource.
+                        </Text>
+                        <CodeBlock language="yaml" showCopy>
+                          {snippet('cloudformation')}
+                        </CodeBlock>
+                      </div>
+                    ),
+                  }
+                : {}),
+            }}
+          />
+        )}
       </Expand>
       <ConnectionPolicies
         connection={connection}

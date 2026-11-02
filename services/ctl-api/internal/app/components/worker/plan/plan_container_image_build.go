@@ -99,10 +99,12 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 	if cfg.GCPGARImageConfig != nil {
 		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
 		return &configs.OCIRegistryRepository{
-			RegistryType: configs.OCIRegistryTypeGAR,
-			Repository:   cfg.ImageURL,
-			Region:       cfg.GCPGARImageConfig.GCPRegion,
-			LoginServer:  garLoginServer,
+			RegistryType:             configs.OCIRegistryTypeGAR,
+			Repository:               cfg.ImageURL,
+			Region:                   cfg.GCPGARImageConfig.GCPRegion,
+			LoginServer:              garLoginServer,
+			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
+			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
 		}, nil
 	}
 

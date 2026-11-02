@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -10,7 +12,7 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) {
+func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) error {
 	l := workflow.GetLogger(ctx)
 	err := activities.AwaitUpdateBuildStatus(ctx, activities.UpdateBuildStatus{
 		BuildID:           bldID,
@@ -21,7 +23,7 @@ func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status
 		l.Error("unable to update build status",
 			zap.String("build-id", bldID),
 			zap.Error(err))
-		return
+		return fmt.Errorf("unable to update build status: %w", err)
 	}
 
 	err = statusactivities.AwaitUpdateBuildStatusV2(ctx, statusactivities.UpdateBuildStatusV2{
@@ -33,9 +35,9 @@ func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status
 		l.Error("unable to update build status v2",
 			zap.String("build-id", bldID),
 			zap.Error(err))
-		return
+		return fmt.Errorf("unable to update build status history: %w", err)
 	}
-
+	return nil
 }
 
 func (w *Workflows) updateBuildSignatureVerification(ctx workflow.Context, bldID, jobID string, pullPlan *plantypes.ContainerImagePullPlan, jobSucceeded bool) {
@@ -60,8 +62,8 @@ func (w *Workflows) failRunnerJob(ctx workflow.Context, jobID, description strin
 	})
 }
 
-func (w *Workflows) failQueuedRunnerJob(ctx workflow.Context, jobID, description string) {
-	_ = activities.AwaitUpdateJobStatus(ctx, &activities.UpdateJobStatusRequest{
+func (w *Workflows) failQueuedRunnerJob(ctx workflow.Context, jobID, description string) error {
+	return activities.AwaitUpdateJobStatus(ctx, &activities.UpdateJobStatusRequest{
 		JobID:             jobID,
 		Status:            app.RunnerJobStatusFailed,
 		StatusDescription: description,

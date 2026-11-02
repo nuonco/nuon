@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -202,7 +203,10 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 		l.Error("policy evaluation failed", zap.Int("deny_count", len(denyViolations)))
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPolicyFailed, description)
 		w.failRunnerJob(ctx, buildJobID, description)
-		return fmt.Errorf("helm policy check failed: %s", description)
+		if !controlplanejob.BuildFailurePropagationEnabled(ctx) {
+			return fmt.Errorf("helm policy check failed: %s", description)
+		}
+		return temporal.NewNonRetryableApplicationError(description, "component-build-policy", nil)
 	}
 
 	if len(warnViolations) > 0 {

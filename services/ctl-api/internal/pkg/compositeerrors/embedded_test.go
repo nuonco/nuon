@@ -114,6 +114,14 @@ func TestRedactDiagnosticSecrets(t *testing.T) {
 			input: `request body: {"token":"json-secret","name":"safe"}`,
 			want:  `request body: {"token":"[REDACTED]","name":"safe"}`,
 		},
+		"federation credentials": {
+			input: `invalid_grant subject_token=acme-secret client_assertion=acme-secret {"client_assertion":"acme-secret"}`,
+			want:  `invalid_grant subject_token=[REDACTED] client_assertion=[REDACTED] {"client_assertion":"[REDACTED]"}`,
+		},
+		"inline bearer": {
+			input: "registry denied Bearer acme-secret; repository acme/api",
+			want:  "registry denied Bearer [REDACTED]; repository acme/api",
+		},
 		"bare assignment": {
 			input: "command failed with TOKEN=bare-secret",
 			want:  "command failed with TOKEN=[REDACTED]",

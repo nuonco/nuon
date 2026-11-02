@@ -1263,6 +1263,7 @@ func diffGCPGAR(old, new *GCPGARConfig) []*diff.Diff {
 	}
 	return []*diff.Diff{
 		diff.NewDiff(diff.WithKey("gcp_gar"), diff.WithChildren(
+			diff.NewDiff(diff.WithKey("use_cloud_connection"), diff.WithBoolDiff(old.UseCloudConnection, new.UseCloudConnection)),
 			diff.NewDiff(diff.WithKey("gcp_project_id"), diff.WithStringDiff(old.GCPProjectID, new.GCPProjectID)),
 			diff.NewDiff(diff.WithKey("region"), diff.WithStringDiff(old.GCPRegion, new.GCPRegion)),
 			diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),
@@ -1922,6 +1923,7 @@ func diffAzureACR(old, new *AzureACRConfig) []*diff.Diff {
 		new = &AzureACRConfig{}
 	}
 	return []*diff.Diff{diff.NewDiff(diff.WithKey("azure_acr"), diff.WithChildren(
+		diff.NewDiff(diff.WithKey("use_cloud_connection"), diff.WithBoolDiff(old.UseCloudConnection, new.UseCloudConnection)),
 		diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),
 		diff.NewDiff(diff.WithKey("tag"), diff.WithStringDiff(old.Tag, new.Tag)),
 		diff.NewDiff(diff.WithKey("registry_url"), diff.WithStringDiff(old.RegistryURL, new.RegistryURL)),

@@ -17,6 +17,7 @@ const accountSchema = z
     service_account_name: z.string().trim().optional(),
     azure_tenant_id: z.string().trim().optional(),
     principal: z.string().trim().optional(),
+    principal_choice: z.string().optional(),
   })
   .superRefine((value, ctx) => {
     const fields =
@@ -58,6 +59,12 @@ const accountSchema = z
                 .regex(/^[\w+=,.@-]+$/, 'Use letters, numbers, or _+=,.@-'),
             }
     for (const [field, schema] of Object.entries(fields)) {
+      if (
+        field === 'role_name' &&
+        value.principal_choice &&
+        value.principal_choice !== 'new'
+      )
+        continue
       const result = schema.safeParse(value[field as keyof typeof value] || '')
       if (!result.success) {
         ctx.addIssue({

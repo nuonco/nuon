@@ -1,13 +1,20 @@
 import { useForm, useStore } from '@tanstack/react-form'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
 import { FormSelect } from '@/components/common/form/FormSelect'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { AWS_REGIONS } from '@/configs/cloud-regions'
-import type { TAPIError, TCreateCloudConnectionRequest } from '@/types'
+import type {
+  TAPIError,
+  TCloudConnectionSummary,
+  TCreateCloudConnectionRequest,
+} from '@/types'
+import { PrincipalSharing } from '../PrincipalSharing'
+import { sharedPrincipalConnections } from '../queries'
 import { connectionSchema, type TConnectionValues } from './schema'
 
 export const ConnectionForm = ({
@@ -15,11 +22,17 @@ export const ConnectionForm = ({
   onCreate,
   isPending = false,
   error,
+  imageRepository = false,
+  connections = [],
+  orgId,
 }: {
   values?: Partial<TConnectionValues>
   onCreate: (body: TCreateCloudConnectionRequest) => void
   isPending?: boolean
   error?: TAPIError | null
+  imageRepository?: boolean
+  connections?: TCloudConnectionSummary[]
+  orgId?: string
 }) => {
   const defaultValues: TConnectionValues = {
     name: '',
@@ -30,6 +43,7 @@ export const ConnectionForm = ({
     service_account_name: 'nuon-cloud-connection',
     azure_tenant_id: '',
     principal: '',
+    principal_choice: values?.target_id ? 'new' : '',
     preset:
       values?.platform === 'gcp'
         ? 'gar'
@@ -56,7 +70,8 @@ export const ConnectionForm = ({
         target_id: v.target_id,
         preset: v.preset,
         principal:
-          platform === 'azure'
+          platform === 'azure' ||
+          (v.principal_choice && v.principal_choice !== 'new')
             ? v.principal!
             : platform === 'gcp'
               ? `${v.service_account_name}@${v.target_id}.iam.gserviceaccount.com`
@@ -81,6 +96,36 @@ export const ConnectionForm = ({
   const canSubmit = useStore(form.store, (s) => s.canSubmit)
   const platform = useStore(form.store, (s) => s.values.platform)
   const preset = useStore(form.store, (s) => s.values.preset)
+  const principalChoice = useStore(form.store, (s) => s.values.principal_choice)
+  const azureTenantId = useStore(form.store, (s) => s.values.azure_tenant_id)
+  const principals = connections.filter(
+    (connection, index, all) =>
+      connection.platform === platform &&
+      index ===
+        all.findIndex(
+          (other) =>
+            other.platform === connection.platform &&
+            (connection.platform === 'azure'
+              ? other.principal.toLowerCase() ===
+                  connection.principal.toLowerCase() &&
+                other.azure_tenant_id?.toLowerCase() ===
+                  connection.azure_tenant_id?.toLowerCase()
+              : other.principal === connection.principal)
+        )
+  )
+  const selectedPrincipal = principals.find((c) => c.id === principalChoice)
+  const identity = useStore(form.store, (s) =>
+    s.values.platform === 'azure'
+      ? s.values.principal || ''
+      : s.values.platform === 'gcp'
+        ? `${s.values.service_account_name}@${s.values.target_id}.iam.gserviceaccount.com`
+        : `arn:aws:iam::${s.values.target_id}:role/${s.values.role_name}`
+  )
+  const shared = sharedPrincipalConnections(connections, {
+    platform: platform || 'aws',
+    principal: identity,
+    azure_tenant_id: azureTenantId,
+  })
   const isGCP = platform === 'gcp'
   const isAzure = platform === 'azure'
   const isImage = ['ecr', 'gar', 'acr'].includes(preset)
@@ -128,7 +173,7 @@ export const ConnectionForm = ({
               'role_name',
               'IAM role name',
               'nuon-cloud-connection',
-              'The IAM role to create in this AWS account.',
+              'Use a new or existing IAM role in this AWS account.',
             ],
           ] as [keyof TConnectionValues, string, string, string?][])),
   ]
@@ -168,57 +213,64 @@ export const ConnectionForm = ({
       }}
     >
       <SectionHeader
-        title="Connection details"
+        title={imageRepository ? 'New pull identity' : 'Connection details'}
         description={
-          isImage
-            ? 'Nuon saves this identity and registry target. Repository permissions are configured separately.'
-            : 'Nuon saves this identity. Review and apply its cloud setup after creation.'
+          imageRepository
+            ? 'Create an identity for pulling images. Nuon manages it as a cloud connection; no long-lived credentials are stored.'
+            : isImage
+              ? 'Nuon saves this identity and registry target. Repository permissions are configured separately.'
+              : 'Nuon saves this identity. Review and apply its cloud setup after creation.'
         }
       />
       <FormErrorBanner error={error} fallback="Connection creation failed" />
-      <form.Field
-        name="platform"
-        listeners={{
-          onChange: ({ value }) => {
-            form.setFieldValue(
-              'preset',
-              value === 'gcp' ? 'gar' : value === 'azure' ? 'acr' : 'ecr'
-            )
-            form.setFieldValue('target_id', '')
-            form.setFieldMeta('target_id', (meta) => ({
-              ...meta,
-              isTouched: false,
-            }))
-          },
-        }}
-      >
-        {(field) => (
-          <FormSelect
-            field={field}
-            id="connection-platform"
-            labelProps={{ labelText: 'Cloud platform' }}
-            disabled={isPending}
-            options={[
-              { value: 'aws', label: 'AWS' },
-              { value: 'gcp', label: 'Google Cloud' },
-              { value: 'azure', label: 'Azure' },
-            ]}
-          />
-        )}
-      </form.Field>
+      {!imageRepository && (
+        <form.Field
+          name="platform"
+          listeners={{
+            onChange: ({ value }) => {
+              form.setFieldValue(
+                'preset',
+                value === 'gcp' ? 'gar' : value === 'azure' ? 'acr' : 'ecr'
+              )
+              form.setFieldValue('principal_choice', '')
+              form.setFieldValue('target_id', '')
+              form.setFieldMeta('target_id', (meta) => ({
+                ...meta,
+                isTouched: false,
+              }))
+            },
+          }}
+        >
+          {(field) => (
+            <FormSelect
+              field={field}
+              id="connection-platform"
+              labelProps={{ labelText: 'Cloud platform' }}
+              disabled={isPending}
+              options={[
+                { value: 'aws', label: 'AWS' },
+                { value: 'gcp', label: 'Google Cloud' },
+                { value: 'azure', label: 'Azure' },
+              ]}
+            />
+          )}
+        </form.Field>
+      )}
       <form.Field name="name">
         {(field) => (
           <FormInput
             field={field}
             id="connection-name"
-            labelProps={{ labelText: 'Connection name' }}
+            labelProps={{
+              labelText: imageRepository ? 'Identity name' : 'Connection name',
+            }}
             placeholder="acme-images"
             className="!font-mono"
             disabled={isPending}
           />
         )}
       </form.Field>
-      {!isGCP && !isAzure && (
+      {!imageRepository && !isGCP && !isAzure && (
         <form.Field name="preset">
           {(field) => (
             <FormSelect
@@ -243,23 +295,129 @@ export const ConnectionForm = ({
           title="Cloud identity"
           description={`The identity Nuon will use in ${isAzure ? 'Azure' : isGCP ? 'Google Cloud' : 'AWS'}.`}
         />
-        {identityFields.map(([name, label, placeholder, helperText]) => (
-          <form.Field key={name} name={name}>
-            {(field) => (
-              <FormInput
-                field={field}
-                id={`connection-${name}`}
-                labelProps={{ labelText: label }}
-                placeholder={placeholder}
-                helperText={helperText}
-                className="!font-mono"
-                disabled={isPending}
-                spellCheck={false}
-                autoCapitalize="none"
-              />
-            )}
-          </form.Field>
-        ))}
+        <form.Field
+          name="principal_choice"
+          listeners={{
+            onChange: ({ value }) => {
+              const selected = principals.find((c) => c.id === value)
+              form.setFieldValue(
+                'target_id',
+                selected?.target_id ||
+                  (platform === defaultValues.platform
+                    ? defaultValues.target_id
+                    : '')
+              )
+              form.setFieldValue(
+                'role_name',
+                selected
+                  ? selected.principal.split(':role/')[1]
+                  : defaultValues.role_name
+              )
+              form.setFieldValue(
+                'service_account_name',
+                selected
+                  ? selected.principal.split('@')[0]
+                  : defaultValues.service_account_name
+              )
+              form.setFieldValue(
+                'gcp_project_number',
+                selected?.gcp_project_number || defaultValues.gcp_project_number
+              )
+              form.setFieldValue(
+                'azure_tenant_id',
+                selected?.azure_tenant_id || defaultValues.azure_tenant_id
+              )
+              form.setFieldValue(
+                'principal',
+                selected?.principal || defaultValues.principal
+              )
+              if (selected && isAzure) {
+                const registry = selected.azure_registry_id?.match(
+                  /\/resourceGroups\/([^/]+)\/providers\/Microsoft.ContainerRegistry\/registries\/([^/]+)$/i
+                )
+                form.setFieldValue('azure_resource_group', registry?.[1] || '')
+                form.setFieldValue('azure_registry_name', registry?.[2] || '')
+                form.setFieldValue(
+                  'azure_registry_login_server',
+                  selected.azure_registry_login_server || ''
+                )
+              }
+              for (const [name] of identityFields) {
+                form.setFieldMeta(name, (meta) => ({
+                  ...meta,
+                  isTouched: false,
+                }))
+              }
+            },
+          }}
+        >
+          {(field) => (
+            <FormSelect
+              field={field}
+              id="connection-principal-choice"
+              labelProps={{ labelText: 'Principal' }}
+              placeholder="Choose a principal or add a new one"
+              helperText="Choose an existing cloud principal or enter details for another one. Its cloud permissions apply to each connection using it."
+              disabled={isPending}
+              searchable
+              options={[
+                ...principals.map((connection) => ({
+                  value: connection.id,
+                  label: connection.principal,
+                  content: (
+                    <span className="flex min-w-0 flex-col">
+                      <Text family="mono" className="break-all">
+                        {connection.principal}
+                      </Text>
+                      {platform === 'azure' && (
+                        <Text variant="subtext" theme="neutral">
+                          Tenant {connection.azure_tenant_id}
+                        </Text>
+                      )}
+                    </span>
+                  ),
+                  description: sharedPrincipalConnections(connections, {
+                    platform: connection.platform,
+                    principal: connection.principal,
+                    azure_tenant_id: connection.azure_tenant_id,
+                  })
+                    .map((c) => c.name)
+                    .join(', '),
+                })),
+                { value: 'new', label: 'Add new principal' },
+              ]}
+            />
+          )}
+        </form.Field>
+        {selectedPrincipal && !isAzure && (
+          <LabeledValue label={isGCP ? 'Project ID' : 'AWS account ID'}>
+            <Text family="mono">{selectedPrincipal.target_id}</Text>
+          </LabeledValue>
+        )}
+        {identityFields
+          .filter(
+            ([name]) =>
+              principalChoice === 'new' ||
+              (selectedPrincipal && isAzure && name === 'target_id')
+          )
+          .map(([name, label, placeholder, helperText]) => (
+            <form.Field key={name} name={name}>
+              {(field) => (
+                <FormInput
+                  field={field}
+                  id={`connection-${name}`}
+                  labelProps={{ labelText: label }}
+                  placeholder={placeholder}
+                  helperText={helperText}
+                  className="!font-mono"
+                  disabled={isPending}
+                  spellCheck={false}
+                  autoCapitalize="none"
+                />
+              )}
+            </form.Field>
+          ))}
+        <PrincipalSharing connections={shared} orgId={orgId} />
       </section>
       {isImage && (
         <section
@@ -268,7 +426,7 @@ export const ConnectionForm = ({
         >
           <SectionHeader
             title="Registry target"
-            description="Used to select this connection when importing images."
+            description="The registry coordinates this identity can be assigned to."
           />
           {preset === 'ecr' && (
             <form.Field name="ecr_region">
@@ -337,6 +495,8 @@ export const ConnectionForm = ({
             <>
               <Icon variant="Loading" /> Creating connection
             </>
+          ) : imageRepository ? (
+            'Create pull identity'
           ) : (
             'Create connection'
           )}

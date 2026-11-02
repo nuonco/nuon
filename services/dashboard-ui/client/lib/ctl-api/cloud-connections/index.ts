@@ -70,13 +70,16 @@ export const getCloudConnectionSetup = ({
   connectionId,
   orgId,
   repositories = [],
+  existingPrincipal = false,
 }: {
   connectionId: string
   orgId: string
   repositories?: string[]
+  existingPrincipal?: boolean
 }) => {
   const params = new URLSearchParams()
   repositories.forEach((repository) => params.append('repository', repository))
+  if (existingPrincipal) params.set('existing_principal', 'true')
   return api<TCloudConnectionSetup>({
     orgId,
     path: `cloud-connections/${connectionId}/setup${params.size ? `?${params}` : ''}`,

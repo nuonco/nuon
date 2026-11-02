@@ -70,7 +70,7 @@ export const ConnectionsList = ({
       },
       {
         accessorKey: 'target_id',
-        header: 'Account / project / subscription',
+        header: 'Cloud target',
         cell: ({ row }) => (
           <div className="flex flex-col gap-1">
             <Text family="mono" variant="subtext">

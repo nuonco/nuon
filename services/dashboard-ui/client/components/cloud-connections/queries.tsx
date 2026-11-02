@@ -5,7 +5,51 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { getCloudConnection, verifyCloudConnection } from '@/lib'
+import {
+  getCloudConnection,
+  getCloudConnections,
+  verifyCloudConnection,
+} from '@/lib'
+import type { TCloudConnectionSummary } from '@/types'
+
+export const useCloudConnections = (orgId: string) =>
+  useQuery({
+    queryKey: ['cloud-connections', orgId, 'all'],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const connections: TCloudConnectionSummary[] = []
+      let offset = 0
+      let hasNext = true
+      while (hasNext) {
+        const page = await getCloudConnections({ orgId, limit: 100, offset })
+        connections.push(...page.data)
+        hasNext = page.pagination.hasNext
+        offset += page.pagination.limit
+      }
+      return connections
+    },
+  })
+
+export const sharedPrincipalConnections = (
+  connections: TCloudConnectionSummary[],
+  connection: Pick<
+    TCloudConnectionSummary,
+    'platform' | 'principal' | 'azure_tenant_id'
+  > & {
+    id?: string
+  }
+) =>
+  connections.filter(
+    (other) =>
+      other.id !== connection.id &&
+      other.platform === connection.platform &&
+      (connection.platform === 'azure'
+        ? other.principal?.toLowerCase() ===
+            connection.principal?.toLowerCase() &&
+          other.azure_tenant_id?.toLowerCase() ===
+            connection.azure_tenant_id?.toLowerCase()
+        : other.principal === connection.principal)
+  )
 
 export const useCloudConnection = (orgId: string, connectionId: string) => {
   const [expiredRequest, setExpiredRequest] = useState<string>()

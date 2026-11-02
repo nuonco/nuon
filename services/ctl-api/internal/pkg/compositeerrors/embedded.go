@@ -15,7 +15,7 @@ const SchemaVersion = 1
 
 const redactedValue = "[REDACTED]"
 
-const sensitiveCredentialName = `(?:access[-_]?key|access[-_]?token|api[-_]?key|auth[-_]?token|awsaccesskeyid|client[-_]?secret|id[-_]?token|password|refresh[-_]?token|secret|session[-_]?token|sig|signature|token|x-amz-credential|x-amz-security-token|x-amz-signature|x-goog-credential|x-goog-signature)`
+const sensitiveCredentialName = `(?:access[-_]?key|access[-_]?token|api[-_]?key|auth[-_]?token|awsaccesskeyid|client[-_]?assertion|client[-_]?secret|id[-_]?token|password|refresh[-_]?token|secret|session[-_]?token|sig|signature|token|x-amz-credential|x-amz-security-token|x-amz-signature|x-goog-credential|x-goog-signature)`
 const diagnosticCredentialName = `(?:[[:alnum:]]+[-_.])*` + sensitiveCredentialName
 
 type diagnosticSecretRedactor struct {
@@ -48,8 +48,16 @@ var diagnosticSecretRedactors = []diagnosticSecretRedactor{
 	},
 	{
 		// Unquoted URL query and environment assignments, such as token=<value>.
-		pattern:     regexp.MustCompile(`(?i)(\b` + diagnosticCredentialName + `\s*=\s*)[^&\s"'<>]+`),
+		pattern:     regexp.MustCompile(`(?i)(\b` + diagnosticCredentialName + `\s*[:=]\s*)[^&\s"'<>]+`),
 		replacement: "${1}" + redactedValue,
+	},
+	{
+		pattern:     regexp.MustCompile(`(?i)(\bBearer\s+)[a-z0-9._~+/-]+=*`),
+		replacement: "${1}" + redactedValue,
+	},
+	{
+		pattern:     regexp.MustCompile(`\beyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\b`),
+		replacement: redactedValue,
 	},
 }
 

@@ -15,12 +15,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/policyerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, buildJobID, componentName string) error {
+	propagateFailures := controlplanejob.BuildFailurePropagationEnabled(ctx)
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "evaluating image policies")
 
 	l, err := log.WorkflowLogger(ctx)
@@ -100,8 +102,12 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to fetch image metadata", err))
-		w.failRunnerJob(ctx, buildJobID, "unable to fetch image metadata")
+		if !propagateFailures {
+			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to fetch image metadata", err))
+		}
+		if !propagateFailures || !temporal.IsCanceledError(err) {
+			w.failRunnerJob(ctx, buildJobID, "unable to fetch image metadata")
+		}
 		return fmt.Errorf("unable to fetch image metadata: %w", err)
 	}
 
@@ -234,7 +240,10 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		l.Error("policy evaluation failed", zap.Int("deny_count", len(denyViolations)))
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPolicyFailed, description)
 		w.failRunnerJob(ctx, buildJobID, description)
-		return fmt.Errorf("image policy check failed: %s", description)
+		if !propagateFailures {
+			return fmt.Errorf("image policy check failed: %s", description)
+		}
+		return temporal.NewNonRetryableApplicationError(description, "component-build-policy", nil)
 	}
 
 	if len(warnViolations) > 0 {
@@ -288,11 +297,11 @@ func truncateErrorMessage(prefix string, err error) string {
 	if err == nil {
 		return prefix
 	}
-	msg := fmt.Sprintf("%s: %v", prefix, err)
+	msg := []rune(fmt.Sprintf("%s: %s", prefix, compositeerrors.ErrorMessage(err)))
 	if len(msg) > maxDescriptionLength {
-		return msg[:maxDescriptionLength-3] + "..."
+		return string(msg[:maxDescriptionLength-1]) + "…"
 	}
-	return msg
+	return string(msg)
 }
 
 func formatPolicyViolations(prefix string, violations []sharedactivities.PolicyViolation) string {

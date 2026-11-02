@@ -1,13 +1,18 @@
 import { useEffect, useRef } from 'react'
+import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { InstallsTable } from '@/components/installs/InstallsTable'
 import { Toast } from '@/components/surfaces/Toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import type { TAPIError, TCloudConnection } from '@/types'
-import { AddRepositoryAccess } from '../AddRepositoryAccess'
 import { DeleteConnection } from '../DeleteConnection'
-import { useVerifyCloudConnection } from '../queries'
+import {
+  sharedPrincipalConnections,
+  useCloudConnections,
+  useVerifyCloudConnection,
+} from '../queries'
 import { ConnectionDetail, type TConnectionTab } from './ConnectionDetail'
 
 export const ConnectionDetailContainer = ({
@@ -29,6 +34,7 @@ export const ConnectionDetailContainer = ({
 }) => {
   const { addModal } = useSurfaces()
   const { addToast } = useToast()
+  const identities = useCloudConnections(orgId)
   const verify = useVerifyCloudConnection(orgId, connectionId)
   const notifiedRequest = useRef<string>()
   useEffect(() => {
@@ -54,18 +60,33 @@ export const ConnectionDetailContainer = ({
   return (
     <ConnectionDetail
       connection={connection}
+      sharedConnections={
+        connection
+          ? sharedPrincipalConnections(identities.data || [], connection)
+          : []
+      }
       tab={tab}
       basePath={`/${orgId}/settings/cloud-connections/${connectionId}`}
-      error={error || verify.error}
+      error={error || verify.error || identities.error}
       isVerifying={verify.isPending || isVerifying}
       verificationTimedOut={verificationTimedOut}
       repositoryAccess={
         connection && ['ecr', 'gar', 'acr'].includes(connection.preset) ? (
-          <AddRepositoryAccess
-            key={connection.id}
-            connection={connection}
-            orgId={orgId}
-          />
+          <section
+            className="flex flex-col gap-4 border-t pt-6"
+            aria-label="Image repositories"
+          >
+            <SectionHeader
+              title="Image repositories"
+              description="Save each repository and explicitly choose its pull identity in Image repositories."
+            />
+            <Button
+              className="w-fit"
+              href={`/${orgId}/settings/image-repositories`}
+            >
+              View image repositories
+            </Button>
+          </section>
         ) : undefined
       }
       onVerify={() =>

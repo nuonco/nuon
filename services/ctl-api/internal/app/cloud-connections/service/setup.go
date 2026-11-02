@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -28,74 +27,20 @@ func subject(connection *app.CloudConnection) string {
 }
 
 func (s *service) setup(connection *app.CloudConnection, repositories ...string) SetupResponse {
+	return s.setupWithPrincipal(connection, false, repositories...)
+}
+
+func (s *service) setupWithPrincipal(connection *app.CloudConnection, existingPrincipal bool, repositories ...string) SetupResponse {
 	if connection.Platform == app.CloudPlatformAzure {
-		return s.acrSetup(connection, repositories)
+		return s.acrSetup(connection, existingPrincipal, repositories)
 	}
 	if connection.Platform == app.CloudPlatformGCP {
-		return s.garSetup(connection, repositories)
+		return s.garSetup(connection, existingPrincipal, repositories)
 	}
-	response := SetupResponse{Subject: subject(connection), Audience: "sts.amazonaws.com", Preset: connection.Preset}
-	if s.issuer == nil {
-		return response
-	}
-	issuerURL := s.issuer.Issuer()
-	issuer, _ := url.Parse(issuerURL)
-	conditionPrefix := strings.TrimPrefix(issuer.Host+issuer.Path, "/")
-	trustPolicy := map[string]any{
-		"Version": "2012-10-17",
-		"Statement": []any{map[string]any{
-			"Effect":    "Allow",
-			"Principal": map[string]string{"Federated": fmt.Sprintf("arn:aws:iam::%s:oidc-provider/%s", connection.TargetID, conditionPrefix)},
-			"Action":    "sts:AssumeRoleWithWebIdentity",
-			"Condition": map[string]any{"StringEquals": map[string]string{
-				conditionPrefix + ":aud": "sts.amazonaws.com",
-				conditionPrefix + ":sub": subject(connection),
-			}},
-		}},
-	}
-	policyJSON, _ := json.MarshalIndent(trustPolicy, "", "  ")
-	response.IssuerURL = issuerURL
-	response.TrustPolicy = trustPolicy
-	response.Terraform = fmt.Sprintf(`resource "aws_iam_openid_connect_provider" "nuon" {
-  url             = %q
-  client_id_list  = ["sts.amazonaws.com"]
+	return s.awsSetup(connection, existingPrincipal, repositories)
 }
 
-resource "aws_iam_role" "nuon_cloud_connection" {
-  name               = "<role-name>"
-  assume_role_policy = jsonencode(%s)
-}
-`, issuerURL, policyJSON)
-	response.CLI = fmt.Sprintf("aws iam create-open-id-connect-provider --url %s --client-id-list sts.amazonaws.com\naws iam create-role --role-name <role-name> --assume-role-policy-document '%s'", issuerURL, policyJSON)
-	response.CloudFormation = fmt.Sprintf("NuonOIDCProvider:\n  Type: AWS::IAM::OIDCProvider\n  Properties:\n    Url: %s\n    ClientIdList:\n      - sts.amazonaws.com\nNuonConnectionRole:\n  Type: AWS::IAM::Role\n  Properties:\n    RoleName: <role-name>\n    AssumeRolePolicyDocument:\n      %s\n", issuerURL, strings.ReplaceAll(string(policyJSON), "\n", "\n      "))
-	switch connection.Preset {
-	case app.CloudConnectionPresetStacks:
-		response.PermissionsPolicy = awsPermissionsPolicy()
-	case app.CloudConnectionPresetECR:
-		if len(repositories) > 0 {
-			response.PermissionsPolicy = awsECRPermissionsPolicy(repositories)
-			response.PermissionsCLI = awsECRPermissionsCLI(connection, response.PermissionsPolicy)
-		}
-	}
-	if response.PermissionsPolicy != nil {
-		permissionsJSON, _ := json.MarshalIndent(response.PermissionsPolicy, "", "  ")
-		response.Terraform += fmt.Sprintf(`
-resource "aws_iam_role_policy" "nuon_cloud_connection" {
-  name   = "nuon-cloud-connection"
-  role   = aws_iam_role.nuon_cloud_connection.id
-  policy = jsonencode(%s)
-}`, permissionsJSON)
-		if connection.Preset == app.CloudConnectionPresetECR {
-			response.CLI += "\n" + response.PermissionsCLI
-		} else {
-			response.CLI += fmt.Sprintf("\naws iam put-role-policy --role-name <role-name> --policy-name nuon-cloud-connection --policy-document '%s'", permissionsJSON)
-		}
-		response.CloudFormation += fmt.Sprintf("    Policies:\n      - PolicyName: nuon-cloud-connection\n        PolicyDocument:\n          %s\n", strings.ReplaceAll(string(permissionsJSON), "\n", "\n          "))
-	}
-	return response
-}
-
-func (s *service) garSetup(connection *app.CloudConnection, repositories []string) SetupResponse {
+func (s *service) garSetup(connection *app.CloudConnection, existingPrincipal bool, repositories []string) SetupResponse {
 	response := SetupResponse{Subject: subject(connection), Audience: "//iam.googleapis.com/" + cloudconnections.GARProvider(connection), Preset: connection.Preset}
 	if s.issuer == nil {
 		return response
@@ -120,30 +65,67 @@ func (s *service) garSetup(connection *app.CloudConnection, repositories []strin
 	}
 	jwks, _ := json.MarshalIndent(s.issuer.PublicJWKS(), "", "  ")
 	saName := strings.Split(connection.Principal, "@")[0]
-	response.CLI = fmt.Sprintf(`gcloud services enable iam.googleapis.com iamcredentials.googleapis.com sts.googleapis.com artifactregistry.googleapis.com --project=%[1]s
-gcloud iam service-accounts create %[2]s --project=%[1]s
-gcloud iam workload-identity-pools create %[3]s --project=%[1]s --location=global --display-name="Nuon image repository access"
-cat > nuon-oidc-jwks.json <<'NUON_JWKS'
+	response.CLI = fmt.Sprintf(`set -eu
+command -v jq >/dev/null
+project=%[1]s
+service_account=%[8]s
+pool_id=%[3]s
+pool_name=%[10]s
+project_number=$(gcloud projects describe "$project" --format='value(projectNumber)')
+if [ "$project_number" != %[11]s ]; then
+  printf 'The GCP project number must match the configured project.\n' >&2
+  exit 1
+fi
+gcloud services enable iam.googleapis.com iamcredentials.googleapis.com sts.googleapis.com artifactregistry.googleapis.com --project="$project"
+accounts=$(gcloud iam service-accounts list --project="$project" --format=json)
+account_count=$(printf '%%s' "$accounts" | jq -er --arg email "$service_account" 'if type == "array" then [.[] | select(.email == $email)] | length else error("Invalid service account list") end')
+if [ "$account_count" = 0 ]; then
+  gcloud iam service-accounts create %[2]s --project="$project"
+fi
+pools=$(gcloud iam workload-identity-pools list --project="$project" --location=global --format=json)
+pool_count=$(printf '%%s' "$pools" | jq -er --arg name "$pool_name" 'if type == "array" then [.[] | select(.name == $name)] | length else error("Invalid pool list") end')
+if [ "$pool_count" = 0 ]; then
+  gcloud iam workload-identity-pools create "$pool_id" --project="$project" --location=global --display-name="Nuon image repository access"
+fi
+workdir=$(mktemp -d)
+trap 'rm -rf "$workdir"' EXIT HUP INT TERM
+cat > "$workdir/jwks.json" <<'NUON_JWKS'
 %[4]s
 NUON_JWKS
-gcloud iam workload-identity-pools providers create-oidc nuon --project=%[1]s --location=global --workload-identity-pool=%[3]s --issuer-uri=%[5]s --allowed-audiences=%[6]s --attribute-mapping="google.subject=assertion.sub" --attribute-condition="%[7]s" --jwk-json-path=nuon-oidc-jwks.json
-gcloud iam service-accounts add-iam-policy-binding %[8]s --project=%[1]s --role=roles/iam.workloadIdentityUser --member=%[9]s
-`, connection.TargetID, saName, poolID, jwks, response.IssuerURL, response.Audience, condition, connection.Principal, member)
+providers=$(gcloud iam workload-identity-pools providers list --project="$project" --location=global --workload-identity-pool="$pool_id" --format=json)
+provider=$(printf '%%s' "$providers" | jq -ce --arg name "$pool_name/providers/nuon" 'if type == "array" then [.[] | select(.name == $name)] else error("Invalid provider list") end')
+if [ "$(printf '%%s' "$provider" | jq 'length')" = 0 ]; then
+  provider_operation=create-oidc
+else
+  printf '%%s' "$provider" | jq -e --arg issuer %[5]s --arg audience %[6]s --arg condition %[7]s 'length == 1 and .[0].oidc.issuerUri == $issuer and .[0].oidc.allowedAudiences == [$audience] and .[0].attributeCondition == $condition and .[0].attributeMapping["google.subject"] == "assertion.sub"' >/dev/null
+  provider_operation=update-oidc
+fi
+gcloud iam workload-identity-pools providers "$provider_operation" nuon --project="$project" --location=global --workload-identity-pool="$pool_id" --issuer-uri=%[5]s --allowed-audiences=%[6]s --attribute-mapping="google.subject=assertion.sub" --attribute-condition=%[7]s --jwk-json-path="$workdir/jwks.json"
+gcloud iam service-accounts add-iam-policy-binding "$service_account" --project="$project" --role=roles/iam.workloadIdentityUser --member=%[9]s --condition=None
+`, acrShellQuote(connection.TargetID), acrShellQuote(saName), acrShellQuote(poolID), jwks, acrShellQuote(response.IssuerURL), acrShellQuote(response.Audience), acrShellQuote(condition), acrShellQuote(connection.Principal), acrShellQuote(member), acrShellQuote(pool), acrShellQuote(connection.GCPProjectNumber))
 	if repositories == nil {
 		repositories = []string{}
 	}
 	repositoriesJSON, _ := json.Marshal(repositories)
+	serviceAccountType := "resource"
+	serviceAccountReference := "google_service_account.nuon"
+	if existingPrincipal {
+		serviceAccountType = "data"
+		serviceAccountReference = "data.google_service_account.nuon"
+	}
+	serviceAccount := fmt.Sprintf(`%s "google_service_account" "nuon" {
+  project = %q
+  account_id = %q
+  depends_on = [google_project_service.nuon]
+}
+`, serviceAccountType, connection.TargetID, saName)
 	response.Terraform = fmt.Sprintf(`resource "google_project_service" "nuon" {
   for_each = toset(["iam.googleapis.com", "iamcredentials.googleapis.com", "sts.googleapis.com", "artifactregistry.googleapis.com"])
   project = %[1]q
   service = each.value
   disable_on_destroy = false
 }
-resource "google_service_account" "nuon" {
-  project = %[1]q
-  account_id = %[2]q
-  depends_on = [google_project_service.nuon]
-}
+%[10]s
 resource "google_iam_workload_identity_pool" "nuon" {
   project = %[1]q
   workload_identity_pool_id = %[3]q
@@ -162,7 +144,7 @@ resource "google_iam_workload_identity_pool_provider" "nuon" {
   }
 }
 resource "google_service_account_iam_member" "nuon" {
-  service_account_id = google_service_account.nuon.name
+  service_account_id = %[11]s.name
   role = "roles/iam.workloadIdentityUser"
   member = %[8]q
   depends_on = [google_iam_workload_identity_pool_provider.nuon]
@@ -173,9 +155,9 @@ resource "google_artifact_registry_repository_iam_member" "nuon" {
   location = split("/", each.value)[3]
   repository = split("/", each.value)[5]
   role = "roles/artifactregistry.reader"
-  member = "serviceAccount:${google_service_account.nuon.email}"
+  member = "serviceAccount:${%[11]s.email}"
 }
-`, connection.TargetID, saName, poolID, condition, response.IssuerURL, response.Audience, jwks, member, repositoriesJSON)
+`, connection.TargetID, saName, poolID, condition, response.IssuerURL, response.Audience, jwks, member, repositoriesJSON, serviceAccount, serviceAccountReference)
 	for _, repository := range repositories {
 		parts := strings.Split(repository, "/")
 		response.PermissionsCLI += fmt.Sprintf("gcloud artifacts repositories add-iam-policy-binding %s --project=%s --location=%s --role=roles/artifactregistry.reader --member=serviceAccount:%s --condition=None\n", parts[5], connection.TargetID, parts[3], connection.Principal)
@@ -189,18 +171,13 @@ resource "google_artifact_registry_repository_iam_member" "nuon" {
 
 func awsECRPermissionsCLI(connection *app.CloudConnection, policy map[string]any) string {
 	grantJSON, _ := json.MarshalIndent(policy, "", "  ")
-	roleName := connection.Principal[strings.LastIndex(connection.Principal, "/")+1:]
-	return fmt.Sprintf(`set -eu
-role_name='%[1]s'
-expected_account='%[2]s'
-actual_account=$(aws sts get-caller-identity --query Account --output text)
-if [ "$actual_account" != "$expected_account" ]; then
-  printf 'Select credentials for the configured AWS account before updating permissions.\n' >&2
-  exit 1
-fi
+	return awsAccountPreflight(connection) + fmt.Sprintf(`policy_name=%[1]s
+role=$(aws iam get-role --role-name "$role_name" --output json)
+printf '%%s' "$role" | jq -e --arg arn %[2]s '.Role.Arn == $arn' >/dev/null
 policy_names=$(aws iam list-role-policies --role-name "$role_name" --output json)
-if printf '%%s' "$policy_names" | jq -e '.PolicyNames | index("nuon-image-repositories") != null' >/dev/null; then
-  existing=$(aws iam get-role-policy --role-name "$role_name" --policy-name nuon-image-repositories --query PolicyDocument --output json)
+has_policy=$(printf '%%s' "$policy_names" | jq -er --arg name "$policy_name" 'if (.PolicyNames | type) == "array" then (.PolicyNames | index($name) != null) | tostring else error("Invalid policy list") end')
+if [ "$has_policy" = true ]; then
+  existing=$(aws iam get-role-policy --role-name "$role_name" --policy-name "$policy_name" --query PolicyDocument --output json)
 else
   existing='{"Version":"2012-10-17","Statement":[]}'
 fi
@@ -208,9 +185,11 @@ grant=$(cat <<'NUON_REPOSITORY_GRANT'
 %[3]s
 NUON_REPOSITORY_GRANT
 )
-merged=$(printf '%%s' "$existing" | jq --argjson grant "$grant" '.Statement = ((if (.Statement | type) == "array" then .Statement else [.Statement] end) + ($grant.Statement | map(del(.Sid))) | unique)')
-aws iam put-role-policy --role-name "$role_name" --policy-name nuon-image-repositories --policy-document "$merged"
-`, strings.ReplaceAll(roleName, "'", "'\"'\"'"), connection.TargetID, grantJSON)
+merged=$(printf '%%s' "$existing" | jq -e --argjson grant "$grant" '
+  if type != "object" or ((.Statement | type) != "array" and (.Statement | type) != "object") then error("Invalid existing permissions policy") else
+  .Statement = ((if (.Statement | type) == "array" then .Statement else [.Statement] end) + ($grant.Statement | map(del(.Sid))) | unique) end')
+aws iam put-role-policy --role-name "$role_name" --policy-name "$policy_name" --policy-document "$merged"
+`, acrShellQuote("nuon-"+connection.ID), acrShellQuote(connection.Principal), grantJSON)
 }
 
 func awsPermissionsPolicy() map[string]any {

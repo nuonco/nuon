@@ -1,14 +1,12 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
@@ -108,13 +106,6 @@ func (s *service) Create(ctx *gin.Context) {
 		}
 	}
 	if err := s.db.WithContext(ctx).Create(&connection).Error; err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			ctx.Error(stderr.ErrConflict{
-				Err:         err,
-				Description: "A cloud connection for this principal already exists in this organization. Use the existing connection or choose a different principal.",
-			})
-			return
-		}
 		ctx.Error(fmt.Errorf("unable to create cloud connection: %w", err))
 		return
 	}

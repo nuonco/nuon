@@ -68,6 +68,11 @@ type Client interface {
 	VerifyCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error)
 	DeleteCloudConnection(ctx context.Context, connectionID string) error
 
+	CreateImageRepository(ctx context.Context, req *models.ServiceCreateImageRepositoryRequest) (*models.AppImageRepository, error)
+	ListImageRepositories(ctx context.Context, query *ListImageRepositoriesQuery) ([]*models.AppImageRepository, bool, error)
+	GetImageRepository(ctx context.Context, repositoryID string) (*models.AppImageRepository, error)
+	DeleteImageRepository(ctx context.Context, repositoryID string) error
+
 	// roles and service accounts
 	ListRoles(ctx context.Context) ([]*models.AppRole, error)
 	ListServiceAccounts(ctx context.Context, includeRunners, includeStacks bool, query *models.GetPaginatedQuery) ([]*models.ServiceServiceAccount, bool, error)

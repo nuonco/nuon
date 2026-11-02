@@ -33,13 +33,13 @@ type CloudConnection struct {
 	CreatedBy                Account               `json:"-" temporaljson:"created_by,omitempty"`
 	CreatedAt                time.Time             `gorm:"notnull" json:"created_at" temporaljson:"created_at,omitempty"`
 	UpdatedAt                time.Time             `gorm:"notnull" json:"updated_at" temporaljson:"updated_at,omitempty"`
-	DeletedAt                soft_delete.DeletedAt `gorm:"uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"-" temporaljson:"deleted_at,omitempty"`
-	OrgID                    string                `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"org_id" temporaljson:"org_id,omitempty"`
+	DeletedAt                soft_delete.DeletedAt `gorm:"index:idx_cloud_connections_org_platform_principal,priority:4" json:"-" temporaljson:"deleted_at,omitempty"`
+	OrgID                    string                `gorm:"notnull;index:idx_cloud_connections_org_platform_principal,priority:1" json:"org_id" temporaljson:"org_id,omitempty"`
 	Org                      Org                   `json:"-" temporaljson:"org,omitempty"`
 	Name                     string                `gorm:"notnull" json:"name" temporaljson:"name,omitempty"`
-	Platform                 CloudPlatform         `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"platform" temporaljson:"platform,omitempty" swaggertype:"string" enums:"aws,gcp,azure"`
+	Platform                 CloudPlatform         `gorm:"notnull;index:idx_cloud_connections_org_platform_principal,priority:2" json:"platform" temporaljson:"platform,omitempty" swaggertype:"string" enums:"aws,gcp,azure"`
 	TargetID                 string                `gorm:"notnull" json:"target_id" temporaljson:"target_id,omitempty"`
-	Principal                string                `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"principal" temporaljson:"principal,omitempty"`
+	Principal                string                `gorm:"notnull;index:idx_cloud_connections_org_platform_principal,priority:3" json:"principal" temporaljson:"principal,omitempty"`
 	DefaultRegion            string                `gorm:"notnull;default:''" json:"default_region,omitempty" temporaljson:"default_region,omitempty"`
 	Status                   CloudConnectionStatus `gorm:"notnull;default:'pending'" json:"status" temporaljson:"status,omitempty"`
 	StatusMessage            string                `gorm:"notnull;default:''" json:"status_message,omitempty" temporaljson:"status_message,omitempty"`

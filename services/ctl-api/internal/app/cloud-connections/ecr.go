@@ -17,7 +17,10 @@ func ECRConnection(ctx context.Context, db *gorm.DB, orgID string, cfg *app.AWSE
 		return nil, fmt.Errorf("ECR image configuration is required")
 	}
 	if cfg.IAMRoleARN != "" {
-		return nil, fmt.Errorf("aws_ecr iam_role_arn is no longer supported; configure the role on the Cloud Connection instead")
+		if cfg.CloudConnectionID != "" {
+			return nil, fmt.Errorf("ECR cloud connection access cannot be combined with iam_role_arn")
+		}
+		return nil, nil
 	}
 	if cfg.ID != "" && cfg.CloudConnectionID == "" {
 		return nil, fmt.Errorf("ECR image configuration has no pinned cloud connection; sync the app configuration before building")

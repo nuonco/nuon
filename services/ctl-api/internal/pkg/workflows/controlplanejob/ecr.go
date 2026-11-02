@@ -3,6 +3,7 @@ package controlplanejob
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	ecr "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -49,7 +50,7 @@ func (a *Activities) authorizeECRSource(ctx context.Context, jobID string, plan 
 	}
 	source.RegistryType = configs.OCIRegistryTypePrivateOCI
 	source.Repository = repo
-	source.LoginServer = auth.ServerAddress
+	source.LoginServer = strings.TrimPrefix(auth.ServerAddress, "https://")
 	source.ECRAuth = nil
 	source.OCIAuth = &configs.OCIRegistryAuth{Username: auth.Username, Password: auth.RegistryToken}
 	return nil

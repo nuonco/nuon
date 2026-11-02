@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 )
 
 type BuildRequest struct {
@@ -23,8 +24,16 @@ type BuildRequest struct {
 // @temporal-gen-v2 workflow
 // @execution-timeout 60m
 // @task-timeout 30m
-func (w *Workflows) Build(ctx workflow.Context, sreq BuildRequest) error {
-	w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusPlanning, "creating build plan")
+func (w *Workflows) Build(ctx workflow.Context, sreq BuildRequest) (retErr error) {
+	propagateFailures := controlplanejob.BuildFailurePropagationEnabled(ctx)
+	if propagateFailures {
+		defer func() {
+			retErr = activities.FailBuild(ctx, sreq.BuildID, retErr)
+		}()
+	}
+	if err := w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusPlanning, "creating build plan"); err != nil && propagateFailures {
+		return err
+	}
 
 	logStream, err := activities.AwaitCreateLogStreamByBuildID(ctx, sreq.BuildID)
 	if err != nil {

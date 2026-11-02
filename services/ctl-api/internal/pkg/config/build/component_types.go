@@ -222,15 +222,20 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 		cfg.Tag = src.Tag
 		cfg.UpdatePolicy = src.UpdatePolicy
 		cfg.AWSECRImageConfig = &app.AWSECRImageConfig{
-			AWSRegion: src.AWSRegion,
+			IAMRoleARN: src.IAMRoleARN,
+			AWSRegion:  src.AWSRegion,
 		}
 	}
 	if src := obj.GCPGARImageConfig; src != nil {
 		sources++
+		if err := src.ValidateCredentials(); err != nil {
+			return nil, err
+		}
 		cfg.ImageURL = src.ImageURL
 		cfg.Tag = src.Tag
 		cfg.UpdatePolicy = src.UpdatePolicy
 		cfg.GCPGARImageConfig = &app.GCPGARImageConfig{
+			UseCloudConnection:       src.UseCloudConnection,
 			GCPProjectID:             src.GCPProjectID,
 			GCPRegion:                src.GCPRegion,
 			ServiceAccountEmail:      src.ServiceAccountEmail,
@@ -252,6 +257,7 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 		cfg.Tag = src.Tag
 		cfg.UpdatePolicy = src.UpdatePolicy
 		cfg.AzureACRImageConfig = &app.AzureACRImageConfig{
+			UseCloudConnection:    src.UseCloudConnection,
 			RegistryURL:           src.RegistryURL,
 			TenantID:              src.TenantID,
 			ClientID:              src.ClientID,
@@ -272,17 +278,6 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 	case 1:
 	default:
 		return nil, errors.New("external_image must specify exactly one of aws_ecr, gcp_gar, azure_acr, or public image source configuration")
-	}
-
-	if obj.AWSECRImageConfig != nil {
-		if err := obj.AWSECRImageConfig.ValidateCredentials(); err != nil {
-			return nil, err
-		}
-	}
-	if obj.GCPGARImageConfig != nil {
-		if err := obj.GCPGARImageConfig.ValidateCredentials(); err != nil {
-			return nil, err
-		}
 	}
 
 	return cfg, nil

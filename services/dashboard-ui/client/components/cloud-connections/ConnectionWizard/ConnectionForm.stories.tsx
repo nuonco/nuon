@@ -1,6 +1,6 @@
 import { ConnectionForm } from './ConnectionForm'
 import { ConnectionWizard } from './ConnectionWizard'
-import { PageStory, noop } from '../__stories__/fixtures'
+import { connection, PageStory, noop } from '../__stories__/fixtures'
 
 export default { title: 'Features / Cloud connections / Connection form' }
 
@@ -19,6 +19,31 @@ export const ECR = () => (
         values={{
           name: 'acme-ecr-images',
           target_id: '123456789012',
+          ecr_region: 'us-west-2',
+        }}
+      />
+    </ConnectionWizard>
+  </PageStory>
+)
+export const SharedRole = () => (
+  <PageStory>
+    <ConnectionWizard>
+      <ConnectionForm
+        onCreate={noop}
+        orgId="org-mock-001"
+        connections={[
+          {
+            ...connection,
+            name: 'acme-production-stacks',
+            principal: 'arn:aws:iam::123456789012:role/nuon-shared',
+          },
+        ]}
+        values={{
+          name: 'acme-image-pulls',
+          target_id: '123456789012',
+          role_name: 'nuon-shared',
+          principal: 'arn:aws:iam::123456789012:role/nuon-shared',
+          principal_choice: connection.id,
           ecr_region: 'us-west-2',
         }}
       />
@@ -110,7 +135,7 @@ export const Failed = () => (
         onCreate={noop}
         error={{
           error: 'Connection creation failed',
-          description: 'This identity already has a cloud connection.',
+          description: 'Unable to save the connection. Try again.',
           user_error: true,
         }}
       />

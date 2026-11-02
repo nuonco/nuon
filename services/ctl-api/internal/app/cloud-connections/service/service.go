@@ -59,6 +59,11 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	routes.DELETE("/:connection_id", s.Delete)
 	routes.POST("/:connection_id/verify", s.Verify)
 	routes.GET("/:connection_id/setup", s.Setup)
+	repositories := api.Group("/v1/image-repositories")
+	repositories.POST("", s.CreateImageRepository)
+	repositories.GET("", s.ListImageRepositories)
+	repositories.GET("/:repository_id", s.GetImageRepository)
+	repositories.DELETE("/:repository_id", s.DeleteImageRepository)
 	return nil
 }
 

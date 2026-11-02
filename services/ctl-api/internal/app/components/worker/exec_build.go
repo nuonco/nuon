@@ -20,6 +20,7 @@ import (
 const signatureVerificationVersion = "exec-build-signature-verification-v1"
 
 func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, currentApp *app.App, sandboxMode bool) (retErr error) {
+	propagateFailures := controlplanejob.BuildFailurePropagationEnabled(ctx)
 	comp, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
 		ComponentID: compID,
 	})
@@ -57,7 +58,9 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		}
 		failureCtx, cancel := workflow.NewDisconnectedContext(ctx)
 		defer cancel()
-		w.failQueuedRunnerJob(failureCtx, runnerJob.ID, truncateErrorMessage("build failed before job execution", retErr))
+		if err := w.failQueuedRunnerJob(failureCtx, runnerJob.ID, truncateErrorMessage("build failed before job execution", retErr)); err != nil && propagateFailures {
+			retErr = fmt.Errorf("%w; unable to persist queued job failure: %v", retErr, err)
+		}
 	}()
 
 	if comp.Type == app.ComponentTypeExternalImage {
@@ -102,7 +105,9 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	}
 
 	// wait for the job
-	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
+	if err := w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building"); err != nil && propagateFailures {
+		return err
+	}
 	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", comp.ID, runnerJob.ID),
 	})
@@ -111,7 +116,9 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		w.updateBuildSignatureVerification(ctx, buildID, runnerJob.ID, runPlan.ContainerImagePullPlan, err == nil)
 	}
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
+		if !propagateFailures {
+			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
+		}
 		return fmt.Errorf("build job failed: %w", err)
 	}
 
@@ -121,6 +128,9 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		}
 	}
 
-	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusActive, "build is active and ready to be deployed")
+	err = w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusActive, "build is active and ready to be deployed")
+	if propagateFailures {
+		return err
+	}
 	return nil
 }

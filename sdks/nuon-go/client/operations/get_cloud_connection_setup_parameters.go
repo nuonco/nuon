@@ -68,6 +68,12 @@ type GetCloudConnectionSetupParams struct {
 	*/
 	ConnectionID string
 
+	/* ExistingPrincipal.
+
+	   Reuse an existing principal in Terraform/CloudFormation; AWS trust contribution must be merged in the original owning role. CLI always detects and reuses existing identities.
+	*/
+	ExistingPrincipal *bool
+
 	/* Repository.
 
 	   Transient exact ECR ARN, GAR resource, or ACR repository path for read-only grant generation; not stored
@@ -91,7 +97,18 @@ func (o *GetCloudConnectionSetupParams) WithDefaults() *GetCloudConnectionSetupP
 //
 // All values with no default are reset to their zero value.
 func (o *GetCloudConnectionSetupParams) SetDefaults() {
-	// no default values defined for this parameter
+	var (
+		existingPrincipalDefault = bool(false)
+	)
+
+	val := GetCloudConnectionSetupParams{
+		ExistingPrincipal: &existingPrincipalDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get cloud connection setup params
@@ -138,6 +155,17 @@ func (o *GetCloudConnectionSetupParams) SetConnectionID(connectionID string) {
 	o.ConnectionID = connectionID
 }
 
+// WithExistingPrincipal adds the existingPrincipal to the get cloud connection setup params
+func (o *GetCloudConnectionSetupParams) WithExistingPrincipal(existingPrincipal *bool) *GetCloudConnectionSetupParams {
+	o.SetExistingPrincipal(existingPrincipal)
+	return o
+}
+
+// SetExistingPrincipal adds the existingPrincipal to the get cloud connection setup params
+func (o *GetCloudConnectionSetupParams) SetExistingPrincipal(existingPrincipal *bool) {
+	o.ExistingPrincipal = existingPrincipal
+}
+
 // WithRepository adds the repository to the get cloud connection setup params
 func (o *GetCloudConnectionSetupParams) WithRepository(repository []string) *GetCloudConnectionSetupParams {
 	o.SetRepository(repository)
@@ -160,6 +188,23 @@ func (o *GetCloudConnectionSetupParams) WriteToRequest(r runtime.ClientRequest, 
 	// path param connection_id
 	if err := r.SetPathParam("connection_id", o.ConnectionID); err != nil {
 		return err
+	}
+
+	if o.ExistingPrincipal != nil {
+
+		// query param existing_principal
+		var qrExistingPrincipal bool
+
+		if o.ExistingPrincipal != nil {
+			qrExistingPrincipal = *o.ExistingPrincipal
+		}
+		qExistingPrincipal := swag.FormatBool(qrExistingPrincipal)
+		if qExistingPrincipal != "" {
+
+			if err := r.SetQueryParam("existing_principal", qExistingPrincipal); err != nil {
+				return err
+			}
+		}
 	}
 
 	if o.Repository != nil {

@@ -25,6 +25,7 @@ type GCPGARImageConfig struct {
 	ComponentConfigID   string `json:"component_config_id,omitzero" gorm:"notnull" temporaljson:"component_config_id,omitzero,omitempty"`
 	ComponentConfigType string `json:"component_config_type,omitzero" gorm:"notnull" temporaljson:"component_config_type,omitzero,omitempty"`
 
+	UseCloudConnection       bool   `json:"use_cloud_connection,omitzero" temporaljson:"use_cloud_connection,omitzero,omitempty"`
 	CloudConnectionID        string `json:"cloud_connection_id,omitzero" temporaljson:"cloud_connection_id,omitzero,omitempty"`
 	GCPProjectID             string `json:"gcp_project_id,omitzero" gorm:"notnull" temporaljson:"gcp_project_id,omitzero,omitempty"`
 	GCPRegion                string `json:"gcp_region,omitzero" gorm:"notnull" temporaljson:"gcp_region,omitzero,omitempty"`

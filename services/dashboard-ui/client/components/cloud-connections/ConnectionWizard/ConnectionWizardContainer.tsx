@@ -1,14 +1,21 @@
+import { useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
-import { createCloudConnection } from '@/lib'
+import { createCloudConnection, getCloudConnectionSetup } from '@/lib'
 import type {
   TCloudConnectionSetup,
   TCreateCloudConnectionRequest,
 } from '@/types'
-import { AddRepositoryAccess } from '../AddRepositoryAccess'
-import { useCloudConnection, useVerifyCloudConnection } from '../queries'
+import { ConnectionSetupMode } from '../ConnectionSetupMode'
+import { PrincipalSharing } from '../PrincipalSharing'
+import {
+  sharedPrincipalConnections,
+  useCloudConnection,
+  useCloudConnections,
+  useVerifyCloudConnection,
+} from '../queries'
 import { ConnectionForm } from './ConnectionForm'
 import { ConnectionWizard } from './ConnectionWizard'
 import { RunInCloud } from './RunInCloud'
@@ -34,6 +41,28 @@ export const ConnectionWizardContainer = ({
   const navigate = useNavigate()
   const client = useQueryClient()
   const connection = useCloudConnection(orgId, connectionId || '')
+  const identities = useCloudConnections(orgId)
+  const shared = connection.data
+    ? sharedPrincipalConnections(identities.data || [], connection.data)
+    : []
+  const [setupMode, setSetupMode] = useState<boolean>()
+  const existingPrincipal =
+    setupMode ?? (shared.length > 0 || connection.data?.status === 'verified')
+  const setup = useQuery({
+    queryKey: [
+      'cloud-connection-setup',
+      orgId,
+      connectionId,
+      existingPrincipal,
+    ],
+    queryFn: () =>
+      getCloudConnectionSetup({
+        orgId,
+        connectionId: connectionId!,
+        existingPrincipal,
+      }),
+    enabled: !!connectionId && !!connection.data && existingPrincipal,
+  })
   const verify = useVerifyCloudConnection(orgId, connectionId || '')
   const setStep = (next: number) =>
     setParams({ step: String(next) }, { state: location.state })
@@ -58,6 +87,8 @@ export const ConnectionWizardContainer = ({
     >
       {!connectionId ? (
         <ConnectionForm
+          orgId={orgId}
+          connections={identities.data}
           onCreate={(body) => create.mutate(body)}
           isPending={create.isPending}
           error={create.error}
@@ -65,7 +96,7 @@ export const ConnectionWizardContainer = ({
       ) : (
         <>
           <FormErrorBanner
-            error={connection.error}
+            error={connection.error || identities.error || setup.error}
             fallback="Connection loading failed"
           />
           {connection.data &&
@@ -83,8 +114,24 @@ export const ConnectionWizardContainer = ({
               <>
                 <RunInCloud
                   connection={connection.data}
-                  setup={initialSetup || connection.data.setup}
-                  hasInitialSetup={!!initialSetup}
+                  setup={
+                    identities.isPending
+                      ? undefined
+                      : existingPrincipal
+                        ? setup.data
+                        : initialSetup || connection.data.setup
+                  }
+                  hasInitialSetup={!existingPrincipal && !!initialSetup}
+                  setupMode={
+                    <>
+                      <PrincipalSharing connections={shared} orgId={orgId} />
+                      <ConnectionSetupMode
+                        platform={connection.data.platform}
+                        existingPrincipal={existingPrincipal}
+                        onChange={setSetupMode}
+                      />
+                    </>
+                  }
                 />
                 <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
                   <Button href={detailHref}>View connection</Button>
@@ -93,11 +140,12 @@ export const ConnectionWizardContainer = ({
                   </Button>
                 </div>
                 {['ecr', 'gar', 'acr'].includes(connection.data.preset) && (
-                  <AddRepositoryAccess
-                    key={connectionId}
-                    connection={connection.data}
-                    orgId={orgId}
-                  />
+                  <Button
+                    className="w-fit"
+                    href={`/${orgId}/settings/image-repositories/add`}
+                  >
+                    Add image repository
+                  </Button>
                 )}
               </>
             ))}

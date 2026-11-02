@@ -26,7 +26,7 @@ func (v *awsVerifier) verifyGAR(ctx context.Context, connection *app.CloudConnec
 			break
 		}
 		if !options.RetryIAMPropagation || !v.now().Before(deadline) || !garTrustDenied(err) {
-			return verificationFailure("GCP federation or service account impersonation failed. Review the identity provider and exact-subject binding in steps 1 and 2."), nil
+			return verificationFailure("GCP federation or service account impersonation failed. Review the identity provider and exact-subject binding in steps 1 and 2. " + VerificationErrorMessage(err)), nil
 		}
 		if err := v.sleep(ctx, 5*time.Second); err != nil {
 			return VerificationResult{}, err

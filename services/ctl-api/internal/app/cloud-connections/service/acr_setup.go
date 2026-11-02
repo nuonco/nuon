@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
 
-func (s *service) acrSetup(connection *app.CloudConnection, repositories []string) SetupResponse {
+func (s *service) acrSetup(connection *app.CloudConnection, existingPrincipal bool, repositories []string) SetupResponse {
 	response := SetupResponse{Subject: subject(connection), Audience: cloudconnections.ACRAudience, Preset: connection.Preset}
 	if s.issuer == nil {
 		return response
@@ -23,6 +23,7 @@ func (s *service) acrSetup(connection *app.CloudConnection, repositories []strin
 	}
 	trustJSON, _ := json.MarshalIndent(response.TrustPolicy, "", "  ")
 	preflight := fmt.Sprintf(`set -eu
+command -v jq >/dev/null || { printf 'Install jq before setting up this connection.\n' >&2; exit 1; }
 subscription=%[1]s
 tenant=%[2]s
 client_id=%[3]s
@@ -47,19 +48,22 @@ if [ "$permission_mode" != 'AbacRepositoryPermissions' ]; then
   exit 1
 fi
 `, acrShellQuote(connection.TargetID), acrShellQuote(strings.ToLower(connection.AzureTenantID)), acrShellQuote(connection.Principal), acrShellQuote(connection.AzureRegistryID), acrShellQuote(connection.AzureRegistryLoginServer))
-	if len(repositories) > 0 {
-		preflight += `command -v jq >/dev/null || { printf 'Install jq before updating repository permissions.\n' >&2; exit 1; }
-`
-	}
 	response.CLI = preflight + fmt.Sprintf(`application_object_id=$(az ad app show --id "$client_id" --query id --output tsv)
 test -n "$application_object_id"
 printf 'The Nuon issuer discovery and JWKS endpoints must be publicly reachable by Microsoft Entra. Azure does not accept uploaded JWKS.\n'
 curl --fail --silent --show-error %[1]s --output /dev/null
 curl --fail --silent --show-error %[2]s --output /dev/null
-cat > nuon-federated-credential.json <<'NUON_FEDERATED_CREDENTIAL'
+credential=$(cat <<'NUON_FEDERATED_CREDENTIAL'
 %[3]s
 NUON_FEDERATED_CREDENTIAL
-az ad app federated-credential create --id "$application_object_id" --parameters @nuon-federated-credential.json
+)
+credentials=$(az ad app federated-credential list --id "$application_object_id" --output json)
+existing=$(printf '%%s' "$credentials" | jq -ce --argjson credential "$credential" 'if type == "array" then [.[] | select(.name == $credential.name)] else error("Invalid federated credential list") end')
+if [ "$(printf '%%s' "$existing" | jq 'length')" = 0 ]; then
+  az ad app federated-credential create --id "$application_object_id" --parameters "$credential"
+else
+  printf '%%s' "$existing" | jq -e --argjson credential "$credential" 'length == 1 and .[0].issuer == $credential.issuer and .[0].subject == $credential.subject and .[0].audiences == $credential.audiences' >/dev/null
+fi
 `, acrShellQuote(response.IssuerURL+"/.well-known/openid-configuration"), acrShellQuote(response.IssuerURL+oidcissuer.JWKSPath), trustJSON)
 	response.Terraform = fmt.Sprintf(`terraform {
   required_version = ">= 1.5.0"
@@ -144,7 +148,7 @@ resource "azuread_application_federated_identity_credential" "nuon" {
 NUON_ABAC_CONDITION
 )
 assignments=$(az role assignment list --subscription "$subscription" --scope "$registry_id" --assignee-object-id "$service_principal_object_id" --role 'Container Registry Repository Reader' --fill-principal-name false --fill-role-definition-name false --output json)
-assignments=$(printf '%%s\n' "$assignments" | jq --arg scope "$registry_id" --arg principal "$service_principal_object_id" '[.[] | select((.scope | ascii_downcase) == ($scope | ascii_downcase) and (.principalId | ascii_downcase) == ($principal | ascii_downcase))]')
+assignments=$(printf '%%s\n' "$assignments" | jq -e --arg scope "$registry_id" --arg principal "$service_principal_object_id" 'if type == "array" then [.[] | select((.scope | ascii_downcase) == ($scope | ascii_downcase) and (.principalId | ascii_downcase) == ($principal | ascii_downcase))] else error("Invalid role assignment list") end')
 assignment_count=$(printf '%%s\n' "$assignments" | jq 'length')
 case "$assignment_count" in
   0)
@@ -158,7 +162,7 @@ case "$assignment_count" in
     elif [ "$(printf '%%s\n' "$assignment" | jq -r '.conditionVersion')" != '2.0' ]; then
       printf 'The existing assignment has an unsupported condition version. Review it manually; no permissions changed.\n' >&2
       exit 1
-    elif printf '%%s\n' "$assignment" | jq -e --arg condition "$condition" '.condition == $condition or (.condition | endswith(") OR (" + $condition + ")"))' >/dev/null; then
+    elif printf '%%s\n' "$assignment" | jq -e --arg condition "$condition" '.condition == $condition or (.condition | contains("(" + $condition + ")"))' >/dev/null; then
       printf 'The requested repository grant is already present; no permissions changed.\n'
     else
       assignment=$(printf '%%s\n' "$assignment" | jq -c --arg condition "$condition" '.condition = "(" + .condition + ") OR (" + $condition + ")"')
@@ -173,6 +177,15 @@ esac
 `, condition)
 	response.PermissionsCLI = preflight + permissionsCLI
 	response.CLI += permissionsCLI
+	if existingPrincipal {
+		response.Terraform += fmt.Sprintf(`
+output "nuon_repository_condition_to_merge" {
+  description = "Merge this exact repository condition with OR into the Repository Reader assignment in its original owning state, preserving existing grants, or use the additive permissions CLI. Azure does not support a second assignment for the same principal, role, and scope in independent state. This configuration only manages this connection's federation, not the shared role assignment."
+  value = %q
+}
+`, condition)
+		return response
+	}
 	response.Terraform += fmt.Sprintf(`
 resource "azurerm_role_assignment" "nuon" {
   scope                = data.azapi_resource.nuon_registry.id

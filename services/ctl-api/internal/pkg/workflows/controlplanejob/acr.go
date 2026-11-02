@@ -8,6 +8,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 )
 
 func (a *Activities) authorizeACRSource(ctx context.Context, jobID string, plan *plantypes.CompositePlan) error {
@@ -38,6 +39,9 @@ func (a *Activities) authorizeACRSource(ctx context.Context, jobID string, plan 
 	cfg := build.ComponentConfigConnection.ExternalImageComponentConfig
 	if cfg == nil || cfg.AzureACRImageConfig == nil || source.Repository != cfg.ImageURL {
 		return fmt.Errorf("component build has no matching ACR source configuration")
+	}
+	if cfg.AzureACRImageConfig.UsesAmbientCredentials() && !a.cfg.LegacyImageAuthEnabled {
+		return cloudconnections.ErrLegacyImageAuthDisabled
 	}
 	if !cfg.AzureACRImageConfig.UsesCloudConnection() {
 		return nil

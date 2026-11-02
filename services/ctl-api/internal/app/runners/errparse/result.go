@@ -101,7 +101,8 @@ func ToolForRunnerJob(runnerJob *app.RunnerJob) Tool {
 		app.RunnerJobTypeKubernetesManifestBuild:
 		return ToolKubernetes
 	case app.RunnerJobTypeContainerImageBuild,
-		app.RunnerJobTypeOCISync:
+		app.RunnerJobTypeOCISync,
+		app.RunnerJobTypeFetchImageMetadata:
 		return ToolOCI
 	default:
 		return ToolUnknown

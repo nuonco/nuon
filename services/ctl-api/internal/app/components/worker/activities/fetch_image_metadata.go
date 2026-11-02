@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/oci/metadata"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -121,6 +122,9 @@ func (a *Activities) getComponentBuildWithExternalImageConfig(ctx context.Contex
 func (a *Activities) getACRAuth(ctx context.Context, orgID string, acrCfg *app.AzureACRImageConfig, imageURL, componentID string) (*metadata.RegistryAuth, error) {
 	if acrCfg.UsesCloudConnection() {
 		return a.cloudConnectionsHelpers.ACRAuthorization(ctx, orgID, acrCfg, imageURL)
+	}
+	if acrCfg.UsesAmbientCredentials() && !a.cfg.LegacyImageAuthEnabled {
+		return nil, cloudconnections.ErrLegacyImageAuthDisabled
 	}
 	tok, err := a.sharedActs.GetACRAccessToken(ctx, &sharedactivities.GetACRAccessTokenRequest{
 		ComponentID:           componentID,

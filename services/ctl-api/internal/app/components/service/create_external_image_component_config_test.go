@@ -53,6 +53,12 @@ func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigWithAWSECR(
 			Status: app.CloudConnectionStatusVerified, Preset: app.CloudConnectionPresetECR,
 		}
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&connection).Error)
+		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.ImageRepository{
+			Platform: app.CloudPlatformAWS, CloudConnectionID: connection.ID,
+			Repository:     "arn:aws:ecr:us-west-2:123456789012:repository/my-repo",
+			CanonicalKey:   "ecr:arn:aws:ecr:us-west-2:123456789012:repository/my-repo",
+			ImageURLPrefix: "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-repo",
+		}).Error)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/external-image", s.testApp.ID, comp.ID)
 		rr := s.makeRequest(http.MethodPost, path, CreateExternalImageComponentConfigRequest{

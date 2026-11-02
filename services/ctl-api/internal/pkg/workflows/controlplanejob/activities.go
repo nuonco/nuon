@@ -25,6 +25,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all"
@@ -46,7 +47,7 @@ type Activities struct {
 	blobSvc                 blobstore.Service
 	statusActivities        *statusactivities.Activities
 	kafka                   *kafka.Producer
-	cloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	cloudConnectionsHelpers cloudconnections.ImageAuthorizer
 }
 
 type ActivityParams struct {

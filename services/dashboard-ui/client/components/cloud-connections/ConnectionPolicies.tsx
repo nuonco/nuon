@@ -88,7 +88,7 @@ export const ConnectionPolicies = ({
             ? 'Keep the exact issuer, connection subject, and api://AzureADTokenExchange audience unchanged. Microsoft Entra must be able to reach the issuer discovery document and signing keys publicly.'
             : isGCP
               ? 'Keep the issuer, audience, attribute mapping, and exact subject condition unchanged. Grant roles/iam.workloadIdentityUser only to this connection subject on the selected service account.'
-              : 'Copy this policy as-is. To customize the role beyond it, edit it in the IAM console after creating it — the audience and subject conditions must stay unchanged for verification to pass.'}
+              : 'For an existing role, add this connection’s statement without replacing other trust statements. Keep its exact audience and subject conditions unchanged.'}
         </Text>
         <Expand
           id={`connection-trust-${connection.id}`}

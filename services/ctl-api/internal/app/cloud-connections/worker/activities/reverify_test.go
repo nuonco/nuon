@@ -49,7 +49,7 @@ func TestReverify(t *testing.T) {
 			status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError,
 			onDemand:  true,
 			awsPreset: app.CloudConnectionPresetStacks, wantProbes: 1, wantUpdates: 1, wantSignals: 1,
-			message: "The role lacks CloudFormation read access required to manage install stacks.",
+			message: "The role lacks CloudFormation read access required to manage install stacks. Verification failed: AccessDenied: Denied",
 		},
 		"on demand custom skips stack permissions": {
 			status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusVerified,

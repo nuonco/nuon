@@ -22,8 +22,11 @@ func GARConnection(ctx context.Context, db *gorm.DB, orgID string, cfg *app.GCPG
 	if cfg == nil {
 		return nil, fmt.Errorf("GAR image configuration is required")
 	}
+	if !cfg.UseCloudConnection && cfg.CloudConnectionID == "" {
+		return nil, nil
+	}
 	if cfg.ServiceAccountEmail != "" || cfg.WorkloadIdentityProvider != "" {
-		return nil, fmt.Errorf("gcp_gar service_account_email and workload_identity_provider are no longer supported; configure access on the Cloud Connection instead")
+		return nil, fmt.Errorf("GAR cloud connection access cannot be combined with service_account_email or workload_identity_provider")
 	}
 	if cfg.ID != "" && cfg.CloudConnectionID == "" {
 		return nil, fmt.Errorf("GAR image configuration has no pinned cloud connection; sync the app configuration before building")

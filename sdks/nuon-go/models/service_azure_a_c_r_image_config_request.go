@@ -31,6 +31,9 @@ type ServiceAzureACRImageConfigRequest struct {
 
 	// tenant id
 	TenantID string `json:"tenant_id,omitempty"`
+
+	// use cloud connection
+	UseCloudConnection bool `json:"use_cloud_connection,omitempty"`
 }
 
 // Validate validates this service azure a c r image config request

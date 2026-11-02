@@ -13,9 +13,14 @@ import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { SectionHeader } from '@/components/layout/SectionHeader'
-import type { TAPIError, TCloudConnection } from '@/types'
+import type {
+  TAPIError,
+  TCloudConnection,
+  TCloudConnectionSummary,
+} from '@/types'
 import { ConnectionPolicies, failedRunbookStep } from '../ConnectionPolicies'
 import { ConnectionStatus } from '../ConnectionStatus'
+import { PrincipalSharing } from '../PrincipalSharing'
 
 export type TConnectionTab = 'overview' | 'installs' | 'verification'
 
@@ -98,6 +103,7 @@ export const ConnectionDetail = ({
   error,
   installs,
   repositoryAccess,
+  sharedConnections = [],
 }: {
   connection?: TCloudConnection
   basePath: string
@@ -109,6 +115,7 @@ export const ConnectionDetail = ({
   error?: TAPIError | null
   installs?: ReactNode
   repositoryAccess?: ReactNode
+  sharedConnections?: TCloudConnectionSummary[]
 }) => (
   <DetailPage
     header={
@@ -175,6 +182,7 @@ export const ConnectionDetail = ({
     )}
     {connection && tab === 'overview' && (
       <div className="flex flex-col gap-6">
+        <PrincipalSharing connections={sharedConnections} />
         <Link href={`${basePath}/setup`}>View identity setup</Link>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <LabeledValue label="Created">

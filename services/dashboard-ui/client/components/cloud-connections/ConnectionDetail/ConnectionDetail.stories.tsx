@@ -31,6 +31,16 @@ export const Overview = () => (
     <ConnectionDetail {...props} connection={connection} tab="overview" />
   </PageStory>
 )
+export const SharedRole = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={ecrConnection}
+      sharedConnections={[connection]}
+      tab="overview"
+    />
+  </PageStory>
+)
 export const Custom = () => (
   <PageStory>
     <ConnectionDetail {...props} connection={customConnection} tab="overview" />

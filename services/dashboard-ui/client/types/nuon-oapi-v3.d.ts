@@ -1391,6 +1391,24 @@ export interface paths {
      */
     post: operations["CreateWaitlist"];
   };
+  "/v1/image-repositories": {
+    /** list image repositories */
+    get: operations["ListImageRepositories"];
+    /**
+     * register an image repository
+     * @description Save an exact ECR ARN, GAR repository resource, or ACR repository path against an existing org-owned image connection. Pending connections are allowed; image use requires verification. Does not change cloud permissions.
+     */
+    post: operations["CreateImageRepository"];
+  };
+  "/v1/image-repositories/{repository_id}": {
+    /** get an image repository */
+    get: operations["GetImageRepository"];
+    /**
+     * remove an image repository assignment
+     * @description Does not revoke cloud permissions or change existing image configuration connection pins.
+     */
+    delete: operations["DeleteImageRepository"];
+  };
   "/v1/install-workflows/{install_workflow_id}": {
     /**
      * get an install workflow
@@ -5039,6 +5057,18 @@ export interface components {
       chart?: string;
       repo_url?: string;
       version?: string;
+    };
+    "app.ImageRepository": {
+      cloud_connection?: components["schemas"]["app.CloudConnection"];
+      cloud_connection_id?: string;
+      created_at?: string;
+      id?: string;
+      image_url_prefix?: string;
+      org_id?: string;
+      /** @enum {string} */
+      platform?: "aws" | "gcp" | "azure";
+      repository?: string;
+      updated_at?: string;
     };
     "app.Install": {
       app_branch?: components["schemas"]["app.AppBranch"];
@@ -9067,6 +9097,10 @@ export interface components {
         [key: string]: string;
       };
       values_files?: string[];
+    };
+    "service.CreateImageRepositoryRequest": {
+      cloud_connection_id: string;
+      repository: string;
     };
     "service.CreateInstallActionWorkflowRunRequest": {
       action_workflow_config_id: string;
@@ -20130,6 +20164,8 @@ export interface operations {
       query?: {
         /** @description Transient exact ECR ARN, GAR resource, or ACR repository path for read-only grant generation; not stored */
         repository?: string[];
+        /** @description Reuse an existing principal in Terraform/CloudFormation; AWS trust contribution must be merged in the original owning role. CLI always detects and reuses existing identities. */
+        existing_principal?: boolean;
       };
       path: {
         /** @description connection ID */
@@ -21678,6 +21714,188 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.Waitlist"];
+        };
+      };
+    };
+  };
+  /** list image repositories */
+  ListImageRepositories: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description search by repository or image URL prefix */
+        q?: string;
+        /** @description cloud platform */
+        platform?: "aws" | "gcp" | "azure";
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ImageRepository"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * register an image repository
+   * @description Save an exact ECR ARN, GAR repository resource, or ACR repository path against an existing org-owned image connection. Pending connections are allowed; image use requires verification. Does not change cloud permissions.
+   */
+  CreateImageRepository: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateImageRepositoryRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ImageRepository"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an image repository */
+  GetImageRepository: {
+    parameters: {
+      path: {
+        /** @description repository ID */
+        repository_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ImageRepository"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * remove an image repository assignment
+   * @description Does not revoke cloud permissions or change existing image configuration connection pins.
+   */
+  DeleteImageRepository: {
+    parameters: {
+      path: {
+        /** @description repository ID */
+        repository_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };

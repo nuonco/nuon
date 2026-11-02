@@ -902,6 +902,35 @@ export type TCloudConnection = {
 export type TCloudConnectionSummary = Omit<TCloudConnection, 'setup'>
 
 export type TCloudConnectionSetup = TCloudConnection['setup']
+
+export type TImageRepository = {
+  id: string
+  org_id: string
+  platform: TCloudConnection['platform']
+  repository: string
+  image_url_prefix: string
+  cloud_connection_id: string
+  cloud_connection: Pick<
+    TCloudConnection,
+    | 'id'
+    | 'name'
+    | 'platform'
+    | 'preset'
+    | 'target_id'
+    | 'default_region'
+    | 'principal'
+    | 'status'
+    | 'azure_registry_login_server'
+  >
+  created_at: string
+  updated_at: string
+}
+
+export type TCreateImageRepositoryRequest = {
+  cloud_connection_id: string
+  repository: string
+}
+
 export type TCreateCloudConnectionRequest = Pick<
   TCloudConnection,
   | 'name'

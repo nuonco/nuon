@@ -1,11 +1,14 @@
 package activities
 
 import (
+	"context"
+
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
@@ -15,6 +18,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
+
+type acrTokenActivity interface {
+	GetACRAccessToken(context.Context, *sharedactivities.GetACRAccessTokenRequest) (*sharedactivities.ACRAccessToken, error)
+}
 
 type Params struct {
 	fx.In
@@ -42,8 +49,8 @@ type Activities struct {
 	authzClient             *authz.Client
 	cfg                     *internal.Config
 	features                *features.Features
-	sharedActs              *sharedactivities.Activities
-	cloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	sharedActs              acrTokenActivity
+	cloudConnectionsHelpers cloudconnections.ImageAuthorizer
 }
 
 func New(params Params) *Activities {

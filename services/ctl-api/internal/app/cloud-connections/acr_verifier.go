@@ -23,7 +23,9 @@ type acrVerificationError struct {
 	cause   error
 }
 
-func (e *acrVerificationError) Error() string { return e.message }
+func (e *acrVerificationError) Error() string {
+	return e.message + " " + VerificationErrorMessage(e.cause)
+}
 func (e *acrVerificationError) Unwrap() error { return e.cause }
 
 func (v *awsVerifier) verifyACR(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (result VerificationResult, verifyErr error) {
@@ -53,7 +55,7 @@ func (v *awsVerifier) verifyACR(ctx context.Context, connection *app.CloudConnec
 			return VerificationResult{}, fmt.Errorf("authenticate Azure connection: %w", err)
 		}
 		if !options.RetryIAMPropagation || !v.now().Before(deadline) {
-			return verificationFailure("Microsoft Entra rejected this connection's identity. Review the existing application/service principal and exact issuer, subject, and api://AzureADTokenExchange audience in step 2. Issuer discovery and JWKS must be public."), nil
+			return verificationFailure("Microsoft Entra rejected this connection's identity. Review the existing application/service principal and exact issuer, subject, and api://AzureADTokenExchange audience in step 2. Issuer discovery and JWKS must be public. " + VerificationErrorMessage(err)), nil
 		}
 		if err := v.sleep(ctx, 5*time.Second); err != nil {
 			return VerificationResult{}, err

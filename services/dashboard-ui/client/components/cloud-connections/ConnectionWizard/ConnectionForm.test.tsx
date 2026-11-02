@@ -4,10 +4,105 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { ConnectionForm } from './ConnectionForm'
 import { AddRepositoryAccess } from '../AddRepositoryAccess/AddRepositoryAccess'
-import { ecrConnection } from '../__stories__/fixtures'
+import {
+  acrConnection,
+  connection,
+  ecrConnection,
+} from '../__stories__/fixtures'
 import type { TConnectionValues } from './schema'
 
 afterEach(cleanup)
+
+test('selecting an existing stack principal reuses its exact role and account without a warning', async () => {
+  let submitted: unknown
+  render(
+    <MemoryRouter>
+      <ConnectionForm
+        connections={[
+          {
+            ...connection,
+            name: 'acme-production-stacks',
+            principal: 'arn:aws:iam::123456789012:role/platform/acme-shared',
+          },
+        ]}
+        values={{
+          name: 'acme-images',
+          target_id: '999999999999',
+          role_name: 'acme-dedicated',
+          ecr_region: 'eu-west-1',
+        }}
+        onCreate={(body) => {
+          submitted = body
+        }}
+      />
+    </MemoryRouter>
+  )
+  fireEvent.click(screen.getByLabelText('Principal'))
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole('option', {
+        name: /arn:aws:iam::123456789012:role\/platform\/acme-shared/,
+      })
+    )
+  })
+  expect(screen.queryByText('Shared cloud permissions')).toBeNull()
+  expect(screen.queryByLabelText('IAM role name')).toBeNull()
+  expect(screen.getByText('acme-production-stacks')).toBeVisible()
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Create connection' }))
+  })
+  expect(submitted).toEqual({
+    name: 'acme-images',
+    platform: 'aws',
+    target_id: '123456789012',
+    principal: 'arn:aws:iam::123456789012:role/platform/acme-shared',
+    preset: 'ecr',
+    default_region: 'eu-west-1',
+  })
+})
+
+test('the same Azure application in different tenants remains a distinct principal choice', async () => {
+  let submitted: unknown
+  const tenant = '44444444-4444-4444-8444-444444444444'
+  render(
+    <MemoryRouter>
+      <ConnectionForm
+        connections={[
+          { ...acrConnection, id: 'cc-acme-original', name: 'acme-original' },
+          {
+            ...acrConnection,
+            id: 'cc-acme-other-tenant',
+            name: 'acme-other-tenant',
+            azure_tenant_id: tenant,
+          },
+        ]}
+        values={{ name: 'acme-images', platform: 'azure' }}
+        onCreate={(body) => {
+          submitted = body
+        }}
+      />
+    </MemoryRouter>
+  )
+  fireEvent.click(screen.getByLabelText('Principal'))
+  await act(async () => {
+    fireEvent.click(screen.getByRole('option', { name: new RegExp(tenant) }))
+  })
+  expect(screen.queryByText('acme-original')).toBeNull()
+  expect(screen.getByText('acme-other-tenant')).toBeVisible()
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Create connection' }))
+  })
+  expect(submitted).toEqual({
+    name: 'acme-images',
+    platform: 'azure',
+    target_id: acrConnection.target_id,
+    preset: 'acr',
+    principal: acrConnection.principal,
+    azure_tenant_id: tenant,
+    azure_registry_id: acrConnection.azure_registry_id,
+    azure_registry_login_server: acrConnection.azure_registry_login_server,
+  })
+})
 
 for (const scenario of [
   {
@@ -159,6 +254,8 @@ test('switching from AWS to GAR and ACR validates only the selected cloud and om
   )
   fireEvent.click(screen.getByLabelText('Cloud platform'))
   fireEvent.click(screen.getByRole('option', { name: 'Google Cloud' }))
+  fireEvent.click(screen.getByLabelText('Principal'))
+  fireEvent.click(screen.getByRole('option', { name: 'Add new principal' }))
   expect(screen.queryByLabelText('AWS account ID')).toBeNull()
   expect(screen.getByLabelText('Project ID')).toHaveValue('')
   expect(
@@ -191,6 +288,8 @@ test('switching from AWS to GAR and ACR validates only the selected cloud and om
   })
   fireEvent.click(screen.getByLabelText('Cloud platform'))
   fireEvent.click(screen.getByRole('option', { name: 'Azure' }))
+  fireEvent.click(screen.getByLabelText('Principal'))
+  fireEvent.click(screen.getByRole('option', { name: 'Add new principal' }))
   expect(screen.queryByLabelText('GAR location')).toBeNull()
   expect(screen.queryByLabelText('ECR region')).toBeNull()
   expect(screen.getByLabelText('Registry login server')).toBeVisible()

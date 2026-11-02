@@ -16,6 +16,7 @@ import (
 	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/reprovision"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -45,8 +46,16 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) Execute(ctx workflow.Context) error {
-	s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusPlanning, "creating build plan")
+func (s *Signal) Execute(ctx workflow.Context) (retErr error) {
+	propagateFailures := controlplanejob.BuildFailurePropagationEnabled(ctx)
+	if propagateFailures {
+		defer func() {
+			retErr = activities.FailBuild(ctx, s.BuildID, retErr)
+		}()
+	}
+	if err := s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusPlanning, "creating build plan"); err != nil && propagateFailures {
+		return err
+	}
 
 	l := workflow.GetLogger(ctx)
 	l.Info("executing build")
@@ -94,7 +103,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 // updateBuildStatus updates the build status
-func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) {
+func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) error {
 	l := workflow.GetLogger(ctx)
 	err := activities.AwaitUpdateBuildStatus(ctx, activities.UpdateBuildStatus{
 		BuildID:           bldID,
@@ -105,7 +114,7 @@ func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status ap
 		l.Error("unable to update build status",
 			zap.String("build-id", bldID),
 			zap.Error(err))
-		return
+		return fmt.Errorf("unable to update build status: %w", err)
 	}
 
 	err = statusactivities.AwaitUpdateBuildStatusV2(ctx, statusactivities.UpdateBuildStatusV2{
@@ -117,13 +126,18 @@ func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status ap
 		l.Error("unable to update build status v2",
 			zap.String("build-id", bldID),
 			zap.Error(err))
-		return
+		return fmt.Errorf("unable to update build status history: %w", err)
 	}
+	return nil
 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
+	propagateFailures := controlplanejob.BuildFailurePropagationEnabled(ctx)
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
 	defer cancel()
-	s.updateBuildStatus(cancelCtx, s.BuildID, app.ComponentBuildStatus(app.StatusCancelled), "build cancelled")
+	err := s.updateBuildStatus(cancelCtx, s.BuildID, app.ComponentBuildStatus(app.StatusCancelled), "build cancelled")
+	if propagateFailures {
+		return err
+	}
 	return nil
 }

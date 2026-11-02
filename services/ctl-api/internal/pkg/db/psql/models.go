@@ -33,6 +33,7 @@ func AllModels() []any {
 		&app.Webhook{},
 		&app.OrgInvite{},
 		&app.CloudConnection{},
+		&app.ImageRepository{},
 
 		// slack
 		&app.SlackInstallation{},
