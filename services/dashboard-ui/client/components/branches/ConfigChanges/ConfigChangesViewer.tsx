@@ -12,6 +12,7 @@ import { DiffSection } from '@/components/diffs/DiffSection'
 import { DiffSections } from '@/components/diffs/DiffSections'
 import { DiffSummary } from '@/components/diffs/DiffSummary'
 import { usePlanDiffFilter } from '@/components/diffs/use-plan-diff-filter'
+import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
 import { CommitRange } from '@/components/branches/InstallGroupCards'
 import { RunSourceMark } from '@/components/branches/BranchOverview/RunSourceCard'
 import {
@@ -134,6 +135,7 @@ export const ConfigChangesViewer = ({
   const filter = usePlanDiffFilter(changes.sections, CONFIG_CHANGE_OPERATIONS)
   const filtered = filter.filteredSections as TConfigChangeSection[]
   const groups = useMemo(() => groupSections(filtered), [filtered])
+  const { planSections } = useDashboardPreferences()
 
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [activeId, setActiveId] = useState<string>()
@@ -302,7 +304,7 @@ export const ConfigChangesViewer = ({
                   <DiffSection
                     key={section.id}
                     data-config-change={section.id}
-                    open={open[section.id] ?? true}
+                    open={open[section.id] ?? planSections === 'expanded'}
                     onOpenChange={(next) => setSectionOpen(section.id, next)}
                     title={section.title}
                     description={section.description}
