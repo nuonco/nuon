@@ -10,9 +10,11 @@ import (
 )
 
 // FindBaseAppBranchRun returns the most recent non-preview run on the app
-// branch that parsed an app config and finished component builds. The run's
-// overall status is not required to be success: a later deploy failure still
-// leaves a usable baseline.
+// branch whose app config is applied to at least one install. Run status can't
+// answer this: a run awaiting approval stays "running", and a denied approval
+// can end the run as "failed" or "success" without applying anything. When no
+// install has applied a config from the branch, it falls back to the latest run
+// that parsed an app config and finished component builds.
 func (h *Helpers) FindBaseAppBranchRun(ctx context.Context, appBranchID string) (*app.AppBranchRun, error) {
 	return h.findLatestBaseRun(ctx, appBranchID, "")
 }
@@ -37,23 +39,38 @@ func (h *Helpers) FindBaseAppBranchRunForHead(ctx context.Context, headRun *app.
 }
 
 func (h *Helpers) findLatestBaseRun(ctx context.Context, appBranchID, excludedRunID string) (*app.AppBranchRun, error) {
-	query := h.db.WithContext(ctx).
-		Where(app.AppBranchRun{AppBranchID: appBranchID}).
-		Where("app_config_id <> ''").
-		Where("labels->>'builds_completed' = ?", "true").
-		Where("run_type IN ?", []app.AppBranchRunType{
-			app.AppBranchRunTypeGit,
-			app.AppBranchRunTypeManual,
-		}).
-		Where("plan_only = ?", false)
-	if excludedRunID != "" {
-		query = query.Not(app.AppBranchRun{ID: excludedRunID})
+	builtRuns := func() *gorm.DB {
+		query := h.db.WithContext(ctx).
+			Where(app.AppBranchRun{AppBranchID: appBranchID}).
+			Where("app_config_id <> ''").
+			Where("labels->>'builds_completed' = ?", "true").
+			Where("run_type IN ?", []app.AppBranchRunType{
+				app.AppBranchRunTypeGit,
+				app.AppBranchRunTypeManual,
+			}).
+			Where("plan_only = ?", false)
+		if excludedRunID != "" {
+			query = query.Not(app.AppBranchRun{ID: excludedRunID})
+		}
+		return query.Order("created_at DESC")
 	}
 
+	branchAppID := h.db.WithContext(ctx).
+		Model(&app.AppBranch{}).
+		Select("app_id").
+		Where(app.AppBranch{ID: appBranchID})
+	appliedConfigIDs := h.db.WithContext(ctx).
+		Model(&app.Install{}).
+		Select("app_config_ref->>'applied_config_id'").
+		Where("app_id = (?)", branchAppID)
+
 	var baseRun app.AppBranchRun
-	err := query.
-		Order("created_at DESC").
+	err := builtRuns().
+		Where("app_config_id IN (?)", appliedConfigIDs).
 		First(&baseRun).Error
+	if err == gorm.ErrRecordNotFound {
+		err = builtRuns().First(&baseRun).Error
+	}
 	if err != nil {
 		return nil, err
 	}
