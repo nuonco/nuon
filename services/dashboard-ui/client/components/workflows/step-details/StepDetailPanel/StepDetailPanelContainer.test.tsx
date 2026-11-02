@@ -93,7 +93,6 @@ const MockSurfaces = ({ children }: { children: ReactNode }) => {
           panels,
           modals: [],
           addPanel,
-          addPanelIfEmpty: () => (panels.length === 0 ? addPanel() : undefined),
           updatePanel: () => {},
           clearPanels: () => setPanels([]),
           removePanel: (id: string) =>
@@ -108,16 +107,40 @@ const MockSurfaces = ({ children }: { children: ReactNode }) => {
   )
 }
 
-const Harness = ({ step }: { step: TWorkflowStep }) => (
-  <MemoryRouter>
+const Harness = ({
+  step,
+  initialEntries,
+}: {
+  step: TWorkflowStep
+  initialEntries?: string[]
+}) => (
+  <MemoryRouter initialEntries={initialEntries}>
     <WorkflowContext.Provider value={workflowContext}>
       <MockSurfaces>
         <PanelCount />
-        <StepDetailPanelButton step={step} approvalPrompt planOnly={false} />
+        <StepDetailPanelButton step={step} planOnly={false} />
       </MockSurfaces>
     </WorkflowContext.Provider>
   </MemoryRouter>
 )
+
+const pendingApprovalStep = {
+  ...runningStep,
+  status: { status: 'approval-awaiting' },
+  approval: { id: 'approval-1', type: 'helm_approval' },
+} as TWorkflowStep
+
+test('a step waiting on approval does not open its panel', () => {
+  render(<Harness step={pendingApprovalStep} />)
+  expect(screen.getByTestId('panel-count')).toHaveTextContent('0')
+})
+
+test('a deep link opens the step panel', () => {
+  render(
+    <Harness step={pendingApprovalStep} initialEntries={['/?panel=step-1']} />
+  )
+  expect(screen.getByTestId('panel-count')).toHaveTextContent('1')
+})
 
 test('an approval transition does not close a manually opened step panel', async () => {
   const view = render(<Harness step={runningStep} />)
