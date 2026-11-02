@@ -18,6 +18,7 @@ import { TerraformSummary } from './TerraformSummary'
 import { ResourceChangesList } from './ResourceChangesList'
 import { OutputChangesList } from './OutputChangesList'
 import { TerraformPlanGraph } from './TerraformPlanGraph'
+import { DestructiveChangeBanner } from '@/components/diffs/DestructiveChangeBanner'
 
 const EMPTY_PARSED_PLAN = {
   summary: {
@@ -84,6 +85,19 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
   return (
     <WrapLinesProvider>
     <div className="flex flex-col gap-6">
+      <DestructiveChangeBanner
+        changes={resources.changes.flatMap((change) =>
+          change.action === 'delete' || change.action === 'replace'
+            ? [
+                {
+                  id: change.address,
+                  title: change.address,
+                  operation: change.action,
+                },
+              ]
+            : []
+        )}
+      />
       <Modal
         heading={
           <Text flex className="gap-4" variant="h3" weight="strong">
@@ -107,38 +121,6 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
           outputs={outputs.changes}
         />
       </Modal>
-
-      {drift?.changes?.length ? (
-        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-          <div className="px-4 sm:px-6 py-4 border-b">
-            <Text variant="base" weight="strong">
-              Resource drift
-            </Text>
-          </div>
-
-          <TerraformSummary summary={drift.summary} />
-
-          <DiffFilter
-            title="drift"
-            selectedActions={driftFilter.selectedActions}
-            onInputToggle={driftFilter.handleInputToggle}
-            onButtonClick={driftFilter.handleButtonClick}
-            onReset={driftFilter.handleReset}
-            selectedCount={driftFilter.filterStats.selectedCount}
-            totalCount={driftFilter.filterStats.totalCount}
-            searchValue={driftFilter.searchQuery}
-            onSearchChange={driftFilter.handleSearchChange}
-            searchPlaceholder="Search by address, resource, or name"
-            isAllExpanded={driftExpanded}
-            onToggleExpandAll={() => setDriftExpanded((v) => !v)}
-          />
-
-          <ResourceChangesList
-            changes={driftFilter.filteredItems}
-            isOpen={driftExpanded}
-          />
-        </Card>
-      ) : null}
 
       {resources?.changes?.length ? (
         <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
@@ -168,6 +150,38 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
           <ResourceChangesList
             changes={resourceFilter.filteredItems}
             isOpen={resourcesExpanded}
+          />
+        </Card>
+      ) : null}
+
+      {drift?.changes?.length ? (
+        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+          <div className="px-4 sm:px-6 py-4 border-b">
+            <Text variant="base" weight="strong">
+              Resource drift
+            </Text>
+          </div>
+
+          <TerraformSummary summary={drift.summary} />
+
+          <DiffFilter
+            title="drift"
+            selectedActions={driftFilter.selectedActions}
+            onInputToggle={driftFilter.handleInputToggle}
+            onButtonClick={driftFilter.handleButtonClick}
+            onReset={driftFilter.handleReset}
+            selectedCount={driftFilter.filterStats.selectedCount}
+            totalCount={driftFilter.filterStats.totalCount}
+            searchValue={driftFilter.searchQuery}
+            onSearchChange={driftFilter.handleSearchChange}
+            searchPlaceholder="Search by address, resource, or name"
+            isAllExpanded={driftExpanded}
+            onToggleExpandAll={() => setDriftExpanded((v) => !v)}
+          />
+
+          <ResourceChangesList
+            changes={driftFilter.filteredItems}
+            isOpen={driftExpanded}
           />
         </Card>
       ) : null}
