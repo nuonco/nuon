@@ -31,6 +31,10 @@ const (
 	phoneHomeRequestTypeCreate = "Create"
 )
 
+const maxPhoneHomeBody = 64 << 10
+
+var errPhoneHomeBodyTooLarge = errors.New("request body too large")
+
 // @ID PhoneHome
 // @Summary				phone home for an install
 // @Description.markdown phone_home.md
@@ -51,6 +55,12 @@ const (
 // @Success				201	{object}	app.EmptyResponse
 // @Router					/v1/installs/{install_id}/phone-home/{phone_home_id} [post]
 func (s *service) InstallPhoneHome(ctx *gin.Context) {
+	if ctx.Request.ContentLength > maxPhoneHomeBody {
+		ctx.Error(stderr.NewInvalidRequest(errPhoneHomeBodyTooLarge))
+		return
+	}
+	ctx.Request.Body = http.MaxBytesReader(ctx.Writer, ctx.Request.Body, maxPhoneHomeBody)
+
 	if s.cfg.PhoneHomeAuthRequired {
 		s.installPhoneHomeRequired(ctx)
 		return
@@ -74,14 +84,6 @@ func (s *service) installPhoneHomeRequired(ctx *gin.Context) {
 		return
 	}
 
-	req, requestType, err := bindPhoneHomeRequest(ctx)
-	if err != nil {
-		s.failPhoneHome(ctx, metricTags, phoneHomeFailInvalidRequest, err, fields...)
-		return
-	}
-	metricTags["request_type"] = requestType
-	fields = append(fields, zap.String("request_type", requestType))
-
 	stackVersion, install, err := s.getPhoneHomeTarget(ctx, installID, phoneHomeID)
 	if err != nil {
 		s.failPhoneHomeAuth(ctx, metricTags, nil, err, fields...)
@@ -92,12 +94,25 @@ func (s *service) installPhoneHomeRequired(ctx *gin.Context) {
 	fields = append(fields, zap.String("org_id", install.OrgID), zap.String("stack_version_id", stackVersion.ID))
 
 	reason, err := s.verifyPhoneHomeCredential(ctx, install, stackVersion, authHeader)
-	if err == nil && requestType != phoneHomeRequestTypeDelete {
-		reason, err = checkObservedCloudAccount(install, req, true)
-	}
 	if err != nil {
 		s.failPhoneHomeAuth(ctx, metricTags, install, err, fields...)
 		return
+	}
+
+	req, requestType, err := bindPhoneHomeRequest(ctx)
+	if err != nil {
+		s.failPhoneHome(ctx, metricTags, phoneHomeFailInvalidRequest, err, fields...)
+		return
+	}
+	metricTags["request_type"] = requestType
+	fields = append(fields, zap.String("request_type", requestType))
+
+	if requestType != phoneHomeRequestTypeDelete {
+		reason, err = checkObservedCloudAccount(install, req, true)
+		if err != nil {
+			s.failPhoneHomeAuth(ctx, metricTags, install, err, fields...)
+			return
+		}
 	}
 	metricTags["reason"] = reason
 	s.recordPhoneHomeAuthResult(ctx, install, true)
