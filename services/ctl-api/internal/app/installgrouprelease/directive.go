@@ -29,6 +29,7 @@ const (
 	StatusPendingCustomer = "pending_customer"
 	StatusQueued          = "queued"
 	StatusSuperseded      = "superseded"
+	StatusError           = "error"
 )
 
 type Directive struct {
@@ -39,10 +40,14 @@ type Directive struct {
 }
 
 func StatusForRelease(reason string) string {
-	if reason == ReasonQueuedBehindCustomer {
+	switch reason {
+	case ReasonQueuedBehindCustomer:
 		return StatusQueued
+	case ReasonRunnerOffline, ReasonRunnerError:
+		return StatusError
+	default:
+		return StatusPendingCustomer
 	}
-	return StatusPendingCustomer
 }
 
 // SetInstallStatus updates one install inside the group-run rows for a branch run.
