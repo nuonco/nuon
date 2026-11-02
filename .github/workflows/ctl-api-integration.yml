@@ -257,6 +257,7 @@ jobs:
             BLOB_STORAGE_PROVIDER: s3
             BLOB_STORAGE_BUCKET: ctl-api-integration-test
             BLOB_STORAGE_REGION: us-east-1
+            DISABLE_VCS_CONNECTION_OWNERSHIP_CHECK: "true"
           YAML
 
       # The untracked temporal-gen wrappers are required to compile the test tree. Run before the dev
