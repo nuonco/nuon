@@ -48,7 +48,7 @@ func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("custom_roles").Short("custom IAM roles").
 		Long("Additional IAM roles for specialized operations beyond the standard provision/maintenance/deprovision lifecycle. Each role must have type set to 'custom'").
 		Field("roles").Short("list of permission roles").
-		Long("Roles for the directory layout, each with a type: provision, maintenance, deprovision, or custom. Must include all three standard types unless set as fields").
+		Long("Typed roles (provision, maintenance, deprovision, or custom), in permissions.toml or a permissions/ directory. Covers any standard role not set as a field").
 		Field("named_policies").Short("named IAM policies").
 		Long("Customer-managed IAM policies created independently of any role's Enable parameter. Attach them from a role with named_policies. Distinct from the root policies/ directory, which is Kyverno/OPA")
 }
