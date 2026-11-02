@@ -13,44 +13,91 @@ keywords:
   ]
 ---
 
-Operation roles let you assign a specific role to each individual operation the Nuon runner performs, such as
-provisioning your sandbox, deploying a component, or running an action, instead of relying on a single all-purpose
-maintenance role. The result is granular, least-privilege access control with no changes required to your customers'
-cloud accounts.
+This guide shows how to define operation roles, assign them to operations, and override them for a single run. For
+what operation roles are and how Nuon picks one, see [Operation Roles](/concepts/operation-roles).
 
-To learn more about operation roles, see the [Operation Roles](/concepts/operation-roles) concept page.
+## Example: separate deploy and teardown roles
 
-## Why Use Operation Roles?
+This example gives an `api` component one role to deploy and another to tear down, so a deploy can't delete anything.
 
-Your deploy workflow might need `lambda:CreateFunction` and `lambda:UpdateFunctionCode`. Your teardown workflow only
-needs `lambda:DeleteFunction`. With a shared maintenance role both permissions are always present; with operation roles
-each workflow gets exactly what it needs.
+<Steps>
+  <Step title="Define the roles">
+    Add two custom roles to `permissions.toml`:
 
-Some concrete use cases:
+    ```toml permissions.toml
+    [[roles]]
+    type        = "custom"
+    name        = "{{.nuon.install.id}}-api-deploy"
+    description = "Create and update the API's Lambda function"
 
-- **Separate deploy vs teardown:** prevent accidental deletion by ensuring your deploy role cannot delete resources
-- **Tighter sandbox permissions:** provision with a broad Terraform role and deprovision with a narrow destroy-only role
-- **Break glass:** run a privileged role the customer turns on when you need more access to service their install. See [Break Glass](/concepts/break-glass)
-- **Audit-friendly access:** separate CloudTrail events per role make it easy to see which operation touched which
-  resource
+    [[roles.policies]]
+    name     = "api-deploy"
+    contents = """
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": ["lambda:CreateFunction", "lambda:UpdateFunctionCode", "lambda:GetFunction"],
+          "Resource": "*"
+        }
+      ]
+    }
+    """
 
-## Role Selection Precedence
+    [[roles]]
+    type        = "custom"
+    name        = "{{.nuon.install.id}}-api-teardown"
+    description = "Delete the API's Lambda function"
 
-When a run starts, the runner selects a role by walking this chain from highest to lowest priority:
+    [[roles.policies]]
+    name     = "api-teardown"
+    contents = """
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": ["lambda:DeleteFunction", "lambda:GetFunction"],
+          "Resource": "*"
+        }
+      ]
+    }
+    """
+    ```
+  </Step>
+  <Step title="Assign them to the component">
+    ```toml components/api.toml
+    [[operation_roles]]
+    operation = "deploy"
+    role      = "{{.nuon.install.id}}-api-deploy"
 
-| Priority    | Source                                                                                        | Scope         |
-| ----------- | --------------------------------------------------------------------------------------------- | ------------- |
-| 1 (highest) | Runtime override (`--role` flag / dashboard selection)                                        | Any operation |
-| 2           | `break_glass_role` field on action config (deprecated; use `role`)                             | Actions only  |
-| 3           | Entity role (inline `operation_roles` block or `role` field)                                  | Single entity |
-| 4           | Matrix rule (`operation_roles.toml` principal + operation)                                    | App-wide      |
-| 5 (lowest)  | Default role (`permissions.toml` `provision_role`, `deprovision_role`, or `maintenance_role`) | App-wide      |
+    [[operation_roles]]
+    operation = "teardown"
+    role      = "{{.nuon.install.id}}-api-teardown"
+    ```
+  </Step>
+  <Step title="Ship it">
+    Push to your app branch, then [reprovision](/guides/reprovision-installs) existing installs so their stacks create
+    the new roles.
+  </Step>
+  <Step title="Check it">
+    The component's next deploy shows the `api-deploy` role in the dashboard.
+  </Step>
+</Steps>
 
-The first match wins. If nothing matches the run fails.
+## Define your own roles
 
-## Defining Your Own Operation Roles
+Your app config must define a provision, maintenance, and deprovision role. Declare them, and any roles of your own, in
+one of two layouts:
 
-Declare your own operation roles in `permissions.toml` with `type = "custom"`:
+- **`permissions.toml`:** one `[[roles]]` block per role, each with a `type`.
+- **`permissions/` directory:** one file per role, such as `permissions/maintenance.toml`, each with a `type`.
+
+Use one layout, and declare each standard role once. If two roles share a standard type, Nuon uses the last one
+without an error.
+
+Add your own roles with `type = "custom"`:
 
 ```toml permissions.toml
 [[roles]]
@@ -59,7 +106,7 @@ name        = "{{.nuon.install.id}}-deploy-role"
 description = "Role for Lambda deployments"
 
 [[roles.policies]]
-type     = "inline"
+name     = "lambda-deploy"
 contents = """
 {
   "Version": "2012-10-17",
@@ -74,11 +121,33 @@ contents = """
 """
 ```
 
+Existing installs get a new role the next time their stack is updated. See
+[Reprovision installs](/guides/reprovision-installs).
+
+## Template role names
+
+Role names support the same Go template syntax used elsewhere in Nuon config:
+
+```toml
+role = "{{.nuon.install.id}}-deploy-role"
+```
+
+Common template variables:
+
+| Variable                                       | Description                                        |
+| ---------------------------------------------- | -------------------------------------------------- |
+| `{{.nuon.install.id}}`                         | Install ID, ensures each install gets its own role |
+| `{{.nuon.install.sandbox.outputs.<key>.name}}` | Sandbox stack output values                        |
+
+The rendered name must match a role in your permissions or break glass config. If it doesn't, the run uses
+the default role.
+
 ## Named IAM policies
 
-Named IAM policies are standalone, customer-managed policies that the install stack creates before any role. Define
-each one in `permissions/policies/`, then attach it by name to any role: provision, maintenance, deprovision, custom, or
-break-glass. Use them to share one policy across several roles, or to split a large permission set that would exceed
+Named IAM policies are standalone, customer-managed policies that AWS CloudFormation stacks create before any role.
+Define each one in `permissions/policies/`, then attach it by name to any operation role or
+[break glass role](/concepts/break-glass). This uses the `permissions/` directory layout. With `permissions.toml`,
+declare them as `[[named_policies]]` blocks in that file instead. Use them to share one policy across several roles, or to split a large permission set that would exceed
 AWS's inline policy size limit.
 
 ```toml permissions/policies/rds-admin.toml
@@ -111,9 +180,9 @@ The `name` in `[[named_policies]]` must match a policy defined under `permission
 even when the role that attaches them is disabled. The install stack outputs a `named_policy_arns` map of policy name to
 ARN, so components can attach a policy to other roles, such as a Kubernetes workload's IAM role.
 
-## Configuring Entity Roles
+## Assign a role to one entity
 
-Entity roles are defined inline on the individual config file. They take precedence over matrix rules.
+Set a role directly on a sandbox, component, or action config. It takes precedence over matrix rules.
 
 ### Sandbox (`sandbox.toml`)
 
@@ -146,14 +215,14 @@ role      = "{{.nuon.install.id}}-deploy-role"
 
 [[operation_roles]]
 operation = "teardown"
-role      = "{{.nuon.install.id}}-update-role"
+role      = "{{.nuon.install.id}}-teardown-role"
 ```
 
 Valid operations for components: `deploy` and `teardown`.
 
 ### Actions (`actions/<name>.toml`)
 
-Actions use a single top-level `role` field (not an array). To run an action with a
+Actions use a single top-level `role` field. To run an action with a
 [break glass role](/concepts/break-glass), set `role` to its name. The older `break_glass_role` field is deprecated.
 
 ```toml actions/db_migration.toml
@@ -169,12 +238,10 @@ name    = "run-migration"
 command = "./migrate.sh"
 ```
 
-## Configuring Matrix Rules (`operation_roles.toml`)
+## Set app-wide rules
 
-The `operation_roles.toml` file defines app-level rules that apply across all installs. Rules are matched by principal
-(which entity is performing the operation) and operation name.
-
-Create a file named `operation_roles.toml` at the root of your app config:
+Create `operation_roles.toml` at the root of your app config. Its rules apply across all installs and match on principal
+(the entity running the operation) and operation:
 
 ```toml operation_roles.toml
 type = "matrix"
@@ -205,7 +272,7 @@ operation = "trigger"
 role      = "{{.nuon.install.id}}-migration-role"
 ```
 
-### Principal Format
+### Principals
 
 | Entity             | Principal                |
 | ------------------ | ------------------------ |
@@ -215,28 +282,12 @@ role      = "{{.nuon.install.id}}-migration-role"
 | Specific action    | `nuon::action:<name>`    |
 | All actions        | `nuon::action:*`         |
 
-The wildcard `*` matches any entity of that type, making it easy to set a default role for all components or all actions
-without listing each one.
+Use `*` to set one role for every component or every action.
 
-## Role Name Templating
+Each rule's `operation` is `provision`, `reprovision`, or `deprovision` for the sandbox, `deploy` or `teardown` for a
+component, and `trigger` for an action run.
 
-Role names support the same Go template syntax used elsewhere in Nuon config:
-
-```toml
-role = "{{.nuon.install.id}}-deploy-role"
-```
-
-Common template variables:
-
-| Variable                                       | Description                                        |
-| ---------------------------------------------- | -------------------------------------------------- |
-| `{{.nuon.install.id}}`                         | Install ID, ensures each install gets its own role |
-| `{{.nuon.install.sandbox.outputs.<key>.name}}` | Sandbox stack output values                        |
-
-The rendered role name must match a role defined in `permissions.toml` (either a standard role or a `custom_roles`
-entry).
-
-## Shipping the config
+## Ship the config
 
 After adding or changing operation role config, commit it and push to the git branch your
 [app branch](/guides/app-branches) tracks:
@@ -246,34 +297,47 @@ git commit -am "update operation roles"
 git push origin main
 ```
 
-The push starts a branch run, which uploads all of your app config to the control plane, including
-`operation_roles.toml` and any inline `operation_roles` blocks.
+The push starts a branch run, which uploads your app config to the control plane.
 
-## Runtime Role Override
+## Check which role an entity uses
 
-You can override the role for a specific run without changing any config file.
+Open your install's **Components** or **Actions** tab in the dashboard. Each entity shows the
+currently configured role.
+
+## Override the role for one run
+
+You can pick a different role for a single run without changing any config.
 
 ### CLI
 
-Pass `--role <role-name>` when triggering a sandbox or component operation:
+Pass `--role-name` to `nuon actions create-run` and `nuon installs components deploy-all`. Pass `--role` to sandbox
+runs, reprovisions, deprovisions, and teardowns:
 
 ```sh
-# Override role for a manual action run
 nuon actions create-run -i <install-id-or-name> -w <action-id-or-name> --role-name my-custom-role
 ```
 
 ### Dashboard
 
-On the install page, before triggering a run, use the role selector in the run options panel to choose an alternative
-role from those available in the install's CloudFormation stack.
+On the install page, before triggering a run, use the role selector in the run options panel to choose a role from the install's
+stack.
 
-## Viewing Configured Roles
+## Which role a run uses
 
-In the Nuon dashboard, navigate to your install and open the **Components** or **Actions** tab. Each entity shows the
-currently configured role.
+When a role is set in more than one place, Nuon uses the first match in this order:
 
-## Next Steps
+| Order | Where the role is set |
+| --- | --- |
+| 1 | Picked for a single run in the dashboard or command line |
+| 2 | The sandbox, component, or action config |
+| 3 | A rule in `operation_roles.toml` |
+| 4 | The standard role for the operation |
 
-- [Operation Roles Concepts](/concepts/operation-roles): understand the mental model and precedence chain
-- [Permissions Config Reference](/config-ref/permissions): defining `provision_role`, `maintenance_role`, and
-  `custom_roles`
+If the matching role is switched off in your customer's stack, a role picked for a single run fails. Any other run uses
+the standard role.
+
+## Next steps
+
+- [Operation Roles](/concepts/operation-roles): how Nuon picks a role
+- [Break Glass](/concepts/break-glass): roles your customer switches on when you need them
+- [Permissions config reference](/config-ref/permissions): every field in `permissions.toml`

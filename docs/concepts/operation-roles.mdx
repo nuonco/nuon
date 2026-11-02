@@ -1,157 +1,56 @@
 ---
 title: "Operation Roles"
-description: "Assign different IAM roles to different operations for least-privilege access across sandbox, components, and actions."
+description: "Operate your customer environments with tightly scoped access"
 boost: 2.5
-keywords: ["operation roles", "what are operation roles", "IAM least privilege", "per-operation permissions", "break glass access", "custom roles", "role precedence", "elevated access", "EKS upgrade role", "least privilege BYOC", "scoped IAM per operation", "different roles for different operations", "sandbox role vs component role", "action-specific IAM", "fine-grained IAM"]
+keywords: ["operation roles", "what are operation roles", "IAM least privilege", "per-operation permissions", "custom roles", "role precedence", "least privilege BYOC", "scoped IAM per operation", "different roles for different operations", "sandbox role vs component role", "action-specific IAM", "fine-grained IAM"]
 ---
 
-## The Install Lifecycle
+## What is an operation role
 
-An install in a customer's cloud account is not a single event. It passes through several distinct phases
-over its lifetime, each with different infrastructure activity and different permission requirements:
+IAM roles that you can scope to the specific task, and have repeatable [runbooks](/concepts/runbooks) that use that role to avoid any mistakes that go beyond the intended scope of your maintenance or upgrade activities.
 
-- **Provision:** The sandbox is created. Foundational infrastructure is stood up via Terraform. This phase needs broad write access to create resources.
-- **Deploy:** Application components (Lambda functions, Helm charts, Kubernetes manifests, and Terraform
-  modules) are deployed into the provisioned sandbox. Each component deploy writes only to its own slice of
-  infrastructure.
-- **Maintenance and updates:** Components are redeployed with new builds, inputs are changed, drift is
-  corrected, and reprovision runs update the sandbox itself. These writes are narrower than initial
-  provisioning but still require resource-modification permissions.
-- **Debug sessions:** Actions are triggered manually or on a schedule to run scripts, collect diagnostics,
-  or execute operational runbooks. Most debug actions need only read and exec access, but some (break-glass
-  scenarios) temporarily require elevated permissions.
-- **Deprovision:** The install is torn down. Components are removed, the sandbox is destroyed, and all
-  customer-account resources are cleaned up. This phase needs delete permissions but not create permissions.
+## Required roles
 
-Using a single/limited set of roles across all these phases means that role must hold the union of every permission
-needed at any point in the lifecycle. Operation roles let you assign a different role to each phase, so
-each one gets only what it needs.
+Every app config must define three standard roles in its permissions config:
 
-## What Are Operation Roles?
+- **Provision:** provisions and reprovisions the install, and deploys all components.
+- **Deprovision:** deprovisions the install, and tears down all components.
+- **Maintenance:** everything else, such as single component deploys, action runs, and input changes.
 
-Every operation that the Nuon runner performs in a customer's account requires a role. By default,
-Nuon uses three roles:
+## Scope roles to a task
 
-- `provision_role` — used when creating the install sandbox
-- `deprovision_role` — used when deprovisioning the install sandbox
-- `maintenance_role` — used for component deploys, teardowns, and action runs
+The standard roles cover broad phases, so they hold a lot of permissions. Add your own roles with `type = "custom"` to
+give one task only the access it needs. For example:
 
-Operation roles allow you to override these defaults at multiple levels of granularity:
+- **Deploy and teardown for one component:** a deploy role that can create and update the component's Lambda function,
+  and a teardown role that can only delete it. See the
+  [deploy and teardown example](/guides/operation-roles#example-separate-deploy-and-teardown-roles).
+- **An action that rotates a password:** a role that can only update that one secret, set on the action. See
+  [assign a role to one entity](/guides/operation-roles#assign-a-role-to-one-entity).
+- **One role for every teardown:** an app-wide rule that sends all component teardowns to a delete-only role. See
+  [set app-wide rules](/guides/operation-roles#set-app-wide-rules).
 
-- **Per entity:** assign a specific role inline on a sandbox, component, or action config
-- **App-wide matrix:** define a central lookup table (`operation_roles.toml`) that maps principals and
-  operations to roles
-- **At runtime:** override the role via the CLI or dashboard just before a run
+When you need more access to service your customer urgently, use a [break glass role](/concepts/break-glass). Your
+customer keeps it switched off until you need it.
 
-## Why Least-Privilege Per Operation Matters
+## When Nuon uses a role
 
-A single maintenance role that covers both "deploy a Lambda function" and "delete a Lambda function" must hold
-`lambda:CreateFunction` and `lambda:DeleteFunction`. Ideally we'd want them to be separate so that the customer knows
-what goes in and out of the system and can control the same.
+Each time Nuon changes something in your customer's account, the runner assumes a role to do it. That happens when it:
 
-With operation roles you can instead create:
+- Sets up, updates, or removes the install's base infrastructure (the [sandbox](/concepts/sandboxes))
+- Deploys or removes a [component](/concepts/components)
+- Runs an [action](/concepts/actions)
 
-- A **deploy role** with only `lambda:CreateFunction` and `lambda:UpdateFunctionCode`
-- A **teardown role** with only `lambda:DeleteFunction`
+By default, each of these uses one of the three standard roles. You can choose a different role in three places:
 
-Neither role can do what the other can, limiting change radius during maintenance windows.
+- **On the sandbox, a component, or an action:** in its config file.
+- **For the whole app:** with rules in `operation_roles.toml`, such as one role for every component teardown.
+- **For a single run:** from the dashboard or command line.
 
-The same principle applies across your entire app template:
+If you set a role in more than one place, see [which role a run uses](/guides/operation-roles#which-role-a-run-uses).
 
-- Sandbox provisioning may need broad Terraform permissions; deprovision needs only destroy permissions
-- Component deploys need write access; component teardowns need delete access
-- Routine action runs need minimal read and exec access; break-glass actions can use a separate elevated role
+## Next steps
 
-## Entity Types and Their Operations
-
-Each entity type in a Nuon app supports a specific set of operations:
-
-| Entity | Operations |
-|--------|------------|
-| Sandbox | `provision`, `reprovision`, `deprovision` |
-| Component | `deploy`, `teardown` |
-| Action | `trigger` |
-
-## The Precedence Chain
-
-When an operation is triggered, the control plane builds the plan for the runner to work with.
-It walks the following chain from highest to lowest priority and uses the first match:
-
-1. **Runtime override:** a role passed explicitly via the `--role` CLI flag or selected in the dashboard
-   before triggering a run
-2. **Break glass role field** _(actions only, deprecated):_ the `break_glass_role` field on an action config. Use
-   the `role` field instead.
-3. **Entity role:** the `operation_roles` block on a sandbox or component config, or the `role` field on
-   an action config
-4. **Matrix rule:** a matching rule in `operation_roles.toml` (the app-level principal + operation lookup
-   table)
-5. **Default role:** the standard role from `permissions.toml` for the operation type
-
-Nuon uses the first level that names a role. If that role is off, a run that picked it at run time fails, and any
-other run uses the default role instead.
-
-**Your own operation roles:** Nuon has three built-in operation roles (`provision`, `deprovision`, and
-`maintenance`). Define more in `permissions.toml` with `type = "custom"` and use them in operation role assignments.
-For access you only need in an incident, use [break glass roles](/concepts/break-glass) instead.
-
-## Elevated Access and Break-Glass Operations
-
-Some operations are too sensitive for day-to-day role permissions but still need to run occasionally under
-controlled conditions. Use [break glass roles](/concepts/break-glass) for these. A break glass role is off by default, and the
-customer turns it on with a stack update when the vendor needs it.
-
-The customer keeps full control. They can see the role's definition in their install stack before it is ever
-used, turn it on or off at any time, and audit every time it's assumed in their cloud audit logs.
-
-### Introducing New Components with New Permission Sets
-
-As an app evolves, new components may require permissions that the existing maintenance role never had. For
-example, adding a component that manages RDS clusters needs `rds:CreateDBInstance` and related permissions,
-which would be inappropriate to add to a maintenance role shared with other components.
-
-With operation roles you can introduce the new component with its own `type = "custom"` role scoped
-exclusively to RDS operations. Existing installs receive the new role the next time their CloudFormation
-stack is updated (triggered by a reprovision), without any change to the permissions of existing roles.
-Each component's blast radius stays bounded to its own role.
-
-### Example: EKS Cluster Upgrade
-
-EKS version upgrades are a concrete case where normal operational permissions are insufficient. A routine
-deploy role might have permission to update workloads running on the cluster, but upgrading the cluster
-control plane itself requires `eks:UpdateClusterVersion` and related permissions that should never be
-available during a standard deploy.
-
-The pattern with operation roles:
-
-1. Define a [break glass role](/concepts/break-glass) (e.g., `{{.nuon.install.id}}-eks-upgrade-role`) with the
-   permissions needed for a cluster upgrade. It's off by default.
-2. When an upgrade is needed, the customer turns the role on with a stack update.
-3. An operator runs the upgrade action from the CLI or dashboard and picks the upgrade role for that run.
-4. The runner assumes the elevated role, performs the upgrade, and exits.
-5. The customer turns the role off again with another stack update.
-
-The upgrade is fully auditable. Audit trail records show exactly which role was assumed, when, and by
-which operation, and the elevated permissions exist in the customer's account for only as long as
-necessary.
-
-You can also automate responses to role changes using [action triggers](/concepts/actions#role-change-triggers). The `role-enabled` and `role-disabled` triggers fire whenever a customer enables or disables a role in their install stack, allowing you to run validation, auditing, or setup tasks automatically.
-
-## Role Name Resolution
-
-Role names at all levels support Go template syntax using install state variables:
-
-```toml
-role = "{{.nuon.install.id}}-deploy-role"
-```
-
-At runtime the template is rendered with the install's current state, producing a concrete role name such as
-`install-abc123-deploy-role`. That name is then looked up in the CloudFormation stack outputs (which contain
-all roles defined in `permissions.toml`). The matching ARN is assumed by the runner for the operation.
-
-## Next Steps
-
-- [Operation Roles Guide](/guides/operation-roles): step-by-step configuration for entity roles, matrix
-  rules, CLI overrides, and more
-- [Operation Roles Config Reference](/guides/operation-roles): full schema reference for
-  `operation_roles.toml`
-- [Permissions Config Reference](/config-ref/permissions): defining `custom_roles` in `permissions.toml`
+- [Operation Roles guide](/guides/operation-roles): define roles, assign them, and override them for a run
+- [Break Glass](/concepts/break-glass): elevated access your customer switches on when you need it
+- [Permissions config reference](/config-ref/permissions): every field in `permissions.toml`

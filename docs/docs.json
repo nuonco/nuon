@@ -118,6 +118,7 @@
               "concepts/policies",
               "concepts/actions",
               "concepts/runbooks",
+              "concepts/operation-roles",
               "concepts/break-glass",
               "concepts/triggers",
               "concepts/install-telemetry"
@@ -387,7 +388,6 @@
               "architecture/platform",
               "architecture/app-deployment",
               "architecture/runner-auth",
-              "concepts/operation-roles",
               "security"
             ]
           }

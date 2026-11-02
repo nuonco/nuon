@@ -25,13 +25,13 @@ it was removed, so you can show them afterward.
     Your customer's security team can review the role before it's ever created.
   </Step>
   <Step title="Your customer switches it on">
-    When you have an incident, they enable the role.
+    When you have an incident, they switch the role on.
   </Step>
   <Step title="You run an action">
     Run an [action](/concepts/actions) or [runbook](/concepts/runbooks) with the role.
   </Step>
   <Step title="Your customer switches it off">
-    The customer disables or removes the role from their account.
+    Your customer switches the role off or removes it.
   </Step>
 </Steps>
 
@@ -49,17 +49,16 @@ If your customer switches the same role on every week, ask them to approve it as
 
 ## Break glass and operation roles
 
-|  | Operation role | Break glass role |
+|  | Break glass role | Operation role |
 | --- | --- | --- |
-| Access | Standing. Your customer approves it once. | Granted when you need it, with a record of every use. |
-| In your customer's account | On by default once your app uses it. | Off by default. Created only when your customer switches it on. |
-| Where it's declared | `permissions.toml` | `break_glass.toml` |
-| How it's shown | Like any other role. | Labeled as break glass in the dashboard and in Slack notifications. |
+| Access | Granted when you need it, with a record of every use. | Standing. Your customer approves it once. |
+| Default | Off. Created only when your customer switches it on. | On. |
+| Declared in | `break_glass.toml` | `permissions.toml` or `permissions/` |
 
 ## Define a break glass role
 
-Declare roles in `break_glass.toml`, or one file per role in a `break_glass/` directory. Your customer sees each role's
-`display_name` and `description` when deciding whether to turn it on.
+Declare roles in `break_glass.toml` at the root of your app config. Your customer sees each role's `display_name` and
+`description` when deciding whether to switch it on.
 
 ```toml break_glass.toml
 [[role]]
@@ -89,8 +88,8 @@ contents = """
 """
 ```
 
-This role is for AWS. For other clouds, add `cloud_platform = "azure"` or `"gcp"`. See the
-[config reference](/config-ref/break-glass) for every field.
+This role is for AWS. On GCP, use `gcp_permissions` or `gcp_predefined_role` in place of `contents`. On Azure, use
+`azure_actions` or `azure_built_in_roles`. See the [config reference](/config-ref/break-glass) for every field.
 
 ## Use a break glass role
 
@@ -117,7 +116,7 @@ To use the role for a single run, pick it in the dashboard's role selector or pa
 
 ## Run actions when access is granted
 
-A `role-enabled` trigger runs an action as soon as your customer switches a role on, so they don't wait on you.
+A `role-enabled` trigger runs an action as soon as your customer switches a role on.
 
 ```toml
 [[triggers]]
@@ -126,19 +125,21 @@ type = "role-enabled"
 
 It fires for any role, so check `ROLE_NAME` first. See [Role change triggers](/concepts/actions#role-change-triggers).
 
-## How your customer turns it on
+## How your customer switches it on
 
 - **CloudFormation:** update the stack with the current template and set the role's `Enable…` parameter.
 - **Azure:** redeploy the stack with the role's enable parameter set.
-- **Terraform module:** set the role in the module's `roles` map and apply. See
+- **Terraform module (AWS or GCP):** set the role in the module's `roles` map and apply. See
   [Provision stacks with the Terraform module](/guides/provision-stacks-with-terraform-module#vendor-changes-roles-or-permissions).
+- **Generated Terraform files (AWS or GCP):** set `enabled = true` on the role in `break_glass_roles` and apply.
 
 ## Audit
 
 Every break glass session leaves a record:
 
-- **Access granted and removed:** each time a role is switched on or off, Nuon sends a
-  [Slack notification](/guides/slack#role-change-notifications) and a [webhook](/guides/webhooks) event.
+- **Access granted and removed:** each time a role is switched on or off, Nuon can send a
+  [Slack notification](/guides/slack#role-change-notifications) and a [webhook](/guides/webhooks) event, if you've
+  set them up.
 - **Work done:** each run shows the role it used in the dashboard.
 - **Actions in the account:** your customer's cloud audit logs, such as AWS CloudTrail, record each time the runner
   assumes the role.
