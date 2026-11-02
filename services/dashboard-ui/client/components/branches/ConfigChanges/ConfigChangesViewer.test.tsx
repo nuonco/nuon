@@ -50,10 +50,15 @@ const sections: DiffSectionData[] = [
   },
 ]
 
-const renderViewer = (props?: Partial<ComponentProps<typeof ConfigChangesViewer>>) =>
+const renderViewer = (
+  props?: Partial<ComponentProps<typeof ConfigChangesViewer>>,
+  preferencesOverride?: Partial<IDashboardPreferencesContext>
+) =>
   render(
     <MemoryRouter>
-      <DashboardPreferencesContext.Provider value={preferences}>
+      <DashboardPreferencesContext.Provider
+        value={{ ...preferences, ...preferencesOverride }}
+      >
         <ConfigChangesViewer {...props} sections={props?.sections ?? sections} />
       </DashboardPreferencesContext.Provider>
     </MemoryRouter>
@@ -104,6 +109,20 @@ test('scrolls to a section chosen from the outline', () => {
   } finally {
     HTMLElement.prototype.scrollIntoView = original
   }
+})
+
+test('collapses sections when the plan sections preference is collapsed', () => {
+  renderViewer({}, { planSections: 'collapsed' })
+
+  const header = screen.getByRole('button', { name: /cache/ })
+  expect(header.getAttribute('aria-expanded')).toBe('false')
+})
+
+test('expands sections when the plan sections preference is expanded', () => {
+  renderViewer({}, { planSections: 'expanded' })
+
+  const header = screen.getByRole('button', { name: /cache/ })
+  expect(header.getAttribute('aria-expanded')).toBe('true')
 })
 
 test('does not offer an outline when there are no changes', () => {
