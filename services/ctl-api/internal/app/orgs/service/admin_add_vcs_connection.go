@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm/clause"
@@ -46,7 +47,19 @@ func (s *service) AdminAddVCSConnection(ctx *gin.Context) {
 	cctx.SetOrgGinContext(ctx, org)
 	cctx.SetAccountIDGinContext(ctx, org.CreatedByID)
 
-	if _, err := s.createOrgConnection(ctx, org.ID, req.GithubInstallID); err != nil {
+	ghAccount, err := s.vcsHelpers.GetInstallationAccount(ctx, req.GithubInstallID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get GitHub installation account: %w", err))
+		return
+	}
+
+	if _, err := s.createOrgConnection(
+		ctx,
+		org.ID,
+		req.GithubInstallID,
+		strconv.FormatInt(ghAccount.GetID(), 10),
+		ghAccount.GetLogin(),
+	); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -54,14 +67,18 @@ func (s *service) AdminAddVCSConnection(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, org)
 }
 
-func (s *service) createOrgConnection(ctx context.Context, orgID, githubInstallID string) (*app.VCSConnection, error) {
+func (s *service) createOrgConnection(
+	ctx context.Context, orgID, githubInstallID, githubAccountID, githubAccountName string,
+) (*app.VCSConnection, error) {
 	vcsConn := app.VCSConnection{
-		OrgID:           orgID,
-		GithubInstallID: githubInstallID,
+		OrgID:             orgID,
+		GithubInstallID:   githubInstallID,
+		GithubAccountID:   githubAccountID,
+		GithubAccountName: githubAccountName,
 	}
 
 	if err := s.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "org_id"}, {Name: "github_install_id"}},
+		Columns:   []clause.Column{{Name: "org_id"}, {Name: "github_install_id"}, {Name: "deleted_at"}},
 		DoNothing: true,
 	}).Create(&vcsConn).Error; err != nil {
 		return nil, fmt.Errorf("unable to create vcs_connection: %w", err)
