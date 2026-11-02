@@ -1,10 +1,13 @@
+import type { ComponentProps } from 'react'
 import { afterEach, expect, mock, test } from 'bun:test'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import {
   DashboardPreferencesContext,
   type IDashboardPreferencesContext,
 } from '@/providers/dashboard-preferences-provider'
+import { configChangesBaseline } from './ConfigChangesBaseline'
 import { ConfigChangesViewer } from './ConfigChangesViewer'
 
 afterEach(cleanup)
@@ -47,11 +50,13 @@ const sections: DiffSectionData[] = [
   },
 ]
 
-const renderViewer = (props?: Partial<{ sections: DiffSectionData[] }>) =>
+const renderViewer = (props?: Partial<ComponentProps<typeof ConfigChangesViewer>>) =>
   render(
-    <DashboardPreferencesContext.Provider value={preferences}>
-      <ConfigChangesViewer sections={props?.sections ?? sections} />
-    </DashboardPreferencesContext.Provider>
+    <MemoryRouter>
+      <DashboardPreferencesContext.Provider value={preferences}>
+        <ConfigChangesViewer {...props} sections={props?.sections ?? sections} />
+      </DashboardPreferencesContext.Provider>
+    </MemoryRouter>
   )
 
 test('keeps the outline closed until it is shown', () => {
@@ -106,4 +111,98 @@ test('does not offer an outline when there are no changes', () => {
 
   expect(screen.getByText('No changes')).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Show outline' })).toBeNull()
+})
+
+test('names the run the diff is compared to', () => {
+  renderViewer({
+    baseline: {
+      run: {
+        href: '/org-1/apps/app-1/branches/br-1/runs/wf-1',
+        status: 'success',
+        message: 'Widen the acme VPC CIDR range',
+        sha: '9f8e7d6c5b4a',
+      },
+    },
+  })
+
+  const link = screen.getByRole('link', {
+    name: 'Widen the acme VPC CIDR range',
+  })
+  expect(link.getAttribute('href')).toBe(
+    '/org-1/apps/app-1/branches/br-1/runs/wf-1'
+  )
+  expect(screen.queryByText("This run hasn't finished.")).toBeNull()
+})
+
+test('says when the compared run has not finished', () => {
+  renderViewer({
+    baseline: {
+      run: { status: 'running', message: 'Bump the cache chart' },
+    },
+  })
+
+  expect(screen.getByText('Bump the cache chart')).toBeTruthy()
+  expect(screen.getByText('Running')).toBeTruthy()
+  expect(screen.getByText("This run hasn't finished.")).toBeTruthy()
+})
+
+test('says when there is no previous run', () => {
+  renderViewer({ baseline: { run: null } })
+
+  expect(
+    screen.getByText(
+      'No previous run to compare against. This shows the full config as created.'
+    )
+  ).toBeTruthy()
+})
+
+test('renders the diff when the baseline is missing', () => {
+  renderViewer()
+  renderViewer({ baseline: { run: {} } })
+  renderViewer({ baseline: null, sections: [] })
+
+  expect(screen.getAllByText('cache').length).toBeGreaterThan(0)
+  expect(screen.queryByText(/Compared to/)).toBeNull()
+  expect(screen.queryByText(/No previous run/)).toBeNull()
+})
+
+test('leaves the baseline unset until a comparison exists', () => {
+  expect(configChangesBaseline(undefined, { orgId: 'org-1' })).toBeUndefined()
+  expect(configChangesBaseline(null)).toBeUndefined()
+  expect(configChangesBaseline({})).toEqual({ run: null })
+  expect(
+    configChangesBaseline(
+      {
+        base_run: {
+          id: 'run-1',
+          status: 'pending',
+          workflow_id: 'wf-1',
+          vcs_connection_commit: {
+            sha: 'abcdef1234567890',
+            message: 'Bump the cache chart\n\nMore detail.',
+          },
+        },
+      },
+      { orgId: 'org-1', appId: 'app-1', branchId: 'br-1' }
+    )
+  ).toEqual({
+    run: {
+      href: '/org-1/apps/app-1/branches/br-1/runs/wf-1',
+      status: 'pending',
+      message: 'Bump the cache chart',
+      sha: 'abcdef1234567890',
+    },
+  })
+  expect(
+    configChangesBaseline({
+      base_run: { id: 'run-1', status: 'success' },
+    })
+  ).toEqual({
+    run: {
+      href: undefined,
+      status: 'success',
+      message: undefined,
+      sha: undefined,
+    },
+  })
 })

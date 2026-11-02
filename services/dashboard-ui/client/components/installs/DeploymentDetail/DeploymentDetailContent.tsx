@@ -7,6 +7,7 @@ import { useBranchConfigSections } from '@/components/branches/BranchRunChangesS
 import {
   ConfigChangesLoading,
   ConfigChangesViewer,
+  configChangesBaseline,
   useConfigVersionLabel,
 } from '@/components/branches/ConfigChanges'
 import { Button } from '@/components/common/Button'
@@ -139,6 +140,11 @@ const DeploymentTemplateDiff = ({
       message={commit?.message}
       author={commit?.author_name}
       createdAt={config.comparison?.head_run?.created_at}
+      baseline={configChangesBaseline(config.comparison, {
+        orgId: org?.id,
+        appId,
+        branchId,
+      })}
     />
   )
 }
