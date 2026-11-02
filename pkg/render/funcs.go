@@ -19,13 +19,17 @@ var disabledFuncs = []string{
 	"htmlDateInZone",
 	"dateInZone",
 	"dateModify",
+	"mustDateModify",
+	"must_date_modify",
 
 	"randAlphaNum",
 	"randAlpha",
 	"randAscii",
 	"randNumeric",
 	"randBytes",
+	"randInt",
 	"uuidv4",
+	"shuffle",
 
 	"env",
 	"expandenv",
