@@ -7,11 +7,13 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -22,31 +24,37 @@ import (
 type Params struct {
 	fx.In
 
-	V              *validator.Validate
-	DB             *gorm.DB `name:"psql"`
-	Cfg            *internal.Config
-	VcsHelpers     *vcshelpers.Helpers
-	CompHelpers    *comphelpers.Helpers
-	Helpers        *actionshelpers.Helpers
-	AppsHelpers    *appshelpers.Helpers
-	InstallHelpers *installhelpers.Helpers
-	EndpointAudit  *apiPkg.EndpointAudit
-	QueueClient    *queueclient.Client
-	Audit          *audit.Emitter
+	V               *validator.Validate
+	DB              *gorm.DB `name:"psql"`
+	CHDB            *gorm.DB `name:"ch"`
+	Cfg             *internal.Config
+	AccountsHelpers *accountshelpers.Helpers
+	AcctClient      *account.Client
+	VcsHelpers      *vcshelpers.Helpers
+	CompHelpers     *comphelpers.Helpers
+	Helpers         *actionshelpers.Helpers
+	AppsHelpers     *appshelpers.Helpers
+	InstallHelpers  *installhelpers.Helpers
+	EndpointAudit   *apiPkg.EndpointAudit
+	QueueClient     *queueclient.Client
+	Audit           *audit.Emitter
 }
 
 type service struct {
 	apiPkg.RouteRegister
-	v              *validator.Validate
-	db             *gorm.DB
-	cfg            *internal.Config
-	vcsHelpers     *vcshelpers.Helpers
-	actionsHelpers *actionshelpers.Helpers
-	appsHelpers    *appshelpers.Helpers
-	compHelpers    *comphelpers.Helpers
-	installHelpers *installhelpers.Helpers
-	queueClient    *queueclient.Client
-	audit          *audit.Emitter
+	v               *validator.Validate
+	db              *gorm.DB
+	chDB            *gorm.DB
+	cfg             *internal.Config
+	accountsHelpers *accountshelpers.Helpers
+	acctClient      *account.Client
+	vcsHelpers      *vcshelpers.Helpers
+	actionsHelpers  *actionshelpers.Helpers
+	appsHelpers     *appshelpers.Helpers
+	compHelpers     *comphelpers.Helpers
+	installHelpers  *installhelpers.Helpers
+	queueClient     *queueclient.Client
+	audit           *audit.Emitter
 }
 
 var _ apiPkg.Service = (*service)(nil)
@@ -81,6 +89,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			actionRuns.POST("", s.CreateInstallActionRun)
 			actionRuns.GET("", s.GetInstallActionRuns)
 			actionRuns.GET("/:run_id", s.GetInstallActionRun)
+			actionRuns.DELETE("/:run_id/logs", s.DeleteInstallActionRunLogs)
 			actionRuns.GET("/:run_id/steps/:step_id", s.GetInstallActionRunStep)
 		}
 
@@ -178,13 +187,16 @@ func New(params Params) *service {
 		RouteRegister: apiPkg.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
 		},
-		cfg:            params.Cfg,
-		v:              params.V,
-		db:             params.DB,
-		vcsHelpers:     params.VcsHelpers,
-		actionsHelpers: params.Helpers,
-		appsHelpers:    params.AppsHelpers,
-		compHelpers:    params.CompHelpers,
+		cfg:             params.Cfg,
+		v:               params.V,
+		db:              params.DB,
+		chDB:            params.CHDB,
+		accountsHelpers: params.AccountsHelpers,
+		acctClient:      params.AcctClient,
+		vcsHelpers:      params.VcsHelpers,
+		actionsHelpers:  params.Helpers,
+		appsHelpers:     params.AppsHelpers,
+		compHelpers:     params.CompHelpers,
 
 		installHelpers: params.InstallHelpers,
 		queueClient:    params.QueueClient,
