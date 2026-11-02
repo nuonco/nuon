@@ -320,6 +320,17 @@ func (fb *FieldBuilder) OneOfRequired(groupName string) *FieldBuilder {
 	return fb.setProperty(prop)
 }
 
+// DocsRequired shows the field as required in the generated docs without adding it to the
+// schema's required list, for fields that can also be set another way.
+func (fb *FieldBuilder) DocsRequired() *FieldBuilder {
+	prop := fb.getProperty()
+	if prop.Extras == nil {
+		prop.Extras = map[string]interface{}{}
+	}
+	prop.Extras["docs_required"] = true
+	return fb.setProperty(prop)
+}
+
 // TODO(fd): how have we avoided such a solution to date? a default value seems preferable.
 
 // Nullable allows the field to accept null in addition to its defined type.
