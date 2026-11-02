@@ -2,6 +2,8 @@ package validate
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 
@@ -105,13 +107,34 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		},
 	}
 
+	var warnings []string
 	for _, fn := range fns {
-		if err := fn(); err != nil {
+		err := fn()
+		if err == nil {
+			continue
+		}
+		if !config.IsWarningErr(err) {
 			return err
+		}
+		warnings = append(warnings, warningMessage(err))
+	}
+
+	if len(warnings) > 0 {
+		return config.ErrConfig{
+			Description: strings.Join(warnings, "\n"),
+			Warning:     true,
 		}
 	}
 
 	return nil
+}
+
+func warningMessage(err error) string {
+	var cfgErr config.ErrConfig
+	if errors.As(err, &cfgErr) && cfgErr.Description != "" {
+		return cfgErr.Description
+	}
+	return err.Error()
 }
 
 func validateAzureCustomNestedStacks(a *config.AppConfig) error {
