@@ -2,18 +2,12 @@ package service
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/auth0/go-jwt-middleware/v2/jwks"
-	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -21,11 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-)
-
-const (
-	azureJWKSCacheDuration  = 5 * time.Minute
-	azureManagementAudience = "https://management.azure.com/"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 )
 
 type RunnerAuthAzureRequest struct {
@@ -41,7 +31,6 @@ type RunnerAuthAzureResponse struct {
 	Token         string `json:"token,omitempty"`
 }
 
-// azureClaims holds the custom claims we extract from Azure managed identity JWTs.
 type azureClaims struct {
 	TenantID string `json:"tid"`
 	ObjectID string `json:"oid"`
@@ -49,182 +38,118 @@ type azureClaims struct {
 	XMSMirID string `json:"xms_mirid"`
 }
 
-func (a *azureClaims) Validate(_ context.Context) error {
-	if a.TenantID == "" {
-		return errors.New("missing tid claim")
-	}
-	if a.ObjectID == "" {
-		return errors.New("missing oid claim")
-	}
-	return nil
-}
-
-// azureJWKSProvider caches JWKS providers per tenant to avoid repeated discovery.
-type azureJWKSProvider struct {
-	mu        sync.RWMutex
-	providers map[string]*jwks.CachingProvider
-}
-
-func newAzureJWKSProvider() *azureJWKSProvider {
-	return &azureJWKSProvider{
-		providers: make(map[string]*jwks.CachingProvider),
-	}
-}
-
-func (p *azureJWKSProvider) getProvider(tenantID string) *jwks.CachingProvider {
-	p.mu.RLock()
-	provider, ok := p.providers[tenantID]
-	p.mu.RUnlock()
-	if ok {
-		return provider
-	}
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	// Double-check after acquiring write lock.
-	if provider, ok := p.providers[tenantID]; ok {
-		return provider
-	}
-
-	issuerURL, _ := url.Parse(fmt.Sprintf("https://sts.windows.net/%s/", tenantID))
-	provider = jwks.NewCachingProvider(issuerURL, azureJWKSCacheDuration)
-	p.providers[tenantID] = provider
-	return provider
-}
-
-var azureJWKS = newAzureJWKSProvider()
-
-// parseUnverifiedTenantID extracts the tid claim from a JWT without signature verification.
-// This is needed to determine which tenant's JWKS endpoint to use for verification.
 func parseUnverifiedTenantID(tokenStr string) (string, error) {
-	parts := strings.Split(tokenStr, ".")
-	if len(parts) != 3 {
-		return "", errors.New("invalid JWT format")
-	}
-
-	// Decode the payload (second part).
-	payload, err := decodeJWTSegment(parts[1])
+	claims, err := workloadjwt.UnverifiedClaims(tokenStr)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode JWT payload: %w", err)
+		return "", err
 	}
 
-	var claims struct {
-		TenantID string `json:"tid"`
-	}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return "", fmt.Errorf("failed to parse JWT claims: %w", err)
-	}
-	if claims.TenantID == "" {
+	tenantID, ok := workloadjwt.StringClaim(claims, "tid")
+	if !ok {
 		return "", errors.New("JWT missing tid claim")
 	}
 
-	return claims.TenantID, nil
+	if _, err := workloadjwt.AzureIssuer(tenantID); err != nil {
+		return "", err
+	}
+
+	return tenantID, nil
 }
 
-// decodeJWTSegment decodes a base64url-encoded JWT segment.
-func decodeJWTSegment(seg string) ([]byte, error) {
-	return base64.RawURLEncoding.DecodeString(seg)
+func azureClaimsFromVerified(claims map[string]any) (*azureClaims, error) {
+	tenantID, ok := workloadjwt.StringClaim(claims, "tid")
+	if !ok {
+		return nil, errors.New("missing tid claim")
+	}
+	objectID, ok := workloadjwt.StringClaim(claims, "oid")
+	if !ok {
+		return nil, errors.New("missing oid claim")
+	}
+	subject, _ := workloadjwt.StringClaim(claims, "sub")
+	mirID, _ := workloadjwt.StringClaim(claims, "xms_mirid")
+
+	return &azureClaims{
+		TenantID: tenantID,
+		ObjectID: objectID,
+		Subject:  subject,
+		XMSMirID: mirID,
+	}, nil
 }
 
-// verifyAzureJWT verifies an Azure managed identity JWT and returns the parsed claims.
 func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureClaims, error) {
+	tokenStr = strings.TrimSpace(tokenStr)
+	if err := workloadjwt.RequireCompactJWT(tokenStr); err != nil {
+		return nil, err
+	}
+
 	tenantID, err := parseUnverifiedTenantID(tokenStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract tenant ID: %w", err)
 	}
 
-	provider := azureJWKS.getProvider(tenantID)
-	issuerURL := fmt.Sprintf("https://sts.windows.net/%s/", tenantID)
-
-	customClaimsFn := func() validator.CustomClaims {
-		return &azureClaims{}
-	}
-
-	tokenValidator, err := validator.New(
-		provider.KeyFunc,
-		validator.RS256,
-		issuerURL,
-		[]string{azureManagementAudience},
-		validator.WithAllowedClockSkew(time.Minute),
-		validator.WithCustomClaims(customClaimsFn),
-	)
+	issuerURL, err := workloadjwt.AzureIssuer(tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create JWT validator: %w", err)
+		return nil, fmt.Errorf("failed to build issuer: %w", err)
 	}
 
-	validToken, err := tokenValidator.ValidateToken(ctx, tokenStr)
+	verified, err := s.workloadJWT.Verify(ctx, workloadjwt.Request{
+		Token:    tokenStr,
+		Issuer:   issuerURL,
+		Audience: workloadjwt.AzureManagementAudience,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("JWT validation failed: %w", err)
 	}
 
-	validatedClaims, ok := validToken.(*validator.ValidatedClaims)
-	if !ok {
-		return nil, errors.New("unexpected token validation response")
+	azClaims, err := azureClaimsFromVerified(verified)
+	if err != nil {
+		return nil, err
 	}
 
-	azClaims, ok := validatedClaims.CustomClaims.(*azureClaims)
-	if !ok {
-		return nil, errors.New("unexpected custom claims type")
+	if err := bindAzureKeyTenant(tenantID, azClaims); err != nil {
+		return nil, err
 	}
 
 	return azClaims, nil
 }
 
-// extractRunnerIDFromXMSMirID parses the Azure managed identity resource ID to extract the runner ID.
-// The format is: /subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{name}
-// The identity name is expected to contain or be the runner ID.
-// For system-assigned identities (e.g. VMSS), xms_mirid points to the compute resource
-// rather than a ManagedIdentity resource — those are not supported here.
-func extractRunnerIDFromXMSMirID(xmsMirID string) (runnerID string, subscriptionID string, err error) {
-	if xmsMirID == "" {
-		return "", "", errors.New("empty xms_mirid claim")
+func bindAzureKeyTenant(keyTenantID string, claims *azureClaims) error {
+	if claims == nil {
+		return errors.New("missing azure claims")
 	}
-
-	lower := strings.ToLower(xmsMirID)
-	parts := strings.Split(strings.TrimPrefix(lower, "/"), "/")
-
-	// Expected: subscriptions/{sub}/resourcegroups/{rg}/providers/microsoft.managedidentity/userassignedidentities/{name}
-	if len(parts) < 8 {
-		return "", "", fmt.Errorf("unexpected xms_mirid format: %s", xmsMirID)
+	if !strings.EqualFold(claims.TenantID, keyTenantID) {
+		return fmt.Errorf("verified tid %q does not match key tenant %q", claims.TenantID, keyTenantID)
 	}
-
-	if parts[0] != "subscriptions" {
-		return "", "", fmt.Errorf("unexpected xms_mirid format, expected 'subscriptions' prefix: %s", xmsMirID)
-	}
-
-	subscriptionID = parts[1]
-
-	// Only extract runner ID from user-assigned managed identity resources.
-	// System-assigned identities (e.g. VMSS, VM) have a different resource type
-	// and the last segment is not a runner ID.
-	if !strings.Contains(lower, "microsoft.managedidentity/userassignedidentities") {
-		return "", subscriptionID, fmt.Errorf("xms_mirid is not a user-assigned managed identity: %s", xmsMirID)
-	}
-
-	// The identity name is the last segment.
-	originalParts := strings.Split(strings.TrimPrefix(xmsMirID, "/"), "/")
-	identityName := originalParts[len(originalParts)-1]
-
-	return identityName, subscriptionID, nil
+	return nil
 }
 
-// extractRunnerIDFromClaims extracts the runner ID from Azure JWT claims.
-// It first tries xms_mirid, then falls back to the request-provided runner_id.
-func extractRunnerIDFromClaims(claims *azureClaims, requestRunnerID string) (runnerID string, subscriptionID string, err error) {
-	if claims.XMSMirID != "" {
-		runnerID, subscriptionID, err = extractRunnerIDFromXMSMirID(claims.XMSMirID)
-		if err == nil && runnerID != "" {
-			return runnerID, subscriptionID, nil
-		}
+func resolveAzureRunnerIdentity(claims *azureClaims, requestRunnerID string) (runnerID, subscriptionID, installID string, err error) {
+	if requestRunnerID == "" {
+		return "", "", "", errors.New("runner_id is required")
+	}
+	if claims == nil || claims.XMSMirID == "" {
+		return requestRunnerID, "", "", nil
 	}
 
-	// Fallback to request-provided runner ID.
-	if requestRunnerID != "" {
-		return requestRunnerID, subscriptionID, nil
+	vmss, err := workloadjwt.ParseAzureRunnerVMSS(claims.XMSMirID)
+	if err != nil {
+		return "", "", "", err
 	}
 
-	return "", "", errors.New("unable to determine runner ID: xms_mirid claim missing or invalid and no runner_id provided")
+	return requestRunnerID, vmss.SubscriptionID, vmss.InstallID, nil
+}
+
+func bindAzureRunnerInstall(installID, miridInstallID string) error {
+	if miridInstallID == "" {
+		return nil
+	}
+	if installID == "" {
+		return errors.New("missing install id for runner vmss bind")
+	}
+	if !strings.EqualFold(installID, miridInstallID) {
+		return fmt.Errorf("vmss install %q does not match runner install %q", miridInstallID, installID)
+	}
+	return nil
 }
 
 // @ID						RunnerAuthAzure
@@ -280,9 +205,9 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		return
 	}
 
-	runnerID, subscriptionID, err := extractRunnerIDFromClaims(azClaims, req.RunnerID)
+	runnerID, subscriptionID, miridInstallID, err := resolveAzureRunnerIdentity(azClaims, req.RunnerID)
 	if err != nil {
-		s.l.Warn("runner auth azure: failed to extract runner ID",
+		s.l.Warn("runner auth azure: failed to resolve runner identity",
 			zap.String("xms_mirid", azClaims.XMSMirID),
 			zap.Error(err))
 		ctx.Error(stderr.ErrAuthentication{
@@ -324,6 +249,21 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 	metricTags["install_id"] = install.ID
 	metricTags["install_name"] = install.Name
 	metricTags["org_id"] = install.OrgID
+
+	if err := bindAzureRunnerInstall(install.ID, miridInstallID); err != nil {
+		s.l.Warn("runner auth azure: vmss install mismatch",
+			zap.String("runner_id", runnerID),
+			zap.String("install_id", install.ID),
+			zap.String("mirid_install_id", miridInstallID),
+			zap.String("xms_mirid", azClaims.XMSMirID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthorization{
+			Err:         errors.New("authorization failed"),
+			Description: "runner identity does not match expected configuration",
+		})
+		ctx.Abort()
+		return
+	}
 
 	if err := s.validateRunnerAzureIdentity(reqCtx, install, azClaims, subscriptionID); err != nil {
 		s.l.Warn("runner auth azure: identity validation failed",

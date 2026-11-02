@@ -8,6 +8,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 )
 
+const holdUnansweredApprovalVersion = "hold-unanswered-approval-v1"
+
 // executeSequential dispatches steps one at a time. After each step completes,
 // the step's directive determines what happens next. Cloning for retry happens
 // here — the single authoritative place for clone decisions.
@@ -27,7 +29,11 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			return err
 		}
 
-		step, found := s.nextExecutableStep(steps)
+		holdUnanswered := workflow.GetVersion(ctx, holdUnansweredApprovalVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+		step, found, awaitingApproval := s.nextExecutableStep(steps, holdUnanswered)
+		if awaitingApproval {
+			return s.writeStepGroupDirective(ctx, directive.GroupAwaitApproval)
+		}
 		if !found {
 			return s.writeStepGroupDirective(ctx, directive.GroupContinue)
 		}

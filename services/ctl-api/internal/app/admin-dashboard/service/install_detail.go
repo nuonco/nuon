@@ -284,7 +284,7 @@ func (s *service) getActiveDeployments(c *gin.Context, installID string) ([]app.
 	}
 
 	for i := range deployments {
-		if deployments[i].InstallComponent.Component.Name != "" {
+		if deployments[i].InstallComponent != nil && deployments[i].InstallComponent.Component.Name != "" {
 			deployments[i].ComponentName = deployments[i].InstallComponent.Component.Name
 		}
 	}

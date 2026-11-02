@@ -26,6 +26,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/publicnet"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/interests"
@@ -241,11 +242,12 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 		blobReadEnabled = params.Cfg.BlobReadEnabled
 	}
 
+	httpClient := publicnet.NewHTTPClient()
+	httpClient.Timeout = timeout
+
 	return &WebhookSignalLifecycleHook{
-		l: logger,
-		httpClient: &http.Client{
-			Timeout: timeout,
-		},
+		l:               logger,
+		httpClient:      httpClient,
 		webhookURLs:     normalizeWebhookURLs(webhookURLs),
 		db:              params.DB,
 		appURL:          appURL,

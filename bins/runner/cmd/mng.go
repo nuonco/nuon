@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -80,26 +78,7 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 	fx.New(providers...).Run()
 }
 
-// fetchTokenDenied reports whether this fetch-token process is a child of the
-// runner. Inside the install container the runner is PID 1, so a vendor action
-// step can exec the binary, and the instance identity would mint a fresh
-// org-wide token. The host invocation is a child of systemd, where PID 1 is
-// not the runner.
-func fetchTokenDenied(pid int, pid1Cmdline string) bool {
-	if pid == 1 {
-		return false
-	}
-	argv0, _, _ := strings.Cut(pid1Cmdline, "\x00")
-	return filepath.Base(argv0) == "runner"
-}
-
 func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
-	pid1Cmdline, err := os.ReadFile("/proc/1/cmdline")
-	if err == nil && fetchTokenDenied(os.Getpid(), string(pid1Cmdline)) {
-		fmt.Fprintf(os.Stderr, "fetch-token cannot run inside the runner\n")
-		os.Exit(1)
-	}
-
 	ctx := context.Background()
 	jsonOutput, _ := cmd.Flags().GetBool("json")
 	platform, _ := cmd.Flags().GetString("platform")

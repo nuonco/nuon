@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/metrics"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/procisolation"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
@@ -32,7 +31,7 @@ type cli struct {
 func (c *cli) commonProviders() []fx.Option {
 	// providers for both runner modes: mng and (org |install)
 	return []fx.Option{
-		fx.Provide(newConfig),
+		fx.Provide(runnerconfig.NewConfig),
 		fx.Provide(validator.New),
 		// logging and error handling
 		fx.Provide(slog.AsSystemProvider(slog.NewSystemProvider)),
@@ -56,19 +55,6 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(componenthealth.NewTerraformProvider),
 		fx.Provide(componenthealth.NewManifestKindsProvider),
 	}
-}
-
-func newConfig() (*runnerconfig.Config, error) {
-	cfg, err := runnerconfig.NewConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := procisolation.Apply(); err != nil {
-		return nil, err
-	}
-
-	return cfg, nil
 }
 
 func (c *cli) providers() []fx.Option {

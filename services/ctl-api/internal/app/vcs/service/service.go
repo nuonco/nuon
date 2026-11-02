@@ -37,6 +37,7 @@ type service struct {
 	queueClient *queueclient.Client
 
 	disableConnectionCallback bool
+	disableOwnershipCheck     bool
 }
 
 var _ api.Service = (*service)(nil)
@@ -52,7 +53,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 		connections := vcs.Group("/connections")
 		{
-			connections.POST("", s.CreateConnection)
 			connections.GET("", s.GetConnections)
 			connections.GET("/:connection_id", s.GetConnection)
 			connections.GET("/:connection_id/branches", s.GetVCSConnectionRepoBranches)
@@ -100,6 +100,7 @@ func New(params Params) *service {
 		queueClient: params.QueueClient,
 
 		disableConnectionCallback: params.Cfg != nil && params.Cfg.DisableVCSConnectionCallback,
+		disableOwnershipCheck:     params.Cfg != nil && params.Cfg.DisableVCSConnectionOwnershipCheck,
 	}
 }
 

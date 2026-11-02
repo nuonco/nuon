@@ -986,8 +986,9 @@ func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployS
 
 	compositeStatus = app.NewCompositeStatus(ctx, req.Status)
 	compositeStatus.StatusHumanDescription = req.StatusDescription
-	installComponent := app.InstallComponent{
-		ID: extantInstallDeploy.InstallComponent.ID,
+	installComponent := app.InstallComponent{}
+	if extantInstallDeploy.InstallComponent != nil {
+		installComponent.ID = extantInstallDeploy.InstallComponent.ID
 	}
 
 	getInstallComponentStatus := func(ctx context.Context) (app.CompositeStatus, error) {

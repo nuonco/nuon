@@ -34,6 +34,9 @@ const findStep = (
   match: (name?: string) => boolean
 ) => steps.find((step) => match(step.name))
 
+export const buildComponentsStep = (steps: TInstallWorkflowStep[]) =>
+  findStep(steps, isBuildComponents)
+
 export const stepStageStatus = (
   step?: TInstallWorkflowStep
 ): TOverviewStageStatus => {

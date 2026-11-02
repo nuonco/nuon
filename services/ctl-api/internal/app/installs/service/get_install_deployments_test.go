@@ -11,7 +11,7 @@ import (
 func TestBuildInstallDeploymentSortsAffectedResources(t *testing.T) {
 	deploy := func(name string) app.InstallDeploy {
 		return app.InstallDeploy{
-			InstallComponent: app.InstallComponent{Component: app.Component{Name: name}},
+			InstallComponent: &app.InstallComponent{Component: app.Component{Name: name}},
 		}
 	}
 	wf := &app.Workflow{

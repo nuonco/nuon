@@ -2,13 +2,17 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
+	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/oidc/githubauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -20,6 +24,10 @@ import (
 type CreateConnectionCallbackRequest struct {
 	OrgID           string `json:"org_id" validate:"required"`
 	GithubInstallID string `json:"github_install_id" validate:"required"`
+	// Code is the GitHub user-authorization code issued after the install.
+	// It proves the caller can see github_install_id; the id alone can be
+	// spoofed.
+	Code string `json:"code"`
 }
 
 func (c *CreateConnectionCallbackRequest) Validate(v *validator.Validate) error {
@@ -81,6 +89,11 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
+	if err := s.verifyInstallationOwnership(ctx, acct, req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	// Fetch org name
 	ghAccount, err := s.ghClient.GetInstallationAccount(ctx, req.GithubInstallID)
 	if err != nil {
@@ -98,7 +111,52 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
+	// Create background health check queue for the connection
+	if _, err := s.helpers.CreateConnectionQueue(dbCtx, vcsConn); err != nil {
+		s.l.Warn("unable to create vcs connection queue",
+			zap.String("vcs_connection_id", vcsConn.ID),
+			zap.Error(err),
+		)
+	}
+
 	ctx.JSON(http.StatusCreated, vcsConn)
+}
+
+// verifyInstallationOwnership rejects installation ids the authorizing GitHub
+// user cannot see. Without it any account that can create an org could
+// attach, read, and uninstall another customer's installation.
+func (s *service) verifyInstallationOwnership(ctx *gin.Context, acct *app.Account, req CreateConnectionCallbackRequest) error {
+	if s.disableOwnershipCheck {
+		s.l.Warn("vcs connection ownership check is disabled; attaching installation without verification",
+			zap.String("org_id", req.OrgID),
+			zap.String("github_install_id", req.GithubInstallID),
+			zap.String("account_id", acct.ID),
+		)
+		return nil
+	}
+
+	if req.Code == "" {
+		return stderr.NewInvalidRequest(fmt.Errorf("code is required"))
+	}
+
+	err := s.ghClient.VerifyInstallationOwnership(ctx, req.Code, req.GithubInstallID)
+	if err == nil {
+		return nil
+	}
+
+	s.l.Warn("vcs connection ownership check failed",
+		zap.String("org_id", req.OrgID),
+		zap.String("github_install_id", req.GithubInstallID),
+		zap.String("account_id", acct.ID),
+		zap.Error(err),
+	)
+	if errors.Is(err, githubauth.ErrInstallationNotOwned) {
+		return stderr.ErrAuthorization{
+			Err:         fmt.Errorf("github installation %s is not accessible to the authorizing user", req.GithubInstallID),
+			Description: "This GitHub installation does not belong to the GitHub account you authorized.",
+		}
+	}
+	return fmt.Errorf("unable to verify github installation ownership: %w", err)
 }
 
 func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
@@ -110,4 +168,26 @@ func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
 	}
 
 	return &org, nil
+}
+
+func (s *service) createOrgConnection(
+	ctx context.Context, orgID, githubInstallID, githubAccountID, githubAccountName string,
+) (*app.VCSConnection, error) {
+	vcsConn := app.VCSConnection{
+		OrgID:             orgID,
+		GithubInstallID:   githubInstallID,
+		GithubAccountID:   githubAccountID,
+		GithubAccountName: githubAccountName,
+	}
+
+	if err := s.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "org_id"}, {Name: "github_install_id"}, {Name: "deleted_at"}},
+		DoNothing: true,
+	}).Create(&vcsConn).Error; err != nil {
+		return nil, fmt.Errorf("unable to create vcs_connection: %w", err)
+	}
+
+	// NOTE(jm): when this is a duplicate, the returned ID is not actually valid, as it is set by the create hook in
+	// GORM, but then the conflict happens after.
+	return &vcsConn, nil
 }

@@ -99,8 +99,8 @@ type InstallComponent struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	InstallID string  `json:"install_id,omitzero" gorm:"index:install_component_group,unique;notnull" temporaljson:"install_id,omitzero,omitempty"`
-	Install   Install `faker:"-" json:"-" temporaljson:"install,omitzero,omitempty"`
+	InstallID string   `json:"install_id,omitzero" gorm:"index:install_component_group,unique;notnull" temporaljson:"install_id,omitzero,omitempty"`
+	Install   *Install `faker:"-" json:"-" temporaljson:"install,omitzero,omitempty"`
 
 	ComponentID string    `json:"component_id,omitzero" gorm:"index:install_component_group,unique;notnull" temporaljson:"component_id,omitzero,omitempty"`
 	Component   Component `faker:"-" json:"component,omitzero" temporaljson:"component,omitzero,omitempty"`

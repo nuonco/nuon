@@ -1,24 +1,19 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Text } from '@/components/common/Text'
 import { RadioInput } from '@/components/common/form/RadioInput'
 import { Toggle } from '@/components/common/form/Toggle'
-import { PageContent } from '@/components/layout/PageContent'
-import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
 import type { TAppBranchPreviewConfig, TAppBranchRunPreviewMode } from '@/types'
-import { PullRequestHeader } from './PullRequestHeader'
-import {
-  installCandidates,
-  type TPlaygroundInstallCandidate,
-  type TPlaygroundPullRequest,
+import type {
+  TPlaygroundInstallCandidate,
+  TPlaygroundPullRequest,
 } from './fixtures'
 
 const MODES: {
@@ -93,25 +88,19 @@ const InstallOption = ({
 export interface IPullRequestConfigure extends IModal {
   pullRequest: TPlaygroundPullRequest
   installs?: TPlaygroundInstallCandidate[]
-  backLink?: ReactNode
   onSave: (override: TAppBranchPreviewConfig) => void | Promise<unknown>
-  onCancel?: () => void
   modeDescription?: string
   githubLocked?: boolean
   isSaving?: boolean
-  presentation?: 'page' | 'modal'
 }
 
 export const PullRequestConfigure = ({
   pullRequest,
-  installs = installCandidates,
-  backLink,
+  installs = [],
   onSave,
-  onCancel,
   modeDescription = 'Applies to every preview run on this pull request, overriding the branch default.',
   githubLocked = false,
   isSaving = false,
-  presentation = 'page',
   modalId,
   ...modalProps
 }: IPullRequestConfigure) => {
@@ -146,7 +135,7 @@ export const PullRequestConfigure = ({
         comment,
         ignore_drafts: ignoreDrafts,
       })
-      if (presentation === 'modal') removeModal(modalId)
+      removeModal(modalId)
     } catch {
     } finally {
       setSaving(false)
@@ -282,54 +271,24 @@ export const PullRequestConfigure = ({
           )}
         </Card>
 
-        {presentation === 'page' ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => void save()}
-              disabled={!isValid || busy}
-            >
-              {busy ? 'Saving...' : 'Save & re-run'}
-            </Button>
-            {onCancel ? (
-              <Button variant="ghost" size="lg" onClick={onCancel}>
-                Cancel
-              </Button>
-            ) : null}
-            {hint}
-          </div>
-        ) : (
-          hint
-        )}
+        {hint}
     </>
   )
 
-  if (presentation === 'modal') {
-    return (
-      <Modal
-        heading="Edit preview config"
-        size="lg"
-        modalId={modalId}
-        primaryActionTrigger={{
-          children: busy ? 'Saving...' : 'Save & re-run',
-          disabled: !isValid || busy,
-          onClick: () => void save(),
-          variant: 'primary',
-        }}
-        {...modalProps}
-      >
-        {fields}
-      </Modal>
-    )
-  }
-
   return (
-    <PageContent>
-      <PageSection>
-        <PullRequestHeader pullRequest={pullRequest} backLink={backLink} />
-        {fields}
-      </PageSection>
-    </PageContent>
+    <Modal
+      heading="Edit preview config"
+      size="lg"
+      modalId={modalId}
+      primaryActionTrigger={{
+        children: busy ? 'Saving...' : 'Save & re-run',
+        disabled: !isValid || busy,
+        onClick: () => void save(),
+        variant: 'primary',
+      }}
+      {...modalProps}
+    >
+      {fields}
+    </Modal>
   )
 }

@@ -310,8 +310,6 @@ type ClientService interface {
 
 	CreateUserJourney(params *CreateUserJourneyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateUserJourneyCreated, error)
 
-	CreateVCSConnection(params *CreateVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCreated, error)
-
 	CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error)
 
 	CreateVCSConnectionWebhookSubscription(params *CreateVCSConnectionWebhookSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionWebhookSubscriptionCreated, error)
@@ -5629,55 +5627,11 @@ func (a *Client) CreateUserJourney(params *CreateUserJourneyParams, authInfo run
 }
 
 /*
-CreateVCSConnection creates a vcs connection for github
+	CreateVCSConnectionCallback creates a vcs connection from the github app install callback
 
-Create a VCS connection for version control integration.
-*/
-func (a *Client) CreateVCSConnection(params *CreateVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewCreateVCSConnectionParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "CreateVCSConnection",
-		Method:             "POST",
-		PathPattern:        "/v1/vcs/connections",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateVCSConnectionReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
+	Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
 
-	// only one success response has to be checked
-	success, ok := result.(*CreateVCSConnectionCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for CreateVCSConnection: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-CreateVCSConnectionCallback creates a vcs connection from the github app install callback
-
-Create a VCS connection after the GitHub App install redirect. The caller must be authenticated and have write access to `org_id`.
+`code` is the user-authorization code GitHub issues when the installing user completes the app's OAuth web flow. The API exchanges it and only attaches `github_install_id` if that user can see the installation; otherwise it responds `403`. The installation id on its own is not trusted because GitHub lets it be spoofed.
 */
 func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error) {
 	// NOTE: parameters are not validated before sending

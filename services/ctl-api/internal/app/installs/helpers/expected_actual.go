@@ -47,17 +47,20 @@ func (h *Helpers) RecordInstallActionWorkflowRunApplied(ctx context.Context, run
 	return nil
 }
 
-func (h *Helpers) RecordInstallStackVersionApplied(ctx context.Context, stackVersion *app.InstallStackVersion, requestType string) error {
+func (h *Helpers) RecordInstallStackVersionApplied(ctx context.Context, db *gorm.DB, stackVersion *app.InstallStackVersion, requestType string) error {
 	if requestType != PhoneHomeRequestTypeCreate && requestType != PhoneHomeRequestTypeUpdate {
 		return nil
 	}
 	if stackVersion.InstallStackID == "" {
 		return nil
 	}
+	if db == nil {
+		db = h.db
+	}
 
 	appConfigID := stackVersion.AppConfigID
 
-	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if _, err := driftresolution.LockInstall(ctx, tx, stackVersion.InstallID); err != nil {
 			return err
 		}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-github/v50/github"
 
+	"github.com/nuonco/nuon/pkg/oidc/githubauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -20,6 +21,18 @@ type GithubClient interface {
 	DeleteInstallation(ctx context.Context, installID string) error
 	ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error)
 	CreateOrgWebhook(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string, secret string) (int64, error)
+	// VerifyInstallationOwnership exchanges a user-authorization code and
+	// confirms installID is visible to that user. Returns
+	// githubauth.ErrInstallationNotOwned when it is not.
+	VerifyInstallationOwnership(ctx context.Context, code, installID string) error
+}
+
+func (h *Helpers) VerifyInstallationOwnership(ctx context.Context, code, installID string) error {
+	c := &githubauth.Client{
+		ClientID:     h.cfg.GithubAppClientID,
+		ClientSecret: h.cfg.GithubAppClientSecret,
+	}
+	return c.VerifyInstallation(ctx, code, installID)
 }
 
 func (h *Helpers) GetInstallationAccount(ctx context.Context, installID string) (*github.User, error) {

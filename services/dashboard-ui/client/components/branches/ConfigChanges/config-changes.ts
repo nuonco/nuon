@@ -7,6 +7,7 @@ import {
   type IPlanDiffSummary,
   type TDiffOperation,
 } from '@/lib/diffs'
+import { formatEmbeddedTomlContent } from '@/lib/diffs/embedded-toml'
 import type {
   DiffEntityEntry,
   DiffFieldEntry,
@@ -243,8 +244,22 @@ const languageFor = (path: string) => {
 
 const unquote = (value: string) => value.trim().replace(/^'([\s\S]*)'$/, '$1')
 
+const presented = (value: string, language: string) =>
+  language === 'toml' ? formatEmbeddedTomlContent(value) : value
+
+const isJsonString = (value: string) => {
+  if (!/^"[\s\S]*"$/.test(value)) return false
+  try {
+    return typeof JSON.parse(value) === 'string'
+  } catch {
+    return false
+  }
+}
+
 const tomlValue = (value: string) =>
-  /^(true|false|-?\d+(\.\d+)?)$/.test(value) ? value : JSON.stringify(value)
+  /^(true|false|-?\d+(\.\d+)?)$/.test(value) || isJsonString(value)
+    ? value
+    : JSON.stringify(value)
 
 const splitField = ({ diff, op }: DiffFieldEntry) => {
   const index = diff.indexOf(' -> ')
@@ -285,21 +300,23 @@ const fileSection = (
   group: string,
   icon: TIconVariant,
   description: string
-): TConfigChangeSection =>
-  complete({
+): TConfigChangeSection => {
+  const language = languageFor(file.name)
+  return complete({
     id,
     kind: 'file',
     title: file.name,
     description,
     operation: operationFor(file.op),
-    before: file.before ?? '',
-    after: file.after ?? '',
-    language: languageFor(file.name),
+    before: presented(file.before ?? '', language),
+    after: presented(file.after ?? '', language),
+    language,
     filename: file.name,
     group,
     icon,
     searchable: [group, description, file.name],
   })
+}
 
 const entitySections = (
   section: DiffSectionData,
@@ -334,10 +351,14 @@ const entitySections = (
     title: entity.name,
     description: entity.componentType?.replace(/_/g, ' '),
     operation: operationFor(entity.op),
-    before:
+    before: presented(
       entity.content?.before ?? tomlBlock(entity.name, entity.fields, 'before'),
-    after:
+      'toml'
+    ),
+    after: presented(
       entity.content?.after ?? tomlBlock(entity.name, entity.fields, 'after'),
+      'toml'
+    ),
     language: 'toml',
     filename: `${id}.toml`,
     group: section.name,
@@ -376,10 +397,14 @@ const sectionChanges = (section: DiffSectionData): TConfigChangeSection[] => {
     title: section.name,
     description: `${section.sectionKey}.toml`,
     operation: operationFor(op),
-    before:
+    before: presented(
       section.content?.before ?? tomlBlock(undefined, section.fields, 'before'),
-    after:
+      'toml'
+    ),
+    after: presented(
       section.content?.after ?? tomlBlock(undefined, section.fields, 'after'),
+      'toml'
+    ),
     language: 'toml',
     filename: `${section.sectionKey}.toml`,
     group: section.name,
@@ -405,26 +430,26 @@ const sectionChanges = (section: DiffSectionData): TConfigChangeSection[] => {
 const sourceFileSections = (
   files: TConfigSourceFile[]
 ): TConfigChangeSection[] =>
-  files.flatMap((file) =>
-    file.change === 'unchanged'
-      ? []
-      : [
-          complete({
-            id: `source/${file.path}`,
-            kind: 'file',
-            title: file.path,
-            description: file.kind,
-            operation: SOURCE_FILE_OPERATION[file.change],
-            before: file.before ?? '',
-            after: file.after ?? '',
-            language: languageFor(file.path),
-            filename: file.path,
-            group: SOURCE_FILES_GROUP,
-            icon: 'FileTextIcon',
-            searchable: [SOURCE_FILES_GROUP, file.path, file.kind],
-          }),
-        ]
-  )
+  files.flatMap((file) => {
+    if (file.change === 'unchanged') return []
+    const language = languageFor(file.path)
+    return [
+      complete({
+        id: `source/${file.path}`,
+        kind: 'file',
+        title: file.path,
+        description: file.kind,
+        operation: SOURCE_FILE_OPERATION[file.change],
+        before: presented(file.before ?? '', language),
+        after: presented(file.after ?? '', language),
+        language,
+        filename: file.path,
+        group: SOURCE_FILES_GROUP,
+        icon: 'FileTextIcon',
+        searchable: [SOURCE_FILES_GROUP, file.path, file.kind],
+      }),
+    ]
+  })
 
 export const configChanges = (
   sections: DiffSectionData[],

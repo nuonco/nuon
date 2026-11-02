@@ -109,6 +109,61 @@ export const WithBuilds = () => (
 )
 WithBuilds.storyName = 'With builds'
 
+const embeddedToml = (enabled: 'false' | 'true', branch: string) =>
+  [
+    'source = ""',
+    `contents = ${JSON.stringify(
+      [
+        '---',
+        'apiVersion: v1',
+        'kind: ConfigMap',
+        'metadata:',
+        '  name: acme',
+        'data:',
+        `  enabled: "${enabled}"`,
+        '  endpoint: http://collector.example.com',
+      ].join('\n')
+    )}`,
+    'path = ""',
+    '',
+    '[helm_chart.public_repo]',
+    "repo = 'acme/example'",
+    `branch = '${branch}'`,
+  ].join('\n')
+
+export const EmbeddedToml = () => (
+  <ConfigChangesViewer
+    sections={[
+      {
+        name: 'Components',
+        sectionKey: 'components',
+        additions: 0,
+        removals: 0,
+        changed: 1,
+        grouped: true,
+        fields: [],
+        entities: [
+          {
+            name: 'collector',
+            op: 'change',
+            componentType: 'helm_chart',
+            fields: [],
+            content: {
+              op: 'change',
+              before: embeddedToml('false', 'release-13'),
+              after: embeddedToml('true', 'release-14'),
+            },
+          },
+        ],
+      },
+    ]}
+    versionLabel="v13 → v14"
+    previousSha="9f8e7d6c5b4a"
+    sha="a1b2c3d4e5f6"
+  />
+)
+EmbeddedToml.storyName = 'Embedded toml'
+
 export const BuildsOnly = () => (
   <ConfigChangesViewer sections={[]} builds={builds} versionLabel="v14" />
 )

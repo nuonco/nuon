@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/nuonco/nuon/pkg/jwtcompact"
 )
 
 type JWTClaims struct {
@@ -17,22 +19,18 @@ type JWTClaims struct {
 
 // parseJWT parses a JWT token from Azure to get metadata about it.
 func parseJWT(tokenString string) (*JWTClaims, error) {
-	// Split the token into parts
-	parts := strings.Split(tokenString, ".")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid token format")
+	if err := jwtcompact.Require(tokenString); err != nil {
+		return nil, fmt.Errorf("invalid token format: %w", err)
 	}
 
-	// Decode the payload (second part)
+	parts := strings.Split(strings.TrimSpace(tokenString), ".")
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse JSON
 	var claims JWTClaims
-	err = json.Unmarshal(payload, &claims)
-	if err != nil {
+	if err := json.Unmarshal(payload, &claims); err != nil {
 		return nil, err
 	}
 
