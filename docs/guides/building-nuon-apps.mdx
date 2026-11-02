@@ -20,15 +20,17 @@ also selects the new app.
 
 ## Adding the Required Files
 
-A valid app needs these three files. The [sandbox](/concepts/sandboxes) and [runner](/concepts/runners) are part of
-Nuon's [install infrastructure](/concepts/installs).
+A valid app needs these four files and a `components/` directory. The [sandbox](/concepts/sandboxes) and
+[runner](/concepts/runners) are part of Nuon's [install infrastructure](/concepts/installs).
 
 ```toml metadata.toml
+# metadata
 # App details. Only the config version is required.
 version = "v2"
 ```
 
 ```toml sandbox.toml
+# sandbox
 # Base infrastructure for each install, such as a VPC and cluster
 terraform_version = "1.11.4"
 
@@ -39,12 +41,43 @@ branch    = "main"
 ```
 
 ```toml runner.toml
+# runner
 # The runner that deploys into each customer's cloud account
 runner_type = "aws"
 ```
 
-Then add a [component](/concepts/components) for each Helm chart, Terraform module, or container image you deploy. The
-[configuration reference](/config-ref) covers every file and field.
+```toml permissions.toml
+# permissions
+# IAM roles the runner uses to provision, maintain, and deprovision each install.
+# All three types are required. Scope the policies down before production.
+[[roles]]
+type        = "provision"
+name        = "{{.nuon.install.id}}-provision"
+description = "Provisions the install"
+
+[[roles.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[roles]]
+type        = "maintenance"
+name        = "{{.nuon.install.id}}-maintenance"
+description = "Deploys and updates the install"
+
+[[roles.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[roles]]
+type        = "deprovision"
+name        = "{{.nuon.install.id}}-deprovision"
+description = "Tears down the install"
+
+[[roles.policies]]
+managed_policy_name = "AdministratorAccess"
+```
+
+Then create a `components/` directory and add a [component](/concepts/components) for each Helm chart, Terraform
+module, or container image you deploy. The [configuration reference](/config-ref) covers every file and field, including
+[permissions](/config-ref/permissions).
 
 ## Validating the Config
 

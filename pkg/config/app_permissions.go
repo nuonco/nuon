@@ -40,15 +40,15 @@ type PermissionsConfig struct {
 func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("provision_role").Short("provisioning IAM role").
-		Long("IAM role used during initial provisioning of the install with permissions to set up resources").
+		Long("IAM role used to provision the install and set up resources. Required, here or as a roles entry with type = \"provision\"").
 		Field("deprovision_role").Short("deprovisioning IAM role").
-		Long("IAM role used for tearing down the install and cleaning up resources").
+		Long("IAM role used to tear down the install and clean up resources. Required, here or as a roles entry with type = \"deprovision\"").
 		Field("maintenance_role").Short("maintenance IAM role").
-		Long("IAM role used for day-to-day maintenance, updates, and operational tasks").
+		Long("IAM role used for day-to-day maintenance, updates, and operational tasks. Required, here or as a roles entry with type = \"maintenance\"").
 		Field("custom_roles").Short("custom IAM roles").
 		Long("Additional IAM roles for specialized operations beyond the standard provision/maintenance/deprovision lifecycle. Each role must have type set to 'custom'").
 		Field("roles").Short("list of permission roles").
-		Long("Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, deprovision, or custom)").
+		Long("Roles for the directory layout, each with a type: provision, maintenance, deprovision, or custom. Must include all three standard types unless set as fields").
 		Field("named_policies").Short("named IAM policies").
 		Long("Customer-managed IAM policies created independently of any role's Enable parameter. Attach them from a role with named_policies. Distinct from the root policies/ directory, which is Kyverno/OPA")
 }
