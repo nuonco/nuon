@@ -9,10 +9,13 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID						GetAppInstalls
@@ -35,7 +38,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{array}		app.Install
+// @Success				200	{array}		CustomerInstall
 // @Router					/v1/apps/{app_id}/installs [GET]
 func (s *service) GetAppInstalls(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -49,20 +52,23 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 	appBranchID := ctx.Query("app_branch_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 
-	// Validate app belongs to org before fetching installs
-	currentApp, err := s.findAppByNameOrID(ctx, org.ID, appID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
-		return
-	}
-
-	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q, appBranchID, lbls)
+	var installs []app.Install
+	err = authz.New(authz.Params{DB: s.db}).ReadCustomerResources(ctx.Request.Context(), org.ID, func(tx, _, query *gorm.DB) error {
+		id, err := require.CustomerResourceID(tx.Statement.Context, tx, permissions.KindApp, org.ID, appID)
+		if err != nil {
+			return err
+		}
+		reader := *s
+		reader.db = tx
+		installs, err = reader.getAppInstalls(ctx, query, org.ID, id, q, appBranchID, lbls)
+		return err
+	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, installs)
+	ctx.JSON(http.StatusOK, customerInstalls(installs))
 }
 
 func (s *service) findAppByNameOrID(ctx *gin.Context, orgID, appID string) (*app.App, error) {
@@ -78,14 +84,20 @@ func (s *service) findAppByNameOrID(ctx *gin.Context, orgID, appID string) (*app
 	return &currentApp, nil
 }
 
-func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBranchID string, lbls labels.Labels) ([]app.Install, error) {
+func (s *service) getAppInstalls(ctx *gin.Context, query *gorm.DB, orgID, appID string, q, appBranchID string, lbls labels.Labels) ([]app.Install, error) {
 	var installs []app.Install
-	tx := s.db.WithContext(ctx).
-		Scopes(scopes.WithOffsetPagination).
+	tx := query.WithContext(ctx.Request.Context()).
+		Scopes(liveInstallParents(orgID)).
 		Scopes(labels.WithLabels("labels", lbls))
 
 	table := views.TableOrViewName(s.db, &app.Install{}, "")
 
+	if page := cctx.OffsetPaginationFromContext(ctx); page != nil {
+		if page.Limit < 1 || page.Limit > 100 || page.Offset < 0 {
+			return nil, stderr.NewInvalidRequest(fmt.Errorf("invalid install pagination"))
+		}
+		tx = tx.Limit(page.Limit + 1).Offset(page.Offset)
+	}
 	if q != "" {
 		queryPattern := "%" + q + "%"
 		tx = tx.Where(table+".name ILIKE ? OR "+table+".id ILIKE ?", queryPattern, queryPattern)
@@ -98,6 +110,7 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 	}
 
 	tx = tx.Where(table+".app_id = ? AND "+table+".org_id = ?", appID, orgID).
+		Preload("App", func(db *gorm.DB) *gorm.DB { return db.Select("id", "name") }).
 		Preload("AppSandboxConfig").
 		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {
 			return db.Order("active DESC, created_at DESC, id DESC")
@@ -116,7 +129,7 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 		Preload("AppConfig.RunnerConfig").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
-		Order("name ASC")
+		Order(table + ".name ASC, " + table + ".id ASC")
 
 	res := tx.Find(&installs)
 

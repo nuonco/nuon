@@ -1,15 +1,16 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -65,32 +66,19 @@ func (s *service) GetInstallsHealth(ctx *gin.Context) {
 	appID := ctx.Query("app_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 
-	installs, err := s.getInstallsForHealthSummary(ctx, org.ID, appID, lbls)
+	var installs []app.Install
+	err = authz.New(authz.Params{DB: s.db}).ReadCustomerResources(ctx.Request.Context(), org.ID, func(tx, _, query *gorm.DB) error {
+		if appID != "" {
+			query = query.Where(app.Install{AppID: appID})
+		}
+		return query.Scopes(labels.WithLabels("labels", lbls)).Preload("Org").Order("name ASC, id ASC").Find(&installs).Error
+	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs health summary: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, summarizeInstallsHealth(installs))
-}
-
-func (s *service) getInstallsForHealthSummary(ctx context.Context, orgID, appID string, lbls labels.Labels) ([]app.Install, error) {
-	tx := s.db.WithContext(ctx).
-		Scopes(labels.WithLabels("labels", lbls)).
-		Preload("Org").
-		Where(app.Install{OrgID: orgID}).
-		Order("name ASC")
-
-	if appID != "" {
-		tx = tx.Where(app.Install{AppID: appID})
-	}
-
-	installs := make([]app.Install, 0)
-	if err := tx.Find(&installs).Error; err != nil {
-		return nil, fmt.Errorf("unable to query installs: %w", err)
-	}
-
-	return installs, nil
 }
 
 // summarizeInstallsHealth rolls installs (with AfterQuery-computed

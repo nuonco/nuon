@@ -10,6 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -38,7 +40,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{array}		app.Install
+// @Success				200	{array}		CustomerInstall
 // @Router					/v1/installs [GET]
 func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -53,13 +55,20 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	branches := ctx.Query("branches")
 	includeComponents := ctx.Query("include_components") != "false"
 
-	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches, ctx.Query("cloud_connection_id"), includeComponents)
+	var installs []app.Install
+	err = authz.New(authz.Params{DB: s.db}).ReadCustomerResources(ctx.Request.Context(), org.ID, func(tx, _, query *gorm.DB) error {
+		reader := *s
+		reader.db = tx
+		var err error
+		installs, err = reader.getOrgInstalls(ctx, query, org.ID, q, lbls, runnerID, branches, ctx.Query("cloud_connection_id"), includeComponents)
+		return err
+	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, install)
+	ctx.JSON(http.StatusOK, customerInstalls(installs))
 }
 
 const branchFilterNoneToken = "__none__"
@@ -82,10 +91,9 @@ func parseBranchesFilter(raw string) (names []string, none bool) {
 	return names, none
 }
 
-func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches, cloudConnectionID string, includeComponents bool) ([]app.Install, error) {
+func (s *service) getOrgInstalls(ctx *gin.Context, query *gorm.DB, orgID, q string, lbls labels.Labels, runnerID, branches, cloudConnectionID string, includeComponents bool) ([]app.Install, error) {
 	var installs []app.Install
-	tx := s.db.WithContext(ctx).
-		Scopes(scopes.WithOffsetPagination).
+	tx := query.WithContext(ctx.Request.Context()).
 		Scopes(labels.WithLabels(views.TableOrViewName(s.db, &app.Install{}, ".labels"), lbls)).
 		Preload("AppSandboxConfig").
 		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {
@@ -118,8 +126,14 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		Joins(fmt.Sprintf("JOIN apps ON apps.id=%s", views.TableOrViewName(s.db, &app.Install{}, ".app_id"))).
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Where(views.TableOrViewName(s.db, &app.Install{}, ".org_id")+" = ?", orgID).
-		Order("name ASC")
+		Order(views.TableOrViewName(s.db, &app.Install{}, ".name ASC") + ", " + views.TableOrViewName(s.db, &app.Install{}, ".id ASC"))
 
+	if page := cctx.OffsetPaginationFromContext(ctx); page != nil {
+		if page.Limit < 1 || page.Limit > 100 || page.Offset < 0 {
+			return nil, stderr.NewInvalidRequest(fmt.Errorf("invalid install pagination"))
+		}
+		tx = tx.Limit(page.Limit + 1).Offset(page.Offset)
+	}
 	if cloudConnectionID != "" {
 		tx = tx.Where(app.Install{CloudConnectionID: &cloudConnectionID})
 	}
@@ -187,7 +201,7 @@ func (s *service) loadOrgInstallsComponents(ctx *gin.Context, orgID string, inst
 
 	componentsByInstallID := make(map[string][]app.InstallComponent, len(installs))
 	var installComponentsBatch []app.InstallComponent
-	tx := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx.Request.Context()).
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithOverrideTable(views.CustomViewName(s.db, &app.InstallDeploy{}, "latest_view_v1"))).

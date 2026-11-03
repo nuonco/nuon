@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -13,7 +12,8 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -51,39 +51,36 @@ func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.App
 // @Router					/v1/apps/{app_id} [patch]
-func (s *service) UpdateApp(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
+func (s *service) UpdateApp(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, err
 	}
-	appID := ctx.Param("app_id")
 
 	var req UpdateAppRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
+		return require.Response{}, stderr.NewInvalidRequest(err)
 	}
 	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
-		return
+		return require.Response{}, fmt.Errorf("invalid request: %w", err)
 	}
 
-	app, err := s.updateApp(ctx, org.ID, appID, &req)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to update app %s: %w", appID, err))
-		return
+	target := access.Target()
+	tx := access.DB()
+	var currentApp app.App
+	if err := tx.Where(app.App{ID: target.ID, OrgID: target.OrgID}).Take(&currentApp).Error; err != nil {
+		return require.Response{}, err
 	}
-
-	ctx.JSON(http.StatusOK, app)
+	if err := s.updateApp(tx, target, &currentApp, &req); err != nil {
+		return require.Response{}, err
+	}
+	reader := *s
+	reader.db = tx
+	result, err := reader.loadAppDetails(tx.Statement.Context, target.OrgID, tx.Where(app.App{ID: target.ID}))
+	return require.Response{Status: http.StatusOK, Body: result}, err
 }
 
-func (s *service) updateApp(ctx context.Context, orgID, appID string, req *UpdateAppRequest) (*app.App, error) {
-	currentApp, err := s.findApp(ctx, orgID, appID)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *service) updateApp(db *gorm.DB, target permissions.ResolvedTarget, currentApp *app.App, req *UpdateAppRequest) error {
 	updates := app.App{
 		Name:        req.Name,
 		Description: generics.NewNullString(req.Description),
@@ -95,15 +92,15 @@ func (s *service) updateApp(ctx context.Context, orgID, appID string, req *Updat
 		updates.ConfigDirectory = *req.ConfigDirectory
 	}
 
-	res := s.db.WithContext(ctx).
+	res := db.
 		Model(&app.App{}).
-		Where("id = ? AND org_id = ?", currentApp.ID, orgID).
+		Where(app.App{ID: target.AppID, OrgID: target.OrgID}).
 		Updates(updates)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to update app: %w", res.Error)
+		return fmt.Errorf("unable to update app: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return nil, fmt.Errorf("app not found %s %w", appID, gorm.ErrRecordNotFound)
+		return fmt.Errorf("app not found %s %w", target.AppID, gorm.ErrRecordNotFound)
 	}
 	currentApp.Name = updates.Name
 	if req.Description != "" {
@@ -114,31 +111,32 @@ func (s *service) updateApp(ctx context.Context, orgID, appID string, req *Updat
 	}
 
 	if req.SlackWebhookURL != nil {
-		res = s.db.WithContext(ctx).
+		res = db.
 			Select("slack_webhook_url").
 			Model(&app.NotificationsConfig{}).
 			Where(&app.NotificationsConfig{
-				OwnerID: currentApp.ID,
+				OwnerID: target.AppID,
 			}).
 			Updates(app.NotificationsConfig{
 				SlackWebhookURL: *req.SlackWebhookURL,
 			})
 		if res.Error != nil {
-			return nil, fmt.Errorf("unable to sync app notifications config: %w", res.Error)
+			return fmt.Errorf("unable to sync app notifications config: %w", res.Error)
 		}
 	}
 
 	if req.LabelColors != nil {
-		res = s.db.WithContext(ctx).
+		res = db.
 			Select("label_colors").
-			Model(currentApp).
+			Model(&app.App{}).
+			Where(app.App{ID: target.AppID, OrgID: target.OrgID}).
 			Updates(app.App{
 				LabelColors: labels.Labels(req.LabelColors),
 			})
 		if res.Error != nil {
-			return nil, fmt.Errorf("unable to update app label colors: %w", res.Error)
+			return fmt.Errorf("unable to update app label colors: %w", res.Error)
 		}
 	}
 
-	return currentApp, nil
+	return nil
 }

@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -25,35 +27,21 @@ func (s *service) GetInstallLabelKeys(ctx *gin.Context) {
 		return
 	}
 
-	result, err := s.getDistinctLabels(ctx, "installs", "org_id = ? AND deleted_at = 0", org.ID)
+	result := make(map[string][]string)
+	err = authz.New(authz.Params{DB: s.db}).ReadCustomerResources(ctx.Request.Context(), org.ID, func(tx, _, installs *gorm.DB) error {
+		var rows []struct{ Key, Value string }
+		if err := tx.Raw("SELECT DISTINCT key, value FROM (?) AS permitted, LATERAL jsonb_each_text(permitted.labels) ORDER BY key, value", installs.Select("labels")).Scan(&rows).Error; err != nil {
+			return err
+		}
+		for _, row := range rows {
+			result[row.Key] = append(result[row.Key], row.Value)
+		}
+		return nil
+	})
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
 	ctx.JSON(http.StatusOK, result)
-}
-
-// getDistinctLabels queries a table for all distinct label key→values.
-// Returns map[string][]string where keys are label keys and values are sorted distinct values.
-func (s *service) getDistinctLabels(ctx *gin.Context, table, where string, args ...any) (map[string][]string, error) {
-	type kv struct {
-		Key   string
-		Value string
-	}
-
-	var rows []kv
-	query := s.db.WithContext(ctx).
-		Raw("SELECT DISTINCT key, value FROM (SELECT (jsonb_each_text(labels)).* FROM "+table+" WHERE labels IS NOT NULL AND labels != '{}'::jsonb AND "+where+") AS t ORDER BY key, value", args...)
-
-	if err := query.Scan(&rows).Error; err != nil {
-		return nil, err
-	}
-
-	result := make(map[string][]string)
-	for _, r := range rows {
-		result[r.Key] = append(result[r.Key], r.Value)
-	}
-
-	return result, nil
 }

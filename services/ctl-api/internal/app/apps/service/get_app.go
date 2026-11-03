@@ -3,13 +3,14 @@ package service
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
@@ -30,21 +31,8 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.App
 // @Router					/v1/apps/{app_id} [get]
-func (s *service) GetApp(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	appID := ctx.Param("app_id")
-	a, err := s.findApp(ctx, org.ID, appID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, a)
+func (s *service) GetApp(ctx *gin.Context) (any, error) {
+	return s.getAuthorizedApp(ctx.Request.Context())
 }
 
 func (s *service) appByNameOrID(ctx context.Context, appID string) (*app.App, error) {
@@ -66,6 +54,10 @@ func (s *service) appByNameOrID(ctx context.Context, appID string) (*app.App, er
 }
 
 func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, error) {
+	return s.loadAppDetails(ctx, orgID, s.db.Where("name = ?", appID).Or("id = ?", appID))
+}
+
+func (s *service) loadAppDetails(ctx context.Context, orgID string, filter *gorm.DB) (*app.App, error) {
 	a := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("Org").
@@ -99,11 +91,35 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
 		Preload("NotificationsConfig").
 		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
+		Where(filter).
 		First(&a)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
 	return &a, nil
+}
+
+var appDetailRead = require.ReadContract{
+	Permission: permissions.AppRead,
+	Targets:    []require.ReadTarget{{Name: "app_id", Kind: permissions.KindApp}},
+}
+
+func (s *service) getAuthorizedApp(ctx context.Context) (*app.App, error) {
+	access, err := require.ReadAccessFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	target, err := access.Target("app_id")
+	if err != nil {
+		return nil, err
+	}
+	reader := *s
+	reader.db = access.DB()
+	result, err := reader.loadAppDetails(ctx, target.OrgID, reader.db.Where(app.App{ID: target.ID}))
+	if err != nil {
+		return nil, err
+	}
+	result.NotificationsConfig.SlackWebhookURL = ""
+	return result, nil
 }

@@ -12,6 +12,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/alignment"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -92,8 +94,12 @@ func (s *service) GetInstallOverview(ctx *gin.Context) {
 
 func (s *service) getInstallOverview(ctx context.Context, orgID, installID string, includeAlignment bool) (*InstallOverviewResponse, error) {
 	var install app.Install
+	filter := app.Install{ID: installID, OrgID: orgID}
+	if target, ok := require.CustomerTarget(ctx); ok && target.Kind == permissions.KindInstall {
+		filter = app.Install{ID: target.ID, OrgID: target.OrgID, AppID: target.AppID}
+	}
 	if err := s.db.WithContext(ctx).
-		Where(app.Install{ID: installID, OrgID: orgID}).
+		Where(filter).
 		First(&install).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}

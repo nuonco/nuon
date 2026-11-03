@@ -1,6 +1,8 @@
 package service
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/metric"
@@ -16,6 +18,7 @@ import (
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
@@ -69,10 +72,12 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	apps := ge.Group("/v1/apps")
 	{
 		apps.POST("", s.CreateApp)
-		apps.GET("", s.GetApps)
+		require.CustomerRoute(apps).GET("", s.GetApps)
 		appByID := apps.Group("/:app_id", require.AppInOrg(s.db))
-		appByID.PATCH("", s.UpdateApp)
-		appByID.GET("", s.GetApp)
+		require.MutationRoute(apps, s.db, require.MutationContract{
+			Permission: permissions.AppWrite, Target: require.ReadTarget{Name: "app_id", Kind: permissions.KindApp},
+		}).Handle(http.MethodPatch, "/:app_id", s.UpdateApp)
+		require.ReadRoute(apps, s.db, appDetailRead).GET("/:app_id", s.GetApp)
 		appByID.DELETE("", s.DeleteApp)
 	}
 
