@@ -48,7 +48,7 @@ func (a *Service) Login(ctx context.Context) error {
 
 	cfg, err := a.api.GetCLIConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("couldn't get cli config: %w", err)
+		return err
 	}
 	if warn, block := version.Assess(cfg); warn != "" || block != nil {
 		if warn != "" {
