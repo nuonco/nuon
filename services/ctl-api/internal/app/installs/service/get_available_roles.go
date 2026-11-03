@@ -112,7 +112,10 @@ func (s *service) availableRolesForInstall(
 		return nil, fmt.Errorf("unable to get app config: %w", err)
 	}
 
-	installState, err := s.helpers.GetInstallState(ctx, install.ID, false, false)
+	// Display surface: rendered role names can interpolate install inputs, so
+	// render against redacted state to keep sensitive input values out of the
+	// response.
+	installState, err := s.helpers.GetInstallState(ctx, install.ID, true, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install state: %w", err)
 	}

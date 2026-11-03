@@ -47,6 +47,24 @@ func TestFuncMap_EnvAccessDisabled(t *testing.T) {
 	}
 }
 
+func TestFuncMap_DisabledFuncsError(t *testing.T) {
+	for name, fm := range map[string]map[string]any{"TxtFuncMap": TxtFuncMap(), "HTMLFuncMap": HTMLFuncMap()} {
+		t.Run(name, func(t *testing.T) {
+			for _, fname := range disabledFuncs {
+				t.Run(fname, func(t *testing.T) {
+					fn, ok := fm[fname].(func(...any) (string, error))
+					require.True(t, ok, "%s should be overridden", fname)
+
+					got, err := fn(any(nil))
+					require.Error(t, err)
+					assert.Contains(t, err.Error(), "is not allowed")
+					assert.Empty(t, got)
+				})
+			}
+		})
+	}
+}
+
 func TestFuncMap_DateHelpersKept(t *testing.T) {
 	tmpl := `{{ .nuon.install.id }}-{{ now | date "2006" }}-{{ now | htmlDate }}`
 
