@@ -97,13 +97,26 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	//
 	// dg.addedImageDepSyncs is shared with the dependents call below so a
 	// shared image dep is only synced once across both call sites.
-	if !flw.PlanOnly && !comp.Type.IsImage() && generics.FromPtrStr(deployDependencies) == strconv.FormatBool(true) {
-		depSyncSteps, err := getImageDepSyncSteps(ctx, dg, comp.ID, 0, map[string]int{comp.ID: 0})
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to prepend image-dep sync steps for primary")
-		}
-		if len(depSyncSteps) > 0 {
+	if !comp.Type.IsImage() {
+		var prepended int
+		if !flw.PlanOnly && generics.FromPtrStr(deployDependencies) == strconv.FormatBool(true) {
+			depSyncSteps, err := getImageDepSyncSteps(ctx, dg, comp.ID, 0, map[string]int{comp.ID: 0})
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to prepend image-dep sync steps for primary")
+			}
 			steps = append(steps, depSyncSteps...)
+			prepended += len(depSyncSteps)
+		}
+		tagSyncs, err := syncImagesForInputTags(ctx, sg, installID, flw.Role, flw.PlanOnly, dg.enabledInputs, dg.syncedInputTagImages)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to sync images pinned by install inputs")
+		}
+		steps = append(steps, tagSyncs...)
+		for id := range dg.syncedInputTagImages {
+			dg.addedImageDepSyncs[id] = struct{}{}
+		}
+		prepended += len(tagSyncs)
+		if prepended > 0 {
 			sg.nextGroup()
 		}
 	}

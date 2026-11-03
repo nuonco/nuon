@@ -101,6 +101,16 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		cccIDByComp[ccc.ComponentID] = ccc.ID
 	}
 
+	// A version input can move a chart's image tag ahead of the app config
+	// this runbook is pinned to. Copy that image before any step deploys.
+	if runbookDeploysComponents(flw, runbookSteps) {
+		tagSyncs, err := syncImagesForInputTags(ctx, sg, installID, flw.Role, flw.PlanOnly, enabledInputs, map[string]struct{}{})
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, tagSyncs...)
+	}
+
 	// Generate steps for each runbook step
 	for _, stepCfg := range runbookSteps {
 		stepWorkflow := runbookStepWorkflow(flw, &stepCfg)
@@ -152,6 +162,18 @@ func runbookStepWorkflow(flw *app.Workflow, stepCfg *app.RunbookStepConfig) *app
 		effective.PlanOnly = true
 	}
 	return &effective
+}
+
+func runbookDeploysComponents(flw *app.Workflow, steps []app.RunbookStepConfig) bool {
+	if flw.PlanOnly {
+		return false
+	}
+	for _, stepCfg := range steps {
+		if stepCfg.Type == app.RunbookStepTypeComponentDeploy && !stepCfg.PlanOnly {
+			return true
+		}
+	}
+	return false
 }
 
 func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string, cccIDByComp map[string]string) ([]*app.WorkflowStep, error) {

@@ -3,6 +3,7 @@ package v2
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -63,20 +64,26 @@ type genCtx struct {
 	// sync step prepended in this workflow. Multiple non-image components
 	// may share the same image dep; we only sync it once per workflow.
 	addedImageDepSyncs map[string]struct{}
+
+	// syncedInputTagImages tracks image builds synced because an install
+	// input equals their source tag. Shared across every deploy batch in
+	// the workflow so the lookup and the sync step happen once.
+	syncedInputTagImages map[string]struct{}
 }
 
 func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow, opts ...genCtxOption) *genCtx {
 	components, depIDsByComp, cccByComp := buildComponentConfigMaps(appCfg)
 	dg := &genCtx{
-		sg:                 sg,
-		flw:                flw,
-		installID:          installID,
-		appCfg:             appCfg,
-		awData:             awData,
-		components:         components,
-		depIDsByComp:       depIDsByComp,
-		cccByComp:          cccByComp,
-		addedImageDepSyncs: make(map[string]struct{}),
+		sg:                   sg,
+		flw:                  flw,
+		installID:            installID,
+		appCfg:               appCfg,
+		awData:               awData,
+		components:           components,
+		depIDsByComp:         depIDsByComp,
+		cccByComp:            cccByComp,
+		addedImageDepSyncs:   make(map[string]struct{}),
+		syncedInputTagImages: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
 		opt(dg)
@@ -364,6 +371,76 @@ func getActionImageDepSyncSteps(ctx workflow.Context, dg *genCtx, installActions
 	return getImageDepSyncStepsForIDs(ctx, dg, depIDs, nil)
 }
 
+// syncImagesForInputTags copies image builds whose source tag equals an install
+// input before a chart that pins that input as its image tag is deployed. The
+// build often lives on a newer app config than the install is pinned to, so the
+// ordinary dep sync, which stays on the pinned config, never copies it.
+func syncImagesForInputTags(ctx workflow.Context, sg *stepGroup, installID, role string, planOnly bool, inputs map[string]*string, synced map[string]struct{}) ([]*app.WorkflowStep, error) {
+	if planOnly {
+		return nil, nil
+	}
+	if synced == nil {
+		synced = map[string]struct{}{}
+	}
+	tags := inputTagCandidates(inputs)
+	if len(tags) == 0 {
+		return nil, nil
+	}
+	matches, err := activities.AwaitFindImageBuildsMatchingTags(ctx, activities.FindImageBuildsMatchingTagsRequest{
+		InstallID: installID,
+		Tags:      tags,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find image builds for install inputs")
+	}
+
+	steps := make([]*app.WorkflowStep, 0)
+	groupStarted := false
+	for _, match := range matches {
+		if _, ok := synced[match.ComponentID]; ok {
+			continue
+		}
+		if !groupStarted {
+			sg.nextGroup()
+			groupStarted = true
+		}
+		step, err := sg.installSignalStep(ctx, installID, "sync "+match.ComponentName, pgtype.Hstore{}, &componentsyncimage.Signal{
+			InstallComponentID: match.InstallComponentID,
+			InstallID:          installID,
+			ComponentID:        match.ComponentID,
+			BuildID:            match.BuildID,
+			Role:               role,
+		}, false)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to create image sync for %s", match.ComponentName)
+		}
+		synced[match.ComponentID] = struct{}{}
+		steps = append(steps, step)
+	}
+	return steps, nil
+}
+
+func inputTagCandidates(inputs map[string]*string) []string {
+	seen := make(map[string]struct{})
+	tags := make([]string, 0)
+	for _, value := range inputs {
+		if value == nil {
+			continue
+		}
+		tag := strings.TrimSpace(*value)
+		if tag == "" || len(tag) > 128 || strings.ContainsAny(tag, " \n\t") {
+			continue
+		}
+		if _, ok := seen[tag]; ok {
+			continue
+		}
+		seen[tag] = struct{}{}
+		tags = append(tags, tag)
+	}
+	sort.Strings(tags)
+	return tags
+}
+
 func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []string) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
@@ -384,6 +461,17 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to batch get install components")
+	}
+
+	if len(componentIDs) > 0 {
+		syncSteps, err := syncImagesForInputTags(ctx, dg.sg, dg.installID, dg.flw.Role, dg.flw.PlanOnly, dg.enabledInputs, dg.syncedInputTagImages)
+		if err != nil {
+			return nil, err
+		}
+		for id := range dg.syncedInputTagImages {
+			dg.addedImageDepSyncs[id] = struct{}{}
+		}
+		steps = append(steps, syncSteps...)
 	}
 
 	for i, compID := range componentIDs {
@@ -458,7 +546,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 		if comp.Type.IsImage() && !dg.flw.PlanOnly {
 			if _, alreadySynced := dg.addedImageDepSyncs[compID]; alreadySynced {
 				skipStep, err := dg.sg.installSignalStep(ctx, dg.installID, "skipped sync "+comp.Name, pgtype.Hstore{
-					"reason":         generics.ToPtr("already synced as an action image dependency"),
+					"reason":         generics.ToPtr("already synced earlier in this workflow"),
 					"component_name": generics.ToPtr(comp.Name),
 				}, nil, false)
 				if err != nil {
