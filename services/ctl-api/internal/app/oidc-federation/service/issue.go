@@ -8,11 +8,19 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 // issueFederatedToken mints the short-lived API token an exchange returns.
 // Duration is clamped to the policy maximum.
 func (s *service) issueFederatedToken(tx *gorm.DB, policy *app.OIDCTrustPolicy) (*app.Token, error) {
+	if !policy.Enabled {
+		return nil, genericExchangeError()
+	}
+	limits, err := s.federatedLimits(tx, policy)
+	if err != nil {
+		return nil, fmt.Errorf("invalid federation authority: %w", err)
+	}
 	duration := policy.TokenDurationSeconds
 	if duration <= 0 {
 		duration = app.OIDCTrustPolicyDefaultTokenDuration
@@ -36,7 +44,7 @@ func (s *service) issueFederatedToken(tx *gorm.DB, policy *app.OIDCTrustPolicy) 
 		SourceType:  app.TokenSourceTypeOIDCTrustPolicy,
 		SourceID:    policy.ID,
 	}
-	if err := tx.Create(&token).Error; err != nil {
+	if err := account.PersistToken(tx, &token, limits); err != nil {
 		return nil, fmt.Errorf("creating federated token: %w", err)
 	}
 

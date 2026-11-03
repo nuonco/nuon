@@ -1,6 +1,8 @@
 package service
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
@@ -11,6 +13,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
 
@@ -55,13 +59,21 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		// unauthenticated token exchange; listed in the public endpoint list
 		oidc.POST("/token", s.ExchangeOIDCToken)
 
-		policies := oidc.Group("/trust-policies")
+		policies := require.CustomerRoute(oidc.Group("/trust-policies"))
 		{
-			policies.POST("", s.CreateOIDCTrustPolicy)
-			policies.GET("", s.ListOIDCTrustPolicies)
-			policies.GET("/:policy_id", s.GetOIDCTrustPolicy)
-			policies.PATCH("/:policy_id", s.UpdateOIDCTrustPolicy)
-			policies.DELETE("/:policy_id", s.DeleteOIDCTrustPolicy)
+			mutations := require.MutationRoute(policies, s.db, require.MutationContract{
+				Permission: permissions.OrgWrite,
+				Target:     require.ReadTarget{Name: "org_id", Kind: permissions.KindOrg},
+			})
+			mutations.HandlePrepared(http.MethodPost, "", s.CreateOIDCTrustPolicy)
+			reads := require.ReadRoute(policies, s.db, require.ReadContract{
+				Permission: permissions.OrgWrite,
+				Targets:    []require.ReadTarget{{Name: "org_id", Kind: permissions.KindOrg}},
+			})
+			reads.GET("", s.ListOIDCTrustPolicies)
+			reads.GET("/:policy_id", s.GetOIDCTrustPolicy)
+			mutations.HandlePrepared(http.MethodPatch, "/:policy_id", s.UpdateOIDCTrustPolicy)
+			mutations.HandlePrepared(http.MethodDelete, "/:policy_id", s.DeleteOIDCTrustPolicy)
 		}
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 func (s *OIDCFederationTestSuite) createPolicy(idp *fakeIDP, conditions map[string]string) app.OIDCTrustPolicy {
@@ -20,6 +21,8 @@ func (s *OIDCFederationTestSuite) createPolicy(idp *fakeIDP, conditions map[stri
 		IssuerURL:       idp.issuer(),
 		Audience:        "nuon-test",
 		ClaimConditions: conditions,
+		Role:            string(app.RoleTypeOrgReadOnly),
+		Scope:           &permissions.Scope{Kind: permissions.KindOrg, OrgID: s.testOrg.ID, ID: s.testOrg.ID},
 	})
 	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
 
@@ -104,6 +107,10 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyValidation() {
 	}
 
 	for _, tc := range cases {
+		if tc.req.Role == "" {
+			tc.req.Role = string(app.RoleTypeOrgReadOnly)
+		}
+		tc.req.Scope = &permissions.Scope{Kind: permissions.KindOrg, OrgID: s.testOrg.ID, ID: s.testOrg.ID}
 		rr := s.makeRequest(http.MethodPost, "/v1/oidc/trust-policies", tc.req)
 		require.Equal(s.T(), http.StatusBadRequest, rr.Code, "%s: %s", tc.name, rr.Body.String())
 	}
@@ -117,6 +124,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyAllowsAdminRole() {
 		Name: "admin", IssuerURL: idp.issuer(), Audience: "nuon-test",
 		ClaimConditions: map[string]string{"sub": "repo:acme/app:*:*"},
 		Role:            string(app.RoleTypeOrgAdmin),
+		Scope:           &permissions.Scope{Kind: permissions.KindOrg, OrgID: s.testOrg.ID, ID: s.testOrg.ID},
 	})
 	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
 
@@ -138,6 +146,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyRejectsDeprecatedBuilderRole()
 		Name: "builder", IssuerURL: idp.issuer(), Audience: "nuon-test",
 		ClaimConditions: map[string]string{"sub": "repo:acme/app:*:*"},
 		Role:            string(app.RoleTypeOrgBuilder),
+		Scope:           &permissions.Scope{Kind: permissions.KindOrg, OrgID: s.testOrg.ID, ID: s.testOrg.ID},
 	})
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
 }
@@ -151,6 +160,8 @@ func (s *OIDCFederationTestSuite) TestCRUDRequiresOrgAdmin() {
 	rr = s.makeRequest(http.MethodPost, "/v1/oidc/trust-policies", CreateOIDCTrustPolicyRequest{
 		Name: "ci", IssuerURL: "https://idp.example.com", Audience: "aud",
 		ClaimConditions: map[string]string{"sub": "repo:acme/app:*:*"},
+		Role:            string(app.RoleTypeOrgReadOnly),
+		Scope:           &permissions.Scope{Kind: permissions.KindOrg, OrgID: s.testOrg.ID, ID: s.testOrg.ID},
 	})
 	require.Equal(s.T(), http.StatusForbidden, rr.Code, rr.Body.String())
 }
