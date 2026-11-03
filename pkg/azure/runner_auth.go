@@ -1,6 +1,9 @@
 package azure
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
 
 // ManagementAudience is the Azure Resource Manager audience. A token for it is a
 // live ARM credential for whatever identity minted it.
@@ -29,6 +32,16 @@ func ExpectedRunnerAudience(configured, presented string) string {
 		return extra
 	}
 	return ManagementAudience
+}
+
+// RunnerAuthAppID is the Entra application id inside a configured Nuon audience.
+// Empty when the audience is unset or not api://<client-id>.
+func RunnerAuthAppID(configured string) string {
+	audience := ConfiguredRunnerAudience(configured)
+	if audience == "" {
+		return ""
+	}
+	return strings.TrimPrefix(audience, "api://")
 }
 
 // RunnerAuthResource is the IMDS resource a runner should request. An empty
