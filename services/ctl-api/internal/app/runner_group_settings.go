@@ -135,6 +135,17 @@ type RunnerGroupSettings struct {
 	ContainerImageVerificationMode        string `json:"container_image_verification_mode,omitzero" gorm:"-" temporaljson:"-"`
 	ContainerImageSignatureIssuer         string `json:"container_image_signature_issuer,omitzero" gorm:"-" temporaljson:"-"`
 	ContainerImageSignatureIdentityRegexp string `json:"container_image_signature_identity_regexp,omitzero" gorm:"-" temporaljson:"-"`
+
+	ContainerImageRegistryAuth *RunnerContainerImageRegistryAuth `json:"container_image_registry_auth,omitempty" gorm:"-" temporaljson:"-"`
+}
+
+// RunnerContainerImageRegistryAuth carries short-lived credentials for pulling the runner image from a private
+// registry. It is minted per request and never persisted.
+type RunnerContainerImageRegistryAuth struct {
+	Registry  string    `json:"registry"`
+	Username  string    `json:"username"`
+	Password  string    `json:"password"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 func (i *RunnerGroupSettings) Indexes(db *gorm.DB) []migrations.Index {
