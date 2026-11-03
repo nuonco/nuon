@@ -1,6 +1,7 @@
 package authz
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"slices"
@@ -17,61 +18,77 @@ import (
 // updated to match the definition. Existing rows' policies are deliberately
 // never modified.
 func ReconcileOrgRoles(ctx context.Context, db *gorm.DB, org app.Org) error {
-	var existingRoles []app.Role
-	if err := db.WithContext(ctx).
-		Where(app.Role{OrgID: generics.NewNullString(org.ID)}).
-		Find(&existingRoles).Error; err != nil {
-		return fmt.Errorf("unable to load roles for org %s: %w", org.ID, err)
+	roles, err := standardOrgRoles(org.ID)
+	if err != nil {
+		return err
 	}
-
-	byType := make(map[app.RoleType]app.Role, len(existingRoles))
-	for _, role := range existingRoles {
-		byType[role.RoleType] = role
-	}
-
-	var toCreate []app.Role
-	var toUpdate []app.Role
-	for _, want := range standardOrgRoles(org.ID) {
-		existing, ok := byType[want.RoleType]
-		if !ok {
-			want.CreatedByID = org.CreatedByID
-			for i := range want.Policies {
-				want.Policies[i].CreatedByID = org.CreatedByID
-			}
-			toCreate = append(toCreate, want)
-			continue
-		}
-		if roleMetadataMatches(existing, want) {
-			continue
-		}
-		existing.Title = want.Title
-		existing.Description = want.Description
-		existing.Contexts = want.Contexts
-		existing.Managed = want.Managed
-		toUpdate = append(toUpdate, existing)
-	}
-
-	if len(toCreate) == 0 && len(toUpdate) == 0 {
-		return nil
-	}
-
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if len(toCreate) > 0 {
-			if err := tx.Create(&toCreate).Error; err != nil {
-				return fmt.Errorf("unable to create roles for org %s: %w", org.ID, err)
-			}
+		if err := requireRoleMutationIsolation(tx); err != nil {
+			return err
 		}
-		for i := range toUpdate {
-			role := &toUpdate[i]
-			if err := tx.Model(role).
+		if err := lockRoleOrg(tx, org.ID); err != nil {
+			return err
+		}
+		if err := tx.Select("id", "created_by_id").Where(app.Org{ID: org.ID}).Take(&org).Error; err != nil {
+			return err
+		}
+		var existingRoles []app.Role
+		if err := tx.Unscoped().Preload("Policies").Where(app.Role{OrgID: generics.NewNullString(org.ID)}).
+			Find(&existingRoles).Error; err != nil {
+			return fmt.Errorf("unable to load roles for org %s: %w", org.ID, err)
+		}
+		for _, want := range roles {
+			var existing *app.Role
+			retired := false
+			for i := range existingRoles {
+				candidate := &existingRoles[i]
+				if candidate.RoleType != want.RoleType {
+					continue
+				}
+				if candidate.DeletedAt != 0 {
+					retired = true
+					continue
+				}
+				if existing != nil {
+					return fmt.Errorf("duplicate catalog role %s requires offline repair", want.RoleType)
+				}
+				existing = candidate
+			}
+			if existing == nil {
+				if retired {
+					return fmt.Errorf("retired catalog role %s requires offline repair", want.RoleType)
+				}
+				want.CreatedByID = org.CreatedByID
+				want.Policies[0].CreatedByID = org.CreatedByID
+				if err := tx.Create(&want).Error; err != nil {
+					return fmt.Errorf("unable to create role %s: %w", want.RoleType, err)
+				}
+				continue
+			}
+			policy, err := decodeScopedRole(*existing, org.ID)
+			if err != nil {
+				return fmt.Errorf("catalog role %s requires offline migration: %w", want.RoleType, err)
+			}
+			document, err := policy.MarshalJSON()
+			if err != nil {
+				return err
+			}
+			if !existing.Managed || existing.CatalogRevision != want.CatalogRevision ||
+				existing.Policies[0].DeletedAt != 0 || !bytes.Equal(document, want.Policies[0].Document) {
+				return fmt.Errorf("catalog role %s differs from revision %d; offline migration required", want.RoleType, want.CatalogRevision)
+			}
+			if roleMetadataMatches(*existing, want) {
+				continue
+			}
+			if err := tx.Model(existing).
 				Select("title", "description", "contexts", "managed").
 				Updates(app.Role{
-					Title:       role.Title,
-					Description: role.Description,
-					Contexts:    role.Contexts,
-					Managed:     role.Managed,
+					Title:       want.Title,
+					Description: want.Description,
+					Contexts:    want.Contexts,
+					Managed:     want.Managed,
 				}).Error; err != nil {
-				return fmt.Errorf("unable to update %s role metadata for org %s: %w", role.RoleType, org.ID, err)
+				return fmt.Errorf("unable to update %s role metadata for org %s: %w", want.RoleType, org.ID, err)
 			}
 		}
 		return nil

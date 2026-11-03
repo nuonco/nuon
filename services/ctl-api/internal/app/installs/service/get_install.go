@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
@@ -28,7 +30,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	app.Install
+// @Success				200	{object}	CustomerInstall
 // @Router					/v1/installs/{install_id} [get]
 func (s *service) GetInstall(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -39,28 +41,28 @@ func (s *service) GetInstall(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 
-	install, err := s.findInstall(ctx, org.ID, installID)
+	install, err := s.findCustomerInstall(ctx.Request.Context(), org.ID, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
 	}
 
-	includeDriftedObjects := ctx.DefaultQuery("include_drifted_objects", "false")
-	if includeDriftedObjects == "true" {
-		dos, err := s.findDriftedObjects(ctx, org.ID, install.ID)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to get drifted objects for install %s: %w", installID, err))
-			return
-		}
-		if dos != nil {
-			install.DriftedObjects = dos
-		}
-	}
-
-	ctx.JSON(http.StatusOK, install)
+	ctx.JSON(http.StatusOK, CustomerInstall{Install: install, App: InstallAppRef{ID: install.AppID, Name: install.App.Name}})
 }
 
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
+	filter := s.db.Where("name = ?", installID).Or("id = ?", installID)
+	if target, ok := require.CustomerTarget(ctx); ok && target.Kind == permissions.KindInstall {
+		return s.findInstallAtTarget(ctx, target)
+	}
+	return s.loadInstallDetails(ctx, orgID, filter)
+}
+
+func (s *service) findInstallAtTarget(ctx context.Context, target permissions.ResolvedTarget) (*app.Install, error) {
+	return s.loadInstallDetails(ctx, target.OrgID, s.db.Where(app.Install{ID: target.ID, OrgID: target.OrgID, AppID: target.AppID}))
+}
+
+func (s *service) loadInstallDetails(ctx context.Context, orgID string, filter *gorm.DB) (*app.Install, error) {
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {
@@ -100,7 +102,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("InstallRoles").
 		Preload("InstallRoles.AppRoleConfig").
 		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", installID).Or("id = ?", installID)).
+		Where(filter).
 		First(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
@@ -108,7 +110,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 
 	driftedObj := make([]app.DriftedObject, 0)
 	res = s.db.WithContext(ctx).
-		Where("install_id = ?", install.ID).
+		Where(app.DriftedObject{OrgID: orgID, InstallID: install.ID}).
 		Find(&driftedObj)
 	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("unable to get drifted objects: %w", res.Error)

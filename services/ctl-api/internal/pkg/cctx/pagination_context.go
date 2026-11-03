@@ -1,6 +1,8 @@
 package cctx
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
@@ -18,4 +20,5 @@ func OffsetPaginationFromContext(ctx ValueContext) *pagination.PaginationQuery {
 
 func SetOffPaginationGinCtx(ctx *gin.Context, pagination pagination.PaginationQuery) {
 	ctx.Set(keys.OffPaginationCtxKey, &pagination)
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), keys.OffPaginationCtxKey, &pagination))
 }

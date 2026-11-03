@@ -2,6 +2,7 @@ package service
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -190,7 +191,6 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 	policy := matched[0]
 	metricTags["policy_id"] = policy.ID
 
-	now := time.Now()
 	sub, _ := claims["sub"].(string)
 	jti, _ := claims["jti"].(string)
 
@@ -203,6 +203,33 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 
 	var token *app.Token
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		live, err := s.lockTrustPolicy(tx, req.OrgID, policy.ID)
+		if err != nil {
+			return err
+		}
+		if !live.Enabled || live.IssuerURL != issuer || live.Audience != policy.Audience ||
+			!live.UpdatedAt.Equal(policy.UpdatedAt) || live.ServiceAccountID != policy.ServiceAccountID ||
+			!sourceExpiry.After(time.Now()) || !matchClaims(live.ClaimConditions, claims) {
+			return genericExchangeError()
+		}
+		var current []app.OIDCTrustPolicy
+		if err := tx.Where(app.OIDCTrustPolicy{OrgID: req.OrgID, IssuerURL: issuer, Enabled: true}).Find(&current).Error; err != nil {
+			return err
+		}
+		matches := 0
+		for _, candidate := range current {
+			verified, seen := verifiedAudiences[candidate.Audience]
+			if !seen {
+				return genericExchangeError()
+			}
+			if verified && matchClaims(candidate.ClaimConditions, claims) {
+				matches++
+			}
+		}
+		if matches != 1 {
+			return genericExchangeError()
+		}
+		policy = live
 		exchanged := app.OIDCExchangedToken{
 			OrgID:     req.OrgID,
 			IssuerURL: issuer,
@@ -221,8 +248,9 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 			return err
 		}
 		token = issued
-		return nil
-	})
+		return tx.Model(&app.OIDCTrustPolicy{}).Where(app.OIDCTrustPolicy{ID: policy.ID, OrgID: req.OrgID}).
+			UpdateColumn("last_used_at", time.Now()).Error
+	}, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if errors.Is(err, errAlreadyExchanged) {
 		s.l.Warn("oidc exchange: token was already exchanged",
 			zap.String("org_id", req.OrgID),
@@ -235,18 +263,8 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 		s.l.Error("oidc exchange: failed to create token",
 			zap.String("policy_id", policy.ID),
 			zap.Error(err))
-		ctx.Error(stderr.ErrSystem{
-			Err:         errors.New("internal error"),
-			Description: "failed to issue authentication token",
-		})
+		ctx.Error(genericExchangeError())
 		return
-	}
-
-	if err := s.db.WithContext(ctx).
-		Model(&app.OIDCTrustPolicy{}).
-		Where(app.OIDCTrustPolicy{ID: policy.ID}).
-		Update("last_used_at", now).Error; err != nil {
-		s.l.Warn("oidc exchange: failed to update last_used_at", zap.String("policy_id", policy.ID), zap.Error(err))
 	}
 
 	metricTags["status"] = "ok"

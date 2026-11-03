@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -63,6 +64,14 @@ func (s *Signal) handleStepCancelled(ctx workflow.Context, l *zap.Logger) error 
 // and returns nil. The group reads the directive and handles cloning.
 func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, stepErr error) error {
 	var applicationErr *temporal.ApplicationError
+	if errors.As(stepErr, &applicationErr) && applicationErr.Type() == authz.WorkflowAuthorizationDenied {
+		if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
+			return err
+		}
+		return s.markStepFailed(ctx, step, stepErr, map[string]any{
+			"terminal": true, "authorization_failure": true,
+		}, nil)
+	}
 	if errors.As(stepErr, &applicationErr) && applicationErr.Type() == "resolution-target-changed" &&
 		workflow.GetVersion(ctx, resolutionTargetChangedStopVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 		if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {

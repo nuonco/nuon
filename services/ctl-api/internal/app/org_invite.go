@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -31,10 +32,12 @@ type OrgInvite struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;index:idx_invite_org_email,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Email    string          `gorm:"notnull;default null;index:idx_invite_org_email,unique" json:"email,omitzero" temporaljson:"email,omitzero,omitempty"`
-	Status   OrgInviteStatus `json:"status,omitzero" gorm:"notnull;default null" temporaljson:"status,omitzero,omitempty"`
-	StatusV2 CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
-	RoleType RoleType        `json:"role_type,omitzero" temporaljson:"role_type,omitzero,omitempty"`
+	Email         string            `gorm:"notnull;default null;index:idx_invite_org_email,unique" json:"email,omitzero" temporaljson:"email,omitzero,omitempty"`
+	Status        OrgInviteStatus   `json:"status,omitzero" gorm:"notnull;default null" temporaljson:"status,omitzero,omitempty"`
+	StatusV2      CompositeStatus   `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	RoleType      RoleType          `json:"role_type,omitzero" temporaljson:"role_type,omitzero,omitempty"`
+	Scope         permissions.Scope `json:"scope" gorm:"type:jsonb;serializer:json" temporaljson:"scope,omitzero,omitempty"`
+	Authorization []byte            `json:"-" gorm:"type:jsonb" temporaljson:"authorization,omitzero,omitempty"`
 }
 
 func (o *OrgInvite) Indexes(db *gorm.DB) []migrations.Index {

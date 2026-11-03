@@ -61,6 +61,7 @@ func AppConfigBuild(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSteps
 		build, err := activities.AwaitCreateComponentBuild(ctx, activities.CreateComponentBuildRequest{
 			BuildID:     appConfigBuildComponentBuildID(flw.ID, componentID),
 			ComponentID: componentID,
+			WorkflowID:  flw.ID,
 		})
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to create build record for component %s", componentID)

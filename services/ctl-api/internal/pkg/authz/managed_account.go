@@ -10,6 +10,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
+func RequireUserManagedInOrg(tx *gorm.DB, accountID, orgID string) error {
+	if err := lockRoleOrg(tx, orgID); err != nil {
+		return err
+	}
+	return RequireUserManaged(tx, accountID)
+}
+
 func RequireUserManaged(tx *gorm.DB, accountID string) error {
 	// Struct filters drop zero values, so an empty id would lock an arbitrary
 	// account and count every managed service account.
@@ -23,7 +30,7 @@ func RequireUserManaged(tx *gorm.DB, accountID string) error {
 		return fmt.Errorf("lock account for management: %w", err)
 	}
 	var count int64
-	if err := tx.Model(&app.ManagedServiceAccount{}).
+	if err := tx.Unscoped().Model(&app.ManagedServiceAccount{}).
 		Where("account_id = ?", accountID).Count(&count).Error; err != nil {
 		return fmt.Errorf("load managed service account ownership: %w", err)
 	}

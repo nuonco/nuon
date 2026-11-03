@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
 // Migration126BackfillRoleMetadata reconciles every org's managed roles with
@@ -27,7 +26,7 @@ func (m *Migrations) Migration126BackfillRoleMetadata(ctx context.Context, db *g
 		}
 
 		for _, org := range orgs {
-			if err := authz.ReconcileOrgRoles(ctx, db, org); err != nil {
+			if err := reconcileLegacyRoleMetadata(ctx, db, org); err != nil {
 				return fmt.Errorf("unable to reconcile roles for org %s: %w", org.ID, err)
 			}
 		}

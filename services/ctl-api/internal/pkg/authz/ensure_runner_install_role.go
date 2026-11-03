@@ -38,6 +38,9 @@ func (h *Client) EnsureRunnerInstallRole(ctx context.Context, orgID, installID, 
 	}
 	ctx = cctx.SetAccountIDContext(ctx, accountID)
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockRoleOrg(tx, orgID); err != nil {
+			return err
+		}
 		var existing app.Role
 		err := tx.Joins("JOIN account_roles ON account_roles.role_id = roles.id AND account_roles.deleted_at = 0").
 			Where("account_roles.account_id = ?", accountID).

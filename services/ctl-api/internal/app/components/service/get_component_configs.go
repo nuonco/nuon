@@ -2,13 +2,12 @@ package service
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -34,16 +33,8 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.ComponentConfigConnection
 // @Router					/v1/apps/{app_id}/components/{component_id}/configs [GET]
-func (s *service) GetAppComponentConfigs(ctx *gin.Context) {
-	cmpID := ctx.Param("component_id")
-
-	cfgs, err := s.getComponentConfigs(ctx, cmpID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component configs: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, cfgs)
+func (s *service) GetAppComponentConfigs(ctx *gin.Context) (any, error) {
+	return s.GetComponentConfigs(ctx)
 }
 
 // @ID						GetComponentConfigs
@@ -66,32 +57,27 @@ func (s *service) GetAppComponentConfigs(ctx *gin.Context) {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.ComponentConfigConnection
 // @Router					/v1/components/{component_id}/configs [GET]
-func (s *service) GetComponentConfigs(ctx *gin.Context) {
+func (s *service) GetComponentConfigs(ctx *gin.Context) (any, error) {
 	cmpID := ctx.Param("component_id")
 
-	cfgs, err := s.getComponentConfigs(ctx, cmpID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component configs: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, cfgs)
+	return s.getComponentConfigs(ctx, cmpID)
 }
 
 func (s *service) getComponentConfigs(ctx *gin.Context, cmpID string) ([]app.ComponentConfigConnection, error) {
-	orgID, err := cctx.OrgIDFromContext(ctx)
+	access, err := require.ReadAccessFromContext(ctx.Request.Context())
 	if err != nil {
-		return nil, fmt.Errorf("unable to get org from context: %w", err)
+		return nil, err
 	}
 
 	cmp := app.Component{}
-	res := s.db.WithContext(ctx).
+	res := access.DB().WithContext(ctx.Request.Context()).
 		// preload configs
-		Preload("ComponentConfigs").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.
+				Where(&app.ComponentConfigConnection{OrgID: access.OrgID()}).
 				Scopes(scopes.WithOffsetPagination).
-				Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
+				Order(views.TableOrViewName(db, &app.ComponentConfigConnection{}, ".created_at DESC")).
+				Order(views.TableOrViewName(db, &app.ComponentConfigConnection{}, ".id DESC"))
 		}).
 
 		// preload all terraform configs
@@ -129,7 +115,7 @@ func (s *service) getComponentConfigs(ctx *gin.Context, cmpID string) ([]app.Com
 		Preload("ComponentConfigs.PulumiComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
+		Where(&app.Component{ID: cmpID, OrgID: access.OrgID()}).First(&cmp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}

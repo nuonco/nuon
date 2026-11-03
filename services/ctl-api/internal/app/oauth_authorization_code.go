@@ -47,6 +47,7 @@ type OAuthAuthorizationCode struct {
 	AccountID string `gorm:"index" json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
 
 	SourceTokenID string `gorm:"index" json:"-" temporaljson:"source_token_id,omitzero,omitempty"`
+	Authorization []byte `json:"-" gorm:"type:jsonb" temporaljson:"authorization,omitzero,omitempty"`
 
 	ExpiresAt time.Time `gorm:"not null" json:"expires_at,omitzero" temporaljson:"expires_at,omitzero,omitempty"`
 	Consumed  bool      `gorm:"default:false" json:"consumed,omitempty" temporaljson:"consumed,omitempty"`

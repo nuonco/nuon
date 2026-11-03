@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 
@@ -28,17 +27,8 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.Component
 // @Router					/v1/apps/{app_id}/component/{component_name_or_id} [GET]
-func (s *service) GetAppComponent(ctx *gin.Context) {
-	appID := ctx.Param("app_id")
-	idOrName := ctx.Param("component_name_or_id")
-
-	component, err := s.getAppComponent(ctx, appID, idOrName)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app component: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, component)
+func (s *service) GetAppComponent(ctx *gin.Context) (any, error) {
+	return s.readComponent(ctx.Request.Context(), "component_name_or_id")
 }
 
 func (s *service) getAppComponent(ctx context.Context, appID, componentNameOrID string) (*app.Component, error) {

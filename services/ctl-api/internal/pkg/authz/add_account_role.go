@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -11,49 +12,50 @@ import (
 )
 
 func (h *Client) AddAccountOrgRole(ctx context.Context, roleType app.RoleType, orgID, accountID string) error {
-	var role app.Role
-	res := h.db.WithContext(ctx).
-		Preload("Policies").
-		Where(app.Role{
-			OrgID:    generics.NewNullString(orgID),
-			RoleType: roleType,
-		}).
-		First(&role)
-	if res.Error != nil {
-		return fmt.Errorf("unable to find role: %w", res.Error)
+	if orgID == "" || roleType == "" {
+		return fmt.Errorf("org ID and role type are required")
 	}
-	if err := assertRoleAPICompatible(h.db.WithContext(ctx), accountID, &role); err != nil {
-		return err
-	}
-
-	acctRole := &app.AccountRole{
-		OrgID:     generics.NewNullString(orgID),
-		RoleID:    role.ID,
-		AccountID: accountID,
-	}
-
-	res = h.db.WithContext(ctx).Clauses(
-		clause.OnConflict{DoNothing: true},
-	).Create(&acctRole)
-	if res.Error != nil {
-		return fmt.Errorf("unable to add role for account: %w", res.Error)
-	}
-
-	return nil
+	return h.addLegacyAccountRole(ctx, accountID, app.Role{OrgID: generics.NewNullString(orgID), RoleType: roleType})
 }
 
 func (h *Client) AddAccountRoleByID(ctx context.Context, roleID, accountID string) error {
-	acctRole := &app.AccountRole{
-		RoleID:    roleID,
-		AccountID: accountID,
+	if roleID == "" {
+		return fmt.Errorf("role ID is required")
 	}
+	return h.addLegacyAccountRole(ctx, accountID, app.Role{ID: roleID})
+}
 
-	res := h.db.WithContext(ctx).Clauses(
-		clause.OnConflict{DoNothing: true},
-	).Create(&acctRole)
-	if res.Error != nil {
-		return fmt.Errorf("unable to add role for account: %w", res.Error)
-	}
-
-	return nil
+func (h *Client) addLegacyAccountRole(ctx context.Context, accountID string, filter app.Role) error {
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var role app.Role
+		query := tx.Preload("Policies").Where(filter)
+		if filter.ID == "" {
+			query = query.Where(tx.Where(app.Role{Version: app.RoleVersionV1}).Or(app.Role{Version: app.RoleVersionV2}))
+		}
+		if err := query.First(&role).Error; err != nil {
+			return fmt.Errorf("unable to find role: %w", err)
+		}
+		if !role.OrgID.Empty() {
+			if err := lockRoleOrg(tx, role.OrgID.ValueString()); err != nil {
+				return err
+			}
+		}
+		if err := lockLegacyRoleSubject(tx, accountID); err != nil {
+			return err
+		}
+		if err := assertRoleAPICompatible(tx, accountID, &role); err != nil {
+			return err
+		}
+		binding := app.AccountRole{OrgID: role.OrgID, RoleID: role.ID, AccountID: accountID}
+		var count int64
+		if err := tx.Model(&app.AccountRole{}).Where(binding).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&binding).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -71,38 +72,51 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	orgs := ge.Group("/v1/orgs")
 	{
 		require.NotFederatedTokenRoute(orgs, "create organizations").POST("", s.CreateOrg)
-		orgs.GET("", s.GetCurrentUserOrgs)
+		require.CustomerRoute(orgs).GET("", s.GetCurrentUserOrgs)
 		orgs.GET("/features", s.GetOrgFeatures)
 
 		// update your current org
 		current := orgs.Group("/current")
 		{
-			current.GET("", s.GetOrg)
+			require.CustomerReadRoute(current, s.db, s.l, permissions.OrgRead, permissions.KindOrg, "").GET("", s.GetOrg)
 			current.DELETE("", s.DeleteOrg)
-			current.PATCH("", s.UpdateOrg)
-			current.PATCH("/telemetry", s.UpdateOrgTelemetry)
-			current.POST("/user", s.CreateUser)
-			current.POST("/remove-user", s.RemoveUser)
+			mutations := require.MutationRoute(current, s.db, require.MutationContract{
+				Permission: permissions.OrgWrite, Target: require.ReadTarget{Name: "org_id", Kind: permissions.KindOrg},
+			})
+			mutations.Handle("PATCH", "", s.UpdateOrg)
+			mutations.Handle("PATCH", "/telemetry", s.UpdateOrgTelemetry)
+			members := require.MutationRoute(current, s.db, require.MutationContract{
+				Permission: permissions.OrgWrite, Target: require.ReadTarget{Name: "org_id", Kind: permissions.KindOrg},
+				SubjectAccountParam: "user_id",
+			})
+			members.HandlePrepared("POST", "/user", s.CreateUser)
+			members.HandlePrepared("POST", "/remove-user", s.RemoveUser)
 
 			// accounts
-			current.GET("/accounts", s.GetOrgAccounts)
-			current.GET("/members", s.GetOrgMembers)
-			current.PATCH("/accounts/:account_id/role", s.UpdateOrgAccountRole)
+			require.CustomerReadRoute(current, s.db, s.l, permissions.OrgWrite, permissions.KindOrg, "").GET("/accounts", s.GetOrgAccounts)
+			require.CustomerReadRoute(current, s.db, s.l, permissions.OrgWrite, permissions.KindOrg, "").GET("/members", s.GetOrgMembers)
+			require.MutationRoute(current, s.db, require.MutationContract{
+				Permission: permissions.OrgWrite, Target: require.ReadTarget{Name: "org_id", Kind: permissions.KindOrg},
+				SubjectAccountParam: "account_id",
+			}).Handle("PATCH", "/accounts/:account_id/role", s.UpdateOrgAccountRole)
 
 			// invites
 			invites := current.Group("/invites")
 			{
-				invites.GET("", s.GetOrgInvites)
-				invites.POST("", s.CreateOrgInvite)
-				invites.POST("/:invite_id/resend", s.ResendOrgInvite)
-				invites.POST("/:invite_id/revoke", s.RevokeOrgInvite)
+				require.CustomerReadRoute(invites, s.db, s.l, permissions.OrgWrite, permissions.KindOrg, "").GET("", s.GetOrgInvites)
+				inviteMutations := require.MutationRoute(invites.Group("", s.finishInviteMutation), s.db, require.MutationContract{
+					Permission: permissions.OrgWrite, Target: require.ReadTarget{Name: "org_id", Kind: permissions.KindOrg},
+				})
+				inviteMutations.Handle("POST", "", s.CreateOrgInvite)
+				inviteMutations.Handle("POST", "/:invite_id/resend", s.ResendOrgInvite)
+				inviteMutations.Handle("POST", "/:invite_id/revoke", s.RevokeOrgInvite)
 			}
 
 			current.GET("/stats", s.GetOrgStats)
 
 			// features
-			current.GET("/features", s.GetCurrentOrgFeatures)
-			current.PATCH("/features", s.UpdateOrgFeatures) // requires user-managed-features flag
+			require.CustomerReadRoute(current, s.db, s.l, permissions.OrgRead, permissions.KindOrg, "").GET("/features", s.GetCurrentOrgFeatures)
+			mutations.Handle("PATCH", "/features", s.UpdateOrgFeatures) // requires user-managed-features flag
 
 			// webhooks
 			current.GET("/webhooks", s.GetCurrentOrgWebhooks)

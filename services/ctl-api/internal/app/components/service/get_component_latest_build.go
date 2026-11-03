@@ -2,14 +2,13 @@ package service
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -30,22 +29,8 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.ComponentBuild
 // @Router					/v1/apps/{app_id}/components/{component_id}/builds/latest [GET]
-func (s *service) GetAppComponentLatestBuild(ctx *gin.Context) {
-	appID := ctx.Param("app_id")
-	cmpID := ctx.Param("component_id")
-	cmp, err := s.getAppComponent(ctx, appID, cmpID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app component: %w", err))
-		return
-	}
-
-	bld, err := s.getComponentLatestBuild(ctx, cmp.ID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component builds: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, bld)
+func (s *service) GetAppComponentLatestBuild(ctx *gin.Context) (any, error) {
+	return s.GetComponentLatestBuild(ctx)
 }
 
 // @ID						GetComponentLatestBuild
@@ -65,54 +50,39 @@ func (s *service) GetAppComponentLatestBuild(ctx *gin.Context) {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.ComponentBuild
 // @Router					/v1/components/{component_id}/builds/latest [GET]
-func (s *service) GetComponentLatestBuild(ctx *gin.Context) {
+func (s *service) GetComponentLatestBuild(ctx *gin.Context) (any, error) {
 	cmpID := ctx.Param("component_id")
 
-	bld, err := s.getComponentLatestBuild(ctx, cmpID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component builds: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, bld)
+	return s.getComponentLatestBuild(ctx, cmpID)
 }
 
 func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.ComponentBuild, error) {
-	orgID, err := cctx.OrgIDFromContext(ctx)
+	access, err := require.ReadAccessFromContext(ctx.Request.Context())
 	if err != nil {
-		return nil, fmt.Errorf("unable to get org from context: %w", err)
+		return nil, err
+	}
+	query, err := access.Query()
+	if err != nil {
+		return nil, err
 	}
 
-	cmp := app.Component{}
-
-	// query all builds that belong to the component id, starting at the component to ensure the component exists
-	// via the double join.
-	res := s.db.WithContext(ctx).
-		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName))
-		}).
-		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
-			return withoutPreviewBuilds(db).
-				Order("component_builds.created_at DESC").
-				Limit(1)
-		}).
-		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
-		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.VCSConnectionCommit").
-		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.AppBranch").
-		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.Preview").
-		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
+	configs := access.DB().Model(&app.ComponentConfigConnection{}).
+		Scopes(scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName)).
+		Select("id").Where(&app.ComponentConfigConnection{ComponentID: cmpID, OrgID: access.OrgID()})
+	var build app.ComponentBuild
+	res := withoutPreviewBuilds(query.WithContext(ctx.Request.Context())).
+		Where("component_builds.component_config_connection_id IN (?)", configs).
+		Preload("ComponentConfigConnection.Component").
+		Preload("VCSConnectionCommit").
+		Preload("AppBranchRun.VCSConnectionCommit").
+		Preload("AppBranchRun.AppBranch").
+		Preload("AppBranchRun.Preview").
+		Order("component_builds.created_at DESC, component_builds.id DESC").
+		First(&build)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get component: %w", res.Error)
+		return nil, fmt.Errorf("unable to get latest component build: %w", res.Error)
 	}
-
-	// pull out the first (and only) component build
-	for _, cfg := range cmp.ComponentConfigs {
-		for _, bld := range cfg.ComponentBuilds {
-			return &bld, nil
-		}
-	}
-
-	return nil, fmt.Errorf("no build found for component: %w", gorm.ErrRecordNotFound)
+	return &build, nil
 }
 
 func withoutPreviewBuilds(db *gorm.DB) *gorm.DB {

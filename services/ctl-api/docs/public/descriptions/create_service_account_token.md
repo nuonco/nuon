@@ -1,7 +1,3 @@
-Deprecated: use `POST /v1/tokens` with `account_id` instead.
-
-Create an API token for a service account in the current org.
-
-Defaults to a duration of one year (`8760h`) if `duration` is not
-specified. If `invalidate` is set, all existing tokens for the service
-account are invalidated before the new token is created.
+Retired: returns `410 Gone`. Use `POST /v1/tokens` with explicit
+`account_id`, `role` and `scope` instead. No token is created by this
+endpoint. Existing tokens can still be listed and revoked.

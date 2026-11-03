@@ -15,11 +15,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
-
-const defaultTrustPolicyRole = app.RoleTypeOrgReadOnly
 
 type CreateOIDCTrustPolicyRequest struct {
 	// human-friendly name to identify the policy
@@ -36,35 +37,22 @@ type CreateOIDCTrustPolicyRequest struct {
 	// `:` segments.
 	ClaimConditions map[string]string `json:"claim_conditions" validate:"required"`
 
-	// org role granted to exchanged tokens. must be assignable to trust
-	// policies; see GET /v1/roles?context=oidc_trust_policy. defaults to
-	// org_read_only.
-	Role string `json:"role"`
+	Role  string             `json:"role" validate:"required"`
+	Scope *permissions.Scope `json:"scope" validate:"required"`
 
 	// lifetime of exchanged tokens in seconds. defaults to 3600, max 86400.
 	TokenDurationSeconds int `json:"token_duration_seconds"`
 }
 
 type UpdateOIDCTrustPolicyRequest struct {
-	Name                 string            `json:"name"`
-	Enabled              *bool             `json:"enabled" swaggertype:"boolean" extensions:"x-nullable"`
-	IssuerURL            string            `json:"issuer_url"`
-	Audience             string            `json:"audience"`
-	ClaimConditions      map[string]string `json:"claim_conditions"`
-	Role                 string            `json:"role"`
-	TokenDurationSeconds int               `json:"token_duration_seconds"`
-}
-
-func (s *service) resolveTrustPolicyRole(ctx *gin.Context, orgID, raw string) (app.RoleType, error) {
-	if raw == "" {
-		raw = string(defaultTrustPolicyRole)
-	}
-
-	resolved, err := s.authzClient.ResolveAssignableRole(ctx, orgID, app.RoleType(raw), app.RoleContextTrustPolicy)
-	if err != nil {
-		return "", err
-	}
-	return resolved.RoleType, nil
+	Name                 string             `json:"name"`
+	Enabled              *bool              `json:"enabled" swaggertype:"boolean" extensions:"x-nullable"`
+	IssuerURL            string             `json:"issuer_url"`
+	Audience             string             `json:"audience"`
+	ClaimConditions      map[string]string  `json:"claim_conditions"`
+	Role                 string             `json:"role"`
+	Scope                *permissions.Scope `json:"scope"`
+	TokenDurationSeconds int                `json:"token_duration_seconds"`
 }
 
 func parseTrustPolicyTokenDuration(raw int) (int, error) {
@@ -98,82 +86,79 @@ func (s *service) validateIssuerURL(ctx context.Context, raw string) error {
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Router					/v1/oidc/trust-policies [POST]
-func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
+func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) (require.PreparedMutation, error) {
 	var req CreateOIDCTrustPolicyRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 	}
 	if err := s.v.Struct(req); err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 	}
 
 	duration, err := parseTrustPolicyTokenDuration(req.TokenDurationSeconds)
 	if err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 	}
 
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.requirePolicyAdministration(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.PreparedMutation{}, err
 	}
 
 	if err := s.validateIssuerURL(ctx, req.IssuerURL); err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 	}
 
 	if err := s.verifier.Discover(ctx, req.IssuerURL); err != nil {
-		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("issuer discovery failed: %w", err)))
-		return
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(fmt.Errorf("issuer discovery failed: %w", err))
 	}
 
 	if err := validateClaimConditions(req.ClaimConditions); err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 	}
 
-	role, err := s.resolveTrustPolicyRole(ctx, org.ID, req.Role)
+	scope, err := authz.RoleBindingScope(org.ID, req.Scope)
 	if err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 	}
 
 	caller, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.PreparedMutation{}, err
 	}
 
-	policy := app.OIDCTrustPolicy{
-		CreatedByID:          caller.ID,
-		OrgID:                org.ID,
-		Name:                 req.Name,
-		Enabled:              true,
-		IssuerURL:            req.IssuerURL,
-		Audience:             req.Audience,
-		ClaimConditions:      req.ClaimConditions,
-		Role:                 string(role),
-		TokenDurationSeconds: duration,
-	}
-
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		acct, err := s.createPolicyServiceAccount(tx, org.ID, role)
+	return require.PreparedMutation{Mutate: func(ctx *gin.Context) (require.Response, error) {
+		access, err := require.MutationAccessFromContext(ctx)
 		if err != nil {
-			return err
+			return require.Response{}, err
+		}
+		tx := access.DB()
+		policy := app.OIDCTrustPolicy{
+			CreatedByID:          caller.ID,
+			OrgID:                access.Target().ID,
+			Name:                 req.Name,
+			Enabled:              true,
+			IssuerURL:            req.IssuerURL,
+			Audience:             req.Audience,
+			ClaimConditions:      req.ClaimConditions,
+			Role:                 req.Role,
+			Scope:                scope,
+			TokenDurationSeconds: duration,
+		}
+		role, err := s.authorizeTrustPolicy(tx, &policy, true)
+		if err != nil {
+			return require.Response{}, err
+		}
+		acct, err := s.createPolicyServiceAccount(tx, scope, role.ID)
+		if err != nil {
+			return require.Response{}, err
 		}
 		policy.ServiceAccountID = acct.ID
-		return tx.Create(&policy).Error
-	})
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create trust policy: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, policy)
+		if err := tx.Create(&policy).Error; err != nil {
+			return require.Response{}, fmt.Errorf("unable to create trust policy: %w", err)
+		}
+		return require.Response{Status: http.StatusCreated, Body: policy}, nil
+	}}, nil
 }
 
 // @ID						ListOIDCTrustPolicies
@@ -186,24 +171,25 @@ func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
 // @Success				200	{array}	app.OIDCTrustPolicy
 // @Failure				403	{object}	stderr.ErrResponse
 // @Router					/v1/oidc/trust-policies [GET]
-func (s *service) ListOIDCTrustPolicies(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+func (s *service) ListOIDCTrustPolicies(ctx *gin.Context) (any, error) {
+	access, err := require.ReadAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
+	}
+	if err := s.requireFederationEnabled(); err != nil {
+		return nil, err
 	}
 
 	var policies []app.OIDCTrustPolicy
-	res := s.db.WithContext(ctx).
-		Where(app.OIDCTrustPolicy{OrgID: org.ID}).
-		Order("created_at DESC").
+	res := access.DB().
+		Where(app.OIDCTrustPolicy{OrgID: access.OrgID()}).
+		Order("created_at DESC, id DESC").
 		Find(&policies)
 	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to list trust policies: %w", res.Error))
-		return
+		return nil, fmt.Errorf("unable to list trust policies: %w", res.Error)
 	}
 
-	ctx.JSON(http.StatusOK, policies)
+	return policies, nil
 }
 
 // @ID						GetOIDCTrustPolicy
@@ -218,20 +204,24 @@ func (s *service) ListOIDCTrustPolicies(ctx *gin.Context) {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Router					/v1/oidc/trust-policies/{policy_id} [GET]
-func (s *service) GetOIDCTrustPolicy(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+func (s *service) GetOIDCTrustPolicy(ctx *gin.Context) (any, error) {
+	access, err := require.ReadAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
+	}
+	if err := s.requireFederationEnabled(); err != nil {
+		return nil, err
 	}
 
-	policy, err := s.getTrustPolicy(ctx, org.ID, ctx.Param("policy_id"))
-	if err != nil {
-		ctx.Error(err)
-		return
+	var policy app.OIDCTrustPolicy
+	err = access.DB().Where(app.OIDCTrustPolicy{ID: ctx.Param("policy_id"), OrgID: access.OrgID()}).Take(&policy).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, stderr.ErrNotFound{Err: fmt.Errorf("trust policy not found")}
 	}
-
-	ctx.JSON(http.StatusOK, policy)
+	if err != nil {
+		return nil, fmt.Errorf("unable to look up trust policy: %w", err)
+	}
+	return &policy, nil
 }
 
 // @ID						UpdateOIDCTrustPolicy
@@ -249,93 +239,108 @@ func (s *service) GetOIDCTrustPolicy(ctx *gin.Context) {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Router					/v1/oidc/trust-policies/{policy_id} [PATCH]
-func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
+func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) (require.PreparedMutation, error) {
 	var req UpdateOIDCTrustPolicyRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 	}
 
-	org, err := s.requireOrgAdmin(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
+	if _, err := s.requirePolicyAdministration(ctx); err != nil {
+		return require.PreparedMutation{}, err
 	}
 
-	policy, err := s.getTrustPolicy(ctx, org.ID, ctx.Param("policy_id"))
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	disabling := false
-	if req.Name != "" {
-		policy.Name = req.Name
-	}
-	if req.Enabled != nil {
-		disabling = policy.Enabled && !*req.Enabled
-		policy.Enabled = *req.Enabled
-	}
 	if req.IssuerURL != "" {
 		if err := s.validateIssuerURL(ctx, req.IssuerURL); err != nil {
-			ctx.Error(stderr.NewInvalidRequest(err))
-			return
+			return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 		}
 		if err := s.verifier.Discover(ctx, req.IssuerURL); err != nil {
-			ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("issuer discovery failed: %w", err)))
-			return
+			return require.PreparedMutation{}, stderr.NewInvalidRequest(fmt.Errorf("issuer discovery failed: %w", err))
 		}
-		policy.IssuerURL = req.IssuerURL
-	}
-	if req.Audience != "" {
-		policy.Audience = req.Audience
 	}
 	if req.ClaimConditions != nil {
 		if err := validateClaimConditions(req.ClaimConditions); err != nil {
-			ctx.Error(stderr.NewInvalidRequest(err))
-			return
+			return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 		}
-		policy.ClaimConditions = req.ClaimConditions
 	}
 	if req.TokenDurationSeconds != 0 {
-		duration, err := parseTrustPolicyTokenDuration(req.TokenDurationSeconds)
-		if err != nil {
-			ctx.Error(stderr.NewInvalidRequest(err))
-			return
+		if _, err := parseTrustPolicyTokenDuration(req.TokenDurationSeconds); err != nil {
+			return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
 		}
-		policy.TokenDurationSeconds = duration
 	}
 
-	var roleChange app.RoleType
-	if req.Role != "" && req.Role != policy.Role {
-		role, err := s.resolveTrustPolicyRole(ctx, org.ID, req.Role)
+	return require.PreparedMutation{Mutate: func(ctx *gin.Context) (require.Response, error) {
+		access, err := require.MutationAccessFromContext(ctx)
 		if err != nil {
-			ctx.Error(stderr.NewInvalidRequest(err))
-			return
+			return require.Response{}, err
 		}
-		roleChange = role
-		policy.Role = string(role)
-	}
-
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if roleChange != "" {
-			if err := s.setAccountOrgRole(tx, org.ID, policy.ServiceAccountID, roleChange); err != nil {
-				return fmt.Errorf("unable to update service account role: %w", err)
+		tx := access.DB()
+		orgID := access.Target().ID
+		policy, err := s.lockTrustPolicy(tx, orgID, ctx.Param("policy_id"))
+		if err != nil {
+			return require.Response{}, err
+		}
+		oldScope, oldRole := policy.Scope, policy.Role
+		disableOnly := req.Enabled != nil && !*req.Enabled && req.Name == "" && req.IssuerURL == "" && req.Audience == "" && req.ClaimConditions == nil && req.Role == "" && req.Scope == nil && req.TokenDurationSeconds == 0
+		if !disableOnly {
+			if _, err := policyLimits(policy); err != nil && (req.Role == "" || req.Scope == nil) {
+				return require.Response{}, stderr.NewInvalidRequest(fmt.Errorf("trust policy requires explicit role and scope reauthorization"))
+			}
+			if req.Role != "" {
+				policy.Role = req.Role
+			}
+			if req.Scope != nil {
+				policy.Scope, err = authz.RoleBindingScope(orgID, req.Scope)
+				if err != nil {
+					return require.Response{}, stderr.NewInvalidRequest(err)
+				}
+			}
+			role, err := s.authorizeTrustPolicy(tx, policy, req.Role != "" || req.Scope != nil)
+			if err != nil {
+				return require.Response{}, err
+			}
+			if oldRole != policy.Role || oldScope != policy.Scope {
+				if err := tx.Unscoped().Where(app.AccountRole{
+					OrgID: generics.NewNullString(orgID), AccountID: policy.ServiceAccountID,
+					ScopeKind: oldScope.Kind, ScopeID: oldScope.ID,
+				}).Delete(&app.AccountRole{}).Error; err != nil {
+					return require.Response{}, err
+				}
+				if err := authz.New(authz.Params{DB: tx}).SetAccountRoleAtScope(tx.Statement.Context, policy.ServiceAccountID, role.ID, policy.Scope); err != nil {
+					return require.Response{}, err
+				}
+			}
+			if _, err := s.federatedLimits(tx, policy); err != nil {
+				return require.Response{}, err
 			}
 		}
-		if disabling {
+		if req.Name != "" {
+			policy.Name = req.Name
+		}
+		if req.Enabled != nil {
+			policy.Enabled = *req.Enabled
+		}
+		if req.IssuerURL != "" {
+			policy.IssuerURL = req.IssuerURL
+		}
+		if req.Audience != "" {
+			policy.Audience = req.Audience
+		}
+		if req.ClaimConditions != nil {
+			policy.ClaimConditions = req.ClaimConditions
+		}
+		if req.TokenDurationSeconds != 0 {
+			policy.TokenDurationSeconds = req.TokenDurationSeconds
+		}
+		if !policy.Enabled || req.IssuerURL != "" || req.Audience != "" || req.ClaimConditions != nil || req.Role != "" || req.Scope != nil {
 			if err := account.RevokeDerivedCredentials(tx, app.TokenSourceTypeOIDCTrustPolicy, []string{policy.ID}); err != nil {
-				return fmt.Errorf("unable to revoke tokens issued under this policy: %w", err)
+				return require.Response{}, fmt.Errorf("unable to revoke tokens issued under this policy: %w", err)
 			}
 		}
-		return tx.Save(policy).Error
-	})
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to update trust policy: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, policy)
+		if err := tx.Save(policy).Error; err != nil {
+			return require.Response{}, fmt.Errorf("unable to update trust policy: %w", err)
+		}
+		return require.Response{Status: http.StatusOK, Body: policy}, nil
+	}}, nil
 }
 
 // @ID						DeleteOIDCTrustPolicy
@@ -350,52 +355,33 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Router					/v1/oidc/trust-policies/{policy_id} [DELETE]
-func (s *service) DeleteOIDCTrustPolicy(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
+func (s *service) DeleteOIDCTrustPolicy(ctx *gin.Context) (require.PreparedMutation, error) {
+	if _, err := s.requirePolicyAdministration(ctx); err != nil {
+		return require.PreparedMutation{}, err
 	}
 
-	policy, err := s.getTrustPolicy(ctx, org.ID, ctx.Param("policy_id"))
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	return require.PreparedMutation{Mutate: func(ctx *gin.Context) (require.Response, error) {
+		access, err := require.MutationAccessFromContext(ctx)
+		if err != nil {
+			return require.Response{}, err
+		}
+		tx := access.DB()
+		orgID := access.Target().ID
+		policy, err := s.lockTrustPolicy(tx, orgID, ctx.Param("policy_id"))
+		if err != nil {
+			return require.Response{}, err
+		}
 		if err := tx.Delete(policy).Error; err != nil {
-			return err
+			return require.Response{}, err
 		}
 		if err := account.RevokeDerivedCredentials(tx, app.TokenSourceTypeOIDCTrustPolicy, []string{policy.ID}); err != nil {
-			return fmt.Errorf("unable to revoke tokens issued under this policy: %w", err)
+			return require.Response{}, fmt.Errorf("unable to revoke tokens issued under this policy: %w", err)
 		}
-		return s.deletePolicyServiceAccount(tx, org.ID, policy.ServiceAccountID)
-	})
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to delete trust policy: %w", err))
-		return
-	}
-
-	ctx.Status(http.StatusNoContent)
-}
-
-func (s *service) getTrustPolicy(ctx *gin.Context, orgID, policyID string) (*app.OIDCTrustPolicy, error) {
-	var policy app.OIDCTrustPolicy
-	res := s.db.WithContext(ctx).
-		Where(app.OIDCTrustPolicy{
-			ID:    policyID,
-			OrgID: orgID,
-		}).
-		First(&policy)
-	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		return nil, stderr.ErrNotFound{Err: fmt.Errorf("trust policy not found")}
-	}
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to look up trust policy: %w", res.Error)
-	}
-
-	return &policy, nil
+		if err := s.deletePolicyServiceAccount(tx, orgID, policy.ServiceAccountID); err != nil {
+			return require.Response{}, fmt.Errorf("unable to delete trust policy: %w", err)
+		}
+		return require.Response{Status: http.StatusNoContent}, nil
+	}}, nil
 }
 
 // requireFederationEnabled gates the trust policy CRUD surface behind the
@@ -412,7 +398,7 @@ func (s *service) requireFederationEnabled() error {
 	}
 }
 
-func (s *service) requireOrgAdmin(ctx *gin.Context) (*app.Org, error) {
+func (s *service) requirePolicyAdministration(ctx *gin.Context) (*app.Org, error) {
 	if err := s.requireFederationEnabled(); err != nil {
 		return nil, err
 	}
@@ -422,32 +408,18 @@ func (s *service) requireOrgAdmin(ctx *gin.Context) (*app.Org, error) {
 		return nil, err
 	}
 
-	acct, err := cctx.AccountFromGinContext(ctx)
-	if err != nil {
+	if _, err := require.CustomerRead(ctx, s.db, s.l, authz.ReadRequest{
+		Permission: permissions.OrgWrite,
+		Target:     permissions.Scope{Kind: permissions.KindOrg, OrgID: org.ID, ID: org.ID},
+	}); err != nil {
 		return nil, err
-	}
-
-	if !s.isOrgAdmin(acct, org.ID) {
-		return nil, stderr.ErrAuthorization{
-			Err:         fmt.Errorf("only org admins can manage OIDC trust policies"),
-			Description: "only org admins can manage OIDC trust policies",
-		}
 	}
 
 	return org, nil
 }
 
-func (s *service) isOrgAdmin(acct *app.Account, orgID string) bool {
-	for _, role := range acct.Roles {
-		if role.RoleType == app.RoleTypeOrgAdmin && role.OrgID.ValueString() == orgID {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *service) createPolicyServiceAccount(tx *gorm.DB, orgID string, roleType app.RoleType) (*app.Account, error) {
-	name := fmt.Sprintf("%s-oidc-%s", orgID, domains.NewAccountID())
+func (s *service) createPolicyServiceAccount(tx *gorm.DB, scope permissions.Scope, roleID string) (*app.Account, error) {
+	name := fmt.Sprintf("%s-oidc-%s", scope.OrgID, domains.NewAccountID())
 
 	newAcct := app.Account{
 		Email:       account.ServiceAccountEmail(name),
@@ -458,7 +430,7 @@ func (s *service) createPolicyServiceAccount(tx *gorm.DB, orgID string, roleType
 		return nil, fmt.Errorf("unable to create service account: %w", err)
 	}
 
-	if err := s.setAccountOrgRole(tx, orgID, newAcct.ID, roleType); err != nil {
+	if err := authz.New(authz.Params{DB: tx}).AddAccountRoleAtScope(tx.Statement.Context, newAcct.ID, roleID, scope); err != nil {
 		return nil, fmt.Errorf("unable to add org role to service account: %w", err)
 	}
 
@@ -466,46 +438,19 @@ func (s *service) createPolicyServiceAccount(tx *gorm.DB, orgID string, roleType
 }
 
 func (s *service) deletePolicyServiceAccount(tx *gorm.DB, orgID, accountID string) error {
-	if err := tx.Unscoped().
-		Where(app.AccountRole{OrgID: generics.NewNullString(orgID), AccountID: accountID}).
-		Delete(&app.AccountRole{}).Error; err != nil {
-		return fmt.Errorf("unable to remove service account roles: %w", err)
+	if accountID == "" {
+		return gorm.ErrRecordNotFound
 	}
-
-	if err := tx.
-		Where(app.Account{ID: accountID, AccountType: app.AccountTypeService}).
-		Delete(&app.Account{}).Error; err != nil {
-		return fmt.Errorf("unable to delete service account: %w", err)
+	var acct app.Account
+	if err := tx.Unscoped().Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where(app.Account{ID: accountID, AccountType: app.AccountTypeService}).Take(&acct).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("unable to lock policy service account: %w", err)
 	}
-
-	return nil
-}
-
-// setAccountOrgRole replaces the account's roles in the org. It writes through
-// the caller's transaction, unlike authz.Client.SetAccountOrgRole which opens
-// its own.
-func (s *service) setAccountOrgRole(tx *gorm.DB, orgID, accountID string, roleType app.RoleType) error {
-	var role app.Role
-	if err := tx.
-		Where(app.Role{OrgID: generics.NewNullString(orgID), RoleType: roleType}).
-		First(&role).Error; err != nil {
-		return fmt.Errorf("unable to find role: %w", err)
+	if err := requireFederationSubject(tx.Unscoped().Session(&gorm.Session{}), accountID); err != nil {
+		return err
 	}
-
-	if err := tx.Unscoped().
-		Where(app.AccountRole{OrgID: generics.NewNullString(orgID), AccountID: accountID}).
-		Delete(&app.AccountRole{}).Error; err != nil {
-		return fmt.Errorf("unable to remove existing roles: %w", err)
-	}
-
-	acctRole := &app.AccountRole{
-		OrgID:     generics.NewNullString(orgID),
-		RoleID:    role.ID,
-		AccountID: accountID,
-	}
-	if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&acctRole).Error; err != nil {
-		return fmt.Errorf("unable to add role: %w", err)
-	}
-
-	return nil
+	return account.New(account.Params{DB: tx}).DeleteServiceAccountByID(tx.Statement.Context, accountID)
 }

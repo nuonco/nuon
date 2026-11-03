@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -84,5 +85,16 @@ func (s *service) getOrgAccounts(ctx *gin.Context, orgID string) ([]app.Account,
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
+	ids := make([]string, 0, len(accounts))
+	for _, account := range accounts {
+		ids = append(ids, account.ID)
+	}
+	bindings, err := authz.New(authz.Params{DB: s.db}).AccountRoleBindings(ctx, orgID, ids)
+	if err != nil {
+		return nil, err
+	}
+	for i := range accounts {
+		accounts[i].RoleBindings = bindings[accounts[i].ID]
+	}
 	return accounts, nil
 }

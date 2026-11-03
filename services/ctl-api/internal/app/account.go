@@ -46,6 +46,7 @@ type Account struct {
 	OrgIDs         []string        `json:"org_ids,omitzero" gorm:"-" temporaljson:"org_i_ds,omitzero,omitempty"`
 	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
 	AllPermissions permissions.Set `json:"permissions,omitzero" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
+	RoleBindings   []RoleBinding   `json:"role_bindings,omitempty" gorm:"-" temporaljson:"-"`
 
 	IsEmployee bool `json:"-"`
 }
@@ -92,7 +93,9 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 	visited := make(map[string]struct{}, 0)
 	for _, role := range a.Roles {
 		for _, policy := range role.Policies {
-			a.AllPermissions.Add(policy.Permissions)
+			if role.Version == RoleVersionV1 || role.Version == RoleVersionV2 {
+				a.AllPermissions.Add(policy.Permissions)
+			}
 		}
 
 		if role.OrgID.Empty() {

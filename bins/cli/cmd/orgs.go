@@ -256,10 +256,10 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a static API token (deprecated)",
-		Long:  "Create a static API token backed by a dedicated service account with the given role. The token is only shown once. Deprecated: use `nuon service-accounts create` and `nuon service-accounts tokens create` instead. The --personal flag is also deprecated: personal tokens carry all of your access.",
+		Long:  "Create a static API token backed by a dedicated service account with the given role. The token is only shown once. Deprecated: use `nuon service-accounts create` and `nuon service-accounts tokens create` instead. The --personal flag is also deprecated. Install list/get, app metadata updates, and org-name updates restrict personal tokens to their recorded issuing org; other legacy routes may still permit cross-org access during rollout. Use a service account token in each org.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			if personal {
-				printDeprecatedCommandWarning(cmd, "Personal tokens are deprecated because they carry all of your access; use `nuon service-accounts create` and `nuon service-accounts tokens create` instead")
+				printDeprecatedCommandWarning(cmd, "Personal tokens are deprecated and cross-org access is restricted for install list/get, app metadata updates, and org-name updates. Use `nuon service-accounts create` and `nuon service-accounts tokens create` in each org instead")
 			} else {
 				printDeprecatedCommandWarning(cmd, "Use `nuon service-accounts create --name <name> --role <role>`, then `nuon service-accounts tokens create --id <account-id>` instead")
 			}

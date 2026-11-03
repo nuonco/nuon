@@ -10,13 +10,13 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_apps",
 		"List apps",
-		"List apps in the current org with their components. Returns app name, ID, description, and associated components."+apiPkg.MCPListToolHint,
+		"List app IDs and names visible through current grants and credential ceilings. Includes parent apps of readable installs without granting app-wide access. Pass query for literal name or ID search."+apiPkg.MCPListToolHint,
 	), s.mcpListApps)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_app",
 		"Get app",
-		"Get an app by name or ID. Returns full app details including components, sandbox configs, and org info. Accepts either the app name or ID.",
+		"Get app details by name or ID, requiring app.read in current grants and credential ceilings. Parent navigation through an install does not grant access to app details.",
 	), s.mcpGetApp)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(

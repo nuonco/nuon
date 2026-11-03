@@ -152,7 +152,7 @@ func (s *service) AuthState(c *gin.Context) {
 	}
 
 	// Create auth token for the cookie
-	tokenValue, err := s.createToken(s.db, account, "")
+	tokenValue, err := s.createToken(s.db.WithContext(c.Request.Context()), account)
 	if err != nil {
 		s.l.Error("failed to create token", zap.Error(err))
 		s.respondError(c, http.StatusInternalServerError, fmt.Errorf("failed to create token: %w", err))

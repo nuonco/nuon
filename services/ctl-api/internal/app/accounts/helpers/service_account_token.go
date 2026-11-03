@@ -4,15 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -135,80 +131,4 @@ func (h *Helpers) OrgServiceAccounts(ctx context.Context, orgID string, includeR
 	}
 
 	return tx.Distinct("account_roles.account_id")
-}
-
-// CreateStaticToken issues a static API token for acct.
-func (h *Helpers) CreateStaticToken(ctx context.Context, acct *app.Account, orgID, createdByID, name string, role app.RoleType, duration time.Duration) (*app.Token, error) {
-	token := app.Token{
-		CreatedByID: createdByID,
-		Name:        name,
-		Role:        string(role),
-		OrgID:       orgID,
-		Token:       domains.NewUserTokenID(),
-		TokenType:   app.TokenTypeStatic,
-		ExpiresAt:   time.Now().Add(duration),
-		IssuedAt:    time.Now(),
-		Issuer:      acct.ID,
-		AccountID:   acct.ID,
-	}
-
-	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var liveAccount struct{ ID string }
-		if err := tx.Model(&app.Account{}).Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where(app.Account{ID: acct.ID}).Take(&liveAccount).Error; err != nil {
-			return fmt.Errorf("lock account for token issuance: %w", err)
-		}
-		return tx.Create(&token).Error
-	}); err != nil {
-		return nil, fmt.Errorf("unable to create static token: %w", err)
-	}
-
-	return &token, nil
-}
-
-// CreateServiceAccountToken creates a static token for the org's service account
-// identified by accountID, optionally invalidating its existing tokens first.
-func (h *Helpers) CreateServiceAccountToken(ctx *gin.Context, org *app.Org, accountID, name, duration string, invalidate bool) (*app.Token, error) {
-	if duration == "" {
-		duration = DefaultTokenDuration
-	}
-
-	dur, err := time.ParseDuration(duration)
-	if err != nil {
-		return nil, stderr.ErrUser{
-			Err:         fmt.Errorf("invalid duration: %w", err),
-			Description: fmt.Sprintf("invalid duration: %s", err.Error()),
-		}
-	}
-
-	acct, err := h.GetOrgServiceAccount(ctx, org.ID, accountID)
-	if err != nil {
-		return nil, err
-	}
-
-	if invalidate {
-		if err := h.acctClient.InvalidateTokens(ctx, acct.Email); err != nil {
-			return nil, fmt.Errorf("unable to invalidate tokens: %w", err)
-		}
-	}
-
-	caller, err := cctx.AccountFromGinContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	name = strings.TrimSpace(name)
-	if name == "" {
-		name = acct.Email
-	}
-
-	// CreateStaticToken, not acctClient.CreateToken: only this one stamps the columns
-	// the token list endpoints filter on, so tokens made the other way cannot be
-	// listed or revoked.
-	token, err := h.CreateStaticToken(ctx, acct, org.ID, caller.ID, name, OrgRoleType(acct, org.ID), dur)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create token: %w", err)
-	}
-
-	return token, nil
 }

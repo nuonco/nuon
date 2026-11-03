@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 const (
@@ -53,54 +52,52 @@ type OrgComponentBuildHistoryResponse struct {
 // @Failure 400 {object} stderr.ErrResponse
 // @Failure 500 {object} stderr.ErrResponse
 // @Router /v1/component-builds [get]
-func (s *service) ListOrgComponentBuilds(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
+func (s *service) ListOrgComponentBuilds(ctx *gin.Context) (any, error) {
+	access, err := require.ReadAccessFromContext(ctx.Request.Context())
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
 
 	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
 	if err != nil || limit < 1 || limit > 100 {
-		ctx.Error(stderr.ErrUser{
+		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("invalid limit %q", ctx.Query("limit")),
 			Description: "limit must be between 1 and 100",
-		})
-		return
+		}
 	}
 
 	cursor, err := decodeComponentBuildCursor(ctx.Query("cursor"))
 	if err != nil {
-		ctx.Error(stderr.ErrUser{Err: err, Description: "invalid component build history cursor"})
-		return
+		return nil, stderr.ErrUser{Err: err, Description: "invalid component build history cursor"}
 	}
 
-	builds, hasMore, err := s.listOrgComponentBuilds(ctx, org.ID, cursor, limit)
+	builds, hasMore, err := s.listOrgComponentBuilds(ctx, access.OrgID(), cursor, limit)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
 
 	buildPtrs := make([]*app.ComponentBuild, len(builds))
 	for i := range builds {
 		buildPtrs[i] = &builds[i]
 	}
-	if err := s.hydrateBuildRunnerJobs(ctx, buildPtrs...); err != nil {
-		ctx.Error(err)
-		return
+	if err := s.hydrateBuildRunnerJobs(ctx.Request.Context(), buildPtrs...); err != nil {
+		return nil, err
 	}
 
-	response, err := buildOrgComponentBuildHistoryResponse(builds, cursor, hasMore)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	ctx.JSON(http.StatusOK, response)
+	return buildOrgComponentBuildHistoryResponse(builds, cursor, hasMore)
 }
 
 func (s *service) listOrgComponentBuilds(ctx *gin.Context, orgID string, cursor *componentBuildCursor, limit int) ([]app.ComponentBuild, bool, error) {
+	access, err := require.ReadAccessFromContext(ctx.Request.Context())
+	if err != nil {
+		return nil, false, err
+	}
+	query, err := access.Query()
+	if err != nil {
+		return nil, false, err
+	}
 	builds := []app.ComponentBuild{}
-	query := s.db.WithContext(ctx).
+	query = query.WithContext(ctx.Request.Context()).
 		Preload("CreatedBy").
 		Preload("VCSConnectionCommit").
 		Preload("ComponentConfigConnection.Component").

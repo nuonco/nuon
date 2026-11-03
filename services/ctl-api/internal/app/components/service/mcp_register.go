@@ -22,7 +22,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_builds",
 		"List builds",
-		"List the 20 most recent builds for a component. Returns build ID, status, git ref, and timestamp.",
+		"List recent builds for a component. Returns build ID, status, git ref, and timestamp."+apiPkg.MCPListToolHint,
 	), s.mcpListBuilds)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(

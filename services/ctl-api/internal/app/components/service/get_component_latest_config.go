@@ -2,12 +2,9 @@ package service
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetAppComponentLatestConfig
@@ -27,34 +24,8 @@ import (
 // @Produce				json
 // @Success				200	{object}	app.ComponentConfigConnection
 // @Router					/v1/apps/{app_id}/components/{component_id}/configs/latest [GET]
-func (s *service) GetAppComponentLatestConfig(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	appID := ctx.Param("app_id")
-	cmpID := ctx.Param("component_id")
-
-	comp, err := s.helpers.GetComponent(ctx, cmpID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component configs: %w", err))
-		return
-	}
-
-	// Validate component belongs to the requesting org AND the specified app
-	if comp.OrgID != org.ID || comp.AppID != appID {
-		ctx.Error(fmt.Errorf("component not found: %w", gorm.ErrRecordNotFound))
-		return
-	}
-
-	if comp.LatestConfig == nil {
-		ctx.Error(fmt.Errorf("no config found for component: %w", gorm.ErrRecordNotFound))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, comp.LatestConfig)
+func (s *service) GetAppComponentLatestConfig(ctx *gin.Context) (any, error) {
+	return s.GetComponentLatestConfig(ctx)
 }
 
 // @ID						GetComponentLatestConfig
@@ -74,31 +45,15 @@ func (s *service) GetAppComponentLatestConfig(ctx *gin.Context) {
 // @Produce				json
 // @Success				200	{object}	app.ComponentConfigConnection
 // @Router					/v1/components/{component_id}/configs/latest [GET]
-func (s *service) GetComponentLatestConfig(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
+func (s *service) GetComponentLatestConfig(ctx *gin.Context) (any, error) {
+	comp, err := s.readComponent(ctx.Request.Context(), "component_id")
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	cmpID := ctx.Param("component_id")
-
-	comp, err := s.helpers.GetComponent(ctx, cmpID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component configs: %w", err))
-		return
-	}
-
-	// Validate component belongs to the requesting org
-	if comp.OrgID != org.ID {
-		ctx.Error(fmt.Errorf("component not found: %w", gorm.ErrRecordNotFound))
-		return
+		return nil, fmt.Errorf("unable to get component configs: %w", err)
 	}
 
 	if comp.LatestConfig == nil {
-		ctx.Error(fmt.Errorf("no config found for component: %w", gorm.ErrRecordNotFound))
-		return
+		return nil, fmt.Errorf("no config found for component: %w", gorm.ErrRecordNotFound)
 	}
 
-	ctx.JSON(http.StatusOK, comp.LatestConfig)
+	return comp.LatestConfig, nil
 }

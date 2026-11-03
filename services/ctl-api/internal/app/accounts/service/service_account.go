@@ -14,24 +14,31 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-func (s *service) resolveServiceAccountRole(ctx *gin.Context, orgID, role string) (app.RoleType, error) {
-	resolved, err := s.authzClient.ResolveAssignableRole(ctx, orgID, app.RoleType(role), app.RoleContextServiceAccount)
+func (s *service) resolveServiceAccountRole(tx *gorm.DB, scope permissions.Scope, role string) (*app.Role, error) {
+	resolved, err := authz.New(authz.Params{DB: tx}).ResolveDelegableRoleAtScope(tx.Statement.Context, scope, app.RoleType(role), app.RoleContextServiceAccount)
 	if err != nil {
-		return "", stderr.ErrUser{
+		var denied stderr.ErrAuthorization
+		if errors.As(err, &denied) {
+			return nil, err
+		}
+		return nil, stderr.ErrUser{
 			Err:         err,
 			Description: err.Error(),
 		}
 	}
-	return resolved.RoleType, nil
+	return resolved, nil
 }
 
 // @ID						ListRoles
@@ -55,7 +62,7 @@ func (s *service) ListRoles(ctx *gin.Context) {
 
 	var roles []app.Role
 	res := s.db.WithContext(ctx).
-		Where(app.Role{OrgID: generics.NewNullString(org.ID)}).
+		Where(app.Role{OrgID: generics.NewNullString(org.ID), Version: app.RoleVersionV3}).
 		Order("role_type").
 		Find(&roles)
 	if res.Error != nil {
@@ -304,8 +311,15 @@ func (s *service) searchServiceAccounts(ctx context.Context, org *app.Org, scope
 // @Success				200	{object}	[]ServiceAccount
 // @Router					/v1/service-accounts [GET]
 func (s *service) ListServiceAccounts(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if _, err := require.CustomerRead(ctx, s.db, s.l, authz.ReadRequest{
+		Permission: permissions.OrgWrite,
+		Target:     permissions.Scope{Kind: permissions.KindOrg, OrgID: org.ID, ID: org.ID},
+	}); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -407,9 +421,15 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 		}
 	}
 
+	bindings, err := authz.New(authz.Params{DB: s.db}).AccountRoleBindings(ctx, org.ID, pageIDs)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	resp := make([]ServiceAccount, 0, len(accounts))
 	for _, acct := range accounts {
 		class := classes.get(acct.ID)
+		acct.RoleBindings = bindings[acct.ID]
 		resp = append(resp, ServiceAccount{
 			Account:               acct,
 			SystemAccount:         class.System,
@@ -434,8 +454,15 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 // @Success				200	{array}		string
 // @Router					/v1/service-accounts/purposes [GET]
 func (s *service) ListServiceAccountPurposes(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if _, err := require.CustomerRead(ctx, s.db, s.l, authz.ReadRequest{
+		Permission: permissions.OrgWrite,
+		Target:     permissions.Scope{Kind: permissions.KindOrg, OrgID: org.ID, ID: org.ID},
+	}); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -459,7 +486,8 @@ type CreateServiceAccountRequest struct {
 	// Name is a human-friendly label for the service account.
 	Name string `json:"name" binding:"required"`
 	// Role must be one of the service account roles returned by GET /v1/roles.
-	Role string `json:"role" binding:"required"`
+	Role  string             `json:"role" binding:"required"`
+	Scope *permissions.Scope `json:"scope,omitempty"`
 }
 
 // @ID						CreateServiceAccount
@@ -477,46 +505,43 @@ type CreateServiceAccountRequest struct {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.Account
 // @Router					/v1/service-accounts [POST]
-func (s *service) CreateServiceAccount(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+func (s *service) CreateServiceAccount(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, err
 	}
 
 	var req CreateServiceAccountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
+		return require.Response{}, stderr.ErrUser{
 			Err:         fmt.Errorf("unable to parse request: %w", err),
 			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
-		})
-		return
+		}
 	}
 
-	roleType, err := s.resolveServiceAccountRole(ctx, org.ID, req.Role)
+	bindingScope, err := authz.RoleBindingScope(access.Target().OrgID, req.Scope)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, stderr.NewInvalidRequest(err)
 	}
-
-	acct, err := s.acctClient.CreateServiceAccount(ctx, domains.NewAccountID(), req.Name)
+	tx := access.DB()
+	role, err := s.resolveServiceAccountRole(tx, bindingScope, req.Role)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create service account: %w", err))
-		return
+		return require.Response{}, err
 	}
-
-	if err := s.authzClient.SetAccountOrgRole(ctx, org.ID, acct.ID, roleType); err != nil {
-		ctx.Error(fmt.Errorf("unable to assign role to service account: %w", err))
-		return
-	}
-
-	acct, err = s.acctClient.FindAccount(ctx, acct.ID)
+	acctClient := account.New(account.Params{DB: tx})
+	acct, err := acctClient.CreateServiceAccount(tx.Statement.Context, domains.NewAccountID(), req.Name)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to reload service account: %w", err))
-		return
+		return require.Response{}, fmt.Errorf("unable to create service account: %w", err)
+	}
+	if err := authz.New(authz.Params{DB: tx}).AddAccountRoleAtScope(tx.Statement.Context, acct.ID, role.ID, bindingScope); err != nil {
+		return require.Response{}, fmt.Errorf("unable to assign role to service account: %w", err)
+	}
+	acct, err = acctClient.FindAccount(tx.Statement.Context, acct.ID)
+	if err != nil {
+		return require.Response{}, err
 	}
 
-	ctx.JSON(http.StatusCreated, acct)
+	return require.Response{Status: http.StatusCreated, Body: acct}, nil
 }
 
 type UpdateServiceAccountRequest struct {
@@ -541,51 +566,46 @@ type UpdateServiceAccountRequest struct {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.Account
 // @Router					/v1/service-accounts/{account_id} [PATCH]
-func (s *service) UpdateServiceAccount(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+func (s *service) UpdateServiceAccount(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, err
 	}
 
-	accountID := ctx.Param("account_id")
+	accountID := access.SubjectAccountID()
 
 	var req UpdateServiceAccountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
+		return require.Response{}, stderr.ErrUser{
 			Err:         fmt.Errorf("unable to parse request: %w", err),
 			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
-		})
-		return
-	}
-
-	acct, err := s.helpers.GetOrgServiceAccount(ctx, org.ID, accountID)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
-			return err
 		}
-		return tx.Model(&app.Account{}).Where(app.Account{ID: acct.ID}).Update("name", req.Name).Error
-	}); err != nil {
-		ctx.Error(fmt.Errorf("unable to update service account: %w", err))
-		return
 	}
 
-	acct, err = s.acctClient.FindAccount(ctx, acct.ID)
+	tx := access.DB()
+	acctClient := account.New(account.Params{DB: tx})
+	acct, err := helpers.New(helpers.Params{DB: tx, AcctClient: acctClient}).GetOrgServiceAccount(tx.Statement.Context, access.Target().OrgID, accountID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to reload service account: %w", err))
-		return
+		return require.Response{}, fmt.Errorf("unable to update service account: %w", err)
+	}
+	if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
+		return require.Response{}, fmt.Errorf("unable to update service account: %w", err)
+	}
+	if err := tx.Model(&app.Account{}).Where(app.Account{ID: acct.ID}).Update("name", req.Name).Error; err != nil {
+		return require.Response{}, fmt.Errorf("unable to update service account: %w", err)
+	}
+	acct, err = acctClient.FindAccount(tx.Statement.Context, acct.ID)
+	if err != nil {
+		return require.Response{}, fmt.Errorf("unable to update service account: %w", err)
 	}
 
-	ctx.JSON(http.StatusOK, acct)
+	return require.Response{Status: http.StatusOK, Body: acct}, nil
 }
 
 type UpdateServiceAccountRoleRequest struct {
-	Role string `json:"role" binding:"required"`
+	Role   string             `json:"role" binding:"required"`
+	Scope  *permissions.Scope `json:"scope,omitempty"`
+	Remove bool               `json:"remove,omitempty"`
 }
 
 // @ID						UpdateServiceAccountRole
@@ -605,53 +625,74 @@ type UpdateServiceAccountRoleRequest struct {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.Account
 // @Router					/v1/service-accounts/{account_id}/role [PATCH]
-func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+func (s *service) UpdateServiceAccountRole(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, err
 	}
 
-	accountID := ctx.Param("account_id")
+	accountID := access.SubjectAccountID()
+	target := access.Target()
+	tx := access.DB()
 
 	var req UpdateServiceAccountRoleRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
+		return require.Response{}, stderr.ErrUser{
 			Err:         fmt.Errorf("unable to parse request: %w", err),
 			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
-		})
-		return
-	}
-
-	roleType, err := s.resolveServiceAccountRole(ctx, org.ID, req.Role)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	acct, err := s.helpers.GetOrgServiceAccount(ctx, org.ID, accountID)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
-			return err
 		}
-		return authz.New(authz.Params{DB: tx}).SetAccountOrgRole(ctx, org.ID, acct.ID, roleType)
-	}); err != nil {
-		ctx.Error(fmt.Errorf("unable to update service account role: %w", err))
-		return
 	}
 
-	acct, err = s.acctClient.FindAccount(ctx, acct.ID)
+	if req.Remove && req.Scope == nil {
+		return require.Response{}, stderr.NewInvalidRequest(fmt.Errorf("removal requires an explicit scope"))
+	}
+	bindingScope, err := authz.RoleBindingScope(target.OrgID, req.Scope)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to reload service account: %w", err))
-		return
+		return require.Response{}, stderr.NewInvalidRequest(err)
 	}
-
-	ctx.JSON(http.StatusOK, acct)
+	acctClient := account.New(account.Params{DB: tx})
+	acct, err := helpers.New(helpers.Params{DB: tx, AcctClient: acctClient}).GetOrgServiceAccount(tx.Statement.Context, target.OrgID, accountID)
+	if err != nil {
+		return require.Response{}, err
+	}
+	if err := authz.RequireUserManagedInOrg(tx, acct.ID, target.OrgID); err != nil {
+		return require.Response{}, err
+	}
+	authzClient := authz.New(authz.Params{DB: tx})
+	if req.Remove {
+		caller, err := cctx.AccountFromContext(tx.Statement.Context)
+		if err != nil {
+			return require.Response{}, err
+		}
+		if caller.ID == accountID {
+			return require.Response{}, stderr.NewInvalidRequest(fmt.Errorf("cannot remove your own role binding"))
+		}
+		role, err := authzClient.ResolveAssignableRole(tx.Statement.Context, target.OrgID, app.RoleType(req.Role), app.RoleContextServiceAccount)
+		if err != nil {
+			return require.Response{}, err
+		}
+		if err := authzClient.RemoveAccountRoleAtScope(tx.Statement.Context, acct.ID, role.ID, bindingScope); err != nil {
+			return require.Response{}, err
+		}
+	} else {
+		role, err := s.resolveServiceAccountRole(tx, bindingScope, req.Role)
+		if err != nil {
+			return require.Response{}, err
+		}
+		if err := authzClient.SetAccountRoleAtScope(tx.Statement.Context, acct.ID, role.ID, bindingScope); err != nil {
+			return require.Response{}, err
+		}
+	}
+	acct, err = acctClient.FindAccount(tx.Statement.Context, acct.ID)
+	if err != nil {
+		return require.Response{}, err
+	}
+	bindings, err := authzClient.AccountRoleBindings(tx.Statement.Context, target.OrgID, []string{acct.ID})
+	if err != nil {
+		return require.Response{}, err
+	}
+	acct.RoleBindings = bindings[acct.ID]
+	return require.Response{Status: http.StatusOK, Body: acct}, nil
 }
 
 // @ID						DeleteServiceAccount
@@ -670,49 +711,35 @@ func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				202
 // @Router					/v1/service-accounts/{account_id} [DELETE]
-func (s *service) DeleteServiceAccount(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+func (s *service) DeleteServiceAccount(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, err
 	}
 
-	accountID := ctx.Param("account_id")
-
-	acct, err := s.helpers.GetOrgServiceAccount(ctx, org.ID, accountID)
+	tx, target := access.DB(), access.Target()
+	acctClient := account.New(account.Params{DB: tx})
+	acct, err := helpers.New(helpers.Params{DB: tx, AcctClient: acctClient}).GetOrgServiceAccount(tx.Statement.Context, target.OrgID, access.SubjectAccountID())
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, err
+	}
+	if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
+		return require.Response{}, err
+	}
+	if err := authz.New(authz.Params{DB: tx}).RemoveAccountOrgRoles(tx.Statement.Context, target.OrgID, acct.ID); err != nil {
+		return require.Response{}, fmt.Errorf("unable to remove roles: %w", err)
+	}
+	if err := acctClient.InvalidateTokens(tx.Statement.Context, acct.Email); err != nil {
+		return require.Response{}, fmt.Errorf("unable to delete service account: %w", err)
 	}
 
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
-			return err
-		}
-		if err := authz.New(authz.Params{DB: tx}).RemoveAccountOrgRoles(ctx, org.ID, acct.ID); err != nil {
-			return fmt.Errorf("unable to remove roles: %w", err)
-		}
-		return account.New(account.Params{DB: tx}).InvalidateTokens(ctx, acct.Email)
-	}); err != nil {
-		ctx.Error(fmt.Errorf("unable to delete service account: %w", err))
-		return
-	}
-
-	ctx.Status(http.StatusAccepted)
+	return require.Response{Status: http.StatusAccepted}, nil
 }
 
 type CreateServiceAccountTokenRequest struct {
-	// Duration defaults to one year.
-	Duration string `json:"duration" default:"8760h"`
-
-	// Name labels the token where it is listed; defaults to the account's identity.
-	Name string `json:"name"`
-
-	Invalidate bool `json:"invalidate"`
-}
-
-type CreateServiceAccountTokenResponse struct {
-	Token string `json:"token,omitzero"`
+	Duration   string `json:"duration" default:"8760h"`
+	Name       string `json:"name"`
+	Invalidate bool   `json:"invalidate"`
 }
 
 // @ID						CreateServiceAccountToken
@@ -730,36 +757,9 @@ type CreateServiceAccountTokenResponse struct {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	CreateServiceAccountTokenResponse
+// @Failure				410	{object}	stderr.ErrResponse
 // @Deprecated				true
 // @Router					/v1/service-accounts/{account_id}/tokens [POST]
 func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	accountID := ctx.Param("account_id")
-
-	var req CreateServiceAccountTokenRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, http.ErrBodyNotAllowed) {
-		if err.Error() != "EOF" {
-			ctx.Error(stderr.ErrUser{
-				Err:         fmt.Errorf("unable to parse request: %w", err),
-				Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
-			})
-			return
-		}
-	}
-
-	token, err := s.helpers.CreateServiceAccountToken(ctx, org, accountID, req.Name, req.Duration, req.Invalidate)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, CreateServiceAccountTokenResponse{
-		Token: token.Token,
-	})
+	ctx.JSON(http.StatusGone, gin.H{"error": "token creation retired; use POST /v1/tokens with account_id, role and scope"})
 }

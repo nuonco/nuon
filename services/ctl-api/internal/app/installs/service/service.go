@@ -92,15 +92,16 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	org := require.OrgRoute(ge)
 
 	// get all installs across orgs
-	org.GET("/v1/installs", s.GetOrgInstalls)
-	org.GET("/v1/installs/label-keys", s.GetInstallLabelKeys)
-	org.GET("/v1/installs/health", s.GetInstallsHealth)
+	inventory := require.CustomerRoute(ge)
+	inventory.GET("/v1/installs", s.GetOrgInstalls)
+	inventory.GET("/v1/installs/label-keys", s.GetInstallLabelKeys)
+	inventory.GET("/v1/installs/health", s.GetInstallsHealth)
 	org.POST("/v1/installs", s.CreateInstallV2)
 
 	// get / create installs for an app
 	apps := require.OrgRoute(ge).Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
-		apps.GET("/installs", s.GetAppInstalls)
+		require.CustomerRoute(ge).GET("/v1/apps/:app_id/installs", s.GetAppInstalls)
 		s.POST(apps, "/installs", s.CreateInstall, api.APIContextTypePublic, true) // Deprecated
 	}
 
@@ -109,7 +110,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 	installs := require.ResourceRoute(ge, permissions.KindInstall, "install_id").Group("/v1/installs/:install_id")
 	{
-		installs.GET("", s.GetInstall)
+		require.CustomerRoute(ge).GET("/v1/installs/:install_id", s.GetInstall)
 		installs.PATCH("", s.UpdateInstall)
 		installs.DELETE("", s.DeleteInstall)
 		installs.POST("/labels", s.AddInstallLabels)
@@ -266,7 +267,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/deployments", s.GetInstallDeployments)
 		installs.GET("/deployments/:workflow_id", s.GetInstallDeployment)
 		installs.GET("/deployment-summaries", s.GetInstallDeploymentSummaries)
-		installs.GET("/overview", s.GetInstallOverview)
+		require.CustomerReadRoute(ge, s.db, s.l, permissions.InstallRead, permissions.KindInstall, "install_id").GET("/v1/installs/:install_id/overview", s.GetInstallOverview)
 		installs.POST("/resolve-drift", s.ResolveInstallDrift)
 		installs.GET("/activity", s.GetInstallActivity)
 		installs.GET("/updates", s.GetInstallUpdates)

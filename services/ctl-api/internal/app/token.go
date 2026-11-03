@@ -56,8 +56,9 @@ type Token struct {
 	IssuedAt  time.Time `json:"issued_at,omitzero" gorm:"notnull" temporaljson:"issued_at,omitzero,omitempty"`
 	Issuer    string    `json:"issuer,omitzero" gorm:"notnull;default null" temporaljson:"issuer,omitzero,omitempty"`
 
-	SourceType TokenSourceType `json:"source_type,omitzero" swaggertype:"string" temporaljson:"source_type,omitzero,omitempty"`
-	SourceID   string          `json:"source_id,omitzero" temporaljson:"source_id,omitzero,omitempty"`
+	SourceType    TokenSourceType `json:"source_type,omitzero" swaggertype:"string" temporaljson:"source_type,omitzero,omitempty"`
+	SourceID      string          `json:"source_id,omitzero" temporaljson:"source_id,omitzero,omitempty"`
+	Authorization []byte          `json:"-" gorm:"type:jsonb" temporaljson:"authorization,omitzero,omitempty"`
 }
 
 func (a *Token) BeforeCreate(tx *gorm.DB) error {

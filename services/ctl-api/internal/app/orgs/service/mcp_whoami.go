@@ -2,42 +2,43 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"slices"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 type mcpWhoamiInput struct{}
 
 func (s *service) mcpWhoami(ctx context.Context, _ *mcp.CallToolRequest, _ mcpWhoamiInput) (*mcp.CallToolResult, any, error) {
-	accountID := keys.CreatedByIDFromContext(ctx)
-
-	var acct app.Account
-	if res := s.db.WithContext(ctx).
-		Preload("Roles").
-		Preload("Roles.Org").
-		First(&acct, "id = ?", accountID); res.Error != nil {
-		return nil, nil, fmt.Errorf("unable to fetch account: %w", res.Error)
-	}
-
-	out := map[string]any{
-		"account":     map[string]string{"id": acct.ID, "email": acct.Email},
-		"org_count":   len(accountOrgs(acct)),
-		"current_org": nil,
-	}
-
-	if orgID := keys.OrgIDFromContext(ctx); orgID != "" {
-		org, err := s.getOrg(ctx, orgID)
-		if err != nil {
-			return nil, nil, err
+	out := map[string]any{"current_org": nil}
+	err := authz.New(authz.Params{DB: s.db}).ReadCustomerNavigation(ctx, func(tx *gorm.DB, orgIDs []string) error {
+		credential, _ := cctx.VerifiedCredentialFromContext(ctx)
+		var acct app.Account
+		if err := tx.Select("id", "email").Where(app.Account{ID: credential.AccountID}).Take(&acct).Error; err != nil {
+			return err
 		}
-		out["current_org"] = map[string]string{"id": org.ID, "name": org.Name}
-	} else {
-		out["hint"] = "No org on this request. Org-scoped tools need the X-Nuon-Org-ID header."
+		out["account"] = map[string]string{"id": acct.ID, "email": acct.Email}
+		out["org_count"] = len(orgIDs)
+		if orgID := keys.OrgIDFromContext(ctx); slices.Contains(orgIDs, orgID) {
+			var org OrgListItem
+			if err := tx.Model(&app.Org{}).Select("id", "name").Where(app.Org{ID: orgID}).Take(&org).Error; err != nil {
+				return err
+			}
+			out["current_org"] = org
+		} else {
+			out["hint"] = "No accessible org on this request. Use list_orgs and send X-Nuon-Org-ID."
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return apiPkg.MCPJSONResult(out)

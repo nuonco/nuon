@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/useragent"
 )
@@ -101,8 +102,20 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				return
 			}
 
+			credential, err := authz.CustomerCredential(acct, acctToken, cctx.SurfacePublicAPI)
+			if err != nil {
+				ctx.Error(stderr.ErrAuthorization{Err: err, Description: "token is not allowed on this api"})
+				ctx.Abort()
+				return
+			}
+			if !require.IsCustomerRoute(ctx) {
+				ctx.Error(stderr.ErrAuthorization{Err: fmt.Errorf("credential restrictions are not supported by this route"), Description: "access denied"})
+				ctx.Abort()
+				return
+			}
 			cctx.SetAccountGinContext(ctx, acct)
 			cctx.SetTokenTypeGinContext(ctx, acctToken.TokenType)
+			ctx.Request = ctx.Request.WithContext(cctx.SetVerifiedCredentialContext(ctx.Request.Context(), credential))
 			m.detectCLIUsage(ctx, acct)
 			m.recordPersonalStaticToken(ctx, acct, acctToken)
 			m.logAgentRequest(ctx, acct.ID)

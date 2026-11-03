@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -43,8 +44,12 @@ func (s *service) GetOrg(ctx *gin.Context) {
 }
 
 func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
+	return getOrg(s.db.WithContext(ctx), orgID)
+}
+
+func getOrg(db *gorm.DB, orgID string) (*app.Org, error) {
 	org := app.Org{}
-	res := s.db.WithContext(ctx).
+	res := db.
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
 		Preload("VCSConnections").

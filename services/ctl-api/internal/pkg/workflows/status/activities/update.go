@@ -47,23 +47,13 @@ type UpdateStatusRequest struct {
 // TODO(sdboyer) remove after workflow refactor
 // @temporal-gen-v2 activity
 func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, req UpdateStatusRequest) error {
-	obj := app.Workflow{
-		ID: req.ID,
-	}
-
-	var loaded app.Workflow
-	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
-			return app.CompositeStatus{}, err
-		}
-
-		return loaded.Status, nil
-	}
-
-	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
+	loaded, updated, err := a.updateWorkflowStatus(ctx, req)
+	if err != nil {
 		return err
 	}
-	a.logWorkflowStatus(ctx, loaded, loaded.Status, req.Status)
+	if updated {
+		a.logWorkflowStatus(ctx, *loaded, loaded.Status, req.Status)
+	}
 	return nil
 }
 
@@ -202,43 +192,60 @@ func reflectID(obj any) string {
 
 // @temporal-gen-v2 activity
 func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateStatusRequest) error {
-	obj := app.Workflow{
-		ID: req.ID,
-	}
-
-	var loaded app.Workflow
-	if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
+	loaded, updated, err := a.updateWorkflowStatus(ctx, req)
+	if err != nil {
 		return err
 	}
-
-	_, cancelRequested := loaded.Status.Metadata["cancel_requested_at"]
-	// Cancellation is terminal because downstream step/group writers can race the cancel handler with stale statuses.
-	if req.Status.Status != app.StatusCancelled && (loaded.Status.Status == app.StatusCancelled || cancelRequested) {
+	if !updated {
 		return nil
-	}
-
-	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		return loaded.Status, nil
-	}
-
-	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
-		return err
 	}
 
 	a.syncInstallAppConfigVersionFromFlowStatus(ctx, req.ID, req.Status)
 	if req.Status.Status == app.StatusSuccess {
-		a.syncInstallActualAppConfigFromFlow(ctx, &loaded)
+		a.syncInstallActualAppConfigFromFlow(ctx, loaded)
 	}
 	if req.Status.Status == app.StatusSuccess || req.Status.Status == app.StatusError || req.Status.Status == app.StatusCancelled {
-		a.syncReleasedInstallGroupRun(ctx, &loaded, string(req.Status.Status))
+		a.syncReleasedInstallGroupRun(ctx, loaded, string(req.Status.Status))
 	}
 
 	if a.notifier != nil {
 		a.notifier.FlowStatusUpdated(ctx, req)
 	}
 
-	a.logWorkflowStatus(ctx, loaded, loaded.Status, req.Status)
+	a.logWorkflowStatus(ctx, *loaded, loaded.Status, req.Status)
 	return nil
+}
+
+func (a *Activities) updateWorkflowStatus(ctx context.Context, req UpdateStatusRequest) (*app.Workflow, bool, error) {
+	var loaded app.Workflow
+	updated := false
+	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Workflow{ID: req.ID}).Take(&loaded).Error; err != nil {
+			return err
+		}
+		if loaded.AuthorizationFailure != "" {
+			return nil
+		}
+		_, cancelRequested := loaded.Status.Metadata["cancel_requested_at"]
+		if loaded.Status.Status == app.StatusCancelled || cancelRequested {
+			return tx.Table(loaded.TableName()).Where(app.Workflow{ID: loaded.ID}).Update("authorization_failure", "cancelled").Error
+		}
+		status, err := NextCompositeStatus(ctx, loaded.Status, req.Status)
+		if err != nil {
+			return err
+		}
+		values := map[string]any{"status": status}
+		_, cancelRequested = status.Metadata["cancel_requested_at"]
+		if status.Status == app.StatusCancelled || cancelRequested {
+			values["authorization_failure"] = "cancelled"
+		}
+		if err := tx.Table(loaded.TableName()).Where(app.Workflow{ID: loaded.ID}).Updates(values).Error; err != nil {
+			return err
+		}
+		updated = true
+		return nil
+	})
+	return &loaded, updated, err
 }
 
 type UpdateFlowStatusMetadataRequest struct {
@@ -248,10 +255,16 @@ type UpdateFlowStatusMetadataRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) UpdateFlowStatusMetadata(ctx context.Context, req UpdateFlowStatusMetadataRequest) error {
-	if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), &app.Workflow{}, req.WorkflowID, "status", req.Metadata); err != nil {
-		return errors.Wrap(err, "unable to update flow status metadata")
-	}
-	return nil
+	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := generics.MergeJSONBMetadata(tx, &app.Workflow{}, req.WorkflowID, "status", req.Metadata); err != nil {
+			return errors.Wrap(err, "unable to update flow status metadata")
+		}
+		if _, cancelRequested := req.Metadata["cancel_requested_at"]; cancelRequested {
+			return tx.Table((&app.Workflow{}).TableName()).Where(app.Workflow{ID: req.WorkflowID}).
+				Where("COALESCE(authorization_failure, '') = ''").Update("authorization_failure", "cancelled").Error
+		}
+		return nil
+	})
 }
 
 // syncInstallAppConfigVersionFromFlowStatus copies the install workflow status

@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -28,19 +29,21 @@ type mcpBuildDetail struct {
 }
 
 func (s *service) mcpGetBuild(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetBuildInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var build app.ComponentBuild
-	err = s.db.WithContext(ctx).
-		Preload("ComponentConfigConnection").
-		Preload("ComponentConfigConnection.Component").
-		Preload("LogStream").
-		Where(app.ComponentBuild{OrgID: orgID}).
-		Where("id = ?", in.BuildID).
-		First(&build).Error
+	build, err := require.ReadOperation(ctx, s.db, require.ReadContract{
+		Permission: permissions.AppRead,
+		Collection: permissions.KindComponentBuild,
+		Targets:    []require.ReadTarget{{Name: "build_id", Kind: permissions.KindComponentBuild}},
+	}, map[string]string{"build_id": in.BuildID}, func(ctx context.Context) (*app.ComponentBuild, error) {
+		access, err := require.ReadAccessFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		target, err := access.Target("build_id")
+		if err != nil {
+			return nil, err
+		}
+		return s.getComponentBuild(ctx, "", target.ID)
+	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find build %q: %w", in.BuildID, err)
 	}

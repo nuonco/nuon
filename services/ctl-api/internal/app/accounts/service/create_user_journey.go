@@ -101,7 +101,7 @@ func (s *service) createUserJourney(ctx *gin.Context, accountID string, req *Cre
 	account.UserJourneys = append(account.UserJourneys, newJourney)
 
 	// Save to database
-	if err := s.db.WithContext(ctx).Save(account).Error; err != nil {
+	if err := s.db.WithContext(ctx).Select("user_journeys").Save(account).Error; err != nil {
 		return nil, fmt.Errorf("unable to create user journey: %w", err)
 	}
 

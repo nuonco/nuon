@@ -8,40 +8,45 @@ An **API token** authenticates requests to the [Nuon Control Plane API](/concept
 
 ## Token types
 
-- **Service account token** — the supported kind of API token. The token belongs to a [service account](/concepts/service-accounts) and acts as that account, with the account's role, in the current org only. Create a service account with the role you want, then create one or more tokens for it.
-- **Personal token** (legacy, deprecated) — a token issued against a person's own account. Personal tokens are deprecated because they carry all of their creator's access, in every org that person belongs to. Existing personal tokens keep working until they are revoked; org admins can find and revoke them in the dashboard under **Settings → API tokens**, in the legacy personal tokens section.
+- **Service account token** — the supported kind of API token. The token belongs to a [service account](/concepts/service-accounts), with an explicit role and org/app/install scope in one org. Its immutable permission ceiling can be narrower than the account's current bindings. Create a service account, then create one or more separately scoped tokens for it.
+- **Personal token** (legacy, creation retired) — a token issued against a person's own account. Replace personal tokens with service-account tokens. Org admins can still inventory and revoke existing personal tokens through the legacy static-token endpoints.
+
+<Note>
+The v3 cutover requires explicit persisted credential limits. Existing tokens are not automatically upgraded by issuing new ones. Historical tokens require independently evidenced original limits during offline migration, or replacement before activation. Current account roles do not prove historical token permissions. Clients must adopt the explicit role/scope request before cutover; the backend change alone does not update the CLI, SDKs or dashboard.
+</Note>
 
 ## Token properties
 
 | Property | Description |
 | --- | --- |
 | **Name** | A human-readable label to identify the token. Defaults to the service account's identity. |
-| **Duration** | How long the token is valid. Defaults to `8760h` (one year). |
+| **Duration** | Positive lifetime, at most `8760h` (one year), which is also the default. Non-interactive issuers cannot issue beyond their own expiry. |
+| **Role** | Required customer role defining the permission ceiling. |
+| **Scope** | Required org, app or install target matching the role's kind. |
 
-A token's permissions come from its service account's role. See [Access control](/concepts/access-control) for the available roles.
+A token can act only where both its frozen ceiling and the account's live bindings allow it. Later promotion does not expand an existing token; removing a binding removes that access immediately. See [Access control](/concepts/access-control) for all nine roles.
 
-Creating and managing API tokens requires **org admin** access.
+Creating and managing API tokens requires **Org Admin** authority allowed by the caller's credential limits. Issuance also checks that the entire requested role at the target fits both the caller's authority and the service account's grants. App/Install Admin cannot delegate. Managed workload identities use their owning issuer instead.
 
 ## Managing tokens
 
 In the dashboard, go to **Settings → API tokens** to see and revoke the tokens in the org.
 
-In the CLI, tokens are managed through [service accounts](/concepts/service-accounts). A token's access comes from the account it belongs to, so you create a service account with the role you want, then create tokens for it.
+Tokens are managed through [service accounts](/concepts/service-accounts). The supported issuance API is `POST /v1/tokens`; clients that omit role or scope must be updated before cutover.
 
 ### Creating a token
 
-Create a service account with a role, then create a token for it:
+Create a service account with a suitable binding using `POST /v1/service-accounts`, then request the token's role and scope explicitly:
 
 ```sh
-nuon service-accounts create --name ci --role org_read_only
-nuon service-accounts tokens create --id <account-id> --name ci-token
+curl https://api.nuon.co/v1/tokens \
+  -H 'Authorization: Bearer <org-admin-credential>' \
+  -H 'X-Nuon-Org-ID: <org-id>' \
+  -H 'Content-Type: application/json' \
+  -d '{"account_id":"<account-id>","role":"app_reader","scope":{"kind":"app","id":"<app-id>"},"name":"acme-ci","duration":"720h"}'
 ```
 
-Tokens expire after one year by default. Use `--duration` to change that:
-
-```sh
-nuon service-accounts tokens create --id <account-id> --name ci-token --duration 720h
-```
+`scope.org_id` defaults to the selected org. The target must belong to that org. Omission of `scope` does not default to org-wide access. Use `invalidate: true` to revoke the service account's existing credentials and their descendants atomically with replacement; if issuance fails, revocation is rolled back.
 
 <Note>
 Tokens are shown **only once** at creation time. Store the value somewhere safe (a secret manager or CI secret); you cannot retrieve it again later.
@@ -78,7 +83,7 @@ nuon service-accounts tokens delete --token-id <token-id>
 ```
 
 <Note>
-The `nuon orgs api-tokens` commands are deprecated. They still work, but print a warning pointing to the commands above.
+The legacy `POST /v1/account/static-token` and `POST /v1/service-accounts/:account_id/tokens` creation endpoints are retired and return `410 Gone`. Commands using those endpoints must migrate to `POST /v1/tokens`. Legacy inventory and revocation remain available.
 </Note>
 
 ## Using a token

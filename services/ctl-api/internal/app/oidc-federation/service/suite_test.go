@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -19,8 +20,12 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -101,7 +106,9 @@ func (s *OIDCFederationTestSuite) setupTestData() {
 	s.ctx, s.testOrg = s.deps.Seeder.EnsureOrg(s.ctx, s.T())
 
 	require.NoError(s.T(), s.deps.AuthzClient.CreateOrgRoles(s.ctx, s.testOrg.ID))
-	require.NoError(s.T(), s.deps.AuthzClient.AddAccountOrgRole(s.ctx, app.RoleTypeOrgAdmin, s.testOrg.ID, s.testAcc.ID))
+	role, err := s.deps.AuthzClient.ResolveAssignableRole(s.ctx, s.testOrg.ID, app.RoleTypeOrgAdmin, app.RoleContextTeam)
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), s.deps.AuthzClient.AddAccountRoleAtScope(s.ctx, s.testAcc.ID, role.ID, permissions.Scope{Kind: permissions.KindOrg, OrgID: s.testOrg.ID, ID: s.testOrg.ID}))
 
 	var acct app.Account
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
@@ -111,11 +118,28 @@ func (s *OIDCFederationTestSuite) setupTestData() {
 		Where("id = ?", s.testAcc.ID).
 		First(&acct).Error)
 	s.testAcc = &acct
+	s.setTestCredential(s.testAcc)
+}
+
+func (s *OIDCFederationTestSuite) setTestCredential(acct *app.Account) {
+	grant, err := permissions.BindCurrentCustomerRole(permissions.RoleOrgAdmin, permissions.Scope{Kind: permissions.KindOrg, OrgID: s.testOrg.ID, ID: s.testOrg.ID})
+	require.NoError(s.T(), err)
+	token := app.Token{
+		AccountID: acct.ID, CreatedByID: acct.ID, Token: domains.NewUserTokenID(), TokenType: app.TokenTypeNuon,
+		IssuedAt: time.Now(), ExpiresAt: time.Now().Add(time.Hour),
+	}
+	require.NoError(s.T(), account.PersistToken(s.deps.DB.WithContext(s.ctx), &token, permissions.CredentialLimits{
+		Profile: permissions.ProfileHuman, API: permissions.APICtl, Ceiling: []permissions.ScopedPermissions{grant},
+	}))
+	credential, err := authz.CustomerCredential(acct, &token, cctx.SurfacePublicAPI)
+	require.NoError(s.T(), err)
+	s.ctx = cctx.SetVerifiedCredentialContext(s.ctx, credential)
 }
 
 // demoteTestAccount rebuilds the router with an account that has no org roles.
 func (s *OIDCFederationTestSuite) demoteTestAccount() {
 	_, nonAdmin := s.deps.Seeder.EnsureAccount(context.Background(), s.T())
+	s.setTestCredential(nonAdmin)
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.deps.L,
@@ -136,7 +160,7 @@ func (s *OIDCFederationTestSuite) makeRequest(method, path string, body interfac
 		reqBody = bytes.NewBuffer(nil)
 	}
 
-	req, err := http.NewRequest(method, path, reqBody)
+	req, err := http.NewRequestWithContext(s.ctx, method, path, reqBody)
 	require.NoError(s.T(), err)
 	req.Header.Set("Content-Type", "application/json")
 

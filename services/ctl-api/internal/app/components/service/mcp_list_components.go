@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -35,29 +36,39 @@ type mcpListComponentsResult struct {
 }
 
 func (s *service) mcpListComponents(ctx context.Context, _ *mcp.CallToolRequest, in mcpListComponentsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	limit, offset, err := apiPkg.MCPListPage(in.Limit, in.Offset)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var components []app.Component
-	tx := s.db.WithContext(ctx).
-		Where(app.Component{OrgID: orgID}).
-		Order("name ASC").
-		Limit(limit + 1).
-		Offset(offset)
-
+	contract := require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponent}
 	if in.AppID != "" {
-		tx = tx.Where(app.Component{AppID: in.AppID})
+		contract.Targets = []require.ReadTarget{{Name: "app_id", Kind: permissions.KindApp}}
 	}
-
-	if res := tx.Find(&components); res.Error != nil {
-		return nil, nil, fmt.Errorf("unable to list components: %w", res.Error)
+	components, err := require.ReadOperation(ctx, s.db, contract, map[string]string{"app_id": in.AppID}, func(ctx context.Context) ([]app.Component, error) {
+		access, err := require.ReadAccessFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		tx, err := access.Query()
+		if err != nil {
+			return nil, err
+		}
+		if in.AppID != "" {
+			target, err := access.Target("app_id")
+			if err != nil {
+				return nil, err
+			}
+			tx = tx.Where(&app.Component{AppID: target.ID})
+		}
+		var components []app.Component
+		if err := tx.WithContext(ctx).Order("components.name ASC, components.id ASC").Limit(limit + 1).Offset(offset).Find(&components).Error; err != nil {
+			return nil, fmt.Errorf("unable to list components: %w", err)
+		}
+		return components, nil
+	})
+	if err != nil {
+		return nil, nil, err
 	}
 
 	components, hasMore := apiPkg.MCPClipList(components, limit)

@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 const oauthAuthorizationCodeExpiry = 10 * time.Minute
@@ -197,12 +198,18 @@ func (s *service) OAuthConsent(c *gin.Context) {
 	authCode.Scope = scope
 	authCode.SourceTokenID = tokenInfo.TokenID
 	err = s.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := lockGrantSource(tx, tokenInfo.AccountID, tokenInfo.TokenID, false); err != nil {
+		role, err := permissions.CurrentCustomerRole(permissions.CustomerRoleName(scope))
+		if err != nil {
+			return err
+		}
+		authCode.Authorization, err = grantAuthorization(tx, tokenInfo.AccountID, tokenInfo.TokenID, role.Permissions)
+		if err != nil {
 			return err
 		}
 		res := tx.Model(&authCode).
 			Where(map[string]any{"code": "", "consumed": false}).
-			Select("code", "account_id", "scope", "source_token_id").
+			Where("expires_at > ?", time.Now()).
+			Select("code", "account_id", "scope", "source_token_id", "authorization").
 			Updates(&authCode)
 		if res.Error != nil {
 			return res.Error

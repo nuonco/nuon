@@ -18,6 +18,11 @@ func revokeAccountCredentials(tx *gorm.DB, accountID string) error {
 		return errors.Wrap(err, "unable to lock account for revocation")
 	}
 
+	var sourceIDs []string
+	if err := tx.Unscoped().Model(&app.Token{}).Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where(app.Token{AccountID: accountID}).Order("id").Pluck("id", &sourceIDs).Error; err != nil {
+		return errors.Wrap(err, "unable to lock account credential lineage")
+	}
 	if res := tx.Where(app.Token{AccountID: accountID}).Delete(&app.Token{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to revoke account tokens")
 	}
@@ -30,7 +35,7 @@ func revokeAccountCredentials(tx *gorm.DB, accountID string) error {
 	if res := tx.Where(app.DeviceAuthorization{AccountID: accountID}).Delete(&app.DeviceAuthorization{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to revoke account device authorizations")
 	}
-	return nil
+	return RevokeDerivedCredentials(tx, app.TokenSourceTypeToken, sourceIDs)
 }
 
 func RevokeDerivedCredentials(tx *gorm.DB, sourceType app.TokenSourceType, sourceIDs []string) error {

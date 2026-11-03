@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -39,7 +40,7 @@ type mcpListInstallsResult struct {
 }
 
 func (s *service) mcpListInstalls(ctx context.Context, _ *mcp.CallToolRequest, in mcpListInstallsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.Org(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -50,26 +51,29 @@ func (s *service) mcpListInstalls(ctx context.Context, _ *mcp.CallToolRequest, i
 	}
 
 	var installs []app.Install
-	tx := s.db.WithContext(ctx).
-		Preload("App").
-		Preload("AppRunnerConfig").
-		Preload("AppConfig", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "app_id", "app_branch_id")
-		}).
-		Preload("AppConfig.RunnerConfig").
-		Preload("RunnerGroup").
-		Preload("RunnerGroup.Runners").
-		Where(app.Install{OrgID: orgID}).
-		Order("name ASC").
-		Limit(limit + 1).
-		Offset(offset)
+	err = authz.New(authz.Params{DB: s.db}).ReadCustomerResources(ctx, orgID, func(tx, _, query *gorm.DB) error {
+		query = query.
+			Preload("App", func(db *gorm.DB) *gorm.DB { return db.Select("id", "name") }).
+			Preload("AppRunnerConfig").
+			Preload("AppConfig", func(db *gorm.DB) *gorm.DB {
+				return db.Select("id", "app_id", "app_branch_id")
+			}).
+			Preload("AppConfig.RunnerConfig").
+			Preload("RunnerGroup").
+			Preload("RunnerGroup.Runners").
+			Where(app.Install{OrgID: orgID}).
+			Order("name ASC, id ASC").
+			Limit(limit + 1).
+			Offset(offset)
 
-	if in.AppID != "" {
-		tx = tx.Where(app.Install{AppID: in.AppID})
-	}
+		if in.AppID != "" {
+			query = query.Where(app.Install{AppID: in.AppID})
+		}
 
-	if res := tx.Find(&installs); res.Error != nil {
-		return nil, nil, fmt.Errorf("unable to list installs: %w", res.Error)
+		return query.Find(&installs).Error
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to list installs: %w", err)
 	}
 
 	installs, hasMore := apiPkg.MCPClipList(installs, limit)

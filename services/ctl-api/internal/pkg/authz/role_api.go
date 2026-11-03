@@ -13,6 +13,9 @@ func APIFromRole(role *app.Role) (permissions.API, bool, error) {
 	if role == nil || role.Version < app.RoleVersionV2 {
 		return "", false, nil
 	}
+	if role.Version != app.RoleVersionV2 {
+		return "", true, fmt.Errorf("role format %d is not supported by legacy API authorization", role.Version)
+	}
 	var found permissions.API
 	var ok bool
 	for _, policy := range role.Policies {
@@ -53,12 +56,20 @@ func APIForRoles(roles []app.Role) (permissions.API, bool, error) {
 }
 
 func assertRoleAPICompatible(db *gorm.DB, accountID string, role *app.Role) error {
+	if role == nil {
+		return fmt.Errorf("legacy assignment requires a role")
+	}
+	if role.Version != app.RoleVersionV1 && role.Version != app.RoleVersionV2 {
+		return fmt.Errorf("unsupported legacy assignment format")
+	}
+	for _, policy := range role.Policies {
+		if len(policy.Document) != 0 {
+			return fmt.Errorf("legacy assignment cannot use a structured policy")
+		}
+	}
 	api, v2, err := APIFromRole(role)
 	if err != nil {
 		return err
-	}
-	if !v2 {
-		return nil
 	}
 	var roles []app.Role
 	if err := db.Joins("JOIN account_roles ON account_roles.role_id = roles.id AND account_roles.deleted_at = 0").
@@ -72,7 +83,7 @@ func assertRoleAPICompatible(db *gorm.DB, accountID string, role *app.Role) erro
 	if err != nil {
 		return err
 	}
-	if enforce && existing != api {
+	if v2 && enforce && existing != api {
 		return fmt.Errorf("account already has a v2 role for api %s", existing)
 	}
 	return nil

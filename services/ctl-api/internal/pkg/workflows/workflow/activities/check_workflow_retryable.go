@@ -32,6 +32,11 @@ func (a *Activities) CheckWorkflowRetryable(ctx context.Context, req CheckWorkfl
 		return nil, fmt.Errorf("unable to get workflow: %w", res.Error)
 	}
 
+	_, cancelRequested := workflow.Status.Metadata["cancel_requested_at"]
+	if workflow.AuthorizationFailure != "" || workflow.Status.Status == app.StatusCancelled || cancelRequested {
+		return &CheckWorkflowRetryableResponse{Retryable: false}, nil
+	}
+
 	// A workflow is not retryable if it succeeded
 	if workflow.Status.Status == app.StatusSuccess {
 		return &CheckWorkflowRetryableResponse{Retryable: false}, nil
