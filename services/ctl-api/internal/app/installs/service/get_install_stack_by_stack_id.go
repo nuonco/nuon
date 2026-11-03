@@ -41,6 +41,7 @@ func (s *service) GetInstallStackByStackID(ctx *gin.Context) {
 		return
 	}
 
+	setAzureRunnerAuthAppID(s, installStack)
 	ctx.JSON(http.StatusOK, installStack)
 }
 

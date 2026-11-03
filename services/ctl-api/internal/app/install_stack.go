@@ -28,6 +28,12 @@ type InstallStack struct {
 
 	InstallStackOutputs  InstallStackOutputs   `json:"install_stack_outputs,omitzero" temporaljson:"install_stack_outputs,omitzero,omitempty"`
 	InstallStackVersions []InstallStackVersion `json:"versions,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_stack_versions,omitzero,omitempty"`
+
+	// AzureRunnerAuthAppID is this control plane's Entra app id for runner
+	// login. Set on read from server config, never stored. Empty when the
+	// control plane still accepts only ARM tokens, so the dashboard can hide
+	// the tenant consent step.
+	AzureRunnerAuthAppID string `json:"azure_runner_auth_app_id,omitempty" gorm:"-" temporaljson:"azure_runner_auth_app_id,omitempty"`
 }
 
 func (a *InstallStack) Indexes(db *gorm.DB) []migrations.Index {
