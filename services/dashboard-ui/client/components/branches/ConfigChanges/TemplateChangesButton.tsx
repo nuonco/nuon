@@ -9,6 +9,7 @@ import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { hasPanelKey } from '@/providers/surfaces-provider'
 import type { TRunSource } from '@/components/branches/BranchOverview/run-source'
+import type { IConfigChangesBaseline } from './ConfigChangesBaseline'
 import { ConfigChangesLoading } from './ConfigChangesLoading'
 import { ConfigChangesViewer } from './ConfigChangesViewer'
 import {
@@ -30,6 +31,7 @@ export interface ITemplateChangesButton {
   author?: string
   createdAt?: string
   source?: TRunSource
+  baseline?: IConfigChangesBaseline | null
   isPending?: boolean
   isLoading?: boolean
   isError?: boolean
@@ -69,6 +71,7 @@ const TemplateChangesPanel = ({
   author,
   createdAt,
   source,
+  baseline,
   isPending,
   isLoading,
   isError,
@@ -86,6 +89,7 @@ const TemplateChangesPanel = ({
       author={author}
       createdAt={createdAt}
       source={source}
+      baseline={baseline}
       isPending={isPending}
       isLoading={isLoading}
       isError={isError}
@@ -125,6 +129,11 @@ export const TemplateChangesButton = (props: ITemplateChangesButton) => {
     props.source && 'tag' in props.source ? props.source.tag : undefined,
     props.source && 'number' in props.source ? props.source.number : undefined,
     props.source && 'label' in props.source ? props.source.label : undefined,
+    props.baseline?.run?.href,
+    props.baseline?.run?.status,
+    props.baseline?.run?.message,
+    props.baseline?.run?.sha,
+    props.baseline ? props.baseline.run == null : undefined,
     props.isPending,
     props.isLoading,
     props.isError,

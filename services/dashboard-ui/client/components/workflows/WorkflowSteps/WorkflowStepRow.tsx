@@ -61,7 +61,6 @@ export const WorkflowStepRow = ({
 
         {hideDetails ? null : (
           <StepDetailPanelButton
-            approvalPrompt={approvalPrompt}
             step={step}
             planOnly={planOnly}
           />
