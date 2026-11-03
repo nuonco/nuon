@@ -70,6 +70,23 @@ export const Default = () => (
   </div>
 )
 
+const mockStackWithRunnerAuth = {
+  ...mockStack,
+  azure_runner_auth_app_id: '11111111-1111-1111-1111-111111111111',
+} as any
+
+export const WithRunnerAuthConsent = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAzureDetails
+      stack={mockStackWithRunnerAuth}
+      step={mockStep}
+      orgId="org-1"
+      installId="install-1"
+      azureLocation="eastus"
+    />
+  </div>
+)
+
 export const WithQuickLink = () => (
   <div className="max-w-2xl p-4">
     <AwaitAzureDetails
