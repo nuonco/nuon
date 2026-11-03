@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -32,37 +32,45 @@ type RemoveOrgUserRequest struct {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.Account
 // @Router					/v1/orgs/current/remove-user [POST]
-func (s *service) RemoveUser(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	acct, err := cctx.AccountFromGinContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
+func (s *service) RemoveUser(ctx *gin.Context) (require.PreparedMutation, error) {
 	var req RemoveOrgUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
+		return require.PreparedMutation{}, stderr.ErrUser{
 			Err:         fmt.Errorf("unable to parse request: %w", err),
 			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
-		})
-		return
-	}
-
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, req.UserID); err != nil {
-			return err
 		}
-		return authz.New(authz.Params{DB: tx}).RemoveAccountOrgRoles(ctx, org.ID, req.UserID)
-	}); err != nil {
-		ctx.Error(err)
-		return
+	}
+	if req.UserID == "" {
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(fmt.Errorf("user_id is required"))
+	}
+	return require.PreparedMutation{SubjectAccountID: req.UserID, Mutate: s.removeUser}, nil
+}
+
+func (s *service) removeUser(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
+	if err != nil {
+		return require.Response{}, err
+	}
+	tx := access.DB()
+	orgID := access.Target().OrgID
+	accountID := access.SubjectAccountID()
+	acct, err := cctx.AccountFromContext(tx.Statement.Context)
+	if err != nil {
+		return require.Response{}, err
+	}
+	if accountID == acct.ID {
+		return require.Response{}, stderr.ErrUser{Err: fmt.Errorf("cannot remove yourself"), Description: "you cannot remove yourself from the org"}
+	}
+	target, err := prepareOrgMember(tx, orgID, accountID, true)
+	if err != nil {
+		return require.Response{}, err
+	}
+	if err := s.requireRemainingOrgAdmin(tx, orgID, target); err != nil {
+		return require.Response{}, err
+	}
+	if err := authz.New(authz.Params{DB: tx}).RemoveAccountOrgRoles(tx.Statement.Context, orgID, accountID); err != nil {
+		return require.Response{}, err
 	}
 
-	ctx.JSON(http.StatusAccepted, acct)
+	return require.Response{Status: http.StatusAccepted, Body: acct}, nil
 }

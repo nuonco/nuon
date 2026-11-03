@@ -90,9 +90,7 @@ func (s *AccountsServiceTestSuite) TestCreateStaticTokenRejectsFederatedToken() 
 		"user service account token": {
 			tokenType:  app.TokenTypeNuon,
 			identity:   TokenIdentityServiceAccount,
-			wantStatus: http.StatusCreated,
-			wantMinted: true,
-			wantNewSA:  true,
+			wantStatus: http.StatusGone,
 		},
 	}
 
@@ -126,17 +124,15 @@ func (s *AccountsServiceTestSuite) TestCreateServiceAccountTokenRejectsFederated
 		wantStatus int
 	}{
 		"federated token": {tokenType: app.TokenTypeFederated, wantStatus: http.StatusForbidden},
-		"user token":      {tokenType: app.TokenTypeNuon, wantStatus: http.StatusCreated},
+		"user token":      {tokenType: app.TokenTypeNuon, wantStatus: http.StatusGone},
 	}
 
 	for name, tc := range testCases {
 		s.Run(name, func() {
 			router := s.routerWithTokenType(admin, tc.tokenType)
-			target, err := s.service.AccountsService.createTokenServiceAccount(cctx.SetAccountContext(s.ctx, s.testAcc), s.testOrg.ID, "federated-target", app.RoleTypeOrgAdmin)
-			require.NoError(s.T(), err)
 			tokensBefore := s.countStaticTokens()
 
-			rr := serveJSON(router, http.MethodPost, fmt.Sprintf("/v1/service-accounts/%s/tokens", target.ID), CreateServiceAccountTokenRequest{
+			rr := serveJSON(router, http.MethodPost, fmt.Sprintf("/v1/service-accounts/%s/tokens", s.testAcc.ID), CreateServiceAccountTokenRequest{
 				Duration: "87600h",
 			})
 			require.Equal(s.T(), tc.wantStatus, rr.Code, rr.Body.String())

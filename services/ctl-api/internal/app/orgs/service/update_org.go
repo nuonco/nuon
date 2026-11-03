@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -11,7 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -42,38 +41,34 @@ func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.Org
 // @Router					/v1/orgs/current [PATCH]
-func (s *service) UpdateOrg(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
+func (s *service) UpdateOrg(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, err
 	}
 
 	var req UpdateOrgRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
+		return require.Response{}, stderr.ErrUser{
 			Err:         fmt.Errorf("unable to parse request: %w", err),
 			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
-		})
-		return
+		}
 	}
 	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
-		return
+		return require.Response{}, fmt.Errorf("invalid request: %w", err)
 	}
 
-	org, err = s.updateOrg(ctx, org.ID, &req)
+	org, err := s.updateOrg(access.DB(), access.Target().OrgID, &req)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, err
 	}
 
-	ctx.JSON(http.StatusOK, org)
+	return require.Response{Status: http.StatusOK, Body: org}, nil
 }
 
-func (s *service) updateOrg(ctx context.Context, orgID string, req *UpdateOrgRequest) (*app.Org, error) {
+func (s *service) updateOrg(db *gorm.DB, orgID string, req *UpdateOrgRequest) (*app.Org, error) {
 	filter := app.Org{ID: orgID}
-	res := s.db.WithContext(ctx).Model(&app.Org{}).Where(filter).Update("name", req.Name)
+	res := db.Model(&app.Org{}).Where(filter).Update("name", req.Name)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update org: %w", res.Error)
 	}
@@ -81,7 +76,7 @@ func (s *service) updateOrg(ctx context.Context, orgID string, req *UpdateOrgReq
 		return nil, fmt.Errorf("org not found: %w", gorm.ErrRecordNotFound)
 	}
 	var org app.Org
-	if err := s.db.WithContext(ctx).Where(filter).First(&org).Error; err != nil {
+	if err := db.Where(filter).First(&org).Error; err != nil {
 		return nil, fmt.Errorf("unable to reload org: %w", err)
 	}
 

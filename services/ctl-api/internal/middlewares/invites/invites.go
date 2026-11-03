@@ -42,7 +42,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		if err := m.handleInvites(ctx, acct); err != nil {
+		if err := m.handleInvites(cctx.SetAccountContext(ctx.Request.Context(), acct), acct); err != nil {
 			ctx.Error(err)
 			ctx.Abort()
 			return

@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -16,7 +17,7 @@ import (
 
 // @ID						GetOrgMembers
 // @Summary				Get current org members and pending invites
-// @Description			Returns a paginated, searchable list of the current org's active members and pending invites.
+// @Description			Returns current-org members and pending invites. Active members include all current-org role_bindings; role_type describes only their org-scoped role and is empty for scoped-only members. Role filters match any binding before pagination. Pending invites have no bindings yet.
 // @Param					q			query	string	false	"search query to filter members by email or name"
 // @Param					status		query	string	false	"comma-separated statuses: active and/or invited"
 // @Param					role_type	query	string	false	"comma-separated role types"
@@ -75,20 +76,21 @@ func (s *service) getOrgMembers(ctx *gin.Context, orgID, q, status, roleType str
 
 	membersQuery := s.db.WithContext(ctx).
 		Model(&app.Account{}).
-		Select(`DISTINCT ON (accounts.id)
+		Select(`
 			accounts.id AS id,
 			accounts.id AS account_id,
 			CAST('' AS text) AS invite_id,
 			accounts.email AS email,
 			COALESCE(accounts.name, '') AS name,
 			CAST('active' AS text) AS status,
-			roles.role_type AS role_type,
-			account_roles.created_at AS joined_at,
-			accounts.created_at AS created_at`).
+			COALESCE(MAX(roles.role_type) FILTER (WHERE account_roles.scope_kind = 'org' AND account_roles.scope_id = ?), '') AS role_type,
+			CAST(NULL AS jsonb) AS invite_scope,
+			MIN(account_roles.created_at) AS joined_at,
+			accounts.created_at AS created_at`, orgID).
 		Joins("JOIN account_roles ON account_roles.account_id = accounts.id AND account_roles.org_id = ? AND account_roles.deleted_at = 0", orgID).
 		Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
 		Where("accounts.account_type != ?", app.AccountTypeService).
-		Order("accounts.id, account_roles.created_at ASC")
+		Group("accounts.id")
 
 	invitesQuery := s.db.WithContext(ctx).
 		Model(&app.OrgInvite{}).
@@ -99,6 +101,7 @@ func (s *service) getOrgMembers(ctx *gin.Context, orgID, q, status, roleType str
 			CAST('' AS text) AS name,
 			CAST('invited' AS text) AS status,
 			org_invites.role_type AS role_type,
+			org_invites.scope AS invite_scope,
 			CAST(NULL AS timestamp) AS joined_at,
 			org_invites.created_at AS created_at`).
 		Where(app.OrgInvite{OrgID: orgID, Status: app.OrgInviteStatusPending}).
@@ -110,6 +113,10 @@ func (s *service) getOrgMembers(ctx *gin.Context, orgID, q, status, roleType str
 			AND accounts.deleted_at = 0
 		)`, app.AccountTypeService)
 
+	if len(roleTypes) > 0 {
+		membersQuery = membersQuery.Having("BOOL_OR(roles.role_type IN ?)", roleTypes)
+		invitesQuery = invitesQuery.Where("org_invites.role_type IN ?", roleTypes)
+	}
 	unionQuery := s.db.WithContext(ctx).Raw("(?) UNION ALL (?)", membersQuery, invitesQuery)
 
 	members := []app.OrgMember{}
@@ -132,10 +139,6 @@ func (s *service) getOrgMembers(ctx *gin.Context, orgID, q, status, roleType str
 		tx = tx.Where("org_members.status IN ?", statuses)
 	}
 
-	if len(roleTypes) > 0 {
-		tx = tx.Where("org_members.role_type IN ?", roleTypes)
-	}
-
 	if err := tx.Find(&members).Error; err != nil {
 		return nil, fmt.Errorf("unable to get org members %s: %w", orgID, err)
 	}
@@ -145,6 +148,22 @@ func (s *service) getOrgMembers(ctx *gin.Context, orgID, q, status, roleType str
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
+	ids := make([]string, 0, len(members))
+	for _, member := range members {
+		if member.AccountID != "" {
+			ids = append(ids, member.AccountID)
+		}
+	}
+	bindings, err := authz.New(authz.Params{DB: s.db}).AccountRoleBindings(ctx, orgID, ids)
+	if err != nil {
+		return nil, err
+	}
+	for i := range members {
+		members[i].RoleBindings = []app.RoleBinding{}
+		if members[i].AccountID != "" {
+			members[i].RoleBindings = bindings[members[i].AccountID]
+		}
+	}
 	return members, nil
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
@@ -245,6 +246,8 @@ func (s *TokensServiceTestSuite) TestCreateToken() {
 	s.Run("creates a static token and returns the secret", func() {
 		rr := s.makeRequest(http.MethodPost, "/v1/tokens", CreateTokenRequest{
 			AccountID: acct.ID,
+			Role:      string(app.RoleTypeOrgReadOnly),
+			Scope:     &permissions.Scope{Kind: permissions.KindOrg, ID: s.testOrg.ID},
 			Name:      "acme-ci",
 			Duration:  "24h",
 		})
@@ -277,14 +280,14 @@ func (s *TokensServiceTestSuite) TestCreateToken() {
 	})
 
 	s.Run("account that is not a service account returns 404", func() {
-		rr := s.makeRequest(http.MethodPost, "/v1/tokens", CreateTokenRequest{AccountID: s.testAcc.ID})
+		rr := s.makeRequest(http.MethodPost, "/v1/tokens", CreateTokenRequest{AccountID: s.testAcc.ID, Role: string(app.RoleTypeOrgReadOnly), Scope: &permissions.Scope{Kind: permissions.KindOrg, ID: s.testOrg.ID}})
 		require.Equal(s.T(), http.StatusNotFound, rr.Code, rr.Body.String())
 	})
 
 	s.Run("service account in another org returns 403", func() {
 		otherOrgAcct := s.createOrgServiceAccount(s.createOtherOrg().ID, app.RoleTypeOrgReadOnly)
 
-		rr := s.makeRequest(http.MethodPost, "/v1/tokens", CreateTokenRequest{AccountID: otherOrgAcct.ID})
+		rr := s.makeRequest(http.MethodPost, "/v1/tokens", CreateTokenRequest{AccountID: otherOrgAcct.ID, Role: string(app.RoleTypeOrgReadOnly), Scope: &permissions.Scope{Kind: permissions.KindOrg, ID: s.testOrg.ID}})
 		require.Equal(s.T(), http.StatusForbidden, rr.Code, rr.Body.String())
 	})
 
@@ -294,6 +297,8 @@ func (s *TokensServiceTestSuite) TestCreateToken() {
 
 		rr := s.makeRequest(http.MethodPost, "/v1/tokens", CreateTokenRequest{
 			AccountID:  target.ID,
+			Role:       string(app.RoleTypeOrgReadOnly),
+			Scope:      &permissions.Scope{Kind: permissions.KindOrg, ID: s.testOrg.ID},
 			Invalidate: true,
 		})
 		require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
@@ -310,7 +315,7 @@ func (s *TokensServiceTestSuite) TestCreateToken() {
 func (s *TokensServiceTestSuite) TestCreateTokenRequiresOrgAdmin() {
 	s.ensureOrgRoles()
 	acct := s.createOrgServiceAccount(s.testOrg.ID, app.RoleTypeOrgReadOnly)
-	s.requireNonAdminForbidden(http.MethodPost, "/v1/tokens", CreateTokenRequest{AccountID: acct.ID})
+	s.requireNonAdminForbidden(http.MethodPost, "/v1/tokens", CreateTokenRequest{AccountID: acct.ID, Role: string(app.RoleTypeOrgReadOnly), Scope: &permissions.Scope{Kind: permissions.KindOrg, ID: s.testOrg.ID}})
 }
 
 // ---------------------------------------------------------------------------

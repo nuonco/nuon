@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -10,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 )
@@ -18,6 +20,7 @@ type Params struct {
 	fx.In
 
 	DB               *gorm.DB `name:"psql"`
+	Logger           *zap.Logger
 	AcctClient       *account.Client
 	AuthzClient      *authz.Client
 	ProductAnalytics *productanalytics.Client
@@ -28,6 +31,7 @@ type Params struct {
 type service struct {
 	api.RouteRegister
 	db               *gorm.DB
+	l                *zap.Logger
 	acctClient       *account.Client
 	authzClient      *authz.Client
 	productAnalytics *productanalytics.Client
@@ -40,6 +44,7 @@ func New(params Params) *service {
 	return &service{
 		RouteRegister:    api.RouteRegister{EndpointAudit: params.EndpointAudit},
 		db:               params.DB,
+		l:                params.Logger,
 		acctClient:       params.AcctClient,
 		authzClient:      params.AuthzClient,
 		productAnalytics: params.ProductAnalytics,
@@ -52,9 +57,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	{
 		account.GET("", s.GetCurrentAccount)
 
-		s.POST(require.NotFederatedTokenRoute(account, "create API tokens"), "/static-token", s.CreateStaticToken, api.APIContextTypePublic, true)
-		s.GET(account, "/static-tokens", s.ListStaticTokens, api.APIContextTypePublic, true)
-		s.DELETE(account, "/static-tokens/:token_id", s.DeleteStaticToken, api.APIContextTypePublic, true)
+		s.POST(require.NotFederatedTokenRoute(require.CustomerRoute(account), "create API tokens"), "/static-token", s.CreateStaticToken, api.APIContextTypePublic, true)
+		s.GET(require.CustomerRoute(account), "/static-tokens", s.ListStaticTokens, api.APIContextTypePublic, true)
+		s.DELETE(require.CustomerRoute(account), "/static-tokens/:token_id", s.DeleteStaticToken, api.APIContextTypePublic, true)
 
 		// user journeys
 		userJourneys := account.Group("/user-journeys")
@@ -68,17 +73,23 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	}
 
 	// roles
-	ge.GET("/v1/roles", s.ListRoles)
+	require.CustomerReadRoute(ge, s.db, s.l, permissions.OrgWrite, permissions.KindOrg, "").GET("/v1/roles", s.ListRoles)
 
 	// service accounts
-	serviceAccounts := ge.Group("/v1/service-accounts")
+	serviceAccounts := require.CustomerRoute(ge.Group("/v1/service-accounts"))
 	{
 		serviceAccounts.GET("", s.ListServiceAccounts)
 		serviceAccounts.GET("/purposes", s.ListServiceAccountPurposes)
-		serviceAccounts.POST("", s.CreateServiceAccount)
-		serviceAccounts.PATCH("/:account_id", s.UpdateServiceAccount)
-		serviceAccounts.PATCH("/:account_id/role", s.UpdateServiceAccountRole)
-		serviceAccounts.DELETE("/:account_id", s.DeleteServiceAccount)
+		require.MutationRoute(serviceAccounts, s.db, require.MutationContract{
+			Permission: permissions.OrgWrite, Target: require.ReadTarget{Name: "org_id", Kind: permissions.KindOrg},
+		}).Handle("POST", "", s.CreateServiceAccount)
+		mutations := require.MutationRoute(serviceAccounts, s.db, require.MutationContract{
+			Permission: permissions.OrgWrite, Target: require.ReadTarget{Name: "org_id", Kind: permissions.KindOrg},
+			SubjectAccountParam: "account_id",
+		})
+		mutations.Handle("PATCH", "/:account_id", s.UpdateServiceAccount)
+		mutations.Handle("PATCH", "/:account_id/role", s.UpdateServiceAccountRole)
+		mutations.Handle("DELETE", "/:account_id", s.DeleteServiceAccount)
 		s.POST(require.NotFederatedTokenRoute(serviceAccounts, "create API tokens"), "/:account_id/tokens", s.CreateServiceAccountToken, api.APIContextTypePublic, true)
 	}
 

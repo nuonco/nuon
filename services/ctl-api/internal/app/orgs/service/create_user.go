@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -34,38 +34,47 @@ type CreateOrgUserRequest struct {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.Account
 // @Router					/v1/orgs/current/user [POST]
-func (s *service) CreateUser(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	acct, err := cctx.AccountFromGinContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	// Add the authenticated user to the org (UserID field is ignored)
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManagedInOrg(tx, acct.ID, org.ID); err != nil {
-			return err
-		}
-		return authz.New(authz.Params{DB: tx}).AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID)
-	}); err != nil {
-		ctx.Error(err)
-		return
-	}
-
+func (s *service) CreateUser(ctx *gin.Context) (require.PreparedMutation, error) {
 	var req CreateOrgUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
+		return require.PreparedMutation{}, stderr.ErrUser{
 			Err:         fmt.Errorf("unable to parse request: %w", err),
 			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
-		})
-		return
+		}
+	}
+	if req.UserID == "" {
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(fmt.Errorf("user_id is required"))
+	}
+	return require.PreparedMutation{SubjectAccountID: req.UserID, Mutate: s.createUser}, nil
+}
+
+func (s *service) createUser(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
+	if err != nil {
+		return require.Response{}, err
+	}
+	tx := access.DB()
+	orgID := access.Target().OrgID
+	accountID := access.SubjectAccountID()
+	acct, err := cctx.AccountFromContext(tx.Statement.Context)
+	if err != nil {
+		return require.Response{}, err
+	}
+	if accountID == acct.ID {
+		return require.Response{}, stderr.ErrUser{Err: fmt.Errorf("cannot change your own membership"), Description: "you cannot change your own membership"}
+	}
+	target, err := prepareOrgMember(tx, orgID, accountID, false)
+	if err != nil {
+		return require.Response{}, err
+	}
+	client := authz.New(authz.Params{DB: tx})
+	role, err := client.ResolveDelegableRole(tx.Statement.Context, orgID, app.RoleTypeOrgReadOnly, app.RoleContextTeam)
+	if err != nil {
+		return require.Response{}, err
+	}
+	if err := client.AddAccountRoleAtScope(tx.Statement.Context, target.ID, role.ID, access.Target().Scope); err != nil {
+		return require.Response{}, err
 	}
 
-	ctx.JSON(http.StatusCreated, acct)
+	return require.Response{Status: http.StatusCreated, Body: target}, nil
 }

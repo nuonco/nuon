@@ -58,7 +58,7 @@ export interface paths {
     /**
      * create a static API token for your org
      * @deprecated
-     * @description Deprecated: create a service account with POST /v1/service-accounts, then a token with POST /v1/tokens. Personal tokens (token_identity "personal") are deprecated because they carry all of the creator's access. Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
+     * @description Deprecated: create a service account with POST /v1/service-accounts, then a token with POST /v1/tokens in each org you need. Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. Personal tokens (token_identity "personal") are deprecated: they use your account's existing roles and the role param must be empty. Cross-org access is being restricted. Public GET /v1/installs, GET /v1/installs/:install_id, PATCH /v1/apps/:app_id and PATCH /v1/orgs/current restrict personal tokens with a recorded issuing org to that org; other legacy routes may still permit cross-org access during rollout. Historical tokens without a recorded issuing org still require valid membership and permissions.
      */
     post: operations["CreateStaticToken"];
   };
@@ -9395,7 +9395,8 @@ export interface components {
       /**
        * @description "service_account" (default) creates a dedicated service account with
        * the given role; "personal" issues the token against your own account
-       * and its existing roles, across all your orgs.
+       * and its existing roles. Install reads and app/org metadata updates restrict
+       * tokens with a recorded issuing org to that org; legacy routes may still allow cross-org access.
        */
       token_identity?: string;
     };
@@ -10995,7 +10996,7 @@ export interface operations {
   /**
    * create a static API token for your org
    * @deprecated
-   * @description Deprecated: create a service account with POST /v1/service-accounts, then a token with POST /v1/tokens. Personal tokens (token_identity "personal") are deprecated because they carry all of the creator's access. Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
+   * @description Deprecated: create a service account with POST /v1/service-accounts, then a token with POST /v1/tokens in each org you need. Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. Personal tokens (token_identity "personal") are deprecated: they use your account's existing roles and the role param must be empty. Cross-org access is being restricted. Public GET /v1/installs, GET /v1/installs/:install_id, PATCH /v1/apps/:app_id and PATCH /v1/orgs/current restrict personal tokens with a recorded issuing org to that org; other legacy routes may still permit cross-org access during rollout. Historical tokens without a recorded issuing org still require valid membership and permissions.
    */
   CreateStaticToken: {
     /** @description Input */

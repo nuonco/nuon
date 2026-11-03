@@ -5,11 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/analytics/events"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 // @ID						RevokeOrgInvite
@@ -28,69 +29,37 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.OrgInvite
 // @Router					/v1/orgs/current/invites/{invite_id}/revoke [POST]
-func (s *service) RevokeOrgInvite(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
+func (s *service) RevokeOrgInvite(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	acct, err := cctx.AccountFromGinContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	if !s.isOrgAdmin(acct, org.ID) {
-		ctx.Error(stderr.ErrAuthorization{
-			Err:         fmt.Errorf("only org admins can revoke invites"),
-			Description: "only org admins can revoke invites",
-		})
-		return
+		return require.Response{}, err
 	}
 
 	inviteID := ctx.Param("invite_id")
 	if inviteID == "" {
-		ctx.Error(stderr.ErrUser{
+		return require.Response{}, stderr.ErrUser{
 			Err:         fmt.Errorf("invite_id is required"),
 			Description: "invite_id is required",
-		})
-		return
+		}
 	}
 
-	invite, err := s.getOrgInviteByID(ctx, org.ID, inviteID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get invite: %w", err))
-		return
+	tx := access.DB()
+	var invite app.OrgInvite
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.OrgInvite{ID: inviteID, OrgID: access.Target().OrgID}).Take(&invite).Error; err != nil {
+		return require.Response{}, err
 	}
-
 	if invite.Status != app.OrgInviteStatusPending {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("only pending invites can be revoked"),
-			Description: "only pending invites can be revoked",
-		})
-		return
+		return require.Response{}, stderr.ErrUser{Err: fmt.Errorf("only pending invites can be revoked"), Description: "only pending invites can be revoked"}
+	}
+	if err := tx.Model(&invite).Update("status", app.OrgInviteStatusRevoked).Error; err != nil {
+		return require.Response{}, err
+	}
+	if err := tx.Delete(&invite).Error; err != nil {
+		return require.Response{}, err
 	}
 
-	invite.Status = app.OrgInviteStatusRevoked
-	if err := s.db.WithContext(ctx).Save(invite).Error; err != nil {
-		ctx.Error(fmt.Errorf("unable to revoke invite: %w", err))
-		return
-	}
-
-	if err := s.db.WithContext(ctx).Delete(invite).Error; err != nil {
-		ctx.Error(fmt.Errorf("unable to soft-delete invite: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, invite)
-
-	s.analyticsClient.Track(ctx, events.InviteRevoked, map[string]interface{}{
-		"invite_id": invite.ID,
-		"email":     invite.Email,
-		"org_id":    invite.OrgID,
-		"role_type": invite.RoleType,
-	})
+	ctx.Set("org-invite-mutation", inviteMutation{Invite: invite, Event: events.InviteRevoked})
+	return require.Response{Status: http.StatusOK, Body: invite}, nil
 }
 
 func (s *service) isOrgAdmin(acct *app.Account, orgID string) bool {

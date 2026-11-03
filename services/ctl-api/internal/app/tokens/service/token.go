@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -13,12 +12,19 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type CreateTokenRequest struct {
-	AccountID string `json:"account_id" validate:"required"`
+	AccountID string             `json:"account_id" binding:"required"`
+	Role      string             `json:"role" binding:"required"`
+	Scope     *permissions.Scope `json:"scope" binding:"required"`
 
 	// Name labels the token where it is listed; defaults to the account's identity.
 	Name string `json:"name"`
@@ -30,12 +36,14 @@ type CreateTokenRequest struct {
 }
 
 type CreateTokenResponse struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	AccountID string    `json:"account_id"`
-	ExpiresAt time.Time `json:"expires_at"`
-	CreatedAt time.Time `json:"created_at"`
-	Token     string    `json:"token"`
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	AccountID string            `json:"account_id"`
+	Role      string            `json:"role"`
+	Scope     permissions.Scope `json:"scope"`
+	ExpiresAt time.Time         `json:"expires_at"`
+	CreatedAt time.Time         `json:"created_at"`
+	Token     string            `json:"token"`
 }
 
 // @ID						CreateToken
@@ -54,55 +62,59 @@ type CreateTokenResponse struct {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	CreateTokenResponse
 // @Router					/v1/tokens [POST]
-func (s *service) CreateToken(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+func (s *service) CreateToken(ctx *gin.Context) (require.PreparedMutation, error) {
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.PreparedMutation{}, err
 	}
 
 	var req CreateTokenRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		ctx.Error(stderr.ErrUser{
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		return require.PreparedMutation{}, stderr.ErrUser{
 			Err:         fmt.Errorf("unable to parse request: %w", err),
 			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
-		})
-		return
+		}
 	}
 
-	if req.AccountID == "" {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("account_id is required"),
-			Description: "account_id is required",
-		})
-		return
-	}
-
-	token, err := s.helpers.CreateServiceAccountToken(ctx, org, req.AccountID, req.Name, req.Duration, req.Invalidate)
+	scope, err := authz.RoleBindingScope(org.ID, req.Scope)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(err)
+	}
+	if req.Duration == "" {
+		req.Duration = accountshelpers.DefaultTokenDuration
+	}
+	duration, err := time.ParseDuration(req.Duration)
+	if err != nil {
+		return require.PreparedMutation{}, stderr.NewInvalidRequest(fmt.Errorf("invalid duration: %w", err))
 	}
 
-	ctx.JSON(http.StatusCreated, CreateTokenResponse{
-		ID:        token.ID,
-		Name:      token.Name,
-		AccountID: token.AccountID,
-		ExpiresAt: token.ExpiresAt,
-		CreatedAt: token.CreatedAt,
-		Token:     token.Token,
-	})
+	return require.PreparedMutation{SubjectAccountID: req.AccountID, Mutate: func(ctx *gin.Context) (require.Response, error) {
+		access, err := require.MutationAccessFromContext(ctx)
+		if err != nil {
+			return require.Response{}, err
+		}
+		tx := access.DB()
+		token, err := account.New(account.Params{DB: tx}).IssueCustomerToken(tx.Statement.Context, account.CustomerTokenRequest{
+			AccountID: access.SubjectAccountID(), OrgID: access.Target().OrgID, Name: req.Name, Role: app.RoleType(req.Role), Scope: scope, Duration: duration, Invalidate: req.Invalidate,
+		})
+		if err != nil {
+			return require.Response{}, err
+		}
+		return require.Response{Status: http.StatusCreated, Body: CreateTokenResponse{
+			ID: token.ID, Name: token.Name, AccountID: token.AccountID, Role: token.Role, Scope: scope,
+			ExpiresAt: token.ExpiresAt, CreatedAt: token.CreatedAt, Token: token.Token,
+		}}, nil
+	}}, nil
 }
 
-// TokenResponse is app.Token enriched with the owning account's identity and
-// its current role in this org (the stored Token.Role is a stale copy from
-// creation time).
 type TokenResponse struct {
 	app.Token
 
-	AccountName  string `json:"account_name"`
-	AccountEmail string `json:"account_email"`
-	AccountRole  string `json:"account_role"`
+	AccountName         string             `json:"account_name"`
+	AccountEmail        string             `json:"account_email"`
+	AccountRole         string             `json:"account_role"`
+	AccountRoleBindings []app.RoleBinding  `json:"account_role_bindings"`
+	Scope               *permissions.Scope `json:"scope,omitempty"`
 }
 
 // @ID						ListTokens
@@ -125,70 +137,60 @@ type TokenResponse struct {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		TokenResponse
 // @Router					/v1/tokens [GET]
-func (s *service) ListTokens(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+func (s *service) ListTokens(ctx *gin.Context) (any, error) {
+	access, err := require.ReadAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
+	tx := access.DB()
+	requestCtx := tx.Statement.Context
+	orgID := access.OrgID()
+	helpers := accountshelpers.New(accountshelpers.Params{DB: tx, AcctClient: account.New(account.Params{DB: tx})})
 
 	var accountIDs []string
 	if accountID := ctx.Query("account_id"); accountID != "" {
-		acct, err := s.helpers.GetOrgServiceAccount(ctx, org.ID, accountID)
+		acct, err := helpers.GetOrgServiceAccount(requestCtx, orgID, accountID)
 		if err != nil {
-			ctx.Error(err)
-			return
+			return nil, err
 		}
 		accountIDs = []string{acct.ID}
 	} else {
-		accountIDs, err = s.helpers.OrgServiceAccountIDs(ctx, org.ID, true, true)
+		accountIDs, err = helpers.OrgServiceAccountIDs(requestCtx, orgID, true, true)
 		if err != nil {
-			ctx.Error(err)
-			return
+			return nil, err
 		}
 	}
 
 	tokens := []app.Token{}
 	if len(accountIDs) > 0 {
-		tx := s.db.WithContext(ctx).
+		query := tx.
 			Where(app.Token{
-				OrgID:     org.ID,
+				OrgID:     orgID,
 				TokenType: app.TokenTypeStatic,
 			}).
 			Where("account_id IN ?", accountIDs)
 		if q := ctx.Query("q"); q != "" {
-			tx = tx.Where("name ILIKE ? OR id = ?", "%"+q+"%", q)
+			query = query.Where("name ILIKE ? OR id = ?", "%"+q+"%", q)
 		}
 
-		res := tx.
-			Order("created_at DESC").
+		res := query.
+			Order("created_at DESC, id DESC").
 			Scopes(scopes.WithOffsetPagination).
 			Find(&tokens)
 		if res.Error != nil {
-			ctx.Error(fmt.Errorf("unable to list tokens: %w", res.Error))
-			return
+			return nil, fmt.Errorf("unable to list tokens: %w", res.Error)
 		}
 	}
 
 	tokens, err = db.HandlePaginatedResponse(ctx, tokens)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to handle paginated response: %w", err))
-		return
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
-	resp, err := s.enrichTokensWithAccounts(ctx, org.ID, tokens)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to load token accounts: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, resp)
+	return enrichTokensWithAccounts(tx, orgID, tokens)
 }
 
-// enrichTokensWithAccounts loads the owning accounts for a page of tokens in
-// a single query (preloading only the Roles for the current org) and merges
-// each account's name, email, and current org role onto its token.
-func (s *service) enrichTokensWithAccounts(ctx *gin.Context, orgID string, tokens []app.Token) ([]TokenResponse, error) {
+func enrichTokensWithAccounts(tx *gorm.DB, orgID string, tokens []app.Token) ([]TokenResponse, error) {
 	resp := make([]TokenResponse, 0, len(tokens))
 	if len(tokens) == 0 {
 		return resp, nil
@@ -204,9 +206,7 @@ func (s *service) enrichTokensWithAccounts(ctx *gin.Context, orgID string, token
 	}
 
 	var accounts []app.Account
-	if err := s.db.WithContext(ctx).
-		Preload("Roles", "org_id = ?", orgID).
-		Preload("Roles.Org").
+	if err := tx.
 		Where("id IN ?", accountIDs).
 		Find(&accounts).Error; err != nil {
 		return nil, fmt.Errorf("unable to load accounts: %w", err)
@@ -216,13 +216,24 @@ func (s *service) enrichTokensWithAccounts(ctx *gin.Context, orgID string, token
 	for _, acct := range accounts {
 		accountsByID[acct.ID] = acct
 	}
+	bindings, err := authz.New(authz.Params{DB: tx}).AccountRoleBindings(tx.Statement.Context, orgID, accountIDs)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, token := range tokens {
-		item := TokenResponse{Token: token}
+		item := TokenResponse{Token: token, AccountRoleBindings: bindings[token.AccountID]}
+		if limits, err := permissions.DecodeCredentialLimits(token.Authorization); err == nil && len(limits.Ceiling) == 1 {
+			item.Scope = &limits.Ceiling[0].Scope
+		}
 		if acct, ok := accountsByID[token.AccountID]; ok {
 			item.AccountName = acct.Name
 			item.AccountEmail = acct.Email
-			item.AccountRole = string(accountshelpers.OrgRoleType(&acct, orgID))
+			for _, binding := range item.AccountRoleBindings {
+				if binding.Scope.Kind == permissions.KindOrg {
+					item.AccountRole = string(binding.RoleType)
+				}
+			}
 		}
 		resp = append(resp, item)
 	}
@@ -246,45 +257,37 @@ func (s *service) enrichTokensWithAccounts(ctx *gin.Context, orgID string, token
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				204
 // @Router					/v1/tokens/{token_id} [DELETE]
-func (s *service) DeleteToken(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+func (s *service) DeleteToken(ctx *gin.Context) (require.Response, error) {
+	access, err := require.MutationAccessFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return require.Response{}, err
 	}
-
+	tx, target := access.DB(), access.Target()
+	mutationCtx := tx.Statement.Context
 	var token app.Token
-	res := s.db.WithContext(ctx).
-		Where(app.Token{
-			ID:        ctx.Param("token_id"),
-			OrgID:     org.ID,
-			TokenType: app.TokenTypeStatic,
-		}).
-		First(&token)
+	res := tx.Where(app.Token{
+		ID: ctx.Param("token_id"), OrgID: target.OrgID, TokenType: app.TokenTypeStatic,
+	}).First(&token)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		ctx.Error(stderr.ErrNotFound{Err: fmt.Errorf("token not found")})
-		return
+		return require.Response{}, stderr.ErrNotFound{Err: fmt.Errorf("token not found")}
 	}
 	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to look up token: %w", res.Error))
-		return
+		return require.Response{}, fmt.Errorf("unable to look up token: %w", res.Error)
 	}
-
-	if _, err := s.helpers.GetOrgServiceAccount(ctx, org.ID, token.AccountID); err != nil {
+	authzClient := authz.New(authz.Params{DB: tx})
+	acctClient := account.New(account.Params{DB: tx, AuthzClient: authzClient})
+	helpers := accountshelpers.New(accountshelpers.Params{DB: tx, AuthzClient: authzClient, AcctClient: acctClient})
+	if _, err := helpers.GetOrgServiceAccount(mutationCtx, target.OrgID, token.AccountID); err != nil {
 		var notFound stderr.ErrNotFound
 		var unauthorized stderr.ErrAuthorization
 		if errors.As(err, &notFound) || errors.As(err, &unauthorized) {
-			ctx.Error(stderr.ErrNotFound{Err: fmt.Errorf("token not found")})
-			return
+			return require.Response{}, stderr.ErrNotFound{Err: fmt.Errorf("token not found")}
 		}
-		ctx.Error(err)
-		return
+		return require.Response{}, err
+	}
+	if err := acctClient.RevokeToken(mutationCtx, token.ID); err != nil {
+		return require.Response{}, fmt.Errorf("unable to delete token: %w", err)
 	}
 
-	if err := s.acctClient.RevokeToken(ctx, token.ID); err != nil {
-		ctx.Error(fmt.Errorf("unable to delete token: %w", err))
-		return
-	}
-
-	ctx.Status(http.StatusNoContent)
+	return require.Response{Status: http.StatusNoContent}, nil
 }

@@ -51,10 +51,16 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 	if err != nil {
 		return nil, err
 	}
-	if c.enqueuer != nil && queueSignal != nil {
-		c.enqueuer.Send(queueSignal.ID)
+	if queueSignal != nil {
+		c.NotifySignal(queueSignal.ID)
 	}
 	return resp, nil
+}
+
+func (c *Client) NotifySignal(signalID string) {
+	if c.enqueuer != nil {
+		c.enqueuer.Send(signalID)
+	}
 }
 
 func (c *Client) EnqueueSignalInTransaction(ctx context.Context, tx *gorm.DB, req *EnqueueSignalRequest) (*queue.EnqueueResponse, error) {

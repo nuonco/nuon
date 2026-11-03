@@ -3,6 +3,8 @@ package invites
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -24,7 +26,7 @@ func (m *middleware) handleInvites(ctx context.Context, acct *app.Account) error
 
 	for _, invite := range invites {
 		if err := m.authz.AcceptInvite(ctx, &invite, acct); err != nil {
-			return nil
+			m.l.Warn("invite acceptance deferred", zap.String("invite_id", invite.ID), zap.Error(err))
 		}
 	}
 
