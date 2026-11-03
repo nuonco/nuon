@@ -7,9 +7,11 @@ import { isOutputAfterUnknown } from '@/utils/terraform-utils'
 import type { TTerraformOutputChange } from '@/types'
 import { TerraformValuesDiff } from './TerraformValuesDiff'
 import {
+  REPLACE_BADGE_CLASS,
   TERRAFORM_ACTION_BADGE_THEME,
   getTerraformActionBgColor,
   getTerraformActionBorderColor,
+  isReplaceAction,
 } from '../diff-style-utils'
 
 interface OutputChangesListProps {
@@ -68,6 +70,11 @@ export function OutputChangesList({
                       <Badge
                         theme={TERRAFORM_ACTION_BADGE_THEME[change.action]}
                         size="sm"
+                        className={
+                          isReplaceAction(change.action)
+                            ? REPLACE_BADGE_CLASS
+                            : undefined
+                        }
                       >
                         {change.action}
                       </Badge>
