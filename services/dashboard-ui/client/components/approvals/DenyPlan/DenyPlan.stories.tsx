@@ -51,3 +51,18 @@ export const WithError = () => (
     />
   </ModalStory>
 )
+
+export const DenyAndContinue = () => (
+  <ModalStory>
+    <DenyPlanModal
+      modalCopy={{
+        ...DENY_MODAL_COPY.terraform_plan,
+        message:
+          'This marks the plan as skipped and continues the workflow. If a later step in this group applies changes regardless of this plan, it will still run — check the workflow after skipping.',
+      }}
+      isPending={false}
+      error={null}
+      onSubmit={noop}
+    />
+  </ModalStory>
+)
