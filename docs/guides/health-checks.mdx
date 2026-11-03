@@ -162,6 +162,11 @@ service DNS (`http://api.myapp.svc:3001/healthz`), pod IPs, and `localhost` all 
 connect, and the probe records an `unhealthy` observation. That is why the
 Kubernetes example above probes the install's public hostname instead of the in-cluster service.
 
+The runner never connects a probe to loopback, link-local or cloud metadata addresses such as
+`169.254.169.254`, whatever hostname resolves to them. Those probes report `unhealthy` with the
+reason. Private network addresses like `db.internal:5432` are allowed. Probes connect directly and
+ignore `HTTP_PROXY` and `HTTPS_PROXY`.
+
 If a component has no target the runner can reach, don't give it a probe. Set
 [`block_deploy`](#verified-deploys) and let Nuon's automatic Kubernetes health checks determine the
 component's health.
