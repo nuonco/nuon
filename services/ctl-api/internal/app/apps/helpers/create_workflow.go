@@ -71,12 +71,23 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 	role string,
 	wfRequest *app.WorkflowRequest,
 ) (*app.Workflow, error) {
+	wf := NewWorkflow(ctx, ownerID, ownerType, workflowType, metadata, planOnly, approvalOption, role, wfRequest)
+	if err := db.WithContext(ctx).Create(wf).Error; err != nil {
+		return nil, errors.Wrap(err, "unable to create workflow")
+	}
+	return wf, nil
+}
+
+func NewWorkflow(ctx context.Context, ownerID, ownerType string, workflowType app.WorkflowType,
+	metadata map[string]string, planOnly bool, approvalOption app.InstallApprovalOption, role string,
+	wfRequest *app.WorkflowRequest,
+) *app.Workflow {
 	status := app.NewCompositeStatus(ctx, app.StatusPending)
 	if approvalOption == app.InstallApprovalOptionApproveAll {
 		metadata["approval_type"] = "install-config"
 		status.Metadata["approval_type"] = "install-config"
 	}
-	wf := app.Workflow{
+	return &app.Workflow{
 		Type:              workflowType,
 		OwnerID:           ownerID,
 		OwnerType:         ownerType,
@@ -91,13 +102,6 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 			Signal: &generateStepsSignal{},
 		},
 	}
-
-	res := db.WithContext(ctx).Create(&wf)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to create workflow")
-	}
-
-	return &wf, nil
 }
 
 func (s *Helpers) CreateWorkflowWithDB(ctx context.Context, db *gorm.DB, ownerID, ownerType string, workflowType app.WorkflowType, metadata map[string]string, planOnly bool, approvalOption app.InstallApprovalOption, role string) (*app.Workflow, error) {

@@ -20,8 +20,8 @@ func (s *Helpers) CreateComponentBuildWithRequest(ctx context.Context, cmpID str
 	return s.createComponentBuild(ctx, s.db, "", cmpID, "", useLatest, gitRef, wfRequest)
 }
 
-func (s *Helpers) CreateComponentBuildWithID(ctx context.Context, buildID, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, s.db, buildID, cmpID, "", useLatest, gitRef, nil)
+func (s *Helpers) CreateComponentBuildWithID(ctx context.Context, tx *gorm.DB, buildID, cmpID, componentConfigConnectionID string) (*app.ComponentBuild, error) {
+	return s.createComponentBuild(ctx, tx, buildID, cmpID, componentConfigConnectionID, false, nil, nil)
 }
 
 // CreateComponentBuildForConfigConnection creates a build attached to a specific

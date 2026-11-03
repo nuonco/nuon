@@ -457,11 +457,13 @@ type Workflow struct {
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
-	Request *WorkflowRequest `json:"-" gorm:"column:request;type:jsonb;serializer:json" swaggerignore:"true" temporaljson:"request,omitzero,omitempty"`
+	Request              *WorkflowRequest `json:"-" gorm:"column:request;type:jsonb;serializer:json" swaggerignore:"true" temporaljson:"request,omitzero,omitempty"`
+	Authorization        []byte           `json:"-" gorm:"->;type:jsonb" swaggerignore:"true" temporaljson:"-"`
+	AuthorizationFailure string           `json:"-" gorm:"->" swaggerignore:"true" temporaljson:"-"`
 }
 
 type WorkflowRequest struct {
-	RequestID         string                 `json:"request_id" temporaljson:"request_id"`
+	RequestID         string                 `json:"request_id,omitempty" temporaljson:"request_id,omitempty"`
 	RequestHash       string                 `json:"request_hash" temporaljson:"request_hash"`
 	PinnedAppConfigID string                 `json:"pinned_app_config_id" temporaljson:"pinned_app_config_id"`
 	DriftResolution   *DriftResolutionTarget `json:"drift_resolution,omitempty" temporaljson:"drift_resolution,omitempty"`

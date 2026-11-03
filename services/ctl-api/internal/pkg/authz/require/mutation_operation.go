@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -23,6 +24,7 @@ type MutationAccess struct {
 	db               *gorm.DB
 	target           permissions.ResolvedTarget
 	subjectAccountID string
+	permission       permissions.PermissionID
 }
 
 type mutationAccessKey struct{}
@@ -45,6 +47,19 @@ func (a *MutationAccess) Target() permissions.ResolvedTarget {
 
 func (a *MutationAccess) SubjectAccountID() string {
 	return a.subjectAccountID
+}
+
+func (a *MutationAccess) AcceptWorkflow(wf *app.Workflow, expiresAt time.Time) error {
+	decision, err := authz.New(authz.Params{DB: a.db}).AcceptWorkflow(a.db.Statement.Context, authz.MutationRequest{
+		Permission: a.permission, Target: a.target.Scope,
+	}, wf, expiresAt)
+	if err != nil {
+		return err
+	}
+	if !decision.Allowed {
+		return customerDenied(a.target.Kind)
+	}
+	return nil
 }
 
 func (c MutationContract) validate() error {
@@ -84,7 +99,7 @@ func MutationOperation[T any](ctx context.Context, db *gorm.DB, contract Mutatio
 		Permission: contract.Permission, Target: permissions.Scope{Kind: contract.Target.Kind, OrgID: orgID},
 		TargetReference: ref, SubjectAccountID: subjectAccountID,
 	}, func(tx *gorm.DB, target permissions.ResolvedTarget) error {
-		access := &MutationAccess{target: target, subjectAccountID: subjectAccountID}
+		access := &MutationAccess{target: target, subjectAccountID: subjectAccountID, permission: contract.Permission}
 		opCtx := context.WithValue(tx.Statement.Context, mutationAccessKey{}, access)
 		access.db = tx.WithContext(opCtx)
 		var err error

@@ -77,6 +77,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		require.MutationRoute(apps, s.db, require.MutationContract{
 			Permission: permissions.AppWrite, Target: require.ReadTarget{Name: "app_id", Kind: permissions.KindApp},
 		}).Handle(http.MethodPatch, "/:app_id", s.UpdateApp)
+		require.MutationRoute(apps, s.db, require.MutationContract{
+			Permission: permissions.AppWrite, Target: require.ReadTarget{Name: "app_id", Kind: permissions.KindApp},
+		}).Handle(http.MethodPost, "/:app_id/configs/:config_id/build", s.BuildAppConfig)
 		require.ReadRoute(apps, s.db, appDetailRead).GET("/:app_id", s.GetApp)
 		appByID.DELETE("", s.DeleteApp)
 	}
@@ -104,7 +107,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			appConfigs.POST("/:config_id/update-installs", s.UpdateAppConfigInstallsV2)
 			appConfigs.GET("/:config_id/graph", s.GetAppConfigGraphV2)
 			appConfigs.POST("/:config_id/sync", s.SyncAppConfig)
-			appConfigs.POST("/:config_id/build", s.BuildAppConfig)
 			appConfigs.GET("/:config_id/diff", s.GetAppConfigDiff)
 			appConfigs.GET("/:config_id/source-files/*path", s.GetAppConfigSourceFile)
 		}
