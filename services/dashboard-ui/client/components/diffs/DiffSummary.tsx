@@ -19,7 +19,7 @@ const LABELS: Record<TDiffOperation, string> = {
 const COUNT_CLASSES: Record<TDiffOperation, string> = {
   create: 'text-diff-add',
   update: 'text-diff-change',
-  replace: 'text-primary-600 dark:text-primary-400',
+  replace: 'text-fuchsia-600 dark:text-fuchsia-300',
   delete: 'text-diff-remove',
   read: 'text-cool-grey-800 dark:text-white/70',
   forget: 'text-blue-700 dark:text-blue-400',

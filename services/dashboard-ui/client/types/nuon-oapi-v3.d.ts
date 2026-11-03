@@ -5698,6 +5698,8 @@ export interface components {
       workflow_id?: string;
     };
     "app.InstallStack": {
+      /** @description This control plane's Entra app id for runner login. Empty when the control plane still accepts only ARM tokens. */
+      azure_runner_auth_app_id?: string;
       app_config_ref?: components["schemas"]["app.AppConfigRef"];
       created_at?: string;
       created_by_id?: string;
