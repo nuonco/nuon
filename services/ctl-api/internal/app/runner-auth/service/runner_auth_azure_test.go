@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 )
 
 const (
@@ -144,18 +145,45 @@ func TestParseUnverifiedTenantID_RejectsNonGUIDAndNonCompact(t *testing.T) {
 	}
 }
 
+func TestExpectedAzureRunnerAudience(t *testing.T) {
+	const nuonAudience = "api://12345678-1234-1234-1234-123456789012"
+	tokenFor := func(aud string) string {
+		payload := base64.RawURLEncoding.EncodeToString([]byte(`{"tid":"` + runnerTenantID + `","aud":"` + aud + `"}`))
+		return "eyJhbGciOiJSUzI1NiJ9." + payload + ".sig"
+	}
+
+	for _, tc := range []struct {
+		name       string
+		configured string
+		token      string
+		want       string
+	}{
+		{"unset config keeps ARM", "", tokenFor(nuonAudience), workloadjwt.AzureManagementAudience},
+		{"configured audience presented", nuonAudience, tokenFor(nuonAudience), nuonAudience},
+		{"ARM token still accepted", nuonAudience, tokenFor(workloadjwt.AzureManagementAudience), workloadjwt.AzureManagementAudience},
+		{"other app audience falls back to ARM", nuonAudience, tokenFor("api://22222222-2222-2222-2222-222222222222"), workloadjwt.AzureManagementAudience},
+		{"undecodable token falls back to ARM", nuonAudience, "not-a-jwt", workloadjwt.AzureManagementAudience},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, expectedAzureRunnerAudience(tc.token, tc.configured))
+		})
+	}
+}
+
 func TestAzureClaimsFromVerified(t *testing.T) {
 	got, err := azureClaimsFromVerified(map[string]any{
 		"tid":       runnerTenantID,
 		"oid":       runnerPrincipalID,
 		"sub":       "subject",
 		"xms_mirid": "/subscriptions/" + runnerSubID + "/resourcegroups/rg/providers/Microsoft.Compute/virtualMachineScaleSets/inst123-vmss",
+		"aud":       "api://12345678-1234-1234-1234-123456789012",
 	})
 	require.NoError(t, err)
 	assert.Equal(t, runnerTenantID, got.TenantID)
 	assert.Equal(t, runnerPrincipalID, got.ObjectID)
 	assert.Equal(t, "subject", got.Subject)
 	assert.Contains(t, got.XMSMirID, "virtualMachineScaleSets")
+	assert.Equal(t, "api://12345678-1234-1234-1234-123456789012", got.Audience)
 
 	_, err = azureClaimsFromVerified(map[string]any{"tid": runnerTenantID})
 	require.Error(t, err)
