@@ -40,7 +40,8 @@ var (
 
 type RunnerAuthGCPRequest struct {
 	IdentityToken   string                    `json:"identity_token" validate:"required"`
-	MetadataRequest *gcptypes.MetadataRequest `json:"metadata" validate:"required"`
+	RunnerID        string                    `json:"runner_id,omitempty"`
+	MetadataRequest *gcptypes.MetadataRequest `json:"metadata,omitempty"`
 }
 
 type RunnerAuthGCPResponse struct {
@@ -132,37 +133,28 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		return
 	}
 
-	// Step 2: Execute metadata request — independently reads instance metadata (runner ID)
-	// Mirrors the AWS presigned DescribeTags pattern.
-	instanceData, err := s.executeGCPMetadataRequest(reqCtx, req.MetadataRequest, claims)
-	if err != nil {
-		s.l.Warn("runner auth gcp: metadata request failed", zap.Error(err))
-		ctx.Error(stderr.ErrAuthentication{
-			Err:         errors.New("authentication failed"),
-			Description: "failed to verify instance metadata",
-		})
-		ctx.Abort()
-		return
+	// Step 2: Resolve the runner. The runner ID is trusted only as a lookup key:
+	// validateRunnerGCPIdentity below binds it to the install whose runner
+	// service account signed the identity token. Only runners built before
+	// runner_id was added send metadata, which carries a live access token.
+	runnerID := req.RunnerID
+	if req.MetadataRequest != nil {
+		metricTags["auth_method"] = "jwt_metadata"
+		runnerID, err = s.resolveGCPRunnerIDFromMetadata(reqCtx, req.MetadataRequest, claims)
+		if err != nil {
+			s.l.Warn("runner auth gcp: metadata request failed",
+				zap.String("instance_id", claims.instanceID),
+				zap.Error(err))
+			ctx.Error(stderr.ErrAuthentication{
+				Err:         errors.New("authentication failed"),
+				Description: "failed to verify instance metadata",
+			})
+			ctx.Abort()
+			return
+		}
 	}
-
-	// Step 3: Cross-validate instance ID from JWT matches Compute API response
-	apiInstanceID := instanceData.ID
-	if apiInstanceID != claims.instanceID {
-		s.l.Warn("runner auth gcp: instance ID mismatch",
-			zap.String("jwt_instance_id", claims.instanceID),
-			zap.String("api_instance_id", apiInstanceID))
-		ctx.Error(stderr.ErrAuthentication{
-			Err:         errors.New("authentication failed"),
-			Description: "instance identity mismatch",
-		})
-		ctx.Abort()
-		return
-	}
-
-	// Step 4: Extract runner ID from instance metadata (independently verified)
-	runnerID := extractRunnerIDFromMetadata(instanceData)
 	if runnerID == "" {
-		s.l.Warn("runner auth gcp: missing runner ID in instance metadata",
+		s.l.Warn("runner auth gcp: missing runner ID",
 			zap.String("instance_id", claims.instanceID))
 		ctx.Error(stderr.ErrAuthentication{
 			Err:         errors.New("authentication failed"),
@@ -221,6 +213,22 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		return
 	}
 
+	if req.MetadataRequest == nil {
+		if err := s.ensureGCPRunnerServiceAccountNotShared(reqCtx, install.ID, claims.serviceAccount); err != nil {
+			s.l.Warn("runner auth gcp: runner service account check failed",
+				zap.String("runner_id", runnerID),
+				zap.String("install_id", install.ID),
+				zap.String("service_account", claims.serviceAccount),
+				zap.Error(err))
+			ctx.Error(stderr.ErrAuthorization{
+				Err:         errors.New("authorization failed"),
+				Description: "runner identity does not match expected configuration",
+			})
+			ctx.Abort()
+			return
+		}
+	}
+
 	token, err := s.createRunnerToken(reqCtx, runner.ID)
 	if err != nil {
 		s.l.Error("runner auth gcp: failed to create token", zap.String("runner_id", runnerID), zap.Error(err))
@@ -239,7 +247,8 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		zap.String("org_id", install.OrgID),
 		zap.String("runner_id", runner.ID),
 		zap.String("instance_id", claims.instanceID),
-		zap.String("project_id", claims.projectID))
+		zap.String("project_id", claims.projectID),
+		zap.String("auth_method", metricTags["auth_method"]))
 
 	ctx.JSON(http.StatusOK, RunnerAuthGCPResponse{
 		Authenticated:  true,
@@ -376,6 +385,42 @@ func (s *service) executeGCPMetadataRequest(ctx context.Context, metadataReq *gc
 	}
 
 	return &instanceResp, nil
+}
+
+func (s *service) resolveGCPRunnerIDFromMetadata(ctx context.Context, metadataReq *gcptypes.MetadataRequest, claims *gcpClaims) (string, error) {
+	instanceData, err := s.executeGCPMetadataRequest(ctx, metadataReq, claims)
+	if err != nil {
+		return "", err
+	}
+
+	if instanceData.ID != claims.instanceID {
+		return "", fmt.Errorf("instance ID mismatch: jwt %s, compute api %s", claims.instanceID, instanceData.ID)
+	}
+
+	return extractRunnerIDFromMetadata(instanceData), nil
+}
+
+// ensureGCPRunnerServiceAccountNotShared rejects a service account that is the
+// runner service account of another install. Without the Compute read, the
+// service account is the only thing tying the token to one install, so a stack
+// that reuses it across installs would let one install's VM claim another's
+// runner.
+func (s *service) ensureGCPRunnerServiceAccountNotShared(ctx context.Context, installID, serviceAccount string) error {
+	var count int64
+	res := s.db.WithContext(ctx).
+		Model(&app.InstallStackOutputs{}).
+		Joins("JOIN install_stacks ON install_stacks.id = install_stack_outputs.install_stack_id AND install_stacks.deleted_at = 0").
+		Joins("JOIN installs ON installs.id = install_stacks.install_id AND installs.deleted_at = 0").
+		Where("installs.id <> ?", installID).
+		Where("install_stack_outputs.data -> 'runner_service_account_email' = ?", serviceAccount).
+		Count(&count)
+	if res.Error != nil {
+		return fmt.Errorf("failed to check runner service account: %w", res.Error)
+	}
+	if count > 0 {
+		return fmt.Errorf("runner service account is also the runner service account of %d other install stack output(s)", count)
+	}
+	return nil
 }
 
 func extractRunnerIDFromMetadata(instance *gcpInstanceResponse) string {
