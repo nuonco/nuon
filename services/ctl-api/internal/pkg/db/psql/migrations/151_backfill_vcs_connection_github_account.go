@@ -26,52 +26,40 @@ type githubAccountLookup struct {
 }
 
 func (m *Migrations) Migration151BackfillVCSConnectionGithubAccount(ctx context.Context, db *gorm.DB) error {
-	const batchSize = 100
+	var conns []app.VCSConnection
+	if err := db.WithContext(ctx).
+		Select(
+			"vcs_connections.id",
+			"vcs_connections.org_id",
+			"vcs_connections.github_install_id",
+			"vcs_connections.github_account_id",
+			"vcs_connections.github_account_name",
+		).
+		Joins("JOIN orgs ON orgs.id = vcs_connections.org_id AND orgs.deleted_at = 0").
+		Where("vcs_connections.github_account_name = ? OR vcs_connections.github_account_id = ?", "", "").
+		Find(&conns).Error; err != nil {
+		return fmt.Errorf("load vcs connections: %w", err)
+	}
 
 	cache := map[string]githubAccountLookup{}
 	var updated, skipped int
-	lastID := ""
-	for {
-		var conns []app.VCSConnection
-		if err := db.WithContext(ctx).
-			Select(
-				"vcs_connections.id",
-				"vcs_connections.org_id",
-				"vcs_connections.github_install_id",
-				"vcs_connections.github_account_id",
-				"vcs_connections.github_account_name",
-			).
-			Joins("JOIN orgs ON orgs.id = vcs_connections.org_id AND orgs.deleted_at = 0").
-			Where("vcs_connections.github_account_name = ? OR vcs_connections.github_account_id = ?", "", "").
-			Where("vcs_connections.id > ?", lastID).
-			Order("vcs_connections.id").
-			Limit(batchSize).
-			Find(&conns).Error; err != nil {
-			return fmt.Errorf("load vcs connections: %w", err)
+	for i := range conns {
+		conn := &conns[i]
+		acct, skip, err := m.lookupGithubAccount(ctx, cache, conn)
+		if err != nil {
+			return err
 		}
-		if len(conns) == 0 {
-			break
+		if skip {
+			skipped++
+			continue
 		}
-
-		for i := range conns {
-			conn := &conns[i]
-			acct, skip, err := m.lookupGithubAccount(ctx, cache, conn)
-			if err != nil {
-				return err
-			}
-			if skip {
-				skipped++
-				continue
-			}
-			wrote, err := writeVCSGithubAccount(ctx, db, conn, acct)
-			if err != nil {
-				return err
-			}
-			if wrote {
-				updated++
-			}
+		wrote, err := writeVCSGithubAccount(ctx, db, conn, acct)
+		if err != nil {
+			return err
 		}
-		lastID = conns[len(conns)-1].ID
+		if wrote {
+			updated++
+		}
 	}
 
 	if m.l != nil {
