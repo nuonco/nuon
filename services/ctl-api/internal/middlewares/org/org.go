@@ -81,12 +81,13 @@ func (m middleware) Handler() gin.HandlerFunc {
 		}
 
 		// make sure account has access to org
-		perm := permissions.FromRequest(ctx)
-		err = acct.AllPermissions.CanPerform(org.ID, perm)
-		if err != nil {
-			ctx.Error(require.PermissionDeniedError(acct, org.ID, perm, require.ScopeFromPath(ctx.FullPath())))
-			ctx.Abort()
-			return
+		if !require.IsCustomerRoute(ctx) {
+			perm := permissions.FromRequest(ctx)
+			if err := acct.AllPermissions.CanPerform(org.ID, perm); err != nil {
+				ctx.Error(require.PermissionDeniedError(acct, org.ID, perm, require.ScopeFromPath(ctx.FullPath())))
+				ctx.Abort()
+				return
+			}
 		}
 
 		cctx.SetOrgGinContext(ctx, &org)

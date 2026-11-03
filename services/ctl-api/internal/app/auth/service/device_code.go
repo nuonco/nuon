@@ -219,13 +219,15 @@ func (s *service) DeviceApprove(c *gin.Context) {
 	}
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := lockGrantSource(tx, tokenInfo.AccountID, tokenInfo.TokenID, false); err != nil {
+		authorization, err := grantAuthorization(tx, tokenInfo.AccountID, tokenInfo.TokenID, nil)
+		if err != nil {
 			return err
 		}
 		return s.decideDeviceAuthorizationTx(tx, authz.ID, map[string]any{
 			"status":          app.DeviceAuthorizationStatusApproved,
 			"account_id":      tokenInfo.AccountID,
 			"source_token_id": tokenInfo.TokenID,
+			"authorization":   authorization,
 		})
 	})
 	if errors.Is(err, errUserCodeNotFound) {
@@ -309,12 +311,17 @@ func (s *service) DeviceToken(c *gin.Context) {
 
 	var tokenValue string
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := lockGrantSource(tx, account.ID, authz.SourceTokenID, true); err != nil {
+		if _, err := lockGrantSource(tx, account.ID, authz.SourceTokenID, true); err != nil {
+			return err
+		}
+		limits, err := constrainGrantAuthorization(tx, account.ID, authz.Authorization)
+		if err != nil {
 			return err
 		}
 
 		res := tx.Model(&app.DeviceAuthorization{}).
 			Where("id = ? AND status = ?", authz.ID, app.DeviceAuthorizationStatusApproved).
+			Where("expires_at > ?", time.Now()).
 			Update("status", app.DeviceAuthorizationStatusConsumed)
 		if res.Error != nil {
 			return res.Error
@@ -323,9 +330,17 @@ func (s *service) DeviceToken(c *gin.Context) {
 			return errDeviceCodeUsed
 		}
 
-		var err error
-		tokenValue, err = s.createToken(tx, &account, authz.SourceTokenID)
-		return err
+		sourceType, sourceID := tokenSource(authz.SourceTokenID)
+		token, err := s.createAccessToken(tx, accessToken{
+			AccountID: account.ID, TokenType: app.TokenTypeNuon,
+			TTL:        time.Duration(s.cfg.NuonAuthTokenTTL) * time.Minute,
+			SourceType: sourceType, SourceID: sourceID, Limits: limits,
+		})
+		if err != nil {
+			return err
+		}
+		tokenValue = token.Token
+		return nil
 	})
 	if errors.Is(err, errDeviceCodeUsed) {
 		s.deviceTokenError(c, http.StatusBadRequest, "invalid_grant", "device code has already been used")
@@ -333,6 +348,10 @@ func (s *service) DeviceToken(c *gin.Context) {
 	}
 	if errors.Is(err, errTokenNotFound) {
 		s.deviceTokenError(c, http.StatusBadRequest, "access_denied", "credential source no longer exists")
+		return
+	}
+	if errors.Is(err, errGrantAuthorization) {
+		s.deviceTokenError(c, http.StatusBadRequest, "access_denied", "device code requires fresh authorization")
 		return
 	}
 	if err != nil {

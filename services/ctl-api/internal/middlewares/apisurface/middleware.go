@@ -7,7 +7,6 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -39,22 +38,13 @@ func (m *Middleware) Handler(required permissions.API) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		api, enforce, err := authz.APIForRoles(acct.Roles)
-		if err != nil {
+		credential, ok := cctx.VerifiedCredentialFromContext(ctx.Request.Context())
+		limits := permissions.CredentialLimits{Profile: credential.Profile, API: credential.Audience, Ceiling: credential.Ceiling}
+		if !ok || credential.AccountID == "" || credential.AccountID != acct.ID || credential.TokenID == "" ||
+			credential.Surface != cctx.SurfacePublicAPI || credential.Audience != required ||
+			required != permissions.APICtl || limits.Validate() != nil {
 			ctx.Error(stderr.ErrAuthorization{
-				Err:         err,
-				Description: "token is not allowed on this api",
-			})
-			ctx.Abort()
-			return
-		}
-		if !enforce {
-			ctx.Next()
-			return
-		}
-		if api != required {
-			ctx.Error(stderr.ErrAuthorization{
-				Err:         fmt.Errorf("token api %s cannot call %s", api, required),
+				Err:         fmt.Errorf("verified credential is not permitted on %s", required),
 				Description: "token is not allowed on this api",
 			})
 			ctx.Abort()

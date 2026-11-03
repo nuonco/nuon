@@ -78,6 +78,7 @@ func (s *service) oauthTokenAuthorizationCode(c *gin.Context) {
 		ClientID:      authCode.ClientID,
 		Scope:         authCode.Scope,
 		SourceTokenID: authCode.SourceTokenID,
+		Authorization: authCode.Authorization,
 	}, "authorization code already used")
 }
 
@@ -121,6 +122,7 @@ func (s *service) oauthTokenRefresh(c *gin.Context) {
 		ClientID:      refresh.ClientID,
 		Scope:         refresh.Scope,
 		SourceTokenID: refresh.SourceTokenID,
+		Authorization: refresh.Authorization,
 	}, "refresh token already used")
 }
 
@@ -129,6 +131,7 @@ type oauthGrant struct {
 	ClientID      string
 	Scope         string
 	SourceTokenID string
+	Authorization []byte
 }
 
 var errOAuthGrantConsumed = errors.New("oauth grant already consumed")
@@ -141,12 +144,17 @@ func (s *service) redeemOAuthGrant(c *gin.Context, model any, grantID string, gr
 	var access *app.Token
 	var refreshValue string
 	err := s.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := lockGrantSource(tx, grant.AccountID, grant.SourceTokenID, true); err != nil {
+		if _, err := lockGrantSource(tx, grant.AccountID, grant.SourceTokenID, true); err != nil {
+			return err
+		}
+		limits, err := constrainGrantAuthorization(tx, grant.AccountID, grant.Authorization)
+		if err != nil {
 			return err
 		}
 
 		res := tx.Model(model).
 			Where("id = ? AND consumed = ?", grantID, false).
+			Where("expires_at > ?", time.Now()).
 			Update("consumed", true)
 		if res.Error != nil {
 			return res.Error
@@ -155,7 +163,6 @@ func (s *service) redeemOAuthGrant(c *gin.Context, model any, grantID string, gr
 			return errOAuthGrantConsumed
 		}
 
-		var err error
 		access, err = s.createAccessToken(tx, accessToken{
 			AccountID:  grant.AccountID,
 			Role:       oauthScopeToRole(grant.Scope),
@@ -163,6 +170,7 @@ func (s *service) redeemOAuthGrant(c *gin.Context, model any, grantID string, gr
 			TTL:        accessTTL,
 			SourceType: sourceType,
 			SourceID:   sourceID,
+			Limits:     limits,
 		})
 		if err != nil {
 			return err
@@ -179,6 +187,7 @@ func (s *service) redeemOAuthGrant(c *gin.Context, model any, grantID string, gr
 			AccountID:     grant.AccountID,
 			ExpiresAt:     time.Now().Add(refreshTTL),
 			SourceTokenID: grant.SourceTokenID,
+			Authorization: access.Authorization,
 		}).Error
 	})
 	if errors.Is(err, errOAuthGrantConsumed) {
@@ -187,6 +196,10 @@ func (s *service) redeemOAuthGrant(c *gin.Context, model any, grantID string, gr
 	}
 	if errors.Is(err, errTokenNotFound) {
 		oauthError(c, http.StatusBadRequest, "invalid_grant", "credential source no longer exists")
+		return
+	}
+	if errors.Is(err, errGrantAuthorization) {
+		oauthError(c, http.StatusBadRequest, "invalid_grant", "grant requires fresh authorization")
 		return
 	}
 	if err != nil {

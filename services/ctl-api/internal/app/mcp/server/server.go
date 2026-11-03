@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/mcp/skills"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	controlplanemetrics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
@@ -270,12 +271,23 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		surface := cctx.SurfaceMCP
+		if s.requireEmployee {
+			surface = cctx.SurfaceEmployeeMCP
+		}
+		credential, err := authz.CustomerCredential(acct, tok, surface)
+		if err != nil {
+			l.Warn("MCP credential access denied", zap.String("account_id", acct.ID), zap.Error(err))
+			s.writeForbidden(w, "credential is not allowed on this MCP server")
+			return
+		}
 		orgID := s.resolveOrg(acct, r.Header.Get("X-Nuon-Org-ID"))
 
 		ctx = cctx.SetAccountContext(ctx, acct)
 		ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
 		ctx = keys.WithTokenRole(ctx, tok.Role)
 		ctx = cctx.SetTokenTypeContext(ctx, tok.TokenType)
+		ctx = cctx.SetVerifiedCredentialContext(ctx, credential)
 		ctx = context.WithValue(ctx, mcpHTTPRequestKey{}, mcpHTTPRequest{
 			method: r.Method,
 			path:   r.URL.Path,
