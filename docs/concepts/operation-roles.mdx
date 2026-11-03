@@ -7,7 +7,7 @@ keywords: ["operation roles", "what are operation roles", "IAM least privilege",
 
 ## What is an operation role
 
-IAM roles that you can scope to the specific task, and have repeatable [runbooks](/concepts/runbooks) that use that role to avoid any mistakes that go beyond the intended scope of your maintenance or upgrade activities.
+Roles that you can scope to the specific task, and use in [runbooks](/concepts/runbooks) so they have built in guardrails for your maintenance or upgrade activities.
 
 ## Required roles
 
@@ -17,21 +17,21 @@ Every app config must define three standard roles in its permissions config:
 - **Deprovision:** deprovisions the install, and tears down all components.
 - **Maintenance:** everything else, such as single component deploys, action runs, and input changes.
 
-## Scope roles to a task
+## Scope custom operation roles to a task
 
-The standard roles cover broad phases, so they hold a lot of permissions. Add your own roles with `type = "custom"` to
-give one task only the access it needs. For example:
+Add more specific roles matching how you manage your customer environments, for example:
 
 - **Deploy and teardown for one component:** a deploy role that can create and update the component's Lambda function,
   and a teardown role that can only delete it. See the
   [deploy and teardown example](/guides/operation-roles#example-separate-deploy-and-teardown-roles).
 - **An action that rotates a password:** a role that can only update that one secret, set on the action. See
-  [assign a role to one entity](/guides/operation-roles#assign-a-role-to-one-entity).
+  [assign a role to an entity](/guides/operation-roles#assign-a-role-to-an-entity).
 - **One role for every teardown:** an app-wide rule that sends all component teardowns to a delete-only role. See
   [set app-wide rules](/guides/operation-roles#set-app-wide-rules).
 
-When you need more access to service your customer urgently, use a [break glass role](/concepts/break-glass). Your
-customer keeps it switched off until you need it.
+<Tip>
+When you need to resolve a deeper issue or outage, use a [break glass role](/concepts/break-glass).
+</Tip>
 
 ## When Nuon uses a role
 
