@@ -36,7 +36,11 @@ export const TerraformSummary = ({
           </Text>
         </div>
         <div className="flex items-center gap-1.5">
-          <Text variant="base" theme="brand" weight="strong">
+          <Text
+            variant="base"
+            weight="strong"
+            className="text-fuchsia-600 dark:text-fuchsia-300"
+          >
             {summary.replace}
           </Text>
           <Text variant="subtext" theme="neutral">
