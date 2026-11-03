@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -34,21 +35,52 @@ func (c *Client) RemoveAccountRoleAtScope(ctx context.Context, accountID, roleID
 		return fmt.Errorf("role ID is required")
 	}
 	return c.mutateScopedAccountRoles(ctx, accountID, scope, func(tx *gorm.DB, account app.Account) error {
-		if err := tx.Unscoped().Where(scopedAccountRole(accountID, roleID, scope)).Delete(&app.AccountRole{}).Error; err != nil {
-			return err
+		res := tx.Unscoped().Where(scopedAccountRole(accountID, roleID, scope)).Where("deleted_at = 0").Delete(&app.AccountRole{})
+		if res.Error != nil {
+			return res.Error
 		}
-		if scope.Kind == permissions.KindOrg {
-			missing, err := bindingTargetMissing(tx.Clauses(clause.Locking{Strength: "SHARE"}).Session(&gorm.Session{}), scope)
-			if err != nil || missing {
-				return err
-			}
+		if res.RowsAffected == 0 {
+			return stderr.ErrNotFound{Err: fmt.Errorf("role binding not found")}
 		}
 		_, err := loadScopedGrants(tx, accountID, scope.OrgID)
 		if errors.Is(err, errNoScopedGrants) {
-			return nil
+			return stderr.NewInvalidRequest(fmt.Errorf("cannot remove the final binding; remove the member or delete the service account instead"))
 		}
 		return err
 	})
+}
+
+func (c *Client) AccountRoleBindings(ctx context.Context, orgID string, accountIDs []string) (map[string][]app.RoleBinding, error) {
+	result := make(map[string][]app.RoleBinding, len(accountIDs))
+	for _, id := range accountIDs {
+		result[id] = []app.RoleBinding{}
+	}
+	if len(accountIDs) == 0 {
+		return result, nil
+	}
+	if err := (permissions.Scope{Kind: permissions.KindOrg, OrgID: orgID, ID: orgID}).ValidateShape(); err != nil {
+		return nil, err
+	}
+	var bindings []app.AccountRole
+	if err := c.db.WithContext(ctx).Preload("Role.Policies").
+		Where(app.AccountRole{OrgID: generics.NewNullString(orgID)}).Where("account_id IN ?", accountIDs).
+		Order("account_id, scope_kind, scope_id, role_id, id").Find(&bindings).Error; err != nil {
+		return nil, err
+	}
+	for _, binding := range bindings {
+		policy, err := decodeScopedRole(binding.Role, orgID)
+		if err != nil {
+			return nil, err
+		}
+		scope := permissions.Scope{Kind: binding.ScopeKind, OrgID: orgID, ID: binding.ScopeID}
+		if _, err := policy.Compile(orgID, scope); err != nil {
+			return nil, err
+		}
+		result[binding.AccountID] = append(result[binding.AccountID], app.RoleBinding{
+			ID: binding.ID, RoleID: binding.RoleID, RoleType: binding.Role.RoleType, Scope: scope,
+		})
+	}
+	return result, nil
 }
 
 func scopedAccountRole(accountID, roleID string, scope permissions.Scope) app.AccountRole {
@@ -130,6 +162,9 @@ func (c *Client) mutateScopedAccountRoles(ctx context.Context, accountID string,
 			return err
 		}
 		for _, binding := range bindings {
+			if account.AccountType != app.AccountTypeService && binding.OrgID.ValueString() != scope.OrgID && binding.Role.OrgID.ValueString() != scope.OrgID {
+				continue
+			}
 			policy, err := decodeScopedRole(binding.Role, binding.OrgID.ValueString())
 			if err != nil {
 				return err

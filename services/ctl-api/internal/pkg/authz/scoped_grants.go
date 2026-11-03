@@ -125,12 +125,8 @@ func decodeScopedRole(role app.Role, orgID string) (permissions.Policy, error) {
 	if stored.OrgID.ValueString() != orgID || stored.RoleID != role.ID {
 		return permissions.Policy{}, fmt.Errorf("policy must belong to its role tenant")
 	}
-	if role.LegacyVersion != 0 {
-		if err := role.ValidateLegacyCompatibility(); err != nil {
-			return permissions.Policy{}, err
-		}
-	} else if len(stored.Permissions) != 0 {
-		return permissions.Policy{}, fmt.Errorf("unmarked v3 policy cannot contain legacy authority")
+	if len(stored.Permissions) != 0 {
+		return permissions.Policy{}, fmt.Errorf("v3 policy cannot contain legacy authority")
 	}
 	policy, err := permissions.DecodePolicy(role.Version, stored.Document)
 	if err != nil {

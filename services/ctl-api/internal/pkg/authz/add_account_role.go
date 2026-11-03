@@ -9,7 +9,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 func (h *Client) AddAccountOrgRole(ctx context.Context, roleType app.RoleType, orgID, accountID string) error {
@@ -44,18 +43,10 @@ func (h *Client) addLegacyAccountRole(ctx context.Context, accountID string, fil
 		if err := lockLegacyRoleSubject(tx, accountID); err != nil {
 			return err
 		}
-		role, err := legacyMutationRole(tx, accountID, role)
-		if err != nil {
-			return err
-		}
 		if err := assertRoleAPICompatible(tx, accountID, &role); err != nil {
 			return err
 		}
 		binding := app.AccountRole{OrgID: role.OrgID, RoleID: role.ID, AccountID: accountID}
-		if role.Version == app.RoleVersionV3 {
-			binding.ScopeKind = permissions.KindOrg
-			binding.ScopeID = role.OrgID.ValueString()
-		}
 		var count int64
 		if err := tx.Model(&app.AccountRole{}).Where(binding).Count(&count).Error; err != nil {
 			return err
@@ -64,10 +55,6 @@ func (h *Client) addLegacyAccountRole(ctx context.Context, accountID string, fil
 			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&binding).Error; err != nil {
 				return err
 			}
-		}
-		if role.Version == app.RoleVersionV3 {
-			_, err = loadScopedGrants(tx, accountID, role.OrgID.ValueString())
-			return err
 		}
 		return nil
 	})

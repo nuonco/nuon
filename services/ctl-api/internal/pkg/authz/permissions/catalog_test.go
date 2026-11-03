@@ -18,20 +18,20 @@ func TestCustomerRole(t *testing.T) {
 	}{
 		"install reader": {p.RoleInstallReader, p.KindInstall, "install.read log_stream.read runner.read runner_job.read telemetry.read"},
 		"install editor": {p.RoleInstallEditor, p.KindInstall, "install.read install.write log_stream.read runner.read runner_job.read telemetry.read"},
-		"install admin":  {p.RoleInstallAdmin, p.KindInstall, "install.access.manage install.read install.write log_stream.read runner.read runner_job.read telemetry.read"},
+		"install admin":  {p.RoleInstallAdmin, p.KindInstall, "install.delete install.read install.write log_stream.read runner.read runner_job.read telemetry.read"},
 		"app reader":     {p.RoleAppReader, p.KindApp, "app.read install.read log_stream.read runner.read runner_job.read telemetry.read"},
 		"app editor":     {p.RoleAppEditor, p.KindApp, "app.read app.write install.read install.write log_stream.read runner.read runner_job.read telemetry.read"},
-		"app admin":      {p.RoleAppAdmin, p.KindApp, "app.access.manage app.read app.write install.access.manage install.read install.write log_stream.read runner.read runner_job.read telemetry.read"},
+		"app admin":      {p.RoleAppAdmin, p.KindApp, "app.delete app.read app.write install.delete install.read install.write log_stream.read runner.read runner_job.read telemetry.read"},
 		"org reader":     {p.RoleOrgReader, p.KindOrg, "app.read install.read log_stream.read org.read runner.read runner_job.read telemetry.read"},
 		"org editor":     {p.RoleOrgEditor, p.KindOrg, "app.read app.write install.read install.write log_stream.read org.read runner.read runner_job.read telemetry.read"},
-		"org admin":      {p.RoleOrgAdmin, p.KindOrg, "app.access.manage app.read app.write install.access.manage install.read install.write log_stream.read org.read org.write runner.read runner_job.read telemetry.read"},
+		"org admin":      {p.RoleOrgAdmin, p.KindOrg, "app.delete app.read app.write install.delete install.read install.write log_stream.read org.read org.write runner.read runner_job.read telemetry.read"},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			role, err := p.CurrentCustomerRole(tt.name)
 			require.NoError(t, err)
 			assert.Equal(t, tt.name, role.Name)
-			assert.Equal(t, 1, role.Revision)
+			assert.Equal(t, 2, role.Revision)
 			assert.Equal(t, tt.kind, role.ScopeKind)
 			var got []string
 			for _, permission := range role.Permissions.Values() {

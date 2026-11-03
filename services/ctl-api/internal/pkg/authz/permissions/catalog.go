@@ -12,10 +12,10 @@ const (
 	OrgWrite            PermissionID = "org.write"
 	AppRead             PermissionID = "app.read"
 	AppWrite            PermissionID = "app.write"
-	AppAccessManage     PermissionID = "app.access.manage"
+	AppDelete           PermissionID = "app.delete"
 	InstallRead         PermissionID = "install.read"
 	InstallWrite        PermissionID = "install.write"
-	InstallAccessManage PermissionID = "install.access.manage"
+	InstallDelete       PermissionID = "install.delete"
 	RunnerRead          PermissionID = "runner.read"
 	RunnerConfigRead    PermissionID = "runner.config.read"
 	RunnerWrite         PermissionID = "runner.write"
@@ -43,12 +43,12 @@ const (
 var permissionTargets = map[PermissionID][]ResourceKind{
 	OrgRead:             {KindOrg},
 	OrgWrite:            {KindOrg},
-	AppRead:             {KindApp},
+	AppRead:             {KindApp, KindComponent, KindComponentBuild, KindComponentConfig},
 	AppWrite:            {KindApp, KindOrg},
-	AppAccessManage:     {KindApp},
+	AppDelete:           {KindApp},
 	InstallRead:         {KindInstall},
 	InstallWrite:        {KindInstall, KindApp},
-	InstallAccessManage: {KindInstall},
+	InstallDelete:       {KindInstall},
 	RunnerRead:          {KindRunner},
 	RunnerConfigRead:    {KindRunner},
 	RunnerWrite:         {KindRunner},

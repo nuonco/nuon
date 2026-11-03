@@ -40,6 +40,7 @@ type DeviceAuthorization struct {
 	// approved it, when account_id is still empty.
 	AccountID     string `gorm:"index" json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
 	SourceTokenID string `gorm:"index" json:"-" temporaljson:"source_token_id,omitzero,omitempty"`
+	Authorization []byte `json:"-" gorm:"type:jsonb" temporaljson:"authorization,omitzero,omitempty"`
 }
 
 func (a *DeviceAuthorization) BeforeCreate(tx *gorm.DB) error {

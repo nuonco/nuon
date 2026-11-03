@@ -12,7 +12,8 @@ import (
 func TestStandardOrgRoles(t *testing.T) {
 	const orgID = "org_one"
 
-	roles := standardOrgRoles(orgID)
+	roles, err := standardOrgRoles(orgID)
+	require.NoError(t, err)
 
 	seen := map[app.RoleType]app.Role{}
 	for _, role := range roles {
@@ -24,20 +25,21 @@ func TestStandardOrgRoles(t *testing.T) {
 
 	for _, roleType := range []app.RoleType{
 		app.RoleTypeOrgAdmin,
-		app.RoleTypeOrgSupport,
 		app.RoleTypeOrgReadOnly,
-		app.RoleTypeInstaller,
-		app.RoleTypeRunner,
+		"org_editor", "app_reader", "app_editor", "app_admin",
+		"install_reader", "install_editor", "install_admin",
 	} {
 		require.Contains(t, seen, roleType)
 	}
 
 	for _, role := range roles {
-		require.Equal(t, app.RoleVersionV2, role.Version, "role %s", role.RoleType)
+		require.Equal(t, app.RoleVersionV3, role.Version, "role %s", role.RoleType)
 		require.Len(t, role.Policies, 1, "role %s", role.RoleType)
-		require.Len(t, role.Policies[0].Permissions, 2, "role %s policies carry the org key and api", role.RoleType)
-		require.NotNil(t, role.Policies[0].Permissions[orgID], "role %s must key its permission on the org ID", role.RoleType)
-		require.NotNil(t, role.Policies[0].Permissions[permissions.APIPermissionKey], "role %s", role.RoleType)
+		require.Empty(t, role.Policies[0].Permissions, "role %s must not carry legacy permissions", role.RoleType)
+		require.Equal(t, orgID, role.Policies[0].OrgID.ValueString())
+		policy, err := permissions.DecodePolicy(role.Version, role.Policies[0].Document)
+		require.NoError(t, err)
+		require.Equal(t, permissions.APICtl, policy.API())
 		require.NotEmpty(t, role.Title, "role %s must carry display metadata", role.RoleType)
 		require.NotEmpty(t, role.Description, "role %s must carry display metadata", role.RoleType)
 		require.True(t, role.Managed, "standard roles are managed")
@@ -51,15 +53,15 @@ func TestStandardOrgRoles(t *testing.T) {
 	}
 	require.ElementsMatch(t, fullContexts, seen[app.RoleTypeOrgAdmin].Contexts)
 	require.ElementsMatch(t, fullContexts, seen[app.RoleTypeOrgReadOnly].Contexts)
-	require.Empty(t, seen[app.RoleTypeRunner].Contexts, "runner is held-only: assigned directly to runner accounts, never user-selectable")
-	require.Empty(t, seen[app.RoleTypeOrgSupport].Contexts, "org_support is held-only")
-	require.Empty(t, seen[app.RoleTypeInstaller].Contexts, "installer is held-only")
+	require.NotContains(t, seen, app.RoleTypeRunner)
+	require.NotContains(t, seen, app.RoleTypeOrgSupport)
+	require.NotContains(t, seen, app.RoleTypeInstaller)
 
 	readOnly := seen[app.RoleTypeOrgReadOnly]
-	set := permissions.Set(permissions.NewSet())
-	require.NoError(t, set.Add(readOnly.Policies[0].Permissions))
-	require.NoError(t, set.CanPerform(orgID, permissions.PermissionRead))
-	require.Error(t, set.CanPerform(orgID, permissions.PermissionCreate))
-	require.Equal(t, string(permissions.APICtl), *readOnly.Policies[0].Permissions[permissions.APIPermissionKey])
-	require.Equal(t, string(permissions.APIRunner), *seen[app.RoleTypeRunner].Policies[0].Permissions[permissions.APIPermissionKey])
+	policy, err := permissions.DecodePolicy(readOnly.Version, readOnly.Policies[0].Document)
+	require.NoError(t, err)
+	grants, err := policy.Compile(orgID, permissions.Scope{Kind: permissions.KindOrg, OrgID: orgID, ID: orgID})
+	require.NoError(t, err)
+	require.Contains(t, grants[0].Permissions, permissions.OrgRead)
+	require.NotContains(t, grants[0].Permissions, permissions.AppWrite)
 }

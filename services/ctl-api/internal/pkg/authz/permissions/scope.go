@@ -7,12 +7,15 @@ import (
 )
 
 const (
-	KindRunner         ResourceKind = "runner"
-	KindLogStream      ResourceKind = "log_stream"
-	KindExecutionState ResourceKind = "execution_state"
-	KindEvent          ResourceKind = "event"
-	KindNotification   ResourceKind = "notification"
-	KindOperation      ResourceKind = "operation"
+	KindComponent       ResourceKind = "component"
+	KindComponentBuild  ResourceKind = "component_build"
+	KindComponentConfig ResourceKind = "component_config"
+	KindRunner          ResourceKind = "runner"
+	KindLogStream       ResourceKind = "log_stream"
+	KindExecutionState  ResourceKind = "execution_state"
+	KindEvent           ResourceKind = "event"
+	KindNotification    ResourceKind = "notification"
+	KindOperation       ResourceKind = "operation"
 )
 
 type Scope struct {
@@ -40,7 +43,7 @@ func (s Scope) ValidateShape() error {
 		if s.ID != s.OrgID {
 			return fmt.Errorf("org scope ID must match its org")
 		}
-	case KindApp, KindInstall, KindStack, KindTelemetry, KindPhoneHome, KindRunnerJob,
+	case KindApp, KindInstall, KindComponent, KindComponentBuild, KindComponentConfig, KindStack, KindTelemetry, KindPhoneHome, KindRunnerJob,
 		KindRunner, KindLogStream, KindExecutionState, KindEvent, KindNotification, KindOperation:
 	default:
 		return fmt.Errorf("invalid scope kind %q", s.Kind)

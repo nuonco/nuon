@@ -46,6 +46,24 @@ func resolveTenantTarget(db *gorm.DB, scope permissions.Scope) (permissions.Reso
 		}
 		target.AppID = row.ID
 		return target, nil
+	case permissions.KindComponent, permissions.KindComponentBuild, permissions.KindComponentConfig:
+		ownerType, ownerID := "components", scope.ID
+		if scope.Kind == permissions.KindComponentBuild {
+			ownerType = "component_builds"
+		}
+		if scope.Kind == permissions.KindComponentConfig {
+			var err error
+			ownerID, err = loadOwnerParentID(db, &app.ComponentConfigConnection{}, scope.OrgID, scope.ID, "component_id")
+			if err != nil {
+				return permissions.ResolvedTarget{}, err
+			}
+		}
+		parent, err := resolveExecutionOwner(db, scope.OrgID, ownerType, ownerID)
+		if err != nil {
+			return permissions.ResolvedTarget{}, err
+		}
+		target.AppID = parent.AppID
+		return target, nil
 	case permissions.KindInstall, permissions.KindStack, permissions.KindTelemetry:
 		var row struct{ AppID string }
 		if err := db.Model(&app.Install{}).Scopes(scopes.WithDisableViews).Select("app_id").

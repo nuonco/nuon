@@ -30,7 +30,7 @@ func RequireUserManaged(tx *gorm.DB, accountID string) error {
 		return fmt.Errorf("lock account for management: %w", err)
 	}
 	var count int64
-	if err := tx.Model(&app.ManagedServiceAccount{}).
+	if err := tx.Unscoped().Model(&app.ManagedServiceAccount{}).
 		Where("account_id = ?", accountID).Count(&count).Error; err != nil {
 		return fmt.Errorf("load managed service account ownership: %w", err)
 	}

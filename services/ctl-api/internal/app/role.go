@@ -71,7 +71,6 @@ type Role struct {
 	RoleType        RoleType `json:"role_type,omitzero" gorm:"defaultnull;notnull" temporaljson:"role_type,omitzero,omitempty"`
 	Version         int      `json:"version,omitzero" gorm:"not null;default:1" temporaljson:"version,omitzero,omitempty"`
 	CatalogRevision int      `json:"-" temporaljson:"catalog_revision,omitzero,omitempty"`
-	LegacyVersion   int      `json:"-" temporaljson:"legacy_version,omitzero,omitempty"`
 
 	// display + assignability metadata; the single source of truth read by
 	// GET /v1/roles and every role picker. Managed roles are kept in sync

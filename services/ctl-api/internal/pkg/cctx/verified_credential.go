@@ -12,15 +12,16 @@ import (
 type CredentialSurface string
 
 const (
-	SurfacePublicAPI CredentialSurface = "public-api"
-	SurfaceMCP       CredentialSurface = "mcp"
+	SurfacePublicAPI   CredentialSurface = "public-api"
+	SurfaceMCP         CredentialSurface = "mcp"
+	SurfaceEmployeeMCP CredentialSurface = "employee-mcp"
 )
 
-type CredentialProfile string
+type CredentialProfile = permissions.CredentialProfile
 
 const (
-	ProfileHuman          CredentialProfile = "human"
-	ProfileServiceAccount CredentialProfile = "service-account"
+	ProfileHuman          = permissions.ProfileHuman
+	ProfileServiceAccount = permissions.ProfileServiceAccount
 )
 
 type VerifiedCredential struct {

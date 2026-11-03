@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-const CatalogRevision = 1
+const CatalogRevision = 2
 
 type CustomerRoleName string
 
@@ -59,11 +59,11 @@ func CurrentCustomerRole(name CustomerRoleName) (RoleDefinition, error) {
 
 	switch name {
 	case RoleInstallAdmin:
-		values = append(values, InstallAccessManage)
+		values = append(values, InstallDelete)
 	case RoleAppAdmin:
-		values = append(values, AppAccessManage, InstallAccessManage)
+		values = append(values, AppDelete, InstallDelete)
 	case RoleOrgAdmin:
-		values = append(values, OrgWrite, AppAccessManage, InstallAccessManage)
+		values = append(values, OrgWrite, AppDelete, InstallDelete)
 	}
 
 	set, err := NewPermissionSet(values...)

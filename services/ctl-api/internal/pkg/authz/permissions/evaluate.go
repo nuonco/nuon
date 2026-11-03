@@ -54,6 +54,18 @@ func MatchPermissions(input PermissionCheck) PermissionMatch {
 	return PermissionMatch{Matched: true, Reason: ReasonMatched}
 }
 
+func ContainsGrant(grants []ScopedPermissions, target ResolvedTarget, requested PermissionSet) bool {
+	if target.ValidateShape() != nil || !validGrants(grants) || len(requested) == 0 {
+		return false
+	}
+	for permission := range requested {
+		if _, err := ParsePermissionID(string(permission)); err != nil || !grantsPermit(grants, permission, target) {
+			return false
+		}
+	}
+	return true
+}
+
 func validGrants(grants []ScopedPermissions) bool {
 	for _, grant := range grants {
 		if err := grant.Scope.ValidateShape(); err != nil {

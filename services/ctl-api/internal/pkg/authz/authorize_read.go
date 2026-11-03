@@ -9,7 +9,6 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -43,7 +42,7 @@ type Decision struct {
 
 func (c *Client) AuthorizeRead(ctx context.Context, req ReadRequest) (Decision, error) {
 	switch req.Permission {
-	case permissions.OrgRead, permissions.AppRead, permissions.InstallRead, permissions.TelemetryRead,
+	case permissions.OrgRead, permissions.OrgWrite, permissions.AppRead, permissions.InstallRead, permissions.TelemetryRead,
 		permissions.RunnerRead, permissions.RunnerJobRead, permissions.LogStreamRead:
 	default:
 		return Decision{Reason: ReasonUnsupportedRead}, nil
@@ -55,9 +54,7 @@ func (c *Client) AuthorizeRead(ctx context.Context, req ReadRequest) (Decision, 
 	if !ok || credential.AccountID == "" || credential.TokenID == "" {
 		return Decision{Reason: ReasonMissingCredential}, nil
 	}
-	if credential.Audience != permissions.APICtl ||
-		(credential.Surface != cctx.SurfacePublicAPI && credential.Surface != cctx.SurfaceMCP) ||
-		(credential.Profile != cctx.ProfileHuman && credential.Profile != cctx.ProfileServiceAccount) {
+	if !customerCredentialAllowed(credential) {
 		return Decision{Reason: ReasonCredentialNotAllowed}, nil
 	}
 	if len(credential.Ceiling) == 0 {
@@ -73,7 +70,7 @@ func (c *Client) AuthorizeRead(ctx context.Context, req ReadRequest) (Decision, 
 			return fmt.Errorf("read authorization requires repeatable-read or serializable isolation")
 		}
 		var err error
-		decision, err = authorizeRead(tx, credential, req, time.Now())
+		decision, err = authorize(tx, credential, req.Permission, req.Target, time.Now())
 		return err
 	}, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
@@ -82,59 +79,19 @@ func (c *Client) AuthorizeRead(ctx context.Context, req ReadRequest) (Decision, 
 	return decision, nil
 }
 
-func authorizeRead(db *gorm.DB, credential cctx.VerifiedCredential, req ReadRequest, now time.Time) (Decision, error) {
-	var token app.Token
-	if err := db.Select("id", "account_id", "org_id", "token_type", "issued_at", "expires_at").
-		Where(app.Token{ID: credential.TokenID, AccountID: credential.AccountID}).Take(&token).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return Decision{Reason: ReasonCredentialUnavailable}, nil
-		}
-		return Decision{}, fmt.Errorf("load authorization credential: %w", err)
+func authorize(db *gorm.DB, credential cctx.VerifiedCredential, permission permissions.PermissionID, scope permissions.Scope, now time.Time) (Decision, error) {
+	ceiling, reason, err := loadCustomerCredential(db, credential, scope.OrgID, now)
+	if err != nil || reason != ReasonAllowed {
+		return Decision{Reason: reason}, err
 	}
-	if !now.Before(token.ExpiresAt) {
-		return Decision{Reason: ReasonCredentialExpired}, nil
-	}
-	if token.IssuedAt.After(now) {
-		return Decision{Reason: ReasonCredentialNotAllowed}, nil
-	}
-	if token.OrgID != "" && token.OrgID != req.Target.OrgID {
-		return Decision{Reason: ReasonTenantMismatch}, nil
-	}
-	var account app.Account
-	if err := db.Select("id", "account_type").Where(app.Account{ID: credential.AccountID}).Take(&account).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return Decision{Reason: ReasonCredentialUnavailable}, nil
-		}
-		return Decision{}, fmt.Errorf("load authorization principal: %w", err)
-	}
-	switch credential.Profile {
-	case cctx.ProfileHuman:
-		if (account.AccountType != app.AccountTypeAuth && account.AccountType != app.AccountTypeAuth0) ||
-			(token.TokenType != app.TokenTypeNuon && token.TokenType != app.TokenTypeOAuth) {
-			return Decision{Reason: ReasonCredentialNotAllowed}, nil
-		}
-	case cctx.ProfileServiceAccount:
-		if account.AccountType != app.AccountTypeService || token.TokenType != app.TokenTypeStatic ||
-			credential.Surface != cctx.SurfacePublicAPI || token.OrgID != req.Target.OrgID {
-			return Decision{Reason: ReasonCredentialNotAllowed}, nil
-		}
-		var managed app.ManagedServiceAccount
-		err := db.Unscoped().Select("account_id").Where(app.ManagedServiceAccount{AccountID: account.ID}).Take(&managed).Error
-		if err == nil {
-			return Decision{Reason: ReasonCredentialNotAllowed}, nil
-		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return Decision{}, fmt.Errorf("load authorization account ownership: %w", err)
-		}
-	}
-	target, err := resolveTarget(db, req.Target)
+	target, err := resolveTarget(db, scope)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return Decision{Reason: ReasonTargetUnavailable}, nil
 		}
 		return Decision{}, err
 	}
-	grants, err := loadScopedGrants(db, account.ID, req.Target.OrgID)
+	grants, err := loadScopedGrants(db, credential.AccountID, scope.OrgID)
 	if err != nil {
 		if errors.Is(err, errNoScopedGrants) {
 			return Decision{Reason: ReasonNoGrant}, nil
@@ -144,8 +101,16 @@ func authorizeRead(db *gorm.DB, credential cctx.VerifiedCredential, req ReadRequ
 	if grants.API != credential.Audience {
 		return Decision{Reason: ReasonCredentialNotAllowed}, nil
 	}
+	if match := permissions.MatchPermissions(permissions.PermissionCheck{
+		Permission: permission, Target: target, Grants: grants.Grants, Ceiling: ceiling,
+	}); !match.Matched {
+		if match.Reason == permissions.ReasonNoGrant {
+			return Decision{Reason: ReasonNoGrant}, nil
+		}
+		return Decision{Reason: ReasonCeilingExceeded}, nil
+	}
 	match := permissions.MatchPermissions(permissions.PermissionCheck{
-		Permission: req.Permission, Target: target, Grants: grants.Grants, Ceiling: credential.Ceiling,
+		Permission: permission, Target: target, Grants: grants.Grants, Ceiling: credential.Ceiling,
 	})
 	switch match.Reason {
 	case permissions.ReasonMatched:
@@ -155,6 +120,6 @@ func authorizeRead(db *gorm.DB, credential cctx.VerifiedCredential, req ReadRequ
 	case permissions.ReasonCeilingExceeded:
 		return Decision{Reason: ReasonCeilingExceeded}, nil
 	default:
-		return Decision{}, fmt.Errorf("invalid read authorization inputs: %s", match.Reason)
+		return Decision{}, fmt.Errorf("invalid authorization inputs: %s", match.Reason)
 	}
 }

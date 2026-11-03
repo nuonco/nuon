@@ -22,45 +22,13 @@ func lockLegacyRoleSubject(tx *gorm.DB, accountID string) error {
 		return err
 	}
 	var bindings []app.AccountRole
-	if err := tx.Preload("Role.Policies").Where(app.AccountRole{AccountID: accountID}).Find(&bindings).Error; err != nil {
+	if err := tx.Preload("Role").Where(app.AccountRole{AccountID: accountID}).Find(&bindings).Error; err != nil {
 		return err
 	}
 	for _, binding := range bindings {
-		if binding.Role.Version == app.RoleVersionV3 {
-			if err := binding.ValidateLegacyCompatibility(); err != nil {
-				return err
-			}
-			continue
-		}
 		if binding.ScopeKind != "" || binding.ScopeID != "" || binding.Role.Version < app.RoleVersionV1 || binding.Role.Version > app.RoleVersionV2 {
 			return fmt.Errorf("legacy role mutation cannot change scoped or unsupported bindings")
 		}
 	}
 	return nil
-}
-
-func legacyMutationRole(tx *gorm.DB, accountID string, role app.Role) (app.Role, error) {
-	if role.OrgID.Empty() {
-		return role, nil
-	}
-	var bindings []app.AccountRole
-	if err := tx.Preload("Role.Policies").Where(app.AccountRole{AccountID: accountID, OrgID: role.OrgID}).Find(&bindings).Error; err != nil {
-		return app.Role{}, err
-	}
-	converted := false
-	for _, binding := range bindings {
-		if binding.Role.Version == app.RoleVersionV3 {
-			if err := binding.ValidateLegacyCompatibility(); err != nil {
-				return app.Role{}, err
-			}
-			converted = true
-		}
-	}
-	if !converted || role.Version == app.RoleVersionV3 {
-		return role, nil
-	}
-	if err := validateLegacyCustomerRole(role, role.OrgID.ValueString()); err != nil {
-		return app.Role{}, err
-	}
-	return ensureConvertedCustomerRole(tx, role.OrgID.ValueString(), role.RoleType, role.Version)
 }

@@ -50,6 +50,9 @@ func Write(ctx context.Context) (string, error) {
 }
 
 func permission(ctx context.Context, orgID string, perm permissions.Permission) error {
+	if _, ok := cctx.VerifiedCredentialFromContext(ctx); ok {
+		return fmt.Errorf("credential restrictions require customer authorization")
+	}
 	acct, err := cctx.AccountFromContext(ctx)
 	if err != nil {
 		return fmt.Errorf("authentication required: %w", err)

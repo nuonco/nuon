@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -47,6 +46,7 @@ type Account struct {
 	OrgIDs         []string        `json:"org_ids,omitzero" gorm:"-" temporaljson:"org_i_ds,omitzero,omitempty"`
 	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
 	AllPermissions permissions.Set `json:"permissions,omitzero" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
+	RoleBindings   []RoleBinding   `json:"role_bindings,omitempty" gorm:"-" temporaljson:"-"`
 
 	IsEmployee bool `json:"-"`
 }
@@ -90,41 +90,10 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 	a.OrgIDs = make([]string, 0)
 	a.AllPermissions = permissions.NewSet()
 
-	var bindings []AccountRole
-	loadedBindings := false
 	visited := make(map[string]struct{}, 0)
 	for _, role := range a.Roles {
-		compatible := role.Version == RoleVersionV3 && role.LegacyVersion != 0 && len(role.Policies) != 0
-		if compatible {
-			if err := role.ValidateLegacyCompatibility(); err != nil {
-				return err
-			}
-			if !loadedBindings {
-				if tx == nil || a.ID == "" {
-					return fmt.Errorf("compatible grants require persisted account bindings")
-				}
-				if err := tx.Session(&gorm.Session{NewDB: true}).Where(AccountRole{AccountID: a.ID}).Find(&bindings).Error; err != nil {
-					return err
-				}
-				loadedBindings = true
-			}
-			found := false
-			for _, binding := range bindings {
-				if binding.RoleID != role.ID {
-					continue
-				}
-				binding.Role = role
-				if err := binding.ValidateLegacyCompatibility(); err != nil {
-					return err
-				}
-				found = true
-			}
-			if !found {
-				return fmt.Errorf("compatible role has no live account binding")
-			}
-		}
 		for _, policy := range role.Policies {
-			if role.Version == RoleVersionV1 || role.Version == RoleVersionV2 || compatible {
+			if role.Version == RoleVersionV1 || role.Version == RoleVersionV2 {
 				a.AllPermissions.Add(policy.Permissions)
 			}
 		}

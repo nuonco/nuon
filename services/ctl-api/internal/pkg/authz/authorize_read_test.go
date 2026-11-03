@@ -81,6 +81,10 @@ func TestAuthorizeReadRequiresSupportedRequestAndVerifiedCredential(t *testing.T
 		"unknown profile": {func(_ *authz.ReadRequest, c *cctx.VerifiedCredential) {
 			c.Profile = "runner"
 		}, authz.ReasonCredentialNotAllowed},
+		"service account cannot authorize MCP": {func(_ *authz.ReadRequest, c *cctx.VerifiedCredential) {
+			c.Profile = cctx.ProfileServiceAccount
+			c.Surface = cctx.SurfaceMCP
+		}, authz.ReasonCredentialNotAllowed},
 		"absent ceiling is not unrestricted": {func(_ *authz.ReadRequest, c *cctx.VerifiedCredential) {
 			c.Ceiling = nil
 		}, authz.ReasonCeilingExceeded},

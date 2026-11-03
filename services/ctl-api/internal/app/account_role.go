@@ -14,6 +14,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
+type RoleBinding struct {
+	ID       string            `json:"id"`
+	RoleID   string            `json:"role_id"`
+	RoleType RoleType          `json:"role_type"`
+	Scope    permissions.Scope `json:"scope"`
+}
+
 // AccountRole is a many2many table used by gorm under the hood
 type AccountRole struct {
 	ID string `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
