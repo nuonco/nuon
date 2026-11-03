@@ -20,16 +20,18 @@ import (
 )
 
 type RunnerAuthAzureRequest struct {
-	Token    string `json:"token" validate:"required"`
-	RunnerID string `json:"runner_id,omitempty"`
+	Token       string `json:"token" validate:"required"`
+	RunnerID    string `json:"runner_id,omitempty"`
+	Refreshable bool   `json:"refreshable,omitempty"`
 }
 
 type RunnerAuthAzureResponse struct {
-	Authenticated bool   `json:"authenticated"`
-	TenantID      string `json:"tenant_id,omitempty"`
-	PrincipalID   string `json:"principal_id,omitempty"`
-	RunnerID      string `json:"runner_id,omitempty"`
-	Token         string `json:"token,omitempty"`
+	Authenticated bool      `json:"authenticated"`
+	TenantID      string    `json:"tenant_id,omitempty"`
+	PrincipalID   string    `json:"principal_id,omitempty"`
+	RunnerID      string    `json:"runner_id,omitempty"`
+	Token         string    `json:"token,omitempty"`
+	ExpiresAt     time.Time `json:"expires_at"`
 }
 
 type azureClaims struct {
@@ -300,7 +302,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createRunnerToken(reqCtx, runner.ID)
+	token, err := s.createRunnerToken(reqCtx, runner.ID, runnerTokenTimeout(req.Refreshable))
 	if err != nil {
 		s.l.Error("runner auth azure: failed to create token", zap.String("runner_id", runnerID), zap.Error(err))
 		ctx.Error(stderr.ErrSystem{
@@ -319,14 +321,17 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		zap.String("runner_id", runner.ID),
 		zap.String("tenant_id", azClaims.TenantID),
 		zap.String("principal_id", azClaims.ObjectID),
-		zap.String("audience", azClaims.Audience))
+		zap.String("audience", azClaims.Audience),
+		zap.Bool("refreshable", req.Refreshable),
+		zap.Time("expires_at", token.ExpiresAt))
 
 	ctx.JSON(http.StatusOK, RunnerAuthAzureResponse{
 		Authenticated: true,
 		TenantID:      azClaims.TenantID,
 		PrincipalID:   azClaims.ObjectID,
 		RunnerID:      runner.ID,
-		Token:         token,
+		Token:         token.Token,
+		ExpiresAt:     token.ExpiresAt,
 	})
 }
 
