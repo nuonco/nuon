@@ -37,7 +37,10 @@ func (h *Helpers) ValidateInstallRole(ctx context.Context, installID, role strin
 		return fmt.Errorf("role %q is not available: install %q has no stack outputs yet", role, install.Name)
 	}
 
-	installState, err := h.GetInstallState(ctx, install.ID, false, true)
+	// Rendered role names can interpolate install inputs, and rendered names
+	// are echoed back in errors, so use redacted state to keep sensitive input
+	// values out of the response.
+	installState, err := h.GetInstallState(ctx, install.ID, true, true)
 	if err != nil {
 		return fmt.Errorf("unable to get install state: %w", err)
 	}
