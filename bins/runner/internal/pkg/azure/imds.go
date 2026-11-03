@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
+
+	"github.com/nuonco/nuon/pkg/azure"
 )
 
 const (
@@ -20,9 +23,17 @@ type imdsTokenResponse struct {
 	TokenType   string `json:"token_type"`
 }
 
-// GetIMDSToken fetches a managed identity access token from the Azure IMDS endpoint.
-func GetIMDSToken(ctx context.Context) (string, error) {
-	reqURL := fmt.Sprintf("%s?api-version=2018-02-01&resource=https://management.azure.com/", imdsTokenURL)
+func imdsTokenRequestURL(resource string) string {
+	if resource == "" || resource == azure.ManagementAudience {
+		return imdsTokenURL + "?api-version=2018-02-01&resource=https://management.azure.com/"
+	}
+	return imdsTokenURL + "?api-version=2018-02-01&resource=" + url.QueryEscape(resource)
+}
+
+// GetIMDSToken fetches a managed identity access token from the Azure IMDS endpoint
+// for the given resource. An empty resource requests the ARM audience.
+func GetIMDSToken(ctx context.Context, resource string) (string, error) {
+	reqURL := imdsTokenRequestURL(resource)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
