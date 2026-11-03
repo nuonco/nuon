@@ -619,7 +619,6 @@ export const BranchOverview = ({
   buildRowsLoading,
   onSelectBuild,
   compositeError,
-  failedBuilds,
   approvals,
   runHeaderAction,
   versionLabel,
@@ -759,24 +758,6 @@ export const BranchOverview = ({
           ) : null}
 
           {compositeError ? <CompositeError error={compositeError} /> : null}
-          {failedBuilds?.length ? (
-            <div className="flex flex-col gap-2">
-              <Text variant="subtext" weight="strong">
-                Failed builds
-              </Text>
-              <ul className="flex flex-col gap-1">
-                {failedBuilds.map((build) => (
-                  <li key={build.id}>
-                    <Link href={build.href} textVariant="subtext">
-                      <Text as="span" variant="subtext" family="mono">
-                        {build.name}
-                      </Text>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
           {previewMode === 'build-only' ? (
             <Banner theme="info">
               This preview will not update any install.
