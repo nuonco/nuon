@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/azure"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -36,6 +37,7 @@ type azureClaims struct {
 	ObjectID string `json:"oid"`
 	Subject  string `json:"sub"`
 	XMSMirID string `json:"xms_mirid"`
+	Audience string `json:"aud"`
 }
 
 func parseUnverifiedTenantID(tokenStr string) (string, error) {
@@ -56,6 +58,14 @@ func parseUnverifiedTenantID(tokenStr string) (string, error) {
 	return tenantID, nil
 }
 
+func expectedAzureRunnerAudience(tokenStr, configured string) string {
+	presented := ""
+	if claims, err := workloadjwt.UnverifiedClaims(tokenStr); err == nil {
+		presented, _ = workloadjwt.StringClaim(claims, "aud")
+	}
+	return azure.ExpectedRunnerAudience(configured, presented)
+}
+
 func azureClaimsFromVerified(claims map[string]any) (*azureClaims, error) {
 	tenantID, ok := workloadjwt.StringClaim(claims, "tid")
 	if !ok {
@@ -67,12 +77,14 @@ func azureClaimsFromVerified(claims map[string]any) (*azureClaims, error) {
 	}
 	subject, _ := workloadjwt.StringClaim(claims, "sub")
 	mirID, _ := workloadjwt.StringClaim(claims, "xms_mirid")
+	audience, _ := workloadjwt.StringClaim(claims, "aud")
 
 	return &azureClaims{
 		TenantID: tenantID,
 		ObjectID: objectID,
 		Subject:  subject,
 		XMSMirID: mirID,
+		Audience: audience,
 	}, nil
 }
 
@@ -92,10 +104,15 @@ func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureCl
 		return nil, fmt.Errorf("failed to build issuer: %w", err)
 	}
 
+	configured := ""
+	if s.cfg != nil {
+		configured = s.cfg.AzureRunnerAuthAudience
+	}
+
 	verified, err := s.workloadJWT.Verify(ctx, workloadjwt.Request{
 		Token:    tokenStr,
 		Issuer:   issuerURL,
-		Audience: workloadjwt.AzureManagementAudience,
+		Audience: expectedAzureRunnerAudience(tokenStr, configured),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("JWT validation failed: %w", err)
@@ -204,6 +221,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+	metricTags["audience"] = azClaims.Audience
 
 	runnerID, subscriptionID, miridInstallID, err := resolveAzureRunnerIdentity(azClaims, req.RunnerID)
 	if err != nil {
@@ -300,7 +318,8 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		zap.String("org_id", install.OrgID),
 		zap.String("runner_id", runner.ID),
 		zap.String("tenant_id", azClaims.TenantID),
-		zap.String("principal_id", azClaims.ObjectID))
+		zap.String("principal_id", azClaims.ObjectID),
+		zap.String("audience", azClaims.Audience))
 
 	ctx.JSON(http.StatusOK, RunnerAuthAzureResponse{
 		Authenticated: true,
