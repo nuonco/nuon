@@ -53,6 +53,9 @@ var _ signal.SignalWithSkipNoops = (*Signal)(nil)
 var _ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 var _ signal.SignalWithOnRetry = (*Signal)(nil)
 var _ signal.SignalWithApprovalValidation = (*Signal)(nil)
+var _ signal.SignalWithSkipGroup = (*Signal)(nil)
+
+func (s *Signal) SkipGroup() bool { return true }
 
 func (s *Signal) ValidateApproval(ctx workflow.Context) error {
 	if s.InstallID == "" || s.FlowID == "" {
