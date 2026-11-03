@@ -176,5 +176,5 @@ func ValidateDeploy(ctx context.Context, db *gorm.DB, deploy *app.InstallDeploy)
 	if err != nil {
 		return err
 	}
-	return ValidateComponent(ctx, db, appConfigID, installComponent.ComponentID, deploy.ComponentBuildID)
+	return ValidateComponentForWorkflow(ctx, db, appConfigID, installComponent.ComponentID, deploy.ComponentBuildID, generics.FromPtrStr(deploy.InstallWorkflowID))
 }

@@ -36,7 +36,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		if err != nil {
 			return nil, err
 		}
-		if err := buildselection.ValidateComponent(ctx, a.db, appConfigID, req.ComponentID, req.BuildID); err != nil {
+		if err := buildselection.ValidateComponentForWorkflow(ctx, a.db, appConfigID, req.ComponentID, req.BuildID, req.WorkflowID); err != nil {
 			return nil, err
 		}
 	}

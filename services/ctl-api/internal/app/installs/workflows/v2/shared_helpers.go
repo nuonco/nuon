@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
@@ -361,7 +362,7 @@ func getActionImageDepSyncSteps(ctx workflow.Context, dg *genCtx, installActions
 		}
 	}
 
-	return getImageDepSyncStepsForIDs(ctx, dg, depIDs, nil)
+	return getImageDepSyncStepsForIDs(ctx, dg, depIDs, nil, nil)
 }
 
 func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []string) ([]*app.WorkflowStep, error) {
@@ -666,7 +667,7 @@ func getImageDepSyncSteps(
 		}
 	}
 
-	return getImageDepSyncStepsForIDs(ctx, dg, depIDs, skip)
+	return getImageDepSyncStepsForIDs(ctx, dg, depIDs, skip, inputImageTags(dg, parentCompID))
 }
 
 func getImageDepSyncStepsForIDs(
@@ -674,6 +675,7 @@ func getImageDepSyncStepsForIDs(
 	dg *genCtx,
 	depIDs []string,
 	skip map[string]struct{},
+	inputTags []string,
 ) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 	groupStarted := false
@@ -696,13 +698,28 @@ func getImageDepSyncStepsForIDs(
 		}
 
 		depCCC, hasCCC := dg.cccByComp[depID]
+		inAppConfig := hasCCC && depCCC != nil
+		isImage := dep.Type.IsImage() || (inAppConfig && depCCC.Type.IsImage())
 		decision, err := imagesync.Decide(ctx, imagesync.Dep{
 			ComponentID: depID,
-			IsImage:     dep.Type.IsImage(),
-			InAppConfig: hasCCC && depCCC != nil,
+			IsImage:     isImage,
+			InAppConfig: inAppConfig,
 		}, loader)
 		if err != nil {
 			return nil, err
+		}
+		pinnedBuildID := decision.BuildID
+		decision, err = overrideImageDepForInputTag(ctx, loader, depID, decision, inputTags)
+		if err != nil {
+			return nil, err
+		}
+		if decision.NeedsSync && decision.BuildID != pinnedBuildID {
+			if l, lErr := log.WorkflowLogger(ctx); lErr == nil {
+				l.Info("syncing image dependency for changed input tag",
+					zap.String("component_id", depID),
+					zap.String("component_name", dep.Name),
+					zap.String("build_id", decision.BuildID))
+			}
 		}
 		if !decision.NeedsSync {
 			if decision.WorthLogging() {
@@ -737,6 +754,105 @@ func getImageDepSyncStepsForIDs(
 	}
 
 	return steps, nil
+}
+
+type changedInputValue struct {
+	Old string `json:"old"`
+	New string `json:"new"`
+}
+
+func inputImageTags(dg *genCtx, parentCompID string) []string {
+	if dg == nil || dg.flw == nil {
+		return nil
+	}
+	raw := generics.FromPtrStr(dg.flw.Metadata[app.WorkflowMetadataKeyChangedInputValues])
+	if raw == "" {
+		return nil
+	}
+	var changed map[string]changedInputValue
+	if err := json.Unmarshal([]byte(raw), &changed); err != nil {
+		return nil
+	}
+	referenced := parentInputNames(dg.cccByComp[parentCompID])
+	tags := make([]string, 0, len(changed))
+	seen := make(map[string]struct{}, len(changed))
+	for name, value := range changed {
+		if _, ok := referenced[name]; !ok {
+			continue
+		}
+		if value.New == "" || value.New == value.Old || value.New == "***" {
+			continue
+		}
+		if _, ok := seen[value.New]; ok {
+			continue
+		}
+		seen[value.New] = struct{}{}
+		tags = append(tags, value.New)
+	}
+	sort.Strings(tags)
+	return tags
+}
+
+func parentInputNames(ccc *app.ComponentConfigConnection) map[string]struct{} {
+	names := make(map[string]struct{})
+	if ccc == nil {
+		return names
+	}
+	refList := ccc.Refs
+	if len(refList) == 0 {
+		refList = make([]refs.Ref, 0, len(ccc.References))
+		for _, raw := range ccc.References {
+			refList = append(refList, refs.NewFromString(raw))
+		}
+	}
+	for _, ref := range refList {
+		if ref.Type == refs.RefTypeInputs || ref.Type == refs.RefTypeInstallInputs {
+			names[ref.Name] = struct{}{}
+		}
+	}
+	return names
+}
+
+func overrideImageDepForInputTag(
+	ctx workflow.Context,
+	loader imagesync.Loader,
+	depID string,
+	decision imagesync.Decision,
+	inputTags []string,
+) (imagesync.Decision, error) {
+	if len(inputTags) == 0 {
+		return decision, nil
+	}
+	switch decision.Skip {
+	case imagesync.SkipNotAnImage, imagesync.SkipNotInAppConfig, imagesync.SkipNoInstallComponent:
+		return decision, nil
+	}
+
+	build, err := activities.AwaitGetLatestActiveComponentBuild(ctx, activities.GetLatestActiveComponentBuildRequest{
+		ComponentID: depID,
+	})
+	if err != nil {
+		return imagesync.Decision{}, errors.Wrapf(err, "unable to get latest active build for image dep %s", depID)
+	}
+	if build == nil {
+		return decision, nil
+	}
+	matches := false
+	for _, tag := range inputTags {
+		if imagesync.ImageTagMatches(build.ResolvedTag, build.SourceRef, tag) {
+			matches = true
+			break
+		}
+	}
+	if !matches {
+		return decision, nil
+	}
+
+	installComponentID, deployedBuildID, err := loader.DeployedBuild(ctx, depID)
+	if err != nil {
+		return imagesync.Decision{}, err
+	}
+	return imagesync.UseBuildForTag(decision, build.ID, deployedBuildID, installComponentID, true), nil
 }
 
 type genCtxDepLoader struct {
