@@ -18,11 +18,16 @@ export const ChangeCountSummary = ({
   emptyText = 'no changes',
   className,
 }: IChangeCountSummary) => {
-  const parts: { text: string; theme: TTextTheme }[] = []
+  const parts: { text: string; theme: TTextTheme; className?: string }[] = []
   if (added > 0) parts.push({ text: `+${added}`, theme: 'success' })
   if (updated > 0) parts.push({ text: `~${updated}`, theme: 'warn' })
   if (removed > 0) parts.push({ text: `-${removed}`, theme: 'error' })
-  if (replaced > 0) parts.push({ text: `±${replaced}`, theme: 'brand' })
+  if (replaced > 0)
+    parts.push({
+      text: `±${replaced}`,
+      theme: 'default',
+      className: 'text-fuchsia-600 dark:text-fuchsia-300',
+    })
 
   if (parts.length === 0) {
     return (
@@ -35,7 +40,14 @@ export const ChangeCountSummary = ({
   return (
     <div className={cn('flex items-center gap-2', className)}>
       {parts.map((part) => (
-        <Text key={part.text} variant="subtext" theme={part.theme} weight="strong" family="mono">
+        <Text
+          key={part.text}
+          variant="subtext"
+          theme={part.theme}
+          weight="strong"
+          family="mono"
+          className={part.className}
+        >
           {part.text}
         </Text>
       ))}

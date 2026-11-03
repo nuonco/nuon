@@ -18,7 +18,7 @@ const LABELS: Record<TDiffOperation, string> = {
 const RAIL_CLASSES: Record<TDiffOperation, string> = {
   create: 'bg-diff-add',
   update: 'bg-diff-change',
-  replace: 'bg-primary-500',
+  replace: 'bg-fuchsia-500 dark:bg-fuchsia-300',
   delete: 'bg-diff-remove',
   read: 'bg-diff-neutral',
   forget: 'bg-blue-500',
