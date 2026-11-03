@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	tfjson "github.com/hashicorp/terraform-json"
@@ -29,7 +30,7 @@ func TestEngineCollectProbes(t *testing.T) {
 	failingSpec, ok := newProbeSpec("http", failing.URL+"/healthz")
 	require.True(t, ok)
 
-	e := &Engine{l: zap.NewNop(), idx: newIndex()}
+	e := &Engine{l: zap.NewNop(), idx: newIndex(), proberFactory: func() *prober { return newProberWithControl(nil) }}
 	e.idx.replace("ins-1", []componentEntry{
 		{
 			installComponentID: "ic-1",
@@ -55,6 +56,31 @@ func TestEngineCollectProbes(t *testing.T) {
 	assert.Equal(t, healthHealthy, byName[healthySpec.target].Health)
 	assert.Equal(t, healthUnhealthy, byName[failingSpec.target].Health)
 	assert.Contains(t, byName[failingSpec.target].Message, "503")
+}
+
+func TestEngineCollectProbesGuardsDestinationsByDefault(t *testing.T) {
+	var hits atomic.Int32
+	local := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer local.Close()
+
+	spec, ok := newProbeSpec("http", local.URL+"/healthz")
+	require.True(t, ok)
+
+	e := &Engine{l: zap.NewNop(), idx: newIndex()}
+	e.idx.replace("ins-1", []componentEntry{
+		{installComponentID: "ic-1", componentID: "cmp-1", componentType: "helm_chart", probes: []probeSpec{spec}},
+	})
+
+	grouped := map[string][]*models.ServiceComponentHealthResource{}
+	e.collectProbes(context.Background(), grouped)
+
+	require.Len(t, grouped["cmp-1"], 1)
+	assert.Equal(t, healthUnhealthy, grouped["cmp-1"][0].Health)
+	assert.Equal(t, probeDestinationBlocked, grouped["cmp-1"][0].Message)
+	assert.Zero(t, hits.Load())
 }
 
 func TestEngineCollectTerraform(t *testing.T) {
