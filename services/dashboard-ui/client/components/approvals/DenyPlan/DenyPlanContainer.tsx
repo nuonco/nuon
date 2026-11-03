@@ -36,7 +36,15 @@ export const DenyPlanModalContainer = ({
   const removePanelByKey = useRemovePanelByKey()
   const queryClient = useQueryClient()
 
-  const modalCopy = DENY_MODAL_COPY[step.approval.type]
+  const baseCopy = DENY_MODAL_COPY[step.approval.type]
+  const modalCopy =
+    denyType === 'deny-skip-current'
+      ? {
+          ...baseCopy,
+          message:
+            'This marks the plan as skipped and continues the workflow. If a later step in this group applies changes regardless of this plan, it will still run — check the workflow after skipping.',
+        }
+      : baseCopy
 
   const {
     mutate: execute,
@@ -58,9 +66,18 @@ export const DenyPlanModalContainer = ({
       }),
     onSuccess: () => {
       addToast(
-        <Toast heading="Plan denied" theme="success">
-          <Text>The plan has been denied and will not be applied.</Text>
-        </Toast>
+        denyType === 'deny-skip-current' ? (
+          <Toast heading="Plan skipped" theme="success">
+            <Text>
+              The workflow continues. Check later steps in this group —
+              skipping a plan does not always discard them.
+            </Text>
+          </Toast>
+        ) : (
+          <Toast heading="Plan denied" theme="success">
+            <Text>The plan has been denied and will not be applied.</Text>
+          </Toast>
+        )
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })

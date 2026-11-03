@@ -7,6 +7,7 @@ export interface IWorkflowStepRoundGroup {
   steps: TWorkflowStep[]
   approvalPrompt?: boolean
   planOnly?: boolean
+  ranAfterSkipById?: Map<string, TWorkflowStep>
 }
 
 const roundOf = (step: TWorkflowStep) => step?.group_retry_idx ?? 0
@@ -15,6 +16,7 @@ export const WorkflowStepRoundGroup = ({
   steps,
   approvalPrompt = false,
   planOnly = false,
+  ranAfterSkipById,
 }: IWorkflowStepRoundGroup) => {
   const roundsByIdx = new Map<number, TWorkflowStep[]>()
   for (const step of steps) {
@@ -56,6 +58,7 @@ export const WorkflowStepRoundGroup = ({
               approvalPrompt={approvalPrompt}
               planOnly={planOnly}
               showRetry
+              ranAfterSkip={ranAfterSkipById?.get(step.id)}
             />
           ))}
         </div>
@@ -75,6 +78,7 @@ export const WorkflowStepRoundGroup = ({
                 planOnly={planOnly}
                 showRetry={false}
                 nested
+                ranAfterSkip={ranAfterSkipById?.get(step.id)}
               />
             ))}
           </div>

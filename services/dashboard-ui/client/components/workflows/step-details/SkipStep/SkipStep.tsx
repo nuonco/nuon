@@ -44,9 +44,10 @@ export const SkipStepModal = ({
           </Banner>
         ) : null}
         <Text variant="base">
-          Skipping will bypass this step and continue the workflow with the
-          remaining steps. Any actions or changes from this step will not be
-          applied.
+          Skipping bypasses this step and continues the workflow with the
+          remaining steps. If a later step in this step&apos;s group applies
+          changes regardless of this one, it can still run — check the
+          workflow afterward.
         </Text>
       </div>
     </Modal>
