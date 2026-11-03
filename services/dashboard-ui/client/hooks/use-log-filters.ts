@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import { useClearSearchParamsOnUnmount } from '@/hooks/use-clear-search-params-on-unmount'
 import type { TLogStreamFilters } from '@/lib/ctl-api/log-streams/get-log-stream-logs'
 import type { TOTELLog, TSpan } from '@/types'
 import { collectDescendantIds } from '@/utils/span-tree'
@@ -88,6 +89,8 @@ const ALL_FILTER_PARAMS = [
   PARAM_SYSTEM_LOGS,
 ] as const
 
+const OWNED_PARAMS = [...ALL_FILTER_PARAMS, PARAM_SORT, PARAM_VIEW]
+
 const KNOWN_SEVERITIES = ['Trace', 'Debug', 'Info', 'Warn', 'Error', 'Fatal']
 
 // Severity has a sensible default — Trace/Debug are very noisy and almost
@@ -114,6 +117,7 @@ export const useLogFilters = <T extends TOTELLog>(
   streamId?: string
 ) => {
   const [searchParams, setSearchParams] = useSearchParams()
+  useClearSearchParamsOnUnmount(OWNED_PARAMS)
 
   const selectedSeverities = useMemo(() => {
     const fromURL = searchParams.getAll(PARAM_SEVERITY)

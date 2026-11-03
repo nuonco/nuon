@@ -84,6 +84,9 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       const id = panelId || uuid()
       const order = panelKeyStack(searchParams)
       setPanels((ps) => {
+        if (panelKey && ps.some((p) => p.key === panelKey && p.isVisible)) {
+          return ps
+        }
         const withNew = [
           ...ps,
           {
