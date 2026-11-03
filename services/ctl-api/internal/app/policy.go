@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -52,6 +54,21 @@ type Policy struct {
 
 	// Permissions are used to track granular permissions for each domain
 	Permissions pgtype.Hstore `json:"permissions" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"permissions,omitzero,omitempty"`
+	Document    []byte        `json:"-" gorm:"type:jsonb" temporaljson:"document,omitzero,omitempty"`
+}
+
+func (a *Policy) DecodeDocument() (permissions.Policy, error) {
+	if a.Document == nil {
+		return permissions.Policy{}, fmt.Errorf("policy %s has no document", a.ID)
+	}
+	if len(a.Permissions) != 0 {
+		return permissions.Policy{}, fmt.Errorf("policy %s has both document and legacy permissions", a.ID)
+	}
+	policy, err := permissions.DecodePolicy(permissions.PolicyFormatV3, a.Document)
+	if err != nil {
+		return permissions.Policy{}, fmt.Errorf("policy %s: %w", a.ID, err)
+	}
+	return policy, nil
 }
 
 func (a *Policy) Indexes(db *gorm.DB) []migrations.Index {
