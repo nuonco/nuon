@@ -16,13 +16,7 @@ To learn more about components, see the [Components](/concepts/components) conce
 
 ## Configuring a container image component
 
-For private ECR, GAR, and ACR sources without component-level credentials, start in **Settings → Image repositories → Add image repository**. Choose the provider and friendly repository name, then explicitly select an existing compatible pull identity or create one inline with its target coordinates. Review the full repository location derived from that identity before saving. For GAR, enter the **repository ID, not an image path**; the assignment covers all images in that GAR repository. Save the assignment, open its detail page for setup commands, have your cloud administrator apply them, and verify the identity before saving or syncing your component configuration. Nuon does not apply cloud writes automatically.
-
-Configure only the source image fields below; there is no user-supplied `cloud_connection_id` in component configuration. During a new configuration save or app sync, Nuon looks up the organization's saved assignment for the exact canonical repository: an ECR ARN, a GAR `projects/.../locations/.../repositories/...` resource, or an ACR login hostname plus exact repository path. The chosen [Cloud Connection](/guides/cloud-connections) must be verified, belong to the same organization, use the appropriate `ecr`, `gar`, or `acr` preset, and match the source target. Nuon pins its ID in the saved configuration. Multiple connections can share target coordinates, and different repositories can choose different identities. **There is no implicit unique-target fallback**, even if only one verified connection matches the target.
-
-A pending identity may have a saved repository assignment, but cannot be used to save or sync component configuration until verified. Saved assignments select credentials, not cloud permissions or proof of access; cloud IAM remains authoritative. After verification and app sync, fetch metadata and build an existing image to test current access. CLI users must register the repository through the dashboard or [POST API](/guides/cloud-connections#register-image-repositories-through-the-api); legacy connection-create repository flags and setup GET requests only generate commands, not assignments.
-
-Builds and metadata fetches use the pinned connection while its identity, organization, target coordinates, and verified status remain valid. Removing an assignment or re-adding it with another identity does not rewrite historical configuration pins. Save or sync again to create a configuration using the newly assigned identity; old configurations keep using the original connection. Active repository assignments and install references block connection deletion; historical pins trigger a warning but do not block it. See [how image connections are selected](/guides/cloud-connections#how-image-connections-are-selected). Complete explicit ACR secret/certificate configurations remain supported as a separate mode without a repository assignment.
+Component configuration describes only the source image; there is no user-supplied `cloud_connection_id`. For private ECR, GAR, and ACR sources, register the repository in **Settings → Image repositories → Add image repository** and choose its pull identity — see [Add an image repository](/guides/private-image-registries#add-an-image-repository). During a new configuration save or app sync, Nuon looks up the organization's saved assignment for the exact canonical repository and pins its chosen [Cloud Connection](/guides/cloud-connections) ID. Configure only the image URL, coordinates, and tag fields shown in the examples below. If the chosen connection is not verified, the save or sync fails. See [how image connections are selected](/guides/private-image-registries#how-image-connections-are-selected) for the full selection and pinning rules, including how removal and deletion affect existing configurations.
 
 ### Using a Public Image
 
@@ -53,7 +47,7 @@ tag       = "latest"
 region    = "us-west-2"
 ```
 
-Register `arn:aws:ecr:us-west-2:123456789012:repository/acme/api` and explicitly choose an AWS [Cloud Connection](/guides/cloud-connections) with the `ecr` preset in the same Nuon organization, account, and region. [Configure its role for ECR read access](#aws-ecr-access-iam-role) and verify it before saving or syncing. Direct `iam_role_arn` configuration is rejected; components using that legacy field must migrate before their next build or metadata fetch.
+Register `arn:aws:ecr:us-west-2:123456789012:repository/acme/api` and explicitly choose an AWS [Cloud Connection](/guides/cloud-connections) with the `ecr` preset in the same Nuon organization, account, and region. [Configure its role for ECR read access](#aws-ecr-access-iam-role) and verify it before saving or syncing. On save or sync, Nuon pins the assignment's chosen verified connection.
 
 ### Using a Private GCP GAR Image
 
@@ -71,13 +65,13 @@ region         = "us-central1"
 gcp_project_id = "my-project"
 ```
 
-Register `projects/my-project/locations/us-central1/repositories/my-repo` and explicitly choose a GCP [Cloud Connection](/guides/cloud-connections#use-connections-for-private-gar-images) with the `gar` preset in the same organization, project, and location. Enter `my-repo` in the dashboard, not `my-repo/my-image`; all images in `my-repo` use this assignment. Apply its setup and verify the identity before saving or syncing. To migrate legacy credentials, remove component-level `service_account_email` and `workload_identity_provider` after applying the generated federation setup, then save or sync again. The connection-specific OIDC flow works independently of the cloud hosting Nuon; the control plane's GCP identity is not a substitute for the chosen connection.
+Register `projects/my-project/locations/us-central1/repositories/my-repo` and explicitly choose a GCP [Cloud Connection](/guides/private-image-registries#google-artifact-registry) with the `gar` preset in the same organization, project, and location. Enter `my-repo` in the dashboard, not `my-repo/my-image`; all images in `my-repo` use this assignment. Apply its setup and verify the identity before saving or syncing. On save or sync, Nuon pins the assignment's chosen verified connection.
 
 ### Using a Private Azure ACR Image
 
-**Use OIDC federation for new ACR integrations. No client secret or certificate is needed.** Nuon exchanges a short-lived OIDC token through Microsoft Entra to authenticate to the registry.
+Nuon exchanges a short-lived OIDC token through Microsoft Entra to authenticate to the registry.
 
-In **Settings → Image repositories → Add image repository**, enter `acme/api` and choose an existing Azure pull identity or create one inline. You can select an existing principal or add a new one. The underlying [Cloud Connection](/guides/cloud-connections#use-connections-for-private-acr-images) must use the `acr` preset in the same organization and match the registry. Nuon saves the actual login hostname **and exact repository path**, such as `acmeimages.azurecr.io/acme/api`, with the identity you chose.
+In **Settings → Image repositories → Add image repository**, enter `acme/api` and choose an existing Azure pull identity or create one inline. You can select an existing principal or add a new one. The underlying [Cloud Connection](/guides/private-image-registries#azure-container-registry) must use the `acr` preset in the same organization and match the registry. Nuon saves the actual login hostname **and exact repository path**, such as `acmeimages.azurecr.io/acme/api`, with the identity you chose.
 
 ```toml components/acr_image.toml
 # container-image
@@ -90,10 +84,10 @@ tag          = "latest"
 registry_url = "acmeimages.azurecr.io"
 ```
 
-The connection authenticates an existing Microsoft Entra application through Nuon's connection-specific OIDC subject. The saved repository assignment selects that connection; its detail page provides Azure CLI and Terraform instructions for federation and **Container Registry Repository Reader** with ABAC conditions for the repository. Have the cloud administrator apply the appropriate commands, then verify the identity. No client secret or certificate is needed. Follow the [access setup directions](#azure-acr-access).
+The connection authenticates an existing Microsoft Entra application through Nuon's connection-specific OIDC subject. The saved repository assignment selects that connection; its detail page provides Azure CLI and Terraform instructions for federation and **Container Registry Repository Reader** with ABAC conditions for the repository. Have the cloud administrator apply the appropriate commands, then verify the identity. Follow the [access setup directions](#azure-acr-access).
 
 <Note>
-OIDC setup requires an ABAC-enabled registry. Nuon does not change existing registry permission modes. Leave `tenant_id`, `client_id`, `client_secret_name`, and `client_certificate_name` out of component configuration; the selected pull identity holds the tenant and application details. Complete [existing secret/certificate configurations](#existing-secretcertificate-configurations) remain supported as a separate compatibility path, not a prerequisite for OIDC.
+OIDC setup requires an ABAC-enabled registry. Nuon does not change existing registry permission modes.
 </Note>
 
 <Note>
@@ -168,11 +162,7 @@ from the org data plane, and copy it into the local registry.
 
 ## Granting Nuon Access to Pull Images
 
-Your **vendor cloud administrator** applies source-registry setup in the account or project containing your images. End customers do not need access to that registry, and setup is not repeated for every install. Saving an image repository assignment or creating a Cloud Connection does not provision cloud trust or grant permissions; apply the setup from the repository detail page with an identity authorized to manage the relevant IAM resources and grants.
-
-Pick the section matching your **source registry**, independently of the cloud hosting Nuon or your customer installs. See [who sets up image repository access](/guides/cloud-connections#who-sets-up-image-repository-access) and the provider-specific prerequisites before starting. Verification checks exact-connection federation and foreign-subject rejection, plus ECR token retrieval or ACR token exchange where applicable; it does not probe repositories. After verification, fetch component metadata and run a build with an existing private image to check current permissions and exercise manifest and layer downloads.
-
-To add another repository, use **Settings → Image repositories → Add image repository**, enter its friendly repository name, and choose an existing compatible identity or create one inline. Save the assignment and open its detail page. For an existing configured identity, have the vendor administrator apply the generated additive, permissions-only commands or update the cloud IaC managing those permissions; do not recreate federation. This preserves the existing identity and immutable organization/trust tuple. Nuon makes no automatic cloud writes. For all three registries, the separate setup-generation API with no repository inputs generates identity-only setup with **no broad repository grant** and does not register an assignment. See [Grant access to another repository](/guides/cloud-connections#grant-access-to-another-repository) for provider-specific grants and API registration and setup generation.
+Your **vendor cloud administrator** applies source-registry setup in the account or project containing your images. End customers do not need access to that registry, and setup is not repeated for every install. Nuon never applies cloud writes automatically. See [who sets up image repository access](/guides/private-image-registries#who-sets-up-image-repository-access), [Grant access to another repository](/guides/private-image-registries#grant-access-to-another-repository), and [Register image repositories through the API](/guides/private-image-registries#register-image-repositories-through-the-api) for setup, permissions, and registration details. After verification, fetch component metadata and run a build with an existing private image to check current permissions and exercise manifest and layer downloads.
 
 | Image registry | Customer deployment | Setup |
 |---|---|---|
@@ -182,133 +172,21 @@ To add another repository, use **Settings → Image repositories → Add image r
 
 ### AWS ECR Access IAM Role
 
-1. [Add the ECR repository](/guides/cloud-connections#use-connections-for-private-ecr-images) in **Settings → Image repositories → Add image repository**. Enter a friendly name such as `acme/api`. Explicitly choose an existing compatible AWS `ecr` pull identity or create one inline with the account and region, then save the assignment. Nuon derives the exact repository ARN from that identity's coordinates. CLI users must register via the dashboard or [POST API](/guides/cloud-connections#register-image-repositories-through-the-api); optional `--repository-arn` create flags only generate commands. Provide `--default-region` explicitly when creating the connection through the CLI.
-2. Open the saved repository's detail page and have the cloud administrator apply the generated AWS CLI, Terraform, or CloudFormation setup in the source account. Initial setup creates the OIDC provider and role and attaches an exact-repository ECR read policy; use additive permissions-only commands for an already configured identity. `ecr:GetAuthorizationToken` requires `*`; repository reads and pulls are scoped to the exact ARN. The policy grants no push or delete access. Reuse or import an existing OIDC provider rather than creating a duplicate.
-3. Verify the chosen connection, then save or sync the component with its source image URL, tag, and matching region. Nuon looks up the exact repository assignment and pins its chosen verified AWS `ecr` connection, checking account and region. Fetch metadata and build to test repository access.
+Set up the identity, trust, and repository permissions through the [ECR guide](/guides/private-image-registries#amazon-ecr): register the repository in **Settings → Image repositories**, apply the generated setup, and verify the connection. Then save or sync the component with its source image URL, tag, and matching region; Nuon pins the assignment's chosen verified `ecr` connection. Tag resolution with `update_policy` requires `ecr:ListImages` on the repository.
 
-The generated trust policy binds the role to the exact Nuon OIDC subject `org:<org_id>:connection:<connection_id>` and audience `sts.amazonaws.com`. This works independently of the cloud hosting your Nuon control plane. When reusing an existing role, add this connection's trust statement without replacing statements needed by other connections. For Terraform or CloudFormation, choose the existing-role instructions and merge the trust contribution into the role's original owning state. See [sharing a principal across connections](/guides/cloud-connections#share-a-principal-across-connections).
-
-The ECR preset verifies role identity and exact trust, rejects a foreign connection subject, and retrieves an authorization token. It does not probe repository APIs or pull an image. Actual metadata fetches and builds check image access using current AWS permissions. A `custom` or `stacks` connection cannot be selected for an ECR assignment, even if its role has equivalent ECR permissions; use the `ecr` preset. Tag resolution with `update_policy` requires `ecr:ListImages`.
-
-Nuon checks the saved identity, organization ownership, verified status, and matching account/region both when saving or syncing configuration and when executing builds or fetching metadata. Deleting the pinned connection or changing it to an unverified state prevents subsequent ECR use, including previously saved build plans. Fix its cloud setup and verify it again, or assign the repository to a verified replacement and save or sync again to create a new configuration; execution does not silently select a different connection for an old configuration.
+See the full set of `aws_ecr` fields in the [container-image config reference](/config-ref/container-image#aws_ecr).
 
 ### GCP GAR Access
 
-1. [Add the GAR repository](/guides/cloud-connections#use-connections-for-private-gar-images) in **Settings → Image repositories → Add image repository**. Enter a repository ID such as `api`, **not an image path**. Choose an existing compatible GCP `gar` pull identity or create one inline with the project ID, numeric project number, location, and service account details, then save the assignment. The chosen identity supplies the project and location. CLI users must register via the dashboard or [POST API](/guides/cloud-connections#register-image-repositories-through-the-api). Optional `--gar-repository` create flags only generate commands; connection creation still requires the service account email, numeric project number, and explicit `--default-region`.
-2. Open the repository detail page and have the cloud administrator apply the generated **gcloud CLI** or **Terraform** instructions. Initial setup creates a dedicated workload identity pool/OIDC provider and service account, binds impersonation to the exact Nuon connection subject, and grants `roles/artifactregistry.reader` on the repository. For an existing configured identity, use additive permission commands. No project-wide reader, push, deletion, or service account keys are required.
-3. Verify the chosen connection, then save or sync the component with its source image URL, tag, project ID, and region. Nuon looks up the exact GAR repository resource and pins its chosen verified GCP `gar` connection, checking project and location. The assignment covers all images in that GAR repository. Fetch metadata and build to test access.
-
-The provider trusts Nuon's issuer, generated provider audience, and exact `org:<org_id>:connection:<connection_id>` subject. Uploaded public JWKS allow federation without a public discovery endpoint; refresh the provider's keys when the control-plane signing key rotates. When reusing a service account, add this connection's federation binding without replacing bindings needed by other connections. Each connection uses its own workload identity pool and provider.
-
-Verification exchanges OIDC through GCP STS, impersonates the configured service account, and rejects a foreign connection subject. It does not read repository metadata or list images. Actual component metadata fetches and builds check current repository permissions, and builds exercise manifest and layer pulls.
-
-The connection must retain its saved identity, belong to the same organization, match the source project/location, and remain verified and undeleted. This applies to configuration, app sync, metadata fetches, and builds, including previously saved builds. If you use `nuonco/gar-access/google`, migrate its federation setup to the generated connection setup before the next GAR build.
+Set up the service account, federation, and repository-reader bindings through the [GAR guide](/guides/private-image-registries#google-artifact-registry): register the repository in **Settings → Image repositories**, apply the generated setup, and verify the connection. Then save or sync the component with its source image URL, tag, project ID, and region; Nuon pins the assignment's chosen verified `gar` connection. The assignment covers all images in that GAR repository.
 
 See the full set of `gcp_gar` fields in the [container-image config reference](/config-ref/container-image#gcp_gar).
 
 ### Azure ACR Access
 
-There are two authentication paths. **OIDC federation is recommended for new integrations** and uses short-lived credentials without storing a client secret or certificate. The [secret/certificate path](#existing-secretcertificate-configurations) remains available for existing integrations, including RBAC-only registries.
+Set up the Entra application, federation, and repository-conditioned Reader grant through the [ACR guide](/guides/private-image-registries#azure-container-registry): the registry must already use **RBAC Registry + ABAC Repository Permissions**, and Nuon does not change an existing registry's mode. Register the repository in **Settings → Image repositories**, apply the generated setup, and verify the connection. Then save or sync the component with its source image URL, registry login hostname, and tag; Nuon pins the assignment's chosen verified `acr` connection.
 
-#### OIDC federation (recommended)
-
-1. Complete the [Azure vendor prerequisites](/guides/cloud-connections#azure-vendor-prerequisites): have an ABAC-enabled registry and create or choose a dedicated Microsoft Entra application and service principal in its tenant. Record the subscription ID, application client ID, tenant ID, registry resource ID, and login server. A new registry is only needed if no suitable ABAC registry is available; do not switch an existing registry's mode without planning its migration.
-2. [Add the ACR repository](/guides/cloud-connections#use-connections-for-private-acr-images) in **Settings → Image repositories → Add image repository**. Enter the exact repository path, choose an existing compatible Azure `acr` pull identity or create one inline, and save the assignment. For a new identity, enter the subscription, tenant, and application client IDs, resource group, registry name, and actual login server; Nuon derives the registry ARM resource ID. The chosen identity supplies the repository's login hostname. CLI creation uses `--platform azure --preset acr` and requires the full ARM resource ID with `--azure-registry-id`, along with the subscription, tenant, application client ID, and login server. Optional repeatable `--acr-repository` flags only generate setup; register the repository separately through the dashboard or [POST API](/guides/cloud-connections#register-image-repositories-through-the-api).
-3. Open the repository detail page and have the cloud administrator apply the generated **Azure CLI** or **Terraform** instructions for exact-subject OIDC federation and a repository-conditioned **Container Registry Repository Reader** grant. For an existing configured identity, use additive permission commands rather than recreating federation. The registry must already use **RBAC Registry + ABAC Repository Permissions**. Changing an existing registry's mode requires a separate migration; Nuon does not do it.
-4. Verify the chosen connection, then save or sync the component with its source image URL, registry login hostname, and tag. Nuon looks up the exact hostname-plus-repository assignment and pins its chosen verified Azure `acr` connection, checking the hostname. Do not include component-level tenant, client, secret, or certificate fields in this mode. Fetch metadata and build to test repository access.
-
-The control plane's public OIDC discovery and JWKS endpoints must be reachable by Microsoft Entra. Verification checks the configured application's exact-connection authentication, foreign-subject rejection, and ACR token exchange, not repository reads. Actual metadata fetches and builds check current permissions, and builds exercise manifest and layer access. The connection must retain its saved identity, remain verified, belong to the component's organization, and match the source registry. Nuon obtains short-lived credentials when executing image operations.
-
-#### Existing secret/certificate configurations
-
-<Note>
-The steps in this section are only for secret/certificate authentication. Skip them when using OIDC federation: do not create an application credential or store an app secret for the OIDC path.
-</Note>
-
-Complete explicit Azure secret/certificate configurations remain supported without a repository assignment. For an RBAC-only registry, a service principal can still use registry-scoped `AcrPull` and an app secret or certificate. This is a different, broader access model from the repository-scoped preset. To migrate, register the repository with a compatible connection, apply its setup and verify it, remove the component-level tenant, client, secret, and certificate fields, then save or sync again. Omitting these fields requires a saved assignment to a compatible verified connection.
-
-<Note>
-Only your build needs this. The install runner that deploys into a
-customer's cloud account pulls the image from Nuon's own registry, never
-from your ACR — so no access needs to be granted to any customer's Azure
-identity. One service principal, scoped to your tenant, covers every install
-of the app.
-</Note>
-
-**1. Create the app registration and service principal:**
-
-```bash
-az ad app create --display-name "nuon-acr-pull"
-# note the "appId" field from the output — this is your client_id
-
-az ad sp create --id <app-id>
-```
-
-**2. Grant `AcrPull`, scoped to just this registry:**
-
-```bash
-az role assignment create \
-  --assignee <app-id> \
-  --role AcrPull \
-  --scope $(az acr show --name vendoracr --query id --output tsv)
-```
-
-**3. Create a credential.** Use a client secret or a client certificate for
-this compatibility path. Both require storing a long-lived credential as
-an app secret.
-
-```bash
-# Option A: client secret
-az ad app credential reset \
-  --id <app-id> \
-  --display-name "nuon-acr-pull-secret" \
-  --years 1
-# outputs a JSON object with "password" — this is the secret value
-```
-
-```bash
-# Option B: client certificate
-openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-  -keyout acr-pull.key -out acr-pull.crt -subj "/CN=nuon-acr-pull"
-
-az ad app credential reset --id <app-id> --cert @acr-pull.crt --append
-
-# Nuon needs the private key too, so bundle both into one PEM and base64
-# encode it before storing it as an app secret
-cat acr-pull.key acr-pull.crt | base64 > acr-pull-bundle.b64
-```
-
-**4. Store the value as an app secret**, never in app config or git:
-
-```bash
-# for a client secret
-nuon apps variables create \
-  --app-id <your-nuon-app-id> \
-  --name acr_pull_secret \
-  --value "<password-from-step-3>"
-
-# for a client certificate
-nuon apps variables create \
-  --app-id <your-nuon-app-id> \
-  --name acr_pull_cert \
-  --value "$(cat acr-pull-bundle.b64)"
-```
-
-**5. Reference the secret by name** in the component's `azure_acr` block.
-Set `tenant_id` to your tenant, `client_id` to the `appId` from step 1, and
-`client_secret_name` or `client_certificate_name` (never both) to the app
-secret name from step 4.
-
-<Note>
-Rotating the credential is a plain app secret update — run `nuon apps
-variables create` again with the same `--name` to overwrite it. Nothing
-re-runs automatically, so a stale or expired credential surfaces as a build
-failure the next time the component builds, not immediately at rotation
-time.
-</Note>
-
-See the full set of `azure_acr` fields in the [container-image config
-reference](/config-ref/container-image#azure_acr).
+See the full set of `azure_acr` fields in the [container-image config reference](/config-ref/container-image#azure_acr).
 
 ## Importing Images Outside of Supported Registries
 

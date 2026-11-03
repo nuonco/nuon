@@ -14,7 +14,21 @@ import (
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 )
+
+func (a *Activities) getComponentBuildWithExternalImageConfig(ctx context.Context, buildID string) (*app.ComponentBuild, error) {
+	var bld app.ComponentBuild
+
+	res := a.db.WithContext(ctx).
+		Scopes(helpers.PreloadComponentBuildConfig).
+		First(&bld, "id = ?", buildID)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get component build")
+	}
+
+	return &bld, nil
+}
 
 type SaveFetchImageMetadataPlanRequest struct {
 	JobID   string `validate:"required"`

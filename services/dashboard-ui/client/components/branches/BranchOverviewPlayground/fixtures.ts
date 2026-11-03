@@ -340,7 +340,6 @@ const COMPONENT_TYPE_LABEL: Partial<Record<TComponentType, string>> = {
   helm_chart: 'Helm chart',
   terraform_module: 'Terraform module',
   kubernetes_manifest: 'Kubernetes manifest',
-  docker_build: 'Docker build',
 }
 
 const componentEntry = ({
@@ -466,12 +465,11 @@ const TEMPLATE: TTemplateItem[] = [
       componentEntry({
         name: 'api-image',
         id: 'cmpa1m5g8e3i6m9a2g4e7b0d',
-        type: 'docker_build',
+        type: 'external_image',
         status: 'success',
         summary: 'Container image for the API.',
         config: [
-          { label: 'Dockerfile name', value: 'Dockerfile' },
-          { label: 'Target', value: 'release' },
+          { label: 'Image URL', value: 'ghcr.io/acme/api:v2.1.0' },
         ],
         dependents: ['api'],
         minutesAgo: 14,

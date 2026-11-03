@@ -190,8 +190,6 @@ type ClientService interface {
 
 	CreateAppConfigV2(params *CreateAppConfigV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppConfigV2Created, error)
 
-	CreateAppDockerBuildComponentConfig(params *CreateAppDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppDockerBuildComponentConfigCreated, error)
-
 	CreateAppExternalImageComponentConfig(params *CreateAppExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppExternalImageComponentConfigCreated, error)
 
 	CreateAppHelmComponentConfig(params *CreateAppHelmComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppHelmComponentConfigCreated, error)
@@ -241,8 +239,6 @@ type ClientService interface {
 	CreateComponentBuild(params *CreateComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentBuildCreated, error)
 
 	CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCurrentOrgWebhookCreated, error)
-
-	CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error)
 
 	CreateExternalImageComponentConfig(params *CreateExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalImageComponentConfigCreated, error)
 
@@ -2877,52 +2873,6 @@ func (a *Client) CreateAppConfigV2(params *CreateAppConfigV2Params, authInfo run
 }
 
 /*
-CreateAppDockerBuildComponentConfig creates a docker build component config
-
-Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
-*/
-func (a *Client) CreateAppDockerBuildComponentConfig(params *CreateAppDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppDockerBuildComponentConfigCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewCreateAppDockerBuildComponentConfigParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "CreateAppDockerBuildComponentConfig",
-		Method:             "POST",
-		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/configs/docker-build",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateAppDockerBuildComponentConfigReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*CreateAppDockerBuildComponentConfigCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for CreateAppDockerBuildComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
 CreateAppExternalImageComponentConfig creates an external image component config
 
 Create an external image component config.
@@ -4061,52 +4011,6 @@ func (a *Client) CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, 
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateCurrentOrgWebhook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-CreateDockerBuildComponentConfig creates a docker build component config
-
-Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
-*/
-func (a *Client) CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewCreateDockerBuildComponentConfigParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "CreateDockerBuildComponentConfig",
-		Method:             "POST",
-		PathPattern:        "/v1/components/{component_id}/configs/docker-build",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateDockerBuildComponentConfigReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*CreateDockerBuildComponentConfigCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for CreateDockerBuildComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -11565,7 +11469,6 @@ You can pass in a valid source argument to render within a specific config file:
 - installer
 - sandbox
 - runner
-- docker_build
 - container_image
 - helm
 - terraform
@@ -11632,7 +11535,6 @@ You can pass in a valid source argument to render within a specific config file:
 - installer
 - sandbox
 - runner
-- docker_build
 - container_image
 - helm
 - terraform

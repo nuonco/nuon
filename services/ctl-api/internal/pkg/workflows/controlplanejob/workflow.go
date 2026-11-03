@@ -13,12 +13,6 @@ import (
 
 const TaskQueue = "control-plane-builds"
 
-const BuildFailurePropagationVersion = "component-build-failure-propagation-v1"
-
-func BuildFailurePropagationEnabled(ctx workflow.Context) bool {
-	return workflow.GetVersion(ctx, BuildFailurePropagationVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-}
-
 type Workflows struct{}
 
 type ExecuteRequest struct {
@@ -28,7 +22,6 @@ type ExecuteRequest struct {
 func NewWorkflows() *Workflows { return &Workflows{} }
 
 func (w *Workflows) ExecuteControlPlaneJob(ctx workflow.Context, req *ExecuteRequest) error {
-	propagateFailures := BuildFailurePropagationEnabled(ctx)
 	ensureCtx, _ := workflow.NewDisconnectedContext(ctx)
 	ensureCtx = workflow.WithActivityOptions(ensureCtx, workflow.ActivityOptions{
 		StartToCloseTimeout: time.Minute,
@@ -67,10 +60,10 @@ func (w *Workflows) ExecuteControlPlaneJob(ctx workflow.Context, req *ExecuteReq
 	finalizeCtx = workflow.WithActivityOptions(finalizeCtx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
 	finalized, err := AwaitFinalize(finalizeCtx, FinalizeRequest{JobID: req.JobID, ExecutionID: execution.ExecutionID, Outcome: outcome})
 	if err != nil {
-		if propagateFailures && (ctx.Err() != nil || temporal.IsCanceledError(runErr)) {
+		if ctx.Err() != nil || temporal.IsCanceledError(runErr) {
 			return temporal.NewCanceledError(compositeerrors.ErrorMessage(err))
 		}
-		if propagateFailures && runErr != nil {
+		if runErr != nil {
 			message := fmt.Sprintf("%s; unable to finalize control-plane execution: %s", compositeerrors.ErrorMessage(runErr), compositeerrors.ErrorMessage(err))
 			return temporal.NewNonRetryableApplicationError(message, "control-plane-build", runErr)
 		}
@@ -88,7 +81,7 @@ func (w *Workflows) ExecuteControlPlaneJob(ctx workflow.Context, req *ExecuteReq
 	if finalized.Status != app.RunnerJobExecutionStatusFinished {
 		message := finalized.Message
 		if message == "" {
-			message = conciseFailureMessage(outcome.Error)
+			message = compositeerrors.ConciseMessage(outcome.Error)
 		}
 		if message == "" {
 			message = string(finalized.Status)

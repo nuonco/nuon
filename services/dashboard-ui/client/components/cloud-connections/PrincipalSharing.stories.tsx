@@ -12,4 +12,14 @@ export const Shared = () => (
   </PageStory>
 )
 
+export const SharedPermissions = () => (
+  <PageStory>
+    <PrincipalSharing
+      connections={[connection, customConnection]}
+      orgId="org-mock-001"
+      sharedPermissions
+    />
+  </PageStory>
+)
+
 export const Dedicated = () => <PrincipalSharing connections={[]} />

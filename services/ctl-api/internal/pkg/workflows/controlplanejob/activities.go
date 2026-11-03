@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -19,6 +17,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/redact"
 	runnercontrolplane "github.com/nuonco/nuon/pkg/runner/controlplane"
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -275,7 +274,7 @@ func (a *Activities) failureMessage(ctx context.Context, executionID, rawError s
 			zap.Error(err))
 	}
 
-	if message := conciseFailureMessage(rawError); message != "" {
+	if message := compositeerrors.ConciseMessage(rawError); message != "" {
 		return message
 	}
 	return string(status)
@@ -322,13 +321,7 @@ func (a *Activities) GetJobCompositePlan(ctx context.Context, jobID string) (*mo
 		}
 	}
 
-	if err := a.authorizeECRSource(ctx, jobID, compositePlan); err != nil {
-		return nil, err
-	}
-	if err := a.authorizeGARSource(ctx, jobID, compositePlan); err != nil {
-		return nil, err
-	}
-	if err := a.authorizeACRSource(ctx, jobID, compositePlan); err != nil {
+	if err := a.authorizeImageSource(ctx, jobID, compositePlan); err != nil {
 		return nil, err
 	}
 
@@ -713,7 +706,7 @@ func hstoreToMap(h pgtype.Hstore) map[string]string {
 func redactedStringMapToHstore(in map[string]string) pgtype.Hstore {
 	out := pgtype.Hstore{}
 	for key, val := range in {
-		v := compositeerrors.RedactDiagnosticSecrets(val)
+		v := redact.DiagnosticSecrets(val)
 		out[key] = &v
 	}
 	return out
@@ -726,35 +719,4 @@ func truncateStatusDescription(s string) string {
 		return s
 	}
 	return s[:statusDescriptionMaxLen] + "…(truncated)"
-}
-
-const failureMessageMaxLen = 512
-
-var (
-	temporalErrorMetadataPattern = regexp.MustCompile(`\s*\((?:type|activityType|workflowType):[^()]*\)`)
-	temporalErrorPrefixPattern   = regexp.MustCompile(`(?i)^(?:activity|child workflow execution|workflow execution)\s+error\s*:?\s*`)
-)
-
-func conciseFailureMessage(raw string) string {
-	cleaned := temporalErrorMetadataPattern.ReplaceAllString(raw, "")
-	cleaned = compositeerrors.RedactDiagnosticSecrets(cleaned)
-	for _, line := range strings.Split(cleaned, "\n") {
-		line = strings.TrimSpace(temporalErrorPrefixPattern.ReplaceAllString(strings.TrimSpace(line), ""))
-		if line == "" {
-			continue
-		}
-		return truncateRunes(line, failureMessageMaxLen)
-	}
-	return ""
-}
-
-func truncateRunes(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	runes := []rune(s)
-	if len(runes) <= n {
-		return s
-	}
-	return string(runes[:n]) + "…"
 }

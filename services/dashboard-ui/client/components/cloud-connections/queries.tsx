@@ -12,10 +12,14 @@ import {
 } from '@/lib'
 import type { TCloudConnectionSummary } from '@/types'
 
-export const useCloudConnections = (orgId: string) =>
+export const useCloudConnections = (
+  orgId: string,
+  options?: { enabled?: boolean }
+) =>
   useQuery({
     queryKey: ['cloud-connections', orgId, 'all'],
-    enabled: !!orgId,
+    enabled: !!orgId && (options?.enabled ?? true),
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const connections: TCloudConnectionSummary[] = []
       let offset = 0
@@ -30,25 +34,24 @@ export const useCloudConnections = (orgId: string) =>
     },
   })
 
+type TPrincipalMatch = Pick<
+  TCloudConnectionSummary,
+  'platform' | 'principal' | 'azure_tenant_id'
+>
+
+export const samePrincipal = (a: TPrincipalMatch, b: TPrincipalMatch) =>
+  a.platform === b.platform &&
+  (a.platform === 'azure'
+    ? a.principal?.toLowerCase() === b.principal?.toLowerCase() &&
+      a.azure_tenant_id?.toLowerCase() === b.azure_tenant_id?.toLowerCase()
+    : a.principal === b.principal)
+
 export const sharedPrincipalConnections = (
   connections: TCloudConnectionSummary[],
-  connection: Pick<
-    TCloudConnectionSummary,
-    'platform' | 'principal' | 'azure_tenant_id'
-  > & {
-    id?: string
-  }
+  connection: TPrincipalMatch & { id?: string }
 ) =>
   connections.filter(
-    (other) =>
-      other.id !== connection.id &&
-      other.platform === connection.platform &&
-      (connection.platform === 'azure'
-        ? other.principal?.toLowerCase() ===
-            connection.principal?.toLowerCase() &&
-          other.azure_tenant_id?.toLowerCase() ===
-            connection.azure_tenant_id?.toLowerCase()
-        : other.principal === connection.principal)
+    (other) => other.id !== connection.id && samePrincipal(other, connection)
   )
 
 export const useCloudConnection = (orgId: string, connectionId: string) => {

@@ -11,7 +11,7 @@ import (
 )
 
 func (s *service) acrSetup(connection *app.CloudConnection, existingPrincipal bool, repositories []string) SetupResponse {
-	response := SetupResponse{Subject: subject(connection), Audience: cloudconnections.ACRAudience, Preset: connection.Preset}
+	response := SetupResponse{Subject: cloudconnections.Subject(connection), Audience: cloudconnections.ACRAudience, Preset: connection.Preset}
 	if s.issuer == nil {
 		return response
 	}
@@ -47,7 +47,7 @@ if [ "$permission_mode" != 'AbacRepositoryPermissions' ]; then
   printf 'The registry must already use RBAC Registry + ABAC Repository Permissions. Review step 3. Setup will not change this mode: switching can break existing AcrPull clients.\n' >&2
   exit 1
 fi
-`, acrShellQuote(connection.TargetID), acrShellQuote(strings.ToLower(connection.AzureTenantID)), acrShellQuote(connection.Principal), acrShellQuote(connection.AzureRegistryID), acrShellQuote(connection.AzureRegistryLoginServer))
+`, shellQuote(connection.TargetID), shellQuote(strings.ToLower(connection.AzureTenantID)), shellQuote(connection.Principal), shellQuote(connection.AzureRegistryID), shellQuote(connection.AzureRegistryLoginServer))
 	response.CLI = preflight + fmt.Sprintf(`application_object_id=$(az ad app show --id "$client_id" --query id --output tsv)
 test -n "$application_object_id"
 printf 'The Nuon issuer discovery and JWKS endpoints must be publicly reachable by Microsoft Entra. Azure does not accept uploaded JWKS.\n'
@@ -62,9 +62,9 @@ existing=$(printf '%%s' "$credentials" | jq -ce --argjson credential "$credentia
 if [ "$(printf '%%s' "$existing" | jq 'length')" = 0 ]; then
   az ad app federated-credential create --id "$application_object_id" --parameters "$credential"
 else
-  printf '%%s' "$existing" | jq -e --argjson credential "$credential" 'length == 1 and .[0].issuer == $credential.issuer and .[0].subject == $credential.subject and .[0].audiences == $credential.audiences' >/dev/null
+  az ad app federated-credential update --id "$application_object_id" --federated-credential-id %[4]s --parameters "$credential"
 fi
-`, acrShellQuote(response.IssuerURL+"/.well-known/openid-configuration"), acrShellQuote(response.IssuerURL+oidcissuer.JWKSPath), trustJSON)
+`, shellQuote(response.IssuerURL+"/.well-known/openid-configuration"), shellQuote(response.IssuerURL+oidcissuer.JWKSPath), trustJSON, shellQuote(credentialName))
 	response.Terraform = fmt.Sprintf(`terraform {
   required_version = ">= 1.5.0"
   required_providers {
@@ -198,8 +198,4 @@ resource "azurerm_role_assignment" "nuon" {
 }
 `, condition)
 	return response
-}
-
-func acrShellQuote(value string) string {
-	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
 }

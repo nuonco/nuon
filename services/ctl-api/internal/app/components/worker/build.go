@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 )
 
 type BuildRequest struct {
@@ -25,13 +24,10 @@ type BuildRequest struct {
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) Build(ctx workflow.Context, sreq BuildRequest) (retErr error) {
-	propagateFailures := controlplanejob.BuildFailurePropagationEnabled(ctx)
-	if propagateFailures {
-		defer func() {
-			retErr = activities.FailBuild(ctx, sreq.BuildID, retErr)
-		}()
-	}
-	if err := w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusPlanning, "creating build plan"); err != nil && propagateFailures {
+	defer func() {
+		retErr = activities.FailBuild(ctx, sreq.BuildID, retErr)
+	}()
+	if err := w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusPlanning, "creating build plan"); err != nil {
 		return err
 	}
 
@@ -53,19 +49,16 @@ func (w *Workflows) Build(ctx workflow.Context, sreq BuildRequest) (retErr error
 	l.Info("executing build")
 	currentApp, err := activities.AwaitGetComponentAppByComponentID(ctx, sreq.ID)
 	if err != nil {
-		w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusError, "unable to get component app")
 		return fmt.Errorf("unable to get component app: %w", err)
 	}
 
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, sreq.ID)
 	if err != nil {
-		w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusError, "unable to get component")
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
 	build, err := activities.AwaitGetComponentBuildByID(ctx, sreq.BuildID)
 	if err != nil {
-		w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusError, "unable to get component build")
 		return fmt.Errorf("unable to get component build: %w", err)
 	}
 
@@ -79,7 +72,6 @@ func (w *Workflows) Build(ctx workflow.Context, sreq BuildRequest) (retErr error
 	}
 
 	if comp.Status != app.ComponentStatusActive {
-		w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusError, "component is not active")
 		return notify(fmt.Errorf("component is not active"))
 	}
 

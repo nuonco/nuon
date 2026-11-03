@@ -8,9 +8,10 @@ import {
 } from '@/components/cloud-connections/queries'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getCloudConnectionSetup, getImageRepository } from '@/lib'
+import { getCloudConnectionSetup } from '@/lib'
+import { useImageRepository } from '../queries'
 import { ImageRepository } from './ImageRepository'
-import { RemoveImageRepository } from './RemoveImageRepository'
+import { RemoveImageRepositoryContainer } from './RemoveImageRepositoryContainer'
 
 export const ImageRepositoryContainer = ({
   repositoryId,
@@ -19,11 +20,7 @@ export const ImageRepositoryContainer = ({
 }) => {
   const { org } = useOrg()
   const { addModal } = useSurfaces()
-  const query = useQuery({
-    queryKey: ['image-repositories', org?.id, repositoryId],
-    queryFn: () => getImageRepository({ orgId: org.id, repositoryId }),
-    enabled: !!org?.id && !!repositoryId,
-  })
+  const query = useImageRepository(org?.id, repositoryId)
   const connectionId = query.data?.cloud_connection_id || ''
   const connection = useCloudConnection(org?.id, connectionId)
   const identities = useCloudConnections(org?.id)
@@ -34,8 +31,12 @@ export const ImageRepositoryContainer = ({
       )
     : []
   const [setupMode, setSetupMode] = useState<boolean>()
+  // Azure hides the setup-mode selector, so it never uses an existing principal.
   const existingPrincipal =
-    setupMode ?? (shared.length > 0 || connection.data?.status === 'verified')
+    query.data?.platform === 'azure'
+      ? false
+      : (setupMode ??
+        (shared.length > 0 || connection.data?.status === 'verified'))
   const verify = useVerifyCloudConnection(org?.id, connectionId)
   const setup = useQuery({
     queryKey: [
@@ -53,12 +54,7 @@ export const ImageRepositoryContainer = ({
         repositories: [query.data!.repository],
         existingPrincipal,
       }),
-    enabled:
-      !!org?.id &&
-      !!connectionId &&
-      !!query.data &&
-      !identities.isPending &&
-      !identities.error,
+    enabled: !!org?.id && !!connectionId && !!query.data,
   })
   return (
     <ImageRepository
@@ -69,7 +65,8 @@ export const ImageRepositoryContainer = ({
       sharedConnections={shared}
       existingPrincipal={existingPrincipal}
       onSetupModeChange={setSetupMode}
-      error={query.error || connection.error || verify.error}
+      error={query.error || connection.error}
+      verifyError={verify.error}
       setupError={setup.error || identities.error}
       isVerifying={verify.isPending || connection.isVerifying}
       verificationTimedOut={connection.verificationTimedOut}
@@ -77,7 +74,7 @@ export const ImageRepositoryContainer = ({
       onReloadSetup={() => setup.refetch()}
       onRemove={() =>
         query.data &&
-        addModal(<RemoveImageRepository repository={query.data} />)
+        addModal(<RemoveImageRepositoryContainer repository={query.data} />)
       }
     />
   )

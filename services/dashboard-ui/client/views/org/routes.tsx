@@ -18,6 +18,8 @@ import { CloudConnections } from './CloudConnections'
 import { CloudConnection } from './CloudConnection'
 import { CloudConnectionCreate } from './CloudConnectionCreate'
 import { ImageRepositories } from './ImageRepositories'
+import { ImageRepository } from './ImageRepository'
+import { AddImageRepository } from './AddImageRepository'
 import { Triggers } from './Triggers'
 import { TriggerLayout } from './TriggerLayout'
 import { TriggerOverview } from './trigger-tabs/TriggerOverview'
@@ -76,11 +78,11 @@ export const orgRoutes: RouteObject[] = [
           },
           {
             path: ':orgId/settings/image-repositories/add',
-            element: <ImageRepositories adding />,
+            element: <AddImageRepository />,
           },
           {
             path: ':orgId/settings/image-repositories/:repositoryId',
-            element: <ImageRepositories />,
+            element: <ImageRepository />,
           },
           {
             path: ':orgId/settings/cloud-connections',

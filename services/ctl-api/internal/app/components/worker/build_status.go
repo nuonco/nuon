@@ -12,7 +12,7 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) error {
+func UpdateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) error {
 	l := workflow.GetLogger(ctx)
 	err := activities.AwaitUpdateBuildStatus(ctx, activities.UpdateBuildStatus{
 		BuildID:           bldID,
@@ -38,6 +38,10 @@ func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status
 		return fmt.Errorf("unable to update build status history: %w", err)
 	}
 	return nil
+}
+
+func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) error {
+	return UpdateBuildStatus(ctx, bldID, status, statusDescription)
 }
 
 func (w *Workflows) updateBuildSignatureVerification(ctx workflow.Context, bldID, jobID string, pullPlan *plantypes.ContainerImagePullPlan, jobSucceeded bool) {

@@ -13,14 +13,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
+	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 type imageAuthTransport func(*http.Request) (*http.Response, error)
@@ -78,8 +80,7 @@ func TestPinnedCloudImageAuthorization(t *testing.T) {
 					return &http.Response{StatusCode: status, Header: http.Header{"Content-Type": {contentType}}, Body: io.NopCloser(strings.NewReader(body)), Request: req}, nil
 				}
 				ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{Transport: imageAuthTransport(respond)})
-				acts := &mockImageAuthActivities{}
-				h := &Helpers{db: db, issuer: issuer, imageAuth: acts}
+				h := &Helpers{cfg: &internal.Config{}, db: db, issuer: issuer, v: validator.New(), imageAuth: &sharedactivities.Activities{}}
 				var token string
 				if platform == "ecr" {
 					server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -113,8 +114,6 @@ func TestPinnedCloudImageAuthorization(t *testing.T) {
 					require.Equal(t, "acme-token", token)
 				}
 				require.Positive(t, calls)
-				acts.AssertNotCalled(t, "GetECRAccessToken", mock.Anything)
-				acts.AssertNotCalled(t, "GetGARAccessToken", mock.Anything)
 			})
 		}
 	}

@@ -3,11 +3,11 @@ package acr
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/azure/credentials"
+	"github.com/nuonco/nuon/pkg/redact"
 )
 
 const (
@@ -41,10 +42,6 @@ var exchangeClient = &http.Client{
 // NOTE: we do this, instead of using the ACR repository client to simplify our dependencies, however, at some point we
 // plan on moving this into a package, like we have with `pkg/aws`.
 func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService string, logger *zap.Logger) (string, error) {
-	if err := ValidateLoginServer(acrService); err != nil {
-		return "", err
-	}
-
 	// get a credential
 	credential, err := credentials.Fetch(ctx, cfg, logger)
 	if err != nil {
@@ -99,42 +96,10 @@ func GetRepositoryTokenWithCredential(ctx context.Context, credential azcore.Tok
 
 	if jsonResponse.StatusCode != http.StatusOK {
 		message := fmt.Sprintf("acr token exchange with %s returned status %d", acrService, jsonResponse.StatusCode)
-		body, readErr := io.ReadAll(io.LimitReader(jsonResponse.Body, 16*1024+1))
-		var failure struct {
-			Error            string `json:"error"`
-			ErrorDescription string `json:"error_description"`
-			Errors           []struct {
-				Code    string `json:"code"`
-				Message string `json:"message"`
-			} `json:"errors"`
+		if diagnostic := exchangeFailureDiagnostic(jsonResponse.Body, aadToken.Token); diagnostic != "" {
+			message += ": " + diagnostic
 		}
-		if readErr == nil && len(body) <= 16*1024 && json.Unmarshal(body, &failure) == nil {
-			var reasons []string
-			if failure.Error != "" {
-				reasons = append(reasons, strings.TrimSuffix(failure.Error+": "+failure.ErrorDescription, ": "))
-			}
-			for _, entry := range failure.Errors {
-				if entry.Code != "" {
-					reasons = append(reasons, strings.TrimSuffix(entry.Code+": "+entry.Message, ": "))
-				}
-			}
-			diagnostic := strings.Join(reasons, "; ")
-			for _, secret := range []string{aadToken.Token, url.QueryEscape(aadToken.Token), url.PathEscape(aadToken.Token)} {
-				if secret != "" {
-					diagnostic = strings.ReplaceAll(diagnostic, secret, "[REDACTED]")
-				}
-			}
-			diagnostic = exchangeDiagnosticCredential.ReplaceAllString(diagnostic, "${1}[REDACTED]")
-			diagnostic = exchangeDiagnosticBearer.ReplaceAllString(diagnostic, "${1}[REDACTED]")
-			diagnostic = strings.Join(strings.Fields(diagnostic), " ")
-			if len(diagnostic) > 2048 {
-				diagnostic = strings.ToValidUTF8(diagnostic[:2048], "") + "..."
-			}
-			if diagnostic != "" {
-				message += ": " + diagnostic
-			}
-		}
-		return "", fmt.Errorf("%s", message)
+		return "", errors.New(message)
 	}
 
 	var response map[string]interface{}
@@ -152,5 +117,47 @@ func GetRepositoryTokenWithCredential(ctx context.Context, credential azcore.Tok
 	return token, nil
 }
 
-var exchangeDiagnosticCredential = regexp.MustCompile(`(?i)(\b(?:access[-_]?token|refresh[-_]?token|client[-_]?secret|client[-_]?assertion|password|token|secret)["']?\s*[:=]\s*["']?)[^&\s"'<>]+`)
-var exchangeDiagnosticBearer = regexp.MustCompile(`(?i)(\bBearer\s+)[a-z0-9._~+/-]+=*`)
+const (
+	maxExchangeFailureBody = 16 * 1024
+	maxExchangeDiagnostic  = 2048
+)
+
+func exchangeFailureDiagnostic(body io.Reader, credential string) string {
+	data, err := io.ReadAll(io.LimitReader(body, maxExchangeFailureBody+1))
+	if err != nil || len(data) > maxExchangeFailureBody {
+		return ""
+	}
+	var failure struct {
+		Error            string `json:"error"`
+		ErrorDescription string `json:"error_description"`
+		Errors           []struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	if json.Unmarshal(data, &failure) != nil {
+		return ""
+	}
+
+	var reasons []string
+	addReason := func(code, detail string) {
+		if code != "" {
+			reasons = append(reasons, strings.TrimSuffix(code+": "+redact.DiagnosticSecrets(detail), ": "))
+		}
+	}
+	addReason(failure.Error, failure.ErrorDescription)
+	for _, entry := range failure.Errors {
+		addReason(entry.Code, entry.Message)
+	}
+	diagnostic := strings.Join(reasons, "; ")
+	for _, secret := range []string{credential, url.QueryEscape(credential), url.PathEscape(credential)} {
+		if secret != "" {
+			diagnostic = strings.ReplaceAll(diagnostic, secret, redact.Placeholder)
+		}
+	}
+	diagnostic = strings.Join(strings.Fields(diagnostic), " ")
+	if len(diagnostic) > maxExchangeDiagnostic {
+		diagnostic = strings.ToValidUTF8(diagnostic[:maxExchangeDiagnostic], "") + "..."
+	}
+	return diagnostic
+}

@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/pkg/azure/acr"
 	"github.com/nuonco/nuon/pkg/oci/metadata"
@@ -11,11 +10,11 @@ import (
 )
 
 func (h *Helpers) ACRAuthorization(ctx context.Context, orgID string, cfg *app.AzureACRImageConfig, imageURL string) (*metadata.RegistryAuth, error) {
-	connection, err := cloudconnections.ACRConnection(ctx, h.db, orgID, cfg, imageURL)
-	if err != nil {
+	connection, err := cloudconnections.ACRConnection(ctx, h.db, orgID, cfg, imageURL, h.cfg.LegacyImageAuthEnabled)
+	if err != nil || connection == nil {
 		return nil, err
 	}
-	credential, err := cloudconnections.ACRCredential(h.issuer, connection, fmt.Sprintf("org:%s:connection:%s", connection.OrgID, connection.ID))
+	credential, err := cloudconnections.ACRCredential(h.issuer, connection, cloudconnections.Subject(connection))
 	if err != nil {
 		return nil, err
 	}

@@ -9,13 +9,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-func (v *awsVerifier) verifyGAR(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
+func (v *providerVerifier) verifyGAR(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
 	if connection.Preset != app.CloudConnectionPresetGAR {
 		return VerificationResult{}, fmt.Errorf("GCP cloud connection requires the gar preset")
 	}
 	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
-	source, err := GARTokenSource(ctx, v.issuer, connection, fmt.Sprintf("org:%s:connection:%s", connection.OrgID, connection.ID))
+	source, err := GARTokenSource(ctx, v.issuer, connection, Subject(connection))
 	if err != nil {
 		return VerificationResult{}, err
 	}
@@ -25,14 +25,17 @@ func (v *awsVerifier) verifyGAR(ctx context.Context, connection *app.CloudConnec
 		if err == nil {
 			break
 		}
-		if !options.RetryIAMPropagation || !v.now().Before(deadline) || !garTrustDenied(err) {
+		if !garTrustDenied(err) {
+			return VerificationResult{}, fmt.Errorf("gcp federation: %w", err)
+		}
+		if !options.RetryIAMPropagation || !v.now().Before(deadline) {
 			return verificationFailure("GCP federation or service account impersonation failed. Review the identity provider and exact-subject binding in steps 1 and 2. " + VerificationErrorMessage(err)), nil
 		}
 		if err := v.sleep(ctx, 5*time.Second); err != nil {
 			return VerificationResult{}, err
 		}
 	}
-	foreign, err := GARTokenSource(ctx, v.issuer, connection, "org:foreign:connection:foreign")
+	foreign, err := GARTokenSource(ctx, v.issuer, connection, ForeignSubject)
 	if err != nil {
 		return VerificationResult{}, err
 	}

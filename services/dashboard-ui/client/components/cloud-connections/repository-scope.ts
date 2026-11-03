@@ -36,6 +36,11 @@ export const repositoryNamesSchema = (preset: string) =>
       })
   })
 
+export const isImagePreset = (
+  preset: TCloudConnection['preset'] | string | undefined
+): preset is 'ecr' | 'gar' | 'acr' =>
+  preset === 'ecr' || preset === 'gar' || preset === 'acr'
+
 export const canonicalRepositories = (
   {
     preset,

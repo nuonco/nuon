@@ -1,14 +1,8 @@
 import { afterEach, expect, test } from 'bun:test'
-import { useState } from 'react'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { ConnectionForm } from './ConnectionForm'
-import { AddRepositoryAccess } from '../AddRepositoryAccess/AddRepositoryAccess'
-import {
-  acrConnection,
-  connection,
-  ecrConnection,
-} from '../__stories__/fixtures'
+import { acrConnection, connection } from '../__stories__/fixtures'
 import type { TConnectionValues } from './schema'
 
 afterEach(cleanup)
@@ -37,7 +31,10 @@ test('selecting an existing stack principal reuses its exact role and account wi
       />
     </MemoryRouter>
   )
-  fireEvent.click(screen.getByLabelText('Principal'))
+  fireEvent.click(
+    screen.getByRole('radio', { name: /Use an existing principal/ })
+  )
+  fireEvent.click(screen.getByLabelText('Existing principal'))
   await act(async () => {
     fireEvent.click(
       screen.getByRole('option', {
@@ -47,7 +44,14 @@ test('selecting an existing stack principal reuses its exact role and account wi
   })
   expect(screen.queryByText('Shared cloud permissions')).toBeNull()
   expect(screen.queryByLabelText('IAM role name')).toBeNull()
+  expect(screen.queryByLabelText('AWS account ID')).toBeNull()
+  expect(screen.getByText('123456789012')).toBeVisible()
   expect(screen.getByText('acme-production-stacks')).toBeVisible()
+  expect(
+    screen.getByText(
+      "These connections share this principal's permissions. Revoking the principal cuts off all of them."
+    )
+  ).toBeVisible()
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create connection' }))
   })
@@ -83,12 +87,16 @@ test('the same Azure application in different tenants remains a distinct princip
       />
     </MemoryRouter>
   )
-  fireEvent.click(screen.getByLabelText('Principal'))
+  fireEvent.click(
+    screen.getByRole('radio', { name: /Use an existing principal/ })
+  )
+  fireEvent.click(screen.getByLabelText('Existing principal'))
   await act(async () => {
     fireEvent.click(screen.getByRole('option', { name: new RegExp(tenant) }))
   })
   expect(screen.queryByText('acme-original')).toBeNull()
   expect(screen.getByText('acme-other-tenant')).toBeVisible()
+  expect(screen.getByText(acrConnection.target_id)).toBeVisible()
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create connection' }))
   })
@@ -254,8 +262,6 @@ test('switching from AWS to GAR and ACR validates only the selected cloud and om
   )
   fireEvent.click(screen.getByLabelText('Cloud platform'))
   fireEvent.click(screen.getByRole('option', { name: 'Google Cloud' }))
-  fireEvent.click(screen.getByLabelText('Principal'))
-  fireEvent.click(screen.getByRole('option', { name: 'Add new principal' }))
   expect(screen.queryByLabelText('AWS account ID')).toBeNull()
   expect(screen.getByLabelText('Project ID')).toHaveValue('')
   expect(
@@ -277,19 +283,20 @@ test('switching from AWS to GAR and ACR validates only the selected cloud and om
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create connection' }))
   })
+  const serviceAccountName = screen.getByLabelText(
+    'Service account name'
+  ) as HTMLInputElement
   expect(submitted).toEqual({
     name: 'acme-images',
     platform: 'gcp',
     target_id: 'acme-project',
     preset: 'gar',
-    principal: 'nuon-cloud-connection@acme-project.iam.gserviceaccount.com',
+    principal: `${serviceAccountName.value}@acme-project.iam.gserviceaccount.com`,
     gcp_project_number: '987654321012',
     default_region: 'us',
   })
   fireEvent.click(screen.getByLabelText('Cloud platform'))
   fireEvent.click(screen.getByRole('option', { name: 'Azure' }))
-  fireEvent.click(screen.getByLabelText('Principal'))
-  fireEvent.click(screen.getByRole('option', { name: 'Add new principal' }))
   expect(screen.queryByLabelText('GAR location')).toBeNull()
   expect(screen.queryByLabelText('ECR region')).toBeNull()
   expect(screen.getByLabelText('Registry login server')).toBeVisible()
@@ -303,57 +310,70 @@ test('switching from AWS to GAR and ACR validates only the selected cloud and om
   ).toHaveAttribute('aria-disabled', 'true')
 })
 
-test('repository generator shows policy and commands for edited rows and hides stale output', async () => {
-  const Generator = () => {
-    const [result, setResult] = useState<{
-      names: string[]
-      permissionsCli: string
-      permissionsPolicy: Record<string, unknown>
-    }>()
-    return (
-      <AddRepositoryAccess
-        connection={ecrConnection}
-        onGenerate={(names) =>
-          setResult({
-            names,
-            permissionsCli: `grant ${names.join(' ')}`,
-            permissionsPolicy: { repositories: names },
-          })
-        }
-        result={result}
-      />
-    )
-  }
+test('a fresh form defaults to creating a new principal with a unique generated role name', () => {
   render(
     <MemoryRouter>
-      <Generator />
+      <ConnectionForm connections={[connection]} onCreate={() => {}} />
     </MemoryRouter>
   )
-  expect(screen.queryByRole('textbox')).toBeNull()
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Generate repository access commands' })
+  expect(
+    (
+      screen.getByRole('radio', {
+        name: /Create a new principal/,
+      }) as HTMLInputElement
+    ).checked
+  ).toBe(true)
+  expect(screen.queryByLabelText('Existing principal')).toBeNull()
+  const roleName = screen.getByLabelText('IAM role name') as HTMLInputElement
+  expect(roleName.value).toMatch(/^nuon-ecr-pull-[a-z0-9]{4}$/)
+})
+
+test('a platform with no principals skips the mode choice and shows the new-principal fields', () => {
+  render(
+    <MemoryRouter>
+      <ConnectionForm onCreate={() => {}} />
+    </MemoryRouter>
   )
-  await act(async () => {
-    fireEvent.change(screen.getByLabelText('ECR repository name 1'), {
-      target: { value: 'acme/api' },
-    })
-  })
-  await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Generate commands' }))
-  })
   expect(
-    screen.getByRole('region', { name: 'Generated repository access' })
-  ).toHaveTextContent('acme/api')
-  fireEvent.click(screen.getByRole('button', { name: /^Commands$/ }))
-  expect(
-    screen.getByRole('region', { name: 'Generated repository access' })
-  ).toHaveTextContent('grant acme/api')
-  await act(async () => {
-    fireEvent.change(screen.getByLabelText('ECR repository name 1'), {
-      target: { value: 'acme/worker' },
-    })
-  })
-  expect(
-    screen.queryByRole('region', { name: 'Generated repository access' })
+    screen.queryByRole('radio', { name: 'Create a new principal' })
   ).toBeNull()
+  expect(screen.queryByLabelText('Existing principal')).toBeNull()
+  expect(screen.getByLabelText('AWS account ID')).toBeVisible()
+  expect(screen.getByLabelText('IAM role name')).toBeVisible()
+})
+
+test('switching to an existing principal and back restores the generated default role name', () => {
+  render(
+    <MemoryRouter>
+      <ConnectionForm connections={[connection]} onCreate={() => {}} />
+    </MemoryRouter>
+  )
+  fireEvent.click(
+    screen.getByRole('radio', { name: /Use an existing principal/ })
+  )
+  expect(screen.getByLabelText('Existing principal')).toBeVisible()
+  expect(screen.queryByLabelText('IAM role name')).toBeNull()
+  fireEvent.click(screen.getByRole('radio', { name: /Create a new principal/ }))
+  const roleName = screen.getByLabelText('IAM role name') as HTMLInputElement
+  expect(roleName.value).toMatch(/^nuon-ecr-pull-[a-z0-9]{4}$/)
+})
+
+test('the default role name follows the access type until it is customized', () => {
+  render(
+    <MemoryRouter>
+      <ConnectionForm
+        values={{ name: 'acme-stacks', target_id: '123456789012' }}
+        onCreate={() => {}}
+      />
+    </MemoryRouter>
+  )
+  const roleName = screen.getByLabelText('IAM role name') as HTMLInputElement
+  expect(roleName.value).toMatch(/^nuon-ecr-pull-[a-z0-9]{4}$/)
+  fireEvent.click(screen.getByLabelText('Access type'))
+  fireEvent.click(screen.getByRole('option', { name: 'Manage install stacks' }))
+  expect(roleName.value).toMatch(/^nuon-stacks-[a-z0-9]{4}$/)
+  fireEvent.change(roleName, { target: { value: 'acme-own-role' } })
+  fireEvent.click(screen.getByLabelText('Access type'))
+  fireEvent.click(screen.getByRole('option', { name: 'Custom policy' }))
+  expect(roleName).toHaveValue('acme-own-role')
 })

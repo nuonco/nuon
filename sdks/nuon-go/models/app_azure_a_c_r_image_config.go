@@ -27,7 +27,7 @@ type AppAzureACRImageConfig struct {
 	// never the material itself.
 	ClientSecretName string `json:"client_secret_name,omitempty"`
 
-	// cloud connection id
+	// actual configuration
 	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
 
 	// connection to parent model
@@ -53,9 +53,6 @@ type AppAzureACRImageConfig struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
-
-	// actual configuration
-	UseCloudConnection bool `json:"use_cloud_connection,omitempty"`
 }
 
 // Validate validates this app azure a c r image config

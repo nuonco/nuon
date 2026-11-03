@@ -78,6 +78,19 @@ export const NoIdentities = () => (
     <AddImageRepository {...props} connections={[]} />
   </PageStory>
 )
+export const NewIdentity = () => (
+  <PageStory>
+    <AddImageRepository
+      {...props}
+      initialValues={{
+        platform: 'aws',
+        repository: 'acme/api',
+        connection_id: '',
+        identity_mode: 'new',
+      }}
+    />
+  </PageStory>
+)
 export const Duplicate = () => (
   <PageStory>
     <AddImageRepository

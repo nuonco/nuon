@@ -149,7 +149,7 @@ func TestAWSVerification(t *testing.T) {
 			connection := &app.CloudConnection{ID: "cc_acme", OrgID: "org_acme", Platform: app.CloudPlatformAWS, Preset: tc.preset, TargetID: "123456789012", Principal: "arn:aws:iam::123456789012:role/acme", DefaultRegion: "us-east-1"}
 			now, sleeps := time.Now(), 0
 			core, logs := observer.New(zap.DebugLevel)
-			verifier := NewAWSVerifier(issuer, zap.New(core)).(*awsVerifier)
+			verifier := NewVerifier(issuer, zap.New(core)).(*providerVerifier)
 			verifier.now = func() time.Time { return now }
 			verifier.sleep = func(ctx context.Context, duration time.Duration) error {
 				require.Equal(t, 5*time.Second, duration)

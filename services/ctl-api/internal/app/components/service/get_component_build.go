@@ -119,7 +119,7 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component build composite error: %w", err)
 	}
-	if jobCompositeError != nil && (bld.CompositeError == nil || jobCompositeError.Type != generic.GenericErrorType) {
+	if jobCompositeError != nil && (bld.CompositeError == nil || bld.CompositeError.Type == generic.GenericErrorType || jobCompositeError.Type != generic.GenericErrorType) {
 		bld.CompositeError = jobCompositeError
 	}
 

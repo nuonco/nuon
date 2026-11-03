@@ -100,7 +100,6 @@ const (
 	RunnerJobTypeHealthCheck RunnerJobType = "health-check"
 
 	// build job types
-	RunnerJobTypeDockerBuild             RunnerJobType = "docker-build"
 	RunnerJobTypeContainerImageBuild     RunnerJobType = "container-image-build"
 	RunnerJobTypeTerraformModuleBuild    RunnerJobType = "terraform-module-build"
 	RunnerJobTypeHelmChartBuild          RunnerJobType = "helm-chart-build"
@@ -158,8 +157,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 	switch r {
 
 	// builds
-	case RunnerJobTypeDockerBuild,
-		RunnerJobTypeContainerImageBuild,
+	case RunnerJobTypeContainerImageBuild,
 		RunnerJobTypeNOOPBuild,
 		RunnerJobTypeTerraformModuleBuild,
 		RunnerJobTypeHelmChartBuild,

@@ -229,7 +229,7 @@ const storyDeploymentFetch = (fallback: typeof fetch): typeof fetch =>
       return storyJson({
         id: componentId,
         name: componentId === 'cmp-cache' ? 'cache' : 'api',
-        type: componentId === 'cmp-cache' ? 'helm_chart' : 'docker_build',
+        type: componentId === 'cmp-cache' ? 'helm_chart' : 'external_image',
         app_id: 'app-acme',
       })
     }

@@ -1,7 +1,6 @@
 import { RunInCloud } from './RunInCloud'
 import { VerifyConnection } from './VerifyConnection'
 import { ConnectionWizard } from './ConnectionWizard'
-import { RepositoryAccessDemo } from '../__stories__/RepositoryAccessDemo'
 import {
   PageStory,
   acrConnection,
@@ -49,7 +48,6 @@ export const ECRSetup = () => (
         connection={ecrConnection}
         setup={initialECRConnection.setup}
         hasInitialSetup
-        repositoryAccess={<RepositoryAccessDemo connection={ecrConnection} />}
       />
     </ConnectionWizard>
   </PageStory>
@@ -60,7 +58,6 @@ export const ECRResumeSetup = () => (
       <RunInCloud
         connection={failedECRConnection}
         setup={failedECRConnection.setup}
-        repositoryAccess={<RepositoryAccessDemo connection={ecrConnection} />}
       />
     </ConnectionWizard>
   </PageStory>
@@ -72,7 +69,6 @@ export const ECRTrustOnlySetup = () => (
         connection={ecrConnection}
         setup={ecrConnection.setup}
         hasInitialSetup
-        repositoryAccess={<RepositoryAccessDemo connection={ecrConnection} />}
       />
     </ConnectionWizard>
   </PageStory>
@@ -178,7 +174,6 @@ export const GARSetup = () => (
         connection={garConnection}
         setup={initialGARConnection.setup}
         hasInitialSetup
-        repositoryAccess={<RepositoryAccessDemo connection={garConnection} />}
       />
     </ConnectionWizard>
   </PageStory>
@@ -189,7 +184,6 @@ export const GARResumeSetup = () => (
       <RunInCloud
         connection={failedGARConnection}
         setup={failedGARConnection.setup}
-        repositoryAccess={<RepositoryAccessDemo connection={garConnection} />}
       />
     </ConnectionWizard>
   </PageStory>
@@ -201,7 +195,6 @@ export const GARTrustOnlySetup = () => (
         connection={garConnection}
         setup={garConnection.setup}
         hasInitialSetup
-        repositoryAccess={<RepositoryAccessDemo connection={garConnection} />}
       />
     </ConnectionWizard>
   </PageStory>
@@ -261,7 +254,6 @@ export const ACRSetup = () => (
         connection={acrConnection}
         setup={initialACRConnection.setup}
         hasInitialSetup
-        repositoryAccess={<RepositoryAccessDemo connection={acrConnection} />}
       />
     </ConnectionWizard>
   </PageStory>
@@ -272,7 +264,6 @@ export const ACRResumeSetup = () => (
       <RunInCloud
         connection={failedACRConnection}
         setup={failedACRConnection.setup}
-        repositoryAccess={<RepositoryAccessDemo connection={acrConnection} />}
       />
     </ConnectionWizard>
   </PageStory>
@@ -284,7 +275,6 @@ export const ACRTrustOnlySetup = () => (
         connection={acrConnection}
         setup={acrConnection.setup}
         hasInitialSetup
-        repositoryAccess={<RepositoryAccessDemo connection={acrConnection} />}
       />
     </ConnectionWizard>
   </PageStory>

@@ -15,15 +15,11 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-type imageAuthActivities interface {
-	GetECRAccessToken(context.Context, *sharedactivities.GetECRAccessTokenRequest) (*sharedactivities.ECRAccessToken, error)
-	GetGARAccessToken(context.Context, *sharedactivities.GetGARAccessTokenRequest) (*sharedactivities.GARAccessToken, error)
-}
-
 type Helpers struct {
 	cfg              *internal.Config
-	imageAuth        imageAuthActivities
+	imageAuth        *sharedactivities.Activities
 	issuer           *oidcissuer.Issuer
+	v                *validator.Validate
 	db               *gorm.DB
 	enqueueOrgSignal func(context.Context, orgshelpers.EnqueueOrgSignalParams) error
 	queueClient      *queueclient.Client
@@ -34,17 +30,14 @@ type Params struct {
 	Cfg         *internal.Config
 	V           *validator.Validate
 	DB          *gorm.DB `name:"psql"`
+	SharedActs  *sharedactivities.Activities
 	OrgsHelpers *orgshelpers.Helpers
 	QueueClient *queueclient.Client
 }
 
 func New(params Params) (*Helpers, error) {
-	imageAuth, err := sharedactivities.New(sharedactivities.Params{Cfg: params.Cfg, V: params.V})
-	if err != nil {
-		return nil, err
-	}
-	h := &Helpers{cfg: params.Cfg, imageAuth: imageAuth, db: params.DB, enqueueOrgSignal: params.OrgsHelpers.EnqueueOrgSignal, queueClient: params.QueueClient}
-	issuer, err := cloudconnections.IssuerFromConfig(params.Cfg)
+	h := &Helpers{cfg: params.Cfg, imageAuth: params.SharedActs, v: params.V, db: params.DB, enqueueOrgSignal: params.OrgsHelpers.EnqueueOrgSignal, queueClient: params.QueueClient}
+	issuer, _, err := cloudconnections.IssuerFromConfig(params.Cfg)
 	if err != nil {
 		return nil, err
 	}

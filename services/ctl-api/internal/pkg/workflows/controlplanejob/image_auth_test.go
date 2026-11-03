@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/pkg/oci/metadata"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 )
@@ -34,7 +33,10 @@ func (m *mockImageAuthorizer) GARAuthorization(ctx context.Context, org string, 
 
 func (m *mockImageAuthorizer) ACRAuthorization(ctx context.Context, org string, cfg *app.AzureACRImageConfig, image string) (*metadata.RegistryAuth, error) {
 	args := m.Called(org, cfg, image)
-	return &metadata.RegistryAuth{Username: "acme", Password: "acme-token"}, args.Error(0)
+	if err := args.Error(0); err != nil || cfg.CloudConnectionID == "" {
+		return nil, err
+	}
+	return &metadata.RegistryAuth{Username: "acme", Password: "acme-token"}, nil
 }
 
 func TestImageSourceAuthorization(t *testing.T) {
@@ -95,7 +97,7 @@ func TestImageSourceAuthorization(t *testing.T) {
 						tx.RowsAffected = 1
 					}))
 					authorizer := &mockImageAuthorizer{}
-					if !mc.foreign && !(mc.legacy && tc.registry == configs.OCIRegistryTypeACR) {
+					if !mc.foreign {
 						var authError error
 						if mc.fail {
 							authError = errors.New("connection authorization denied")
@@ -105,7 +107,7 @@ func TestImageSourceAuthorization(t *testing.T) {
 						}
 						authorizer.On(tc.method, "org_acme", authConfig, tc.image).Return(authError).Once()
 					}
-					a := &Activities{cfg: &internal.Config{LegacyImageAuthEnabled: !mc.disabled}, db: db, cloudConnectionsHelpers: authorizer}
+					a := &Activities{db: db, cloudConnectionsHelpers: authorizer}
 					source := &configs.OCIRegistryRepository{RegistryType: tc.registry, Repository: tc.image}
 					plan := &plantypes.CompositePlan{}
 					if metadataJob {
@@ -114,12 +116,8 @@ func TestImageSourceAuthorization(t *testing.T) {
 						plan.BuildPlan = &plantypes.BuildPlan{ContainerImagePullPlan: &plantypes.ContainerImagePullPlan{RepoCfg: source}}
 					}
 					switch tc.registry {
-					case configs.OCIRegistryTypeECR:
-						err = a.authorizeECRSource(context.Background(), "job", plan)
-					case configs.OCIRegistryTypeGAR:
-						err = a.authorizeGARSource(context.Background(), "job", plan)
-					case configs.OCIRegistryTypeACR:
-						err = a.authorizeACRSource(context.Background(), "job", plan)
+					case configs.OCIRegistryTypeECR, configs.OCIRegistryTypeGAR, configs.OCIRegistryTypeACR:
+						err = a.authorizeImageSource(context.Background(), "job", plan)
 					}
 					switch {
 					case mc.disabled:

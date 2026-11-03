@@ -26,7 +26,6 @@ type awsECRImageConfigRequest struct {
 }
 
 type gcpGARImageConfigRequest struct {
-	UseCloudConnection       bool   `json:"use_cloud_connection,omitempty"`
 	GCPProjectID             string `json:"gcp_project_id"`
 	GCPRegion                string `json:"gcp_region"`
 	ImageURL                 string `json:"image_url"`
@@ -36,10 +35,9 @@ type gcpGARImageConfigRequest struct {
 }
 
 type azureACRImageConfigRequest struct {
-	UseCloudConnection bool   `json:"use_cloud_connection,omitempty"`
-	RegistryURL        string `json:"registry_url"`
-	TenantID           string `json:"tenant_id,omitempty"`
-	ClientID           string `json:"client_id,omitempty"`
+	RegistryURL string `json:"registry_url"`
+	TenantID    string `json:"tenant_id,omitempty"`
+	ClientID    string `json:"client_id,omitempty"`
 	// Names of app secrets, never raw values. At most one may be set.
 	ClientSecretName      string `json:"client_secret_name,omitempty"`
 	ClientCertificateName string `json:"client_certificate_name,omitempty"`
@@ -87,7 +85,6 @@ func (c *CreateExternalImageComponentConfigRequest) toConfig() *config.ExternalI
 		}
 	case c.GCPGARImageConfig != nil:
 		obj.GCPGARImageConfig = &config.GCPGARConfig{
-			UseCloudConnection:       c.GCPGARImageConfig.UseCloudConnection,
 			GCPProjectID:             c.GCPGARImageConfig.GCPProjectID,
 			GCPRegion:                c.GCPGARImageConfig.GCPRegion,
 			ServiceAccountEmail:      c.GCPGARImageConfig.ServiceAccountEmail,
@@ -98,7 +95,6 @@ func (c *CreateExternalImageComponentConfigRequest) toConfig() *config.ExternalI
 		}
 	case c.AzureACRImageConfig != nil:
 		obj.AzureACRImageConfig = &config.AzureACRConfig{
-			UseCloudConnection:    c.AzureACRImageConfig.UseCloudConnection,
 			RegistryURL:           c.AzureACRImageConfig.RegistryURL,
 			TenantID:              c.AzureACRImageConfig.TenantID,
 			ClientID:              c.AzureACRImageConfig.ClientID,
@@ -165,19 +161,8 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 			return err
 		}
 	}
-	if c.GCPGARImageConfig != nil {
-		garCfg := config.GCPGARConfig{
-			UseCloudConnection:       c.GCPGARImageConfig.UseCloudConnection,
-			ServiceAccountEmail:      c.GCPGARImageConfig.ServiceAccountEmail,
-			WorkloadIdentityProvider: c.GCPGARImageConfig.WorkloadIdentityProvider,
-		}
-		if err := garCfg.ValidateCredentials(); err != nil {
-			return err
-		}
-	}
 	if c.AzureACRImageConfig != nil {
 		acrCfg := config.AzureACRConfig{
-			UseCloudConnection:    c.AzureACRImageConfig.UseCloudConnection,
 			TenantID:              c.AzureACRImageConfig.TenantID,
 			ClientID:              c.AzureACRImageConfig.ClientID,
 			ClientSecretName:      c.AzureACRImageConfig.ClientSecretName,
@@ -294,8 +279,8 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		return nil, stderr.NewInvalidRequest(err)
 	}
 	componentConfigConnection.ExternalImageComponentConfig = cfg
-	if err := cloudconnections.ResolveImageConnection(ctx, s.db, parentCmp.OrgID, componentConfigConnection); err != nil {
-		return nil, stderr.NewInvalidRequest(err)
+	if err := cloudconnections.ResolveImageConnection(ctx, s.db, parentCmp.OrgID, componentConfigConnection, s.cfg.LegacyImageAuthEnabled); err != nil {
+		return nil, err
 	}
 
 	if res := s.db.WithContext(ctx).Create(componentConfigConnection); res.Error != nil {

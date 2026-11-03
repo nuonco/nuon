@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -14,10 +15,37 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
+type dryRunConnPool struct{}
+
+func (dryRunConnPool) PrepareContext(context.Context, string) (*sql.Stmt, error) {
+	return nil, nil
+}
+
+func (dryRunConnPool) ExecContext(context.Context, string, ...interface{}) (sql.Result, error) {
+	return sql.Result(nil), nil
+}
+
+func (dryRunConnPool) QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error) {
+	return nil, nil
+}
+
+func (dryRunConnPool) QueryRowContext(context.Context, string, ...interface{}) *sql.Row {
+	return nil
+}
+
+func (dryRunConnPool) BeginTx(context.Context, *sql.TxOptions) (gorm.ConnPool, error) {
+	return dryRunConnPool{}, nil
+}
+
+func (dryRunConnPool) Commit() error { return nil }
+
+func (dryRunConnPool) Rollback() error { return nil }
+
 func TestUpdateBuildFailure(t *testing.T) {
 	for name, tc := range map[string]struct {
 		previous    *compositeerrors.CompositeErrorData
 		policy      bool
+		cancelled   bool
 		queryError  error
 		updateError error
 		missing     bool
@@ -27,13 +55,14 @@ func TestUpdateBuildFailure(t *testing.T) {
 		"existing structured failure": {
 			previous: &compositeerrors.CompositeErrorData{Version: 1, Type: "oci.image-not-found", Message: "Image reference not found"},
 		},
-		"policy failure": {policy: true},
-		"read failure":   {queryError: errors.New("database read unavailable"), wantError: "database read unavailable"},
-		"write failure":  {updateError: errors.New("database write unavailable"), wantError: "database write unavailable"},
-		"missing build":  {missing: true, wantError: "no build found"},
+		"policy failure":  {policy: true},
+		"cancelled build": {cancelled: true},
+		"read failure":    {queryError: errors.New("database read unavailable"), wantError: "database read unavailable"},
+		"write failure":   {updateError: errors.New("database write unavailable"), wantError: "database write unavailable"},
+		"missing build":   {missing: true, wantError: "no build found"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=localhost dbname=unused"}), &gorm.Config{
+			db, err := gorm.Open(postgres.New(postgres.Config{Conn: dryRunConnPool{}}), &gorm.Config{
 				DryRun: true, DisableAutomaticPing: true, SkipDefaultTransaction: true,
 			})
 			require.NoError(t, err)
@@ -47,6 +76,10 @@ func TestUpdateBuildFailure(t *testing.T) {
 				if tc.policy {
 					build.Status = app.ComponentBuildStatusPolicyFailed
 					build.StatusDescription = "policy violations: image must be signed"
+				}
+				if tc.cancelled {
+					build.Status = app.ComponentBuildStatus(app.StatusCancelled)
+					build.StatusDescription = "build cancelled"
 				}
 			}))
 			var stored app.ComponentBuild
@@ -78,6 +111,9 @@ func TestUpdateBuildFailure(t *testing.T) {
 			if tc.policy {
 				require.Equal(t, app.ComponentBuildStatusPolicyFailed, stored.Status)
 				require.Equal(t, "policy violations: image must be signed", stored.StatusDescription)
+			} else if tc.cancelled {
+				require.Equal(t, app.ComponentBuildStatus(app.StatusCancelled), stored.Status)
+				require.Equal(t, "build cancelled", stored.StatusDescription)
 			} else {
 				require.Equal(t, app.ComponentBuildStatusError, stored.Status)
 			}

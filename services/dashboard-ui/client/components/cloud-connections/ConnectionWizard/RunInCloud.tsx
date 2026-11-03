@@ -3,8 +3,6 @@ import { useLocation } from 'react-router'
 import { Banner } from '@/components/common/Banner'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Expand } from '@/components/common/Expand'
-import { LabeledValue } from '@/components/common/LabeledValue'
-import { ClickToCopy } from '@/components/common/ClickToCopy'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { SectionHeader } from '@/components/layout/SectionHeader'
@@ -14,25 +12,26 @@ import {
   failedRunbookStep,
   roleName,
 } from '../ConnectionPolicies'
+import { isImagePreset } from '../repository-scope'
 
 export const RunInCloud = ({
   connection,
   setup,
   hasInitialSetup = false,
-  repositoryAccess,
   setupMode,
+  orgId,
 }: {
   connection: TCloudConnection
   setup?: TCloudConnectionSetup
   hasInitialSetup?: boolean
-  repositoryAccess?: ReactNode
   setupMode?: ReactNode
+  orgId?: string
 }) => {
   const { hash } = useLocation()
   const isGCP = connection.platform === 'gcp'
   const isAzure = connection.platform === 'azure'
   const isAWS = connection.platform === 'aws'
-  const isImage = ['ecr', 'gar', 'acr'].includes(connection.preset)
+  const isImage = isImagePreset(connection.preset)
   const hasInitialGrants = hasInitialSetup && !!setup?.permissions_policy
   useEffect(() => {
     if (hash)
@@ -50,10 +49,10 @@ export const RunInCloud = ({
       <SectionHeader
         title={
           isAzure
-            ? 'Connect the identity in Azure'
+            ? 'Connect the principal in Azure'
             : isGCP
-              ? 'Connect the identity in Google Cloud'
-              : 'Connect the identity in AWS'
+              ? 'Connect the principal in Google Cloud'
+              : 'Connect the principal in AWS'
         }
         description={
           isAzure
@@ -75,7 +74,7 @@ export const RunInCloud = ({
             ? 'These setup commands include the repositories entered during creation. They are a setup snapshot, not an inventory of cloud grants.'
             : hasInitialSetup
               ? 'The connection details are saved. Run the identity setup below, then optionally generate repository access commands separately.'
-              : 'This setup configures the cloud identity. Generate repository access commands separately; repository names are not saved to the connection.'}
+              : 'This setup configures the principal. Generate repository access commands separately; repository names are not saved to the connection.'}
         </Banner>
       )}
       {connection.preset === 'custom' && (
@@ -86,32 +85,20 @@ export const RunInCloud = ({
       )}
       {isAzure && (
         <Banner theme="warn">
-          <strong>Warning:</strong> ACR requires the RBAC + ABAC repository
-          permissions mode. Do not switch an existing registry casually:
-          changing modes can break existing role assignments and image access.
-          Review the impact with the registry owner before applying setup.
+          <Text weight="strong" as="span">
+            Warning:
+          </Text>{' '}
+          ACR requires the RBAC + ABAC repository permissions mode. Do not
+          switch an existing registry casually: changing modes can break
+          existing role assignments and image access. Review the impact with the
+          registry owner before applying setup.
         </Banner>
       )}
-      <LabeledValue
-        label={
-          isAzure
-            ? 'Application (client) ID'
-            : isGCP
-              ? 'Service account'
-              : 'Role ARN'
-        }
-      >
-        <ClickToCopy>
-          <Text family="mono" variant="subtext" className="break-all">
-            {connection.principal}
-          </Text>
-        </ClickToCopy>
-      </LabeledValue>
       <ol className="flex list-decimal flex-col gap-2 pl-5">
         <li id="runbook-step-1" className="scroll-mt-6">
           <Text as="div" weight="strong">
             {isAzure
-              ? 'Check the existing identity and registry prerequisites'
+              ? 'Check the existing principal and registry prerequisites'
               : isGCP
                 ? 'Configure the service account and connection-specific federation'
                 : 'Create the OIDC provider'}
@@ -163,6 +150,7 @@ export const RunInCloud = ({
       <Expand
         id={`identity-setup-${connection.id}`}
         heading="View identity setup commands"
+        isOpen
       >
         {!setup ? (
           <Text theme="neutral">Setup commands are not available yet.</Text>
@@ -209,7 +197,7 @@ export const RunInCloud = ({
       <ConnectionPolicies
         connection={connection}
         initialSetup={hasInitialSetup ? setup : undefined}
-        repositoryAccess={repositoryAccess}
+        orgId={orgId}
       />
     </div>
   )

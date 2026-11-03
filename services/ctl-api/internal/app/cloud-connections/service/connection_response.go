@@ -22,8 +22,8 @@ type ConnectionListResponse struct {
 }
 
 type ConnectionUsage struct {
-	Installs     int64 `json:"installs"`
-	ImageConfigs int64 `json:"image_configs"`
+	Installs          int64 `json:"installs"`
+	ImageRepositories int64 `json:"image_repositories"`
 }
 
 func userError(err error) error {
@@ -77,28 +77,22 @@ func (s *service) usages(ctx context.Context, orgID string, connectionIDs []stri
 	for _, count := range counts {
 		usage[count.CloudConnectionID] = ConnectionUsage{Installs: count.Installs}
 	}
-	for _, model := range []any{
-		&app.AWSECRImageConfig{OrgID: orgID},
-		&app.GCPGARImageConfig{OrgID: orgID},
-		&app.AzureACRImageConfig{OrgID: orgID},
-	} {
-		var counts []struct {
-			CloudConnectionID string
-			ImageConfigs      int64
-		}
-		if err := s.db.WithContext(ctx).Model(model).
-			Select("cloud_connection_id, count(*) as image_configs").
-			Where(model).
-			Where("cloud_connection_id IN ?", connectionIDs).
-			Group("cloud_connection_id").
-			Find(&counts).Error; err != nil {
-			return nil, fmt.Errorf("count image configurations using cloud connections: %w", err)
-		}
-		for _, count := range counts {
-			value := usage[count.CloudConnectionID]
-			value.ImageConfigs += count.ImageConfigs
-			usage[count.CloudConnectionID] = value
-		}
+	var repositoryCounts []struct {
+		CloudConnectionID string
+		ImageRepositories int64
+	}
+	if err := s.db.WithContext(ctx).Model(&app.ImageRepository{}).
+		Select("cloud_connection_id, count(*) as image_repositories").
+		Where(app.ImageRepository{OrgID: orgID}).
+		Where("cloud_connection_id IN ?", connectionIDs).
+		Group("cloud_connection_id").
+		Find(&repositoryCounts).Error; err != nil {
+		return nil, fmt.Errorf("count image repositories using cloud connections: %w", err)
+	}
+	for _, count := range repositoryCounts {
+		value := usage[count.CloudConnectionID]
+		value.ImageRepositories = count.ImageRepositories
+		usage[count.CloudConnectionID] = value
 	}
 	return usage, nil
 }

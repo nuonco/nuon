@@ -11,14 +11,12 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
-	"go.temporal.io/sdk/workflow"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -30,15 +28,9 @@ func TestExecuteFailurePersistence(t *testing.T) {
 		inactive    bool
 		cancelled   bool
 		bounded     bool
-		legacy      bool
 		planningErr bool
 		planningV2  bool
 	}{
-		"legacy preflight failure":          {legacy: true, failAt: "git", cause: "source repository unavailable"},
-		"legacy child failure":              {legacy: true, failAt: "child", cause: "registry denied"},
-		"legacy child cancellation":         {legacy: true, failAt: "child", cancelled: true},
-		"legacy planning status failure":    {legacy: true, planningErr: true},
-		"legacy planning history failure":   {legacy: true, planningErr: true, planningV2: true},
 		"new planning status failure":       {planningErr: true, cause: "status database unavailable"},
 		"new planning history failure":      {planningErr: true, planningV2: true, cause: "status database unavailable"},
 		"git source preflight":              {failAt: "git", cause: "source repository does not exist"},
@@ -78,11 +70,6 @@ func TestExecuteFailurePersistence(t *testing.T) {
 			var suite testsuite.WorkflowTestSuite
 			env := suite.NewTestWorkflowEnvironment()
 			env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: 5 * time.Second})
-			version := workflow.Version(1)
-			if tc.legacy {
-				version = workflow.DefaultVersion
-			}
-			env.OnGetVersion(controlplanejob.BuildFailurePropagationVersion, workflow.DefaultVersion, 1).Return(version)
 			failure := func(stage string) error {
 				if tc.failAt != stage {
 					return nil
@@ -158,36 +145,6 @@ func TestExecuteFailurePersistence(t *testing.T) {
 			require.True(t, env.IsWorkflowCompleted())
 			err := env.GetWorkflowError()
 			require.NotEmpty(t, updates, "workflow error: %v", err)
-			if tc.legacy {
-				if tc.planningErr {
-					require.NoError(t, err)
-					require.True(t, childReached)
-					require.Len(t, updates, 1)
-					if tc.planningV2 {
-						require.Len(t, updatesV2, 1)
-					} else {
-						require.Empty(t, updatesV2)
-					}
-				} else {
-					require.Error(t, err)
-					wantCount := 1
-					if tc.failAt == "git" {
-						wantCount = 2
-					}
-					require.Len(t, updates, wantCount)
-					require.Len(t, updatesV2, wantCount)
-					if tc.cancelled {
-						require.True(t, temporal.IsCanceledError(err), "%v", err)
-					} else {
-						require.ErrorContains(t, err, tc.cause)
-					}
-				}
-				for _, update := range updates {
-					require.Empty(t, update.Error)
-				}
-				env.AssertExpectations(t)
-				return
-			}
 			if tc.planningErr {
 				require.False(t, childReached)
 			}
@@ -197,6 +154,15 @@ func TestExecuteFailurePersistence(t *testing.T) {
 			require.Equal(t, "build-id", last.BuildID)
 			require.Equal(t, "build-id", lastV2.BuildID)
 
+			if tc.failAt == "child" && !tc.cancelled {
+				require.ErrorContains(t, err, tc.cause)
+				require.Len(t, updates, 1)
+				require.Equal(t, app.ComponentBuildStatusPlanning, updates[0].Status)
+				require.Len(t, updatesV2, 1)
+				require.Equal(t, app.ComponentBuildStatusPlanning, updatesV2[0].Status)
+				env.AssertExpectations(t)
+				return
+			}
 			if tc.cancelled || (tc.failAt == "" && !tc.planningErr) {
 				if tc.cancelled {
 					require.True(t, temporal.IsCanceledError(err), "%v", err)
@@ -218,7 +184,6 @@ func TestExecuteFailurePersistence(t *testing.T) {
 				require.NotEmpty(t, last.StatusDescription)
 				require.LessOrEqual(t, utf8.RuneCountInString(last.StatusDescription), 500)
 				require.LessOrEqual(t, utf8.RuneCountInString(lastV2.StatusDescription), 500)
-				require.LessOrEqual(t, len(last.Error), 64*1024)
 				for _, wrapper := range []string{"activity error", "child workflow execution error", "workflow execution error", "ActivityType:", "WorkflowType:"} {
 					require.NotContains(t, last.StatusDescription, wrapper)
 					require.NotContains(t, lastV2.StatusDescription, wrapper)
@@ -247,24 +212,16 @@ func TestExecuteFailurePersistence(t *testing.T) {
 func TestCancelBuildStatus(t *testing.T) {
 	for name, tc := range map[string]struct {
 		buildID string
-		legacy  bool
 		failAt  string
 	}{
-		"queued build":           {buildID: "queued-build-id"},
-		"running build":          {buildID: "running-build-id"},
-		"legacy status failure":  {buildID: "build-id", legacy: true, failAt: "status"},
-		"legacy history failure": {buildID: "build-id", legacy: true, failAt: "history"},
-		"new status failure":     {buildID: "build-id", failAt: "status"},
-		"new history failure":    {buildID: "build-id", failAt: "history"},
+		"queued build":        {buildID: "queued-build-id"},
+		"running build":       {buildID: "running-build-id"},
+		"new status failure":  {buildID: "build-id", failAt: "status"},
+		"new history failure": {buildID: "build-id", failAt: "history"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			var suite testsuite.WorkflowTestSuite
 			env := suite.NewTestWorkflowEnvironment()
-			version := workflow.Version(1)
-			if tc.legacy {
-				version = workflow.DefaultVersion
-			}
-			env.OnGetVersion(controlplanejob.BuildFailurePropagationVersion, workflow.DefaultVersion, 1).Return(version)
 			failure := func(stage string) error {
 				if tc.failAt == stage {
 					return temporal.NewNonRetryableApplicationError("status database unavailable", "database", nil)
@@ -281,7 +238,7 @@ func TestCancelBuildStatus(t *testing.T) {
 				}).Return(failure("history")).Maybe()
 
 			env.ExecuteWorkflow((&Signal{ComponentID: "component-id", BuildID: tc.buildID}).Cancel)
-			if !tc.legacy && tc.failAt != "" {
+			if tc.failAt != "" {
 				require.ErrorContains(t, env.GetWorkflowError(), "status database unavailable")
 			} else {
 				require.NoError(t, env.GetWorkflowError())

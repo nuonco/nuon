@@ -77,6 +77,8 @@ type SyncComponentParams struct {
 	// build signals for (the signal packages would import-cycle from here).
 	// Leave off when a later step schedules builds (branch run's builds step).
 	DispatchBuilds bool
+
+	LegacyImageAuth bool
 }
 
 // SyncComponent updates a component and creates its configuration via the shared
@@ -173,7 +175,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 			Err:         err,
 		}
 	}
-	if err := cloudconnections.ResolveImageConnection(ctx, db, apiComp.OrgID, ccc); err != nil {
+	if err := cloudconnections.ResolveImageConnection(ctx, db, apiComp.OrgID, ccc, params.LegacyImageAuth); err != nil {
 		return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "invalid image repository cloud connection", err)
 	}
 

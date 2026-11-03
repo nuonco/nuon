@@ -60,7 +60,10 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 			return fmt.Errorf("count image repository references: %w", err)
 		}
 		if repositoryReferences > 0 {
-			description := "This connection is assigned to image repositories. Remove those assignments in Settings > Image repositories first."
+			description := fmt.Sprintf("This connection is assigned to %d image repositories. Remove those assignments in Settings > Image repositories first.", repositoryReferences)
+			if repositoryReferences == 1 {
+				description = "This connection is assigned to 1 image repository. Remove that assignment in Settings > Image repositories first."
+			}
 			return stderr.ErrConflict{Err: errors.New(description), Description: description}
 		}
 		if err := s.helpers.TerminateConnectionQueue(ctx, connection.ID); err != nil {

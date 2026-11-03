@@ -11,14 +11,14 @@ func TestComponentDiffEntryBuildChangedSameChecksum(t *testing.T) {
 	oldConn := &app.ComponentConfigConnection{
 		ComponentID:   "comp-1",
 		ComponentName: "api",
-		Type:          app.ComponentTypeDockerBuild,
+		Type:          app.ComponentTypeExternalImage,
 		Checksum:      "abc123",
 		LatestBuildID: generics.NewNullString("bld-old"),
 	}
 	newConn := &app.ComponentConfigConnection{
 		ComponentID:   "comp-1",
 		ComponentName: "api",
-		Type:          app.ComponentTypeDockerBuild,
+		Type:          app.ComponentTypeExternalImage,
 		Checksum:      "abc123",
 		LatestBuildID: generics.NewNullString("bld-new"),
 	}

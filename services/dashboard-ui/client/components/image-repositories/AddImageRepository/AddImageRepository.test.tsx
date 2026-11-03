@@ -65,3 +65,67 @@ for (const { identity, name, canonical } of [
     })
   })
 }
+
+test('the inline identity defaults to a unique generated role name', async () => {
+  render(
+    <MemoryRouter>
+      <AddImageRepository
+        orgId="org-mock-001"
+        connections={[verifiedECRConnection]}
+        onCreateIdentity={async () => verifiedECRConnection}
+        onSave={() => {}}
+      />
+    </MemoryRouter>
+  )
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole('radio', { name: 'Create a new principal' })
+    )
+  })
+  const roleName = screen.getByLabelText('IAM role name') as HTMLInputElement
+  expect(roleName.value).toMatch(/^nuon-ecr-pull-[a-z0-9]{4}$/)
+})
+
+test('defaults to the existing-identity flow when identities exist for the platform', () => {
+  render(
+    <MemoryRouter>
+      <AddImageRepository
+        orgId="org-mock-001"
+        connections={[verifiedECRConnection]}
+        onCreateIdentity={async () => verifiedECRConnection}
+        onSave={() => {}}
+      />
+    </MemoryRouter>
+  )
+  expect(
+    (
+      screen.getByRole('radio', {
+        name: 'Use an existing principal',
+      }) as HTMLInputElement
+    ).checked
+  ).toBe(true)
+  expect(screen.getByLabelText('Pull identity')).toBeVisible()
+  expect(screen.getByLabelText('Registry provider')).toBeVisible()
+  expect(screen.getByLabelText('Repository name')).toBeVisible()
+})
+
+test('skips the mode choice and shows the create form when no identities exist', () => {
+  render(
+    <MemoryRouter>
+      <AddImageRepository
+        orgId="org-mock-001"
+        connections={[]}
+        onCreateIdentity={async () => verifiedECRConnection}
+        onSave={() => {}}
+      />
+    </MemoryRouter>
+  )
+  expect(
+    screen.queryByRole('radio', { name: 'Create a new principal' })
+  ).toBeNull()
+  expect(screen.queryByLabelText('Pull identity')).toBeNull()
+  expect(screen.getByLabelText('Registry provider')).toBeVisible()
+  expect(screen.getByLabelText('Repository name')).toBeVisible()
+  const roleName = screen.getByLabelText('IAM role name') as HTMLInputElement
+  expect(roleName.value).toMatch(/^nuon-ecr-pull-[a-z0-9]{4}$/)
+})

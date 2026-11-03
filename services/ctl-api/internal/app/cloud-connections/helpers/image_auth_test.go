@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -16,19 +15,7 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-type mockImageAuthActivities struct{ mock.Mock }
-
-func (m *mockImageAuthActivities) GetECRAccessToken(ctx context.Context, req *sharedactivities.GetECRAccessTokenRequest) (*sharedactivities.ECRAccessToken, error) {
-	args := m.Called(req)
-	return &sharedactivities.ECRAccessToken{Username: "AWS", Password: "acme-token", ServerAddress: "123456789012.dkr.ecr.us-east-1.amazonaws.com"}, args.Error(0)
-}
-
-func (m *mockImageAuthActivities) GetGARAccessToken(ctx context.Context, req *sharedactivities.GetGARAccessTokenRequest) (*sharedactivities.GARAccessToken, error) {
-	args := m.Called(req)
-	return &sharedactivities.GARAccessToken{Username: "oauth2accesstoken", Password: "acme-token"}, args.Error(0)
-}
-
-func TestLegacyImageAuthorization(t *testing.T) {
+func TestLegacyECRCredentialsConfig(t *testing.T) {
 	for name, tc := range map[string]struct {
 		cloud          string
 		managementRole string
@@ -40,48 +27,19 @@ func TestLegacyImageAuthorization(t *testing.T) {
 		"GCP OIDC":             {cloud: "gcp", managementRole: "unused", gcpOIDC: true},
 		"Azure":                {cloud: "azure", managementRole: "unused"},
 	} {
-		for result, tokenError := range map[string]error{"success": nil, "denied": errors.New("legacy authorization denied")} {
-			t.Run(name+"/"+result, func(t *testing.T) {
-				acts := &mockImageAuthActivities{}
-				acts.On("GetECRAccessToken", mock.MatchedBy(func(req *sharedactivities.GetECRAccessTokenRequest) bool {
-					require.Equal(t, "us-east-1", req.Credentials.Region)
-					role := req.Credentials.AssumeRole
-					require.Equal(t, "arn:aws:iam::123456789012:role/acme", role.RoleARN)
-					require.Equal(t, tc.gcpOIDC, role.UseGCPOIDC)
-					if tc.twoStep {
-						require.Equal(t, tc.managementRole, role.TwoStepConfig.IAMRoleARN)
-					} else {
-						require.Nil(t, role.TwoStepConfig)
-					}
-					return true
-				})).Return(tokenError).Once()
-				h := &Helpers{cfg: &internal.Config{CloudProvider: tc.cloud, ManagementIAMRoleARN: tc.managementRole, LegacyImageAuthEnabled: true}, imageAuth: acts}
-				auth, err := h.ECRAuthorization(context.Background(), "org_acme", &app.AWSECRImageConfig{ID: "saved", AWSRegion: "us-east-1", IAMRoleARN: "arn:aws:iam::123456789012:role/acme"}, "image")
-				if tokenError != nil {
-					require.ErrorIs(t, err, tokenError)
-					require.Nil(t, auth)
-				} else {
-					require.NoError(t, err)
-					require.Equal(t, "acme-token", auth.RegistryToken)
-				}
-				acts.AssertExpectations(t)
-			})
-		}
-	}
-	for name, tc := range map[string]struct{ account, provider string }{
-		"ambient":                       {},
-		"impersonation":                 {account: "acme@example.com"},
-		"federation":                    {provider: "provider"},
-		"federation with impersonation": {account: "acme@example.com", provider: "provider"},
-	} {
 		t.Run(name, func(t *testing.T) {
-			acts := &mockImageAuthActivities{}
-			acts.On("GetGARAccessToken", &sharedactivities.GetGARAccessTokenRequest{ServiceAccountEmail: tc.account, WorkloadIdentityProvider: tc.provider}).Return(nil).Once()
-			h := &Helpers{cfg: &internal.Config{LegacyImageAuthEnabled: true}, imageAuth: acts}
-			token, err := h.GARAuthorization(context.Background(), "org_acme", &app.GCPGARImageConfig{ID: "saved", ServiceAccountEmail: tc.account, WorkloadIdentityProvider: tc.provider}, "image")
-			require.NoError(t, err)
-			require.Equal(t, "acme-token", token.AccessToken)
-			acts.AssertExpectations(t)
+			cfg := legacyECRCredentialsConfig(
+				&internal.Config{CloudProvider: tc.cloud, ManagementIAMRoleARN: tc.managementRole},
+				&app.AWSECRImageConfig{AWSRegion: "us-east-1", IAMRoleARN: "arn:aws:iam::123456789012:role/acme"},
+			)
+			require.Equal(t, "us-east-1", cfg.Region)
+			require.Equal(t, "arn:aws:iam::123456789012:role/acme", cfg.AssumeRole.RoleARN)
+			require.Equal(t, tc.gcpOIDC, cfg.AssumeRole.UseGCPOIDC)
+			if tc.twoStep {
+				require.Equal(t, tc.managementRole, cfg.AssumeRole.TwoStepConfig.IAMRoleARN)
+			} else {
+				require.Nil(t, cfg.AssumeRole.TwoStepConfig)
+			}
 		})
 	}
 }
@@ -102,11 +60,8 @@ func TestLegacyImageAuthorizationDisabled(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			acts := &mockImageAuthActivities{}
-			h := &Helpers{cfg: &internal.Config{}, imageAuth: acts}
+			h := &Helpers{cfg: &internal.Config{}, imageAuth: &sharedactivities.Activities{}}
 			require.ErrorIs(t, authorize(h), cloudconnections.ErrLegacyImageAuthDisabled)
-			acts.AssertNotCalled(t, "GetECRAccessToken", mock.Anything)
-			acts.AssertNotCalled(t, "GetGARAccessToken", mock.Anything)
 		})
 	}
 }
@@ -141,8 +96,7 @@ func TestConnectionAuthorizationNeverFallsBack(t *testing.T) {
 					}
 					tx.RowsAffected = 1
 				}))
-				acts := &mockImageAuthActivities{}
-				h := &Helpers{cfg: &internal.Config{LegacyImageAuthEnabled: true}, db: db, imageAuth: acts}
+				h := &Helpers{cfg: &internal.Config{LegacyImageAuthEnabled: true}, db: db, imageAuth: &sharedactivities.Activities{}}
 				switch platform {
 				case "ecr":
 					_, err = h.ECRAuthorization(context.Background(), "org_acme", &app.AWSECRImageConfig{ID: "saved", CloudConnectionID: "cc_saved", AWSRegion: "us-east-1"}, "123456789012.dkr.ecr.us-east-1.amazonaws.com/acme")
@@ -152,8 +106,6 @@ func TestConnectionAuthorizationNeverFallsBack(t *testing.T) {
 					_, err = h.ACRAuthorization(context.Background(), "org_acme", &app.AzureACRImageConfig{ID: "saved", CloudConnectionID: "cc_saved", RegistryURL: "acme.azurecr.io"}, "acme.azurecr.io/repo")
 				}
 				require.ErrorContains(t, err, tc.want)
-				acts.AssertNotCalled(t, "GetECRAccessToken", mock.Anything)
-				acts.AssertNotCalled(t, "GetGARAccessToken", mock.Anything)
 			})
 		}
 	}

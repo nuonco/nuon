@@ -12,6 +12,7 @@ import { ListPage } from '@/components/layout/ListPage'
 import type { TAPIError, TCloudConnectionSummary } from '@/types'
 import type { TPaginationMeta } from '@/lib/api'
 import { ConnectionStatus } from '../ConnectionStatus'
+import { isImagePreset } from '../repository-scope'
 
 export const ConnectionsList = ({
   connections,
@@ -89,25 +90,21 @@ export const ConnectionsList = ({
         header: 'Access',
         cell: ({ row }) => {
           const connection = row.original
-          const isImage =
-            connection.preset === 'ecr' ||
-            connection.preset === 'gar' ||
-            connection.preset === 'acr'
           return (
             <div className="flex flex-col gap-1">
               <Text variant="subtext">
-                {isImage
+                {isImagePreset(connection.preset)
                   ? 'Image repositories'
                   : connection.preset === 'stacks'
                     ? 'Install stacks'
                     : 'Custom'}
               </Text>
-              {isImage && (
+              {isImagePreset(connection.preset) && (
                 <Text variant="subtext" theme="neutral">
                   {connection.preset === 'acr'
-                    ? 'Azure ACR'
+                    ? 'Azure Container Registry'
                     : connection.preset === 'gar'
-                      ? 'Artifact Registry'
+                      ? 'Google Artifact Registry'
                       : 'Amazon ECR'}
                 </Text>
               )}
@@ -180,7 +177,7 @@ export const ConnectionsList = ({
             : {
                 emptyTitle: 'No cloud connections yet',
                 emptyMessage:
-                  'A cloud connection gives Nuon access to cloud resources through an identity you control. Create a connection for install stacks or private image repositories.',
+                  'A cloud connection gives Nuon access to cloud resources through a principal you control. Create a connection for install stacks or private image repositories.',
                 action: (
                   <Button variant="secondary" href={createHref}>
                     Create cloud connection

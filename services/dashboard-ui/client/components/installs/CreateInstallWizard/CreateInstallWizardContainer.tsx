@@ -4,6 +4,7 @@ import { Button } from '@/components/common/Button'
 import { pickCreateInstallConfig } from '@/components/installs/CreateInstall/CreateInstallFromAppContainer'
 import { FormSkeleton } from '@/components/installs/CreateInstall/FormSkeleton'
 import { normalizeInstallPlatform } from '@/components/installs/forms/InstallForm'
+import { useCloudConnections } from '@/components/cloud-connections/queries'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { useOrg } from '@/hooks/use-org'
@@ -12,11 +13,9 @@ import {
   getAppConfig,
   getActions,
   getBranchConfigs,
-  getCloudConnections,
   getComponents,
 } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
-import type { TCloudConnectionSummary } from '@/types'
 import { CreateInstallWizardSession } from './CreateInstallWizardSession'
 
 const errorMessage = (err: unknown) =>
@@ -78,26 +77,7 @@ export const CreateInstallWizardContainer = ({
   })
 
   const { data: cloudConnections, isLoading: cloudConnectionsLoading } =
-    useQuery({
-      placeholderData: keepPreviousData,
-      queryKey: ['cloud-connections', org.id, 'all'],
-      queryFn: async () => {
-        const all: TCloudConnectionSummary[] = []
-        let offset = 0
-        for (;;) {
-          const { data, pagination } = await getCloudConnections({
-            orgId: org.id,
-            offset,
-            limit: 100,
-          })
-          const page = data ?? []
-          all.push(...page)
-          if (!pagination?.hasNext || page.length === 0) return all
-          offset += page.length
-        }
-      },
-      enabled: !!org.id && cloudConnectionsEnabled,
-    })
+    useCloudConnections(org.id, { enabled: cloudConnectionsEnabled })
 
   const componentIds = config?.component_ids ?? []
   const actionIds = config?.action_ids ?? []

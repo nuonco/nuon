@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/redact"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all"
@@ -30,42 +31,46 @@ func (a *Activities) UpdateBuildStatus(ctx context.Context, req UpdateBuildStatu
 		ID: req.BuildID,
 	}
 	var failure *compositeerrors.CompositeErrorData
-	if req.Error != "" {
-		if err := a.db.WithContext(ctx).Select("id", "status", "status_description", "composite_error").
-			Where(&currentApp).Take(&currentApp).Error; err != nil {
-			return fmt.Errorf("unable to get failed build: %w", err)
-		}
-		if currentApp.Status == app.ComponentBuildStatusPolicyFailed {
-			req.Status = currentApp.Status
-			req.StatusDescription = currentApp.StatusDescription
-		}
-		failure = currentApp.CompositeError
-		if failure == nil {
-			var err error
-			failure, err = errparse.ParseRunnerJobResult(false, map[string]string{errparse.ErrorMetadataMessage: req.Error}, &app.RunnerJob{
-				OwnerType: "component_builds", OwnerID: req.BuildID,
-			}, nil)
-			if err != nil {
-				return fmt.Errorf("unable to record build failure: %w", err)
+	res := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if req.Error != "" {
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+				Select("id", "status", "status_description", "composite_error").
+				Where(&currentApp).Take(&currentApp).Error; err != nil {
+				return fmt.Errorf("unable to get failed build: %w", err)
 			}
-			if failure != nil {
-				failure.Message = compositeerrors.RedactDiagnosticSecrets(req.StatusDescription)
+			switch currentApp.Status {
+			case app.ComponentBuildStatusPolicyFailed, app.ComponentBuildStatus(app.StatusCancelled):
+				req.Status = currentApp.Status
+				req.StatusDescription = currentApp.StatusDescription
+			}
+			failure = currentApp.CompositeError
+			if failure == nil {
+				var err error
+				failure, err = errparse.ParseRunnerJobResult(false, map[string]string{errparse.ErrorMetadataMessage: req.Error}, &app.RunnerJob{
+					OwnerType: "component_builds", OwnerID: req.BuildID,
+				}, nil)
+				if err != nil {
+					return fmt.Errorf("unable to record build failure: %w", err)
+				}
+				if failure != nil {
+					failure.Message = redact.DiagnosticSecrets(req.StatusDescription)
+				}
 			}
 		}
-	}
-	res := a.db.WithContext(ctx).Model(&currentApp).Updates(app.ComponentBuild{
-		Status:            req.Status,
-		StatusDescription: compositeerrors.RedactDiagnosticSecrets(req.StatusDescription),
-		CompositeError:    failure,
+		res := tx.Model(&currentApp).Updates(app.ComponentBuild{
+			Status:            req.Status,
+			StatusDescription: redact.DiagnosticSecrets(req.StatusDescription),
+			CompositeError:    failure,
+		})
+		if res.Error != nil {
+			return fmt.Errorf("unable to update build: %w", res.Error)
+		}
+		if res.RowsAffected < 1 {
+			return fmt.Errorf("no build found: %s %w", req.BuildID, gorm.ErrRecordNotFound)
+		}
+		return nil
 	})
-	if res.Error != nil {
-		return fmt.Errorf("unable to update build: %w", res.Error)
-	}
-	if res.RowsAffected < 1 {
-		return fmt.Errorf("no build found: %s %w", req.BuildID, gorm.ErrRecordNotFound)
-	}
-
-	return nil
+	return res
 }
 
 func FailBuild(ctx workflow.Context, buildID string, buildErr error) error {
@@ -81,16 +86,11 @@ func FailBuild(ctx workflow.Context, buildID string, buildErr error) error {
 		status = app.ComponentBuildStatusPolicyFailed
 		description = compositeerrors.ErrorMessage(buildErr)
 	}
-	if runes := []rune(description); len(runes) > 500 {
-		description = string(runes[:499]) + "…"
-	}
-	diagnostic := compositeerrors.RedactDiagnosticSecrets(buildErr.Error())
-	if len(diagnostic) > 64*1024 {
-		diagnostic = strings.ToValidUTF8(diagnostic[:64*1024-3], "") + "..."
-	}
+	description = redact.DiagnosticSecrets(description)
+	description = compositeerrors.TruncateRunes(description, 499)
 	statusErr := AwaitUpdateBuildStatus(ctx, UpdateBuildStatus{
 		BuildID: buildID, Status: status,
-		StatusDescription: description, Error: diagnostic,
+		StatusDescription: description, Error: redact.DiagnosticSecrets(buildErr.Error()),
 	})
 	if statusErr != nil {
 		statusErr = fmt.Errorf("unable to persist build failure: %w", statusErr)

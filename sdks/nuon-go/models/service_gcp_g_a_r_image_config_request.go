@@ -32,9 +32,6 @@ type ServiceGcpGARImageConfigRequest struct {
 	// tag
 	Tag string `json:"tag,omitempty"`
 
-	// use cloud connection
-	UseCloudConnection bool `json:"use_cloud_connection,omitempty"`
-
 	// workload identity provider
 	WorkloadIdentityProvider string `json:"workload_identity_provider,omitempty"`
 }

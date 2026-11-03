@@ -18,27 +18,6 @@ type VCS struct {
 	Public *app.PublicGitVCSConfig
 }
 
-func DockerBuildComponentConfig(obj *config.DockerBuildComponentConfig, vcs VCS) (*app.DockerBuildComponentConfig, error) {
-	if obj == nil {
-		return nil, errors.New("docker_build config is required")
-	}
-	if vcs.Github == nil && vcs.Public == nil {
-		return nil, errors.New("docker_build requires either a connected repo or public repo configuration")
-	}
-
-	dockerfile := obj.Dockerfile
-	if dockerfile == "" {
-		dockerfile = "Dockerfile"
-	}
-
-	return &app.DockerBuildComponentConfig{
-		Dockerfile:               dockerfile,
-		EnvVars:                  Hstore(obj.EnvVarMap),
-		PublicGitVCSConfig:       vcs.Public,
-		ConnectedGithubVCSConfig: vcs.Github,
-	}, nil
-}
-
 func HelmComponentConfig(obj *config.HelmChartComponentConfig, vcs VCS) (*app.HelmComponentConfig, error) {
 	if obj == nil {
 		return nil, errors.New("helm_chart config is required")
@@ -228,14 +207,10 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 	}
 	if src := obj.GCPGARImageConfig; src != nil {
 		sources++
-		if err := src.ValidateCredentials(); err != nil {
-			return nil, err
-		}
 		cfg.ImageURL = src.ImageURL
 		cfg.Tag = src.Tag
 		cfg.UpdatePolicy = src.UpdatePolicy
 		cfg.GCPGARImageConfig = &app.GCPGARImageConfig{
-			UseCloudConnection:       src.UseCloudConnection,
 			GCPProjectID:             src.GCPProjectID,
 			GCPRegion:                src.GCPRegion,
 			ServiceAccountEmail:      src.ServiceAccountEmail,
@@ -257,7 +232,6 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 		cfg.Tag = src.Tag
 		cfg.UpdatePolicy = src.UpdatePolicy
 		cfg.AzureACRImageConfig = &app.AzureACRImageConfig{
-			UseCloudConnection:    src.UseCloudConnection,
 			RegistryURL:           src.RegistryURL,
 			TenantID:              src.TenantID,
 			ClientID:              src.ClientID,
@@ -286,12 +260,6 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 // AttachTypeConfig wires the per-type config onto the shared connection.
 func AttachTypeConfig(ccc *app.ComponentConfigConnection, comp *config.Component, vcs VCS, terraformVersion string) error {
 	switch {
-	case comp.DockerBuild != nil:
-		cfg, err := DockerBuildComponentConfig(comp.DockerBuild, vcs)
-		if err != nil {
-			return err
-		}
-		ccc.DockerBuildComponentConfig = cfg
 	case comp.HelmChart != nil:
 		cfg, err := HelmComponentConfig(comp.HelmChart, vcs)
 		if err != nil {

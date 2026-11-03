@@ -15,7 +15,10 @@ import (
 	ecr "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
 	"github.com/nuonco/nuon/pkg/oci/metadata"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
+
+var errNoImageRepositoryMapping = errors.New("no saved image repository mapping")
 
 type ImageAuthorizer interface {
 	ECRAuthorization(context.Context, string, *app.AWSECRImageConfig, string) (*ecr.Authorization, error)
@@ -23,7 +26,7 @@ type ImageAuthorizer interface {
 	ACRAuthorization(context.Context, string, *app.AzureACRImageConfig, string) (*metadata.RegistryAuth, error)
 }
 
-func ResolveImageConnection(ctx context.Context, db *gorm.DB, orgID string, componentConfig *app.ComponentConfigConnection) error {
+func ResolveImageConnection(ctx context.Context, db *gorm.DB, orgID string, componentConfig *app.ComponentConfigConnection, legacy bool) error {
 	cfg := componentConfig.ExternalImageComponentConfig
 	if cfg == nil {
 		return nil
@@ -32,15 +35,11 @@ func ResolveImageConnection(ctx context.Context, db *gorm.DB, orgID string, comp
 	var err error
 	switch {
 	case cfg.AWSECRImageConfig != nil:
-		connection, err = ECRConnection(ctx, db, orgID, cfg.AWSECRImageConfig, cfg.ImageURL)
+		connection, err = ECRConnection(ctx, db, orgID, cfg.AWSECRImageConfig, cfg.ImageURL, legacy)
 	case cfg.GCPGARImageConfig != nil:
-		connection, err = GARConnection(ctx, db, orgID, cfg.GCPGARImageConfig, cfg.ImageURL)
+		connection, err = GARConnection(ctx, db, orgID, cfg.GCPGARImageConfig, cfg.ImageURL, legacy)
 	case cfg.AzureACRImageConfig != nil:
-		acr := cfg.AzureACRImageConfig
-		if !acr.UsesCloudConnection() {
-			return nil
-		}
-		connection, err = ACRConnection(ctx, db, orgID, acr, cfg.ImageURL)
+		connection, err = ACRConnection(ctx, db, orgID, cfg.AzureACRImageConfig, cfg.ImageURL, legacy)
 	default:
 		return nil
 	}
@@ -62,26 +61,26 @@ func imageConnection(ctx context.Context, db *gorm.DB, filter app.CloudConnectio
 	}
 	key, _, err := ImageRepositoryCoordinates(&filter, repository)
 	if err != nil {
-		return nil, err
+		return nil, stderr.NewInvalidRequest(err)
 	}
 	if filter.ID == "" {
 		var mapping app.ImageRepository
 		if err := db.WithContext(ctx).Where(app.ImageRepository{OrgID: filter.OrgID, CanonicalKey: key}).First(&mapping).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, fmt.Errorf("no saved image repository mapping for %s; Add this repository in Settings > Image repositories, then sync", repository)
+				return nil, stderr.NewInvalidRequest(fmt.Errorf("%w for %s; Add this repository in Settings > Image repositories or with nuon image-repositories create, then sync", errNoImageRepositoryMapping, repository))
 			}
 			return nil, fmt.Errorf("unable to resolve image repository mapping: %w", err)
 		}
 		filter.ID = mapping.CloudConnectionID
 		if filter.ID == "" {
-			return nil, fmt.Errorf("image repository mapping has no cloud connection")
+			return nil, stderr.NewInvalidRequest(errors.New("image repository mapping has no cloud connection"))
 		}
 	}
 	filter.Status = app.CloudConnectionStatusVerified
 	var connection app.CloudConnection
 	if err := db.WithContext(ctx).Where(filter).First(&connection).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("the selected %s image connection for %s is unavailable, does not match the repository, or is not verified; check Settings > Image repositories and verify its Cloud Connection, then sync", filter.Platform, repository)
+			return nil, stderr.NewInvalidRequest(fmt.Errorf("the selected %s image connection for %s is unavailable, does not match the repository, or is not verified; check Settings > Image repositories and verify its Cloud Connection, then sync", filter.Platform, repository))
 		}
 		return nil, fmt.Errorf("unable to resolve image repository cloud connection: %w", err)
 	}

@@ -1,6 +1,5 @@
 import { ConnectionDetail } from './ConnectionDetail'
 import { InstallsTableComponent } from '@/components/installs/InstallsTable'
-import { RepositoryAccessDemo } from '../__stories__/RepositoryAccessDemo'
 import {
   PageStory,
   acrConnection,
@@ -22,6 +21,7 @@ import {
 } from '../__stories__/fixtures'
 export default { title: 'Features / Cloud connections / Detail' }
 const props = {
+  orgId: 'org-mock-001',
   basePath: '/org-mock-001/settings/cloud-connections/cc-example',
   onVerify: noop,
   onDelete: noop,
@@ -48,12 +48,7 @@ export const Custom = () => (
 )
 export const ECROverview = () => (
   <PageStory>
-    <ConnectionDetail
-      {...props}
-      connection={ecrConnection}
-      tab="overview"
-      repositoryAccess={<RepositoryAccessDemo connection={ecrConnection} />}
-    />
+    <ConnectionDetail {...props} connection={ecrConnection} tab="overview" />
   </PageStory>
 )
 export const ECRVerification = () => (
@@ -71,12 +66,9 @@ export const ImageConfigurations = () => (
       {...props}
       connection={{
         ...verifiedECRConnection,
-        used_by: { installs: 0, image_configs: 3 },
+        used_by: { installs: 0, image_repositories: 3 },
       }}
       tab="overview"
-      repositoryAccess={
-        <RepositoryAccessDemo connection={verifiedECRConnection} />
-      }
     />
   </PageStory>
 )
@@ -142,12 +134,7 @@ export const Verifying = () => (
 )
 export const GAROverview = () => (
   <PageStory>
-    <ConnectionDetail
-      {...props}
-      connection={garConnection}
-      tab="overview"
-      repositoryAccess={<RepositoryAccessDemo connection={garConnection} />}
-    />
+    <ConnectionDetail {...props} connection={garConnection} tab="overview" />
   </PageStory>
 )
 export const GARVerification = () => (
@@ -189,12 +176,7 @@ export const GARTrustFailed = () => (
 )
 export const ACROverview = () => (
   <PageStory>
-    <ConnectionDetail
-      {...props}
-      connection={acrConnection}
-      tab="overview"
-      repositoryAccess={<RepositoryAccessDemo connection={acrConnection} />}
-    />
+    <ConnectionDetail {...props} connection={acrConnection} tab="overview" />
   </PageStory>
 )
 export const ACRVerification = () => (

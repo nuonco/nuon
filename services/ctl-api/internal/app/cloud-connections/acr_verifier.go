@@ -28,19 +28,16 @@ func (e *acrVerificationError) Error() string {
 }
 func (e *acrVerificationError) Unwrap() error { return e.cause }
 
-func (v *awsVerifier) verifyACR(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (result VerificationResult, verifyErr error) {
+func (v *providerVerifier) verifyACR(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (result VerificationResult, verifyErr error) {
 	message := "Azure federation could not be checked. Review the existing application and service principal, exact issuer/subject/audience, and publicly reachable issuer discovery and JWKS in step 2, then retry."
 	defer func() {
 		if verifyErr != nil {
 			verifyErr = &acrVerificationError{message: message, cause: verifyErr}
 		}
 	}()
-	if err := ValidateACRConnection(connection); err != nil {
-		return VerificationResult{}, err
-	}
 	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
-	credential, err := ACRCredential(v.issuer, connection, fmt.Sprintf("org:%s:connection:%s", connection.OrgID, connection.ID))
+	credential, err := ACRCredential(v.issuer, connection, Subject(connection))
 	if err != nil {
 		return VerificationResult{}, err
 	}
@@ -61,7 +58,7 @@ func (v *awsVerifier) verifyACR(ctx context.Context, connection *app.CloudConnec
 			return VerificationResult{}, err
 		}
 	}
-	foreign, err := ACRCredential(v.issuer, connection, "org:foreign:connection:foreign")
+	foreign, err := ACRCredential(v.issuer, connection, ForeignSubject)
 	if err != nil {
 		return VerificationResult{}, err
 	}

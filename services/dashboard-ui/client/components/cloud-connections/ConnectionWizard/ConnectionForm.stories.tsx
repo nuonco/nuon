@@ -43,6 +43,7 @@ export const SharedRole = () => (
           target_id: '123456789012',
           role_name: 'nuon-shared',
           principal: 'arn:aws:iam::123456789012:role/nuon-shared',
+          principal_mode: 'existing',
           principal_choice: connection.id,
           ecr_region: 'us-west-2',
         }}

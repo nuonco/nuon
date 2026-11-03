@@ -23,7 +23,6 @@ func init() {
 	// Component providers
 	_ = faker.AddProvider("terraformComponent", fakeTerraformComponent)
 	_ = faker.AddProvider("helmComponent", fakeHelmComponent)
-	_ = faker.AddProvider("dockerComponent", fakeDockerComponent)
 	_ = faker.AddProvider("k8sManifestComponent", fakeKubernetesManifestComponent)
 	_ = faker.AddProvider("jobComponent", fakeJobComponent)
 	_ = faker.AddProvider("externalImageComponent", fakeExternalImageComponent)

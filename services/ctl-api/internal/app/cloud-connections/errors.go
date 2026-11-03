@@ -11,10 +11,8 @@ import (
 	"github.com/aws/smithy-go"
 	"golang.org/x/oauth2"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
+	"github.com/nuonco/nuon/pkg/redact"
 )
-
-var ErrLegacyImageAuthDisabled = errors.New("legacy image registry authentication is disabled; add the repository in Settings > Image repositories and use a Cloud Connection")
 
 func IsAccessDenied(err error) bool {
 	var apiErr smithy.APIError
@@ -77,7 +75,7 @@ func VerificationErrorMessage(err error) string {
 			}
 		}
 	}
-	diagnostic = compositeerrors.RedactDiagnosticSecrets(diagnostic)
+	diagnostic = redact.DiagnosticSecrets(diagnostic)
 	diagnostic = strings.Join(strings.Fields(diagnostic), " ")
 	if len(diagnostic) > 2048 {
 		diagnostic = strings.ToValidUTF8(diagnostic[:2048], "") + "..."

@@ -10,7 +10,6 @@ import {
 } from '@/components/cloud-connections/__stories__/fixtures'
 import { repositories } from '../fixtures'
 import { ImageRepository } from './ImageRepository'
-import { RemoveImageRepository } from './RemoveImageRepository'
 
 export default { title: 'Features / Image repositories / Setup' }
 
@@ -87,11 +86,5 @@ export const Failed = () => (
       onVerify={noop}
       onReloadSetup={noop}
     />
-  </PageStory>
-)
-
-export const Remove = () => (
-  <PageStory>
-    <RemoveImageRepository repository={repositories[0]} isVisible />
   </PageStory>
 )

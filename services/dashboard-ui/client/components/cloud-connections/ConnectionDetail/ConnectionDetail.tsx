@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
+import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -12,7 +13,6 @@ import { Time } from '@/components/common/Time'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
-import { SectionHeader } from '@/components/layout/SectionHeader'
 import type {
   TAPIError,
   TCloudConnection,
@@ -21,22 +21,35 @@ import type {
 import { ConnectionPolicies, failedRunbookStep } from '../ConnectionPolicies'
 import { ConnectionStatus } from '../ConnectionStatus'
 import { PrincipalSharing } from '../PrincipalSharing'
+import { isImagePreset } from '../repository-scope'
 
 export type TConnectionTab = 'overview' | 'installs' | 'verification'
+
+const verifyingCopy: Record<'ecr' | 'gar' | 'acr', string> = {
+  acr: 'Checking Entra federation, foreign-subject rejection, and ACR token exchange.',
+  gar: 'Checking federation trust, service account impersonation, and foreign-subject rejection.',
+  ecr: 'Checking role trust, foreign-subject rejection, and ECR token retrieval.',
+}
+const imageNoteCopy: Record<'ecr' | 'gar' | 'acr', string> = {
+  ecr: 'Verification checks role trust, foreign-subject rejection, and ECR token retrieval. Cloud IAM controls repository access; a component build proves access when pulling the image.',
+  gar: 'Verification checks GCP STS exchange, service account impersonation, and foreign-subject rejection, not repository access. Cloud IAM controls repository access; a component build proves access when pulling the image.',
+  acr: 'Verification checks Entra federation, foreign-subject rejection, and ACR token exchange, not repository access. Cloud IAM controls repository access; a component build proves access when pulling the image.',
+}
 
 export const ConnectionMetadata = ({
   connection,
 }: {
   connection?: TCloudConnection
 }) => {
-  const values = [
+  const values: [string, ReactNode][] = [
     [
       'Cloud',
-      connection?.platform === 'gcp'
-        ? 'Google Cloud'
-        : connection?.platform === 'azure'
-          ? 'Azure'
-          : 'AWS',
+      <CloudPlatform
+        key="cloud"
+        platform={connection?.platform || 'unknown'}
+        displayVariant="name"
+        variant="subtext"
+      />,
     ],
     [
       connection?.platform === 'azure'
@@ -55,45 +68,40 @@ export const ConnectionMetadata = ({
       connection?.principal,
     ],
     ...(connection?.platform === 'azure'
-      ? [
+      ? ([
           ['Tenant', connection.azure_tenant_id],
           ['Registry', connection.azure_registry_login_server],
           ['Registry resource ID', connection.azure_registry_id],
-        ]
-      : [
+        ] as [string, string | undefined][])
+      : ([
           ...(connection?.default_region
             ? [['Location', connection.default_region]]
             : []),
           ...(connection?.platform === 'gcp'
             ? [['Project number', connection.gcp_project_number]]
             : []),
-        ]),
+        ] as [string, string | undefined][])),
   ]
   return (
-    <section
-      className="flex w-full min-w-0 flex-col gap-4"
-      aria-label="Saved connection details"
-    >
-      <SectionHeader title="Saved connection details" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {values.map(([label, value]) => (
-          <LabeledValue key={label} label={label} loading={!connection}>
-            <Text
-              family={label === 'Cloud' ? 'sans' : 'mono'}
-              variant="subtext"
-              className="break-all"
-            >
+    <>
+      {values.map(([label, value]) => (
+        <LabeledValue key={label} label={label} loading={!connection}>
+          {typeof value === 'string' ? (
+            <Text family="mono" variant="subtext" className="break-all">
               {value}
             </Text>
-          </LabeledValue>
-        ))}
-      </div>
-    </section>
+          ) : (
+            value
+          )}
+        </LabeledValue>
+      ))}
+    </>
   )
 }
 
 export const ConnectionDetail = ({
   connection,
+  orgId,
   basePath,
   tab,
   isVerifying = false,
@@ -102,10 +110,10 @@ export const ConnectionDetail = ({
   onDelete,
   error,
   installs,
-  repositoryAccess,
   sharedConnections = [],
 }: {
   connection?: TCloudConnection
+  orgId: string
   basePath: string
   tab: TConnectionTab
   isVerifying?: boolean
@@ -114,7 +122,6 @@ export const ConnectionDetail = ({
   onDelete: () => void
   error?: TAPIError | null
   installs?: ReactNode
-  repositoryAccess?: ReactNode
   sharedConnections?: TCloudConnectionSummary[]
 }) => (
   <DetailPage
@@ -122,12 +129,8 @@ export const ConnectionDetail = ({
       <DetailHeader
         backLink={false}
         loading={!connection && !error}
-        title={
-          <Text family="mono" weight="strong" className="break-all">
-            {connection?.name || 'Cloud connection'}
-          </Text>
-        }
-        description="Manage the saved cloud identity and generate cloud setup commands."
+        title={connection?.name || 'Cloud connection'}
+        description="Manage this connection and generate cloud setup commands."
         status={
           <ConnectionStatus connection={connection} isVerifying={isVerifying} />
         }
@@ -182,7 +185,7 @@ export const ConnectionDetail = ({
     )}
     {connection && tab === 'overview' && (
       <div className="flex flex-col gap-6">
-        <PrincipalSharing connections={sharedConnections} />
+        <PrincipalSharing connections={sharedConnections} orgId={orgId} />
         <Link href={`${basePath}/setup`}>View identity setup</Link>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <LabeledValue label="Created">
@@ -191,22 +194,22 @@ export const ConnectionDetail = ({
           <LabeledValue label="Access">
             {connection.preset === 'stacks'
               ? 'Manages install stacks'
-              : connection.preset === 'ecr' ||
-                  connection.preset === 'gar' ||
-                  connection.preset === 'acr'
+              : isImagePreset(connection.preset)
                 ? 'Image repository access'
                 : 'Custom policy'}
           </LabeledValue>
-          {['ecr', 'gar', 'acr'].includes(connection.preset) && (
-            <LabeledValue label="Saved image configurations">
-              {connection.used_by?.image_configs ?? 0}
+          {isImagePreset(connection.preset) && (
+            <LabeledValue label="Image repositories">
+              {connection.used_by?.image_repositories ?? 0}
             </LabeledValue>
           )}
         </div>
-        <ConnectionPolicies
-          connection={connection}
-          repositoryAccess={repositoryAccess}
-        />
+        <ConnectionPolicies connection={connection} orgId={orgId} />
+        {isImagePreset(connection.preset) && (
+          <Link href={`/${orgId}/settings/image-repositories`}>
+            View image repositories
+          </Link>
+        )}
       </div>
     )}
     {tab === 'installs' && installs}
@@ -228,37 +231,15 @@ export const ConnectionDetail = ({
           </LabeledValue>
           <LabeledValue label="Result" className="col-span-2">
             {isVerifying
-              ? connection.preset === 'acr'
-                ? 'Checking Entra federation, foreign-subject rejection, and ACR token exchange.'
-                : connection.preset === 'gar'
-                  ? 'Checking federation trust, service account impersonation, and foreign-subject rejection.'
-                  : connection.preset === 'ecr'
-                    ? 'Checking role trust, foreign-subject rejection, and ECR token retrieval.'
-                    : 'Checking the OIDC exchange and account access.'
+              ? isImagePreset(connection.preset)
+                ? verifyingCopy[connection.preset]
+                : 'Checking the OIDC exchange and account access.'
               : connection.status_message || 'Verification has not run yet.'}
           </LabeledValue>
         </div>
-        {connection.preset === 'ecr' && (
+        {isImagePreset(connection.preset) && (
           <Text variant="subtext" theme="neutral">
-            Verification checks role trust, foreign-subject rejection, and ECR
-            token retrieval. Cloud IAM controls repository access; a component
-            build proves access when pulling the image.
-          </Text>
-        )}
-        {connection.preset === 'gar' && (
-          <Text variant="subtext" theme="neutral">
-            Verification checks GCP STS exchange, service account impersonation,
-            and foreign-subject rejection, not repository access. Cloud IAM
-            controls repository access; a component build proves access when
-            pulling the image.
-          </Text>
-        )}
-        {connection.preset === 'acr' && (
-          <Text variant="subtext" theme="neutral">
-            Verification checks Entra federation, foreign-subject rejection, and
-            ACR token exchange, not repository access. Cloud IAM controls
-            repository access; a component build proves access when pulling the
-            image.
+            {imageNoteCopy[connection.preset]}
           </Text>
         )}
         {connection.status === 'error' &&

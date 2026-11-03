@@ -11,8 +11,6 @@ type CreateComponentBuildPlanRequest struct {
 	ComponentBuildID string
 
 	WorkflowID               string
-	CloudProvider            string
-	ManagementIAMRoleARN     string
 	ManagementACRRegistryURL string
 }
 

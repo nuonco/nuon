@@ -1,7 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
-import { SectionHeader } from '@/components/layout/SectionHeader'
 import { InstallsTable } from '@/components/installs/InstallsTable'
 import { Toast } from '@/components/surfaces/Toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -60,6 +58,7 @@ export const ConnectionDetailContainer = ({
   return (
     <ConnectionDetail
       connection={connection}
+      orgId={orgId}
       sharedConnections={
         connection
           ? sharedPrincipalConnections(identities.data || [], connection)
@@ -70,25 +69,6 @@ export const ConnectionDetailContainer = ({
       error={error || verify.error || identities.error}
       isVerifying={verify.isPending || isVerifying}
       verificationTimedOut={verificationTimedOut}
-      repositoryAccess={
-        connection && ['ecr', 'gar', 'acr'].includes(connection.preset) ? (
-          <section
-            className="flex flex-col gap-4 border-t pt-6"
-            aria-label="Image repositories"
-          >
-            <SectionHeader
-              title="Image repositories"
-              description="Save each repository and explicitly choose its pull identity in Image repositories."
-            />
-            <Button
-              className="w-fit"
-              href={`/${orgId}/settings/image-repositories`}
-            >
-              View image repositories
-            </Button>
-          </section>
-        ) : undefined
-      }
       onVerify={() =>
         verify.mutate(undefined, {
           onError: (error) =>

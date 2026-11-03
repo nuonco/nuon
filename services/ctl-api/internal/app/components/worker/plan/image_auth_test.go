@@ -14,7 +14,6 @@ func TestImageSourcePlanAuthentication(t *testing.T) {
 		connection, registration bool
 	}{
 		"saved ambient":     {acr: app.AzureACRImageConfig{ID: "saved"}},
-		"explicit opt in":   {acr: app.AzureACRImageConfig{UseCloudConnection: true}, connection: true},
 		"saved pin":         {acr: app.AzureACRImageConfig{ID: "saved", CloudConnectionID: "cc_saved"}, connection: true},
 		"saved secret":      {acr: app.AzureACRImageConfig{ID: "saved", TenantID: "tenant", ClientID: "client", ClientSecretName: "secret"}, registration: true},
 		"saved certificate": {acr: app.AzureACRImageConfig{ID: "saved", TenantID: "tenant", ClientID: "client", ClientCertificateName: "cert"}, registration: true},

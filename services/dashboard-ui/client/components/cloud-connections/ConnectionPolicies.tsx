@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import type { TCloudConnection, TCloudConnectionSetup } from '@/types'
+import { isImagePreset } from './repository-scope'
 
 export const roleName = (principal: string) =>
   principal.split(':role/')[1] || ''
@@ -51,16 +51,16 @@ export const failedRunbookStep = (connection: TCloudConnection) =>
 export const ConnectionPolicies = ({
   connection,
   initialSetup,
-  repositoryAccess,
+  orgId,
 }: {
   connection: TCloudConnection
   initialSetup?: TCloudConnectionSetup
-  repositoryAccess?: ReactNode
+  orgId?: string
 }) => {
   const setup = initialSetup || connection.setup
   const isGCP = connection.platform === 'gcp'
   const isAzure = connection.platform === 'azure'
-  const isImage = ['ecr', 'gar', 'acr'].includes(connection.preset)
+  const isImage = isImagePreset(connection.preset)
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <section
@@ -99,10 +99,9 @@ export const ConnectionPolicies = ({
           </CodeBlock>
         </Expand>
       </section>
-      {connection.preset === 'stacks' ||
-      (isImage && initialSetup?.permissions_policy) ? (
+      {connection.preset === 'stacks' || isImage ? (
         <section
-          id={isImage ? undefined : 'runbook-step-3'}
+          id="runbook-step-3"
           className="flex min-w-0 flex-col gap-3 scroll-mt-6"
         >
           <Text weight="strong">
@@ -112,23 +111,40 @@ export const ConnectionPolicies = ({
                 ? 'Repository role bindings'
                 : 'Permissions policy'}
           </Text>
-          {isAzure && (
+          {setup.permissions_policy ? (
+            <>
+              {isAzure && (
+                <Text variant="subtext" theme="neutral">
+                  Grant Container Registry Repository Reader at this registry
+                  with an ABAC condition for the exact selected repository
+                  names. This does not require legacy AcrPull or a
+                  catalog-listing role.
+                </Text>
+              )}
+              <CodeBlock language="json" showCopy>
+                {JSON.stringify(setup.permissions_policy, null, 2)}
+              </CodeBlock>
+            </>
+          ) : (
             <Text variant="subtext" theme="neutral">
-              Grant Container Registry Repository Reader at this registry with
-              an ABAC condition for the exact selected repository names. This
-              does not require legacy AcrPull or a catalog-listing role.
+              Repository access is granted per image repository, not on this
+              connection. Grant it in{' '}
+              {orgId ? (
+                <Link href={`/${orgId}/settings/image-repositories`}>
+                  Image repositories
+                </Link>
+              ) : (
+                'Image repositories'
+              )}
+              .
             </Text>
           )}
-          <CodeBlock language="json" showCopy>
-            {JSON.stringify(setup.permissions_policy, null, 2)}
-          </CodeBlock>
         </section>
-      ) : !isImage ? (
+      ) : (
         <Banner theme="neutral">
           The permissions policy is managed in the customer's AWS account.
         </Banner>
-      ) : null}
-      {isImage && repositoryAccess}
+      )}
     </div>
   )
 }

@@ -33,11 +33,6 @@ func (a *Activities) GetComponentsWithType(ctx context.Context, req GetComponent
 		Preload("ComponentConfigs.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
 
-		// preload all docker configs
-		Preload("ComponentConfigs.DockerBuildComponentConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-
 		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
 

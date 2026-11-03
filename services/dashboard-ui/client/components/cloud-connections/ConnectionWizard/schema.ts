@@ -18,8 +18,16 @@ const accountSchema = z
     azure_tenant_id: z.string().trim().optional(),
     principal: z.string().trim().optional(),
     principal_choice: z.string().optional(),
+    principal_mode: z.enum(['new', 'existing']).optional(),
   })
   .superRefine((value, ctx) => {
+    if (value.principal_mode === 'existing' && !value.principal_choice) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['principal_choice'],
+        message: 'Choose an existing principal',
+      })
+    }
     const fields =
       value.platform === 'azure'
         ? {
@@ -59,12 +67,7 @@ const accountSchema = z
                 .regex(/^[\w+=,.@-]+$/, 'Use letters, numbers, or _+=,.@-'),
             }
     for (const [field, schema] of Object.entries(fields)) {
-      if (
-        field === 'role_name' &&
-        value.principal_choice &&
-        value.principal_choice !== 'new'
-      )
-        continue
+      if (field === 'role_name' && value.principal_mode === 'existing') continue
       const result = schema.safeParse(value[field as keyof typeof value] || '')
       if (!result.success) {
         ctx.addIssue({

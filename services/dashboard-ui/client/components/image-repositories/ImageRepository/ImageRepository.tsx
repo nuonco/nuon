@@ -1,10 +1,17 @@
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
+import {
+  CloudPlatform,
+  cloudPlatformName,
+} from '@/components/common/CloudPlatform'
 import { CodeBlock } from '@/components/common/CodeBlock'
+import { Dropdown } from '@/components/common/Dropdown'
 import { Expand } from '@/components/common/Expand'
+import { Icon } from '@/components/common/Icon'
+import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
-import { Status } from '@/components/common/Status'
+import { Menu } from '@/components/common/Menu'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
@@ -37,6 +44,7 @@ export const ImageRepository = ({
   sharedConnections = [],
   existingPrincipal = false,
   onSetupModeChange,
+  verifyError,
 }: {
   orgId: string
   repository?: TImageRepository
@@ -52,13 +60,9 @@ export const ImageRepository = ({
   sharedConnections?: TCloudConnectionSummary[]
   existingPrincipal?: boolean
   onSetupModeChange?: (existing: boolean) => void
+  verifyError?: TAPIError | null
 }) => {
-  const cloud =
-    repository?.platform === 'gcp'
-      ? 'Google Cloud'
-      : repository?.platform === 'azure'
-        ? 'Azure'
-        : 'AWS'
+  const cloud = cloudPlatformName(repository?.platform)
   const verified = connection?.status === 'verified'
   const cli = setup?.cli.replaceAll(
     '<role-name>',
@@ -81,23 +85,59 @@ export const ImageRepository = ({
         <DetailHeader
           backLink={false}
           loading={!repository && !error}
-          title={
-            <Text family="mono" className="break-all">
-              {repository?.image_url_prefix || 'Image repository'}
-            </Text>
-          }
+          title={repository?.image_url_prefix || 'Image repository'}
           description="Set up image pull access, then use this repository in app configuration."
+          metadata={
+            repository ? (
+              <>
+                <LabeledValue label="Identity" loading={!connection}>
+                  {repository.cloud_connection?.name ? (
+                    <Text family="mono" className="break-all">
+                      {repository.cloud_connection.name}
+                    </Text>
+                  ) : (
+                    'Unavailable identity'
+                  )}
+                </LabeledValue>
+                <LabeledStatus
+                  label="Authentication"
+                  loading={!connection}
+                  statusProps={{
+                    status: isVerifying ? 'pending' : connection?.status,
+                  }}
+                />
+                <LabeledValue label="Cloud" loading={!connection}>
+                  <CloudPlatform
+                    platform={repository.platform}
+                    displayVariant="name"
+                    variant="subtext"
+                  />
+                </LabeledValue>
+                <LabeledValue label="Principal" loading={!connection}>
+                  <Text family="mono" variant="subtext" className="break-all">
+                    {repository.cloud_connection?.principal}
+                  </Text>
+                </LabeledValue>
+              </>
+            ) : null
+          }
           actions={
-            <div className="flex flex-wrap gap-2">
-              <Button href={`/${orgId}/settings/image-repositories`}>
-                View image repositories
-              </Button>
-              {repository && onRemove && (
-                <Button variant="danger" onClick={onRemove}>
-                  Remove repository
-                </Button>
-              )}
-            </div>
+            repository && onRemove ? (
+              <Dropdown
+                id="image-repository-actions"
+                aria-label="Repository actions"
+                buttonText={<Icon variant="DotsThreeIcon" size={20} />}
+                hideIcon
+                variant="ghost"
+                alignment="right"
+              >
+                <Menu>
+                  <Button variant="danger" onClick={onRemove}>
+                    Remove repository
+                  </Button>
+                </Menu>
+              </Dropdown>
+            ) : null
           }
         />
       }
@@ -113,28 +153,6 @@ export const ImageRepository = ({
               title="Pull identity"
               description="This selection is saved for this repository. Cloud permissions are configured separately."
             />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <LabeledValue label="Identity">
-                <Text family="mono">
-                  {repository.cloud_connection?.name || 'Unavailable identity'}
-                </Text>
-              </LabeledValue>
-              <LabeledValue label="Authentication">
-                <Status
-                  loading={!connection}
-                  variant="badge"
-                  status={isVerifying ? 'pending' : connection?.status}
-                />
-              </LabeledValue>
-              <LabeledValue label="Cloud">
-                <Text>{cloud}</Text>
-              </LabeledValue>
-              <LabeledValue label="Principal">
-                <Text family="mono" variant="subtext" className="break-all">
-                  {repository.cloud_connection?.principal}
-                </Text>
-              </LabeledValue>
-            </div>
             <Link
               href={`/${orgId}/settings/cloud-connections/${repository.cloud_connection_id}`}
             >
@@ -193,7 +211,9 @@ export const ImageRepository = ({
                       tabLabels={{
                         cli: `${cloud === 'Google Cloud' ? 'gcloud' : cloud} CLI`,
                         terraform: 'Terraform',
-                        cloudformation: 'CloudFormation',
+                        ...(setup.cloudformation
+                          ? { cloudformation: 'CloudFormation' }
+                          : {}),
                       }}
                       tabs={{
                         cli: (
@@ -232,9 +252,10 @@ export const ImageRepository = ({
                 >
                   <div className="flex flex-col gap-4">
                     <Text variant="subtext" theme="neutral">
-                      These additive commands grant this repository to the saved
-                      identity without recreating authentication. If cloud IaC
-                      manages its policy, update that source of truth too.
+                      These additive commands grant this repository to the
+                      saved principal without recreating authentication. If
+                      cloud IaC manages its policy, update that source of truth
+                      too.
                     </Text>
                     <CodeBlock language="bash" showCopy wrapLongLines>
                       {permissions || ''}
@@ -269,9 +290,7 @@ export const ImageRepository = ({
               </Banner>
             )}
             {verificationTimedOut && (
-              <Banner theme="info">
-                Verification is still running. Refresh in a moment.
-              </Banner>
+              <Banner theme="info">Still checking — refresh in a moment</Banner>
             )}
             {verified && (
               <Banner theme="success">
@@ -279,6 +298,10 @@ export const ImageRepository = ({
                 access.
               </Banner>
             )}
+            <FormErrorBanner
+              error={verifyError}
+              fallback="Verification failed to start"
+            />
             <Button
               className="w-fit"
               variant="primary"

@@ -25,9 +25,6 @@ func (e *registryError) Sections() []compositeerrors.Section {
 }
 
 func parseRegistry(ctx *errparse.ParseContext) compositeerrors.CompositeError {
-	if ctx.Tool != errparse.ToolOCI {
-		return nil
-	}
 	raw := ctx.Raw
 	e := &registryError{}
 	switch {

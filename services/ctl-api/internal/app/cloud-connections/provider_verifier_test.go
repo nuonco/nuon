@@ -34,6 +34,7 @@ func TestGARVerification(t *testing.T) {
 	require.NoError(t, err)
 	for name, tc := range map[string]struct {
 		stsError      string
+		transientSts  bool
 		impersonation bool
 		allowForeign  bool
 		foreignError  string
@@ -46,6 +47,7 @@ func TestGARVerification(t *testing.T) {
 	}{
 		"verified":                  {wantStatus: app.CloudConnectionStatusVerified},
 		"federation denied":         {stsError: "invalid_grant", wantStatus: app.CloudConnectionStatusError, wantMessage: "invalid_grant: The given credential is rejected by the attribute condition"},
+		"transient sts error":       {transientSts: true, retry: true, wantSleeps: 0, wantError: true, wantMessage: "status code 503: server_error: upstream request timed out"},
 		"impersonation denied":      {impersonation: true, wantStatus: app.CloudConnectionStatusError, wantMessage: "PERMISSION_DENIED: Permission iam.serviceAccounts.getAccessToken denied for acme"},
 		"retry exhausted":           {stsError: "invalid_grant", retry: true, wantSleeps: 12, wantStatus: app.CloudConnectionStatusError, wantMessage: "invalid_grant: The given credential is rejected by the attribute condition"},
 		"retry succeeds":            {stsError: "invalid_grant", retry: true, failures: 1, wantSleeps: 1, wantStatus: app.CloudConnectionStatusVerified},
@@ -69,6 +71,8 @@ func TestGARVerification(t *testing.T) {
 						status, body = http.StatusBadRequest, `{"error":"invalid_target","error_description":"Provider does not exist"}`
 					case foreign && !tc.allowForeign:
 						status, body = http.StatusBadRequest, `{"error":"invalid_grant","error_description":"The given credential is rejected by the attribute condition"}`
+					case !foreign && tc.transientSts:
+						status, body = http.StatusServiceUnavailable, `{"error":"server_error","error_description":"upstream request timed out","private":"never-include-this"}`
 					case !foreign && tc.stsError != "" && (tc.failures == 0 || exchanges < tc.failures):
 						exchanges++
 						status = http.StatusBadRequest
@@ -89,7 +93,7 @@ func TestGARVerification(t *testing.T) {
 			})}
 			connection := &app.CloudConnection{ID: "cc_acme", OrgID: "org_acme", Platform: app.CloudPlatformGCP, Preset: app.CloudConnectionPresetGAR, Principal: "acme@acme-project.iam.gserviceaccount.com", GCPProjectNumber: "123456789012"}
 			now, sleeps := time.Now(), 0
-			verifier := NewAWSVerifier(issuer, zap.NewNop()).(*awsVerifier)
+			verifier := NewVerifier(issuer, zap.NewNop()).(*providerVerifier)
 			verifier.now = func() time.Time { return now }
 			verifier.sleep = func(_ context.Context, duration time.Duration) error {
 				sleeps++
@@ -200,7 +204,7 @@ func TestACRVerification(t *testing.T) {
 			t.Cleanup(func() { http.DefaultTransport = previous })
 			connection := &app.CloudConnection{ID: "cc_acme", OrgID: "org_acme", Platform: app.CloudPlatformAzure, Preset: app.CloudConnectionPresetACR, TargetID: tenant, Principal: "22222222-2222-2222-2222-222222222222", AzureTenantID: tenant, AzureRegistryID: "/subscriptions/" + tenant + "/resourceGroups/acme/providers/Microsoft.ContainerRegistry/registries/acmeregistry", AzureRegistryLoginServer: "acmeregistry.azurecr.io"}
 			now, sleeps := time.Now(), 0
-			verifier := NewAWSVerifier(issuer, zap.NewNop()).(*awsVerifier)
+			verifier := NewVerifier(issuer, zap.NewNop()).(*providerVerifier)
 			verifier.now = func() time.Time { return now }
 			verifier.sleep = func(_ context.Context, duration time.Duration) error {
 				sleeps++

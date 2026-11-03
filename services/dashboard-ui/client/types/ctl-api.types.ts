@@ -183,7 +183,6 @@ export type TAppPolicyType =
   | 'terraform_module'
   | 'helm_chart'
   | 'kubernetes_manifest'
-  | 'docker_build'
   | 'container_image'
   | 'sandbox'
 
@@ -884,7 +883,7 @@ export type TCloudConnection = {
   verification_requested_at?: string
   verification_in_progress: boolean
   preset: 'stacks' | 'ecr' | 'gar' | 'acr' | 'custom'
-  used_by: { installs: number; image_configs?: number }
+  used_by: { installs: number; image_repositories?: number }
   setup: {
     issuer_url: string
     subject: string

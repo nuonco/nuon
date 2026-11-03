@@ -29,6 +29,7 @@ type service struct {
 	apiPkg.RouteRegister
 	db                  *gorm.DB
 	issuer              *oidcissuer.Issuer
+	jwks                oidcissuer.JWKS
 	helpers             *cloudconnectionshelpers.Helpers
 	enqueueVerification func(context.Context, *app.CloudConnection) error
 	now                 func() time.Time
@@ -37,7 +38,7 @@ type service struct {
 var _ apiPkg.Service = (*service)(nil)
 
 func New(params Params) (*service, error) {
-	issuer, err := cloudconnections.IssuerFromConfig(params.Cfg)
+	issuer, jwks, err := cloudconnections.IssuerFromConfig(params.Cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +46,7 @@ func New(params Params) (*service, error) {
 		RouteRegister:       apiPkg.RouteRegister{EndpointAudit: params.EndpointAudit},
 		db:                  params.DB,
 		issuer:              issuer,
+		jwks:                jwks,
 		helpers:             params.Helpers,
 		enqueueVerification: params.Helpers.EnqueueVerification,
 		now:                 time.Now,

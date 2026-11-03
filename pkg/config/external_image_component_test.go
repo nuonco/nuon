@@ -61,15 +61,6 @@ func TestAzureACRConfigValidateCredentials(t *testing.T) {
 		"nothing set preserves ambient authentication": {
 			cfg: AzureACRConfig{},
 		},
-		"explicit connection opt in": {
-			cfg: AzureACRConfig{UseCloudConnection: true},
-		},
-		"mixed connection and secret": {
-			cfg: AzureACRConfig{UseCloudConnection: true, TenantID: tenant, ClientID: client, ClientSecretName: secret}, wantErr: true,
-		},
-		"mixed connection and certificate": {
-			cfg: AzureACRConfig{UseCloudConnection: true, TenantID: tenant, ClientID: client, ClientCertificateName: cert}, wantErr: true,
-		},
 		"complete with secret": {
 			cfg: AzureACRConfig{TenantID: tenant, ClientID: client, ClientSecretName: secret},
 		},
@@ -134,10 +125,6 @@ func TestAzureACRLegacyChecksum(t *testing.T) {
 			checksum, err := hasher.HashStruct(tc.cfg, hasher.StructHasherOptions{EnableOmitEmpty: true})
 			require.NoError(t, err)
 			require.Equal(t, tc.checksum, checksum)
-			tc.cfg.UseCloudConnection = true
-			checksum, err = hasher.HashStruct(tc.cfg, hasher.StructHasherOptions{EnableOmitEmpty: true})
-			require.NoError(t, err)
-			require.NotEqual(t, tc.checksum, checksum)
 		})
 	}
 }
@@ -154,36 +141,6 @@ func TestGARLegacyChecksums(t *testing.T) {
 			checksum, err := hasher.HashStruct(cfg, hasher.StructHasherOptions{EnableOmitEmpty: true})
 			require.NoError(t, err)
 			require.Equal(t, tc.checksum, checksum)
-			cfg.UseCloudConnection = true
-			checksum, err = hasher.HashStruct(cfg, hasher.StructHasherOptions{EnableOmitEmpty: true})
-			require.NoError(t, err)
-			require.NotEqual(t, tc.checksum, checksum)
-		})
-	}
-}
-
-func TestGARAuthenticationDecode(t *testing.T) {
-	for name, tc := range map[string]struct {
-		body                  string
-		connection, wantError bool
-	}{
-		"ambient":         {},
-		"connection":      {body: "use_cloud_connection = true", connection: true},
-		"legacy account":  {body: "service_account_email = 'acme@example.com'"},
-		"legacy provider": {body: "workload_identity_provider = 'provider'"},
-		"mixed account":   {body: "use_cloud_connection = true\nservice_account_email = 'acme@example.com'", connection: true, wantError: true},
-		"mixed provider":  {body: "use_cloud_connection = true\nworkload_identity_provider = 'provider'", connection: true, wantError: true},
-	} {
-		t.Run(name, func(t *testing.T) {
-			var cfg ExternalImageComponentConfig
-			require.NoError(t, toml.Unmarshal([]byte("[gcp_gar]\ntag = 'v1'\n"+tc.body), &cfg))
-			require.Equal(t, tc.connection, cfg.GCPGARImageConfig.UseCloudConnection)
-			err := cfg.Validate()
-			if tc.wantError {
-				require.ErrorContains(t, err, "cannot be combined")
-			} else {
-				require.NoError(t, err)
-			}
 		})
 	}
 }

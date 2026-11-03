@@ -43,7 +43,8 @@ export const DeleteConnectionContainer = ({
     <DeleteConnection
       {...props}
       name={connection.name}
-      imageConfigs={connection.used_by?.image_configs ?? 0}
+      orgId={connection.org_id}
+      imageRepositories={connection.used_by?.image_repositories ?? 0}
       error={mutation.error}
       isPending={mutation.isPending}
       onDelete={() => mutation.mutate()}

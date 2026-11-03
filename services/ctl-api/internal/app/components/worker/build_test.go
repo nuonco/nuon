@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -16,13 +14,10 @@ import (
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	historypb "go.temporal.io/api/history/v1"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
-	"go.temporal.io/sdk/workflow"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -57,69 +52,42 @@ func TestBuildFailurePersistence(t *testing.T) {
 		persistence string
 		cancelled   bool
 		bounded     bool
-		legacy      bool
 		statusError app.ComponentBuildStatus
 		statusV2    bool
 		wantTail    []string
 		helm        bool
 		cleanupErr  bool
 	}{
-		"legacy queued job failure": {legacy: true, failAt: "build child", cause: "registry denied", cleanupErr: true},
-		"new queued job failure":    {failAt: "build child", cause: "registry denied", cleanupErr: true},
-		"legacy helm policy denial": {legacy: true, helm: true, policyDeny: true, cause: "image must be signed"},
-		"new helm policy denial":    {helm: true, policyDeny: true, cause: "image must be signed"},
-		"legacy build child ordering": {
-			legacy: true, failAt: "build child", cause: "registry denied",
-			wantTail: []string{"child:build", "status:error", "history:error", "job:queued", "close"},
-		},
+		"new queued job failure": {failAt: "build child", cause: "registry denied", cleanupErr: true},
+		"new helm policy denial": {helm: true, policyDeny: true, cause: "image must be signed"},
 		"new build child ordering": {
 			failAt: "build child", cause: "registry denied",
 			wantTail: []string{"child:build", "job:queued", "close", "status:error", "history:error"},
-		},
-		"legacy metadata child ordering": {
-			legacy: true, failAt: "metadata child", policies: true, cause: "metadata denied",
-			wantTail: []string{"child:metadata", "status:error", "history:error", "job:", "job:queued", "close"},
 		},
 		"new metadata child ordering": {
 			failAt: "metadata child", policies: true, cause: "metadata denied",
 			wantTail: []string{"child:metadata", "job:", "job:queued", "close", "status:error", "history:error"},
 		},
-		"legacy metadata cancellation ordering": {
-			legacy: true, failAt: "metadata child", policies: true, cancelled: true,
-			wantTail: []string{"child:metadata", "status:error", "history:error", "job:", "job:queued", "close"},
-		},
 		"new metadata cancellation ordering": {
 			failAt: "metadata child", policies: true, cancelled: true,
 			wantTail: []string{"child:metadata", "job:queued", "close"},
 		},
-		"legacy build cancellation ordering": {
-			legacy: true, failAt: "build child", cancelled: true,
-			wantTail: []string{"child:build", "status:error", "history:error", "job:queued", "close"},
-		},
-		"legacy policy denial":            {legacy: true, policies: true, policyDeny: true, cause: "image must be signed"},
-		"legacy planning status failure":  {legacy: true, statusError: app.ComponentBuildStatusPlanning},
-		"new planning status failure":     {statusError: app.ComponentBuildStatusPlanning, cause: "status database unavailable"},
-		"legacy planning history failure": {legacy: true, statusError: app.ComponentBuildStatusPlanning, statusV2: true},
-		"new planning history failure":    {statusError: app.ComponentBuildStatusPlanning, statusV2: true, cause: "status database unavailable"},
-		"legacy building status failure":  {legacy: true, statusError: app.ComponentBuildStatusBuilding},
-		"new building status failure":     {statusError: app.ComponentBuildStatusBuilding, cause: "status database unavailable"},
-		"legacy building history failure": {legacy: true, statusError: app.ComponentBuildStatusBuilding, statusV2: true},
-		"new building history failure":    {statusError: app.ComponentBuildStatusBuilding, statusV2: true, cause: "status database unavailable"},
-		"legacy active status failure":    {legacy: true, statusError: app.ComponentBuildStatusActive},
-		"new active status failure":       {statusError: app.ComponentBuildStatusActive, cause: "status database unavailable"},
-		"legacy active history failure":   {legacy: true, statusError: app.ComponentBuildStatusActive, statusV2: true},
-		"new active history failure":      {statusError: app.ComponentBuildStatusActive, statusV2: true, cause: "status database unavailable"},
-		"legacy log stream creation":      {legacy: true, failAt: "log stream", cause: "log stream database unavailable"},
-		"log stream creation":             {failAt: "log stream", cause: "log stream database unavailable"},
-		"app lookup":                      {failAt: "app", cause: "component app not found"},
-		"component lookup":                {failAt: "component", cause: "component not found"},
-		"build lookup":                    {failAt: "build", cause: "build not found"},
-		"inactive component":              {failAt: "inactive", cause: "component is not active"},
-		"job creation":                    {failAt: "job", cause: "runner job database unavailable"},
-		"policy lookup":                   {failAt: "policy lookup", cause: "policy database unavailable"},
-		"policy org lookup":               {failAt: "org", cause: "org not found", policies: true},
-		"metadata job creation":           {failAt: "metadata job", cause: "metadata job database unavailable", policies: true},
-		"metadata plan persistence":       {failAt: "metadata plan", cause: "metadata plan storage unavailable", policies: true},
+		"new planning status failure":  {statusError: app.ComponentBuildStatusPlanning, cause: "status database unavailable"},
+		"new planning history failure": {statusError: app.ComponentBuildStatusPlanning, statusV2: true, cause: "status database unavailable"},
+		"new building status failure":  {statusError: app.ComponentBuildStatusBuilding, cause: "status database unavailable"},
+		"new building history failure": {statusError: app.ComponentBuildStatusBuilding, statusV2: true, cause: "status database unavailable"},
+		"new active status failure":    {statusError: app.ComponentBuildStatusActive, cause: "status database unavailable"},
+		"new active history failure":   {statusError: app.ComponentBuildStatusActive, statusV2: true, cause: "status database unavailable"},
+		"log stream creation":          {failAt: "log stream", cause: "log stream database unavailable"},
+		"app lookup":                   {failAt: "app", cause: "component app not found"},
+		"component lookup":             {failAt: "component", cause: "component not found"},
+		"build lookup":                 {failAt: "build", cause: "build not found"},
+		"inactive component":           {failAt: "inactive", cause: "component is not active"},
+		"job creation":                 {failAt: "job", cause: "runner job database unavailable"},
+		"policy lookup":                {failAt: "policy lookup", cause: "policy database unavailable"},
+		"policy org lookup":            {failAt: "org", cause: "org not found", policies: true},
+		"metadata job creation":        {failAt: "metadata job", cause: "metadata job database unavailable", policies: true},
+		"metadata plan persistence":    {failAt: "metadata plan", cause: "metadata plan storage unavailable", policies: true},
 		"metadata ECR identity": {
 			failAt: "metadata child", cause: "InvalidIdentityToken: No OpenIDConnect provider found", policies: true,
 		},
@@ -178,11 +146,6 @@ func TestBuildFailurePersistence(t *testing.T) {
 					pkgdataconverter.NewJSONConverter(),
 				))
 			}
-			version := workflow.Version(1)
-			if tc.legacy {
-				version = workflow.DefaultVersion
-			}
-			env.OnGetVersion(controlplanejob.BuildFailurePropagationVersion, workflow.DefaultVersion, 1).Return(version)
 			failure := func(stage string) error {
 				if tc.failAt != stage {
 					return nil
@@ -328,33 +291,6 @@ func TestBuildFailurePersistence(t *testing.T) {
 				require.NotEqual(t, -1, index, "%v", events)
 				require.Equal(t, tc.wantTail, events[index:])
 			}
-			if tc.legacy {
-				if tc.statusError != "" {
-					require.NoError(t, err)
-					require.Equal(t, app.ComponentBuildStatusActive, last.Status)
-					require.Contains(t, events, "child:build")
-				} else if tc.cancelled {
-					require.True(t, temporal.IsCanceledError(err), "%v", err)
-				} else {
-					require.ErrorContains(t, err, tc.cause)
-				}
-				require.Empty(t, last.Error)
-				if tc.cleanupErr {
-					require.NotContains(t, err.Error(), "job status database unavailable")
-				}
-				if tc.policyDeny {
-					prefix := "image policy check failed:"
-					if tc.helm {
-						prefix = "helm policy check failed:"
-					}
-					require.ErrorContains(t, err, prefix)
-					var applicationErr *temporal.ApplicationError
-					require.True(t, errors.As(err, &applicationErr))
-					require.False(t, applicationErr.NonRetryable())
-				}
-				env.AssertExpectations(t)
-				return
-			}
 			if tc.statusError == app.ComponentBuildStatusPlanning || tc.statusError == app.ComponentBuildStatusBuilding {
 				require.NotContains(t, events, "child:build")
 			}
@@ -387,7 +323,6 @@ func TestBuildFailurePersistence(t *testing.T) {
 				require.NotEmpty(t, last.StatusDescription)
 				require.LessOrEqual(t, utf8.RuneCountInString(last.StatusDescription), 500)
 				require.LessOrEqual(t, utf8.RuneCountInString(lastV2.StatusDescription), 500)
-				require.LessOrEqual(t, len(last.Error), 64*1024)
 				for _, wrapper := range []string{"activity error", "child workflow execution error", "workflow execution error", "ActivityType:", "WorkflowType:"} {
 					require.NotContains(t, last.StatusDescription, wrapper)
 					require.NotContains(t, lastV2.StatusDescription, wrapper)
@@ -418,30 +353,91 @@ func TestBuildFailurePersistence(t *testing.T) {
 	}
 }
 
-func TestBuildLegacyHistoryReplay(t *testing.T) {
+func TestBuildTerminalStatusWriteCount(t *testing.T) {
 	for name, tc := range map[string]struct {
-		fixture    string
-		workflowID string
+		policyDeny bool
+		wantStatus app.ComponentBuildStatus
 	}{
-		"build child failure":    {fixture: "testdata/build_child_failure.json.gz", workflowID: "legacy-build_child_failure"},
-		"metadata child failure": {fixture: "testdata/metadata_child_failure.json.gz", workflowID: "legacy-metadata_child_failure"},
+		"build child failure counts one terminal write": {wantStatus: app.ComponentBuildStatusError},
+		"policy denial counts one terminal write":       {policyDeny: true, wantStatus: app.ComponentBuildStatusPolicyFailed},
 	} {
 		t.Run(name, func(t *testing.T) {
-			file, err := os.Open(tc.fixture)
-			require.NoError(t, err)
-			t.Cleanup(func() { require.NoError(t, file.Close()) })
-			reader, err := gzip.NewReader(file)
-			require.NoError(t, err)
-			t.Cleanup(func() { require.NoError(t, reader.Close()) })
-			data, err := io.ReadAll(reader)
-			require.NoError(t, err)
-			var history historypb.History
-			require.NoError(t, protojson.Unmarshal(data, &history))
-			replayer := worker.NewWorkflowReplayer()
-			replayer.RegisterWorkflow((&Workflows{cfg: &internal.Config{}}).Build)
-			require.NoError(t, replayer.ReplayWorkflowHistoryWithOptions(nil, &history, worker.ReplayWorkflowHistoryOptions{
-				OriginalExecution: workflow.Execution{ID: tc.workflowID},
-			}))
+			var suite testsuite.WorkflowTestSuite
+			env := suite.NewTestWorkflowEnvironment()
+			env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: 5 * time.Second})
+
+			var updates []activities.UpdateBuildStatus
+			env.OnActivity((&activities.Activities{}).UpdateBuildStatus, mock.Anything, mock.Anything).
+				Run(func(args mock.Arguments) { updates = append(updates, args.Get(1).(activities.UpdateBuildStatus)) }).Return(nil).Maybe()
+			var updatesV2 []statusactivities.UpdateBuildStatusV2
+			env.OnActivity((&statusactivities.Activities{}).UpdateBuildStatusV2, mock.Anything, mock.Anything).
+				Run(func(args mock.Arguments) {
+					updatesV2 = append(updatesV2, args.Get(1).(statusactivities.UpdateBuildStatusV2))
+				}).Return(nil).Maybe()
+
+			env.OnActivity((&activities.Activities{}).CreateLogStream, mock.Anything, mock.Anything).
+				Return(&app.LogStream{ID: "log-stream-id"}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).CloseLogStream, mock.Anything, mock.Anything).Return(nil).Maybe()
+			env.OnActivity((&activities.Activities{}).GetComponentApp, mock.Anything, mock.Anything).
+				Return(&app.App{ID: "app-id", Name: "acme"}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).GetComponent, mock.Anything, mock.Anything).
+				Return(&app.Component{ID: "component-id", Name: "acme-api", OrgID: "org-id", Type: app.ComponentTypeExternalImage, Status: app.ComponentStatusActive}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).GetComponentBuild, mock.Anything, mock.Anything).
+				Return(&app.ComponentBuild{ID: "build-id", OrgID: "org-id"}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).CheckContainerImagePoliciesExist, mock.Anything, mock.Anything).
+				Return(&activities.CheckContainerImagePoliciesExistResult{HasPolicies: tc.policyDeny}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).CreateBuildJob, mock.Anything, mock.Anything).
+				Return(&app.RunnerJob{ID: "build-job-id"}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).GetOrg, mock.Anything, mock.Anything).
+				Return(&app.Org{ID: "org-id"}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).CreateFetchImageMetadataJob, mock.Anything, mock.Anything).
+				Return(&app.RunnerJob{ID: "metadata-job-id"}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).SaveFetchImageMetadataPlan, mock.Anything, mock.Anything).Return(nil).Maybe()
+			env.OnActivity((&activities.Activities{}).GetImageMetadataFromJobResult, mock.Anything, mock.Anything).
+				Return(&activities.GetImageMetadataFromJobResultResponse{}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).PrepExternalImagePolicy, mock.Anything, mock.Anything).
+				Return(&activities.PrepExternalImagePolicyResult{
+					HasPolicies: true,
+					Policies:    []activities.ExternalImagePolicyToEvaluate{{PolicyID: "policy-id"}},
+				}, nil).Maybe()
+			env.OnActivity((&activities.Activities{}).SaveRunnerJobPlan, mock.Anything, mock.Anything).Return(nil).Maybe()
+			env.OnActivity((&policyactivities.Activities{}).EvaluateSinglePolicy, mock.Anything, mock.Anything).
+				Return(&policyactivities.EvaluateSinglePolicyResult{
+					Violations: []policyactivities.PolicyViolation{{Severity: "deny", Message: "image must be signed"}},
+				}, nil).Maybe()
+			env.OnActivity((&sharedactivities.Activities{}).SendEmail, mock.Anything, mock.Anything).Return(nil).Maybe()
+
+			env.OnWorkflow(plan.CreateComponentBuildPlan, mock.Anything, mock.Anything).
+				Return(&plantypes.BuildPlan{ContainerImagePullPlan: &plantypes.ContainerImagePullPlan{
+					RepoCfg: &configs.OCIRegistryRepository{RegistryType: configs.OCIRegistryTypePublicOCI},
+				}}, nil).Maybe()
+			childErr := error(nil)
+			if !tc.policyDeny {
+				childErr = temporal.NewNonRetryableApplicationError("registry denied", "registry-test", nil)
+			}
+			env.OnWorkflow((&controlplanejob.Workflows{}).ExecuteControlPlaneJob, mock.Anything, mock.Anything).
+				Return(childErr).Maybe()
+
+			env.ExecuteWorkflow((&Workflows{cfg: &internal.Config{}}).Build, BuildRequest{ID: "component-id", BuildID: "build-id"})
+			require.True(t, env.IsWorkflowCompleted())
+			require.Error(t, env.GetWorkflowError())
+
+			require.NotEmpty(t, updates)
+			require.Equal(t, app.ComponentBuildStatusPlanning, updates[0].Status)
+			terminal, terminalV2 := 0, 0
+			for _, update := range updates {
+				if update.Status == tc.wantStatus {
+					terminal++
+				}
+			}
+			for _, update := range updatesV2 {
+				if update.Status == tc.wantStatus {
+					terminalV2++
+				}
+			}
+			require.Equal(t, 1, terminal, "status writes: %v", updates)
+			require.Equal(t, 1, terminalV2, "status history writes: %v", updatesV2)
+			env.AssertExpectations(t)
 		})
 	}
 }

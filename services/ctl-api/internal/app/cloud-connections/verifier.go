@@ -44,18 +44,18 @@ type cloudFormationAPI interface {
 	DescribeStacks(context.Context, *cloudformation.DescribeStacksInput, ...func(*cloudformation.Options)) (*cloudformation.DescribeStacksOutput, error)
 }
 
-type awsVerifier struct {
+type providerVerifier struct {
 	issuer *oidcissuer.Issuer
 	l      *zap.Logger
 	sleep  func(context.Context, time.Duration) error
 	now    func() time.Time
 }
 
-func NewAWSVerifier(issuer *oidcissuer.Issuer, l *zap.Logger) Verifier {
-	return &awsVerifier{issuer: issuer, l: l, sleep: sleepWithContext, now: time.Now}
+func NewVerifier(issuer *oidcissuer.Issuer, l *zap.Logger) Verifier {
+	return &providerVerifier{issuer: issuer, l: l, sleep: sleepWithContext, now: time.Now}
 }
 
-func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
+func (v *providerVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
 	if connection.Platform == app.CloudPlatformAzure {
 		return v.verifyACR(ctx, connection, options)
 	}
@@ -79,7 +79,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 		return VerificationResult{}, fmt.Errorf("load AWS config: %w", err)
 	}
 	client := sts.NewFromConfig(base)
-	token, err := v.issuer.Mint(ctx, fmt.Sprintf("org:%s:connection:%s", connection.OrgID, connection.ID), "sts.amazonaws.com", 10*time.Minute)
+	token, err := v.issuer.Mint(ctx, Subject(connection), "sts.amazonaws.com", 10*time.Minute)
 	if err != nil {
 		return VerificationResult{}, err
 	}
@@ -91,7 +91,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 		}
 		return VerificationResult{}, err
 	}
-	foreignToken, err := v.issuer.Mint(ctx, "org:foreign:connection:foreign", "sts.amazonaws.com", 10*time.Minute)
+	foreignToken, err := v.issuer.Mint(ctx, ForeignSubject, "sts.amazonaws.com", 10*time.Minute)
 	if err != nil {
 		return VerificationResult{}, err
 	}
@@ -147,7 +147,7 @@ func sleepWithContext(ctx context.Context, duration time.Duration) error {
 	}
 }
 
-func (v *awsVerifier) assumeRole(ctx context.Context, connectionID string, client stsAPI, input *sts.AssumeRoleWithWebIdentityInput, retry bool) (output *sts.AssumeRoleWithWebIdentityOutput, err error) {
+func (v *providerVerifier) assumeRole(ctx context.Context, connectionID string, client stsAPI, input *sts.AssumeRoleWithWebIdentityInput, retry bool) (output *sts.AssumeRoleWithWebIdentityOutput, err error) {
 	if !retry {
 		return client.AssumeRoleWithWebIdentity(ctx, input)
 	}

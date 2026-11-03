@@ -29,10 +29,9 @@ type nestedFieldContract struct {
 }
 
 var nestedFieldContracts = []nestedFieldContract{
-	{reflect.TypeFor[Component](), "Source:ingress Type:constrained-type Name:identity SourceFile:provenance VarName:var_name Labels:labels Dependencies:dependencies OperationRoles:nested Toggleable:toggleable DefaultEnabled:default_enabled KubernetesContext:kubernetes_context HelmChart:nested TerraformModule:nested DockerBuild:nested Job:nested ExternalImage:nested KubernetesManifest:nested Pulumi:nested References:derived Checksum:derived"},
+	{reflect.TypeFor[Component](), "Source:ingress Type:constrained-type Name:identity SourceFile:provenance VarName:var_name Labels:labels Dependencies:dependencies OperationRoles:nested Toggleable:toggleable DefaultEnabled:default_enabled KubernetesContext:kubernetes_context HelmChart:nested TerraformModule:nested Job:nested ExternalImage:nested KubernetesManifest:nested Pulumi:nested References:derived Checksum:derived"},
 	{reflect.TypeFor[HelmChartComponentConfig](), "ChartName:chart_name ValuesMap:values ValuesFiles:nested PublicRepo:nested ConnectedRepo:nested HelmRepo:nested Namespace:namespace StorageDriver:storage_driver TakeOwnership:take_ownership SkipCRDs:skip_crds DriftSchedule:drift_schedule Health:nested BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing Values:legacy-rejected"},
 	{reflect.TypeFor[TerraformModuleComponentConfig](), "TerraformVersion:terraform_version EnvVarMap:env_vars VarsMap:vars VariablesFiles:nested PublicRepo:nested ConnectedRepo:nested DriftSchedule:drift_schedule BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing Teardown:nested Variables:legacy-rejected EnvVars:legacy-rejected"},
-	{reflect.TypeFor[DockerBuildComponentConfig](), "Dockerfile:dockerfile EnvVarMap:env_vars PublicRepo:nested ConnectedRepo:nested BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing"},
 	{reflect.TypeFor[ExternalImageComponentConfig](), "AWSECRImageConfig:nested GCPGARImageConfig:nested AzureACRImageConfig:nested PublicImageConfig:nested Verification:nested BuildTimeout:build_timeout DeployTimeout:deploy_timeout"},
 	{reflect.TypeFor[KubernetesManifestComponentConfig](), "Manifest:manifest Kustomize:nested PublicRepo:nested ConnectedRepo:nested Namespace:namespace DriftSchedule:drift_schedule Health:nested BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing"},
 	{reflect.TypeFor[JobComponentConfig](), "ImageURL:image_url Tag:tag Cmd:cmd EnvVarMap:env_vars Args:args BuildTimeout:build_timeout DeployTimeout:deploy_timeout EnvVars:legacy-rejected"},
@@ -47,8 +46,8 @@ var nestedFieldContracts = []nestedFieldContract{
 	{reflect.TypeFor[ComponentHealthProbeConfig](), "Type:type Name:name URL:url Command:legacy-rejected"},
 	{reflect.TypeFor[ComponentTeardownConfig](), "Retain:retain"},
 	{reflect.TypeFor[AWSECRConfig](), "IAMRoleARN:iam_role_arn AWSRegion:region ImageURL:image_url Tag:tag UpdatePolicy:update_policy"},
-	{reflect.TypeFor[GCPGARConfig](), "UseCloudConnection:use_cloud_connection GCPProjectID:gcp_project_id GCPRegion:region ImageURL:image_url Tag:tag ServiceAccountEmail:service_account_email WorkloadIdentityProvider:workload_identity_provider UpdatePolicy:update_policy"},
-	{reflect.TypeFor[AzureACRConfig](), "UseCloudConnection:use_cloud_connection ImageURL:image_url Tag:tag RegistryURL:registry_url TenantID:tenant_id ClientID:client_id ClientSecretName:client_secret_name ClientCertificateName:client_certificate_name UpdatePolicy:update_policy"},
+	{reflect.TypeFor[GCPGARConfig](), "GCPProjectID:gcp_project_id GCPRegion:region ImageURL:image_url Tag:tag ServiceAccountEmail:service_account_email WorkloadIdentityProvider:workload_identity_provider UpdatePolicy:update_policy"},
+	{reflect.TypeFor[AzureACRConfig](), "ImageURL:image_url Tag:tag RegistryURL:registry_url TenantID:tenant_id ClientID:client_id ClientSecretName:client_secret_name ClientCertificateName:client_certificate_name UpdatePolicy:update_policy"},
 	{reflect.TypeFor[PublicImageConfig](), "ImageURL:image_url Tag:tag UpdatePolicy:update_policy"},
 	{reflect.TypeFor[signature.Verification](), "RequireSignature:require_signature Authorities:nested"},
 	{reflect.TypeFor[signature.Authority](), "Type:constrained-type Issuer:issuer Subject:subject SubjectRegexp:subject_regexp PublicKey:public_key"},
@@ -94,22 +93,21 @@ func nestedDiffFixtures() []nestedDiffFixture {
 		{"Components.0", "components/component.helm"},
 		{"Components.0.HelmChart", "components/component.helm"},
 		{"Components.1.TerraformModule", "components/component.terraform"},
-		{"Components.2.DockerBuild", "components/component.docker"},
-		{"Components.3.ExternalImage", "components/component.image"},
-		{"Components.4.KubernetesManifest", "components/component.manifest"},
-		{"Components.5.Job", "components/component.job"},
-		{"Components.6.Pulumi", "components/component.pulumi"},
+		{"Components.2.ExternalImage", "components/component.image"},
+		{"Components.3.KubernetesManifest", "components/component.manifest"},
+		{"Components.4.Job", "components/component.job"},
+		{"Components.5.Pulumi", "components/component.pulumi"},
 		{"Components.0.HelmChart.ValuesFiles.0", "components/component.helm/values_files"},
 		{"Components.0.HelmChart.HelmRepo", "components/component.helm/helm_repo"},
 		{"Components.1.TerraformModule.VariablesFiles.0", "components/component.terraform/var_file/var_file[0]"},
 		{"Components.1.TerraformModule.Teardown", "components/component.terraform/teardown"},
-		{"Components.4.KubernetesManifest.Kustomize", "components/component.manifest/kustomize"},
-		{"Components.3.ExternalImage.AWSECRImageConfig", "components/component.image/aws_ecr"},
-		{"Components.3.ExternalImage.GCPGARImageConfig", "components/component.image/gcp_gar"},
-		{"Components.3.ExternalImage.AzureACRImageConfig", "components/component.image/azure_acr"},
-		{"Components.3.ExternalImage.PublicImageConfig", "components/component.image/public_image"},
-		{"Components.3.ExternalImage.Verification", "components/component.image/verification"},
-		{"Components.3.ExternalImage.Verification.Authorities.0", "components/component.image/verification/authority.0"},
+		{"Components.3.KubernetesManifest.Kustomize", "components/component.manifest/kustomize"},
+		{"Components.2.ExternalImage.AWSECRImageConfig", "components/component.image/aws_ecr"},
+		{"Components.2.ExternalImage.GCPGARImageConfig", "components/component.image/gcp_gar"},
+		{"Components.2.ExternalImage.AzureACRImageConfig", "components/component.image/azure_acr"},
+		{"Components.2.ExternalImage.PublicImageConfig", "components/component.image/public_image"},
+		{"Components.2.ExternalImage.Verification", "components/component.image/verification"},
+		{"Components.2.ExternalImage.Verification.Authorities.0", "components/component.image/verification/authority.0"},
 		{"Sandbox", "sandbox"}, {"Runner", "runner"},
 		{"Sandbox.VariablesFiles.0", "sandbox/var_file/var_file[0]"},
 		{"Sandbox.OperationRoles.0", "sandbox/operation_roles/operation_role.0"},
@@ -130,15 +128,14 @@ func nestedDiffFixtures() []nestedDiffFixture {
 	for _, parent := range []nestedDiffFixture{
 		{"Components.0.HelmChart", "components/component.helm"},
 		{"Components.1.TerraformModule", "components/component.terraform"},
-		{"Components.2.DockerBuild", "components/component.docker"},
-		{"Components.4.KubernetesManifest", "components/component.manifest"},
-		{"Components.6.Pulumi", "components/component.pulumi"},
+		{"Components.3.KubernetesManifest", "components/component.manifest"},
+		{"Components.5.Pulumi", "components/component.pulumi"},
 		{"Sandbox", "sandbox"}, {"Actions.0.Steps.0", "actions/action.inspect/step.inspect"},
 		{"Branch", "branch"}, {"Branches.0", "branches/branch.stable"},
 	} {
 		fixtures = append(fixtures, nestedDiffFixture{parent.input + ".PublicRepo", parent.owner + "/public_repo"}, nestedDiffFixture{parent.input + ".ConnectedRepo", parent.owner + "/connected_repo"})
 	}
-	for _, parent := range []nestedDiffFixture{{"Components.0.HelmChart", "components/component.helm"}, {"Components.4.KubernetesManifest", "components/component.manifest"}} {
+	for _, parent := range []nestedDiffFixture{{"Components.0.HelmChart", "components/component.helm"}, {"Components.3.KubernetesManifest", "components/component.manifest"}} {
 		fixtures = append(fixtures, nestedDiffFixture{parent.input + ".Health", parent.owner + "/health"}, nestedDiffFixture{parent.input + ".Health.Probes.0", parent.owner + "/health/probe.0"})
 	}
 	for _, parent := range []nestedDiffFixture{{"Branch", "branch"}, {"Branches.0", "branches/branch.stable"}} {
@@ -181,7 +178,6 @@ func nestedBaseline() *AppConfig {
 		Components: ComponentList{
 			{Name: "helm", Type: HelmChartComponentType, OperationRoles: []EntityOperationRole{{Operation: OperationDeploy, RoleName: "maintenance"}}, HelmChart: &HelmChartComponentConfig{ChartName: "example", Namespace: "default", PublicRepo: repo(), ValuesFiles: []HelmValuesFile{{Path: "values.yaml", Contents: "replicas: 1"}}, Health: health()}},
 			{Name: "terraform", Type: TerraformModuleComponentType, TerraformModule: &TerraformModuleComponentConfig{TerraformVersion: "1.6.0", PublicRepo: repo(), VariablesFiles: []TerraformVariablesFile{{Contents: "region = \"us-east-1\""}}, Teardown: &ComponentTeardownConfig{Retain: []string{"aws_s3_bucket.data"}}}},
-			{Name: "docker", Type: DockerBuildComponentType, DockerBuild: &DockerBuildComponentConfig{Dockerfile: "Dockerfile", PublicRepo: repo()}},
 			{Name: "image", Type: ExternalImageComponentType, ExternalImage: &ExternalImageComponentConfig{PublicImageConfig: &PublicImageConfig{ImageURL: "docker.io/acme/app", Tag: "1.0.0"}, Verification: &signature.Verification{RequireSignature: true, Authorities: []signature.Authority{{Type: signature.AuthorityTypeKeyless, Issuer: "https://token.actions.githubusercontent.com", Subject: "https://github.com/acme/app"}}}}},
 			{Name: "manifest", Type: KubernetesManifestComponentType, KubernetesManifest: &KubernetesManifestComponentConfig{Namespace: "default", Kustomize: &KustomizeConfig{Path: "overlays/prod"}, PublicRepo: repo(), Health: health()}},
 			{Name: "job", Type: JobComponentType, Job: &JobComponentConfig{ImageURL: "docker.io/acme/job", Tag: "1.0.0", Cmd: []string{"echo"}, Args: []string{"ready"}}},
@@ -236,15 +232,15 @@ func nestedFixtureConfig(f nestedDiffFixture, field string) *AppConfig {
 		c.Components[0].HelmChart.PublicRepo = nil
 		c.Components[0].HelmChart.HelmRepo = &HelmRepoConfig{RepoURL: "https://example.com/charts", Chart: "example", Version: "1.0.0"}
 	}
-	e := c.Components[3].ExternalImage
+	e := c.Components[2].ExternalImage
 	switch f.input {
-	case "Components.3.ExternalImage.AWSECRImageConfig":
+	case "Components.2.ExternalImage.AWSECRImageConfig":
 		e.PublicImageConfig = nil
 		e.AWSECRImageConfig = &AWSECRConfig{AWSRegion: "us-east-1", ImageURL: "123456789012.dkr.ecr.us-east-1.amazonaws.com/app", Tag: "1.0.0"}
-	case "Components.3.ExternalImage.GCPGARImageConfig":
+	case "Components.2.ExternalImage.GCPGARImageConfig":
 		e.PublicImageConfig = nil
 		e.GCPGARImageConfig = &GCPGARConfig{GCPProjectID: "acme-prod", GCPRegion: "us-east1", ImageURL: "us-east1-docker.pkg.dev/acme-prod/app/api", Tag: "1.0.0"}
-	case "Components.3.ExternalImage.AzureACRImageConfig":
+	case "Components.2.ExternalImage.AzureACRImageConfig":
 		e.PublicImageConfig = nil
 		e.AzureACRImageConfig = &AzureACRConfig{ImageURL: "acme.azurecr.io/app", RegistryURL: "acme.azurecr.io", Tag: "1.0.0"}
 		if field == "TenantID" || field == "ClientID" || field == "ClientSecretName" || field == "ClientCertificateName" {
@@ -254,9 +250,9 @@ func nestedFixtureConfig(f nestedDiffFixture, field string) *AppConfig {
 			}
 		}
 	}
-	if f.input == "Components.4.KubernetesManifest" && field == "Manifest" {
-		c.Components[4].KubernetesManifest.Kustomize, c.Components[4].KubernetesManifest.PublicRepo = nil, nil
-		c.Components[4].KubernetesManifest.Manifest = "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: before"
+	if f.input == "Components.3.KubernetesManifest" && field == "Manifest" {
+		c.Components[3].KubernetesManifest.Kustomize, c.Components[3].KubernetesManifest.PublicRepo = nil, nil
+		c.Components[3].KubernetesManifest.Manifest = "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: before"
 	}
 	if strings.HasSuffix(f.input, ".Verification.Authorities.0") {
 		a := &e.Verification.Authorities[0]
@@ -883,9 +879,9 @@ func TestAppConfigDiff_NestedOmittedRetryBoundaries(t *testing.T) {
 func TestAppConfigDiff_NestedConstrainedTransitions(t *testing.T) {
 	t.Run("unsupported_helm_inflation", func(t *testing.T) {
 		old, next := nestedBaseline(), nestedBaseline()
-		next.Components[4].KubernetesManifest.Kustomize.EnableHelm = true
+		next.Components[3].KubernetesManifest.Kustomize.EnableHelm = true
 		nestedValidate(t, old)
-		require.ErrorContains(t, next.Components[4].Validate(), "kustomize.enable_helm")
+		require.ErrorContains(t, next.Components[3].Validate(), "kustomize.enable_helm")
 		for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
 			require.True(t, nestedDiffAt(t, pair[1].Diff(pair[0]), "components/component.manifest/kustomize/enable_helm").DirectSummary().HasChanged)
 		}
@@ -902,7 +898,7 @@ func TestAppConfigDiff_NestedConstrainedTransitions(t *testing.T) {
 	})
 	t.Run("keyless_to_public_key", func(t *testing.T) {
 		old, next := nestedBaseline(), nestedBaseline()
-		next.Components[3].ExternalImage.Verification.Authorities[0] = signature.Authority{Type: signature.AuthorityTypePublicKey, PublicKey: nestedPublicKey("public-key")}
+		next.Components[2].ExternalImage.Verification.Authorities[0] = signature.Authority{Type: signature.AuthorityTypePublicKey, PublicKey: nestedPublicKey("public-key")}
 		nestedValidate(t, old)
 		nestedValidate(t, next)
 		for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {

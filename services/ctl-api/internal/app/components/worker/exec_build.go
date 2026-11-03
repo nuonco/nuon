@@ -17,21 +17,16 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 )
 
-const signatureVerificationVersion = "exec-build-signature-verification-v1"
-
 func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, currentApp *app.App, sandboxMode bool) (retErr error) {
-	propagateFailures := controlplanejob.BuildFailurePropagationEnabled(ctx)
 	comp, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
 		ComponentID: compID,
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component")
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get build log stream")
 		return err
 	}
 
@@ -49,7 +44,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		},
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
 		return fmt.Errorf("unable to create job: %w", err)
 	}
 	defer func() {
@@ -58,7 +52,7 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		}
 		failureCtx, cancel := workflow.NewDisconnectedContext(ctx)
 		defer cancel()
-		if err := w.failQueuedRunnerJob(failureCtx, runnerJob.ID, truncateErrorMessage("build failed before job execution", retErr)); err != nil && propagateFailures {
+		if err := w.failQueuedRunnerJob(failureCtx, runnerJob.ID, truncateErrorMessage("build failed before job execution", retErr)); err != nil {
 			retErr = fmt.Errorf("%w; unable to persist queued job failure: %v", retErr, err)
 		}
 	}()
@@ -73,23 +67,18 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		ComponentID:              comp.ID,
 		ComponentBuildID:         buildID,
 		WorkflowID:               fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
-		CloudProvider:            w.cfg.CloudProvider,
-		ManagementIAMRoleARN:     w.cfg.ManagementIAMRoleARN,
 		ManagementACRRegistryURL: w.cfg.ManagementACRRegistryURL,
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
 		return errors.Wrap(err, "unable to create plan")
 	}
 
 	if err := sharedactivities.EnsureContainerImagePullAuth(ctx, runPlan); err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get image source credentials", err))
 		return err
 	}
 
 	planJSON, err := json.Marshal(runPlan)
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to convert build plan to JSON")
 		return fmt.Errorf("unable to convert plan to json: %w", err)
 	}
 
@@ -100,25 +89,20 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 			BuildPlan: runPlan,
 		},
 	}); err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to save job plan")
 		return fmt.Errorf("unable to save runner job plan: %w", err)
 	}
 
 	// wait for the job
-	if err := w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building"); err != nil && propagateFailures {
+	if err := w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building"); err != nil {
 		return err
 	}
 	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", comp.ID, runnerJob.ID),
 	})
-	if runPlan.ContainerImagePullPlan != nil &&
-		workflow.GetVersion(ctx, signatureVerificationVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if runPlan.ContainerImagePullPlan != nil {
 		w.updateBuildSignatureVerification(ctx, buildID, runnerJob.ID, runPlan.ContainerImagePullPlan, err == nil)
 	}
 	if err != nil {
-		if !propagateFailures {
-			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
-		}
 		return fmt.Errorf("build job failed: %w", err)
 	}
 
@@ -128,9 +112,5 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		}
 	}
 
-	err = w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusActive, "build is active and ready to be deployed")
-	if propagateFailures {
-		return err
-	}
-	return nil
+	return w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusActive, "build is active and ready to be deployed")
 }

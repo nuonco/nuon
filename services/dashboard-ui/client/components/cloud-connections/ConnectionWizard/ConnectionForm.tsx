@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm, useStore } from '@tanstack/react-form'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -5,6 +6,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
+import { FormRadioGroup } from '@/components/common/form/FormRadioGroup'
 import { FormSelect } from '@/components/common/form/FormSelect'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { AWS_REGIONS } from '@/configs/cloud-regions'
@@ -14,8 +16,54 @@ import type {
   TCreateCloudConnectionRequest,
 } from '@/types'
 import { PrincipalSharing } from '../PrincipalSharing'
-import { sharedPrincipalConnections } from '../queries'
+import { samePrincipal, sharedPrincipalConnections } from '../queries'
+import { isImagePreset } from '../repository-scope'
 import { connectionSchema, type TConnectionValues } from './schema'
+
+const principalPrefixes: Record<TConnectionValues['preset'], string> = {
+  stacks: 'nuon-stacks',
+  ecr: 'nuon-ecr-pull',
+  gar: 'nuon-gar-pull',
+  acr: 'nuon-acr',
+  custom: 'nuon-custom',
+}
+
+const defaultPrincipalName = (
+  preset: TConnectionValues['preset'],
+  suffix: string
+) => `${principalPrefixes[preset]}-${suffix}`
+
+const isDefaultPrincipalName = (name: string, suffix: string) =>
+  Object.values(principalPrefixes).some(
+    (prefix) => name === `${prefix}-${suffix}`
+  )
+
+const principalSuffix = () => {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  const bytes = crypto.getRandomValues(new Uint8Array(4))
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join('')
+}
+
+const presetForPlatform = (platform?: 'aws' | 'gcp' | 'azure') =>
+  platform === 'gcp' ? 'gar' : platform === 'azure' ? 'acr' : 'ecr'
+
+const principalModeDescriptions: Record<
+  'aws' | 'gcp' | 'azure',
+  { new: string; existing: string }
+> = {
+  aws: {
+    new: 'Setup creates a dedicated IAM role for this connection.',
+    existing: 'Reuse a role another connection already uses.',
+  },
+  gcp: {
+    new: 'Setup creates a dedicated service account for this connection.',
+    existing: 'Reuse a service account another connection already uses.',
+  },
+  azure: {
+    new: 'Setup creates a dedicated application for this connection.',
+    existing: 'Reuse an application another connection already uses.',
+  },
+}
 
 export const ConnectionForm = ({
   values,
@@ -34,22 +82,20 @@ export const ConnectionForm = ({
   connections?: TCloudConnectionSummary[]
   orgId?: string
 }) => {
+  const [suffix] = useState(principalSuffix)
+  const initialPreset = values?.preset ?? presetForPlatform(values?.platform)
   const defaultValues: TConnectionValues = {
     name: '',
     platform: 'aws',
     target_id: '',
-    role_name: 'nuon-cloud-connection',
+    role_name: defaultPrincipalName(initialPreset, suffix),
     gcp_project_number: '',
-    service_account_name: 'nuon-cloud-connection',
+    service_account_name: defaultPrincipalName(initialPreset, suffix),
     azure_tenant_id: '',
     principal: '',
-    principal_choice: values?.target_id ? 'new' : '',
-    preset:
-      values?.platform === 'gcp'
-        ? 'gar'
-        : values?.platform === 'azure'
-          ? 'acr'
-          : 'ecr',
+    principal_choice: '',
+    principal_mode: 'new',
+    preset: presetForPlatform(values?.platform),
     ecr_region: '',
     gar_location: '',
     azure_resource_group: '',
@@ -70,12 +116,13 @@ export const ConnectionForm = ({
         target_id: v.target_id,
         preset: v.preset,
         principal:
-          platform === 'azure' ||
-          (v.principal_choice && v.principal_choice !== 'new')
+          platform === 'azure'
             ? v.principal!
-            : platform === 'gcp'
-              ? `${v.service_account_name}@${v.target_id}.iam.gserviceaccount.com`
-              : `arn:aws:iam::${v.target_id}:role/${v.role_name}`,
+            : v.principal_mode === 'existing' && v.principal
+              ? v.principal
+              : platform === 'gcp'
+                ? `${v.service_account_name}@${v.target_id}.iam.gserviceaccount.com`
+                : `arn:aws:iam::${v.target_id}:role/${v.role_name}`,
         ...(platform === 'gcp'
           ? {
               gcp_project_number: v.gcp_project_number,
@@ -96,23 +143,14 @@ export const ConnectionForm = ({
   const canSubmit = useStore(form.store, (s) => s.canSubmit)
   const platform = useStore(form.store, (s) => s.values.platform)
   const preset = useStore(form.store, (s) => s.values.preset)
-  const principalChoice = useStore(form.store, (s) => s.values.principal_choice)
+  const principalMode = useStore(form.store, (s) => s.values.principal_mode)
   const azureTenantId = useStore(form.store, (s) => s.values.azure_tenant_id)
   const principals = connections.filter(
     (connection, index, all) =>
       connection.platform === platform &&
-      index ===
-        all.findIndex(
-          (other) =>
-            other.platform === connection.platform &&
-            (connection.platform === 'azure'
-              ? other.principal.toLowerCase() ===
-                  connection.principal.toLowerCase() &&
-                other.azure_tenant_id?.toLowerCase() ===
-                  connection.azure_tenant_id?.toLowerCase()
-              : other.principal === connection.principal)
-        )
+      index === all.findIndex((other) => samePrincipal(other, connection))
   )
+  const principalChoice = useStore(form.store, (s) => s.values.principal_choice)
   const selectedPrincipal = principals.find((c) => c.id === principalChoice)
   const identity = useStore(form.store, (s) =>
     s.values.platform === 'azure'
@@ -128,7 +166,7 @@ export const ConnectionForm = ({
   })
   const isGCP = platform === 'gcp'
   const isAzure = platform === 'azure'
-  const isImage = ['ecr', 'gar', 'acr'].includes(preset)
+  const isImage = isImagePreset(preset)
   const identityFields: [keyof TConnectionValues, string, string, string?][] = [
     [
       'target_id',
@@ -164,16 +202,16 @@ export const ConnectionForm = ({
             [
               'service_account_name',
               'Service account name',
-              'nuon-cloud-connection',
-              'Use 6–30 lowercase letters, numbers, or dashes, starting with a letter.',
+              defaultPrincipalName('gar', suffix),
+              'Setup creates this service account, or updates its access if it already exists in the project.',
             ],
           ] as [keyof TConnectionValues, string, string, string?][])
         : ([
             [
               'role_name',
               'IAM role name',
-              'nuon-cloud-connection',
-              'Use a new or existing IAM role in this AWS account.',
+              defaultPrincipalName(preset, suffix),
+              'Setup creates this role, or updates its trust if it already exists in AWS.',
             ],
           ] as [keyof TConnectionValues, string, string, string?][])),
   ]
@@ -212,16 +250,12 @@ export const ConnectionForm = ({
         form.handleSubmit()
       }}
     >
-      <SectionHeader
-        title={imageRepository ? 'New pull identity' : 'Connection details'}
-        description={
-          imageRepository
-            ? 'Create an identity for pulling images. Nuon manages it as a cloud connection; no long-lived credentials are stored.'
-            : isImage
-              ? 'Nuon saves this identity and registry target. Repository permissions are configured separately.'
-              : 'Nuon saves this identity. Review and apply its cloud setup after creation.'
-        }
-      />
+      {imageRepository && (
+        <SectionHeader
+          title="New pull identity"
+          description="Create a connection for pulling images. No long-lived credentials are stored."
+        />
+      )}
       <FormErrorBanner error={error} fallback="Connection creation failed" />
       {!imageRepository && (
         <form.Field
@@ -232,6 +266,7 @@ export const ConnectionForm = ({
                 'preset',
                 value === 'gcp' ? 'gar' : value === 'azure' ? 'acr' : 'ecr'
               )
+              form.setFieldValue('principal_mode', 'new')
               form.setFieldValue('principal_choice', '')
               form.setFieldValue('target_id', '')
               form.setFieldMeta('target_id', (meta) => ({
@@ -261,9 +296,7 @@ export const ConnectionForm = ({
           <FormInput
             field={field}
             id="connection-name"
-            labelProps={{
-              labelText: imageRepository ? 'Identity name' : 'Connection name',
-            }}
+            labelProps={{ labelText: 'Connection name' }}
             placeholder="acme-images"
             className="!font-mono"
             disabled={isPending}
@@ -271,7 +304,22 @@ export const ConnectionForm = ({
         )}
       </form.Field>
       {!imageRepository && !isGCP && !isAzure && (
-        <form.Field name="preset">
+        <form.Field
+          name="preset"
+          listeners={{
+            onChange: ({ value }) => {
+              const roleName = form.getFieldValue('role_name')
+              if (
+                typeof roleName === 'string' &&
+                isDefaultPrincipalName(roleName, suffix)
+              )
+                form.setFieldValue(
+                  'role_name',
+                  defaultPrincipalName(value, suffix)
+                )
+            },
+          }}
+        >
           {(field) => (
             <FormSelect
               field={field}
@@ -279,7 +327,7 @@ export const ConnectionForm = ({
               labelProps={{ labelText: 'Access type' }}
               disabled={isPending}
               options={[
-                { value: 'ecr', label: 'ECR image imports' },
+                { value: 'ecr', label: 'Image repositories' },
                 { value: 'stacks', label: 'Manage install stacks' },
                 { value: 'custom', label: 'Custom policy' },
               ]}
@@ -289,79 +337,121 @@ export const ConnectionForm = ({
       )}
       <section
         className="flex flex-col gap-4 border-t pt-6"
-        aria-label="Cloud identity"
+        aria-label="Principal"
       >
         <SectionHeader
-          title="Cloud identity"
-          description={`The identity Nuon will use in ${isAzure ? 'Azure' : isGCP ? 'Google Cloud' : 'AWS'}.`}
+          title="Principal"
+          description={`The principal Nuon will use in ${isAzure ? 'Azure' : isGCP ? 'Google Cloud' : 'AWS'}.`}
         />
-        <form.Field
-          name="principal_choice"
-          listeners={{
-            onChange: ({ value }) => {
-              const selected = principals.find((c) => c.id === value)
-              form.setFieldValue(
-                'target_id',
-                selected?.target_id ||
-                  (platform === defaultValues.platform
-                    ? defaultValues.target_id
-                    : '')
+        {principals.length > 0 && (
+          <form.Field
+            name="principal_mode"
+            listeners={{
+              onChange: () => {
+                form.setFieldValue('principal_choice', '')
+                for (const [name] of identityFields) {
+                  form.setFieldMeta(name, (meta) => ({
+                    ...meta,
+                    isTouched: false,
+                  }))
+                }
+              },
+            }}
+          >
+            {(field) => {
+              const descriptions = principalModeDescriptions[platform || 'aws']
+              return (
+                <FormRadioGroup
+                  field={field}
+                  disabled={isPending}
+                  options={[
+                    {
+                      value: 'new',
+                      label: 'Create a new principal',
+                      description: descriptions.new,
+                    },
+                    {
+                      value: 'existing',
+                      label: 'Use an existing principal',
+                      description: descriptions.existing,
+                    },
+                  ]}
+                />
               )
-              form.setFieldValue(
-                'role_name',
-                selected
-                  ? selected.principal.split(':role/')[1]
-                  : defaultValues.role_name
-              )
-              form.setFieldValue(
-                'service_account_name',
-                selected
-                  ? selected.principal.split('@')[0]
-                  : defaultValues.service_account_name
-              )
-              form.setFieldValue(
-                'gcp_project_number',
-                selected?.gcp_project_number || defaultValues.gcp_project_number
-              )
-              form.setFieldValue(
-                'azure_tenant_id',
-                selected?.azure_tenant_id || defaultValues.azure_tenant_id
-              )
-              form.setFieldValue(
-                'principal',
-                selected?.principal || defaultValues.principal
-              )
-              if (selected && isAzure) {
-                const registry = selected.azure_registry_id?.match(
-                  /\/resourceGroups\/([^/]+)\/providers\/Microsoft.ContainerRegistry\/registries\/([^/]+)$/i
-                )
-                form.setFieldValue('azure_resource_group', registry?.[1] || '')
-                form.setFieldValue('azure_registry_name', registry?.[2] || '')
+            }}
+          </form.Field>
+        )}
+        {principalMode === 'existing' && (
+          <form.Field
+            name="principal_choice"
+            listeners={{
+              onChange: ({ value }) => {
+                const selected = principals.find((c) => c.id === value)
+                const preset = form.getFieldValue('preset') || 'ecr'
                 form.setFieldValue(
-                  'azure_registry_login_server',
-                  selected.azure_registry_login_server || ''
+                  'target_id',
+                  selected?.target_id ||
+                    (platform === defaultValues.platform
+                      ? defaultValues.target_id
+                      : '')
                 )
-              }
-              for (const [name] of identityFields) {
-                form.setFieldMeta(name, (meta) => ({
-                  ...meta,
-                  isTouched: false,
-                }))
-              }
-            },
-          }}
-        >
-          {(field) => (
-            <FormSelect
-              field={field}
-              id="connection-principal-choice"
-              labelProps={{ labelText: 'Principal' }}
-              placeholder="Choose a principal or add a new one"
-              helperText="Choose an existing cloud principal or enter details for another one. Its cloud permissions apply to each connection using it."
-              disabled={isPending}
-              searchable
-              options={[
-                ...principals.map((connection) => ({
+                form.setFieldValue(
+                  'role_name',
+                  selected
+                    ? selected.principal.split(':role/')[1]
+                    : defaultPrincipalName(preset, suffix)
+                )
+                form.setFieldValue(
+                  'service_account_name',
+                  selected
+                    ? selected.principal.split('@')[0]
+                    : defaultPrincipalName(preset, suffix)
+                )
+                form.setFieldValue(
+                  'gcp_project_number',
+                  selected?.gcp_project_number ||
+                    defaultValues.gcp_project_number
+                )
+                form.setFieldValue(
+                  'azure_tenant_id',
+                  selected?.azure_tenant_id || defaultValues.azure_tenant_id
+                )
+                form.setFieldValue(
+                  'principal',
+                  selected?.principal || defaultValues.principal
+                )
+                if (selected && isAzure) {
+                  const registry = selected.azure_registry_id?.match(
+                    /\/resourceGroups\/([^/]+)\/providers\/Microsoft.ContainerRegistry\/registries\/([^/]+)$/i
+                  )
+                  form.setFieldValue(
+                    'azure_resource_group',
+                    registry?.[1] || ''
+                  )
+                  form.setFieldValue('azure_registry_name', registry?.[2] || '')
+                  form.setFieldValue(
+                    'azure_registry_login_server',
+                    selected.azure_registry_login_server || ''
+                  )
+                }
+                for (const [name] of identityFields) {
+                  form.setFieldMeta(name, (meta) => ({
+                    ...meta,
+                    isTouched: false,
+                  }))
+                }
+              },
+            }}
+          >
+            {(field) => (
+              <FormSelect
+                field={field}
+                id="connection-existing-principal"
+                labelProps={{ labelText: 'Existing principal' }}
+                placeholder="Choose an existing principal"
+                disabled={isPending}
+                searchable
+                options={principals.map((connection) => ({
                   value: connection.id,
                   label: connection.principal,
                   content: (
@@ -370,7 +460,7 @@ export const ConnectionForm = ({
                         {connection.principal}
                       </Text>
                       {platform === 'azure' && (
-                        <Text variant="subtext" theme="neutral">
+                        <Text variant="subtext" theme="neutral" family="mono">
                           Tenant {connection.azure_tenant_id}
                         </Text>
                       )}
@@ -383,24 +473,26 @@ export const ConnectionForm = ({
                   })
                     .map((c) => c.name)
                     .join(', '),
-                })),
-                { value: 'new', label: 'Add new principal' },
-              ]}
-            />
-          )}
-        </form.Field>
-        {selectedPrincipal && !isAzure && (
-          <LabeledValue label={isGCP ? 'Project ID' : 'AWS account ID'}>
+                }))}
+              />
+            )}
+          </form.Field>
+        )}
+        {selectedPrincipal && (
+          <LabeledValue
+            label={
+              isAzure
+                ? 'Subscription ID'
+                : isGCP
+                  ? 'Project ID'
+                  : 'AWS account ID'
+            }
+          >
             <Text family="mono">{selectedPrincipal.target_id}</Text>
           </LabeledValue>
         )}
-        {identityFields
-          .filter(
-            ([name]) =>
-              principalChoice === 'new' ||
-              (selectedPrincipal && isAzure && name === 'target_id')
-          )
-          .map(([name, label, placeholder, helperText]) => (
+        {principalMode !== 'existing' &&
+          identityFields.map(([name, label, placeholder, helperText]) => (
             <form.Field key={name} name={name}>
               {(field) => (
                 <FormInput
@@ -417,7 +509,11 @@ export const ConnectionForm = ({
               )}
             </form.Field>
           ))}
-        <PrincipalSharing connections={shared} orgId={orgId} />
+        <PrincipalSharing
+          connections={shared}
+          orgId={orgId}
+          sharedPermissions={!!selectedPrincipal}
+        />
       </section>
       {isImage && (
         <section
@@ -426,7 +522,7 @@ export const ConnectionForm = ({
         >
           <SectionHeader
             title="Registry target"
-            description="The registry coordinates this identity can be assigned to."
+            description="The registry coordinates this principal can be assigned to."
           />
           {preset === 'ecr' && (
             <form.Field name="ecr_region">
@@ -476,7 +572,9 @@ export const ConnectionForm = ({
       )}
       <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-4">
         <Text variant="subtext" theme="neutral">
-          Creating a connection does not change cloud permissions.
+          {imageRepository
+            ? 'Creating a pull identity does not change cloud permissions.'
+            : 'Creating a connection does not change cloud permissions.'}
         </Text>
         <Button
           type="submit"
@@ -485,15 +583,17 @@ export const ConnectionForm = ({
           tooltipProps={
             !canSubmit && !isPending
               ? {
-                  tipContent:
-                    'Cannot create connection — complete the required details',
+                  tipContent: `Cannot create ${imageRepository ? 'pull identity' : 'connection'} — complete the required details`,
                 }
               : undefined
           }
         >
           {isPending ? (
             <>
-              <Icon variant="Loading" /> Creating connection
+              <Icon variant="Loading" />{' '}
+              {imageRepository
+                ? 'Creating pull identity'
+                : 'Creating connection'}
             </>
           ) : imageRepository ? (
             'Create pull identity'

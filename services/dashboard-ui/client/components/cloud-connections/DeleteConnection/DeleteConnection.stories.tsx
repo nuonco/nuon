@@ -35,21 +35,23 @@ export const GAR = () => (
     />
   </ModalStory>
 )
-export const ImageConfiguration = () => (
+export const AssignedRepository = () => (
   <ModalStory>
     <DeleteConnection
       name="acme-ecr-images"
-      imageConfigs={1}
+      orgId="org-mock-001"
+      imageRepositories={1}
       isPending={false}
       onDelete={() => {}}
     />
   </ModalStory>
 )
-export const ImageConfigurations = () => (
+export const AssignedRepositories = () => (
   <ModalStory>
     <DeleteConnection
       name="acme-acr-images"
-      imageConfigs={3}
+      orgId="org-mock-001"
+      imageRepositories={3}
       isPending={false}
       onDelete={() => {}}
     />

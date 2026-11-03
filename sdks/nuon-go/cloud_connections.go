@@ -42,6 +42,14 @@ func (c *client) VerifyCloudConnection(ctx context.Context, connectionID string)
 	return resp.Payload, nil
 }
 
+func (c *client) GetCloudConnectionSetup(ctx context.Context, connectionID string, repositories []string) (*models.ServiceSetupResponse, error) {
+	resp, err := c.genClient.Operations.GetCloudConnectionSetup(&operations.GetCloudConnectionSetupParams{Context: ctx, ConnectionID: connectionID, Repository: repositories}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}
+
 func (c *client) DeleteCloudConnection(ctx context.Context, connectionID string) error {
 	_, err := c.genClient.Operations.DeleteCloudConnection(&operations.DeleteCloudConnectionParams{Context: ctx, ConnectionID: connectionID}, c.getOrgIDAuthInfo())
 	return err

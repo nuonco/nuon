@@ -28,11 +28,10 @@ type AzureACRImageConfig struct {
 	ComponentConfigType string `json:"component_config_type,omitzero" gorm:"notnull" temporaljson:"component_config_type,omitzero,omitempty"`
 
 	// actual configuration
-	UseCloudConnection bool   `json:"use_cloud_connection,omitzero" temporaljson:"use_cloud_connection,omitzero,omitempty"`
-	CloudConnectionID  string `json:"cloud_connection_id,omitzero" temporaljson:"cloud_connection_id,omitzero,omitempty"`
-	RegistryURL        string `json:"registry_url,omitzero" gorm:"notnull" temporaljson:"registry_url,omitzero,omitempty"`
-	TenantID           string `json:"tenant_id,omitzero" temporaljson:"tenant_id,omitzero,omitempty"`
-	ClientID           string `json:"client_id,omitzero" temporaljson:"client_id,omitzero,omitempty"`
+	CloudConnectionID string `json:"cloud_connection_id,omitzero" gorm:"default:null" temporaljson:"cloud_connection_id,omitzero,omitempty"`
+	RegistryURL       string `json:"registry_url,omitzero" gorm:"notnull" temporaljson:"registry_url,omitzero,omitempty"`
+	TenantID          string `json:"tenant_id,omitzero" temporaljson:"tenant_id,omitzero,omitempty"`
+	ClientID          string `json:"client_id,omitzero" temporaljson:"client_id,omitzero,omitempty"`
 
 	// Names of app secrets holding the app registration's credential material,
 	// never the material itself.
@@ -41,11 +40,7 @@ type AzureACRImageConfig struct {
 }
 
 func (c *AzureACRImageConfig) UsesCloudConnection() bool {
-	return c.UseCloudConnection || c.CloudConnectionID != ""
-}
-
-func (c *AzureACRImageConfig) UsesAmbientCredentials() bool {
-	return !c.UsesCloudConnection() && c.TenantID == "" && c.ClientID == "" && c.ClientSecretName == "" && c.ClientCertificateName == ""
+	return c.CloudConnectionID != ""
 }
 
 func (c *AzureACRImageConfig) Indexes(db *gorm.DB) []migrations.Index {

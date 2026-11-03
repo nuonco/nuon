@@ -11,6 +11,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { ListPage } from '@/components/layout/ListPage'
+import { ConnectionStatus } from '@/components/cloud-connections/ConnectionStatus'
 import type { TPaginationMeta } from '@/lib/api'
 import type { TAPIError, TImageRepository } from '@/types'
 
@@ -37,10 +38,11 @@ export const ImageRepositories = ({
         accessorKey: 'image_url_prefix',
         header: 'Repository',
         cell: ({ row }) => (
-          <Link href={`${basePath}/${row.original.id}`}>
-            <Text family="mono" className="break-all">
-              {row.original.image_url_prefix}
-            </Text>
+          <Link
+            href={`${basePath}/${row.original.id}`}
+            className="!font-mono break-all"
+          >
+            {row.original.image_url_prefix}
           </Link>
         ),
       },
@@ -50,8 +52,9 @@ export const ImageRepositories = ({
         cell: ({ row }) => (
           <CloudPlatform
             platform={row.original.platform}
-            displayVariant="name"
+            displayVariant={row.original.platform === 'gcp' ? 'name' : 'abbr'}
             colorVariant="color"
+            variant="subtext"
           />
         ),
       },
@@ -60,9 +63,13 @@ export const ImageRepositories = ({
         header: 'Pull identity',
         cell: ({ row }) => (
           <div className="flex min-w-0 flex-col gap-1">
-            <Text family="mono" className="break-all">
-              {row.original.cloud_connection?.name || 'Unavailable identity'}
-            </Text>
+            {row.original.cloud_connection?.name ? (
+              <Text family="mono" className="break-all">
+                {row.original.cloud_connection.name}
+              </Text>
+            ) : (
+              <Text>Unavailable identity</Text>
+            )}
             <Text
               family="mono"
               variant="subtext"
@@ -79,10 +86,7 @@ export const ImageRepositories = ({
         header: 'Authentication',
         cell: ({ row }) =>
           row.original.cloud_connection?.id ? (
-            <Status
-              status={row.original.cloud_connection.status}
-              variant="badge"
-            />
+            <ConnectionStatus connection={row.original.cloud_connection} />
           ) : (
             <Status status="error">Unavailable</Status>
           ),
@@ -90,7 +94,9 @@ export const ImageRepositories = ({
       {
         accessorKey: 'created_at',
         header: 'Added',
-        cell: ({ row }) => <Time time={row.original.created_at} />,
+        cell: ({ row }) => (
+          <Time time={row.original.created_at} format="relative" />
+        ),
       },
     ],
     [basePath]
@@ -98,7 +104,7 @@ export const ImageRepositories = ({
   return (
     <ListPage
       title="Image repositories"
-      description="Choose where Nuon pulls private images and which identity it uses for each repository."
+      description="Choose where Nuon pulls private images and the pull identity for each repository."
       createAction={
         <Button variant="primary" href={`${basePath}/add`}>
           Add image repository
@@ -154,8 +160,8 @@ export const ImageRepositories = ({
         }}
       />
       <Text variant="subtext" theme="neutral">
-        Authentication verifies the identity, not repository permissions. Image
-        builds check actual pull access.
+        Authentication verifies the principal, not repository permissions.
+        Image builds check actual pull access.
       </Text>
     </ListPage>
   )

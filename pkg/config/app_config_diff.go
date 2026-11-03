@@ -985,7 +985,6 @@ func diffComponent(old, new *Component) *diff.Diff {
 	// Type-specific diffs
 	children = append(children, diffHelmChart(old.HelmChart, new.HelmChart)...)
 	children = append(children, diffTerraformModule(old.TerraformModule, new.TerraformModule)...)
-	children = append(children, diffDockerBuild(old.DockerBuild, new.DockerBuild)...)
 	children = append(children, diffExternalImage(old.ExternalImage, new.ExternalImage)...)
 	children = append(children, diffKubernetesManifest(old.KubernetesManifest, new.KubernetesManifest)...)
 	children = append(children, diffJob(old.Job, new.Job)...)
@@ -1172,35 +1171,6 @@ func diffTerraformVariablesFiles(old, new []TerraformVariablesFile) *diff.Diff {
 	return diff.NewDiff(diff.WithKey("var_file"), diff.WithChildren(children...))
 }
 
-func diffDockerBuild(old, new *DockerBuildComponentConfig) []*diff.Diff {
-	if old == nil && new == nil {
-		return nil
-	}
-	if old == nil {
-		old = &DockerBuildComponentConfig{}
-	}
-	if new == nil {
-		new = &DockerBuildComponentConfig{}
-	}
-
-	var diffs []*diff.Diff
-	diffs = append(diffs, diffDeployOptions(old.MaxAutoRetries, new.MaxAutoRetries, old.SkipNoops, new.SkipNoops, old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing)...)
-	diffs = append(diffs,
-		diff.NewDiff(diff.WithKey("dockerfile"), diff.WithStringDiff(old.Dockerfile, new.Dockerfile)),
-		diff.NewDiff(diff.WithKey("build_timeout"), diff.WithStringDiff(old.BuildTimeout, new.BuildTimeout)),
-		diff.NewDiff(diff.WithKey("deploy_timeout"), diff.WithStringDiff(old.DeployTimeout, new.DeployTimeout)),
-	)
-
-	if d := diff.MapDiff("env_vars", old.EnvVarMap, new.EnvVarMap); d != nil {
-		diffs = append(diffs, d)
-	}
-
-	diffs = append(diffs, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
-	diffs = append(diffs, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
-
-	return diffs
-}
-
 func diffExternalImage(old, new *ExternalImageComponentConfig) []*diff.Diff {
 	if old == nil && new == nil {
 		return nil
@@ -1263,7 +1233,6 @@ func diffGCPGAR(old, new *GCPGARConfig) []*diff.Diff {
 	}
 	return []*diff.Diff{
 		diff.NewDiff(diff.WithKey("gcp_gar"), diff.WithChildren(
-			diff.NewDiff(diff.WithKey("use_cloud_connection"), diff.WithBoolDiff(old.UseCloudConnection, new.UseCloudConnection)),
 			diff.NewDiff(diff.WithKey("gcp_project_id"), diff.WithStringDiff(old.GCPProjectID, new.GCPProjectID)),
 			diff.NewDiff(diff.WithKey("region"), diff.WithStringDiff(old.GCPRegion, new.GCPRegion)),
 			diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),
@@ -1923,7 +1892,6 @@ func diffAzureACR(old, new *AzureACRConfig) []*diff.Diff {
 		new = &AzureACRConfig{}
 	}
 	return []*diff.Diff{diff.NewDiff(diff.WithKey("azure_acr"), diff.WithChildren(
-		diff.NewDiff(diff.WithKey("use_cloud_connection"), diff.WithBoolDiff(old.UseCloudConnection, new.UseCloudConnection)),
 		diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),
 		diff.NewDiff(diff.WithKey("tag"), diff.WithStringDiff(old.Tag, new.Tag)),
 		diff.NewDiff(diff.WithKey("registry_url"), diff.WithStringDiff(old.RegistryURL, new.RegistryURL)),

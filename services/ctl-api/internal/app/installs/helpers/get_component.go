@@ -36,12 +36,6 @@ func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Componen
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
-		// preload all docker configs
-		Preload("ComponentConfigs.DockerBuildComponentConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-
 		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
 		Preload("ComponentConfigs.ExternalImageComponentConfig.AWSECRImageConfig").

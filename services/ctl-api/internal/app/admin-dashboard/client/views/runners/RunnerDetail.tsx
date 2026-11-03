@@ -13,7 +13,6 @@ const SANDBOX_JOB_TYPES = [
   'kubernetes-manifest-deploy',
   'job-deploy',
   'noop-deploy',
-  'docker-build',
   'container-image-build',
   'terraform-module-build',
   'helm-chart-build',

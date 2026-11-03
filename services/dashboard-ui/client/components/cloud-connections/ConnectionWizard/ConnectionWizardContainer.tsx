@@ -16,6 +16,7 @@ import {
   useCloudConnections,
   useVerifyCloudConnection,
 } from '../queries'
+import { isImagePreset } from '../repository-scope'
 import { ConnectionForm } from './ConnectionForm'
 import { ConnectionWizard } from './ConnectionWizard'
 import { RunInCloud } from './RunInCloud'
@@ -64,8 +65,8 @@ export const ConnectionWizardContainer = ({
     enabled: !!connectionId && !!connection.data && existingPrincipal,
   })
   const verify = useVerifyCloudConnection(orgId, connectionId || '')
-  const setStep = (next: number) =>
-    setParams({ step: String(next) }, { state: location.state })
+  const setStep = (next: string) =>
+    setParams({ step: next }, { state: location.state })
   const create = useMutation({
     mutationFn: (body: TCreateCloudConnectionRequest) =>
       createCloudConnection({ orgId, body }),
@@ -100,7 +101,7 @@ export const ConnectionWizardContainer = ({
             fallback="Connection loading failed"
           />
           {connection.data &&
-            (params.get('step') === '4' ? (
+            (params.get('step') === 'verify' ? (
               <VerifyConnection
                 connection={connection.data}
                 isVerifying={verify.isPending || connection.isVerifying}
@@ -114,6 +115,7 @@ export const ConnectionWizardContainer = ({
               <>
                 <RunInCloud
                   connection={connection.data}
+                  orgId={orgId}
                   setup={
                     identities.isPending
                       ? undefined
@@ -135,18 +137,15 @@ export const ConnectionWizardContainer = ({
                 />
                 <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
                   <Button href={detailHref}>View connection</Button>
-                  <Button onClick={() => setStep(4)}>
+                  <Button onClick={() => setStep('verify')}>
                     Review verification
                   </Button>
+                  {isImagePreset(connection.data.preset) && (
+                    <Button href={`/${orgId}/settings/image-repositories/add`}>
+                      Add image repository
+                    </Button>
+                  )}
                 </div>
-                {['ecr', 'gar', 'acr'].includes(connection.data.preset) && (
-                  <Button
-                    className="w-fit"
-                    href={`/${orgId}/settings/image-repositories/add`}
-                  >
-                    Add image repository
-                  </Button>
-                )}
               </>
             ))}
         </>

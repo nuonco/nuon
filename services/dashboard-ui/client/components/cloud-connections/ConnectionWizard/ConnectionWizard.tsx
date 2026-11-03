@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { Text } from '@/components/common/Text'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { PageSection } from '@/components/layout/PageSection'
@@ -7,6 +6,7 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import type { TCloudConnection } from '@/types'
 import { ConnectionMetadata } from '../ConnectionDetail/ConnectionDetail'
 import { ConnectionStatus } from '../ConnectionStatus'
+import { isImagePreset } from '../repository-scope'
 
 export const ConnectionWizard = ({
   connection,
@@ -25,19 +25,11 @@ export const ConnectionWizard = ({
         <DetailHeader
           backLink={false}
           loading={loading}
-          title={
-            <Text
-              family={connection ? 'mono' : 'sans'}
-              weight="strong"
-              className="break-all"
-            >
-              {connection?.name || 'Cloud connection'}
-            </Text>
-          }
+          title={connection?.name || 'Cloud connection'}
           description={
-            connection && ['ecr', 'gar', 'acr'].includes(connection.preset)
+            connection && isImagePreset(connection.preset)
               ? 'Configure cloud trust, then optionally generate repository access commands.'
-              : 'Configure and verify the cloud identity.'
+              : 'Configure and verify the principal.'
           }
           status={<ConnectionStatus connection={connection} />}
           metadata={<ConnectionMetadata connection={connection} />}
@@ -50,7 +42,7 @@ export const ConnectionWizard = ({
     <PageSection>
       <SectionHeader
         title="Create cloud connection"
-        description="Connect a cloud identity without storing credentials in Nuon."
+        description="Connect a principal without storing credentials in Nuon."
       />
       {children}
     </PageSection>

@@ -35,7 +35,6 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 
 	var name, platform, targetID, principal, defaultRegion, preset, projectNumber string
 	var azureTenantID, azureRegistryID, azureLoginServer string
-	var repositoryARNs, garRepositories, acrRepositories []string
 	create := &cobra.Command{
 		Use: "create", Short: "Create a cloud connection", Args: cobra.NoArgs, Annotations: outputs,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
@@ -45,8 +44,8 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 			if principal == "" {
 				return ui.PrintError(fmt.Errorf("--principal is required"))
 			}
-			if (preset == "ecr" && len(repositoryARNs) == 0 || preset == "gar" && len(garRepositories) == 0) && defaultRegion == "" {
-				return ui.PrintError(fmt.Errorf("--default-region is required for image connections without initial repository setup input"))
+			if (preset == "ecr" || preset == "gar") && defaultRegion == "" {
+				return ui.PrintError(fmt.Errorf("--default-region is required with --preset %s", preset))
 			}
 			if preset == "gar" && projectNumber == "" {
 				return ui.PrintError(fmt.Errorf("--gcp-project-number is required with --preset gar"))
@@ -57,9 +56,8 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 			return c.cloudConnections.Create(cmd.Context(), &models.ServiceCreateRequest{
 				Name: name, Platform: platform, TargetID: targetID, Principal: principal,
 				DefaultRegion: defaultRegion, Preset: models.AppCloudConnectionPreset(preset),
-				EcrRepositoryArns: repositoryARNs, GcpProjectNumber: projectNumber, GarRepositories: garRepositories,
-				AzureTenantID: azureTenantID, AzureRegistryID: azureRegistryID,
-				AzureRegistryLoginServer: azureLoginServer, AcrRepositories: acrRepositories,
+				GcpProjectNumber: projectNumber, AzureTenantID: azureTenantID, AzureRegistryID: azureRegistryID,
+				AzureRegistryLoginServer: azureLoginServer,
 			}, PrintJSON)
 		}),
 	}
@@ -67,15 +65,12 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 	create.Flags().StringVar(&platform, "platform", "aws", "Cloud platform: aws, gcp, or azure")
 	create.Flags().StringVar(&targetID, "target-id", "", "AWS account ID, GCP project ID, or Azure subscription ID")
 	create.Flags().StringVar(&principal, "principal", "", "AWS IAM role ARN, GCP service account email, or Entra application client ID")
-	create.Flags().StringVar(&defaultRegion, "default-region", "", "AWS region or GAR location for image connection matching (inferred from initial repository input when provided)")
+	create.Flags().StringVar(&defaultRegion, "default-region", "", "AWS region or GAR location (required with --preset ecr or gar)")
 	create.Flags().StringVar(&preset, "preset", "", "Access preset: stacks, ecr, gar, acr (image repository access), or custom")
-	create.Flags().StringSliceVar(&repositoryARNs, "repository-arn", nil, "Optional ECR repository ARN for initial permission commands (repeatable; not saved)")
 	create.Flags().StringVar(&projectNumber, "gcp-project-number", "", "Numeric GCP project number (required with --preset gar)")
-	create.Flags().StringSliceVar(&garRepositories, "gar-repository", nil, "Optional GAR resource projects/PROJECT/locations/LOCATION/repositories/REPOSITORY for initial permission commands (repeatable; not saved)")
 	create.Flags().StringVar(&azureTenantID, "azure-tenant-id", "", "Microsoft Entra tenant ID (required with --preset acr)")
 	create.Flags().StringVar(&azureRegistryID, "azure-registry-id", "", "Full ARM resource ID of the existing ACR registry (required with --preset acr)")
 	create.Flags().StringVar(&azureLoginServer, "azure-registry-login-server", "", "ACR login server, e.g. acme.azurecr.io (required with --preset acr)")
-	create.Flags().StringSliceVar(&acrRepositories, "acr-repository", nil, "Optional ACR repository path, e.g. acme/api, for initial permission commands (repeatable; not saved)")
 	_ = create.MarkFlagRequired("name")
 	_ = create.MarkFlagRequired("preset")
 	command.AddCommand(create)

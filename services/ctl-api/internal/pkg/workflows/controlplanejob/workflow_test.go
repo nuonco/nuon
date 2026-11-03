@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
-	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -43,24 +42,8 @@ func TestExecuteControlPlaneJobFailureDiagnostics(t *testing.T) {
 		message       string
 		want          []string
 		cancelled     bool
-		legacy        bool
 		cancelContext bool
 	}{
-		"legacy run failure and failed finalization": {
-			legacy: true, runError: errors.New("registry denied"),
-			finalizeError: temporal.NewNonRetryableApplicationError("database unavailable", "database", nil),
-			want:          []string{"unable to finalize", "database unavailable"},
-		},
-		"legacy cancellation and failed finalization": {
-			legacy: true, runError: temporal.NewCanceledError(),
-			finalizeError: temporal.NewNonRetryableApplicationError("database unavailable", "database", nil),
-			want:          []string{"unable to finalize", "database unavailable"},
-		},
-		"legacy cancelled context and failed finalization": {
-			legacy: true, cancelContext: true,
-			finalizeError: temporal.NewNonRetryableApplicationError("database unavailable", "database", nil),
-			want:          []string{"unable to finalize", "database unavailable"},
-		},
 		"new cancelled context and failed finalization": {
 			cancelContext: true, cancelled: true,
 			finalizeError: temporal.NewNonRetryableApplicationError("database unavailable", "database", nil),
@@ -105,11 +88,6 @@ func TestExecuteControlPlaneJobFailureDiagnostics(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var suite testsuite.WorkflowTestSuite
 			env := suite.NewTestWorkflowEnvironment()
-			version := workflow.Version(1)
-			if tc.legacy {
-				version = workflow.DefaultVersion
-			}
-			env.OnGetVersion(BuildFailurePropagationVersion, workflow.DefaultVersion, 1).Return(version)
 			if tc.cancelContext {
 				env.RegisterDelayedCallback(env.CancelWorkflow, 0)
 			}
@@ -137,9 +115,7 @@ func TestExecuteControlPlaneJobFailureDiagnostics(t *testing.T) {
 				for _, want := range tc.want {
 					require.ErrorContains(t, err, want)
 				}
-				if tc.legacy {
-					require.NotContains(t, err.Error(), "registry denied")
-				} else if tc.runError != nil && tc.finalizeError != nil {
+				if tc.runError != nil && tc.finalizeError != nil {
 					var applicationErr *temporal.ApplicationError
 					require.True(t, errors.As(err, &applicationErr))
 					require.Equal(t, "control-plane-build", applicationErr.Type())

@@ -22,7 +22,6 @@ import (
 )
 
 func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, buildJobID, componentName string) error {
-	propagateFailures := controlplanejob.BuildFailurePropagationEnabled(ctx)
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "evaluating image policies")
 
 	l, err := log.WorkflowLogger(ctx)
@@ -38,7 +37,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		BuildID: buildID,
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to check for policies", err))
 		return fmt.Errorf("unable to check for container image policies: %w", err)
 	}
 
@@ -49,12 +47,10 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	build, err := activities.AwaitGetComponentBuildByID(ctx, buildID)
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get build", err))
 		return fmt.Errorf("unable to get component build: %w", err)
 	}
 	org, err := activities.AwaitGetOrgByID(ctx, build.OrgID)
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get org", err))
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 	if !shouldFetchImageMetadataForPolicy(policyCheckResult.HasPolicies, org.SandboxMode) {
@@ -66,7 +62,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get log stream ID", err))
 		return fmt.Errorf("unable to get log stream ID: %w", err)
 	}
 
@@ -81,7 +76,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		},
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to create metadata job", err))
 		w.failRunnerJob(ctx, buildJobID, "unable to create metadata job")
 		return fmt.Errorf("unable to create metadata job: %w", err)
 	}
@@ -91,7 +85,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		JobID:   metadataJob.ID,
 		BuildID: buildID,
 	}); err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to save metadata job plan", err))
 		w.failRunnerJob(ctx, buildJobID, "unable to save metadata job plan")
 		return fmt.Errorf("unable to save metadata job plan: %w", err)
 	}
@@ -102,10 +95,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		if !propagateFailures {
-			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to fetch image metadata", err))
-		}
-		if !propagateFailures || !temporal.IsCanceledError(err) {
+		if !temporal.IsCanceledError(err) {
 			w.failRunnerJob(ctx, buildJobID, "unable to fetch image metadata")
 		}
 		return fmt.Errorf("unable to fetch image metadata: %w", err)
@@ -116,7 +106,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		JobID: metadataJob.ID,
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get image metadata", err))
 		w.failRunnerJob(ctx, buildJobID, "unable to get image metadata")
 		return fmt.Errorf("unable to get image metadata: %w", err)
 	}
@@ -126,7 +115,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		ImageMetadata: metadataResult.Metadata,
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to prepare policy evaluation", err))
 		w.failRunnerJob(ctx, buildJobID, "unable to prepare policy evaluation")
 		return fmt.Errorf("unable to prepare policy evaluation: %w", err)
 	}
@@ -169,7 +157,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 				l.Error("named policy evaluation failed", zap.Error(err))
 				w.recordComponentPolicyEvaluationFailure(ctx, l, metadataJob.ID)
 				description := truncateErrorMessage("unable to evaluate named policy checks", err)
-				w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, description)
 				w.failRunnerJob(ctx, buildJobID, description)
 				return fmt.Errorf("image policy evaluation failed: %w", err)
 			}
@@ -238,11 +225,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		}
 		description := formatPolicyViolations("policy violations", denyViolations)
 		l.Error("policy evaluation failed", zap.Int("deny_count", len(denyViolations)))
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPolicyFailed, description)
 		w.failRunnerJob(ctx, buildJobID, description)
-		if !propagateFailures {
-			return fmt.Errorf("image policy check failed: %s", description)
-		}
 		return temporal.NewNonRetryableApplicationError(description, "component-build-policy", nil)
 	}
 
@@ -297,11 +280,7 @@ func truncateErrorMessage(prefix string, err error) string {
 	if err == nil {
 		return prefix
 	}
-	msg := []rune(fmt.Sprintf("%s: %s", prefix, compositeerrors.ErrorMessage(err)))
-	if len(msg) > maxDescriptionLength {
-		return string(msg[:maxDescriptionLength-1]) + "…"
-	}
-	return string(msg)
+	return compositeerrors.TruncateRunes(fmt.Sprintf("%s: %s", prefix, compositeerrors.ErrorMessage(err)), maxDescriptionLength-1)
 }
 
 func formatPolicyViolations(prefix string, violations []sharedactivities.PolicyViolation) string {

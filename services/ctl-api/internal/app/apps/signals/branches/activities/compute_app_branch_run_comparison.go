@@ -440,8 +440,6 @@ func componentRepoDirectory(c *app.ComponentConfigConnection) (string, string, s
 		return vcsRepoDirectory(c.HelmComponentConfig.ConnectedGithubVCSConfig, c.HelmComponentConfig.PublicGitVCSConfig)
 	case c.TerraformModuleComponentConfig != nil:
 		return vcsRepoDirectory(c.TerraformModuleComponentConfig.ConnectedGithubVCSConfig, c.TerraformModuleComponentConfig.PublicGitVCSConfig)
-	case c.DockerBuildComponentConfig != nil:
-		return vcsRepoDirectory(c.DockerBuildComponentConfig.ConnectedGithubVCSConfig, c.DockerBuildComponentConfig.PublicGitVCSConfig)
 	case c.KubernetesManifestComponentConfig != nil:
 		return vcsRepoDirectory(c.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig, c.KubernetesManifestComponentConfig.PublicGitVCSConfig)
 	case c.PulumiComponentConfig != nil:
@@ -469,8 +467,6 @@ func (a *Activities) loadComponentSources(ctx context.Context, appConfigID strin
 		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("HelmComponentConfig.ConnectedGithubVCSConfig").
 		Preload("HelmComponentConfig.PublicGitVCSConfig").
-		Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("KubernetesManifestComponentConfig.ConnectedGithubVCSConfig").
 		Preload("KubernetesManifestComponentConfig.PublicGitVCSConfig").
 		Preload("PulumiComponentConfig.ConnectedGithubVCSConfig").

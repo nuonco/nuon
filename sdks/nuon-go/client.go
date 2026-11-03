@@ -67,6 +67,7 @@ type Client interface {
 	GetCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error)
 	VerifyCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error)
 	DeleteCloudConnection(ctx context.Context, connectionID string) error
+	GetCloudConnectionSetup(ctx context.Context, connectionID string, repositories []string) (*models.ServiceSetupResponse, error)
 
 	CreateImageRepository(ctx context.Context, req *models.ServiceCreateImageRepositoryRequest) (*models.AppImageRepository, error)
 	ListImageRepositories(ctx context.Context, query *ListImageRepositoriesQuery) ([]*models.AppImageRepository, bool, error)
@@ -355,7 +356,6 @@ type Client interface {
 	CreateTerraformModuleComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateTerraformModuleComponentConfigRequest) (*models.AppTerraformModuleComponentConfig, error)
 	CreatePulumiComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreatePulumiComponentConfigRequest) (*models.AppPulumiComponentConfig, error)
 	CreateHelmComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateHelmComponentConfigRequest) (*models.AppHelmComponentConfig, error)
-	CreateDockerBuildComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateDockerBuildComponentConfigRequest) (*models.AppDockerBuildComponentConfig, error)
 	CreateExternalImageComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateExternalImageComponentConfigRequest) (*models.AppExternalImageComponentConfig, error)
 	CreateJobComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateJobComponentConfigRequest) (*models.AppJobComponentConfig, error)
 	GetComponentConfigs(ctx context.Context, componentID string, query *models.GetPaginatedQuery) ([]*models.AppComponentConfigConnection, bool, error)

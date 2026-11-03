@@ -2,6 +2,7 @@ package components
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +13,9 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/syncerr"
 )
 
 func TestUnchangedLegacyImageSync(t *testing.T) {
@@ -44,6 +47,9 @@ func TestUnchangedLegacyImageSync(t *testing.T) {
 					*dest = app.ComponentConfigConnection{ID: "saved_config", Checksum: checksum, LatestBuildID: generics.NewNullString("saved_build")}
 				case *app.ComponentBuild:
 					*dest = app.ComponentBuild{ID: "saved_build", Status: app.ComponentBuildStatusActive}
+				case *app.ImageRepository:
+					tx.AddError(gorm.ErrRecordNotFound)
+					return
 				default:
 					t.Fatalf("unexpected lookup for legacy sync: %T", dest)
 				}
@@ -53,10 +59,29 @@ func TestUnchangedLegacyImageSync(t *testing.T) {
 				t.Fatal("unchanged sync must reuse the saved config without creating a config or build")
 			}))
 			state := &sync.State{}
-			require.NoError(t, SyncComponent(context.Background(), SyncComponentParams{DB: db, Component: component, AppID: "app", AppConfigID: "appconfig", State: state, DispatchBuilds: true}))
+			require.NoError(t, SyncComponent(context.Background(), SyncComponentParams{DB: db, Component: component, AppID: "app", AppConfigID: "appconfig", State: state, DispatchBuilds: true, LegacyImageAuth: true}))
 			require.Len(t, state.Components, 1)
 			require.Equal(t, "saved_config", state.Components[0].ConfigID)
 			require.Nil(t, state.Result)
+		})
+	}
+}
+
+func TestImageConnectionSyncErrorClassification(t *testing.T) {
+	for name, tc := range map[string]struct {
+		resolveErr   error
+		wantSyncErr  bool
+		wantInternal bool
+	}{
+		"user error":     {resolveErr: cloudconnections.ErrLegacyImageAuthDisabled, wantSyncErr: true},
+		"database error": {resolveErr: errors.New("database unavailable"), wantInternal: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := syncerr.From("component-acme", "invalid image repository cloud connection", tc.resolveErr)
+			var syncErr sync.SyncErr
+			var internalErr sync.SyncInternalErr
+			require.Equal(t, tc.wantSyncErr, errors.As(err, &syncErr))
+			require.Equal(t, tc.wantInternal, errors.As(err, &internalErr))
 		})
 	}
 }
