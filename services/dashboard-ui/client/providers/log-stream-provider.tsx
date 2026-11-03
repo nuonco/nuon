@@ -123,13 +123,6 @@ export function LogStreamProvider({
     [appendLogs]
   )
 
-  // The tail session marks a stream "complete" as soon as it observes the
-  // owning job/step closed with nothing left to drain — but the runner's
-  // final batch of job output can still be a beat behind that close signal
-  // (ingestion/flush lag), so the SSE "complete" event can fire a moment
-  // before the last lines are queryable. Re-fetch the freshest page once on
-  // completion so those trailing lines show up immediately instead of
-  // waiting on a manual refresh or the next poll window.
   const fetchFreshestLogs = useCallback(
     (streamId: string, orgId: string) => {
       if (finalSyncRequestedRef.current) return
