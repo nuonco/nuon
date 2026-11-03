@@ -102,7 +102,11 @@ func (h *Helpers) componentHealthClusterInputs(ctx context.Context, installID st
 		return nil, err
 	}
 
-	installState, err := h.GetInstallState(ctx, installID, false, true)
+	// Role names can interpolate install inputs and the chosen name is echoed
+	// back to the caller, so render against redacted state to keep sensitive
+	// input values out of the response. Cluster info templates only reference
+	// sandbox outputs, which redaction does not touch.
+	installState, err := h.GetInstallState(ctx, installID, true, true)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install state: %w", err)
 	}
