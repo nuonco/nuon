@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						DeleteAppSecretV2
@@ -28,9 +30,13 @@ import (
 // @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/apps/{app_id}/secrets/{secret_id} [DELETE]
 func (s *service) DeleteAppSecretV2(ctx *gin.Context) {
-	secretID := ctx.Param("secret_id")
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
-	err := s.deleteAppSecret(ctx, secretID)
+	err = s.deleteAppSecret(ctx, org.ID, ctx.Param("app_id"), ctx.Param("secret_id"))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -58,9 +64,13 @@ func (s *service) DeleteAppSecretV2(ctx *gin.Context) {
 // @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/apps/{app_id}/secret/{secret_id} [DELETE]
 func (s *service) DeleteAppSecret(ctx *gin.Context) {
-	secretID := ctx.Param("secret_id")
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
-	err := s.deleteAppSecret(ctx, secretID)
+	err = s.deleteAppSecret(ctx, org.ID, ctx.Param("app_id"), ctx.Param("secret_id"))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -69,13 +79,20 @@ func (s *service) DeleteAppSecret(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
-func (s *service) deleteAppSecret(ctx context.Context, secretID string) error {
+func (s *service) deleteAppSecret(ctx context.Context, orgID, appRef, secretID string) error {
+	currentApp, err := s.findAppRef(ctx, orgID, appRef)
+	if err != nil {
+		return err
+	}
+
 	res := s.db.WithContext(ctx).
-		Delete(&app.AppSecret{
-			ID: secretID,
-		})
+		Where(app.AppSecret{ID: secretID, OrgID: orgID, AppID: currentApp.ID}).
+		Delete(&app.AppSecret{})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete app secret: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("app secret %q: %w", secretID, gorm.ErrRecordNotFound)
 	}
 
 	return nil
