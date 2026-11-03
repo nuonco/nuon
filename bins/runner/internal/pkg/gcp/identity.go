@@ -7,6 +7,8 @@ import (
 	"cloud.google.com/go/compute/metadata"
 )
 
+const runnerIDMetadataKey = "nuon_runner_id"
+
 // GetIdentityToken fetches a GCP identity token (JWT) from the instance metadata service.
 // The audience is embedded in the token and must match what the server expects.
 func GetIdentityToken(ctx context.Context, audience string) (string, error) {
@@ -17,49 +19,16 @@ func GetIdentityToken(ctx context.Context, audience string) (string, error) {
 	return token, nil
 }
 
-// computeReadonlyScope is the only scope the returned token needs: ctl-api uses
-// it solely to read this instance back from the Compute API. Requesting it
-// explicitly, rather than the full set of scopes attached to the instance,
-// keeps the token in the auth request from being usable for anything else if
-// it leaks.
-const computeReadonlyScope = "https://www.googleapis.com/auth/compute.readonly"
-
-// GetAccessToken fetches an OAuth2 access token for the default service account,
-// scoped to compute.readonly. The server uses this to independently read
-// instance metadata via the Compute API.
-func GetAccessToken(ctx context.Context) (string, error) {
-	token, err := metadata.GetWithContext(ctx, "instance/service-accounts/default/token?scopes="+computeReadonlyScope)
+// GetRunnerID returns the runner ID the stack wrote into instance metadata.
+func GetRunnerID(ctx context.Context) (string, error) {
+	runnerID, err := metadata.InstanceAttributeValueWithContext(ctx, runnerIDMetadataKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to get access token: %w", err)
+		return "", fmt.Errorf("failed to get %s from instance metadata: %w", runnerIDMetadataKey, err)
 	}
-	return token, nil
-}
-
-// GetInstanceName returns the instance name from metadata.
-func GetInstanceName(ctx context.Context) (string, error) {
-	name, err := metadata.InstanceNameWithContext(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get instance name: %w", err)
+	if runnerID == "" {
+		return "", fmt.Errorf("%s instance metadata is empty", runnerIDMetadataKey)
 	}
-	return name, nil
-}
-
-// GetProjectID returns the project ID from metadata.
-func GetProjectID(ctx context.Context) (string, error) {
-	project, err := metadata.ProjectIDWithContext(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get project ID: %w", err)
-	}
-	return project, nil
-}
-
-// GetZone returns the instance zone from metadata.
-func GetZone(ctx context.Context) (string, error) {
-	zone, err := metadata.ZoneWithContext(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get zone: %w", err)
-	}
-	return zone, nil
+	return runnerID, nil
 }
 
 // IsGCPInstance checks if we're running on a GCP instance.
