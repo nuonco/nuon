@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -55,24 +56,49 @@ var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// show all components for an org
-	api.GET("/v1/components", s.GetOrgComponents)
-	api.GET("/v1/component-builds", s.ListOrgComponentBuilds)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponent}).GET("/v1/components", s.GetOrgComponents)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponentBuild}).GET("/v1/component-builds", s.ListOrgComponentBuilds)
+	appTarget := require.ReadTarget{Name: "app_id", Kind: permissions.KindApp}
+	componentTarget := require.ReadTarget{Name: "component_id", Kind: permissions.KindComponent, Parent: "app_id"}
+	appReads := require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponent, Targets: []require.ReadTarget{appTarget}})
+	appReads.GET("/v1/apps/:app_id/components", s.GetAppComponents)
+	appReads.GET("/v1/apps/:app_id/components/label-keys", s.GetComponentLabelKeys)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Targets: []require.ReadTarget{appTarget, {Name: "component_name_or_id", Kind: permissions.KindComponent, Parent: "app_id"}}}).GET("/v1/apps/:app_id/component/:component_name_or_id", s.GetAppComponent)
+	componentReads := require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponent, Targets: []require.ReadTarget{appTarget, componentTarget}})
+	componentReads.GET("/v1/apps/:app_id/components/:component_id/dependencies", s.GetAppComponentDependencies)
+	componentReads.GET("/v1/apps/:app_id/components/:component_id/dependents", s.GetAppComponentDependents)
+	componentReads.GET("/v1/apps/:app_id/components/:component_id/configs", s.GetAppComponentConfigs)
+	componentReads.GET("/v1/apps/:app_id/components/:component_id/configs/latest", s.GetAppComponentLatestConfig)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Targets: []require.ReadTarget{appTarget, componentTarget, {Name: "config_id", Kind: permissions.KindComponentConfig, Parent: "component_id"}}}).GET("/v1/apps/:app_id/components/:component_id/configs/:config_id", s.GetAppComponentConfig)
+	buildReads := require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponentBuild, Targets: []require.ReadTarget{appTarget, componentTarget}})
+	buildReads.GET("/v1/apps/:app_id/components/:component_id/builds", s.GetAppComponentBuilds)
+	buildReads.GET("/v1/apps/:app_id/components/:component_id/builds/latest", s.GetAppComponentLatestBuild)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponentBuild, Targets: []require.ReadTarget{appTarget, componentTarget, {Name: "build_id", Kind: permissions.KindComponentBuild, Parent: "component_id"}}}).GET("/v1/apps/:app_id/components/:component_id/builds/:build_id", s.GetAppComponentBuild)
+	deprecatedTarget := require.ReadTarget{Name: "component_id", Kind: permissions.KindComponent}
+	deprecatedReads := require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponent, Targets: []require.ReadTarget{deprecatedTarget}})
+	deprecatedReads.GET("/v1/components/:component_id", s.GetComponent)
+	deprecatedReads.GET("/v1/components/:component_id/dependencies", s.GetComponentDependencies)
+	deprecatedReads.GET("/v1/components/:component_id/dependents", s.GetComponentDependents)
+	deprecatedReads.GET("/v1/components/:component_id/configs", s.GetComponentConfigs)
+	deprecatedReads.GET("/v1/components/:component_id/configs/latest", s.GetComponentLatestConfig)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Targets: []require.ReadTarget{deprecatedTarget, {Name: "config_id", Kind: permissions.KindComponentConfig, Parent: "component_id"}}}).GET("/v1/components/:component_id/configs/:config_id", s.GetComponentConfig)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponentBuild, Targets: []require.ReadTarget{deprecatedTarget}}).GET("/v1/components/:component_id/builds/latest", s.GetComponentLatestBuild)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponentBuild, Targets: []require.ReadTarget{deprecatedTarget, {Name: "build_id", Kind: permissions.KindComponentBuild, Parent: "component_id"}}}).GET("/v1/components/:component_id/builds/:build_id", s.GetComponentBuild)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponentBuild}).GET("/v1/builds", s.GetComponentBuilds)
+	require.ReadRoute(api, s.db, require.ReadContract{Permission: permissions.AppRead, Collection: permissions.KindComponentBuild, Targets: []require.ReadTarget{{Name: "build_id", Kind: permissions.KindComponentBuild}}}).GET("/v1/components/builds/:build_id", s.GetBuild)
+	if s.EndpointAudit != nil {
+		for _, path := range []string{"/v1/components/:component_id", "/v1/components/:component_id/dependencies", "/v1/components/:component_id/dependents", "/v1/components/:component_id/configs", "/v1/components/:component_id/configs/:config_id", "/v1/components/:component_id/configs/latest", "/v1/components/:component_id/builds/latest", "/v1/components/:component_id/builds/:build_id", "/v1/builds", "/v1/components/builds/:build_id"} {
+			s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypePublic), path)
+		}
+	}
 
 	// components belong to an app
 	apps := api.Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
 		components := apps.Group("/components")
 		{
-			components.GET("", s.GetAppComponents)
-			components.GET("/label-keys", s.GetComponentLabelKeys)
 			components.POST("", s.CreateComponent)
 			components.POST("/build-all", s.BuildAllComponents)
-		}
-
-		// single component routes
-		component := apps.Group("/component")
-		{
-			component.GET("/:component_name_or_id", s.GetAppComponent)
 		}
 
 		// component-specific routes
@@ -83,18 +109,11 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			comp.POST("/labels", s.AddAppComponentLabels)
 			comp.DELETE("/labels", s.RemoveAppComponentLabels)
 
-			// dependencies
-			comp.GET("/dependencies", s.GetAppComponentDependencies)
-			comp.GET("/dependents", s.GetAppComponentDependents)
-
 			// builds
 			builds := comp.Group("/builds")
 			{
 				builds.POST("", s.CreateAppComponentBuild)
-				builds.GET("/latest", s.GetAppComponentLatestBuild)
-				builds.GET("/:build_id", s.GetAppComponentBuild)
 				builds.POST("/:build_id/cancel", s.CancelAppComponentBuild)
-				builds.GET("", s.GetAppComponentBuilds)
 			}
 
 			// component configurations
@@ -107,9 +126,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 				configs.POST("/job", s.CreateAppJobComponentConfig)
 				configs.POST("/kubernetes-manifest", s.CreateAppKubernetesManifestComponentConfig)
 				configs.POST("/pulumi", s.CreateAppPulumiComponentConfig)
-				configs.GET("", s.GetAppComponentConfigs)
-				configs.GET("/:config_id", s.GetAppComponentConfig)
-				configs.GET("/latest", s.GetAppComponentLatestConfig)
 			}
 		}
 	}
@@ -118,13 +134,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	deprecatedComponents := api.Group("/v1/components/:component_id", require.ComponentInOrg(s.db))
 	{
 		// crud ops for components
-		s.GET(deprecatedComponents, "", s.GetComponent, apiPkg.APIContextTypePublic, true)
 		s.PATCH(deprecatedComponents, "", s.UpdateComponent, apiPkg.APIContextTypePublic, true)
 		s.DELETE(deprecatedComponents, "", s.DeleteComponent, apiPkg.APIContextTypePublic, true)
-
-		// dependencies
-		s.GET(deprecatedComponents, "/dependencies", s.GetComponentDependencies, apiPkg.APIContextTypePublic, true)
-		s.GET(deprecatedComponents, "/dependents", s.GetComponentDependents, apiPkg.APIContextTypePublic, true)
 
 		// component configurations
 		deprecatedConfigs := deprecatedComponents.Group("/configs")
@@ -136,23 +147,14 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			s.POST(deprecatedConfigs, "/job", s.CreateJobComponentConfig, apiPkg.APIContextTypePublic, true)
 			s.POST(deprecatedConfigs, "/kubernetes-manifest", s.CreateKubernetesManifestComponentConfig, apiPkg.APIContextTypePublic, true)
 			s.POST(deprecatedConfigs, "/pulumi", s.CreatePulumiComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedConfigs, "", s.GetComponentConfigs, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedConfigs, "/:config_id", s.GetComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedConfigs, "/latest", s.GetComponentLatestConfig, apiPkg.APIContextTypePublic, true)
 		}
 
 		// builds
 		deprecatedBuilds := deprecatedComponents.Group("/builds")
 		{
 			s.POST(deprecatedBuilds, "", s.CreateComponentBuild, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedBuilds, "/latest", s.GetComponentLatestBuild, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedBuilds, "/:build_id", s.GetComponentBuild, apiPkg.APIContextTypePublic, true)
 		}
 	}
-
-	// other deprecated build routes
-	s.GET(api, "/v1/builds", s.GetComponentBuilds, apiPkg.APIContextTypePublic, true)
-	s.GET(api, "/v1/components/builds/:build_id", s.GetBuild, apiPkg.APIContextTypePublic, true)
 
 	return nil
 }

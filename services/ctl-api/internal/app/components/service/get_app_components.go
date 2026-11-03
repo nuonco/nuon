@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -41,7 +41,7 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.Component
 // @Router					/v1/apps/{app_id}/components [GET]
-func (s *service) GetAppComponents(ctx *gin.Context) {
+func (s *service) GetAppComponents(ctx *gin.Context) (any, error) {
 	appID := ctx.Param("app_id")
 	q := ctx.Query("q")
 	types := ctx.Query("types")
@@ -61,16 +61,18 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	branchID := ctx.Query("branch_id")
 
-	components, err := s.getAppComponents(ctx, appID, branchID, q, typesSlice, componentIDsSlice, lbls)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, components)
+	return s.getAppComponents(ctx, appID, branchID, q, typesSlice, componentIDsSlice, lbls)
 }
 
 func (s *service) getAppComponents(ctx *gin.Context, appID, branchID, q string, types []string, componentIDs []string, lbls labels.Labels) ([]app.Component, error) {
+	access, err := require.ReadAccessFromContext(ctx.Request.Context())
+	if err != nil {
+		return nil, err
+	}
+	query, err := access.Query()
+	if err != nil {
+		return nil, err
+	}
 	appCfg, err := s.scopedAppConfig(ctx, appID, branchID)
 	if err != nil {
 		if errors.Is(err, appshelpers.ErrAppBranchNotFound) {
@@ -83,16 +85,20 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, branchID, q string, 
 	}
 
 	var components []app.Component
-	tx := s.db.WithContext(ctx).
+	tx := query.WithContext(ctx.Request.Context()).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("components.labels", lbls)).
-		Where("id IN ?", []string(appCfg.ComponentIDs)).
-		Preload("Dependencies").
+		Where(&app.Component{AppID: appID}).
+		Where("components.id IN ?", []string(appCfg.ComponentIDs)).
+		Order("components.created_at DESC, components.id DESC").
+		Preload("Dependencies", &app.Component{AppID: appID, OrgID: access.OrgID()}).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName))
+			return db.Where(&app.ComponentConfigConnection{OrgID: access.OrgID()}).Scopes(scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName))
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
-			return db.Order("component_builds.created_at DESC")
+			return db.Where(&app.ComponentBuild{OrgID: access.OrgID()}).
+				Where("component_builds.component_id IS NULL OR component_builds.component_id = '' OR component_builds.component_id = (SELECT component_id FROM component_config_connections WHERE id = component_builds.component_config_connection_id)").
+				Order("component_builds.created_at DESC, component_builds.id DESC")
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit")
 	if q != "" {
@@ -121,9 +127,9 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, branchID, q string, 
 }
 
 func (s *service) scopedAppConfig(ctx *gin.Context, appID, branchID string) (*app.AppConfig, error) {
-	if branchID == "" {
-		return s.appsHelpers.GetLatestActiveAppConfig(ctx, appID)
+	access, err := require.ReadAccessFromContext(ctx.Request.Context())
+	if err != nil {
+		return nil, err
 	}
-
-	return s.appsHelpers.GetLatestActiveAppConfigForBranch(ctx, appID, branchID)
+	return s.appsHelpers.GetComponentAppConfigInTx(ctx.Request.Context(), access.DB(), appID, branchID)
 }

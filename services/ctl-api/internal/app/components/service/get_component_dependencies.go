@@ -1,14 +1,7 @@
 package service
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetAppComponentDependencies
@@ -33,43 +26,8 @@ import (
 // (dependency → dependent). This means it returns the component's *dependents* (children),
 // not its *dependencies* (parents). To return actual dependencies, the BFS would need to
 // traverse incoming edges instead.
-func (s *service) GetAppComponentDependencies(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	componentID := ctx.Param("component_id")
-
-	component, err := s.findComponent(ctx, org.ID, componentID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component %s: %w", componentID, err))
-		return
-	}
-
-	appID := ctx.Param("app_id")
-	if component.AppID != appID {
-		ctx.Error(stderr.ErrNotFound{
-			Err:         errors.New("component does not belong to the specified app path"),
-			Description: "Component does not belong to the specified app",
-		})
-		return
-	}
-
-	appCfg, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, component.AppID)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get app config"))
-		return
-	}
-
-	depCmps, err := s.appsHelpers.GetComponentDependents(ctx, appCfg.ID, component.ID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component dependencies: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, depCmps)
+func (s *service) GetAppComponentDependencies(ctx *gin.Context) (any, error) {
+	return s.GetComponentDependencies(ctx)
 }
 
 // @ID						GetComponentDependencies
@@ -89,32 +47,14 @@ func (s *service) GetAppComponentDependencies(ctx *gin.Context) {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.Component
 // @Router					/v1/components/{component_id}/dependencies [get]
-func (s *service) GetComponentDependencies(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
+func (s *service) GetComponentDependencies(ctx *gin.Context) (any, error) {
+	components, err := s.readComponentDependents(ctx.Request.Context())
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
-
-	componentID := ctx.Param("component_id")
-
-	component, err := s.findComponent(ctx, org.ID, componentID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component %s: %w", componentID, err))
-		return
+	ids := make([]string, 0, len(components))
+	for _, component := range components {
+		ids = append(ids, component.ID)
 	}
-
-	appCfg, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, component.AppID)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get app config"))
-		return
-	}
-
-	depCmps, err := s.appsHelpers.GetComponentDependents(ctx, appCfg.ID, component.ID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get component dependencies: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, depCmps)
+	return ids, nil
 }

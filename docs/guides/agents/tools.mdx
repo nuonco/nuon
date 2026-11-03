@@ -29,9 +29,14 @@ For prompts to paste into a client, see [Sample queries](/guides/agents/sample-q
 
 ## Organization
 
-Org-scoped tools read `X-Nuon-Org-ID` on that request. `whoami` and `list_orgs` work without the header. `whoami` returns the account, the org on that request, and an org count. `list_orgs` returns only orgs the account belongs to. It is paged and accepts `query` to match a name or id.
+Org-scoped tools read `X-Nuon-Org-ID` on that request. `whoami` and `list_orgs` work without the header. `whoami` returns the account, the accessible org on that request, and a credential-visible org count. `list_orgs` returns only org IDs and names allowed by current grants and credential limits, including parent navigation for app/install-scoped access. This does not grant org-wide read access. It is paged and accepts `query` to match a name or id.
 
 The stdio proxy sends the CLI config org as `X-Nuon-Org-ID`. Pass `x_nuon_org_id` on a tool call to use a different org for that request. The proxy removes `x_nuon_org_id` before forwarding and does not store it. Direct HTTP clients set `X-Nuon-Org-ID` themselves.
+
+`list_apps` returns ID/name navigation summaries, including parents of readable installs. `get_app` separately requires
+`app.read`. `list_installs` filters each install with `install.read` before pagination; neither org-wide nor parent-app
+read access is required. Lists and details enforce live grants and both credential ceilings. Discovering a parent
+never grants access to its configs or sibling installs.
 
 ## Install summary
 

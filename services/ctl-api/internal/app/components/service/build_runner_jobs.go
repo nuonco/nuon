@@ -7,10 +7,15 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 func (s *service) hydrateBuildRunnerJobs(ctx context.Context, builds ...*app.ComponentBuild) error {
+	access, err := require.ReadAccessFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	if len(builds) == 0 {
 		return nil
 	}
@@ -23,9 +28,10 @@ func (s *service) hydrateBuildRunnerJobs(ctx context.Context, builds ...*app.Com
 	}
 
 	jobs := []app.RunnerJob{}
-	if err := s.db.WithContext(ctx).
+	if err := access.DB().WithContext(ctx).
 		Scopes(scopes.WithDisableViews).
 		Where(&app.RunnerJob{
+			OrgID:     access.OrgID(),
 			OwnerType: "component_builds",
 			Group:     app.RunnerJobGroupBuild,
 			Operation: app.RunnerJobOperationTypeBuild,

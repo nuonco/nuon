@@ -2,17 +2,13 @@ package service
 
 import (
 	"fmt"
-	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -36,36 +32,8 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.ComponentBuild
 // @Router					/v1/apps/{app_id}/components/{component_id}/builds [GET]
-func (s *service) GetAppComponentBuilds(ctx *gin.Context) {
-	appID := ctx.Param("app_id")
-	cmpID := ctx.Param("component_id")
-	if cmpID == "" && appID == "" {
-		ctx.Error(fmt.Errorf("component id or app id must be passed in"))
-		return
-	}
-
-	limitStr := ctx.DefaultQuery("limit", "50")
-	limitVal, err := strconv.Atoi(limitStr)
-	if err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("invalid limit %s: %w", limitStr, err),
-			Description: "invalid limit",
-		})
-		return
-	}
-
-	var blds []app.ComponentBuild
-	if cmpID != "" {
-		blds, err = s.getComponentBuilds(ctx, cmpID)
-	} else {
-		blds, err = s.getAppBuilds(ctx, appID, limitVal)
-	}
-
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get builds: %w", err))
-		return
-	}
-	ctx.JSON(http.StatusOK, blds)
+func (s *service) GetAppComponentBuilds(ctx *gin.Context) (any, error) {
+	return s.getComponentBuilds(ctx, ctx.Param("component_id"), ctx.Param("app_id"))
 }
 
 // @ID						GetComponentBuilds
@@ -89,50 +57,40 @@ func (s *service) GetAppComponentBuilds(ctx *gin.Context) {
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.ComponentBuild
 // @Router					/v1/builds [GET]
-func (s *service) GetComponentBuilds(ctx *gin.Context) {
+func (s *service) GetComponentBuilds(ctx *gin.Context) (any, error) {
 	cmpID := ctx.Query("component_id")
 	appID := ctx.Query("app_id")
 	if cmpID == "" && appID == "" {
-		ctx.Error(fmt.Errorf("component id or app id must be passed in"))
-		return
+		return nil, stderr.ErrUser{Err: fmt.Errorf("component id or app id must be passed in"), Description: "component id or app id must be passed in"}
 	}
 
-	limitStr := ctx.DefaultQuery("limit", "50")
-	limitVal, err := strconv.Atoi(limitStr)
-	if err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("invalid limit %s: %w", limitStr, err),
-			Description: "invalid limit",
-		})
-		return
-	}
-
-	var blds []app.ComponentBuild
-	if cmpID != "" {
-		blds, err = s.getComponentBuilds(ctx, cmpID)
-	} else {
-		blds, err = s.getAppBuilds(ctx, appID, limitVal)
-	}
-
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get builds: %w", err))
-		return
-	}
-	ctx.JSON(http.StatusOK, blds)
+	return s.getComponentBuilds(ctx, cmpID, appID)
 }
 
-func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app.ComponentBuild, error) {
-	orgID, err := cctx.OrgIDFromContext(ctx)
+func (s *service) getComponentBuilds(ctx *gin.Context, cmpID, appID string) ([]app.ComponentBuild, error) {
+	access, err := require.ReadAccessFromContext(ctx.Request.Context())
 	if err != nil {
-		return nil, fmt.Errorf("unable to get org from context: %w", err)
+		return nil, err
+	}
+	query, err := access.Query()
+	if err != nil {
+		return nil, err
+	}
+	configs := access.DB().WithContext(ctx.Request.Context()).Model(&app.ComponentConfigConnection{}).
+		Scopes(scopes.WithDisableViews).Select("id").Where(&app.ComponentConfigConnection{OrgID: access.OrgID()})
+	if cmpID != "" {
+		configs = configs.Where(&app.ComponentConfigConnection{ComponentID: cmpID})
+	}
+	if appID != "" {
+		configs = configs.Where("component_id IN (?)", access.DB().Model(&app.Component{}).Select("id").Where(&app.Component{AppID: appID, OrgID: access.OrgID()}))
 	}
 
 	blds := []app.ComponentBuild{}
 
-	// query all builds that belong to the component id, starting at the component to ensure the component exists
-	// via the double join.
-	res := s.db.WithContext(ctx).
+	res := query.WithContext(ctx.Request.Context()).
+		Where("component_builds.component_config_connection_id IN (?)", configs).
 		Scopes(scopes.WithOffsetPagination).
+		Preload("CreatedBy").
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("VCSConnectionCommit").
@@ -140,66 +98,10 @@ func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app
 		Preload("AppBranchRun.AppBranch").
 		Preload("AppBranchRun.Preview").
 		Preload("ComponentConfigConnection.Component").
-		Joins("JOIN component_config_connections ON component_config_connections.id=component_builds.component_config_connection_id").
-		Joins("JOIN components ON components.id=component_config_connections.component_id").
-		Where("components.app_id = ? AND components.org_id = ?", appID, orgID).
-		Limit(limit).
-		Order("created_at DESC").
+		Order("component_builds.created_at DESC, component_builds.id DESC").
 		Find(&blds)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get app builds: %w", res.Error)
-	}
-
-	blds, err = db.HandlePaginatedResponse(ctx, blds)
-	if err != nil {
-		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
-	}
-
-	return blds, nil
-}
-
-func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.ComponentBuild, error) {
-	orgID, err := cctx.OrgIDFromContext(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get org from context: %w", err)
-	}
-
-	cmp := app.Component{}
-
-	// query all builds that belong to the component id, starting at the component to ensure the component exists
-	// via the double join.
-	res := s.db.WithContext(ctx).
-		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
-		}).
-		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
-			return db.
-				Scopes(scopes.WithOffsetPagination).
-				Order("component_builds.created_at DESC")
-		}).
-		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
-		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.VCSConnectionCommit").
-		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.AppBranch").
-		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.Preview").
-		Preload("ComponentConfigs.ExternalImageComponentConfig").
-		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
-		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection.Component").
-		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection.ExternalImageComponentConfig").
-		Preload("ComponentConfigs.ComponentBuilds.CreatedBy").
-		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get component: %w", res.Error)
-	}
-
-	blds := make([]app.ComponentBuild, 0)
-	for _, cfg := range cmp.ComponentConfigs {
-		for i := range cfg.ComponentBuilds {
-			if cfg.ComponentBuilds[i].ComponentConfigConnection.ExternalImageComponentConfig == nil {
-				cfg.ComponentBuilds[i].ComponentConfigConnection.ExternalImageComponentConfig = cfg.ExternalImageComponentConfig
-				cfg.ComponentBuilds[i].ComponentConfigConnection.Type = cfg.Type
-			}
-		}
-		blds = append(blds, cfg.ComponentBuilds...)
+		return nil, fmt.Errorf("unable to get builds: %w", res.Error)
 	}
 
 	blds, err = db.HandlePaginatedResponse(ctx, blds)

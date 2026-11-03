@@ -2,14 +2,13 @@ package service
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -33,23 +32,23 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.Component
 // @Router					/v1/components [GET]
-func (s *service) GetOrgComponents(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
+func (s *service) GetOrgComponents(ctx *gin.Context) (any, error) {
+	access, err := require.ReadAccessFromContext(ctx.Request.Context())
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
-
-	component, err := s.getOrgComponents(ctx, org.ID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get components for org %s: %w", org.ID, err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, component)
+	return s.getOrgComponents(ctx, access.OrgID())
 }
 
 func (s *service) getOrgComponents(ctx *gin.Context, orgID string) ([]app.Component, error) {
+	access, err := require.ReadAccessFromContext(ctx.Request.Context())
+	if err != nil {
+		return nil, err
+	}
+	query, err := access.Query()
+	if err != nil {
+		return nil, err
+	}
 	componentIDs := ctx.Query("component_ids")
 	var componentIDsSlice []string
 	if componentIDs != "" {
@@ -61,22 +60,21 @@ func (s *service) getOrgComponents(ctx *gin.Context, orgID string) ([]app.Compon
 
 	comps := []app.Component{}
 
-	res := s.db.WithContext(ctx).
+	res := query.WithContext(ctx.Request.Context()).
 		Scopes(scopes.WithOffsetPagination).
-		Joins("JOIN apps on apps.id=components.app_id").
-		Where("apps.org_id = ?", orgID)
+		Where(&app.Component{OrgID: orgID})
 
 	if len(componentIDsSlice) > 0 {
 		res = res.Where("components.id IN ?", componentIDsSlice)
 	}
 
-	res = res.Order("created_at desc").
+	res = res.Order("components.created_at DESC, components.id DESC").
 		Find(&comps)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get components: %w", res.Error)
 	}
 
-	comps, err := db.HandlePaginatedResponse(ctx, comps)
+	comps, err = db.HandlePaginatedResponse(ctx, comps)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}

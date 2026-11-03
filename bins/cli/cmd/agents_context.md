@@ -97,7 +97,7 @@ The upstream URL (`{{.MCPURL}}`) is derived from `api_url` in the CLI config, tu
 
 ## Creating something new (starter checklist)
 
-1. Confirm the session org from the table above. `whoami` reports the org on that request and an org count. Use `list_orgs` to find a different org.
+1. Confirm the session org from the table above. `whoami` reports the accessible org on that request and a credential-visible org count. Use `list_orgs` for permitted org IDs and names; parent navigation for scoped access does not grant org-wide read access. `list_apps` also returns ID/name navigation summaries, including parents of readable installs; `get_app` separately requires app-wide read access. `list_installs` filters each install before pagination and does not require org-wide or parent-app read access.
 2. Prefer MCP tools for reads; use `--allow-writes` (or a write-scoped token) only when mutating.
 3. Typical create flow:
    - App config in a local directory → `nuon apps sync` (or ask the user to sync).
