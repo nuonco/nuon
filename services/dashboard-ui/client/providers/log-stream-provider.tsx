@@ -79,6 +79,7 @@ export function LogStreamProvider({
   const reconnectAttemptRef = useRef(0)
   const connStateRef = useRef<ConnectionState>('disconnected')
   const seedRequestedRef = useRef(false)
+  const finalSyncRequestedRef = useRef(false)
   const isNewestFirstRef = useRef(isNewestFirst)
   const logStreamIdRef = useRef(logStreamId)
 
@@ -122,6 +123,27 @@ export function LogStreamProvider({
     [appendLogs]
   )
 
+  const fetchFreshestLogs = useCallback(
+    (streamId: string, orgId: string) => {
+      if (finalSyncRequestedRef.current) return
+      finalSyncRequestedRef.current = true
+
+      getLogStreamLogs({
+        logStreamId: streamId,
+        orgId,
+        order: 'desc',
+        filters: serverFiltersRef.current,
+      })
+        .then((newest) => {
+          if (streamId !== logStreamIdRef.current) return
+          if (!Array.isArray(newest)) return
+          appendLogs(newest)
+        })
+        .catch(() => {})
+    },
+    [appendLogs]
+  )
+
   const setConnState = (state: ConnectionState) => {
     if (connStateRef.current === state) return
     connStateRef.current = state
@@ -146,6 +168,7 @@ export function LogStreamProvider({
     isCompleteRef.current = false
     reconnectAttemptRef.current = 0
     seedRequestedRef.current = false
+    finalSyncRequestedRef.current = false
     logStreamIdRef.current = logStreamId
     seenIdsRef.current = new Set()
     setLogs([])
@@ -190,6 +213,7 @@ export function LogStreamProvider({
           eventSource.close()
           eventSourceRef.current = null
           setConnState('disconnected')
+          fetchFreshestLogs(logStreamId, org.id)
         }
       })
 
