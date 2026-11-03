@@ -69,6 +69,7 @@ type Engine struct {
 	terraform     *TerraformProvider
 	manifestKinds *ManifestKindsProvider
 	idx           *index
+	proberFactory func() *prober
 
 	ctx      context.Context
 	cancelFn func()
