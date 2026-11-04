@@ -8,6 +8,7 @@ import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
 import { usePrefetchLogStreamSpans } from '@/hooks/use-prefetch-log-stream-spans'
+import { useStepTab } from '@/components/workflows/step-details/use-step-tab'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TInstallDeploy } from '@/types'
 
@@ -17,6 +18,7 @@ export const DeployApply = ({
   initDeploy?: TInstallDeploy
 }) => {
   usePrefetchLogStreamSpans(deploy?.log_stream?.id)
+  const [tab, setTab] = useStepTab()
 
   return (
     <>
@@ -55,6 +57,8 @@ export const DeployApply = ({
               <LogViewerProvider>
                 <Tabs
                   naturalHeight
+                  activeTab={tab}
+                  onTabChange={setTab}
                   tabs={{
                     logs: <SSELogs />,
                     trace: (

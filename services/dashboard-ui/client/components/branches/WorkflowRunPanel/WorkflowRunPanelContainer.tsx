@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { useParams, useSearchParams } from 'react-router'
+import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import type { IPanel } from '@/components/surfaces/Panel'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
+import { usePanelDeepLinks } from '@/hooks/use-panel-deep-links'
+import { useReplaceSearchParams } from '@/hooks/use-replace-search-params'
 import { useSearchParamState } from '@/hooks/use-search-param-state'
-import { useSurfaces } from '@/hooks/use-surfaces'
+import { withPanelKey, withoutPanelKey } from '@/providers/surfaces-provider'
 import { getBranchWorkflowRun } from '@/lib'
 import { isActiveStepStatus } from '@/components/branches/shared/step-status'
 import { getRunTitle } from '@/components/branches/shared/run-title'
@@ -46,7 +48,9 @@ export const WorkflowRunPanelContainer = ({
   const branchId = params.branchId as string
   const runId = runIdProp ?? (params.runId as string)
 
-  const [urlStepId, setUrlStepId] = useSearchParamState('step')
+  const [urlStepId, setUrlStepId] = useSearchParamState('step', {
+    clearOnUnmount: true,
+  })
   const stepDetailRef = useRef<HTMLDivElement>(null)
   const pendingScrollRef = useRef(false)
 
@@ -105,93 +109,54 @@ export const WorkflowRunPanelContainer = ({
   )
 }
 
-const useClearWorkflowParams = () => {
-  const [, setSearchParams] = useSearchParams()
-  return useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        next.delete('workflow')
-        next.delete('step')
-        return next
-      },
-      { replace: true }
-    )
-  }, [setSearchParams])
+export const workflowRunPanelKey = (runId: string) => `run-${runId}`
+
+export const parseWorkflowRunPanelKey = (key: string) => {
+  const match = /^run-([a-z0-9]+)$/.exec(key)
+  return match?.[1] ?? null
 }
 
 export const useOpenWorkflowRunPanel = () => {
-  const [, setSearchParams] = useSearchParams()
+  const replaceSearch = useReplaceSearchParams()
   return useCallback(
     (runId: string, stepId?: string) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          next.set('workflow', runId)
-          if (stepId) next.set('step', stepId)
-          else next.delete('step')
-          return next
-        },
-        { replace: true }
-      )
+      replaceSearch((next) => {
+        for (const key of next.getAll('panel')) {
+          if (parseWorkflowRunPanelKey(key)) withoutPanelKey(next, key)
+        }
+        withPanelKey(next, workflowRunPanelKey(runId))
+        if (stepId) next.set('step', stepId)
+        else next.delete('step')
+      })
     },
-    [setSearchParams]
+    [replaceSearch]
   )
 }
 
-const useWorkflowRunPanelSync = (
-  runIdFilter: string | null,
-  enabled: boolean
-) => {
-  const { addPanel, removePanel, panels } = useSurfaces()
-  const [searchParams] = useSearchParams()
-  const workflowParam = searchParams.get('workflow')
-  const clearParams = useClearWorkflowParams()
-  const panelRef = useRef<{ id: string; runId: string } | null>(null)
-  const openPanel = panels.some((p) => p?.id === panelRef.current?.id)
-    ? panelRef.current
-    : null
-
-  useEffect(() => {
-    const target =
-      enabled &&
-      workflowParam &&
-      (!runIdFilter || workflowParam === runIdFilter)
-        ? workflowParam
-        : null
-
-    if (openPanel && openPanel.runId !== target) {
-      removePanel(openPanel.id)
-      panelRef.current = null
-    }
-    if (target && openPanel?.runId !== target) {
-      panelRef.current = {
-        runId: target,
-        id: addPanel(
-          <WorkflowRunPanelContainer runId={target} onClose={clearParams} />
-        ),
-      }
-    }
-  }, [
-    enabled,
-    workflowParam,
-    runIdFilter,
-    openPanel,
-    addPanel,
-    removePanel,
-    clearParams,
-  ])
+const useWorkflowRunPanelLinks = (runIdFilter: string | null | false) => {
+  usePanelDeepLinks((key) => {
+    if (runIdFilter === false) return null
+    const runId = parseWorkflowRunPanelKey(key)
+    if (!runId || (runIdFilter && runId !== runIdFilter)) return null
+    return (
+      <WorkflowRunPanelContainer
+        runId={runId}
+        panelKey={key}
+        onClose={() => {}}
+      />
+    )
+  })
 }
 
 export const WorkflowRunPanelHost = () => {
-  useWorkflowRunPanelSync(null, true)
+  useWorkflowRunPanelLinks(null)
   return null
 }
 
 export const WorkflowRunPanelButton = ({ runId }: { runId: string }) => {
   const hasNewAppIA = useNewAppIA()
   const openWorkflowRunPanel = useOpenWorkflowRunPanel()
-  useWorkflowRunPanelSync(runId, !hasNewAppIA)
+  useWorkflowRunPanelLinks(hasNewAppIA ? false : runId)
 
   const openPanel = () => openWorkflowRunPanel(runId)
 
