@@ -25,11 +25,6 @@ var analyticsForwardedResponseHeaders = map[string]struct{}{
 	"content-type": {},
 }
 
-// allowedIngestPathPrefixes covers everything posthog-js 1.x sends through a
-// relative api_host: event capture (/e, /i), session replay (/s), feature
-// flags (/flags), and the asset-host paths it falls back to when api_host
-// isn't a posthog.com domain (/static, /array). This keeps the anonymous
-// proxy from reaching the rest of PostHog's API.
 var allowedIngestPathPrefixes = []string{
 	"/e",
 	"/i",
@@ -82,11 +77,6 @@ func (h *PostHogProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	return nil
 }
 
-// sanitizeIngestPath rejects control characters, cleans `.`/`..` segments,
-// and allowlists the result. Building the upstream request from this cleaned
-// path (via url.URL, not string concatenation) keeps an encoded `?` or `/..`
-// from being reinterpreted as a query string or path traversal once it
-// reaches the upstream parser.
 func sanitizeIngestPath(raw string) (string, bool) {
 	for i := 0; i < len(raw); i++ {
 		if raw[i] < 0x20 || raw[i] == 0x7f {
@@ -104,10 +94,6 @@ func sanitizeIngestPath(raw string) (string, bool) {
 	if cleaned == "." {
 		cleaned = "/"
 	}
-	// posthog-js's capture endpoints are registered with a trailing slash
-	// (e.g. "/e/"); path.Clean strips it, and PostHog's server 301s the
-	// slash-less form instead of serving it, which the proxy no longer
-	// follows.
 	if raw != "/" && strings.HasSuffix(raw, "/") && !strings.HasSuffix(cleaned, "/") {
 		cleaned += "/"
 	}
@@ -120,9 +106,6 @@ func sanitizeIngestPath(raw string) (string, bool) {
 	return "", false
 }
 
-// redactUpstreamError drops the request URL (and its query string) that
-// net/http embeds in *url.Error, so upstream failures don't put query
-// strings in logs.
 func redactUpstreamError(err error) string {
 	var urlErr *url.Error
 	if errors.As(err, &urlErr) {

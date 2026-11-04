@@ -120,9 +120,6 @@ func TestPostHogProxyEscapesEmbeddedQueryDelimiter(t *testing.T) {
 
 	srv := newTestPostHogProxy(t, upstream.URL)
 
-	// %3F decodes to a literal '?' before it reaches the handler. If the
-	// upstream URL were built by string concatenation, re-parsing it would
-	// reinterpret that '?' as the real query delimiter.
 	resp, err := http.Get(srv.URL + "/ingest/e/foo%3Finjected=1")
 	if err != nil {
 		t.Fatal(err)

@@ -85,9 +85,11 @@ func NewAPI(p APIParams) (*API, error) {
 	handler := gin.New()
 	handler.Use(gin.Recovery())
 	handler.Use(gin.Logger())
-	// nil trusts no proxy: ClientIP() uses the raw peer address instead of a
-	// spoofable X-Forwarded-For/X-Real-IP.
-	if err := handler.SetTrustedProxies(nil); err != nil {
+	proxies := p.Config.TrustedProxies
+	if len(proxies) == 0 {
+		proxies = nil
+	}
+	if err := handler.SetTrustedProxies(proxies); err != nil {
 		return nil, fmt.Errorf("unable to configure trusted proxies: %w", err)
 	}
 
