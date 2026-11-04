@@ -106,7 +106,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		StateBackend: &pulumiworkspace.StateBackend{
 			APIEndpoint: h.cfg.RunnerAPIURL,
 			WorkspaceID: backend.WorkspaceID,
-			Token:       h.cfg.RunnerAPIToken,
+			Token:       h.cfg.APIToken(),
 			JobID:       h.state.jobID,
 		},
 	})
@@ -339,7 +339,7 @@ func (h *handler) downloadState(ctx context.Context, l *zap.Logger, ws *pulumiwo
 	if err != nil {
 		return false, fmt.Errorf("unable to create state request: %w", err)
 	}
-	req.Header.Set("Authorization", "Bearer "+h.cfg.RunnerAPIToken)
+	req.Header.Set("Authorization", "Bearer "+h.cfg.APIToken())
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -386,7 +386,7 @@ func (h *handler) updatePulumiState(ctx context.Context, ws *pulumiworkspace.Wor
 		return fmt.Errorf("unable to export pulumi state: %w", err)
 	}
 
-	return uploadPulumiState(ctx, h.cfg.RunnerAPIURL, h.cfg.RunnerAPIToken, h.state.plan.PulumiBackend.WorkspaceID, h.state.jobID, stateJSON)
+	return uploadPulumiState(ctx, h.cfg.RunnerAPIURL, h.cfg.APIToken(), h.state.plan.PulumiBackend.WorkspaceID, h.state.jobID, stateJSON)
 }
 
 func uploadPulumiState(ctx context.Context, apiURL, token, workspaceID, jobID string, stateJSON []byte) error {

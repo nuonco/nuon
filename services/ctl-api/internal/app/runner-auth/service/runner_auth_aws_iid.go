@@ -144,7 +144,7 @@ func (s *service) RunnerAuthAWSIID(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createRunnerToken(ctx.Request.Context(), runner.ID)
+	token, err := s.createRunnerToken(ctx.Request.Context(), runner.ID, defaultRunnerTokenTimeout)
 	if err != nil {
 		s.l.Error("runner auth iid: failed to create token", zap.String("runner_id", req.RunnerID), zap.Error(err))
 		ctx.Error(stderr.ErrSystem{
@@ -171,7 +171,7 @@ func (s *service) RunnerAuthAWSIID(ctx *gin.Context) {
 		InstanceID:    iid.InstanceID,
 		Region:        iid.Region,
 		RunnerID:      runner.ID,
-		Token:         token,
+		Token:         token.Token,
 	})
 }
 

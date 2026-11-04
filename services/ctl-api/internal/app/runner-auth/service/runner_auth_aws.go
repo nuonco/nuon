@@ -25,8 +25,9 @@ import (
 )
 
 const (
-	runnerIDTagKey            = "runner.nuon.co/id"
-	defaultRunnerTokenTimeout = time.Hour * 24 * 90
+	runnerIDTagKey                = "runner.nuon.co/id"
+	defaultRunnerTokenTimeout     = time.Hour * 24 * 90
+	refreshableRunnerTokenTimeout = time.Hour * 12
 
 	presignedRequestTimeout  = 10 * time.Second
 	maxPresignedResponseSize = 64 * 1024
@@ -314,7 +315,7 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createRunnerToken(reqCtx, runner.ID)
+	token, err := s.createRunnerToken(reqCtx, runner.ID, defaultRunnerTokenTimeout)
 	if err != nil {
 		s.l.Error("runner auth: failed to create token", zap.String("runner_id", runnerID), zap.Error(err))
 		ctx.Error(stderr.ErrSystem{
@@ -340,7 +341,7 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		ARN:           callerIdentity.Result.Arn,
 		InstanceID:    instanceID,
 		RunnerID:      runner.ID,
-		Token:         token,
+		Token:         token.Token,
 	})
 }
 
@@ -587,13 +588,20 @@ func (s *service) getInstallStackWithOutputs(ctx context.Context, installID stri
 	return &installStack, nil
 }
 
-func (s *service) createRunnerToken(ctx context.Context, runnerID string) (string, error) {
+func runnerTokenTimeout(refreshable bool) time.Duration {
+	if refreshable {
+		return refreshableRunnerTokenTimeout
+	}
+	return defaultRunnerTokenTimeout
+}
+
+func (s *service) createRunnerToken(ctx context.Context, runnerID string, ttl time.Duration) (*app.Token, error) {
 	email := account.ServiceAccountEmail(runnerID)
 
-	token, err := s.acctClient.CreateToken(ctx, email, defaultRunnerTokenTimeout)
+	token, err := s.acctClient.CreateToken(ctx, email, ttl)
 	if err != nil {
-		return "", fmt.Errorf("unable to create token: %w", err)
+		return nil, fmt.Errorf("unable to create token: %w", err)
 	}
 
-	return token.Token, nil
+	return token, nil
 }
