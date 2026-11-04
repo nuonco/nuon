@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
 func ServiceAccountEmail(id string) string {
@@ -30,6 +31,12 @@ func (c *Client) FindAccount(ctx context.Context, emailOrSubjectOrID string) (*a
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to find account %s: %w", emailOrSubjectOrID, res.Error)
 	}
+
+	authority, err := authz.New(authz.Params{DB: c.db}).LoadAccountPermissions(ctx, &acct)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load account permissions: %w", err)
+	}
+	acct.Authority = authority
 
 	return &acct, nil
 }
