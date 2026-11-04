@@ -1,12 +1,15 @@
 import { afterEach, expect, test } from 'bun:test'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { BrowserRouter } from 'react-router'
 import { Panel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { usePanelDeepLinks, type TPanelResolver } from './use-panel-deep-links'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  ;(window as any).happyDOM.setURL('about:blank')
+})
 
 const Probe = ({ resolve }: { resolve: TPanelResolver }) => {
   usePanelDeepLinks(resolve)
@@ -14,14 +17,16 @@ const Probe = ({ resolve }: { resolve: TPanelResolver }) => {
   return <div data-testid="order">{panels.map((p) => p.key).join(',')}</div>
 }
 
-const renderAt = (search: string, resolve: TPanelResolver) =>
-  render(
-    <MemoryRouter initialEntries={[`/page${search}`]}>
+const renderAt = (search: string, resolve: TPanelResolver) => {
+  ;(window as any).happyDOM.setURL(`http://localhost/page${search}`)
+  return render(
+    <BrowserRouter>
       <SurfacesProvider>
         <Probe resolve={resolve} />
       </SurfacesProvider>
-    </MemoryRouter>
+    </BrowserRouter>
   )
+}
 
 test('opens every resolvable key in url stack order', async () => {
   renderAt('?panel=parent-1&panel=child-1', (key) => (
