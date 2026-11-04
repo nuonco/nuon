@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Status } from '@/components/common/Status'
 import { Banner } from '@/components/common/Banner'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Select } from '@/components/common/form/Select'
@@ -98,29 +99,48 @@ export const BuildSelect = ({
 }: IBuildSelect) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<TSortOrder>('newest')
+  const [showOtherConfigs, setShowOtherConfigs] = useState(false)
   const deployableBuilds = useMemo(() => excludePreviewBuilds(builds), [builds])
 
+  // A build only deploys successfully when its app config matches the
+  // install's current app config; builds from other app branches/configs
+  // fail with "build is not selected by app config" on submit. Filter them
+  // out by default so the list only shows builds that will actually deploy.
+  const configMatchedBuilds = useMemo(
+    () =>
+      deployableBuilds.filter((build) =>
+        buildMatchesInstallConfig(build, installAppConfigId)
+      ),
+    [deployableBuilds, installAppConfigId]
+  )
+  const otherConfigBuildCount =
+    deployableBuilds.length - configMatchedBuilds.length
+  const baseBuilds =
+    showOtherConfigs || otherConfigBuildCount === 0
+      ? deployableBuilds
+      : configMatchedBuilds
+
   useEffect(() => {
-    if (!selectedBuildId && deployableBuilds.length > 0) {
-      const mostRecentActiveBuild = deployableBuilds.find(
+    if (!selectedBuildId && baseBuilds.length > 0) {
+      const mostRecentActiveBuild = baseBuilds.find(
         (build) => build?.status_v2?.status === 'active'
       )
       if (mostRecentActiveBuild) {
         onSelectBuild(mostRecentActiveBuild.id)
       }
     }
-  }, [selectedBuildId, deployableBuilds, onSelectBuild])
+  }, [selectedBuildId, baseBuilds, onSelectBuild])
 
   const visibleBuilds = useMemo(() => {
     const filtered = searchQuery
-      ? deployableBuilds.filter((build) => matchesQuery(build, searchQuery))
-      : deployableBuilds
+      ? baseBuilds.filter((build) => matchesQuery(build, searchQuery))
+      : baseBuilds
     return [...filtered].sort((a, b) =>
       sortOrder === 'newest'
         ? buildTimestamp(b) - buildTimestamp(a)
         : buildTimestamp(a) - buildTimestamp(b)
     )
-  }, [deployableBuilds, searchQuery, sortOrder])
+  }, [baseBuilds, searchQuery, sortOrder])
 
   const showControls = deployableBuilds.length > 0 && !error
   const selectedBuild = deployableBuilds.find(
@@ -157,6 +177,17 @@ export const BuildSelect = ({
           size="sm"
           emptyTitle="No builds available"
           emptyMessage="No builds found. Create a build first."
+        />
+      )
+    }
+
+    if (baseBuilds.length === 0 && !isLoading) {
+      return (
+        <EmptyState
+          variant="search"
+          size="sm"
+          emptyTitle="No matching builds"
+          emptyMessage={`No builds match this install's app config. ${otherConfigBuildCount} build${otherConfigBuildCount === 1 ? '' : 's'} from other app configs are hidden — show them to pick one anyway.`}
         />
       )
     }
@@ -329,6 +360,21 @@ export const BuildSelect = ({
               />
             </div>
           </div>
+          {otherConfigBuildCount > 0 && (
+            <CheckboxInput
+              checked={showOtherConfigs}
+              onChange={(e) => setShowOtherConfigs(e.target.checked)}
+              labelProps={{
+                className:
+                  'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !p-0 gap-2',
+                labelText: (
+                  <Text variant="subtext" theme="neutral">
+                    {`Show ${otherConfigBuildCount} build${otherConfigBuildCount === 1 ? '' : 's'} from other app configs (these will fail to deploy)`}
+                  </Text>
+                ),
+              }}
+            />
+          )}
         </div>
       )}
       <div className="px-6 py-6">{renderContent()}</div>
