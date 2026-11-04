@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"maps"
 	"time"
 
 	"gorm.io/gorm"
@@ -53,8 +54,9 @@ type Policy struct {
 	Name PolicyName `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 
 	// Permissions are used to track granular permissions for each domain
-	Permissions pgtype.Hstore `json:"permissions" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"permissions,omitzero,omitempty"`
-	Document    []byte        `json:"-" gorm:"type:jsonb" temporaljson:"document,omitzero,omitempty"`
+	Permissions         pgtype.Hstore `json:"-" gorm:"type:hstore" temporaljson:"permissions,omitzero,omitempty"`
+	ResponsePermissions pgtype.Hstore `json:"permissions" gorm:"-" swaggertype:"object,string" temporaljson:"-"`
+	Document            []byte        `json:"-" gorm:"type:jsonb" temporaljson:"document,omitzero,omitempty"`
 }
 
 func (a *Policy) DecodeDocument() (permissions.Policy, error) {
@@ -95,5 +97,37 @@ func (a *Policy) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *Policy) AfterQuery(tx *gorm.DB) error {
-	return nil
+	var err error
+	a.ResponsePermissions, err = a.PermissionProjection()
+	return err
+}
+
+func (a *Policy) BeforeSave(tx *gorm.DB) error {
+	var err error
+	a.ResponsePermissions, err = a.PermissionProjection()
+	return err
+}
+
+func (a *Policy) PermissionProjection() (pgtype.Hstore, error) {
+	if a.Document == nil {
+		return maps.Clone(a.Permissions), nil
+	}
+	document, err := a.DecodeDocument()
+	if err != nil {
+		return nil, err
+	}
+	orgID := a.OrgID.String
+	grants, err := document.Compile(orgID, permissions.Scope{Kind: permissions.KindOrg, OrgID: orgID, ID: orgID})
+	if err != nil {
+		return nil, err
+	}
+	verb, err := permissions.LegacyOrgPermission(grants[0].Permissions)
+	if err != nil {
+		return nil, err
+	}
+	projection := pgtype.Hstore{permissions.APIPermissionKey: generics.ToPtr(string(document.API()))}
+	if verb != permissions.PermissionUnknown {
+		projection[orgID] = verb.ToStrPtr()
+	}
+	return projection, nil
 }
