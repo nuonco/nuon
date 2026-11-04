@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useClearSearchParamsOnUnmount } from '@/hooks/use-clear-search-params-on-unmount'
+import { useReplaceSearchParams } from '@/hooks/use-replace-search-params'
 import type { TLogStreamFilters } from '@/lib/ctl-api/log-streams/get-log-stream-logs'
 import type { TOTELLog, TSpan } from '@/types'
 import { collectDescendantIds } from '@/utils/span-tree'
@@ -116,7 +117,8 @@ export const useLogFilters = <T extends TOTELLog>(
   // which must not collapse the facet to the selection).
   streamId?: string
 ) => {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
+  const replaceSearch = useReplaceSearchParams()
   useClearSearchParamsOnUnmount(OWNED_PARAMS)
 
   const selectedSeverities = useMemo(() => {
@@ -144,16 +146,9 @@ export const useLogFilters = <T extends TOTELLog>(
 
   const updateParams = useCallback(
     (mutate: (sp: URLSearchParams) => void) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          mutate(next)
-          return next
-        },
-        { replace: true }
-      )
+      replaceSearch(mutate)
     },
-    [setSearchParams]
+    [replaceSearch]
   )
 
   const setMultiValue = useCallback(

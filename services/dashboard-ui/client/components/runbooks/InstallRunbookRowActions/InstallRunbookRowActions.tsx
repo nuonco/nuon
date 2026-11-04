@@ -9,6 +9,7 @@ import { RunbookReadmePanel } from '@/components/runbooks/RunbookReadmePanel'
 import { RunbookRunTimeline } from '@/components/runbooks/RunbookRunTimeline/RunbookRunTimeline'
 import { Panel } from '@/components/surfaces/Panel'
 import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
+import { usePanelDeepLinks } from '@/hooks/use-panel-deep-links'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
@@ -74,6 +75,32 @@ export const InstallRunbookRowActions = ({
   const name = runbook?.name ?? 'Runbook'
   const config = runbook?.configs?.[0]
   const readme = config?.readme
+  const configKey = `runbook-config-${config?.runbook_id ?? name}`
+  const readmeKey = `runbook-readme-${runbookId}`
+  const historyKey = `runbook-history-${runbookId}`
+  usePanelDeepLinks((key) => {
+    if (key === configKey) {
+      return <RunbookConfigPanel config={config} name={name} />
+    }
+    if (key === readmeKey && readme) {
+      return (
+        <RunbookReadmePanel
+          panelKey={key}
+          readme={readme}
+          runbookName={name}
+          size="half"
+        />
+      )
+    }
+    if (key === historyKey) {
+      return (
+        <Panel heading={`${name} history`} panelKey={key} size="half">
+          <RunbookRunHistory runbookId={runbookId} runbookName={name} />
+        </Panel>
+      )
+    }
+    return null
+  })
 
   return (
     <SplitButton

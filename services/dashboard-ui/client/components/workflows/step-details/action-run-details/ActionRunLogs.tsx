@@ -8,6 +8,7 @@ import { SSELogs } from '@/components/log-stream/SSELogs'
 import { LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
 import { usePrefetchLogStreamSpans } from '@/hooks/use-prefetch-log-stream-spans'
+import { useStepTab } from '@/components/workflows/step-details/use-step-tab'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { IActionRunLogs } from './types'
@@ -18,6 +19,7 @@ export const ActionRunLogs = ({
   loading,
 }: IActionRunLogs) => {
   usePrefetchLogStreamSpans(actionRun?.log_stream?.id)
+  const [tab, setTab] = useStepTab()
 
   if (loading) {
     return (
@@ -49,6 +51,8 @@ export const ActionRunLogs = ({
               <Text weight="strong">Action logs</Text>
               <Tabs
                 naturalHeight
+                activeTab={tab}
+                onTabChange={setTab}
                 tabs={{
                   logs: <SSELogs />,
                   trace: (
@@ -63,6 +67,8 @@ export const ActionRunLogs = ({
           ) : (
             <Tabs
               naturalHeight
+              activeTab={tab}
+              onTabChange={setTab}
               tabs={{
                 logs: (
                   <div className="pt-4">
