@@ -226,7 +226,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_RunnerNotFound() 
 
 			// Should return error (not 201)
 			require.Equal(s.T(), http.StatusNotFound, rr.Code)
-			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
+			assert.Contains(s.T(), rr.Body.String(), "runner not found")
 
 			// Verify no signal was sent
 			sigs := tests.GetQueueSignals(s.T(), s.service.DB)
@@ -317,7 +317,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 
 			// Should return error due to cross-org isolation
 			require.Equal(s.T(), http.StatusNotFound, rr.Code)
-			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
+			assert.Contains(s.T(), rr.Body.String(), "runner not found")
 
 			// Verify no signal was sent
 			sigs := tests.GetQueueSignals(s.T(), s.service.DB)

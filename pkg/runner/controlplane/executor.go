@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/spf13/afero"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -98,6 +99,7 @@ func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
 	copier := ocicopy.New(ocicopy.CopierParams{V: v, Cfg: runnerCfg})
 	resolver := ociresolve.New(ociresolve.ResolverParams{V: v, Cfg: runnerCfg})
 	apiClient := &clientAdapter{Client: client}
+	fs := afero.NewOsFs()
 
 	handlers := make([]jobs.JobHandler, 0, 8)
 	add := func(handler jobs.JobHandler, err error) error {
@@ -110,22 +112,22 @@ func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
 	if err := add(containerimagebuild.New(containerimagebuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, OCIResolve: resolver, ErrRecorder: recorder})); err != nil {
 		return nil, err
 	}
-	if err := add(helmbuild.New(helmbuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder})); err != nil {
+	if err := add(helmbuild.New(helmbuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder, FS: fs})); err != nil {
 		return nil, err
 	}
-	if err := add(kubernetesmanifestbuild.New(kubernetesmanifestbuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder})); err != nil {
+	if err := add(kubernetesmanifestbuild.New(kubernetesmanifestbuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder, FS: fs})); err != nil {
 		return nil, err
 	}
-	if err := add(terraformbuild.New(terraformbuild.Params{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder})); err != nil {
+	if err := add(terraformbuild.New(terraformbuild.Params{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder, FS: fs})); err != nil {
 		return nil, err
 	}
-	if err := add(pulumibuild.New(pulumibuild.Params{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder})); err != nil {
+	if err := add(pulumibuild.New(pulumibuild.Params{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder, FS: fs})); err != nil {
 		return nil, err
 	}
 	if err := add(noopbuild.New(noopbuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, ErrRecorder: recorder})); err != nil {
 		return nil, err
 	}
-	if err := add(sandboxbuild.New(sandboxbuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder})); err != nil {
+	if err := add(sandboxbuild.New(sandboxbuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder, FS: fs})); err != nil {
 		return nil, err
 	}
 	if err := add(imagemetadatasync.New(imagemetadatasync.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, ErrRecorder: recorder})); err != nil {
@@ -251,6 +253,14 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 		}
 	}
 
+	cleanupPending := false
+	defer func() {
+		if cleanupPending {
+			if err := handler.Cleanup(context.WithoutCancel(ctx), job, execution); err != nil {
+				l.Warn("unable to clean up job resources", zap.Error(err))
+			}
+		}
+	}()
 	steps := []struct {
 		name   string
 		status models.AppRunnerJobExecutionStatus
@@ -264,7 +274,10 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 		}},
 		{name: "fetching", status: models.AppRunnerJobExecutionStatusInitializing, fn: func(ctx context.Context) error { return handler.Fetch(ctx, job, execution) }},
 		{name: "validate", status: models.AppRunnerJobExecutionStatusInitializing, fn: func(ctx context.Context) error { return handler.Validate(ctx, job, execution) }},
-		{name: "initialize", status: models.AppRunnerJobExecutionStatusInitializing, fn: func(ctx context.Context) error { return handler.Initialize(ctx, job, execution) }},
+		{name: "initialize", status: models.AppRunnerJobExecutionStatusInitializing, fn: func(ctx context.Context) error {
+			cleanupPending = true
+			return handler.Initialize(ctx, job, execution)
+		}},
 		{name: "execute", status: models.AppRunnerJobExecutionStatusInDashProgress, fn: func(ctx context.Context) error { return handler.Exec(ctx, job, execution) }},
 		{name: "outputs", status: models.AppRunnerJobExecutionStatusInDashProgress, fn: func(ctx context.Context) error {
 			outputs, err := handler.Outputs(ctx)
@@ -274,7 +287,10 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 			_, err = e.client.CreateJobExecutionOutputs(ctx, job.ID, execution.ID, &models.ServiceCreateRunnerJobExecutionOutputsRequest{Outputs: outputs})
 			return err
 		}},
-		{name: "cleanup", status: models.AppRunnerJobExecutionStatusCleaningDashUp, fn: func(ctx context.Context) error { return handler.Cleanup(ctx, job, execution) }},
+		{name: "cleanup", status: models.AppRunnerJobExecutionStatusCleaningDashUp, fn: func(ctx context.Context) error {
+			cleanupPending = false
+			return handler.Cleanup(ctx, job, execution)
+		}},
 	}
 
 	for _, step := range steps {
@@ -330,9 +346,6 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 				if terminalErr := terminalExecutionError(updated.Status); errors.Is(terminalErr, context.Canceled) || errors.Is(terminalErr, context.DeadlineExceeded) {
 					err = terminalErr
 				}
-			}
-			if step.name == "execute" || step.name == "outputs" {
-				_ = handler.Cleanup(ctx, job, execution)
 			}
 			jobErr = fmt.Errorf("%s: %w", step.name, err)
 			return jobErr

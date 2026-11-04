@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -30,6 +31,13 @@ const (
 	phoneHomeRejectRevokedVersion  = "revoked_stack_version"
 	phoneHomeRejectVersionExpired  = "version_expired"
 	phoneHomeRejectAccountMismatch = "account_mismatch"
+	phoneHomeRejectNoCredential    = "no_credential"
+	phoneHomeRejectMissingAccount  = "missing_account"
+
+	// Failures that are not a verdict on the caller.
+	phoneHomeFailInvalidRequest = "invalid_request"
+	phoneHomeFailInternal       = "internal_error"
+	phoneHomeFailWrite          = "write_failed"
 
 	// Not a rejection: the org is not enrolled, or this stack version predates
 	// token minting, so there is nothing to check.
@@ -79,20 +87,36 @@ func (s *service) authorizePhoneHome(
 		return "", fmt.Errorf("unable to check phone home auth feature: %w", err)
 	}
 
-	revoked := stackVersion.PhoneHomeTokenRevokedAt != nil
 	switch {
 	case !enabled:
 		return phoneHomeAuthSkipped, nil
-	case revoked:
+	// A version carries whichever credential its cloud renders. Neither means it was
+	// rendered before enforcement reached that cloud, so it is skipped rather than
+	// rejected.
+	case stackVersion.PhoneHomeTokenRevokedAt == nil && !hasPhoneHomeCredential(stackVersion):
+		return phoneHomeAuthSkipped, nil
+	}
+
+	return s.verifyPhoneHomeCredential(ctx, install, stackVersion, authHeader)
+}
+
+func hasPhoneHomeCredential(stackVersion *app.InstallStackVersion) bool {
+	return stackVersion.PhoneHomeIdentityName != "" || stackVersion.PhoneHomeTokenID != ""
+}
+
+func (s *service) verifyPhoneHomeCredential(
+	ctx context.Context, install *app.Install, stackVersion *app.InstallStackVersion, authHeader string,
+) (string, error) {
+	switch {
+	case stackVersion.PhoneHomeTokenRevokedAt != nil:
 		return phoneHomeRejectRevokedVersion, rejectPhoneHome(
 			phoneHomeRejectRevokedVersion,
 			fmt.Errorf("phone home token for stack version %s was revoked", stackVersion.ID),
 		)
-	// A version carries whichever credential its cloud renders. Neither means it was
-	// rendered before enforcement reached that cloud, so it is skipped rather than
-	// rejected.
-	case stackVersion.PhoneHomeIdentityName == "" && stackVersion.PhoneHomeTokenID == "":
-		return phoneHomeAuthSkipped, nil
+	case !hasPhoneHomeCredential(stackVersion):
+		return phoneHomeRejectNoCredential, rejectPhoneHome(
+			phoneHomeRejectNoCredential, errors.New("stack version has no phone home credential"),
+		)
 	}
 
 	// An Expired version is one the await workflow already gave up on after 180
@@ -178,35 +202,16 @@ func bearerToken(header string) string {
 	return strings.TrimSpace(header[len(prefix):])
 }
 
-// checkObservedCloudAccount rejects a verified caller whose payload names a different
-// cloud account than the install is pinned to.
-//
-// Separate from token verification on purpose: a valid token proves *who* is calling,
-// this proves the call is about the account we expect. A mismatch means either the
-// install was created against the wrong account or a token escaped into a different
-// one, and neither should be allowed to overwrite stack outputs.
-func checkObservedCloudAccount(install *app.Install, props map[string]any) (string, error) {
-	for _, field := range []struct {
-		payloadKey string
-		expected   string
-	}{
-		{"account_id", install.ExpectedAccountID},
-		{"subscription_id", install.ExpectedSubscriptionID},
-		{"project_id", install.ExpectedProjectID},
-	} {
-		observed, _ := props[field.payloadKey].(string)
-		if observed == "" || field.expected == "" || strings.EqualFold(observed, field.expected) {
-			continue
-		}
-
-		return phoneHomeRejectAccountMismatch, rejectPhoneHome(
-			phoneHomeRejectAccountMismatch,
-			fmt.Errorf("payload %s %s does not match the account expected for this install",
-				field.payloadKey, observed),
-		)
+func checkObservedCloudAccount(install *app.Install, props map[string]any, required bool) (string, error) {
+	err := helpers.CheckObservedCloudAccount(install, props, required)
+	switch {
+	case err == nil:
+		return phoneHomeAuthOK, nil
+	case errors.Is(err, helpers.ErrMissingCloudAccount):
+		return phoneHomeRejectMissingAccount, rejectPhoneHome(phoneHomeRejectMissingAccount, err)
+	default:
+		return phoneHomeRejectAccountMismatch, rejectPhoneHome(phoneHomeRejectAccountMismatch, err)
 	}
-
-	return phoneHomeAuthOK, nil
 }
 
 // recordPhoneHomeAuthResult stamps the install so the dashboard can say "stack outputs

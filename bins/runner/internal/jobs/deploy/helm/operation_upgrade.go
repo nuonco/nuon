@@ -47,9 +47,17 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
+	values, err = helm.UpgradeValues(actionCfg, prevRel, values)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve helm upgrade values: %w", err)
+	}
 	l.Debug("rendered values", zap.Any("values", values))
+	if err := helm.ValidateSchemaResources(chart, values); err != nil {
+		return nil, fmt.Errorf("unable to confine helm schemas: %w", err)
+	}
 
 	client := helm.DefaultUpgrade(actionCfg)
+	client.ResetValues = true
 	// configure the client with additional, chart and context -specific values
 	client.DryRunStrategy = action.DryRunServer
 	// wait logic
@@ -105,6 +113,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 
 	l.Info("upgrading helm release")
 	client = helm.DefaultUpgrade(actionCfg)
+	client.ResetValues = true
 
 	client.DryRunStrategy = action.DryRunNone
 	client.ServerSideApply = "false"

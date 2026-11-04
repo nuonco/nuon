@@ -3,7 +3,6 @@ import { cn } from '@/utils/classnames'
 import { changeCounts, type TDiffOperation } from '@/lib/diffs'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import { Button } from '@/components/common/Button'
-import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -13,8 +12,13 @@ import { DiffSection } from '@/components/diffs/DiffSection'
 import { DiffSections } from '@/components/diffs/DiffSections'
 import { DiffSummary } from '@/components/diffs/DiffSummary'
 import { usePlanDiffFilter } from '@/components/diffs/use-plan-diff-filter'
+import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
 import { CommitRange } from '@/components/branches/InstallGroupCards'
 import { RunSourceMark } from '@/components/branches/BranchOverview/RunSourceCard'
+import {
+  ConfigChangesBaseline,
+  type IConfigChangesBaseline,
+} from './ConfigChangesBaseline'
 import type { TRunSource } from '@/components/branches/BranchOverview/run-source'
 import { BuildChangeDetail } from './BuildChangeDetail'
 import {
@@ -28,7 +32,7 @@ import {
 const DOT_CLASSES: Record<TDiffOperation, string> = {
   create: 'bg-diff-add',
   update: 'bg-diff-change',
-  replace: 'bg-primary-500',
+  replace: 'bg-fuchsia-500 dark:bg-fuchsia-300',
   delete: 'bg-diff-remove',
   read: 'bg-diff-neutral',
   forget: 'bg-blue-500',
@@ -106,6 +110,7 @@ export interface IConfigChangesViewer {
   author?: string
   createdAt?: string
   source?: TRunSource
+  baseline?: IConfigChangesBaseline | null
   emptyMessage?: string
 }
 
@@ -120,6 +125,7 @@ export const ConfigChangesViewer = ({
   author,
   createdAt,
   source,
+  baseline,
   emptyMessage = 'This run matches the previous version.',
 }: IConfigChangesViewer) => {
   const changes = useMemo(
@@ -129,6 +135,7 @@ export const ConfigChangesViewer = ({
   const filter = usePlanDiffFilter(changes.sections, CONFIG_CHANGE_OPERATIONS)
   const filtered = filter.filteredSections as TConfigChangeSection[]
   const groups = useMemo(() => groupSections(filtered), [filtered])
+  const { planSections } = useDashboardPreferences()
 
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [activeId, setActiveId] = useState<string>()
@@ -155,37 +162,43 @@ export const ConfigChangesViewer = ({
 
   if (!changes.sections.length) {
     return (
-      <div className="rounded-lg bg-cool-grey-100 dark:bg-dark-grey-800 px-4 py-8 text-center">
-        <Text as="p" variant="body" weight="strong">
-          No changes
-        </Text>
-        <Text as="p" variant="subtext" theme="neutral">
-          {emptyMessage}
-        </Text>
+      <div className="flex flex-col gap-3">
+        <ConfigChangesBaseline baseline={baseline} hasChanges={false} />
+        <div className="rounded-lg bg-cool-grey-100 dark:bg-dark-grey-800 px-4 py-8 text-center">
+          <Text as="p" variant="body" weight="strong">
+            No changes
+          </Text>
+          <Text as="p" variant="subtext" theme="neutral">
+            {emptyMessage}
+          </Text>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-6 md:min-h-0 md:flex-1">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          {versionLabel ? (
-            <Text variant="subtext" theme="neutral" family="mono">
-              {versionLabel}
-            </Text>
-          ) : null}
-          {sha || previousSha ? (
-            <CommitRange
-              commit={{ sha, previousSha, message, author, createdAt }}
-            />
-          ) : null}
-          {source ? <RunSourceMark source={source} /> : null}
-        </span>
-        <DiffSummary
-          summary={changes.summary}
-          operations={CONFIG_CHANGE_OPERATIONS}
-        />
+      <header className="flex shrink-0 flex-col gap-2">
+        <ConfigChangesBaseline baseline={baseline} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {versionLabel ? (
+              <Text variant="subtext" theme="neutral" family="mono">
+                {versionLabel}
+              </Text>
+            ) : null}
+            {sha || previousSha ? (
+              <CommitRange
+                commit={{ sha, previousSha, message, author, createdAt }}
+              />
+            ) : null}
+            {source ? <RunSourceMark source={source} /> : null}
+          </span>
+          <DiffSummary
+            summary={changes.summary}
+            operations={CONFIG_CHANGE_OPERATIONS}
+          />
+        </div>
       </header>
 
       <div
@@ -243,12 +256,9 @@ export const ConfigChangesViewer = ({
           <DiffSections
             className="md:min-h-0 md:flex-1"
             renderBody={(body) => (
-              <Card
-                elevation="0"
-                className="gap-1 bg-elevation-0 p-0 md:min-h-0 md:flex-1 md:overflow-y-auto"
-              >
+              <div className="flex flex-col gap-1 md:min-h-0 md:flex-1 md:overflow-y-auto">
                 {body}
-              </Card>
+              </div>
             )}
             toolbar={
               <>
@@ -294,7 +304,7 @@ export const ConfigChangesViewer = ({
                   <DiffSection
                     key={section.id}
                     data-config-change={section.id}
-                    open={open[section.id] ?? true}
+                    open={open[section.id] ?? planSections === 'expanded'}
                     onOpenChange={(next) => setSectionOpen(section.id, next)}
                     title={section.title}
                     description={section.description}

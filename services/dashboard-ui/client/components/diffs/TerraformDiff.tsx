@@ -15,6 +15,10 @@ import { DiffFilter } from './DiffFilter'
 import { DiffSection } from './DiffSection'
 import { DiffSections } from './DiffSections'
 import { DiffEmptyState } from './DiffEmptyState'
+import {
+  DestructiveChangeBanner,
+  destructiveChanges,
+} from './DestructiveChangeBanner'
 
 export interface ITerraformDiff
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -102,7 +106,7 @@ export const TerraformDiff = ({
   ...props
 }: ITerraformDiff) => {
   const groups = useMemo(() => terraformPlanDiff(plan), [plan])
-  const visible = [groups.drift, groups.resources, groups.outputs]
+  const visible = [groups.resources, groups.drift, groups.outputs]
 
   if (!plan) {
     return (
@@ -127,6 +131,9 @@ export const TerraformDiff = ({
 
   return (
     <div className={cn('flex flex-col gap-3', className)} {...props}>
+      <DestructiveChangeBanner
+        changes={destructiveChanges(groups.resources.sections)}
+      />
       {visible.map((group) => (
         <TerraformDiffGroup
           key={group.id}

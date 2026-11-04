@@ -1,3 +1,4 @@
+import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
@@ -44,6 +45,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
   const {
     denyViolations,
     warnViolations,
+    skipFindings,
     denyCount,
     hasPolicyData,
     hasViolations,
@@ -70,7 +72,16 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
                 {denyCount} {denyCount === 1 ? 'violation' : 'violations'}
               </Text>
             ) : null}
-            {!hasViolations ? (
+            {skipFindings.length > 0 ? (
+              <Text variant="subtext" theme="neutral" weight="strong">
+                {denyCount > 0
+                  ? 'Change denied by policy'
+                  : step.status?.metadata?.check === 'policy-skip-apply'
+                    ? 'Apply skipped by policy'
+                    : 'Skip apply'}
+              </Text>
+            ) : null}
+            {!hasViolations && !skipFindings.length ? (
               <Text
                 variant="subtext"
                 weight="strong"
@@ -82,8 +93,16 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
           </div>
         </div>
 
-        {hasViolations ? (
+        {hasViolations || skipFindings.length > 0 ? (
           <div className="flex flex-col gap-2 p-4">
+            {skipFindings.map((finding, index) => (
+              <Banner
+                key={`skip-${finding.policy_id}-${index}`}
+                theme="neutral"
+              >
+                <Text variant="subtext">{finding.message}</Text>
+              </Banner>
+            ))}
             {denyViolations.map((violation, index) => (
               <ViolationRow
                 key={`deny-${violation.policy_id}-${index}`}

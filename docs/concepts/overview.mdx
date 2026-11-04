@@ -1,119 +1,30 @@
 ---
-title: "Concepts"
-sidebarTitle: "Overview"
-description: "How App Templates, installs, and updates fit together in Nuon."
+title: "Nuon Overview"
+sidebarTitle: "Nuon Overview"
+description: "Nuon primitives that enable you to scale a BYOC-deployed version of your app to any customer on any cloud."
 boost: 5
+mode: "wide"
 keywords: ["concepts", "how Nuon works", "platform overview", "app template", "app templates", "what is an app", "apps", "app config", "app configuration", "configure an app", "application packaging", "installs", "what is an install", "updates", "change management", "BYOC", "bring your own cloud", "BYOC deployment platform", "managed BYOC"]
 ---
 
-import { ConceptMap } from "/snippets/concept-map.jsx";
-import { FlowSteps } from "/snippets/flow-steps.jsx";
+import { PlatformDiagram, RelationshipTree } from "/snippets/platform-diagram.jsx";
 
-## [App Templates](/concepts/apps)
+You define your app once. Each customer runs their own copy in their own cloud account.
 
-An App Template is your product, described as TOML in your own git repo. You provide two things:
+<PlatformDiagram />
 
-<ConceptMap
-  columns={[
-    {
-      title: "Your product",
-      items: [
-        { label: "Components", href: "/concepts/components", note: "Such as your API, a database, or a storage bucket" },
-      ],
-    },
-    {
-      title: "Customer settings",
-      items: [
-        { label: "Inputs", href: "/concepts/app-inputs" },
-        { label: "Secrets", href: "/concepts/app-secrets" },
-      ],
-    },
-  ]}
-/>
+- **[App templates](/concepts/apps)**: your product as TOML in your git repo. It lists your
+  [components](/concepts/components), plus the [inputs](/concepts/app-inputs) and [secrets](/concepts/app-secrets)
+  that change per customer.
+- **[Installs](/concepts/installs)**: one copy of your app in a customer's cloud account. The customer applies
+  the [stack](/concepts/stacks) with their own credentials, and the [runner](/concepts/runners) deploys the
+  [sandbox](/concepts/sandboxes) and your components.
+- **[Updates and operations](/concepts/updates-and-operations)**: push to git and an
+  [app branch](/concepts/app-branches) rolls the change out in order, with a plan you can review first.
+  [Actions](/concepts/actions) and [runbooks](/concepts/runbooks) handle migrations and day-2 work.
 
-## [BYOC Management Infra](/concepts/nuon-infrastructure)
+## How the pieces relate
 
-What Nuon runs in each customer's cloud account.
+An app template has app branches. Each app branch splits its installs into install groups that deploy in order.
 
-<FlowSteps
-  horizontal
-  steps={[
-    { title: "Stack", href: "/concepts/stacks" },
-    { title: "Runner", href: "/concepts/runners" },
-    { title: "Sandbox", href: "/concepts/sandboxes" },
-  ]}
-/>
-
-## [Customer Installs](/concepts/installs)
-
-An install is one instance of your App Template in a customer's cloud account.
-
-<ConceptMap
-  columns={[
-    {
-      title: "Deploy",
-      items: [
-        { label: "Stack", href: "/concepts/stacks" },
-        { label: "Sandbox", href: "/concepts/sandboxes" },
-        { label: "Components", href: "/concepts/components" },
-      ],
-    },
-    {
-      title: "Setup",
-      items: [
-        { label: "Inputs and secrets", href: "/guides/configuring-inputs-and-secrets" },
-        { label: "Customer architectures", href: "/concepts/stacks" },
-        { label: "Install configuration", href: "/guides/install-configs" },
-        { label: "Overrides", href: "/guides/component-overrides" },
-      ],
-    },
-    {
-      title: "Health",
-      items: [
-        { label: "Health checks", href: "/guides/health-checks" },
-        { label: "Install telemetry", href: "/concepts/install-telemetry" },
-      ],
-    },
-  ]}
-/>
-
-The customer deploys the [stack](/concepts/stacks) first. The [sandbox](/concepts/sandboxes) then sets up compute,
-and your components deploy on top.
-
-## [Updates and Operations](/concepts/updates-and-operations)
-
-What Nuon provides. These primitives are built in. Some, like actions and runbooks, take a little configuration.
-
-<ConceptMap
-  columns={[
-    {
-      title: "Automatic updates",
-      tone: "nuon",
-      items: [
-        { label: "App branches", href: "/concepts/app-branches" },
-        { label: "Plan approvals", href: "/concepts/workflows#workflow-approvals" },
-        { label: "Policies", href: "/concepts/policies" },
-        { label: "Roll back", href: "/guides/rollback-install-config" },
-      ],
-    },
-    {
-      title: "Secure execution",
-      tone: "nuon",
-      items: [
-        { label: "Operation roles", href: "/concepts/operation-roles" },
-        { label: "Break-glass access", href: "/concepts/operation-roles#elevated-access-and-break-glass-operations" },
-      ],
-    },
-    {
-      title: "Day-2 tooling",
-      tone: "nuon",
-      items: [
-        { label: "Actions", href: "/concepts/actions" },
-        { label: "Runbooks", href: "/guides/runbooks" },
-        { label: "Drift detection", href: "/concepts/workflows#drift-detection" },
-      ],
-    },
-  ]}
-/>
-
-Every change runs as a [workflow](/concepts/workflows) with a plan you can review before it reaches a customer.
+<RelationshipTree />

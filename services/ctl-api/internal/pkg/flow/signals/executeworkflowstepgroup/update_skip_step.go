@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -48,12 +49,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	}
 
 	// Determine the directive: skip-group if the signal declares it, otherwise continue.
-	skipDirective := directive.StepContinue
-	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
-		if sg, ok := step.QueueSignal.Signal.(signal.SignalWithSkipGroup); ok && sg.SkipGroup() {
-			skipDirective = directive.StepSkipGroup
-		}
-	}
+	skipDirective := skipStepDirective(step)
 
 	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepResultDirective(ctx, activities.UpdateFlowStepResultDirectiveRequest{
 		StepID:    req.StepID,
@@ -73,4 +69,68 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		resp.Directive = string(skipDirective)
 	}
 	return resp, nil
+}
+
+func SkipSettledStep(ctx workflow.Context, step *app.WorkflowStep) error {
+	s := &Signal{WorkflowID: step.InstallWorkflowID, StepGroupID: step.WorkflowStepGroupID, GroupIdx: step.GroupIdx}
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+	steps, err := s.getGroupSteps(ctx)
+	if err != nil {
+		return err
+	}
+	skipDirective := skipStepDirective(step)
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepResultDirective(ctx, activities.UpdateFlowStepResultDirectiveRequest{
+		StepID: step.ID, Directive: string(skipDirective),
+	}); err != nil {
+		return err
+	}
+	groupDirective := directive.GroupContinue
+	if skipDirective == directive.StepSkipGroup {
+		if err := s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded, app.CompositeStatus{}); err != nil {
+			return err
+		}
+		groupDirective = directive.GroupSkipGroup
+	}
+	if err := s.writeStepGroupDirective(ctx, groupDirective); err != nil {
+		return err
+	}
+
+	groupStatus := app.StatusSuccess
+	for _, candidate := range steps {
+		if candidate.ID == step.ID || isTerminalStatus(candidate.Status.Status) {
+			continue
+		}
+		if skipDirective == directive.StepSkipGroup && candidate.Idx > step.Idx {
+			continue
+		}
+		groupStatus = app.StatusPending
+		break
+	}
+	if s.StepGroupID != "" {
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepGroupStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.StepGroupID, Status: app.CompositeStatus{Status: groupStatus},
+		}); err != nil {
+			return err
+		}
+	}
+	return statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusUserSkipped,
+			StatusHumanDescription: "Step was skipped by the user.",
+			Metadata:               map[string]any{"skipped": true},
+		},
+	})
+}
+
+func skipStepDirective(step *app.WorkflowStep) directive.Step {
+	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+		if sg, ok := step.QueueSignal.Signal.(signal.SignalWithSkipGroup); ok && sg.SkipGroup() {
+			return directive.StepSkipGroup
+		}
+	}
+	return directive.StepContinue
 }

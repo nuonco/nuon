@@ -176,6 +176,9 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 				NestedStacks: installConfig.AWSNestedStackParameters,
 			}
 		}
+		if installConfig.ActionTimeout != nil {
+			installCfg.ActionTimeout = config.FormatActionTimeout(*installConfig.ActionTimeout)
+		}
 	}
 
 	appInputCfg, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)

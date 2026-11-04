@@ -231,6 +231,8 @@ type Install struct {
 	// Absent keys fall through to the component's default_enabled setting.
 	ComponentToggles map[string]bool `mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
 
+	ActionTimeout string `mapstructure:"action_timeout,omitempty" toml:"action_timeout,omitempty" jsonschema:"-"`
+
 	// Components holds per-component install-level overrides, keyed by component
 	// name. Each override deep-merges over the component's app-config values and
 	// wins. It is carried through the install input system under a reserved
@@ -325,6 +327,14 @@ func (i *Install) Validate() error {
 	if i.AppBranchGroup != "" && i.AppBranch == "" {
 		return ErrConfig{
 			Description: fmt.Sprintf("install %q: app_branch_group requires app_branch", i.Name),
+		}
+	}
+	if i.ActionTimeout != "" {
+		if _, err := ParseActionTimeout(i.ActionTimeout); err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("install %q: %s", i.Name, err),
+				Err:         err,
+			}
 		}
 	}
 
@@ -473,6 +483,13 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("approval_option"),
 			diff.WithStringDiff(string(upstreamInstall.ApprovalOption), string(i.ApprovalOption)),
+		))
+	}
+
+	if i.ActionTimeout != "" && !ActionTimeoutsEqual(upstreamInstall.ActionTimeout, i.ActionTimeout) {
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("action_timeout"),
+			diff.WithStringDiff(upstreamInstall.ActionTimeout, i.ActionTimeout),
 		))
 	}
 

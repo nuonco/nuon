@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	policyopa "github.com/nuonco/nuon/pkg/policies/opa"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
@@ -16,22 +17,26 @@ import (
 )
 
 type PersistPolicyReportRequest struct {
-	OrgID                          string            `json:"org_id" validate:"required"`
-	AppID                          string            `json:"app_id" validate:"required"`
-	InstallID                      *string           `json:"install_id"`
-	InstallSandboxID               *string           `json:"install_sandbox_id"`
-	ComponentID                    *string           `json:"component_id"`
-	ComponentBuildID               *string           `json:"component_build_id"`
-	WorkflowStepPolicyValidationID *string           `json:"workflow_step_policy_validation_id"`
-	RunnerJobID                    *string           `json:"runner_job_id"`
-	OwnerID                        string            `json:"owner_id" validate:"required"`
-	OwnerType                      string            `json:"owner_type" validate:"required"`
-	Violations                     []PolicyViolation `json:"violations"`
-	PolicyIDs                      []string          `json:"policy_ids"`
-	PolicyInputCounts              map[string]int    `json:"policy_input_counts"`
-	DenyCount                      int               `json:"deny_count"`
-	WarnCount                      int               `json:"warn_count"`
-	PassCount                      int               `json:"pass_count"`
+	OrgID                          string                        `json:"org_id" validate:"required"`
+	AppID                          string                        `json:"app_id" validate:"required"`
+	InstallID                      *string                       `json:"install_id"`
+	InstallSandboxID               *string                       `json:"install_sandbox_id"`
+	ComponentID                    *string                       `json:"component_id"`
+	ComponentBuildID               *string                       `json:"component_build_id"`
+	WorkflowStepPolicyValidationID *string                       `json:"workflow_step_policy_validation_id"`
+	RunnerJobID                    *string                       `json:"runner_job_id"`
+	RunnerJobExecutionID           string                        `json:"runner_job_execution_id,omitempty"`
+	AppConfigID                    string                        `json:"app_config_id,omitempty"`
+	OwnerID                        string                        `json:"owner_id" validate:"required"`
+	OwnerType                      string                        `json:"owner_type" validate:"required"`
+	Violations                     []PolicyViolation             `json:"violations"`
+	SkipFindings                   []PolicyViolation             `json:"skip_findings,omitempty"`
+	CheckResults                   map[string][]policyopa.Result `json:"check_results,omitempty"`
+	PolicyIDs                      []string                      `json:"policy_ids"`
+	PolicyInputCounts              map[string]int                `json:"policy_input_counts"`
+	DenyCount                      int                           `json:"deny_count"`
+	WarnCount                      int                           `json:"warn_count"`
+	PassCount                      int                           `json:"pass_count"`
 
 	// Human-readable names for display in reports
 	OrgName       string `json:"org_name"`
@@ -82,20 +87,59 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 	}
 
 	policyResults := buildPolicyResults(req.PolicyIDs, req.PolicyInputCounts, req.Violations)
-	if passCount == 0 && denyCount == 0 && warnCount == 0 {
+	skipFindings := req.SkipFindings
+	skipPolicies := make(map[string]bool)
+	for _, finding := range skipFindings {
+		skipPolicies[finding.PolicyID] = true
+	}
+	for i := range policyResults {
+		result := &policyResults[i]
+		if skipPolicies[result.PolicyID] {
+			result.PassCount = 0
+			if result.DenyCount == 0 {
+				result.Status = "skip_apply"
+			}
+		}
+	}
+	skipCount := len(skipFindings)
+	if skipCount > 0 || (passCount == 0 && denyCount == 0 && warnCount == 0) {
+		denyCount, warnCount, passCount = 0, 0, 0
 		for _, result := range policyResults {
 			denyCount += result.DenyCount
 			warnCount += result.WarnCount
 			passCount += result.PassCount
 		}
 	}
-
 	violations := req.Violations
 
 	policies := helpers.ToAppResultsFromInternal(toInternalResults(policyResults))
+	for i := range policies {
+		policies[i].Checks = policyopa.Aggregate(req.CheckResults[policies[i].PolicyID])
+	}
 
 	inputs := buildPolicyInputRefs(req)
 	appInputs := helpers.ToAppInputRefsFromInternal(toInternalInputRefs(inputs))
+
+	status := buildPolicyReportStatus(ctx, denyCount, warnCount, passCount)
+	if req.AppConfigID != "" {
+		status.Metadata["app_config_id"] = req.AppConfigID
+	}
+	if req.RunnerJobExecutionID != "" {
+		status.Metadata["runner_job_execution_id"] = req.RunnerJobExecutionID
+	}
+	if skipCount > 0 {
+		status.Metadata["skip_count"] = skipCount
+		status.Metadata["skip_findings"] = skipFindings
+		if denyCount > 0 {
+			status.Metadata["resolved_action"] = "deny"
+		} else {
+			status.Metadata["resolved_action"] = "skip_apply"
+			status.StatusHumanDescription = "Policy decision: skip component apply"
+			if req.OwnerType == "install_sandbox_runs" {
+				status.StatusHumanDescription = "Policy decision: skip sandbox apply"
+			}
+		}
+	}
 
 	report := &app.PolicyReport{
 		OrgID:                          req.OrgID,
@@ -114,7 +158,7 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		DenyCount:                      denyCount,
 		WarnCount:                      warnCount,
 		PassCount:                      passCount,
-		Status:                         buildPolicyReportStatus(ctx, denyCount, warnCount, passCount),
+		Status:                         status,
 		// Human-readable names for display in reports
 		OrgName:       req.OrgName,
 		AppName:       req.AppName,
@@ -152,6 +196,7 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 			"policy_report.deny":       strconv.Itoa(denyCount),
 			"policy_report.warn":       strconv.Itoa(warnCount),
 			"policy_report.pass":       strconv.Itoa(passCount),
+			"policy_report.skip":       strconv.Itoa(skipCount),
 			"policy_report.owner_id":   req.OwnerID,
 			"policy_report.owner_type": req.OwnerType,
 			"runner_job.id":            generics.FromPtrStr(req.RunnerJobID),
@@ -311,7 +356,7 @@ func buildPolicyReportStatus(ctx context.Context, denyCount, warnCount, passCoun
 
 	if denyCount > 0 {
 		status = app.StatusError
-		statusDescription = "policy checks failed"
+		statusDescription = "Change denied by policy"
 	} else if warnCount > 0 {
 		status = app.StatusWarning
 		statusDescription = "policy warnings detected"

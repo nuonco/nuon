@@ -1,6 +1,5 @@
 export * from './check-vcs-connection-status'
 export * from './get-connection-branches'
-export * from './create-vcs-connection'
 export * from './create-vcs-connection-webhook-subscription'
 export * from './get-vcs-connection'
 export * from './get-vcs-connection-webhook-subscription'

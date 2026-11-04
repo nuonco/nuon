@@ -37,7 +37,8 @@ export const ToggleButton = <T extends string>({
         const isFirst = i === 0
         const isLast = i === options.length - 1
         const isSelected = value === option.value
-        const tipContent = option.description ?? option.title ?? option.ariaLabel
+        const tipContent =
+          option.description ?? option.title ?? option.ariaLabel
 
         return (
           <Button
@@ -59,13 +60,12 @@ export const ToggleButton = <T extends string>({
                 : undefined
             }
             className={cn(
-              'focus:z-10 !shadow-none',
-              isSelected
-                ? '!bg-primary-200 dark:!bg-primary-600/25 !text-primary-800 dark:!text-primary-400 !font-stronger'
-                : '!bg-transparent !text-cool-grey-800 dark:!text-cool-grey-400 hover:!bg-cool-grey-500/8 dark:hover:!bg-cool-grey-500/8',
+              'focus:z-10',
+              isSelected &&
+                '!border-[color-mix(in_oklab,var(--primary-500)_70%,black)] !bg-[color-mix(in_oklab,var(--primary-500)_55%,black)] dark:!border-[color-mix(in_oklab,var(--primary-500)_40%,black)] dark:!bg-[color-mix(in_oklab,var(--primary-500)_35%,black)] !text-white !shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]',
               isFirst && '!rounded-e-none',
               isLast && '!rounded-s-none !border-l-0',
-              !isFirst && !isLast && '!rounded-none !border-l-0',
+              !isFirst && !isLast && '!rounded-none !border-l-0'
             )}
           >
             {option.label}

@@ -151,6 +151,71 @@ export const AllPassed = () => (
   />
 )
 
+const skipped: TPolicyReport = {
+  ...passed,
+  id: 'report-skip',
+  component_id: 'component-database',
+  component_name: 'database',
+  pass_count: 0,
+  policies: [{ policy_id: 'policy-skip', status: 'skip_apply' }],
+  status: {
+    status: 'success',
+    status_human_description: 'Policy decision: skip component apply',
+    metadata: {
+      resolved_action: 'skip_apply',
+      skip_count: 1,
+      skip_findings: [
+        {
+          policy_id: 'policy-skip',
+          message: 'Database replacement requires a maintenance window.',
+        },
+      ],
+    },
+  },
+}
+
+const decisionRows = groupPolicyReports([
+  skipped,
+  {
+    ...skipped,
+    id: 'report-skip-warning',
+    component_id: 'component-cache',
+    component_name: 'cache',
+    warn_count: 1,
+    policies: [...(skipped.policies || []), result('pol-2', 'warn')],
+    violations: [violation('pol-2', 'warn', 'Resource limits are not set.')],
+    status: { ...skipped.status, status: 'warning' },
+  },
+  {
+    ...denied,
+    id: 'report-denied-skip',
+    policies: [...(denied.policies || []), ...(skipped.policies || [])],
+    status: {
+      status: 'error',
+      status_human_description: 'Change denied by policy',
+      metadata: { ...skipped.status?.metadata, resolved_action: 'deny' },
+    },
+  },
+])
+
+export const PolicyDecisions = () => (
+  <InstallPolicyReports
+    rows={decisionRows}
+    view="list"
+    orgId="org-1"
+    policyNameMap={policyNameMap}
+  />
+)
+
+export const PolicyDecisionsGrid = () => (
+  <InstallPolicyReports
+    rows={decisionRows}
+    view="grid"
+    orgId="org-1"
+    policyNameMap={policyNameMap}
+  />
+)
+
 export const SingleEvaluation = () => (
   <InstallPolicyReports
     rows={groupPolicyReports([sandboxWarn])}

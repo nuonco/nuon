@@ -79,6 +79,77 @@ export const WithViolations = () => <PolicyViolations step={violationStep} />
 
 export const AllPassed = () => <PolicyViolations step={passedStep} />
 
+export const SkippedWithWarnings = () => (
+  <PolicyViolations
+    step={{
+      ...violationStep,
+      status: {
+        status: 'auto-skipped',
+        metadata: {
+          ...violationStep.status.metadata,
+          check: 'policy-skip-apply',
+          skip_findings: [
+            {
+              policy_id: 'policy-skip',
+              message: 'Sandbox apply deferred until the maintenance window.',
+            },
+          ],
+        },
+      },
+    }}
+  />
+)
+
+export const SkippedByPolicy = () => (
+  <PolicyViolations
+    step={
+      {
+        id: 'step-skip',
+        status: {
+          status: 'auto-skipped',
+          metadata: {
+            check: 'policy-skip-apply',
+            skip_findings: [
+              {
+                policy_id: 'policy-skip',
+                message: 'Database replacement requires a maintenance window.',
+              },
+            ],
+          },
+        },
+      } as TWorkflowStep
+    }
+  />
+)
+
+export const DenyOverridesSkip = () => (
+  <PolicyViolations
+    step={
+      {
+        id: 'step-deny-skip',
+        status: {
+          status: 'error',
+          metadata: {
+            deny_violations: [
+              {
+                policy_id: 'policy-deny',
+                severity: 'deny',
+                message: 'Public access is prohibited.',
+              },
+            ],
+            skip_findings: [
+              {
+                policy_id: 'policy-skip',
+                message: 'Database replacement requires a maintenance window.',
+              },
+            ],
+          },
+        },
+      } as TWorkflowStep
+    }
+  />
+)
+
 export const ManyWarnings = () => (
   <div className="max-w-3xl">
     <PolicyViolations step={manyWarningsStep} />

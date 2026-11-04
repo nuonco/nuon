@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/spf13/afero"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -22,6 +23,7 @@ type handler struct {
 	errRecorder *errs.Recorder
 	cfg         *runnerconfig.Config
 	ociCopy     ocicopy.Copier
+	fs          afero.Fs
 
 	state *handlerState
 }
@@ -36,6 +38,7 @@ type Params struct {
 	Config      *runnerconfig.Config
 	OCICopy     ocicopy.Copier
 	ErrRecorder *errs.Recorder
+	FS          afero.Fs
 }
 
 func New(params Params) (*handler, error) {
@@ -45,6 +48,7 @@ func New(params Params) (*handler, error) {
 		cfg:         params.Config,
 		ociCopy:     params.OCICopy,
 		errRecorder: params.ErrRecorder,
+		fs:          params.FS,
 	}, nil
 }
 

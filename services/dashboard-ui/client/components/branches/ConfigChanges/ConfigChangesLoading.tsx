@@ -1,4 +1,3 @@
-import { Card } from '@/components/common/Card'
 import { Text } from '@/components/common/Text'
 
 const NAV_GROUPS = [
@@ -48,10 +47,7 @@ export const ConfigChangesLoading = () => (
         <div className="flex items-center gap-2 pb-2">
           <Text loading loadingWidth={40} />
         </div>
-        <Card
-          elevation="0"
-          className="gap-1 overflow-hidden bg-elevation-0 p-0 md:min-h-0 md:flex-1"
-        >
+        <div className="flex flex-col gap-1 overflow-hidden md:min-h-0 md:flex-1">
           {SECTIONS.map((section, index) => (
             <div
               key={index}
@@ -71,7 +67,7 @@ export const ConfigChangesLoading = () => (
               </div>
             </div>
           ))}
-        </Card>
+        </div>
       </div>
     </div>
   </div>

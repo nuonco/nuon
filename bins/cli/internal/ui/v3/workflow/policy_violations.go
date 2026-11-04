@@ -59,15 +59,38 @@ func (m model) stepDetailViewPolicyViolations() string {
 	}
 
 	denyViolations, warnViolations := extractPolicyViolations(m.selectedStep.Status.Metadata)
-	if len(denyViolations) == 0 && len(warnViolations) == 0 {
+	skipFindings := parsePolicyViolations(m.selectedStep.Status.Metadata["skip_findings"])
+	if len(denyViolations) == 0 && len(warnViolations) == 0 && len(skipFindings) == 0 {
+		if m.selectedStep.Status.Status == "auto-skipped" && m.selectedStep.Status.Metadata["cause_check"] == "policy-skip-apply" {
+			return policySectionStyle.Width(m.stepDetail.Width()).Padding(1).Margin(0, 0, 1).Render(
+				lipgloss.JoinVertical(lipgloss.Left,
+					styles.TextBold.Render("Apply skipped by policy"),
+					m.selectedStep.Status.StatusHumanDescription,
+				),
+			)
+		}
 		return ""
 	}
 
-	header := styles.TextBold.Render("Policy Violations")
+	header := styles.TextBold.Render("Policy findings")
 	lookup := policyNameLookup(m)
 	sections := []string{header}
 
 	contentWidth := m.stepDetail.Width() - 6
+
+	if len(skipFindings) > 0 {
+		label := "Policy decision: skip apply"
+		if len(denyViolations) > 0 {
+			label = "Change denied by policy"
+		} else if m.selectedStep.Status.Metadata["check"] == "policy-skip-apply" {
+			label = "Apply skipped by policy"
+		}
+		lines := []string{styles.TextBold.Render(label), ""}
+		for _, finding := range skipFindings {
+			lines = append(lines, formatPolicyViolationLine(finding, lookup, contentWidth))
+		}
+		sections = append(sections, lipgloss.JoinVertical(lipgloss.Left, lines...))
+	}
 
 	if len(denyViolations) > 0 {
 		headerText := styles.TextError.Render(fmt.Sprintf("Deny violations (%d)", len(denyViolations)))

@@ -18,6 +18,12 @@ func TestValidateOPAPolicy(t *testing.T) {
 		require.NoError(t, ValidateOPAPolicy("package nuon\nwarn := []"))
 	})
 
+	t.Run("accepts named checks with the Nuon library", func(t *testing.T) {
+		require.NoError(t, ValidateOPAPolicy(`package nuon.checks
+import data.nuon.lib.check
+check_example contains check.finding("review")`))
+	})
+
 	t.Run("rejects another package", func(t *testing.T) {
 		err := ValidateOPAPolicy("package other\ndeny := []")
 		require.Error(t, err)
@@ -51,6 +57,33 @@ func TestValidatePolicyType(t *testing.T) {
 			err := validatePolicyType(test.input)
 			assert.Equal(t, (err != nil), test.expected, "Expected error for policy type %s: %v, got: %v", test.input, test.expected, err)
 		})
+	}
+}
+
+func TestSkipApplyPolicyScope(t *testing.T) {
+	contents := `package nuon.checks
+import data.nuon.lib.check
+# METADATA
+# custom:
+#   action: skip_apply
+check_defer contains check.finding("defer replacement") if { input.replace }
+`
+	for _, policyType := range []config.AppPolicyType{
+		config.AppPolicyTypeTerraformModule, config.AppPolicyTypeSandbox,
+		config.AppPolicyTypeHelmChart, config.AppPolicyTypeContainerImage,
+	} {
+		for _, teardown := range []*bool{nil, new(true), new(false)} {
+			cfg := &config.AppConfig{Policies: &config.PoliciesConfig{Policies: []config.AppPolicy{{
+				Type: policyType, Engine: config.AppPolicyEngineOPA,
+				Contents: contents, ApplyOnTeardown: teardown,
+			}}}}
+			err := ValidatePolicies(cfg)
+			if policyType == config.AppPolicyTypeTerraformModule || policyType == config.AppPolicyTypeSandbox {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, "skip_apply is only supported for terraform_module")
+			}
+		}
 	}
 }
 

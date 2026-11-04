@@ -67,11 +67,12 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	}
 
 	runPlan, err := plan.AwaitCreateComponentBuildPlan(ctx, &plan.CreateComponentBuildPlanRequest{
-		ComponentID:          comp.ID,
-		ComponentBuildID:     buildID,
-		WorkflowID:           fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
-		CloudProvider:        w.cfg.CloudProvider,
-		ManagementIAMRoleARN: w.cfg.ManagementIAMRoleARN,
+		ComponentID:              comp.ID,
+		ComponentBuildID:         buildID,
+		WorkflowID:               fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		CloudProvider:            w.cfg.CloudProvider,
+		ManagementIAMRoleARN:     w.cfg.ManagementIAMRoleARN,
+		ManagementACRRegistryURL: w.cfg.ManagementACRRegistryURL,
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")

@@ -34,8 +34,12 @@ func (s *Service) warnIfCLIOutdated(ctx context.Context) {
 		return
 	}
 
-	ui.PrintWarning(fmt.Sprintf(
-		"your CLI (%s) is older than the minimum %s this control plane syncs app configs for — actions and runbooks will not be synced to installs. see https://docs.nuon.co/cli to update.",
+	ui.PrintWarning(syncMinCLIMessage(current, minimum))
+}
+
+func syncMinCLIMessage(current, minimum *semver.Version) string {
+	return fmt.Sprintf(
+		"Your CLI (%s) is older than the minimum %s this control plane syncs app configs for. Actions and runbooks will not be synced to installs. see https://docs.nuon.co/cli to update.",
 		current, minimum,
-	))
+	)
 }

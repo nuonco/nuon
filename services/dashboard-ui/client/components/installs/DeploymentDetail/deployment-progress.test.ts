@@ -797,6 +797,84 @@ test('a no-op plan reports no changes', () => {
   expect(outcomes[0]).toMatchObject({ status: 'success', detail: 'No changes' })
 })
 
+test('policy skips retain attribution in full workflows and summaries', () => {
+  const plan = component('sync and plan api', 'auto-skipped', 1, 'api', {
+    execution_type: 'approval',
+    status: {
+      status: 'auto-skipped',
+      metadata: { check: 'policy-skip-apply' },
+    },
+  })
+  const apply = component('apply api', 'auto-skipped', 1, 'api')
+  for (const pendingFollowUp of [false, true]) {
+    const full = workflow(
+      [
+        plan,
+        apply,
+        ...(pendingFollowUp
+          ? [component('refresh api', 'pending', 2, 'api')]
+          : []),
+      ],
+      { finished: true }
+    )
+    const summary = summaryDeploymentEvidence({
+      finished: true,
+      steps: full.steps!.map((item) => ({
+        ...item,
+        status: item.status!.status,
+        component_name: 'api',
+        policy: item.id === plan.id ? { skipped_by_policy: true } : undefined,
+      })),
+    } as TInstallDeploymentSummary)
+    for (const evidence of [full, summary]) {
+      expect(
+        deploymentOutcomes(deployment, evidence).find(isApi)
+      ).toMatchObject({
+        status: 'auto-skipped',
+        detail: 'Apply skipped by policy',
+        applied: false,
+      })
+    }
+  }
+  for (const status of ['error', 'in-progress'] as const) {
+    expect(
+      deploymentOutcomes(
+        deployment,
+        workflow([plan, apply, component('refresh api', status, 2, 'api')])
+      ).find(isApi)
+    ).toMatchObject({ status })
+  }
+  expect(
+    deploymentOutcomes(
+      deployment,
+      workflow([
+        component('apply api', 'success', 1, 'api', { group_retry_idx: 0 }),
+        { ...plan, group_retry_idx: 1 },
+        { ...apply, group_retry_idx: 1 },
+      ])
+    ).find(isApi)
+  ).toMatchObject({
+    status: 'warn',
+    detail: 'Previously applied; apply skipped by policy',
+    applied: true,
+  })
+  expect(
+    deploymentOutcomes(
+      deployment,
+      workflow([
+        {
+          ...plan,
+          status: {
+            status: 'error',
+            metadata: { skip_count: 1, resolved_action: 'deny' },
+          },
+        },
+        { ...apply, status: { status: 'discarded' } },
+      ])
+    ).find(isApi)
+  ).toMatchObject({ status: 'error' })
+})
+
 test('an operator-skipped apply is reported as skipped', () => {
   const outcomes = deploymentOutcomes(
     { ...deployment, affected_resources: { components: [], images: [] } },

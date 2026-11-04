@@ -17,6 +17,7 @@ import (
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/pkg/jwtcompact"
 	"github.com/nuonco/nuon/pkg/publicnet"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -115,12 +116,14 @@ func (s *service) verifyBearerJWT(ctx *gin.Context, trigger *app.Trigger) error 
 		return errors.New("missing bearer token")
 	}
 	token := strings.TrimPrefix(authorization, "Bearer ")
-	if len(token) > maxBearerTokenSize || strings.Count(token, ".") != 2 {
+	if len(token) > maxBearerTokenSize || jwtcompact.Require(token) != nil {
 		return errors.New("invalid bearer token format")
 	}
 	issuer := trigger.AuthConfig.Issuer
 	if issuer == "https://accounts.google.com" {
-		parts := strings.Split(token, ".")
+		// Google accepts both https://accounts.google.com and accounts.google.com
+		// as iss; JWKS still comes from the configured issuer URL below.
+		parts := strings.Split(strings.TrimSpace(token), ".")
 		claimsJSON, decodeErr := base64.RawURLEncoding.DecodeString(parts[1])
 		if decodeErr != nil {
 			return decodeErr

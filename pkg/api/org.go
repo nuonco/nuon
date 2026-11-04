@@ -13,6 +13,17 @@ type Org struct {
 	Status string `json:"status"`
 }
 
+func (c *client) AddVCSConnection(ctx context.Context, orgID, githubInstallID string) error {
+	endpoint := fmt.Sprintf("/v1/orgs/%s/admin-add-vcs-connection", orgID)
+	if _, err := c.execPostRequest(ctx, endpoint, map[string]string{
+		"github_install_id": githubInstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to add vcs connection: %w", err)
+	}
+
+	return nil
+}
+
 func (c *client) AddSupportUsers(ctx context.Context, orgID string) error {
 	endpoint := fmt.Sprintf("/v1/orgs/%s/admin-support-users", orgID)
 	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})

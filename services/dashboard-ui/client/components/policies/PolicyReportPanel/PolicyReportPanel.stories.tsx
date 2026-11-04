@@ -89,6 +89,116 @@ export const WithHistory = () => (
   </PanelStory>
 )
 
+const skipReport: TPolicyReport = {
+  ...mockReport,
+  id: 'report-skip',
+  component_name: 'database',
+  deny_count: 0,
+  policies: [
+    {
+      policy_id: 'policy-skip',
+      policy_name: 'Defer database replacements',
+      status: 'skip_apply',
+    },
+  ],
+  violations: [],
+  status: {
+    status: 'success',
+    status_human_description: 'Policy decision: skip component apply',
+    metadata: {
+      resolved_action: 'skip_apply',
+      skip_count: 1,
+      skip_findings: [
+        {
+          policy_id: 'policy-skip',
+          message: 'Database replacement requires a maintenance window.',
+        },
+      ],
+    },
+  },
+}
+
+export const SkipRequested = () => (
+  <PanelStory>
+    <PolicyReportPanel
+      report={skipReport}
+      orgId="org-1"
+      policyNameMap={policyNameMap}
+      history={[skipReport]}
+    />
+  </PanelStory>
+)
+
+export const SandboxSkip = () => (
+  <PanelStory>
+    <PolicyReportPanel
+      report={{
+        ...skipReport,
+        owner_type: 'install_sandbox_runs',
+        component_name: undefined,
+        policies: [
+          {
+            policy_id: 'policy-skip',
+            policy_name: 'Defer sandbox EKS changes',
+            status: 'skip_apply',
+          },
+        ],
+        status: {
+          ...skipReport.status,
+          status_human_description: 'Policy decision: skip sandbox apply',
+          metadata: {
+            ...skipReport.status?.metadata,
+            skip_findings: [
+              {
+                policy_id: 'policy-skip',
+                message: 'Sandbox apply deferred for EKS version 1.34.',
+              },
+            ],
+          },
+        },
+      }}
+      orgId="org-1"
+      policyNameMap={policyNameMap}
+    />
+  </PanelStory>
+)
+
+export const DenyOverridesSkip = () => (
+  <PanelStory>
+    <PolicyReportPanel
+      report={{
+        ...skipReport,
+        deny_count: 1,
+        policies: [
+          ...(skipReport.policies || []),
+          ...(mockReport.policies || []),
+        ],
+        violations: mockReport.violations,
+        status: {
+          ...skipReport.status,
+          status: 'error',
+          status_human_description: 'Change denied by policy',
+          metadata: { ...skipReport.status?.metadata, resolved_action: 'deny' },
+        },
+      }}
+      orgId="org-1"
+      policyNameMap={policyNameMap}
+      history={[
+        {
+          ...skipReport,
+          id: 'report-deny-skip',
+          deny_count: 1,
+          status: {
+            status: 'error',
+            metadata: { skip_count: 1, resolved_action: 'deny' },
+          },
+        },
+        skipReport,
+      ]}
+    />
+  </PanelStory>
+)
+
 export const AllPassed = () => (
   <PanelStory>
     <PolicyReportPanel

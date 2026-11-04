@@ -23,7 +23,15 @@ import (
 const (
 	pollJobPeriod              time.Duration = time.Second * 10
 	pollJobMaxWorkflowDuration               = time.Minute * 2
+	actionJobTimeoutBuffer                   = 2 * time.Minute
 )
+
+func ActionWaitTimeout(timeout time.Duration) time.Duration {
+	if timeout <= time.Hour {
+		return 0
+	}
+	return timeout + actionJobTimeoutBuffer
+}
 
 var failureStatuses = []app.RunnerJobStatus{
 	app.RunnerJobStatusFailed,
@@ -34,9 +42,10 @@ var failureStatuses = []app.RunnerJobStatus{
 }
 
 type ExecuteJobRequest struct {
-	RunnerID   string `json:"runner_id" validate:"required"`
-	JobID      string `json:"job_id" validate:"required"`
-	WorkflowID string `json:"workflow_id" validate:"required"`
+	RunnerID    string        `json:"runner_id" validate:"required"`
+	JobID       string        `json:"job_id" validate:"required"`
+	WorkflowID  string        `json:"workflow_id" validate:"required"`
+	WaitTimeout time.Duration `json:"wait_timeout,omitempty"`
 }
 
 // @temporal-gen-v2 workflow
@@ -56,9 +65,11 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 	}
 
 	if queueSignalID != "" {
-		// Queue path: await signal completion via callback.
-		// Bound by the workflow's execution timeout (1h), but be explicit.
-		if _, err := callback.AwaitWithTimeout(ctx, cb, time.Hour); err != nil {
+		waitTimeout := time.Hour
+		if req.WaitTimeout > waitTimeout {
+			waitTimeout = req.WaitTimeout
+		}
+		if _, err := callback.AwaitWithTimeout(ctx, cb, waitTimeout); err != nil {
 			return app.RunnerJobStatusUnknown, errors.Wrap(err, "queue signal failed")
 		}
 	} else {

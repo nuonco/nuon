@@ -216,7 +216,7 @@ func declaredCheckNames(ccc app.ComponentConfigConnection) map[string]bool {
 
 func probeNameSet(probes app.ComponentHealthProbes) map[string]bool {
 	names := map[string]bool{}
-	for _, probe := range probes {
+	for _, probe := range probes.Runnable() {
 		if probe.Name != "" {
 			names[probe.Name] = true
 		}

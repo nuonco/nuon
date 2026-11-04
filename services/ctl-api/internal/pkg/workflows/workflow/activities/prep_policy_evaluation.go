@@ -35,16 +35,20 @@ type PolicyToEvaluate struct {
 }
 
 type PrepPolicyEvaluationResult struct {
-	Policies         []PolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
-	HasPolicies      bool               `json:"has_policies" temporaljson:"has_policies,omitempty"`
-	OrgID            string             `json:"org_id" temporaljson:"org_id,omitempty"`
-	AppID            string             `json:"app_id" temporaljson:"app_id,omitempty"`
-	InstallID        *string            `json:"install_id" temporaljson:"install_id,omitempty"`
-	InstallSandboxID *string            `json:"install_sandbox_id" temporaljson:"install_sandbox_id,omitempty"`
-	ComponentID      *string            `json:"component_id" temporaljson:"component_id,omitempty"`
-	ComponentBuildID *string            `json:"component_build_id" temporaljson:"component_build_id,omitempty"`
-	PolicyIDs        []string           `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
-	InputCount       int                `json:"input_count" temporaljson:"input_count,omitempty"`
+	Policies             []PolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
+	HasPolicies          bool               `json:"has_policies" temporaljson:"has_policies,omitempty"`
+	OrgID                string             `json:"org_id" temporaljson:"org_id,omitempty"`
+	AppID                string             `json:"app_id" temporaljson:"app_id,omitempty"`
+	InstallID            *string            `json:"install_id" temporaljson:"install_id,omitempty"`
+	InstallSandboxID     *string            `json:"install_sandbox_id" temporaljson:"install_sandbox_id,omitempty"`
+	ComponentID          *string            `json:"component_id" temporaljson:"component_id,omitempty"`
+	ComponentBuildID     *string            `json:"component_build_id" temporaljson:"component_build_id,omitempty"`
+	PolicyIDs            []string           `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
+	InputCount           int                `json:"input_count" temporaljson:"input_count,omitempty"`
+	AllowSkipApply       bool               `json:"allow_skip_apply" temporaljson:"allow_skip_apply,omitempty"`
+	AppConfigID          string             `json:"app_config_id" temporaljson:"app_config_id,omitempty"`
+	RunnerJobID          string             `json:"runner_job_id" temporaljson:"runner_job_id,omitempty"`
+	RunnerJobExecutionID string             `json:"runner_job_execution_id" temporaljson:"runner_job_execution_id,omitempty"`
 
 	// Human-readable names for display in reports
 	OrgName       string `json:"org_name" temporaljson:"org_name,omitempty"`
@@ -141,10 +145,15 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		ComponentBuildID: policyContext.ComponentBuildID,
 		PolicyIDs:        policyIDs,
 		InputCount:       len(policyInputs),
-		OrgName:          policyContext.OrgName,
-		AppName:          policyContext.AppName,
-		InstallName:      policyContext.InstallName,
-		ComponentName:    policyContext.ComponentName,
+		AllowSkipApply: (!policyContext.IsSandbox && policyContext.ComponentType == app.ComponentTypeTerraformModule && approvalPlan.RunnerJobType == app.RunnerJobTypeTerraformDeploy) ||
+			(policyContext.IsSandbox && (approvalPlan.RunnerJobType == app.RunnerJobTypeSandboxTerraform || approvalPlan.RunnerJobType == app.RunnerJobTypeSandboxTerraformPlan)),
+		AppConfigID:          policyContext.AppConfigID,
+		RunnerJobID:          approvalPlan.RunnerJobID,
+		RunnerJobExecutionID: approvalPlan.RunnerJobExecutionID,
+		OrgName:              policyContext.OrgName,
+		AppName:              policyContext.AppName,
+		InstallName:          policyContext.InstallName,
+		ComponentName:        policyContext.ComponentName,
 	}, nil
 }
 
@@ -184,6 +193,9 @@ func (a *Activities) resolvePolicyContext(ctx context.Context, stepTargetID, ste
 func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID string) (*policyContext, error) {
 	var deploy app.InstallDeploy
 	res := a.db.WithContext(ctx).
+		Preload("InstallComponent", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).
 		Preload("InstallComponent.Install.App.Org").
 		Preload("InstallComponent.Component").
 		First(&deploy, "id = ?", deployID)
@@ -191,20 +203,26 @@ func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID st
 		return nil, errors.Wrap(res.Error, "unable to get deploy")
 	}
 
+	installComponent := deploy.InstallComponent
+	if installComponent == nil || installComponent.Install == nil {
+		return nil, errors.Errorf("deploy %s has no install component or install", deployID)
+	}
+	install := installComponent.Install
+
 	return &policyContext{
-		AppConfigID:      deploy.InstallComponent.Install.AppConfigID,
-		OrgID:            deploy.InstallComponent.Install.App.OrgID,
-		AppID:            deploy.InstallComponent.Install.AppID,
-		InstallID:        &deploy.InstallComponent.InstallID,
-		ComponentID:      &deploy.InstallComponent.ComponentID,
+		AppConfigID:      install.AppConfigID,
+		OrgID:            install.App.OrgID,
+		AppID:            install.AppID,
+		InstallID:        &installComponent.InstallID,
+		ComponentID:      &installComponent.ComponentID,
 		ComponentBuildID: &deploy.ComponentBuildID,
-		ComponentType:    deploy.InstallComponent.Component.Type,
-		ComponentName:    deploy.InstallComponent.Component.Name,
+		ComponentType:    installComponent.Component.Type,
+		ComponentName:    installComponent.Component.Name,
 		IsSandbox:        false,
 		IsTeardown:       deploy.Type == app.InstallDeployTypeTeardown,
-		OrgName:          deploy.InstallComponent.Install.App.Org.Name,
-		AppName:          deploy.InstallComponent.Install.App.Name,
-		InstallName:      deploy.InstallComponent.Install.Name,
+		OrgName:          install.App.Org.Name,
+		AppName:          install.App.Name,
+		InstallName:      install.Name,
 	}, nil
 }
 

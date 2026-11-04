@@ -13,6 +13,7 @@ import (
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
@@ -36,6 +37,7 @@ type Params struct {
 	AnalyticsClient analytics.Writer
 	Helpers         *helpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
+	VCSHelpers      *vcshelpers.Helpers
 	Features        *features.Features
 	EndpointAudit   *api.EndpointAudit
 	QueueClient     *queueclient.Client
@@ -55,6 +57,7 @@ type service struct {
 	analyticsClient analytics.Writer
 	helpers         *helpers.Helpers
 	accountsHelpers *accountshelpers.Helpers
+	vcsHelpers      *vcshelpers.Helpers
 	features        *features.Features
 	endpointAudit   *api.EndpointAudit
 	queueClient     *queueclient.Client
@@ -122,6 +125,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		orgs.POST("/admin-delete-canarys", s.AdminDeleteCanaryOrgs)
 		orgs.POST("/admin-delete-integrations", s.AdminDeleteIntegrationOrgs)
 		orgs.POST("/admin-restart-all", s.RestartAllOrgs)
+		orgs.POST("/admin-reconcile-roles", s.AdminReconcileOrgRoles)
 
 		// org features (all orgs)
 		orgs.GET("/admin-features", s.AdminGetOrgFeatures)
@@ -200,6 +204,7 @@ func New(params Params) *service {
 		acctClient:      params.AcctClient,
 		helpers:         params.Helpers,
 		accountsHelpers: params.AccountsHelpers,
+		vcsHelpers:      params.VCSHelpers,
 		features:        params.Features,
 		queueClient:     params.QueueClient,
 		emitterClient:   params.EmitterClient,

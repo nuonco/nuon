@@ -37,6 +37,7 @@ export const StepBanner = ({
     hasViolations: hasPolicyViolations,
     hasPolicyData,
     passedCount,
+    skipFindings,
   } = getPolicyViolationCounts(step)
   const metadata = step?.status?.metadata as Record<string, unknown> | undefined
   const isPolicyAutoApproved =
@@ -68,11 +69,7 @@ export const StepBanner = ({
                 statusDescription &&
                 !showCompositeError &&
                 bannerCfg.theme === 'error' ? (
-                  <Text
-                    variant="subtext"
-                    theme="error"
-                    className="break-words"
-                  >
+                  <Text variant="subtext" theme="error" className="break-words">
                     {statusDescription}
                   </Text>
                 ) : null}
@@ -97,7 +94,7 @@ export const StepBanner = ({
           ) : null}
         </div>
       ) : null}
-      {hasPolicyViolations ? (
+      {hasPolicyViolations || skipFindings.length > 0 ? (
         <PolicyViolations step={step} />
       ) : hasPolicyData && passedCount > 0 ? (
         <Banner theme="success">

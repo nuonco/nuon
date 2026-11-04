@@ -3,11 +3,11 @@ package validate
 import (
 	"fmt"
 
-	"github.com/open-policy-agent/opa/v1/ast"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
 	"github.com/nuonco/nuon/pkg/config"
+	policyopa "github.com/nuonco/nuon/pkg/policies/opa"
 )
 
 func ValidatePolicies(a *config.AppConfig) error {
@@ -15,19 +15,21 @@ func ValidatePolicies(a *config.AppConfig) error {
 }
 
 func ValidateOPAPolicy(contents string) error {
-	module, err := ast.ParseModule("policy.rego", contents)
+	_, err := policyopa.Parse(contents)
+	return err
+}
+
+func ValidateOPAPolicyForType(contents string, policyType config.AppPolicyType) error {
+	policy, err := policyopa.Parse(contents)
 	if err != nil {
 		return err
 	}
-	if module.Package.Path.String() != "data.nuon" {
-		return fmt.Errorf("OPA policy must use package nuon, got %s", module.Package.Path.String())
-	}
-	for _, rule := range module.Rules {
-		if rule.Head.Name == "deny" || rule.Head.Name == "warn" {
-			return nil
+	for _, check := range policy.Checks {
+		if check.Action == "skip_apply" && policyType != config.AppPolicyTypeTerraformModule && policyType != config.AppPolicyTypeSandbox {
+			return fmt.Errorf("check %s: skip_apply is only supported for terraform_module and sandbox policies", check.ID)
 		}
 	}
-	return fmt.Errorf("OPA policy must define at least one deny or warn rule")
+	return nil
 }
 
 func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
@@ -46,7 +48,7 @@ func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 		)
 
 		if policy.Engine == config.AppPolicyEngineOPA {
-			if err := ValidateOPAPolicy(policy.Contents); err != nil {
+			if err := ValidateOPAPolicyForType(policy.Contents, policy.Type); err != nil {
 				policyLogger.Error("invalid OPA rego policy", zap.Error(err))
 				return config.ErrConfig{
 					Description: fmt.Sprintf("policy %d (%s) was invalid rego", idx, policy.Type),

@@ -55,7 +55,7 @@ func PoliciesConfig(policies []PolicyInput, appID, appConfigID string) (*app.App
 			policyName = fmt.Sprintf("#%d", idx)
 		}
 		if policy.Engine == config.AppPolicyEngineOPA {
-			if err := validate.ValidateOPAPolicy(policy.Contents); err != nil {
+			if err := validate.ValidateOPAPolicyForType(policy.Contents, policy.Type); err != nil {
 				return nil, fmt.Errorf("policy %q is invalid: %w", policyName, err)
 			}
 		}

@@ -18,6 +18,11 @@ func HelmUpgradeWithLogStreaming(
 	resources []Resource,
 	l *zap.Logger,
 ) (*release.Release, error) {
+	if err := ValidateSchemaResources(chart, values); err != nil {
+		return nil, err
+	}
+	// Do not let Helm replace the guarded values with stored release values.
+	client.ResetValues = true
 	annotationSelectorKey := "meta.helm.sh/release-name"
 	annotationSelectorValue := chart.Metadata.Name
 	labelSelector := "app.kubernetes.io/managed-by=Helm"

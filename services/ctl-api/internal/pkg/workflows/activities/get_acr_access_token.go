@@ -51,6 +51,10 @@ type ACRAccessToken struct {
 func (a *Activities) GetACRAccessToken(ctx context.Context, req *GetACRAccessTokenRequest) (*ACRAccessToken, error) {
 	l := temporalzap.GetActivityLogger(ctx)
 
+	if err := acr.ValidateLoginServer(req.LoginServer, a.cfg.ManagementACRRegistryURL); err != nil {
+		return nil, err
+	}
+
 	cfg := &azurecredentials.Config{
 		TenantID: req.TenantID,
 		ClientID: req.ClientID,

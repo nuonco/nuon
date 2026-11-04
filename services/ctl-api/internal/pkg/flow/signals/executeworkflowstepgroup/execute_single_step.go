@@ -16,6 +16,7 @@ type StepResult struct {
 	Result directive.StepResult
 
 	ManualRetry bool
+	Cause       app.CompositeStatus
 
 	// Error is set when the step failed unexpectedly (not handled by the
 	// directive system). The caller should propagate this as a group error.
@@ -116,5 +117,5 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 		}
 	}
 
-	return StepResult{Result: result, ManualRetry: manualRetry}
+	return StepResult{Result: result, ManualRetry: manualRetry, Cause: updatedStep.Status}
 }

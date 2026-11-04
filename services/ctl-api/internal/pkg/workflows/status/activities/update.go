@@ -373,6 +373,9 @@ func hasUnappliedStep(steps []app.WorkflowStep) bool {
 		if step.Retried {
 			continue
 		}
+		if step.Status.Status == app.StatusAutoSkipped && step.Status.Metadata["check"] == "policy-skip-apply" {
+			return true
+		}
 		if unappliedStepStatuses[step.Status.Status] {
 			return true
 		}
@@ -983,8 +986,9 @@ func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployS
 
 	compositeStatus = app.NewCompositeStatus(ctx, req.Status)
 	compositeStatus.StatusHumanDescription = req.StatusDescription
-	installComponent := app.InstallComponent{
-		ID: extantInstallDeploy.InstallComponent.ID,
+	installComponent := app.InstallComponent{}
+	if extantInstallDeploy.InstallComponent != nil {
+		installComponent.ID = extantInstallDeploy.InstallComponent.ID
 	}
 
 	getInstallComponentStatus := func(ctx context.Context) (app.CompositeStatus, error) {

@@ -38,7 +38,7 @@ When customers deploy the vendor's application through Nuon, they run a [Stack](
 
 The vendor's app config defines three scoped IAM roles with different permission levels: provision (for initial setup), deprovision (for removal, automatically disabled after use), and maintenance (for ongoing updates and monitoring). Customers control these permissions directly through the Stack and can toggle them on or off at any time.
 
-For emergency access, break-glass permissions work the same way. Customers grant or revoke elevated access by updating parameters in their Stack, giving them complete control over when emergency permissions are enabled. All Runner actions are logged for complete audit visibility. This architecture ensures the vendor's software can be deployed and managed in the customers' environment without ever exposing their cloud credentials to external parties.
+When the vendor needs more access to service an install, such as during an incident, [break glass roles](/concepts/break-glass) work the same way. Each one is off by default, and customers turn it on or off with a Stack update. All Runner actions are logged for complete audit visibility. This architecture ensures the vendor's software can be deployed and managed in the customers' environment without ever exposing their cloud credentials to external parties.
 
 ### Nuon Deployment Options
 

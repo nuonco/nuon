@@ -10,21 +10,24 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	configvalidate "github.com/nuonco/nuon/pkg/config/validate"
+	policyopa "github.com/nuonco/nuon/pkg/policies/opa"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 )
 
 type EvaluateSinglePolicyRequest struct {
-	PolicyID      string `json:"policy_id" validate:"required"`
-	PolicyName    string `json:"policy_name"`
-	Contents      string `json:"contents" validate:"required"`
-	InputJSON     []byte `json:"input_json" validate:"required"`
-	InputIndex    int    `json:"input_index"`                // Index of the input document being evaluated
-	InputIdentity string `json:"input_identity" validate:""` // Human-readable input reference
+	PolicyID       string `json:"policy_id" validate:"required"`
+	PolicyName     string `json:"policy_name"`
+	Contents       string `json:"contents" validate:"required"`
+	InputJSON      []byte `json:"input_json" validate:"required"`
+	InputIndex     int    `json:"input_index"`                // Index of the input document being evaluated
+	InputIdentity  string `json:"input_identity" validate:""` // Human-readable input reference
+	AllowSkipApply bool   `json:"allow_skip_apply,omitempty"`
 }
 
 type EvaluateSinglePolicyResult struct {
-	Violations []PolicyViolation `json:"violations" temporaljson:"violations,omitempty"`
+	Violations   []PolicyViolation  `json:"violations" temporaljson:"violations,omitempty"`
+	Checks       []policyopa.Result `json:"checks,omitempty" temporaljson:"checks,omitempty"`
+	SkipFindings []PolicyViolation  `json:"skip_findings,omitempty" temporaljson:"skip_findings,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -42,10 +45,56 @@ func (a *Activities) EvaluateSinglePolicy(ctx context.Context, req *EvaluateSing
 
 	l.Info("evaluating policy")
 
-	if err := configvalidate.ValidateOPAPolicy(req.Contents); err != nil {
+	policy, err := policyopa.Parse(req.Contents)
+	if err != nil {
 		errorStage = "policy_validation"
 		l.Error("invalid OPA policy", zap.Error(err))
 		return nil, errors.Wrap(err, "invalid OPA policy")
+	}
+
+	for _, check := range policy.Checks {
+		if check.Action == "skip_apply" && !req.AllowSkipApply {
+			errorStage = "policy_validation"
+			return nil, fmt.Errorf("check %s: skip_apply is only supported for Terraform component and sandbox plans", check.ID)
+		}
+	}
+
+	if len(policy.Checks) > 0 {
+		result := &EvaluateSinglePolicyResult{Checks: policy.Evaluate(ctx, req.InputJSON, req.InputIndex, req.InputIdentity)}
+		for i, check := range result.Checks {
+			for _, finding := range check.Findings {
+				if policy.Checks[i].Action == "skip_apply" {
+					result.SkipFindings = append(result.SkipFindings, PolicyViolation{
+						PolicyID: req.PolicyID, PolicyName: req.PolicyName, CheckID: check.CheckID,
+						InputIndex: finding.InputIndex, InputIdentity: finding.InputIdentity,
+						Message: finding.Message,
+					})
+					continue
+				}
+				result.Violations = append(result.Violations, PolicyViolation{
+					PolicyID: req.PolicyID, PolicyName: req.PolicyName, CheckID: check.CheckID,
+					InputIndex: finding.InputIndex, InputIdentity: finding.InputIdentity,
+					Message: finding.Message, Severity: policy.Checks[i].Action,
+				})
+			}
+			for _, evaluationErr := range check.Errors {
+				result.Violations = append(result.Violations, PolicyViolation{
+					PolicyID: req.PolicyID, PolicyName: req.PolicyName, CheckID: check.CheckID,
+					InputIndex: evaluationErr.InputIndex, InputIdentity: evaluationErr.InputIdentity,
+					Message: fmt.Sprintf("Check %s could not be evaluated: %s", check.CheckID, evaluationErr.Message), Severity: "deny",
+				})
+				errorStage = "check_evaluation"
+			}
+			if check.Decision == "deny" || check.Decision == "error" {
+				decision = "deny"
+			} else if check.Decision == "skip_apply" && decision != "deny" {
+				decision = "skip_apply"
+			} else if check.Decision == "warn" && decision == "pass" {
+				decision = "warn"
+			}
+		}
+		l.Info("named policy checks evaluated", zap.Int("check_count", len(result.Checks)), zap.String("decision", decision))
+		return result, nil
 	}
 
 	var input any

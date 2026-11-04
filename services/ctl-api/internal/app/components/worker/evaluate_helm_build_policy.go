@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/config"
+	policyopa "github.com/nuonco/nuon/pkg/policies/opa"
 	plan "github.com/nuonco/nuon/pkg/types/approvals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
@@ -118,13 +119,29 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 	}
 
 	var allViolations []sharedactivities.PolicyViolation
+	var checkResults map[string][]policyopa.Result
 	evaluationFailed := false
-	for _, fut := range futures {
+	for i, fut := range futures {
 		var result sharedactivities.EvaluateSinglePolicyResult
 		if err := fut.Get(ctx, &result); err != nil {
+			if policyopa.UsesNamedChecks(policyItems[i].Contents) {
+				l.Error("named policy evaluation failed", zap.Error(err))
+				w.recordComponentPolicyEvaluationFailure(ctx, l, buildJobID)
+				description := truncateErrorMessage("unable to evaluate named policy checks", err)
+				w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, description)
+				w.failRunnerJob(ctx, buildJobID, description)
+				return fmt.Errorf("helm policy evaluation failed: %w", err)
+			}
 			l.Error("policy evaluation failed; continuing with warning", zap.Error(err))
 			evaluationFailed = true
 			continue
+		}
+		if len(result.Checks) > 0 {
+			if checkResults == nil {
+				checkResults = make(map[string][]policyopa.Result)
+			}
+			policyID := policyItems[i].PolicyID
+			checkResults[policyID] = append(checkResults[policyID], result.Checks...)
 		}
 		allViolations = append(allViolations, result.Violations...)
 	}
@@ -142,6 +159,10 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 				policyInputCounts[policyID] = len(payload.PolicyInput)
 			}
 			componentID := build.ComponentConfigConnection.ComponentID
+			componentApp := build.ComponentConfigConnection.Component.App
+			if componentApp == nil {
+				componentApp = &app.App{}
+			}
 			if _, err := sharedactivities.AwaitPersistPolicyReport(ctx, &sharedactivities.PersistPolicyReportRequest{
 				OrgID:             orgID,
 				AppID:             build.ComponentConfigConnection.Component.AppID,
@@ -150,10 +171,11 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 				OwnerType:         string(app.PolicyReportOwnerTypeComponentBuild),
 				RunnerJobID:       &buildJobID,
 				Violations:        allViolations,
+				CheckResults:      checkResults,
 				PolicyIDs:         policyIDs,
 				PolicyInputCounts: policyInputCounts,
-				OrgName:           build.ComponentConfigConnection.Component.App.Org.Name,
-				AppName:           build.ComponentConfigConnection.Component.App.Name,
+				OrgName:           componentApp.Org.Name,
+				AppName:           componentApp.Name,
 				ComponentName:     build.ComponentConfigConnection.Component.Name,
 			}); err != nil {
 				l.Warn("failed to persist policy report", zap.Error(err))

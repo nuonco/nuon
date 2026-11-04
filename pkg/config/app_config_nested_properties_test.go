@@ -42,9 +42,9 @@ var nestedFieldContracts = []nestedFieldContract{
 	{reflect.TypeFor[HelmRepoConfig](), "RepoURL:repo_url Chart:chart Version:version"},
 	{reflect.TypeFor[PublicRepoConfig](), "Repo:repo Directory:directory Branch:branch"},
 	{reflect.TypeFor[ConnectedRepoConfig](), "Repo:repo Directory:directory Branch:branch"},
-	{reflect.TypeFor[KustomizeConfig](), "Path:path Patches:patches EnableHelm:enable_helm LoadRestrictor:load_restrictor"},
+	{reflect.TypeFor[KustomizeConfig](), "Path:path Patches:patches EnableHelm:singleton LoadRestrictor:load_restrictor"},
 	{reflect.TypeFor[ComponentHealthConfig](), "Enabled:enabled StabilizationWindow:stabilization_window BlockDeploy:block_deploy Probes:nested RequiredChecks:required_checks"},
-	{reflect.TypeFor[ComponentHealthProbeConfig](), "Type:type Name:name URL:url Command:command"},
+	{reflect.TypeFor[ComponentHealthProbeConfig](), "Type:type Name:name URL:url Command:legacy-rejected"},
 	{reflect.TypeFor[ComponentTeardownConfig](), "Retain:retain"},
 	{reflect.TypeFor[AWSECRConfig](), "IAMRoleARN:iam_role_arn AWSRegion:region ImageURL:image_url Tag:tag UpdatePolicy:update_policy"},
 	{reflect.TypeFor[GCPGARConfig](), "GCPProjectID:gcp_project_id GCPRegion:region ImageURL:image_url Tag:tag ServiceAccountEmail:service_account_email WorkloadIdentityProvider:workload_identity_provider UpdatePolicy:update_policy"},
@@ -257,9 +257,6 @@ func nestedFixtureConfig(f nestedDiffFixture, field string) *AppConfig {
 	if f.input == "Components.4.KubernetesManifest" && field == "Manifest" {
 		c.Components[4].KubernetesManifest.Kustomize, c.Components[4].KubernetesManifest.PublicRepo = nil, nil
 		c.Components[4].KubernetesManifest.Manifest = "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: before"
-	}
-	if strings.HasSuffix(f.input, ".Health.Probes.0") && field == "Command" {
-		nestedValue(c, f.input).Set(reflect.ValueOf(ComponentHealthProbeConfig{Type: "exec", Command: []string{"echo", "ready"}}))
 	}
 	if strings.HasSuffix(f.input, ".Verification.Authorities.0") {
 		a := &e.Verification.Authorities[0]
@@ -884,6 +881,15 @@ func TestAppConfigDiff_NestedOmittedRetryBoundaries(t *testing.T) {
 }
 
 func TestAppConfigDiff_NestedConstrainedTransitions(t *testing.T) {
+	t.Run("unsupported_helm_inflation", func(t *testing.T) {
+		old, next := nestedBaseline(), nestedBaseline()
+		next.Components[4].KubernetesManifest.Kustomize.EnableHelm = true
+		nestedValidate(t, old)
+		require.ErrorContains(t, next.Components[4].Validate(), "kustomize.enable_helm")
+		for _, pair := range [][2]*AppConfig{{old, next}, {next, old}} {
+			require.True(t, nestedDiffAt(t, pair[1].Diff(pair[0]), "components/component.manifest/kustomize/enable_helm").DirectSummary().HasChanged)
+		}
+	})
 	t.Run("helm_to_job", func(t *testing.T) {
 		old, next := nestedBaseline(), nestedBaseline()
 		next.Components[0].Type, next.Components[0].HelmChart = JobComponentType, nil

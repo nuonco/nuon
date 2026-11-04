@@ -1504,6 +1504,7 @@ export type TInstallDeploymentStepSummary = {
   policy?: {
     deny_count: number
     warn_count: number
+    skipped_by_policy?: boolean
     first_warn_message?: string
   }
 }

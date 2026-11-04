@@ -18,16 +18,21 @@ export const DeploymentPolicySummary = ({
     (count, step) => count + (step.policy?.warn_count ?? 0),
     0
   )
-  if (!denyCount && !warnCount) return null
-  if (history || denyCount > 0) {
+  const skipCount = steps.filter(
+    (step) => step.policy?.skipped_by_policy
+  ).length
+  if (!denyCount && !warnCount && !skipCount) return null
+  if (history || denyCount > 0 || skipCount > 0) {
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <Text variant="subtext" theme={denyCount ? 'error' : 'warn'} flex>
-          <Icon variant={denyCount ? 'ShieldIcon' : 'WarningIcon'} />
-          {denyCount
-            ? 'Blocked by policy'
-            : `${warnCount} policy warning${warnCount === 1 ? '' : 's'}`}
-        </Text>
+        {denyCount > 0 || warnCount > 0 ? (
+          <Text variant="subtext" theme={denyCount ? 'error' : 'warn'} flex>
+            <Icon variant={denyCount ? 'ShieldIcon' : 'WarningIcon'} />
+            {denyCount
+              ? 'Blocked by policy'
+              : `${warnCount} policy warning${warnCount === 1 ? '' : 's'}`}
+          </Text>
+        ) : null}
         {denyCount > 0 ? (
           <>
             <Text variant="subtext" theme="error">
@@ -39,6 +44,13 @@ export const DeploymentPolicySummary = ({
               </Text>
             ) : null}
           </>
+        ) : null}
+        {skipCount > 0 ? (
+          <Text variant="subtext" theme="neutral" flex>
+            <Icon variant="InfoIcon" />
+            {skipCount} {skipCount === 1 ? 'apply' : 'applies'} skipped by
+            policy
+          </Text>
         ) : null}
       </div>
     )

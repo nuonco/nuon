@@ -155,7 +155,10 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 		return nil, errors.Wrap(res.Error, "unable to get install action workflow")
 	}
 
-	installState, err := s.installHelpers.GetInstallState(ctx, installID, false, false)
+	// Display surface: the break-glass role ARN can interpolate install inputs,
+	// so render against redacted state to keep sensitive input values out of
+	// the response.
+	installState, err := s.installHelpers.GetInstallState(ctx, installID, true, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install state: %w", err)
 	}

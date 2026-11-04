@@ -28,11 +28,12 @@ const TITLE_TRIGGER_CLASS = cn(
   LINK_COLOR_CLASSES
 )
 
-const ViolationCounts = ({ report }: { report?: TPolicyReport }) => {
+const FindingCounts = ({ report }: { report?: TPolicyReport }) => {
   const denyCount = report?.deny_count ?? 0
   const warnCount = report?.warn_count ?? 0
+  const skipCount = Number(report?.status?.metadata?.skip_count ?? 0)
 
-  if (!denyCount && !warnCount) {
+  if (!denyCount && !warnCount && !skipCount) {
     return (
       <Text variant="subtext" theme="neutral">
         None
@@ -50,6 +51,11 @@ const ViolationCounts = ({ report }: { report?: TPolicyReport }) => {
       {warnCount ? (
         <Badge size="sm" theme="warn">
           {warnCount} warning{warnCount === 1 ? '' : 's'}
+        </Badge>
+      ) : null}
+      {skipCount ? (
+        <Badge size="sm" theme="neutral">
+          {skipCount} skip finding{skipCount === 1 ? '' : 's'}
         </Badge>
       ) : null}
     </span>
@@ -167,15 +173,24 @@ export const InstallPolicyReports = ({
                     Latest evaluation
                   </Text>
                   <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
-                    <LabeledStatus
-                      label="Status"
-                      loading={isLoading}
-                      statusProps={{ status: report?.status?.status }}
-                      tooltipProps={{
-                        tipContent: report?.status?.status_human_description,
-                        position: 'bottom',
-                      }}
-                    />
+                    {report?.status?.metadata?.resolved_action ===
+                    'skip_apply' ? (
+                      <LabeledValue label="Status" loading={isLoading}>
+                        <Badge theme="neutral" size="sm">
+                          Skip apply
+                        </Badge>
+                      </LabeledValue>
+                    ) : (
+                      <LabeledStatus
+                        label="Status"
+                        loading={isLoading}
+                        statusProps={{ status: report?.status?.status }}
+                        tooltipProps={{
+                          tipContent: report?.status?.status_human_description,
+                          position: 'bottom',
+                        }}
+                      />
+                    )}
                     <LabeledValue label="Evaluated" loading={isLoading}>
                       <Time
                         variant="subtext"
@@ -183,8 +198,8 @@ export const InstallPolicyReports = ({
                         format="relative"
                       />
                     </LabeledValue>
-                    <LabeledValue label="Violations" loading={isLoading}>
-                      <ViolationCounts report={report} />
+                    <LabeledValue label="Findings" loading={isLoading}>
+                      <FindingCounts report={report} />
                     </LabeledValue>
                     <LabeledValue label="Evaluations" loading={isLoading}>
                       <Text variant="subtext" family="mono">

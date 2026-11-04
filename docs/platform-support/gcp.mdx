@@ -42,49 +42,38 @@ helm_driver = "configmap"
 
 ## Installation
 
-When you create a new install, Nuon will generate a Terraform install stack your customer can use to install the runner and base infrastructure. The customer applies it locally with the Google Cloud SDK and Terraform.
+When you create an install, Nuon generates a Terraform install stack. Your customer applies it in their GCP project to
+create the runner and base infrastructure. They can run Terraform themselves or through Google Cloud's
+[Infrastructure Manager](https://cloud.google.com/infrastructure-manager/docs).
 
 ### Create an Install
 
-Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you want to install.
+In the Nuon dashboard, open the Installs tab, click **Create Install**, and select the app you want to install.
 
-This will kick off a provision workflow. The stack will be generated and pre-configured `inputs.auto.tfvars` and `secrets.auto.tfvars` files will be provided for it. The tfvars files are templated with the install ID, runner ID, API token, and IAM permissions, and can be shared with your customer.
+This starts a provision workflow. Its **Await install stack** step shows how to apply the stack, with the **TF Module**
+tab selected by default.
 
 ### Install the Stack
 
-Your customer must be authenticated to the GCP project they want to install your app in (typically via `gcloud auth application-default login`) and have permissions to create the IAM bindings, service accounts, and resources defined in the stack module.
+The recommended path is the published [`nuonco/stack/gcp`](https://registry.terraform.io/modules/nuonco/stack/gcp)
+module. Your customer adds the snippet from the **TF Module** tab to their own Terraform project, sets their Nuon
+credentials and secret values as environment variables, and runs:
 
-The dashboard provides four steps the customer can follow:
+```bash
+terraform init && terraform apply
+```
 
-1. **Clone the install stack module**
+On the first apply, the snippet passes `project_id` and `region` to the module, because the control plane hasn't
+recorded the install's project yet. Your customer can drop them once the install is provisioned.
 
-   ```bash
-   git clone https://github.com/nuonco/install-stacks.git
-   cd install-stacks/gcp
-   ```
+See [Provision Stacks with a Terraform Module](/guides/provision-stacks-with-terraform-module) for every step,
+including credentials and secrets.
 
-2. **Configure remote state (recommended)** — create a `backend.tf` pointing at a GCS bucket so the install state is durable.
-
-   ```hcl
-   terraform {
-     backend "gcs" {
-       bucket = "<your-state-bucket>"
-       prefix = "nuon/<install-id>"
-     }
-   }
-   ```
-
-3. **Save the install configuration** — copy or download the `inputs.auto.tfvars` and `secrets.auto.tfvars` content shown in the dashboard and save both files next to the module.
-
-4. **Apply with Terraform**
-
-   ```bash
-   terraform init && terraform apply
-   ```
-
-   Both `.auto.tfvars` files are loaded automatically, so no `-var-file` flag is needed.
-
-The customer is prompted for `gcp_project_id` and `gcp_region` at apply time unless those are pre-populated in the install config (`gcp_account.project_id` / `gcp_account.region`), in which case they're injected into the tfvars and applied automatically.
+<Note>
+  The **Terraform** tab still offers the legacy flow: clone `install-stacks/gcp` and apply generated
+  `inputs.auto.tfvars` and `secrets.auto.tfvars` files. See
+  [Provision Stacks with Terraform](/guides/provision-stacks-with-terraform).
+</Note>
 
 ## Try it with a sample app
 
@@ -107,5 +96,9 @@ To try it:
 If you make changes to the install stack template, the install must be reprovisioned to update the stack.
 
 1. From the install's Overview page, click on "Reprovision install" in the "Manage" drop-down menu. This will trigger a reprovision workflow.
-1. A new Terraform stack version and updated `inputs.auto.tfvars` and `secrets.auto.tfvars` files will be generated.
-1. Send the updated files to your customer to re-apply with `terraform apply`.
+1. A new stack version is generated.
+1. Your customer runs `terraform apply` again. With the module, the new version is picked up on the next plan. With the
+   legacy flow, send them the updated `inputs.auto.tfvars` and `secrets.auto.tfvars` files first.
+
+See [Updating the stack](/guides/provision-stacks-with-terraform-module#updating-the-stack) for input, secret, and role
+changes.

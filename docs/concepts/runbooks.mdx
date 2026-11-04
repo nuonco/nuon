@@ -1,0 +1,20 @@
+---
+title: "Runbooks"
+description: "Named, multi-step procedures, such as a database migration, that you run against one install or every install."
+keywords: ["runbooks", "runbook", "migrations", "database migration", "fleet migration", "customer migration", "post_deploy_runbooks", "operational procedures", "version upgrade", "recovery", "day 2 operations"]
+---
+
+A runbook turns a multi-step procedure, such as a version upgrade or a database migration, into one file you run the
+same way on every install.
+
+Each step deploys or tears down a component, runs an [action](/concepts/actions), or reprovisions the sandbox. Steps
+run in order, and every run is a [workflow](/concepts/workflows) in the install's history.
+
+## Running a runbook
+
+- **On one install.** Run it from the install's **Runbooks** tab in the dashboard, or with the CLI.
+- **On every install.** List it in the app branch's `post_deploy_runbooks`. It then runs on each install after that
+  install's deploy succeeds.
+
+Runbooks live in `runbooks/` in your App Template and ship with it through your
+[app branch](/concepts/app-branches). See [Configure runbooks](/guides/runbooks) for the file format.

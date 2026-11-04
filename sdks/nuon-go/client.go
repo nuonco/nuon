@@ -220,7 +220,6 @@ type Client interface {
 	DeleteOIDCTrustPolicy(ctx context.Context, policyID string) error
 
 	// vcs connections
-	CreateVCSConnection(ctx context.Context, req *models.ServiceCreateConnectionRequest) (*models.AppVCSConnection, error)
 	CreateVCSConnectionCallback(ctx context.Context, req *models.ServiceCreateConnectionCallbackRequest) (*models.AppVCSConnection, error)
 	GetVCSConnections(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppVCSConnection, bool, error)
 	GetVCSConnection(ctx context.Context, connID string) (*models.AppVCSConnection, error)

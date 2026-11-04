@@ -111,3 +111,125 @@ func (s *FindBaseAppBranchRunTestSuite) TestPreviewUsesLatestRunOnTargetBranch()
 	s.Require().NoError(err)
 	s.Equal(mainRun.ID, baseRun.ID)
 }
+
+func (s *FindBaseAppBranchRunTestSuite) TestPrefersRunAppliedToAnInstall() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+	s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
+	install := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+
+	branch := &app.AppBranch{AppID: testApp.ID, Name: "main"}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branch).Error)
+	branchConfig := &app.AppBranchConfig{AppBranchID: branch.ID}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branchConfig).Error)
+
+	builtRun := func(status, appConfigID string) *app.AppBranchRun {
+		run := &app.AppBranchRun{
+			AppBranchID:       branch.ID,
+			AppBranchConfigID: branchConfig.ID,
+			RunType:           app.AppBranchRunTypeGit,
+			Status:            status,
+			AppConfigID:       appConfigID,
+			Labeled: labels.Labeled{Labels: labels.Labels{
+				app.AppBranchRunLabelBuildsCompleted: "true",
+			}},
+		}
+		s.Require().NoError(s.deps.DB.WithContext(ctx).Create(run).Error)
+		return run
+	}
+
+	applied := builtRun("success", "appapplied0000000000000000")
+	builtRun("failed", "appdenied00000000000000000")
+	builtRun("running", "appawaiting000000000000000")
+
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Model(&app.Install{}).
+		Where(app.Install{ID: install.ID}).
+		Update("app_config_ref", app.AppConfigRef{AppliedConfigID: applied.AppConfigID}).Error)
+
+	baseRun, err := s.deps.Helpers.FindBaseAppBranchRun(ctx, branch.ID)
+	s.Require().NoError(err)
+	s.Equal(applied.ID, baseRun.ID)
+}
+
+func (s *FindBaseAppBranchRunTestSuite) TestFallsBackToLatestBuiltRunWhenNothingApplied() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+
+	branch := &app.AppBranch{AppID: testApp.ID, Name: "main"}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branch).Error)
+	branchConfig := &app.AppBranchConfig{AppBranchID: branch.ID}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branchConfig).Error)
+
+	run := &app.AppBranchRun{
+		AppBranchID:       branch.ID,
+		AppBranchConfigID: branchConfig.ID,
+		RunType:           app.AppBranchRunTypeGit,
+		Status:            "running",
+		AppConfigID:       "appawaiting000000000000000",
+		Labeled: labels.Labeled{Labels: labels.Labels{
+			app.AppBranchRunLabelBuildsCompleted: "true",
+		}},
+	}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(run).Error)
+
+	baseRun, err := s.deps.Helpers.FindBaseAppBranchRun(ctx, branch.ID)
+	s.Require().NoError(err)
+	s.Equal(run.ID, baseRun.ID)
+}
+
+func (s *FindBaseAppBranchRunTestSuite) TestComparisonBaselineIsFrozenAtRunCreation() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+	s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
+	install := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+
+	branch := &app.AppBranch{AppID: testApp.ID, Name: "main"}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branch).Error)
+	branchConfig := &app.AppBranchConfig{AppBranchID: branch.ID}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branchConfig).Error)
+
+	runA, err := s.deps.Helpers.CreateAppBranchRun(ctx, &appshelpers.CreateAppBranchRunRequest{
+		AppBranchID:       branch.ID,
+		AppBranchConfigID: branchConfig.ID,
+		AppConfigID:       "appruna00000000000000000000",
+		RunType:           app.AppBranchRunTypeGit,
+	})
+	s.Require().NoError(err)
+	s.Require().NotNil(runA.Comparison)
+	s.Nil(runA.Comparison.BaseRunID, "run A has no baseline: nothing applied yet")
+
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Model(&app.AppBranchRun{}).
+		Where(app.AppBranchRun{ID: runA.ID}).
+		Update("labels", labels.Labels{
+			app.AppBranchRunLabelBuildsCompleted: "true",
+		}).Error)
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Model(&app.Install{}).
+		Where(app.Install{ID: install.ID}).
+		Update("app_config_ref", app.AppConfigRef{AppliedConfigID: runA.AppConfigID}).Error)
+
+	runB, err := s.deps.Helpers.CreateAppBranchRun(ctx, &appshelpers.CreateAppBranchRunRequest{
+		AppBranchID:       branch.ID,
+		AppBranchConfigID: branchConfig.ID,
+		AppConfigID:       "apprunb00000000000000000000",
+		RunType:           app.AppBranchRunTypeGit,
+	})
+	s.Require().NoError(err)
+	s.Require().NotNil(runB.Comparison)
+	s.Require().NotNil(runB.Comparison.BaseRunID, "run B should pick up run A now that it is applied")
+	s.Equal(runA.ID, *runB.Comparison.BaseRunID)
+
+	var reloadedComparisonA app.AppBranchRunComparison
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.AppBranchRunComparison{HeadRunID: runA.ID}).
+		First(&reloadedComparisonA).Error)
+	s.Nil(reloadedComparisonA.BaseRunID, "run A's own comparison is frozen at creation and never backfilled")
+}

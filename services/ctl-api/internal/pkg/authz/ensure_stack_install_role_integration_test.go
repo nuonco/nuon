@@ -20,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -133,4 +134,108 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureUpgradesReadToAll() {
 	require.NoError(t, set.Add(roles[0].Policies[0].Permissions))
 	require.NoError(t, set.CanPerform(permissions.StackObject(org.ID, installID), permissions.PermissionCreate))
 	require.Error(t, set.CanPerform(org.ID, permissions.PermissionRead), "converging must not widen to the org")
+}
+
+func (s *EnsureStackInstallRoleTestSuite) boundStackAccount() (orgID, installID, accountID string) {
+	t := s.T()
+	ctx := context.Background()
+	ctx, _ = s.deps.Seeder.EnsureAccount(ctx, t)
+	ctx, org := s.deps.Seeder.EnsureOrg(ctx, t)
+	a := s.deps.Seeder.CreateApp(ctx, t)
+	s.deps.Seeder.CreateAppConfig(ctx, t, a.ID)
+	install := s.deps.Seeder.CreateInstall(ctx, t, a)
+	stack := install.InstallStack
+
+	acct := s.deps.Seeder.CreateServiceAccount(ctx, t, stack.ID)
+	require.NoError(t, s.deps.DB.Create(&app.ManagedServiceAccount{
+		AccountID:   acct.ID,
+		CreatedByID: acct.ID,
+		OrgID:       org.ID,
+		OwnerType:   plugins.TableName(s.deps.DB, app.InstallStack{}),
+		OwnerID:     stack.ID,
+		Purpose:     app.ManagedServiceAccountPurposeStack,
+		InstanceKey: "default",
+	}).Error)
+
+	return org.ID, install.ID, acct.ID
+}
+
+func (s *EnsureStackInstallRoleTestSuite) requireStackAPI(accountID string) app.Role {
+	roles := s.rolesFor(accountID)
+	require.Len(s.T(), roles, 1)
+	api, enforced, err := authz.APIFromRole(&roles[0])
+	require.NoError(s.T(), err)
+	require.True(s.T(), enforced)
+	require.Equal(s.T(), permissions.APIStack, api)
+	return roles[0]
+}
+
+func (s *EnsureStackInstallRoleTestSuite) TestEnsureKeepsAPIForBoundAccount() {
+	t := s.T()
+	ctx := context.Background()
+	orgID, installID, accountID := s.boundStackAccount()
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
+	first := s.requireStackAPI(accountID)
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
+	second := s.requireStackAPI(accountID)
+	assert.Equal(t, first.ID, second.ID)
+
+	set := permissions.Set(permissions.NewSet())
+	require.NoError(t, set.Add(second.Policies[0].Permissions))
+	require.NoError(t, set.CanPerform(permissions.StackObject(orgID, installID), permissions.PermissionCreate))
+	require.Error(t, set.CanPerform(orgID, permissions.PermissionRead))
+}
+
+func (s *EnsureStackInstallRoleTestSuite) TestEnsureRestoresStrippedAPIForBoundAccount() {
+	t := s.T()
+	ctx := context.Background()
+	orgID, installID, accountID := s.boundStackAccount()
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
+	role := s.requireStackAPI(accountID)
+	require.NoError(t, s.deps.DB.
+		Model(&app.Policy{}).
+		Where("id = ?", role.Policies[0].ID).
+		Update("permissions", pgtype.Hstore(map[string]*string{
+			permissions.StackObject(orgID, installID): permissions.PermissionAll.ToStrPtr(),
+		})).Error)
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
+	s.requireStackAPI(accountID)
+}
+
+func (s *EnsureStackInstallRoleTestSuite) TestEnsureLeavesV1BoundRoleUnscoped() {
+	t := s.T()
+	ctx := context.Background()
+	orgID, installID, accountID := s.boundStackAccount()
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
+	role := s.requireStackAPI(accountID)
+	require.NoError(t, s.deps.DB.Model(&app.Role{}).Where("id = ?", role.ID).Update("version", app.RoleVersionV1).Error)
+	require.NoError(t, s.deps.DB.
+		Model(&app.Policy{}).
+		Where("id = ?", role.Policies[0].ID).
+		Update("permissions", pgtype.Hstore(map[string]*string{
+			permissions.StackObject(orgID, installID): permissions.PermissionAll.ToStrPtr(),
+		})).Error)
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
+
+	roles := s.rolesFor(accountID)
+	require.Len(t, roles, 1)
+	assert.Equal(t, role.ID, roles[0].ID)
+	assert.Equal(t, app.RoleVersionV1, roles[0].Version)
+	require.Len(t, roles[0].Policies, 1)
+	assert.NotContains(t, roles[0].Policies[0].Permissions, permissions.APIPermissionKey)
+
+	_, enforced, err := authz.APIFromRole(&roles[0])
+	require.NoError(t, err)
+	assert.False(t, enforced)
+
+	set := permissions.Set(permissions.NewSet())
+	require.NoError(t, set.Add(roles[0].Policies[0].Permissions))
+	require.NoError(t, set.CanPerform(permissions.StackObject(orgID, installID), permissions.PermissionCreate))
+	require.Error(t, set.CanPerform(orgID, permissions.PermissionRead))
 }

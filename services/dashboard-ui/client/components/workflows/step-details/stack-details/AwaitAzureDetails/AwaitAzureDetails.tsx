@@ -138,6 +138,10 @@ export const AwaitAzureDetails = ({
     )
   }
 
+  const runnerAuthAppID = stack?.azure_runner_auth_app_id
+  const runnerAuthConsentCmd = runnerAuthAppID
+    ? `az ad sp create --id ${runnerAuthAppID}`
+    : ''
   const vaultName = installId.slice(0, 24)
   const customerSecrets = secrets?.filter((s) => !s.auto_generate)
   const hasCustomerSecrets = (customerSecrets?.length ?? 0) > 0
@@ -454,21 +458,45 @@ export const AwaitAzureDetails = ({
   )
 
   return (
-    <Tabs
-      // The published module is the recommended path, so it opens first.
-      initActiveTab="tfmodule"
-      tabLabels={{ tfmodule: 'TF Module', arm: 'ARM Template' }}
-      tabs={{
-        tfmodule: (
-          <AzureTFModuleTab
-            orgId={orgId}
-            installId={installId}
-            azureSubscriptionId={azureSubscriptionId}
-          />
-        ),
-        arm: armFlow,
-      }}
-    />
+    <div className="flex flex-col gap-6">
+      {runnerAuthAppID && (
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Allow this tenant to issue runner tokens
+          </Text>
+          <Text variant="subtext">
+            Run this once in the Entra tenant that will host the runner, before
+            deploying the stack. Skip it when that tenant already has a service
+            principal for this app. This grants no access to the subscription.
+          </Text>
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Create the service principal</Text>
+              <ClickToCopyButton
+                className="w-fit self-end"
+                textToCopy={runnerAuthConsentCmd}
+              />
+            </span>
+            <Code>{runnerAuthConsentCmd}</Code>
+          </Card>
+        </div>
+      )}
+      <Tabs
+        // The published module is the recommended path, so it opens first.
+        initActiveTab="tfmodule"
+        tabLabels={{ tfmodule: 'TF Module', arm: 'ARM Template' }}
+        tabs={{
+          tfmodule: (
+            <AzureTFModuleTab
+              orgId={orgId}
+              installId={installId}
+              azureSubscriptionId={azureSubscriptionId}
+            />
+          ),
+          arm: armFlow,
+        }}
+      />
+    </div>
   )
 }
 

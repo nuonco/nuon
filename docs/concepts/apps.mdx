@@ -1,50 +1,35 @@
 ---
 title: "App Templates"
-description: "Define your app and all its dependencies so they install easily in any customer environment."
+description: "Your existing application, mapped to Nuon so it can install in any customer's environment."
 boost: 10
-keywords: ["app template", "app templates", "what is an app", "what is an app template", "apps", "app config", "app configuration", "configure an app", "application packaging", "sandbox", "components", "inputs", "secrets"]
+keywords: ["app template", "app templates", "what is an app", "what is an app template", "apps", "app config", "app configuration", "configure an app", "application packaging", "components", "inputs", "secrets"]
 ---
 
-An App Template is a series of TOML files that describe how your app is structured and what it depends on.
-Each [install](/concepts/installs) is one deployment of an App Template. Most teams keep one template per cloud or
-architecture, such as AWS and Azure.
+import { FlowSteps } from "/snippets/flow-steps.jsx";
 
-## What's in a template
+An app is your template for creating [installs](/concepts/installs) in a customer's account. You map your existing
+application, Nuon makes it deployable into any customer's
+environment.
 
-A template is a directory of TOML files in your own git repo. The [configuration reference](/config-ref) covers
-each file.
+<FlowSteps
+  horizontal
+  steps={[
+    { title: "Map your app", href: "/concepts/components" },
+    { title: "Nuon packages it" },
+    { title: "Install for customers", href: "/concepts/installs" },
+  ]}
+/>
 
-```
-my-app/
-├── metadata.toml   # name and README
-├── inputs.toml     # customer values
-├── secrets.toml    # customer credentials
-├── policies.toml   # policy checks
-├── components/     # your product
-├── actions/        # scripts
-├── runbooks/       # procedures
-│
-│   # BYOC management infra
-├── stack.toml      # install stack
-├── runner.toml     # runner settings
-└── sandbox.toml    # VPC, cluster
-```
+## What you map
 
-- **[Metadata](/config-ref/metadata)**: the template's name and README.
-- **[Inputs](/concepts/app-inputs)**: values each customer sets, such as region.
-- **[Secrets](/concepts/app-secrets)**: credentials each customer supplies.
-- **[Policies](/concepts/policies)**: checks that run before a build or deploy.
-- **[Components](/concepts/components)**: your Helm charts, Terraform modules, manifests, and images.
-- **[Actions](/concepts/actions)**: scripts you run against installs.
-- **[Runbooks](/guides/runbooks)**: multi-step procedures for installs.
+- **[Components](/concepts/components)**: the Helm charts, Terraform modules, Kubernetes manifests, and container
+  images you already use.
+- **[Inputs](/concepts/app-inputs)** and **[secrets](/concepts/app-secrets)**: what changes per customer, such as
+  region or an API key.
 
-[BYOC management infra](/concepts/nuon-infrastructure):
-
-- **[Stack](/concepts/stacks)**: what the customer applies first, such as the network and permissions.
-- **[Runner](/concepts/runners)**: settings for the runner in each customer's account.
-- **[Sandbox](/concepts/sandboxes)**: base infrastructure, such as a VPC and cluster.
+The app lives as TOML in your own git repo. The [configuration reference](/config-ref) covers every file.
 
 <Tip>
-Change your App Template any time. Push to git, and an [app branch](/concepts/app-branches) rolls the change out to
-your installs.
+Change your app any time. Push to git, and an [app branch](/concepts/app-branches) rolls the change out to your
+installs.
 </Tip>

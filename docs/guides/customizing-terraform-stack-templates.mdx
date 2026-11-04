@@ -66,7 +66,7 @@ The AWS stack lives in [`terraform-aws-stack`](https://github.com/nuonco/terrafo
 
 Attached to the instance via an instance profile. The inline policy must allow:
 
-- `sts:AssumeRole` on every operation, break-glass, and custom role the stack creates. The runner switches into these
+- `sts:AssumeRole` on every operation role and break glass role the stack creates. The runner switches into these
   roles to execute components.
 - `secretsmanager:GetSecretValue` and `secretsmanager:DescribeSecret` on the secret ARN pattern your stack uses (the
   default stack uses `<prefix>-*`). Required for components that consume secrets.
@@ -74,7 +74,7 @@ Attached to the instance via an instance profile. The inline policy must allow:
   `runner-*` log groups.
 - `ec2:DescribeTags` on `*` — the init script's tag lookups.
 
-### Operation, break-glass, and custom roles
+### Operation and break glass roles
 
 - One IAM role per `[operation_role]`, `[[break_glass_role]]`, and `[[custom_role]]` block declared in `stack.toml`.
 - Trust policy must allow `sts:AssumeRole` from:
@@ -84,7 +84,7 @@ Attached to the instance via an instance profile. The inline policy must allow:
 - Permissions on each role come from your `stack.toml` (`provision_inline_policy`,
   `provision_managed_policy_arns`, etc.). The stack's job is to translate those into IAM resources.
 - **Role names must match `each.key` from `stack.toml` verbatim.** ctl-api looks roles up by exact name, and the
-  default stack deliberately doesn't double-prefix break-glass / custom roles. If you rewrap names with a prefix you'll
+  default stack deliberately doesn't double-prefix break glass roles or your own operation roles. If you rewrap names with a prefix you'll
   hit the 64-character IAM role-name limit and break role lookups.
 
 ### Phone-home payload
@@ -170,7 +170,7 @@ The Azure stack lives in [`terraform-azure-stack`](https://github.com/nuonco/ter
 
 - A Linux virtual machine in a subnet with outbound HTTPS to the Nuon API and artifact hosts.
 - Metadata passed to cloud-init must include the runner ID and runner API URL from `stack_config`.
-- The runner identity needs the role assignments required to assume configured operation, break-glass, and custom roles.
+- The runner identity needs the role assignments required to assume configured operation roles and break glass roles.
 
 ### Phone-home payload
 

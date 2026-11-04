@@ -754,7 +754,7 @@ func (s *GetRunnerJobPlanV2TestSuite) TestGetRunnerJobPlanV2() {
 					OrgID:             s.testOrg.ID,
 					RunnerID:          s.testRunner.ID,
 					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
-					Status:            app.RunnerJobStatusQueued,
+					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
 					Type:              app.RunnerJobTypeNOOPBuild,

@@ -139,7 +139,9 @@ export function getWorkflowHref(
     const run = workflow?.app_branch_runs?.[0]
     const appId = run?.app_branch?.app_id ?? workflow.metadata?.app_id
     const branchId =
-      run?.app_branch?.id ?? workflow.metadata?.app_branch_id ?? workflow?.owner_id
+      run?.app_branch?.id ??
+      workflow.metadata?.app_branch_id ??
+      workflow?.owner_id
     if (!appId || !branchId || !workflow?.id) return ''
     return `/${orgId}/apps/${appId}/branches/${branchId}/runs/${workflow.id}`
   }
@@ -333,6 +335,33 @@ function hasStepStarted(status?: string): boolean {
   return !!status && status !== 'pending' && status !== 'not-attempted'
 }
 
+export type TBypassedSkip = {
+  skipped: TWorkflowStep
+  ranAnyway: TWorkflowStep
+}
+
+// The backend only discards the rest of a group on skip when the step's signal
+// opts into `skip-group`; otherwise the group just continues to the next idx,
+// which can mean a later step in the same attempt still ran.
+export function bypassedSkipsInGroup(
+  groupSteps: TWorkflowStep[]
+): TBypassedSkip[] {
+  const bypassed: TBypassedSkip[] = []
+  for (const skipped of groupSteps) {
+    if (skipped.status?.status !== 'user-skipped') continue
+    if (skipped.result_directive === 'skip-group') continue
+    const ranAnyway = groupSteps.find(
+      (candidate) =>
+        candidate.id !== skipped.id &&
+        candidate.group_retry_idx === skipped.group_retry_idx &&
+        (candidate.idx ?? 0) > (skipped.idx ?? 0) &&
+        hasStepStarted(candidate.status?.status)
+    )
+    if (ranAnyway) bypassed.push({ skipped, ranAnyway })
+  }
+  return bypassed
+}
+
 export type TStepButtonsCfg = {
   cancel: boolean
   approval: boolean
@@ -480,6 +509,17 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     }
   }
 
+  if (
+    status === 'auto-skipped' &&
+    step.status.metadata?.cause_check === 'policy-skip-apply'
+  ) {
+    return {
+      copy: status_human_description || 'No changes were applied by this step.',
+      theme: 'neutral',
+      title: 'Apply skipped by policy',
+    }
+  }
+
   if (status === 'not-attempted') {
     return {
       copy: `Step was not attempted ${status_human_description ? `: ${status_human_description}` : ''}`,
@@ -542,6 +582,7 @@ export interface PolicyViolation {
 export interface PolicyViolationCounts {
   denyViolations: PolicyViolation[]
   warnViolations: PolicyViolation[]
+  skipFindings: Omit<PolicyViolation, 'severity'>[]
   passedPolicyIds: string[]
   denyCount: number
   warnCount: number
@@ -556,6 +597,8 @@ export function getPolicyViolationCounts(
   const metadata = step?.status?.metadata
   const denyViolations = (metadata?.deny_violations as PolicyViolation[]) || []
   const warnViolations = (metadata?.warn_violations as PolicyViolation[]) || []
+  const skipFindings =
+    (metadata?.skip_findings as Omit<PolicyViolation, 'severity'>[]) || []
   const passedPolicyIds = (metadata?.passed_policy_ids as string[]) || []
   const denyCount = denyViolations.length
   const warnCount = warnViolations.length
@@ -563,12 +606,14 @@ export function getPolicyViolationCounts(
   const hasPolicyData =
     metadata?.deny_violations !== undefined ||
     metadata?.warn_violations !== undefined ||
+    metadata?.skip_findings !== undefined ||
     metadata?.passed_policy_ids !== undefined
   const hasViolations = denyCount > 0 || warnCount > 0
 
   return {
     denyViolations,
     warnViolations,
+    skipFindings,
     passedPolicyIds,
     denyCount,
     warnCount,

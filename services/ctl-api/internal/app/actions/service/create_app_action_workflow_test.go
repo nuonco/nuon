@@ -260,28 +260,12 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionDifferentOrg() {
 		Name: "test-action",
 	}
 
-	// Note: Current handler behavior has a security issue - findApp uses Or("id = ?", appID)
-	// without org_id check, so it finds apps from other orgs. However, createActionWorkflow
-	// uses the org context from the request, creating a mismatched action.
-	// This test documents current behavior. The action is created with the requesting org's ID
-	// even though the app belongs to a different org.
 	rr := s.makeRequest(http.MethodPost, "/v1/apps/"+otherApp.ID+"/actions", req)
 
-	if rr.Code != http.StatusCreated {
-		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-	}
-	require.Equal(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
+	assert.Contains(s.T(), rr.Body.String(), "app not found")
 
-	var response app.ActionWorkflow
-	err := json.Unmarshal(rr.Body.Bytes(), &response)
-	require.NoError(s.T(), err)
-
-	// Verify action was created with mismatched org/app relationship
-	// (this is the current buggy behavior)
-	assert.Equal(s.T(), s.testOrg.ID, response.OrgID) // Uses requesting org
-	assert.Equal(s.T(), otherApp.ID, response.AppID)  // But references app from other org
-
-	s.T().Cleanup(func() {
-		s.service.DB.Unscoped().Delete(&app.ActionWorkflow{}, "id = ?", response.ID)
-	})
+	var count int64
+	require.NoError(s.T(), s.service.DB.Model(&app.ActionWorkflow{}).Where("app_id = ?", otherApp.ID).Count(&count).Error)
+	assert.Zero(s.T(), count)
 }

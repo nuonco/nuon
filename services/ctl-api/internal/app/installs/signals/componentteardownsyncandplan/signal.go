@@ -67,6 +67,9 @@ var _ signal.SignalWithSkipNoops = (*Signal)(nil)
 var _ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 var _ signal.SignalWithOnRetry = (*Signal)(nil)
 var _ signal.SignalWithApprovalValidation = (*Signal)(nil)
+var _ signal.SignalWithSkipGroup = (*Signal)(nil)
+
+func (s *Signal) SkipGroup() bool { return true }
 
 func (s *Signal) ValidateApproval(ctx workflow.Context) error {
 	if s.ComponentID == "" || s.FlowID == "" {
@@ -262,7 +265,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Check if component type requires teardown
-	_, err = activities.AwaitGetComponentByComponentID(ctx, installDeploy.InstallComponent.ComponentID)
+	componentID := ""
+	if installDeploy.InstallComponent != nil {
+		componentID = installDeploy.InstallComponent.ComponentID
+	}
+	_, err = activities.AwaitGetComponentByComponentID(ctx, componentID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get component")
 	}

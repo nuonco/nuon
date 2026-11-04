@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/spf13/afero"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -22,6 +23,7 @@ type handler struct {
 	errRecorder *errs.Recorder
 	cfg         *runnerconfig.Config
 	ociCopy     ocicopy.Copier
+	fs          afero.Fs
 
 	// state is populated per-job and must not be shared across jobs.
 	state *handlerState
@@ -37,6 +39,7 @@ type HandlerParams struct {
 	Config      *runnerconfig.Config
 	ErrRecorder *errs.Recorder
 	OCICopy     ocicopy.Copier
+	FS          afero.Fs
 }
 
 func New(params HandlerParams) (*handler, error) {
@@ -46,6 +49,7 @@ func New(params HandlerParams) (*handler, error) {
 		cfg:         params.Config,
 		errRecorder: params.ErrRecorder,
 		ociCopy:     params.OCICopy,
+		fs:          params.FS,
 	}, nil
 }
 

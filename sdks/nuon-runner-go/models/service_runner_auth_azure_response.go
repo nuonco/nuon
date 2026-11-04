@@ -20,6 +20,9 @@ type ServiceRunnerAuthAzureResponse struct {
 	// authenticated
 	Authenticated bool `json:"authenticated,omitempty"`
 
+	// expires at
+	ExpiresAt string `json:"expires_at,omitempty"`
+
 	// principal id
 	PrincipalID string `json:"principal_id,omitempty"`
 

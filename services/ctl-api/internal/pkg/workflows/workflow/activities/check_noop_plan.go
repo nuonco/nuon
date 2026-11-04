@@ -80,16 +80,20 @@ func (a *Activities) getApprovalPlan(ctx context.Context, stepTargetID string) (
 	}
 
 	plan := ApprovalPlan{
-		RunnerJobType: runnerJob.Type,
-		PlanContents:  decompressedContentDisplay,
+		RunnerJobType:        runnerJob.Type,
+		RunnerJobID:          runnerJob.ID,
+		RunnerJobExecutionID: runnerJobExecution.ID,
+		PlanContents:         decompressedContentDisplay,
 	}
 
 	return &plan, nil
 }
 
 type ApprovalPlan struct {
-	RunnerJobType app.RunnerJobType `json:"runner_job_type" temporaljson:"runner_job_type,omitempty"`
-	PlanContents  []byte            `json:"plan_contents" temporaljson:"plan_contents,omitempty"`
+	RunnerJobType        app.RunnerJobType `json:"runner_job_type" temporaljson:"runner_job_type,omitempty"`
+	RunnerJobID          string            `json:"runner_job_id" temporaljson:"runner_job_id,omitempty"`
+	RunnerJobExecutionID string            `json:"runner_job_execution_id" temporaljson:"runner_job_execution_id,omitempty"`
+	PlanContents         []byte            `json:"plan_contents" temporaljson:"plan_contents,omitempty"`
 }
 
 func (p *ApprovalPlan) IsNoopPlan() (bool, error) {

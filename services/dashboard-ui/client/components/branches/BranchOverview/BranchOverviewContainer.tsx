@@ -11,6 +11,7 @@ import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummar
 import {
   TemplateChangesButton,
   TemplateChangesContent,
+  configChangesBaseline,
   useConfigVersionLabel,
 } from '@/components/branches/ConfigChanges'
 import { BuildPanel } from '@/components/builds/BuildPanel'
@@ -19,13 +20,11 @@ import {
   InstallDeploymentPanel,
   PendingInstallPanel,
 } from '@/components/installs/InstallDeploymentPanel'
-import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
 import { commitUrl } from './run-source'
 import type { TAPIError } from '@/types'
 import { BranchOverview } from './BranchOverview'
-import type { TFailedBuildLink } from './overview-shared'
 import {
   buildOverviewLoadingStages,
   groupCompositeError,
@@ -85,7 +84,6 @@ export const BranchOverviewContainer = () => {
   })
 
   const {
-    builds,
     buildsPending,
     metaBuilds,
     runBuilds,
@@ -98,18 +96,6 @@ export const BranchOverviewContainer = () => {
     branchRunId,
     workflowSteps,
     isRunTerminal: isTerminalRunStatus(rolloutWorkflow?.status?.status),
-  })
-  const failedBuilds: TFailedBuildLink[] = (builds ?? []).flatMap((build) => {
-    const status = build.status_v2?.status || build.status
-    if (stepStatusCategory(status) !== 'error') return []
-    if (!orgId || !appId || !build.component_id || !build.id) return []
-    return [
-      {
-        id: build.id,
-        name: build.component_name || build.component_id,
-        href: `/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`,
-      },
-    ]
   })
   const configSections = useBranchConfigSections({
     branchId,
@@ -195,6 +181,7 @@ export const BranchOverviewContainer = () => {
     author: rollout?.commit?.author ?? rollout?.author,
     createdAt: rollout?.commit?.createdAt,
     source: rollout?.source,
+    baseline: configChangesBaseline(comparison, { orgId, appId, branchId }),
     isPending: changesPending,
     isLoading: configSections.isLoading || buildsPending,
     isError: configSections.isError,
@@ -273,7 +260,6 @@ export const BranchOverviewContainer = () => {
         buildRows={buildRows}
         buildRowsLoading={buildRowsLoading}
         compositeError={failure}
-        failedBuilds={failedBuilds}
         rolloutHref={rolloutHref}
         groupHref={groupHref}
         approvals={approvals}

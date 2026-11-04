@@ -10,6 +10,7 @@ import (
 
 	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
 	"github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/azure/acr"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
@@ -118,6 +119,13 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, 
 	}
 
 	if cfg.AzureACRImageConfig != nil {
+		if err := acr.ValidateLoginServer(cfg.AzureACRImageConfig.RegistryURL, a.cfg.ManagementACRRegistryURL); err != nil {
+			return nil, err
+		}
+		if err := acr.ValidateImageHost(cfg.AzureACRImageConfig.RegistryURL, cfg.ImageURL); err != nil {
+			return nil, err
+		}
+
 		acrCfg := &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeACR,
 			Repository:   cfg.ImageURL,

@@ -101,7 +101,7 @@ func (s *service) withDeclaredChecks(
 	for _, name := range ccc.HealthRequiredChecks {
 		declared = append(declared, declaredCheck{name, customCheckProvider, "CustomCheck"})
 	}
-	for _, probe := range ccc.HealthProbes {
+	for _, probe := range ccc.HealthProbes.Runnable() {
 		declared = append(declared, declaredCheck{probe.Name, resourceProviderProbe, probeResourceKind(probe.Type)})
 	}
 
@@ -137,8 +137,6 @@ func probeResourceKind(probeType string) string {
 	switch strings.ToLower(strings.TrimSpace(probeType)) {
 	case "tcp":
 		return "TCPProbe"
-	case "exec":
-		return "ExecProbe"
 	default:
 		return "HTTPProbe"
 	}

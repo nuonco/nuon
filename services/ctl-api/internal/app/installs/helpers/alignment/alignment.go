@@ -351,7 +351,9 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 	applied := st.appliedDeploys[ic.ID]
 	if applied != nil {
 		res.AppliedBuildID = applied.ComponentBuildID
-		res.AppliedConfigID = applied.ComponentBuild.ComponentConfigConnection.AppConfigID
+		if applied.ComponentBuild != nil {
+			res.AppliedConfigID = applied.ComponentBuild.ComponentConfigConnection.AppConfigID
+		}
 		res.appliedAt = applied.AppliedAt
 	}
 	inactive := ic.Status == app.InstallComponentStatusInactive || ic.Status == app.InstallComponentStatusDeleted || ic.Status == app.InstallComponentStatusDisabled
@@ -587,6 +589,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 			target := targetByResource[icID]
 			if target != nil && target.Build != nil && target.Build.ID == d.ComponentBuildID &&
 				d.Status == app.InstallDeployStatusAutoSkipped && d.PlannedAt != nil &&
+				d.StatusV2.Metadata["policy_action"] != "skip_apply" &&
 				(applied == nil || applied.AppliedAt == nil || !d.PlannedAt.Before(*applied.AppliedAt)) {
 				cfg := &target.Build.ComponentConfigConnection
 				inputs := st.desiredInputs(cfg.AppConfigID)
@@ -646,6 +649,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, db *gorm.DB, st *in
 			ev.lastAttempts[st.sandbox.ID] = attempt
 			if st.expectedSandbox != nil && last.AppSandboxConfigID == st.expectedSandbox.ID &&
 				last.Status == app.SandboxRunAutoSkipped && last.PlannedAt != nil &&
+				last.StatusV2.Metadata["policy_action"] != "skip_apply" &&
 				(st.appliedSandbox == nil || st.appliedSandbox.AppliedAt == nil || !last.PlannedAt.Before(*st.appliedSandbox.AppliedAt)) {
 				ev.inputsAligned[st.sandbox.ID] = last.PlannedInputsDigest == installhelpers.InputsDigest(installhelpers.InputNames(st.expectedSandbox.Refs), st.desiredInputs(""))
 			}

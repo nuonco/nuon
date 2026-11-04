@@ -49,7 +49,7 @@ Use policies to enforce compliance, security baselines, or organization conventi
 
 ## Operation Roles
 
-An operation role is a specific IAM role the runner assumes for one class of work — provisioning, deploys, individual actions, or break-glass access. Each role is defined by the vendor and approved by the customer through the Stack, so the runner never holds more permissions than the task at hand requires.
+An operation role is a specific IAM role the runner assumes for one class of work: provisioning, deploys, or individual actions. For urgent elevated access, use [break glass](/concepts/break-glass) roles. Each role is defined by the vendor and approved by the customer through the Stack, so the runner never holds more permissions than the task at hand requires.
 
 Roles can be scoped per component or per action; every workflow run records which role was used.
 

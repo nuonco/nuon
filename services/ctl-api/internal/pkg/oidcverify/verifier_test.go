@@ -230,6 +230,11 @@ func TestUnverifiedIssuer(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("rejects flattened jws", func(t *testing.T) {
+		_, err := UnverifiedIssuer(`{"payload":"e30","signatures":[{"protected":"e30","signature":"e30"}]}`)
+		require.Error(t, err)
+	})
+
 	t.Run("rejects missing iss", func(t *testing.T) {
 		payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"x"}`))
 		_, err := UnverifiedIssuer("aGVhZGVy." + payload + ".c2ln")

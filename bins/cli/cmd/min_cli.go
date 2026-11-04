@@ -8,8 +8,9 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-// enforceMinCLI warns when this build is older than the control plane's
-// min_cli_version. A failed config fetch does not warn.
+// enforceMinCLI warns when this build is below the control plane's warn floor
+// and stops the command when it is below the error floor. version, help, and
+// docs print the message and continue. A failed config fetch does neither.
 func (c *cli) enforceMinCLI(cmd *cobra.Command) error {
 	if skipMinCLICheck(cmd) || c.apiClient == nil {
 		return nil
@@ -20,10 +21,23 @@ func (c *cli) enforceMinCLI(cmd *cobra.Command) error {
 		return nil
 	}
 
-	if msg := version.MinCLIWarning(cfg.MinCliVersion); msg != "" {
-		ui.PrintWarning(msg)
+	warn, block := version.Assess(cfg)
+	if warn != "" {
+		ui.PrintWarning(warn)
 	}
-	return nil
+	if block == nil {
+		return nil
+	}
+	block = &ui.CLIUserError{Msg: block.Error()}
+	if advisoryMinCLI(cmd) {
+		ui.PrintWarning(block.Error())
+		return nil
+	}
+	if agentmode.Enabled() || Output == OutputJSON {
+		_ = ui.PrintError(block)
+		c.exit(1)
+	}
+	return block
 }
 
 // returnToFang leaves the error for fang on a terminal. Agent and JSON output
@@ -49,8 +63,17 @@ func skipMinCLICheck(cmd *cobra.Command) bool {
 		return true
 	}
 	for current := cmd; current != nil; current = current.Parent() {
+		if current.Name() == "login" {
+			return true
+		}
+	}
+	return false
+}
+
+func advisoryMinCLI(cmd *cobra.Command) bool {
+	for current := cmd; current != nil; current = current.Parent() {
 		switch current.Name() {
-		case "version", "help", "docs", "login":
+		case "version", "help", "docs":
 			return true
 		}
 	}

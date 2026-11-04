@@ -7,6 +7,7 @@ import { useBranchConfigSections } from '@/components/branches/BranchRunChangesS
 import {
   ConfigChangesLoading,
   ConfigChangesViewer,
+  configChangesBaseline,
   useConfigVersionLabel,
 } from '@/components/branches/ConfigChanges'
 import { Button } from '@/components/common/Button'
@@ -139,6 +140,11 @@ const DeploymentTemplateDiff = ({
       message={commit?.message}
       author={commit?.author_name}
       createdAt={config.comparison?.head_run?.created_at}
+      baseline={configChangesBaseline(config.comparison, {
+        orgId: org?.id,
+        appId,
+        branchId,
+      })}
     />
   )
 }
@@ -207,11 +213,13 @@ export const DeploymentAlerts = () => {
         <ApprovalBanner key={step.id} step={step} />
       ))}
       {steps
-        .filter(
-          (step) =>
-            getPolicyViolationCounts(step).hasViolations &&
+        .filter((step) => {
+          const { hasViolations, skipFindings } = getPolicyViolationCounts(step)
+          return (
+            (hasViolations || skipFindings.length > 0) &&
             !failedSteps.some((failed) => failed.id === step.id)
-        )
+          )
+        })
         .map((step) => (
           <div key={step.id} className="flex shrink-0 flex-col gap-2">
             <Text variant="subtext" weight="strong">

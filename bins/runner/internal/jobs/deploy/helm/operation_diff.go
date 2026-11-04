@@ -37,7 +37,14 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	if err != nil {
 		return "", nil, "", fmt.Errorf("unable to load helm values: %w", err)
 	}
+	values, err = helm.UpgradeValues(actionCfg, prevRel, values)
+	if err != nil {
+		return "", nil, "", fmt.Errorf("unable to resolve helm upgrade values: %w", err)
+	}
 	l.Info("rendered values", zap.Any("values", values))
+	if err := helm.ValidateSchemaResources(chart, values); err != nil {
+		return "", nil, "", fmt.Errorf("unable to confine helm schemas: %w", err)
+	}
 
 	client := action.NewUpgrade(actionCfg)
 	client.DryRunStrategy = action.DryRunServer
@@ -52,7 +59,7 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Description = ""
-	client.ResetValues = false
+	client.ResetValues = true
 	client.ReuseValues = false
 	client.MaxHistory = 0
 	client.CleanupOnFail = false
@@ -114,6 +121,9 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 		return "", nil, "", fmt.Errorf("unable to load helm values: %w", err)
 	}
 	l.Info("rendered values", zap.Any("values", values))
+	if err := helm.ValidateSchemaResources(chart, values); err != nil {
+		return "", nil, "", fmt.Errorf("unable to confine helm schemas: %w", err)
+	}
 
 	client := action.NewInstall(actionCfg)
 	client.DryRunStrategy = action.DryRunServer

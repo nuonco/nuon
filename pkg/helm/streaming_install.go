@@ -18,6 +18,9 @@ func HelmInstallWithLogStreaming(
 	resources []Resource,
 	l *zap.Logger,
 ) (*release.Release, error) {
+	if err := ValidateSchemaResources(chart, values); err != nil {
+		return nil, err
+	}
 	// these are the things we use for filtering the deployments and statefulsets
 	annotationSelectorKey := "meta.helm.sh/release-name"
 	annotationSelectorValue := chart.Metadata.Name

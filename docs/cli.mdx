@@ -146,14 +146,24 @@ plane's version by default.
 
 ### Version warnings
 
-When your CLI is older than your control plane requires, the CLI prints a warning with the version to install. Commands
-still run, but some may not work as expected.
+The control plane publishes two CLI floors on `GET /v1/general/cli-config`.
 
-When you see a warning, update the CLI. On Nuon Cloud, [update to the latest release](#update-to-the-latest-release).
-On Nuon BYOC or Self-Hosted, [install your control plane's version](#install-your-control-planes-version).
+`min_cli_version_policy.error` is the oldest CLI that control plane will run. Commands other than `version`, `help`,
+`docs`, and `login` stop when your CLI is older than that floor. `login` still signs you in and prints the message.
 
-On Nuon Self-Hosted, you set the minimum allowed version using `min_cli_version` setting. Set it to your control plane's
-version, or to `latest` to follow Nuon's latest release.
+`min_cli_version_policy.warn`, when set, prints a warning and the command still runs. An empty warn means the CLI does
+not warn. Nuon Cloud leaves warn empty so a routine promote does not nag. Nuon BYOC and Self-Hosted set warn when they
+want an upgrade nudge.
+
+`min_cli_version` is deprecated. It remains the warning floor for older CLIs, and is used only when
+`min_cli_version_warn` is empty. Set `min_cli_version_warn` to a version, or to `latest`, to follow Nuon's latest
+release. The control plane resolves `latest`. `min_cli_version_error` is a pinned version.
+`server_side_sync_min_cli_version` stays a separate warning on `nuon apps sync` for CLIs that predate server-side app
+config sync.
+
+When you see a warning or an error, update the CLI. On Nuon Cloud,
+[update to the latest release](#update-to-the-latest-release). On Nuon BYOC or Self-Hosted,
+[install your control plane's version](#install-your-control-planes-version).
 
 ### Using the CLI with Nuon BYOC or Self-Hosted
 

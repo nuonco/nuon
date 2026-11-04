@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  bypassedSkipsInGroup,
   getAccountDisplayName,
   getApprovalHref,
   getWorkflowBadge,
@@ -569,6 +570,25 @@ describe('workflow-utils', () => {
       expect(banner).toBeUndefined()
     })
 
+    test('attributes auto-skipped applies to policy without relabelling no-ops', () => {
+      expect(
+        getStepBanner({
+          status: {
+            status: 'auto-skipped',
+            metadata: { cause_check: 'policy-skip-apply' },
+          },
+        } as TWorkflowStep)
+      ).toMatchObject({
+        title: 'Apply skipped by policy',
+        theme: 'neutral',
+      })
+      expect(
+        getStepBanner({
+          status: { status: 'auto-skipped', metadata: { check: 'noop' } },
+        } as TWorkflowStep)
+      ).toBeUndefined()
+    })
+
     test('should return undefined for step without status', () => {
       const step: TWorkflowStep = {} as TWorkflowStep
 
@@ -622,6 +642,64 @@ describe('workflow-utils', () => {
           step('c', 'pending'),
         ])
       ).toBe(false)
+    })
+  })
+
+  describe('bypassedSkipsInGroup', () => {
+    const step = (overrides: {
+      id: string
+      idx: number
+      status: string
+      group_retry_idx?: number
+      result_directive?: string
+    }) =>
+      ({
+        id: overrides.id,
+        idx: overrides.idx,
+        group_retry_idx: overrides.group_retry_idx ?? 0,
+        result_directive: overrides.result_directive,
+        status: { status: overrides.status },
+      }) as TWorkflowStep
+
+    test('flags a later step that ran after a skip without skip-group', () => {
+      const plan = step({ id: 'plan', idx: 100, status: 'user-skipped' })
+      const apply = step({ id: 'apply', idx: 101, status: 'success' })
+      expect(bypassedSkipsInGroup([plan, apply])).toEqual([
+        { skipped: plan, ranAnyway: apply },
+      ])
+    })
+
+    test('does not flag a skip-group skip', () => {
+      const plan = step({
+        id: 'plan',
+        idx: 100,
+        status: 'user-skipped',
+        result_directive: 'skip-group',
+      })
+      const apply = step({ id: 'apply', idx: 101, status: 'discarded' })
+      expect(bypassedSkipsInGroup([plan, apply])).toEqual([])
+    })
+
+    test('does not flag a later step that never started', () => {
+      const plan = step({ id: 'plan', idx: 100, status: 'user-skipped' })
+      const apply = step({ id: 'apply', idx: 101, status: 'pending' })
+      expect(bypassedSkipsInGroup([plan, apply])).toEqual([])
+    })
+
+    test('does not compare across retry rounds', () => {
+      const plan = step({
+        id: 'plan',
+        idx: 100,
+        group_retry_idx: 0,
+        status: 'user-skipped',
+      })
+      const retriedApply = step({
+        id: 'apply-round-2',
+        idx: 101,
+        group_retry_idx: 1,
+        status: 'success',
+      })
+      expect(bypassedSkipsInGroup([plan, retriedApply])).toEqual([])
     })
   })
 

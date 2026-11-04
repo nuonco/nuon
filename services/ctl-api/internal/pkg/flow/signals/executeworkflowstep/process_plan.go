@@ -167,9 +167,8 @@ func (s *Signal) approvalResponseChecks(ctx workflow.Context) []directive.Approv
 func (s *Signal) applyCheckResult(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, result directive.CheckResult) error {
 	meta := result.Reason.Metadata()
 	meta[string(directive.MetadataKey)] = string(result.Directive)
-
-	if err := setResultDirective(ctx, step.ID, result.Directive); err != nil {
-		return errors.Wrap(err, "unable to set result directive from check")
+	if result.SiblingStatus != "" {
+		meta["sibling_status"] = string(result.SiblingStatus)
 	}
 
 	stepStatus := result.Status
@@ -177,7 +176,7 @@ func (s *Signal) applyCheckResult(ctx workflow.Context, step *app.WorkflowStep, 
 		stepStatus = app.StatusError
 	}
 
-	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+	statusErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 stepStatus,
@@ -185,6 +184,13 @@ func (s *Signal) applyCheckResult(ctx workflow.Context, step *app.WorkflowStep, 
 			Metadata:               meta,
 		},
 	})
+	if statusErr != nil && result.SiblingStatus != "" {
+		return errors.Wrap(statusErr, "unable to record check result")
+	}
+
+	if err := setResultDirective(ctx, step.ID, result.Directive); err != nil {
+		return errors.Wrap(err, "unable to set result directive from check")
+	}
 
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,

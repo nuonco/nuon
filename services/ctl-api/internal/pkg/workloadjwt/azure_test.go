@@ -21,14 +21,15 @@ func uamiMIRID(sub, name string) string {
 }
 
 func TestAzureIssuer_RejectsNonGUIDTenant(t *testing.T) {
-	// A tenant is interpolated into the issuer URL, so anything but a GUID is refused
-	// before it can reshape the URL.
 	for _, tenant := range []string{
 		"",
 		"not-a-guid",
 		"../../evil.com",
 		"11111111-2222-3333-4444-555555555555/../..",
 		"11111111-2222-3333-4444-555555555555@evil.com",
+		"11111111-2222-3333-4444-555555555555?appid=00000000-0000-0000-0000-000000000001",
+		"11111111-2222-3333-4444-555555555555?appid=00000000-0000-0000-0000-000000000001#",
+		"11111111-2222-3333-4444-555555555555#",
 	} {
 		if _, err := AzureIssuer(tenant); err == nil {
 			t.Errorf("expected %q to be rejected as an issuer tenant", tenant)
@@ -139,6 +140,60 @@ func TestAzurePhoneHomeIdentityName(t *testing.T) {
 	// single point of agreement between them.
 	if got := AzurePhoneHomeIdentityName("inst123"); got != "inst123-phone-home" {
 		t.Errorf("got %q", got)
+	}
+}
+
+func TestAzureRunnerVMSSName(t *testing.T) {
+	if got := AzureRunnerVMSSName("inst123"); got != "inst123-vmss" {
+		t.Errorf("got %q", got)
+	}
+}
+
+func TestParseAzureRunnerVMSS(t *testing.T) {
+	mirID := "/subscriptions/" + testSubID +
+		"/resourcegroups/rg-1/providers/Microsoft.Compute/virtualMachineScaleSets/inst123-vmss"
+
+	vmss, err := ParseAzureRunnerVMSS(mirID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if vmss.SubscriptionID != testSubID {
+		t.Errorf("got subscription %q", vmss.SubscriptionID)
+	}
+	if vmss.InstallID != "inst123" {
+		t.Errorf("got install id %q", vmss.InstallID)
+	}
+	if vmss.ResourceGroup != "rg-1" {
+		t.Errorf("got resource group %q", vmss.ResourceGroup)
+	}
+}
+
+func TestParseAzureRunnerVMSS_CaseInsensitive(t *testing.T) {
+	mirID := "/SUBSCRIPTIONS/" + testSubID +
+		"/RESOURCEGROUPS/rg-1/PROVIDERS/microsoft.compute/VIRTUALMACHINESCALESETS/inst123-VMSS"
+
+	vmss, err := ParseAzureRunnerVMSS(mirID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if vmss.InstallID != "inst123" {
+		t.Errorf("got install id %q", vmss.InstallID)
+	}
+}
+
+func TestParseAzureRunnerVMSS_RejectsNonRunnerShapes(t *testing.T) {
+	cases := map[string]string{
+		"empty":            "",
+		"user-assigned mi": uamiMIRID(testSubID, "inst123-phone-home"),
+		"wrong suffix": "/subscriptions/" + testSubID +
+			"/resourcegroups/rg-1/providers/Microsoft.Compute/virtualMachineScaleSets/inst123",
+		"other install name used as runner_id": "/subscriptions/" + testSubID +
+			"/resourcegroups/rg-1/providers/Microsoft.Compute/virtualMachineScaleSets/run123",
+	}
+	for name, mirID := range cases {
+		if _, err := ParseAzureRunnerVMSS(mirID); err == nil {
+			t.Errorf("%s: expected rejection for %q", name, mirID)
+		}
 	}
 }
 

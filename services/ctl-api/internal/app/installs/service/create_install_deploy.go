@@ -121,7 +121,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 		installID,
 		app.WorkflowTypeManualDeploy,
 		map[string]string{
-			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.InstallComponent.Component.Name,
+			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.ComponentName,
 			"install_deploy_id":                       deploy.ID,
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
 			"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),
@@ -224,7 +224,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		installID,
 		app.WorkflowTypeManualDeploy,
 		map[string]string{
-			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.InstallComponent.Component.Name,
+			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.ComponentName,
 			"install_deploy_id":                       deploy.ID,
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
 			"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),

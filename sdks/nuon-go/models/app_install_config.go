@@ -20,6 +20,9 @@ import (
 // swagger:model app.InstallConfig
 type AppInstallConfig struct {
 
+	// action timeout
+	ActionTimeout *int64 `json:"action_timeout,omitempty"`
+
 	// approval option
 	ApprovalOption AppInstallApprovalOption `json:"approval_option,omitempty"`
 

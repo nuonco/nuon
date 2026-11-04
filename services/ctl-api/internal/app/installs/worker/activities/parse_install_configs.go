@@ -9,6 +9,9 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	configparse "github.com/nuonco/nuon/pkg/config/parse"
+	"github.com/nuonco/nuon/pkg/config/parse/get"
+	"github.com/nuonco/nuon/pkg/rootfs"
+	"github.com/nuonco/nuon/pkg/sourcefs"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -34,15 +37,40 @@ type ParseInstallConfigsResponse struct {
 // @as-wrapper
 // @by-field sourceDir
 func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, req *ParseInstallConfigsInput) (*ParseInstallConfigsResponse, error) {
-	installsPath := filepath.Join(sourceDir, req.InstallsDirectory)
+	installsPath := filepath.Clean(strings.TrimLeft(req.InstallsDirectory, "/"))
+	if !filepath.IsLocal(installsPath) || strings.Contains(req.InstallsDirectory, `\`) {
+		return nil, fmt.Errorf("invalid installs directory %q", req.InstallsDirectory)
+	}
+	root, err := rootfs.Open(sourceDir)
+	if os.IsNotExist(err) {
+		return &ParseInstallConfigsResponse{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to open source directory: %w", err)
+	}
+	defer root.Close()
+	source, err := sourcefs.From(root, root.Root())
+	if err != nil {
+		return nil, err
+	}
 
-	info, err := os.Stat(installsPath)
-	if err != nil || !info.IsDir() {
+	resolved, err := source.Resolve(installsPath)
+	if os.IsNotExist(err) {
+		return &ParseInstallConfigsResponse{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve installs directory: %w", err)
+	}
+	info, err := source.Lstat(resolved)
+	if err != nil {
+		return nil, err
+	}
+	if !info.IsDir() {
 		return &ParseInstallConfigsResponse{}, nil
 	}
 
 	if req.InstallName != "" {
-		return a.parseSingleInstallConfig(ctx, installsPath, req.InstallName)
+		return a.parseSingleInstallConfig(ctx, source, installsPath, req.InstallName)
 	}
 
 	changedSet := make(map[string]bool, len(req.ChangedFiles))
@@ -52,7 +80,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 
 	var result []ParsedInstallConfig
 
-	entries, err := os.ReadDir(installsPath)
+	entries, err := source.ReadDir(installsPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read installs directory: %w", err)
 	}
@@ -69,7 +97,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 		}
 
 		fullPath := filepath.Join(installsPath, entry.Name())
-		installCfg, err := parseInstallTOMLFile(ctx, fullPath)
+		installCfg, err := parseInstallTOMLFile(ctx, source, fullPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse %s: %w", relPath, err)
 		}
@@ -83,15 +111,21 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 	return &ParseInstallConfigsResponse{Installs: result}, nil
 }
 
-func (a *Activities) parseSingleInstallConfig(ctx context.Context, installsPath, installName string) (*ParseInstallConfigsResponse, error) {
+func (a *Activities) parseSingleInstallConfig(ctx context.Context, source *sourcefs.FS, installsPath, installName string) (*ParseInstallConfigsResponse, error) {
+	if installName == "." || installName == ".." || strings.ContainsAny(installName, `/\`) {
+		return nil, fmt.Errorf("invalid install name %q", installName)
+	}
 	fileName := installName + ".toml"
 	fullPath := filepath.Join(installsPath, fileName)
 
-	if _, err := os.Stat(fullPath); err != nil {
+	_, err := source.Resolve(fullPath)
+	if os.IsNotExist(err) {
 		return &ParseInstallConfigsResponse{}, nil
 	}
-
-	installCfg, err := parseInstallTOMLFile(ctx, fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve %s: %w", fileName, err)
+	}
+	installCfg, err := parseInstallTOMLFile(ctx, source, fullPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse %s: %w", fileName, err)
 	}
@@ -103,8 +137,8 @@ func (a *Activities) parseSingleInstallConfig(ctx context.Context, installsPath,
 	}, nil
 }
 
-func parseInstallTOMLFile(ctx context.Context, filePath string) (*config.Install, error) {
-	f, err := os.Open(filePath)
+func parseInstallTOMLFile(ctx context.Context, source *sourcefs.FS, filePath string) (*config.Install, error) {
+	f, err := source.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open %s: %w", filePath, err)
 	}
@@ -114,7 +148,10 @@ func parseInstallTOMLFile(ctx context.Context, filePath string) (*config.Install
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse install config: %w", err)
 	}
-	if err := configparse.LoadInstallUIDefinition(ctx, cfg, filepath.Dir(filePath)); err != nil {
+	if err := configparse.LoadInstallUIDefinition(ctx, cfg, &get.Options{
+		RootDir: filepath.Join(source.Root(), filepath.Dir(filePath)),
+		Source:  source,
+	}); err != nil {
 		return nil, err
 	}
 

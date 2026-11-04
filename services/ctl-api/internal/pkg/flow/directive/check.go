@@ -18,7 +18,8 @@ type CheckResult struct {
 
 	// Status overrides the step status written by applyCheckResult.
 	// When empty, defaults to StatusError for backward compatibility.
-	Status app.Status
+	Status        app.Status
+	SiblingStatus app.Status
 }
 
 // Pass returns a result with no opinion.

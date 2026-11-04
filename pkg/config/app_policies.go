@@ -2,7 +2,9 @@ package config
 
 import (
 	"bufio"
+	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -31,9 +33,9 @@ func (a PoliciesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Array of policy definitions that enforce compliance and security rules across your infrastructure")
 }
 
-func (a *PoliciesConfig) parse() error {
+func (a *PoliciesConfig) parse(cfg ParseOptions) error {
 	// Extract line numbers from the source file if available
-	policyLineNumbers := extractPolicyLineNumbers(a.SourceFile)
+	policyLineNumbers := extractPolicyLineNumbers(a.SourceFile, cfg)
 
 	for i := range a.Policies {
 		// to maintain backwards compatibility, default engine based on type
@@ -57,12 +59,21 @@ func (a *PoliciesConfig) parse() error {
 
 // extractPolicyLineNumbers reads the source file and returns the 1-indexed line numbers
 // of each [[policy]] table header. Returns nil if the file cannot be read.
-func extractPolicyLineNumbers(sourceFile string) []int {
+func extractPolicyLineNumbers(sourceFile string, cfg ParseOptions) []int {
 	if sourceFile == "" {
 		return nil
 	}
 
-	file, err := os.Open(sourceFile)
+	var file io.ReadCloser
+	var err error
+	if cfg.Source != nil {
+		if cfg.RootDir != "" && !filepath.IsAbs(sourceFile) {
+			sourceFile = filepath.Join(cfg.RootDir, sourceFile)
+		}
+		file, err = cfg.Source.Open(sourceFile)
+	} else {
+		file, err = os.Open(sourceFile)
+	}
 	if err != nil {
 		return nil
 	}

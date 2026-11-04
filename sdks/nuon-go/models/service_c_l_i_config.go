@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -29,8 +31,11 @@ type ServiceCLIConfig struct {
 	// dashboard url
 	DashboardURL string `json:"dashboard_url,omitempty"`
 
-	// min cli version
+	// Deprecated: older CLIs read this warning floor. New CLIs use min_cli_version_policy.
 	MinCliVersion string `json:"min_cli_version,omitempty"`
+
+	// min cli version policy
+	MinCliVersionPolicy *ServiceMinCLIVersionPolicy `json:"min_cli_version_policy,omitempty"`
 
 	// nuon auth enabled
 	NuonAuthEnabled bool `json:"nuon_auth_enabled,omitempty"`
@@ -44,11 +49,77 @@ type ServiceCLIConfig struct {
 
 // Validate validates this service c l i config
 func (m *ServiceCLIConfig) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateMinCliVersionPolicy(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this service c l i config based on context it is used
+func (m *ServiceCLIConfig) validateMinCliVersionPolicy(formats strfmt.Registry) error {
+	if swag.IsZero(m.MinCliVersionPolicy) { // not required
+		return nil
+	}
+
+	if m.MinCliVersionPolicy != nil {
+		if err := m.MinCliVersionPolicy.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("min_cli_version_policy")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("min_cli_version_policy")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this service c l i config based on the context it is used
 func (m *ServiceCLIConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateMinCliVersionPolicy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceCLIConfig) contextValidateMinCliVersionPolicy(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.MinCliVersionPolicy != nil {
+
+		if swag.IsZero(m.MinCliVersionPolicy) { // not required
+			return nil
+		}
+
+		if err := m.MinCliVersionPolicy.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("min_cli_version_policy")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("min_cli_version_policy")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

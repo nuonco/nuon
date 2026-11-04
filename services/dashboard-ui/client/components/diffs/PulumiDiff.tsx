@@ -16,6 +16,10 @@ import { DiffFilter } from './DiffFilter'
 import { DiffSection } from './DiffSection'
 import { DiffSections } from './DiffSections'
 import { DiffEmptyState } from './DiffEmptyState'
+import {
+  DestructiveChangeBanner,
+  destructiveChanges,
+} from './DestructiveChangeBanner'
 
 export interface IPulumiDiff
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -65,6 +69,7 @@ export const PulumiDiff = ({
 
   return (
     <Card className={cn('flex flex-col gap-3', className)} {...props}>
+      <DestructiveChangeBanner changes={destructiveChanges(group.sections)} />
       <header className="flex flex-wrap items-start justify-between gap-3 px-1">
         <Text as="h2" variant="h3">
           {group.title}

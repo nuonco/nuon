@@ -50,8 +50,13 @@ func (a *Service) Login(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("couldn't get cli config: %w", err)
 	}
-	if msg := version.MinCLIWarning(cfg.MinCliVersion); msg != "" {
-		ui.PrintWarning(msg)
+	if warn, block := version.Assess(cfg); warn != "" || block != nil {
+		if warn != "" {
+			ui.PrintWarning(warn)
+		}
+		if block != nil {
+			ui.PrintWarning(block.Error())
+		}
 	}
 
 	// Log in with Nuon Auth

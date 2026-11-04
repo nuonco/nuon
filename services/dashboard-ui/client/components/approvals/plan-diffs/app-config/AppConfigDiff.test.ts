@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { formatEmbeddedTomlContent } from './AppConfigDiff'
+import { formatEmbeddedTomlContent } from '@/lib/diffs/embedded-toml'
 
 describe('formatEmbeddedTomlContent', () => {
   test('expands embedded contents into a multiline literal', () => {

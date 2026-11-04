@@ -10,9 +10,10 @@ type CreateComponentBuildPlanRequest struct {
 	ComponentID      string
 	ComponentBuildID string
 
-	WorkflowID           string
-	CloudProvider        string
-	ManagementIAMRoleARN string
+	WorkflowID               string
+	CloudProvider            string
+	ManagementIAMRoleARN     string
+	ManagementACRRegistryURL string
 }
 
 // @temporal-gen-v2 workflow
@@ -22,8 +23,9 @@ type CreateComponentBuildPlanRequest struct {
 // @id-template {{.Req.WorkflowID}}
 func CreateComponentBuildPlan(ctx workflow.Context, req *CreateComponentBuildPlanRequest) (*plantypes.BuildPlan, error) {
 	p := Planner{
-		cloudProvider:        req.CloudProvider,
-		managementIAMRoleARN: req.ManagementIAMRoleARN,
+		cloudProvider:            req.CloudProvider,
+		managementIAMRoleARN:     req.ManagementIAMRoleARN,
+		managementACRRegistryURL: req.ManagementACRRegistryURL,
 	}
 	return p.createComponentBuildPlan(ctx, req)
 }

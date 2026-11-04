@@ -28,13 +28,15 @@ import (
 //return obj, nil
 //}
 
-func DecodeComponent(rootDir string) mapstructure.DecodeHookFunc {
+func DecodeComponent(rootDir string, opts ...ParseOption) mapstructure.DecodeHookFunc {
+	cfg := parseOptions(opts...)
+	cfg.RootDir = rootDir
 	return func(fromType reflect.Type, toType reflect.Type, from interface{}) (interface{}, error) {
-		return decodeComponent(fromType, toType, from, rootDir)
+		return decodeComponent(fromType, toType, from, cfg)
 	}
 }
 
-func decodeComponent(fromType reflect.Type, toType reflect.Type, from interface{}, rootDir string) (interface{}, error) {
+func decodeComponent(fromType reflect.Type, toType reflect.Type, from interface{}, cfg ParseOptions) (interface{}, error) {
 	if fromType != reflect.TypeOf(map[string]interface{}{}) {
 		return from, nil
 	}
@@ -45,7 +47,7 @@ func decodeComponent(fromType reflect.Type, toType reflect.Type, from interface{
 	obj := from.(map[string]interface{})
 	src, ok := obj["source"]
 	if ok {
-		srcObj, err := source.LoadSourceFrom(src.(string), rootDir)
+		srcObj, err := source.LoadSourceFrom(src.(string), cfg.RootDir, cfg.Source)
 		if err != nil {
 			return from, ErrConfig{
 				Description: "unable to load source",

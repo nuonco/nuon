@@ -203,7 +203,7 @@ export const CodeBlock = ({
         onClick={() => setWrap((current) => !current)}
       >
         <Icon
-          variant={wrap ? 'ArrowElbowDownLeftIcon' : 'ArrowsHorizontalIcon'}
+          variant={wrap ? 'ArrowsHorizontalIcon' : 'ArrowElbowDownLeftIcon'}
           size={14}
         />
       </Button>
