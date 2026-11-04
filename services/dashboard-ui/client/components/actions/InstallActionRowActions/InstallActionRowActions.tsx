@@ -9,6 +9,7 @@ import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunT
 import { ActionConfigPanel } from '@/components/installs/InstallResourceConfig'
 import { Panel } from '@/components/surfaces/Panel'
 import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
+import { usePanelDeepLinks } from '@/hooks/use-panel-deep-links'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
@@ -119,6 +120,21 @@ export const InstallActionRowActions = ({
   removed?: boolean
 }) => {
   const { addModal, addPanel } = useSurfaces()
+  const configKey = `action-config-${config?.action_workflow_id ?? name}`
+  const historyKey = `action-history-${actionId}`
+  usePanelDeepLinks((key) => {
+    if (key === configKey) {
+      return <ActionConfigPanel config={config} name={name} />
+    }
+    if (key === historyKey) {
+      return (
+        <Panel heading={`${name} history`} panelKey={key} size="half">
+          <ActionRunHistory actionId={actionId} name={name} />
+        </Panel>
+      )
+    }
+    return null
+  })
   const canRun = !!config?.triggers?.some(
     (trigger) => trigger.type === 'manual'
   )

@@ -10,13 +10,27 @@ import (
 )
 
 func APIFromRole(role *app.Role) (permissions.API, bool, error) {
-	if role == nil || role.Version < app.RoleVersionV2 {
+	if role == nil {
 		return "", false, nil
+	}
+	hasDocument := role.HasPolicyDocument()
+	if !hasDocument && role.Version < app.RoleVersionV2 {
+		return "", false, nil
+	}
+	if hasDocument && len(role.Policies) != 1 {
+		return "", true, fmt.Errorf("role %s requires one document policy", role.ID)
 	}
 	var found permissions.API
 	var ok bool
 	for _, policy := range role.Policies {
 		api, has := permissions.APIFromPermissions(policy.Permissions)
+		if policy.Document != nil {
+			document, err := policy.DecodeDocument()
+			if err != nil {
+				return "", true, err
+			}
+			api, has = document.API(), true
+		}
 		if !has {
 			continue
 		}

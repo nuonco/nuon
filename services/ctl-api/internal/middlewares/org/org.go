@@ -82,7 +82,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		// make sure account has access to org
 		perm := permissions.FromRequest(ctx)
-		err = acct.AllPermissions.CanPerform(org.ID, perm)
+		err = acct.Authority.CanPerform(org.ID, perm, false)
 		if err != nil {
 			ctx.Error(require.PermissionDeniedError(acct, org.ID, perm, require.ScopeFromPath(ctx.FullPath())))
 			ctx.Abort()
