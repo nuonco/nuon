@@ -142,7 +142,7 @@ func ClassifyOrgRole(source OrgRoleSnapshot) (OrgRoleClassification, error) {
 			}
 		}
 	}
-	bundle, err := permissions.RolePolicy(permissions.RoleName(role.RoleType))
+	bundle, err := permissions.RolePolicy(permissions.RoleName(role.RoleType), permissions.APICtl)
 	if err != nil {
 		return OrgRoleClassification{}, err
 	}

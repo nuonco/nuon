@@ -9,7 +9,12 @@ const (
 	RoleOrgAdmin  RoleName = "org_admin"
 )
 
-func RolePolicy(name RoleName) (Policy, error) {
+func RolePolicy(name RoleName, api API) (Policy, error) {
+	if api != "" {
+		if _, err := ParseAPI(string(api)); err != nil {
+			return Policy{}, err
+		}
+	}
 	values := []PermissionID{OrgRead}
 	switch name {
 	case RoleOrgReader:
@@ -22,5 +27,5 @@ func RolePolicy(name RoleName) (Policy, error) {
 	if err != nil {
 		return Policy{}, err
 	}
-	return Policy{kind: PolicyKindBundle, api: APICtl, bindingKind: KindOrg, permissions: set}, nil
+	return Policy{kind: PolicyKindBundle, api: api, bindingKind: KindOrg, permissions: set}, nil
 }

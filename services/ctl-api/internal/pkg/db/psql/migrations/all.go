@@ -293,5 +293,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "155-tokens-account-roles-indexes",
 			Fn:   m.Migration155TokensAccountRolesIndexes,
 		},
+		migrations.Migration{
+			Name: "156-convert-standard-org-roles",
+			Fn:   m.Migration156ConvertStandardOrgRoles,
+		},
 	)
 }

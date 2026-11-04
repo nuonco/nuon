@@ -109,7 +109,7 @@ func standardOrgRoles(orgID string) ([]app.Role, error) {
 		if role.RoleType != app.RoleTypeOrgAdmin && role.RoleType != app.RoleTypeOrgReadOnly {
 			continue
 		}
-		policy, err := permissions.RolePolicy(permissions.RoleName(role.RoleType))
+		policy, err := permissions.RolePolicy(permissions.RoleName(role.RoleType), permissions.APICtl)
 		if err != nil {
 			return nil, err
 		}
