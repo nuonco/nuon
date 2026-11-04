@@ -87,13 +87,6 @@ func (s *service) buildDeviceURL() string {
 	return fmt.Sprintf("https://%s/device", s.domain)
 }
 
-func (s *service) buildDeviceURLComplete(userCode string) string {
-	if userCode == "" {
-		return s.buildDeviceURL()
-	}
-	return s.buildDeviceURL() + "?user_code=" + url.QueryEscape(userCode)
-}
-
 // DeviceAuthorize handles POST /device/authorize (RFC 8628 §3.1).
 // The CLI starts the flow here and receives a device_code to poll with and a user_code to show the user.
 func (s *service) DeviceAuthorize(c *gin.Context) {
@@ -138,37 +131,32 @@ func (s *service) DeviceAuthorize(c *gin.Context) {
 
 	c.Header("Cache-Control", "no-store")
 	c.JSON(http.StatusOK, gin.H{
-		"device_code":               authz.DeviceCode,
-		"user_code":                 authz.UserCode,
-		"verification_uri":          s.buildDeviceURL(),
-		"verification_uri_complete": s.buildDeviceURLComplete(authz.UserCode),
-		"expires_in":                int(deviceAuthorizationExpiry.Seconds()),
-		"interval":                  int(deviceAuthorizationInterval.Seconds()),
+		"device_code":      authz.DeviceCode,
+		"user_code":        authz.UserCode,
+		"verification_uri": s.buildDeviceURL(),
+		"expires_in":       int(deviceAuthorizationExpiry.Seconds()),
+		"interval":         int(deviceAuthorizationInterval.Seconds()),
 	})
 }
 
-// DevicePage handles GET /device
-// Shows the form where a signed-in user enters the code from their terminal. A user_code in the
-// query string (verification_uri_complete) only pre-fills the form; the user still has to submit
-// it and then approve on the confirmation page.
+// DevicePage handles GET /device.
+// Shows the form where a signed-in user types the code from their terminal. A code in the query
+// string is ignored, because that link can be sent to someone else.
 func (s *service) DevicePage(c *gin.Context) {
-	userCode := normalizeUserCode(c.Query("user_code"))
-
-	tokenInfo, ok := s.deviceSession(c, userCode)
+	tokenInfo, ok := s.deviceSession(c)
 	if !ok {
 		return
 	}
 
 	c.HTML(http.StatusOK, "auth/device_enter.tmpl", gin.H{
-		"Email":    tokenInfo.Email,
-		"UserCode": userCode,
+		"Email": tokenInfo.Email,
 	})
 }
 
 // DeviceLookup handles POST /device
 // Finds the pending request for the entered code and asks the user to confirm it.
 func (s *service) DeviceLookup(c *gin.Context) {
-	tokenInfo, ok := s.deviceSession(c, "")
+	tokenInfo, ok := s.deviceSession(c)
 	if !ok {
 		return
 	}
@@ -192,7 +180,7 @@ func (s *service) DeviceLookup(c *gin.Context) {
 // Records the user's decision. Approval binds the request to the user's account; the CLI then
 // redeems it at /device/token.
 func (s *service) DeviceApprove(c *gin.Context) {
-	tokenInfo, ok := s.deviceSession(c, "")
+	tokenInfo, ok := s.deviceSession(c)
 	if !ok {
 		return
 	}
@@ -371,7 +359,7 @@ func (s *service) deviceTokenError(c *gin.Context, status int, code, description
 }
 
 // deviceSession returns the signed-in user, or redirects to login and returns false.
-func (s *service) deviceSession(c *gin.Context, userCode string) (*TokenInfo, bool) {
+func (s *service) deviceSession(c *gin.Context) (*TokenInfo, bool) {
 	tokenValue := s.findToken(c)
 	if tokenValue != "" {
 		tokenInfo, err := s.validateToken(tokenValue)
@@ -386,7 +374,7 @@ func (s *service) deviceSession(c *gin.Context, userCode string) (*TokenInfo, bo
 		s.respondError(c, http.StatusUnauthorized, errNotAuthenticated)
 		return nil, false
 	}
-	s.redirect302(c, s.deviceLoginURL(c.Request.Context(), userCode))
+	s.redirect302(c, s.deviceLoginURL(c.Request.Context()))
 	return nil, false
 }
 
@@ -449,8 +437,8 @@ func (s *service) renderDeviceEnterError(c *gin.Context, tokenInfo *TokenInfo, e
 // deviceLoginURL sends the user straight to the only provider when there is one, and to the
 // picker otherwise. Hardcoding the env provider here used to lock every CLI login onto it, leaving
 // users whose account lives on another provider unable to complete `nuon auth login`.
-func (s *service) deviceLoginURL(ctx context.Context, userCode string) string {
-	returnURL := url.QueryEscape(s.buildDeviceURLComplete(userCode))
+func (s *service) deviceLoginURL(ctx context.Context) string {
+	returnURL := url.QueryEscape(s.buildDeviceURL())
 
 	identityProviders, err := s.getIdentityProviders(ctx)
 	if err != nil || len(identityProviders) != 1 {

@@ -23,12 +23,11 @@ const (
 
 // NuonAuthDeviceAuthorizationResponse is the device authorization response (RFC 8628 §3.2).
 type NuonAuthDeviceAuthorizationResponse struct {
-	DeviceCode              string `json:"device_code"`
-	UserCode                string `json:"user_code"`
-	VerificationURI         string `json:"verification_uri"`
-	VerificationURIComplete string `json:"verification_uri_complete"`
-	ExpiresIn               int    `json:"expires_in"`
-	Interval                int    `json:"interval"`
+	DeviceCode      string `json:"device_code"`
+	UserCode        string `json:"user_code"`
+	VerificationURI string `json:"verification_uri"`
+	ExpiresIn       int    `json:"expires_in"`
+	Interval        int    `json:"interval"`
 }
 
 // NuonAuthTokenResponse represents the response from the device token endpoint
@@ -57,17 +56,12 @@ func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIC
 		return nil, err
 	}
 
-	openURL := authz.VerificationURIComplete
-	if openURL == "" {
-		openURL = authz.VerificationURI
-	}
-
 	fmt.Println("\nLogging in to Nuon")
-	fmt.Printf("Opening your browser. Check that it shows this code:\n\n    %s\n\n", authz.UserCode)
+	fmt.Printf("Opening your browser. Enter this code:\n\n    %s\n\n", authz.UserCode)
 	fmt.Printf("If the browser does not open, visit %s and enter the code.\n", authz.VerificationURI)
 	fmt.Println("Never approve a login code that someone else sent you.")
 
-	browser.OpenURL(openURL)
+	browser.OpenURL(authz.VerificationURI)
 
 	interval := time.Duration(authz.Interval) * time.Second
 	if interval <= 0 {

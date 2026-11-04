@@ -270,15 +270,11 @@ issues both codes:
   browser or put in a URL.
 - `user_code`: a short `XXXX-XXXX` code (consonants only) that the CLI prints. The user types it in at `/device`.
 
-The CLI opens `verification_uri_complete` (`/device?user_code=XXXX-XXXX`), which only pre-fills the entry form. The
-user still submits the code and then approves it on a confirmation page that tells them to check it against their
-terminal. If the user is not authenticated, `/device` redirects to login and returns to the same link afterwards.
-
-> [!WARNING] A pre-filled link can be phished: an attacker can start a request, send the victim the link, and collect the
-> token if the victim approves. The expiry, the confirmation copy and the requester details reduce this but don't remove
-> it. See NUO-1126. The approval page shows the requesting IP, user agent and time so the user can check the
-request is theirs before approving or denying it. Both codes expire after 10 minutes, and a request can be decided and
-redeemed only once.
+The CLI prints `user_code` and opens `verification_uri` (`/device`) with no code in the URL. The user types the code.
+A `user_code` query parameter is ignored, so a link that already contains the code cannot pre-fill the form. The user
+then approves it on a confirmation page that shows the requesting IP, user agent and time. If the user is not
+authenticated, `/device` redirects to login and returns to `/device` with no code in the URL. Both codes expire after
+10 minutes, and a request can be decided and redeemed only once.
 
 ```
  Flow
@@ -287,7 +283,7 @@ redeemed only once.
   |-- POST /device/authorize ------------------------------------------------->|
   |<-- {device_code, user_code, verification_uri, expires_in, interval} -------|
   |-- Print user_code, open link ----->|                                      |
-  |                                     |-- GET /device?user_code= (cookie) -->|
+  |                                     |-- GET /device (cookie) ------------->|
   |                                     |-- POST /device user_code=XXXX-XXXX ->|
   |                                     |<-- Requester IP / UA / time ---------|
   |                                     |-- POST /device/approve ------------->|

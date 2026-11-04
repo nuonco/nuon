@@ -215,7 +215,7 @@ func (s *DeviceAuthorizationTestSuite) TestAuthorizeIssuesCodes() {
 	assert.Regexp(s.T(), userCodePattern, resp.UserCode)
 	assert.Equal(s.T(), s.service.AuthService.buildDeviceURL(), resp.VerificationURI)
 	assert.NotContains(s.T(), resp.VerificationURI, resp.UserCode)
-	assert.Equal(s.T(), s.service.AuthService.buildDeviceURL()+"?user_code="+resp.UserCode, resp.VerificationURIComplete)
+	assert.Empty(s.T(), resp.VerificationURIComplete)
 	assert.NotContains(s.T(), resp.VerificationURIComplete, resp.DeviceCode)
 	assert.Equal(s.T(), int(deviceAuthorizationExpiry.Seconds()), resp.ExpiresIn)
 	assert.Equal(s.T(), int(deviceAuthorizationInterval.Seconds()), resp.Interval)
@@ -251,10 +251,11 @@ func (s *DeviceAuthorizationTestSuite) TestDevicePage() {
 		s.assertDeviceLoginRedirect(rr.Header().Get("Location"), s.service.AuthService.buildDeviceURL())
 	})
 
-	s.Run("without a session keeps the pre-filled code through login", func() {
+	s.Run("a user_code in the link is not carried through login", func() {
 		rr := s.do(http.MethodGet, "/device?user_code=bcdf-ghjk", nil, "")
 		require.Equal(s.T(), http.StatusFound, rr.Code)
-		s.assertDeviceLoginRedirect(rr.Header().Get("Location"), s.service.AuthService.buildDeviceURL()+"?user_code=BCDF-GHJK")
+		s.assertDeviceLoginRedirect(rr.Header().Get("Location"), s.service.AuthService.buildDeviceURL())
+		assert.NotContains(s.T(), rr.Header().Get("Location"), "user_code")
 	})
 
 	s.Run("with an expired session redirects to login", func() {
@@ -281,14 +282,15 @@ func (s *DeviceAuthorizationTestSuite) TestDevicePage() {
 		assert.Contains(s.T(), body, s.testAcc.Email)
 	})
 
-	s.Run("a code in the link only pre-fills the form", func() {
+	s.Run("a code in the link does not pre-fill the form", func() {
 		authz := s.createAuthorization(app.DeviceAuthorizationStatusPending, time.Now().Add(time.Minute), "")
 		session := s.createSession()
 
 		rr := s.do(http.MethodGet, "/device?user_code="+authz.UserCode, nil, session.Token)
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 		body := rr.Body.String()
-		assert.Contains(s.T(), body, `value="`+authz.UserCode+`"`)
+		assert.Contains(s.T(), body, `value=""`)
+		assert.NotContains(s.T(), body, authz.UserCode)
 		assert.Contains(s.T(), body, `action="/device"`)
 		assert.NotContains(s.T(), body, "/device/approve")
 		assert.Equal(s.T(), app.DeviceAuthorizationStatusPending, s.reload(authz.ID).Status)
