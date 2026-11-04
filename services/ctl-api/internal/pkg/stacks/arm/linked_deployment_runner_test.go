@@ -107,22 +107,12 @@ func TestGetRunnerLinkedDeployment_CustomTemplateReceivesVMSize(t *testing.T) {
 	}
 }
 
-func TestBuildRunnerCustomData_AuthResource(t *testing.T) {
+func TestBuildRunnerCustomData_NoAuthResource(t *testing.T) {
 	inp := minimalTemplateInput()
 
-	without := (&Templates{cfg: &internal.Config{}}).buildRunnerCustomData(inp)
-	if strings.Contains(without, "AZURE_RUNNER_AUTH_RESOURCE") {
-		t.Fatal("unset audience wrote a resource line")
-	}
-
 	const audience = "api://11111111-1111-1111-1111-111111111111"
-	with := (&Templates{cfg: &internal.Config{AzureRunnerAuthAudience: audience}}).buildRunnerCustomData(inp)
-	if !strings.Contains(with, "AZURE_RUNNER_AUTH_RESOURCE="+audience+"\n") {
-		t.Fatalf("custom data missing the audience:\n%s", with)
-	}
-
-	invalid := (&Templates{cfg: &internal.Config{AzureRunnerAuthAudience: "https://management.azure.com/"}}).buildRunnerCustomData(inp)
-	if strings.Contains(invalid, "AZURE_RUNNER_AUTH_RESOURCE") {
-		t.Fatal("ARM audience was written into the runner env")
+	got := (&Templates{cfg: &internal.Config{AzureRunnerAuthAudience: audience}}).buildRunnerCustomData(inp)
+	if strings.Contains(got, "AZURE_RUNNER_AUTH_RESOURCE") || strings.Contains(got, audience) {
+		t.Fatalf("custom data pins the auth audience, so changing it needs a reimage:\n%s", got)
 	}
 }

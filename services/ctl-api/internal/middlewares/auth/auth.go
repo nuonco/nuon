@@ -103,6 +103,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 			cctx.SetAccountGinContext(ctx, acct)
 			cctx.SetTokenTypeGinContext(ctx, acctToken.TokenType)
+			cctx.SetTokenIDGinContext(ctx, acctToken.ID)
 			m.detectCLIUsage(ctx, acct)
 			m.recordPersonalStaticToken(ctx, acct, acctToken)
 			m.logAgentRequest(ctx, acct.ID)

@@ -128,7 +128,7 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 	back, err := httpbackend.New(h.v, httpbackend.WithNuonTerraformWorkspaceConfig(&httpbackend.NuonWorkspaceConfig{
 		APIEndpoint: h.cfg.RunnerAPIURL,
 		WorkspaceID: h.state.plan.TerraformBackend.WorkspaceID,
-		Token:       h.cfg.RunnerAPIToken,
+		Token:       h.cfg.APIToken(),
 		JobID:       h.state.jobID,
 	}))
 	if err != nil {
@@ -221,7 +221,7 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 	back, err := httpbackend.New(h.v, httpbackend.WithNuonTerraformWorkspaceConfig(&httpbackend.NuonWorkspaceConfig{
 		APIEndpoint: h.cfg.RunnerAPIURL,
 		WorkspaceID: h.state.plan.TerraformBackend.WorkspaceID,
-		Token:       h.cfg.RunnerAPIToken,
+		Token:       h.cfg.APIToken(),
 		JobID:       h.state.jobID,
 	}))
 	if err != nil {
