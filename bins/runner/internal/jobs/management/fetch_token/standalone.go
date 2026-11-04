@@ -23,6 +23,7 @@ type FetchTokenResult struct {
 	ProjectID  string    `json:"project_id,omitempty"`
 	Token      string    `json:"token,omitempty"`
 	TokenPath  string    `json:"token_path,omitempty"`
+	Audience   string    `json:"audience,omitempty"`
 	ExpiresAt  time.Time `json:"-"`
 }
 
@@ -60,6 +61,7 @@ func FetchTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID 
 		AccountID: result.AccountID,
 		Token:     result.Token,
 		ExpiresAt: result.ExpiresAt,
+		Audience:  result.Audience,
 	}, nil
 }
 
