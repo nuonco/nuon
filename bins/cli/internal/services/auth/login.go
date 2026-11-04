@@ -18,12 +18,6 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-var (
-	AuthDomain   string
-	AuthClientID string
-	AuthAudience string
-)
-
 // LoginResult contains the result of an authentication flow
 type LoginResult struct {
 	AccessToken string
