@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -240,4 +243,67 @@ func TestPolicyValidationAndCompatibility(t *testing.T) {
 			require.Error(t, err)
 		})
 	}
+}
+
+func TestParseRejectsNetworkBuiltins(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+	}))
+	defer server.Close()
+
+	httpSend := fmt.Sprintf(`http.send({"method": "PUT", "url": %q}).status_code == 200`, server.URL)
+	lookup := `net.lookup_ip_addr("example.com") != set()`
+
+	tests := map[string]struct {
+		policy  string
+		builtin string
+	}{
+		"legacy deny http.send": {
+			policy:  "package nuon\ndeny contains \"blocked\" if { " + httpSend + " }",
+			builtin: "http.send",
+		},
+		"legacy warn http.send": {
+			policy:  "package nuon\nwarn contains \"blocked\" if { " + httpSend + " }",
+			builtin: "http.send",
+		},
+		"legacy helper http.send": {
+			policy:  "package nuon\nhelper if { " + httpSend + " }\ndeny := []",
+			builtin: "http.send",
+		},
+		"legacy net.lookup_ip_addr": {
+			policy:  "package nuon\ndeny contains \"blocked\" if { " + lookup + " }",
+			builtin: "net.lookup_ip_addr",
+		},
+		"named check http.send": {
+			policy:  "package nuon.checks\nimport data.nuon.lib.check\ncheck_x contains check.finding(\"blocked\") if { " + httpSend + " }",
+			builtin: "http.send",
+		},
+		"named check net.lookup_ip_addr": {
+			policy:  "package nuon.checks\nimport data.nuon.lib.check\ncheck_x contains check.finding(\"blocked\") if { " + lookup + " }",
+			builtin: "net.lookup_ip_addr",
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := policyopa.Parse(test.policy)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "undefined function "+test.builtin)
+		})
+	}
+	assert.Zero(t, requests.Load())
+}
+
+func TestCapabilitiesKeepsOtherBuiltinsAndBlocksNetwork(t *testing.T) {
+	capabilities := policyopa.Capabilities()
+	names := make(map[string]struct{}, len(capabilities.Builtins))
+	for _, builtin := range capabilities.Builtins {
+		names[builtin.Name] = struct{}{}
+	}
+	assert.NotContains(t, names, "http.send")
+	assert.NotContains(t, names, "net.lookup_ip_addr")
+	assert.Contains(t, names, "net.cidr_contains")
+	assert.Contains(t, names, "json.unmarshal")
+	assert.NotNil(t, capabilities.AllowNet)
+	assert.Empty(t, capabilities.AllowNet)
 }
