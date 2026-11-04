@@ -7,14 +7,26 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/azure"
 )
 
-const (
-	imdsTokenURL = "http://169.254.169.254/metadata/identity/oauth2/token"
-)
+var imdsTokenURL = "http://169.254.169.254/metadata/identity/oauth2/token"
+
+type IMDSError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *IMDSError) Error() string {
+	return fmt.Sprintf("Azure IMDS returned status %d: %s", e.StatusCode, e.Body)
+}
+
+func (e *IMDSError) ResourceNotInTenant() bool {
+	return strings.Contains(e.Body, "AADSTS500011")
+}
 
 type imdsTokenResponse struct {
 	AccessToken string `json:"access_token"`
@@ -50,7 +62,7 @@ func GetIMDSToken(ctx context.Context, resource string) (string, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("Azure IMDS returned status %d: %s", resp.StatusCode, string(body))
+		return "", &IMDSError{StatusCode: resp.StatusCode, Body: string(body)}
 	}
 
 	body, err := io.ReadAll(resp.Body)
