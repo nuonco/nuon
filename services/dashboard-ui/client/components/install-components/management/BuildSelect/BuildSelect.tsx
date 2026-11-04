@@ -36,6 +36,18 @@ export const buildMatchesInstallConfig = (
   return buildConfigId === installAppConfigId
 }
 
+export const buildAppBranchId = (build: TBuild) =>
+  build.app_branch_id || build.app_branch_run?.app_branch?.id
+
+export const buildMatchesInstallBranch = (
+  build: TBuild,
+  installAppBranchId?: string
+) => {
+  const branchId = buildAppBranchId(build)
+  if (!installAppBranchId || !branchId) return true
+  return branchId === installAppBranchId
+}
+
 const matchesQuery = (build: TBuild, query: string) => {
   const haystack = [
     build?.id,
@@ -80,6 +92,7 @@ interface IBuildSelect {
   hasMorePages: boolean
   error?: { error?: string } | null
   installAppConfigId?: string
+  installAppBranchId?: string
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void
 }
 
@@ -95,6 +108,7 @@ export const BuildSelect = ({
   hasMorePages,
   error,
   installAppConfigId,
+  installAppBranchId,
   onScroll,
 }: IBuildSelect) => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -102,22 +116,28 @@ export const BuildSelect = ({
   const [showOtherConfigs, setShowOtherConfigs] = useState(false)
   const deployableBuilds = useMemo(() => excludePreviewBuilds(builds), [builds])
 
-  // A build only deploys successfully when its app config matches the
-  // install's current app config; builds from other app branches/configs
-  // fail with "build is not selected by app config" on submit. Filter them
-  // out by default so the list only shows builds that will actually deploy.
-  const configMatchedBuilds = useMemo(
+  // A build deploys only when it belongs to the install's app branch and
+  // its app config matches the install. Other branches never deploy here.
+  // Other configs on this branch stay behind the toggle.
+  const branchMatchedBuilds = useMemo(
     () =>
       deployableBuilds.filter((build) =>
+        buildMatchesInstallBranch(build, installAppBranchId)
+      ),
+    [deployableBuilds, installAppBranchId]
+  )
+  const configMatchedBuilds = useMemo(
+    () =>
+      branchMatchedBuilds.filter((build) =>
         buildMatchesInstallConfig(build, installAppConfigId)
       ),
-    [deployableBuilds, installAppConfigId]
+    [branchMatchedBuilds, installAppConfigId]
   )
   const otherConfigBuildCount =
-    deployableBuilds.length - configMatchedBuilds.length
+    branchMatchedBuilds.length - configMatchedBuilds.length
   const baseBuilds =
     showOtherConfigs || otherConfigBuildCount === 0
-      ? deployableBuilds
+      ? branchMatchedBuilds
       : configMatchedBuilds
 
   useEffect(() => {
