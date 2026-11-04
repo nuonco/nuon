@@ -71,7 +71,7 @@ func (a *Activities) FetchImageMetadata(ctx context.Context, req *FetchImageMeta
 
 	if extImgCfg.GCPGARImageConfig != nil {
 		l.Debug("fetching GAR credentials for private registry")
-		auth, err := a.getGARAuth(ctx, extImgCfg.GCPGARImageConfig)
+		auth, err := a.getGARAuth(ctx, extImgCfg.GCPGARImageConfig, build.ID)
 		if err != nil {
 			l.Error("unable to get GAR authorization", zap.Error(err))
 			return nil, errors.Wrap(err, "unable to get GAR authorization")
@@ -147,8 +147,9 @@ func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageCo
 	}, nil
 }
 
-func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConfig) (*metadata.RegistryAuth, error) {
+func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConfig, componentBuildID string) (*metadata.RegistryAuth, error) {
 	tok, err := a.sharedActs.GetGARAccessToken(ctx, &sharedactivities.GetGARAccessTokenRequest{
+		ComponentBuildID:         componentBuildID,
 		ServiceAccountEmail:      garCfg.ServiceAccountEmail,
 		WorkloadIdentityProvider: garCfg.WorkloadIdentityProvider,
 	})

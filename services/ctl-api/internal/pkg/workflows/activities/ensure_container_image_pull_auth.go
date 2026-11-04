@@ -21,12 +21,16 @@ func EnsureContainerImagePullAuth(ctx workflow.Context, plan *plantypes.BuildPla
 	if plan == nil || plan.ContainerImagePullPlan == nil {
 		return nil
 	}
+	cfg := plan.ContainerImagePullPlan.RepoCfg
 	if plan.SandboxMode != nil && plan.SandboxMode.Enabled {
+		if cfg != nil {
+			cfg.ServiceAccountEmail = ""
+			cfg.WorkloadIdentityProvider = ""
+		}
 		return nil
 	}
 
-	cfg := plan.ContainerImagePullPlan.RepoCfg
-	if err := EnsureGARAuth(ctx, cfg); err != nil {
+	if err := EnsureGARAuth(ctx, plan.ComponentBuildID, cfg); err != nil {
 		return errors.Wrap(err, "unable to get GAR access token")
 	}
 	if err := EnsureACRAuth(ctx, cfg); err != nil {

@@ -134,7 +134,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 			// artifact has to travel with its own credentials rather than relying on
 			// the runner finding GCP application default credentials.
 			if ociSource != nil {
-				if err := sharedactivities.EnsureGARAuth(ctx, ociSource.Registry); err != nil {
+				if err := sharedactivities.EnsureGARAuth(ctx, "", ociSource.Registry); err != nil {
 					return nil, nil, errors.Wrap(err, "unable to get GAR access token for sandbox artifact")
 				}
 				if err := sharedactivities.EnsureACRAuth(ctx, ociSource.Registry); err != nil {

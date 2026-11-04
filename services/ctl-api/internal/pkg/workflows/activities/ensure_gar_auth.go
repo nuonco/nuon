@@ -17,7 +17,7 @@ import (
 //
 // Safe to call on any registry type; it is a no-op unless cfg is GAR without a
 // token already attached.
-func EnsureGARAuth(ctx workflow.Context, cfg *configs.OCIRegistryRepository) error {
+func EnsureGARAuth(ctx workflow.Context, componentBuildID string, cfg *configs.OCIRegistryRepository) error {
 	if cfg == nil || cfg.RegistryType != configs.OCIRegistryTypeGAR {
 		return nil
 	}
@@ -26,6 +26,7 @@ func EnsureGARAuth(ctx workflow.Context, cfg *configs.OCIRegistryRepository) err
 	}
 
 	token, err := AwaitGetGARAccessToken(ctx, &GetGARAccessTokenRequest{
+		ComponentBuildID:         componentBuildID,
 		ServiceAccountEmail:      cfg.ServiceAccountEmail,
 		WorkloadIdentityProvider: cfg.WorkloadIdentityProvider,
 	})

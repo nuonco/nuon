@@ -295,6 +295,11 @@ output "gar_access_sa_email" {
 
 Then set `service_account_email` in your component's `gcp_gar` block to the SA email the module emits.
 
+The control plane only impersonates a service account or workload identity provider that its operator has bound to
+your org. Each entry in the ctl-api `GCP_GAR_IMPERSONATION_ALLOWLIST` setting is `<org_id>:<principal>`, comma
+separated, where the principal is the service account email or the full provider path. Builds that name an identity
+not bound to the org fail before any token is minted, and ctl-api refuses to start if an entry is malformed. On Nuon-hosted, contact Nuon support to add the binding.
+
 `repositories` accepts multiple entries, and entries ending in `*` grant access to every repository matching that
 prefix (e.g. `repositories = ["shared-images", "team-*"]`) — including repositories created later. Requires
 `nuonco/gar-access/google` version `0.3.0` or later; older versions take a single `repository_id` string.

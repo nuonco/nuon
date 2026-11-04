@@ -46,7 +46,14 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 		return fmt.Errorf("build %s does not have external image config", req.BuildID)
 	}
 
-	srcRepo, err := a.getSourceRepository(extImgCfg, build.ComponentConfigConnection.ComponentID)
+	var component app.Component
+	if err := a.db.WithContext(ctx).Where(app.Component{
+		ID: build.ComponentConfigConnection.ComponentID,
+	}).First(&component).Error; err != nil {
+		return errors.Wrap(err, "unable to get component")
+	}
+
+	srcRepo, err := a.getSourceRepository(extImgCfg, component.ID, component.OrgID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get source repository")
 	}
@@ -76,7 +83,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 	return nil
 }
 
-func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
+func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, componentID, orgID string) (*configs.OCIRegistryRepository, error) {
 	if cfg.AWSECRImageConfig != nil {
 		assumeRole := &credentials.AssumeRoleConfig{
 			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
@@ -107,6 +114,14 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, 
 	}
 
 	if cfg.GCPGARImageConfig != nil {
+		if err := a.cfg.GARImpersonationAllowlist().Validate(
+			orgID,
+			cfg.GCPGARImageConfig.ServiceAccountEmail,
+			cfg.GCPGARImageConfig.WorkloadIdentityProvider,
+		); err != nil {
+			return nil, err
+		}
+
 		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
 		return &configs.OCIRegistryRepository{
 			RegistryType:             configs.OCIRegistryTypeGAR,

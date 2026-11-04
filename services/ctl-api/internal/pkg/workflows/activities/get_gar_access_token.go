@@ -13,6 +13,7 @@ import (
 
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // azureTokenExchangeAudience is the audience the Azure managed identity token is
@@ -21,6 +22,7 @@ import (
 const azureTokenExchangeAudience = "api://AzureADTokenExchange"
 
 type GetGARAccessTokenRequest struct {
+	ComponentBuildID         string
 	ServiceAccountEmail      string
 	WorkloadIdentityProvider string
 }
@@ -39,6 +41,10 @@ type GARAccessToken struct {
 // @max-retries 1
 func (a *Activities) GetGARAccessToken(ctx context.Context, req *GetGARAccessTokenRequest) (*GARAccessToken, error) {
 	scopes := []string{"https://www.googleapis.com/auth/cloud-platform"}
+
+	if err := a.validateGARImpersonation(ctx, req); err != nil {
+		return nil, err
+	}
 
 	if req.WorkloadIdentityProvider != "" {
 		if a.cfg.IsAzure() {
@@ -71,6 +77,43 @@ func (a *Activities) GetGARAccessToken(ctx context.Context, req *GetGARAccessTok
 		return nil, fmt.Errorf("unable to get GCP access token: %w", err)
 	}
 	return &GARAccessToken{Username: "oauth2accesstoken", Password: token.AccessToken}, nil
+}
+
+func (a *Activities) validateGARImpersonation(ctx context.Context, req *GetGARAccessTokenRequest) error {
+	if req.ServiceAccountEmail == "" && req.WorkloadIdentityProvider == "" {
+		return nil
+	}
+	if req.ComponentBuildID == "" {
+		return fmt.Errorf("gcp_gar impersonation requires a component build")
+	}
+
+	var build app.ComponentBuild
+	if err := a.db.WithContext(ctx).
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.GCPGARImageConfig").
+		Where(app.ComponentBuild{ID: req.ComponentBuildID}).
+		First(&build).Error; err != nil {
+		return fmt.Errorf("unable to resolve build %s for gcp_gar credentials: %w", req.ComponentBuildID, err)
+	}
+
+	ext := build.ComponentConfigConnection.ExternalImageComponentConfig
+	if ext == nil || ext.GCPGARImageConfig == nil ||
+		ext.GCPGARImageConfig.ServiceAccountEmail != req.ServiceAccountEmail ||
+		ext.GCPGARImageConfig.WorkloadIdentityProvider != req.WorkloadIdentityProvider {
+		return fmt.Errorf("gcp_gar identity does not match the component config for build %s", req.ComponentBuildID)
+	}
+
+	var component app.Component
+	if err := a.db.WithContext(ctx).Where(app.Component{
+		ID: build.ComponentConfigConnection.ComponentID,
+	}).First(&component).Error; err != nil {
+		return fmt.Errorf("unable to resolve component for build %s: %w", req.ComponentBuildID, err)
+	}
+
+	return a.cfg.GARImpersonationAllowlist().Validate(
+		component.OrgID,
+		req.ServiceAccountEmail,
+		req.WorkloadIdentityProvider,
+	)
 }
 
 // awsCredentialSupplier implements externalaccount.AwsSecurityCredentialsSupplier

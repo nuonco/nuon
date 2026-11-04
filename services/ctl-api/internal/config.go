@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/services/config"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/garimpersonation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/orgfeatures"
 )
 
@@ -187,6 +188,7 @@ func init() {
 	config.RegisterDefault("slack_auto_link_org_label_value", "")
 
 	config.RegisterDefault("internal_email_domains", []string{})
+	config.RegisterDefault("gcp_gar_impersonation_allowlist", []string{})
 
 	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
 
@@ -527,7 +529,8 @@ type Config struct {
 	PhoneHomeAuthRequired bool   `config:"phone_home_auth_required"`
 
 	// GCP management (not required for AWS)
-	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
+	ManagementGARRepositoryURL   string   `config:"management_gar_repository_url"`
+	GCPGARImpersonationAllowlist []string `config:"gcp_gar_impersonation_allowlist"`
 
 	// Azure management (not required for AWS/GCP)
 	ManagementACRRegistryURL      string `config:"management_acr_registry_url"`
@@ -676,6 +679,14 @@ func (c *Config) IsAzure() bool {
 	return c.CloudProvider == "azure"
 }
 
+func (c *Config) GARImpersonationAllowlist() garimpersonation.Allowlist {
+	list, err := garimpersonation.Parse(c.GCPGARImpersonationAllowlist)
+	if err != nil {
+		return garimpersonation.Allowlist{}
+	}
+	return list
+}
+
 func (c *Config) CFTemplateUploadCreds() *credentials.Config {
 	if c.IsGCP() && c.AWSCloudFormationStackTemplateRoleARN != "" {
 		return &credentials.Config{
@@ -740,6 +751,10 @@ func NewConfig() (*Config, error) {
 
 	if cfg.CORSAllowLoopbackOrigins && cfg.ServiceDeployment != "local" {
 		return nil, fmt.Errorf("cors_allow_loopback_origins is only allowed when service_deployment=local")
+	}
+
+	if _, err := garimpersonation.Parse(cfg.GCPGARImpersonationAllowlist); err != nil {
+		return nil, err
 	}
 
 	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)
