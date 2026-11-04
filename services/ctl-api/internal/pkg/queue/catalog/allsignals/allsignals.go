@@ -164,6 +164,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/provisionserviceaccount"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovisionserviceaccount"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/restart"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/revokeunusedtokens"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/runnerhealthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/runnerunhealthy"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/triggershutdown"
