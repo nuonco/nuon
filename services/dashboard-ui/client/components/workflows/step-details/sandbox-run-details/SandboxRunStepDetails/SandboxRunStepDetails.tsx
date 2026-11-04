@@ -10,6 +10,7 @@ import { Time } from '@/components/common/Time'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
 import { usePrefetchLogStreamSpans } from '@/hooks/use-prefetch-log-stream-spans'
+import { useStepTab } from '@/components/workflows/step-details/use-step-tab'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
@@ -103,6 +104,7 @@ const ApprovalStepTabs = ({
   const hasPlan = !!step?.approval
   const hasLogStream = !!sandboxRun?.log_stream
   usePrefetchLogStreamSpans(sandboxRun?.log_stream?.id)
+  const [tab, setTab] = useStepTab()
 
   const logsTab = hasLogStream ? (
     <SSELogs />
@@ -142,7 +144,12 @@ const ApprovalStepTabs = ({
       renderWhilePending
     >
       <LogViewerProvider>
-        <Tabs naturalHeight tabs={tabs} />
+        <Tabs
+          naturalHeight
+          activeTab={tab}
+          onTabChange={setTab}
+          tabs={tabs}
+        />
       </LogViewerProvider>
     </LogStreamProvider>
   )
