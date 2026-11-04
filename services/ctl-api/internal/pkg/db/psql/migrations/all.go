@@ -279,5 +279,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "152-dedupe-account-roles",
 			Fn:   m.Migration152DedupeAccountRoles,
 		},
+		migrations.Migration{
+			Name: "153-backfill-service-account-api",
+			Fn:   m.Migration153BackfillServiceAccountAPI,
+		},
 	)
 }
