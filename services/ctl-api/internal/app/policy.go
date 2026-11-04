@@ -122,7 +122,7 @@ func (a *Policy) PermissionProjection() (pgtype.Hstore, error) {
 	if err != nil {
 		return nil, err
 	}
-	verb, err := permissions.LegacyOrgPermission(grants[0].Permissions)
+	sources, err := permissions.LegacySources(grants)
 	if err != nil {
 		return nil, err
 	}
@@ -130,8 +130,8 @@ func (a *Policy) PermissionProjection() (pgtype.Hstore, error) {
 	if document.API() != "" {
 		projection[permissions.APIPermissionKey] = generics.ToPtr(string(document.API()))
 	}
-	if verb != permissions.PermissionUnknown {
-		projection[orgID] = verb.ToStrPtr()
+	for object, source := range sources {
+		projection[object] = source.Permission.ToStrPtr()
 	}
 	return projection, nil
 }

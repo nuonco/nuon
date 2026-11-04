@@ -27,6 +27,11 @@ const (
 	TelemetryConfigRead PermissionID = "telemetry.config.read"
 	TelemetryIssue      PermissionID = "telemetry.issue"
 	TelemetryWrite      PermissionID = "telemetry.write"
+	TelemetryAll        PermissionID = "telemetry.all"
+	InstallAll          PermissionID = "install.all"
+	RunnerJobAll        PermissionID = "runner_job.all"
+	StackAll            PermissionID = "stack.all"
+	PhoneHomeCreate     PermissionID = "phone_home.create"
 	LogStreamRead       PermissionID = "log_stream.read"
 	LogStreamWrite      PermissionID = "log_stream.write"
 	StackRead           PermissionID = "stack.read"
@@ -60,6 +65,11 @@ var permissionTargets = map[PermissionID][]ResourceKind{
 	TelemetryConfigRead: {KindTelemetry},
 	TelemetryIssue:      {KindTelemetry},
 	TelemetryWrite:      {KindTelemetry},
+	TelemetryAll:        {KindTelemetry},
+	InstallAll:          {KindInstall},
+	RunnerJobAll:        {KindRunnerJob},
+	StackAll:            {KindStack},
+	PhoneHomeCreate:     {KindPhoneHome},
 	LogStreamRead:       {KindLogStream},
 	LogStreamWrite:      {KindLogStream},
 	StackRead:           {KindStack},
@@ -71,6 +81,13 @@ var permissionTargets = map[PermissionID][]ResourceKind{
 	NotificationWrite:   {KindNotification},
 	NotificationDeliver: {KindNotification},
 	OperationExecute:    {KindOperation},
+}
+
+var permissionBundles = map[PermissionID][]PermissionID{
+	TelemetryAll: {TelemetryRead, TelemetryConfigRead, TelemetryIssue, TelemetryWrite},
+	InstallAll:   {InstallRead, InstallWrite, InstallDelete},
+	RunnerJobAll: {RunnerJobRead, RunnerJobConfigRead, RunnerJobClaim, RunnerJobWrite},
+	StackAll:     {StackRead, StackReport},
 }
 
 func ParsePermissionID(value string) (PermissionID, error) {
@@ -86,6 +103,18 @@ func (p PermissionID) AppliesTo(kind ResourceKind) bool {
 }
 
 type PermissionSet map[PermissionID]struct{}
+
+func (s PermissionSet) permits(permission PermissionID, kind ResourceKind) bool {
+	if _, ok := s[permission]; ok {
+		return true
+	}
+	for bundle, members := range permissionBundles {
+		if _, ok := s[bundle]; ok && bundle.AppliesTo(kind) && slices.Contains(members, permission) {
+			return true
+		}
+	}
+	return false
+}
 
 func NewPermissionSet(values ...PermissionID) (PermissionSet, error) {
 	set := make(PermissionSet, len(values))
