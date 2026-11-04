@@ -112,6 +112,9 @@ func testDependencyOptions() fx.Option {
 
 func withOrgAccess(acc *app.Account, org *app.Org) *app.Account {
 	acc.AllPermissions = permissions.Set{org.ID: permissions.PermissionAll}
+	acc.Authority = &permissions.AccountPermissions{
+		Sources: map[string]permissions.PermissionSource{org.ID: {Permission: permissions.PermissionAll}},
+	}
 	return acc
 }
 

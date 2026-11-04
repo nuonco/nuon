@@ -78,7 +78,7 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
-	if err := acct.AllPermissions.CanPerform(req.OrgID, permissions.PermissionCreate); err != nil {
+	if err := acct.Authority.CanPerform(req.OrgID, permissions.PermissionCreate, false); err != nil {
 		ctx.Error(require.PermissionDeniedError(acct, req.OrgID, permissions.PermissionCreate, require.ScopeFromPath(ctx.FullPath())))
 		return
 	}
