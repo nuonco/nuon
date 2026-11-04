@@ -48,7 +48,7 @@ type coalescedStatus struct {
 	description string
 }
 
-func newStatusCoalescer(jobID, executionID string, l *zap.Logger, write writeJobExecutionStatusFn) *statusCoalescer {
+func newStatusCoalescer(ctx context.Context, jobID, executionID string, l *zap.Logger, write writeJobExecutionStatusFn) *statusCoalescer {
 	c := &statusCoalescer{
 		jobID:       jobID,
 		executionID: executionID,
@@ -58,7 +58,7 @@ func newStatusCoalescer(jobID, executionID string, l *zap.Logger, write writeJob
 		doneCh:      make(chan struct{}),
 		stopCh:      make(chan struct{}),
 	}
-	go c.run()
+	go c.run(context.WithoutCancel(ctx))
 	return c
 }
 
@@ -112,7 +112,7 @@ func (c *statusCoalescer) Close() {
 	})
 }
 
-func (c *statusCoalescer) run() {
+func (c *statusCoalescer) run(jobCtx context.Context) {
 	defer close(c.doneCh)
 	for {
 		select {
@@ -129,12 +129,12 @@ func (c *statusCoalescer) run() {
 			continue
 		}
 
-		// Use a fresh context decoupled from the job context so a
-		// step that just returned doesn't cancel the trailing
-		// status write. Bound it at 10s — the underlying write has
+		// Preserve job authentication without inheriting cancellation so
+		// a step that just returned doesn't cancel the trailing status
+		// write. Bound it at 10s — the underlying write has
 		// its own retry, this is a hard ceiling so we don't pile
 		// up writes if the API is wedged.
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(jobCtx, 10*time.Second)
 		if err := c.write(ctx, c.jobID, c.executionID, next.status, next.description); err != nil {
 			c.l.Warn("coalesced status update failed",
 				zap.String("status", string(next.status)),
