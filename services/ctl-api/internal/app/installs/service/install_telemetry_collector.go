@@ -54,12 +54,14 @@ func (s *service) EnsureInstallTelemetryCollector(ctx *gin.Context) {
 		return authz.New(authz.Params{DB: tx}).EnsureManagedServiceAccountRole(ctx, binding.AccountID, &app.Role{
 			OrgID:       generics.NewNullString(orgID),
 			RoleType:    app.RoleTypeTelemetryCollector,
+			Version:     app.RoleVersionV2,
 			Title:       "Telemetry collector",
 			Description: "Scoped access to telemetry endpoints for a single install.",
 			Policies: []app.Policy{{
 				OrgID: generics.NewNullString(orgID),
 				Name:  app.PolicyNameTelemetryCollector,
 				Permissions: pgtype.Hstore{
+					permissions.APIPermissionKey:                                          generics.ToPtr(string(permissions.APIRunner)),
 					permissions.Object(orgID, permissions.KindTelemetry, binding.OwnerID): permissions.PermissionAll.ToStrPtr(),
 				},
 			}},

@@ -43,12 +43,14 @@ func (c *Client) EnsurePhoneHomeServiceAccount(
 		return client.authzClient.EnsureManagedServiceAccountRole(ctx, binding.AccountID, &app.Role{
 			OrgID:       generics.NewNullString(orgID),
 			RoleType:    app.RoleTypePhoneHome,
+			Version:     app.RoleVersionV2,
 			Title:       "Phone home",
 			Description: "Scoped access to one install stack version callback.",
 			Policies: []app.Policy{{
 				OrgID: generics.NewNullString(orgID),
 				Name:  app.PolicyNamePhoneHome,
 				Permissions: pgtype.Hstore{
+					permissions.APIPermissionKey:                                         generics.ToPtr(string(permissions.APIStack)),
 					permissions.Object(orgID, permissions.KindPhoneHome, stackVersionID): permissions.PermissionCreate.ToStrPtr(),
 				},
 			}},
