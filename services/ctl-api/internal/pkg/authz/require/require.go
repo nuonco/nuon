@@ -94,7 +94,7 @@ func OrgOrInstallRoute(router gin.IRouter) *gin.RouterGroup {
 			return
 		}
 
-		if err := acct.AllPermissions.CanPerform(orgID, verb); err == nil {
+		if err := acct.Authority.CanPerform(orgID, verb, false); err == nil {
 			ctx.Next()
 			return
 		}
@@ -103,7 +103,7 @@ func OrgOrInstallRoute(router gin.IRouter) *gin.RouterGroup {
 			runner.RunnerGroup.Type == app.RunnerGroupTypeInstall &&
 			runner.RunnerGroup.OwnerID != "" {
 			obj := permissions.Object(orgID, permissions.KindInstall, runner.RunnerGroup.OwnerID)
-			if err := acct.AllPermissions.CanPerform(obj, verb); err == nil {
+			if err := acct.Authority.CanPerform(obj, verb, false); err == nil {
 				ctx.Next()
 				return
 			}
@@ -159,7 +159,7 @@ func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, 
 		}
 
 		if kind == permissions.KindOrg {
-			if err := acct.AllPermissions.CanPerform(orgID, verb); err != nil {
+			if err := acct.Authority.CanPerform(orgID, verb, false); err != nil {
 				ctx.Error(PermissionDeniedError(acct, orgID, verb, ScopeFromPath(ctx.FullPath())))
 				ctx.Abort()
 				return
@@ -177,7 +177,7 @@ func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, 
 		// The declared verb, not the one inferred from the request method: the
 		// route says what it does, the method is only a hint.
 		obj := permissions.Object(orgID, kind, id)
-		if err := acct.AllPermissions.CanPerform(obj, verb); err != nil {
+		if err := acct.Authority.CanPerform(obj, verb, false); err != nil {
 			notFound(fmt.Errorf("account %s cannot %s %s %s: %w", acct.ID, verb, kind, id, err))
 			return
 		}

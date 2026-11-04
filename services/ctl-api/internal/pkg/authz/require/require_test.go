@@ -31,7 +31,11 @@ func run(t *testing.T, kind permissions.ResourceKind, verb permissions.Permissio
 	engine.Use(func(c *gin.Context) {
 		ctx = c
 		if perms != nil {
-			cctx.SetAccountGinContext(c, &app.Account{ID: "acct_one", AllPermissions: perms})
+			authority := &permissions.AccountPermissions{Sources: make(map[string]permissions.PermissionSource)}
+			for object, verb := range perms {
+				authority.Add(object, permissions.PermissionSource{Permission: verb})
+			}
+			cctx.SetAccountGinContext(c, &app.Account{ID: "acct_one", Authority: authority})
 		}
 		if orgID != "" {
 			cctx.SetOrgIDGinContext(c, orgID)
