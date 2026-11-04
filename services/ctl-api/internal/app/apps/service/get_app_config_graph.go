@@ -6,6 +6,8 @@ import (
 
 	"github.com/dominikbraun/graph/draw"
 	"github.com/gin-gonic/gin"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetAppConfigGraphV2
@@ -26,7 +28,19 @@ import (
 // @Success				200	{object}	string
 // @Router					/v1/apps/{app_id}/configs/{config_id}/graph [get]
 func (s *service) GetAppConfigGraphV2(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	appID := ctx.Param("app_id")
 	appConfigID := ctx.Param("config_id")
+
+	if _, err := s.getAppConfig(ctx, org.ID, appID, appConfigID); err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	appConfig, err := s.helpers.GetFullAppConfig(ctx, appConfigID, true)
 	if err != nil {
@@ -68,7 +82,19 @@ func (s *service) GetAppConfigGraphV2(ctx *gin.Context) {
 // @Success				200	{object}	string
 // @Router					/v1/apps/{app_id}/config/{app_config_id}/graph [get]
 func (s *service) GetAppConfigGraph(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	appID := ctx.Param("app_id")
 	appConfigID := ctx.Param("app_config_id")
+
+	if _, err := s.getAppConfig(ctx, org.ID, appID, appConfigID); err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	appConfig, err := s.helpers.GetFullAppConfig(ctx, appConfigID, true)
 	if err != nil {
