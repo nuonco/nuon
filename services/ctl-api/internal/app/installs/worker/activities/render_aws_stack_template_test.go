@@ -91,7 +91,7 @@ func TestRenderAWSStackTemplate_StackParameters(t *testing.T) {
 				connectionID := "test-cloud-connection"
 				inp.Install.CloudConnectionID = &connectionID
 			}
-			a := &Activities{cfTemplates: cloudformation.NewTemplates(cloudformation.Params{Cfg: &internal.Config{UseLocalRunners: true}})}
+			a := &Activities{cfTemplates: cloudformation.NewTemplates(cloudformation.Params{Cfg: &internal.Config{UseLocalRunners: true}}).WithTemplateFetchClient(stacks.NewLocalTemplateFetchClient())}
 			res, err := a.RenderAWSStackTemplate(context.Background(), &RenderAWSStackTemplateRequest{Input: inp})
 			if tt.wantErr != "" {
 				require.ErrorContains(t, err, tt.wantErr)
@@ -183,7 +183,7 @@ VPC = "vpc-external"
 				require.NoError(t, err)
 				require.NoError(t, config.RenderCustomNestedStackParameters(inp.AppCfg.StackConfig.CustomNestedStacks, data))
 			}
-			a := &Activities{cfTemplates: cloudformation.NewTemplates(cloudformation.Params{Cfg: &internal.Config{UseLocalRunners: tt.localRunner}})}
+			a := &Activities{cfTemplates: cloudformation.NewTemplates(cloudformation.Params{Cfg: &internal.Config{UseLocalRunners: tt.localRunner}}).WithTemplateFetchClient(stacks.NewLocalTemplateFetchClient())}
 			res, err := a.RenderAWSStackTemplate(context.Background(), &RenderAWSStackTemplateRequest{Input: inp})
 			if tt.wantErr != "" {
 				require.ErrorContains(t, err, tt.wantErr)
@@ -251,7 +251,7 @@ func TestRenderAWSStackTemplate_CustomStacksOutputMapAgreesWithSplit(t *testing.
 		CustomStacksOnly: true,
 	}
 
-	a := &Activities{cfTemplates: cloudformation.NewTemplates(cloudformation.Params{Cfg: &internal.Config{}})}
+	a := &Activities{cfTemplates: cloudformation.NewTemplates(cloudformation.Params{Cfg: &internal.Config{}}).WithTemplateFetchClient(stacks.NewLocalTemplateFetchClient())}
 
 	res, err := a.RenderAWSStackTemplate(context.Background(), &RenderAWSStackTemplateRequest{Input: inp})
 	require.NoError(t, err)
@@ -276,7 +276,7 @@ func TestRenderAWSStackTemplate_CustomStacksOutputMapAgreesWithSplit(t *testing.
 }
 
 func TestRenderAWSStackTemplate_CustomStacksOutputMapEmptyWhenNotCustomStacksOnly(t *testing.T) {
-	a := &Activities{cfTemplates: cloudformation.NewTemplates(cloudformation.Params{Cfg: &internal.Config{}})}
+	a := &Activities{cfTemplates: cloudformation.NewTemplates(cloudformation.Params{Cfg: &internal.Config{}}).WithTemplateFetchClient(stacks.NewLocalTemplateFetchClient())}
 
 	inp := stacks.TemplateInput{
 		Install:          &app.Install{ID: "test-install-id", AppID: "test-app-id", OrgID: "test-org-id"},
