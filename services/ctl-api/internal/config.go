@@ -120,7 +120,7 @@ func init() {
 	config.RegisterDefault("telemetry_relay_endpoint", "")
 
 	// max request sizes to prevent too large of requests
-	config.RegisterDefault("max_request_size", 1024*50)
+	config.RegisterDefault("max_request_size", 32<<20)
 	config.RegisterDefault("max_request_duration", time.Second*30)
 
 	config.RegisterDefault("app_repository_name_template", "%s/%s")
