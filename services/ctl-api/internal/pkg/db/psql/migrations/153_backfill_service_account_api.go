@@ -16,7 +16,6 @@ func (m *Migrations) Migration153BackfillServiceAccountAPI(ctx context.Context, 
 	apiForRole := map[app.RoleType]permissions.API{
 		app.RoleTypeRunner:             permissions.APIRunner,
 		app.RoleTypeStack:              permissions.APIStack,
-		app.RoleTypePhoneHome:          permissions.APIStack,
 		app.RoleTypeTelemetryCollector: permissions.APIRunner,
 	}
 	roleTypes := make([]app.RoleType, 0, len(apiForRole))
