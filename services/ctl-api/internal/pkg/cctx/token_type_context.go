@@ -25,3 +25,12 @@ func SetTokenTypeGinContext(ctx *gin.Context, tokenType app.TokenType) {
 func SetTokenTypeContext(ctx context.Context, tokenType app.TokenType) context.Context {
 	return context.WithValue(ctx, keys.TokenTypeCtxKey, tokenType)
 }
+
+func TokenIDFromContext(ctx ValueContext) string {
+	tokenID, _ := ctx.Value(keys.TokenIDCtxKey).(string)
+	return tokenID
+}
+
+func SetTokenIDGinContext(ctx *gin.Context, tokenID string) {
+	ctx.Set(keys.TokenIDCtxKey, tokenID)
+}
