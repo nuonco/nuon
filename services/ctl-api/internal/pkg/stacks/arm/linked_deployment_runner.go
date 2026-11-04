@@ -2,6 +2,7 @@ package arm
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nuonco/nuon/pkg/azure"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -58,16 +59,17 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	// All values Nuon can supply. Only injected if the template declares
 	// the parameter — otherwise ARM rejects unknown params.
 	managedParams := map[string]any{
-		"nuonInstallID":       inp.Install.ID,
-		"nuonOrgID":           inp.Runner.OrgID,
-		"nuonAppID":           inp.Install.AppID,
-		"location":            scope.rootLocationRef(),
-		"runnerId":            inp.Runner.ID,
-		"runnerApiUrl":        t.runnerAPIURL(inp),
-		"runnerInitScriptUrl": inp.RunnerInitScriptURL,
-		"runnerSubnetId":      fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment),
-		"customData":          t.buildRunnerCustomData(inp),
-		"commonTags":          "[variables('commonTags')]",
+		"nuonInstallID":            inp.Install.ID,
+		"nuonOrgID":                inp.Runner.OrgID,
+		"nuonAppID":                inp.Install.AppID,
+		"location":                 scope.rootLocationRef(),
+		"runnerId":                 inp.Runner.ID,
+		"runnerApiUrl":             t.runnerAPIURL(inp),
+		"runnerInitScriptUrl":      inp.RunnerInitScriptURL,
+		"runnerInitScriptChecksum": inp.RunnerInitScriptChecksum,
+		"runnerSubnetId":           fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment),
+		"customData":               t.buildRunnerCustomData(inp),
+		"commonTags":               "[variables('commonTags')]",
 	}
 
 	if hasIdentities {
@@ -243,6 +245,7 @@ var runnerManagedParamNames = []string{
 	"runnerId",
 	"runnerApiUrl",
 	"runnerInitScriptUrl",
+	"runnerInitScriptChecksum",
 	"runnerSubnetId",
 	"customData",
 	"commonTags",
@@ -434,6 +437,29 @@ func (t *Templates) runnerAuthResourceLine() string {
 }
 
 func (t *Templates) buildRunnerCustomData(inp *stacks.TemplateInput) string {
+	if inp.RunnerInitScriptURL != "" && inp.RunnerInitScriptChecksum != "" {
+		authExport := ""
+		if line := strings.TrimSpace(t.runnerAuthResourceLine()); line != "" {
+			authExport = "export " + line + "\n"
+		}
+		return fmt.Sprintf(`#!/bin/bash
+set -euo pipefail
+export RUNNER_ID=%q
+export RUNNER_API_URL=%q
+export RUNNER_PLATFORM=azure
+export CONTAINER_IMAGE_URL=%q
+export CONTAINER_IMAGE_TAG=%q
+export AWS_REGION=%q
+%stmp="$(mktemp)"
+if ! curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 --max-time 60 -o "$tmp" %q; then
+  echo "failed to download runner init script" >&2
+  exit 1
+fi
+echo "%s  $tmp" | sha256sum -c -
+bash "$tmp"
+`, inp.Runner.ID, t.runnerAPIURL(inp), inp.Settings.ContainerImageURL, inp.Settings.ContainerImageTag, inp.Install.AzureAccount.Location, authExport, inp.RunnerInitScriptURL, inp.RunnerInitScriptChecksum)
+	}
+
 	return fmt.Sprintf(`#!/bin/bash
 
 RUNNER_ID=%s

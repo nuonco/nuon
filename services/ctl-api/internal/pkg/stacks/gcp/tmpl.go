@@ -12,6 +12,7 @@ gcp_region               = "{{.GCPRegion}}"
 runner_api_url           = "{{.Settings.RunnerAPIURL}}"
 runner_id                = "{{.Runner.ID}}"
 runner_init_script_url   = "{{.RunnerInitScriptURL}}"
+runner_init_script_checksum = "{{.RunnerInitScriptChecksum}}"
 {{- if .Settings.AWSInstanceType}}
 runner_machine_type      = "{{.Settings.AWSInstanceType}}"
 {{- end}}
