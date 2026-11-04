@@ -78,8 +78,9 @@ account/RBAC models.
 - Comment only when the *why* is non-obvious.
 - After changing annotated types, Temporal `@temporal-gen` surfaces, or swagger endpoints: `go generate` in the
   affected package (see `services/ctl-api`, `sdks/`).
-- ACR image access requests Entra scope `https://containerregistry.azure.net/.default`
-  (`acr.RegistryScope` in `pkg/azure/acr`). Use that scope for connection verification, the
-  foreign-subject probe, and the access token exchanged at the registry login server. Do not
-  request an Azure Resource Manager management scope (`https://management.azure.com/` or
-  `https://management.azure.com/.default`) for ACR pull, exchange, or verification.
+- Cloud-connection ACR tokens always use Entra scope `https://containerregistry.azure.net/.default`
+  (`acr.RegistryScope`). That covers connection verification, the foreign-subject probe, and
+  `GetRepositoryTokenWithCredential`, which posts the access token with `ConnectionExchangeClient`.
+  Do not request an Azure Resource Manager management scope (`https://management.azure.com/` or
+  `https://management.azure.com/.default`) on that path. Legacy `GetRepositoryToken` keeps
+  `armTokenScope` and the default HTTP client so existing runners behind a proxy keep working.
