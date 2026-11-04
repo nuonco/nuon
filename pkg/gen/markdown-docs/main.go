@@ -153,7 +153,7 @@ func generateSchemaDoc(schemaName, outputDir, format string) error {
 				}
 			}
 
-			isRequired := isPropertyRequired(targetSchema.Required, propName)
+			isRequired := isPropertyRequired(targetSchema.Required, propName) || isDocsRequired(prop)
 			entry := propEntry{name: propName, prop: prop, required: isRequired}
 			if isRequired {
 				requiredProps = append(requiredProps, entry)
@@ -374,6 +374,11 @@ func isPropertyRequired(required []string, propName string) bool {
 	return false
 }
 
+func isDocsRequired(prop *jsonschema.Schema) bool {
+	docsRequired, _ := prop.Extras["docs_required"].(bool)
+	return docsRequired
+}
+
 // isExcludedProperty checks if a property should be excluded from documentation
 func isExcludedProperty(propName string) bool {
 	// Properties that are common across schemas but don't need documentation
@@ -431,7 +436,7 @@ func renderSubSchemaTable(doc *mdast.Document, schema *jsonschema.Schema) {
 	var requiredProps, optionalProps []propEntry
 
 	for pair := schema.Properties.Oldest(); pair != nil; pair = pair.Next() {
-		isRequired := isPropertyRequired(schema.Required, pair.Key)
+		isRequired := isPropertyRequired(schema.Required, pair.Key) || isDocsRequired(pair.Value)
 		entry := propEntry{name: pair.Key, prop: pair.Value, required: isRequired}
 		if isRequired {
 			requiredProps = append(requiredProps, entry)

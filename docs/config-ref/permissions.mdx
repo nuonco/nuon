@@ -11,11 +11,11 @@ title: 'Permissions'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`provision_role`**<br/>[AppAWSIAMRole](#provision_role) | provisioning IAM role IAM role used during initial provisioning of the install with permissions to set up resources | **Optional** | - |
-| **`deprovision_role`**<br/>AppAWSIAMRole | deprovisioning IAM role IAM role used for tearing down the install and cleaning up resources | **Optional** | - |
-| **`maintenance_role`**<br/>AppAWSIAMRole | maintenance IAM role IAM role used for day-to-day maintenance, updates, and operational tasks | **Optional** | - |
+| **`provision_role`**<br/>[AppAWSIAMRole](#provision_role) | provisioning IAM role IAM role used to provision the install and set up resources. Set here or as a roles entry with type = "provision" | **✅ Required** | - |
+| **`deprovision_role`**<br/>AppAWSIAMRole | deprovisioning IAM role IAM role used to tear down the install and clean up resources. Set here or as a roles entry with type = "deprovision" | **✅ Required** | - |
+| **`maintenance_role`**<br/>AppAWSIAMRole | maintenance IAM role IAM role used for day-to-day maintenance, updates, and operational tasks. Set here or as a roles entry with type = "maintenance" | **✅ Required** | - |
 | **`custom_roles`**<br/>array | custom IAM roles Additional IAM roles for specialized operations beyond the standard provision/maintenance/deprovision lifecycle. Each role must have type set to 'custom' | **Optional** | - |
-| **`roles`**<br/>array | list of permission roles Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, deprovision, or custom) | **Optional** | - |
+| **`roles`**<br/>array | list of permission roles Typed roles (provision, maintenance, deprovision, or custom), in permissions.toml or a permissions/ directory. Covers any standard role not set as a field | **Optional** | - |
 | **`named_policies`**<br/>[array](#named_policies) | named IAM policies Customer-managed IAM policies created independently of any role's Enable parameter. Attach them from a role with named_policies. Distinct from the root policies/ directory, which... | **Optional** | - |
 
 ### `provision_role`

@@ -39,16 +39,16 @@ type PermissionsConfig struct {
 
 func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("provision_role").Short("provisioning IAM role").
-		Long("IAM role used during initial provisioning of the install with permissions to set up resources").
-		Field("deprovision_role").Short("deprovisioning IAM role").
-		Long("IAM role used for tearing down the install and cleaning up resources").
-		Field("maintenance_role").Short("maintenance IAM role").
-		Long("IAM role used for day-to-day maintenance, updates, and operational tasks").
+		Field("provision_role").Short("provisioning IAM role").DocsRequired().
+		Long("IAM role used to provision the install and set up resources. Set here or as a roles entry with type = \"provision\"").
+		Field("deprovision_role").Short("deprovisioning IAM role").DocsRequired().
+		Long("IAM role used to tear down the install and clean up resources. Set here or as a roles entry with type = \"deprovision\"").
+		Field("maintenance_role").Short("maintenance IAM role").DocsRequired().
+		Long("IAM role used for day-to-day maintenance, updates, and operational tasks. Set here or as a roles entry with type = \"maintenance\"").
 		Field("custom_roles").Short("custom IAM roles").
 		Long("Additional IAM roles for specialized operations beyond the standard provision/maintenance/deprovision lifecycle. Each role must have type set to 'custom'").
 		Field("roles").Short("list of permission roles").
-		Long("Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, deprovision, or custom)").
+		Long("Typed roles (provision, maintenance, deprovision, or custom), in permissions.toml or a permissions/ directory. Covers any standard role not set as a field").
 		Field("named_policies").Short("named IAM policies").
 		Long("Customer-managed IAM policies created independently of any role's Enable parameter. Attach them from a role with named_policies. Distinct from the root policies/ directory, which is Kyverno/OPA")
 }
