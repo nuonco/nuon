@@ -4,7 +4,11 @@ import { Loading } from '@/components/common/Loading'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import type { TWorkflowStep } from '@/types'
-import { getStepKind, isRetryChain } from '@/utils/workflow-utils'
+import {
+  bypassedSkipsInGroup,
+  getStepKind,
+  isRetryChain,
+} from '@/utils/workflow-utils'
 import { WorkflowStepGroup } from './WorkflowStepGroup'
 import { WorkflowStepRoundGroup } from './WorkflowStepRoundGroup'
 import { WorkflowStepRow } from './WorkflowStepRow'
@@ -51,6 +55,11 @@ export const WorkflowSteps = ({
   }
 
   const renderGroup = (groupSteps: TWorkflowStep[]) => {
+    const ranAfterSkipById = new Map(
+      bypassedSkipsInGroup(groupSteps).flatMap(({ skipped, ranAnyway }) =>
+        skipped.id ? [[skipped.id, ranAnyway] as const] : []
+      )
+    )
     const rounds = new Set(groupSteps.map((s) => s.group_retry_idx ?? 0))
     if (rounds.size > 1) {
       return (
@@ -59,6 +68,7 @@ export const WorkflowSteps = ({
           steps={groupSteps}
           approvalPrompt={approvalPrompt}
           planOnly={planOnly}
+          ranAfterSkipById={ranAfterSkipById}
         />
       )
     }
@@ -82,6 +92,7 @@ export const WorkflowSteps = ({
             steps={kindSteps}
             approvalPrompt={approvalPrompt}
             planOnly={planOnly}
+            ranAfterSkipById={ranAfterSkipById}
           />
         )
       }
@@ -94,6 +105,7 @@ export const WorkflowSteps = ({
               approvalPrompt={approvalPrompt}
               planOnly={planOnly}
               showRetry
+              ranAfterSkip={step.id ? ranAfterSkipById.get(step.id) : undefined}
             />
           </div>
         ))
@@ -107,6 +119,7 @@ export const WorkflowSteps = ({
             approvalPrompt={approvalPrompt}
             planOnly={planOnly}
             showRetry
+            ranAfterSkip={step.id ? ranAfterSkipById.get(step.id) : undefined}
           />
         </div>
       )

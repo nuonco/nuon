@@ -28,12 +28,6 @@ export interface TOverviewRollout extends IRunSourceCard {
   activity?: string
 }
 
-export interface TFailedBuildLink {
-  id: string
-  name: string
-  href: string
-}
-
 export interface IBranchOverview {
   hasPlan: boolean
   showInstalls?: boolean
@@ -52,7 +46,6 @@ export interface IBranchOverview {
   buildRows?: TChangedBuildRow[]
   buildRowsLoading?: boolean
   compositeError?: TCompositeError
-  failedBuilds?: TFailedBuildLink[]
   approvals?: IGroupPlanApproval[]
   runHeaderAction?: ReactNode
   cancelRollout?: ReactNode

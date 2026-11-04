@@ -17,10 +17,18 @@ func GetIdentityToken(ctx context.Context, audience string) (string, error) {
 	return token, nil
 }
 
-// GetAccessToken fetches an OAuth2 access token for the default service account.
-// The server uses this to independently read instance metadata via the Compute API.
+// computeReadonlyScope is the only scope the returned token needs: ctl-api uses
+// it solely to read this instance back from the Compute API. Requesting it
+// explicitly, rather than the full set of scopes attached to the instance,
+// keeps the token in the auth request from being usable for anything else if
+// it leaks.
+const computeReadonlyScope = "https://www.googleapis.com/auth/compute.readonly"
+
+// GetAccessToken fetches an OAuth2 access token for the default service account,
+// scoped to compute.readonly. The server uses this to independently read
+// instance metadata via the Compute API.
 func GetAccessToken(ctx context.Context) (string, error) {
-	token, err := metadata.GetWithContext(ctx, "instance/service-accounts/default/token")
+	token, err := metadata.GetWithContext(ctx, "instance/service-accounts/default/token?scopes="+computeReadonlyScope)
 	if err != nil {
 		return "", fmt.Errorf("failed to get access token: %w", err)
 	}

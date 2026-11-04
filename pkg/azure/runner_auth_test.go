@@ -35,6 +35,19 @@ func TestExpectedRunnerAudience(t *testing.T) {
 	}
 }
 
+func TestRunnerAuthAppID(t *testing.T) {
+	const audience = "api://11111111-1111-1111-1111-111111111111"
+	if got := RunnerAuthAppID(audience); got != "11111111-1111-1111-1111-111111111111" {
+		t.Fatalf("app id = %q", got)
+	}
+	if got := RunnerAuthAppID(ManagementAudience); got != "" {
+		t.Fatalf("arm audience produced app id %q", got)
+	}
+	if got := RunnerAuthAppID(""); got != "" {
+		t.Fatalf("empty audience produced app id %q", got)
+	}
+}
+
 func TestRunnerAuthResource(t *testing.T) {
 	got, ok := RunnerAuthResource("")
 	if !ok || got != ManagementAudience {

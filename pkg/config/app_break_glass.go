@@ -11,7 +11,7 @@ type BreakGlass struct {
 }
 
 func (a BreakGlass) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "role", "Roles to be used for breaking glass.")
+	addDescription(schema, "role", "Roles your customer can turn on in their install stack for elevated access. Off by default. See https://docs.nuon.co/concepts/break-glass")
 }
 
 func (a *BreakGlass) parse(context.Context) error {

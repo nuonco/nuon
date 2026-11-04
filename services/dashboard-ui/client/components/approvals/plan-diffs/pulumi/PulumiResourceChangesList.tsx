@@ -10,8 +10,10 @@ import { useWrapLines } from '../wrap-lines-context'
 import { TreeDiffValue } from '../terraform/TreeDiffValue'
 import {
   PULUMI_ACTION_BADGE_THEME,
+  REPLACE_BADGE_CLASS,
   getPulumiActionBgColor,
   getPulumiActionBorderColor,
+  isReplaceAction,
 } from '../diff-style-utils'
 
 interface IPropertyDiff {
@@ -303,6 +305,9 @@ export function PulumiResourceChangesList({
                       <Badge
                         theme={PULUMI_ACTION_BADGE_THEME[action] || 'neutral'}
                         size="sm"
+                        className={
+                          isReplaceAction(action) ? REPLACE_BADGE_CLASS : undefined
+                        }
                       >
                         {change.action}
                       </Badge>
