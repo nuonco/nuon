@@ -143,7 +143,7 @@ type Component struct {
 	labels.Labeled
 
 	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_component_name,unique" temporaljson:"app_id,omitzero,omitempty"`
-	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
+	App   *App   `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
 
 	Status            ComponentStatus `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string          `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`

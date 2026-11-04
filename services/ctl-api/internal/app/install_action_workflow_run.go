@@ -146,6 +146,14 @@ func (i *InstallActionWorkflowRun) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
+			Name: indexes.Name(db, &InstallActionWorkflowRun{}, "latest"),
+			Columns: []string{
+				"install_action_workflow_id",
+				"created_at DESC",
+			},
+			Option: "WHERE deleted_at = 0",
+		},
+		{
 			Name: indexes.Name(db, &InstallActionWorkflowRun{}, "triggered"),
 			Columns: []string{
 				"triggered_by_type",

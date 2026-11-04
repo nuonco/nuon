@@ -188,6 +188,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runners.POST("/update-health-check-cron", s.AdminUpdateHealthCheckCron)
 		runners.POST("/migrate-cron-emitters", s.AdminMigrateCronEmitters)
 		runners.POST("/toggle-cron-emitters", s.AdminToggleCronEmitters)
+		runners.POST("/revoke-unused-tokens", s.AdminRevokeUnusedTokens)
 
 		// sandbox management
 		runners.GET("/sandbox", s.AdminListSandboxRunners)
@@ -212,6 +213,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			runner.POST("/invalidate-service-account-token", s.AdminInvalidateRunnerServiceAccountToken)
 			runner.POST("/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken)
 			runner.GET("/service-account", s.AdminGetRunnerServiceAccount)
+			runner.POST("/revoke-unused-tokens", s.AdminRevokeRunnerUnusedTokens)
 
 			// job management
 			runner.POST("/flush-orphaned-jobs", s.AdminFlushOrphanedJobs)

@@ -7,12 +7,14 @@ export interface IWorkflowStepGroup {
   steps: TWorkflowStep[]
   approvalPrompt?: boolean
   planOnly?: boolean
+  ranAfterSkipById?: Map<string, TWorkflowStep>
 }
 
 export const WorkflowStepGroup = ({
   steps,
   approvalPrompt = false,
   planOnly = false,
+  ranAfterSkipById,
 }: IWorkflowStepGroup) => {
   const latest = steps.at(-1)
   const prior = steps
@@ -40,6 +42,7 @@ export const WorkflowStepGroup = ({
             approvalPrompt={approvalPrompt}
             planOnly={planOnly}
             showRetry
+            ranAfterSkip={ranAfterSkipById?.get(latest.id)}
           />
         </div>
       }
@@ -54,6 +57,7 @@ export const WorkflowStepGroup = ({
               showRetry={false}
               attemptNumber={attemptNumber}
               nested
+              ranAfterSkip={ranAfterSkipById?.get(step.id)}
             />
           </div>
         ))}

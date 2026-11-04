@@ -182,7 +182,7 @@ func (a *Activities) matchApprovalTarget(ctx context.Context, req *MatchPriorApp
 			return err
 		}
 		for _, d := range []app.InstallDeploy{prior, current} {
-			if d.OrgID != req.OrgID || d.InstallComponent.OrgID != req.OrgID || d.InstallComponent.InstallID != req.InstallID {
+			if d.OrgID != req.OrgID || d.InstallComponent == nil || d.InstallComponent.OrgID != req.OrgID || d.InstallComponent.InstallID != req.InstallID {
 				return priorApprovalMismatch("deploy_scope_mismatch")
 			}
 		}

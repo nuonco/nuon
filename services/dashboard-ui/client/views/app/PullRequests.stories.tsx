@@ -13,16 +13,9 @@ export const Open = () => (
   />
 )
 
-export const Detail = () => (
-  <InstallView
-    fixture={appFixture('pull-request')}
-    path={appPath('/branches/br-1/pull-requests/482')}
-  />
-)
-
-export const DetailLoading = () => (
+export const Loading = () => (
   <InstallView
     fixture={appFixture('pull-request-loading')}
-    path={appPath('/branches/br-1/pull-requests/482')}
+    path={appPath('/branches/br-1/pull-requests')}
   />
 )

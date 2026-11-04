@@ -2,7 +2,7 @@ import type {
   TPlaygroundPullRequest,
   TPlaygroundPullRequestRun,
   TPullRequestConfigStatus,
-} from '@/components/playground/pull-request/fixtures'
+} from './fixtures'
 import type {
   TAppBranchPreviewConfig,
   TAppBranchRun,

@@ -106,14 +106,25 @@ func (s *baseIntegrationTestSuite) createOrg() *models.AppOrg {
 
 	s.apiClient.SetOrgID(org.ID)
 	if s.githubInstallID != "" {
-		vcs, err := s.apiClient.CreateVCSConnection(s.ctx, &models.ServiceCreateConnectionRequest{
-			GithubInstallID: generics.ToPtr(s.githubInstallID),
-		})
-		require.Nil(s.T(), err)
-		require.NotNil(s.T(), vcs)
+		s.createVCSConnection(org.ID, s.githubInstallID)
 	}
 
 	return org
+}
+
+// createVCSConnection attaches a GitHub installation to the org through the
+// callback endpoint, the only way to create a connection. No user-authorization
+// code is available here, so the ctl-api under test must run with
+// disable_vcs_connection_ownership_check=true.
+func (s *baseIntegrationTestSuite) createVCSConnection(orgID, githubInstallID string) *models.AppVCSConnection {
+	vcs, err := s.apiClient.CreateVCSConnectionCallback(s.ctx, &models.ServiceCreateConnectionCallbackRequest{
+		OrgID:           generics.ToPtr(orgID),
+		GithubInstallID: generics.ToPtr(githubInstallID),
+	})
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), vcs)
+
+	return vcs
 }
 
 func (s *baseIntegrationTestSuite) fakeInstallInputsForApp(appID string) map[string]string {

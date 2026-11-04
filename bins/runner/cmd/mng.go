@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -15,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/management"
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/health"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -67,6 +66,7 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 			// sandbox control API
 
 			// start heartbeater, process registrar, and shutdown poller
+			fx.Invoke(func(*auth.Refresher) {}),
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*process.Registrar) {}),
 			fx.Invoke(func(*process.ShutdownPoller) {}),
@@ -80,26 +80,7 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 	fx.New(providers...).Run()
 }
 
-// fetchTokenDenied reports whether this fetch-token process is a child of the
-// runner. Inside the install container the runner is PID 1, so a vendor action
-// step can exec the binary, and the instance identity would mint a fresh
-// org-wide token. The host invocation is a child of systemd, where PID 1 is
-// not the runner.
-func fetchTokenDenied(pid int, pid1Cmdline string) bool {
-	if pid == 1 {
-		return false
-	}
-	argv0, _, _ := strings.Cut(pid1Cmdline, "\x00")
-	return filepath.Base(argv0) == "runner"
-}
-
 func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
-	pid1Cmdline, err := os.ReadFile("/proc/1/cmdline")
-	if err == nil && fetchTokenDenied(os.Getpid(), string(pid1Cmdline)) {
-		fmt.Fprintf(os.Stderr, "fetch-token cannot run inside the runner\n")
-		os.Exit(1)
-	}
-
 	ctx := context.Background()
 	jsonOutput, _ := cmd.Flags().GetBool("json")
 	platform, _ := cmd.Flags().GetString("platform")
@@ -127,7 +108,7 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 	if platform == "azure" {
 		runnerID := os.Getenv("RUNNER_ID")
 		if jsonOutput {
-			result, err = fetchtoken.FetchTokenAzure(ctx, apiClient, runnerID)
+			result, err = fetchtoken.FetchTokenAzure(ctx, apiClient, runnerID, false)
 		} else {
 			result, err = fetchtoken.FetchAndStoreTokenAzure(ctx, apiClient, runnerID)
 		}
@@ -136,7 +117,7 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 		runnerID := os.Getenv("RUNNER_ID")
 		fmt.Fprintf(os.Stderr, "fetch-token: api_url=%s auth_method=%q runner_id=%s\n", apiURL, authMethod, runnerID)
 		if jsonOutput {
-			result, err = fetchtoken.FetchToken(ctx, apiClient, authMethod, runnerID)
+			result, err = fetchtoken.FetchToken(ctx, apiClient, authMethod, runnerID, false)
 		} else {
 			result, err = fetchtoken.FetchAndStoreToken(ctx, apiClient, authMethod, runnerID)
 		}

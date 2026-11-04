@@ -1,3 +1,11 @@
+export {
+  ConfigChangesBaseline,
+  configChangesBaseline,
+} from './ConfigChangesBaseline'
+export type {
+  IConfigChangesBaseline,
+  IConfigChangesBaselineRun,
+} from './ConfigChangesBaseline'
 export { BuildChangeDetail } from './BuildChangeDetail'
 export { ConfigChangesLoading } from './ConfigChangesLoading'
 export { ConfigChangesViewer } from './ConfigChangesViewer'

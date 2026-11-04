@@ -73,6 +73,8 @@ func (s *service) adminCreateJob(ctx context.Context, runnerID string, typ app.R
 		CreatedByID:       runner.CreatedByID,
 		OrgID:             runner.OrgID,
 		RunnerID:          runnerID,
+		OwnerID:           runner.ID,
+		OwnerType:         "runners",
 		QueueTimeout:      time.Minute,
 		ExecutionTimeout:  time.Second * 5,
 		AvailableTimeout:  time.Second * 30,

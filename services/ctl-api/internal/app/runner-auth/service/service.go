@@ -7,11 +7,13 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/azure"
 	"github.com/nuonco/nuon/pkg/metrics"
 	runneraws "github.com/nuonco/nuon/pkg/runner/auth/aws"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 )
 
 type Params struct {
@@ -26,13 +28,14 @@ type Params struct {
 }
 
 type service struct {
-	v          *validator.Validate
-	l          *zap.Logger
-	db         *gorm.DB
-	cfg        *internal.Config
-	acctClient *account.Client
-	mw         metrics.Writer
-	certStore  *runneraws.IIDCertStore
+	v           *validator.Validate
+	l           *zap.Logger
+	db          *gorm.DB
+	cfg         *internal.Config
+	acctClient  *account.Client
+	mw          metrics.Writer
+	certStore   *runneraws.IIDCertStore
+	workloadJWT *workloadjwt.Verifier
 }
 
 var _ api.Service = (*service)(nil)
@@ -45,16 +48,20 @@ func New(params Params) *service {
 		if err != nil {
 			params.L.Warn("failed to initialize AWS IID cert store, IID auth will be unavailable", zap.Error(err))
 		}
+		if params.Cfg.AzureRunnerAuthAudience != "" && azure.ConfiguredRunnerAudience(params.Cfg.AzureRunnerAuthAudience) == "" {
+			params.L.Warn("azure runner auth audience is set but is not api://<client-id>; only the ARM audience will be accepted")
+		}
 	}
 
 	return &service{
-		v:          params.V,
-		l:          params.L,
-		db:         params.DB,
-		cfg:        params.Cfg,
-		acctClient: params.AcctClient,
-		mw:         params.MW,
-		certStore:  certStore,
+		v:           params.V,
+		l:           params.L,
+		db:          params.DB,
+		cfg:         params.Cfg,
+		acctClient:  params.AcctClient,
+		mw:          params.MW,
+		certStore:   certStore,
+		workloadJWT: workloadjwt.NewVerifier(),
 	}
 }
 

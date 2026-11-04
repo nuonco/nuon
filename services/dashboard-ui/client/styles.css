@@ -922,8 +922,13 @@
   --landing-graphic: url('../../public/login-graphics/landing-graphic.svg');
 }
 
+@layer base {
+  * {
+    border-color: var(--border-color);
+  }
+}
+
 hr,
-:where([class*="divide"] > :not(:last-child)),
 [class*="border"],
 [class*="[&:before]:border"]::before
 {

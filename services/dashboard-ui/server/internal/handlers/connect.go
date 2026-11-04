@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/oidc/githubauth"
 	nuon "github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
@@ -18,6 +19,8 @@ import (
 var githubAppSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
 
 var orgIDPattern = regexp.MustCompile(`^[a-z0-9]+$`)
+
+var installationIDPattern = regexp.MustCompile(`^[0-9]+$`)
 
 func githubAppSlug(name string) string {
 	slug := githubAppSlugPattern.ReplaceAllString(strings.ToLower(name), "-")
@@ -35,6 +38,7 @@ func NewConnectHandler(cfg *internal.Config, l *zap.Logger) *ConnectHandler {
 
 func (h *ConnectHandler) RegisterRoutes(e *gin.Engine) error {
 	e.GET("/connect", h.Handle)
+	e.GET("/connect/oauth", h.HandleOAuth)
 	e.GET("/api/connect-github", h.StartConnectGithub)
 	return nil
 }
@@ -85,8 +89,52 @@ func (h *ConnectHandler) StartConnectGithub(c *gin.Context) {
 	c.Redirect(http.StatusFound, target)
 }
 
+// Handle is the GitHub App setup URL. GitHub sends the user here after an
+// install (or an update, with "Redirect on update" enabled) carrying
+// installation_id and our state nonce. The id is not trusted on its own: when
+// an OAuth client is configured the user is sent on to GitHub's authorize
+// page, and HandleOAuth finishes the connection with the resulting code.
 func (h *ConnectHandler) Handle(c *gin.Context) {
 	installationID := c.Query("installation_id")
+	token, _ := c.Cookie(authCookie)
+	flow, err := h.openConnectState(c)
+	fallback := connectFallback(flow.OrgID, flow.Onboarding)
+	if err != nil || token == "" || !hmacEqual(tokenHash(token), flow.TokenHash) || !hmacEqual(flow.Nonce, c.Query("state")) {
+		h.clearConnectState(c)
+		c.Redirect(http.StatusFound, fallback)
+		return
+	}
+	if !installationIDPattern.MatchString(installationID) {
+		h.clearConnectState(c)
+		h.l.Warn("github setup redirect without a usable installation_id", zap.String("org_id", flow.OrgID))
+		c.Redirect(http.StatusFound, fallback)
+		return
+	}
+
+	if h.cfg.GithubAppClientID == "" {
+		// No OAuth client: hand the id to ctl-api as-is. ctl-api rejects it
+		// unless its own ownership check is disabled (local stacks only).
+		h.clearConnectState(c)
+		h.finishConnect(c, flow, token, installationID, "")
+		return
+	}
+
+	flow.InstallationID = installationID
+	nonce, err := h.writeConnectState(c, flow)
+	if err != nil {
+		h.l.Error("failed to set github oauth state", zap.Error(err))
+		h.clearConnectState(c)
+		c.Redirect(http.StatusFound, fallback)
+		return
+	}
+	c.Redirect(http.StatusFound, githubauth.AuthorizeURL(h.cfg.GithubAppClientID, h.oauthRedirectURI(), nonce))
+}
+
+// HandleOAuth is the GitHub App callback URL for the user-authorization flow
+// started by Handle. It forwards the code together with the installation id
+// stashed in the state cookie, so ctl-api can prove the two belong together.
+func (h *ConnectHandler) HandleOAuth(c *gin.Context) {
+	code := c.Query("code")
 	token, _ := c.Cookie(authCookie)
 	flow, err := h.openConnectState(c)
 	h.clearConnectState(c)
@@ -95,6 +143,21 @@ func (h *ConnectHandler) Handle(c *gin.Context) {
 		c.Redirect(http.StatusFound, fallback)
 		return
 	}
+	if code == "" || !installationIDPattern.MatchString(flow.InstallationID) {
+		h.l.Warn("github oauth redirect without code or installation",
+			zap.String("org_id", flow.OrgID),
+			zap.Bool("has_code", code != ""),
+			zap.Bool("has_installation", flow.InstallationID != ""),
+		)
+		c.Redirect(http.StatusFound, fallback)
+		return
+	}
+
+	h.finishConnect(c, flow, token, flow.InstallationID, code)
+}
+
+func (h *ConnectHandler) finishConnect(c *gin.Context, flow connectState, token, installationID, code string) {
+	fallback := connectFallback(flow.OrgID, flow.Onboarding)
 
 	client, err := nuon.New(nuon.WithURL(h.cfg.ServerAPIURL()), nuon.WithAuthToken(token), nuon.WithOrgID(flow.OrgID))
 	if err != nil {
@@ -106,6 +169,7 @@ func (h *ConnectHandler) Handle(c *gin.Context) {
 	connection, err := client.CreateVCSConnectionCallback(c.Request.Context(), &models.ServiceCreateConnectionCallbackRequest{
 		GithubInstallID: &installationID,
 		OrgID:           &flow.OrgID,
+		Code:            code,
 	})
 	if err != nil {
 		h.l.Error("vcs connection callback failed", zap.Error(err))
@@ -118,6 +182,11 @@ func (h *ConnectHandler) Handle(c *gin.Context) {
 		return
 	}
 	c.Redirect(http.StatusFound, fmt.Sprintf("/%s/apps?vcs-connected=%s", flow.OrgID, connection.ID))
+}
+
+// oauthRedirectURI must match a callback URL registered on the GitHub App.
+func (h *ConnectHandler) oauthRedirectURI() string {
+	return strings.TrimRight(h.cfg.AppUrl, "/") + "/connect/oauth"
 }
 
 func (h *ConnectHandler) redirectToLogin(c *gin.Context) {

@@ -109,6 +109,61 @@ export const WithBuilds = () => (
 )
 WithBuilds.storyName = 'With builds'
 
+const embeddedToml = (enabled: 'false' | 'true', branch: string) =>
+  [
+    'source = ""',
+    `contents = ${JSON.stringify(
+      [
+        '---',
+        'apiVersion: v1',
+        'kind: ConfigMap',
+        'metadata:',
+        '  name: acme',
+        'data:',
+        `  enabled: "${enabled}"`,
+        '  endpoint: http://collector.example.com',
+      ].join('\n')
+    )}`,
+    'path = ""',
+    '',
+    '[helm_chart.public_repo]',
+    "repo = 'acme/example'",
+    `branch = '${branch}'`,
+  ].join('\n')
+
+export const EmbeddedToml = () => (
+  <ConfigChangesViewer
+    sections={[
+      {
+        name: 'Components',
+        sectionKey: 'components',
+        additions: 0,
+        removals: 0,
+        changed: 1,
+        grouped: true,
+        fields: [],
+        entities: [
+          {
+            name: 'collector',
+            op: 'change',
+            componentType: 'helm_chart',
+            fields: [],
+            content: {
+              op: 'change',
+              before: embeddedToml('false', 'release-13'),
+              after: embeddedToml('true', 'release-14'),
+            },
+          },
+        ],
+      },
+    ]}
+    versionLabel="v13 → v14"
+    previousSha="9f8e7d6c5b4a"
+    sha="a1b2c3d4e5f6"
+  />
+)
+EmbeddedToml.storyName = 'Embedded toml'
+
 export const BuildsOnly = () => (
   <ConfigChangesViewer sections={[]} builds={builds} versionLabel="v14" />
 )
@@ -172,6 +227,44 @@ export const ManyChangesPanel = () => (
   />
 )
 ManyChangesPanel.storyName = 'Many changes panel'
+
+const comparedTo = {
+  href: '/org-1/apps/app-1/branches/br-1/runs/wf-1',
+  message: 'Widen the acme VPC CIDR range',
+  sha: '9f8e7d6c5b4a3928',
+}
+
+export const ComparedToRun = () => (
+  <ConfigChangesViewer
+    sections={sections}
+    versionLabel="v13 → v14"
+    previousSha="9f8e7d6c5b4a"
+    sha="a1b2c3d4e5f6"
+    baseline={{ run: { ...comparedTo, status: 'success' } }}
+  />
+)
+ComparedToRun.storyName = 'Compared to a run'
+
+export const ComparedToUnfinishedRun = () => (
+  <ConfigChangesViewer
+    sections={sections}
+    versionLabel="v13 → v14"
+    previousSha="9f8e7d6c5b4a"
+    sha="a1b2c3d4e5f6"
+    baseline={{ run: { ...comparedTo, status: 'running' } }}
+  />
+)
+ComparedToUnfinishedRun.storyName = 'Compared to an unfinished run'
+
+export const NoPreviousRun = () => (
+  <ConfigChangesViewer
+    sections={sections}
+    versionLabel="v14"
+    sha="a1b2c3d4e5f6"
+    baseline={{ run: null }}
+  />
+)
+NoPreviousRun.storyName = 'No previous run'
 
 export const NoChanges = () => <ConfigChangesViewer sections={[]} />
 NoChanges.storyName = 'No changes'

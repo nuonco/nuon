@@ -227,6 +227,34 @@ test('seeds with a runner job filter for another runner job', async () => {
   await waitFor(() => expect(ids()).toBe('9,8'))
 })
 
+test('re-fetches the freshest page once the stream reports complete', async () => {
+  getLogStreamLogs.mockImplementation(async () => [log('2'), log('1')])
+
+  const { stream, ids } = renderProvider()
+  stream.emitLogs([log('1')])
+  stream.emitStatus('live')
+  stream.emitStatus('complete')
+
+  await waitFor(() => expect(getLogStreamLogs).toHaveBeenCalledTimes(1))
+  expect(getLogStreamLogs.mock.calls[0]?.[0]).toMatchObject({
+    logStreamId: 'ls1',
+    orgId: 'org1',
+    order: 'desc',
+  })
+  await waitFor(() => expect(ids()).toBe('1,2'))
+})
+
+test('only re-fetches once even if complete fires more than once', async () => {
+  getLogStreamLogs.mockImplementation(async () => [log('1')])
+
+  const { stream } = renderProvider()
+  stream.emitStatus('complete')
+  await waitFor(() => expect(getLogStreamLogs).toHaveBeenCalledTimes(1))
+
+  stream.emitStatus('complete')
+  await waitFor(() => expect(getLogStreamLogs).toHaveBeenCalledTimes(1))
+})
+
 test('search keystrokes do not reconnect the stream', () => {
   const { stream, setSearch } = renderProvider({
     search: '?q=a',

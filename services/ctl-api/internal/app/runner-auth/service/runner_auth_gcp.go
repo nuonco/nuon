@@ -18,6 +18,7 @@ import (
 	"google.golang.org/api/idtoken"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/jwtcompact"
 	"github.com/nuonco/nuon/pkg/metrics"
 	gcptypes "github.com/nuonco/nuon/pkg/types/gcp"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -40,15 +41,17 @@ var (
 type RunnerAuthGCPRequest struct {
 	IdentityToken   string                    `json:"identity_token" validate:"required"`
 	MetadataRequest *gcptypes.MetadataRequest `json:"metadata" validate:"required"`
+	Refreshable     bool                      `json:"refreshable,omitempty"`
 }
 
 type RunnerAuthGCPResponse struct {
-	Authenticated  bool   `json:"authenticated"`
-	ProjectID      string `json:"project_id,omitempty"`
-	InstanceID     string `json:"instance_id,omitempty"`
-	ServiceAccount string `json:"service_account,omitempty"`
-	RunnerID       string `json:"runner_id,omitempty"`
-	Token          string `json:"token,omitempty"`
+	Authenticated  bool      `json:"authenticated"`
+	ProjectID      string    `json:"project_id,omitempty"`
+	InstanceID     string    `json:"instance_id,omitempty"`
+	ServiceAccount string    `json:"service_account,omitempty"`
+	RunnerID       string    `json:"runner_id,omitempty"`
+	Token          string    `json:"token,omitempty"`
+	ExpiresAt      time.Time `json:"expires_at"`
 }
 
 // @ID						RunnerAuthGCP
@@ -94,6 +97,17 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 	reqCtx := ctx.Request.Context()
 
 	// Step 1: Verify identity token (JWT) — proves project, SA, instance ID.
+	// Compact serialization only: peeks below must not diverge from what
+	// idtoken.Validate verifies.
+	if err := jwtcompact.Require(req.IdentityToken); err != nil {
+		s.l.Warn("runner auth gcp: identity token is not compact jwt", zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "invalid GCP identity token",
+		})
+		ctx.Abort()
+		return
+	}
 	// Resolve the expected audience: if the token carries a custom (white-label)
 	// audience that is registered as a runner group URL, use that; otherwise
 	// fall back to the global runner API URL.
@@ -209,7 +223,7 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createRunnerToken(reqCtx, runner.ID)
+	token, err := s.createRunnerToken(reqCtx, runner.ID, runnerTokenTimeout(req.Refreshable))
 	if err != nil {
 		s.l.Error("runner auth gcp: failed to create token", zap.String("runner_id", runnerID), zap.Error(err))
 		ctx.Error(stderr.ErrSystem{
@@ -227,7 +241,9 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		zap.String("org_id", install.OrgID),
 		zap.String("runner_id", runner.ID),
 		zap.String("instance_id", claims.instanceID),
-		zap.String("project_id", claims.projectID))
+		zap.String("project_id", claims.projectID),
+		zap.Bool("refreshable", req.Refreshable),
+		zap.Time("expires_at", token.ExpiresAt))
 
 	ctx.JSON(http.StatusOK, RunnerAuthGCPResponse{
 		Authenticated:  true,
@@ -235,7 +251,8 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		InstanceID:     claims.instanceID,
 		ServiceAccount: claims.serviceAccount,
 		RunnerID:       runner.ID,
-		Token:          token,
+		Token:          token.Token,
+		ExpiresAt:      token.ExpiresAt,
 	})
 }
 
@@ -379,11 +396,15 @@ func extractRunnerIDFromMetadata(instance *gcpInstanceResponse) string {
 // and checks if it is a registered custom runner URL. If so, that URL is returned
 // as the expected audience so white-labeled deployments can authenticate without
 // exposing Nuon's URL. Falls back to cfg.RunnerAPIURL for standard deployments.
+//
+// The peeked aud only chooses which expected audience idtoken.Validate checks;
+// a valid Google signature for that audience is still required. Non-compact
+// tokens fall back so a flattened JWS cannot steer the choice.
 func (s *service) resolveGCPTokenAudience(ctx context.Context, token string) string {
-	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
+	if err := jwtcompact.Require(token); err != nil {
 		return s.cfg.RunnerAPIURL
 	}
+	parts := strings.Split(strings.TrimSpace(token), ".")
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		return s.cfg.RunnerAPIURL

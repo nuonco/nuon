@@ -61,6 +61,10 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 	}
 
 	component := build.ComponentConfigConnection.Component
+	componentApp := component.App
+	if componentApp == nil {
+		componentApp = &app.App{}
+	}
 	appConfigID := build.ComponentConfigConnection.AppConfigID
 	if appConfigID == "" {
 		l.Info("no app config found, skipping policy evaluation")
@@ -71,8 +75,8 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 			ComponentID:   build.ComponentConfigConnection.ComponentID,
 			PolicyIDs:     []string{},
 			InputCount:    0,
-			OrgName:       component.App.Org.Name,
-			AppName:       component.App.Name,
+			OrgName:       componentApp.Org.Name,
+			AppName:       componentApp.Name,
 			ComponentName: component.Name,
 		}, nil
 	}
@@ -89,8 +93,8 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 			ComponentID:   build.ComponentConfigConnection.ComponentID,
 			PolicyIDs:     []string{},
 			InputCount:    0,
-			OrgName:       component.App.Org.Name,
-			AppName:       component.App.Name,
+			OrgName:       componentApp.Org.Name,
+			AppName:       componentApp.Name,
 			ComponentName: component.Name,
 		}, nil
 	}
@@ -109,8 +113,8 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 			ComponentID:   build.ComponentConfigConnection.ComponentID,
 			PolicyIDs:     []string{},
 			InputCount:    0,
-			OrgName:       component.App.Org.Name,
-			AppName:       component.App.Name,
+			OrgName:       componentApp.Org.Name,
+			AppName:       componentApp.Name,
 			ComponentName: component.Name,
 		}, nil
 	}
@@ -153,8 +157,8 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 		ComponentID:   build.ComponentConfigConnection.ComponentID,
 		PolicyIDs:     policyIDs,
 		InputCount:    1,
-		OrgName:       component.App.Org.Name,
-		AppName:       component.App.Name,
+		OrgName:       componentApp.Org.Name,
+		AppName:       componentApp.Name,
 		ComponentName: component.Name,
 	}, nil
 }

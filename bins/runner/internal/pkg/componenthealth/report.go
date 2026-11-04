@@ -640,15 +640,19 @@ func (e *Engine) collectProbes(ctx context.Context, grouped map[string][]*models
 		return
 	}
 
-	client := newProbeHTTPClient()
-	defer client.CloseIdleConnections()
+	build := e.proberFactory
+	if build == nil {
+		build = newProber
+	}
+	p := build()
+	defer p.close()
 
 	var mu sync.Mutex
 	wg := conc.NewWaitGroup()
 	for componentID, specs := range targets {
 		for _, spec := range specs {
 			wg.Go(func() {
-				row := probeResourceRow(spec, runProbe(ctx, client, spec))
+				row := probeResourceRow(spec, p.run(ctx, spec))
 				mu.Lock()
 				defer mu.Unlock()
 				grouped[componentID] = append(grouped[componentID], row)

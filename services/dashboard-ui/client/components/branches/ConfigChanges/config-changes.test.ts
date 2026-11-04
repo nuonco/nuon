@@ -110,6 +110,69 @@ describe('configChanges', () => {
     expect(changes.sections[0].error).toBeUndefined()
   })
 
+  test('expands escaped contents inside a toml file into real lines', () => {
+    const contents = (enabled: string) =>
+      [
+        'source = ""',
+        `contents = ${JSON.stringify(
+          ['---', 'kind: ConfigMap', `enabled: "${enabled}"`].join('\n')
+        )}`,
+        'path = ""',
+      ].join('\n')
+    const changes = configChanges([
+      section({
+        name: 'Components',
+        sectionKey: 'components',
+        grouped: true,
+        entities: [
+          {
+            name: 'collector',
+            op: 'change',
+            componentType: 'helm_chart',
+            fields: [],
+            content: {
+              op: 'change',
+              before: contents('false'),
+              after: contents('true'),
+            },
+          },
+        ],
+      }),
+    ])
+
+    expect(changes.sections[0].before).toContain('kind: ConfigMap')
+    expect(changes.sections[0].before).not.toContain('\\n')
+    expect(changes.sections[0].after).toContain('enabled: "true"')
+    expect(changes.sections[0].before).toContain('contents = """')
+  })
+
+  test('does not re-quote input defaults the differ already JSON-encoded', () => {
+    const changes = configChanges([
+      section({
+        name: 'Install inputs',
+        sectionKey: 'inputs',
+        grouped: true,
+        entities: [
+          {
+            name: 'input.instance_type',
+            op: 'change',
+            fields: [
+              {
+                key: 'default',
+                op: 'change',
+                diff: `'"t3a.medium"' -> '"t3a.large"'`,
+              },
+            ],
+          },
+        ],
+      }),
+    ])
+
+    expect(changes.sections[0].before).toContain('default = "t3a.medium"')
+    expect(changes.sections[0].after).toContain('default = "t3a.large"')
+    expect(changes.sections[0].after).not.toContain('\\"')
+  })
+
   test('attaches builds to the matching component and sandbox rows', () => {
     const changes = configChanges(
       [

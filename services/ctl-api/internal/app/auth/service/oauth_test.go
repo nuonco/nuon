@@ -27,23 +27,33 @@ func TestVerifyPKCE(t *testing.T) {
 }
 
 func TestIsAllowedRedirectURI(t *testing.T) {
+	hosts := []string{
+		"claude.ai", "www.claude.ai", "claude.com",
+		"cursor.com", "www.cursor.com",
+		"vscode.dev", "insiders.vscode.dev",
+	}
 	cases := []struct {
 		uri  string
 		want bool
 	}{
-		{"https://claude.ai/callback", true},
-		{"https://example.com/oauth/cb", true},
+		{"https://claude.ai/api/mcp/auth_callback", true},
+		{"https://claude.com/api/mcp/auth_callback", true},
+		{"https://www.cursor.com/agents/mcp/oauth/callback", true},
+		{"https://vscode.dev/redirect", true},
+		{"https://example.com/oauth/cb", false},
 		{"http://localhost:8765/callback", true},
 		{"http://127.0.0.1:53210/cb", true},
+		{"http://127.0.0.42:9/cb", true},
 		{"http://[::1]:5000/cb", true},
-		{"http://evil.com/callback", false}, // http non-loopback
-		{"ftp://localhost/cb", false},       // unsupported scheme
+		{"http://evil.com/callback", false},
+		{"https://localhost/cb", false},
+		{"ftp://localhost/cb", false},
 		{"not a url", false},
-		{"https://", false}, // no host
+		{"https://", false},
 		{"", false},
 	}
 	for _, tc := range cases {
-		assert.Equalf(t, tc.want, isAllowedRedirectURI(tc.uri), "uri=%q", tc.uri)
+		assert.Equalf(t, tc.want, isAllowedRedirectURI(tc.uri, hosts), "uri=%q", tc.uri)
 	}
 }
 

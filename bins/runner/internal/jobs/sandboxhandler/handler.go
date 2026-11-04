@@ -562,7 +562,7 @@ func (h *Handler) writeTerraformSandboxMode(ctx context.Context, plan *plantypes
 	params := url.Values{
 		"job_id":       {h.job.ID},
 		"workspace_id": {plan.WorkspaceID},
-		"token":        {h.cfg.RunnerAPIToken},
+		"token":        {h.cfg.APIToken()},
 	}
 
 	u, err := url.JoinPath(h.cfg.RunnerAPIURL, "/v1/terraform-backend")

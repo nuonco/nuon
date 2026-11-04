@@ -230,7 +230,7 @@ export const CodeBlock = ({
             >
               <Icon
                 variant={
-                  wrap ? 'ArrowElbowDownLeftIcon' : 'ArrowsHorizontalIcon'
+                  wrap ? 'ArrowsHorizontalIcon' : 'ArrowElbowDownLeftIcon'
                 }
                 size={14}
               />

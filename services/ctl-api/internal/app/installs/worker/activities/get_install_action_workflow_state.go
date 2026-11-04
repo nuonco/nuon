@@ -4,11 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 )
 
 type GetInstallActionWorkflowStateRequest struct {
@@ -20,16 +18,20 @@ type GetInstallActionWorkflowStateRequest struct {
 func (a *Activities) GetInstallActionWorkflowState(ctx context.Context, req GetInstallActionWorkflowStateRequest) (*app.InstallActionWorkflow, error) {
 	var act app.InstallActionWorkflow
 	res := a.db.WithContext(ctx).
-		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(
-				scopes.WithOverrideTable(views.CustomViewName(db, &app.InstallActionWorkflowRun{}, "state_view_v1")),
-			)
-		}).
-		Preload("Runs.RunnerJob").
 		Preload("ActionWorkflow").
 		Find(&act, "id= ?", req.InstallActionWorkflowID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install action workflow state")
+	}
+
+	runsByWorkflow, err := a.helpers.GetLatestInstallActionWorkflowRuns(ctx, []string{act.ID}, helpers.LatestInstallActionWorkflowRunsOptions{WithRunnerJobs: true})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get latest install action workflow runs")
+	}
+	act.Runs = runsByWorkflow[act.ID]
+	// Find already ran AfterQuery, before Runs was set.
+	if err := act.AfterQuery(a.db); err != nil {
+		return nil, errors.Wrap(err, "unable to hydrate install action workflow")
 	}
 
 	return &act, nil

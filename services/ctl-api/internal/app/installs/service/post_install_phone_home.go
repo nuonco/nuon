@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
@@ -29,6 +30,10 @@ const (
 	phoneHomeRequestTypeDelete = "Delete"
 	phoneHomeRequestTypeCreate = "Create"
 )
+
+const maxPhoneHomeBody = 64 << 10
+
+var errPhoneHomeBodyTooLarge = errors.New("request body too large")
 
 // @ID PhoneHome
 // @Summary				phone home for an install
@@ -50,6 +55,12 @@ const (
 // @Success				201	{object}	app.EmptyResponse
 // @Router					/v1/installs/{install_id}/phone-home/{phone_home_id} [post]
 func (s *service) InstallPhoneHome(ctx *gin.Context) {
+	if ctx.Request.ContentLength > maxPhoneHomeBody {
+		ctx.Error(stderr.NewInvalidRequest(errPhoneHomeBodyTooLarge))
+		return
+	}
+	ctx.Request.Body = http.MaxBytesReader(ctx.Writer, ctx.Request.Body, maxPhoneHomeBody)
+
 	if s.cfg.PhoneHomeAuthRequired {
 		s.installPhoneHomeRequired(ctx)
 		return
@@ -73,14 +84,6 @@ func (s *service) installPhoneHomeRequired(ctx *gin.Context) {
 		return
 	}
 
-	req, requestType, err := bindPhoneHomeRequest(ctx)
-	if err != nil {
-		s.failPhoneHome(ctx, metricTags, phoneHomeFailInvalidRequest, err, fields...)
-		return
-	}
-	metricTags["request_type"] = requestType
-	fields = append(fields, zap.String("request_type", requestType))
-
 	stackVersion, install, err := s.getPhoneHomeTarget(ctx, installID, phoneHomeID)
 	if err != nil {
 		s.failPhoneHomeAuth(ctx, metricTags, nil, err, fields...)
@@ -91,12 +94,25 @@ func (s *service) installPhoneHomeRequired(ctx *gin.Context) {
 	fields = append(fields, zap.String("org_id", install.OrgID), zap.String("stack_version_id", stackVersion.ID))
 
 	reason, err := s.verifyPhoneHomeCredential(ctx, install, stackVersion, authHeader)
-	if err == nil && requestType != phoneHomeRequestTypeDelete {
-		reason, err = checkObservedCloudAccount(install, req, true)
-	}
 	if err != nil {
 		s.failPhoneHomeAuth(ctx, metricTags, install, err, fields...)
 		return
+	}
+
+	req, requestType, err := bindPhoneHomeRequest(ctx)
+	if err != nil {
+		s.failPhoneHome(ctx, metricTags, phoneHomeFailInvalidRequest, err, fields...)
+		return
+	}
+	metricTags["request_type"] = requestType
+	fields = append(fields, zap.String("request_type", requestType))
+
+	if requestType != phoneHomeRequestTypeDelete {
+		reason, err = checkObservedCloudAccount(install, req, true)
+		if err != nil {
+			s.failPhoneHomeAuth(ctx, metricTags, install, err, fields...)
+			return
+		}
 	}
 	metricTags["reason"] = reason
 	s.recordPhoneHomeAuthResult(ctx, install, true)
@@ -328,47 +344,64 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 	if err != nil {
 		return errors.Wrap(err, "unable to convert to mapstructure")
 	}
+	hstoreData := generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data)))
 
-	updatedStack := app.InstallStackVersion{
-		ID: stackVersion.ID,
-	}
-	res := s.db.WithContext(ctx).
-		Model(&updatedStack).
-		Where("status->>'status' <> ?", app.StatusCancelled).
-		Updates(app.InstallStackVersion{
-			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
-			Runs: []app.InstallStackVersionRun{
-				{
-					Data: generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data))),
-				},
-			},
-		})
-	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update stack version")
-	}
-	if res.RowsAffected == 0 {
+	var run app.InstallStackVersionRun
+	var clearedAwait bool
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var current app.InstallStackVersion
-		if err := s.db.WithContext(ctx).First(&current, "id = ?", stackVersion.ID).Error; err != nil {
-			return errors.Wrap(err, "unable to reload stack version")
+		if err := tx.First(&current, "id = ?", stackVersion.ID).Error; err != nil {
+			return errors.Wrap(err, "unable to load stack version")
 		}
-		if current.Status.Status == app.StatusCancelled {
-			return nil
+		wasCancelled := current.Status.Status == app.StatusCancelled
+		// Drop the await hook so a cancelled provision workflow is not resumed.
+		if wasCancelled {
+			if res := tx.Model(&app.InstallStackVersion{}).
+				Where("id = ?", stackVersion.ID).
+				Update("callback_ref", callback.Ref{}); res.Error != nil {
+				return errors.Wrap(res.Error, "unable to clear await callback")
+			}
+			clearedAwait = true
 		}
-	}
 
-	run := app.InstallStackVersionRun{
-		OrgID:                 stackVersion.OrgID,
-		CreatedByID:           stackVersion.CreatedByID,
-		InstallStackVersionID: stackVersion.ID,
-		Data:                  generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data))),
-	}
-	if res = s.db.WithContext(ctx).
-		Create(&run); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to create install stack version run")
-	}
+		updatedStack := app.InstallStackVersion{
+			ID: stackVersion.ID,
+		}
+		if res := tx.Model(&updatedStack).
+			Updates(app.InstallStackVersion{
+				Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
+				Runs: []app.InstallStackVersionRun{
+					{
+						Data: hstoreData,
+					},
+				},
+			}); res.Error != nil {
+			return errors.Wrap(res.Error, "unable to update stack version")
+		}
 
-	if err := s.helpers.RecordInstallStackVersionApplied(ctx, stackVersion, requestType); err != nil {
+		run = app.InstallStackVersionRun{
+			OrgID:                 stackVersion.OrgID,
+			CreatedByID:           stackVersion.CreatedByID,
+			InstallStackVersionID: stackVersion.ID,
+			Data:                  hstoreData,
+		}
+		if res := tx.Create(&run); res.Error != nil {
+			return errors.Wrap(res.Error, "unable to create install stack version run")
+		}
+
+		if err := s.helpers.RecordInstallStackVersionApplied(ctx, tx, stackVersion, requestType); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
 		return err
+	}
+
+	if clearedAwait {
+		s.l.Info("cleared await callback before phone-home on cancelled stack version",
+			zap.String("install_stack_version_id", stackVersion.ID),
+			zap.String("install_id", installID),
+		)
 	}
 
 	ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
