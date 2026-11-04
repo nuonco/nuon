@@ -46,6 +46,19 @@ func (c *client) RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAut
 	return resp.Payload, nil
 }
 
+func (c *client) GetPublicSettings(ctx context.Context, runnerID string) (*models.ServiceRunnerPublicSettings, error) {
+	resp, err := c.genClient.Operations.GetRunnerPublicSettings(&operations.GetRunnerPublicSettingsParams{
+		RunnerID:   runnerID,
+		Context:    ctx,
+		HTTPClient: c.unauthClient,
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) RunnerAuthAzure(ctx context.Context, req *models.ServiceRunnerAuthAzureRequest) (*models.ServiceRunnerAuthAzureResponse, error) {
 	resp, err := c.genClient.Operations.RunnerAuthAzure(&operations.RunnerAuthAzureParams{
 		Req:        req,
