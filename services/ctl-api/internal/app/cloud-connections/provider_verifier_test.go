@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 
+	"github.com/nuonco/nuon/pkg/azure/acr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
@@ -154,6 +155,7 @@ func TestACRVerification(t *testing.T) {
 			accessToken := "eyJhbGciOiJSUzI1NiJ9." + base64.RawURLEncoding.EncodeToString([]byte(`{"tid":"`+tenant+`"}`)) + ".c2lnbmF0dXJl"
 			attempts := 0
 			previous := http.DefaultTransport
+			previousExchange := acr.ConnectionExchangeClient.Transport
 			http.DefaultTransport = verificationTransportFunc(func(req *http.Request) (*http.Response, error) {
 				status, body := http.StatusOK, ""
 				switch {
@@ -201,7 +203,11 @@ func TestACRVerification(t *testing.T) {
 				}
 				return &http.Response{StatusCode: status, Header: http.Header{"Content-Type": {"application/json"}}, Body: io.NopCloser(strings.NewReader(body)), Request: req}, nil
 			})
-			t.Cleanup(func() { http.DefaultTransport = previous })
+			acr.ConnectionExchangeClient.Transport = http.DefaultTransport
+			t.Cleanup(func() {
+				http.DefaultTransport = previous
+				acr.ConnectionExchangeClient.Transport = previousExchange
+			})
 			connection := &app.CloudConnection{ID: "cc_acme", OrgID: "org_acme", Platform: app.CloudPlatformAzure, Preset: app.CloudConnectionPresetACR, TargetID: tenant, Principal: "22222222-2222-2222-2222-222222222222", AzureTenantID: tenant, AzureRegistryID: "/subscriptions/" + tenant + "/resourceGroups/acme/providers/Microsoft.ContainerRegistry/registries/acmeregistry", AzureRegistryLoginServer: "acmeregistry.azurecr.io"}
 			now, sleeps := time.Now(), 0
 			verifier := NewVerifier(issuer, zap.NewNop()).(*providerVerifier)

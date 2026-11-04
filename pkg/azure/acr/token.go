@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -24,12 +26,45 @@ const (
 	// RegistryScope is the Entra scope exchanged for an ACR refresh token.
 	// That access token is posted to the registry login server, so it is limited to Container Registry.
 	RegistryScope = "https://containerregistry.azure.net/.default"
+	armTokenScope = "https://management.azure.com/.default"
 )
 
 // exchangeClient never follows redirects: the request body carries an Entra
 // token, and a redirect would replay it to whatever host the registry names.
 var exchangeClient = &http.Client{
 	Timeout: 30 * time.Second,
+	CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
+
+var ConnectionExchangeClient = &http.Client{
+	Timeout: 30 * time.Second,
+	Transport: &http.Transport{
+		Proxy: nil,
+		DialContext: (&net.Dialer{
+			Timeout: 30 * time.Second,
+			Control: func(_, address string, _ syscall.RawConn) error {
+				host, _, err := net.SplitHostPort(address)
+				if err != nil {
+					return err
+				}
+				ip := net.ParseIP(host)
+				if ip == nil {
+					return fmt.Errorf("acr token exchange refused non-IP address %q", host)
+				}
+				if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() || ip.IsMulticast() {
+					return fmt.Errorf("acr token exchange refused address %q", address)
+				}
+				return nil
+			},
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	},
 	CheckRedirect: func(*http.Request, []*http.Request) error {
 		return http.ErrUseLastResponse
 	},
@@ -55,15 +90,19 @@ func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService
 	if cfg != nil {
 		tenantID = cfg.TenantID
 	}
-	return GetRepositoryTokenWithCredential(ctx, credential, tenantID, acrService)
+	return exchangeRepositoryToken(ctx, credential, tenantID, acrService, armTokenScope, exchangeClient)
 }
 
 func GetRepositoryTokenWithCredential(ctx context.Context, credential azcore.TokenCredential, tenantID, acrService string) (string, error) {
+	return exchangeRepositoryToken(ctx, credential, tenantID, acrService, RegistryScope, ConnectionExchangeClient)
+}
+
+func exchangeRepositoryToken(ctx context.Context, credential azcore.TokenCredential, tenantID, acrService, scope string, client *http.Client) (string, error) {
 	if err := ValidateLoginServer(acrService); err != nil {
 		return "", err
 	}
 	aadToken, err := credential.GetToken(ctx, policy.TokenRequestOptions{
-		Scopes: []string{RegistryScope}},
+		Scopes: []string{scope}},
 	)
 	if err != nil {
 		return "", fmt.Errorf("unable to get credential: %w", err)
@@ -91,7 +130,7 @@ func GetRepositoryTokenWithCredential(ctx context.Context, credential azcore.Tok
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	jsonResponse, err := exchangeClient.Do(req)
+	jsonResponse, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("unable to get credential: %w", err)
 	}

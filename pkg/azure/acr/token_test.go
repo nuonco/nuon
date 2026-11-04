@@ -75,15 +75,15 @@ func TestGetRepositoryTokenWithCredential(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			body := &exchangeBody{Reader: strings.NewReader(tc.body)}
-			previous := exchangeClient.Transport
-			exchangeClient.Transport = exchangeTransportFunc(func(req *http.Request) (*http.Response, error) {
+			previous := ConnectionExchangeClient.Transport
+			ConnectionExchangeClient.Transport = exchangeTransportFunc(func(req *http.Request) (*http.Response, error) {
 				require.Equal(t, "https://acmeregistry.azurecr.io/oauth2/exchange", req.URL.String())
 				require.NoError(t, req.ParseForm())
 				require.Equal(t, token, req.Form.Get("access_token"))
 				require.Equal(t, "acme-tenant", req.Form.Get("tenant"))
 				return &http.Response{StatusCode: tc.status, Header: http.Header{"Location": {"https://foreign.example.com"}}, Body: body, Request: req}, nil
 			})
-			t.Cleanup(func() { exchangeClient.Transport = previous })
+			t.Cleanup(func() { ConnectionExchangeClient.Transport = previous })
 			credential := tokenCredentialFunc(func(_ context.Context, opts policy.TokenRequestOptions) (azcore.AccessToken, error) {
 				require.Equal(t, []string{RegistryScope}, opts.Scopes)
 				return azcore.AccessToken{Token: token, ExpiresOn: time.Now().Add(time.Hour)}, nil
