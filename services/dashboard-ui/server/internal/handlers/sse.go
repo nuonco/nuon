@@ -28,11 +28,16 @@ const (
 )
 
 var terminalStatuses = map[string]bool{
-	"success":       true,
-	"error":         true,
-	"failed":        true,
-	"cancelled":     true,
-	"not-attempted": true,
+	"success":         true,
+	"active":          true,
+	"finished":        true,
+	"error":           true,
+	"failed":          true,
+	"cancelled":       true,
+	"not-attempted":   true,
+	"timed-out":       true,
+	"deprovisioned":   true,
+	"approval-denied": true,
 }
 
 func sseToken(c *gin.Context) (string, bool) {
