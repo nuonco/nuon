@@ -12,9 +12,8 @@ func (c *client) SetRunnerID(runnerID string) {
 }
 
 func (c *client) SetAuthToken(token string) {
-	c.APIToken = token
 	if c.appTransport != nil {
-		c.appTransport.authToken = token
+		c.appTransport.setAuthToken(token)
 	}
 }
 

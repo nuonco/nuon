@@ -20,6 +20,9 @@ type ServiceRunnerAuthGCPResponse struct {
 	// authenticated
 	Authenticated bool `json:"authenticated,omitempty"`
 
+	// expires at
+	ExpiresAt string `json:"expires_at,omitempty"`
+
 	// instance id
 	InstanceID string `json:"instance_id,omitempty"`
 

@@ -2,6 +2,7 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -15,6 +16,9 @@ import (
 // Fetcher implements tokenfetcher.TokenFetcher for Azure managed identity.
 type Fetcher struct {
 	RunnerID string
+	// Refreshable asks for a short-lived token; only set it when the caller
+	// refreshes the token before it expires.
+	Refreshable bool
 }
 
 var _ tokenfetcher.TokenFetcher = (*Fetcher)(nil)
@@ -24,19 +28,21 @@ func (f *Fetcher) Name() string {
 }
 
 func (f *Fetcher) FetchToken(ctx context.Context, apiClient nuonrunner.Client) (*tokenfetcher.TokenFetchResult, error) {
-	resource, ok := azure.RunnerAuthResource(os.Getenv("AZURE_RUNNER_AUTH_RESOURCE"))
-	if !ok {
-		return nil, fmt.Errorf("AZURE_RUNNER_AUTH_RESOURCE is not the ARM audience or an api://<client-id> audience")
+	audience := f.requestedAudience(ctx, apiClient)
+	token, err := GetIMDSToken(ctx, audience)
+	var imdsErr *IMDSError
+	if err != nil && audience != azure.ManagementAudience && errors.As(err, &imdsErr) && imdsErr.ResourceNotInTenant() {
+		audience = azure.ManagementAudience
+		token, err = GetIMDSToken(ctx, audience)
 	}
-
-	token, err := GetIMDSToken(ctx, resource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Azure IMDS token: %w", err)
 	}
 
 	req := &models.ServiceRunnerAuthAzureRequest{
-		Token:    &token,
-		RunnerID: f.RunnerID,
+		Token:       &token,
+		RunnerID:    f.RunnerID,
+		Refreshable: f.Refreshable,
 	}
 
 	resp, err := apiClient.RunnerAuthAzure(ctx, req)
@@ -52,5 +58,19 @@ func (f *Fetcher) FetchToken(ctx context.Context, apiClient nuonrunner.Client) (
 		RunnerID:  resp.RunnerID,
 		AccountID: resp.TenantID,
 		Token:     resp.Token,
+		ExpiresAt: tokenfetcher.ParseExpiresAt(resp.ExpiresAt),
+		Audience:  audience,
 	}, nil
+}
+
+func (f *Fetcher) requestedAudience(ctx context.Context, apiClient nuonrunner.Client) string {
+	if settings, err := apiClient.GetPublicSettings(ctx, f.RunnerID); err == nil && settings != nil {
+		if audience := azure.ConfiguredRunnerAudience(settings.AzureAuthAudience); audience != "" {
+			return audience
+		}
+	}
+	if audience, ok := azure.RunnerAuthResource(os.Getenv("AZURE_RUNNER_AUTH_RESOURCE")); ok {
+		return audience
+	}
+	return azure.ManagementAudience
 }
