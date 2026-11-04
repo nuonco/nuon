@@ -28,7 +28,7 @@ func NewProcessProvider(cfg *runnerconfig.Config, set *settings.Settings) (*sdkt
 		return sdktrace.NewTracerProvider(), nil
 	}
 
-	exp, err := otlptrace.New(context.Background(), newJSONHTTPClient(cfg.RunnerAPIURL, cfg.RunnerID, cfg.RunnerAPIToken))
+	exp, err := otlptrace.New(context.Background(), newJSONHTTPClient(cfg.RunnerAPIURL, cfg.RunnerID, cfg.APIToken))
 	if err != nil {
 		return nil, fmt.Errorf("strace: init otlp trace exporter: %w", err)
 	}

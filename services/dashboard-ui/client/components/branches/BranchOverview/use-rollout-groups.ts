@@ -335,7 +335,8 @@ export const useRolloutGroups = () => {
         runId: workflowId!,
       }),
     enabled: !!orgId && !!appId && !!branchId && !!workflowId,
-    refetchInterval: 5000,
+    refetchInterval: (query) =>
+      TERMINAL.has(query.state.data?.status?.status ?? '') ? false : 5000,
     placeholderData: keepPreviousData,
   })
   const rolloutRun =

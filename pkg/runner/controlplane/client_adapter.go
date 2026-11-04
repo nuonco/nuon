@@ -188,6 +188,10 @@ func (c *clientAdapter) RunnerAuthAzure(context.Context, *models.ServiceRunnerAu
 	return nil, unsupported("RunnerAuthAzure")
 }
 
+func (c *clientAdapter) GetPublicSettings(context.Context, string) (*models.ServiceRunnerPublicSettings, error) {
+	return nil, unsupported("GetPublicSettings")
+}
+
 func unsupported(method string) error {
 	return fmt.Errorf("control-plane runner client does not support %s", method)
 }

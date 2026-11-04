@@ -174,10 +174,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	sandboxRun, err := activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
-		InstallWorkflowID: s.FlowID,
-		InstallID:         install.ID,
-	})
+	var sandboxRun *app.InstallSandboxRun
+	if workflow.GetVersion(ctx, "reprovision-sandbox-apply-plan-authorization-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		sandboxRun, err = activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
+			InstallWorkflowID: s.FlowID,
+			InstallID:         install.ID,
+		})
+	} else {
+		sandboxRun, err = activities.AwaitGetApprovedInstallSandboxRunForApplyStep(ctx, activities.GetApprovedInstallSandboxRunForApplyStepRequest{
+			InstallWorkflowID: s.FlowID,
+			InstallID:         install.ID,
+			ApplyStepID:       s.FlowStepID,
+		})
+	}
 	if err != nil {
 		return errors.Wrap(err, "unable to get install deploy")
 	}

@@ -5,6 +5,7 @@ import { PolicyCountsBadge } from '@/components/workflows/step-details/PolicyCou
 import { StepButtons } from '@/components/workflows/step-details/StepButtons'
 import { StepDetailPanelButton } from '@/components/workflows/step-details/StepDetailPanel'
 import { RunningClock } from '@/components/workflows/RunningClock'
+import { SkipBypassWarning } from '@/components/workflows/step-details/SkipBypassWarning'
 import { StepTitle } from '@/components/workflows/step-details/StepTitle'
 import type { TWorkflowStep } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -17,6 +18,7 @@ export interface IWorkflowStepRow {
   showRetry?: boolean
   nested?: boolean
   attemptNumber?: number
+  ranAfterSkip?: TWorkflowStep
 }
 
 export const WorkflowStepRow = ({
@@ -26,6 +28,7 @@ export const WorkflowStepRow = ({
   showRetry = false,
   nested = false,
   attemptNumber,
+  ranAfterSkip,
 }: IWorkflowStepRow) => {
   const badges = getStepBadges(step, approvalPrompt, planOnly)
   const eventWait = step?.links?.event_wait
@@ -58,6 +61,8 @@ export const WorkflowStepRow = ({
         ))}
 
         <PolicyCountsBadge step={step} />
+
+        {ranAfterSkip ? <SkipBypassWarning ranAnyway={ranAfterSkip} /> : null}
 
         {hideDetails ? null : (
           <StepDetailPanelButton

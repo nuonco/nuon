@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
 )
 
 type GetInstallSandboxRunForApplyStep struct {
@@ -17,6 +18,28 @@ type GetInstallSandboxRunForApplyStep struct {
 // @temporal-gen-v2 activity
 func (a *Activities) GetInstallSandboxRunForApplyStep(ctx context.Context, req GetInstallSandboxRunForApplyStep) (*app.InstallSandboxRun, error) {
 	return a.getInstallSandboxRun(ctx, req.InstallWorkflowID, req.InstallID)
+}
+
+type GetApprovedInstallSandboxRunForApplyStepRequest struct {
+	InstallWorkflowID string `validate:"required"`
+	InstallID         string `validate:"required"`
+	ApplyStepID       string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) GetApprovedInstallSandboxRunForApplyStep(ctx context.Context, req GetApprovedInstallSandboxRunForApplyStepRequest) (*app.InstallSandboxRun, error) {
+	ctx = routing.WithoutReplica(ctx)
+	planStep, err := a.approvedPlanStepForApply(ctx, req.InstallWorkflowID, req.ApplyStepID, app.WorkflowStepTargetTypeInstallSandboxRuns)
+	if err != nil {
+		return nil, err
+	}
+	var run app.InstallSandboxRun
+	if err := a.db.WithContext(ctx).
+		Where(&app.InstallSandboxRun{ID: planStep.StepTargetID, InstallID: req.InstallID, InstallWorkflowID: generics.ToPtr(req.InstallWorkflowID)}).
+		Preload("LogStream").First(&run).Error; err != nil {
+		return nil, errors.Wrap(err, "unable to find the sandbox run authorized by the plan")
+	}
+	return &run, nil
 }
 
 type GetLatestInstallSandboxRun struct {

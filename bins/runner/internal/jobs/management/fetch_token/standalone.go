@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -12,26 +13,29 @@ import (
 	pkgazure "github.com/nuonco/nuon/bins/runner/internal/pkg/azure"
 	pkggcp "github.com/nuonco/nuon/bins/runner/internal/pkg/gcp"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/token"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/tokenfetcher"
 )
 
 type FetchTokenResult struct {
-	RunnerID   string `json:"runner_id"`
-	InstanceID string `json:"instance_id"`
-	AccountID  string `json:"account_id,omitempty"`
-	ProjectID  string `json:"project_id,omitempty"`
-	Token      string `json:"token,omitempty"`
-	TokenPath  string `json:"token_path,omitempty"`
+	RunnerID   string    `json:"runner_id"`
+	InstanceID string    `json:"instance_id"`
+	AccountID  string    `json:"account_id,omitempty"`
+	ProjectID  string    `json:"project_id,omitempty"`
+	Token      string    `json:"token,omitempty"`
+	TokenPath  string    `json:"token_path,omitempty"`
+	Audience   string    `json:"audience,omitempty"`
+	ExpiresAt  time.Time `json:"-"`
 }
 
 // FetchToken authenticates using cloud instance credentials and returns the token without writing to disk.
 // It detects the cloud provider from the CLOUD_PROVIDER env var, falling back to auto-detection.
 // For AWS, authMethod selects the authentication strategy: "" / "iid" (default) for Instance
 // Identity Document (requires runnerID), or "sts" for presigned STS requests.
-func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string) (*FetchTokenResult, error) {
+func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string, refreshable bool) (*FetchTokenResult, error) {
 	provider := detectCloudProvider(ctx)
 	switch provider {
 	case "gcp":
-		return fetchTokenGCP(ctx, apiClient)
+		return fetchTokenGCP(ctx, apiClient, refreshable)
 	case "aws":
 		switch authMethod {
 		case "sts":
@@ -45,8 +49,8 @@ func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, ru
 }
 
 // FetchTokenAzure authenticates with Azure managed identity and returns the token without writing to disk.
-func FetchTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID string) (*FetchTokenResult, error) {
-	f := &pkgazure.Fetcher{RunnerID: runnerID}
+func FetchTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID string, refreshable bool) (*FetchTokenResult, error) {
+	f := &pkgazure.Fetcher{RunnerID: runnerID, Refreshable: refreshable}
 	result, err := f.FetchToken(ctx, apiClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to authenticate with azure: %w", err)
@@ -56,12 +60,14 @@ func FetchTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID 
 		RunnerID:  result.RunnerID,
 		AccountID: result.AccountID,
 		Token:     result.Token,
+		ExpiresAt: result.ExpiresAt,
+		Audience:  result.Audience,
 	}, nil
 }
 
 // FetchAndStoreToken authenticates using cloud instance credentials and writes the token to disk.
 func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string) (*FetchTokenResult, error) {
-	result, err := FetchToken(ctx, apiClient, authMethod, runnerID)
+	result, err := FetchToken(ctx, apiClient, authMethod, runnerID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +77,7 @@ func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client, authMe
 
 // FetchAndStoreTokenAzure authenticates with Azure managed identity and writes the token to disk.
 func FetchAndStoreTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID string) (*FetchTokenResult, error) {
-	result, err := FetchTokenAzure(ctx, apiClient, runnerID)
+	result, err := FetchTokenAzure(ctx, apiClient, runnerID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +167,7 @@ func fetchTokenAWSIID(ctx context.Context, apiClient nuonrunner.Client, runnerID
 	}, nil
 }
 
-func fetchTokenGCP(ctx context.Context, apiClient nuonrunner.Client) (*FetchTokenResult, error) {
+func fetchTokenGCP(ctx context.Context, apiClient nuonrunner.Client, refreshable bool) (*FetchTokenResult, error) {
 	apiURL := os.Getenv("RUNNER_API_URL")
 	if apiURL == "" {
 		apiURL = "https://runner.nuon.co"
@@ -187,6 +193,7 @@ func fetchTokenGCP(ctx context.Context, apiClient nuonrunner.Client) (*FetchToke
 			URL:     metadataReq.URL,
 			Headers: metadataReq.Headers,
 		},
+		Refreshable: refreshable,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to authenticate with GCP: %w", err)
@@ -201,5 +208,6 @@ func fetchTokenGCP(ctx context.Context, apiClient nuonrunner.Client) (*FetchToke
 		InstanceID: resp.InstanceID,
 		ProjectID:  resp.ProjectID,
 		Token:      resp.Token,
+		ExpiresAt:  tokenfetcher.ParseExpiresAt(resp.ExpiresAt),
 	}, nil
 }
