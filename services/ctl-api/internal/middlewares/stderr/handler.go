@@ -53,7 +53,15 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		// Capture the request body
 		var requestBody string
 		if c.Request.Body != nil {
-			b, _ := io.ReadAll(c.Request.Body)
+			b, err := io.ReadAll(c.Request.Body)
+			var tooLarge *http.MaxBytesError
+			if errors.As(err, &tooLarge) {
+				c.Abort()
+				if !c.Writer.Written() {
+					c.Status(http.StatusRequestEntityTooLarge)
+				}
+				return
+			}
 			requestBody = string(b)
 			c.Request.Body = io.NopCloser(bytes.NewReader(b)) // Restore the body for the actual handler to use
 		}
