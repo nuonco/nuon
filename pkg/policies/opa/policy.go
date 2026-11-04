@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/open-policy-agent/opa/v1/ast"
 	"github.com/open-policy-agent/opa/v1/rego"
@@ -14,6 +15,33 @@ import (
 
 //go:embed check.rego
 var Library string
+
+// Policies come from app configs and run on the control plane, so they must not
+// be able to reach the network from there.
+var deniedBuiltins = map[string]struct{}{
+	ast.HTTPSend.Name:        {},
+	ast.NetLookupIPAddr.Name: {},
+}
+
+var capabilities = sync.OnceValue(func() *ast.Capabilities {
+	caps := ast.CapabilitiesForThisVersion()
+	builtins := make([]*ast.Builtin, 0, len(caps.Builtins))
+	for _, builtin := range caps.Builtins {
+		if _, denied := deniedBuiltins[builtin.Name]; !denied {
+			builtins = append(builtins, builtin)
+		}
+	}
+	caps.Builtins = builtins
+	// A nil AllowNet permits every host; an empty one permits none.
+	caps.AllowNet = []string{}
+	return caps
+})
+
+// Capabilities returns the OPA capabilities every policy compile and evaluation
+// must use. The returned value is shared and must not be modified.
+func Capabilities() *ast.Capabilities {
+	return capabilities()
+}
 
 type Check struct {
 	ID          string
@@ -63,6 +91,11 @@ func Parse(contents string) (*Policy, error) {
 	if module.Package.Path.String() == "data.nuon" {
 		for _, rule := range module.Rules {
 			if rule.Head.Name == "deny" || rule.Head.Name == "warn" {
+				compiler := ast.NewCompiler().WithCapabilities(Capabilities())
+				compiler.Compile(map[string]*ast.Module{"policy.rego": module})
+				if compiler.Failed() {
+					return nil, compiler.Errors
+				}
 				return &Policy{}, nil
 			}
 		}
@@ -136,7 +169,7 @@ func Parse(contents string) (*Policy, error) {
 	if err != nil {
 		return nil, err
 	}
-	compiler := ast.NewCompiler()
+	compiler := ast.NewCompiler().WithCapabilities(Capabilities())
 	compiler.Compile(map[string]*ast.Module{"policy.rego": module, "nuon-check.rego": library})
 	if compiler.Failed() {
 		return nil, compiler.Errors
@@ -171,6 +204,7 @@ func (p *Policy) Evaluate(ctx context.Context, inputJSON []byte, inputIndex int,
 			var query rego.PreparedEvalQuery
 			query, err = rego.New(
 				rego.Compiler(p.compiler),
+				rego.Capabilities(Capabilities()),
 				rego.Query("data.nuon.checks."+check.ID),
 				rego.StrictBuiltinErrors(true),
 			).PrepareForEval(ctx)

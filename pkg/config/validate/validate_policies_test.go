@@ -35,6 +35,22 @@ check_example contains check.finding("review")`))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must define at least one deny or warn rule")
 	})
+
+	t.Run("rejects network builtins", func(t *testing.T) {
+		tests := map[string]string{
+			"legacy http.send":               `package nuon` + "\n" + `deny contains "x" if { http.send({"method": "GET", "url": "http://example.com"}) }`,
+			"legacy net.lookup_ip_addr":      `package nuon` + "\n" + `deny contains "x" if { net.lookup_ip_addr("example.com") }`,
+			"named check http.send":          "package nuon.checks\nimport data.nuon.lib.check\n" + `check_x contains check.finding("x") if { http.send({"method": "GET", "url": "http://example.com"}) }`,
+			"named check net.lookup_ip_addr": "package nuon.checks\nimport data.nuon.lib.check\n" + `check_x contains check.finding("x") if { net.lookup_ip_addr("example.com") }`,
+		}
+		for name, policy := range tests {
+			t.Run(name, func(t *testing.T) {
+				err := ValidateOPAPolicy(policy)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "undefined function")
+			})
+		}
+	})
 }
 
 func TestValidatePolicyType(t *testing.T) {
