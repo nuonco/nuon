@@ -30,7 +30,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	// Nuon-managed values are baked in. runnerVmSize and telemetry stay
 	// customer-facing when the template declares them. At subscription scope
 	// every other scalar parameter is hoisted as well.
-	armTmpl, err := fetchARMTemplate(templateURL)
+	armTmpl, err := t.fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("runner linked deployment: %w", err)
 	}
