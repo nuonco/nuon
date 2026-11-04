@@ -120,9 +120,9 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 	var result *fetchtoken.FetchTokenResult
 	switch h.settings.Platform {
 	case "azure":
-		result, err = fetchtoken.FetchTokenAzure(ctx, unauthClient, h.settings.Cfg.RunnerID)
+		result, err = fetchtoken.FetchTokenAzure(ctx, unauthClient, h.settings.Cfg.RunnerID, true)
 	default:
-		result, err = fetchtoken.FetchToken(ctx, unauthClient, h.settings.Cfg.RunnerAuthMethod, h.settings.Cfg.RunnerID)
+		result, err = fetchtoken.FetchToken(ctx, unauthClient, h.settings.Cfg.RunnerAuthMethod, h.settings.Cfg.RunnerID, true)
 	}
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch new token")
@@ -130,7 +130,7 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 
 	// Update the in-memory token on both the API client and config.
 	h.apiClient.SetAuthToken(result.Token)
-	h.settings.Cfg.RunnerAPIToken = result.Token
+	h.settings.Cfg.SetAPIToken(result.Token)
 
 	h.l.Info(fmt.Sprintf("successfully refreshed runner token for runner %s", result.RunnerID))
 	return nil
