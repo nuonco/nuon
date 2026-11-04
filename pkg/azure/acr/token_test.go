@@ -85,7 +85,7 @@ func TestGetRepositoryTokenWithCredential(t *testing.T) {
 			})
 			t.Cleanup(func() { exchangeClient.Transport = previous })
 			credential := tokenCredentialFunc(func(_ context.Context, opts policy.TokenRequestOptions) (azcore.AccessToken, error) {
-				require.Equal(t, []string{"https://management.azure.com/.default"}, opts.Scopes)
+				require.Equal(t, []string{RegistryScope}, opts.Scopes)
 				return azcore.AccessToken{Token: token, ExpiresOn: time.Now().Add(time.Hour)}, nil
 			})
 			got, err := GetRepositoryTokenWithCredential(context.Background(), credential, "", "acmeregistry.azurecr.io")

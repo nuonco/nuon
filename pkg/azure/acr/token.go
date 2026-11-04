@@ -21,6 +21,9 @@ import (
 
 const (
 	DefaultACRUsername string = "00000000-0000-0000-0000-000000000000"
+	// RegistryScope is the Entra scope exchanged for an ACR refresh token.
+	// That access token is posted to the registry login server, so it is limited to Container Registry.
+	RegistryScope = "https://containerregistry.azure.net/.default"
 )
 
 // exchangeClient never follows redirects: the request body carries an Entra
@@ -60,7 +63,7 @@ func GetRepositoryTokenWithCredential(ctx context.Context, credential azcore.Tok
 		return "", err
 	}
 	aadToken, err := credential.GetToken(ctx, policy.TokenRequestOptions{
-		Scopes: []string{"https://management.azure.com/.default"}},
+		Scopes: []string{RegistryScope}},
 	)
 	if err != nil {
 		return "", fmt.Errorf("unable to get credential: %w", err)

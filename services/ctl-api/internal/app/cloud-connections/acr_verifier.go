@@ -41,7 +41,7 @@ func (v *providerVerifier) verifyACR(ctx context.Context, connection *app.CloudC
 	if err != nil {
 		return VerificationResult{}, err
 	}
-	tokenOptions := policy.TokenRequestOptions{Scopes: []string{"https://management.azure.com/.default"}}
+	tokenOptions := policy.TokenRequestOptions{Scopes: []string{acr.RegistryScope}}
 	deadline := v.now().Add(time.Minute)
 	for {
 		_, err = credential.GetToken(ctx, tokenOptions)
