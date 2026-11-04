@@ -11,7 +11,10 @@ import (
 )
 
 func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
-	roles := standardOrgRoles(orgID)
+	roles, err := standardOrgRoles(orgID)
+	if err != nil {
+		return err
+	}
 
 	res := c.db.
 		WithContext(ctx).
@@ -37,8 +40,8 @@ func orgPolicy(orgID string, name app.PolicyName, verb permissions.Permission, a
 	}
 }
 
-func standardOrgRoles(orgID string) []app.Role {
-	return []app.Role{
+func standardOrgRoles(orgID string) ([]app.Role, error) {
+	roles := []app.Role{
 		{
 			OrgID:       generics.NewNullString(orgID),
 			RoleType:    app.RoleTypeOrgAdmin,
@@ -101,4 +104,22 @@ func standardOrgRoles(orgID string) []app.Role {
 			},
 		},
 	}
+	for i := range roles {
+		role := &roles[i]
+		if role.RoleType != app.RoleTypeOrgAdmin && role.RoleType != app.RoleTypeOrgReadOnly {
+			continue
+		}
+		policy, err := permissions.RolePolicy(permissions.RoleName(role.RoleType))
+		if err != nil {
+			return nil, err
+		}
+		document, err := policy.MarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		role.Version = app.RoleVersionV3
+		role.Policies[0].Document = document
+		role.Policies[0].Permissions = nil
+	}
+	return roles, nil
 }

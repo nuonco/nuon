@@ -126,7 +126,10 @@ func (a *Policy) PermissionProjection() (pgtype.Hstore, error) {
 	if err != nil {
 		return nil, err
 	}
-	projection := pgtype.Hstore{permissions.APIPermissionKey: generics.ToPtr(string(document.API()))}
+	projection := make(pgtype.Hstore)
+	if document.API() != "" {
+		projection[permissions.APIPermissionKey] = generics.ToPtr(string(document.API()))
+	}
 	if verb != permissions.PermissionUnknown {
 		projection[orgID] = verb.ToStrPtr()
 	}

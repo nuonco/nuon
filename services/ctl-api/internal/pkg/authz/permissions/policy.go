@@ -23,10 +23,10 @@ type Policy struct {
 }
 
 type bundleDocument struct {
-	Kind        PolicyKind     `json:"kind"`
-	API         API            `json:"api"`
-	BindingKind ResourceKind   `json:"binding_kind"`
-	Permissions []PermissionID `json:"permissions"`
+	Kind        PolicyKind      `json:"kind"`
+	API         json.RawMessage `json:"api,omitempty"`
+	BindingKind ResourceKind    `json:"binding_kind"`
+	Permissions []PermissionID  `json:"permissions"`
 }
 
 func DecodePolicy(version int, data []byte) (Policy, error) {
@@ -44,8 +44,14 @@ func DecodePolicy(version int, data []byte) (Policy, error) {
 	if doc.Kind != PolicyKindBundle {
 		return Policy{}, fmt.Errorf("invalid policy kind %q", doc.Kind)
 	}
-	if _, err := ParseAPI(string(doc.API)); err != nil {
-		return Policy{}, err
+	var api API
+	if doc.API != nil {
+		if err := json.Unmarshal(doc.API, &api); err != nil {
+			return Policy{}, err
+		}
+		if _, err := ParseAPI(string(api)); err != nil {
+			return Policy{}, err
+		}
 	}
 	if doc.BindingKind != KindOrg {
 		return Policy{}, fmt.Errorf("invalid bundle binding kind %q", doc.BindingKind)
@@ -57,7 +63,7 @@ func DecodePolicy(version int, data []byte) (Policy, error) {
 	if err != nil {
 		return Policy{}, err
 	}
-	return Policy{kind: doc.Kind, api: doc.API, bindingKind: doc.BindingKind, permissions: set}, nil
+	return Policy{kind: doc.Kind, api: api, bindingKind: doc.BindingKind, permissions: set}, nil
 }
 
 func (p Policy) API() API {
@@ -88,7 +94,15 @@ func (p Policy) MarshalJSON() ([]byte, error) {
 	if p.kind != PolicyKindBundle {
 		return nil, fmt.Errorf("invalid policy kind %q", p.kind)
 	}
+	var api json.RawMessage
+	if p.api != "" {
+		value, err := json.Marshal(p.api)
+		if err != nil {
+			return nil, err
+		}
+		api = value
+	}
 	return json.Marshal(bundleDocument{
-		Kind: p.kind, API: p.api, BindingKind: p.bindingKind, Permissions: p.permissions.Values(),
+		Kind: p.kind, API: api, BindingKind: p.bindingKind, Permissions: p.permissions.Values(),
 	})
 }
