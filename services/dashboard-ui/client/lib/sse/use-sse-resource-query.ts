@@ -1,18 +1,30 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { useResourceSSE } from '@/lib/sse/use-resource-sse'
-import { createSSEQueryListener, type TSSEListenerMap } from '@/lib/sse-listeners'
+import {
+  createSSEQueryListener,
+  type TSSEListenerMap,
+} from '@/lib/sse-listeners'
 import type { TAPIError } from '@/types'
 
 const FALLBACK_POLL_MS = 4000
 const FINISHED_POLL_MS = 30_000
 
+const TERMINAL_STATUSES_V2 = new Set([
+  'success',
+  'active',
+  'finished',
+  'error',
+  'cancelled',
+  'not-attempted',
+  'timed-out',
+  'deprovisioned',
+  'approval-denied',
+])
+
 export const isTerminalStatusV2 = (
   data: { status_v2?: { status?: string } } | undefined
-): boolean =>
-  ['success', 'error', 'cancelled', 'not-attempted'].includes(
-    data?.status_v2?.status ?? ''
-  )
+): boolean => TERMINAL_STATUSES_V2.has(data?.status_v2?.status ?? '')
 
 interface IUseSSEResourceQuery<TData> {
   sseUrl: string | undefined
@@ -57,7 +69,11 @@ export function useSSEResourceQuery<TData>({
     [queryClient, eventName, onPrimaryEvent, extraListeners, ...queryKey]
   )
 
-  const { connected: sseConnected, suspended: sseSuspended, disconnect } = useResourceSSE({
+  const {
+    connected: sseConnected,
+    suspended: sseSuspended,
+    disconnect,
+  } = useResourceSSE({
     url: sseUrl,
     enabled: sseEnabled ?? shouldPoll,
     listeners,
