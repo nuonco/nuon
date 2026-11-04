@@ -13,7 +13,7 @@ import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
-import { getAppConfig } from '@/lib'
+import { getAppConfig, getComponent } from '@/lib'
 import type { TComponentConfig } from '@/types'
 import { getComponentConfigDisplayData } from '@/utils/component-config-display'
 import { ConfigProperties, ConfigSection } from './ConfigLayout'
@@ -195,18 +195,28 @@ export const ComponentConfigPanel = ({
   appliedConfigId?: string
   componentId: string
   emptyMessage?: string
-  name: string
-} & Omit<IPanel, 'heading' | 'children'>) => (
-  <Panel
-    heading={`${name} config`}
-    panelKey={`component-config-${componentId}`}
-    size="half"
-    {...props}
-  >
-    <ComponentConfigPanelBody
-      appliedConfigId={appliedConfigId}
-      componentId={componentId}
-      emptyMessage={emptyMessage}
-    />
-  </Panel>
-)
+  name?: string
+} & Omit<IPanel, 'heading' | 'children'>) => {
+  const { org } = useOrg()
+  const { data: component } = useQuery({
+    queryKey: ['component', org?.id, componentId],
+    queryFn: () => getComponent({ orgId: org.id, componentId }),
+    enabled: !!org?.id && !!componentId && !name,
+  })
+  const title = name || component?.name || 'Component'
+
+  return (
+    <Panel
+      heading={`${title} config`}
+      panelKey={`component-config-${componentId}`}
+      size="half"
+      {...props}
+    >
+      <ComponentConfigPanelBody
+        appliedConfigId={appliedConfigId}
+        componentId={componentId}
+        emptyMessage={emptyMessage}
+      />
+    </Panel>
+  )
+}

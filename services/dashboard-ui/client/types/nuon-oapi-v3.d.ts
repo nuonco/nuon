@@ -5699,6 +5699,13 @@ export interface components {
     };
     "app.InstallStack": {
       app_config_ref?: components["schemas"]["app.AppConfigRef"];
+      /**
+       * @description AzureRunnerAuthAppID is this control plane's Entra app id for runner
+       * login. Set on read from server config, never stored. Empty when the
+       * control plane still accepts only ARM tokens, so the dashboard can hide
+       * the tenant consent step.
+       */
+      azure_runner_auth_app_id?: string;
       created_at?: string;
       created_by_id?: string;
       id?: string;

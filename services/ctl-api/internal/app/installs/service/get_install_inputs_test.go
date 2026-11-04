@@ -63,8 +63,8 @@ func (s *InstallsServiceTestSuite) TestMCPGetInstallInputsRedactsSensitiveValues
 
 	ctx := cctx.SetAccountContext(context.Background(), &app.Account{
 		ID: s.testAcc.ID,
-		AllPermissions: permissions.Set{
-			s.testOrg.ID: permissions.PermissionRead,
+		Authority: &permissions.AccountPermissions{
+			Sources: map[string]permissions.PermissionSource{s.testOrg.ID: {Permission: permissions.PermissionRead}},
 		},
 	})
 	ctx = context.WithValue(ctx, keys.OrgIDCtxKey, s.testOrg.ID)

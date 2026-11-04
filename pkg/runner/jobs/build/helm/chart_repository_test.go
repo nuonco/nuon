@@ -51,7 +51,7 @@ func chartRepositoryFixture(t *testing.T, oci, corrupt bool) string {
 	blobs := map[string][]byte{}
 	entries := []map[string]interface{}{}
 	for _, version := range versions {
-		metadata := fmt.Sprintf("apiVersion: v2\nname: acme\nversion: %s\ndependencies:\n- name: child\n  version: ~0.1.0\n  repository: file://charts/child\n", version)
+		metadata := fmt.Sprintf("apiVersion: v2\nname: acme\nversion: %s\ndependencies:\n- name: child\n  version: ~0.1.0\n  repository: file://../child\n", version)
 		data := chartArchiveFixture(t,
 			chartArchiveEntry{name: "acme/Chart.yaml", data: metadata},
 			chartArchiveEntry{name: "acme/templates/config.yaml", data: "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: from-repository\n"},
@@ -426,8 +426,9 @@ func TestHelmExecRepositoryWithMemoryAndReplacedOSRoots(t *testing.T) {
 				api, copier := &chartResultClient{}, &chartStoreCopier{}
 				h, err := New(HandlerParams{V: validator.New(), FS: fs, APIClient: api, OCICopy: copier})
 				require.NoError(t, err)
+				repository := chartRepositoryFixture(t, oci, false)
 				h.state = &handlerState{plan: &plantypes.BuildPlan{}, cfg: &plantypes.HelmBuildPlan{HelmRepoConfig: &config.HelmRepoConfig{
-					RepoURL: chartRepositoryFixture(t, oci, false), Chart: "acme", Version: "^1.0.0",
+					RepoURL: repository, Chart: "acme", Version: "^1.0.0",
 				}}}
 				ctx := pkgctx.SetLogger(context.Background(), zap.NewNop())
 				job, execution := &models.AppRunnerJob{}, &models.AppRunnerJobExecution{ID: fmt.Sprintf("helm-repository-%d", time.Now().UnixNano())}
@@ -459,11 +460,13 @@ func TestHelmExecRepositoryWithMemoryAndReplacedOSRoots(t *testing.T) {
 				require.NotEmpty(t, api.results[0].ContentsCompressed)
 				require.Equal(t, "1.2.3+meta", h.state.chart.Metadata.Version)
 				require.Len(t, h.state.chart.Dependencies(), 1)
-				require.Equal(t, "0.1.2", h.state.chart.Lock.Dependencies[0].Version)
 				packaged, err := h.state.output.ReadFile(defaultChartPackageFilename)
 				require.NoError(t, err)
-				_, err = chartArchiveFiles(bytes.NewReader(packaged))
+				client := newChartRepositoryClient()
+				defer client.CloseIdleConnections()
+				pulled, err := fetchRepositoryChart(t.Context(), client, repository, "acme", "1.2.3+meta")
 				require.NoError(t, err)
+				require.Equal(t, pulled, packaged, "a pulled chart is published unchanged, its vendored file://../child included")
 				require.NoError(t, h.Cleanup(ctx, job, execution))
 				entries, err := os.ReadDir(outside)
 				require.NoError(t, err)

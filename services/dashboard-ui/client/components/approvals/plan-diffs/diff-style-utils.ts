@@ -17,6 +17,14 @@ export const TERRAFORM_ACTION_BADGE_THEME: Record<
   'no-op': 'neutral',
 } as const
 
+export const REPLACE_BADGE_CLASS =
+  'bg-fuchsia-50 text-fuchsia-700 !border-fuchsia-200 dark:bg-fuchsia-950 dark:text-fuchsia-300 dark:!border-fuchsia-400/40'
+
+export const isReplaceAction = (action: string) =>
+  action === 'replace' ||
+  action === 'create-replacement' ||
+  action === 'delete-replaced'
+
 export function getTerraformActionBgColor(
   action: TTerraformChangeAction
 ): string {
@@ -30,10 +38,10 @@ export function getTerraformActionBgColor(
       ].join(' ')
     case 'replace':
       return [
-        'bg-primary-100 dark:bg-primary-500/10',
-        'hover:!bg-primary-200 dark:hover:!bg-primary-500/20',
-        'focus:!bg-primary-200 dark:focus:!bg-primary-500/20',
-        'active:!bg-primary-300 dark:active:!bg-primary-500/30',
+        'bg-fuchsia-50 dark:bg-fuchsia-400/10',
+        'hover:!bg-fuchsia-100 dark:hover:!bg-fuchsia-400/20',
+        'focus:!bg-fuchsia-100 dark:focus:!bg-fuchsia-400/20',
+        'active:!bg-fuchsia-200 dark:active:!bg-fuchsia-400/30',
       ].join(' ')
     case 'create':
       return [
@@ -73,7 +81,7 @@ export function getTerraformActionBorderColor(
     case 'read':
       return '!border-l-blue-400 dark:!border-l-blue-600'
     case 'replace':
-      return '!border-l-primary-400 dark:!border-l-primary-600'
+      return '!border-l-fuchsia-400 dark:!border-l-fuchsia-300'
     case 'create':
       return '!border-l-green-400 dark:!border-l-green-600'
     case 'update':
@@ -212,10 +220,10 @@ export function getPulumiActionBgColor(action: TPulumiChangeAction): string {
     case 'create-replacement':
     case 'delete-replaced':
       return [
-        'bg-primary-100 dark:bg-primary-500/10',
-        'hover:!bg-primary-200 dark:hover:!bg-primary-500/20',
-        'focus:!bg-primary-200 dark:focus:!bg-primary-500/20',
-        'active:!bg-primary-300 dark:active:!bg-primary-500/30',
+        'bg-fuchsia-50 dark:bg-fuchsia-400/10',
+        'hover:!bg-fuchsia-100 dark:hover:!bg-fuchsia-400/20',
+        'focus:!bg-fuchsia-100 dark:focus:!bg-fuchsia-400/20',
+        'active:!bg-fuchsia-200 dark:active:!bg-fuchsia-400/30',
       ].join(' ')
     case 'read':
     case 'refresh':
@@ -248,7 +256,7 @@ export function getPulumiActionBorderColor(
     case 'replace':
     case 'create-replacement':
     case 'delete-replaced':
-      return '!border-l-primary-400 dark:!border-l-primary-600'
+      return '!border-l-fuchsia-400 dark:!border-l-fuchsia-300'
     case 'read':
     case 'refresh':
       return '!border-l-blue-400 dark:!border-l-blue-600'

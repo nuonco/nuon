@@ -29,20 +29,33 @@ func (h *handler) packageChartFromRepoConfig(ctx context.Context, l *zap.Logger)
 	if err != nil {
 		return "", fmt.Errorf("unable to pull helm chart: %w", err)
 	}
-	dir, err := materializeChartArchive(h.state.workspace.FS(), bytes.NewReader(data))
+	h.state.chart, err = publishPulledChart(h.state.arch.FS(), data)
 	if err != nil {
 		return "", err
 	}
-	pulledSource, err := h.state.source.Sub(dir)
+	packagePath := filepath.Join(h.state.arch.BasePath(), defaultChartPackageFilename)
+	l.Info("published pulled chart", zap.String("path", packagePath))
+	return packagePath, nil
+}
+
+// A pulled chart is already packaged with its dependencies vendored, and its
+// file:// entries refer to the publisher's tree. Publish its exact bytes.
+func publishPulledChart(output afero.Fs, data []byte) (*chartv2.Chart, error) {
+	files, err := chartArchiveFiles(bytes.NewReader(data))
 	if err != nil {
-		return "", fmt.Errorf("unable to open pulled chart source: %w", err)
+		return nil, fmt.Errorf("invalid pulled chart: %w", err)
 	}
-	if err := h.state.source.Close(); err != nil {
-		pulledSource.Close()
-		return "", err
+	chart, err := loadChartFiles(files)
+	if err != nil {
+		return nil, fmt.Errorf("invalid pulled chart: %w", err)
 	}
-	h.state.source = pulledSource
-	return h.loadAndPackageChart(ctx, l, ".")
+	if err := verifyDependenciesPresent(chart.Metadata.Dependencies, chart); err != nil {
+		return nil, err
+	}
+	if err := writeChartPackage(output, bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return chart, nil
 }
 
 func (h *handler) loadAndPackageChart(ctx context.Context, l *zap.Logger, chartDir string) (string, error) {
@@ -111,18 +124,25 @@ func publishChart(output afero.Fs, chart *chartv2.Chart) (*chartv2.Chart, error)
 	if _, err := packaged.Seek(0, io.SeekStart); err != nil {
 		return nil, err
 	}
+	if err := writeChartPackage(output, packaged); err != nil {
+		return nil, err
+	}
+	return chart, nil
+}
+
+func writeChartPackage(output afero.Fs, packaged io.Reader) error {
 	// Exclusive creation refuses existing symlinks; display paths never authorize I/O.
 	dest, err := output.OpenFile(defaultChartPackageFilename, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	_, copyErr := io.Copy(dest, packaged)
 	closeErr := dest.Close()
 	if copyErr != nil || closeErr != nil {
 		output.Remove(defaultChartPackageFilename)
-		return nil, fmt.Errorf("unable to publish chart: write=%v close=%v", copyErr, closeErr)
+		return fmt.Errorf("unable to publish chart: write=%v close=%v", copyErr, closeErr)
 	}
-	return chart, nil
+	return nil
 }
 
 // verifyDependenciesPresent prevents incomplete packages (notably missing CRDs).

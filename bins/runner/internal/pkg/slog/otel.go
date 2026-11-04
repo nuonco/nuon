@@ -3,6 +3,7 @@ package slog
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -15,6 +16,7 @@ import (
 
 const (
 	defaultOTLPLogsEndpointTmpl string = "%s/v1/log-streams/%s/logs"
+	otlpExportTimeout                  = 10 * time.Second
 )
 
 func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStreamID string) (*log.LoggerProvider, error) {
@@ -37,8 +39,12 @@ func newAPIProcessor(cfg *runnerconfig.Config, logStreamID string) (log.Processo
 	url := fmt.Sprintf(defaultOTLPLogsEndpointTmpl, cfg.RunnerAPIURL, logStreamID)
 	exporter, err := otlploghttp.New(context.Background(),
 		otlploghttp.WithEndpointURL(url),
-		otlploghttp.WithHeaders(map[string]string{
-			"Authorization": "Bearer " + cfg.RunnerAPIToken,
+		otlploghttp.WithHTTPClient(&http.Client{
+			Timeout: otlpExportTimeout,
+			Transport: &bearerTransport{
+				token: cfg.APIToken,
+				next:  http.DefaultTransport,
+			},
 		}),
 	)
 	if err != nil {
@@ -46,6 +52,17 @@ func newAPIProcessor(cfg *runnerconfig.Config, logStreamID string) (log.Processo
 	}
 
 	return newBatchProcessor(exporter), nil
+}
+
+type bearerTransport struct {
+	token func() string
+	next  http.RoundTripper
+}
+
+func (t *bearerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Set("Authorization", "Bearer "+t.token())
+	return t.next.RoundTrip(req)
 }
 
 func newBatchProcessor(exporter log.Exporter) log.Processor {

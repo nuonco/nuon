@@ -32,7 +32,7 @@ const (
 // otlploghttp posting directly to /v1/log-streams/{id}/logs.
 type jsonHTTPClient struct {
 	endpoint string
-	token    string
+	token    func() string
 	http     *http.Client
 
 	mu     sync.Mutex
@@ -41,7 +41,7 @@ type jsonHTTPClient struct {
 
 var _ otlptrace.Client = (*jsonHTTPClient)(nil)
 
-func newJSONHTTPClient(apiURL, runnerID, token string) *jsonHTTPClient {
+func newJSONHTTPClient(apiURL, runnerID string, token func() string) *jsonHTTPClient {
 	return &jsonHTTPClient{
 		endpoint: fmt.Sprintf(defaultOTLPTracesEndpointTmpl, apiURL, runnerID),
 		token:    token,
@@ -93,8 +93,8 @@ func (c *jsonHTTPClient) UploadTraces(ctx context.Context, protoSpans []*tracepb
 		return fmt.Errorf("strace: build http request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	if c.token != "" {
-		httpReq.Header.Set("Authorization", "Bearer "+c.token)
+	if token := c.token(); token != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+token)
 	}
 
 	resp, err := c.http.Do(httpReq)
