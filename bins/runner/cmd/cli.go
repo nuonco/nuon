@@ -43,6 +43,7 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(auth.New),
 		// api client and settings (depend on auth token)
 		fx.Provide(api.New),
+		fx.Provide(auth.NewRefresher),
 		fx.Provide(settings.New),
 		fx.Provide(heartbeater.New),
 		fx.Provide(process.New),

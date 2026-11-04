@@ -55,7 +55,7 @@ func (h *handler) getHelmReleaseStore(ctx context.Context, kubeCfg *rest.Config)
 	case "nuon":
 		httpDriver, err := nuondriver.NewNuonDriver(fmt.Sprintf("%s/v1/helm-releases/%s/", h.cfg.RunnerAPIURL,
 			h.state.plan.HelmDeployPlan.HelmChartID),
-			h.cfg.RunnerAPIToken)
+			h.cfg.APIToken())
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create http driver")
 		}

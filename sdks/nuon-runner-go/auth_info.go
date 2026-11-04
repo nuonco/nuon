@@ -12,5 +12,8 @@ func (c *client) getAuthInfo() runtime.ClientAuthInfoWriter {
 }
 
 func (c *client) getApiKeyAuthInfo() runtime.ClientAuthInfoWriter {
+	if c.appTransport != nil {
+		return runtimeclient.BearerToken(c.appTransport.currentAuthToken())
+	}
 	return runtimeclient.BearerToken(c.APIToken)
 }

@@ -2,6 +2,7 @@ package runnerconfig
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -72,6 +73,22 @@ type Config struct {
 
 	// TagOCIIndexChildren tags each child manifest of a copied image index.
 	TagOCIIndexChildren bool `config:"tag_oci_index_children"`
+
+	apiTokenMu sync.RWMutex
+}
+
+// APIToken returns the current runner API token. Read it at the point of use
+// rather than caching it, because the token is refreshed while the process runs.
+func (c *Config) APIToken() string {
+	c.apiTokenMu.RLock()
+	defer c.apiTokenMu.RUnlock()
+	return c.RunnerAPIToken
+}
+
+func (c *Config) SetAPIToken(token string) {
+	c.apiTokenMu.Lock()
+	defer c.apiTokenMu.Unlock()
+	c.RunnerAPIToken = token
 }
 
 func NewConfig() (*Config, error) {
@@ -81,7 +98,7 @@ func NewConfig() (*Config, error) {
 	}
 
 	v := validator.New()
-	if err := v.Struct(cfg); err != nil {
+	if err := v.Struct(&cfg); err != nil {
 		return nil, fmt.Errorf("unable to validate config: %w", err)
 	}
 

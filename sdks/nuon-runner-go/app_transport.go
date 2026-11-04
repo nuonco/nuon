@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 )
 
 // appTransport is a transport that injects our authentication token and org id into the api request
 type appTransport struct {
+	authTokenMu   sync.RWMutex
 	authToken     string
 	authTokenFile string
 	orgID         string
@@ -18,8 +20,20 @@ type appTransport struct {
 	transport http.RoundTripper
 }
 
+func (t *appTransport) currentAuthToken() string {
+	t.authTokenMu.RLock()
+	defer t.authTokenMu.RUnlock()
+	return t.authToken
+}
+
+func (t *appTransport) setAuthToken(token string) {
+	t.authTokenMu.Lock()
+	defer t.authTokenMu.Unlock()
+	t.authToken = token
+}
+
 func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	token := t.authToken
+	token := t.currentAuthToken()
 	if t.authTokenFile != "" {
 		file, err := os.Open(t.authTokenFile)
 		if err != nil {

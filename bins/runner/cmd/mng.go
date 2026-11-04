@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/management"
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/health"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -65,6 +66,7 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 			// sandbox control API
 
 			// start heartbeater, process registrar, and shutdown poller
+			fx.Invoke(func(*auth.Refresher) {}),
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*process.Registrar) {}),
 			fx.Invoke(func(*process.ShutdownPoller) {}),
@@ -106,7 +108,7 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 	if platform == "azure" {
 		runnerID := os.Getenv("RUNNER_ID")
 		if jsonOutput {
-			result, err = fetchtoken.FetchTokenAzure(ctx, apiClient, runnerID)
+			result, err = fetchtoken.FetchTokenAzure(ctx, apiClient, runnerID, false)
 		} else {
 			result, err = fetchtoken.FetchAndStoreTokenAzure(ctx, apiClient, runnerID)
 		}
@@ -115,7 +117,7 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 		runnerID := os.Getenv("RUNNER_ID")
 		fmt.Fprintf(os.Stderr, "fetch-token: api_url=%s auth_method=%q runner_id=%s\n", apiURL, authMethod, runnerID)
 		if jsonOutput {
-			result, err = fetchtoken.FetchToken(ctx, apiClient, authMethod, runnerID)
+			result, err = fetchtoken.FetchToken(ctx, apiClient, authMethod, runnerID, false)
 		} else {
 			result, err = fetchtoken.FetchAndStoreToken(ctx, apiClient, authMethod, runnerID)
 		}
