@@ -275,5 +275,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "151-backfill-vcs-connection-github-account",
 			Fn:   m.Migration151BackfillVCSConnectionGithubAccount,
 		},
+		migrations.Migration{
+			Name: "152-dedupe-account-roles",
+			Fn:   m.Migration152DedupeAccountRoles,
+		},
 	)
 }
