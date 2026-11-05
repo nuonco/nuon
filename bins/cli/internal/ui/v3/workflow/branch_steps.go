@@ -372,7 +372,7 @@ func extractType(entries []diffParsedEntry) string {
 
 func isComponentType(s string) bool {
 	switch s {
-	case "helm_chart", "terraform_module", "docker_build", "container_image",
+	case "helm_chart", "terraform_module", "container_image",
 		"kubernetes_manifest", "job", "pulumi", "external_image":
 		return true
 	}
@@ -380,7 +380,7 @@ func isComponentType(s string) bool {
 }
 
 func isTypeField(desc string) bool {
-	for _, t := range []string{"helm_chart", "terraform_module", "docker_build", "container_image",
+	for _, t := range []string{"helm_chart", "terraform_module", "container_image",
 		"kubernetes_manifest", "job", "pulumi", "external_image"} {
 		if strings.Contains(desc, "'"+t+"'") {
 			return true

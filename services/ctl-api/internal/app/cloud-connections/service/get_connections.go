@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -17,7 +18,9 @@ import (
 // @Param offset query int false "offset of results to return" Default(0)
 // @Param limit query int false "limit of results to return" Default(10)
 // @Param page query int false "page number of results to return" Default(0)
-// @Param q query string false "search by name, account, or role ARN"
+// @Param q query string false "search by name, account, project, subscription, or principal"
+// @Param platform query string false "cloud platform" Enums(aws,gcp,azure)
+// @Param preset query string false "comma-separated access presets: stacks, ecr, gar, acr, custom"
 // @Tags cloud-connections
 // @Produce json
 // @Security APIKey
@@ -36,6 +39,12 @@ func (s *service) List(ctx *gin.Context) {
 		pattern := "%" + q + "%"
 		query = query.Where("name ILIKE ? OR target_id ILIKE ? OR principal ILIKE ?", pattern, pattern, pattern)
 	}
+	if platform := ctx.Query("platform"); platform != "" {
+		query = query.Where(app.CloudConnection{Platform: app.CloudPlatform(platform)})
+	}
+	if preset := ctx.Query("preset"); preset != "" {
+		query = query.Where("preset IN ?", strings.Split(preset, ","))
+	}
 	if err := query.Order("created_at DESC, id DESC").Find(&connections).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to list cloud connections: %w", err))
 		return
@@ -49,7 +58,7 @@ func (s *service) List(ctx *gin.Context) {
 	for i := range connections {
 		ids = append(ids, connections[i].ID)
 	}
-	usage, err := s.usages(ctx, ids)
+	usage, err := s.usages(ctx, org.ID, ids)
 	if err != nil {
 		ctx.Error(err)
 		return

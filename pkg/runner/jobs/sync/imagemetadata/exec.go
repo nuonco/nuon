@@ -45,7 +45,8 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		h.errRecorder.Record("get registry auth", err)
 		return errors.Wrap(err, "unable to get registry auth")
 	}
-	if accessInfo != nil && accessInfo.Auth != nil {
+	fetchOpts.Image = accessInfo.RepositoryURI()
+	if accessInfo.Auth != nil {
 		fetchOpts.Auth = &metadata.RegistryAuth{
 			ServerAddress: accessInfo.Auth.ServerAddress,
 			Username:      accessInfo.Auth.Username,

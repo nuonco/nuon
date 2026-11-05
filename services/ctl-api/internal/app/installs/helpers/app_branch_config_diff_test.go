@@ -88,8 +88,8 @@ func (s *AppBranchConfigDiffTestSuite) seedPair() changeClassFixture {
 		Where("app_config_id IN ?", []string{oldCfg.ID, newCfg.ID}).
 		Updates(map[string]any{"name": "shared-stack", "description": "shared"}).Error)
 
-	component := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeDockerBuild)
-	worker := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeDockerBuild)
+	component := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeTerraformModule)
+	worker := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeTerraformModule)
 	s.connection(component.ID, oldCfg.ID, "checksum-same", "build-same")
 	s.connection(component.ID, newCfg.ID, "checksum-same", "build-same")
 	s.connection(worker.ID, oldCfg.ID, "worker-same", "worker-build")
@@ -112,7 +112,7 @@ func (s *AppBranchConfigDiffTestSuite) seedPair() changeClassFixture {
 }
 
 func (s *AppBranchConfigDiffTestSuite) connection(componentID, appConfigID, checksum, buildID string) {
-	conn := s.deps.Seed.CreateDockerBuildComponentConfigConnection(s.ctx, s.T(), componentID, appConfigID)
+	conn := s.deps.Seed.CreateTerraformComponentConfigConnection(s.ctx, s.T(), componentID, appConfigID)
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(conn).Updates(map[string]any{
 		"checksum":        checksum,
 		"latest_build_id": buildID,
@@ -264,7 +264,7 @@ func (s *AppBranchConfigDiffTestSuite) TestComponentSource() {
 
 func (s *AppBranchConfigDiffTestSuite) TestComponentAdded() {
 	f := s.seedPair()
-	billing := s.deps.Seed.CreateComponent(s.ctx, s.T(), f.appID, app.ComponentTypeDockerBuild)
+	billing := s.deps.Seed.CreateComponent(s.ctx, s.T(), f.appID, app.ComponentTypeTerraformModule)
 	f.billingID = billing.ID
 	s.connection(billing.ID, f.newID, "billing", "billing-build")
 	s.pin(f.install, f.newID, f.oldID)
@@ -279,7 +279,7 @@ func (s *AppBranchConfigDiffTestSuite) TestComponentAdded() {
 
 func (s *AppBranchConfigDiffTestSuite) TestComponentRemoved() {
 	f := s.seedPair()
-	legacy := s.deps.Seed.CreateComponent(s.ctx, s.T(), f.appID, app.ComponentTypeDockerBuild)
+	legacy := s.deps.Seed.CreateComponent(s.ctx, s.T(), f.appID, app.ComponentTypeTerraformModule)
 	s.connection(legacy.ID, f.oldID, "legacy", "legacy-build")
 	s.componentRef(f.install.ID, legacy.ID, f.oldID)
 

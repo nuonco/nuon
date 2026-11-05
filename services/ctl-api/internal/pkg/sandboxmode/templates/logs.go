@@ -135,7 +135,7 @@ func logTemplates() []Template {
 			Key:         "docker-build",
 			Description: "Docker build output with layer caching",
 			Category:    "logs",
-			JobTypes:    []string{"docker-build", "container-image-build"},
+			JobTypes:    []string{"container-image-build"},
 			Contents: strings.Join([]string{
 				"#1 [internal] load build definition from Dockerfile",
 				"#1 transferring dockerfile: 847B done",

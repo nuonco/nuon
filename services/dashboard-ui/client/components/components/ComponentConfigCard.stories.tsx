@@ -147,33 +147,6 @@ spec:
   },
 }
 
-const mockDockerConfig: TComponentConfig = {
-  id: 'cfg4234567890abcdef',
-  version: 3,
-  type: 'docker_build',
-  checksum: 'd4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9',
-  build_timeout: '20m',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
-  component_id: 'cmp101',
-  app_config_id: 'cfg101',
-  docker_build: {
-    id: 'docker123',
-    dockerfile: 'Dockerfile',
-    target: 'production',
-    public_git_vcs_config: {
-      id: 'vcs101',
-      repo: 'myorg/web-app',
-      directory: 'services/api',
-      branch: 'main',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-  },
-}
-
 const mockExternalImageConfig: TComponentConfig = {
   id: 'cfg5234567890abcdef',
   version: 1,
@@ -300,34 +273,6 @@ export const KubernetesManifest = () => (
   </SurfacesProvider>
 )
 
-export const DockerBuild = () => (
-  <SurfacesProvider>
-    <div className="space-y-6">
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold">Docker Build Configuration</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Displays Docker build configuration showing the Dockerfile name and
-          build target. The actual Dockerfile content is stored in the VCS
-          repository.
-        </p>
-      </div>
-
-      <ComponentConfigCard config={mockDockerConfig} />
-
-      <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
-        <strong>Key Features:</strong>
-        <ul className="mt-2 space-y-1 list-disc list-inside">
-          <li>Dockerfile name (not full path)</li>
-          <li>Build target for multi-stage builds</li>
-          <li>Build timeout configuration</li>
-          <li>VCS repository showing Dockerfile location</li>
-          <li>No modal buttons (content is in repository)</li>
-        </ul>
-      </div>
-    </div>
-  </SurfacesProvider>
-)
-
 export const ExternalImage = () => (
   <SurfacesProvider>
     <div className="space-y-6">
@@ -426,7 +371,6 @@ export const AllConfigTypes = () => (
         <ComponentConfigCard config={mockHelmConfig} />
         <ComponentConfigCard config={mockTerraformConfig} />
         <ComponentConfigCard config={mockKubernetesConfig} />
-        <ComponentConfigCard config={mockDockerConfig} />
         <ComponentConfigCard config={mockExternalImageConfig} />
         <ComponentConfigCard config={mockJobConfig} />
       </div>
@@ -444,9 +388,6 @@ export const AllConfigTypes = () => (
           </li>
           <li>
             <strong>Kubernetes Manifest:</strong> Raw K8s YAML configuration files
-          </li>
-          <li>
-            <strong>Docker Build:</strong> Container images built from Dockerfiles
           </li>
           <li>
             <strong>External Image:</strong> Pre-built images from registries

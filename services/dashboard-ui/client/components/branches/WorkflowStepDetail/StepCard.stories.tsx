@@ -83,7 +83,7 @@ const configSections: DiffSectionData[] = [
       {
         name: 'worker',
         op: 'add',
-        componentType: 'docker_build',
+        componentType: 'external_image',
         fields: [{ key: 'dockerfile', op: 'add', diff: "'Dockerfile'" }],
       },
     ],

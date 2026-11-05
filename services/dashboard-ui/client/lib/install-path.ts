@@ -29,7 +29,7 @@ export const installRunActivitySuffix = (
     : '/operations'
 }
 
-const IMAGE_COMPONENT_TYPES = new Set(['docker_build', 'external_image'])
+const IMAGE_COMPONENT_TYPES = new Set(['external_image'])
 
 export type TInstallStatusPage =
   | 'runner'

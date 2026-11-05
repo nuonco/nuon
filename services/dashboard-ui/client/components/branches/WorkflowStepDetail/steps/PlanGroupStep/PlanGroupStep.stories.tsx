@@ -61,7 +61,7 @@ const mixedSection: DiffSectionData = {
     {
       name: 'legacy_worker',
       op: 'remove',
-      componentType: 'docker_build',
+      componentType: 'external_image',
       fields: [{ key: 'image', op: 'remove', diff: '- image: legacy:1' }],
     },
   ],

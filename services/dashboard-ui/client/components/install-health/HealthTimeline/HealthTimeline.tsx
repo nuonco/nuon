@@ -219,7 +219,6 @@ function dayAriaLabel(day: THealthTimelineDay): string {
 }
 
 const IMAGE_COMPONENT_TYPES: TComponentType[] = [
-  'docker_build',
   'external_image',
 ]
 

@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
+	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	stsTypes "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/aws/smithy-go"
@@ -43,18 +44,24 @@ type cloudFormationAPI interface {
 	DescribeStacks(context.Context, *cloudformation.DescribeStacksInput, ...func(*cloudformation.Options)) (*cloudformation.DescribeStacksOutput, error)
 }
 
-type awsVerifier struct {
+type providerVerifier struct {
 	issuer *oidcissuer.Issuer
 	l      *zap.Logger
 	sleep  func(context.Context, time.Duration) error
 	now    func() time.Time
 }
 
-func NewAWSVerifier(issuer *oidcissuer.Issuer, l *zap.Logger) Verifier {
-	return &awsVerifier{issuer: issuer, l: l, sleep: sleepWithContext, now: time.Now}
+func NewVerifier(issuer *oidcissuer.Issuer, l *zap.Logger) Verifier {
+	return &providerVerifier{issuer: issuer, l: l, sleep: sleepWithContext, now: time.Now}
 }
 
-func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
+func (v *providerVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
+	if connection.Platform == app.CloudPlatformAzure {
+		return v.verifyACR(ctx, connection, options)
+	}
+	if connection.Platform == app.CloudPlatformGCP {
+		return v.verifyGAR(ctx, connection, options)
+	}
 	if connection.Platform != app.CloudPlatformAWS {
 		return VerificationResult{}, fmt.Errorf("only aws cloud connections are supported")
 	}
@@ -72,7 +79,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 		return VerificationResult{}, fmt.Errorf("load AWS config: %w", err)
 	}
 	client := sts.NewFromConfig(base)
-	token, err := v.issuer.Mint(ctx, fmt.Sprintf("org:%s:connection:%s", connection.OrgID, connection.ID), "sts.amazonaws.com", 10*time.Minute)
+	token, err := v.issuer.Mint(ctx, Subject(connection), "sts.amazonaws.com", 10*time.Minute)
 	if err != nil {
 		return VerificationResult{}, err
 	}
@@ -84,7 +91,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 		}
 		return VerificationResult{}, err
 	}
-	foreignToken, err := v.issuer.Mint(ctx, "org:foreign:connection:foreign", "sts.amazonaws.com", 10*time.Minute)
+	foreignToken, err := v.issuer.Mint(ctx, ForeignSubject, "sts.amazonaws.com", 10*time.Minute)
 	if err != nil {
 		return VerificationResult{}, err
 	}
@@ -107,10 +114,20 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if connection.Preset == app.CloudConnectionPresetStacks {
 		if _, err := cloudformation.NewFromConfig(assumed).DescribeStacks(ctx, &cloudformation.DescribeStacksInput{}); err != nil {
 			if IsAccessDenied(err) {
-				return verificationFailure("The role lacks CloudFormation read access required to manage install stacks."), nil
+				return verificationFailure("The role lacks CloudFormation read access required to manage install stacks. " + VerificationErrorMessage(err)), nil
 			}
 			return VerificationResult{}, fmt.Errorf("probe CloudFormation access: %w", err)
 		}
+	}
+	if connection.Preset == app.CloudConnectionPresetECR {
+		client := ecr.NewFromConfig(assumed)
+		if _, err := client.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{}); err != nil {
+			if IsAccessDenied(err) {
+				return verificationFailure("The role lacks ecr:GetAuthorizationToken. Attach the ECR permissions policy in step 3. " + VerificationErrorMessage(err)), nil
+			}
+			return VerificationResult{}, fmt.Errorf("probe ECR authorization: %w", err)
+		}
+		return VerificationResult{Status: app.CloudConnectionStatusVerified, Message: "AWS role trust, foreign-subject rejection, and ECR token retrieval passed. Cloud IAM controls repository access; component builds check image pull permissions."}, nil
 	}
 	return VerificationResult{Status: app.CloudConnectionStatusVerified, Message: "Cloud connection verified."}, nil
 }
@@ -130,7 +147,7 @@ func sleepWithContext(ctx context.Context, duration time.Duration) error {
 	}
 }
 
-func (v *awsVerifier) assumeRole(ctx context.Context, connectionID string, client stsAPI, input *sts.AssumeRoleWithWebIdentityInput, retry bool) (output *sts.AssumeRoleWithWebIdentityOutput, err error) {
+func (v *providerVerifier) assumeRole(ctx context.Context, connectionID string, client stsAPI, input *sts.AssumeRoleWithWebIdentityInput, retry bool) (output *sts.AssumeRoleWithWebIdentityOutput, err error) {
 	if !retry {
 		return client.AssumeRoleWithWebIdentity(ctx, input)
 	}

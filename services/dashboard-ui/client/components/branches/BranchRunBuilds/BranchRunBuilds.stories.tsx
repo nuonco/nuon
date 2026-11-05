@@ -34,7 +34,7 @@ export const MultipleBuilds = () => (
         build({
           id: 'bld2',
           component_name: 'api',
-          component_config_connection: { type: 'docker_build' },
+          component_config_connection: { type: 'external_image' },
           status_v2: { status: 'building' },
         }),
         build({
@@ -83,7 +83,7 @@ const manyBuilds = Array.from({ length: 26 }, (_, i) =>
         i % 3 === 0
           ? 'terraform_module'
           : i % 3 === 1
-            ? 'docker_build'
+            ? 'external_image'
             : 'helm_chart',
     },
     status_v2: { status: i % 5 === 0 ? 'building' : 'active' },
@@ -109,7 +109,7 @@ export const WithSandboxAndTypes = () => (
         build({
           id: 'bld2',
           component_name: 'api',
-          component_config_connection: { type: 'docker_build' },
+          component_config_connection: { type: 'external_image' },
           status_v2: { status: 'building' },
         }),
         build({

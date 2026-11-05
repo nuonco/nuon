@@ -125,23 +125,6 @@ export function getComponentConfigDisplayData(
       )
       break
 
-    case 'docker_build':
-      typeSpecificFields = [
-        {
-          label: 'Dockerfile name',
-          value: config.docker_build?.dockerfile,
-        },
-        {
-          label: 'Target',
-          value: config.docker_build?.target,
-        },
-      ]
-      vcsInfo = getVCSInfo(
-        config.docker_build?.connected_github_vcs_config ||
-          config.docker_build?.public_git_vcs_config
-      )
-      break
-
     case 'external_image':
       typeSpecificFields = [
         {

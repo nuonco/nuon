@@ -14,6 +14,7 @@ import (
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 // HelpersModule provides all domain-specific helper functions
@@ -24,6 +25,7 @@ var HelpersModule = fx.Module("helpers",
 	fx.Provide(actionshelpers.New),
 	fx.Provide(componentshelpers.New),
 	fx.Provide(cloudconnectionshelpers.New),
+	fx.Provide(sharedactivities.New),
 	fx.Provide(orgshelpers.New),
 	fx.Provide(appshelpers.New),
 	fx.Provide(installshelpers.New),

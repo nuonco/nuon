@@ -283,5 +283,11 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "153-backfill-service-account-api",
 			Fn:   m.Migration153BackfillServiceAccountAPI,
 		},
+		migrations.Migration{
+			Name: "154-cloud-connections-shared-principals",
+			SQL: `CREATE INDEX IF NOT EXISTS idx_cloud_connections_org_platform_principal
+				ON cloud_connections (org_id, platform, principal, deleted_at);
+				DROP INDEX IF EXISTS idx_cloud_connections_org_platform_principal_deleted;`,
+		},
 	)
 }

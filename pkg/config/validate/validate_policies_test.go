@@ -62,7 +62,6 @@ func TestValidatePolicyType(t *testing.T) {
 		"terraform_module":    {config.AppPolicyTypeTerraformModule, false},
 		"helm_chart":          {config.AppPolicyTypeHelmChart, false},
 		"kubernetes_manifest": {config.AppPolicyTypeKubernetesManifest, false},
-		"docker_build":        {config.AppPolicyTypeDockerBuild, false},
 		"container_image":     {config.AppPolicyTypeContainerImage, false},
 		"sandbox":             {config.AppPolicyTypeSandbox, false},
 		"invalid_policy_type": {config.AppPolicyType("invalid_policy_type"), true},
@@ -274,7 +273,6 @@ func TestValidatePolicyApplyOnTeardown(t *testing.T) {
 		"container_image_unset_ok": {config.AppPolicyTypeContainerImage, nil, false},
 		// types never evaluated on teardown
 		"container_image_err":    {config.AppPolicyTypeContainerImage, &no, true},
-		"docker_build_err":       {config.AppPolicyTypeDockerBuild, &no, true},
 		"kubernetes_cluster_err": {config.AppPolicyTypeKubernetesCluster, &no, true},
 	}
 

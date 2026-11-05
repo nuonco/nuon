@@ -6,6 +6,7 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/pkg/hasher"
 	"github.com/nuonco/nuon/pkg/oci/signature"
 )
 
@@ -53,74 +54,93 @@ func TestAzureACRConfigValidateCredentials(t *testing.T) {
 		cert   = "acr-cert"
 	)
 
-	tests := []struct {
-		name    string
+	tests := map[string]struct {
 		cfg     AzureACRConfig
 		wantErr bool
 	}{
-		{
-			name: "nothing set uses ambient credentials",
-			cfg:  AzureACRConfig{},
+		"nothing set preserves ambient authentication": {
+			cfg: AzureACRConfig{},
 		},
-		{
-			name: "complete with secret",
-			cfg:  AzureACRConfig{TenantID: tenant, ClientID: client, ClientSecretName: secret},
+		"complete with secret": {
+			cfg: AzureACRConfig{TenantID: tenant, ClientID: client, ClientSecretName: secret},
 		},
-		{
-			name: "complete with certificate",
-			cfg:  AzureACRConfig{TenantID: tenant, ClientID: client, ClientCertificateName: cert},
+		"complete with certificate": {
+			cfg: AzureACRConfig{TenantID: tenant, ClientID: client, ClientCertificateName: cert},
 		},
-		{
-			name:    "both credential kinds",
+		"both credential kinds": {
 			cfg:     AzureACRConfig{TenantID: tenant, ClientID: client, ClientSecretName: secret, ClientCertificateName: cert},
 			wantErr: true,
 		},
-		{
-			name:    "secret without tenant or client",
+		"secret without tenant or client": {
 			cfg:     AzureACRConfig{ClientSecretName: secret},
 			wantErr: true,
 		},
-		{
-			name:    "certificate without tenant or client",
+		"certificate without tenant or client": {
 			cfg:     AzureACRConfig{ClientCertificateName: cert},
 			wantErr: true,
 		},
-		{
-			name:    "tenant and client without a credential",
+		"tenant and client without a credential": {
 			cfg:     AzureACRConfig{TenantID: tenant, ClientID: client},
 			wantErr: true,
 		},
-		{
-			name:    "missing tenant only",
+		"missing tenant only": {
 			cfg:     AzureACRConfig{ClientID: client, ClientSecretName: secret},
 			wantErr: true,
 		},
-		{
-			name:    "missing client only",
+		"missing client only": {
 			cfg:     AzureACRConfig{TenantID: tenant, ClientSecretName: secret},
 			wantErr: true,
 		},
-		{
-			name:    "tenant alone",
+		"tenant alone": {
 			cfg:     AzureACRConfig{TenantID: tenant},
 			wantErr: true,
 		},
-		{
-			name:    "client alone",
+		"client alone": {
 			cfg:     AzureACRConfig{ClientID: client},
 			wantErr: true,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			err := tt.cfg.ValidateCredentials()
-			if tt.wantErr && err == nil {
-				t.Fatalf("expected an error, got nil")
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if !tt.wantErr && err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
+		})
+	}
+}
+
+func TestAzureACRLegacyChecksum(t *testing.T) {
+	for name, tc := range map[string]struct {
+		cfg      AzureACRConfig
+		checksum string
+	}{
+		"ambient": {cfg: AzureACRConfig{RegistryURL: "acme.azurecr.io", ImageURL: "acme.azurecr.io/repo", Tag: "v1"}, checksum: "185c4621059b7713146bff276b61fa0fc557f30ff6eeb2573dff4d00c20ef751"},
+		"secret":  {cfg: AzureACRConfig{RegistryURL: "acme.azurecr.io", ImageURL: "acme.azurecr.io/repo", Tag: "v1", TenantID: "tenant", ClientID: "client", ClientSecretName: "secret"}, checksum: "202d555b66a5280914d057b82b8462d1c56ca1c280e9190c35606b4780377ef6"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			checksum, err := hasher.HashStruct(tc.cfg, hasher.StructHasherOptions{EnableOmitEmpty: true})
+			require.NoError(t, err)
+			require.Equal(t, tc.checksum, checksum)
+		})
+	}
+}
+
+func TestGARLegacyChecksums(t *testing.T) {
+	for name, tc := range map[string]struct {
+		account, checksum string
+	}{
+		"ambient": {checksum: "127479ef396a774e2e6d6487f1c59acad73041f5b94eb1e20298c97e2326ad51"},
+		"account": {account: "acme@example.com", checksum: "c3f58ad581e5c615f29de4d24a3142d058cf4cdeb38aa693bb3ab27f828bc5f4"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			cfg := GCPGARConfig{GCPProjectID: "acme", GCPRegion: "us-central1", ImageURL: "us-central1-docker.pkg.dev/acme/repo/image", Tag: "v1", ServiceAccountEmail: tc.account}
+			checksum, err := hasher.HashStruct(cfg, hasher.StructHasherOptions{EnableOmitEmpty: true})
+			require.NoError(t, err)
+			require.Equal(t, tc.checksum, checksum)
 		})
 	}
 }
