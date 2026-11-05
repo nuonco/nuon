@@ -9,8 +9,6 @@ name: tests labeler
 
 permissions:
   contents: read
-  issues: write
-  pull-requests: write
 
 jobs:
   changes:
@@ -36,6 +34,8 @@ jobs:
 
   add-integration-label:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     needs:
       - changes
     if: ${{ !github.event.pull_request.draft && needs.changes.outputs.ctl-api == 'true' }}
@@ -47,6 +47,8 @@ jobs:
 
   add-canary-label:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     needs:
       - changes
     if: ${{ !github.event.pull_request.draft && (needs.changes.outputs.ctl-api == 'true' || needs.changes.outputs.workers-canary == 'true')}}
