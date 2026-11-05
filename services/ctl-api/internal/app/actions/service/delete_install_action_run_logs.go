@@ -101,7 +101,22 @@ func (s *service) DeleteInstallActionRunLogs(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.deleteActionRunLogs(ctx, org.ID, &logStream); err != nil {
+	if err := s.acctClient.InvalidateLogStreamTokens(ctx, logStream.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to revoke log stream tokens: %w", err))
+		return
+	}
+
+	var jobs []app.RunnerJob
+	res = s.db.WithContext(ctx).
+		Select("id", "runner_id").
+		Where(app.RunnerJob{LogStreamID: generics.ToPtr(logStream.ID)}).
+		Find(&jobs)
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to get runner jobs for log stream: %w", res.Error))
+		return
+	}
+
+	if err := s.deleteActionRunLogs(ctx, org.ID, &logStream, jobs); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -126,6 +141,11 @@ func (s *service) DeleteInstallActionRunLogs(ctx *gin.Context) {
 		}
 	}
 
+	if err := s.deleteActionRunSpans(ctx, jobs); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	s.audit.Emit(ctx, audit.Event{
 		Type:        audit.EventInstallActionWorkflowRun,
 		Message:     "action run logs deleted",
@@ -143,16 +163,7 @@ func (s *service) DeleteInstallActionRunLogs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, logStream)
 }
 
-func (s *service) deleteActionRunLogs(ctx context.Context, orgID string, logStream *app.LogStream) error {
-	var jobIDs []string
-	res := s.db.WithContext(ctx).
-		Model(&app.RunnerJob{}).
-		Where(app.RunnerJob{LogStreamID: generics.ToPtr(logStream.ID)}).
-		Pluck("id", &jobIDs)
-	if res.Error != nil {
-		return fmt.Errorf("unable to get runner jobs for log stream: %w", res.Error)
-	}
-
+func (s *service) deleteActionRunLogs(ctx context.Context, orgID string, logStream *app.LogStream, jobs []app.RunnerJob) error {
 	ctx, cancel := context.WithTimeout(ctx, deleteActionRunLogsTimeout)
 	defer cancel()
 
@@ -161,7 +172,7 @@ func (s *service) deleteActionRunLogs(ctx context.Context, orgID string, logStre
 		"max_execution_time": int(deleteActionRunLogsTimeout.Seconds()),
 	}))
 
-	res = s.chDB.WithContext(chCtx).
+	res := s.chDB.WithContext(chCtx).
 		Unscoped().
 		Where(app.OtelLogRecord{OrgID: orgID, LogStreamID: logStream.ID}).
 		Delete(&app.OtelLogRecord{})
@@ -169,28 +180,54 @@ func (s *service) deleteActionRunLogs(ctx context.Context, orgID string, logStre
 		return fmt.Errorf("unable to delete log stream logs: %w", res.Error)
 	}
 
-	if len(jobIDs) == 0 {
+	if len(jobs) == 0 || logStream.ParentLogStreamID.Empty() {
 		return nil
-	}
-
-	if !logStream.ParentLogStreamID.Empty() {
-		res = s.chDB.WithContext(chCtx).
-			Unscoped().
-			Where(app.OtelLogRecord{OrgID: orgID, LogStreamID: logStream.ParentLogStreamID.String}).
-			Where("runner_job_id IN ?", jobIDs).
-			Delete(&app.OtelLogRecord{})
-		if res.Error != nil {
-			return fmt.Errorf("unable to delete parent log stream logs: %w", res.Error)
-		}
 	}
 
 	res = s.chDB.WithContext(chCtx).
 		Unscoped().
-		Where("runner_job_id IN ?", jobIDs).
+		Where(app.OtelLogRecord{OrgID: orgID, LogStreamID: logStream.ParentLogStreamID.String}).
+		Where("runner_job_id IN ?", runnerJobIDs(jobs)).
+		Delete(&app.OtelLogRecord{})
+	if res.Error != nil {
+		return fmt.Errorf("unable to delete parent log stream logs: %w", res.Error)
+	}
+
+	return nil
+}
+
+func (s *service) deleteActionRunSpans(ctx context.Context, jobs []app.RunnerJob) error {
+	if len(jobs) == 0 {
+		return nil
+	}
+
+	runnerIDs := make([]string, 0, len(jobs))
+	for _, job := range jobs {
+		if !slices.Contains(runnerIDs, job.RunnerID) {
+			runnerIDs = append(runnerIDs, job.RunnerID)
+		}
+	}
+
+	chCtx := chgo.Context(ctx, chgo.WithSettings(chgo.Settings{
+		"mutations_sync": 0,
+	}))
+
+	res := s.chDB.WithContext(chCtx).
+		Unscoped().
+		Where("runner_id IN ?", runnerIDs).
+		Where("runner_job_id IN ?", runnerJobIDs(jobs)).
 		Delete(&app.OtelTraceIngestion{})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete trace spans: %w", res.Error)
 	}
 
 	return nil
+}
+
+func runnerJobIDs(jobs []app.RunnerJob) []string {
+	ids := make([]string, 0, len(jobs))
+	for _, job := range jobs {
+		ids = append(ids, job.ID)
+	}
+	return ids
 }

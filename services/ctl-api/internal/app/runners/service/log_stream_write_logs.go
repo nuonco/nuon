@@ -64,6 +64,11 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 		return
 	}
 
+	if logStream.LogsDeletedAt != nil {
+		ctx.JSON(http.StatusCreated, app.EmptyResponse{})
+		return
+	}
+
 	s.mw.Incr("otel.log_stream.batch", metrics.ToTags(map[string]string{
 		"log_stream_type": logStream.OwnerType,
 	}))

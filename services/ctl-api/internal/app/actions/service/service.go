@@ -13,6 +13,7 @@ import (
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -28,6 +29,7 @@ type Params struct {
 	CHDB            *gorm.DB `name:"ch"`
 	Cfg             *internal.Config
 	AccountsHelpers *accountshelpers.Helpers
+	AcctClient      *account.Client
 	VcsHelpers      *vcshelpers.Helpers
 	CompHelpers     *comphelpers.Helpers
 	Helpers         *actionshelpers.Helpers
@@ -45,6 +47,7 @@ type service struct {
 	chDB            *gorm.DB
 	cfg             *internal.Config
 	accountsHelpers *accountshelpers.Helpers
+	acctClient      *account.Client
 	vcsHelpers      *vcshelpers.Helpers
 	actionsHelpers  *actionshelpers.Helpers
 	appsHelpers     *appshelpers.Helpers
@@ -189,6 +192,7 @@ func New(params Params) *service {
 		db:              params.DB,
 		chDB:            params.CHDB,
 		accountsHelpers: params.AccountsHelpers,
+		acctClient:      params.AcctClient,
 		vcsHelpers:      params.VcsHelpers,
 		actionsHelpers:  params.Helpers,
 		appsHelpers:     params.AppsHelpers,
