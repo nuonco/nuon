@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -310,6 +311,13 @@ func deployedResourceGroupName(inp *stacks.TemplateInput) string {
 	return name
 }
 
+func formatParamValue(value any) string {
+	if f, ok := value.(float64); ok {
+		return strconv.FormatFloat(f, 'f', -1, 64)
+	}
+	return fmt.Sprintf("%v", value)
+}
+
 func sortedParamNames(params map[string]ARMParameter) []string {
 	names := make([]string, 0, len(params))
 	for name := range params {
@@ -363,7 +371,7 @@ func basicsElement(name string, p ARMParameter, label, section string) (map[stri
 		allowedValues := make([]any, 0, len(p.AllowedValues))
 		for _, value := range p.AllowedValues {
 			allowedValues = append(allowedValues, map[string]any{
-				"label": humanizeParamName(fmt.Sprintf("%v", value)),
+				"label": humanizeParamName(formatParamValue(value)),
 				"value": value,
 			})
 		}
@@ -373,7 +381,7 @@ func basicsElement(name string, p ARMParameter, label, section string) (map[stri
 			"required":      true,
 		}
 		if p.DefaultValue != nil {
-			element["defaultValue"] = humanizeParamName(fmt.Sprintf("%v", p.DefaultValue))
+			element["defaultValue"] = humanizeParamName(formatParamValue(p.DefaultValue))
 		}
 		return element, fmt.Sprintf("[%s]", ref), true
 	}
@@ -400,7 +408,7 @@ func basicsElement(name string, p ARMParameter, label, section string) (map[stri
 			"validationMessage": "Enter a whole number.",
 		}
 		if p.DefaultValue != nil {
-			element["defaultValue"] = fmt.Sprintf("%v", p.DefaultValue)
+			element["defaultValue"] = formatParamValue(p.DefaultValue)
 		}
 		// The portal hands back every TextBox value as a string, and ARM will not
 		// coerce one into an int parameter.
