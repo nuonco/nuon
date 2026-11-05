@@ -1,0 +1,109 @@
+---
+title: "BYOC architecture patterns"
+description: "Deployment architectures enterprise customers ask for, and how to build each one with Nuon."
+hidden: true
+keywords: ["BYOC architecture", "enterprise deployment", "deploy in customer VPC", "existing cluster", "hybrid data plane", "single-tenant", "data residency", "customer-managed key", "bring your own bucket", "bring your own LLM", "air-gapped"]
+---
+
+Use this page to match an enterprise customer's requirement to an architecture you can build with Nuon. Each pattern lists what the customer asks for, how to build it, and a reference app in [`nuonco/example-app-configs`](https://github.com/nuonco/example-app-configs).
+
+Every pattern shares the same base:
+
+- The customer deploys a [stack](/concepts/stacks) with their own credentials. It creates the [runner](/concepts/runners) and the [operation roles](/concepts/operation-roles) it uses.
+- The runner connects outbound only, so you need no cross-account access. The customer can [turn it off](/guides/runner-kill-switch) at any time.
+- [Secrets](/concepts/app-secrets) stay in the customer's cloud secret manager, and [break glass roles](/concepts/break-glass) cover incidents.
+- Customers can [export runner audit logs](/guides/export-runner-audit-logs) to their own logging backend.
+
+For the full security model, see [Security](/security).
+
+## Supported patterns
+
+### Dedicated account (full BYOC)
+
+**The customer asks:** "Run your product in our AWS, Azure, or GCP account, but you operate it."
+
+**Build it:** Use the [stand-alone VPC](/concepts/stacks/stand-alone-vpc) stack, which creates a new VPC for the install. The [sandbox](/concepts/sandboxes) creates the base infrastructure, such as a Kubernetes cluster. Your [components](/concepts/components) deploy your Helm charts, Terraform modules, Kubernetes manifests, and container images on top.
+
+**Reference apps:** `eks-simple-auto` (AWS), `gke-simple` (GCP), `aks-simple` (Azure).
+
+### Existing customer VPC
+
+**The customer asks:** "Deploy into our VPC and subnets."
+
+**Build it:** Use the [customer VPC](/concepts/stacks/customer-vpc) stack. On AWS, the Nuon-generated CloudFormation template accepts the customer's VPC and subnet IDs, and the sandbox attaches to those subnets. The default Terraform stack modules always create a new VPC, so Terraform deployments of this pattern need a fork of [`install-stacks`](https://github.com/nuonco/install-stacks).
+
+**Reference app:** `byo-vpc`.
+
+### Existing customer Kubernetes cluster
+
+**The customer asks:** "Install into our shared cluster," or your product is an agent or operator that needs in-cluster access.
+
+**Build it:** Start from the customer VPC pattern, then add [custom nested stacks](/guides/custom-nested-stacks) that give the runner access to the cluster. See [customer cluster](/concepts/stacks/customer-cluster).
+
+**Reference app:** `byo-eks`.
+
+### Agent or worker next to the customer's data (hybrid data plane)
+
+**The customer asks:** "Keep our data in our network. Your hosted product can still manage the work."
+
+**Build it:** Your hosted product stays the control plane for your users. Package the agent or worker that touches customer data as a [Helm chart](/guides/helm-chart-components), [Kubernetes manifest](/guides/kubernetes-manifest-components), or [container image](/guides/container-image-components) component, and Nuon installs and upgrades it in each customer account. To run it in a cluster the customer already has, use the existing cluster pattern.
+
+**Reference apps:** `datadog-operator` (operator in the customer's cluster), `ecs-simple` (ECS).
+
+### Self-hosted package you want to operate for the customer
+
+**The customer asks:** "We run your Helm chart today and own the upgrades. We want you to run it, in our account."
+
+**Build it:** Wrap your existing Helm chart as a [Helm chart component](/guides/helm-chart-components). Add [Terraform components](/guides/terraform-components) for what the chart depends on, such as a database or bucket. You then ship changes by pushing to git, and [app branches](/concepts/app-branches) roll them out with plan review and approvals.
+
+### Single-tenant per customer
+
+**The customer asks:** "We need a dedicated, isolated deployment."
+
+**Build it:** Every install is its own stack, sandbox, and set of components in one cloud account. Install the same app template into an account you own for a dedicated hosted tier, or into the customer's account for BYOC.
+
+### Data residency and region pinning
+
+**The customer asks:** "Our data must stay in a specific region."
+
+**Build it:** Each install is created in one region (`nuon installs create --region <region>`), and its resources are created in the customer's account in that region. To block changes that would create resources elsewhere, add a [policy](/concepts/policies). Policies can check Terraform plans before they deploy.
+
+**Reference app:** `policies-demo`.
+
+## Patterns you build with components
+
+No dedicated docs page covers these, but standard Nuon building blocks support them. A [Terraform component](/guides/terraform-components) can create any resource Terraform supports in the customer's account, using the operation role's permissions. A [custom nested stack](/guides/custom-nested-stacks) creates resources earlier, when the customer deploys the stack with their own admin credentials. Pass outputs to other components with `{{.nuon.components.<name>.outputs.<key>}}`. See [component dependencies](/guides/component-dependencies).
+
+### Customer-managed encryption key
+
+**The customer asks:** "Encrypt our data with a key we control and can revoke."
+
+**Build it:** Accept the customer's existing key ARN or ID as an [input](/concepts/app-inputs), or create the key in a Terraform component. Grant your components' operation roles only the key actions they need.
+
+### Customer-owned storage bucket
+
+**The customer asks:** "Store our data in a bucket in our account."
+
+**Build it:** Create the bucket in a custom nested stack, so it exists before any component runs and is created with the customer's credentials. Or create it in a Terraform component.
+
+**Reference apps:** `gcp-gcs-bucket`, `azure-custom-storage`.
+
+### Customer database
+
+**The customer asks:** "Run the database in our account, on our managed service."
+
+**Build it:** Create the managed database (for example RDS or Cloud SQL) in a Terraform component. Pass its connection details to your Helm chart values with component outputs, as shown in [component dependencies](/guides/component-dependencies).
+
+### Model access in the customer's cloud
+
+**The customer asks:** "Use our own model provider account, such as Amazon Bedrock, for the AI features."
+
+**Build it:** Create the IAM role or service account for the customer's model provider in a Terraform component, and pass the endpoint to your app as a component output or install input.
+
+**Reference app:** `byo-llm-openui` (experimental).
+
+## Not supported
+
+### Fully air-gapped installs
+
+The runner must have an outbound connection to the Nuon control plane to receive jobs, so installs on networks with no outbound access are not supported. If the requirement is "no inbound access" or "no standing access," the outbound-only runner and the customer's ability to [turn it off](/guides/runner-kill-switch) between maintenance windows may meet it.
