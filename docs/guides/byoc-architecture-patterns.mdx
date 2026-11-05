@@ -1,6 +1,6 @@
 ---
 title: "BYOC architecture patterns"
-description: "Deployment architectures enterprise customers ask for, and how to build each one with Nuon."
+description: "Answers \"does Nuon support this architecture?\" for the deployment architectures enterprise customers ask for, with how to build each one."
 hidden: true
 keywords: ["BYOC architecture", "enterprise deployment", "deploy in customer VPC", "existing cluster", "hybrid data plane", "single-tenant", "data residency", "customer-managed key", "bring your own bucket", "bring your own LLM", "air-gapped"]
 ---
@@ -42,7 +42,7 @@ For the full security model, see [Security](/security).
 
 **Reference app:** `byo-eks`.
 
-### Agent or worker next to the customer's data (hybrid data plane)
+### Agent or worker next to customer data (hybrid data plane)
 
 **The customer asks:** "Keep our data in our network. Your hosted product can still manage the work."
 
@@ -94,7 +94,7 @@ No dedicated docs page covers these, but standard Nuon building blocks support t
 
 **Build it:** Create the managed database (for example RDS or Cloud SQL) in a Terraform component. Pass its connection details to your Helm chart values with component outputs, as shown in [component dependencies](/guides/component-dependencies).
 
-### Model access in the customer's cloud
+### Model provider in the customer account
 
 **The customer asks:** "Use our own model provider account, such as Amazon Bedrock, for the AI features."
 

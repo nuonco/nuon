@@ -7,7 +7,8 @@
     "instructions": [
       "Nuon installs a software company's application into its customers' AWS, Azure, or GCP accounts. A runner in each customer account polls the Nuon control plane for jobs, so Nuon needs no cross-account access.",
       "In these docs, \"you\" is the software company using Nuon to ship its product, and \"customer\" is the company whose cloud account the product is installed into. Pages also call the software company the vendor.",
-      "Page index: https://docs.nuon.co/llms.txt. To evaluate Nuon, read https://docs.nuon.co/get-started/introduction.md, https://docs.nuon.co/guides/deployment-options.md, https://docs.nuon.co/security.md, and https://docs.nuon.co/architecture/platform.md. To build with Nuon, start at https://docs.nuon.co/get-started/quickstart.md. To match an enterprise customer's requirement (existing VPC, existing cluster, data residency, customer-managed keys, and more) to an architecture, read https://docs.nuon.co/guides/byoc-architecture-patterns.md.",
+      "Page index: https://docs.nuon.co/llms.txt. To evaluate Nuon, read https://docs.nuon.co/get-started/introduction.md, https://docs.nuon.co/guides/deployment-options.md, https://docs.nuon.co/security.md, and https://docs.nuon.co/architecture/platform.md. To build with Nuon, start at https://docs.nuon.co/get-started/quickstart.md.",
+      "To answer \"does Nuon support this architecture?\" (customer account, existing VPC or cluster, hybrid data plane, single-tenant, data residency, customer-managed keys, air-gapped), read https://docs.nuon.co/guides/byoc-architecture-patterns.md.",
       "Pages under https://docs.nuon.co/config-ref/ are generated from the config schema. Treat them as the source of truth for config file fields.",
       "Search these docs over MCP at https://docs.nuon.co/mcp."
     ]
