@@ -42,19 +42,25 @@ func (c *cli) registerAdmin() {
 		Use:   "admin",
 		Short: "run admin operations as one-off commands",
 	}
-	adminCmd.AddCommand(&cobra.Command{
+
+	var force bool
+	postPromotionCmd := &cobra.Command{
 		Use:   "post-promotion",
-		Short: "enqueue the promotion signal for the version in config",
+		Short: "enqueue the promotion signal for the version in config, unless it is already the latest promotion",
 		Args:  cobra.NoArgs,
 		Run: func(*cobra.Command, []string) {
-			c.runAdmin("post-promotion", runPostPromotion)
+			c.runAdmin("post-promotion", func(ctx context.Context, deps *adminDeps) (any, error) {
+				if force {
+					return deps.Ops.Promote(ctx, deps.Cfg.Version)
+				}
+				return deps.Ops.PromoteOnce(ctx, deps.Cfg.Version)
+			})
 		},
-	})
-	rootCmd.AddCommand(adminCmd)
-}
+	}
+	postPromotionCmd.Flags().BoolVar(&force, "force", false, "enqueue a new promotion even if this version is already the latest")
+	adminCmd.AddCommand(postPromotionCmd)
 
-func runPostPromotion(ctx context.Context, deps *adminDeps) (any, error) {
-	return deps.Ops.Promote(ctx, deps.Cfg.Version)
+	rootCmd.AddCommand(adminCmd)
 }
 
 func (c *cli) runAdmin(command string, op adminOperation) {
@@ -70,9 +76,11 @@ func (c *cli) runAdmin(command string, op adminOperation) {
 		res.Result = out
 	}
 
+	code := writeAdminResult(res)
+
 	ensureMinRuntime(start)
 
-	os.Exit(writeAdminResult(res))
+	os.Exit(code)
 }
 
 func (c *cli) execAdmin(op adminOperation) (any, error) {
