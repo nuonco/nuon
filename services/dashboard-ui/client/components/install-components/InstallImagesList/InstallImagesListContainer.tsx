@@ -25,7 +25,7 @@ import {
   type TInstallImageListItem,
 } from './InstallImagesList'
 
-const IMAGE_TYPES = 'external_image,docker_build'
+const IMAGE_TYPES = 'external_image'
 const LIMIT = 10
 
 export const InstallImagesListContainer = () => {

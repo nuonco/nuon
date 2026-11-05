@@ -36,9 +36,6 @@ const (
 	// AppComponentTypeHelmChart captures enum value "helm_chart"
 	AppComponentTypeHelmChart AppComponentType = "helm_chart"
 
-	// AppComponentTypeDockerBuild captures enum value "docker_build"
-	AppComponentTypeDockerBuild AppComponentType = "docker_build"
-
 	// AppComponentTypeExternalImage captures enum value "external_image"
 	AppComponentTypeExternalImage AppComponentType = "external_image"
 
@@ -60,7 +57,7 @@ var appComponentTypeEnum []any
 
 func init() {
 	var res []AppComponentType
-	if err := json.Unmarshal([]byte(`["terraform_module","helm_chart","docker_build","external_image","job","kubernetes_manifest","pulumi","unknown"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["terraform_module","helm_chart","external_image","job","kubernetes_manifest","pulumi","unknown"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

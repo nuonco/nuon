@@ -310,8 +310,6 @@ func componentTypeToPolicyType(ct app.ComponentType) config.AppPolicyType {
 		return config.AppPolicyTypeHelmChart
 	case app.ComponentTypeKubernetesManifest:
 		return config.AppPolicyTypeKubernetesManifest
-	case app.ComponentTypeDockerBuild:
-		return config.AppPolicyTypeDockerBuild
 	case app.ComponentTypeExternalImage:
 		return config.AppPolicyTypeContainerImage
 	case app.ComponentTypePulumi:

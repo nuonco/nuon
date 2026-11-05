@@ -23,13 +23,13 @@ export const appConfigMockSections: TAppConfigDiffSection[] = [
       {
         name: 'legacy-worker',
         op: 'remove',
-        componentType: 'docker_build',
+        componentType: 'external_image',
         fields: [
-          { key: 'type', op: 'remove', diff: "'docker_build' -> ''" },
+          { key: 'type', op: 'remove', diff: "'external_image' -> ''" },
           {
-            key: 'dockerfile',
+            key: 'image_url',
             op: 'remove',
-            diff: "'Dockerfile.worker' -> ''",
+            diff: "'ghcr.io/acme/legacy-worker:bld-abc123' -> ''",
           },
         ],
         files: [],

@@ -96,7 +96,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 	}
 
 	switch build.ComponentConfigConnection.Type {
-	case app.ComponentTypeDockerBuild, app.ComponentTypeExternalImage:
+	case app.ComponentTypeExternalImage:
 		l.Info("generating noop plan")
 		plan.NoopDeployPlan = p.createNoopDeployPlan()
 	case app.ComponentTypeTerraformModule:
