@@ -40,17 +40,36 @@ func TestAssumeRoleExternalID(t *testing.T) {
 	}
 
 	client := &recordingSTS{}
-	if _, err := assumer.assumeIamRole(context.Background(), client, assumer.RoleARN, assumer.ExternalID); err != nil {
+	if _, err := assumer.assumeIamRole(context.Background(), client, assumer.RoleARN, assumer.ExternalID, ""); err != nil {
 		t.Fatal(err)
 	}
 	if client.assumeRoleInput.ExternalId == nil || *client.assumeRoleInput.ExternalId != assumer.ExternalID {
 		t.Fatalf("expected final role external ID, got %#v", client.assumeRoleInput.ExternalId)
 	}
 
-	if _, err := assumer.assumeIamRole(context.Background(), client, "arn:aws:iam::123456789012:role/broker", ""); err != nil {
+	if _, err := assumer.assumeIamRole(context.Background(), client, "arn:aws:iam::123456789012:role/broker", "", ""); err != nil {
 		t.Fatal(err)
 	}
 	if client.assumeRoleInput.ExternalId != nil {
 		t.Fatalf("intermediate role received external ID: %q", *client.assumeRoleInput.ExternalId)
+	}
+}
+
+func TestAssumeRoleSessionPolicy(t *testing.T) {
+	assumer, err := New(validator.New(), WithSettings(Settings{
+		RoleARN:         "arn:aws:iam::123456789012:role/test",
+		RoleSessionName: "test",
+		SessionPolicy:   `{"Version":"2012-10-17"}`,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client := &recordingSTS{}
+	if _, err := assumer.assumeIamRole(context.Background(), client, assumer.RoleARN, "", assumer.SessionPolicy); err != nil {
+		t.Fatal(err)
+	}
+	if client.assumeRoleInput.Policy == nil || *client.assumeRoleInput.Policy != assumer.SessionPolicy {
+		t.Fatalf("expected session policy, got %#v", client.assumeRoleInput.Policy)
 	}
 }

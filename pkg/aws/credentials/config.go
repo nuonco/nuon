@@ -20,6 +20,10 @@ type AssumeRoleConfig struct {
 	TwoStepConfig *assumerole.TwoStepConfig `cty:"two_step_config" hcl:"two_step_config" mapstructure:"two_step_config,omitempty" json:"two_step_config" temporaljson:"two_step_config"`
 	UseGithubOIDC bool                      `json:"use_github_oidc"`
 	UseGCPOIDC    bool                      `json:"use_gcp_oidc"`
+
+	// SessionPolicy limits the credentials from this assume. It stays out of
+	// plan JSON; the runner receives the token these credentials mint, not the role.
+	SessionPolicy string `cty:"-" hcl:"-" mapstructure:"-" json:"-" temporaljson:"session_policy"`
 }
 
 // StaticCredentials are used to create credentials ahead of time, and pass them around for use. Specifically, we do

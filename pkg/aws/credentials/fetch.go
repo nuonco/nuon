@@ -114,6 +114,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 		UseGithubOIDC: c.AssumeRole.UseGithubOIDC,
 		UseGCPOIDC:    c.AssumeRole.UseGCPOIDC,
 		TwoStepConfig: c.AssumeRole.TwoStepConfig,
+		SessionPolicy: c.AssumeRole.SessionPolicy,
 		Region:        c.Region,
 	}))
 	if err != nil {

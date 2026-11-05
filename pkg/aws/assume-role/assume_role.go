@@ -50,6 +50,9 @@ type Settings struct {
 	UseGithubOIDC bool
 	UseGCPOIDC    bool
 
+	// SessionPolicy is applied only to the final role, not a two-step jump.
+	SessionPolicy string
+
 	Region string
 }
 
@@ -68,6 +71,7 @@ type assumer struct {
 	TwoStepConfig *TwoStepConfig
 	UseGithubOIDC bool
 	UseGCPOIDC    bool
+	SessionPolicy string
 
 	// internal state
 	v *validator.Validate
@@ -119,6 +123,7 @@ func WithSettings(s Settings) assumerOptions {
 		a.TwoStepConfig = s.TwoStepConfig
 		a.UseGithubOIDC = s.UseGithubOIDC
 		a.UseGCPOIDC = s.UseGCPOIDC
+		a.SessionPolicy = s.SessionPolicy
 		a.Region = s.Region
 
 		if s.RoleSessionDuration > 0 {
