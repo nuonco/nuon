@@ -17,7 +17,6 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"branch":              AppBranchConfigSchema,
 	"break-glass":         BreakGlassConfigSchema,
 	"container-image":     ContainerImageConfigSchema,
-	"docker-build":        DockerBuildConfigSchema,
 	"helm":                HelmConfigSchema,
 	"input":               InputSchema,
 	"input-group":         InputGroupSchema,
@@ -46,7 +45,7 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 }
 
 // normalizeSchemaType maps underscore-style names used in TOML component
-// types (e.g. docker_build, container_image) onto the hyphenated schema keys.
+// types (e.g. container_image) onto the hyphenated schema keys.
 func normalizeSchemaType(typ string) string {
 	return strings.ReplaceAll(typ, "_", "-")
 }
@@ -252,14 +251,6 @@ func ContainerImageConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return flattenedComponentSchema(config.ExternalImageComponentConfig{}, config.ContainerImageComponentType, config.ExternalImageComponentType)
-}
-
-func DockerBuildConfigSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.DockerBuildComponentConfig{}); err != nil {
-		return nil, errors.Wrap(err, "DockerBuildComponentConfig validation failed")
-	}
-
-	return flattenedComponentSchema(config.DockerBuildComponentConfig{}, config.DockerBuildComponentType)
 }
 
 func JobConfigSchema() (*jsonschema.Schema, error) {

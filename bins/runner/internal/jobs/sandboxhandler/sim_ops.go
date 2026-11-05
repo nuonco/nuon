@@ -104,8 +104,7 @@ func simulatedOps(jobType models.AppRunnerJobType, jobOp models.AppRunnerJobOper
 			}},
 		}
 
-	case models.AppRunnerJobTypeDockerDashBuild,
-		models.AppRunnerJobTypeContainerDashImageDashBuild:
+	case models.AppRunnerJobTypeContainerDashImageDashBuild:
 		return []simOp{
 			{op: "build", fraction: 0.7, logs: []string{
 				"(simulated) building container image",

@@ -77,7 +77,7 @@ The generator creates:
    - Property details section for enums and multiple examples
 
 2. **Index Page**: Navigation page with categorized schemas
-   - Component Types (helm, terraform, docker-build, etc.)
+   - Component Types (helm, terraform, container image, etc.)
    - Configuration Types (inputs, secrets, policies, etc.)
    - Other Types (action, install, runner, etc.)
 

@@ -52,7 +52,6 @@ const (
 	ToolTerraform  Tool = "terraform"
 	ToolHelm       Tool = "helm"
 	ToolPulumi     Tool = "pulumi"
-	ToolDocker     Tool = "docker"
 	ToolKubernetes Tool = "kubernetes"
 	ToolOCI        Tool = "oci"
 )

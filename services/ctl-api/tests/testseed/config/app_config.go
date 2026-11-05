@@ -49,13 +49,13 @@ func BuildMinimalAppConfig() *config.AppConfig {
 // BuildFullAppConfig returns an AppConfig with one of every component type.
 // This is useful for tests that need to verify behavior across all component types.
 //
-// Includes: terraform module, helm chart, docker build, kubernetes manifest, and external image.
+// Includes: terraform module, helm chart, kubernetes manifest, and external image.
 //
 // Example usage:
 //
 //	cfg := testseedconfig.BuildFullAppConfig()
-//	// All 5 component types are present
-//	assert.Len(t, cfg.Components, 5)
+//	// All component types are present
+//	assert.Len(t, cfg.Components, 4)
 func BuildFullAppConfig() *config.AppConfig {
 	return &config.AppConfig{
 		Version:     "1",
@@ -66,7 +66,6 @@ func BuildFullAppConfig() *config.AppConfig {
 		Components: config.ComponentList{
 			BuildTerraformComponent("terraform-component"),
 			BuildHelmComponent("helm-component"),
-			BuildDockerBuildComponent("docker-build-component"),
 			BuildKubernetesManifestComponent("k8s-manifest-component"),
 			BuildExternalImageComponent("external-image-component"),
 		},

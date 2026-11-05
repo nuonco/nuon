@@ -16,7 +16,7 @@ const componentsSection: DiffSectionData = {
     {
       name: 'api',
       op: 'add',
-      componentType: 'docker_build',
+      componentType: 'external_image',
       fields: [{ key: 'image', op: 'add', diff: '+ image: api:latest' }],
     },
     {

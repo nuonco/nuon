@@ -82,9 +82,21 @@ type ListCloudConnectionsParams struct {
 	*/
 	Page *int64
 
+	/* Platform.
+
+	   cloud platform
+	*/
+	Platform *string
+
+	/* Preset.
+
+	   comma-separated access presets: stacks, ecr, gar, acr, custom
+	*/
+	Preset *string
+
 	/* Q.
 
-	   search by name, account, or role ARN
+	   search by name, account, project, subscription, or principal
 	*/
 	Q *string
 
@@ -191,6 +203,28 @@ func (o *ListCloudConnectionsParams) SetPage(page *int64) {
 	o.Page = page
 }
 
+// WithPlatform adds the platform to the list cloud connections params
+func (o *ListCloudConnectionsParams) WithPlatform(platform *string) *ListCloudConnectionsParams {
+	o.SetPlatform(platform)
+	return o
+}
+
+// SetPlatform adds the platform to the list cloud connections params
+func (o *ListCloudConnectionsParams) SetPlatform(platform *string) {
+	o.Platform = platform
+}
+
+// WithPreset adds the preset to the list cloud connections params
+func (o *ListCloudConnectionsParams) WithPreset(preset *string) *ListCloudConnectionsParams {
+	o.SetPreset(preset)
+	return o
+}
+
+// SetPreset adds the preset to the list cloud connections params
+func (o *ListCloudConnectionsParams) SetPreset(preset *string) {
+	o.Preset = preset
+}
+
 // WithQ adds the q to the list cloud connections params
 func (o *ListCloudConnectionsParams) WithQ(q *string) *ListCloudConnectionsParams {
 	o.SetQ(q)
@@ -256,6 +290,40 @@ func (o *ListCloudConnectionsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if qPage != "" {
 
 			if err := r.SetQueryParam("page", qPage); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Platform != nil {
+
+		// query param platform
+		var qrPlatform string
+
+		if o.Platform != nil {
+			qrPlatform = *o.Platform
+		}
+		qPlatform := qrPlatform
+		if qPlatform != "" {
+
+			if err := r.SetQueryParam("platform", qPlatform); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Preset != nil {
+
+		// query param preset
+		var qrPreset string
+
+		if o.Preset != nil {
+			qrPreset = *o.Preset
+		}
+		qPreset := qrPreset
+		if qPreset != "" {
+
+			if err := r.SetQueryParam("preset", qPreset); err != nil {
 				return err
 			}
 		}

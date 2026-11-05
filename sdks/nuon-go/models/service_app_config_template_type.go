@@ -72,9 +72,6 @@ const (
 	// ServiceAppConfigTemplateTypeHelm captures enum value "helm"
 	ServiceAppConfigTemplateTypeHelm ServiceAppConfigTemplateType = "helm"
 
-	// ServiceAppConfigTemplateTypeDockerDashBuild captures enum value "docker-build"
-	ServiceAppConfigTemplateTypeDockerDashBuild ServiceAppConfigTemplateType = "docker-build"
-
 	// ServiceAppConfigTemplateTypeJob captures enum value "job"
 	ServiceAppConfigTemplateTypeJob ServiceAppConfigTemplateType = "job"
 
@@ -90,7 +87,7 @@ var serviceAppConfigTemplateTypeEnum []any
 
 func init() {
 	var res []ServiceAppConfigTemplateType
-	if err := json.Unmarshal([]byte(`["aws-ecs","aws-ecs-byovpc","aws-eks","aws-eks-byovpc","azure-aks","flat","top-level","installer","runner","sandbox","inputs","terraform","terraformInfra","helm","docker-build","job","container-image","ecr-container-image"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["aws-ecs","aws-ecs-byovpc","aws-eks","aws-eks-byovpc","azure-aks","flat","top-level","installer","runner","sandbox","inputs","terraform","terraformInfra","helm","job","container-image","ecr-container-image"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

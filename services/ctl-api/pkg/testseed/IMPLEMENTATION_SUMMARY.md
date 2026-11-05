@@ -100,7 +100,6 @@ Comprehensive faker providers for **every** config type using `pkg/generics.GetF
 |----------|---------------|-------------|
 | `GetTerraformComponent(name)` | `terraform_module` | With public repo, latest version |
 | `GetHelmComponent(name)` | `helm_chart` | With chart name, namespace |
-| `GetDockerBuildComponent(name)` | `docker_build` | With Dockerfile, public repo |
 | `GetKubernetesManifestComponent(name)` | `kubernetes_manifest` | With public repo |
 | `GetJobComponent(name)` | `job` | With image, tag, command |
 | `GetExternalImageComponent(name)` | `external_image` | With public image config |
@@ -147,7 +146,6 @@ cfg := testseedconfig.GetMinimalAppConfig()
 cfg.Components = append(cfg.Components,
     testseedconfig.GetTerraformComponent("infrastructure"),
     testseedconfig.GetHelmComponent("api-service"),
-    testseedconfig.GetDockerBuildComponent("worker"),
 )
 
 // Add inputs
@@ -258,7 +256,6 @@ ok      github.com/nuonco/nuon/services/ctl-api/pkg/testseed/config    0.455s
 | **Component Types** | | | |
 | Terraform Module | `GetTerraformComponent(name)` | `faker:"terraformComponent"` | ✅ |
 | Helm Chart | `GetHelmComponent(name)` | `faker:"helmComponent"` | ✅ |
-| Docker Build | `GetDockerBuildComponent(name)` | `faker:"dockerComponent"` | ✅ |
 | K8s Manifest | `GetKubernetesManifestComponent(name)` | `faker:"k8sManifestComponent"` | ✅ |
 | Job | `GetJobComponent(name)` | `faker:"jobComponent"` | ✅ |
 | External Image | `GetExternalImageComponent(name)` | `faker:"externalImageComponent"` | ✅ |

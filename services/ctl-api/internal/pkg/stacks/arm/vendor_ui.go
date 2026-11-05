@@ -22,7 +22,7 @@ func (t *Templates) loadStackUIDefinition(inp *stacks.TemplateInput) ([]byte, er
 	if ui.SourceURL == "" {
 		return nil, nil
 	}
-	return fetchLimitedBody(ui.SourceURL)
+	return t.fetchLimitedBody(ui.SourceURL)
 }
 
 // vendorUINames is how a vendor createUiDefinition refers to template parameters.
@@ -91,9 +91,8 @@ func displayOnlyUIElement(el map[string]any) bool {
 	}
 }
 
-func fetchLimitedBody(rawURL string) ([]byte, error) {
-	client := &http.Client{Timeout: fetchTimeout}
-	resp, err := client.Get(rawURL)
+func (t *Templates) fetchLimitedBody(rawURL string) ([]byte, error) {
+	resp, err := t.templateClient().Get(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch ui definition %s: %w", rawURL, err)
 	}
@@ -103,12 +102,10 @@ func fetchLimitedBody(rawURL string) ([]byte, error) {
 		return nil, fmt.Errorf("HTTP %d fetching ui definition %s", resp.StatusCode, rawURL)
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxTemplateBytes+1))
+	// The client fails the read past stacks.MaxTemplateFetchBytes.
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read ui definition %s: %w", rawURL, err)
-	}
-	if len(body) > maxTemplateBytes {
-		return nil, fmt.Errorf("ui definition %s exceeds %d bytes", rawURL, maxTemplateBytes)
 	}
 	return body, nil
 }

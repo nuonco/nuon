@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"go.uber.org/fx"
 
@@ -14,6 +15,9 @@ import (
 
 type Templates struct {
 	cfg *internal.Config
+
+	// fetchClient overrides templateFetchClient; see WithTemplateFetchClient.
+	fetchClient *http.Client
 }
 
 type Params struct {

@@ -22,6 +22,15 @@ import (
 // swagger:model app.CloudConnection
 type AppCloudConnection struct {
 
+	// azure registry id
+	AzureRegistryID string `json:"azure_registry_id,omitempty"`
+
+	// azure registry login server
+	AzureRegistryLoginServer string `json:"azure_registry_login_server,omitempty"`
+
+	// azure tenant id
+	AzureTenantID string `json:"azure_tenant_id,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -30,6 +39,9 @@ type AppCloudConnection struct {
 
 	// default region
 	DefaultRegion string `json:"default_region,omitempty"`
+
+	// gcp project number
+	GcpProjectNumber string `json:"gcp_project_number,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`
@@ -44,7 +56,7 @@ type AppCloudConnection struct {
 	OrgID string `json:"org_id,omitempty"`
 
 	// platform
-	// Enum: ["aws"]
+	// Enum: ["aws","gcp","azure"]
 	Platform string `json:"platform,omitempty"`
 
 	// preset
@@ -102,7 +114,7 @@ var appCloudConnectionTypePlatformPropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["aws"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["aws","gcp","azure"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -114,6 +126,12 @@ const (
 
 	// AppCloudConnectionPlatformAws captures enum value "aws"
 	AppCloudConnectionPlatformAws string = "aws"
+
+	// AppCloudConnectionPlatformGcp captures enum value "gcp"
+	AppCloudConnectionPlatformGcp string = "gcp"
+
+	// AppCloudConnectionPlatformAzure captures enum value "azure"
+	AppCloudConnectionPlatformAzure string = "azure"
 )
 
 // prop value enum

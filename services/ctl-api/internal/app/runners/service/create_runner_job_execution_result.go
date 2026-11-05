@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/redact"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all" // register all errparse parsers
@@ -266,7 +267,7 @@ func redactedErrorMetadata(meta map[string]*string) pgtype.Hstore {
 			out[key] = nil
 			continue
 		}
-		redacted := compositeerrors.RedactDiagnosticSecrets(*value)
+		redacted := redact.DiagnosticSecrets(*value)
 		out[key] = &redacted
 	}
 	return out

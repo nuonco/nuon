@@ -41,7 +41,7 @@ jobs:
     outputs:
       promote: ${{steps.output.outputs.promote}}
     steps:
-      - uses: actions-ecosystem/action-get-merged-pull-request@v1
+      - uses: actions-ecosystem/action-get-merged-pull-request@v1.0.1
         name: get merged pr
         id: merged_pr
         if: github.event_name == 'push'
@@ -65,7 +65,7 @@ jobs:
       semver: ${{ steps.semver.outputs.nextStrict }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           ref: ${{ inputs.branch || github.ref }}
           fetch-depth: 0
@@ -83,7 +83,7 @@ jobs:
 
       - name: Determine next version
         id: semver
-        uses: ./.github/actions/cross-repo-semver
+        uses: $/.github/actions/cross-repo-semver
         with:
           sibling_repo: nuonco/mono
           token: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
@@ -104,12 +104,12 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           sparse-checkout: .github/actions/await-ctl-api-integration
 
       - name: Await ctl-api integration
-        uses: ./.github/actions/await-ctl-api-integration
+        uses: $/.github/actions/await-ctl-api-integration
         with:
           sha: ${{ needs.tag.outputs.sha }}
           ref: ${{ inputs.branch || github.ref_name }}
@@ -125,7 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2
+        uses: rtCamp/action-slack-notify@v2.4.1
         env:
           SLACK_ICON_EMOJI: 🤖
           SLACK_USERNAME: github-bot
@@ -179,7 +179,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           ref: ${{ inputs.branch || github.ref }}
 
@@ -201,7 +201,7 @@ jobs:
       - uses: martialonline/workflow-status@v4.2
         id: check
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2
+        uses: rtCamp/action-slack-notify@v2.4.1
         env:
           SLACK_ICON_EMOJI: 🤖
           SLACK_USERNAME: github-bot
@@ -213,7 +213,7 @@ jobs:
             *status* - ${{steps.check.outputs.status}}
 
       - name: Update datadog
-        uses: masci/datadog@v1
+        uses: masci/datadog@v1.9.4
         with:
           api-key: ${{ secrets.DATADOG_API_KEY }}
           api-url: "https://us5.datadoghq.com"

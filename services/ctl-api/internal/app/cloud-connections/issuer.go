@@ -6,24 +6,31 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
 
 func NewVerifierFromConfig(cfg *internal.Config, l *zap.Logger) (Verifier, error) {
-	issuer, err := IssuerFromConfig(cfg)
+	issuer, _, err := IssuerFromConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
-	return NewAWSVerifier(issuer, l), nil
+	return NewVerifier(issuer, l), nil
 }
 
-func IssuerFromConfig(cfg *internal.Config) (*oidcissuer.Issuer, error) {
+func IssuerFromConfig(cfg *internal.Config) (*oidcissuer.Issuer, oidcissuer.JWKS, error) {
 	if cfg == nil || cfg.TelemetryJWKS == "" {
-		return nil, nil
+		return nil, oidcissuer.JWKS{}, nil
 	}
-	issuer, _, err := oidcissuer.NewFromJWKS(cfg.PublicAPIURL, cfg.TelemetryJWKS)
+	issuer, publicKeys, err := oidcissuer.NewFromJWKS(cfg.PublicAPIURL, cfg.TelemetryJWKS)
 	if err != nil {
-		return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
+		return nil, oidcissuer.JWKS{}, fmt.Errorf("initialize cloud connection issuer: %w", err)
 	}
-	return issuer, nil
+	return issuer, publicKeys, nil
+}
+
+const ForeignSubject = "org:foreign:connection:foreign"
+
+func Subject(connection *app.CloudConnection) string {
+	return fmt.Sprintf("org:%s:connection:%s", connection.OrgID, connection.ID)
 }

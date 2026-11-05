@@ -29,9 +29,6 @@ type PlantypesBuildPlan struct {
 	// container image pull plan
 	ContainerImagePullPlan *PlantypesContainerImagePullPlan `json:"container_image_pull_plan,omitempty"`
 
-	// docker build plan
-	DockerBuildPlan *PlantypesDockerBuildPlan `json:"docker_build_plan,omitempty"`
-
 	// dst registry
 	// Required: true
 	DstRegistry *ConfigsOCIRegistryRepository `json:"dst_registry"`
@@ -64,10 +61,6 @@ func (m *PlantypesBuildPlan) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateContainerImagePullPlan(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateDockerBuildPlan(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -123,29 +116,6 @@ func (m *PlantypesBuildPlan) validateContainerImagePullPlan(formats strfmt.Regis
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("container_image_pull_plan")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *PlantypesBuildPlan) validateDockerBuildPlan(formats strfmt.Registry) error {
-	if swag.IsZero(m.DockerBuildPlan) { // not required
-		return nil
-	}
-
-	if m.DockerBuildPlan != nil {
-		if err := m.DockerBuildPlan.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("docker_build_plan")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("docker_build_plan")
 			}
 
 			return err
@@ -334,10 +304,6 @@ func (m *PlantypesBuildPlan) ContextValidate(ctx context.Context, formats strfmt
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateDockerBuildPlan(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateDstRegistry(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -388,31 +354,6 @@ func (m *PlantypesBuildPlan) contextValidateContainerImagePullPlan(ctx context.C
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("container_image_pull_plan")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *PlantypesBuildPlan) contextValidateDockerBuildPlan(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.DockerBuildPlan != nil {
-
-		if swag.IsZero(m.DockerBuildPlan) { // not required
-			return nil
-		}
-
-		if err := m.DockerBuildPlan.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("docker_build_plan")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("docker_build_plan")
 			}
 
 			return err
