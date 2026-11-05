@@ -2,6 +2,10 @@
 name: add labels based on changes
 on: pull_request
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   changes:
     name: 🔍 changes
@@ -10,9 +14,9 @@ jobs:
       changes: ${{ steps.changes.outputs.changes }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v3.0.4
         id: changes
         with:
           filters: |
@@ -31,6 +35,6 @@ jobs:
         label: ${{ fromJSON(needs.changes.outputs.changes) }}
     steps:
       - name: add auto deploy label
-        uses: actions-ecosystem/action-add-labels@v1
+        uses: actions-ecosystem/action-add-labels@v1.1.3
         with:
           labels: ${{ matrix.label }}
