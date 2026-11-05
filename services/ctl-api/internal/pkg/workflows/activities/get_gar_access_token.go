@@ -7,7 +7,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/google/externalaccount"
 	"google.golang.org/api/impersonate"
 
@@ -62,15 +61,7 @@ func (a *Activities) GetGARAccessToken(ctx context.Context, req *GetGARAccessTok
 		return &GARAccessToken{Username: "oauth2accesstoken", Password: token.AccessToken}, nil
 	}
 
-	creds, err := google.FindDefaultCredentials(ctx, scopes...)
-	if err != nil {
-		return nil, fmt.Errorf("unable to find GCP credentials: %w", err)
-	}
-	token, err := creds.TokenSource.Token()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get GCP access token: %w", err)
-	}
-	return &GARAccessToken{Username: "oauth2accesstoken", Password: token.AccessToken}, nil
+	return nil, fmt.Errorf("refusing to mint a control plane token for artifact registry")
 }
 
 // awsCredentialSupplier implements externalaccount.AwsSecurityCredentialsSupplier
