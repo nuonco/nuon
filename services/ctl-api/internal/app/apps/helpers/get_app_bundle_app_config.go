@@ -133,12 +133,6 @@ func (h *Helpers) connectionIDFromTypedComponentConfig(ctx context.Context, orgI
 			return "", res.Error
 		}
 		return cfg.ComponentConfigConnectionID, nil
-	case models.AppComponentTypeDockerBuild:
-		var cfg app.DockerBuildComponentConfig
-		if res := db.Where(app.DockerBuildComponentConfig{ID: component.ConfigID, OrgID: orgID}).First(&cfg); res.Error != nil {
-			return "", res.Error
-		}
-		return cfg.ComponentConfigConnectionID, nil
 	case models.AppComponentTypeExternalImage:
 		var cfg app.ExternalImageComponentConfig
 		if res := db.Where(app.ExternalImageComponentConfig{ID: component.ConfigID, OrgID: orgID}).First(&cfg); res.Error != nil {
@@ -176,9 +170,6 @@ func PreloadComponentConfigConnection(db *gorm.DB) *gorm.DB {
 		Preload("HelmComponentConfig").
 		Preload("HelmComponentConfig.PublicGitVCSConfig").
 		Preload("HelmComponentConfig.ConnectedGithubVCSConfig").
-		Preload("DockerBuildComponentConfig").
-		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ExternalImageComponentConfig").
 		Preload("JobComponentConfig").
 		Preload("KubernetesManifestComponentConfig").

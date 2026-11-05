@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
@@ -16,7 +15,6 @@ import (
 	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/reprovision"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 type Signal struct {
@@ -46,7 +44,26 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusPlanning, "creating build plan")
+	err := s.preflight(ctx)
+	if err != nil {
+		return activities.FailBuild(ctx, s.BuildID, err)
+	}
+
+	err = componentsworker.AwaitBuild(ctx, componentsworker.BuildRequest{
+		ID:          s.ComponentID,
+		BuildID:     s.BuildID,
+		SandboxMode: s.SandboxMode,
+	})
+	if err != nil && (temporal.IsTimeoutError(err) || temporal.IsTerminatedError(err)) {
+		return activities.FailBuild(ctx, s.BuildID, err)
+	}
+	return err
+}
+
+func (s *Signal) preflight(ctx workflow.Context) error {
+	if err := componentsworker.UpdateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusPlanning, "creating build plan"); err != nil {
+		return err
+	}
 
 	l := workflow.GetLogger(ctx)
 	l.Info("executing build")
@@ -55,25 +72,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	if _, err := activities.AwaitGetBuildGitSourceByBuildID(ctx, s.BuildID, &preflightOptions); err != nil {
 		l.Error(err.Error())
-		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, err.Error())
 		return err
 	}
 
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, s.ComponentID)
 	if err != nil {
-		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "unable to get component")
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
 	// Ensure org is provisioned before building.
 	if err := queueclient.EnsureQueueSignal(ctx, comp.OrgID, "orgs", orgprovision.SignalType, orgreprovision.SignalType); err != nil {
-		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "org provision not ready")
 		return fmt.Errorf("org provision not ready: %w", err)
 	}
 	if comp.Status != app.ComponentStatusActive {
 		createdSignal := &createdsignal.Signal{ComponentID: s.ComponentID}
 		if err := createdSignal.Execute(ctx); err != nil {
-			s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "unable to activate component")
 			return fmt.Errorf("unable to activate component: %w", err)
 		}
 	}
@@ -82,48 +95,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// sync burst the build can be enqueued before that signal commits the active
 	// status, so wait for activation before the worker validates the status.
 	if err := queueclient.EnsureQueueSignal(ctx, comp.ID, "components", createdsignal.SignalType); err != nil {
-		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "component activation not ready")
 		return fmt.Errorf("component activation not ready: %w", err)
 	}
 
-	return componentsworker.AwaitBuild(ctx, componentsworker.BuildRequest{
-		ID:          s.ComponentID,
-		BuildID:     s.BuildID,
-		SandboxMode: s.SandboxMode,
-	})
-}
-
-// updateBuildStatus updates the build status
-func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) {
-	l := workflow.GetLogger(ctx)
-	err := activities.AwaitUpdateBuildStatus(ctx, activities.UpdateBuildStatus{
-		BuildID:           bldID,
-		Status:            status,
-		StatusDescription: statusDescription,
-	})
-	if err != nil {
-		l.Error("unable to update build status",
-			zap.String("build-id", bldID),
-			zap.Error(err))
-		return
-	}
-
-	err = statusactivities.AwaitUpdateBuildStatusV2(ctx, statusactivities.UpdateBuildStatusV2{
-		BuildID:           bldID,
-		Status:            status,
-		StatusDescription: statusDescription,
-	})
-	if err != nil {
-		l.Error("unable to update build status v2",
-			zap.String("build-id", bldID),
-			zap.Error(err))
-		return
-	}
+	return nil
 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
 	defer cancel()
-	s.updateBuildStatus(cancelCtx, s.BuildID, app.ComponentBuildStatus(app.StatusCancelled), "build cancelled")
-	return nil
+	return componentsworker.UpdateBuildStatus(cancelCtx, s.BuildID, app.ComponentBuildStatus(app.StatusCancelled), "build cancelled")
 }

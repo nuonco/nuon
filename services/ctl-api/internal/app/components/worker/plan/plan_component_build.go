@@ -46,14 +46,6 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 	}
 
 	switch build.ComponentConfigConnection.Type {
-	case app.ComponentTypeDockerBuild:
-		l.Info("generating docker build plan")
-		subPlan, err := p.createDockerBuildPlan(ctx, build)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create docker build plan")
-		}
-		plan.DockerBuildPlan = subPlan
-
 	case app.ComponentTypeExternalImage:
 		l.Info("generating container image build plan")
 		subPlan, err := p.createContainerImageBuildPlan(ctx, build)

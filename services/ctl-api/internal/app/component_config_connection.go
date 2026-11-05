@@ -66,7 +66,6 @@ type ComponentConfigConnection struct {
 	TerraformModuleComponentConfig    *TerraformModuleComponentConfig    `json:"terraform_module,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"terraform_module_component_config,omitzero,omitempty"`
 	HelmComponentConfig               *HelmComponentConfig               `json:"helm,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"helm_component_config,omitzero,omitempty"`
 	ExternalImageComponentConfig      *ExternalImageComponentConfig      `json:"external_image,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"external_image_component_config,omitzero,omitempty"`
-	DockerBuildComponentConfig        *DockerBuildComponentConfig        `json:"docker_build,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"docker_build_component_config,omitzero,omitempty"`
 	JobComponentConfig                *JobComponentConfig                `json:"job,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"job_component_config,omitzero,omitempty"`
 	KubernetesManifestComponentConfig *KubernetesManifestComponentConfig `json:"kubernetes_manifest,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"kubernetes_manifest_component_config,omitzero,omitempty"`
 	PulumiComponentConfig             *PulumiComponentConfig             `json:"pulumi,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"pulumi_component_config,omitzero,omitempty"`
@@ -322,9 +321,6 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	if c.TerraformModuleComponentConfig != nil {
 		c.Type = ComponentTypeTerraformModule
 	}
-	if c.DockerBuildComponentConfig != nil {
-		c.Type = ComponentTypeDockerBuild
-	}
 	if c.ExternalImageComponentConfig != nil {
 		c.Type = ComponentTypeExternalImage
 	}
@@ -345,9 +341,6 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	} else if c.HelmComponentConfig != nil {
 		c.ConnectedGithubVCSConfig = c.HelmComponentConfig.ConnectedGithubVCSConfig
 		c.PublicGitVCSConfig = c.HelmComponentConfig.PublicGitVCSConfig
-	} else if c.DockerBuildComponentConfig != nil {
-		c.ConnectedGithubVCSConfig = c.DockerBuildComponentConfig.ConnectedGithubVCSConfig
-		c.PublicGitVCSConfig = c.DockerBuildComponentConfig.PublicGitVCSConfig
 	} else if c.KubernetesManifestComponentConfig != nil {
 		c.ConnectedGithubVCSConfig = c.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig
 		c.PublicGitVCSConfig = c.KubernetesManifestComponentConfig.PublicGitVCSConfig

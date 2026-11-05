@@ -53,7 +53,6 @@ function getTabsForComponentType(
         { path: '/manifest', text: 'Manifest' },
       )
       break
-    case 'docker_build':
     case 'external_image':
     case 'job':
       tabs.push({ path: '/artifact', text: 'Artifact' })

@@ -27,6 +27,9 @@ type AppAzureACRImageConfig struct {
 	// never the material itself.
 	ClientSecretName string `json:"client_secret_name,omitempty"`
 
+	// actual configuration
+	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
+
 	// connection to parent model
 	ComponentConfigID string `json:"component_config_id,omitempty"`
 
@@ -42,7 +45,7 @@ type AppAzureACRImageConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
-	// actual configuration
+	// registry url
 	RegistryURL string `json:"registry_url,omitempty"`
 
 	// tenant id

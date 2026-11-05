@@ -132,7 +132,7 @@ test('status links use the new install pages when the new install IA is on', () 
       nested: true,
       componentId: 'cmp-2',
       name: 'worker',
-      type: 'docker_build',
+      type: 'external_image',
     })
   ).toBe('/resources/images?q=worker')
   expect(

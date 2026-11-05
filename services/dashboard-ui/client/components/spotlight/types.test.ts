@@ -121,7 +121,7 @@ test('new install pages and resource searches use the nested routes', () => {
       ...nested,
       componentId: 'cmp-2',
       name: 'worker',
-      type: 'docker_build',
+      type: 'external_image',
     })
   ).toBe('/apps/app-1/installs/inst-1/resources/images?q=worker')
   expect(

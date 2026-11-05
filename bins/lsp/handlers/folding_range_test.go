@@ -35,8 +35,11 @@ directory = "aws-ecs-tutorial"
 
 [[components]]
 name = "docker_image"
-type = "docker_build"
-dockerfile = "Dockerfile"
+type = "external_image"
+
+[components.public]
+image_url = "docker.io/acme/app"
+tag = "latest"
 `
 	lines := strings.Split(config, "\n")
 	doc := toml.ParseToml(config)
@@ -167,7 +170,7 @@ repo = "nuonco/nuon"
 
 [[values_file]]
 contents = """
-image.tag = {{.nuon.components.toml_docker_build.image.name}}
+image.tag = {{.nuon.components.toml_container_image.image.name}}
 """
 
 [[input]]

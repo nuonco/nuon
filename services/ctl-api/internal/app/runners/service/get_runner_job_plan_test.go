@@ -164,7 +164,7 @@ func (s *GetRunnerJobPlanPublicTestSuite) TestGetRunnerJobPlanPublic() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -178,7 +178,7 @@ func (s *GetRunnerJobPlanPublicTestSuite) TestGetRunnerJobPlanPublic() {
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
 					RunnerJobID: job.ID,
-					PlanJSON:    `{"buildConfig": {"dockerfile": "Dockerfile"}}`,
+					PlanJSON:    `{"container_image_pull_plan": {"image_url": "example.com/app:tag"}}`,
 				}
 				err = s.service.DB.WithContext(ctx).Create(plan).Error
 				require.NoError(s.T(), err)
@@ -191,7 +191,7 @@ func (s *GetRunnerJobPlanPublicTestSuite) TestGetRunnerJobPlanPublic() {
 				return job.ID
 			},
 			expectedCode: http.StatusOK,
-			expectedPlan: `{"buildConfig": {"dockerfile": "Dockerfile"}}`,
+			expectedPlan: `{"container_image_pull_plan": {"image_url": "example.com/app:tag"}}`,
 		},
 		{
 			name: "runner job plan not found",
@@ -208,7 +208,7 @@ func (s *GetRunnerJobPlanPublicTestSuite) TestGetRunnerJobPlanPublic() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -289,7 +289,7 @@ func (s *GetRunnerJobPlanPublicTestSuite) TestGetRunnerJobPlanPublic() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -448,7 +448,7 @@ func (s *GetRunnerJobPlanPublicTestSuite) TestGetRunnerJobPlanDifferentJobTypes(
 		typ   app.RunnerJobType
 		plan  string
 	}{
-		{app.RunnerJobGroupBuild, app.RunnerJobTypeDockerBuild, `{"dockerfile": "Dockerfile"}`},
+		{app.RunnerJobGroupBuild, app.RunnerJobTypeContainerImageBuild, `{"image_url": "example.com/app:tag"}`},
 		{app.RunnerJobGroupBuild, app.RunnerJobTypeHelmChartBuild, `{"chart": "mychart"}`},
 		{app.RunnerJobGroupBuild, app.RunnerJobTypeTerraformModuleBuild, `{"module": "mymodule"}`},
 		{app.RunnerJobGroupDeploy, app.RunnerJobTypeTerraformDeploy, `{"tf_vars": {}}`},
@@ -637,7 +637,7 @@ func (s *GetRunnerJobPlanV2TestSuite) TestGetRunnerJobPlanV2() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -651,7 +651,7 @@ func (s *GetRunnerJobPlanV2TestSuite) TestGetRunnerJobPlanV2() {
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
 					RunnerJobID: job.ID,
-					PlanJSON:    `{"buildConfig": {"dockerfile": "Dockerfile"}}`,
+					PlanJSON:    `{"container_image_pull_plan": {"image_url": "example.com/app:tag"}}`,
 				}
 				err = s.service.DB.WithContext(ctx).Create(plan).Error
 				require.NoError(s.T(), err)
@@ -664,7 +664,7 @@ func (s *GetRunnerJobPlanV2TestSuite) TestGetRunnerJobPlanV2() {
 				return s.testRunner.ID, job.ID
 			},
 			expectedCode: http.StatusOK,
-			expectedPlan: `{"buildConfig": {"dockerfile": "Dockerfile"}}`,
+			expectedPlan: `{"container_image_pull_plan": {"image_url": "example.com/app:tag"}}`,
 		},
 		{
 			name: "runner not found returns error",
@@ -680,7 +680,7 @@ func (s *GetRunnerJobPlanV2TestSuite) TestGetRunnerJobPlanV2() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -694,7 +694,7 @@ func (s *GetRunnerJobPlanV2TestSuite) TestGetRunnerJobPlanV2() {
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
 					RunnerJobID: job.ID,
-					PlanJSON:    `{"buildConfig": {"dockerfile": "Dockerfile"}}`,
+					PlanJSON:    `{"container_image_pull_plan": {"image_url": "example.com/app:tag"}}`,
 				}
 				err = s.service.DB.WithContext(ctx).Create(plan).Error
 				require.NoError(s.T(), err)
@@ -724,7 +724,7 @@ func (s *GetRunnerJobPlanV2TestSuite) TestGetRunnerJobPlanV2() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,

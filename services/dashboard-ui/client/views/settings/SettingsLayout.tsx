@@ -36,6 +36,11 @@ const SettingsTemplate = () => {
       text: 'VCS connections',
     },
     {
+      path: `/image-repositories`,
+      iconVariant: 'PackageIcon' as const,
+      text: 'Image repositories',
+    },
+    {
       path: `/cloud-connections`,
       iconVariant: 'CloudIcon' as const,
       text: 'Cloud connections',

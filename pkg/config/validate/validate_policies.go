@@ -139,7 +139,6 @@ func validatePolicyType(policyType config.AppPolicyType) error {
 		config.AppPolicyTypeTerraformModule,
 		config.AppPolicyTypeHelmChart,
 		config.AppPolicyTypeKubernetesManifest,
-		config.AppPolicyTypeDockerBuild,
 		config.AppPolicyTypeContainerImage,
 		config.AppPolicyTypePulumi,
 		config.AppPolicyTypeSandbox:
@@ -178,7 +177,6 @@ func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engi
 	case config.AppPolicyTypeTerraformModule,
 		config.AppPolicyTypeHelmChart,
 		config.AppPolicyTypeKubernetesManifest,
-		config.AppPolicyTypeDockerBuild,
 		config.AppPolicyTypeContainerImage,
 		config.AppPolicyTypePulumi,
 		config.AppPolicyTypeSandbox:
@@ -199,7 +197,6 @@ func ComponentScopedPolicyType(policyType config.AppPolicyType) bool {
 	case config.AppPolicyTypeTerraformModule,
 		config.AppPolicyTypeHelmChart,
 		config.AppPolicyTypeKubernetesManifest,
-		config.AppPolicyTypeDockerBuild,
 		config.AppPolicyTypeContainerImage,
 		config.AppPolicyTypePulumi:
 		return true

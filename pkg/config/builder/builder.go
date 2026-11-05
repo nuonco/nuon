@@ -34,7 +34,6 @@ const (
 	AttributeHelmCharts    = "helm_charts"
 	AttributeKubernetes    = "kubernetes"
 	AttributeLambda        = "lambda"
-	AttributeDockerImage   = "docker_image"
 	AttributeCustomScripts = "custom_scripts"
 )
 
