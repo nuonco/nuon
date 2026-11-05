@@ -74,6 +74,9 @@ func (h *Client) EnsureManagedServiceAccountRole(ctx context.Context, accountID 
 }
 
 func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
+	if !want.RoleType.IsPrivate() {
+		return fmt.Errorf("role type %q is not a private role type", want.RoleType)
+	}
 	if want.ID == "" {
 		want.Policies[0].OrgID = want.OrgID
 		if err := tx.Create(want).Error; err != nil {
@@ -158,6 +161,25 @@ func DeleteManagedServiceAccountRole(tx *gorm.DB, accountID string) error {
 		return fmt.Errorf("clear private role ownership: %w", err)
 	}
 	return deletePrivateRole(tx, accountID, role.ID)
+}
+
+func DeletePrivateRoles(tx *gorm.DB, accountID string) error {
+	var roles []app.Role
+	if err := tx.Unscoped().Joins("JOIN account_roles ON account_roles.role_id = roles.id").
+		Where("account_roles.account_id = ?", accountID).
+		Where("roles.role_type IN ?", app.PrivateRoleTypes).
+		Distinct("roles.*").Find(&roles).Error; err != nil {
+		return fmt.Errorf("load private roles for deletion: %w", err)
+	}
+	for _, role := range roles {
+		if err := validatePrivateRole(tx, accountID, role.OrgID.ValueString(), &role); err != nil {
+			return err
+		}
+		if err := deletePrivateRole(tx, accountID, role.ID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func deletePrivateRole(tx *gorm.DB, accountID, roleID string) error {

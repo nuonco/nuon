@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"gorm.io/gorm"
@@ -40,6 +41,19 @@ const (
 	RoleTypePhoneHome          RoleType = "phone_home"
 	RoleTypeLogStream          RoleType = "log_stream"
 )
+
+var PrivateRoleTypes = []RoleType{
+	RoleTypeRunnerInstall,
+	RoleTypeRunnerJob,
+	RoleTypeStack,
+	RoleTypeTelemetryCollector,
+	RoleTypePhoneHome,
+	RoleTypeLogStream,
+}
+
+func (r RoleType) IsPrivate() bool {
+	return slices.Contains(PrivateRoleTypes, r)
+}
 
 // Role contexts name the assignment surfaces a role may be offered on. A role
 // with no contexts still exists (and is displayed where held) but no picker or
