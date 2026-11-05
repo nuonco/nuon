@@ -88,6 +88,11 @@ func (s *service) getInstallSandboxRun(ctx *gin.Context, runID string) (*app.Ins
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install sandbox run: %w", res.Error)
 	}
+	for i := range installSandboxRun.RunnerJobs {
+		if err := installSandboxRun.RunnerJobs[i].Plan.RedactCredentials(); err != nil {
+			return nil, err
+		}
+	}
 	if len(installSandboxRun.RunnerJobs) > 0 {
 		compositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
 			OwnerID:   installSandboxRun.ID,
