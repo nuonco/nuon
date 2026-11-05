@@ -52,6 +52,28 @@ type resourceDocument struct {
 	Rules []resourceRule `json:"rules"`
 }
 
+func ResourcePolicy(api API, scope Scope, permission PermissionID) (Policy, error) {
+	if api != "" {
+		if _, err := ParseAPI(string(api)); err != nil {
+			return Policy{}, err
+		}
+	}
+	switch scope.Kind {
+	case KindInstall, KindRunnerJob, KindPhoneHome:
+	default:
+		return Policy{}, fmt.Errorf("unsupported resource rule scope %q", scope.Kind)
+	}
+	set, err := NewPermissionSet(permission)
+	if err != nil {
+		return Policy{}, err
+	}
+	rules := []ScopedPermissions{{Scope: scope, Permissions: set}}
+	if _, err := LegacySources(rules); err != nil {
+		return Policy{}, err
+	}
+	return Policy{kind: PolicyKindResourceRules, api: api, bindingKind: KindOrg, rules: rules}, nil
+}
+
 func DecodePolicy(version int, data []byte) (Policy, error) {
 	if version != PolicyFormatV3 {
 		return Policy{}, fmt.Errorf("unsupported policy format %d", version)
