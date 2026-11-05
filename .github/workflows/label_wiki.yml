@@ -4,8 +4,6 @@ on: pull_request
 
 permissions:
   contents: read
-  issues: write
-  pull-requests: write
 
 jobs:
   changes:
@@ -27,6 +25,8 @@ jobs:
 
   add-label:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     needs:
       - changes
     if: ${{ needs.changes.outputs.changes != '[]' && needs.changes.outputs.changes != '' }}
