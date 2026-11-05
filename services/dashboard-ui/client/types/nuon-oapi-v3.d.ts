@@ -1649,6 +1649,24 @@ export interface paths {
      */
     get: operations["GetInstallActionRun"];
   };
+  "/v1/installs/{install_id}/actions/runs/{run_id}/logs": {
+    /**
+     * delete the logs and trace spans of an action run
+     * @description Permanently delete the logs and trace spans of a finished action run, for example after a command printed a secret.
+     *
+     * Only org admins can delete logs, and only after the run has ended, including runs that failed, timed out, or were
+     * cancelled. The run itself and its outputs are kept. The
+     * log stream is marked with `logs_deleted_at` and `logs_deleted_by_id` from the first deletion. Calling this again
+     * deletes any records that arrived late and keeps the original marker.
+     *
+     * Once the logs are deleted, the log stream's write token is revoked, new writes to the stream are dropped, and reads of
+     * the stream return no logs or spans. Trace spans are removed in the background after the call returns.
+     *
+     * Rotate any secret that was exposed: deleting the logs does not undo the exposure, and copies held in the ingestion
+     * queue expire on their own retention schedule. If that queue is replayed before then, call this endpoint again.
+     */
+    delete: operations["DeleteInstallActionRunLogs"];
+  };
   "/v1/installs/{install_id}/actions/runs/{run_id}/steps/{step_id}": {
     /**
      * get action workflow run step by install id and step id
@@ -5886,6 +5904,8 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      logs_deleted_at?: string;
+      logs_deleted_by_id?: string;
       open?: boolean;
       org_id?: string;
       owner_id?: string;
@@ -23333,6 +23353,69 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallActionWorkflowRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete the logs and trace spans of an action run
+   * @description Permanently delete the logs and trace spans of a finished action run, for example after a command printed a secret.
+   *
+   * Only org admins can delete logs, and only after the run has ended, including runs that failed, timed out, or were
+   * cancelled. The run itself and its outputs are kept. The
+   * log stream is marked with `logs_deleted_at` and `logs_deleted_by_id` from the first deletion. Calling this again
+   * deletes any records that arrived late and keeps the original marker.
+   *
+   * Once the logs are deleted, the log stream's write token is revoked, new writes to the stream are dropped, and reads of
+   * the stream return no logs or spans. Trace spans are removed in the background after the call returns.
+   *
+   * Rotate any secret that was exposed: deleting the logs does not undo the exposure, and copies held in the ingestion
+   * queue expire on their own retention schedule. If that queue is replayed before then, call this endpoint again.
+   */
+  DeleteInstallActionRunLogs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.LogStream"];
         };
       };
       /** @description Bad Request */
