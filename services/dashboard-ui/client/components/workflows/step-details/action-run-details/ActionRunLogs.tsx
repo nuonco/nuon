@@ -2,6 +2,7 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { ActionRunLogsDeleted } from '@/components/actions/DeleteActionRunLogs'
 import { InstallActionRunLogs } from '@/components/actions/InstallActionRunLogs'
 import { InstallActionRunOutputsComponent } from '@/components/actions/InstallActionRunOutputs'
 import { SSELogs } from '@/components/log-stream/SSELogs'
@@ -11,20 +12,75 @@ import { usePrefetchLogStreamSpans } from '@/hooks/use-prefetch-log-stream-spans
 import { useStepTab } from '@/components/workflows/step-details/use-step-tab'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
+import type { TInstallActionRun } from '@/types'
 import type { IActionRunLogs } from './types'
+
+const ActionRunSummary = ({ actionRun }: { actionRun: TInstallActionRun }) => (
+  <div className="pt-4 flex flex-col gap-6">
+    <div className="flex flex-col gap-2">
+      <Text weight="strong">Outputs</Text>
+      <InstallActionRunOutputsComponent installActionRun={actionRun} />
+    </div>
+    {Object.keys(actionRun?.run_env_vars ?? {}).length > 0 && (
+      <div className="flex flex-col gap-2">
+        <Text weight="strong">Environment variables</Text>
+        <KeyValueList
+          values={Object.entries(actionRun.run_env_vars!).map(
+            ([key, value]) => ({ key, value })
+          )}
+        />
+      </div>
+    )}
+  </div>
+)
 
 export const ActionRunLogs = ({
   actionRun,
   isAdhoc,
   loading,
 }: IActionRunLogs) => {
-  usePrefetchLogStreamSpans(actionRun?.log_stream?.id)
+  const logsDeleted = !!actionRun?.log_stream?.logs_deleted_at
+  usePrefetchLogStreamSpans(logsDeleted ? undefined : actionRun?.log_stream?.id)
   const [tab, setTab] = useStepTab()
 
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
         <LogsSkeleton />
+      </div>
+    )
+  }
+
+  if (logsDeleted && isAdhoc) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Text weight="strong">Action logs</Text>
+        <ActionRunLogsDeleted />
+      </div>
+    )
+  }
+
+  if (logsDeleted) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Tabs
+          naturalHeight
+          activeTab={tab}
+          onTabChange={setTab}
+          tabs={{
+            logs: (
+              <div className="pt-4">
+                <ActionRunLogsDeleted />
+              </div>
+            ),
+            trace: (
+              <div className="pt-4">
+                <ActionRunLogsDeleted />
+              </div>
+            ),
+            summary: <ActionRunSummary actionRun={actionRun!} />,
+          }}
+        />
       </div>
     )
   }
@@ -87,26 +143,7 @@ export const ActionRunLogs = ({
                     />
                   </div>
                 ),
-                summary: (
-                  <div className="pt-4 flex flex-col gap-6">
-                    <div className="flex flex-col gap-2">
-                      <Text weight="strong">Outputs</Text>
-                      <InstallActionRunOutputsComponent
-                        installActionRun={actionRun}
-                      />
-                    </div>
-                    {Object.keys(actionRun?.run_env_vars ?? {}).length > 0 && (
-                      <div className="flex flex-col gap-2">
-                        <Text weight="strong">Environment variables</Text>
-                        <KeyValueList
-                          values={Object.entries(actionRun.run_env_vars!).map(
-                            ([key, value]) => ({ key, value })
-                          )}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ),
+                summary: <ActionRunSummary actionRun={actionRun} />,
               }}
             />
           )}
