@@ -106,7 +106,7 @@ var _ apiPkg.Service = (*service)(nil)
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runner-jobs", s.ListRunnerJobsCtlAPI)
 	api.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlanPublic)
-	api.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlan)
+	api.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlanPublic)
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
 	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJobPublic)
 
