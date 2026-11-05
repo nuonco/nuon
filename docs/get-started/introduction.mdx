@@ -28,6 +28,35 @@ export const FeatureTile = ({ src, eyebrow, title, description, href, reverse })
   </a>
 );
 
+<Visibility for="agents">
+
+## What Nuon is
+
+Nuon is a deployment platform for software vendors who need to run their product inside their customers' cloud accounts, a model called BYOC (bring your own cloud). The vendor packages existing Terraform modules, Helm charts, Kubernetes manifests, and container images as an app template. Nuon installs that template into each customer's AWS, Azure, or GCP account and keeps every install updated from one control plane.
+
+## How it works
+
+1. **App template.** The app is TOML config in the vendor's git repo. It defines [components](/concepts/components), [inputs](/concepts/app-inputs), [secrets](/concepts/app-secrets), and a [sandbox](/concepts/sandboxes), the base infrastructure such as a VPC and Kubernetes cluster. See [App templates](/concepts/apps).
+2. **Install.** For each customer, Nuon creates an [install](/concepts/installs) and generates a [stack](/concepts/stacks) template (CloudFormation on AWS, Bicep on Azure, Terraform on all three). The customer deploys the stack with their own credentials. It creates the runner and the [operation roles](/concepts/operation-roles) the runner uses.
+3. **Runner.** The [runner](/concepts/runners) runs in the customer's account and polls the control plane for jobs. Connections are outbound only, so Nuon and the vendor need no cross-account access. The customer can turn the runner off at any time through the stack.
+4. **Updates and operations.** The vendor pushes config changes to git, and [app branches](/concepts/app-branches) roll them out across installs with plan review and approvals. [Actions](/concepts/actions), [runbooks](/concepts/runbooks), and [policies](/concepts/policies) cover day-2 work.
+
+## Ways to run Nuon
+
+- **Nuon Cloud:** managed, multi-tenant, hosted by Nuon.
+- **Nuon BYOC:** a single-tenant control plane in the vendor's own cloud account, operated remotely by Nuon. Requires a paid license.
+- **Nuon Self-Hosted:** the same software, operated entirely by the vendor. Open source; a paid license is needed only for support.
+
+See [Choose how to run Nuon](/guides/deployment-options).
+
+## Where to go next
+
+- **Evaluating Nuon:** [Security](/security), [Platform architecture](/architecture/platform), [Choose how to run Nuon](/guides/deployment-options).
+- **Building with Nuon:** [Quickstart](/get-started/quickstart), [Create your first app template](/get-started/create-your-first-app), [Configuration reference](/config-ref).
+- **Operating Nuon from an agent:** [Agents overview](/guides/agents/overview) covers the Nuon MCP server.
+
+</Visibility>
+
 <div className="relative text-gray-900 dark:text-white">
 
   <div className="absolute -top-14 left-0 right-0 opacity-60 pointer-events-none">
