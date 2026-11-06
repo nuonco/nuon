@@ -60,7 +60,7 @@ Following that example, we can describe the parts of a workflow.
 
 ### Timeout
 
-Each workflow should have a timeout limiting how long it can run. The maximum allowed timeout is 30 minutes. Timeouts must be provided as valid Golang `time.Duration` strings. An action without a timeout gets 5 minutes.
+Each workflow should have a timeout limiting how long it can run. The maximum allowed timeout is 1 hour. Timeouts must be provided as valid Golang `time.Duration` strings. An action without a timeout gets 5 minutes.
 
 A run that exceeds its timeout is stopped and ends with status `timed-out`. Time spent waiting in the install's queue or for the runner to pick up the job does not count toward the timeout.
 
@@ -134,6 +134,9 @@ The following triggers require a `component_name` field to be set, as they are t
 
 The enable and disable triggers run when an input update changes a toggleable component's enabled state.
 
+If an action on a `pre-` or `post-` trigger fails, the workflow pauses until someone retries or skips it. After three
+failed retries, the workflow continues.
+
 Actions can be triggered manually, on a cron, or by install events. You can define multiple triggers for an action.
 
 The example action defines two triggers. It will run every five minutes, and can also be triggered manually at any time.
@@ -193,7 +196,8 @@ command = "migrate -database \"$DATABASE_URL\" -path /migrations up"
 
 Steps can use `command`, `inline_contents`,
 or a repo (`public_repo` / `connected_repo`). Container actions run on AWS, Azure, and
-GCP VM install runners. See [Container actions](/guides/container-actions) for the full guide.
+GCP VM install runners. See [Container actions](/guides/container-actions) for the full guide, and
+[Database migrations](/guides/database-migrations) for a migration example.
 
 ## Running and monitoring actions
 

@@ -254,6 +254,7 @@
                   "guides/rollback-install-config",
                   "guides/reprovision-installs",
                   "guides/runbooks",
+                  "guides/database-migrations",
                   "guides/health-checks",
                   "guides/operation-roles",
                   "guides/runner-management-mode",
