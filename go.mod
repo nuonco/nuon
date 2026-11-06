@@ -77,7 +77,6 @@ require (
 	github.com/getkin/kin-openapi v0.149.0
 	github.com/getsentry/sentry-go v0.28.1
 	github.com/gin-contrib/cors v1.6.0
-	github.com/gin-contrib/size v1.0.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/go-git/go-git/v5 v5.19.2

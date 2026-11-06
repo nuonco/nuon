@@ -1,11 +1,11 @@
 package size
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-
-	limits "github.com/gin-contrib/size"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
@@ -20,11 +20,22 @@ func (m *middleware) Name() string {
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
+	return LimitRequestBody(m.cfg.MaxRequestSize)
+}
+
+func LimitRequestBody(limit int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if c.Request == nil || c.Request.Body == nil || limit <= 0 {
+			c.Next()
+			return
+		}
+		if c.Request.ContentLength > limit {
+			c.AbortWithStatus(http.StatusRequestEntityTooLarge)
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
 		c.Next()
 	}
-
-	return limits.RequestSizeLimiter(m.cfg.MaxRequestSize)
 }
 
 type Params struct {
