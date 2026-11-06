@@ -95,12 +95,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout nuon
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           path: nuon
 
       - name: Checkout mono
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           repository: nuonco/mono
           ref: main
@@ -108,7 +108,7 @@ jobs:
           token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
 
       - name: Setup Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@v7.0.0
         with:
           go-version-file: nuon/go.mod
           cache-dependency-path: nuon/go.sum
@@ -145,7 +145,7 @@ jobs:
           }
 
       - name: Restore postgres schema snapshot
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: /tmp/schema-dump
           key: pg-schema-${{ runner.os }}-${{ hashFiles('nuon/services/ctl-api/internal/pkg/db/psql/**', 'nuon/services/ctl-api/internal/app/**/*.go', 'nuon/services/ctl-api/tests/testdb.go') }}
@@ -189,12 +189,12 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout nuon
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           path: nuon
 
       - name: Checkout mono
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           repository: nuonco/mono
           ref: main
@@ -204,7 +204,7 @@ jobs:
       # Generate and the integration tests run in the nuon checkout. setup-go sets
       # GOTOOLCHAIN=local, so the toolchain has to satisfy nuon/go.mod even when mono lags.
       - name: Setup Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@v7.0.0
         with:
           go-version-file: nuon/go.mod
           cache-dependency-path: |
@@ -212,16 +212,16 @@ jobs:
             nuon/go.sum
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: "20"
 
       # The dev stack's ctl-api service runs bins/nuonctl/scripts/bun-install-if-needed on the
       # host, so bun must be on PATH.
       - name: Setup bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@v2.2.0
         with:
-          bun-version: latest
+          bun-version: 1.3.13
 
       - name: Install nuonctl
         run: |

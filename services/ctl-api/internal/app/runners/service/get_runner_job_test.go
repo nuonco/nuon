@@ -166,7 +166,7 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -199,7 +199,7 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				assert.Equal(s.T(), s.testRunner.ID, job.RunnerID)
 				assert.Equal(s.T(), app.RunnerJobStatusAvailable, job.Status)
 				assert.Equal(s.T(), app.RunnerJobGroupBuild, job.Group)
-				assert.Equal(s.T(), app.RunnerJobTypeDockerBuild, job.Type)
+				assert.Equal(s.T(), app.RunnerJobTypeContainerImageBuild, job.Type)
 				// Should preload latest execution
 				assert.Len(s.T(), job.Executions, 1)
 			},
@@ -221,7 +221,7 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 						Type: "runner.job_lifecycle_failure",
 					},
 					Group:            app.RunnerJobGroupBuild,
-					Type:             app.RunnerJobTypeDockerBuild,
+					Type:             app.RunnerJobTypeContainerImageBuild,
 					Operation:        app.RunnerJobOperationTypeBuild,
 					QueueTimeout:     5 * time.Minute,
 					AvailableTimeout: 10 * time.Minute,
@@ -333,7 +333,7 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -498,7 +498,7 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobWithDifferentStatuses() {
 				Status:            status,
 				StatusDescription: "test job",
 				Group:             app.RunnerJobGroupBuild,
-				Type:              app.RunnerJobTypeDockerBuild,
+				Type:              app.RunnerJobTypeContainerImageBuild,
 				Operation:         app.RunnerJobOperationTypeBuild,
 				QueueTimeout:      5 * time.Minute,
 				AvailableTimeout:  10 * time.Minute,

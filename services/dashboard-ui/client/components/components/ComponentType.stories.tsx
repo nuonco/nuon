@@ -22,7 +22,7 @@ export const ColorVariants = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Mono (default)</h4>
       <div className="flex items-center gap-6 p-4 border rounded flex-wrap">
-        <ComponentType type="docker_build" />
+        <ComponentType type="external_image" />
         <ComponentType type="external_image" />
         <ComponentType type="helm_chart" />
         <ComponentType type="terraform_module" />
@@ -35,7 +35,7 @@ export const ColorVariants = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Color</h4>
       <div className="flex items-center gap-6 p-4 border rounded flex-wrap">
-        <ComponentType type="docker_build" colorVariant="color" />
+        <ComponentType type="external_image" colorVariant="color" />
         <ComponentType type="external_image" colorVariant="color" />
         <ComponentType type="helm_chart" colorVariant="color" />
         <ComponentType type="terraform_module" colorVariant="color" />
@@ -48,7 +48,7 @@ export const ColorVariants = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Color with icon-only</h4>
       <div className="flex items-center gap-6 p-4 border rounded flex-wrap">
-        <ComponentType type="docker_build" colorVariant="color" displayVariant="icon-only" />
+        <ComponentType type="external_image" colorVariant="color" displayVariant="icon-only" />
         <ComponentType type="external_image" colorVariant="color" displayVariant="icon-only" />
         <ComponentType type="helm_chart" colorVariant="color" displayVariant="icon-only" />
         <ComponentType type="terraform_module" colorVariant="color" displayVariant="icon-only" />
@@ -77,7 +77,7 @@ export const BasicUsage = () => (
       <h4 className="text-sm font-medium">All Supported Types</h4>
       <div className="flex items-center gap-6 flex-wrap">
         <div className="text-center space-y-2">
-          <ComponentType type="docker_build" />
+          <ComponentType type="external_image" />
           <Text variant="label" className="text-xs">
             Docker
           </Text>
@@ -161,7 +161,7 @@ export const DisplayVariants = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Full Name (Default)</h4>
       <div className="flex items-center gap-6 p-4 border rounded flex-wrap">
-        <ComponentType type="docker_build" displayVariant="name" />
+        <ComponentType type="external_image" displayVariant="name" />
         <ComponentType type="external_image" displayVariant="name" />
         <ComponentType type="helm_chart" displayVariant="name" />
         <ComponentType type="terraform_module" displayVariant="name" />
@@ -177,7 +177,7 @@ export const DisplayVariants = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Abbreviation</h4>
       <div className="flex items-center gap-6 p-4 border rounded">
-        <ComponentType type="docker_build" displayVariant="abbr" />
+        <ComponentType type="external_image" displayVariant="abbr" />
         <ComponentType type="external_image" displayVariant="abbr" />
         <ComponentType type="helm_chart" displayVariant="abbr" />
         <ComponentType type="terraform_module" displayVariant="abbr" />
@@ -194,7 +194,7 @@ export const DisplayVariants = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Icon Only</h4>
       <div className="flex items-center gap-6 p-4 border rounded">
-        <ComponentType type="docker_build" displayVariant="icon-only" />
+        <ComponentType type="external_image" displayVariant="icon-only" />
         <ComponentType type="external_image" displayVariant="icon-only" />
         <ComponentType type="helm_chart" displayVariant="icon-only" />
         <ComponentType type="terraform_module" displayVariant="icon-only" />
@@ -249,15 +249,15 @@ export const TextVariants = () => (
       <h4 className="text-sm font-medium">Different Text Variants</h4>
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <ComponentType type="docker_build" variant="base" />
+          <ComponentType type="external_image" variant="base" />
           <Text variant="subtext">Base variant (default)</Text>
         </div>
         <div className="flex items-center gap-3">
-          <ComponentType type="docker_build" variant="subtext" />
+          <ComponentType type="external_image" variant="subtext" />
           <Text variant="subtext">Subtext variant</Text>
         </div>
         <div className="flex items-center gap-3">
-          <ComponentType type="docker_build" variant="label" />
+          <ComponentType type="external_image" variant="label" />
           <Text variant="subtext">Label variant</Text>
         </div>
       </div>
@@ -281,7 +281,7 @@ export const UsageExamples = () => (
       <div className="space-y-3">
         <div className="flex items-center justify-between p-3 border rounded">
           <div className="flex items-center gap-3">
-            <ComponentType type="docker_build" />
+            <ComponentType type="external_image" />
             <div>
               <Text weight="strong">api-gateway</Text>
               <Text variant="subtext" theme="neutral">
@@ -338,7 +338,7 @@ export const UsageExamples = () => (
         <div className="divide-y">
           <div className="px-4 py-3">
             <div className="grid grid-cols-4 gap-4 items-center text-sm">
-              <ComponentType type="docker_build" displayVariant="icon-only" />
+              <ComponentType type="external_image" displayVariant="icon-only" />
               <Text variant="subtext">api-gateway</Text>
               <Text variant="subtext">v2.1.4</Text>
               <Badge theme="success" size="sm">
@@ -368,9 +368,9 @@ export const UsageExamples = () => (
             Docker Build
           </Text>
           <div className="flex items-center gap-4">
-            <ComponentType type="docker_build" displayVariant="icon-only" />
-            <ComponentType type="docker_build" displayVariant="abbr" />
-            <ComponentType type="docker_build" displayVariant="name" />
+            <ComponentType type="external_image" displayVariant="icon-only" />
+            <ComponentType type="external_image" displayVariant="abbr" />
+            <ComponentType type="external_image" displayVariant="name" />
           </div>
         </div>
         <div className="p-4 border rounded">

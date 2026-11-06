@@ -16,6 +16,8 @@ To learn more about components, see the [Components](/concepts/components) conce
 
 ## Configuring a container image component
 
+Component configuration describes only the source image; there is no user-supplied `cloud_connection_id`. For private ECR, GAR, and ACR sources, register the repository in **Settings → Image repositories → Add image repository** and choose its pull identity — see [Add an image repository](/guides/private-image-registries#add-an-image-repository). During a new configuration save or app sync, Nuon looks up the organization's saved assignment for the exact canonical repository and pins its chosen [Cloud Connection](/guides/cloud-connections) ID. Configure only the image URL, coordinates, and tag fields shown in the examples below. If the chosen connection is not verified, the save or sync fails. See [how image connections are selected](/guides/private-image-registries#how-image-connections-are-selected) for the full selection and pinning rules, including how removal and deletion affect existing configurations.
+
 ### Using a Public Image
 
 To use a public image from any container registry, configure the `public` block.
@@ -40,13 +42,12 @@ name   = "ecr"
 type   = "container_image"
 
 [aws_ecr]
-image_url    = "123927561584.dkr.ecr.us-west-2.amazonaws.com/repo-name"
-tag          = "latest"
-region       = "us-west-2"
-iam_role_arn = "arn:aws:iam::123927561584:role/nuon-container-image-access"
+image_url = "123456789012.dkr.ecr.us-west-2.amazonaws.com/acme/api"
+tag       = "latest"
+region    = "us-west-2"
 ```
 
-To use an AWS ECR image, [follow the access setup directions](#granting-nuon-access-to-pull-images). Both Nuon-hosted (AWS) and self-hosted-on-GCP customers can pull from the same role.
+Register `arn:aws:ecr:us-west-2:123456789012:repository/acme/api` and explicitly choose an AWS [Cloud Connection](/guides/cloud-connections) with the `ecr` preset in the same Nuon organization, account, and region. [Configure its role for ECR read access](#aws-ecr-access-iam-role) and verify it before saving or syncing. On save or sync, Nuon pins the assignment's chosen verified connection.
 
 ### Using a Private GCP GAR Image
 
@@ -62,22 +63,15 @@ image_url      = "us-central1-docker.pkg.dev/my-project/my-repo/my-image"
 tag            = "latest"
 region         = "us-central1"
 gcp_project_id = "my-project"
-
-# Reader SA that Nuon impersonates to pull. Optional for self-hosted-on-GCP
-# customers if the customer's ctl-api SA already has artifactregistry.reader
-# directly on the repo; required for Nuon-hosted (AWS) customers.
-service_account_email = "nuon-puller@my-project.iam.gserviceaccount.com"
-
-# Required for Nuon-hosted (AWS) customers. Workload Identity Provider that
-# Nuon's AWS ctl-api federates against before impersonating the reader SA.
-workload_identity_provider = "projects/123456789/locations/global/workloadIdentityPools/nuon-aws/providers/aws-prod"
 ```
 
-To use a GAR image, [follow the access setup directions](#gcp-gar-access). Both Nuon-hosted (AWS) and self-hosted-on-GCP customers can pull from the same GAR repository.
+Register `projects/my-project/locations/us-central1/repositories/my-repo` and explicitly choose a GCP [Cloud Connection](/guides/private-image-registries#google-artifact-registry) with the `gar` preset in the same organization, project, and location. Enter `my-repo` in the dashboard, not `my-repo/my-image`; all images in `my-repo` use this assignment. Apply its setup and verify the identity before saving or syncing. On save or sync, Nuon pins the assignment's chosen verified connection.
 
 ### Using a Private Azure ACR Image
 
-To use an image from a private Azure Container Registry, configure the `azure_acr` block.
+Nuon exchanges a short-lived OIDC token through Microsoft Entra to authenticate to the registry.
+
+In **Settings → Image repositories → Add image repository**, enter `acme/api` and choose an existing Azure pull identity or create one inline. You can select an existing principal or add a new one. The underlying [Cloud Connection](/guides/private-image-registries#azure-container-registry) must use the `acr` preset in the same organization and match the registry. Nuon saves the actual login hostname **and exact repository path**, such as `acmeimages.azurecr.io/acme/api`, with the identity you chose.
 
 ```toml components/acr_image.toml
 # container-image
@@ -85,35 +79,20 @@ name   = "acr"
 type   = "container_image"
 
 [azure_acr]
-image_url    = "vendoracr.azurecr.io/private-app"
+image_url    = "acmeimages.azurecr.io/acme/api"
 tag          = "latest"
-registry_url = "vendoracr.azurecr.io"
-tenant_id    = "00000000-0000-0000-0000-000000000000"
-client_id    = "11111111-1111-1111-1111-111111111111"
-
-# Exactly one of client_secret_name or client_certificate_name. Both take the
-# NAME of an app secret, never the credential itself.
-client_secret_name = "acr_pull_secret"
+registry_url = "acmeimages.azurecr.io"
 ```
 
-Access to a private ACR repository is granted through a service principal in
-your own tenant, not through credentials in your app config. The service
-principal's secret (or certificate) value is stored as an app secret and
-referenced by name; the value itself never appears in app config or git. To
-set this up, [follow the access setup directions](#azure-acr-access).
+The connection authenticates an existing Microsoft Entra application through Nuon's connection-specific OIDC subject. The saved repository assignment selects that connection; its detail page provides Azure CLI and Terraform instructions for federation and **Container Registry Repository Reader** with ABAC conditions for the repository. Have the cloud administrator apply the appropriate commands, then verify the identity. Follow the [access setup directions](#azure-acr-access).
 
 <Note>
-ACR has no registry-level password. Authentication always goes through Azure
-AD: Nuon exchanges an Azure AD token for the service principal for an ACR
-refresh token, then uses that to pull the image. This is why `azure_acr`
-takes a tenant, client, and secret/certificate rather than a username and
-password.
+OIDC setup requires an ABAC-enabled registry. Nuon does not change existing registry permission modes.
 </Note>
 
 <Note>
-This credential is used only when Nuon's build runs — it authenticates to
-your registry once, at build time, from Nuon's control plane. It never lands
-in a customer cloud account, and it is shared across all installs of the app template
+Source-registry credentials are used by Nuon's builds and metadata fetches. They never land
+in a customer cloud account, and access is shared across all installs of the app template
 rather than configured per install.
 </Note>
 
@@ -183,281 +162,31 @@ from the org data plane, and copy it into the local registry.
 
 ## Granting Nuon Access to Pull Images
 
-Nuon-hosted runs in AWS, and we also offer a [self-hosted BYOC deployment on GCP](/guides/self-hosted/gcp). Pick the
-section that matches your registry and the deployment kind your customers are using.
+Your **vendor cloud administrator** applies source-registry setup in the account or project containing your images. End customers do not need access to that registry, and setup is not repeated for every install. Nuon never applies cloud writes automatically. See [who sets up image repository access](/guides/private-image-registries#who-sets-up-image-repository-access), [Grant access to another repository](/guides/private-image-registries#grant-access-to-another-repository), and [Register image repositories through the API](/guides/private-image-registries#register-image-repositories-through-the-api) for setup, permissions, and registration details. After verification, fetch component metadata and run a build with an existing private image to check current permissions and exercise manifest and layer downloads.
 
 | Image registry | Customer deployment | Setup |
 |---|---|---|
-| AWS ECR | Nuon-hosted (AWS) | [AWS ECR Access IAM Role](#aws-ecr-access-iam-role) |
-| AWS ECR | Self-hosted on GCP | [AWS ECR from a Self-Hosted-on-GCP Customer](#aws-ecr-from-a-self-hosted-on-gcp-customer) |
-| GCP Artifact Registry | Nuon-hosted (AWS) | [GAR for Nuon-hosted (AWS) customers](#gar-for-nuon-hosted-aws-customers) |
-| GCP Artifact Registry | Self-hosted on GCP | [GCP GAR Access](#gcp-gar-access) |
-| GCP Artifact Registry | Self-hosted on Azure | [GAR for Nuon self-hosted (Azure) customers](#gar-for-nuon-self-hosted-azure-customers) |
+| AWS ECR | Any | [AWS ECR Access IAM Role](#aws-ecr-access-iam-role) |
+| GCP Artifact Registry | Any | [GCP GAR Access](#gcp-gar-access) |
 | Azure Container Registry | Any | [Azure ACR Access](#azure-acr-access) |
-
-If you have customers on both deployments, you can set both inputs on the same role or service account. Both modules add the new principals alongside any existing ones.
 
 ### AWS ECR Access IAM Role
 
-To use a private AWS ECR image, you must create an IAM role that grants Nuon access to pull your container image. When
-building your component, `nuon` will automatically assume the role and pull the image from your build runner.
+Set up the identity, trust, and repository permissions through the [ECR guide](/guides/private-image-registries#amazon-ecr): register the repository in **Settings → Image repositories**, apply the generated setup, and verify the connection. Then save or sync the component with its source image URL, tag, and matching region; Nuon pins the assignment's chosen verified `ecr` connection. Tag resolution with `update_policy` requires `ecr:ListImages` on the repository.
 
-The easiest way to setup an IAM role to configure your component with is using our [Terraform Module](https://registry.terraform.io/modules/nuonco/ecr-access/aws).
-
-```hcl
-module "nuon_ecr_access" {
-  source  = "nuonco/ecr-access/aws"
-
-  repository_arns = ["<repository-arn>"]
-}
-
-output "iam_role_arn" {
-  value = module.nuon_ecr_access.iam_role_arn
-}
-```
-
-<Note>
-If you are having trouble finding the repository ARN in the AWS console, you can run `aws ecr describe-repositories` to
-  print the ARNs of all repositories in your current context.
-</Note>
-
-### AWS ECR from a Self-Hosted-on-GCP Customer
-
-If your customer is running a self-hosted Nuon deployment on GCP, pass the customer's GCP service account unique IDs
-via `gcp_principals` so they can assume the role via Workload Identity Federation. One SA needs to be listed:
-
-- The ctl-api SA, which fetches image metadata for `external_image` components. Display name: `ctl-api for <install_id>`.
-
-<Note>
-Requires `nuonco/ecr-access/aws` version `0.1.9` or later.
-</Note>
-
-```hcl
-module "nuon_ecr_access" {
-  source  = "nuonco/ecr-access/aws"
-
-  repository_arns = ["<repository-arn>"]
-
-  gcp_principals = [
-    {
-      service_account_unique_id = "987654321098765432109"  # ctl-api SA UID
-      service_account_email     = "ctl-api-<install-id-truncated>@<customer-project>.iam.gserviceaccount.com"
-    },
-  ]
-}
-```
-
-<Note>
-Don't construct the SA emails by hand. Nuon truncates the org and install IDs to fit GCP's 30-character SA name limit,
-and the truncation length varies. Look the SAs up directly in the customer's project. The full org and install IDs are
-preserved in each SA's display name.
-</Note>
-
-Look it up with:
-
-```bash
-gcloud iam service-accounts list \
-  --project=<customer-project> \
-  --filter='displayName~"ctl-api for"' \
-  --format='table(email,uniqueId,displayName)'
-```
-
-<Note>
-The default Nuon-hosted (AWS) trust principal stays in place. Adding `gcp_principals` is additive, so the same role
-works for both Nuon-hosted and self-hosted-on-GCP customers.
-</Note>
+See the full set of `aws_ecr` fields in the [container-image config reference](/config-ref/container-image#aws_ecr).
 
 ### GCP GAR Access
 
-You grant access to a private GAR repository by creating a reader service account on the repo and allowing each
-customer's identity to impersonate it. The same module covers both customer-deployment kinds. Use
-`customer_principals` for self-hosted-on-GCP customers, `aws_principals` for Nuon-hosted (AWS) customers, or both.
-
-The easiest way to set this up is using our [Terraform Module](https://registry.terraform.io/modules/nuonco/gar-access/google):
-
-```hcl
-module "nuon_gar_access" {
-  source  = "nuonco/gar-access/google"
-
-  project_id          = "<your-gcp-project>"
-  repository_location = "us-central1"
-  repositories        = ["<repo-name>"]
-
-  customer_principals = [
-    "serviceAccount:ctl-api-<install>@<customer-project>.iam.gserviceaccount.com",
-  ]
-}
-
-output "gar_access_sa_email" {
-  value = module.nuon_gar_access.service_account_email
-}
-```
-
-Then set `service_account_email` in your component's `gcp_gar` block to the SA email the module emits.
-
-`repositories` accepts multiple entries, and entries ending in `*` grant access to every repository matching that
-prefix (e.g. `repositories = ["shared-images", "team-*"]`) — including repositories created later. Requires
-`nuonco/gar-access/google` version `0.3.0` or later; older versions take a single `repository_id` string.
-
-#### GAR for Nuon-hosted (AWS) customers
-
-If some of your customers pull from this GAR repo via Nuon-hosted ctl-api running on AWS, pass each customer's AWS
-account ID via `aws_principals`. You can use it alongside `customer_principals` if you also have self-hosted-on-GCP
-customers. The module sets up a Workload Identity Pool and AWS Provider per account, and lets the federated principal
-impersonate the GAR-access SA.
-
-```hcl
-module "nuon_gar_access" {
-  source = "nuonco/gar-access/google"
-
-  project_id          = "<your-gcp-project>"
-  repository_location = "us-central1"
-  repositories        = ["<repo-name>"]
-
-  aws_principals = [
-    { aws_account_id = "123456789012" },
-  ]
-}
-
-output "workload_identity_provider_paths" {
-  value = module.nuon_gar_access.workload_identity_provider_paths
-}
-```
-
-<Note>
-Requires `nuonco/gar-access/google` version `0.2.0` or later.
-</Note>
-
-In the customer's component config, set `gcp_gar.service_account_email` to the GAR-access SA email, and set
-`gcp_gar.workload_identity_provider` to the provider path for that customer's AWS account from the module's
-`workload_identity_provider_paths` output.
-
-#### GAR for Nuon self-hosted (Azure) customers
-
-If some of your customers run Nuon self-hosted on Azure, pass each customer's Azure user-assigned managed identity via
-`azure_principals`. You can use it alongside `customer_principals` and `aws_principals`. The module sets up a Workload
-Identity Pool and an OIDC provider per identity — trusting the Entra ID issuer for its tenant — and lets the federated
-identity impersonate the GAR-access SA.
-
-```hcl
-module "nuon_gar_access" {
-  source = "nuonco/gar-access/google"
-
-  project_id          = "<your-gcp-project>"
-  repository_location = "us-central1"
-  repositories        = ["<repo-name>"]
-
-  azure_principals = [
-    {
-      tenant_id    = "<azure-tenant-id>"
-      principal_id = "<managed-identity-principal-id>"
-    },
-  ]
-}
-
-output "azure_workload_identity_provider_paths" {
-  value = module.nuon_gar_access.azure_workload_identity_provider_paths
-}
-```
-
-`principal_id` is the managed identity's principal (object) ID — the `sub` claim Nuon's Azure ctl-api presents. In the
-customer's component config, set `gcp_gar.service_account_email` to the GAR-access SA email, and set
-`gcp_gar.workload_identity_provider` to the provider path for that customer's identity from the module's
-`azure_workload_identity_provider_paths` output.
+Set up the service account, federation, and repository-reader bindings through the [GAR guide](/guides/private-image-registries#google-artifact-registry): register the repository in **Settings → Image repositories**, apply the generated setup, and verify the connection. Then save or sync the component with its source image URL, tag, project ID, and region; Nuon pins the assignment's chosen verified `gar` connection. The assignment covers all images in that GAR repository.
 
 See the full set of `gcp_gar` fields in the [container-image config reference](/config-ref/container-image#gcp_gar).
 
 ### Azure ACR Access
 
-Unlike AWS ECR and GCP GAR, ACR has no cross-tenant identity federation, so
-access is granted the way most third parties access an Azure resource: you
-create a service principal (an app registration) in your own tenant, grant
-it `AcrPull` scoped to your registry, and give Nuon the tenant ID, client
-ID, and a secret or certificate for that service principal.
+Set up the Entra application, federation, and repository-conditioned Reader grant through the [ACR guide](/guides/private-image-registries#azure-container-registry): the registry must already use **RBAC Registry + ABAC Repository Permissions**, and Nuon does not change an existing registry's mode. Register the repository in **Settings → Image repositories**, apply the generated setup, and verify the connection. Then save or sync the component with its source image URL, registry login hostname, and tag; Nuon pins the assignment's chosen verified `acr` connection.
 
-<Note>
-Only your build needs this. The install runner that deploys into a
-customer's cloud account pulls the image from Nuon's own registry, never
-from your ACR — so no access needs to be granted to any customer's Azure
-identity. One service principal, scoped to your tenant, covers every install
-of the app.
-</Note>
-
-**1. Create the app registration and service principal:**
-
-```bash
-az ad app create --display-name "nuon-acr-pull"
-# note the "appId" field from the output — this is your client_id
-
-az ad sp create --id <app-id>
-```
-
-**2. Grant `AcrPull`, scoped to just this registry:**
-
-```bash
-az role assignment create \
-  --assignee <app-id> \
-  --role AcrPull \
-  --scope $(az acr show --name vendoracr --query id --output tsv)
-```
-
-**3. Create a credential.** Use a client secret, or a client certificate
-(the better practice of the two, since it needs no plaintext secret at
-rest):
-
-```bash
-# Option A: client secret
-az ad app credential reset \
-  --id <app-id> \
-  --display-name "nuon-acr-pull-secret" \
-  --years 1
-# outputs a JSON object with "password" — this is the secret value
-```
-
-```bash
-# Option B: client certificate
-openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-  -keyout acr-pull.key -out acr-pull.crt -subj "/CN=nuon-acr-pull"
-
-az ad app credential reset --id <app-id> --cert @acr-pull.crt --append
-
-# Nuon needs the private key too, so bundle both into one PEM and base64
-# encode it before storing it as an app secret
-cat acr-pull.key acr-pull.crt | base64 > acr-pull-bundle.b64
-```
-
-**4. Store the value as an app secret**, never in app config or git:
-
-```bash
-# for a client secret
-nuon apps variables create \
-  --app-id <your-nuon-app-id> \
-  --name acr_pull_secret \
-  --value "<password-from-step-3>"
-
-# for a client certificate
-nuon apps variables create \
-  --app-id <your-nuon-app-id> \
-  --name acr_pull_cert \
-  --value "$(cat acr-pull-bundle.b64)"
-```
-
-**5. Reference the secret by name** in the component's `azure_acr` block —
-see [Using a Private Azure ACR Image](#using-a-private-azure-acr-image).
-Set `tenant_id` to your tenant, `client_id` to the `appId` from step 1, and
-`client_secret_name` or `client_certificate_name` (never both) to the app
-secret name from step 4.
-
-<Note>
-Rotating the credential is a plain app secret update — run `nuon apps
-variables create` again with the same `--name` to overwrite it. Nothing
-re-runs automatically, so a stale or expired credential surfaces as a build
-failure the next time the component builds, not immediately at rotation
-time.
-</Note>
-
-See the full set of `azure_acr` fields in the [container-image config
-reference](/config-ref/container-image#azure_acr).
+See the full set of `azure_acr` fields in the [container-image config reference](/config-ref/container-image#azure_acr).
 
 ## Importing Images Outside of Supported Registries
 

@@ -106,8 +106,8 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestBuildExcludesPrevi
 func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestBuildNotFound() {
 	s.Run("no builds exist for component", func() {
 		// Create a fresh component with a config connection but no builds
-		freshComp := s.createComponent(s.testApp.ID, app.ComponentTypeDockerBuild)
-		s.deps.Seeder.CreateDockerBuildComponentConfigConnection(s.ctx, s.T(), freshComp.ID, s.testAppConfig.ID)
+		freshComp := s.createComponent(s.testApp.ID, app.ComponentTypeTerraformModule)
+		s.deps.Seeder.CreateTerraformComponentConfigConnection(s.ctx, s.T(), freshComp.ID, s.testAppConfig.ID)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/builds/latest", s.testApp.ID, freshComp.ID)
 		rr := s.makeRequest(http.MethodGet, path, nil)

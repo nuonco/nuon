@@ -160,6 +160,7 @@
                   "guides/helm-chart-components",
                   "guides/kubernetes-manifest-components",
                   "guides/container-image-components",
+                  "guides/private-image-registries",
                   "guides/image-signature-verification",
                   "guides/image-update-policies",
                   "guides/pulumi-components",

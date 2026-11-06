@@ -88,6 +88,7 @@ nuon sync
 		c.actionsCmd(),
 		c.componentsCmd(),
 		c.cloudConnectionsCmd(),
+		c.imageRepositoriesCmd(),
 		c.orgsCmd(),
 		c.serviceAccountsCmd(),
 		c.rolesCmd(),

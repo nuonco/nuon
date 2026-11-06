@@ -32,17 +32,19 @@ func init() {
 	// path it does in the cluster
 	config.RegisterDefault("nuon_kafka_ui_url", "http://localhost:8092")
 	config.RegisterDefault("nuon_grafana_ui_url", "")
+	config.RegisterDefault("trusted_proxies", []string{})
 }
 
 type Config struct {
-	HTTPPort    string   `config:"http_port" validate:"required"`
-	LogLevel    string   `config:"log_level"`
-	ServiceName string   `config:"service_name"`
-	Version     string   `config:"version"`
-	GitRef      string   `config:"git_ref"`
-	Middlewares []string `config:"middlewares"`
-	DistDir     string   `config:"dist_dir"`
-	PublicDir   string   `config:"public_dir"`
+	HTTPPort       string   `config:"http_port" validate:"required"`
+	LogLevel       string   `config:"log_level"`
+	ServiceName    string   `config:"service_name"`
+	Version        string   `config:"version"`
+	GitRef         string   `config:"git_ref"`
+	Middlewares    []string `config:"middlewares"`
+	TrustedProxies []string `config:"trusted_proxies"`
+	DistDir        string   `config:"dist_dir"`
+	PublicDir      string   `config:"public_dir"`
 
 	APIUrl string `config:"nuon_api_url"`
 	// InternalAPIUrl is the ctl-api address this process dials. The browser still

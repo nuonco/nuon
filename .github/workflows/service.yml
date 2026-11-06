@@ -33,6 +33,15 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+  actions: read
+
 jobs:
   # NOTE(jm): I'm not the biggest fan of having this all connected in a single stage, however this ultimately gives us
   # the best performance. This is because each job has it's own runner, and that means loading in our GHA cache each
@@ -50,15 +59,15 @@ jobs:
       # Fork PRs don't push artifacts (security).
       IS_FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
     steps:
-      - uses: FranzDiebold/github-env-vars-action@v2
+      - uses: FranzDiebold/github-env-vars-action@v2.10.0
 
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           fetch-depth: 1
 
       - name: Setup nuonctl
-        uses: ./actions/setup-nuonctl
+        uses: $/actions/setup-nuonctl
 
       - name: Setup BuildKit
         if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}

@@ -17,6 +17,9 @@ import (
 // swagger:model app.GCPGARImageConfig
 type AppGCPGARImageConfig struct {
 
+	// cloud connection id
+	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
+
 	// component config id
 	ComponentConfigID string `json:"component_config_id,omitempty"`
 

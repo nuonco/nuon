@@ -56,9 +56,6 @@ type AppComponentConfigConnection struct {
 	// Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
-	// docker build
-	DockerBuild *AppDockerBuildComponentConfig `json:"docker_build,omitempty"`
-
 	// drift schedule
 	DriftSchedule string `json:"drift_schedule,omitempty"`
 
@@ -142,10 +139,6 @@ type AppComponentConfigConnection struct {
 func (m *AppComponentConfigConnection) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateDockerBuild(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateExternalImage(formats); err != nil {
 		res = append(res, err)
 	}
@@ -189,29 +182,6 @@ func (m *AppComponentConfigConnection) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *AppComponentConfigConnection) validateDockerBuild(formats strfmt.Registry) error {
-	if swag.IsZero(m.DockerBuild) { // not required
-		return nil
-	}
-
-	if m.DockerBuild != nil {
-		if err := m.DockerBuild.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("docker_build")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("docker_build")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -461,10 +431,6 @@ func (m *AppComponentConfigConnection) validateType(formats strfmt.Registry) err
 func (m *AppComponentConfigConnection) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateDockerBuild(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateExternalImage(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -508,31 +474,6 @@ func (m *AppComponentConfigConnection) ContextValidate(ctx context.Context, form
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *AppComponentConfigConnection) contextValidateDockerBuild(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.DockerBuild != nil {
-
-		if swag.IsZero(m.DockerBuild) { // not required
-			return nil
-		}
-
-		if err := m.DockerBuild.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("docker_build")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("docker_build")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 

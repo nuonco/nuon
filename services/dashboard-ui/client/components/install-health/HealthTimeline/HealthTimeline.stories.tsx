@@ -187,7 +187,7 @@ const mockImageComponents: THealthTimelineComponent[] = [
     install_component_id: 'icmp7',
     component_id: 'cmp-api-image',
     component_name: 'api-image',
-    component_type: 'docker_build',
+    component_type: 'external_image',
     current_health: 'not-applicable',
     uptime_percent: 0,
   },
@@ -468,10 +468,7 @@ export const InstallScopeGroupedByKind = () => (
       ]}
       getComponentHref={({ component_id, component_name, component_type }) =>
         `/org123/installs/inst123/resources/${
-          component_type === 'docker_build' ||
-          component_type === 'external_image'
-            ? 'images'
-            : 'components'
+          component_type === 'external_image' ? 'images' : 'components'
         }?q=${encodeURIComponent(component_name || component_id)}`
       }
     />

@@ -39,3 +39,7 @@ func New(params Params) *Helpers {
 func (h *Helpers) QueueClient() *queueclient.Client {
 	return h.queueClient
 }
+
+func (h *Helpers) LegacyImageAuthEnabled() bool {
+	return h.cfg.LegacyImageAuthEnabled
+}

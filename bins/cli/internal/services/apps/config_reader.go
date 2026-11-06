@@ -199,9 +199,6 @@ func ConvertToConfigStructure(appConfig *config.AppConfig, targetPath string) (*
 		case config.ComponentType(config.KubernetesManifestComponentType):
 			componentConfig = component.KubernetesManifest
 			component.KubernetesManifest = nil
-		case config.ComponentType(config.DockerBuildComponentType):
-			componentConfig = component.DockerBuild
-			component.DockerBuild = nil
 		case config.ComponentType(config.HelmChartComponentType):
 			componentConfig = component.HelmChart
 			component.HelmChart = nil
