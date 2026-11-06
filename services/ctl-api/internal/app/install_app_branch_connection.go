@@ -30,8 +30,8 @@ type InstallAppBranchConnection struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	InstallID string  `json:"install_id,omitzero" gorm:"notnull" temporaljson:"install_id,omitzero,omitempty"`
-	Install   Install `json:"-" faker:"-" temporaljson:"install,omitzero,omitempty"`
+	InstallID string   `json:"install_id,omitzero" gorm:"notnull" temporaljson:"install_id,omitzero,omitempty"`
+	Install   *Install `json:"-" faker:"-" temporaljson:"install,omitzero,omitempty"`
 
 	AppBranchID string    `json:"app_branch_id,omitzero" gorm:"notnull" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   AppBranch `json:"app_branch,omitzero" faker:"-" temporaljson:"app_branch,omitzero,omitempty"`
