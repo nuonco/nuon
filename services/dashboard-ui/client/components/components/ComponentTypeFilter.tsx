@@ -8,7 +8,6 @@ import { Menu } from '@/components/common/Menu'
 import { CheckboxInputWithButton } from '@/components/common/form/CheckboxInput'
 
 export type TComponentConfigTypeText =
-  | 'docker_build'
   | 'external_image'
   | 'helm_chart'
   | 'terraform_module'
@@ -16,7 +15,6 @@ export type TComponentConfigTypeText =
   | 'pulumi'
 
 const FILTER_OPTIONS: Array<TComponentConfigTypeText> = [
-  'docker_build',
   'external_image',
   'helm_chart',
   'terraform_module',
@@ -25,10 +23,6 @@ const FILTER_OPTIONS: Array<TComponentConfigTypeText> = [
 ]
 
 const groupClasses = {
-  docker_build: [
-    'group/trace',
-    'group-hover/trace:block group-hover/trace:opacity-100',
-  ],
   external_image: [
     'group/debug',
     'group-hover/debug:block group-hover/debug:opacity-100',

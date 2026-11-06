@@ -31,7 +31,7 @@ func TestAssumeRoleFailure(t *testing.T) {
 	}{
 		"access denied": {
 			err:         &smithy.GenericAPIError{Code: "AccessDenied", Message: "raw diagnostic"},
-			wantMessage: "Nuon OIDC identity is not trusted by this role.",
+			wantMessage: "Nuon OIDC identity is not trusted by this role. Verification failed: AccessDenied: raw diagnostic",
 		},
 		"invalid identity token": {
 			err: &smithy.GenericAPIError{Code: "InvalidIdentityToken", Message: "raw diagnostic"},

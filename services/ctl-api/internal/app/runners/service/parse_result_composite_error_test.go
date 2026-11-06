@@ -232,7 +232,6 @@ func TestRunnerJobTool(t *testing.T) {
 		{app.RunnerJobTypePulumiDeploy, errparse.ToolPulumi},
 		{app.RunnerJobTypePulumiBuild, errparse.ToolPulumi},
 		{app.RunnerJobTypeSandboxPulumi, errparse.ToolPulumi},
-		{app.RunnerJobTypeDockerBuild, errparse.ToolDocker},
 		{app.RunnerJobTypeKubrenetesManifestDeploy, errparse.ToolKubernetes},
 		{app.RunnerJobTypeKubernetesManifestBuild, errparse.ToolKubernetes},
 		{app.RunnerJobTypeContainerImageBuild, errparse.ToolOCI},

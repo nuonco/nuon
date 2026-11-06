@@ -95,11 +95,6 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 			Preload("HelmComponentConfig.PublicGitVCSConfig").
 			Preload("HelmComponentConfig.ConnectedGithubVCSConfig").
 
-			// preload all docker configs
-			Preload("DockerBuildComponentConfig").
-			Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
-			Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-
 			// preload all external image configs
 			Preload("ExternalImageComponentConfig").
 

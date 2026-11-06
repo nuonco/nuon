@@ -68,6 +68,17 @@ func (c *Client) InvalidateTokens(ctx context.Context, subjectOrEmail string) er
 	})
 }
 
+// InvalidateLogStreamTokens revokes the write token for a closed log stream's
+// service account. The account may already be gone (deleted by cleanup), so a
+// missing account is not an error.
+func (c *Client) InvalidateLogStreamTokens(ctx context.Context, logStreamID string) error {
+	err := c.InvalidateTokens(ctx, ServiceAccountEmail(logStreamID))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	return err
+}
+
 func (c *Client) InvalidateOldTokens(ctx context.Context, subjectOrEmail string) (int64, error) {
 	acct, err := c.FindAccount(ctx, subjectOrEmail)
 	if err != nil {

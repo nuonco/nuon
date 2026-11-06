@@ -35,6 +35,22 @@ check_example contains check.finding("review")`))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must define at least one deny or warn rule")
 	})
+
+	t.Run("rejects network builtins", func(t *testing.T) {
+		tests := map[string]string{
+			"legacy http.send":               `package nuon` + "\n" + `deny contains "x" if { http.send({"method": "GET", "url": "http://example.com"}) }`,
+			"legacy net.lookup_ip_addr":      `package nuon` + "\n" + `deny contains "x" if { net.lookup_ip_addr("example.com") }`,
+			"named check http.send":          "package nuon.checks\nimport data.nuon.lib.check\n" + `check_x contains check.finding("x") if { http.send({"method": "GET", "url": "http://example.com"}) }`,
+			"named check net.lookup_ip_addr": "package nuon.checks\nimport data.nuon.lib.check\n" + `check_x contains check.finding("x") if { net.lookup_ip_addr("example.com") }`,
+		}
+		for name, policy := range tests {
+			t.Run(name, func(t *testing.T) {
+				err := ValidateOPAPolicy(policy)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "undefined function")
+			})
+		}
+	})
 }
 
 func TestValidatePolicyType(t *testing.T) {
@@ -46,7 +62,6 @@ func TestValidatePolicyType(t *testing.T) {
 		"terraform_module":    {config.AppPolicyTypeTerraformModule, false},
 		"helm_chart":          {config.AppPolicyTypeHelmChart, false},
 		"kubernetes_manifest": {config.AppPolicyTypeKubernetesManifest, false},
-		"docker_build":        {config.AppPolicyTypeDockerBuild, false},
 		"container_image":     {config.AppPolicyTypeContainerImage, false},
 		"sandbox":             {config.AppPolicyTypeSandbox, false},
 		"invalid_policy_type": {config.AppPolicyType("invalid_policy_type"), true},
@@ -258,7 +273,6 @@ func TestValidatePolicyApplyOnTeardown(t *testing.T) {
 		"container_image_unset_ok": {config.AppPolicyTypeContainerImage, nil, false},
 		// types never evaluated on teardown
 		"container_image_err":    {config.AppPolicyTypeContainerImage, &no, true},
-		"docker_build_err":       {config.AppPolicyTypeDockerBuild, &no, true},
 		"kubernetes_cluster_err": {config.AppPolicyTypeKubernetesCluster, &no, true},
 	}
 

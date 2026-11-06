@@ -28,8 +28,9 @@ type AWSECRImageConfig struct {
 	ComponentConfigType string `json:"component_config_type,omitzero" gorm:"notnull" temporaljson:"component_config_type,omitzero,omitempty"`
 
 	// actual configuration
-	IAMRoleARN string `json:"iam_role_arn,omitzero" gorm:"notnull" temporaljson:"iam_role_arn,omitzero,omitempty"`
-	AWSRegion  string `json:"aws_region,omitzero" gorm:"notnull" temporaljson:"aws_region,omitzero,omitempty"`
+	CloudConnectionID string `json:"cloud_connection_id,omitzero" gorm:"default:null" temporaljson:"cloud_connection_id,omitzero,omitempty"`
+	IAMRoleARN        string `json:"iam_role_arn,omitzero" gorm:"notnull" temporaljson:"iam_role_arn,omitzero,omitempty"`
+	AWSRegion         string `json:"aws_region,omitzero" gorm:"notnull" temporaljson:"aws_region,omitzero,omitempty"`
 }
 
 func (c *AWSECRImageConfig) Indexes(db *gorm.DB) []migrations.Index {

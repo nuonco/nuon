@@ -158,19 +158,6 @@ func (c *client) CreateHelmComponentConfig(ctx context.Context, componentID stri
 	return resp.Payload, nil
 }
 
-func (c *client) CreateDockerBuildComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateDockerBuildComponentConfigRequest) (*models.AppDockerBuildComponentConfig, error) {
-	resp, err := c.genClient.Operations.CreateDockerBuildComponentConfig(&operations.CreateDockerBuildComponentConfigParams{
-		ComponentID: componentID,
-		Req:         req,
-		Context:     ctx,
-	}, c.getOrgIDAuthInfo())
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
-}
-
 func (c *client) CreateExternalImageComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateExternalImageComponentConfigRequest) (*models.AppExternalImageComponentConfig, error) {
 	resp, err := c.genClient.Operations.CreateExternalImageComponentConfig(&operations.CreateExternalImageComponentConfigParams{
 		ComponentID: componentID,

@@ -214,8 +214,6 @@ func buildVCSConfigs(build *app.ComponentBuild) (*app.ConnectedGithubVCSConfig, 
 		return ccc.TerraformModuleComponentConfig.ConnectedGithubVCSConfig, ccc.TerraformModuleComponentConfig.PublicGitVCSConfig
 	case ccc.HelmComponentConfig != nil:
 		return ccc.HelmComponentConfig.ConnectedGithubVCSConfig, ccc.HelmComponentConfig.PublicGitVCSConfig
-	case ccc.DockerBuildComponentConfig != nil:
-		return ccc.DockerBuildComponentConfig.ConnectedGithubVCSConfig, ccc.DockerBuildComponentConfig.PublicGitVCSConfig
 	case ccc.KubernetesManifestComponentConfig != nil:
 		return ccc.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig, ccc.KubernetesManifestComponentConfig.PublicGitVCSConfig
 	case ccc.PulumiComponentConfig != nil:

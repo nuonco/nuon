@@ -220,27 +220,6 @@ function getConfigItems(
       )
       break
 
-    case 'docker_build':
-      items.push(
-        ...[
-          config?.docker_build?.dockerfile && {
-            id: `config-dockerfile-`,
-            title: 'Dockerfile',
-            subtitle: config.docker_build.dockerfile,
-          },
-          config?.docker_build?.target && {
-            id: `config-target-`,
-            title: 'Target',
-            subtitle: config.docker_build.target,
-          },
-        ].filter(Boolean),
-        ...getConfigVCSItems(
-          config?.docker_build?.connected_github_vcs_config ||
-            config?.docker_build?.public_git_vcs_config
-        )
-      )
-      break
-
     case 'external_image':
       items.push(
         {

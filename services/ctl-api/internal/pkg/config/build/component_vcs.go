@@ -5,8 +5,6 @@ import "github.com/nuonco/nuon/pkg/config"
 // ComponentRepos returns the git sources from whichever type config is set.
 func ComponentRepos(comp *config.Component) (*config.ConnectedRepoConfig, *config.PublicRepoConfig) {
 	switch {
-	case comp.DockerBuild != nil:
-		return comp.DockerBuild.ConnectedRepo, comp.DockerBuild.PublicRepo
 	case comp.HelmChart != nil:
 		return comp.HelmChart.ConnectedRepo, comp.HelmChart.PublicRepo
 	case comp.TerraformModule != nil:

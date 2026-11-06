@@ -239,6 +239,15 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 		return append(result, skipStep), nil
 	}
 
+	if unsupportedComponentType(*component) {
+		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (skipped)", name))
+		skipStep, err := unsupportedComponentTypeSkipStep(ctx, sg, installID, *component, fmt.Sprintf("skipped deploy %s", name))
+		if err != nil {
+			return nil, err
+		}
+		return append(result, skipStep), nil
+	}
+
 	if component.Type.IsImage() {
 		if flw.PlanOnly {
 			sg.nextGroupNamed(fmt.Sprintf("drift check: %s (skipped)", name))
@@ -368,6 +377,15 @@ func runbookTearDownSingleComponent(ctx workflow.Context, installID, componentID
 		}
 		result = append(result, skipStep)
 		return result, nil
+	}
+
+	if unsupportedComponentType(*component) {
+		sg.nextGroupNamed(fmt.Sprintf("tear down: %s (skipped)", name))
+		skipStep, err := unsupportedComponentTypeSkipStep(ctx, sg, installID, *component, fmt.Sprintf("skipped tear down %s", name))
+		if err != nil {
+			return nil, err
+		}
+		return append(result, skipStep), nil
 	}
 
 	sg.nextGroupNamed(fmt.Sprintf("tear down: %s", name))

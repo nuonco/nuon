@@ -274,9 +274,9 @@ const sandboxSections: DiffSectionData[] = [
       {
         name: 'worker',
         op: 'add',
-        componentType: 'docker_build',
+        componentType: 'terraform_module',
         fields: [],
-        files: [{ name: 'components/worker/Dockerfile', op: 'add' }],
+        files: [{ name: 'components/worker/main.tf', op: 'add' }],
       },
       {
         name: 'legacy',
@@ -311,11 +311,11 @@ const sandboxFiles = [
       'replicaCount: 3\nimage:\n  repository: ghcr.io/acme/api\n  tag: v1.3.0\nresources:\n  requests:\n    cpu: 500m\n    memory: 1Gi\n',
   },
   {
-    path: 'components/worker/Dockerfile',
-    kind: 'dockerfile',
+    path: 'components/worker/main.tf',
+    kind: 'terraform',
     change: 'added' as const,
     after:
-      'FROM ghcr.io/acme/worker-base:2\nCOPY bin/worker /usr/local/bin/worker\nENTRYPOINT ["/usr/local/bin/worker"]\n',
+      'module "worker" {\n  source = "./modules/worker"\n  instance_count = 2\n}\n',
   },
   {
     path: 'components/legacy/service.yaml',

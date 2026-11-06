@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -19,12 +17,15 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/redact"
 	runnercontrolplane "github.com/nuonco/nuon/pkg/runner/controlplane"
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
+	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all"
 	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
@@ -37,14 +38,15 @@ import (
 )
 
 type Activities struct {
-	db               *gorm.DB
-	chDB             *gorm.DB
-	cfg              *internal.Config
-	l                *zap.Logger
-	mw               metrics.Writer
-	blobSvc          blobstore.Service
-	statusActivities *statusactivities.Activities
-	kafka            *kafka.Producer
+	db                      *gorm.DB
+	chDB                    *gorm.DB
+	cfg                     *internal.Config
+	l                       *zap.Logger
+	mw                      metrics.Writer
+	blobSvc                 blobstore.Service
+	statusActivities        *statusactivities.Activities
+	kafka                   *kafka.Producer
+	cloudConnectionsHelpers cloudconnections.ImageAuthorizer
 }
 
 type ActivityParams struct {
@@ -56,21 +58,23 @@ type ActivityParams struct {
 	L    *zap.Logger
 	MW   metrics.Writer
 
-	BlobSvc          blobstore.Service
-	StatusActivities *statusactivities.Activities
-	Kafka            *kafka.Producer
+	BlobSvc                 blobstore.Service
+	StatusActivities        *statusactivities.Activities
+	Kafka                   *kafka.Producer
+	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
 }
 
 func NewActivities(params ActivityParams) *Activities {
 	return &Activities{
-		db:               params.DB,
-		chDB:             params.CHDB,
-		cfg:              params.Cfg,
-		l:                params.L,
-		mw:               params.MW,
-		blobSvc:          params.BlobSvc,
-		statusActivities: params.StatusActivities,
-		kafka:            params.Kafka,
+		db:                      params.DB,
+		chDB:                    params.CHDB,
+		cfg:                     params.Cfg,
+		l:                       params.L,
+		mw:                      params.MW,
+		blobSvc:                 params.BlobSvc,
+		statusActivities:        params.StatusActivities,
+		kafka:                   params.Kafka,
+		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
 	}
 }
 
@@ -270,7 +274,7 @@ func (a *Activities) failureMessage(ctx context.Context, executionID, rawError s
 			zap.Error(err))
 	}
 
-	if message := conciseFailureMessage(rawError); message != "" {
+	if message := compositeerrors.ConciseMessage(rawError); message != "" {
 		return message
 	}
 	return string(status)
@@ -315,6 +319,10 @@ func (a *Activities) GetJobCompositePlan(ctx context.Context, jobID string) (*mo
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if err := a.authorizeImageSource(ctx, jobID, compositePlan); err != nil {
+		return nil, err
 	}
 
 	contents, err := json.Marshal(compositePlan)
@@ -698,7 +706,7 @@ func hstoreToMap(h pgtype.Hstore) map[string]string {
 func redactedStringMapToHstore(in map[string]string) pgtype.Hstore {
 	out := pgtype.Hstore{}
 	for key, val := range in {
-		v := compositeerrors.RedactDiagnosticSecrets(val)
+		v := redact.DiagnosticSecrets(val)
 		out[key] = &v
 	}
 	return out
@@ -711,35 +719,4 @@ func truncateStatusDescription(s string) string {
 		return s
 	}
 	return s[:statusDescriptionMaxLen] + "…(truncated)"
-}
-
-const failureMessageMaxLen = 512
-
-var (
-	temporalErrorMetadataPattern = regexp.MustCompile(`\s*\((?:type|activityType|workflowType):[^()]*\)`)
-	temporalErrorPrefixPattern   = regexp.MustCompile(`(?i)^(?:activity|child workflow execution|workflow execution)\s+error\s*:?\s*`)
-)
-
-func conciseFailureMessage(raw string) string {
-	cleaned := temporalErrorMetadataPattern.ReplaceAllString(raw, "")
-	cleaned = compositeerrors.RedactDiagnosticSecrets(cleaned)
-	for _, line := range strings.Split(cleaned, "\n") {
-		line = strings.TrimSpace(temporalErrorPrefixPattern.ReplaceAllString(strings.TrimSpace(line), ""))
-		if line == "" {
-			continue
-		}
-		return truncateRunes(line, failureMessageMaxLen)
-	}
-	return ""
-}
-
-func truncateRunes(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	runes := []rune(s)
-	if len(runes) <= n {
-		return s
-	}
-	return string(runes[:n]) + "…"
 }

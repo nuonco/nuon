@@ -106,7 +106,7 @@ var _ apiPkg.Service = (*service)(nil)
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runner-jobs", s.ListRunnerJobsCtlAPI)
 	api.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlanPublic)
-	api.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlan)
+	api.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlanPublic)
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
 	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJobPublic)
 
@@ -397,7 +397,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	org.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
 
 	// TODO(jm): these will be moved to the otel namespace
-	org.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
+	require.OrgInstallOrLogStreamRoute(api, "log_stream_id").POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
 	// installs
 	installs := org.Group("/v1/installs")

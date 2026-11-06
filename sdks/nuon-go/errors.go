@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -56,6 +57,46 @@ func newHTTPAPIError(statusCode int, body string) error {
 		body:       body,
 		payload:    payload,
 	}
+}
+
+type cliConfigHTTPError struct {
+	httpAPIError
+	message string
+}
+
+func (e *cliConfigHTTPError) Error() string {
+	return e.message
+}
+
+func newCLIConfigHTTPError(statusCode int, body []byte) error {
+	message := cliConfigStatusMessage(statusCode)
+	payload := new(models.StderrErrResponse)
+	if err := json.Unmarshal(body, payload); err == nil && (payload.Description != "" || payload.Error != "" || payload.UserError) {
+		return &cliConfigHTTPError{
+			httpAPIError: httpAPIError{
+				statusCode: statusCode,
+				body:       string(body),
+				payload:    payload,
+			},
+			message: message,
+		}
+	}
+
+	return &cliConfigHTTPError{
+		httpAPIError: httpAPIError{
+			statusCode: statusCode,
+			body:       string(body),
+			payload: &models.StderrErrResponse{
+				Description: message,
+				Error:       http.StatusText(statusCode),
+			},
+		},
+		message: message,
+	}
+}
+
+func cliConfigStatusMessage(statusCode int) string {
+	return fmt.Sprintf("Failed to retrieve cli-config. Request return %d", statusCode)
 }
 
 // ToUserError returns the error as a user error if possible

@@ -136,7 +136,7 @@ const inProgressRun: TInstallWorkflow = {
             {
               component_id: 'cmp-api',
               component_name: 'api',
-              component_type: 'docker_build',
+              component_type: 'external_image',
               status: 'building',
               change_reason: 'source_changed',
             },
@@ -212,7 +212,7 @@ const mockBuilds = (api: TMockBuildStatus, worker: TMockBuildStatus) => [
   {
     component_id: 'cmp-api',
     component_name: 'api',
-    component_type: 'docker_build',
+    component_type: 'external_image',
     status: api,
     change_reason: 'source_changed',
   },
@@ -335,7 +335,7 @@ const mockDiff: DiffSectionData[] = [
       {
         name: 'api',
         op: 'change',
-        componentType: 'docker_build',
+        componentType: 'external_image',
         fields: [
           { key: 'dockerfile', op: 'change', diff: "'Dockerfile' -> 'Dockerfile.retry'" },
         ],
