@@ -74,7 +74,7 @@ func (s *service) mcpGetAppConfigSchema(ctx context.Context, _ *mcp.CallToolRequ
 
 func suggestedConfigPath(schemaType string) string {
 	switch schemaType {
-	case "helm", "terraform", "docker-build", "container-image", "job", "kubernetes-manifest", "pulumi":
+	case "helm", "terraform", "container-image", "job", "kubernetes-manifest", "pulumi":
 		return "components/<name>.toml"
 	case "action":
 		return "actions/<name>.toml"

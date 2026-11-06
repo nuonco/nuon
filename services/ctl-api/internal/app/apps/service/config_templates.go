@@ -102,9 +102,6 @@ source = "template_terraform_infra_component.toml"
 source = "template_helm_component.toml"
 
 [[components]]
-source = "template_docker_build_component.toml"
-
-[[components]]
 source = "template_container_image_component.toml"
 
 [[components]]
@@ -219,23 +216,11 @@ branch = "main"
 
 [[values_file]]
 contents = """
-image.tag = {{.nuon.components.toml_docker_build.image.name}}
+image.tag = {{.nuon.components.toml_container_image.image.name}}
 """
 
 [values]
 "api.ingresses.public_domain" = "{{.nuon.components.infra.outputs.iam_role}}"
-`
-
-const dockerBuildComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema/docker-build
-name = "toml_docker_build"
-type = "docker_build"
-
-dockerfile = "Dockerfile"
-
-[connected_repo]
-directory = "deployment"
-repo = "nuonco/nuon"
-branch = "main"
 `
 
 const containerImageComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema/container-image
@@ -251,8 +236,8 @@ const jobComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schem
 name = "toml_job"
 type = "job"
 
-image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
-tag	  = "{{.nuon.components.e2e_docker_build.image.tag}}"
+image_url = "{{.nuon.components.toml_container_image.image.repository.uri}}"
+tag	  = "{{.nuon.components.toml_container_image.image.tag}}"
 cmd	  = ["printenv"]
 args	  = [""]
 

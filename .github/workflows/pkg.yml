@@ -32,9 +32,9 @@ jobs:
       pkg: ${{ steps.filter.outputs.pkg }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v3.0.4
         id: filter
         with:
           filters: |
@@ -53,13 +53,13 @@ jobs:
       NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
       IS_FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
     steps:
-      - uses: FranzDiebold/github-env-vars-action@v2
+      - uses: FranzDiebold/github-env-vars-action@v2.10.0
 
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
       - name: Setup nuonctl
-        uses: ./actions/setup-nuonctl
+        uses: $/actions/setup-nuonctl
 
       - name: Setup BuildKit
         if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}

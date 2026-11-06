@@ -27,6 +27,7 @@ interface IInstallActionRunHeader {
   cancelWorkflowButton: ReactNode
   runActionButton?: ReactNode
   runnerJobPlanButton?: ReactNode
+  deleteLogsButton?: ReactNode
 }
 
 export const InstallActionRunHeader = ({
@@ -40,6 +41,7 @@ export const InstallActionRunHeader = ({
   cancelWorkflowButton,
   runActionButton,
   runnerJobPlanButton,
+  deleteLogsButton,
 }: IInstallActionRunHeader) => {
   return (
     <DetailHeader
@@ -71,6 +73,7 @@ export const InstallActionRunHeader = ({
       actions={
         <>
           {cancelWorkflowButton}
+          {deleteLogsButton}
           {runnerJobPlanButton}
           {runActionButton}
         </>

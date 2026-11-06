@@ -223,6 +223,7 @@ func init() {
 	config.RegisterDefault("use_legacy_maintenance_role_default", false)
 
 	config.RegisterDefault("gcp_legacy_role_fallback", false)
+	config.RegisterDefault("legacy_image_auth_enabled", true)
 
 	config.RegisterDefault("cors_allow_all_origins", false)
 	config.RegisterDefault("cors_allow_loopback_origins", false)
@@ -662,6 +663,8 @@ type Config struct {
 	UseLegacyMaintenanceRoleDefault bool `config:"use_legacy_maintenance_role_default"`
 
 	GCPLegacyRoleFallback bool `config:"gcp_legacy_role_fallback"`
+
+	LegacyImageAuthEnabled bool `config:"legacy_image_auth_enabled"`
 }
 
 func (c *Config) IsAWS() bool {

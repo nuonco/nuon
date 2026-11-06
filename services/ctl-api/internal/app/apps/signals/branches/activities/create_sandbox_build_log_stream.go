@@ -36,7 +36,9 @@ func (a *Activities) CreateSandboxBuildLogStream(ctx context.Context, req Create
 		return nil, errors.Wrap(err, "unable to create service account")
 	}
 
-	a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, req.OrgID, svcAcct.ID)
+	if err := a.authzClient.EnsureLogStreamRole(ctx, req.OrgID, ls.ID, svcAcct.ID); err != nil {
+		return nil, errors.Wrap(err, "unable to grant log stream role")
+	}
 
 	token, err := a.acctClient.CreateToken(ctx, svcAcct.Email, defaultLogStreamTokenDuration)
 	if err != nil {

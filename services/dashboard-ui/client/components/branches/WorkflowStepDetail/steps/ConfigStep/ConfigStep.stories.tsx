@@ -17,9 +17,9 @@ const sections: DiffSectionData[] = [
       {
         name: 'worker',
         op: 'add',
-        componentType: 'docker_build',
+        componentType: 'external_image',
         fields: [
-          { key: 'type', op: 'add', diff: "'docker_build'" },
+          { key: 'type', op: 'add', diff: "'external_image'" },
           { key: 'dockerfile', op: 'add', diff: "'Dockerfile'" },
         ],
       },

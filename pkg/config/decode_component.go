@@ -78,14 +78,6 @@ func decodeComponent(fromType reflect.Type, toType reflect.Type, from interface{
 			}
 		}
 		comp.ExternalImage = &cmpCfg
-	case DockerBuildComponentType:
-		var cmpCfg DockerBuildComponentConfig
-		if err := mapstructure.Decode(obj, &cmpCfg); err != nil {
-			return from, ErrConfig{
-				Description: fmt.Sprintf("unable to parse docker build: %s", err.Error()),
-			}
-		}
-		comp.DockerBuild = &cmpCfg
 	case HelmChartComponentType:
 		var cmpCfg HelmChartComponentConfig
 		if err := mapstructure.Decode(obj, &cmpCfg); err != nil {

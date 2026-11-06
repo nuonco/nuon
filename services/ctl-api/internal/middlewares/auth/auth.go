@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"net/http"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/gin-gonic/gin"
@@ -101,6 +102,15 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				return
 			}
 
+			if isReadOnlyOAuthToken(acctToken) && !isReadMethod(ctx.Request.Method) {
+				ctx.Error(stderr.ErrAuthorization{
+					Err:         fmt.Errorf("read-only oauth token cannot perform %s requests", ctx.Request.Method),
+					Description: "This access token is read-only (org_read_only scope) and cannot make changes. Re-authorize with the org_admin scope.",
+				})
+				ctx.Abort()
+				return
+			}
+
 			cctx.SetAccountGinContext(ctx, acct)
 			cctx.SetTokenTypeGinContext(ctx, acctToken.TokenType)
 			cctx.SetTokenIDGinContext(ctx, acctToken.ID)
@@ -116,6 +126,19 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			Description: "Please make sure you are using a valid token.",
 		})
 		ctx.Abort()
+	}
+}
+
+func isReadOnlyOAuthToken(token *app.Token) bool {
+	return token.TokenType == app.TokenTypeOAuth && token.Role != string(app.RoleTypeOrgAdmin)
+}
+
+func isReadMethod(method string) bool {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return true
+	default:
+		return false
 	}
 }
 

@@ -30,7 +30,7 @@ const webAppConfig = makeConfig([
   { id: 'rds', name: 'postgres', type: 'terraform_module', depIds: ['vpc'] },
   { id: 'api', name: 'api_server', type: 'helm_chart', depIds: ['eks', 'rds'] },
   { id: 'worker', name: 'background_worker', type: 'helm_chart', depIds: ['eks', 'rds'] },
-  { id: 'frontend', name: 'frontend', type: 'docker_build', depIds: ['api'] },
+  { id: 'frontend', name: 'frontend', type: 'external_image', depIds: ['api'] },
   { id: 'monitoring', name: 'observability', type: 'helm_chart', depIds: ['eks'] },
 ])
 
@@ -63,7 +63,7 @@ export const WebAppFromFrontend = () => (
     <ComponentDependencyGraphModal
       componentId="frontend"
       componentName="frontend"
-      componentType="docker_build"
+      componentType="external_image"
       appConfig={webAppConfig}
       basePath={basePath}
     />

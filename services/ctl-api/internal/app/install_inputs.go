@@ -25,7 +25,7 @@ type InstallInputs struct {
 	Org         Org                   `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	InstallID      string        `json:"install_id,omitzero" gorm:"notnull;default null" temporaljson:"install_id,omitzero,omitempty"`
-	Install        Install       `json:"-" temporaljson:"install,omitzero,omitempty"`
+	Install        *Install      `json:"-" temporaljson:"install,omitzero,omitempty"`
 	Values         pgtype.Hstore `json:"values,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"values,omitzero,omitempty"`
 	ValuesRedacted pgtype.Hstore `json:"redacted_values,omitzero" gorm:"type:hstore;->;-:migration" swaggertype:"object,string" temporaljson:"values_redacted,omitzero,omitempty"`
 

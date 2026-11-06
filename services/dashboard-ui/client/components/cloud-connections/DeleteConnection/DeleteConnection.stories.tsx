@@ -19,10 +19,41 @@ export const Conflict = () => (
       error={{
         error: 'Conflict',
         description:
-          'This connection is used by 2 installs. Reassign or delete those installs first.',
+          'This connection is used by 2 installs. Delete those installs first.',
         user_error: true,
         status: 409,
       }}
+    />
+  </ModalStory>
+)
+export const GAR = () => (
+  <ModalStory>
+    <DeleteConnection
+      name="acme-gar-images"
+      isPending={false}
+      onDelete={() => {}}
+    />
+  </ModalStory>
+)
+export const AssignedRepository = () => (
+  <ModalStory>
+    <DeleteConnection
+      name="acme-ecr-images"
+      orgId="org-mock-001"
+      imageRepositories={1}
+      isPending={false}
+      onDelete={() => {}}
+    />
+  </ModalStory>
+)
+export const AssignedRepositories = () => (
+  <ModalStory>
+    <DeleteConnection
+      name="acme-acr-images"
+      orgId="org-mock-001"
+      imageRepositories={3}
+      isPending={false}
+      onDelete={() => {}}
     />
   </ModalStory>
 )

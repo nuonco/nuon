@@ -31,7 +31,7 @@ const mockBuilds = [
     id: 'bld2345678901abcdef234567',
     component_name: 'api-server',
     component_id: 'cmp2345678901abcdef234567',
-    component_config_connection: { type: 'docker_build' },
+    component_config_connection: { type: 'external_image' },
     status_v2: { status: 'active' },
   },
 ]
