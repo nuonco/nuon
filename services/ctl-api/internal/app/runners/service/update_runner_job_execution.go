@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
@@ -58,9 +59,37 @@ func (s *service) UpdateRunnerJobExecution(ctx *gin.Context) {
 	// Intermediate transitions still drive the workflow via its poll loop.
 	if !req.Status.IsRunning() {
 		s.wakeProcessJobWorkflow(ctx, runnerJobID, processjob.TerminalSignalName(runnerJobID))
+		s.closeRunnerOperationLogStream(ctx, runnerJobID)
 	}
 
 	ctx.JSON(http.StatusOK, jobExecution)
+}
+
+func (s *service) closeRunnerOperationLogStream(ctx context.Context, runnerJobID string) {
+	var job app.RunnerJob
+	if err := s.db.WithContext(ctx).Select("id", "log_stream_id").Where(app.RunnerJob{ID: runnerJobID}).Take(&job).Error; err != nil {
+		s.l.Warn("unable to load runner job to close its log stream", zap.String("runner_job.id", runnerJobID), zap.Error(err))
+		return
+	}
+	if job.LogStreamID == nil {
+		return
+	}
+
+	res := s.db.WithContext(ctx).
+		Model(&app.LogStream{}).
+		Where(app.LogStream{ID: *job.LogStreamID, OwnerType: "runner_operations"}).
+		Update("open", false)
+	if res.Error != nil {
+		s.l.Warn("unable to close runner operation log stream", zap.String("log_stream.id", *job.LogStreamID), zap.Error(res.Error))
+		return
+	}
+	if res.RowsAffected == 0 {
+		return
+	}
+
+	if err := s.acctClient.DeleteServiceAccount(ctx, *job.LogStreamID); err != nil {
+		s.l.Warn("unable to delete runner operation log stream service account", zap.String("log_stream.id", *job.LogStreamID), zap.Error(err))
+	}
 }
 
 func (s *service) updateRunnerJobExecution(ctx context.Context, runnerJobID, runnerJobExecutionID string, req UpdateRunnerJobExecutionRequest) (*app.RunnerJobExecution, error) {
