@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
-// DeleteServiceAccount removes an account's role bindings, stack roles, tokens, and
+// DeleteServiceAccount removes an account's role bindings, private roles, tokens, and
 // the row itself. A missing account is success — delete workflows retry.
 func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) error {
 	email := ServiceAccountEmail(svcAcctID)
@@ -30,23 +30,7 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 		return errors.Errorf("account %s is not a service account", acct.ID)
 	}
 
-	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var locked struct{ ID string }
-		if err := tx.Unscoped().Model(&app.Account{}).Select("id").
-			Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Account{ID: acct.ID}).Take(&locked).Error; err != nil {
-			return errors.Wrap(err, "unable to lock service account")
-		}
-		var binding app.ManagedServiceAccount
-		if err := tx.Unscoped().Where(app.ManagedServiceAccount{AccountID: acct.ID}).Find(&binding).Error; err != nil {
-			return errors.Wrap(err, "unable to load service account ownership")
-		}
-		if binding.AccountID == "" {
-			if err := authz.DeleteStackInstallRoles(tx, acct.ID); err != nil {
-				return err
-			}
-		}
-		return deleteServiceAccount(tx, acct.ID)
-	})
+	return c.DeleteServiceAccountByID(ctx, acct.ID)
 }
 
 func (c *Client) DeleteServiceAccountByID(ctx context.Context, accountID string) error {
@@ -71,6 +55,9 @@ func deleteServiceAccount(tx *gorm.DB, accountID string) error {
 		return err
 	}
 	if err := authz.DeleteManagedServiceAccountRole(tx, accountID); err != nil {
+		return err
+	}
+	if err := authz.DeletePrivateRoles(tx, accountID); err != nil {
 		return err
 	}
 	if err := tx.Where(app.ManagedServiceAccount{AccountID: accountID}).Delete(&app.ManagedServiceAccount{}).Error; err != nil {
