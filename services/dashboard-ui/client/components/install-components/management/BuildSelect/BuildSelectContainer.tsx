@@ -12,6 +12,7 @@ interface IBuildSelectContainer {
   currentBuildId?: string
   currentDeployStatus?: string
   installAppConfigId?: string
+  installAppBranchId?: string
   onSelectBuild: (buildId: string) => void
   onClose: () => void
 }
@@ -23,6 +24,7 @@ export const BuildSelectContainer = ({
   currentBuildId,
   currentDeployStatus,
   installAppConfigId,
+  installAppBranchId,
   onSelectBuild,
 }: IBuildSelectContainer) => {
   const { org } = useOrg()
@@ -111,6 +113,7 @@ export const BuildSelectContainer = ({
       currentBuildId={currentBuildId}
       currentDeployStatus={currentDeployStatus}
       installAppConfigId={installAppConfigId}
+      installAppBranchId={installAppBranchId}
       onSelectBuild={onSelectBuild}
       builds={allBuilds}
       isLoading={isLoading}
