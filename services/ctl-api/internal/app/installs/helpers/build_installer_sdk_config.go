@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -292,7 +293,7 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			ProjectID: gcpProjectID,
 			Region:    gcpRegion,
 
-			RunnerInitScriptURL: initScriptURL,
+			RunnerInitScriptURL: gcpInitScriptURLForBoot(initScriptURL, latestVersion),
 			RunnerMachineType:   instanceType,
 
 			ProvisionPermissions:      prov.Permissions,
@@ -469,4 +470,21 @@ func azureRolesToSDKMap(rs []azurestacks.AzureRoleRaw, enabled bool) map[string]
 		}
 	}
 	return out
+}
+
+func gcpInitScriptURLForBoot(rawURL string, pinned app.InstallStackVersion) string {
+	if rawURL == "" || pinned.RunnerInitScriptChecksum == "" || pinned.RunnerInitScriptURL == "" {
+		return rawURL
+	}
+	if stripInitScriptFragment(pinned.RunnerInitScriptURL) != stripInitScriptFragment(rawURL) {
+		return rawURL
+	}
+	return stripInitScriptFragment(rawURL) + "#sha256=" + pinned.RunnerInitScriptChecksum
+}
+
+func stripInitScriptFragment(rawURL string) string {
+	if i := strings.Index(rawURL, "#"); i >= 0 {
+		return rawURL[:i]
+	}
+	return rawURL
 }

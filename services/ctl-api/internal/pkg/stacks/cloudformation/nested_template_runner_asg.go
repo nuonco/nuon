@@ -70,6 +70,10 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		params["RunnerEnvVars"] = inp.RunnerEnvVars
 	}
 
+	if _, ok := tmpl.Parameters["RunnerInitScriptChecksum"]; ok {
+		params["RunnerInitScriptChecksum"] = inp.RunnerInitScriptChecksum
+	}
+
 	// Older runner templates don't declare these and CloudFormation rejects unknown parameters, so drop them there.
 	_, hasAutoUpdateParam := tmpl.Parameters["RunnerAmiAutoUpdate"]
 	_, hasImageIDParam := tmpl.Parameters["RunnerAmiId"]

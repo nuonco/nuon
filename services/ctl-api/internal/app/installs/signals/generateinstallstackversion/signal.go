@@ -1,8 +1,11 @@
 package generateinstallstackversion
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"maps"
+	"strings"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
@@ -32,7 +35,7 @@ const dedupeVersion = "generate-install-stack-version-dedupe-v1"
 const SignalType signal.SignalType = "generate-install-stack-version"
 
 const (
-	DefaultAzureRunnerInitScript string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#azure"
+	DefaultAzureRunnerInitScript string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/azure/init.sh"
 	DefaultAWSRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#default"
 	DefaultGCPRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/gcp/init.sh"
 )
@@ -212,11 +215,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to ensure install stack service account")
 	}
 
+	activeVersion, err := activities.AwaitGetActiveInstallStackVersionByInstallID(ctx, install.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get active install stack version")
+	}
+
 	// GCP uses a static Terraform module with tfvars — no S3 upload needed.
 	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
 		initScriptURL := DefaultGCPRunnerInitScript
 		if cfg.RunnerConfig.InitScriptURL != "" {
 			initScriptURL = cfg.RunnerConfig.InitScriptURL
+		}
+
+		initScriptChecksum, err := s.validateRunnerInitScript(ctx, stackVersion, activeVersion, "gcp", initScriptURL, compositeErrorsEnabled)
+		if err != nil {
+			return err
 		}
 
 		inp := &stacks.TemplateInput{
@@ -226,7 +239,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			AppCfg:                     cfg,
 			Runner:                     runner,
 			Settings:                   &runner.RunnerGroup.Settings,
-			RunnerInitScriptURL:        initScriptURL,
+			RunnerInitScriptURL:        initScriptURLWithChecksum(initScriptURL, initScriptChecksum),
+			RunnerInitScriptChecksum:   initScriptChecksum,
 			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, s.cfg.RunnerContainerImageTag),
 		}
 
@@ -248,6 +262,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Checksum: checksum,
 		}); err != nil {
 			return errors.Wrap(err, "unable to save gcp tfvars")
+		}
+
+		if err := activities.AwaitSaveInstallStackVersionRunnerInitScript(ctx, &activities.SaveInstallStackVersionRunnerInitScriptRequest{
+			ID:       stackVersion.ID,
+			URL:      initScriptURL,
+			Checksum: initScriptChecksum,
+		}); err != nil {
+			return errors.Wrap(err, "unable to save runner init script checksum")
 		}
 
 		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -277,6 +299,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Generate the stack template.
 	tmplByts := []byte{}
 	checksum := ""
+	initScriptChecksum := ""
 	quickLinkWrapperByts := []byte{}
 	quickLinkUIDefByts := []byte{}
 	inp := &stacks.TemplateInput{
@@ -315,6 +338,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		} else {
 			inp.RunnerInitScriptURL = DefaultAWSRunnerInitScript
 		}
+
+		initScriptChecksum, err = s.validateRunnerInitScript(ctx, stackVersion, activeVersion, "aws", inp.RunnerInitScriptURL, compositeErrorsEnabled)
+		if err != nil {
+			return err
+		}
+		inp.RunnerInitScriptChecksum = initScriptChecksum
 
 		// render the template via activity to avoid blocking the workflow goroutine
 		// (the template rendering fetches nested stack templates over HTTP)
@@ -365,6 +394,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		} else {
 			inp.RunnerInitScriptURL = DefaultAzureRunnerInitScript
 		}
+
+		initScriptChecksum, err = s.validateRunnerInitScript(ctx, stackVersion, activeVersion, "azure", inp.RunnerInitScriptURL, compositeErrorsEnabled)
+		if err != nil {
+			return err
+		}
+		inp.RunnerInitScriptChecksum = initScriptChecksum
 
 		inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
 		inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
@@ -430,6 +465,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		AWSStackParameters: stackVersion.AWSStackParameters,
 	}); err != nil {
 		return errors.Wrap(err, "unable to save cloudformation stack")
+	}
+
+	if err := activities.AwaitSaveInstallStackVersionRunnerInitScript(ctx, &activities.SaveInstallStackVersionRunnerInitScriptRequest{
+		ID:       stackVersion.ID,
+		URL:      inp.RunnerInitScriptURL,
+		Checksum: initScriptChecksum,
+	}); err != nil {
+		return errors.Wrap(err, "unable to save runner init script checksum")
 	}
 
 	if workflow.GetVersion(ctx, dedupeVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
@@ -500,4 +543,32 @@ func setStackVersionCompositeRenderError(ctx workflow.Context, stackVersionID, p
 	}); err != nil {
 		workflow.GetLogger(ctx).Warn("unable to set stack version composite error", "error", err.Error(), "stack_version_id", stackVersionID)
 	}
+}
+
+func initScriptURLWithChecksum(rawURL, checksum string) string {
+	if rawURL == "" || checksum == "" {
+		return rawURL
+	}
+	if i := strings.Index(rawURL, "#"); i >= 0 {
+		rawURL = rawURL[:i]
+	}
+	return rawURL + "#sha256=" + checksum
+}
+
+func (s *Signal) validateRunnerInitScript(ctx workflow.Context, stackVersion, active *app.InstallStackVersion, platform, url string, compositeErrorsEnabled bool) (string, error) {
+	raw, err := activities.AwaitGetRunnerInitScriptRaw(ctx, &activities.GetRunnerInitScriptRequest{URL: url})
+	if err != nil {
+		return "", errors.Wrap(err, "unable to get runner init script")
+	}
+
+	sum := sha256.Sum256(raw)
+	checksum := hex.EncodeToString(sum[:])
+
+	if active == nil || active.RunnerInitScriptChecksum == "" || active.RunnerInitScriptChecksum == checksum {
+		return checksum, nil
+	}
+
+	detail := fmt.Sprintf("runner init script at %s does not match the checksum pinned by the active version (pinned %s, fetched %s)", url, active.RunnerInitScriptChecksum, checksum)
+	setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, detail, compositeErrorsEnabled)
+	return "", temporal.NewNonRetryableApplicationError(detail, "runner_init_script_checksum_mismatch", errors.New(detail))
 }

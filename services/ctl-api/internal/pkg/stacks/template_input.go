@@ -32,7 +32,8 @@ type TemplateInput struct {
 	RunnerEnvVars string
 
 	// subscripts and embedded templates
-	RunnerInitScriptURL string `validate:"required"`
+	RunnerInitScriptURL      string `validate:"required"`
+	RunnerInitScriptChecksum string
 
 	// AWS-only: the inline source for the phone-home Lambda (Code.ZipFile). Unvalidated
 	// because the Azure and GCP paths share this struct — ARM builds its own phone-home

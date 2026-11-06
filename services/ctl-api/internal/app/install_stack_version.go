@@ -40,6 +40,9 @@ type InstallStackVersion struct {
 	PhoneHomeID  string `json:"phone_home_id,omitzero" temporaljson:"phone_home_id,omitzero,omitempty"`
 	PhoneHomeURL string `json:"phone_home_url,omitzero" temporaljson:"phone_home_url,omitzero,omitempty"`
 
+	RunnerInitScriptURL      string `json:"runner_init_script_url,omitzero" temporaljson:"runner_init_script_url,omitzero,omitempty"`
+	RunnerInitScriptChecksum string `json:"runner_init_script_checksum,omitzero" temporaljson:"runner_init_script_checksum,omitzero,omitempty"`
+
 	// PhoneHomeTokenID is the tokens row minted for this stack version's phone home,
 	// issued to the version's own service account. Never serialized: it identifies a
 	// live credential.
