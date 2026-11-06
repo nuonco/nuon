@@ -23,6 +23,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+	wfactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 const SignalType signal.SignalType = "component-deploy-sync-and-plan"
@@ -91,9 +92,35 @@ var (
 	_ signal.SignalWithOnRetry                      = (*Signal)(nil)
 	_ signal.SignalWithApprovalValidation           = (*Signal)(nil)
 	_ signal.SignalWithSkipGroup                    = (*Signal)(nil)
+	_ signal.SignalWithOnSkip                       = (*Signal)(nil)
 )
 
 func (s *Signal) SkipGroup() bool { return true }
+
+// OnSkip closes the log stream the plan left open for apply. A skip discards
+// apply, and a retry creates a new deploy, so nothing else would close it.
+// The version gate keeps replays of skips that ran before this hook from
+// scheduling the close.
+func (s *Signal) OnSkip(ctx workflow.Context) error {
+	if workflow.GetVersion(ctx, "deploy-plan-skip-closes-log-stream-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return nil
+	}
+	if s.WorkflowStepID == "" {
+		return nil
+	}
+	step, err := wfactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.WorkflowStepID)
+	if err != nil || step == nil || step.StepTargetID == "" {
+		return nil
+	}
+	deploy, err := activities.AwaitGetDeployByDeployID(ctx, step.StepTargetID)
+	if err != nil || deploy.LogStream.ID == "" {
+		return nil
+	}
+	if err := activities.AwaitCloseLogStreamByLogStreamID(ctx, deploy.LogStream.ID); err != nil {
+		return fmt.Errorf("close log stream: %w", err)
+	}
+	return nil
+}
 
 func (s *Signal) ValidateApproval(ctx workflow.Context) error {
 	if s.DeployID == "" {
