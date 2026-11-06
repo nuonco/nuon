@@ -24,6 +24,22 @@ func TestPreloadedModelSizes(t *testing.T) {
 			size:     unsafe.Sizeof(Component{}),
 			maxBytes: 8 << 10,
 		},
+		"install sandbox run": {
+			size:     unsafe.Sizeof(InstallSandboxRun{}),
+			maxBytes: 16 << 10,
+		},
+		"install app branch connection": {
+			size:     unsafe.Sizeof(InstallAppBranchConnection{}),
+			maxBytes: 64 << 10,
+		},
+		"install roles": {
+			size:     unsafe.Sizeof(InstallRoles{}),
+			maxBytes: 16 << 10,
+		},
+		"install inputs": {
+			size:     unsafe.Sizeof(InstallInputs{}),
+			maxBytes: 16 << 10,
+		},
 	}
 
 	for name, tc := range tests {
