@@ -42,9 +42,9 @@ When the vendor needs more access to service an install, such as during an incid
 
 ### Nuon Deployment Options
 
-Nuon Cloud is our SaaS offering primarily targeted for free trials and smaller customers. Vendors' app templates, installs, and logs are stored in an encrypted PostgreSQL database and securely accessed by the vendors and customers using TLS for encryption of data in transit and Auth0 for authentication.
+Nuon Cloud is our SaaS offering primarily targeted for free trials and smaller customers. Vendors' app templates, installs, and logs are stored in an encrypted PostgreSQL database and securely accessed by the vendors and customers using TLS for encryption of data in transit.
 
-For vendors and their customers concerned about data residency and multiple SaaS 3rd parties in the loop, Nuon supports self-hosting Nuon's control plane in the vendor's AWS cloud. Nuon uses its BYOC product to provision and update Nuon. In this deployment scenario, the metadata and logs about customer installs are stored encrypted in PostgreSQL RDS in the vendor's AWS cloud. The vendor can cut off access of the Nuon Runner to the Nuon control plane except as required during maintenance windows to upgrade the Nuon control plane. This offering is called Nuon BYOC.
+For vendors and their customers concerned about data residency and multiple SaaS 3rd parties in the loop, Nuon supports self-hosting Nuon's control plane in the vendor's AWS or GCP cloud. Nuon uses its BYOC product to provision and update Nuon. In this deployment scenario, the metadata and logs about customer installs are stored encrypted in PostgreSQL (RDS on AWS, Cloud SQL on GCP) in the vendor's cloud. The vendor can cut off access of the Nuon Runner to the Nuon control plane except as required during maintenance windows to upgrade the Nuon control plane. This offering is called Nuon BYOC.
 
 Nuon also supports fully self-hosted deployments where the vendor can deploy Nuon using Helm charts into their own cloud account.
 
