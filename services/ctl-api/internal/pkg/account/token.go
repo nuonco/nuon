@@ -68,15 +68,35 @@ func (c *Client) InvalidateTokens(ctx context.Context, subjectOrEmail string) er
 	})
 }
 
-// InvalidateLogStreamTokens revokes the write token for a closed log stream's
-// service account. The account may already be gone (deleted by cleanup), so a
-// missing account is not an error.
-func (c *Client) InvalidateLogStreamTokens(ctx context.Context, logStreamID string) error {
-	err := c.InvalidateTokens(ctx, ServiceAccountEmail(logStreamID))
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil
+// Restores rather than recreates: (deleted_at, email, subject) is unique and
+// deleted_at has second precision, so a second soft-deleted row can collide.
+func (c *Client) IssueLogStreamToken(ctx context.Context, orgID, logStreamID string, dur time.Duration) (*app.Token, error) {
+	var acct app.Account
+	if err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where(app.Account{Email: ServiceAccountEmail(logStreamID), Subject: logStreamID, AccountType: app.AccountTypeService}).
+			Order("deleted_at = 0 DESC, deleted_at DESC").Limit(1).Find(&acct).Error; err != nil {
+			return pkgerrors.Wrap(err, "unable to look up log stream service account")
+		}
+		if acct.ID == "" {
+			created, err := New(Params{DB: tx}).CreateServiceAccount(ctx, logStreamID, "")
+			if err != nil {
+				return err
+			}
+			acct = *created
+			return nil
+		}
+		if acct.DeletedAt == 0 {
+			return nil
+		}
+		return tx.Unscoped().Model(&app.Account{}).Where(app.Account{ID: acct.ID}).Update("deleted_at", 0).Error
+	}); err != nil {
+		return nil, pkgerrors.Wrap(err, "unable to ensure log stream service account")
 	}
-	return err
+	if err := c.authzClient.EnsureLogStreamRole(ctx, orgID, logStreamID, acct.ID); err != nil {
+		return nil, pkgerrors.Wrap(err, "unable to ensure log stream role")
+	}
+	return c.CreateToken(ctx, acct.ID, dur)
 }
 
 func (c *Client) InvalidateOldTokens(ctx context.Context, subjectOrEmail string) (int64, error) {
