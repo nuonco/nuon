@@ -29,15 +29,9 @@ import {
   getBranchConfigs,
   getBranchWorkflowRuns,
   createAppInstall,
-  getCloudConnections,
   installNameTaken,
 } from '@/lib'
-import type {
-  TApp,
-  TAppBranch,
-  TAppConfig,
-  TCloudConnectionSummary,
-} from '@/types'
+import type { TApp, TAppBranch, TAppConfig } from '@/types'
 import {
   BRANCH_CONFIG_POLL_MS,
   branchConfigWaitState,
@@ -55,6 +49,7 @@ import {
 } from './CreateInstallFormFields'
 import { FormSkeleton } from './FormSkeleton'
 import { useInstallLink } from '@/hooks/use-install-path'
+import { useCloudConnections } from '@/components/cloud-connections/queries'
 
 export type CreateInstallPhase = 'select-branch' | 'form' | 'pick-group'
 
@@ -278,25 +273,8 @@ export const CreateInstallFromAppContainer = ({
   })
 
   const { data: cloudConnections, isLoading: cloudConnectionsLoading } =
-    useQuery({
-      placeholderData: keepPreviousData,
-      queryKey: ['cloud-connections', org?.id, 'all'],
-      queryFn: async () => {
-        const all: TCloudConnectionSummary[] = []
-        let offset = 0
-        for (;;) {
-          const { data, pagination } = await getCloudConnections({
-            orgId: org.id,
-            offset,
-            limit: 100,
-          })
-          const page = data ?? []
-          all.push(...page)
-          if (!pagination?.hasNext || page.length === 0) return all
-          offset += page.length
-        }
-      },
-      enabled: !!org?.id && cloudConnectionsEnabled && phase === 'form',
+    useCloudConnections(org?.id || '', {
+      enabled: cloudConnectionsEnabled && phase === 'form',
     })
 
   const {
@@ -606,6 +584,8 @@ export const CreateInstallFromAppContainer = ({
                   (connection) =>
                     connection.platform === installPlatform &&
                     connection.platform === 'aws' &&
+                    (connection.preset === 'stacks' ||
+                      connection.preset === 'custom') &&
                     connection.status === 'verified'
                 )
               : undefined

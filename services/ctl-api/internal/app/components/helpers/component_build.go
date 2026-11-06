@@ -36,23 +36,10 @@ func (s *Helpers) CreateComponentBuildInTx(ctx context.Context, tx *gorm.DB, cmp
 	return s.createComponentBuild(ctx, tx, "", cmpID, componentConfigConnectionID, useLatest, gitRef, nil)
 }
 
-func DockerBuildUnsupported() stderr.ErrUser {
-	return stderr.ErrUser{
-		Err: fmt.Errorf("docker_build components have been deprecated"),
-		Description: "docker_build components have been deprecated and are no longer supported. " +
-			"Use a container_image component to reference a pre-built image instead.",
-		Code: "docker_build_deprecated",
-	}
-}
-
 func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID, cmpID, componentConfigConnectionID string, _ bool, gitRef *string, wfRequest *app.WorkflowRequest) (*app.ComponentBuild, error) {
 	cmp, err := s.getComponent(ctx, db, cmpID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component: %w", err)
-	}
-
-	if cmp.Type == app.ComponentTypeDockerBuild {
-		return nil, DockerBuildUnsupported()
 	}
 
 	configConn, err := s.resolveBuildConfigConnection(ctx, db, cmp, componentConfigConnectionID)
@@ -106,7 +93,6 @@ func (s *Helpers) resolveBuildConfigConnection(ctx context.Context, db *gorm.DB,
 	query := db.WithContext(ctx).
 		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("HelmComponentConfig.PublicGitVCSConfig").
-		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("KubernetesManifestComponentConfig.PublicGitVCSConfig").
 		Preload("PulumiComponentConfig.PublicGitVCSConfig").
 		Where(app.ComponentConfigConnection{ID: componentConfigConnectionID, ComponentID: cmp.ID})

@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -68,6 +69,7 @@ func (c *cli) runInstall(cmd *cobra.Command, _ []string) {
 			// sandbox control API
 
 			// start registry, heartbeater, and shutdown poller
+			fx.Invoke(func(*auth.Refresher) {}),
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*process.ShutdownPoller) {}),
 			fx.Invoke(func(*registry.Registry) {}),

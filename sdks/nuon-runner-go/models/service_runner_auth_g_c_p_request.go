@@ -27,6 +27,9 @@ type ServiceRunnerAuthGCPRequest struct {
 	// metadata
 	// Required: true
 	Metadata *GcpMetadataRequest `json:"metadata"`
+
+	// refreshable
+	Refreshable bool `json:"refreshable,omitempty"`
 }
 
 // Validate validates this service runner auth g c p request

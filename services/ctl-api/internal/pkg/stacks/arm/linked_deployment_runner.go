@@ -3,7 +3,6 @@ package arm
 import (
 	"fmt"
 
-	"github.com/nuonco/nuon/pkg/azure"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -31,7 +30,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	// Nuon-managed values are baked in. runnerVmSize and telemetry stay
 	// customer-facing when the template declares them. At subscription scope
 	// every other scalar parameter is hoisted as well.
-	armTmpl, err := fetchARMTemplate(templateURL)
+	armTmpl, err := t.fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("runner linked deployment: %w", err)
 	}
@@ -422,17 +421,6 @@ func (t *Templates) getDefaultRunnerTemplate(hasIdentities bool) map[string]any 
 	}
 }
 
-func (t *Templates) runnerAuthResourceLine() string {
-	if t.cfg == nil {
-		return ""
-	}
-	resource := azure.ConfiguredRunnerAudience(t.cfg.AzureRunnerAuthAudience)
-	if resource == "" {
-		return ""
-	}
-	return "AZURE_RUNNER_AUTH_RESOURCE=" + resource + "\n"
-}
-
 func (t *Templates) buildRunnerCustomData(inp *stacks.TemplateInput) string {
 	return fmt.Sprintf(`#!/bin/bash
 
@@ -482,7 +470,7 @@ RUNNER_API_URL=$RUNNER_API_URL
 RUNNER_PLATFORM=$RUNNER_PLATFORM
 ARM_USE_MSI=true
 HOST_IP=$(curl -s https://checkip.amazonaws.com)
-%sEOF
+EOF
 
 # Determine runner binary version from public-settings endpoint
 RUNNER_BINARY_VERSION="${CONTAINER_IMAGE_TAG:-latest}"
@@ -536,5 +524,5 @@ EOF
 # Reload systemd and start the mng service
 systemctl daemon-reload
 systemctl enable --now nuon-runner-mng
-`, inp.Runner.ID, t.runnerAPIURL(inp), inp.Settings.ContainerImageURL, inp.Settings.ContainerImageTag, inp.Install.AzureAccount.Location, t.runnerAuthResourceLine())
+`, inp.Runner.ID, t.runnerAPIURL(inp), inp.Settings.ContainerImageURL, inp.Settings.ContainerImageTag, inp.Install.AzureAccount.Location)
 }

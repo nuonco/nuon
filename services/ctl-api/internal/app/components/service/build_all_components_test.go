@@ -18,8 +18,7 @@ import (
 // ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSuccess() {
-	s.Run("builds all non-docker seeded components", func() {
-		s.deleteDockerBuildComponent()
+	s.Run("builds all seeded components", func() {
 		path := fmt.Sprintf("/v1/apps/%s/components/build-all", s.testApp.ID)
 		rr := s.makeRequest(http.MethodPost, path, nil)
 
@@ -47,8 +46,6 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSuccess() {
 
 func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSignals() {
 	s.Run("sends OperationBuild signal for each component", func() {
-		s.deleteDockerBuildComponent()
-
 		path := fmt.Sprintf("/v1/apps/%s/components/build-all", s.testApp.ID)
 		rr := s.makeRequest(http.MethodPost, path, nil)
 		require.Equal(s.T(), http.StatusCreated, rr.Code)
@@ -71,18 +68,6 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSignals() {
 		}
 		assert.Len(s.T(), buildIDs, 5, "each signal should have a distinct BuildID")
 	})
-}
-
-func (s *ComponentsServiceTestSuite) TestBuildAllComponentsRejectsDockerBuild() {
-	path := fmt.Sprintf("/v1/apps/%s/components/build-all", s.testApp.ID)
-	rr := s.makeRequest(http.MethodPost, path, nil)
-	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
-	assert.Contains(s.T(), rr.Body.String(), "docker_build components have been deprecated")
-}
-
-func (s *ComponentsServiceTestSuite) deleteDockerBuildComponent() {
-	cmp := s.getSeededComponent(app.ComponentTypeDockerBuild)
-	require.NoError(s.T(), s.deps.DB.Delete(&app.Component{}, "id = ?", cmp.ID).Error)
 }
 
 // ---------------------------------------------------------------------------

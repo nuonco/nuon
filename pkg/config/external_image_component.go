@@ -11,7 +11,7 @@ import (
 )
 
 type AWSECRConfig struct {
-	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
+	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty"`
 	AWSRegion  string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
 	ImageURL   string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
 	Tag        string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
@@ -78,9 +78,8 @@ type ExternalImageComponentConfig struct {
 
 func (a AWSECRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("iam_role_arn").Short("IAM role ARN for ECR access").Required().
-		Long("ARN of the IAM role with permissions to pull images from the ECR repository").
-		Example("arn:aws:iam::123456789012:role/ecr-pull-role").
+		Field("iam_role_arn").Short("ECR pull role ARN").HideDocs().
+		Long("Assume this role for legacy ECR authentication. Omit to use the verified identity saved for the exact image repository.").
 		Field("region").Short("AWS region for the ECR repository").Required().
 		Long("AWS region where the ECR repository is located").
 		Example("us-east-1").
@@ -151,9 +150,10 @@ func (g GCPGARConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example(">=1.0.0,<2.0.0").
 		Example("1.x").
 		Example("^1.0 || ^2.0").
-		Field("service_account_email").Short("GCP service account for impersonation").
-		Long("Optional service account email to impersonate when pulling from GAR. If not set, uses application default credentials").
-		Example("my-sa@my-project.iam.gserviceaccount.com")
+		Field("service_account_email").Short("legacy service account").HideDocs().
+		Long("Service account to impersonate for legacy GAR authentication. Omit both legacy fields to use the verified GAR identity saved for the exact repository.").
+		Field("workload_identity_provider").Short("legacy federation provider").HideDocs().
+		Long("Workload identity provider for legacy federation, optionally with service_account_email for impersonation")
 }
 
 func (a AzureACRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -176,30 +176,26 @@ func (a AzureACRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example(">=1.0.0,<2.0.0").
 		Example("1.x").
 		Example("^1.0 || ^2.0").
-		Field("tenant_id").Short("Azure tenant ID owning the registry").
-		Long("Azure AD tenant that owns the registry. Required to reach a registry in a tenant Nuon holds no identity in, and must be set together with client_id and one of client_secret or client_certificate. Leave all four unset for a registry in the same tenant as the Nuon control plane, which is reached with ambient credentials").
+		Field("tenant_id").Short("legacy tenant ID (secret/certificate mode only)").HideDocs().
+		Long("Omit for OIDC. Otherwise set tenant_id, client_id, and exactly one of client_secret_name or client_certificate_name.").
 		Example("00000000-0000-0000-0000-000000000000").
-		Field("client_id").Short("Azure client ID of the app registration granted AcrPull").
-		Long("Application (client) ID of an app registration in tenant_id that has been granted AcrPull on the registry. Must be set together with tenant_id and one of client_secret or client_certificate; setting only some of them is rejected at sync").
+		Field("client_id").Short("legacy application client ID (secret/certificate mode only)").HideDocs().
+		Long("Omit for OIDC. For explicit credentials, use the application client ID in tenant_id with the required repository permissions.").
 		Example("00000000-0000-0000-0000-000000000000").
-		Field("client_secret_name").Short("name of the app secret holding the client secret").
-		Long("Name of an app secret (nuon apps variables create) whose value is the app registration's client secret. This is the secret's name, not the secret itself — never put the value here. Exactly one of client_secret_name or client_certificate_name may be set").
+		Field("client_secret_name").Short("legacy app secret name (secret authentication only)").HideDocs().
+		Long("Omit for OIDC. Name of the app secret holding the client secret, not its value. Set with tenant_id and client_id; do not set client_certificate_name.").
 		Example("azure-acr-client-secret").
-		Field("client_certificate_name").Short("name of the app secret holding the client certificate").
-		Long("Name of an app secret (nuon apps variables create) whose value is the app registration's base64-encoded PEM certificate. This is the secret's name, not the certificate itself — never put the value here. Exactly one of client_secret_name or client_certificate_name may be set").
+		Field("client_certificate_name").Short("legacy app secret name (certificate authentication only)").HideDocs().
+		Long("Omit for OIDC. App secret name for a base64-encoded PEM private key and certificate. Set tenant_id and client_id; omit client_secret_name.").
 		Example("azure-acr-client-cert")
 }
 
-// ValidateCredentials rejects a half-specified app registration. All four
-// fields absent means ambient credentials, which is the supported same-tenant
-// case; anything in between would fall back to ambient and surface as an
-// unexplained 401 against a registry the author believes they configured.
 func (a AzureACRConfig) ValidateCredentials() error {
+	anySet := a.TenantID != "" || a.ClientID != "" || a.ClientSecretName != "" || a.ClientCertificateName != ""
 	if a.ClientSecretName != "" && a.ClientCertificateName != "" {
 		return fmt.Errorf("azure_acr: only one of client_secret_name or client_certificate_name may be set")
 	}
 
-	anySet := a.TenantID != "" || a.ClientID != "" || a.ClientSecretName != "" || a.ClientCertificateName != ""
 	if !anySet {
 		return nil
 	}
@@ -216,7 +212,7 @@ func (a AzureACRConfig) ValidateCredentials() error {
 	}
 	if len(missing) > 0 {
 		return fmt.Errorf(
-			"azure_acr: incomplete credentials, missing %s; set all of tenant_id, client_id and a credential, or none of them to use ambient credentials",
+			"azure_acr: incomplete credentials, missing %s; set all of tenant_id, client_id and a credential, or omit them to use the saved repository identity",
 			strings.Join(missing, ", "),
 		)
 	}
@@ -227,11 +223,11 @@ func (a AzureACRConfig) ValidateCredentials() error {
 func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("aws_ecr").Short("AWS ECR image configuration").OneOfRequired("image_source").
-		Long("Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories").
+		Long("Authentication comes from the verified ECR identity saved for the exact image repository in Settings > Image repositories or with `nuon image-repositories create`.").
 		Field("gcp_gar").Short("GCP Artifact Registry image configuration").OneOfRequired("image_source").
-		Long("Configuration for pulling images from Google Artifact Registry. Use when deploying images from private GAR repositories").
+		Long("Authentication comes from the verified GAR identity saved for the exact image repository in Settings > Image repositories or with `nuon image-repositories create`.").
 		Field("azure_acr").Short("Azure Container Registry image configuration").OneOfRequired("image_source").
-		Long("Configuration for pulling images from Azure Container Registry. Use when deploying images from private ACR repositories").
+		Long("Authentication comes from the verified ACR identity saved for the exact image repository in Settings > Image repositories or with `nuon image-repositories create`.").
 		Field("public").Short("public registry image configuration").OneOfRequired("image_source").
 		Long("Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc)").
 		Field("verification").Short("container image signature verification policy").

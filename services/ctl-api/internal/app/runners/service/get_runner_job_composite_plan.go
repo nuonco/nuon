@@ -46,6 +46,24 @@ func (s *service) GetRunnerJobCompositePlan(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, cp)
 }
 
+func (s *service) GetRunnerJobCompositePlanPublic(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	runnerJobID := ctx.Param("runner_job_id")
+
+	cp, err := s.getOrgRunnerJobCompositePlan(ctx, runnerJobID, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get runner job: %w", err))
+		return
+	}
+	cp.RedactCredentials()
+
+	ctx.JSON(http.StatusOK, cp)
+}
+
 func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID string) (*plantypes.CompositePlan, error) {
 	var runnerPlan app.RunnerJobPlan
 

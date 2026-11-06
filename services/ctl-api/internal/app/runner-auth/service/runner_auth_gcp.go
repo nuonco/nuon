@@ -41,15 +41,17 @@ var (
 type RunnerAuthGCPRequest struct {
 	IdentityToken   string                    `json:"identity_token" validate:"required"`
 	MetadataRequest *gcptypes.MetadataRequest `json:"metadata" validate:"required"`
+	Refreshable     bool                      `json:"refreshable,omitempty"`
 }
 
 type RunnerAuthGCPResponse struct {
-	Authenticated  bool   `json:"authenticated"`
-	ProjectID      string `json:"project_id,omitempty"`
-	InstanceID     string `json:"instance_id,omitempty"`
-	ServiceAccount string `json:"service_account,omitempty"`
-	RunnerID       string `json:"runner_id,omitempty"`
-	Token          string `json:"token,omitempty"`
+	Authenticated  bool      `json:"authenticated"`
+	ProjectID      string    `json:"project_id,omitempty"`
+	InstanceID     string    `json:"instance_id,omitempty"`
+	ServiceAccount string    `json:"service_account,omitempty"`
+	RunnerID       string    `json:"runner_id,omitempty"`
+	Token          string    `json:"token,omitempty"`
+	ExpiresAt      time.Time `json:"expires_at"`
 }
 
 // @ID						RunnerAuthGCP
@@ -221,7 +223,7 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createRunnerToken(reqCtx, runner.ID)
+	token, err := s.createRunnerToken(reqCtx, runner.ID, runnerTokenTimeout(req.Refreshable))
 	if err != nil {
 		s.l.Error("runner auth gcp: failed to create token", zap.String("runner_id", runnerID), zap.Error(err))
 		ctx.Error(stderr.ErrSystem{
@@ -239,7 +241,9 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		zap.String("org_id", install.OrgID),
 		zap.String("runner_id", runner.ID),
 		zap.String("instance_id", claims.instanceID),
-		zap.String("project_id", claims.projectID))
+		zap.String("project_id", claims.projectID),
+		zap.Bool("refreshable", req.Refreshable),
+		zap.Time("expires_at", token.ExpiresAt))
 
 	ctx.JSON(http.StatusOK, RunnerAuthGCPResponse{
 		Authenticated:  true,
@@ -247,7 +251,8 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		InstanceID:     claims.instanceID,
 		ServiceAccount: claims.serviceAccount,
 		RunnerID:       runner.ID,
-		Token:          token,
+		Token:          token.Token,
+		ExpiresAt:      token.ExpiresAt,
 	})
 }
 

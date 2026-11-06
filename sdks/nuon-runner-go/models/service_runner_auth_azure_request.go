@@ -19,6 +19,9 @@ import (
 // swagger:model service.RunnerAuthAzureRequest
 type ServiceRunnerAuthAzureRequest struct {
 
+	// refreshable
+	Refreshable bool `json:"refreshable,omitempty"`
+
 	// runner id
 	RunnerID string `json:"runner_id,omitempty"`
 

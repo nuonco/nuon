@@ -7,9 +7,9 @@ import type { TDotNode, TDotEdge } from './parse-dot'
 
 const nodes: TDotNode[] = [
   { id: 'cmp-db', label: 'database', type: 'terraform_module', changed: true },
-  { id: 'cmp-api', label: 'api', type: 'docker_build', changed: false },
+  { id: 'cmp-api', label: 'api', type: 'external_image', changed: false },
   { id: 'cmp-cache', label: 'cache', type: 'helm_chart', changed: false },
-  { id: 'cmp-worker', label: 'worker', type: 'docker_build', changed: true },
+  { id: 'cmp-worker', label: 'worker', type: 'external_image', changed: true },
 ]
 
 const edges: TDotEdge[] = [

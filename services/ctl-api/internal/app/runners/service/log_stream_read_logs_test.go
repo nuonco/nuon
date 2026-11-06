@@ -530,3 +530,33 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 		})
 	}
 }
+
+func (s *LogStreamReadLogsTestSuite) TestDeletedLogStreamReturnsNoLogs() {
+	deletedAt := time.Now()
+	logStream := &app.LogStream{
+		ID:            domains.NewLogStreamID(),
+		OrgID:         s.testOrg.ID,
+		OwnerID:       s.testOrg.ID,
+		LogsDeletedAt: &deletedAt,
+	}
+	ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(logStream).Error)
+	s.createOtelLogRecords(logStream.ID, 3, time.Now())
+
+	rr := s.makeRequest("GET", fmt.Sprintf("/v1/log-streams/%s/logs", logStream.ID), nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+	var logs []app.OtelLogRecord
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &logs))
+	assert.Empty(s.T(), logs)
+
+	rr = s.makeRequest("GET", fmt.Sprintf("/v1/log-streams/%s/logs/tail?since=123:abc", logStream.ID), nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+	var tail LogStreamTailLogsResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &tail))
+	assert.Empty(s.T(), tail.Logs)
+	assert.Equal(s.T(), "123:abc", tail.Next)
+
+	rr = s.makeRequest("GET", fmt.Sprintf("/v1/log-streams/%s/spans", logStream.ID), nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+	assert.JSONEq(s.T(), "[]", rr.Body.String())
+}

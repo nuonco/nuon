@@ -171,7 +171,7 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) TestCreateRunnerJobExecutionO
 					Status:            app.RunnerJobStatusInProgress,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      60,
 					AvailableTimeout:  60,

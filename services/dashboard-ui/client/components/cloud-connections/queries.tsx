@@ -5,7 +5,54 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { getCloudConnection, verifyCloudConnection } from '@/lib'
+import {
+  getCloudConnection,
+  getCloudConnections,
+  verifyCloudConnection,
+} from '@/lib'
+import type { TCloudConnectionSummary } from '@/types'
+
+export const useCloudConnections = (
+  orgId: string,
+  options?: { enabled?: boolean }
+) =>
+  useQuery({
+    queryKey: ['cloud-connections', orgId, 'all'],
+    enabled: !!orgId && (options?.enabled ?? true),
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const connections: TCloudConnectionSummary[] = []
+      let offset = 0
+      let hasNext = true
+      while (hasNext) {
+        const page = await getCloudConnections({ orgId, limit: 100, offset })
+        connections.push(...page.data)
+        hasNext = page.pagination.hasNext
+        offset += page.pagination.limit
+      }
+      return connections
+    },
+  })
+
+type TPrincipalMatch = Pick<
+  TCloudConnectionSummary,
+  'platform' | 'principal' | 'azure_tenant_id'
+>
+
+export const samePrincipal = (a: TPrincipalMatch, b: TPrincipalMatch) =>
+  a.platform === b.platform &&
+  (a.platform === 'azure'
+    ? a.principal?.toLowerCase() === b.principal?.toLowerCase() &&
+      a.azure_tenant_id?.toLowerCase() === b.azure_tenant_id?.toLowerCase()
+    : a.principal === b.principal)
+
+export const sharedPrincipalConnections = (
+  connections: TCloudConnectionSummary[],
+  connection: TPrincipalMatch & { id?: string }
+) =>
+  connections.filter(
+    (other) => other.id !== connection.id && samePrincipal(other, connection)
+  )
 
 export const useCloudConnection = (orgId: string, connectionId: string) => {
   const [expiredRequest, setExpiredRequest] = useState<string>()

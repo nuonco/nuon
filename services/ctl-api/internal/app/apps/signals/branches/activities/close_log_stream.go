@@ -27,5 +27,10 @@ func (a *Activities) CloseLogStream(ctx context.Context, req CloseLogStreamReque
 	if err := credentialcleanup.EnqueueForLogStream(ctx, a.db, a.queueClient, req.LogStreamID); err != nil {
 		return fmt.Errorf("enqueue credential cleanup: %w", err)
 	}
+
+	if err := a.acctClient.InvalidateLogStreamTokens(ctx, req.LogStreamID); err != nil {
+		return fmt.Errorf("unable to revoke log stream tokens: %w", err)
+	}
+
 	return nil
 }

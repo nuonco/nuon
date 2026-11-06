@@ -68,6 +68,17 @@ func (c *Client) InvalidateTokens(ctx context.Context, subjectOrEmail string) er
 	})
 }
 
+// InvalidateLogStreamTokens revokes the write token for a closed log stream's
+// service account. The account may already be gone (deleted by cleanup), so a
+// missing account is not an error.
+func (c *Client) InvalidateLogStreamTokens(ctx context.Context, logStreamID string) error {
+	err := c.InvalidateTokens(ctx, ServiceAccountEmail(logStreamID))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	return err
+}
+
 func (c *Client) InvalidateOldTokens(ctx context.Context, subjectOrEmail string) (int64, error) {
 	acct, err := c.FindAccount(ctx, subjectOrEmail)
 	if err != nil {
@@ -87,6 +98,56 @@ func (c *Client) InvalidateOldTokens(ctx context.Context, subjectOrEmail string)
 	}
 
 	return c.revokeTokens(ctx, c.db.Where("account_id = ? AND created_at < ?", acct.ID, latestToken.CreatedAt))
+}
+
+func (c *Client) RevokeTokenCreatedBefore(ctx context.Context, subjectOrEmail, tokenID string, cutoff time.Time) (int64, error) {
+	acct, err := c.FindAccount(ctx, subjectOrEmail)
+	if err != nil {
+		return 0, pkgerrors.Wrap(err, "unable to get account")
+	}
+
+	newestID, err := c.newestTokenID(ctx, acct.ID)
+	if err != nil || newestID == "" || newestID == tokenID {
+		return 0, err
+	}
+
+	return c.revokeTokens(ctx, c.db.
+		Where(app.Token{ID: tokenID, AccountID: acct.ID}).
+		Where("created_at < ?", cutoff))
+}
+
+func (c *Client) RevokeTokensExcept(ctx context.Context, subjectOrEmail string, keepIDs []string, cutoff time.Time) (int64, error) {
+	acct, err := c.FindAccount(ctx, subjectOrEmail)
+	if err != nil {
+		return 0, pkgerrors.Wrap(err, "unable to get account")
+	}
+
+	newestID, err := c.newestTokenID(ctx, acct.ID)
+	if err != nil || newestID == "" {
+		return 0, err
+	}
+
+	keep := append([]string{newestID}, keepIDs...)
+	return c.revokeTokens(ctx, c.db.
+		Where(app.Token{AccountID: acct.ID}).
+		Where("created_at < ?", cutoff).
+		Where("id <> ALL(?)", pq.Array(keep)))
+}
+
+func (c *Client) newestTokenID(ctx context.Context, accountID string) (string, error) {
+	var newest app.Token
+	res := c.db.WithContext(ctx).
+		Where(app.Token{AccountID: accountID}).
+		Order("created_at DESC").
+		First(&newest)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return "", nil
+		}
+		return "", pkgerrors.Wrap(res.Error, "unable to find newest token")
+	}
+
+	return newest.ID, nil
 }
 
 func (c *Client) RevokeToken(ctx context.Context, tokenID string) error {
