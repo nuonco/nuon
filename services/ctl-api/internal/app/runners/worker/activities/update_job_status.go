@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -75,7 +76,7 @@ func (a *Activities) enqueueJobCompleted(ctx context.Context, runnerID, jobID st
 		}
 		return fmt.Errorf("find runner-signals queue: %w", err)
 	}
-	if _, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+	if _, err := a.queueClient.EnqueueSignal(cctx.ClearLogStreamContext(ctx), &queueclient.EnqueueSignalRequest{
 		QueueID:        q.ID,
 		OwnerID:        runnerID,
 		OwnerType:      plugins.TableName(a.db, app.Runner{}),
