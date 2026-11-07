@@ -35,6 +35,7 @@ type UpdateRunbookRequest struct {
 // @Failure		500		{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/runbooks/{runbook_id} [patch]
 func (s *service) UpdateRunbook(ctx *gin.Context) {
+	appID := ctx.Param("app_id")
 	runbookID := ctx.Param("runbook_id")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -44,8 +45,7 @@ func (s *service) UpdateRunbook(ctx *gin.Context) {
 
 	var runbook app.Runbook
 	if res := s.db.WithContext(ctx).
-		Where(app.Runbook{OrgID: org.ID}).
-		Where("id = ?", runbookID).
+		Where(app.Runbook{OrgID: org.ID, AppID: appID, ID: runbookID}).
 		First(&runbook); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get runbook: %w", res.Error))
 		return
