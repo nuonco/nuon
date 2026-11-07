@@ -35,6 +35,10 @@ func (a *Activities) getLogStream(ctx context.Context, logStreamID string) (*app
 		return nil, fmt.Errorf("unable to create log stream token: %w", err)
 	}
 
+	if err := a.db.WithContext(ctx).Model(&installLogStream).Update("open", true).Error; err != nil {
+		return nil, fmt.Errorf("unable to reopen log stream: %w", err)
+	}
+
 	installLogStream.RunnerAPIURL = a.cfg.RunnerAPIURL
 	installLogStream.WriteToken = token.Token
 	return &installLogStream, nil
