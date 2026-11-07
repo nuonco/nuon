@@ -207,7 +207,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, sandboxRun.LogStream.ID)
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, sandboxRun.LogStream.ID)
 	}()
 
 	l.Info("executing plan")
@@ -258,10 +260,6 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 	if err != nil {
 		return err
 	}
-
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
-	}()
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
