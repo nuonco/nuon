@@ -100,7 +100,7 @@ Each workflow trigger is called at the beginning or end of the workflow. In some
 
 #### Role change triggers
 
-The `role-enabled` and `role-disabled` triggers fire when a customer enables or disables an [operation role](/concepts/operation-roles) in their install stack. Use these to run validation, auditing, or setup tasks whenever elevated permissions are granted or revoked.
+The `role-enabled` and `role-disabled` triggers fire when a customer enables or disables an [operation role](/concepts/operation-roles) or [break glass role](/concepts/break-glass) in their install stack. Use these to run validation, auditing, or setup tasks whenever elevated permissions are granted or revoked.
 
 ```toml actions/role_audit.toml
 # action
