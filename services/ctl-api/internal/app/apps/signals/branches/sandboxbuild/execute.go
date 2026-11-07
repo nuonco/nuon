@@ -135,7 +135,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	} else if logStream != nil {
 		logStreamID = logStream.ID
 		defer func() {
-			_ = activities.AwaitCloseLogStream(ctx, activities.CloseLogStreamRequest{
+			closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+			defer cancel()
+			_ = activities.AwaitCloseLogStream(closeCtx, activities.CloseLogStreamRequest{
 				LogStreamID: logStreamID,
 			})
 		}()
