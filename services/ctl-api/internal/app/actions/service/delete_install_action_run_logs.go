@@ -101,8 +101,8 @@ func (s *service) DeleteInstallActionRunLogs(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.acctClient.InvalidateLogStreamTokens(ctx, logStream.ID); err != nil {
-		ctx.Error(fmt.Errorf("unable to revoke log stream tokens: %w", err))
+	if err := s.acctClient.DeleteServiceAccount(ctx, logStream.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to delete log stream service account: %w", err))
 		return
 	}
 

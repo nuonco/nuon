@@ -24,8 +24,8 @@ func (a *Activities) CloseLogStream(ctx context.Context, req CloseLogStreamReque
 		return fmt.Errorf("unable to close log stream: %w", res.Error)
 	}
 
-	if err := a.acctClient.InvalidateLogStreamTokens(ctx, req.LogStreamID); err != nil {
-		return fmt.Errorf("unable to revoke log stream tokens: %w", err)
+	if err := a.acctClient.DeleteServiceAccount(ctx, req.LogStreamID); err != nil {
+		return fmt.Errorf("unable to delete log stream service account: %w", err)
 	}
 
 	return nil
