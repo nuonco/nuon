@@ -368,7 +368,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}
-	// NOTE: not closed so we can re-use this log stream for apply plan
+	defer func() {
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, logStream.ID)
+	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
