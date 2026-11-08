@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"regexp"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"github.com/spf13/afero"
 
@@ -27,6 +29,11 @@ import (
 // regex to match full git commit hash
 // regex to match full git commit hash
 var commitHashRegex = regexp.MustCompile(`\b[0-9a-f]{5,40}\b`)
+
+// fetch-by-SHA refspecs only accept a full 40-character hash.
+var fullCommitHashRegex = regexp.MustCompile(`^[0-9a-f]{40}$`)
+
+const shallowCheckoutBranch = "nuon-checkout"
 
 // IsCommitHash checks if a string matches the pattern of a git commit hash
 // (5-40 hexadecimal characters).
@@ -70,6 +77,141 @@ func (w *workspace) clone(ctx context.Context) (retErr error) {
 	if err != nil {
 		return err
 	}
+
+	// go-git's in-process transport for local repositories rejects shallow fetches.
+	if isLocalRepo(cloneURL) {
+		return w.fullClone(ctx, l, cloneURL, auth, pWriter)
+	}
+
+	l.Info("shallow cloning repository", zap.String("url", cloneURL), zap.String("ref", w.Src.Ref))
+	shallowErr := w.shallowClone(ctx, l, cloneURL, auth, pWriter)
+	if shallowErr == nil {
+		return nil
+	}
+	if !errors.Is(shallowErr, git.ErrExactSHA1NotSupported) {
+		return CloneErr{
+			Url: cloneURL,
+			Ref: w.Src.Ref,
+			Err: shallowErr,
+		}
+	}
+	l.Warn("server does not support fetching by commit hash, falling back to full clone",
+		zap.String("url", cloneURL),
+		zap.String("ref", w.Src.Ref),
+	)
+	if err := w.emptyFS(); err != nil {
+		return errors.Join(shallowErr, err)
+	}
+
+	return w.fullClone(ctx, l, cloneURL, auth, pWriter)
+}
+
+func isLocalRepo(cloneURL string) bool {
+	ep, err := transport.NewEndpoint(cloneURL)
+	return err == nil && ep.Protocol == "file"
+}
+
+type shallowCandidate struct {
+	refSpec  config.RefSpec
+	checkout git.CheckoutOptions
+}
+
+func (w *workspace) shallowCandidates() []shallowCandidate {
+	ref := w.Src.Ref
+	if fullCommitHashRegex.MatchString(ref) {
+		dst := plumbing.NewBranchReferenceName(shallowCheckoutBranch)
+		return []shallowCandidate{{
+			refSpec:  config.RefSpec(fmt.Sprintf("%s:%s", ref, dst)),
+			checkout: git.CheckoutOptions{Hash: plumbing.NewHash(ref), Force: true},
+		}}
+	}
+
+	branch := plumbing.NewBranchReferenceName(ref)
+	tag := plumbing.NewTagReferenceName(ref)
+	return []shallowCandidate{
+		{
+			refSpec:  config.RefSpec(fmt.Sprintf("+%s:%s", branch, branch)),
+			checkout: git.CheckoutOptions{Branch: branch, Force: true},
+		},
+		{
+			refSpec:  config.RefSpec(fmt.Sprintf("+%s:%s", tag, tag)),
+			checkout: git.CheckoutOptions{Branch: tag, Force: true},
+		},
+	}
+}
+
+func (w *workspace) shallowClone(ctx context.Context, l *zap.Logger, cloneURL string, auth transport.AuthMethod, progress io.Writer) (retErr error) {
+	worktree := rootfs.NewBilly(w.fs)
+	defer func() { retErr = errors.Join(retErr, worktree.Close()) }()
+	if err := worktree.MkdirAll(".git", 0o700); err != nil {
+		return err
+	}
+	dotgit, err := worktree.Chroot(".git")
+	if err != nil {
+		return err
+	}
+	storage := filesystem.NewStorage(dotgit, cache.NewObjectLRUDefault())
+	defer func() { retErr = errors.Join(retErr, storage.Close()) }()
+
+	repo, err := git.Init(storage, worktree)
+	if err != nil {
+		return err
+	}
+	remote, err := repo.CreateRemote(&config.RemoteConfig{
+		Name: git.DefaultRemoteName,
+		URLs: []string{cloneURL},
+	})
+	if err != nil {
+		return err
+	}
+	wtree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	var errs []error
+	for _, c := range w.shallowCandidates() {
+		err := remote.FetchContext(ctx, &git.FetchOptions{
+			Auth:     auth,
+			RefSpecs: []config.RefSpec{c.refSpec},
+			Depth:    1,
+			Tags:     git.NoTags,
+			Progress: progress,
+		})
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			errs = append(errs, fmt.Errorf("fetch %s: %w", c.refSpec, err))
+			continue
+		}
+		if err := wtree.Checkout(&c.checkout); err != nil {
+			errs = append(errs, fmt.Errorf("checkout %s: %w", c.refSpec, err))
+			continue
+		}
+		l.Info("shallow clone complete",
+			zap.String("url", cloneURL),
+			zap.String("ref", w.Src.Ref),
+			zap.String("ref_spec", c.refSpec.String()),
+		)
+		return nil
+	}
+
+	return errors.Join(errs...)
+}
+
+func (w *workspace) emptyFS() error {
+	entries, err := afero.ReadDir(w.fs, ".")
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if err := w.fs.RemoveAll(entry.Name()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (w *workspace) fullClone(ctx context.Context, l *zap.Logger, cloneURL string, auth transport.AuthMethod, pWriter io.Writer) (retErr error) {
+	var err error
 	l.Info("cloning repository", zap.String("url", cloneURL))
 	worktree := rootfs.NewBilly(w.fs)
 	defer func() { retErr = errors.Join(retErr, worktree.Close()) }()
