@@ -352,13 +352,6 @@ export const useLogFilters = <T extends TOTELLog>(
   }, [setMultiValue])
 
   const setTool = useCallback((v: string) => setSingleValue(PARAM_TOOL, v), [setSingleValue])
-  const setHelmReleaseName = useCallback((v: string) => setSingleValue(PARAM_HELM_RELEASE, v), [setSingleValue])
-  const setHelmOperation = useCallback((v: string) => setSingleValue(PARAM_HELM_OPERATION, v), [setSingleValue])
-  const setTfWorkspaceID = useCallback((v: string) => setSingleValue(PARAM_TF_WORKSPACE, v), [setSingleValue])
-  const setTfOperation = useCallback((v: string) => setSingleValue(PARAM_TF_OPERATION, v), [setSingleValue])
-  const setK8sKind = useCallback((v: string) => setSingleValue(PARAM_K8S_KIND, v), [setSingleValue])
-  const setK8sNamespace = useCallback((v: string) => setSingleValue(PARAM_K8S_NAMESPACE, v), [setSingleValue])
-  const setK8sName = useCallback((v: string) => setSingleValue(PARAM_K8S_NAME, v), [setSingleValue])
 
   const handleSearchChange = useCallback(
     (query: string) => setSingleValue(PARAM_BODY, query),
@@ -367,10 +360,6 @@ export const useLogFilters = <T extends TOTELLog>(
   const handleSortToggle = useCallback(() => {
     setSingleValue(PARAM_SORT, sortDirection === 'desc' ? 'asc' : 'desc')
   }, [sortDirection, setSingleValue])
-  const handleSortChange = useCallback(
-    (direction: SortDirection) => setSingleValue(PARAM_SORT, direction),
-    [setSingleValue]
-  )
   const handleViewModeChange = useCallback(
     (mode: ViewMode) => {
       try {
@@ -426,13 +415,6 @@ export const useLogFilters = <T extends TOTELLog>(
     })
   }, [updateParams])
 
-  // serverFilters mirrors the URL state in the shape the ctl-api endpoint
-  // expects, so callers can pass it straight to getLogStreamLogs[WithMeta].
-  const serverFilters: TLogStreamFilters = useMemo(
-    () => buildServerFilters(searchParams),
-    [searchParams]
-  )
-
   return {
     selectedSeverities,
     availableSeverities,
@@ -447,19 +429,12 @@ export const useLogFilters = <T extends TOTELLog>(
     tool,
     setTool,
     helmReleaseName,
-    setHelmReleaseName,
     helmOperation,
-    setHelmOperation,
     tfWorkspaceID,
-    setTfWorkspaceID,
     tfOperation,
-    setTfOperation,
     k8sKind,
-    setK8sKind,
     k8sNamespace,
-    setK8sNamespace,
     k8sName,
-    setK8sName,
 
     viewMode,
     handleViewModeChange,
@@ -469,12 +444,9 @@ export const useLogFilters = <T extends TOTELLog>(
     filteredLogs,
     handleSearchChange,
     handleSortToggle,
-    handleSortChange,
 
     isFiltered,
     handleResetAll,
-
-    serverFilters,
 
     filterStats: {
       selectedCount: filteredLogs?.length || 0,

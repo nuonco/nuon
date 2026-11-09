@@ -66,15 +66,6 @@ test('buildServerFilters applies default severities when none are set', () => {
   ])
 })
 
-test('useLogFilters serverFilters matches buildServerFilters for the same URL', () => {
-  const logs = [toolLog('1', 'terraform')]
-  renderHook(logs, '?severity=Error&system_logs=false&tool=helm&q=%20boom%20')
-  expect(latest?.serverFilters).toStrictEqual(
-    buildServerFilters(new URLSearchParams('?severity=Error&system_logs=false&tool=helm&q=%20boom%20'))
-  )
-  cleanup()
-})
-
 test('tool facets survive a server-side tool filter', () => {
   const logs = [toolLog('1', 'helm'), toolLog('2', 'terraform')]
   renderHook(logs, '?tool=helm', 'ls1')
