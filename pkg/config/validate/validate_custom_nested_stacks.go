@@ -7,20 +7,20 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/publicnet/templatefetch"
 )
 
 type cfnOutputsShape struct {
 	Outputs map[string]struct{} `yaml:"Outputs" json:"Outputs"`
 }
 
-var templateOutputsClient = &http.Client{Timeout: 30 * time.Second}
+var templateOutputsClient = templatefetch.NewClient()
 
-func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
+func fetchTemplate(templateURL string) ([]byte, error) {
 	resp, err := templateOutputsClient.Get(templateURL)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,11 @@ func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
 		return nil, fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, templateURL)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
+}
+
+func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
+	body, err := fetchTemplate(templateURL)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +73,9 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 			continue
 		}
 		outputs, err := fetchTemplateOutputs(templateURL)
+		if templatefetch.IsRefused(err) {
+			return fmt.Errorf("%s nested template URL %q cannot be fetched: %w", resourceName, templateURL, err)
+		}
 		if err != nil {
 			continue
 		}
@@ -86,6 +93,9 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 		}
 
 		outputs, err := fetchTemplateOutputs(stack.TemplateURL)
+		if templatefetch.IsRefused(err) {
+			return fmt.Errorf("custom_nested_stacks (%s): template_url %q cannot be fetched: %w", stack.Name, stack.TemplateURL, err)
+		}
 		if err != nil {
 			continue
 		}
