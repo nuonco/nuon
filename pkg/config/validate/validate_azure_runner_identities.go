@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/publicnet/templatefetch"
 )
 
 type armParametersShape struct {
@@ -29,6 +30,9 @@ func ValidateAzureRunnerIdentities(a *config.AppConfig) error {
 	}
 
 	params, err := fetchTemplateParameters(a.Stack.RunnerNestedTemplateURL)
+	if templatefetch.IsRefused(err) {
+		return fmt.Errorf("runner_nested_template_url %q cannot be fetched: %w", a.Stack.RunnerNestedTemplateURL, err)
+	}
 	if err != nil {
 		// Don't fail validation on a transient fetch error; the render-time
 		// check in ctl-api still enforces this.

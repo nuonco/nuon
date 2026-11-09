@@ -1,13 +1,13 @@
 package validate
 
 import (
-	"net/http"
 	"os"
 	"testing"
-	"time"
+
+	"github.com/nuonco/nuon/pkg/publicnet/templatefetch"
 )
 
 func TestMain(m *testing.M) {
-	templateOutputsClient = &http.Client{Timeout: 30 * time.Second}
+	templateOutputsClient = templatefetch.NewLocalClient()
 	os.Exit(m.Run())
 }
