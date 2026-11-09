@@ -12,6 +12,7 @@ import (
 
 func azureRunnerTestServer(t *testing.T, body string) string {
 	t.Helper()
+	useLocalTemplateClient(t)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(body))
