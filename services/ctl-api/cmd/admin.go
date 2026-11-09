@@ -51,29 +51,54 @@ func (c *cli) registerAdmin() {
 		Run: func(*cobra.Command, []string) {
 			c.runAdmin("post-promotion", func(ctx context.Context, deps *adminDeps) (any, error) {
 				if force {
-					return deps.Ops.Promote(ctx, deps.Cfg.Version)
+					return adminOutput(deps.Ops.Promote(ctx, deps.Cfg.Version))
 				}
-				return deps.Ops.PromoteOnce(ctx, deps.Cfg.Version)
+				return adminOutput(deps.Ops.PromoteOnce(ctx, deps.Cfg.Version))
 			})
 		},
 	}
 	postPromotionCmd.Flags().BoolVar(&force, "force", false, "enqueue a new promotion even if this version is already the latest")
 	adminCmd.AddCommand(postPromotionCmd)
 
+	runnersCmd := &cobra.Command{
+		Use:   "runners",
+		Short: "run admin operations on runners",
+	}
+
+	var updateOpts adminops.UpdateRunnersOptions
+	runnersUpdateCmd := &cobra.Command{
+		Use:   "update",
+		Short: "set install runners to the runner image tag in config",
+		Args:  cobra.NoArgs,
+		Run: func(*cobra.Command, []string) {
+			c.runAdmin("runners update", func(ctx context.Context, deps *adminDeps) (any, error) {
+				return adminOutput(deps.Ops.UpdateInstallRunners(ctx, deps.Cfg.RunnerContainerImageTag, updateOpts))
+			})
+		},
+	}
+	runnersUpdateCmd.Flags().BoolVar(&updateOpts.DryRun, "dry-run", false, "report the runners that would be updated without changing them")
+	runnersUpdateCmd.Flags().BoolVar(&updateOpts.RestartSignal, "restart-signal", true, "enqueue a restart signal for each updated runner")
+	runnersCmd.AddCommand(runnersUpdateCmd)
+	adminCmd.AddCommand(runnersCmd)
+
 	rootCmd.AddCommand(adminCmd)
+}
+
+func adminOutput[T any](out *T, err error) (any, error) {
+	if out == nil {
+		return nil, err
+	}
+	return out, err
 }
 
 func (c *cli) runAdmin(command string, op adminOperation) {
 	start := time.Now()
 
-	res := adminResult{Command: command, Success: true}
 	out, err := c.execAdmin(op)
+	res := adminResult{Command: command, Success: err == nil, Result: out}
 	if err != nil {
 		zap.L().Error("admin command failed", zap.String("command", command), zap.Error(err))
-		res.Success = false
 		res.Error = err.Error()
-	} else {
-		res.Result = out
 	}
 
 	code := writeAdminResult(res)
