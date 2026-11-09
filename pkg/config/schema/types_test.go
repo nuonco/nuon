@@ -50,7 +50,7 @@ func TestAllSchemasHaveJSONSchemaExtend(t *testing.T) {
 // TestPermissionVsPermissionsSchemas guards the singular/collection split: the
 // permissions/ directory form is a single AppAWSIAMRole per file ("permission"),
 // while permissions.toml is the PermissionsConfig collection ("permissions").
-func TestInstallSchemaRequiresAppBranch(t *testing.T) {
+func TestInstallSchemaAppBranchIsOptional(t *testing.T) {
 	schema, err := InstallSchema()
 	if err != nil || schema == nil {
 		t.Fatalf("install schema unavailable: %v", err)
@@ -59,10 +59,12 @@ func TestInstallSchemaRequiresAppBranch(t *testing.T) {
 	for _, name := range collectSchemaRequired(schema, map[*jsonschema.Schema]bool{}) {
 		required[name] = true
 	}
-	for _, name := range []string{"name", "app_branch"} {
-		if !required[name] {
-			t.Fatalf("install schema required = %v, want %q", required, name)
-		}
+	if !required["name"] {
+		t.Fatalf("install schema required = %v, want %q", required, "name")
+	}
+	// ctl-api only requires app_branch for orgs with disable-app-sync enabled.
+	if required["app_branch"] {
+		t.Fatalf("install schema required = %v, app_branch must be optional", required)
 	}
 }
 
