@@ -12,15 +12,24 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/publicnet"
 )
 
 type cfnOutputsShape struct {
 	Outputs map[string]struct{} `yaml:"Outputs" json:"Outputs"`
 }
 
-var templateOutputsClient = &http.Client{Timeout: 30 * time.Second}
+const maxTemplateFetchBytes = 10 << 20
 
-func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
+var templateOutputsClient = newTemplateOutputsClient()
+
+func newTemplateOutputsClient() *http.Client {
+	client := publicnet.NewHTTPClient()
+	client.Timeout = 30 * time.Second
+	return client
+}
+
+func fetchTemplate(templateURL string) ([]byte, error) {
 	resp, err := templateOutputsClient.Get(templateURL)
 	if err != nil {
 		return nil, err
@@ -31,7 +40,18 @@ func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
 		return nil, fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, templateURL)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxTemplateFetchBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(body) > maxTemplateFetchBytes {
+		return nil, fmt.Errorf("template at %s exceeds %d bytes", templateURL, maxTemplateFetchBytes)
+	}
+	return body, nil
+}
+
+func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
+	body, err := fetchTemplate(templateURL)
 	if err != nil {
 		return nil, err
 	}

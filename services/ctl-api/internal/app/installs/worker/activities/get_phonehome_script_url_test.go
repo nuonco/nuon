@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 // Precedence lives in the activity so the two stack-generation paths cannot disagree
@@ -17,6 +18,10 @@ import (
 // nuonco/runner's main from shipping itself to the fleet, hence the assertion that the
 // default is a pinned tag.
 func TestGetPhoneHomeScriptRawResolvesURL(t *testing.T) {
+	prev := phoneHomeScriptFetchClient
+	phoneHomeScriptFetchClient = stacks.NewLocalTemplateFetchClient()
+	t.Cleanup(func() { phoneHomeScriptFetchClient = prev })
+
 	newServer := func(t *testing.T, body string) *httptest.Server {
 		t.Helper()
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

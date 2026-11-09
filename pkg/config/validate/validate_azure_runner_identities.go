@@ -3,8 +3,6 @@ package validate
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -58,15 +56,7 @@ func hasAzurePermissionRole(p *config.PermissionsConfig) bool {
 }
 
 func fetchTemplateParameters(templateURL string) (map[string]json.RawMessage, error) {
-	resp, err := templateOutputsClient.Get(templateURL)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, templateURL)
-	}
-	body, err := io.ReadAll(resp.Body)
+	body, err := fetchTemplate(templateURL)
 	if err != nil {
 		return nil, err
 	}
