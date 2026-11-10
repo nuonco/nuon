@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/google/go-github/v50/github"
 
@@ -11,7 +12,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-var ErrSourceTreeTruncated = errors.New("pinned source tree is truncated")
+var (
+	ErrSourceTreeTruncated  = errors.New("pinned source tree is truncated")
+	ErrSourceCommitNotFound = errors.New("pinned commit not found")
+)
 
 func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit string, connection *app.VCSConnection) (*github.Tree, error) {
 	if !sourceidentity.IsCommit(commit) {
@@ -50,7 +54,10 @@ func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit s
 		if err != nil {
 			return nil, err
 		}
-		gitCommit, _, err := client.Git.GetCommit(ctx, owner, repo, commit)
+		gitCommit, resp, err := client.Git.GetCommit(ctx, owner, repo, commit)
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return nil, ErrSourceCommitNotFound
+		}
 		if err != nil {
 			return nil, fmt.Errorf("unable to read pinned commit: %w", err)
 		}
