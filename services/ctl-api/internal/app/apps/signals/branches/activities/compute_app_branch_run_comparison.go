@@ -210,7 +210,11 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 			if shaErr != nil {
 				return nil, fmt.Errorf("unable to load base component build commits: %w", shaErr)
 			}
-			baseSHAs = loaded
+			baseSources, srcErr := a.loadComponentSources(ctx, baseRun.AppConfigID)
+			if srcErr != nil {
+				return nil, fmt.Errorf("unable to load base component sources: %w", srcErr)
+			}
+			baseSHAs = dropRepoChangedSHAs(loaded, componentSources, baseSources)
 		}
 		repo, branchName := branchRepoAndBranch(branch)
 		if headRun.Preview != nil && headRun.Preview.GitRef != "" {
