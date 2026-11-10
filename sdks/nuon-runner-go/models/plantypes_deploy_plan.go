@@ -38,9 +38,6 @@ type PlantypesDeployPlan struct {
 	// component name
 	ComponentName string `json:"component_name,omitempty"`
 
-	// dependency build ids
-	DependencyBuildIds map[string]string `json:"dependency_build_ids,omitempty"`
-
 	// helm
 	Helm *PlantypesHelmDeployPlan `json:"helm,omitempty"`
 

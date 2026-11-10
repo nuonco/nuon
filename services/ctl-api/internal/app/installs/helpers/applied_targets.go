@@ -203,3 +203,37 @@ func (h *Helpers) AppliedInstallSandboxRun(ctx context.Context, sandbox *app.Ins
 	}
 	return &run, nil
 }
+
+func (h *Helpers) AppliedBuildIDs(ctx context.Context, installID string) (map[string]string, error) {
+	var components []app.InstallComponent
+	if err := h.db.WithContext(ctx).Where(app.InstallComponent{InstallID: installID}).Find(&components).Error; err != nil {
+		return nil, fmt.Errorf("unable to get install components: %w", err)
+	}
+	deploys, err := h.AppliedInstallDeploys(ctx, components)
+	if err != nil {
+		return nil, err
+	}
+	ids := map[string]string{"sandbox": ""}
+	for i := range components {
+		if deploy := deploys[components[i].ID]; deploy != nil {
+			ids[components[i].ComponentID] = deploy.ComponentBuildID
+		}
+	}
+
+	var sandbox app.InstallSandbox
+	err = h.db.WithContext(ctx).Where(app.InstallSandbox{InstallID: installID}).First(&sandbox).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ids, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install sandbox: %w", err)
+	}
+	run, err := h.AppliedInstallSandboxRun(ctx, &sandbox)
+	if err != nil {
+		return nil, err
+	}
+	if run != nil {
+		ids["sandbox"] = run.AppSandboxBuildID
+	}
+	return ids, nil
+}

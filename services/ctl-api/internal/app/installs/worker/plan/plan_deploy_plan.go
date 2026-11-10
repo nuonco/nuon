@@ -85,24 +85,10 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 
 	srcTag, srcDigest := DeploySrcRef(deploy, build)
 
-	dependencyBuildIDs := map[string]string{"sandbox": installState.Sandbox.BuildID}
-	for _, component := range installState.Components {
-		componentState, ok := component.(map[string]any)
-		if !ok {
-			continue
-		}
-		componentID, _ := componentState["component_id"].(string)
-		buildID, _ := componentState["build_id"].(string)
-		if componentID != "" {
-			dependencyBuildIDs[componentID] = buildID
-		}
-	}
-
 	plan := &plantypes.DeployPlan{
-		Src:                ociConfig,
-		SrcTag:             srcTag,
-		SrcDigest:          srcDigest,
-		DependencyBuildIDs: dependencyBuildIDs,
+		Src:       ociConfig,
+		SrcTag:    srcTag,
+		SrcDigest: srcDigest,
 
 		AppID:         install.AppID,
 		AppConfigID:   appCfg.ID,

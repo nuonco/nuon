@@ -8006,9 +8006,6 @@ export interface components {
       apply_plan_display?: string;
       component_id?: string;
       component_name?: string;
-      dependency_build_ids?: {
-        [key: string]: string;
-      };
       helm?: components["schemas"]["plantypes.HelmDeployPlan"];
       inputs_digest?: string;
       install_id?: string;

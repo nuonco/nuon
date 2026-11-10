@@ -61,7 +61,11 @@ func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPl
 	case app.RunnerJobOperationTypeCreateApplyPlan, app.RunnerJobOperationTypeCreateTeardownPlan:
 		updates := map[string]any{"planned_inputs_digest": digest}
 		if job.OwnerType == "install_deploys" && job.Operation == app.RunnerJobOperationTypeCreateApplyPlan && req.CompositePlan.DeployPlan != nil {
-			updates["dependency_build_ids"] = req.CompositePlan.DeployPlan.DependencyBuildIDs
+			buildIDs, err := a.helpers.AppliedBuildIDs(ctx, req.CompositePlan.DeployPlan.InstallID)
+			if err != nil {
+				return fmt.Errorf("unable to get dependency builds: %w", err)
+			}
+			updates["dependency_build_ids"] = buildIDs
 		}
 		err = query.Updates(updates).Error
 	case app.RunnerJobOperationTypeApplyPlan:
