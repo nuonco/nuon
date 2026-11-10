@@ -24,6 +24,7 @@ func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []c
 
 	cache := map[string][]string{}
 	missing := map[string]bool{}
+	latestByRepo := map[string]string{}
 	for _, src := range sources {
 		if src.Name == "" || src.Repo == "" || (repoURLsEqual(src.Repo, branchRepo) && src.Branch == branchName) {
 			continue
@@ -32,9 +33,15 @@ func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []c
 			return fmt.Errorf("component %s source %s has no vcs config", src.Name, src.Repo)
 		}
 
-		latest, err := a.latestVCSCommitSHA(ctx, src.VCSConfigID, src.Branch)
-		if err != nil {
-			return fmt.Errorf("component %s: %w", src.Name, err)
+		repoKey := normalizeRepoURL(src.Repo) + "\n" + src.Branch
+		latest, ok := latestByRepo[repoKey]
+		if !ok {
+			var err error
+			latest, err = a.latestVCSCommitSHA(ctx, src.VCSConfigID, src.Branch)
+			if err != nil {
+				return fmt.Errorf("component %s: %w", src.Name, err)
+			}
+			latestByRepo[repoKey] = latest
 		}
 		previous := previousSHAs[src.Name]
 		if previous == "" {
@@ -45,13 +52,14 @@ func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []c
 			continue
 		}
 
-		key := src.VCSConfigID + "\n" + previous + "\n" + latest
+		key := normalizeRepoURL(src.Repo) + "\n" + previous + "\n" + latest
 		if missing[key] {
 			markComponentSourceChanged(out, src.Name)
 			continue
 		}
 		paths, ok := cache[key]
 		if !ok {
+			var err error
 			paths, err = a.changedPathsBetween(ctx, src.VCSConfigID, previous, latest)
 			if errors.Is(err, plumbing.ErrObjectNotFound) {
 				a.l.Warn("component source commit not found; marking source changed",
