@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useLocation } from 'react-router'
-import { getAppBranches, getInstalls } from '@/lib'
+import { getAppBranches, getAppInstalls } from '@/lib'
 import {
   branchQuickNavHref,
   installQuickNavHref,
@@ -113,10 +113,19 @@ const InstallQuickNav = ({
   const [searchTerm, setSearchTerm] = useState('')
   const query = useDebouncedValue(searchTerm)
   const { data, isFetching } = useQuery({
-    queryKey: ['installs', config.orgId, 'breadcrumb-quick-nav', query],
+    queryKey: [
+      'app-installs',
+      config.orgId,
+      config.appId,
+      config.appBranchId,
+      'breadcrumb-quick-nav',
+      query,
+    ],
     queryFn: () =>
-      getInstalls({
+      getAppInstalls({
         orgId: config.orgId,
+        appId: config.appId,
+        app_branch_id: config.appBranchId,
         q: query || undefined,
         limit: LIMIT,
         offset: 0,
@@ -128,8 +137,8 @@ const InstallQuickNav = ({
   const items = useMemo<TBreadcrumbQuickNavItem[]>(
     () =>
       (data?.data ?? []).flatMap((install) => {
-        if (!install.id || !install.name || !install.app_id) return []
-        const targetBasePath = `/${config.orgId}/apps/${install.app_id}/installs/${install.id}`
+        if (!install.id || !install.name) return []
+        const targetBasePath = `/${config.orgId}/apps/${config.appId}/installs/${install.id}`
         return [
           {
             id: install.id,
