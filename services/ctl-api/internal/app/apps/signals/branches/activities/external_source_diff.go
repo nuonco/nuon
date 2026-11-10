@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-git/go-git/v5/plumbing"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -21,6 +23,7 @@ func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []c
 	}
 
 	cache := map[string][]string{}
+	missing := map[string]bool{}
 	for _, src := range sources {
 		if src.Name == "" || src.Repo == "" || (repoURLsEqual(src.Repo, branchRepo) && src.Branch == branchName) {
 			continue
@@ -43,9 +46,23 @@ func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []c
 		}
 
 		key := src.VCSConfigID + "\n" + previous + "\n" + latest
+		if missing[key] {
+			markComponentSourceChanged(out, src.Name)
+			continue
+		}
 		paths, ok := cache[key]
 		if !ok {
 			paths, err = a.changedPathsBetween(ctx, src.VCSConfigID, previous, latest)
+			if errors.Is(err, plumbing.ErrObjectNotFound) {
+				a.l.Warn("component source commit not found; marking source changed",
+					zap.String("component", src.Name),
+					zap.String("previous_sha", previous),
+					zap.String("latest_sha", latest),
+					zap.Error(err))
+				missing[key] = true
+				markComponentSourceChanged(out, src.Name)
+				continue
+			}
 			if err != nil {
 				return fmt.Errorf("component %s: %w", src.Name, err)
 			}
