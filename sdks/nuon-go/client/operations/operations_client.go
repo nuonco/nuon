@@ -342,6 +342,8 @@ type ClientService interface {
 
 	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
 
+	DeleteInstallActionRunLogs(params *DeleteInstallActionRunLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallActionRunLogsOK, error)
+
 	DeleteInstallTelemetryCollector(params *DeleteInstallTelemetryCollectorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallTelemetryCollectorNoContent, error)
 
 	DeleteNotebook(params *DeleteNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookNoContent, error)
@@ -6361,6 +6363,63 @@ func (a *Client) DeleteInstall(params *DeleteInstallParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	DeleteInstallActionRunLogs deletes the logs and trace spans of an action run
+
+	Permanently delete the logs and trace spans of a finished action run, for example after a command printed a secret.
+
+Only org admins can delete logs, and only after the run has ended, including runs that failed, timed out, or were
+cancelled. The run itself and its outputs are kept. The
+log stream is marked with `logs_deleted_at` and `logs_deleted_by_id` from the first deletion. Calling this again
+deletes any records that arrived late and keeps the original marker.
+
+Once the logs are deleted, the log stream's write token is revoked, new writes to the stream are dropped, and reads of
+the stream return no logs or spans. Trace spans are removed in the background after the call returns.
+
+Rotate any secret that was exposed: deleting the logs does not undo the exposure, and copies held in the ingestion
+queue expire on their own retention schedule. If that queue is replayed before then, call this endpoint again.
+*/
+func (a *Client) DeleteInstallActionRunLogs(params *DeleteInstallActionRunLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallActionRunLogsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteInstallActionRunLogsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteInstallActionRunLogs",
+		Method:             "DELETE",
+		PathPattern:        "/v1/installs/{install_id}/actions/runs/{run_id}/logs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteInstallActionRunLogsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteInstallActionRunLogsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteInstallActionRunLogs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
