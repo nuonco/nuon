@@ -126,7 +126,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	resultReq.ResolvedAt = resolvedAt.Format(time.RFC3339Nano)
 	resultReq.NoOp = noOp
 
-	if err := buildinputs.Report(ctx, h.apiClient, job.ID, jobExecution.ID, resultReq, identity); err != nil {
+	if err := buildinputs.Report(ctx, h.apiClient, job.ID, jobExecution.ID, resultReq, identity, nil); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}
 	return nil

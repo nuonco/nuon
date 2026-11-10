@@ -262,8 +262,8 @@ to decide whether a build is needed.
 | --- | --- |
 | A component's TOML configuration, or referenced configuration contents such as Helm values | The next branch run |
 | Files inside a component or sandbox's source directory, in the app repo or another configured Git repo | The next branch run |
-| Any file, when the source directory is a symlink or contains a symlink or Git submodule | Every branch run, because Nuon cannot compare what the link or submodule points to |
-| Files elsewhere in the repository that the build reads without a symlink, such as Helm `file://../` dependencies or kustomize `../` resources | No automatic rebuild; use a forced rebuild |
+| Files elsewhere in the same repository that the previous build read, such as symlink targets, Helm `file://../` dependencies, or kustomize `../` resources | The next branch run |
+| Any file, when the source directory contains a Git submodule | Every branch run, because runners do not check out submodules |
 | Remote dependencies whose declarations inside the source directory did not change | A forced rebuild |
 
 <Tip>
@@ -272,8 +272,10 @@ When a component's source lives in your app repository, set its `branch` to the 
 different `branch`, the component builds from the latest commit on that branch instead.
 </Tip>
 
-Keep build inputs within the selected source directory for automatic change detection. Nuon does not discover or
-watch sibling dependencies. Choosing `directory = "."` tracks the whole repository, but that directory must also be
+A build can read files elsewhere in its repository through symlinks, Helm `file://` dependencies, or kustomize
+references. The runner records each repository path the build reads, and the next run rebuilds when any of them
+changes. Nuon tracks up to 1,000 such paths per build. A build that reads more is rebuilt on every run, and its build
+log says so. Choosing `directory = "."` tracks the whole repository, but that directory must also be
 a valid build root: for example, the Helm chart or Terraform module must live there. Changes in a different source
 repository are checked when a branch run starts; they do not independently trigger an app branch run.
 

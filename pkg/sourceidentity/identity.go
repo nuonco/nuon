@@ -41,6 +41,25 @@ type File struct {
 	Executable bool   `json:"executable,omitempty"`
 }
 
+// Input is a repository path outside Root that the build read (or only
+// statted, when Stat is set), with its Git entry at Commit. Entry is empty
+// when the path is absent; stat inputs keep only the mode unless the entry is
+// a symlink or submodule.
+type Input struct {
+	Path  string `json:"path"`
+	Stat  bool   `json:"stat,omitempty"`
+	Entry string `json:"entry,omitempty"`
+}
+
+type Reads struct {
+	Read []string `json:"read,omitempty"`
+	Stat []string `json:"stat,omitempty"`
+}
+
+const MaxInputs = 1000
+
+const InputsOverLimit = "source_inputs_over_limit"
+
 type Identity struct {
 	Version        int      `json:"version"`
 	Checksum       string   `json:"checksum"`
@@ -55,6 +74,8 @@ type Identity struct {
 	ChartVersion   string   `json:"chart_version,omitempty"`
 	Files          []File   `json:"files,omitempty"`
 	Captured       bool     `json:"captured"`
+	Inputs         []Input  `json:"inputs,omitempty"`
+	InputsRecorded bool     `json:"inputs_recorded,omitempty"`
 }
 
 func Hash(value any) string {
@@ -87,6 +108,7 @@ func (i *Identity) MarkUnknown(reason string) {
 
 func (i *Identity) Seal() {
 	sort.Slice(i.Files, func(a, b int) bool { return i.Files[a].Path < i.Files[b].Path })
+	sort.Slice(i.Inputs, func(a, b int) bool { return i.Inputs[a].Path < i.Inputs[b].Path })
 	files := i.Files
 	if len(files) == 0 {
 		files = nil
@@ -95,12 +117,110 @@ func (i *Identity) Seal() {
 		Version                            int
 		ConfigChecksum, Kind, Root, Digest string
 		Files                              []File
-		ChartVersion                       string `json:",omitempty"`
-	}{i.Version, i.ConfigChecksum, i.Kind, i.Root, i.Digest, files, i.ChartVersion})
+		ChartVersion                       string  `json:",omitempty"`
+		Inputs                             []Input `json:",omitempty"`
+		InputsRecorded                     bool    `json:",omitempty"`
+	}{i.Version, i.ConfigChecksum, i.Kind, i.Root, i.Digest, files, i.ChartVersion, i.Inputs, i.InputsRecorded})
+}
+
+// WithInputs records the entries a build read outside Root.
+func (i *Identity) WithInputs(inputs []Input) (*Identity, error) {
+	out := *i.WithoutInputs()
+	out.Inputs = slices.Clone(inputs)
+	out.InputsRecorded = true
+	out.Seal()
+	return &out, out.Validate()
+}
+
+// OverInputLimit records that the build read more than MaxInputs paths
+// outside Root, so it can never be reused.
+func (i *Identity) OverInputLimit() (*Identity, error) {
+	out := *i.WithoutInputs()
+	out.InputsRecorded = true
+	out.MarkUnknown(InputsOverLimit)
+	out.Seal()
+	return &out, out.Validate()
+}
+
+func (i *Identity) WithoutInputs() *Identity {
+	out := *i
+	out.Files = slices.Clone(i.Files)
+	out.Reasons = slices.Clone(i.Reasons)
+	if i.Inputs == nil && !i.InputsRecorded {
+		return &out
+	}
+	if i.InputsRecorded && i.Coverage == Unknown {
+		out.Coverage, out.Reasons = Complete, nil
+	}
+	out.Inputs, out.InputsRecorded = nil, false
+	out.Seal()
+	return &out
+}
+
+// InputEntry reduces a Git entry to what a stat observes: the mode, plus the
+// object for symlinks and submodules.
+func InputEntry(entry string, stat bool) string {
+	parts := strings.Split(entry, ":")
+	if !stat || len(parts) != 3 || parts[1] == "120000" || parts[1] == "160000" {
+		return entry
+	}
+	return parts[0] + ":" + parts[1]
+}
+
+// ExternalReads keeps the paths outside root, dropping any path covered by a
+// directory or file whose contents were read.
+func ExternalReads(root string, read, stat []string) *Reads {
+	root = CleanRoot(root)
+	outside := func(name string) bool {
+		return root != "" && name != root && !strings.HasPrefix(name, root+"/")
+	}
+	out := &Reads{}
+	kept := make(map[string]bool)
+	covered := func(name string) bool {
+		for dir := name; ; dir = path.Dir(dir) {
+			if kept[dir] {
+				return true
+			}
+			if dir == "." || dir == "/" {
+				return false
+			}
+		}
+	}
+	read = slices.Clone(read)
+	sort.Strings(read)
+	for _, name := range read {
+		if outside(name) && !covered(name) {
+			kept[name] = true
+			out.Read = append(out.Read, name)
+		}
+	}
+	stat = slices.Clone(stat)
+	sort.Strings(stat)
+	for _, name := range slices.Compact(stat) {
+		if outside(name) && !covered(name) {
+			out.Stat = append(out.Stat, name)
+		}
+	}
+	return out
+}
+
+func ValidInputPath(name string) bool {
+	if name == "" || path.IsAbs(name) || path.Clean(name) != name || name == ".." || strings.HasPrefix(name, "../") {
+		return false
+	}
+	for _, part := range strings.Split(name, "/") {
+		if strings.EqualFold(part, ".git") {
+			return false
+		}
+	}
+	return true
 }
 
 func (i *Identity) EligibleChecksum() string {
 	if i == nil || i.Version != Version || i.Coverage != Complete || !i.Captured || i.ConfigChecksum == "" || i.Checksum == "" {
+		return ""
+	}
+	if strings.HasPrefix(i.Digest, "git:") && !i.InputsRecorded {
 		return ""
 	}
 	if i.Validate() != nil {
@@ -115,6 +235,7 @@ func (i *Identity) Validate() error {
 	}
 	copy := *i
 	copy.Files = append([]File(nil), i.Files...)
+	copy.Inputs = slices.Clone(i.Inputs)
 	copy.Seal()
 	if copy.Checksum != i.Checksum {
 		return fmt.Errorf("source identity checksum mismatch")
@@ -146,6 +267,19 @@ func (i *Identity) Validate() error {
 			return fmt.Errorf("invalid Git source mode")
 		}
 	}
+	if len(i.Inputs) != 0 || i.InputsRecorded {
+		if !strings.HasPrefix(i.Digest, "git:") || !i.InputsRecorded || len(i.Inputs) > MaxInputs {
+			return fmt.Errorf("invalid source inputs")
+		}
+		if i.Coverage == Unknown && (len(i.Inputs) != 0 || !slices.Equal(i.Reasons, []string{InputsOverLimit})) {
+			return fmt.Errorf("invalid source inputs")
+		}
+		for n, input := range i.Inputs {
+			if !ValidInputPath(input.Path) || n > 0 && i.Inputs[n-1].Path >= input.Path || !validInputEntry(input) {
+				return fmt.Errorf("invalid source input %q", input.Path)
+			}
+		}
+	}
 	if i.Kind == "image" && i.Captured {
 		if err := digest.Digest(i.Digest).Validate(); err != nil {
 			return fmt.Errorf("invalid image source digest: %w", err)
@@ -162,6 +296,21 @@ func (i *Identity) Validate() error {
 		seen[f.Path] = true
 	}
 	return nil
+}
+
+func validInputEntry(input Input) bool {
+	if input.Entry == "" {
+		return true
+	}
+	parts := strings.Split(input.Entry, ":")
+	if len(parts) < 2 || len(parts) > 3 || parts[0] != "git" || len(parts[1]) != 6 || strings.Trim(parts[1], "01234567") != "" {
+		return false
+	}
+	objectless := input.Stat && parts[1] != "120000" && parts[1] != "160000"
+	if len(parts) == 2 {
+		return objectless
+	}
+	return !objectless && IsCommit(parts[2])
 }
 
 func Equivalent(before, after *Identity) bool {
@@ -182,6 +331,12 @@ func ValidateTransition(expected, actual *Identity, allowCapture bool) error {
 	}
 	if expected == nil {
 		return fmt.Errorf("source metadata was not prepared")
+	}
+	if actual.InputsRecorded {
+		if expected.InputsRecorded {
+			return fmt.Errorf("prepared source cannot record build inputs")
+		}
+		actual = actual.WithoutInputs()
 	}
 	if err := expected.Validate(); err != nil {
 		return err

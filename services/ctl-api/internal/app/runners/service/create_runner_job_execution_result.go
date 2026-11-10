@@ -21,6 +21,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all" // register all errparse parsers
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
@@ -28,6 +29,7 @@ type CreateRunnerJobExecutionResultRequest struct {
 	Success        bool                     `json:"success"`
 	SourceIdentity *sourceidentity.Identity `json:"source_identity,omitempty"`
 	SourceCapture  *sourceidentity.Identity `json:"source_capture,omitempty"`
+	SourceReads    *sourceidentity.Reads    `json:"source_reads,omitempty"`
 
 	ErrorMetadata map[string]*string `json:"error_metadata"`
 	ErrorCode     int                `json:"error_code"`
@@ -321,8 +323,9 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 }
 
 func (s *service) persistBuildResult(ctx context.Context, job *app.RunnerJob, result *app.RunnerJobExecutionResult, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, bool, error) {
+	identity := buildsource.ReportedSource(ctx, s.db, s.vcsHelpers, s.l, job, req.Success, req.SourceIdentity, req.SourceReads)
 	return helpers.PersistBuildResult(ctx, s.db, job, result, &app.ComponentBuild{
-		SourceIdentity: req.SourceIdentity, SourceRef: req.SourceRef, SourceImage: req.SourceImage,
+		SourceIdentity: identity, SourceRef: req.SourceRef, SourceImage: req.SourceImage,
 		ResolvedTag: req.ResolvedTag, SourceDigest: req.SourceDigest, SourceMediaType: req.SourceMediaType,
 		ResolvedAt: req.ResolvedAt, NoOp: req.NoOp,
 	})

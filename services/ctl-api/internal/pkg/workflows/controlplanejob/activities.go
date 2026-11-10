@@ -30,7 +30,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all"
 	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -48,6 +50,7 @@ type Activities struct {
 	statusActivities        *statusactivities.Activities
 	kafka                   *kafka.Producer
 	cloudConnectionsHelpers cloudconnections.ImageAuthorizer
+	vcsHelpers              *vcshelpers.Helpers
 }
 
 type ActivityParams struct {
@@ -63,6 +66,7 @@ type ActivityParams struct {
 	StatusActivities        *statusactivities.Activities
 	Kafka                   *kafka.Producer
 	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	VcsHelpers              *vcshelpers.Helpers
 }
 
 func NewActivities(params ActivityParams) *Activities {
@@ -76,6 +80,7 @@ func NewActivities(params ActivityParams) *Activities {
 		statusActivities:        params.StatusActivities,
 		kafka:                   params.Kafka,
 		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
+		vcsHelpers:              params.VcsHelpers,
 	}
 }
 
@@ -447,8 +452,12 @@ func (a *Activities) CreateJobExecutionResult(ctx context.Context, jobID, execut
 		}
 		return &models.AppRunnerJobExecutionResult{}, nil
 	}
+	var reads *sourceidentity.Reads
+	if req.SourceReads != nil {
+		reads = &sourceidentity.Reads{Read: req.SourceReads.Read, Stat: req.SourceReads.Stat}
+	}
 	source := &app.ComponentBuild{
-		SourceIdentity: identity, SourceRef: req.SourceRef, SourceImage: req.SourceImage,
+		SourceIdentity: buildsource.ReportedSource(ctx, a.db, a.vcsHelpers, a.l, job, req.Success, identity, reads), SourceRef: req.SourceRef, SourceImage: req.SourceImage,
 		ResolvedTag: req.ResolvedTag, SourceDigest: req.SourceDigest, SourceMediaType: req.SourceMediaType,
 		NoOp: req.NoOp,
 	}

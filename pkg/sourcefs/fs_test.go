@@ -361,3 +361,87 @@ func TestGitMetadataNotEnumerable(t *testing.T) {
 		})
 	}
 }
+
+func TestRecordedReads(t *testing.T) {
+	for name, tc := range map[string]struct {
+		op                 func(*sourcefs.FS) error
+		wantRead, wantStat []string
+	}{
+		"a file read through a file link": {
+			op:       func(s *sourcefs.FS) error { _, err := s.ReadFile("app/link.tf"); return err },
+			wantRead: []string{"shared/extra.tf"}, wantStat: []string{"app/link.tf"},
+		},
+		"a listing through a directory link": {
+			op:       func(s *sourcefs.FS) error { _, err := s.ReadDir("app/modules/net"); return err },
+			wantRead: []string{"modules/net"}, wantStat: []string{"app/modules"},
+		},
+		"a failed lookup records the first missing component": {
+			op: func(s *sourcefs.FS) error {
+				_, err := s.Resolve("charts/missing/values.yaml")
+				return ignoreMissing(err)
+			},
+			wantStat: []string{"charts/missing"},
+		},
+		"lstat records the entry, not its parent": {
+			op:       func(s *sourcefs.FS) error { _, err := s.Lstat("shared/extra.tf"); return err },
+			wantStat: []string{"shared/extra.tf"},
+		},
+		"a view records repository paths": {
+			op: func(s *sourcefs.FS) error {
+				sub, err := s.Sub("charts")
+				if err != nil {
+					return err
+				}
+				defer sub.Close()
+				_, err = sub.ReadFile("common/Chart.yaml")
+				return err
+			},
+			wantRead: []string{"charts/common/Chart.yaml"},
+		},
+		"a glob lists its literal base directory": {
+			op:       func(s *sourcefs.FS) error { _, err := s.Glob("modules/*/main.tf"); return err },
+			wantRead: []string{"modules"}, wantStat: []string{"modules/net/main.tf"},
+		},
+		"a literal glob that matches nothing records the missing path": {
+			op:       func(s *sourcefs.FS) error { _, err := s.Glob("shared/none.tf"); return err },
+			wantStat: []string{"shared/none.tf"},
+		},
+		"a walk records its root": {
+			op: func(s *sourcefs.FS) error {
+				return s.Walk("shared", func(string, os.FileInfo, error) error { return nil })
+			},
+			wantRead: []string{"shared"},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			for _, dir := range []string{"app", "shared", "modules/net", "charts/common"} {
+				require.NoError(t, os.MkdirAll(filepath.Join(root, dir), 0755))
+			}
+			for _, file := range []string{"app/main.tf", "shared/extra.tf", "modules/net/main.tf", "charts/common/Chart.yaml"} {
+				require.NoError(t, os.WriteFile(filepath.Join(root, file), []byte(file), 0644))
+			}
+			require.NoError(t, os.Symlink("../shared/extra.tf", filepath.Join(root, "app/link.tf")))
+			require.NoError(t, os.Symlink("../modules", filepath.Join(root, "app/modules")))
+			source, err := sourcefs.New(afero.NewOsFs(), root)
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, source.Close()) })
+
+			require.NoError(t, tc.op(source))
+			require.Empty(t, source.Reads(), "nothing is recorded before Record")
+
+			source.Record()
+			require.NoError(t, tc.op(source))
+			got := source.Reads()
+			require.Equal(t, tc.wantRead, got.Read)
+			require.Equal(t, tc.wantStat, got.Stat)
+		})
+	}
+}
+
+func ignoreMissing(err error) error {
+	if os.IsNotExist(err) {
+		return nil
+	}
+	return err
+}

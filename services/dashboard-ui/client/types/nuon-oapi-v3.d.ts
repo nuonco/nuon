@@ -6228,7 +6228,6 @@ export interface components {
       created_by_id?: string;
       id?: string;
       name?: components["schemas"]["app.PolicyName"];
-      /** @description Permissions are used to track granular permissions for each domain */
       permissions?: {
         [key: string]: string;
       };
@@ -6241,7 +6240,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_job" | "hosted_installer" | "stack" | "telemetry_collector" | "phone_home";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_job" | "hosted_installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -6450,7 +6449,7 @@ export interface components {
       version?: number;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -10762,11 +10761,18 @@ export interface components {
       coverage?: string;
       digest?: string;
       files?: components["schemas"]["sourceidentity.File"][];
+      inputs?: components["schemas"]["sourceidentity.Input"][];
+      inputs_recorded?: boolean;
       kind?: string;
       reasons?: string[];
       repository?: string;
       root?: string;
       version?: number;
+    };
+    "sourceidentity.Input": {
+      entry?: string;
+      path?: string;
+      stat?: boolean;
     };
     "sql.NullBool": {
       bool?: boolean;

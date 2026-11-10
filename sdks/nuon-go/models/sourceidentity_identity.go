@@ -44,6 +44,12 @@ type SourceidentityIdentity struct {
 	// files
 	Files []*SourceidentityFile `json:"files"`
 
+	// inputs
+	Inputs []*SourceidentityInput `json:"inputs"`
+
+	// inputs recorded
+	InputsRecorded bool `json:"inputs_recorded,omitempty"`
+
 	// kind
 	Kind string `json:"kind,omitempty"`
 
@@ -65,6 +71,10 @@ func (m *SourceidentityIdentity) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateFiles(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateInputs(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -104,11 +114,45 @@ func (m *SourceidentityIdentity) validateFiles(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *SourceidentityIdentity) validateInputs(formats strfmt.Registry) error {
+	if swag.IsZero(m.Inputs) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Inputs); i++ {
+		if swag.IsZero(m.Inputs[i]) { // not required
+			continue
+		}
+
+		if m.Inputs[i] != nil {
+			if err := m.Inputs[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("inputs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("inputs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this sourceidentity identity based on the context it is used
 func (m *SourceidentityIdentity) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateFiles(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateInputs(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -136,6 +180,35 @@ func (m *SourceidentityIdentity) contextValidateFiles(ctx context.Context, forma
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("files" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *SourceidentityIdentity) contextValidateInputs(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Inputs); i++ {
+
+		if m.Inputs[i] != nil {
+
+			if swag.IsZero(m.Inputs[i]) { // not required
+				return nil
+			}
+
+			if err := m.Inputs[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("inputs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("inputs" + "." + strconv.Itoa(i))
 				}
 
 				return err

@@ -4,8 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/sourcefs"
 	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -49,13 +53,27 @@ func Claim(ctx context.Context, client ResultClient, jobID, executionID string, 
 	return err
 }
 
-func Report(ctx context.Context, client ResultClient, jobID, executionID string, req *models.ServiceCreateRunnerJobExecutionResultRequest, i *sourceidentity.Identity) error {
+// Report sends the result with the identity it was built from and the paths
+// outside that identity's root which the build read from source.
+func Report(ctx context.Context, client ResultClient, jobID, executionID string, req *models.ServiceCreateRunnerJobExecutionResultRequest, i *sourceidentity.Identity, source *sourcefs.FS) error {
 	if i != nil {
 		metadata, err := apiIdentity(i)
 		if err != nil {
 			return err
 		}
 		req.SourceIdentity = metadata
+		if source != nil && strings.HasPrefix(i.Digest, "git:") {
+			reads := source.Reads()
+			outside := sourceidentity.ExternalReads(i.Root, reads.Read, reads.Stat)
+			if count := len(outside.Read) + len(outside.Stat); count > sourceidentity.MaxInputs {
+				pkgctx.LoggerOrDefault(ctx, zap.NewNop()).Warn(fmt.Sprintf(
+					"This build read %d paths outside its source directory %q. Nuon tracks at most %d, so this build will not be reused and the next run rebuilds it. Move build inputs into the source directory, or set the directory to a common parent.",
+					count, i.Root, sourceidentity.MaxInputs))
+				outside.Read = outside.Read[:min(len(outside.Read), sourceidentity.MaxInputs+1)]
+				outside.Stat = outside.Stat[:min(len(outside.Stat), sourceidentity.MaxInputs+1-len(outside.Read))]
+			}
+			req.SourceReads = &models.SourceidentityReads{Read: outside.Read, Stat: outside.Stat}
+		}
 	}
 	_, err := client.CreateJobExecutionResult(ctx, jobID, executionID, req)
 	return err

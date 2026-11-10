@@ -103,7 +103,6 @@ func TestFetchSourceTree(t *testing.T) {
 		wantFetchErr  error
 		wantScopeErr  error
 		wantSubmodule bool
-		wantSymlink   bool
 		wantNoBlobs   bool
 		serverCaps    *capability.List
 	}{
@@ -140,7 +139,6 @@ func TestFetchSourceTree(t *testing.T) {
 			root:          "",
 			wantScope:     "git:040000:" + object(first, ""),
 			wantSubmodule: true,
-			wantSymlink:   true,
 		},
 		"slash means the repository root": {
 			server:        filtered,
@@ -148,7 +146,6 @@ func TestFetchSourceTree(t *testing.T) {
 			root:          "/",
 			wantScope:     "git:040000:" + object(first, ""),
 			wantSubmodule: true,
-			wantSymlink:   true,
 		},
 		"leading slash is relative to the repository": {
 			server:    filtered,
@@ -163,18 +160,16 @@ func TestFetchSourceTree(t *testing.T) {
 			wantScope: "git:100644:" + object(first, "app/chart/values.yaml"),
 		},
 		"path below a symlink pins the symlink": {
-			server:      filtered,
-			commit:      first,
-			root:        "linked/chart",
-			wantScope:   "git:120000:" + object(first, "linked"),
-			wantSymlink: true,
+			server:    filtered,
+			commit:    first,
+			root:      "linked/chart",
+			wantScope: "git:120000:" + object(first, "linked"),
 		},
 		"symlink inside the directory": {
-			server:      filtered,
-			commit:      shapes,
-			root:        "tools",
-			wantScope:   "git:040000:" + object(shapes, "tools"),
-			wantSymlink: true,
+			server:    filtered,
+			commit:    shapes,
+			root:      "tools",
+			wantScope: "git:040000:" + object(shapes, "tools"),
 		},
 		"repeated subtrees are walked once": {
 			server:    filtered,
@@ -229,9 +224,9 @@ func TestFetchSourceTree(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tc.wantScope, scope)
 
-			shape, err := tree.Shape(context.Background(), tc.root)
+			submodule, err := tree.HasSubmodule(context.Background(), tc.root)
 			require.NoError(t, err)
-			assert.Equal(t, TreeShape{Submodule: tc.wantSubmodule, Symlink: tc.wantSymlink}, shape)
+			assert.Equal(t, tc.wantSubmodule, submodule)
 
 			if tc.wantNoBlobs {
 				blobs, err := tree.s.IterEncodedObjects(plumbing.BlobObject)

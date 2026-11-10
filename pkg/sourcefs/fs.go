@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/spf13/afero"
 
@@ -15,10 +17,23 @@ import (
 var errGitMetadata = errors.New("Git metadata is not authored source")
 
 type FS struct {
-	fs    afero.Fs
-	root  string
-	base  string
-	close func() error
+	fs     afero.Fs
+	root   string
+	base   string
+	close  func() error
+	reads  *reads
+	prefix string
+}
+
+type reads struct {
+	mu    sync.Mutex
+	paths map[string]bool
+}
+
+// Reads lists repository paths whose contents were read or listed, and paths
+// that were only resolved, statted, or found missing.
+type Reads struct {
+	Read, Stat []string
 }
 
 type Link struct {
@@ -92,7 +107,7 @@ func (f *FS) Close() error {
 }
 
 func (f *FS) Sub(name string) (*FS, error) {
-	rel, err := f.Resolve(name)
+	rel, err := f.resolve(name)
 	if err != nil {
 		return nil, err
 	}
@@ -101,13 +116,56 @@ func (f *FS) Sub(name string) (*FS, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &FS{fs: pinned, root: pinned.Root(), base: filepath.Join(f.base, rel), close: pinned.Close}, nil
+		return &FS{fs: pinned, root: pinned.Root(), base: filepath.Join(f.base, rel), close: pinned.Close, reads: f.reads, prefix: filepath.Join(f.prefix, rel)}, nil
 	}
+	var sub *FS
 	if rel == "." {
-		return From(f.fs, f.root)
+		sub, err = From(f.fs, f.root)
+	} else {
+		sub, err = From(afero.NewBasePathFs(f.fs, rel), filepath.Join(f.root, rel))
 	}
-	return From(afero.NewBasePathFs(f.fs, rel), filepath.Join(f.root, rel))
+	if err != nil {
+		return nil, err
+	}
+	sub.reads, sub.prefix = f.reads, filepath.Join(f.prefix, rel)
+	return sub, nil
 }
+
+// Record starts collecting the paths this filesystem and its views touch.
+func (f *FS) Record() {
+	f.reads = &reads{paths: make(map[string]bool)}
+}
+
+func (f *FS) Reads() Reads {
+	var out Reads
+	if f.reads == nil {
+		return out
+	}
+	f.reads.mu.Lock()
+	defer f.reads.mu.Unlock()
+	for name, read := range f.reads.paths {
+		if read {
+			out.Read = append(out.Read, name)
+		} else {
+			out.Stat = append(out.Stat, name)
+		}
+	}
+	sort.Strings(out.Read)
+	sort.Strings(out.Stat)
+	return out
+}
+
+func (f *FS) record(name string, read bool) {
+	if f.reads == nil {
+		return
+	}
+	name = filepath.ToSlash(filepath.Join(f.prefix, name))
+	f.reads.mu.Lock()
+	f.reads.paths[name] = f.reads.paths[name] || read
+	f.reads.mu.Unlock()
+}
+
+func (f *FS) stat(name string) { f.record(name, false) }
 
 func (f *FS) Root() string { return f.root }
 
@@ -140,11 +198,26 @@ func (f *FS) Relative(name string) (string, error) {
 }
 
 func (f *FS) Resolve(name string) (string, error) {
+	resolved, err := f.resolve(name)
+	if err == nil {
+		f.stat(resolved)
+	}
+	return resolved, err
+}
+
+func (f *FS) resolve(name string) (string, error) {
 	rel, err := f.Relative(name)
 	if err != nil {
 		return "", err
 	}
-	return resolve(f.fs, ".", rel, f.root, f.base)
+	return resolveTrace(f.fs, ".", rel, nil, f.visitor(), f.root, f.base)
+}
+
+func (f *FS) visitor() func(string) {
+	if f.reads == nil {
+		return nil
+	}
+	return f.stat
 }
 
 func (f *FS) ResolveWithLinks(name string) (string, []Link, error) {
@@ -156,12 +229,15 @@ func (f *FS) ResolveWithin(root, name string) (string, []Link, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	scope, err := f.Resolve(root)
+	scope, err := f.resolve(root)
 	if err != nil {
 		return "", nil, err
 	}
 	var links []Link
-	resolved, err := resolveTrace(f.fs, scope, rel, &links, f.root, f.base)
+	resolved, err := resolveTrace(f.fs, scope, rel, &links, f.visitor(), f.root, f.base)
+	if err == nil {
+		f.stat(resolved)
+	}
 	return resolved, links, err
 }
 
@@ -187,23 +263,27 @@ func (f *FS) linkPath(name string) (string, error) {
 		return "", err
 	}
 	if rel == "." {
+		f.stat(".")
 		return ".", nil
 	}
-	if _, err := f.Resolve(rel); errors.Is(err, errGitMetadata) {
+	if _, err := f.resolve(rel); errors.Is(err, errGitMetadata) {
 		return "", err
 	}
-	parent, err := f.Resolve(filepath.Dir(rel))
+	parent, err := f.resolve(filepath.Dir(rel))
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(parent, filepath.Base(rel)), nil
+	name = filepath.Join(parent, filepath.Base(rel))
+	f.stat(name)
+	return name, nil
 }
 
 func (f *FS) Open(name string) (afero.File, error) {
-	resolved, err := f.Resolve(name)
+	resolved, err := f.resolve(name)
 	if err != nil {
 		return nil, err
 	}
+	f.record(resolved, true)
 	file, err := f.fs.Open(resolved)
 	if err != nil {
 		return nil, err
@@ -233,7 +313,7 @@ func (d *sourceDirectory) Readdir(n int) ([]os.FileInfo, error) {
 		}
 		entries, err := d.File.Readdir(count)
 		for _, entry := range entries {
-			if _, err := d.source.Resolve(filepath.Join(d.name, entry.Name())); !errors.Is(err, errGitMetadata) {
+			if _, err := d.source.resolve(filepath.Join(d.name, entry.Name())); !errors.Is(err, errGitMetadata) {
 				visible = append(visible, entry)
 			}
 		}
@@ -253,25 +333,27 @@ func (d *sourceDirectory) Readdirnames(n int) ([]string, error) {
 }
 
 func (f *FS) ReadFile(name string) ([]byte, error) {
-	resolved, err := f.Resolve(name)
+	resolved, err := f.resolve(name)
 	if err != nil {
 		return nil, err
 	}
+	f.record(resolved, true)
 	return afero.ReadFile(f.fs, resolved)
 }
 
 func (f *FS) ReadDir(name string) ([]os.FileInfo, error) {
-	resolved, err := f.Resolve(name)
+	resolved, err := f.resolve(name)
 	if err != nil {
 		return nil, err
 	}
+	f.record(resolved, true)
 	entries, err := afero.ReadDir(f.fs, resolved)
 	if err != nil {
 		return nil, err
 	}
 	visible := entries[:0]
 	for _, entry := range entries {
-		if _, err := f.Resolve(filepath.Join(resolved, entry.Name())); !errors.Is(err, errGitMetadata) {
+		if _, err := f.resolve(filepath.Join(resolved, entry.Name())); !errors.Is(err, errGitMetadata) {
 			visible = append(visible, entry)
 		}
 	}
@@ -282,6 +364,10 @@ func (f *FS) Glob(pattern string) ([]string, error) {
 	rel, err := f.Relative(pattern)
 	if err != nil {
 		return nil, err
+	}
+	base := globBase(rel)
+	if resolved, err := f.resolve(base); err == nil {
+		f.record(resolved, base != rel)
 	}
 	matches, err := afero.Glob(f.fs, rel)
 	if err != nil {
@@ -301,9 +387,12 @@ func (f *FS) Walk(name string, fn filepath.WalkFunc) error {
 	if err != nil {
 		return err
 	}
+	if resolved, err := f.resolve(rel); err == nil {
+		f.record(resolved, true)
+	}
 	return afero.Walk(f.fs, rel, func(name string, info os.FileInfo, err error) error {
 		if err == nil {
-			if _, resolveErr := f.Resolve(name); errors.Is(resolveErr, errGitMetadata) {
+			if _, resolveErr := f.resolve(name); errors.Is(resolveErr, errGitMetadata) {
 				if info.IsDir() {
 					return filepath.SkipDir
 				}
@@ -312,6 +401,18 @@ func (f *FS) Walk(name string, fn filepath.WalkFunc) error {
 		}
 		return fn(name, info, err)
 	})
+}
+
+// globBase is the deepest directory of a pattern that has no glob syntax.
+func globBase(pattern string) string {
+	base := "."
+	for _, part := range strings.Split(pattern, string(filepath.Separator)) {
+		if strings.ContainsAny(part, `*?[\`) {
+			break
+		}
+		base = filepath.Join(base, part)
+	}
+	return base
 }
 
 func within(root, name string) bool {
@@ -335,10 +436,12 @@ func readlink(fs afero.Fs, name string) (string, error) {
 }
 
 func resolve(fs afero.Fs, root, name string, absoluteRoots ...string) (string, error) {
-	return resolveTrace(fs, root, name, nil, absoluteRoots...)
+	return resolveTrace(fs, root, name, nil, nil, absoluteRoots...)
 }
 
-func resolveTrace(fs afero.Fs, root, name string, links *[]Link, absoluteRoots ...string) (string, error) {
+// visit receives each symlink followed and the component that ended a failed
+// lookup, so a recorder sees every entry that shaped the result.
+func resolveTrace(fs afero.Fs, root, name string, links *[]Link, visit func(string), absoluteRoots ...string) (string, error) {
 	if !within(root, name) {
 		return "", fmt.Errorf("source path escapes repository: %s", name)
 	}
@@ -367,6 +470,9 @@ func resolveTrace(fs afero.Fs, root, name string, links *[]Link, absoluteRoots .
 		}
 		next := filepath.Join(resolved, part)
 		info, err := lstat(fs, next)
+		if visit != nil && (err != nil || info.Mode()&os.ModeSymlink != 0 || len(pending) > 0 && !info.IsDir()) {
+			visit(next)
+		}
 		if err != nil {
 			return "", err
 		}

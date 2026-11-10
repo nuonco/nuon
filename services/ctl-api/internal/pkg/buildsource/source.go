@@ -18,9 +18,10 @@ Git-backed component and sandbox flow:
 	                                                       |
 	                                                  Build tools
 
-Selection uses cached Git metadata, not checkouts or blob downloads. The configured
-directory is the change-detection boundary; dependencies outside it are not tracked.
-Runner verification hashes the already-required checkout before build tools modify it.
+Selection uses cached Git metadata, not checkouts or blob downloads. The runner
+verifies its checkout against the directory's tree and reports every path outside the
+directory that the build read through sourcefs; the build records each path's Git entry,
+and reuse requires the directory and every recorded entry to be unchanged.
 */
 package buildsource
 
@@ -172,17 +173,12 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 	if err != nil {
 		return nil, err
 	}
-	shape, err := tree.Shape(ctx, i.Root)
+	submodule, err := tree.HasSubmodule(ctx, i.Root)
 	if err != nil {
 		return nil, err
 	}
-	if shape.Submodule {
+	if submodule {
 		i.MarkUnknown("git_submodules_not_materialized")
-	}
-	if shape.Symlink {
-		i.MarkUnknown("git_symlinks_not_tracked")
-	}
-	if shape.Submodule || shape.Symlink {
 		i.Seal()
 		return i, i.Validate()
 	}

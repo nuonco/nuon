@@ -404,3 +404,132 @@ func TestIdentityUnknownReasonProperties(t *testing.T) {
 		require.Empty(t, i.EligibleChecksum())
 	})
 }
+
+func TestExternalReads(t *testing.T) {
+	for name, tc := range map[string]struct {
+		root               string
+		read, stat         []string
+		wantRead, wantStat []string
+	}{
+		"drops the root and paths under it": {
+			root: "app", read: []string{"app/main.tf", "shared/extra.tf"}, stat: []string{"app", "app/link.tf", "modules"},
+			wantRead: []string{"shared/extra.tf"}, wantStat: []string{"modules"},
+		},
+		"a leading slash names the same root": {
+			root: "/app", read: []string{"app/x", "appx/y"},
+			wantRead: []string{"appx/y"},
+		},
+		"a read directory covers descendants but not name-prefixed siblings": {
+			root: "app", read: []string{"lib/y", "lib-b/x", "lib"},
+			wantRead: []string{"lib", "lib-b/x"},
+		},
+		"a read path covers stats at and below it": {
+			root: "app", read: []string{"lib"}, stat: []string{"other", "lib/z", "lib", "other"},
+			wantRead: []string{"lib"}, wantStat: []string{"other"},
+		},
+		"a read of the repository root covers everything": {
+			root: "app", read: []string{"lib", "."}, stat: []string{"x"},
+			wantRead: []string{"."},
+		},
+		"the repository root as the source directory has nothing outside": {
+			root: "/", read: []string{"lib"}, stat: []string{"x"},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			got := sourceidentity.ExternalReads(tc.root, tc.read, tc.stat)
+			require.Equal(t, tc.wantRead, got.Read)
+			require.Equal(t, tc.wantStat, got.Stat)
+		})
+	}
+}
+
+func TestIdentityInputs(t *testing.T) {
+	object := strings.Repeat("b", 40)
+	prepared := sourceidentity.New("helm", "config")
+	prepared.Root, prepared.Repository, prepared.Commit = "app", "acme/repo", strings.Repeat("a", 40)
+	prepared.Digest, prepared.Captured = "git:040000:"+strings.Repeat("c", 40), true
+	prepared.Seal()
+	require.Empty(t, prepared.EligibleChecksum(), "a Git identity is not reusable until the build records its inputs")
+
+	for name, tc := range map[string]struct {
+		identity *sourceidentity.Identity
+		inputs   []sourceidentity.Input
+		wantErr  bool
+	}{
+		"no inputs outside the root": {identity: prepared, inputs: []sourceidentity.Input{}},
+		"read, stat, symlink, and absent entries": {identity: prepared, inputs: []sourceidentity.Input{
+			{Path: "shared/extra.tf", Entry: "git:100644:" + object},
+			{Path: "modules", Stat: true, Entry: "git:040000"},
+			{Path: "app-link", Stat: true, Entry: "git:120000:" + object},
+			{Path: "missing", Stat: true},
+		}},
+		"a stat of a regular entry keeps no object": {identity: prepared, inputs: []sourceidentity.Input{{Path: "x", Stat: true, Entry: "git:100644:" + object}}, wantErr: true},
+		"a stat of a symlink keeps its target":      {identity: prepared, inputs: []sourceidentity.Input{{Path: "x", Stat: true, Entry: "git:120000"}}, wantErr: true},
+		"a read keeps the object":                   {identity: prepared, inputs: []sourceidentity.Input{{Path: "x", Entry: "git:100644"}}, wantErr: true},
+		"duplicate paths":                           {identity: prepared, inputs: []sourceidentity.Input{{Path: "x"}, {Path: "x", Stat: true}}, wantErr: true},
+		"a path outside the repository":             {identity: prepared, inputs: []sourceidentity.Input{{Path: "../x"}}, wantErr: true},
+		"Git metadata":                              {identity: prepared, inputs: []sourceidentity.Input{{Path: "a/.GIT/config"}}, wantErr: true},
+		"an identity that is not a Git tree": {identity: func() *sourceidentity.Identity {
+			i := cloneIdentity(prepared)
+			i.Digest = "sha256:" + sum256("x")
+			i.Seal()
+			return i
+		}(), inputs: []sourceidentity.Input{}, wantErr: true},
+		"more inputs than the limit": {identity: prepared, inputs: manyInputs(sourceidentity.MaxInputs + 1), wantErr: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			recorded, err := tc.identity.WithInputs(tc.inputs)
+			if tc.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.NotEmpty(t, recorded.EligibleChecksum())
+			require.NotEqual(t, prepared.Checksum, recorded.Checksum)
+			require.NoError(t, sourceidentity.ValidateTransition(prepared, recorded, false))
+			require.Equal(t, prepared, recorded.WithoutInputs())
+			require.Error(t, sourceidentity.ValidateTransition(recorded, recorded, false), "inputs are recorded once, after the build")
+
+			other := cloneIdentity(prepared)
+			other.Commit = strings.Repeat("d", 40)
+			other.Seal()
+			moved, err := other.WithInputs(tc.inputs)
+			require.NoError(t, err)
+			require.Error(t, sourceidentity.ValidateTransition(prepared, moved, false), "inputs cannot carry a different source")
+		})
+	}
+}
+
+func manyInputs(n int) []sourceidentity.Input {
+	inputs := make([]sourceidentity.Input, n)
+	for i := range inputs {
+		inputs[i] = sourceidentity.Input{Path: fmt.Sprintf("p%05d", i)}
+	}
+	return inputs
+}
+
+func TestIdentityOverInputLimit(t *testing.T) {
+	prepared := sourceidentity.New("kustomize", "config")
+	prepared.Root, prepared.Repository, prepared.Commit = "app", "acme/repo", strings.Repeat("a", 40)
+	prepared.Digest, prepared.Captured = "git:040000:"+strings.Repeat("c", 40), true
+	prepared.Seal()
+
+	over, err := prepared.OverInputLimit()
+	require.NoError(t, err)
+	require.Equal(t, sourceidentity.Unknown, over.Coverage)
+	require.Equal(t, []string{sourceidentity.InputsOverLimit}, over.Reasons)
+	require.Empty(t, over.EligibleChecksum(), "a build over the input limit is never reused")
+	require.NoError(t, sourceidentity.ValidateTransition(prepared, over, false))
+	require.Equal(t, prepared, over.WithoutInputs())
+
+	forged := cloneIdentity(over)
+	forged.MarkUnknown("another_reason")
+	forged.Seal()
+	require.Error(t, forged.Validate(), "recorded inputs can only make coverage unknown through the input limit")
+
+	submodule := cloneIdentity(prepared)
+	submodule.MarkUnknown("git_submodules_not_materialized")
+	submodule.Seal()
+	over, err = submodule.OverInputLimit()
+	require.Error(t, err, "only complete identities record inputs")
+}

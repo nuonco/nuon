@@ -79,7 +79,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("writing job result")
 	resultReq := registry.ToAPIResult(res)
-	if err := buildinputs.Report(ctx, h.apiClient, job.ID, jobExecution.ID, resultReq, h.state.plan.SourceIdentity); err != nil {
+	if err := buildinputs.Report(ctx, h.apiClient, job.ID, jobExecution.ID, resultReq, h.state.plan.SourceIdentity, h.state.source); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}
 	return nil

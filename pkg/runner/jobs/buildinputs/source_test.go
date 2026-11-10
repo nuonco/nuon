@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -13,9 +14,12 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	"hegel.dev/go/hegel"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/sourcefs"
 	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -145,7 +149,7 @@ func TestClaimAndReportTransportProperties(t *testing.T) {
 			if claim {
 				err = Claim(ctx, client, "job", "execution", i)
 			} else {
-				err = Report(ctx, client, "job", "execution", &models.ServiceCreateRunnerJobExecutionResultRequest{Success: true, ErrorCode: 17}, i)
+				err = Report(ctx, client, "job", "execution", &models.ServiceCreateRunnerJobExecutionResultRequest{Success: true, ErrorCode: 17}, i, nil)
 			}
 			require.ErrorIs(t, err, wantErr)
 			require.Equal(t, 1, calls)
@@ -162,12 +166,12 @@ func TestClaimAndReportTransportProperties(t *testing.T) {
 		}}
 		require.NoError(t, Claim(ctx, client, "job", "execution", nil))
 		require.Zero(t, calls)
-		require.NoError(t, Report(ctx, client, "job", "execution", &models.ServiceCreateRunnerJobExecutionResultRequest{}, nil))
+		require.NoError(t, Report(ctx, client, "job", "execution", &models.ServiceCreateRunnerJobExecutionResultRequest{}, nil, nil))
 		require.Equal(t, 1, calls)
 		invalid := cloneSource(i)
 		invalid.Checksum += "!"
 		require.Error(t, Claim(ctx, client, "job", "execution", invalid))
-		require.Error(t, Report(ctx, client, "job", "execution", &models.ServiceCreateRunnerJobExecutionResultRequest{}, invalid))
+		require.Error(t, Report(ctx, client, "job", "execution", &models.ServiceCreateRunnerJobExecutionResultRequest{}, invalid, nil))
 		require.Equal(t, 1, calls)
 	})
 }
@@ -253,4 +257,56 @@ func TestImageResolutionCompletenessAndRetryProperties(t *testing.T) {
 		require.NoError(t, err)
 		require.Nil(t, missing)
 	})
+}
+
+func TestReportSourceReads(t *testing.T) {
+	for name, tc := range map[string]struct {
+		outside   int
+		wantReads int
+		wantWarn  bool
+	}{
+		"reads within the limit are reported in full": {outside: 3, wantReads: 3},
+		"reads at the limit are reported in full":     {outside: sourceidentity.MaxInputs, wantReads: sourceidentity.MaxInputs},
+		"reads over the limit are capped and warned":  {outside: sourceidentity.MaxInputs + 5, wantReads: sourceidentity.MaxInputs + 1, wantWarn: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			fs := afero.NewMemMapFs()
+			require.NoError(t, afero.WriteFile(fs, "/repo/app/main.tf", nil, 0o644))
+			for n := 0; n < tc.outside; n++ {
+				require.NoError(t, afero.WriteFile(fs, fmt.Sprintf("/repo/shared/%04d.tf", n), nil, 0o644))
+			}
+			source, err := sourcefs.New(fs, "/repo")
+			require.NoError(t, err)
+			source.Record()
+			_, err = source.ReadFile("app/main.tf")
+			require.NoError(t, err)
+			for n := 0; n < tc.outside; n++ {
+				_, err := source.ReadFile(fmt.Sprintf("shared/%04d.tf", n))
+				require.NoError(t, err)
+			}
+
+			i := sourceidentity.New("terraform", "config")
+			i.Root, i.Repository, i.Commit, i.Captured = "app", "acme/repo", strings.Repeat("a", 40), true
+			i.Digest = "git:040000:" + strings.Repeat("b", 40)
+			i.Seal()
+			core, logs := observer.New(zap.WarnLevel)
+			ctx := pkgctx.SetLogger(context.Background(), zap.New(core))
+			var sent *models.SourceidentityReads
+			client := receiptClient{call: func(_ context.Context, _, _ string, req *models.ServiceCreateRunnerJobExecutionResultRequest) error {
+				sent = req.SourceReads
+				return nil
+			}}
+			require.NoError(t, Report(ctx, client, "job", "execution", &models.ServiceCreateRunnerJobExecutionResultRequest{Success: true}, i, source))
+
+			require.NotNil(t, sent)
+			require.Len(t, append(sent.Read, sent.Stat...), tc.wantReads)
+			require.NotContains(t, sent.Read, "app/main.tf")
+			if tc.wantWarn {
+				require.Equal(t, 1, logs.Len())
+				require.Contains(t, logs.All()[0].Message, fmt.Sprintf("read %d paths outside its source directory", tc.outside))
+			} else {
+				require.Zero(t, logs.Len())
+			}
+		})
+	}
 }

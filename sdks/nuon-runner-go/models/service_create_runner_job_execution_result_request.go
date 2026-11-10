@@ -64,6 +64,9 @@ type ServiceCreateRunnerJobExecutionResultRequest struct {
 	// SourceMediaType is the media type of the resolved manifest.
 	SourceMediaType string `json:"source_media_type,omitempty"`
 
+	// source reads
+	SourceReads *SourceidentityReads `json:"source_reads,omitempty"`
+
 	// Source identity for image-type builds.
 	// These fields are populated by the containerimage build handler after it
 	// resolves the user-provided source ref to a manifest descriptor. When the
@@ -87,6 +90,10 @@ func (m *ServiceCreateRunnerJobExecutionResultRequest) Validate(formats strfmt.R
 	}
 
 	if err := m.validateSourceIdentity(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSourceReads(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -142,6 +149,29 @@ func (m *ServiceCreateRunnerJobExecutionResultRequest) validateSourceIdentity(fo
 	return nil
 }
 
+func (m *ServiceCreateRunnerJobExecutionResultRequest) validateSourceReads(formats strfmt.Registry) error {
+	if swag.IsZero(m.SourceReads) { // not required
+		return nil
+	}
+
+	if m.SourceReads != nil {
+		if err := m.SourceReads.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_reads")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_reads")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service create runner job execution result request based on the context it is used
 func (m *ServiceCreateRunnerJobExecutionResultRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -151,6 +181,10 @@ func (m *ServiceCreateRunnerJobExecutionResultRequest) ContextValidate(ctx conte
 	}
 
 	if err := m.contextValidateSourceIdentity(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSourceReads(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -201,6 +235,31 @@ func (m *ServiceCreateRunnerJobExecutionResultRequest) contextValidateSourceIden
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("source_identity")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateRunnerJobExecutionResultRequest) contextValidateSourceReads(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SourceReads != nil {
+
+		if swag.IsZero(m.SourceReads) { // not required
+			return nil
+		}
+
+		if err := m.SourceReads.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_reads")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_reads")
 			}
 
 			return err
