@@ -26,7 +26,6 @@ package buildsource
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -175,22 +174,19 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 		return nil, err
 	}
 	tree, err := vcs.GetSourceTree(ctx, orgID, i.Repository, i.Commit, connection)
-	if errors.Is(err, vcshelpers.ErrSourceTreeTruncated) {
-		i.MarkUnknown("git_tree_metadata_truncated")
-		i.Seal()
-		return i, i.Validate()
-	}
 	if err != nil {
 		return nil, err
 	}
-	for _, entry := range tree.Entries {
-		if entry.GetMode() == "160000" && (i.Root == "" || entry.GetPath() == i.Root || strings.HasPrefix(entry.GetPath(), i.Root+"/")) {
-			i.MarkUnknown("git_submodules_not_materialized")
-			i.Seal()
-			return i, i.Validate()
-		}
+	submodule, err := tree.HasSubmodule(i.Root)
+	if err != nil {
+		return nil, err
 	}
-	i.Digest, err = treeScope(tree, i.Root)
+	if submodule {
+		i.MarkUnknown("git_submodules_not_materialized")
+		i.Seal()
+		return i, i.Validate()
+	}
+	i.Digest, err = tree.Scope(i.Root)
 	if err != nil {
 		return nil, err
 	}

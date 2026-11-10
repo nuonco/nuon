@@ -7,14 +7,10 @@ import (
 	"path"
 	"strings"
 
-	"github.com/google/go-github/v50/github"
-
 	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
-
-var errSourceDirectoryMissing = errors.New("source directory is missing from pinned commit")
 
 func SourcesEqual(ctx context.Context, vcs *vcshelpers.Helpers, connected *app.ConnectedGithubVCSConfig, public *app.PublicGitVCSConfig, before, after *sourceidentity.Identity) (bool, error) {
 	if before == nil || after == nil {
@@ -52,7 +48,7 @@ func SourcesEqual(ctx context.Context, vcs *vcshelpers.Helpers, connected *app.C
 	if err != nil {
 		return false, err
 	}
-	oldHash, err := treeScope(oldTree, after.Root)
+	oldHash, err := oldTree.Scope(after.Root)
 	if err != nil {
 		return false, err
 	}
@@ -77,25 +73,22 @@ func DirectoryChanged(ctx context.Context, vcs *vcshelpers.Helpers, connected *a
 		repository = public.Repo
 	}
 	base, err := vcs.GetSourceTree(ctx, orgID, repository, baseSHA, connection)
-	if errors.Is(err, vcshelpers.ErrSourceCommitNotFound) || errors.Is(err, vcshelpers.ErrSourceTreeTruncated) {
+	if errors.Is(err, vcshelpers.ErrSourceCommitNotFound) {
 		return true, nil
 	}
 	if err != nil {
 		return false, err
 	}
 	head, err := vcs.GetSourceTree(ctx, orgID, repository, headSHA, connection)
-	if errors.Is(err, vcshelpers.ErrSourceTreeTruncated) {
-		return true, nil
-	}
 	if err != nil {
 		return false, err
 	}
-	before, err := treeScope(base, root)
-	if err != nil && !errors.Is(err, errSourceDirectoryMissing) {
+	before, err := base.Scope(root)
+	if err != nil && !errors.Is(err, vcshelpers.ErrSourceDirectoryMissing) {
 		return false, err
 	}
-	after, err := treeScope(head, root)
-	if err != nil && !errors.Is(err, errSourceDirectoryMissing) {
+	after, err := head.Scope(root)
+	if err != nil && !errors.Is(err, vcshelpers.ErrSourceDirectoryMissing) {
 		return false, err
 	}
 	return before != after, nil
@@ -109,29 +102,4 @@ func sourceAccess(connected *app.ConnectedGithubVCSConfig, public *app.PublicGit
 		return public.OrgID, nil, nil
 	}
 	return "", nil, fmt.Errorf("git source has no repository config")
-}
-
-func treeScope(tree *github.Tree, root string) (string, error) {
-	root = path.Clean(root)
-	if root == "." {
-		return "git:040000:" + tree.GetSHA(), nil
-	}
-	if path.IsAbs(root) || root == ".." || strings.HasPrefix(root, "../") {
-		return "", fmt.Errorf("source directory escapes repository")
-	}
-	for _, entry := range tree.Entries {
-		name := entry.GetPath()
-		if entry.GetMode() == "120000" && strings.HasPrefix(root, name+"/") {
-			return "git:120000:" + entry.GetSHA(), nil
-		}
-	}
-	for _, entry := range tree.Entries {
-		if entry.GetPath() == root {
-			if entry.GetType() != "tree" && entry.GetType() != "blob" && entry.GetType() != "commit" {
-				return "", fmt.Errorf("source root is not a Git directory or file")
-			}
-			return "git:" + entry.GetMode() + ":" + entry.GetSHA(), nil
-		}
-	}
-	return "", fmt.Errorf("%w: %s", errSourceDirectoryMissing, root)
 }

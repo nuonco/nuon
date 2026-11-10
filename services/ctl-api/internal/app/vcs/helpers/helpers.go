@@ -35,7 +35,7 @@ type Helpers struct {
 	l             *zap.Logger
 	queueClient   *queueclient.Client
 	emitterClient *emitterclient.Client
-	sourceTrees   *expirable.LRU[string, *github.Tree]
+	sourceTrees   *expirable.LRU[string, *SourceTree]
 	sourceFetches *singleflight.Group
 }
 
@@ -47,7 +47,7 @@ func New(params Params) *Helpers {
 		l:             params.L,
 		queueClient:   params.QueueClient,
 		emitterClient: params.EmitterClient,
-		sourceTrees:   expirable.NewLRU[string, *github.Tree](16, nil, 5*time.Minute),
+		sourceTrees:   expirable.NewLRU[string, *SourceTree](16, nil, 5*time.Minute),
 		sourceFetches: &singleflight.Group{},
 	}
 }
