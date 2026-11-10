@@ -189,7 +189,7 @@ func TestVerifyPreparedGitSelectionAndDriftProperties(t *testing.T) {
 		i, err = sourceidentity.Capture(source, i)
 		require.NoError(t, err)
 		before := cloneSource(i)
-		plan := &plantypes.BuildPlan{SourceIdentity: i, Src: &plantypes.GitSource{Ref: i.Commit, Path: "src/."}}
+		plan := &plantypes.BuildPlan{SourceIdentity: i, Src: &plantypes.GitSource{Ref: i.Commit, Path: "/src/."}}
 		require.NoError(t, Verify(plan, source))
 		for _, ref := range []string{"main", strings.Repeat("b", 40)} {
 			plan.Src.Ref = ref

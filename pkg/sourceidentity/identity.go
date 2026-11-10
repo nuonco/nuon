@@ -14,6 +14,15 @@ import (
 )
 
 const Version = 1
+
+func CleanRoot(root string) string {
+	root = path.Clean(strings.TrimLeft(root, "/"))
+	if root == "." {
+		return ""
+	}
+	return root
+}
+
 const Complete = "complete"
 const Unknown = "unknown"
 

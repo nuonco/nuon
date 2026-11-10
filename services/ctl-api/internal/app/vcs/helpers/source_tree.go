@@ -176,8 +176,8 @@ func fetchSourceTree(ctx context.Context, url string, auth transport.AuthMethod,
 }
 
 func (t *SourceTree) Scope(root string) (string, error) {
-	root = path.Clean(root)
-	if root == "." {
+	root = sourceidentity.CleanRoot(root)
+	if root == "" {
 		return "git:040000:" + t.root.Hash.String(), nil
 	}
 	entry, err := t.entry(root)
@@ -189,7 +189,7 @@ func (t *SourceTree) Scope(root string) (string, error) {
 
 func (t *SourceTree) HasSubmodule(root string) (bool, error) {
 	tree := t.root
-	if root = path.Clean(root); root != "." {
+	if root = sourceidentity.CleanRoot(root); root != "" {
 		entry, err := t.entry(root)
 		if errors.Is(err, ErrSourceDirectoryMissing) {
 			return false, nil

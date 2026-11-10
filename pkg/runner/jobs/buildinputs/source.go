@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/sourcefs"
@@ -25,7 +24,7 @@ func Verify(plan *plantypes.BuildPlan, source *sourcefs.FS) error {
 		return err
 	}
 	if plan.Src != nil {
-		if !sourceidentity.IsCommit(plan.Src.Ref) || plan.Src.Ref != i.Commit || filepath.Clean(plan.Src.Path) != filepath.Clean(i.Root) {
+		if !sourceidentity.IsCommit(plan.Src.Ref) || plan.Src.Ref != i.Commit || sourceidentity.CleanRoot(plan.Src.Path) != sourceidentity.CleanRoot(i.Root) {
 			return fmt.Errorf("build source selection differs from prepared snapshot")
 		}
 		return sourceidentity.Verify(source, i)

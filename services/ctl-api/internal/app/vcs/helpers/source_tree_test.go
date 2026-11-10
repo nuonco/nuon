@@ -111,6 +111,19 @@ func TestFetchSourceTree(t *testing.T) {
 			wantScope:     "git:040000:" + object(first, ""),
 			wantSubmodule: true,
 		},
+		"slash means the repository root": {
+			server:        filtered,
+			commit:        first,
+			root:          "/",
+			wantScope:     "git:040000:" + object(first, ""),
+			wantSubmodule: true,
+		},
+		"leading slash is relative to the repository": {
+			server:    filtered,
+			commit:    inside,
+			root:      "/app/chart",
+			wantScope: "git:040000:" + object(inside, "app/chart"),
+		},
 		"file root": {
 			server:    filtered,
 			commit:    first,

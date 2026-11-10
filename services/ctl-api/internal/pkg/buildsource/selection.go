@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path"
 	"strings"
 
 	"github.com/nuonco/nuon/pkg/sourceidentity"
@@ -16,7 +15,7 @@ func SourcesEqual(ctx context.Context, vcs *vcshelpers.Helpers, connected *app.C
 	if before == nil || after == nil {
 		return false, nil
 	}
-	if before.Kind != after.Kind || normalizeRepo(before.Repository) != normalizeRepo(after.Repository) || path.Clean(before.Root) != path.Clean(after.Root) {
+	if before.Kind != after.Kind || normalizeRepo(before.Repository) != normalizeRepo(after.Repository) || sourceidentity.CleanRoot(before.Root) != sourceidentity.CleanRoot(after.Root) {
 		return false, nil
 	}
 	if before.ConfigChecksum != after.ConfigChecksum {

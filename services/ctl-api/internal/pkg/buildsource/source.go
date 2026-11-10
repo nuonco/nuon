@@ -27,7 +27,6 @@ package buildsource
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"gorm.io/gorm"
@@ -118,12 +117,12 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 	branch := ""
 	if connected != nil {
 		i.Repository = connected.Repo
-		i.Root = connected.Directory
+		i.Root = sourceidentity.CleanRoot(connected.Directory)
 		branch = connected.Branch
 	}
 	if public != nil {
 		i.Repository = public.Repo
-		i.Root = public.Directory
+		i.Root = sourceidentity.CleanRoot(public.Directory)
 		branch = public.Branch
 	}
 	if connected == nil && public == nil {
@@ -165,10 +164,6 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 		return nil, fmt.Errorf("source did not resolve to a full commit SHA")
 	}
 	i.Commit = ref
-	i.Root = filepath.ToSlash(filepath.Clean(i.Root))
-	if i.Root == "." {
-		i.Root = ""
-	}
 	orgID, connection, err := sourceAccess(connected, public)
 	if err != nil {
 		return nil, err
