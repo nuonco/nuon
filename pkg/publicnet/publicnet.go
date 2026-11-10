@@ -30,6 +30,8 @@ var nonPublicPrefixes = []netip.Prefix{
 	netip.MustParsePrefix("2002::/16"),       // 6to4, embeds an IPv4 address
 }
 
+var ErrNonPublic = errors.New("non-public address")
+
 func IsPublicIP(ip net.IP) bool {
 	if ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() ||
 		ip.IsUnspecified() || ip.IsMulticast() {
@@ -58,7 +60,7 @@ func ResolvePublic(ctx context.Context, host string) ([]net.IPAddr, error) {
 		if IsPublicIP(ip) {
 			return []net.IPAddr{{IP: ip}}, nil
 		}
-		return nil, fmt.Errorf("%s is a non-public address", host)
+		return nil, fmt.Errorf("%s is a %w", host, ErrNonPublic)
 	}
 
 	ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
@@ -70,7 +72,7 @@ func ResolvePublic(ctx context.Context, host string) ([]net.IPAddr, error) {
 	}
 	for _, resolved := range ips {
 		if !IsPublicIP(resolved.IP) {
-			return nil, fmt.Errorf("%s resolved to a non-public address", host)
+			return nil, fmt.Errorf("%s resolved to a %w", host, ErrNonPublic)
 		}
 	}
 	return ips, nil
