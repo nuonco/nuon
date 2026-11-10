@@ -196,7 +196,7 @@ func ValidateTransition(expected, actual *Identity, allowCapture bool) error {
 		if actual.Digest == "" {
 			return fmt.Errorf("image digest is required")
 		}
-	} else if actual.Coverage != Unknown {
+	} else if actual.Coverage != Unknown && (actual.Kind != "helm" || expected.Commit != "" || actual.ChartVersion == "") {
 		return fmt.Errorf("unprepared dependency closure cannot become complete")
 	}
 	for _, reason := range expected.Reasons {

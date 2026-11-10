@@ -561,6 +561,8 @@ func TestRepositoryRetryKeepsClaimedChartVersion(t *testing.T) {
 	var resumed sourceidentity.Identity
 	require.NoError(t, json.Unmarshal(data, &resumed))
 	require.Equal(t, "1.0.0", resumed.ChartVersion)
+	require.NotEmpty(t, resumed.EligibleChecksum())
+	require.NoError(t, sourceidentity.ValidateTransition(prepared, &resumed, true))
 	require.True(t, sourceidentity.Matches(first.state.plan.SourceIdentity, &resumed))
 	advanced.Store(true)
 	retried, err := packageChart(&resumed)
