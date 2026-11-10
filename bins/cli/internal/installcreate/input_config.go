@@ -2,6 +2,7 @@ package installcreate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -90,6 +91,14 @@ func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID
 	}
 	hydrateInputGroups(cfg.Input)
 	return cfg.Input, nil
+}
+
+// ResolveCreateTarget asks the server which app config, and any app branch
+// and group, a new install with these labels and appBranchID would start on,
+// then returns that target along with the input config it should validate
+// against.
+func ResolveCreateTarget(ctx context.Context, api nuon.Client, appID string, labels map[string]string, appBranchID string) (*models.ServiceInstallCreateTargetResponse, *models.AppAppInputConfig, error) {
+	return nil, nil, errors.New("not implemented")
 }
 
 // hydrateInputGroups mirrors the nested shape returned by the latest-input

@@ -256,6 +256,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		app.GET("/sandbox-latest-config", s.GetAppSandboxLatestConfig)
 		app.GET("/latest-secrets-config", s.GetLatestAppSecretsConfig)
 		app.GET("/latest-permissions-config", s.GetLatestAppPermissionsConfig)
+		app.GET("/install-create-target", s.GetInstallCreateTarget)
 	}
 
 	return nil

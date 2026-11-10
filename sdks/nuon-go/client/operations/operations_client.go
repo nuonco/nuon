@@ -654,6 +654,8 @@ type ClientService interface {
 
 	GetInstallConfigVersions(params *GetInstallConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigVersionsOK, error)
 
+	GetInstallCreateTarget(params *GetInstallCreateTargetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallCreateTargetOK, error)
+
 	GetInstallDeploy(params *GetInstallDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeployOK, error)
 
 	GetInstallDeployment(params *GetInstallDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentOK, error)
@@ -13683,6 +13685,52 @@ func (a *Client) GetInstallConfigVersions(params *GetInstallConfigVersionsParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallConfigVersions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallCreateTarget gets install create target
+
+Returns the app config, and any app branch and group, that a new install with these labels and app_branch_id would start on. Does not create anything.
+*/
+func (a *Client) GetInstallCreateTarget(params *GetInstallCreateTargetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallCreateTargetOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallCreateTargetParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallCreateTarget",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/install-create-target",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallCreateTargetReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallCreateTargetOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallCreateTarget: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
