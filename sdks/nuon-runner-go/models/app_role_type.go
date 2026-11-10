@@ -65,6 +65,9 @@ const (
 
 	// AppRoleTypePhoneHome captures enum value "phone_home"
 	AppRoleTypePhoneHome AppRoleType = "phone_home"
+
+	// AppRoleTypeLogStream captures enum value "log_stream"
+	AppRoleTypeLogStream AppRoleType = "log_stream"
 )
 
 // for schema
@@ -72,7 +75,7 @@ var appRoleTypeEnum []any
 
 func init() {
 	var res []AppRoleType
-	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","runner_install","runner_job","hosted-installer","stack","telemetry_collector","phone_home"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","runner_install","runner_job","hosted-installer","stack","telemetry_collector","phone_home","log_stream"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
