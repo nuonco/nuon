@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'bun:test'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { RunSourceCard } from './RunSourceCard'
+import { RunCommitSummary, RunSourceCard } from './RunSourceCard'
 
 const originalScrollHeight = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
@@ -38,6 +38,43 @@ afterAll(() => {
 afterEach(cleanup)
 
 const source = { kind: 'manual' as const }
+
+test('labels the branch run time instead of leaving it beside the commit author', () => {
+  render(
+    <RunCommitSummary
+      source={source}
+      title="Manual run"
+      commit={{
+        message: 'feat: add cache',
+        author: 'Casey',
+        createdAt: '2026-11-01T12:00:00Z',
+      }}
+      runAt="2026-11-08T15:00:00Z"
+    />,
+  )
+
+  expect(screen.getByText('Branch run was')).toBeTruthy()
+  expect(screen.getByText(/ago$/)).toBeTruthy()
+  expect(screen.queryByText('Commit was')).toBeNull()
+})
+
+test('shows the git commit time beside the branch run time', () => {
+  render(
+    <RunCommitSummary
+      source={source}
+      title="Manual run"
+      commit={{
+        message: 'feat: add cache',
+        committedAt: '2026-11-01T12:00:00Z',
+      }}
+      runAt="2026-11-08T15:00:00Z"
+    />,
+  )
+
+  expect(screen.getByText('Commit was')).toBeTruthy()
+  expect(screen.getByText('Branch run was')).toBeTruthy()
+  expect(screen.getAllByText(/ago$/)).toHaveLength(2)
+})
 
 test('shows a short commit message without a toggle', () => {
   render(
