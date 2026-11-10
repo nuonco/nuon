@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -55,16 +56,44 @@ func TestFetchSourceTree(t *testing.T) {
 	git(src, "commit", "-qam", "inside app")
 	inside := git(src, "rev-parse", "HEAD")
 
+	object := func(commit, root string) string {
+		return git(src, "rev-parse", commit+":"+root)
+	}
+	gitInput := func(input string, args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = src
+		cmd.Env = append(os.Environ(),
+			"GIT_AUTHOR_NAME=test",
+			"GIT_AUTHOR_EMAIL=test@example.com",
+			"GIT_COMMITTER_NAME=test",
+			"GIT_COMMITTER_EMAIL=test@example.com",
+		)
+		cmd.Stdin = strings.NewReader(input)
+		out, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(out))
+		return strings.TrimSpace(string(out))
+	}
+	bomb := gitInput("100644 blob "+object(inside, "app/README.md")+"\tf\n", "mktree")
+	for range 10 {
+		var entries strings.Builder
+		for i := range 10 {
+			fmt.Fprintf(&entries, "040000 tree %s\td%d\n", bomb, i)
+		}
+		bomb = gitInput(entries.String(), "mktree")
+	}
+	link := gitInput("../other/main.tf", "hash-object", "-w", "--stdin")
+	tools := gitInput("120000 blob "+link+"\tmain.tf\n", "mktree")
+	rootEntries := git(src, "ls-tree", inside) + "\n040000 tree " + bomb + "\tbomb\n040000 tree " + tools + "\ttools\n"
+	shapes := gitInput("shapes", "commit-tree", gitInput(rootEntries, "mktree"), "-p", inside)
+	git(src, "update-ref", "refs/heads/shapes", shapes)
+
 	plain := filepath.Join(dir, "plain.git")
 	filtered := filepath.Join(dir, "filtered.git")
 	git(dir, "clone", "-q", "--bare", src, plain)
 	git(dir, "clone", "-q", "--bare", src, filtered)
 	git(filtered, "config", "uploadpack.allowFilter", "true")
 	git(filtered, "config", "uploadpack.allowAnySHA1InWant", "true")
-
-	object := func(commit, root string) string {
-		return git(src, "rev-parse", commit+":"+root)
-	}
 
 	tests := map[string]struct {
 		server        string
@@ -74,6 +103,7 @@ func TestFetchSourceTree(t *testing.T) {
 		wantFetchErr  error
 		wantScopeErr  error
 		wantSubmodule bool
+		wantSymlink   bool
 		wantNoBlobs   bool
 		serverCaps    *capability.List
 	}{
@@ -110,6 +140,7 @@ func TestFetchSourceTree(t *testing.T) {
 			root:          "",
 			wantScope:     "git:040000:" + object(first, ""),
 			wantSubmodule: true,
+			wantSymlink:   true,
 		},
 		"slash means the repository root": {
 			server:        filtered,
@@ -117,6 +148,7 @@ func TestFetchSourceTree(t *testing.T) {
 			root:          "/",
 			wantScope:     "git:040000:" + object(first, ""),
 			wantSubmodule: true,
+			wantSymlink:   true,
 		},
 		"leading slash is relative to the repository": {
 			server:    filtered,
@@ -131,10 +163,24 @@ func TestFetchSourceTree(t *testing.T) {
 			wantScope: "git:100644:" + object(first, "app/chart/values.yaml"),
 		},
 		"path below a symlink pins the symlink": {
+			server:      filtered,
+			commit:      first,
+			root:        "linked/chart",
+			wantScope:   "git:120000:" + object(first, "linked"),
+			wantSymlink: true,
+		},
+		"symlink inside the directory": {
+			server:      filtered,
+			commit:      shapes,
+			root:        "tools",
+			wantScope:   "git:040000:" + object(shapes, "tools"),
+			wantSymlink: true,
+		},
+		"repeated subtrees are walked once": {
 			server:    filtered,
-			commit:    first,
-			root:      "linked/chart",
-			wantScope: "git:120000:" + object(first, "linked"),
+			commit:    shapes,
+			root:      "bomb",
+			wantScope: "git:040000:" + object(shapes, "bomb"),
 		},
 		"submodule under the directory": {
 			server:        filtered,
@@ -183,9 +229,9 @@ func TestFetchSourceTree(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tc.wantScope, scope)
 
-			submodule, err := tree.HasSubmodule(tc.root)
+			shape, err := tree.Shape(context.Background(), tc.root)
 			require.NoError(t, err)
-			assert.Equal(t, tc.wantSubmodule, submodule)
+			assert.Equal(t, TreeShape{Submodule: tc.wantSubmodule, Symlink: tc.wantSymlink}, shape)
 
 			if tc.wantNoBlobs {
 				blobs, err := tree.s.IterEncodedObjects(plumbing.BlobObject)

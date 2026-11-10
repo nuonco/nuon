@@ -187,40 +187,64 @@ func (t *SourceTree) Scope(root string) (string, error) {
 	return fmt.Sprintf("git:%06o:%s", uint32(entry.Mode), entry.Hash), nil
 }
 
-func (t *SourceTree) HasSubmodule(root string) (bool, error) {
+type TreeShape struct {
+	Submodule bool
+	Symlink   bool
+}
+
+func (t *SourceTree) Shape(ctx context.Context, root string) (TreeShape, error) {
+	var shape TreeShape
 	tree := t.root
 	if root = sourceidentity.CleanRoot(root); root != "" {
 		entry, err := t.entry(root)
 		if errors.Is(err, ErrSourceDirectoryMissing) {
-			return false, nil
+			return shape, nil
 		}
 		if err != nil {
-			return false, err
+			return shape, err
 		}
-		if entry.Mode == filemode.Submodule {
-			return true, nil
-		}
-		if entry.Mode != filemode.Dir {
-			return false, nil
+		switch entry.Mode {
+		case filemode.Submodule:
+			shape.Submodule = true
+			return shape, nil
+		case filemode.Symlink:
+			shape.Symlink = true
+			return shape, nil
+		case filemode.Dir:
+		default:
+			return shape, nil
 		}
 		if tree, err = object.GetTree(t.s, entry.Hash); err != nil {
-			return false, err
+			return shape, err
 		}
 	}
-	walker := object.NewTreeWalker(tree, true, nil)
-	defer walker.Close()
-	for {
-		_, entry, err := walker.Next()
-		if err == io.EOF {
-			return false, nil
+	seen := map[plumbing.Hash]bool{tree.Hash: true}
+	pending := []*object.Tree{tree}
+	for len(pending) > 0 && !(shape.Submodule && shape.Symlink) {
+		if err := ctx.Err(); err != nil {
+			return shape, err
 		}
-		if err != nil {
-			return false, err
-		}
-		if entry.Mode == filemode.Submodule {
-			return true, nil
+		tree, pending = pending[len(pending)-1], pending[:len(pending)-1]
+		for _, entry := range tree.Entries {
+			switch entry.Mode {
+			case filemode.Submodule:
+				shape.Submodule = true
+			case filemode.Symlink:
+				shape.Symlink = true
+			case filemode.Dir:
+				if seen[entry.Hash] {
+					continue
+				}
+				seen[entry.Hash] = true
+				next, err := object.GetTree(t.s, entry.Hash)
+				if err != nil {
+					return shape, err
+				}
+				pending = append(pending, next)
+			}
 		}
 	}
+	return shape, nil
 }
 
 func (t *SourceTree) entry(root string) (*object.TreeEntry, error) {

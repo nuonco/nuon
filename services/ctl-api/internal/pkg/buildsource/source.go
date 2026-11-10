@@ -172,12 +172,17 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 	if err != nil {
 		return nil, err
 	}
-	submodule, err := tree.HasSubmodule(i.Root)
+	shape, err := tree.Shape(ctx, i.Root)
 	if err != nil {
 		return nil, err
 	}
-	if submodule {
+	if shape.Submodule {
 		i.MarkUnknown("git_submodules_not_materialized")
+	}
+	if shape.Symlink {
+		i.MarkUnknown("git_symlinks_not_tracked")
+	}
+	if shape.Submodule || shape.Symlink {
 		i.Seal()
 		return i, i.Validate()
 	}

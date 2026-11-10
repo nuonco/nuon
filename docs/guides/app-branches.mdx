@@ -262,7 +262,8 @@ to decide whether a build is needed.
 | --- | --- |
 | A component's TOML configuration, or referenced configuration contents such as Helm values | The next branch run |
 | Files inside a component or sandbox's source directory, in the app repo or another configured Git repo | The next branch run |
-| Files elsewhere in the repository, including sibling dependencies and symlink targets outside the source directory | No automatic rebuild; use a forced rebuild |
+| Any file, when the source directory is a symlink or contains a symlink or Git submodule | Every branch run, because Nuon cannot compare what the link or submodule points to |
+| Files elsewhere in the repository that the build reads without a symlink, such as Helm `file://../` dependencies or kustomize `../` resources | No automatic rebuild; use a forced rebuild |
 | Remote dependencies whose declarations inside the source directory did not change | A forced rebuild |
 
 <Tip>
