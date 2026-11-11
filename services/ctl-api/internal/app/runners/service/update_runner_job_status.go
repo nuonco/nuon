@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/credentialcleanup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/jobcompleted"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -73,8 +75,13 @@ func (s *service) updateRunnerJob(ctx context.Context, runnerJobID string, req U
 		if err := s.db.WithContext(ctx).Select("id", "runner_id").Where(app.RunnerJob{ID: runnerJobID}).Take(&existing).Error; err != nil {
 			return nil, fmt.Errorf("load job for completion: %w", err)
 		}
+		// The status update above already succeeded; a failure to enqueue the
+		// cleanup signal is logged, not returned, so it doesn't fail this
+		// request for the runner that just reported completion.
+		// CleanupInstallTokens sweeps up any job accounts this leaves behind.
 		if err := s.enqueueJobCompleted(ctx, existing.RunnerID, existing.ID); err != nil {
-			return nil, err
+			s.l.Error("unable to enqueue job-completed cleanup signal",
+				zap.String("job_id", existing.ID), zap.String("runner_id", existing.RunnerID), zap.Error(err))
 		}
 	}
 
@@ -82,15 +89,25 @@ func (s *service) updateRunnerJob(ctx context.Context, runnerJobID string, req U
 }
 
 func (s *service) enqueueJobCompleted(ctx context.Context, runnerID, jobID string) error {
-	if s.queueClient == nil || runnerID == "" {
-		return nil
+	if s.queueClient == nil {
+		return fmt.Errorf("runner queue client is unavailable")
+	}
+	if runnerID == "" {
+		return fmt.Errorf("runner id is required")
 	}
 	q, err := s.queueClient.GetQueueByOwnerAndName(ctx, runnerID, "runners", queuenames.RunnerSignalsQueueName)
 	if err != nil {
 		if generics.IsGormErrRecordNotFound(err) {
-			return nil
+			return fmt.Errorf("runner-signals queue not found for runner %s", runnerID)
 		}
 		return fmt.Errorf("find runner-signals queue: %w", err)
+	}
+	if err := credentialcleanup.EnqueueOnQueue(ctx, s.queueClient, credentialcleanup.Queue{
+		ID:        q.ID,
+		OwnerID:   runnerID,
+		OwnerType: plugins.TableName(s.db, app.Runner{}),
+	}, credentialcleanup.Request{ServiceAccountSubject: jobID}); err != nil {
+		return err
 	}
 	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID:        q.ID,

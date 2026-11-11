@@ -46,6 +46,25 @@ func (c *Client) DeleteInstallServiceAccounts(ctx context.Context, installID str
 			query = query.Or(tx.Where(app.ManagedServiceAccount{OwnerType: plugins.TableName(tx, app.InstallStack{})}).
 				Where("owner_id = ANY(?)", pq.Array(stackIDs)))
 		}
+		var runnerGroupIDs []string
+		if err := tx.Unscoped().Model(&app.RunnerGroup{}).
+			Where(app.RunnerGroup{OwnerID: installID, Type: app.RunnerGroupTypeInstall}).
+			Pluck("id", &runnerGroupIDs).Error; err != nil {
+			return fmt.Errorf("list runner groups for service account cleanup: %w", err)
+		}
+		if len(runnerGroupIDs) != 0 {
+			var jobIDs []string
+			if err := tx.Unscoped().Model(&app.RunnerJob{}).
+				Where("runner_id IN (?)", tx.Unscoped().Model(&app.Runner{}).
+					Select("id").Where("runner_group_id = ANY(?)", pq.Array(runnerGroupIDs))).
+				Pluck("id", &jobIDs).Error; err != nil {
+				return fmt.Errorf("list runner jobs for service account cleanup: %w", err)
+			}
+			if len(jobIDs) != 0 {
+				query = query.Or(tx.Where(app.ManagedServiceAccount{OwnerType: plugins.TableName(tx, app.RunnerJob{})}).
+					Where("owner_id = ANY(?)", pq.Array(jobIDs)))
+			}
+		}
 		if err := deleteManagedServiceAccounts(tx, query); err != nil {
 			return err
 		}
