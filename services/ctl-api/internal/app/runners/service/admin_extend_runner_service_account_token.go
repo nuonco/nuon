@@ -22,6 +22,7 @@ type ExtendRunnerServiceTokenRequest struct {
 // @Description.markdown	extend_runner_service_account_token.md
 // @Param					req	body	ExtendRunnerServiceTokenRequest true	"Input"
 // @Tags					runners/admin
+// @Deprecated				true
 // @Security				AdminEmail
 // @Accept					json
 // @Param					runner_id	path	string	true	"runner ID to fetch"
