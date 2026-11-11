@@ -264,6 +264,7 @@ to decide whether a build is needed.
 | Files inside a component or sandbox's source directory, in the app repo or another configured Git repo | The next branch run |
 | Files elsewhere in the same repository that the previous build read, such as symlink targets, Helm `file://../` dependencies, or kustomize `../` resources | The next branch run |
 | Any file, when the source directory contains a Git submodule | Every branch run, because runners do not check out submodules |
+| Any file, when the repository's directory trees add up to more than 128 MiB | Every branch run |
 | Remote dependencies whose declarations inside the source directory did not change | A forced rebuild |
 
 <Tip>
@@ -278,6 +279,11 @@ changes. Nuon tracks up to 1,000 such paths per build. A build that reads more i
 log says so. Choosing `directory = "."` tracks the whole repository, but that directory must also be
 a valid build root: for example, the Helm chart or Terraform module must live there. Changes in a different source
 repository are checked when a branch run starts; they do not independently trigger an app branch run.
+
+Remote dependencies are resolved when a build runs and then stay with that build. A Helm chart dependency with a
+version range such as `^1.2.0`, or Terraform providers and modules without a committed `.terraform.lock.hcl` or with a
+branch ref, are not re-resolved until a file the build reads changes. To pick up a new upstream version, commit or
+update `Chart.lock` or `.terraform.lock.hcl`, or force a rebuild.
 
 Build reuse requires verified source evidence from a successful build. Older builds without that evidence may need
 one rebuild before they can be reused. Non-Git sources, such as container images and Helm repositories, use their
@@ -334,6 +340,9 @@ flowchart TD
 
 `build-only` stops after build, `plan-only` after plan, and `apply` continues to the preview install. Fleet runs
 (push, tag, label, `nuon branches trigger`) are separate and do not run `[preview]`.
+
+A preview runs build selection even when the pull request does not change the app config, so a change to source
+files alone is still built and planned. Components whose source and configuration match an existing build reuse it.
 
 A preview run starts in one of two ways:
 
