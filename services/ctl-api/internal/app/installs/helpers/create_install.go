@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 
@@ -9,9 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
-	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/metrics"
-	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -111,7 +110,13 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	pin, err := s.resolveCreateInstallPin(ctx, orgID, appID, req)
+	mergedLabels, staticLabels, templatedLabels, err := CreateInstallLabels(&parentApp, req.Labels)
+	if err != nil {
+		return nil, err
+	}
+	req.Labels = mergedLabels
+
+	pin, err := s.resolveCreateInstallPin(ctx, orgID, appID, req, staticLabels)
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +137,19 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	if err := s.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs); err != nil {
+		if pin.BranchID == "" {
+			hasBranches, hErr := s.appHasBranches(ctx, appID)
+			if hErr != nil {
+				return nil, hErr
+			}
+			if hasBranches {
+				var userErr stderr.ErrUser
+				if errors.As(err, &userErr) {
+					userErr.Description += " This install did not match any app branch's install groups, so it uses the app config from the last apps sync. Add labels that a branch selects, or set app_branch."
+					return nil, userErr
+				}
+			}
+		}
 		return nil, err
 	}
 
@@ -170,38 +188,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	if len(parentApp.DefaultLabels) > 0 {
-		combined := make(map[string]string, len(req.Labels)+len(parentApp.DefaultLabels))
-		for k, v := range req.Labels {
-			combined[k] = v
-		}
-		for key, val := range parentApp.DefaultLabels {
-			if cur, ok := combined[key]; ok && cur != val {
-				return nil, stderr.ErrUser{
-					Err:         fmt.Errorf("label %q is a default label defined in the app config and cannot be overridden", key),
-					Description: fmt.Sprintf("label %q is a default label defined in the app config and cannot be overridden", key),
-				}
-			}
-			combined[key] = val
-		}
-		req.Labels = combined
 		install.AppDefaultLabels = parentApp.DefaultLabels
 	}
-
-	if len(req.Labels) > 0 {
-		static, templated := labels.Labels(req.Labels).SplitTemplated()
-		for key, tmpl := range templated {
-			if err := render.ValidateTextTemplate(tmpl); err != nil {
-				return nil, stderr.ErrUser{
-					Err:         fmt.Errorf("label %q template is invalid: %w", key, err),
-					Description: fmt.Sprintf("label %q uses the interpolation syntax but is not a valid template", key),
-				}
-			}
-		}
-		install.Labels = static
-		if len(templated) > 0 {
-			// Rendered once install state exists; the keys stay absent until then.
-			install.LabelTemplates = templated
-		}
+	install.Labels = staticLabels
+	if len(templatedLabels) > 0 {
+		// Rendered once install state exists; the keys stay absent until then.
+		install.LabelTemplates = templatedLabels
 	}
 
 	// When enabled, every install must declare which cloud account it targets, so a

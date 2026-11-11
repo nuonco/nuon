@@ -2,11 +2,12 @@ package helpers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -14,7 +15,33 @@ import (
 // when a request label conflicts with a default), validates any templated
 // labels, and splits the result into its static and templated halves.
 func CreateInstallLabels(parentApp *app.App, reqLabels map[string]string) (merged map[string]string, static, templated labels.Labels, err error) {
+	if len(parentApp.DefaultLabels) > 0 {
+		combined := make(map[string]string, len(reqLabels)+len(parentApp.DefaultLabels))
+		for k, v := range reqLabels {
+			combined[k] = v
+		}
+		for key, val := range parentApp.DefaultLabels {
+			if cur, ok := combined[key]; ok && cur != val {
+				return nil, nil, nil, stderr.ErrUser{
+					Err:         fmt.Errorf("label %q is a default label defined in the app config and cannot be overridden", key),
+					Description: fmt.Sprintf("label %q is a default label defined in the app config and cannot be overridden", key),
+				}
+			}
+			combined[key] = val
+		}
+		reqLabels = combined
+	}
+
 	staticLabels, templatedLabels := labels.Labels(reqLabels).SplitTemplated()
+	for key, tmpl := range templatedLabels {
+		if err := render.ValidateTextTemplate(tmpl); err != nil {
+			return nil, nil, nil, stderr.ErrUser{
+				Err:         fmt.Errorf("label %q template is invalid: %w", key, err),
+				Description: fmt.Sprintf("label %q uses the interpolation syntax but is not a valid template", key),
+			}
+		}
+	}
+
 	return reqLabels, staticLabels, templatedLabels, nil
 }
 
@@ -41,5 +68,47 @@ type CreateInstallTarget struct {
 // and group, a new install with reqLabels and appBranchID would start on,
 // without creating anything.
 func (s *Helpers) ResolveCreateInstallTarget(ctx context.Context, orgID, appID string, reqLabels map[string]string, appBranchID string) (*CreateInstallTarget, error) {
-	return nil, errors.New("not implemented")
+	parentApp := app.App{}
+	if err := s.db.WithContext(ctx).Where(app.App{OrgID: orgID}).First(&parentApp, "id = ?", appID).Error; err != nil {
+		return nil, fmt.Errorf("unable to get app: %w", err)
+	}
+
+	_, staticLabels, _, err := CreateInstallLabels(&parentApp, reqLabels)
+	if err != nil {
+		return nil, err
+	}
+
+	pin, err := s.resolveCreateInstallPin(ctx, orgID, appID, &CreateInstallParams{AppBranchID: appBranchID, Name: "new install"}, staticLabels)
+	if err != nil {
+		return nil, err
+	}
+
+	target := &CreateInstallTarget{AppConfigID: pin.AppConfig.ID}
+	if pin.BranchID == "" {
+		return target, nil
+	}
+
+	var branch app.AppBranch
+	if err := s.db.WithContext(ctx).First(&branch, "id = ?", pin.BranchID).Error; err != nil {
+		return nil, fmt.Errorf("unable to get app branch: %w", err)
+	}
+	target.AppBranchID = branch.ID
+	target.AppBranchName = branch.Name
+
+	groups, err := s.appsHelpers.LatestConfigInstallGroups(ctx, pin.BranchID)
+	if err != nil {
+		return nil, err
+	}
+	candidate := app.Install{Labeled: labels.Labeled{Labels: staticLabels}}
+	group, source, err := appshelpers.ResolveInstallGroupAssignment(groups, &candidate)
+	if err != nil {
+		return nil, err
+	}
+	if group == nil {
+		return nil, appshelpers.NoMatchingInstallGroupError(&candidate)
+	}
+	target.AppBranchGroup = group.Name
+	target.AppBranchGroupAssignmentSource = source
+
+	return target, nil
 }
