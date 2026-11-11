@@ -280,6 +280,9 @@ func (a *Activities) reconcileStackVersionPhoneHomeTokens(
 				}
 				resp.TokensRevoked++
 			}
+			if err := a.acctClient.DeleteServiceAccount(ctx, version.ID); err != nil {
+				return nil, fmt.Errorf("delete phone home service account: %w", err)
+			}
 
 			continue
 		}
