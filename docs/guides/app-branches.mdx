@@ -188,19 +188,23 @@ nuon branches get --branch-id main
 
 ## Label your installs
 
-Pin each install to a branch with `app_branch`, and set the labels install groups select. Prefer install config
-files:
+For a **new** install, its labels decide which app branch it lands on: Nuon checks every app branch's install groups
+against the install's labels, and an install group selecting them puts the install on that install group, on that
+install group's branch. Set `app_branch` only when an install's labels would match more than one branch and you need
+to pick between them; it is otherwise optional. Prefer install config files:
 
 ```toml installs/customer-acme.toml
-name       = "customer-acme"
-app_branch = "main"
+name = "customer-acme"
 
 [labels]
 env = "prod"
 ```
 
-Changing `app_branch` moves the install and applies the branch's latest non-preview run. Omitting it leaves the
-install's current branch unchanged.
+An install with no `app_branch` and labels matching no branch starts on the latest config from `nuon apps sync`,
+the same as before app branches existed. **Existing** installs are different: `app_branch` is the only way to move
+one onto, or between, branches. Changing it moves the install and applies the branch's latest non-preview run.
+Omitting it leaves the install's current branch unchanged — an existing install's labels changing later never moves
+it on their own.
 
 Apply them:
 

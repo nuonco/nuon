@@ -166,7 +166,13 @@ Know these constraints before you design your branch layout:
 
 - All branches of one app must point at the **same repository**. The branch and directory within it may differ.
 - An install can belong to **one app branch** at a time.
-- Two branches of the same app cannot use an **identical label selector**.
+- A **new** install with no `app_branch` is matched to a branch by its labels against every branch's install groups.
+  No match, or an install group with no label selector, means the install starts on the latest config from
+  `nuon apps sync` instead. Labels matching more than one branch require `app_branch` to disambiguate. Changing an
+  **existing** install's labels never moves it between branches; only `app_branch` does that.
+- Two branches of the same app cannot use an **identical label selector** on the same install group, but a selector
+  need not be unique across branches: when more than one branch would match a new install's labels, set `app_branch`
+  to choose one.
 - When `install_groups` is non-empty, **exactly one** install group must set `default = true`.
 - Every qualifying event on the tracked branch can start a run. Scope what a branch watches with `directory` on the
   repo block and, when several apps share a repo, `ignore_changes_regex`.

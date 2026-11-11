@@ -136,8 +136,9 @@ parser rejects `branch.toml` and `branches/` together. A manually managed remote
 taken over.
 
 Afterwards it asks whether to add installs to the branch (default no). On yes, a select list offers all, none, or one
-install at a time, and repeats until none or all are chosen. `nuon installs sync` requires `app_branch` in each install
-config while this flag is on.
+install at a time, and repeats until none or all are chosen. With this flag on, a new install still does not need
+`app_branch` in its config: the server matches it to a branch by labels, the same as with the flag off, and rejects
+only an install whose labels match no branch.
 
 ### Output format (`--output table|json|agent`)
 
