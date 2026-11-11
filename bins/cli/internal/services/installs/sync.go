@@ -121,12 +121,6 @@ func resolveInstallConfigBranches(
 			continue
 		}
 		if installCfg.AppBranch == "" {
-			if requireBranch {
-				return nil, fmt.Errorf(
-					"install config %q must set app_branch when disable-app-sync is enabled; use an app branch name or ID",
-					installCfg.Name,
-				)
-			}
 			continue
 		}
 		needsBranches = true

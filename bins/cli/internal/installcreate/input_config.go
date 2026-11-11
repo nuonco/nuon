@@ -2,7 +2,6 @@ package installcreate
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -41,7 +40,8 @@ func InputConfigForInstall(ctx context.Context, api nuon.Client, install *models
 // latest-input behavior.
 func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID string) (*models.AppAppInputConfig, error) {
 	if appBranchID == "" {
-		return api.GetAppInputLatestConfig(ctx, appID)
+		_, inputCfg, err := ResolveCreateTarget(ctx, api, appID, nil, "")
+		return inputCfg, err
 	}
 
 	branch, err := api.GetAppBranch(ctx, appID, appBranchID)
@@ -98,7 +98,24 @@ func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID
 // then returns that target along with the input config it should validate
 // against.
 func ResolveCreateTarget(ctx context.Context, api nuon.Client, appID string, labels map[string]string, appBranchID string) (*models.ServiceInstallCreateTargetResponse, *models.AppAppInputConfig, error) {
-	return nil, nil, errors.New("not implemented")
+	target, err := api.GetInstallCreateTarget(ctx, appID, labels, appBranchID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error resolving install create target: %w", err)
+	}
+	if target == nil || target.AppConfigID == "" {
+		return nil, nil, fmt.Errorf("install create target for app %s has no app config", appID)
+	}
+
+	recurse := true
+	cfg, err := api.GetAppConfig(ctx, appID, target.AppConfigID, &recurse)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to get app config %s: %w", target.AppConfigID, err)
+	}
+	if cfg == nil || cfg.Input == nil {
+		return nil, nil, fmt.Errorf("app config %s has no input config", target.AppConfigID)
+	}
+	hydrateInputGroups(cfg.Input)
+	return target, cfg.Input, nil
 }
 
 // hydrateInputGroups mirrors the nested shape returned by the latest-input

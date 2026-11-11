@@ -64,6 +64,10 @@ func classifyError(err error) (string, string) {
 		return "user_error", cliUserErr.Msg
 	}
 
+	if userErr, ok := nuon.ToUserError(err); ok {
+		return "user_error", userErr.Description
+	}
+
 	code := ""
 	switch {
 	case nuon.IsNotFound(err):

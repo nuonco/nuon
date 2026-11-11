@@ -98,7 +98,13 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	if branch != nil {
 		s.branchesByInstall[installCfg.Name] = branch
 	}
-	appInputCfg, err := s.inputConfigForNewInstall(ctx, branch)
+
+	var appInputCfg *models.AppAppInputConfig
+	if branch != nil {
+		appInputCfg, err = s.inputConfigForNewInstall(ctx, branch)
+	} else {
+		appInputCfg, err = s.resolveNewInstallInputConfig(ctx, installCfg, dryRun)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -527,6 +533,37 @@ func (s *appInstallSyncer) inputConfigForNewInstall(
 		return nil, fmt.Errorf("latest app config %s for app branch %q has no input configuration", appConfig.ID, branch.Name)
 	}
 	return appConfig.Input, nil
+}
+
+// resolveNewInstallInputConfig asks the server which app config a new install
+// with no explicit app_branch will start on, based on its labels, and
+// records any matched app branch for later syncs. The create request itself
+// is left without an app_branch: the server re-resolves the same match when
+// it creates the install.
+func (s *appInstallSyncer) resolveNewInstallInputConfig(ctx context.Context, installCfg *config.Install, dryRun bool) (*models.AppAppInputConfig, error) {
+	target, inputCfg, err := installcreate.ResolveCreateTarget(ctx, s.api, s.appID, installCfg.Labels, "")
+	if err != nil {
+		return nil, err
+	}
+	if target.AppBranchID == "" {
+		return inputCfg, nil
+	}
+
+	matchedBranch, err := s.api.GetAppBranch(ctx, s.appID, target.AppBranchID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting app branch %q: %w", target.AppBranchName, err)
+	}
+	matchedBranch, err = s.awaitBranchConfig(ctx, matchedBranch, dryRun)
+	if err != nil {
+		return nil, err
+	}
+	if matchedBranch != nil {
+		s.branchesByInstall[installCfg.Name] = matchedBranch
+		if !s.asJSON {
+			ui.PrintLn(fmt.Sprintf("install %s matches app branch %s by labels", installCfg.Name, matchedBranch.Name))
+		}
+	}
+	return inputCfg, nil
 }
 
 func branchID(branch *models.AppAppBranch) string {
