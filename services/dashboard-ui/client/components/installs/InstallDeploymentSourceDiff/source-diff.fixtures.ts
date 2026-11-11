@@ -10,6 +10,7 @@ export const sourceDiff: TInstallDeploymentSourceDiff = {
     repository: 'acme/example',
     commit: '1111111111111111111111111111111111111111',
     root: 'services/api',
+    digest: 'git:040000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     coverage: 'complete',
   },
   after: {
@@ -17,6 +18,7 @@ export const sourceDiff: TInstallDeploymentSourceDiff = {
     repository: 'acme/example',
     commit: '2222222222222222222222222222222222222222',
     root: 'services/api',
+    digest: 'git:040000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
     coverage: 'complete',
   },
   files: [

@@ -34,7 +34,7 @@ func (h *Helpers) GetSourceFile(ctx context.Context, orgID, repository, commit, 
 	}
 	file, _, _, err := client.Repositories.GetContents(ctx, owner, repo, filePath, &github.RepositoryContentGetOptions{Ref: commit})
 	if err != nil {
-		return nil, fmt.Errorf("unable to read pinned source file")
+		return nil, fmt.Errorf("unable to read pinned source file: %w", err)
 	}
 	if file == nil || file.GetType() != "file" {
 		return nil, fmt.Errorf("source is not a regular file")
@@ -47,7 +47,7 @@ func (h *Helpers) GetSourceFile(ctx context.Context, orgID, repository, commit, 
 	}
 	contents, err := file.GetContent()
 	if err != nil {
-		return nil, fmt.Errorf("unable to decode source file")
+		return nil, fmt.Errorf("unable to decode source file: %w", err)
 	}
 	return []byte(contents), nil
 }

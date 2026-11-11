@@ -26,6 +26,8 @@ const SourceDiffContent = ({
     queryKey,
     queryFn: () => getInstallDeploymentSourceDiff(target),
     enabled,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   })
   const file = useQuery({
     queryKey: [...queryKey, selectedPath],
@@ -36,6 +38,8 @@ const SourceDiffContent = ({
       manifest.data?.status === 'available' &&
       !!selectedPath &&
       !!manifest.data.files?.some(({ path }) => path === selectedPath),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   })
 
   return (

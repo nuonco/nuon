@@ -315,9 +315,23 @@ test('distinguishes initial, partial, unavailable, and image-only comparisons wi
   )
   expect(screen.getByText('sha256:old')).toBeTruthy()
   expect(screen.getByText('sha256:new')).toBeTruthy()
+  expect(screen.getAllByText('Image digest')).toHaveLength(2)
+  expect(screen.queryByText('Source digest')).toBeNull()
   expect(screen.getByText('Text comparison unsupported')).toBeTruthy()
   expect(document.querySelector('file-tree-container')).toBeNull()
   expect(codeText()).toBe('')
+})
+
+test('labels Git tree digests as source digests', () => {
+  renderUI(
+    <InstallDeploymentSourceDiff
+      comparison={sourceDiff}
+      onSelectPath={() => {}}
+    />
+  )
+  expect(screen.getAllByText('Source digest')).toHaveLength(2)
+  expect(screen.queryByText('Image digest')).toBeNull()
+  expect(screen.getByText(sourceDiff.after!.digest!)).toBeTruthy()
 })
 
 test('shows executable-bit changes with identical code, and never treats missing modified content as empty', async () => {

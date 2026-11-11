@@ -47,7 +47,10 @@ const SourceBuild = ({
           ['Repository', build.repository],
           ['Root', build.root],
           ['Pinned commit SHA', build.commit],
-          ['Image digest', build.digest],
+          [
+            build.digest?.startsWith('git:') ? 'Source digest' : 'Image digest',
+            build.digest,
+          ],
         ].map(([field, value]) =>
           value ? (
             <LabeledValue key={field} label={field}>

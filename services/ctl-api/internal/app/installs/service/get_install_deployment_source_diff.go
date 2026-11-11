@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"path"
@@ -16,6 +17,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/google/go-github/v50/github"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -23,6 +25,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -90,13 +93,17 @@ type deploymentSourceSnapshot struct {
 // @Success     200 {object} InstallDeploymentSourceDiff
 // @Router      /v1/installs/{install_id}/deployments/{workflow_id}/source-diff [GET]
 func (s *service) GetInstallDeploymentSourceDiff(ctx *gin.Context) {
+	ctx.Header("Cache-Control", "private, no-store")
 	var query struct {
 		Kind string `form:"kind" binding:"required,oneof=component sandbox"`
 		Name string `form:"name" binding:"required"`
 		Path string `form:"path"`
 	}
 	if err := ctx.ShouldBindQuery(&query); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "kind and resource name are required"})
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("invalid source diff query: %w", err),
+			Description: "kind and resource name are required",
+		})
 		return
 	}
 	org, err := cctx.OrgFromContext(ctx)
@@ -160,11 +167,21 @@ func (s *service) GetInstallDeploymentSourceDiff(ctx *gin.Context) {
 		return
 	}
 	before, err := s.deploymentSourceSnapshot(ctx, org.ID, install.AppID, query.Kind, componentID, oldID)
+	if message := missingSourceRecordMessage(err, "previously applied"); message != "" {
+		result.Message = message
+		ctx.JSON(http.StatusOK, result)
+		return
+	}
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 	after, err := s.deploymentSourceSnapshot(ctx, org.ID, install.AppID, query.Kind, componentID, newID)
+	if message := missingSourceRecordMessage(err, "selected"); message != "" {
+		result.Message = message
+		ctx.JSON(http.StatusOK, result)
+		return
+	}
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -176,18 +193,21 @@ func (s *service) GetInstallDeploymentSourceDiff(ctx *gin.Context) {
 	if (before == nil && !added) || (after == nil && !removed) {
 		result.Message = "This deployment did not record both previously applied and selected build identities."
 	} else {
-		changes = s.populateSourceDiff(readCtx, org.ID, &result, before, after)
+		changes = s.populateSourceDiff(readCtx, org.ID, install.ID, &result, before, after)
 	}
 	if query.Path != "" && result.Status == "available" {
 		change, ok := changes[query.Path]
 		if !ok {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "path must identify a changed source file"})
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("path %q is not a changed source file", query.Path),
+				Description: "path must identify a changed source file",
+			})
 			return
 		}
 		selected := &InstallDeploymentSourceFileContent{Path: query.Path}
-		selected.Before, err = s.deploymentSourceFile(readCtx, org.ID, before, change.beforePath, change.before)
+		selected.Before, err = s.deploymentSourceFile(readCtx, org.ID, install.ID, before, change.beforePath, change.before)
 		if err == nil {
-			selected.After, err = s.deploymentSourceFile(readCtx, org.ID, after, change.afterPath, change.after)
+			selected.After, err = s.deploymentSourceFile(readCtx, org.ID, install.ID, after, change.afterPath, change.after)
 		}
 		if err != nil {
 			selected.Before, selected.After = nil, nil
@@ -195,7 +215,6 @@ func (s *service) GetInstallDeploymentSourceDiff(ctx *gin.Context) {
 		}
 		result.SelectedFile = selected
 	}
-	ctx.Header("Cache-Control", "private, no-store")
 	ctx.JSON(http.StatusOK, result)
 }
 
@@ -213,6 +232,9 @@ func (s *service) deploymentSourceSnapshot(ctx context.Context, orgID, appID, ki
 	} else {
 		var component app.Component
 		if err := s.db.WithContext(ctx).Where(app.Component{ID: componentID, OrgID: orgID, AppID: appID}).First(&component).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, errSourceComponentMissing
+			}
 			return nil, err
 		}
 		var build app.ComponentBuild
@@ -222,6 +244,27 @@ func (s *service) deploymentSourceSnapshot(ctx context.Context, orgID, appID, ki
 		snapshot.identity, snapshot.configID = build.SourceIdentity, build.ComponentConfigConnectionID
 	}
 	return snapshot, nil
+}
+
+var errSourceComponentMissing = errors.New("source component not found")
+
+func missingSourceRecordMessage(err error, build string) string {
+	switch {
+	case errors.Is(err, errSourceComponentMissing):
+		return "This component has been deleted. Source changes are unavailable."
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		return fmt.Sprintf("The %s build has been deleted. Source changes are unavailable.", build)
+	}
+	return ""
+}
+
+func sourceReadFailureMessage(err error, fallback string) string {
+	var githubErr *github.ErrorResponse
+	if errors.Is(err, vcshelpers.ErrSourceCommitNotFound) ||
+		(errors.As(err, &githubErr) && githubErr.Response != nil && githubErr.Response.StatusCode == http.StatusNotFound) {
+		return "The pinned commit or file no longer exists in the repository."
+	}
+	return fallback
 }
 
 func sourceBuildMetadata(snapshot *deploymentSourceSnapshot) *InstallDeploymentSourceBuild {
@@ -243,7 +286,7 @@ type deploymentSourceChange struct {
 
 const maxDeploymentSourceChanges = 1000
 
-func (s *service) populateSourceDiff(ctx context.Context, orgID string, result *InstallDeploymentSourceDiff, before, after *deploymentSourceSnapshot) map[string]deploymentSourceChange {
+func (s *service) populateSourceDiff(ctx context.Context, orgID, installID string, result *InstallDeploymentSourceDiff, before, after *deploymentSourceSnapshot) map[string]deploymentSourceChange {
 	var trees [2]*vcshelpers.SourceTree
 	var roots [2]string
 	for index, snapshot := range []*deploymentSourceSnapshot{before, after} {
@@ -272,8 +315,13 @@ func (s *service) populateSourceDiff(ctx context.Context, orgID string, result *
 			trees[index], err = s.appsHelpers.VCSHelpers().GetSourceTree(ctx, orgID, identity.Repository, identity.Commit, connection)
 		}
 		if err != nil {
-			s.l.Warn("unable to read deployment source tree", zap.String("build_id", snapshot.id), zap.Error(err))
-			result.Message = "The pinned source could not be read. Repository access may have changed."
+			s.l.Warn("unable to read deployment source tree",
+				zap.String("org_id", orgID),
+				zap.String("install_id", installID),
+				zap.String("build_id", snapshot.id),
+				zap.String("path", identity.Root),
+				zap.Error(err))
+			result.Message = sourceReadFailureMessage(err, "The pinned source could not be read. Repository access may have changed.")
 			return nil
 		}
 		roots[index] = sourceidentity.CleanRoot(identity.Root)
@@ -417,7 +465,7 @@ func (s *service) deploymentSourceAccess(ctx context.Context, orgID string, snap
 	return nil, nil
 }
 
-func (s *service) deploymentSourceFile(ctx context.Context, orgID string, snapshot *deploymentSourceSnapshot, filePath string, entry *object.TreeEntry) (*string, error) {
+func (s *service) deploymentSourceFile(ctx context.Context, orgID, installID string, snapshot *deploymentSourceSnapshot, filePath string, entry *object.TreeEntry) (*string, error) {
 	if snapshot == nil || entry == nil {
 		return nil, nil
 	}
@@ -431,7 +479,13 @@ func (s *service) deploymentSourceFile(ctx context.Context, orgID string, snapsh
 	identity := snapshot.identity
 	contents, err := s.appsHelpers.VCSHelpers().GetSourceFile(ctx, orgID, identity.Repository, identity.Commit, filePath, connection)
 	if err != nil {
-		return nil, fmt.Errorf("The pinned source file could not be read. Repository access may have changed, or the file is unavailable or exceeds 512 KiB.")
+		s.l.Warn("unable to read deployment source file",
+			zap.String("org_id", orgID),
+			zap.String("install_id", installID),
+			zap.String("build_id", snapshot.id),
+			zap.String("path", filePath),
+			zap.Error(err))
+		return nil, errors.New(sourceReadFailureMessage(err, "The pinned source file could not be read. Repository access may have changed, or the file is unavailable or exceeds 512 KiB."))
 	}
 	if plumbing.ComputeHash(plumbing.BlobObject, contents) != entry.Hash {
 		return nil, fmt.Errorf("The retrieved file does not match the pinned commit.")
