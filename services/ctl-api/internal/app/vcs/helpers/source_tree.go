@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -261,4 +262,95 @@ func (t *SourceTree) entry(root string) (*object.TreeEntry, error) {
 		tree = next
 	}
 	return nil, fmt.Errorf("%w: %s", ErrSourceDirectoryMissing, root)
+}
+
+type SourceChange struct {
+	Path          string
+	Before, After *object.TreeEntry
+}
+
+func DiffSources(ctx context.Context, before *SourceTree, beforeName string, after *SourceTree, afterName string, limit int) ([]SourceChange, bool, error) {
+	var changes []SourceChange
+	truncated := false
+	var diff func(string, *object.TreeEntry, *object.TreeEntry) (bool, error)
+	diff = func(name string, b, a *object.TreeEntry) (bool, error) {
+		if err := ctx.Err(); err != nil {
+			return false, err
+		}
+		if b != nil && a != nil && b.Mode == a.Mode && b.Hash == a.Hash {
+			return true, nil
+		}
+		children := map[string][2]*object.TreeEntry{}
+		for side, entry := range []*object.TreeEntry{b, a} {
+			if entry == nil {
+				continue
+			}
+			if entry.Mode != filemode.Dir {
+				pair := children[""]
+				pair[side] = entry
+				children[""] = pair
+				continue
+			}
+			tree := before
+			if side == 1 {
+				tree = after
+			}
+			t, err := object.GetTree(tree.s, entry.Hash)
+			if err != nil {
+				return false, err
+			}
+			for i := range t.Entries {
+				pair := children[t.Entries[i].Name]
+				pair[side] = &t.Entries[i]
+				children[t.Entries[i].Name] = pair
+			}
+		}
+		names := make([]string, 0, len(children))
+		for child := range children {
+			names = append(names, child)
+		}
+		sort.Strings(names)
+		for _, child := range names {
+			pair := children[child]
+			if child == "" {
+				if len(changes) == limit {
+					truncated = true
+					return false, nil
+				}
+				changes = append(changes, SourceChange{Path: name, Before: pair[0], After: pair[1]})
+				continue
+			}
+			ok, err := diff(path.Join(name, child), pair[0], pair[1])
+			if err != nil || !ok {
+				return ok, err
+			}
+		}
+		return true, nil
+	}
+	b, err := before.Lookup(beforeName)
+	if err != nil {
+		return nil, false, err
+	}
+	a, err := after.Lookup(afterName)
+	if err != nil {
+		return nil, false, err
+	}
+	if _, err := diff("", b, a); err != nil {
+		return nil, false, err
+	}
+	return changes, truncated, nil
+}
+
+func (t *SourceTree) Lookup(name string) (*object.TreeEntry, error) {
+	if t == nil {
+		return nil, nil
+	}
+	if name = sourceidentity.CleanRoot(name); name == "" {
+		return &object.TreeEntry{Mode: filemode.Dir, Hash: t.root.Hash}, nil
+	}
+	entry, err := t.entry(name)
+	if errors.Is(err, ErrSourceDirectoryMissing) {
+		return nil, nil
+	}
+	return entry, err
 }

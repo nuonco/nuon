@@ -3,21 +3,26 @@ package service
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/filemode"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -165,22 +170,24 @@ func (s *service) GetInstallDeploymentSourceDiff(ctx *gin.Context) {
 		return
 	}
 	result.Before, result.After = sourceBuildMetadata(before), sourceBuildMetadata(after)
+	readCtx, cancel := context.WithTimeout(ctx.Request.Context(), 20*time.Second)
+	defer cancel()
+	var changes map[string]deploymentSourceChange
 	if (before == nil && !added) || (after == nil && !removed) {
 		result.Message = "This deployment did not record both previously applied and selected build identities."
 	} else {
-		populateSourceDiff(&result, before, after)
+		changes = s.populateSourceDiff(readCtx, org.ID, &result, before, after)
 	}
 	if query.Path != "" && result.Status == "available" {
-		if !slices.ContainsFunc(result.Files, func(file InstallDeploymentSourceFile) bool { return file.Path == query.Path }) {
+		change, ok := changes[query.Path]
+		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "path must identify a changed source file"})
 			return
 		}
 		selected := &InstallDeploymentSourceFileContent{Path: query.Path}
-		readCtx, cancel := context.WithTimeout(ctx.Request.Context(), 20*time.Second)
-		defer cancel()
-		selected.Before, err = s.deploymentSourceFile(readCtx, org.ID, before, query.Path)
+		selected.Before, err = s.deploymentSourceFile(readCtx, org.ID, before, change.beforePath, change.before)
 		if err == nil {
-			selected.After, err = s.deploymentSourceFile(readCtx, org.ID, after, query.Path)
+			selected.After, err = s.deploymentSourceFile(readCtx, org.ID, after, change.afterPath, change.after)
 		}
 		if err != nil {
 			selected.Before, selected.After = nil, nil
@@ -229,72 +236,161 @@ func sourceBuildMetadata(snapshot *deploymentSourceSnapshot) *InstallDeploymentS
 	return build
 }
 
-func populateSourceDiff(result *InstallDeploymentSourceDiff, before, after *deploymentSourceSnapshot) {
-	files := [2]map[string]sourceidentity.File{{}, {}}
+type deploymentSourceChange struct {
+	beforePath, afterPath string
+	before, after         *object.TreeEntry
+}
+
+const maxDeploymentSourceChanges = 1000
+
+func (s *service) populateSourceDiff(ctx context.Context, orgID string, result *InstallDeploymentSourceDiff, before, after *deploymentSourceSnapshot) map[string]deploymentSourceChange {
+	var trees [2]*vcshelpers.SourceTree
+	var roots [2]string
 	for index, snapshot := range []*deploymentSourceSnapshot{before, after} {
 		if snapshot == nil {
 			continue
 		}
 		identity := snapshot.identity
-		if identity == nil || !identity.Captured || identity.Validate() != nil {
-			result.Message = "A build has no valid captured source manifest. Source changes are unavailable for legacy builds."
-			return
+		if identity == nil || identity.Validate() != nil {
+			result.Message = "A build has no valid captured source identity. Source changes are unavailable for legacy builds."
+			return nil
 		}
 		if identity.Kind == "image" {
 			result.Status, result.Message = "unsupported", "Image sources are compared by digest, not as text files."
-			return
+			return nil
 		}
-		if identity.Repository == "" || !sourceidentity.IsCommit(identity.Commit) {
+		if identity.Repository == "" || !sourceidentity.IsCommit(identity.Commit) || !strings.HasPrefix(identity.Digest, "git:") {
 			result.Status, result.Message = "unsupported", "This source is not backed by a captured Git repository."
-			return
+			return nil
 		}
 		if identity.Coverage != sourceidentity.Complete {
 			result.Partial = true
 			result.Reasons = append(result.Reasons, identity.Reasons...)
 		}
-		for _, file := range identity.Files {
-			files[index][file.Path] = file
+		connection, err := s.deploymentSourceAccess(ctx, orgID, snapshot)
+		if err == nil {
+			trees[index], err = s.appsHelpers.VCSHelpers().GetSourceTree(ctx, orgID, identity.Repository, identity.Commit, connection)
+		}
+		if err != nil {
+			s.l.Warn("unable to read deployment source tree", zap.String("build_id", snapshot.id), zap.Error(err))
+			result.Message = "The pinned source could not be read. Repository access may have changed."
+			return nil
+		}
+		roots[index] = sourceidentity.CleanRoot(identity.Root)
+	}
+	display := roots[1]
+	if after == nil {
+		display = roots[0]
+	}
+	changes := map[string]deploymentSourceChange{}
+	add := func(beforeName, afterName string, found []vcshelpers.SourceChange) {
+		for _, change := range found {
+			beforePath, afterPath := path.Join(beforeName, change.Path), path.Join(afterName, change.Path)
+			name := afterPath
+			if change.After == nil {
+				name = beforePath
+			}
+			if rel, err := filepath.Rel("/"+display, "/"+name); err == nil && rel != "." {
+				name = filepath.ToSlash(rel)
+			} else {
+				name = path.Base(name)
+			}
+			changes[name] = deploymentSourceChange{beforePath: beforePath, afterPath: afterPath, before: change.Before, after: change.After}
 		}
 	}
-	paths := make(map[string]bool, len(files[0])+len(files[1]))
-	for _, side := range files {
-		for filePath := range side {
-			paths[filePath] = true
-		}
+	found, truncated, err := vcshelpers.DiffSources(ctx, trees[0], roots[0], trees[1], roots[1], maxDeploymentSourceChanges)
+	if err == nil {
+		add(roots[0], roots[1], found)
+		err = s.diffSourceInputs(ctx, trees, roots, before, after, &truncated, add)
 	}
-	for filePath := range paths {
-		oldFile, oldOK := files[0][filePath]
-		newFile, newOK := files[1][filePath]
-		change := "modified"
+	if err != nil {
+		s.l.Warn("unable to compare deployment source trees", zap.Error(err))
+		result.Message = "The pinned sources could not be compared."
+		return nil
+	}
+	if truncated {
+		result.Partial = true
+		result.Reasons = append(result.Reasons, "source_diff_truncated")
+	}
+	for name, change := range changes {
+		file := InstallDeploymentSourceFile{Path: name, Change: "modified"}
 		switch {
-		case !oldOK:
-			change = "added"
-		case !newOK:
-			change = "removed"
-		case oldFile.SHA256 == newFile.SHA256 && oldFile.Executable == newFile.Executable:
-			continue
+		case change.before == nil:
+			file.Change = "added"
+		case change.after == nil:
+			file.Change = "removed"
 		}
-		result.Files = append(result.Files, InstallDeploymentSourceFile{Path: filePath, Change: change, BeforeExecutable: oldFile.Executable, AfterExecutable: newFile.Executable})
+		file.BeforeExecutable = change.before != nil && change.before.Mode == filemode.Executable
+		file.AfterExecutable = change.after != nil && change.after.Mode == filemode.Executable
+		result.Files = append(result.Files, file)
 	}
 	slices.SortFunc(result.Files, func(a, b InstallDeploymentSourceFile) int { return strings.Compare(a.Path, b.Path) })
 	slices.Sort(result.Reasons)
 	result.Reasons = slices.Compact(result.Reasons)
 	result.Status = "available"
+	return changes
 }
 
-func (s *service) deploymentSourceFile(ctx context.Context, orgID string, snapshot *deploymentSourceSnapshot, filePath string) (*string, error) {
-	if snapshot == nil {
-		return nil, nil
+func (s *service) diffSourceInputs(ctx context.Context, trees [2]*vcshelpers.SourceTree, roots [2]string, before, after *deploymentSourceSnapshot, truncated *bool, add func(string, string, []vcshelpers.SourceChange)) error {
+	inputs := map[string]bool{}
+	for _, snapshot := range []*deploymentSourceSnapshot{before, after} {
+		if snapshot == nil {
+			continue
+		}
+		for _, input := range snapshot.identity.Inputs {
+			if !input.Stat {
+				inputs[input.Path] = true
+			} else if _, ok := inputs[input.Path]; !ok {
+				inputs[input.Path] = false
+			}
+		}
 	}
+	names := make([]string, 0, len(inputs))
+	for name := range inputs {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	for _, name := range names {
+		if inside(roots[0], name) || inside(roots[1], name) {
+			continue
+		}
+		if !inputs[name] {
+			b, err := trees[0].Lookup(name)
+			if err != nil {
+				return err
+			}
+			a, err := trees[1].Lookup(name)
+			if err != nil {
+				return err
+			}
+			if entryString(b, true) != entryString(a, true) {
+				add(name, name, []vcshelpers.SourceChange{{Before: b, After: a}})
+			}
+			continue
+		}
+		found, cut, err := vcshelpers.DiffSources(ctx, trees[0], name, trees[1], name, maxDeploymentSourceChanges)
+		if err != nil {
+			return err
+		}
+		*truncated = *truncated || cut
+		add(name, name, found)
+	}
+	return nil
+}
+
+func inside(root, name string) bool {
+	return root == "" || name == root || strings.HasPrefix(name, root+"/")
+}
+
+func entryString(entry *object.TreeEntry, stat bool) string {
+	if entry == nil {
+		return ""
+	}
+	return sourceidentity.InputEntry(fmt.Sprintf("git:%06o:%s", uint32(entry.Mode), entry.Hash), stat)
+}
+
+func (s *service) deploymentSourceAccess(ctx context.Context, orgID string, snapshot *deploymentSourceSnapshot) (*app.VCSConnection, error) {
 	identity := snapshot.identity
-	index := slices.IndexFunc(identity.Files, func(file sourceidentity.File) bool { return file.Path == filePath })
-	if index < 0 {
-		return nil, nil
-	}
-	root := identity.Root
-	if path.IsAbs(root) || path.Clean(root) == ".." || strings.HasPrefix(path.Clean(root), "../") {
-		return nil, fmt.Errorf("The captured source root is not a repository-relative path.")
-	}
 	var connected *app.ConnectedGithubVCSConfig
 	var public *app.PublicGitVCSConfig
 	if snapshot.componentID != "" {
@@ -312,18 +408,33 @@ func (s *service) deploymentSourceFile(ctx context.Context, orgID string, snapsh
 		}
 		connected, public = config.ConnectedGithubVCSConfig, config.PublicGitVCSConfig
 	}
-	var connection *app.VCSConnection
 	if connected != nil && connected.OrgID == orgID && connected.Repo == identity.Repository {
-		connection = &connected.VCSConnection
-	} else if public == nil || public.OrgID != orgID || public.Repo != identity.Repository {
+		return &connected.VCSConnection, nil
+	}
+	if public == nil || public.OrgID != orgID || public.Repo != identity.Repository {
 		return nil, fmt.Errorf("The captured repository does not match the build's source configuration.")
 	}
-	contents, err := s.appsHelpers.VCSHelpers().GetSourceFile(ctx, orgID, identity.Repository, identity.Commit, path.Join(root, filePath), connection)
+	return nil, nil
+}
+
+func (s *service) deploymentSourceFile(ctx context.Context, orgID string, snapshot *deploymentSourceSnapshot, filePath string, entry *object.TreeEntry) (*string, error) {
+	if snapshot == nil || entry == nil {
+		return nil, nil
+	}
+	if entry.Mode != filemode.Regular && entry.Mode != filemode.Executable {
+		return nil, fmt.Errorf("Symlinks and submodules cannot be displayed as text.")
+	}
+	connection, err := s.deploymentSourceAccess(ctx, orgID, snapshot)
+	if err != nil {
+		return nil, err
+	}
+	identity := snapshot.identity
+	contents, err := s.appsHelpers.VCSHelpers().GetSourceFile(ctx, orgID, identity.Repository, identity.Commit, filePath, connection)
 	if err != nil {
 		return nil, fmt.Errorf("The pinned source file could not be read. Repository access may have changed, or the file is unavailable or exceeds 512 KiB.")
 	}
-	if fmt.Sprintf("%x", sha256.Sum256(contents)) != identity.Files[index].SHA256 {
-		return nil, fmt.Errorf("The retrieved file does not match the captured source checksum. Linked or transformed files cannot be displayed.")
+	if plumbing.ComputeHash(plumbing.BlobObject, contents) != entry.Hash {
+		return nil, fmt.Errorf("The retrieved file does not match the pinned commit.")
 	}
 	if !utf8.Valid(contents) || bytes.IndexByte(contents, 0) >= 0 {
 		return nil, fmt.Errorf("This is a binary file; a text diff is unavailable.")
