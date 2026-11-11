@@ -2,7 +2,7 @@ import { useDeepLinkedPanels } from '@/hooks/use-deep-linked-panels'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TInstallWorkflow } from '@/types'
-import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { GroupApprovalActions } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import { WarmPlanInstallChanges } from '@/components/branches/PlanInstallChanges/WarmPlanInstallChanges'
 import {
   BranchRunApproval,
@@ -53,8 +53,7 @@ export const BranchPendingApprovalsContainer = ({
         addPanel(<PlanDiffPanel step={step} />, `plan-diff-${step.id}`)
       },
       actions: (
-        <GroupActionButton
-          action="approve"
+        <GroupApprovalActions
           target={{
             orgId,
             workflowId: step.install_workflow_id ?? run.id ?? '',
