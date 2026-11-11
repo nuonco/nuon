@@ -402,13 +402,9 @@ func (h *Helpers) InstallCompositeBaselines(ctx context.Context, install *app.In
 		}
 		if applied != nil {
 			baselines.Sandbox = applied.AppSandboxConfig.AppConfigID
-			buildID := applied.AppSandboxBuildID
-			var cfg app.AppConfig
-			if err := h.db.WithContext(ctx).Unscoped().Where(app.AppConfig{ID: baselines.Sandbox}).First(&cfg).Error; err != nil {
+			buildID, err := h.appliedSandboxBuildID(ctx, applied)
+			if err != nil {
 				return baselines, err
-			}
-			if buildID == "" && cfg.BuildsPinned && cfg.BuildsLocked && cfg.SandboxBuildID.Valid {
-				buildID = cfg.SandboxBuildID.String
 			}
 			baselines.SandboxBuildID = &buildID
 		}

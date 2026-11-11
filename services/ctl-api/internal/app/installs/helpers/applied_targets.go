@@ -233,7 +233,23 @@ func (h *Helpers) AppliedBuildIDs(ctx context.Context, installID string) (map[st
 		return nil, err
 	}
 	if run != nil {
-		ids["sandbox"] = run.AppSandboxBuildID
+		if ids["sandbox"], err = h.appliedSandboxBuildID(ctx, run); err != nil {
+			return nil, err
+		}
 	}
 	return ids, nil
+}
+
+func (h *Helpers) appliedSandboxBuildID(ctx context.Context, run *app.InstallSandboxRun) (string, error) {
+	if run.AppSandboxBuildID != "" {
+		return run.AppSandboxBuildID, nil
+	}
+	var cfg app.AppConfig
+	if err := h.db.WithContext(ctx).Unscoped().Where(app.AppConfig{ID: run.AppSandboxConfig.AppConfigID}).First(&cfg).Error; err != nil {
+		return "", err
+	}
+	if cfg.BuildsPinned && cfg.BuildsLocked && cfg.SandboxBuildID.Valid {
+		return cfg.SandboxBuildID.String, nil
+	}
+	return "", nil
 }

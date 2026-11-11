@@ -280,6 +280,9 @@ func (h *appliedHistory) check(t require.TestingT) {
 	require.Equal(t, want.configID, baseline.Sandbox)
 	require.NotNil(t, baseline.SandboxBuildID)
 	require.Equal(t, want.buildID, *baseline.SandboxBuildID)
+	receipt, err := h.helpers.AppliedBuildIDs(ctx, h.install.ID)
+	require.NoError(t, err)
+	require.Equal(t, want.buildID, receipt["sandbox"])
 	if want.operationID == "" {
 		require.Nil(t, run)
 	} else {
