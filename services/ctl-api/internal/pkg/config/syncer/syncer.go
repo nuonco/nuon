@@ -118,6 +118,7 @@ func (s *syncer) Sync(ctx context.Context) error {
 		}
 	}
 	s.orgID = orgID
+	ctx = vcshelpers.WithRepoAccessCache(ctx)
 
 	// Initialize state
 	s.state = &sync.State{

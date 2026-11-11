@@ -2,21 +2,13 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"strings"
-	"time"
 
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
-)
-
-const (
-	updateWithStartMaxAttempts  = 15
-	updateWithStartInitialDelay = 50 * time.Millisecond
-	updateWithStartMaxDelay     = 5 * time.Second
 )
 
 func (c *Client) updateWithStartUntilAccepted(
@@ -41,29 +33,17 @@ func (c *Client) updateWithStartUntilCompleted(
 	result any,
 	args ...any,
 ) error {
-	delay := updateWithStartInitialDelay
-	for attempt := 1; attempt <= updateWithStartMaxAttempts; attempt++ {
+	var accepted bool
+	return handler.RetryUpdate(ctx, updateName, func(err error) bool {
+		return accepted && isColdHostUpdateRejection(err, updateName)
+	}, func() error {
 		handle, err := c.updateWithStartUntilAccepted(ctx, qs, updateName, args...)
+		accepted = err == nil
 		if err != nil {
 			return err
 		}
-		if err := handle.Get(ctx, result); err == nil {
-			return nil
-		} else if !isColdHostUpdateRejection(err, updateName) {
-			return err
-		}
-		if attempt == updateWithStartMaxAttempts {
-			return fmt.Errorf("%s handler not registered after %d attempts", updateName, updateWithStartMaxAttempts)
-		}
-		if err := waitForUpdateRetry(ctx, delay); err != nil {
-			return err
-		}
-		delay *= 2
-		if delay > updateWithStartMaxDelay {
-			delay = updateWithStartMaxDelay
-		}
-	}
-	return nil
+		return handle.Get(ctx, result)
+	})
 }
 
 func updateWithStartUntilAccepted(
@@ -71,42 +51,18 @@ func updateWithStartUntilAccepted(
 	updateName string,
 	submit func() (tclient.WorkflowUpdateHandle, error),
 ) (tclient.WorkflowUpdateHandle, error) {
-	delay := updateWithStartInitialDelay
-	var lastErr error
-	for attempt := 1; attempt <= updateWithStartMaxAttempts; attempt++ {
-		handle, err := submit()
-		if err == nil {
-			return handle, nil
-		}
-		if !isColdHostUpdateStartRace(err, updateName) {
-			return nil, err
-		}
-		lastErr = err
-		if attempt == updateWithStartMaxAttempts {
-			break
-		}
-
-		if err := waitForUpdateRetry(ctx, delay); err != nil {
-			return nil, err
-		}
-		delay *= 2
-		if delay > updateWithStartMaxDelay {
-			delay = updateWithStartMaxDelay
-		}
+	var handle tclient.WorkflowUpdateHandle
+	err := handler.RetryUpdate(ctx, updateName, func(err error) bool {
+		return isColdHostUpdateStartRace(err, updateName)
+	}, func() error {
+		var err error
+		handle, err = submit()
+		return err
+	})
+	if err != nil {
+		return nil, err
 	}
-
-	return nil, fmt.Errorf("%s handler not registered after %d attempts: %w", updateName, updateWithStartMaxAttempts, lastErr)
-}
-
-func waitForUpdateRetry(ctx context.Context, delay time.Duration) error {
-	timer := time.NewTimer(delay)
-	select {
-	case <-ctx.Done():
-		timer.Stop()
-		return ctx.Err()
-	case <-timer.C:
-		return nil
-	}
+	return handle, nil
 }
 
 func isColdHostUpdateStartRace(err error, updateName string) bool {

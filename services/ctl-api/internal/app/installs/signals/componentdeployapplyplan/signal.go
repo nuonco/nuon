@@ -237,11 +237,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
-	_ = activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
+	baselineErr := activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
 		DeployID: installDeploy.ID,
 	})
-
-	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
+	if baselineErr != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		baselineErr = errors.Wrap(baselineErr, "unable to record applied component baseline")
+		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "applied, but unable to record the applied baseline")
+	} else {
+		baselineErr = nil
+		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
+	}
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{
 		InstallID:       install.ID,
 		Targets:         statemanager.TargetsForHint(statemanager.HintDeployCompleted, s.InstallComponentID),
@@ -257,7 +262,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// wait and its reasons are visible on the workflow instead of hidden
 	// inside this apply.
 
-	return nil
+	return baselineErr
 }
 
 func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, sandboxMode bool) (*app.ComponentBuild, error) {

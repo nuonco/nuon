@@ -45,12 +45,14 @@ const DeploymentTemplateDiff = ({
   branchId,
   branchRunId,
   deployment,
+  installId,
   workflow,
 }: {
   appId: string
   branchId: string
   branchRunId: string
   deployment?: TInstallDeploymentRecord
+  installId?: string
   workflow?: TWorkflow
 }) => {
   const { org } = useOrg()
@@ -96,12 +98,26 @@ const DeploymentTemplateDiff = ({
   )
   const scopedTemplateBuilds = useMemo(
     () =>
-      templateBuilds.filter((build) =>
-        build.kind === 'sandbox'
-          ? scope.sections.includes('Sandbox')
-          : scope.components.includes(build.name)
-      ),
-    [templateBuilds, scope]
+      templateBuilds
+        .filter((build) =>
+          build.kind === 'sandbox'
+            ? scope.sections.includes('Sandbox')
+            : scope.components.includes(build.name)
+        )
+        .map((build) => ({
+          ...build,
+          sourceDiffTarget:
+            org?.id && installId && deployment?.id
+              ? {
+                  orgId: org.id,
+                  installId,
+                  workflowId: deployment.id,
+                  kind: build.kind,
+                  name: build.kind === 'sandbox' ? 'sandbox' : build.name,
+                }
+              : undefined,
+        })),
+    [templateBuilds, scope, org?.id, installId, deployment?.id]
   )
   const config = useBranchConfigSections({
     branchId,
@@ -152,6 +168,7 @@ const DeploymentTemplateDiff = ({
 export const DeploymentTemplateContent = ({
   deployment,
   appId,
+  installId,
   workflow,
   isLoading = false,
   isError = false,
@@ -159,6 +176,7 @@ export const DeploymentTemplateContent = ({
 }: {
   deployment?: TInstallDeploymentRecord
   appId?: string
+  installId?: string
   workflow?: TWorkflow
   isLoading?: boolean
   isError?: boolean
@@ -189,6 +207,7 @@ export const DeploymentTemplateContent = ({
         branchId={branch.id}
         branchRunId={branch.run_id}
         deployment={deployment}
+        installId={installId || workflow?.owner_id}
         workflow={workflow}
       />
     </AppProvider>

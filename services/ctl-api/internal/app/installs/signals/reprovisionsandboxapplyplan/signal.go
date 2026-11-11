@@ -220,12 +220,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	l.Debug("finished executing sandbox apply plan", zap.String("install_run.id", sandboxRun.ID))
 
-	_ = activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
+	baselineErr := activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
 		SandboxRunID: sandboxRun.ID,
 	})
-
-	l.Info("updating install sandbox run status", zap.String("install_run.id", sandboxRun.ID))
-	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
+	if baselineErr != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		baselineErr = errors.Wrap(baselineErr, "unable to record applied sandbox baseline")
+		s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusError, "applied, but unable to record the applied baseline")
+	} else {
+		baselineErr = nil
+		l.Info("updating install sandbox run status", zap.String("install_run.id", sandboxRun.ID))
+		s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
+	}
 
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{
 		InstallID:       install.ID,
@@ -237,7 +242,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
-	return nil
+	return baselineErr
 }
 
 func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, sandboxMode bool, dnsRootDomain string) error {
