@@ -1,20 +1,26 @@
-import { Button } from '@/components/common/Button'
+import { GroupApprovalActions } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import { BranchRunApproval } from './BranchRunApproval'
 
 export default {
   title: 'Features / Branches / Branch run approval',
 }
 
-const mockActions = <Button variant="primary">Approve</Button>
+const target = (groupName: string, stepId: string) => ({
+  orgId: 'org-mock-001',
+  workflowId: 'wf-1',
+  stepId,
+  approvalId: `apr-${stepId}`,
+  groupName,
+})
 
 export const Default = () => (
   <BranchRunApproval
     items={[
       {
         key: 'step-1',
-        groupName: 'uat',
+        groupName: 'tag',
         onReview: () => {},
-        actions: mockActions,
+        actions: <GroupApprovalActions target={target('tag', 'step-1')} />,
       },
     ]}
   />
@@ -27,13 +33,15 @@ export const MultipleGroups = () => (
         key: 'step-1',
         groupName: 'uat',
         onReview: () => {},
-        actions: mockActions,
+        actions: <GroupApprovalActions target={target('uat', 'step-1')} />,
       },
       {
         key: 'step-2',
         groupName: 'production',
         onReview: () => {},
-        actions: mockActions,
+        actions: (
+          <GroupApprovalActions target={target('production', 'step-2')} />
+        ),
       },
     ]}
   />
