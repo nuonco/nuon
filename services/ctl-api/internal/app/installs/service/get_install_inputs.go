@@ -62,16 +62,15 @@ func (s *service) getInstallInputs(ctx *gin.Context, installID string) ([]app.In
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
-	install.InstallInputs = i
-	omitSensitiveInputValues(install.InstallInputs)
-
+	install.InstallInputs = maskSensitiveInputValues(i)
+	
 	return install.InstallInputs, nil
 }
 
-// omitSensitiveInputValues drops sensitive keys from values. redacted_values
+// maskSensitiveInputValues drops sensitive keys from values. redacted_values
 // still carries "********" for those keys. The stack config endpoint is the
 // one that needs the real values, so this stays on the install-inputs reads.
-func omitSensitiveInputValues(inputs []app.InstallInputs) {
+func maskSensitiveInputValues(inputs []app.InstallInputs) {
 	for i := range inputs {
 		row := &inputs[i]
 		if row.Values == nil {
