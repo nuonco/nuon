@@ -63,7 +63,7 @@ func (s *service) getInstallInputs(ctx *gin.Context, installID string) ([]app.In
 	}
 
 	install.InstallInputs = maskSensitiveInputValues(i)
-	
+
 	return install.InstallInputs, nil
 }
 
