@@ -1,13 +1,17 @@
 package helpers
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"path"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -34,8 +38,10 @@ var (
 )
 
 const (
-	maxSourceTreeBytes = 128 << 20
-	sourceFetchTimeout = 3 * time.Minute
+	maxSourceTreeBytes         = 128 << 20
+	maxCachedSourceTreeBytes   = 256 << 20
+	maxConcurrentSourceFetches = 4
+	sourceFetchTimeout         = 3 * time.Minute
 )
 
 type limitedStorage struct {
@@ -51,8 +57,31 @@ func (s *limitedStorage) SetEncodedObject(o plumbing.EncodedObject) (plumbing.Ha
 }
 
 type SourceTree struct {
-	s    storer.EncodedObjectStorer
-	root *object.Tree
+	s     storer.EncodedObjectStorer
+	root  *object.Tree
+	size  int64
+	mu    sync.Mutex
+	trees map[plumbing.Hash]*object.Tree
+}
+
+func (t *SourceTree) tree(hash plumbing.Hash) (*object.Tree, error) {
+	t.mu.Lock()
+	tree, ok := t.trees[hash]
+	t.mu.Unlock()
+	if ok {
+		return tree, nil
+	}
+	tree, err := object.GetTree(t.s, hash)
+	if err != nil {
+		return nil, err
+	}
+	t.mu.Lock()
+	if t.trees == nil {
+		t.trees = make(map[plumbing.Hash]*object.Tree)
+	}
+	t.trees[hash] = tree
+	t.mu.Unlock()
+	return tree, nil
 }
 
 func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit string, connection *app.VCSConnection) (*SourceTree, error) {
@@ -71,41 +100,23 @@ func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit s
 		scope = connection.ID
 	}
 	key := orgID + "\n" + scope + "\n" + owner + "/" + repo + "\n" + commit
+	if h.sourceTreesTooLarge != nil {
+		if _, ok := h.sourceTreesTooLarge.Get(key); ok {
+			return nil, ErrSourceTreeTooLarge
+		}
+	}
 	if h.sourceTrees != nil {
 		if tree, ok := h.sourceTrees.Get(key); ok {
 			return tree, nil
 		}
 	}
-	fetches := h.sourceFetches.DoChan(key, func() (any, error) {
-		if h.sourceTrees != nil {
-			if tree, ok := h.sourceTrees.Get(key); ok {
-				return tree, nil
+	fetches := h.sourceFetches.DoChan(key, func() (tree any, err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				tree, err = nil, fmt.Errorf("source tree fetch panicked: %v", r)
 			}
-		}
-		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), sourceFetchTimeout)
-		defer cancel()
-		token := ""
-		var err error
-		if connection != nil {
-			token, err = h.CreateInstallationToken(ctx, connection, repo)
-		} else {
-			token, _, err = h.ResolvePublicRepoCloneToken(ctx, h.l, orgID, owner, repo)
-		}
-		if err != nil {
-			return nil, err
-		}
-		var auth transport.AuthMethod
-		if token != "" {
-			auth = &githttp.BasicAuth{Username: "x-access-token", Password: token}
-		}
-		tree, err := fetchSourceTree(ctx, fmt.Sprintf("https://github.com/%s/%s.git", owner, repo), auth, commit, githubUploadPackCapabilities(), maxSourceTreeBytes)
-		if err != nil {
-			return nil, err
-		}
-		if h.sourceTrees != nil {
-			h.sourceTrees.Add(key, tree)
-		}
-		return tree, nil
+		}()
+		return h.loadSourceTree(ctx, key, orgID, owner, repo, commit, connection)
 	})
 	select {
 	case <-ctx.Done():
@@ -115,6 +126,66 @@ func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit s
 			return nil, res.Err
 		}
 		return res.Val.(*SourceTree), nil
+	}
+}
+
+func (h *Helpers) loadSourceTree(ctx context.Context, key, orgID, owner, repo, commit string, connection *app.VCSConnection) (*SourceTree, error) {
+	if h.sourceTrees != nil {
+		if tree, ok := h.sourceTrees.Get(key); ok {
+			return tree, nil
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), sourceFetchTimeout)
+	defer cancel()
+	if h.sourceFetchSlots != nil {
+		select {
+		case h.sourceFetchSlots <- struct{}{}:
+			defer func() { <-h.sourceFetchSlots }()
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	token := ""
+	var err error
+	if connection != nil {
+		token, err = h.CreateInstallationToken(ctx, connection, repo)
+	} else {
+		token, _, err = h.ResolvePublicRepoCloneToken(ctx, h.l, orgID, owner, repo)
+	}
+	if err != nil {
+		return nil, err
+	}
+	var auth transport.AuthMethod
+	if token != "" {
+		auth = &githttp.BasicAuth{Username: "x-access-token", Password: token}
+	}
+	tree, err := fetchSourceTree(ctx, fmt.Sprintf("https://github.com/%s/%s.git", owner, repo), auth, commit, githubUploadPackCapabilities(), maxSourceTreeBytes)
+	if errors.Is(err, ErrSourceTreeTooLarge) && h.sourceTreesTooLarge != nil {
+		h.sourceTreesTooLarge.Add(key, struct{}{})
+	}
+	if err != nil {
+		return nil, err
+	}
+	h.cacheSourceTree(key, tree)
+	return tree, nil
+}
+
+func (h *Helpers) cacheSourceTree(key string, tree *SourceTree) {
+	if h.sourceTrees == nil {
+		return
+	}
+	h.sourceTrees.Add(key, tree)
+	for {
+		var total int64
+		for _, cached := range h.sourceTrees.Values() {
+			total += cached.size
+		}
+		if total <= maxCachedSourceTreeBytes {
+			return
+		}
+		if _, _, ok := h.sourceTrees.RemoveOldest(); !ok {
+			return
+		}
 	}
 }
 
@@ -182,8 +253,21 @@ func fetchSourceTree(ctx context.Context, url string, auth transport.AuthMethod,
 	case req.Capabilities.Supports(capability.Sideband):
 		pack = sideband.NewDemuxer(sideband.Sideband, resp)
 	}
-	st := memory.NewStorage()
-	if err := packfile.UpdateObjectStorage(&limitedStorage{Storage: st, remaining: maxBytes}, pack); err != nil {
+	chunks, err := readPack(pack, maxBytes)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read pinned commit: %w", err)
+	}
+	readers := make([]io.Reader, len(chunks))
+	for i, chunk := range chunks {
+		readers[i] = bytes.NewReader(chunk)
+	}
+	if err := checkPackSize(io.MultiReader(readers...), maxBytes); err != nil {
+		return nil, fmt.Errorf("unable to read pinned commit: %w", err)
+	}
+	parse := &releasingReader{chunks: chunks}
+	chunks, readers = nil, nil
+	st := &limitedStorage{Storage: memory.NewStorage(), remaining: maxBytes}
+	if err := packfile.UpdateObjectStorage(st, parse); err != nil {
 		return nil, fmt.Errorf("unable to read pinned commit: %w", err)
 	}
 	c, err := object.GetCommit(st, hash)
@@ -197,7 +281,99 @@ func fetchSourceTree(ctx context.Context, url string, auth transport.AuthMethod,
 	if err != nil {
 		return nil, fmt.Errorf("pinned commit has no source tree: %w", err)
 	}
-	return &SourceTree{s: st, root: root}, nil
+	return &SourceTree{s: st.Storage, root: root, size: maxBytes - st.remaining}, nil
+}
+
+func readPack(pack io.Reader, maxBytes int64) ([][]byte, error) {
+	var chunks [][]byte
+	var total int64
+	for {
+		chunk := make([]byte, 1<<20)
+		n := 0
+		var err error
+		for n < len(chunk) && err == nil {
+			var read int
+			read, err = pack.Read(chunk[n:])
+			n += read
+		}
+		chunks = append(chunks, chunk[:n])
+		if total += int64(n); total > maxBytes {
+			return nil, ErrSourceTreeTooLarge
+		}
+		if errors.Is(err, io.EOF) {
+			return chunks, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+}
+
+type releasingReader struct {
+	chunks [][]byte
+}
+
+func (r *releasingReader) Read(p []byte) (int, error) {
+	for len(r.chunks) > 0 && len(r.chunks[0]) == 0 {
+		r.chunks[0] = nil
+		r.chunks = r.chunks[1:]
+	}
+	if len(r.chunks) == 0 {
+		return 0, io.EOF
+	}
+	n := copy(p, r.chunks[0])
+	r.chunks[0] = r.chunks[0][n:]
+	return n, nil
+}
+
+func checkPackSize(pack io.Reader, maxBytes int64) error {
+	s := packfile.NewScanner(pack)
+	_, count, err := s.Header()
+	if err != nil {
+		return err
+	}
+	var total int64
+	for range count {
+		h, err := s.NextObjectHeader()
+		if err != nil {
+			return err
+		}
+		if h.Length > maxBytes-total {
+			return ErrSourceTreeTooLarge
+		}
+		size := h.Length
+		if h.Type.IsDelta() {
+			var header deltaHeader
+			if _, _, err := s.NextObject(&header); err != nil {
+				return err
+			}
+			_, n := binary.Uvarint(header)
+			if n <= 0 {
+				return packfile.ErrMalformedPackFile
+			}
+			target, m := binary.Uvarint(header[n:])
+			if m <= 0 {
+				return packfile.ErrMalformedPackFile
+			}
+			if target > uint64(maxBytes) {
+				return ErrSourceTreeTooLarge
+			}
+			size += int64(target)
+		}
+		if total += size; total > maxBytes {
+			return ErrSourceTreeTooLarge
+		}
+	}
+	return nil
+}
+
+type deltaHeader []byte
+
+func (h *deltaHeader) Write(p []byte) (int, error) {
+	if n := 2*binary.MaxVarintLen64 - len(*h); n > 0 {
+		*h = append(*h, p[:min(n, len(p))]...)
+	}
+	return len(p), nil
 }
 
 func (t *SourceTree) Scope(root string) (string, error) {
@@ -230,17 +406,16 @@ func (t *SourceTree) Unsupported(ctx context.Context, root string) (string, erro
 		if entry.Mode != filemode.Dir {
 			return unsupportedMode(entry.Mode), nil
 		}
-		if tree, err = object.GetTree(t.s, entry.Hash); err != nil {
+		if tree, err = t.tree(entry.Hash); err != nil {
 			return "", err
 		}
 	}
 	seen := map[plumbing.Hash]bool{tree.Hash: true}
-	pending := []*object.Tree{tree}
-	for len(pending) > 0 {
+	var pending []plumbing.Hash
+	for {
 		if err := ctx.Err(); err != nil {
 			return "", err
 		}
-		tree, pending = pending[len(pending)-1], pending[:len(pending)-1]
 		canonical, err := t.canonical(tree)
 		if err != nil {
 			return "", err
@@ -256,14 +431,17 @@ func (t *SourceTree) Unsupported(ctx context.Context, root string) (string, erro
 				continue
 			}
 			seen[entry.Hash] = true
-			next, err := object.GetTree(t.s, entry.Hash)
-			if err != nil {
-				return "", err
-			}
-			pending = append(pending, next)
+			pending = append(pending, entry.Hash)
+		}
+		if len(pending) == 0 {
+			return "", nil
+		}
+		hash := pending[len(pending)-1]
+		pending = pending[:len(pending)-1]
+		if tree, err = object.GetTree(t.s, hash); err != nil {
+			return "", err
 		}
 	}
-	return "", nil
 }
 
 func unsupportedMode(mode filemode.FileMode) string {
@@ -304,7 +482,7 @@ func (t *SourceTree) entry(root string) (*object.TreeEntry, error) {
 		if entry.Mode != filemode.Dir {
 			return nil, fmt.Errorf("%w: %s", ErrSourceDirectoryMissing, root)
 		}
-		next, err := object.GetTree(t.s, entry.Hash)
+		next, err := t.tree(entry.Hash)
 		if err != nil {
 			return nil, err
 		}
@@ -319,15 +497,31 @@ type SourceChange struct {
 }
 
 func DiffSources(ctx context.Context, before *SourceTree, beforeName string, after *SourceTree, afterName string, limit int) ([]SourceChange, bool, error) {
-	var changes []SourceChange
-	truncated := false
-	var diff func(string, *object.TreeEntry, *object.TreeEntry) (bool, error)
-	diff = func(name string, b, a *object.TreeEntry) (bool, error) {
+	if limit < 0 {
+		limit = math.MaxInt - 1
+	}
+	type sourcePair struct {
+		beforeMode, afterMode filemode.FileMode
+		beforeHash, afterHash plumbing.Hash
+	}
+	seen := map[sourcePair][]SourceChange{}
+	var diff func(*object.TreeEntry, *object.TreeEntry) ([]SourceChange, error)
+	diff = func(b, a *object.TreeEntry) ([]SourceChange, error) {
 		if err := ctx.Err(); err != nil {
-			return false, err
+			return nil, err
 		}
 		if b != nil && a != nil && b.Mode == a.Mode && b.Hash == a.Hash {
-			return true, nil
+			return nil, nil
+		}
+		var key sourcePair
+		if b != nil {
+			key.beforeMode, key.beforeHash = b.Mode, b.Hash
+		}
+		if a != nil {
+			key.afterMode, key.afterHash = a.Mode, a.Hash
+		}
+		if changes, ok := seen[key]; ok {
+			return changes, nil
 		}
 		children := map[string][2]*object.TreeEntry{}
 		for side, entry := range []*object.TreeEntry{b, a} {
@@ -346,7 +540,7 @@ func DiffSources(ctx context.Context, before *SourceTree, beforeName string, aft
 			}
 			t, err := object.GetTree(tree.s, entry.Hash)
 			if err != nil {
-				return false, err
+				return nil, err
 			}
 			for i := range t.Entries {
 				pair := children[t.Entries[i].Name]
@@ -359,22 +553,30 @@ func DiffSources(ctx context.Context, before *SourceTree, beforeName string, aft
 			names = append(names, child)
 		}
 		sort.Strings(names)
+		var changes []SourceChange
 		for _, child := range names {
 			pair := children[child]
 			if child == "" {
-				if len(changes) == limit {
-					truncated = true
-					return false, nil
-				}
-				changes = append(changes, SourceChange{Path: name, Before: pair[0], After: pair[1]})
+				changes = append(changes, SourceChange{Before: pair[0], After: pair[1]})
 				continue
 			}
-			ok, err := diff(path.Join(name, child), pair[0], pair[1])
-			if err != nil || !ok {
-				return ok, err
+			found, err := diff(pair[0], pair[1])
+			if err != nil {
+				return nil, err
+			}
+			for _, change := range found {
+				if len(changes) > limit {
+					break
+				}
+				change.Path = path.Join(child, change.Path)
+				changes = append(changes, change)
+			}
+			if len(changes) > limit {
+				break
 			}
 		}
-		return true, nil
+		seen[key] = changes
+		return changes, nil
 	}
 	b, err := before.Lookup(beforeName)
 	if err != nil {
@@ -384,10 +586,14 @@ func DiffSources(ctx context.Context, before *SourceTree, beforeName string, aft
 	if err != nil {
 		return nil, false, err
 	}
-	if _, err := diff("", b, a); err != nil {
+	changes, err := diff(b, a)
+	if err != nil {
 		return nil, false, err
 	}
-	return changes, truncated, nil
+	if len(changes) > limit {
+		return changes[:limit], true, nil
+	}
+	return changes, false, nil
 }
 
 func (t *SourceTree) Lookup(name string) (*object.TreeEntry, error) {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -91,7 +92,12 @@ func ReportedSource(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, l
 	}
 	recorded, err := recordInputs(ctx, db, vcs, job.OwnerType, job.OwnerID, i, reads)
 	if err != nil {
-		l.Warn("unable to record build source inputs; the build will not be reused", zap.String("runner_job_id", job.ID), zap.Error(err))
+		l.Warn("unable to record build source inputs; the build will not be reused",
+			zap.String("org_id", job.OrgID),
+			zap.String("build_type", job.OwnerType),
+			zap.String("build_id", job.OwnerID),
+			zap.String("runner_job_id", job.ID),
+			zap.Error(err))
 		return i
 	}
 	return recorded
@@ -107,27 +113,47 @@ func recordInputs(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, own
 	}
 	var connected *app.ConnectedGithubVCSConfig
 	var public *app.PublicGitVCSConfig
+	var stored *sourceidentity.Identity
 	switch ownerType {
 	case "component_builds":
 		var b app.ComponentBuild
 		if err := db.WithContext(ctx).Preload("ComponentConfigConnection", PreloadConnection).Where(app.ComponentBuild{ID: ownerID}).First(&b).Error; err != nil {
 			return nil, err
 		}
-		connected, public = b.ComponentConfigConnection.ConnectedGithubVCSConfig, b.ComponentConfigConnection.PublicGitVCSConfig
+		connected, public, stored = b.ComponentConfigConnection.ConnectedGithubVCSConfig, b.ComponentConfigConnection.PublicGitVCSConfig, b.SourceIdentity
 	case "app_sandbox_builds":
 		var b app.AppSandboxBuild
 		if err := db.WithContext(ctx).Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").Preload("AppSandboxConfig.PublicGitVCSConfig").Where(app.AppSandboxBuild{ID: ownerID}).First(&b).Error; err != nil {
 			return nil, err
 		}
-		connected, public = b.AppSandboxConfig.ConnectedGithubVCSConfig, b.AppSandboxConfig.PublicGitVCSConfig
+		connected, public, stored = b.AppSandboxConfig.ConnectedGithubVCSConfig, b.AppSandboxConfig.PublicGitVCSConfig, b.SourceIdentity
 	default:
 		return nil, fmt.Errorf("source inputs require a build owner")
+	}
+	if stored == nil || stored.Repository != i.Repository || stored.Commit != i.Commit {
+		return nil, fmt.Errorf("reported source does not match the prepared repository and commit")
+	}
+	if len(reads.Read)+len(reads.Stat) == 0 {
+		return i.WithInputs(nil)
 	}
 	orgID, connection, err := sourceAccess(connected, public)
 	if err != nil {
 		return nil, err
 	}
-	tree, err := vcs.GetSourceTree(ctx, orgID, i.Repository, i.Commit, connection)
+	var tree *vcshelpers.SourceTree
+	for attempt := range 3 {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(time.Duration(attempt) * time.Second):
+			}
+		}
+		tree, err = vcs.GetSourceTree(ctx, orgID, stored.Repository, stored.Commit, connection)
+		if err == nil || errors.Is(err, vcshelpers.ErrSourceTreeTooLarge) || errors.Is(err, vcshelpers.ErrSourceCommitNotFound) {
+			break
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -186,6 +212,9 @@ func DirectoryChanged(ctx context.Context, vcs *vcshelpers.Helpers, connected *a
 	after, err := head.Scope(root)
 	if err != nil && !errors.Is(err, vcshelpers.ErrSourceDirectoryMissing) {
 		return false, err
+	}
+	if strings.HasPrefix(before, "git:120000:") || strings.HasPrefix(after, "git:120000:") {
+		return true, nil
 	}
 	return before != after, nil
 }

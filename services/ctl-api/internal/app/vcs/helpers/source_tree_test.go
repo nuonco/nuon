@@ -1,14 +1,17 @@
 package helpers
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp/capability"
@@ -83,12 +86,24 @@ func TestFetchSourceTree(t *testing.T) {
 		}
 		bomb = gitInput(entries.String(), "mktree")
 	}
+	leaf, err := hex.DecodeString(gitInput("100644 blob "+object(inside, "app/README.md")+"\tf\n", "mktree"))
+	require.NoError(t, err)
+	rebomb := ""
+	for range 10 {
+		var entries strings.Builder
+		for i := range 10 {
+			fmt.Fprintf(&entries, "040000 d%d\x00%s", i, leaf)
+		}
+		rebomb = gitInput(entries.String(), "hash-object", "-t", "tree", "--literally", "-w", "--stdin")
+		leaf, err = hex.DecodeString(rebomb)
+		require.NoError(t, err)
+	}
 	link := gitInput("../other/main.tf", "hash-object", "-w", "--stdin")
 	tools := gitInput("120000 blob "+link+"\tmain.tf\n", "mktree")
 	readme, err := hex.DecodeString(object(inside, "app/README.md"))
 	require.NoError(t, err)
 	legacy := gitInput("100664 README.md\x00"+string(readme), "hash-object", "-t", "tree", "--literally", "-w", "--stdin")
-	rootEntries := git(src, "ls-tree", inside) + "\n040000 tree " + bomb + "\tbomb\n040000 tree " + tools + "\ttools\n040000 tree " + legacy + "\tlegacy\n"
+	rootEntries := git(src, "ls-tree", inside) + "\n040000 tree " + bomb + "\tbomb\n040000 tree " + rebomb + "\trebomb\n040000 tree " + tools + "\ttools\n040000 tree " + legacy + "\tlegacy\n"
 	shapes := gitInput("shapes", "commit-tree", gitInput(rootEntries, "mktree"), "-p", inside)
 	git(src, "update-ref", "refs/heads/shapes", shapes)
 
@@ -306,6 +321,9 @@ func TestFetchSourceTree(t *testing.T) {
 			want:          []change{{"bomb/d0/d0/d0/d0/d0/d0/d0/d0/d0/d0/f", false, true}},
 			wantTruncated: true,
 		},
+		"repeated subtree pairs are compared once": {
+			before: shapes, after: shapes, beforeName: "bomb", afterName: "rebomb",
+		},
 	}
 	for name, tc := range diffs {
 		t.Run("diff/"+name, func(t *testing.T) {
@@ -313,7 +331,9 @@ func TestFetchSourceTree(t *testing.T) {
 			if limit == 0 {
 				limit = 100
 			}
-			found, truncated, err := DiffSources(context.Background(), trees[tc.before], tc.beforeName, trees[tc.after], tc.afterName, limit)
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			found, truncated, err := DiffSources(ctx, trees[tc.before], tc.beforeName, trees[tc.after], tc.afterName, limit)
 			require.NoError(t, err)
 			var got []change
 			for _, c := range found {
@@ -323,4 +343,34 @@ func TestFetchSourceTree(t *testing.T) {
 			assert.Equal(t, tc.wantTruncated, truncated)
 		})
 	}
+
+	t.Run("pack size counts inflated objects, delta payloads, and delta targets", func(t *testing.T) {
+		cmd := exec.Command("git", "pack-objects", "--revs", "--stdout", "--filter=blob:none")
+		cmd.Dir = src
+		cmd.Stdin = strings.NewReader(inside + "\n")
+		pack, err := cmd.Output()
+		require.NoError(t, err)
+		objects := strings.Fields(git(src, "rev-list", "--objects", "--no-object-names", "--filter=blob:none", inside))
+		var total int64
+		for _, size := range strings.Fields(gitInput(strings.Join(objects, "\n")+"\n", "cat-file", "--batch-check=%(objectsize)")) {
+			n, err := strconv.ParseInt(size, 10, 64)
+			require.NoError(t, err)
+			total += n
+		}
+		packPath := filepath.Join(t.TempDir(), "objects.pack")
+		require.NoError(t, os.WriteFile(packPath, pack, 0o600))
+		git(src, "index-pack", packPath)
+		deltas := 0
+		for _, line := range strings.Split(git(src, "verify-pack", "-v", strings.TrimSuffix(packPath, ".pack")+".idx"), "\n") {
+			if fields := strings.Fields(line); len(fields) == 7 {
+				n, err := strconv.ParseInt(fields[2], 10, 64)
+				require.NoError(t, err)
+				total += n
+				deltas++
+			}
+		}
+		require.NotZero(t, deltas)
+		require.NoError(t, checkPackSize(bytes.NewReader(pack), total))
+		require.ErrorIs(t, checkPackSize(bytes.NewReader(pack), total-1), ErrSourceTreeTooLarge)
+	})
 }
