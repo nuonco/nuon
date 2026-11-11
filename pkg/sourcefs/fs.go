@@ -221,20 +221,12 @@ func (f *FS) visitor() func(string) {
 }
 
 func (f *FS) ResolveWithLinks(name string) (string, []Link, error) {
-	return f.ResolveWithin(".", name)
-}
-
-func (f *FS) ResolveWithin(root, name string) (string, []Link, error) {
 	rel, err := f.Relative(name)
 	if err != nil {
 		return "", nil, err
 	}
-	scope, err := f.resolve(root)
-	if err != nil {
-		return "", nil, err
-	}
 	var links []Link
-	resolved, err := resolveTrace(f.fs, scope, rel, &links, f.visitor(), f.root, f.base)
+	resolved, err := resolveTrace(f.fs, ".", rel, &links, f.visitor(), f.root, f.base)
 	if err == nil {
 		f.stat(resolved)
 	}
@@ -255,6 +247,70 @@ func (f *FS) Readlink(name string) (string, error) {
 		return "", err
 	}
 	return readlink(f.fs, name)
+}
+
+// Entry is a directory entry as stored. Target is a symlink's text.
+type Entry struct {
+	os.FileInfo
+	Target string
+}
+
+// Entry is Lstat plus Readlink of name. Unlike Lstat, it accepts a symlink
+// whose target resolves into Git metadata: Git tracks such a link as its text,
+// and reading that text never follows the link.
+func (f *FS) Entry(name string) (Entry, error) {
+	rel, err := f.Relative(name)
+	if err != nil {
+		return Entry{}, err
+	}
+	if rel != "." {
+		parent, err := f.resolve(filepath.Dir(rel))
+		if err != nil {
+			return Entry{}, err
+		}
+		rel = filepath.Join(parent, filepath.Base(rel))
+	}
+	f.stat(rel)
+	return entry(f.fs, rel)
+}
+
+// Entries lists a directory like ReadDir, with the symlink exception of Entry.
+func (f *FS) Entries(name string) ([]Entry, error) {
+	resolved, err := f.resolve(name)
+	if err != nil {
+		return nil, err
+	}
+	f.record(resolved, true)
+	infos, err := afero.ReadDir(f.fs, resolved)
+	if err != nil {
+		return nil, err
+	}
+	var out []Entry
+	for _, info := range infos {
+		child := filepath.Join(resolved, info.Name())
+		if _, err := f.Relative(child); err != nil {
+			continue
+		}
+		f.stat(child)
+		e, err := entry(f.fs, child)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, nil
+}
+
+func entry(fs afero.Fs, name string) (Entry, error) {
+	info, err := lstat(fs, name)
+	if err != nil {
+		return Entry{}, err
+	}
+	out := Entry{FileInfo: info}
+	if info.Mode()&os.ModeSymlink != 0 {
+		out.Target, err = readlink(fs, name)
+	}
+	return out, err
 }
 
 func (f *FS) linkPath(name string) (string, error) {

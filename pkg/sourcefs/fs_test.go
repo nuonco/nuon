@@ -316,6 +316,22 @@ func TestGitMetadataNotEnumerable(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, entries, 1)
 			require.Equal(t, ".config", entries[0].Name())
+			stored, err := source.Entries(".")
+			require.NoError(t, err)
+			targets := map[string]string{}
+			for _, entry := range stored {
+				targets[entry.Name()] = entry.Target
+			}
+			require.Equal(t, map[string]string{".config": "", "alias": gitDir, "file-alias": "alias/HEAD"}, targets)
+			link, err := source.Entry("alias")
+			require.NoError(t, err)
+			require.Equal(t, gitDir, link.Target)
+			for _, name := range []string{gitDir, gitDir + "/HEAD", "alias/HEAD"} {
+				_, err := source.Entry(name)
+				require.ErrorContains(t, err, "Git metadata", name)
+			}
+			_, err = source.Entries("alias")
+			require.ErrorContains(t, err, "Git metadata")
 			for _, count := range []int{-1, 1} {
 				directory, err := source.Open(".")
 				require.NoError(t, err)

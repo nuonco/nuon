@@ -88,7 +88,14 @@ func (w *Workspace) clone(ctx context.Context) (retErr error) {
 
 	coOpts := &git.CheckoutOptions{}
 	if sourceidentity.IsCommit(w.src.Ref) {
-		return sourceidentity.Checkout(ctx, repo, w.src.Ref, auth)
+		if err := sourceidentity.Checkout(ctx, repo, w.src.Ref, auth); err != nil {
+			return CloneErr{
+				Url: cloneURL,
+				Ref: w.src.Ref,
+				Err: err,
+			}
+		}
+		return nil
 	}
 
 	// first, if it looks like a commit hash, attempt to check out as a reference

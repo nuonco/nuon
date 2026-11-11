@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
@@ -18,6 +19,8 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/rootfs"
 	runnerworkspace "github.com/nuonco/nuon/pkg/runner/workspace"
+	"github.com/nuonco/nuon/pkg/sourcefs"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/pkg/workspace"
 )
 
@@ -340,6 +343,94 @@ func TestPublicInitMemoryNamespaceAndFailureLifecycle(t *testing.T) {
 			require.Error(t, err, "failed Init must close its pinned root")
 			require.NoError(t, other.Cleanup(t.Context()))
 			require.NoDirExists(t, other.Root())
+		})
+	}
+}
+
+func requireGitTree(t *testing.T, w job, root, digest, commit string) {
+	t.Helper()
+	source, err := sourcefs.From(w.FS(), w.Root())
+	require.NoError(t, err)
+	i := sourceidentity.New("terraform", "config")
+	i.Root, i.Digest, i.Commit, i.Repository, i.Captured = root, digest, commit, "https://example.com/acme/app.git", true
+	i.Seal()
+	require.NoError(t, sourceidentity.Verify(source, i))
+}
+
+func TestPublicInitCheckoutHashesToGitTree(t *testing.T) {
+	dir := t.TempDir()
+	gitCommand(t, dir, "init", "-b", "main")
+	for name, mode := range map[string]os.FileMode{
+		"exec/run.sh":         0o755,
+		"exec/plain":          0o644,
+		"nested/a/b/c/file":   0o644,
+		"prefix/a.txt":        0o644,
+		"prefix/a/file":       0o644,
+		"prefix/a-b":          0o644,
+		"link/target":         0o644,
+		"gitlink/authored.tf": 0o644,
+	} {
+		path := filepath.Join(dir, name)
+		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+		require.NoError(t, os.WriteFile(path, []byte(name), mode))
+	}
+	require.NoError(t, os.Symlink("target", filepath.Join(dir, "link/to-target")))
+	require.NoError(t, os.Symlink("../.git/hooks", filepath.Join(dir, "gitlink/hooks")))
+	gitCommand(t, dir, "add", ".")
+	gitCommand(t, dir, "commit", "-m", "fixture")
+	commit := gitCommand(t, dir, "rev-parse", "HEAD")
+	tests := []struct{ name, root, mode string }{
+		{"repository root", "", "040000"},
+		{"executable bit", "exec", "040000"},
+		{"nested directories", "nested", "040000"},
+		{"names sharing a prefix", "prefix", "040000"},
+		{"symlink", "link", "040000"},
+		{"symlink as root", "link/to-target", "120000"},
+		{"symlink into Git metadata", "gitlink", "040000"},
+	}
+	for _, factory := range factories {
+		t.Run(factory.name, func(t *testing.T) {
+			w := factory.new(t, jobOptions{root: t.TempDir(), id: "job", url: dir, ref: commit, logger: zap.NewNop()})
+			require.NoError(t, w.Init(t.Context()))
+			defer w.Cleanup(context.Background())
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					object := gitCommand(t, dir, "rev-parse", commit+":"+tc.root)
+					requireGitTree(t, w, tc.root, "git:"+tc.mode+":"+object, commit)
+				})
+			}
+		})
+	}
+}
+
+func TestPublicInitFetchesCommitOutsideClonedRefs(t *testing.T) {
+	for name, allowAnySHA := range map[string]bool{"server allows any SHA": true, "server refuses unadvertised SHA": false} {
+		t.Run(name, func(t *testing.T) {
+			dir, _, _ := fixture(t)
+			require.NoError(t, os.WriteFile(filepath.Join(dir, "dir/payload"), []byte("unmerged"), 0o600))
+			gitCommand(t, dir, "commit", "-am", "unmerged")
+			commit := gitCommand(t, dir, "rev-parse", "HEAD")
+			tree := gitCommand(t, dir, "rev-parse", commit+":dir")
+			gitCommand(t, dir, "update-ref", "refs/pull/1/head", commit)
+			gitCommand(t, dir, "reset", "--hard", "HEAD~1")
+			if allowAnySHA {
+				gitCommand(t, dir, "config", "uploadpack.allowAnySHA1InWant", "true")
+			}
+			for _, factory := range factories {
+				t.Run(factory.name, func(t *testing.T) {
+					w := factory.new(t, jobOptions{root: t.TempDir(), id: "job", url: dir, ref: commit, path: "dir", logger: zap.NewNop()})
+					err := w.Init(t.Context())
+					defer w.Cleanup(context.Background())
+					if !allowAnySHA {
+						require.ErrorIs(t, err, git.ErrExactSHA1NotSupported)
+						require.ErrorContains(t, err, dir)
+						require.ErrorContains(t, err, commit)
+						return
+					}
+					require.NoError(t, err)
+					requireGitTree(t, w, "dir", "git:040000:"+tree, commit)
+				})
+			}
 		})
 	}
 }

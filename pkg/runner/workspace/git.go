@@ -113,7 +113,14 @@ func (w *workspace) clone(ctx context.Context) (retErr error) {
 	// hoist this var, like a savage
 	coOpts := &git.CheckoutOptions{}
 	if sourceidentity.IsCommit(w.Src.Ref) {
-		return sourceidentity.Checkout(ctx, repo, w.Src.Ref, auth)
+		if err := sourceidentity.Checkout(ctx, repo, w.Src.Ref, auth); err != nil {
+			return CloneErr{
+				Url: cloneURL,
+				Ref: w.Src.Ref,
+				Err: err,
+			}
+		}
+		return nil
 	}
 
 	// first, if it looks like a 40 char regex, attempt to check out as a reference w/ the hash

@@ -30,7 +30,7 @@ func Checkout(ctx context.Context, repo *git.Repository, ref string, auth transp
 	if _, err := repo.CommitObject(hash); err != nil {
 		fetchErr := repo.FetchContext(ctx, &git.FetchOptions{Auth: auth, RefSpecs: []config.RefSpec{config.RefSpec("+" + ref + ":refs/nuon/captured")}})
 		if fetchErr != nil && fetchErr != git.NoErrAlreadyUpToDate {
-			return fmt.Errorf("fetch captured commit: %w", fetchErr)
+			return fmt.Errorf("fetch captured commit outside cloned refs: %w", fetchErr)
 		}
 	}
 	wt, err := repo.Worktree()
@@ -56,52 +56,42 @@ func gitDigest(source *sourcefs.FS, root string) (string, error) {
 		return "", err
 	}
 	name := "."
+	var stored sourcefs.Entry
 	for _, part := range strings.Split(root, string(filepath.Separator)) {
 		name = filepath.Join(name, part)
-		info, err := source.Lstat(name)
+		stored, err = source.Entry(name)
 		if err != nil {
 			return "", err
 		}
-		if info.Mode()&os.ModeSymlink != 0 {
-			root = name
+		if stored.Mode()&os.ModeSymlink != 0 {
 			break
 		}
 	}
-	entry, err := gitEntry(source, root)
+	entry, err := gitEntry(source, name, stored)
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("git:%06o:%s", entry.Mode, entry.Hash), nil
 }
 
-func gitEntry(source *sourcefs.FS, name string) (object.TreeEntry, error) {
+func gitEntry(source *sourcefs.FS, name string, stored sourcefs.Entry) (object.TreeEntry, error) {
 	entry := object.TreeEntry{Name: filepath.Base(name)}
-	info, err := source.Lstat(name)
-	if err != nil {
-		return entry, err
-	}
-	entry.Mode, err = filemode.NewFromOSFileMode(info.Mode())
+	var err error
+	entry.Mode, err = filemode.NewFromOSFileMode(stored.Mode())
 	if err != nil {
 		return entry, err
 	}
 	switch entry.Mode {
 	case filemode.Symlink:
-		target, err := source.Readlink(name)
-		if err != nil {
-			return entry, err
-		}
-		entry.Hash = plumbing.ComputeHash(plumbing.BlobObject, []byte(target))
+		entry.Hash = plumbing.ComputeHash(plumbing.BlobObject, []byte(stored.Target))
 	case filemode.Dir:
-		children, err := source.ReadDir(name)
+		children, err := source.Entries(name)
 		if err != nil {
 			return entry, err
 		}
 		tree := &object.Tree{}
 		for _, child := range children {
-			if child.Name() == ".git" {
-				continue
-			}
-			next, err := gitEntry(source, filepath.Join(name, child.Name()))
+			next, err := gitEntry(source, filepath.Join(name, child.Name()), child)
 			if err != nil {
 				return entry, err
 			}
@@ -118,7 +108,7 @@ func gitEntry(source *sourcefs.FS, name string) (object.TreeEntry, error) {
 		if err != nil {
 			return entry, err
 		}
-		hasher := plumbing.NewHasher(plumbing.BlobObject, info.Size())
+		hasher := plumbing.NewHasher(plumbing.BlobObject, stored.Size())
 		_, err = io.Copy(hasher, file)
 		if err := errors.Join(err, file.Close()); err != nil {
 			return entry, err
