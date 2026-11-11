@@ -147,10 +147,10 @@ const ConfirmGroupActionModal = ({
 
 const ACTION_LABEL: Record<
   GroupAction,
-  { label: string; variant: 'primary' | 'danger' }
+  { label: string; variant: 'primary' | 'secondary' }
 > = {
   approve: { label: 'Approve', variant: 'primary' },
-  'deny-skip-current': { label: 'Skip', variant: 'danger' },
+  'deny-skip-current': { label: 'Skip', variant: 'secondary' },
 }
 
 export const GroupActionButton = ({
