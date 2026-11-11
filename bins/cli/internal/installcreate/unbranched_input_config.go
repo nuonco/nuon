@@ -25,7 +25,7 @@ func UnbranchedInputConfig(ctx context.Context, api nuon.Client, appID string) (
 			if cfg == nil || cfg.ID == "" || cfg.AppBranchID != "" {
 				continue
 			}
-			if cfg.Status != models.AppAppConfigStatusActive {
+			if !appConfigActive(cfg) {
 				continue
 			}
 			if cfg.Labels["source"] == string(models.AppAppBranchRunTypeGitDashPreviewDashRun) {
@@ -38,7 +38,7 @@ func UnbranchedInputConfig(ctx context.Context, api nuon.Client, appID string) (
 				return nil, fmt.Errorf("unable to get app config %s: %w", cfg.ID, err)
 			}
 			if full == nil || full.Input == nil {
-				continue
+				return nil, fmt.Errorf("app config %s has no input config", cfg.ID)
 			}
 			hydrateInputGroups(full.Input)
 			return full.Input, nil
@@ -50,6 +50,13 @@ func UnbranchedInputConfig(ctx context.Context, api nuon.Client, appID string) (
 	}
 
 	return nil, noUnbranchedConfigError(ctx, api, appID)
+}
+
+func appConfigActive(cfg *models.AppAppConfig) bool {
+	if cfg.StatusV2 != nil && cfg.StatusV2.Status != "" {
+		return cfg.StatusV2.Status == models.AppStatusActive
+	}
+	return cfg.Status == models.AppAppConfigStatusActive
 }
 
 func noUnbranchedConfigError(ctx context.Context, api nuon.Client, appID string) error {
