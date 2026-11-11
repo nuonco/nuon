@@ -3,7 +3,6 @@ package activities
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"go.temporal.io/sdk/temporal"
 	"gorm.io/gorm"
@@ -13,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/vcserrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
 type GetSandboxBuildConfigInput struct {
@@ -99,38 +97,6 @@ func SandboxSourceFailureDescription(err error) string {
 		}
 	}
 	return "unable to resolve sandbox source"
-}
-
-func (a *Activities) failSandboxBuildSource(ctx context.Context, buildID, repo, ref string, cause error) error {
-	data, buildErr := compositeerrors.New(
-		&vcserrors.GitRefNotFoundError{Repo: repo, Ref: ref},
-		compositeerrors.WithSource("app_sandbox_builds", buildID),
-	)
-	if buildErr != nil {
-		return fmt.Errorf("unable to build sandbox build composite error: %w", buildErr)
-	}
-
-	if res := a.db.WithContext(ctx).
-		Model(&app.AppSandboxBuild{ID: buildID}).
-		Select("composite_error").
-		Updates(app.AppSandboxBuild{CompositeError: data}); res.Error != nil {
-		return fmt.Errorf("unable to set sandbox build composite error: %w", res.Error)
-	}
-
-	return vcserrors.NewGitRefNotFound(repo, ref, cause)
-}
-
-func (a *Activities) attachSandboxBuildCommit(ctx context.Context, buildID string, commitID *string) error {
-	if buildID == "" || commitID == nil || *commitID == "" {
-		return nil
-	}
-	if res := a.db.WithContext(ctx).
-		Model(&app.AppSandboxBuild{}).
-		Where(app.AppSandboxBuild{ID: buildID}).
-		Update("vcs_connection_commit_id", *commitID); res.Error != nil {
-		return fmt.Errorf("unable to attach commit to sandbox build: %w", res.Error)
-	}
-	return nil
 }
 
 func sandboxConfigRepo(cfg *app.AppSandboxConfig) (repo, vcsConfigID string) {

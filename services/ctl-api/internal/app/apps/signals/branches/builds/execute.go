@@ -8,7 +8,6 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
@@ -155,7 +154,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		builds = append(builds, sandboxEntry)
 		s.updateBuildMetadata(ctx, builds)
 
-		if err := s.buildSandbox(ctx, l, check.SourceIdentity, false); err != nil {
+		if err := s.buildSandbox(ctx, l, false); err != nil {
 			s.setBuildStatus(builds, activities.SandboxComponentID, "error")
 			buildsErr := s.markBuildsCompleted(ctx, l, false)
 			s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
@@ -239,7 +238,6 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 
 	builds := make([]buildEntry, 0, len(componentIDs))
 	var toBuild []string
-	prepared := make(map[string]*sourceidentity.Identity, len(componentIDs))
 	for _, componentID := range componentIDs {
 		info := components[componentID]
 		name := info.Name
@@ -264,9 +262,6 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			check, err := activities.AwaitCheckBuildNeeded(ctx, checkInput)
 			if err != nil && workflow.GetVersion(ctx, "build-source-preparation-required-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 				return builds, fmt.Errorf("component %s: prepare source: %w", componentID, err)
-			}
-			if err == nil {
-				prepared[componentID] = check.SourceIdentity
 			}
 			if err == nil && !check.NeedsBuild {
 				l.Info("skipping build for unchanged component",
@@ -368,7 +363,6 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 					ComponentID:    componentID,
 					AppConfigID:    appConfigID,
 					AppBranchRunID: s.RunID,
-					SourceIdentity: prepared[componentID],
 				},
 				Callback: cb,
 			})
@@ -697,7 +691,7 @@ func previewInstallURL(commentContext *activities.GetPreviewCommentContextOutput
 	return commentContext.PreviewInstallURL
 }
 
-func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger, prepared *sourceidentity.Identity, reuseChecked bool) error {
+func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger, reuseChecked bool) error {
 	cb := callback.New(ctx, s.AppBranchID+"-sandbox-infra")
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.AppBranchID,
@@ -706,11 +700,10 @@ func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger, prepared *sour
 		SignalOwnerID:   s.AppBranchID,
 		SignalOwnerType: "app_branches",
 		Signal: &sandboxbuild.Signal{
-			AppBranchID:    s.AppBranchID,
-			RunID:          s.RunID,
-			StepID:         s.StepID,
-			SourceIdentity: prepared,
-			ReuseChecked:   reuseChecked,
+			AppBranchID:  s.AppBranchID,
+			RunID:        s.RunID,
+			StepID:       s.StepID,
+			ReuseChecked: reuseChecked,
 		},
 		Callback: cb,
 	})

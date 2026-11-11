@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -22,8 +20,7 @@ type CreateComponentBuildRecordRequest struct {
 	AppBranchRunID string
 	// AppConfigID pins the build to the CCC for this app config + component
 	// instead of the global LatestConfig view (avoids concurrent-run races).
-	AppConfigID    string
-	SourceIdentity *sourceidentity.Identity
+	AppConfigID string
 }
 
 // CreateComponentBuildRecord creates a component build record. Used by queue signals
@@ -66,15 +63,6 @@ func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateC
 			return nil, fmt.Errorf("update build branch run: %w", res.Error)
 		}
 		build.AppBranchRunID = &req.AppBranchRunID
-	}
-	if req.SourceIdentity != nil {
-		identity, err := buildsource.SaveComponent(ctx, a.db, build.ID, req.SourceIdentity)
-		if err != nil {
-			return nil, err
-		}
-		build.SourceIdentity = identity
-		build.Checksum = identity.ConfigChecksum
-		return build, nil
 	}
 
 	// Public-repo builds are created with their configured branch as the ref, so

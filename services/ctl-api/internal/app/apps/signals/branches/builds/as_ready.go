@@ -8,7 +8,6 @@ import (
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/queuebuild"
@@ -40,7 +39,7 @@ func (s *Signal) buildsAsReady(ctx workflow.Context, l log.Logger, appConfig *ap
 	dirty := true
 	changed := func() { dirty = true }
 	remaining := 3
-	var componentErr, sandboxErr, comparisonErr error
+	var componentErr, sandboxErr error
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		componentErr = s.componentsAsReady(ctx, l, builds[:len(appConfig.ComponentIDs)], appConfigID, previousAppConfigID, force, changed)
 		remaining--
@@ -58,7 +57,7 @@ func (s *Signal) buildsAsReady(ctx workflow.Context, l log.Logger, appConfig *ap
 			ExternalSourcesOnly: true,
 		})
 		if err != nil {
-			comparisonErr = fmt.Errorf("unable to enrich external source comparison: %w", err)
+			l.Warn("unable to enrich external source comparison", "error", err)
 		}
 		remaining--
 		changed()
@@ -73,7 +72,7 @@ func (s *Signal) buildsAsReady(ctx workflow.Context, l log.Logger, appConfig *ap
 			return builds, err
 		}
 	}
-	return builds, errors.Join(componentErr, sandboxErr, comparisonErr)
+	return builds, errors.Join(componentErr, sandboxErr)
 }
 
 func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []buildEntry, appConfigID, previousAppConfigID string, force bool, changed func()) error {
@@ -176,7 +175,6 @@ func (s *Signal) selectAndEnqueueComponent(ctx workflow.Context, l log.Logger, b
 		build.ComponentType = string(cmp.Type)
 		changed()
 	}
-	var prepared *sourceidentity.Identity
 	if previousAppConfigID != "" && !force {
 		input := &activities.CheckBuildNeededInput{
 			ComponentID:    componentID,
@@ -191,7 +189,6 @@ func (s *Signal) selectAndEnqueueComponent(ctx workflow.Context, l log.Logger, b
 		if err != nil {
 			return fmt.Errorf("component %s: prepare source: %w", componentID, err)
 		}
-		prepared = check.SourceIdentity
 		build.ChangeReason = check.ChangeReason
 		if !check.NeedsBuild {
 			if check.ExistingBuildID != "" {
@@ -228,7 +225,6 @@ func (s *Signal) selectAndEnqueueComponent(ctx workflow.Context, l log.Logger, b
 			ComponentID:    componentID,
 			AppConfigID:    appConfigID,
 			AppBranchRunID: s.RunID,
-			SourceIdentity: prepared,
 		},
 		Callback: cb,
 	})
@@ -268,7 +264,7 @@ func (s *Signal) sandboxAsReady(ctx workflow.Context, l log.Logger, build *build
 	}
 	build.Status = "in-progress"
 	changed()
-	if err := s.buildSandbox(ctx, l, check.SourceIdentity, true); err != nil {
+	if err := s.buildSandbox(ctx, l, true); err != nil {
 		return err
 	}
 	build.Status = "success"

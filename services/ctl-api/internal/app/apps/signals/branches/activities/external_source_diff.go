@@ -22,7 +22,7 @@ func (a *Activities) applyExternalSourceChanges(ctx context.Context, sources []c
 	group.SetLimit(8)
 	changed := make([]bool, len(sources))
 	for i, src := range sources {
-		if src.Name == "" || src.Repo == "" || (repoURLsEqual(src.Repo, branchRepo) && src.Branch == branchName) {
+		if src.Name == "" || src.Repo == "" || (buildsource.SameRepo(src.Repo, branchRepo) && src.Branch == branchName) {
 			continue
 		}
 		group.Go(func() error {

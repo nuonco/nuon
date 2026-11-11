@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
@@ -16,11 +15,10 @@ import (
 )
 
 type Signal struct {
-	ComponentID    string                   `json:"component_id" validate:"required"`
-	AppConfigID    string                   `json:"app_config_id"`     // optional; if set, use branch VCS commit when component shares same VCS config
-	BuildID        string                   `json:"build_id"`          // optional; if set, skip build creation and trigger pre-created build
-	AppBranchRunID string                   `json:"app_branch_run_id"` // optional; links build to branch run for querying
-	SourceIdentity *sourceidentity.Identity `json:"source_identity,omitempty"`
+	ComponentID    string `json:"component_id" validate:"required"`
+	AppConfigID    string `json:"app_config_id"`     // optional; if set, use branch VCS commit when component shares same VCS config
+	BuildID        string `json:"build_id"`          // optional; if set, skip build creation and trigger pre-created build
+	AppBranchRunID string `json:"app_branch_run_id"` // optional; links build to branch run for querying
 }
 
 var (
@@ -53,7 +51,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			ComponentID:    s.ComponentID,
 			AppConfigID:    s.AppConfigID,
 			AppBranchRunID: s.AppBranchRunID,
-			SourceIdentity: s.SourceIdentity,
 		})
 		if err != nil {
 			return fmt.Errorf("unable to adopt queued build: %w", err)
@@ -73,7 +70,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			OrgID:          cmp.OrgID,
 			AppBranchRunID: s.AppBranchRunID,
 			AppConfigID:    s.AppConfigID,
-			SourceIdentity: s.SourceIdentity,
 		}
 
 		// If AppConfigID is provided, try to use the branch's VCS commit when the

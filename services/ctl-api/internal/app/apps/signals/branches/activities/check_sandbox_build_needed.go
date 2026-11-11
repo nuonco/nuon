@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 )
 
@@ -16,10 +15,9 @@ type CheckSandboxBuildNeededInput struct {
 }
 
 type CheckSandboxBuildNeededOutput struct {
-	NeedsBuild      bool                     `json:"needs_build"`
-	ExistingBuildID string                   `json:"existing_build_id,omitempty"`
-	ChangeReason    string                   `json:"change_reason,omitempty"`
-	SourceIdentity  *sourceidentity.Identity `json:"source_identity,omitempty"`
+	NeedsBuild      bool   `json:"needs_build"`
+	ExistingBuildID string `json:"existing_build_id,omitempty"`
+	ChangeReason    string `json:"change_reason,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -58,7 +56,7 @@ func (a *Activities) CheckSandboxBuildNeeded(ctx context.Context, input *CheckSa
 		return reuseExistingSandboxBuild(reused.BuildID), nil
 	}
 
-	return &CheckSandboxBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged, SourceIdentity: reused.SourceIdentity}, nil
+	return &CheckSandboxBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
 }
 
 func reuseExistingSandboxBuild(existingBuildID string) *CheckSandboxBuildNeededOutput {

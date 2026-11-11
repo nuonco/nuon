@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/google/go-github/v50/github"
 	"gorm.io/gorm"
@@ -200,10 +199,7 @@ func runBranchRepo(run *app.AppBranchRun) (repo, branch string) {
 func buildTracksBranchSource(run *app.AppBranchRun, build *app.ComponentBuild) bool {
 	branchRepo, branchName := runBranchRepo(run)
 	cmpRepo, cmpBranch := buildRepoRef(buildVCSConfigs(build))
-	if branchRepo == "" || cmpRepo == "" || branchName == "" || cmpBranch == "" {
-		return false
-	}
-	return strings.EqualFold(branchRepo, cmpRepo) && branchName == cmpBranch
+	return branchName != "" && branchName == cmpBranch && buildsource.SameRepo(branchRepo, cmpRepo)
 }
 
 func buildRefCanBePinned(build *app.ComponentBuild) bool {

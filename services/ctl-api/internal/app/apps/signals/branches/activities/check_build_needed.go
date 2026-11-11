@@ -6,7 +6,6 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
@@ -21,10 +20,9 @@ type CheckBuildNeededInput struct {
 }
 
 type CheckBuildNeededOutput struct {
-	NeedsBuild      bool                     `json:"needs_build"`
-	ExistingBuildID string                   `json:"existing_build_id,omitempty"`
-	ChangeReason    string                   `json:"change_reason,omitempty"`
-	SourceIdentity  *sourceidentity.Identity `json:"source_identity,omitempty"`
+	NeedsBuild      bool   `json:"needs_build"`
+	ExistingBuildID string `json:"existing_build_id,omitempty"`
+	ChangeReason    string `json:"change_reason,omitempty"`
 }
 
 const (
@@ -112,7 +110,7 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 	if err != nil {
 		return nil, err
 	}
-	equal, err := buildsource.SourcesEqual(ctx, a.vcsHelpers, cfg.ConnectedGithubVCSConfig, cfg.PublicGitVCSConfig, completed.SourceIdentity, identity)
+	equal, err := buildsource.SourcesEqual(ctx, a.vcsHelpers, cfg.ConnectedGithubVCSConfig, cfg.PublicGitVCSConfig, buildsource.StoredIdentity(completed.SourceChecksum, completed.SourceIdentity), identity)
 	if err != nil {
 		return nil, err
 	}

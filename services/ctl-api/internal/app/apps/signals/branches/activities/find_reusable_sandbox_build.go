@@ -10,7 +10,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
@@ -24,8 +23,7 @@ type FindReusableSandboxBuildInput struct {
 }
 
 type FindReusableSandboxBuildOutput struct {
-	BuildID        string                   `json:"build_id,omitempty"`
-	SourceIdentity *sourceidentity.Identity `json:"source_identity,omitempty"`
+	BuildID string `json:"build_id,omitempty"`
 }
 
 func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindReusableSandboxBuildInput) (*FindReusableSandboxBuildOutput, error) {
@@ -80,7 +78,7 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 	if err != nil {
 		return nil, err
 	}
-	equal, err := buildsource.SourcesEqual(ctx, a.vcsHelpers, cfg.ConnectedGithubVCSConfig, cfg.PublicGitVCSConfig, build.SourceIdentity, identity)
+	equal, err := buildsource.SourcesEqual(ctx, a.vcsHelpers, cfg.ConnectedGithubVCSConfig, cfg.PublicGitVCSConfig, buildsource.StoredIdentity(build.SourceChecksum, build.SourceIdentity), identity)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +119,7 @@ func sandboxConfigsEquivalent(a, b *app.AppSandboxConfig) bool {
 	}
 	aRepo, _ := sandboxConfigRepo(a)
 	bRepo, _ := sandboxConfigRepo(b)
-	if !repoURLsEqual(aRepo, bRepo) || sandboxConfigBranch(a) != sandboxConfigBranch(b) {
+	if !buildsource.SameRepo(aRepo, bRepo) || sandboxConfigBranch(a) != sandboxConfigBranch(b) {
 		return false
 	}
 	if normalizeRepoPath(sandboxConfigDirectory(a)) != normalizeRepoPath(sandboxConfigDirectory(b)) {

@@ -41,7 +41,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 	sandboxConfig := sandbox.SandboxConfig
-	prepared := s.SourceIdentity
 
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
 	if err != nil {
@@ -51,7 +50,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	if !s.ReuseChecked && prepared == nil && !run.Force {
+	if !s.ReuseChecked && !run.Force {
 		reused, reuseErr := activities.AwaitFindReusableSandboxBuild(ctx, &activities.FindReusableSandboxBuildInput{
 			AppID:       appConfig.AppID,
 			AppConfigID: run.AppConfigID,
@@ -59,9 +58,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 		if reuseErr != nil {
 			return fmt.Errorf("unable to look up an existing sandbox build: %w", reuseErr)
-		}
-		if reused != nil {
-			prepared = reused.SourceIdentity
 		}
 		if reused != nil && reused.BuildID != "" {
 			l.Info("reusing sandbox build", "build_id", reused.BuildID)
@@ -90,7 +86,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		OrgID:              run.OrgID,
 		CreatedByID:        run.CreatedByID,
 		AppBranchRunID:     s.RunID,
-		SourceIdentity:     prepared,
 	}
 	build, err := activities.AwaitCreateSandboxBuild(ctx, createReq)
 	if err != nil {

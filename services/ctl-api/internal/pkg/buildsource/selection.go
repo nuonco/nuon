@@ -36,28 +36,14 @@ func SourcesEqual(ctx context.Context, vcs *vcshelpers.Helpers, connected *app.C
 	if before.EligibleChecksum() == "" || after.EligibleChecksum() == "" {
 		return false, nil
 	}
-	if after.Commit == "" {
-		return before.Digest != "" && before.Digest == after.Digest, nil
+	return after.Commit == "" && before.Digest != "" && before.Digest == after.Digest, nil
+}
+
+func StoredIdentity(sourceChecksum string, i *sourceidentity.Identity) *sourceidentity.Identity {
+	if i == nil || sourceChecksum == "" || sourceChecksum != i.Checksum {
+		return nil
 	}
-	if before.Commit == after.Commit {
-		return true, nil
-	}
-	if !sourceidentity.IsCommit(before.Commit) {
-		return false, nil
-	}
-	orgID, connection, err := sourceAccess(connected, public)
-	if err != nil {
-		return false, err
-	}
-	oldTree, err := vcs.GetSourceTree(ctx, orgID, after.Repository, before.Commit, connection)
-	if err != nil {
-		return false, err
-	}
-	oldHash, err := oldTree.Scope(after.Root)
-	if err != nil {
-		return false, err
-	}
-	return oldHash == after.Digest, nil
+	return i
 }
 
 func inputsUnchanged(ctx context.Context, vcs *vcshelpers.Helpers, connected *app.ConnectedGithubVCSConfig, public *app.PublicGitVCSConfig, after *sourceidentity.Identity, inputs []sourceidentity.Input) (bool, error) {
@@ -183,11 +169,8 @@ func DirectoryChanged(ctx context.Context, vcs *vcshelpers.Helpers, connected *a
 		repository = public.Repo
 	}
 	base, err := vcs.GetSourceTree(ctx, orgID, repository, baseSHA, connection)
-	if errors.Is(err, vcshelpers.ErrSourceCommitNotFound) || errors.Is(err, vcshelpers.ErrSourceTreeTooLarge) {
-		return true, nil
-	}
 	if err != nil {
-		return false, err
+		return true, ctx.Err()
 	}
 	head, err := vcs.GetSourceTree(ctx, orgID, repository, headSHA, connection)
 	if errors.Is(err, vcshelpers.ErrSourceTreeTooLarge) {
@@ -198,7 +181,7 @@ func DirectoryChanged(ctx context.Context, vcs *vcshelpers.Helpers, connected *a
 	}
 	before, err := base.Scope(root)
 	if err != nil && !errors.Is(err, vcshelpers.ErrSourceDirectoryMissing) {
-		return false, err
+		return true, nil
 	}
 	after, err := head.Scope(root)
 	if err != nil && !errors.Is(err, vcshelpers.ErrSourceDirectoryMissing) {

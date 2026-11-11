@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 )
 
 type ComputeAndStoreAppBranchRunComparisonInput struct {
@@ -232,7 +233,7 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		}
 		if !out.GitDiffStored {
 			for _, src := range componentSources {
-				if repoURLsEqual(src.Repo, repo) && src.Branch == branchName {
+				if buildsource.SameRepo(src.Repo, repo) && src.Branch == branchName {
 					markComponentSourceChanged(configDiff, src.Name)
 				}
 			}
