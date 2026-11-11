@@ -11,7 +11,7 @@ import {
   TemplateChangesContent,
 } from '@/components/branches/ConfigChanges'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
-import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { GroupApprovalActions } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import { AppContext } from '@/providers/app-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TInstallWorkflowStep } from '@/types'
@@ -773,7 +773,7 @@ const PrimaryPlanApproval = () => {
               />,
               `plan-diff-${primaryPlanStep.id}`
             ),
-          actions: <GroupActionButton action="approve" target={target} />,
+          actions: <GroupApprovalActions target={target} />,
         },
       ]}
     />
