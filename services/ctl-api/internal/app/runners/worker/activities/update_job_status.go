@@ -83,7 +83,7 @@ func (a *Activities) enqueueJobCompleted(ctx context.Context, runnerID, jobID st
 		return fmt.Errorf("runner id is required")
 	}
 
-  ctx = cctx.ClearLogStreamContext(ctx)
+    ctx = cctx.ClearLogStreamContext(ctx)
 
 	q, err := a.queueClient.GetQueueByOwnerAndName(ctx, runnerID, "runners", queuenames.RunnerSignalsQueueName)
 	if err != nil {
