@@ -538,7 +538,7 @@ func (s *appInstallSyncer) withUnbranchedInstallHint(ctx context.Context, instal
 		return err
 	}
 	return fmt.Errorf(
-		"%w; install config %q has no app_branch, so it uses the app config from the last `nuon apps sync`. Set app_branch to create the install on an app branch",
+		"%w; install config %q has no app_branch, so it uses the app config from the last `nuon apps sync`; set app_branch to create the install on an app branch",
 		err, installCfg.Name,
 	)
 }
