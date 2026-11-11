@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func TestClassifyErrorExitCode(t *testing.T) {
@@ -30,5 +33,20 @@ func TestClassifyErrorExitCode(t *testing.T) {
 	code, _ = classifyError(errors.New("boom"))
 	if code != "error" {
 		t.Fatalf("plain error code = %q, want error", code)
+	}
+}
+
+func TestClassifyErrorWrappedAPIUserError(t *testing.T) {
+	description := "The install's labels match more than one app branch (acme-a, acme-b). Set app_branch on the install to choose one."
+	err := fmt.Errorf("error resolving install create target: %w", &operations.GetInstallCreateTargetBadRequest{
+		Payload: &models.StderrErrResponse{UserError: true, Error: "invalid request", Description: description},
+	})
+
+	code, msg := classifyError(err)
+	if code != "user_error" {
+		t.Fatalf("code = %q, want user_error", code)
+	}
+	if msg != description {
+		t.Fatalf("msg = %q, want %q", msg, description)
 	}
 }

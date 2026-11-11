@@ -366,6 +366,10 @@ func (a *dryRunInputsAPI) GetAppInputLatestConfig(context.Context, string) (*mod
 	return a.latestInput, nil
 }
 
+func (a *dryRunInputsAPI) GetInstallCreateTarget(context.Context, string, map[string]string, string) (*models.ServiceInstallCreateTargetResponse, error) {
+	return &models.ServiceInstallCreateTargetResponse{AppConfigID: "fallback-config"}, nil
+}
+
 func appConfigWithInputs(id string, names ...string) *models.AppAppConfig {
 	inputs := make([]*models.AppAppInput, len(names))
 	for i, name := range names {
@@ -460,11 +464,14 @@ func TestSyncExistingInstallDryRunAllowsInputDeclaredOnlyOnPin(t *testing.T) {
 
 func TestSyncNewInstallDryRunRejectsUnknownInput(t *testing.T) {
 	api := &dryRunInputsAPI{
+		configs: map[string]*models.AppAppConfig{
+			"fallback-config": appConfigWithInputs("fallback-config", "region"),
+		},
 		latestInput: &models.AppAppInputConfig{
 			Inputs: []*models.AppAppInput{{Name: "region"}},
 		},
 	}
-	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
+	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true, branchesByInstall: map[string]*models.AppAppBranch{}}
 	cfg := &config.Install{
 		Name: "acme",
 		InputGroups: []config.InputGroup{{

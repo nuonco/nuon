@@ -8,16 +8,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-type latestInputAPI struct {
-	nuon.Client
-	calls int
-}
-
-func (a *latestInputAPI) GetAppInputLatestConfig(context.Context, string) (*models.AppAppInputConfig, error) {
-	a.calls++
-	return &models.AppAppInputConfig{ID: "input"}, nil
-}
-
 type pinnedInputAPI struct {
 	nuon.Client
 	latestCalls int
@@ -71,13 +61,23 @@ func TestInputConfigForInstallWithoutPinUsesLatest(t *testing.T) {
 	}
 }
 
-func TestResolveInputConfigWithoutBranchDoesNotPoll(t *testing.T) {
-	api := &latestInputAPI{}
+func TestResolveInputConfigWithoutBranchUsesTheCreateTargetConfig(t *testing.T) {
+	api := &createTargetAPI{
+		target: &models.ServiceInstallCreateTargetResponse{AppConfigID: "fallback-cfg"},
+		appConfigResponse: &models.AppAppConfig{
+			ID:     "fallback-cfg",
+			Status: models.AppAppConfigStatusActive,
+			Input:  &models.AppAppInputConfig{ID: "fallback-cfg-inputs"},
+		},
+	}
 	got, err := ResolveInputConfig(context.Background(), api, "app", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.ID != "input" || api.calls != 1 {
-		t.Fatalf("got %v after %d calls", got, api.calls)
+	if got.ID != "fallback-cfg-inputs" {
+		t.Fatalf("got %v", got)
+	}
+	if api.latestInputCalls != 0 {
+		t.Fatalf("expected GetAppInputLatestConfig to not be called, got %d calls", api.latestInputCalls)
 	}
 }

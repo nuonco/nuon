@@ -16,8 +16,6 @@ import (
 
 var branchLabelsTestSeq int64
 
-// uniqueBranchName keeps branch names collision-free across the many s.Run
-// subtests sharing one suite-level app, since app branch names are unique per app.
 func uniqueBranchName(name string) string {
 	return fmt.Sprintf("%s-%d", name, atomic.AddInt64(&branchLabelsTestSeq, 1))
 }
@@ -31,9 +29,6 @@ const (
 	branchCfgStatePreviewOnly
 )
 
-// seedBranch creates an app branch, optionally with a config in cfgState and the
-// given install groups on that config. Returns the branch and its config (nil
-// when cfgState is branchCfgStateNone).
 func (s *InstallsServiceTestSuite) seedBranch(name string, groups []app.AppBranchInstallGroup, cfgState branchCfgState) (*app.AppBranch, *app.AppConfig) {
 	branch := &app.AppBranch{AppID: s.testApp.ID, Name: uniqueBranchName(name)}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
@@ -69,8 +64,6 @@ func (s *InstallsServiceTestSuite) seedBranch(name string, groups []app.AppBranc
 	return branch, cfg
 }
 
-// removeFallbackAppConfig soft-deletes the suite's default non-branch app config, so
-// the app has no latest apps-sync config for an unbranched or unmatched install to fall back to.
 func (s *InstallsServiceTestSuite) removeFallbackAppConfig() {
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(s.testAppConfig).Error)
 }
@@ -268,8 +261,6 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 	s.Run("only the branch's latest config selectors are considered", func() {
 		s.expectQueueCreation()
 		branch, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
-		// A newer config on the same branch now selects a different label, so the
-		// older config's selector must not be consulted.
 		newerCfg := s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(newerCfg).
 			Updates(map[string]any{"app_branch_id": branch.ID, "builds_pinned": true, "builds_locked": true}).Error)
