@@ -7,9 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/promotion"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type AdminPromotionRequest struct {
@@ -27,23 +26,22 @@ type AdminPromotionRequest struct {
 // @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/general/promotion [POST]
 func (s *service) AdminPromotion(ctx *gin.Context) {
+	if _, err := cctx.AccountFromGinContext(ctx); err != nil {
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         err,
+			Description: "X-Nuon-Admin-Email header is required",
+		})
+		return
+	}
+
 	var req AdminPromotionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
-	q, err := s.generalHelpers.EnsureGeneralQueue(ctx)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to ensure general queue: %w", err))
-		return
-	}
-
-	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: q.ID,
-		Signal:  &promotion.Signal{Tag: req.Tag},
-	}); err != nil {
-		ctx.Error(fmt.Errorf("unable to enqueue promotion signal: %w", err))
+	if _, err := s.adminOps.Promote(ctx, req.Tag); err != nil {
+		ctx.Error(fmt.Errorf("unable to promote: %w", err))
 		return
 	}
 
