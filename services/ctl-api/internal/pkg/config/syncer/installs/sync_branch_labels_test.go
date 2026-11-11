@@ -207,6 +207,72 @@ func (s *SyncInstallBranchLabelsTestSuite) TestSyncWithAppSyncDisabledRejectsIns
 	assert.Contains(s.T(), err.Error(), "has no app_branch and its labels")
 }
 
+func (s *SyncInstallBranchLabelsTestSuite) TestSyncDoesNotMoveExistingOffBranchInstallWhenLabelsStartMatching() {
+	s.expectQueueCreation()
+
+	installCfg := &config.Install{
+		Name:       "existing-off-branch-stays",
+		AWSAccount: &config.AWSAccount{Region: "us-west-2"},
+	}
+	_, err := SyncInstall(s.ctx, s.deps.DB, s.deps.InstallHelpers, s.testApp.ID, installCfg)
+	require.NoError(s.T(), err)
+
+	install := s.getInstallByName("existing-off-branch-stays")
+	require.False(s.T(), install.AppBranchID.Valid)
+
+	s.seedBranch("prod", []app.AppBranchInstallGroup{{
+		Name:          "prod",
+		LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}},
+	}})
+
+	installCfg = &config.Install{
+		Name:       "existing-off-branch-stays",
+		Labels:     map[string]string{"env": "prod"},
+		AWSAccount: &config.AWSAccount{Region: "us-west-2"},
+	}
+	_, err = SyncInstall(s.ctx, s.deps.DB, s.deps.InstallHelpers, s.testApp.ID, installCfg)
+	require.NoError(s.T(), err)
+
+	install = s.getInstallByName("existing-off-branch-stays")
+	assert.False(s.T(), install.AppBranchID.Valid)
+}
+
+func (s *SyncInstallBranchLabelsTestSuite) TestSyncKeepsExistingInstallOnItsBranchWhenTOMLOmitsAppBranch() {
+	s.expectQueueCreation()
+	branch := s.seedBranch("prod", []app.AppBranchInstallGroup{{
+		Name: "default",
+		LabelSelector: &labels.Selector{MatchLabels: labels.Labels{
+			"keep": "me",
+		}},
+		Default: true,
+	}})
+
+	installCfg := &config.Install{
+		Name:       "existing-on-branch-stays",
+		AppBranch:  branch.Name,
+		Labels:     map[string]string{"keep": "me"},
+		AWSAccount: &config.AWSAccount{Region: "us-west-2"},
+	}
+	_, err := SyncInstall(s.ctx, s.deps.DB, s.deps.InstallHelpers, s.testApp.ID, installCfg)
+	require.NoError(s.T(), err)
+
+	install := s.getInstallByName("existing-on-branch-stays")
+	require.True(s.T(), install.AppBranchID.Valid)
+	require.Equal(s.T(), branch.ID, install.AppBranchID.String)
+
+	installCfg = &config.Install{
+		Name:       "existing-on-branch-stays",
+		Labels:     map[string]string{"keep": "me", "extra": "value"},
+		AWSAccount: &config.AWSAccount{Region: "us-west-2"},
+	}
+	_, err = SyncInstall(s.ctx, s.deps.DB, s.deps.InstallHelpers, s.testApp.ID, installCfg)
+	require.NoError(s.T(), err)
+
+	install = s.getInstallByName("existing-on-branch-stays")
+	assert.True(s.T(), install.AppBranchID.Valid)
+	assert.Equal(s.T(), branch.ID, install.AppBranchID.String)
+}
+
 func (s *SyncInstallBranchLabelsTestSuite) TestSyncWithAppSyncDisabledRejectsInstallMatchingTwoBranches() {
 	s.setDisableAppSync(true)
 	branchA := s.seedBranch("prod", []app.AppBranchInstallGroup{{

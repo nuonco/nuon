@@ -134,6 +134,24 @@ func TestResolveInstallConfigBranchesRequiresBranchWhenAppSyncDisabled(t *testin
 	}
 }
 
+// TestResolveInstallConfigBranchesAllowsNoAppBranchUnderDisableAppSync documents the
+// target behaviour once Phase 2 removes this function's local disable-app-sync check:
+// an install config with no app_branch should no longer fail here, leaving the
+// no-matching-branch decision to the server's label-based resolution. It fails today
+// because that local check has not been removed yet.
+func TestResolveInstallConfigBranchesAllowsNoAppBranchUnderDisableAppSync(t *testing.T) {
+	_, err := resolveInstallConfigBranches(
+		context.Background(),
+		testAppBranchLister{},
+		"app-1",
+		[]*config.Install{{Name: "production", Labels: map[string]string{"env": "prod"}}},
+		true,
+	)
+	if err != nil {
+		t.Fatalf("expected no local app_branch requirement once the server resolves by labels, got: %v", err)
+	}
+}
+
 func TestResolveInstallConfigBranchesAcceptsNameAndID(t *testing.T) {
 	branches := []*models.AppAppBranch{
 		{ID: "branch-1", Name: "production"},

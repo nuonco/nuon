@@ -572,6 +572,44 @@ func (s *InstallsServiceTestSuite) TestCreateInstallMatchedBranchConfigStates() 
 	})
 }
 
+func (s *InstallsServiceTestSuite) addAppInput(appConfigID, name string) {
+	var inputCfg app.AppInputConfig
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.AppInputConfig{AppConfigID: appConfigID}).First(&inputCfg).Error)
+	var group app.AppInputGroup
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.AppInputGroup{AppInputConfigID: inputCfg.ID}).First(&group).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.AppInput{
+		AppInputConfigID: inputCfg.ID,
+		AppInputGroupID:  group.ID,
+		Name:             name,
+		Type:             app.AppInputTypeString,
+	}).Error)
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallMatchedBranchInputOnlyBranchDefines() {
+	s.Run("matched branch config defines an input the fallback config does not, request input accepted", func() {
+		s.expectQueueCreation()
+		branch, cfg := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
+		s.addAppInput(cfg.ID, "x")
+
+		body := CreateInstallV2Request{
+			AppID: s.testApp.ID,
+			CreateInstallParams: helpers.CreateInstallParams{
+				Name:       "branch-only-input-accepted",
+				AWSAccount: &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
+				Labels:     map[string]string{"env": "prod"},
+				Inputs:     map[string]*string{"x": strPtr("value")},
+			},
+		}
+		rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
+		require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+		var install app.Install
+		require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
+		require.True(s.T(), install.AppBranchID.Valid)
+		assert.Equal(s.T(), branch.ID, install.AppBranchID.String)
+		assert.Equal(s.T(), cfg.ID, install.AppConfigID)
+	})
+}
+
 func (s *InstallsServiceTestSuite) TestCreateInstallNoMatchAndNoFallback() {
 	s.Run("branches exist, no apps-sync config, no labels errors with the no-branch-match wording", func() {
 		s.removeFallbackAppConfig()
@@ -600,5 +638,23 @@ func (s *InstallsServiceTestSuite) TestCreateInstallNoMatchAndNoFallback() {
 		require.Equal(s.T(), http.StatusBadRequest, res.code, string(res.body))
 		assert.Contains(s.T(), string(res.body), "sync your app configuration")
 		s.assertNoInstallCreated("no-branches-no-config")
+	})
+
+	s.Run("branches and fallback config exist, no label match, request sets an input only branches define errors with appended explanation", func() {
+		_, cfg := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
+		s.addAppInput(cfg.ID, "y")
+
+		body := CreateInstallV2Request{
+			AppID: s.testApp.ID,
+			CreateInstallParams: helpers.CreateInstallParams{
+				Name:       "fallback-missing-branch-input",
+				AWSAccount: &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
+				Inputs:     map[string]*string{"y": strPtr("value")},
+			},
+		}
+		rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
+		require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+		assert.Contains(s.T(), rr.Body.String(), "did not match any app branch's install groups")
+		s.assertNoInstallCreated("fallback-missing-branch-input")
 	})
 }
