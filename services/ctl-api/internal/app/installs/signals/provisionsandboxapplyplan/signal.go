@@ -218,13 +218,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
-	if err := activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
+	baselineErr := activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
 		SandboxRunID: sandboxRun.ID,
-	}); err != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		return errors.Wrap(err, "unable to record applied sandbox baseline")
-	}
+	})
+	if baselineErr != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		baselineErr = errors.Wrap(baselineErr, "unable to record applied sandbox baseline")
+		s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusError, "applied, but unable to record the applied baseline")
+	} else {
+		baselineErr = nil
 
-	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
+		s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
+	}
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{
 		InstallID:       install.ID,
 		Targets:         statemanager.TargetsForHint(statemanager.HintSandboxProvisioned, ""),
@@ -234,7 +238,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return err
 	}
-	return nil
+	return baselineErr
 }
 
 func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, sandboxMode bool, dnsRootDomain string) error {
