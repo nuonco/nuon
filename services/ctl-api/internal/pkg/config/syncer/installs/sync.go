@@ -42,7 +42,17 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 		return nil, fmt.Errorf("unable to load app %s for install sync: %w", appID, err)
 	}
 	if application.Org.Features[string(app.OrgFeatureDisableAppSync)] && install.AppBranch == "" {
-		return nil, fmt.Errorf("install config %q must set app_branch when disable-app-sync is enabled", install.Name)
+		_, staticLabels, _, err := installhelpers.CreateInstallLabels(&application, install.Labels)
+		if err != nil {
+			return nil, err
+		}
+		branch, err := appshelpers.BranchForInstallLabelsWithDB(ctx, db, appID, staticLabels)
+		if err != nil {
+			return nil, err
+		}
+		if branch == nil {
+			return nil, installhelpers.NoBranchForInstallError(install.Name)
+		}
 	}
 
 	var existing app.Install
