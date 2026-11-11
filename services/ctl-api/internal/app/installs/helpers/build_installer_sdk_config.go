@@ -72,7 +72,7 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	// contents before passing to the SDK. Without this, IAM rejects policy docs
 	// containing literal template syntax with "policy failed legacy parsing",
 	// and role names get created with literal `{{` characters.
-	installState, err := h.GetInstallState(ctx, installID, false, false)
+	installState, err := h.GetInstallState(ctx, installID, true, false)
 	if err != nil {
 		return nil, fmt.Errorf("get install state for template render: %w", err)
 	}
@@ -92,8 +92,9 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 
 	app.ApplyInstallStackOverrides(&install, &appCfg.StackConfig)
 
-	// Real values, not names: the read is authenticated. Current value per
-	// customer-source input, falling back to the app input's default.
+	// Current value per customer-source input, falling back to the app input's
+	// default. Sensitive inputs are listed by name only; their values never leave
+	// the API.
 	var currentInputs map[string]*string
 	if install.CurrentInstallInputs != nil {
 		currentInputs = install.CurrentInstallInputs.Values
@@ -115,6 +116,9 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		value := in.Default
 		if v, ok := currentInputs[in.Name]; ok && v != nil && *v != "" {
 			value = *v
+		}
+		if in.Sensitive {
+			value = ""
 		}
 		installInputs[in.Name] = value
 
