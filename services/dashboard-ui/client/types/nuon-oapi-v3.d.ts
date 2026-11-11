@@ -7134,6 +7134,7 @@ export interface components {
       author_avatar_url?: string;
       author_email?: string;
       author_name?: string;
+      committed_at?: string;
       created_at?: string;
       created_by_id?: string;
       id?: string;

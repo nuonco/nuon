@@ -183,7 +183,7 @@ const excludedSections: DiffSectionData[] = [
 
 const actions = (
   <>
-    <Button variant="danger">Skip</Button>
+    <Button variant="secondary">Skip</Button>
     <Button variant="primary">Approve</Button>
   </>
 )

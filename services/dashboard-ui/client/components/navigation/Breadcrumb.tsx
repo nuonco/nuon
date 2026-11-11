@@ -5,6 +5,7 @@ import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { installAppBranchId } from '@/components/branches/active-app-branch-connection'
 import { BreadcrumbQuickNav } from '@/components/navigation/BreadcrumbQuickNav'
 import { useBreadcrumb } from '@/hooks/use-breadcrumb'
 import { useInstallNested } from '@/hooks/use-install-path'
@@ -231,6 +232,7 @@ export const Breadcrumbs = ({ breadcrumbs }: { breadcrumbs: TNavLink[] }) => {
       appId,
       resourceId: install?.id ?? params.installId,
       name: install?.name,
+      appBranchId: install ? installAppBranchId(install) : undefined,
     },
   })
   const key = JSON.stringify(routed)

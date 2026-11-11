@@ -3,6 +3,7 @@ package fxmodules
 import (
 	"go.uber.org/fx"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/adminops"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -32,4 +33,5 @@ var HelpersModule = fx.Module("helpers",
 	fx.Provide(runnershelpers.New),
 	fx.Provide(generalhelpers.New),
 	fx.Provide(runbookshelpers.New),
+	fx.Provide(adminops.New),
 )

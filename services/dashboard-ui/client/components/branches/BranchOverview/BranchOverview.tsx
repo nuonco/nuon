@@ -745,6 +745,7 @@ export const BranchOverview = ({
                   commit={rollout.commit}
                   previewMode={rollout.previewMode}
                   baseline={rollout.baseline}
+                  runAt={rollout.runAt}
                 />
               )}
               {showConfigChanges ? null : changes}
