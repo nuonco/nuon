@@ -233,8 +233,8 @@ func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema
 		Field("verification").Short("container image signature verification policy").
 		Long("Require the resolved image digest to satisfy at least one configured Sigstore keyless identity or Cosign public key before Nuon copies it").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for build operations (e.g., \"10m\", \"30m\"). Default: 15m. Max: 30m").
-		Default("15m").
+		Long("Duration string for build operations (e.g., \"10m\", \"30m\"). Default: 10m. Max: 30m").
+		Default("10m").
 		Example("30m").
 		Field("deploy_timeout").Short("deploy operation timeout").
 		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\"). Default: 5m. Max: 1h").

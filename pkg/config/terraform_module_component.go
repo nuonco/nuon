@@ -65,8 +65,8 @@ func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Sche
 		Example("0 2 * * *").
 		Example("*/10 * * * *").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for build operations (e.g., \"10m\", \"30m\"). Default: 5m. Max: 30m").
-		Default("5m").
+		Long("Duration string for build operations (e.g., \"10m\", \"30m\"). Default: 10m. Max: 30m").
+		Default("10m").
 		Example("30m").
 		Field("deploy_timeout").Short("deploy operation timeout").
 		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\"). Default: 60m. Max: 1h").
