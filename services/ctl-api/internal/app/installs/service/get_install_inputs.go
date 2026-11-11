@@ -70,7 +70,7 @@ func (s *service) getInstallInputs(ctx *gin.Context, installID string) ([]app.In
 // maskSensitiveInputValues drops sensitive keys from values. redacted_values
 // still carries "********" for those keys. The stack config endpoint is the
 // one that needs the real values, so this stays on the install-inputs reads.
-func maskSensitiveInputValues(inputs []app.InstallInputs) {
+func maskSensitiveInputValues(inputs []app.InstallInputs) []app.InstallInputs {
 	for i := range inputs {
 		row := &inputs[i]
 		if row.Values == nil {
@@ -83,4 +83,5 @@ func maskSensitiveInputValues(inputs []app.InstallInputs) {
 			delete(row.Values, name)
 		}
 	}
+	return inputs
 }
