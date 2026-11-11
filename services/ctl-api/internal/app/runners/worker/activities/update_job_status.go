@@ -9,8 +9,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/credentialcleanup"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -83,7 +83,7 @@ func (a *Activities) enqueueJobCompleted(ctx context.Context, runnerID, jobID st
 		return fmt.Errorf("runner id is required")
 	}
 
-    ctx = cctx.ClearLogStreamContext(ctx)
+	ctx = cctx.ClearLogStreamContext(ctx)
 
 	q, err := a.queueClient.GetQueueByOwnerAndName(ctx, runnerID, "runners", queuenames.RunnerSignalsQueueName)
 	if err != nil {
