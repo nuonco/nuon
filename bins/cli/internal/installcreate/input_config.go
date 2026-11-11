@@ -40,7 +40,7 @@ func InputConfigForInstall(ctx context.Context, api nuon.Client, install *models
 // latest-input behavior.
 func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID string) (*models.AppAppInputConfig, error) {
 	if appBranchID == "" {
-		return api.GetAppInputLatestConfig(ctx, appID)
+		return UnbranchedInputConfig(ctx, api, appID)
 	}
 
 	branch, err := api.GetAppBranch(ctx, appID, appBranchID)

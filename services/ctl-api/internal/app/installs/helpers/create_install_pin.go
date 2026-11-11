@@ -35,7 +35,7 @@ func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID stri
 				return nil, branchErr
 			}
 			if hasBranches {
-				userErr.Description = "No app config from nuon apps sync exists for this app; its configs are on app branches. Set app_branch in the install config to create the install on an app branch."
+				userErr.Description = "No app config from nuon apps sync exists for this app; its configs are on app branches. Choose an app branch for this install."
 				return nil, userErr
 			}
 			return nil, err
@@ -79,7 +79,7 @@ func (s *Helpers) withUnbranchedInstallHint(ctx context.Context, orgID, appID st
 	if !hasBranches {
 		return err
 	}
-	userErr.Description = strings.TrimSuffix(userErr.Description, ".") + ". This install has no app_branch, so it uses the app config from the last nuon apps sync. Set app_branch in the install config to create the install on an app branch."
+	userErr.Description = strings.TrimSuffix(userErr.Description, ".") + ". This install has no app_branch, so it uses the app config from the last nuon apps sync. Choose an app branch for this install."
 	return userErr
 }
 

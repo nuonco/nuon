@@ -510,9 +510,9 @@ func (s *appInstallSyncer) inputConfigForNewInstall(
 	branch *models.AppAppBranch,
 ) (*models.AppAppInputConfig, error) {
 	if branch == nil {
-		appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
+		appInputCfg, err := installcreate.UnbranchedInputConfig(ctx, s.api, s.appID)
 		if err != nil {
-			return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
+			return nil, err
 		}
 		return appInputCfg, nil
 	}
