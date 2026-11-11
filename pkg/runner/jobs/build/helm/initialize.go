@@ -65,6 +65,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	if err != nil {
 		return fmt.Errorf("unable to open chart source: %w", err)
 	}
+	h.state.source.Record()
 	arch := ociarchive.New()
 	h.state.arch = arch
 	if err := arch.Initialize(ctx); err != nil {

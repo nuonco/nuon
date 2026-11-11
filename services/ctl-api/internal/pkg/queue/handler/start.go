@@ -2,6 +2,10 @@ package handler
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
@@ -11,6 +15,45 @@ import (
 	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
+
+const (
+	updateWithStartMaxAttempts  = 15
+	updateWithStartInitialDelay = 50 * time.Millisecond
+	updateWithStartMaxDelay     = 5 * time.Second
+)
+
+func RetryUpdate(ctx context.Context, updateName string, retryable func(error) bool, submit func() error) error {
+	delay := updateWithStartInitialDelay
+	var lastErr error
+	for attempt := 1; attempt <= updateWithStartMaxAttempts; attempt++ {
+		err := submit()
+		if err == nil {
+			return nil
+		}
+		if !retryable(err) {
+			return err
+		}
+		lastErr = err
+		if attempt == updateWithStartMaxAttempts {
+			break
+		}
+
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return fmt.Errorf("%s handler not registered: %w", updateName, errors.Join(ctx.Err(), lastErr))
+		case <-timer.C:
+		}
+		delay = min(delay*2, updateWithStartMaxDelay)
+	}
+	return fmt.Errorf("%s handler not registered after %d attempts: %w", updateName, updateWithStartMaxAttempts, lastErr)
+}
+
+func IsUnknownUpdate(err error, updateName string) bool {
+	var appErr *temporal.ApplicationError
+	return errors.As(err, &appErr) && strings.HasPrefix(appErr.Message(), "unknown update "+updateName+".")
+}
 
 // UpdateWithStartOptions configures the update sent to a handler workflow.
 type UpdateWithStartOptions struct {

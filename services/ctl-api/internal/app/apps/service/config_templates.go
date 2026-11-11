@@ -57,8 +57,8 @@ branch    = "main"
 [components.vars]
 service_name = "{{.nuon.install.inputs.service_name}}"
 cluster_arn = "{{.nuon.install.sandbox.outputs.ecs_cluster.arn}}"
-image_url = "{{.nuon.components.docker_image.image.repository.uri}}"
-image_tag = "{{.nuon.components.docker_image.image.tag}}"
+image_url = "{{.nuon.components.docker_image.outputs.image.repository}}"
+image_tag = "{{.nuon.components.docker_image.outputs.image.tag}}"
 app_id = "{{.nuon.app.id}}"
 org_id = "{{.nuon.org.id}}"
 install_id = "{{.nuon.install.id}}"
@@ -216,7 +216,8 @@ branch = "main"
 
 [[values_file]]
 contents = """
-image.tag = {{.nuon.components.toml_container_image.image.name}}
+image:
+  tag: "{{.nuon.components.toml_container_image.outputs.image.tag}}"
 """
 
 [values]
@@ -236,8 +237,8 @@ const jobComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schem
 name = "toml_job"
 type = "job"
 
-image_url = "{{.nuon.components.toml_container_image.image.repository.uri}}"
-tag	  = "{{.nuon.components.toml_container_image.image.tag}}"
+image_url = "{{.nuon.components.toml_container_image.outputs.image.repository}}"
+tag	  = "{{.nuon.components.toml_container_image.outputs.image.tag}}"
 cmd	  = ["printenv"]
 args	  = [""]
 

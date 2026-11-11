@@ -22,6 +22,7 @@ import (
 
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/op"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
@@ -32,7 +33,7 @@ const (
 	// TerraformModuleComponentConfig model so most components hit the
 	// same install. Stored without a leading "v" to match the
 	// un-prefixed format of TerraformModuleComponentConfig.Version.
-	defaultMirrorTerraformVersion = "1.7.5"
+	defaultMirrorTerraformVersion = sourceidentity.DefaultTerraformVersion
 
 	// terraformInstallTimeout bounds the terraform CLI download. It replaces
 	// hc-install's 30s default, which is not enough for a ~30MB archive when
@@ -121,6 +122,7 @@ func (h *handler) generateProviderMirror(ctx context.Context, srcDir string) err
 	return GenerateProviderMirror(ctx, srcDir, mirrorCfg)
 }
 
+// GenerateProviderMirror runs Terraform with host filesystem access, not sourcefs confinement.
 func GenerateProviderMirror(ctx context.Context, srcDir string, cfg MirrorConfig) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
