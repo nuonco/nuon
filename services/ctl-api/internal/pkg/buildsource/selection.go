@@ -101,7 +101,7 @@ func recordInputs(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, own
 	if !strings.HasPrefix(i.Digest, "git:") || i.Coverage != sourceidentity.Complete {
 		return i, nil
 	}
-	reads = sourceidentity.ExternalReads(i.Root, reads.Read, reads.Stat)
+	reads = sourceidentity.ExternalReads(i.Root, i.Digest, reads.Read, reads.Stat)
 	if len(reads.Read)+len(reads.Stat) > sourceidentity.MaxInputs {
 		return i.OverInputLimit()
 	}

@@ -64,7 +64,7 @@ func Report(ctx context.Context, client ResultClient, jobID, executionID string,
 		req.SourceIdentity = metadata
 		if source != nil && strings.HasPrefix(i.Digest, "git:") {
 			reads := source.Reads()
-			outside := sourceidentity.ExternalReads(i.Root, reads.Read, reads.Stat)
+			outside := sourceidentity.ExternalReads(i.Root, i.Digest, reads.Read, reads.Stat)
 			if count := len(outside.Read) + len(outside.Stat); count > sourceidentity.MaxInputs {
 				pkgctx.LoggerOrDefault(ctx, zap.NewNop()).Warn(fmt.Sprintf(
 					"This build read %d paths outside its source directory %q. Nuon tracks at most %d, so this build will not be reused and the next run rebuilds it. Move build inputs into the source directory, or set the directory to a common parent.",

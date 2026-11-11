@@ -181,11 +181,18 @@ func InputEntry(entry string, stat bool) string {
 }
 
 // ExternalReads keeps the paths outside root, dropping any path covered by a
-// directory or file whose contents were read.
-func ExternalReads(root string, read, stat []string) *Reads {
+// directory or file whose contents were read. When root's digest is a
+// directory, stats of root's ancestors are dropped too, because that digest
+// already pins each of them as a directory. A symlink digest holds only the
+// link target, not which ancestor is the link, so those stats are kept.
+func ExternalReads(root, digest string, read, stat []string) *Reads {
 	root = CleanRoot(root)
 	outside := func(name string) bool {
 		return root != "" && name != root && !strings.HasPrefix(name, root+"/")
+	}
+	directory := strings.HasPrefix(digest, "git:040000:")
+	ancestor := func(name string) bool {
+		return directory && (name == "." || strings.HasPrefix(root, name+"/"))
 	}
 	out := &Reads{}
 	kept := make(map[string]bool)
@@ -210,7 +217,7 @@ func ExternalReads(root string, read, stat []string) *Reads {
 	stat = slices.Clone(stat)
 	sort.Strings(stat)
 	for _, name := range slices.Compact(stat) {
-		if outside(name) && !covered(name) {
+		if outside(name) && !ancestor(name) && !covered(name) {
 			out.Stat = append(out.Stat, name)
 		}
 	}
