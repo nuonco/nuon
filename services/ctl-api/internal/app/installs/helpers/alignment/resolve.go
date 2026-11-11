@@ -45,8 +45,8 @@ type resolveDriftTarget struct {
 	ic       *app.InstallComponent
 }
 
-func (s *Helpers) loadResolveDriftTarget(ctx context.Context, db *gorm.DB, install *app.Install, resourceID string) (*installAlignmentState, *resolveDriftTarget, error) {
-	st, err := s.loadInstallAlignmentState(ctx, db, install)
+func (s *Helpers) loadResolveDriftTarget(ctx context.Context, install *app.Install, resourceID string) (*installAlignmentState, *resolveDriftTarget, error) {
+	st, err := s.loadInstallAlignmentState(ctx, install)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -54,7 +54,7 @@ func (s *Helpers) loadResolveDriftTarget(ctx context.Context, db *gorm.DB, insta
 	if err != nil {
 		return nil, nil, err
 	}
-	evidence, err := s.loadAlignmentEvidence(ctx, db, st)
+	evidence, err := s.loadAlignmentEvidence(ctx, st)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -91,12 +91,12 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 	if !isNotFound(err) {
 		return nil, fmt.Errorf("unable to look up resolve drift request: %w", err)
 	}
-	st, target, err := s.loadResolveDriftTarget(ctx, s.db, &install, req.ResourceID)
+	st, target, err := s.loadResolveDriftTarget(ctx, &install, req.ResourceID)
 	if err != nil {
 		return nil, err
 	}
 	res := &target.resource
-	open, err := s.openDeployments(ctx, s.db, st)
+	open, err := s.openDeployments(ctx, st)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 	}
 	var reuse *alignmentApproval
 	if req.ApprovedPlanID != "" {
-		reuse, err = s.validateResolvePlan(ctx, s.db, st, res, req.ApprovedPlanID, true)
+		reuse, err = s.validateResolvePlan(ctx, st, res, req.ApprovedPlanID, true)
 	} else {
 		reuse, err = s.findApprovedResolvePlan(ctx, st, res)
 	}
@@ -160,6 +160,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 		QueueName: installhelpers.InstallWorkflowsQueueName, SkipAppConfigConflict: true,
 	}, &installhelpers.IdempotentInstallWorkflowHooks{
 		Prepare: func(tx *gorm.DB) (map[string]string, error) {
+			scoped := s.WithDB(tx)
 			createdDeploy = nil
 			createdResponse = nil
 			locked, err := driftresolution.LockInstall(ctx, tx, install.ID)
@@ -176,7 +177,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 			if digest != resolution.InputsDigest {
 				return nil, stderr.ErrConflict{Err: fmt.Errorf("resolution inputs changed"), Description: "input values changed; reload Resources and try again"}
 			}
-			fresh, freshTarget, err := s.loadResolveDriftTarget(ctx, tx, &install, req.ResourceID)
+			fresh, freshTarget, err := scoped.loadResolveDriftTarget(ctx, &install, req.ResourceID)
 			if err != nil {
 				return nil, err
 			}
@@ -186,7 +187,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 			if freshTarget.resource.ExpectedBuildID != res.ExpectedBuildID {
 				return nil, stderr.ErrConflict{Err: fmt.Errorf("resolution build changed"), Description: "the selected build changed; reload Resources and try again"}
 			}
-			open, err := s.openDeployments(ctx, tx, fresh)
+			open, err := scoped.openDeployments(ctx, fresh)
 			if err != nil {
 				return nil, err
 			}
@@ -200,11 +201,11 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 			resolution.AppliedByID = ref.AppliedConfigByID
 			resolution.AppliedAt = ref.AppliedConfigAt
 			if reuse != nil {
-				if _, err := s.validateResolvePlan(ctx, tx, fresh, &freshTarget.resource, reuse.approval.ID, req.ApprovedPlanID != ""); err != nil {
+				if _, err := scoped.validateResolvePlan(ctx, fresh, &freshTarget.resource, reuse.approval.ID, req.ApprovedPlanID != ""); err != nil {
 					return nil, err
 				}
 				if req.ApprovedPlanID != "" {
-					createdResponse, err = s.ensureResolvePlanApproved(ctx, tx, reuse.approval.ID)
+					createdResponse, err = scoped.ensureResolvePlanApproved(ctx, reuse.approval.ID)
 					if err != nil {
 						return nil, err
 					}

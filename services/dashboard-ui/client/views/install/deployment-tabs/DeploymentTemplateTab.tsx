@@ -28,6 +28,7 @@ export const DeploymentTemplateTab = () => {
       <DeploymentTemplateContent
         deployment={deployment}
         appId={install?.app_id}
+        installId={install?.id}
         workflow={workflow}
         isLoading={!deploymentFetched}
         isError={deploymentError}

@@ -94,6 +94,7 @@ const DeploymentPanelContent = ({
       <DeploymentTemplateContent
         deployment={record}
         appId={appId}
+        installId={installId}
         workflow={workflow}
         isLoading={recordPending}
         isError={recordError}
@@ -188,8 +189,15 @@ export const DeploymentDetailBody = (props: TDeploymentDetailBody) => (
 )
 
 export const DeploymentDetailPanel = (props: IDeploymentDetailPanel) => {
-  const { deployment, orgId, appId, installId, repo, initialTab, ...panelProps } =
-    props
+  const {
+    deployment,
+    orgId,
+    appId,
+    installId,
+    repo,
+    initialTab,
+    ...panelProps
+  } = props
   return (
     <Panel
       heading={deployment.title}

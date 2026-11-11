@@ -28,6 +28,9 @@ type GitDiffResult struct {
 // computeGitDiffBetweenSHAs clones the repo at headSHA, ensures baseSHA is
 // present, and returns a unified patch equivalent to `git diff base..head`.
 func (a *Activities) computeGitDiffBetweenSHAs(ctx context.Context, vcsConfigID, baseSHA, headSHA, workspaceID string) (*GitDiffResult, error) {
+	if baseSHA != "" && baseSHA == headSHA {
+		return &GitDiffResult{BaseSHA: baseSHA, HeadSHA: headSHA, ChangedPaths: []string{}}, nil
+	}
 	gitSource, err := a.resolveGitSource(ctx, vcsConfigID, headSHA)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve git source: %w", err)

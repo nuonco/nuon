@@ -8,6 +8,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -37,12 +38,15 @@ type AppSandboxBuild struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppID              string           `json:"app_id,omitzero" gorm:"notnull" temporaljson:"app_id,omitzero,omitempty"`
-	App                App              `json:"-" temporaljson:"app,omitzero,omitempty"`
-	AppConfigID        string           `json:"app_config_id,omitzero" gorm:"notnull" temporaljson:"app_config_id,omitzero,omitempty"`
-	AppConfig          AppConfig        `json:"-" temporaljson:"app_config,omitzero,omitempty"`
-	AppSandboxConfigID string           `json:"app_sandbox_config_id,omitzero" gorm:"notnull" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
-	AppSandboxConfig   AppSandboxConfig `json:"-" temporaljson:"app_sandbox_config,omitzero,omitempty"`
+	AppID              string                   `json:"app_id,omitzero" gorm:"notnull" temporaljson:"app_id,omitzero,omitempty"`
+	App                App                      `json:"-" temporaljson:"app,omitzero,omitempty"`
+	AppConfigID        string                   `json:"app_config_id,omitzero" gorm:"notnull" temporaljson:"app_config_id,omitzero,omitempty"`
+	AppConfig          AppConfig                `json:"-" temporaljson:"app_config,omitzero,omitempty"`
+	AppSandboxConfigID string                   `json:"app_sandbox_config_id,omitzero" gorm:"notnull" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
+	AppSandboxConfig   AppSandboxConfig         `json:"-" temporaljson:"app_sandbox_config,omitzero,omitempty"`
+	Checksum           string                   `json:"checksum,omitzero" temporaljson:"checksum,omitempty"`
+	SourceChecksum     string                   `json:"source_checksum,omitzero" temporaljson:"source_checksum,omitempty"`
+	SourceIdentity     *sourceidentity.Identity `json:"source_identity,omitempty" gorm:"type:jsonb;serializer:json" temporaljson:"source_identity,omitempty"`
 
 	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitzero" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
