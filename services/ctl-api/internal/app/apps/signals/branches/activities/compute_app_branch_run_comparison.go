@@ -3,10 +3,12 @@ package activities
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -22,20 +24,21 @@ type ComputeAndStoreAppBranchRunComparisonInput struct {
 }
 
 type ComputeAndStoreAppBranchRunComparisonOutput struct {
-	Skipped          bool   `json:"skipped"`
-	SkipReason       string `json:"skip_reason,omitempty"`
-	BaseRunID        string `json:"base_run_id,omitempty"`
-	HeadRunID        string `json:"head_run_id,omitempty"`
-	BaseSHA          string `json:"base_sha,omitempty"`
-	HeadSHA          string `json:"head_sha,omitempty"`
-	FilesChanged     int    `json:"files_changed"`
-	Additions        int    `json:"additions"`
-	Removals         int    `json:"removals"`
-	Changed          int    `json:"changed"`
-	GitDiffStored    bool   `json:"git_diff_stored"`
-	FullDiffStored   bool   `json:"full_diff_stored"`
-	ConfigDiffStored bool   `json:"config_diff_stored"`
-	SourceDiffStored bool   `json:"source_diff_stored"`
+	Skipped           bool   `json:"skipped"`
+	SkipReason        string `json:"skip_reason,omitempty"`
+	BaseRunID         string `json:"base_run_id,omitempty"`
+	HeadRunID         string `json:"head_run_id,omitempty"`
+	BaseSHA           string `json:"base_sha,omitempty"`
+	HeadSHA           string `json:"head_sha,omitempty"`
+	FilesChanged      int    `json:"files_changed"`
+	Additions         int    `json:"additions"`
+	Removals          int    `json:"removals"`
+	Changed           int    `json:"changed"`
+	GitDiffStored     bool   `json:"git_diff_stored"`
+	FullDiffStored    bool   `json:"full_diff_stored"`
+	ConfigDiffStored  bool   `json:"config_diff_stored"`
+	SourceDiffStored  bool   `json:"source_diff_stored"`
+	BranchRepoChanged bool   `json:"branch_repo_changed,omitempty"`
 }
 
 // ConfigDiffWithSourceOutput is FullDiff enriched with source_changed flags.
@@ -91,6 +94,8 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	if err := a.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
 		Preload("Preview").
+		Preload("AppBranchConfig.ConnectedGithubVCSConfig").
+		Preload("AppBranchConfig.PublicGitVCSConfig").
 		First(&headRun, "id = ?", input.RunID).Error; err != nil {
 		return nil, fmt.Errorf("unable to load head run: %w", err)
 	}
@@ -119,6 +124,8 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		out.BaseRunID = *comparison.BaseRunID
 		if err := a.db.WithContext(ctx).
 			Preload("VCSConnectionCommit").
+			Preload("AppBranchConfig.ConnectedGithubVCSConfig").
+			Preload("AppBranchConfig.PublicGitVCSConfig").
 			First(&baseRun, "id = ?", *comparison.BaseRunID).Error; err != nil {
 			return nil, fmt.Errorf("unable to load base run: %w", err)
 		}
@@ -136,6 +143,7 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	if err != nil {
 		return nil, fmt.Errorf("unable to load app branch: %w", err)
 	}
+	headBranchCfg := runBranchConfig(&headRun, branch)
 
 	var changedPaths []string
 	switch {
@@ -143,13 +151,30 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		a.l.Info("no base run for comparison; diffing against empty baseline",
 			zap.String("run_id", input.RunID),
 			zap.String("head_sha", headSHA))
+	case headSHA != "" && baseSHA != "" && branchRepoChanged(baseRun.AppBranchConfig, headBranchCfg):
+		baseRepo, _ := vcsRepoAndBranch(&baseRun.AppBranchConfig)
+		headRepo, _ := vcsRepoAndBranch(headBranchCfg)
+		a.l.Warn("app branch repo changed since base run; skipping git diff",
+			zap.String("run_id", input.RunID),
+			zap.String("base_repo", baseRepo),
+			zap.String("head_repo", headRepo))
+		out.BranchRepoChanged = true
 	case headSHA != "" && baseSHA != "":
-		vcsConfigID := branchVCSConfigID(branch)
+		vcsConfigID := branchConfigVCSID(headBranchCfg)
 		if vcsConfigID == "" {
 			return nil, fmt.Errorf("no VCS config for git diff on run %s", input.RunID)
 		}
 		workspaceID := fmt.Sprintf("app-branch-run-comparison-%s", comparison.ID)
 		gitDiff, gitErr := a.computeGitDiffBetweenSHAs(ctx, vcsConfigID, baseSHA, headSHA, workspaceID)
+		if errors.Is(gitErr, plumbing.ErrObjectNotFound) {
+			a.l.Warn("base or head commit not found in app branch repo; skipping git diff",
+				zap.String("run_id", input.RunID),
+				zap.String("base_sha", baseSHA),
+				zap.String("head_sha", headSHA),
+				zap.Error(gitErr))
+			out.BranchRepoChanged = true
+			break
+		}
 		if gitErr != nil {
 			return nil, fmt.Errorf("unable to diff %s..%s: %w", baseSHA, headSHA, gitErr)
 		}
@@ -202,7 +227,8 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		return nil, fmt.Errorf("unable to load component sources: %w", dirErr)
 	}
 
-	configDiff := a.computeAndEnrichConfigDiff(ctx, branch, fullDiff, componentSources, changedPaths, headRun.AppConfigID, baseRun.AppConfigID)
+	repo, branchName := vcsRepoAndBranch(headBranchCfg)
+	configDiff := a.computeAndEnrichConfigDiff(ctx, branch.AppID, repo, fullDiff, componentSources, changedPaths, headRun.AppConfigID, baseRun.AppConfigID)
 	if configDiff != nil {
 		baseSHAs := map[string]string{}
 		if !noBase && baseRun.AppConfigID != "" {
@@ -210,9 +236,12 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 			if shaErr != nil {
 				return nil, fmt.Errorf("unable to load base component build commits: %w", shaErr)
 			}
-			baseSHAs = loaded
+			baseSources, srcErr := a.loadComponentSources(ctx, baseRun.AppConfigID)
+			if srcErr != nil {
+				return nil, fmt.Errorf("unable to load base component sources: %w", srcErr)
+			}
+			baseSHAs = dropRepoChangedSHAs(loaded, componentSources, baseSources)
 		}
-		repo, branchName := branchRepoAndBranch(branch)
 		if headRun.Preview != nil && headRun.Preview.GitRef != "" {
 			branchName = headRun.Preview.GitRef
 		}
@@ -262,16 +291,29 @@ func runCommitSHA(run *app.AppBranchRun) string {
 	return run.HeadSHA
 }
 
-func branchRepo(branch *app.AppBranch) string {
-	repo, _ := branchRepoAndBranch(branch)
-	return repo
+func runBranchConfig(run *app.AppBranchRun, branch *app.AppBranch) *app.AppBranchConfig {
+	if run != nil && (run.AppBranchConfig.ConnectedGithubVCSConfig != nil || run.AppBranchConfig.PublicGitVCSConfig != nil) {
+		return &run.AppBranchConfig
+	}
+	if branch == nil || len(branch.Configs) == 0 {
+		return nil
+	}
+	return &branch.Configs[0]
 }
 
-func branchRepoAndBranch(branch *app.AppBranch) (string, string) {
-	if branch == nil || len(branch.Configs) == 0 {
+func branchRepoChanged(baseCfg app.AppBranchConfig, headCfg *app.AppBranchConfig) bool {
+	baseRepo, _ := vcsRepoAndBranch(&baseCfg)
+	headRepo, _ := vcsRepoAndBranch(headCfg)
+	if baseRepo == "" || headRepo == "" {
+		return false
+	}
+	return !repoURLsEqual(baseRepo, headRepo)
+}
+
+func vcsRepoAndBranch(cfg *app.AppBranchConfig) (string, string) {
+	if cfg == nil {
 		return "", ""
 	}
-	cfg := branch.Configs[0]
 	if cfg.ConnectedGithubVCSConfig != nil {
 		return cfg.ConnectedGithubVCSConfig.Repo, cfg.ConnectedGithubVCSConfig.Branch
 	}
@@ -337,11 +379,10 @@ func (a *Activities) loadComponentBuildSHAs(ctx context.Context, appConfigID str
 	return out, nil
 }
 
-func branchVCSConfigID(branch *app.AppBranch) string {
-	if branch == nil || len(branch.Configs) == 0 {
+func branchConfigVCSID(cfg *app.AppBranchConfig) string {
+	if cfg == nil {
 		return ""
 	}
-	cfg := branch.Configs[0]
 	if cfg.ConnectedGithubVCSConfig != nil {
 		return cfg.ConnectedGithubVCSConfig.ID
 	}
@@ -510,13 +551,13 @@ func (a *Activities) loadComponentSources(ctx context.Context, appConfigID strin
 // entities exist only there).
 func (a *Activities) computeAndEnrichConfigDiff(
 	ctx context.Context,
-	branch *app.AppBranch,
+	appID, branchRepo string,
 	fullDiff *ComputeAppConfigDiffOutput,
 	componentSources []componentSource,
 	changedPaths []string,
 	headConfigID, baseConfigID string,
 ) *ConfigDiffWithSourceOutput {
-	headArchive, headErr := a.loadSourceArchive(ctx, branch.AppID, headConfigID)
+	headArchive, headErr := a.loadSourceArchive(ctx, appID, headConfigID)
 	if headErr != nil {
 		a.l.Warn("unable to load head source archive for member refs", zap.Error(headErr))
 		headArchive = nil
@@ -524,12 +565,12 @@ func (a *Activities) computeAndEnrichConfigDiff(
 	var baseArchive *pkgconfig.SourceArchive
 	if baseConfigID != "" {
 		var baseErr error
-		baseArchive, baseErr = a.loadSourceArchive(ctx, branch.AppID, baseConfigID)
+		baseArchive, baseErr = a.loadSourceArchive(ctx, appID, baseConfigID)
 		if baseErr != nil {
 			a.l.Warn("unable to load base source archive for member refs", zap.Error(baseErr))
 			baseArchive = nil
 		}
 	}
 
-	return enrichConfigDiffWithSourceChanged(fullDiff, componentSources, branchRepo(branch), changedPaths, headArchive, baseArchive)
+	return enrichConfigDiffWithSourceChanged(fullDiff, componentSources, branchRepo, changedPaths, headArchive, baseArchive)
 }

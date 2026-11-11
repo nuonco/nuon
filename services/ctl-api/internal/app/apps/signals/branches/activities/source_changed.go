@@ -77,6 +77,28 @@ func componentSourceChanged(src componentSource, branchRepo string, changedPaths
 	return anyPathMatchesDirectory(changedPaths, src.Directory)
 }
 
+// dropRepoChangedSHAs removes the previous build commit of every component
+// whose source repo differs between the base and head configs. That commit
+// belongs to the old repo, so it cannot be diffed against the new one.
+func dropRepoChangedSHAs(previousSHAs map[string]string, headSources, baseSources []componentSource) map[string]string {
+	baseRepos := make(map[string]string, len(baseSources))
+	for _, src := range baseSources {
+		baseRepos[src.Name] = src.Repo
+	}
+
+	out := make(map[string]string, len(previousSHAs))
+	for name, sha := range previousSHAs {
+		out[name] = sha
+	}
+	for _, src := range headSources {
+		baseRepo, ok := baseRepos[src.Name]
+		if !ok || !repoURLsEqual(baseRepo, src.Repo) {
+			delete(out, src.Name)
+		}
+	}
+	return out
+}
+
 // sectionMemberKind maps a config diff section name to the source archive
 // member kind that holds each entity's defining file.
 var sectionMemberKind = map[string]string{
