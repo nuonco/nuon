@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -25,6 +26,20 @@ func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID stri
 	if req.AppBranchID == "" {
 		cfg, err := s.latestActiveAppConfig(ctx, orgID, appID, "")
 		if err != nil {
+			var userErr stderr.ErrUser
+			if !errors.As(err, &userErr) {
+				return nil, err
+			}
+			hasBranches, branchErr := s.appHasBranches(ctx, orgID, appID)
+			if branchErr != nil {
+				return nil, branchErr
+			}
+			if hasBranches {
+				return nil, stderr.ErrUser{
+					Err:         fmt.Errorf("no active app config from apps sync for app %s: %w", appID, userErr.Err),
+					Description: "No app config from `nuon apps sync` exists for this app; its configs are on app branches. Set app_branch in the install config to create the install on an app branch.",
+				}
+			}
 			return nil, err
 		}
 		return &createInstallPin{AppConfig: cfg}, nil
@@ -52,6 +67,34 @@ func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID stri
 		AppConfig: cfg,
 		BranchID:  branch.ID,
 	}, nil
+}
+
+func (s *Helpers) withUnbranchedInstallHint(ctx context.Context, orgID, appID string, pin *createInstallPin, err error) error {
+	var userErr stderr.ErrUser
+	if pin.BranchID != "" || !errors.As(err, &userErr) {
+		return err
+	}
+	hasBranches, branchErr := s.appHasBranches(ctx, orgID, appID)
+	if branchErr != nil {
+		return branchErr
+	}
+	if !hasBranches {
+		return err
+	}
+	userErr.Description = strings.TrimSuffix(userErr.Description, ".") + ". This install has no app_branch, so it uses the app config from the last `nuon apps sync`. Set app_branch in the install config to create the install on an app branch."
+	return userErr
+}
+
+func (s *Helpers) appHasBranches(ctx context.Context, orgID, appID string) (bool, error) {
+	var count int64
+	if err := s.db.WithContext(ctx).
+		Model(&app.AppBranch{}).
+		Where(app.AppBranch{OrgID: orgID, AppID: appID}).
+		Limit(1).
+		Count(&count).Error; err != nil {
+		return false, fmt.Errorf("unable to check app branches: %w", err)
+	}
+	return count > 0, nil
 }
 
 // LatestActiveBranchAppConfig returns the app config a branch currently

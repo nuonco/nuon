@@ -132,7 +132,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	if err := s.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs); err != nil {
-		return nil, err
+		return nil, s.withUnbranchedInstallHint(ctx, orgID, appID, pin, err)
 	}
 
 	sandboxConfigID := pin.AppConfig.SandboxConfig.ID
