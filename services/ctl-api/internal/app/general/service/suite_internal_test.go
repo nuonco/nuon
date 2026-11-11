@@ -23,6 +23,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/adminops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -71,6 +72,9 @@ func (s *GeneralInternalTestSuite) SetupSuite() {
 	s.mockTC.EXPECT().ExecuteWorkflowInNamespace(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return(&mockWorkflowRun{}, nil).AnyTimes()
+	s.mockTC.EXPECT().SignalWithStartWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&mockWorkflowRun{}, nil).AnyTimes()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
@@ -79,6 +83,7 @@ func (s *GeneralInternalTestSuite) SetupSuite() {
 			CustomValidator: true,
 		}),
 		// Service under test
+		fx.Provide(adminops.New),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)

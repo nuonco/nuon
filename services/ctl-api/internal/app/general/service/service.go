@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/adminops"
 	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -31,6 +32,7 @@ type service struct {
 	acctClient     *account.Client
 	queueClient    *queueclient.Client
 	generalHelpers *generalhelpers.Helpers
+	adminOps       *adminops.Ops
 	codecs         []converter.PayloadCodec
 
 	productAnalytics *productanalytics.Client
@@ -123,6 +125,7 @@ type Params struct {
 	AcctClient     *account.Client
 	QueueClient    *queueclient.Client
 	GeneralHelpers *generalhelpers.Helpers
+	AdminOps       *adminops.Ops
 	DB             *gorm.DB `name:"psql"`
 	MW             metrics.Writer
 
@@ -147,6 +150,7 @@ func New(params Params) *service {
 		acctClient:       params.AcctClient,
 		queueClient:      params.QueueClient,
 		generalHelpers:   params.GeneralHelpers,
+		adminOps:         params.AdminOps,
 		productAnalytics: params.ProductAnalytics,
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,
