@@ -354,11 +354,21 @@ func (a *dryRunInputsAPI) GetAppBranches(context.Context, string, *models.GetPag
 
 func (a *dryRunInputsAPI) GetAppConfig(_ context.Context, _, appConfigID string, _ *bool) (*models.AppAppConfig, error) {
 	a.fetched = append(a.fetched, appConfigID)
+	if appConfigID == "latest-cfg" {
+		return &models.AppAppConfig{ID: "latest-cfg", Input: a.latestInput}, nil
+	}
 	cfg, ok := a.configs[appConfigID]
 	if !ok {
 		return nil, fmt.Errorf("no app config %s", appConfigID)
 	}
 	return cfg, nil
+}
+
+func (a *dryRunInputsAPI) GetAppConfigs(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error) {
+	if a.latestInput == nil {
+		return nil, false, nil
+	}
+	return []*models.AppAppConfig{{ID: "latest-cfg", Status: models.AppAppConfigStatusActive}}, false, nil
 }
 
 func (a *dryRunInputsAPI) GetInstallCurrentInputs(context.Context, string) (*models.AppInstallInputs, error) {
@@ -532,6 +542,98 @@ func TestSyncNewInstallUnknownInputWithoutBranchesOmitsAppBranchHint(t *testing.
 	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
 	if err == nil || err.Error() != "unknown input(s): retired" {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+type appsSyncOnlyAPI struct {
+	nuon.Client
+	configs  []*models.AppAppConfig
+	byID     map[string]*models.AppAppConfig
+	branches []*models.AppAppBranch
+}
+
+func (a *appsSyncOnlyAPI) GetAppConfigs(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error) {
+	return a.configs, false, nil
+}
+
+func (a *appsSyncOnlyAPI) GetAppConfig(_ context.Context, _, id string, _ *bool) (*models.AppAppConfig, error) {
+	return a.byID[id], nil
+}
+
+func (a *appsSyncOnlyAPI) GetAppBranches(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
+	return a.branches, false, nil
+}
+
+func TestInputConfigForNewInstallWithoutBranchUsesAppsSyncConfig(t *testing.T) {
+	api := &appsSyncOnlyAPI{
+		configs: []*models.AppAppConfig{
+			{ID: "branch-cfg", AppBranchID: "b1", Status: models.AppAppConfigStatusActive},
+			{ID: "sync-cfg", Status: models.AppAppConfigStatusActive},
+		},
+		byID: map[string]*models.AppAppConfig{
+			"sync-cfg": appConfigWithInputs("sync-cfg", "legacy_only"),
+		},
+	}
+	syncer := &appInstallSyncer{api: api, appID: "app-1"}
+	got, err := syncer.inputConfigForNewInstall(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Inputs) != 1 || got.Inputs[0].Name != "legacy_only" {
+		t.Fatalf("got %#v", got)
+	}
+}
+
+func TestSyncNewInstallAcceptsInputOnlyInAppsSyncConfig(t *testing.T) {
+	api := &appsSyncOnlyAPI{
+		configs: []*models.AppAppConfig{
+			{ID: "sync-cfg", Status: models.AppAppConfigStatusActive},
+		},
+		byID: map[string]*models.AppAppConfig{
+			"sync-cfg": appConfigWithInputs("sync-cfg", "legacy_only"),
+		},
+	}
+	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
+	cfg := &config.Install{
+		Name: "acme",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"legacy_only": "1"},
+		}},
+	}
+
+	got, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != nil {
+		t.Fatalf("dry-run install = %#v, want nil", got)
+	}
+}
+
+func TestSyncNewInstallRejectsInputOnlyOnNewerBranchConfig(t *testing.T) {
+	api := &appsSyncOnlyAPI{
+		configs: []*models.AppAppConfig{
+			{ID: "sync-cfg", Status: models.AppAppConfigStatusActive},
+		},
+		byID: map[string]*models.AppAppConfig{
+			"sync-cfg": appConfigWithInputs("sync-cfg", "region"),
+		},
+		branches: []*models.AppAppBranch{{ID: "b1", Name: "prod"}},
+	}
+	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
+	cfg := &config.Install{
+		Name: "acme",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"newer_branch_only": "1"},
+		}},
+	}
+
+	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
+	if err == nil || !strings.Contains(err.Error(), "unknown input(s): newer_branch_only") {
+		t.Fatalf("err = %v", err)
+	}
+	if !strings.Contains(err.Error(), "app_branch") {
+		t.Fatalf("err = %v, want app_branch hint", err)
 	}
 }
 

@@ -13,9 +13,15 @@ type latestInputAPI struct {
 	calls int
 }
 
-func (a *latestInputAPI) GetAppInputLatestConfig(context.Context, string) (*models.AppAppInputConfig, error) {
+func (a *latestInputAPI) GetAppConfigs(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error) {
 	a.calls++
-	return &models.AppAppInputConfig{ID: "input"}, nil
+	return []*models.AppAppConfig{
+		{ID: "cfg", Status: models.AppAppConfigStatusActive},
+	}, false, nil
+}
+
+func (a *latestInputAPI) GetAppConfig(context.Context, string, string, *bool) (*models.AppAppConfig, error) {
+	return &models.AppAppConfig{ID: "cfg", Input: &models.AppAppInputConfig{ID: "input"}}, nil
 }
 
 type pinnedInputAPI struct {
