@@ -140,7 +140,7 @@ func (s *GetInstallCreateTargetTestSuite) getTarget(appID, labelsQuery, appBranc
 func (s *GetInstallCreateTargetTestSuite) assertNothingCreated() {
 	var installCount, connectionCount int64
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Model(&app.Install{}).Where(app.Install{AppID: s.testApp.ID}).Count(&installCount).Error)
-	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Model(&app.InstallAppBranchConnection{}).Count(&connectionCount).Error)
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Model(&app.InstallAppBranchConnection{}).Where(app.InstallAppBranchConnection{OrgID: s.testOrg.ID}).Count(&connectionCount).Error)
 	assert.Zero(s.T(), installCount)
 	assert.Zero(s.T(), connectionCount)
 }
