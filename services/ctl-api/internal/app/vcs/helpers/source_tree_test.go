@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
@@ -84,7 +85,10 @@ func TestFetchSourceTree(t *testing.T) {
 	}
 	link := gitInput("../other/main.tf", "hash-object", "-w", "--stdin")
 	tools := gitInput("120000 blob "+link+"\tmain.tf\n", "mktree")
-	rootEntries := git(src, "ls-tree", inside) + "\n040000 tree " + bomb + "\tbomb\n040000 tree " + tools + "\ttools\n"
+	readme, err := hex.DecodeString(object(inside, "app/README.md"))
+	require.NoError(t, err)
+	legacy := gitInput("100664 README.md\x00"+string(readme), "hash-object", "-t", "tree", "--literally", "-w", "--stdin")
+	rootEntries := git(src, "ls-tree", inside) + "\n040000 tree " + bomb + "\tbomb\n040000 tree " + tools + "\ttools\n040000 tree " + legacy + "\tlegacy\n"
 	shapes := gitInput("shapes", "commit-tree", gitInput(rootEntries, "mktree"), "-p", inside)
 	git(src, "update-ref", "refs/heads/shapes", shapes)
 
@@ -96,16 +100,16 @@ func TestFetchSourceTree(t *testing.T) {
 	git(filtered, "config", "uploadpack.allowAnySHA1InWant", "true")
 
 	tests := map[string]struct {
-		server        string
-		commit        string
-		root          string
-		wantScope     string
-		wantFetchErr  error
-		wantScopeErr  error
-		wantSubmodule bool
-		wantNoBlobs   bool
-		serverCaps    *capability.List
-		maxBytes      int64
+		server          string
+		commit          string
+		root            string
+		wantScope       string
+		wantFetchErr    error
+		wantScopeErr    error
+		wantUnsupported string
+		wantNoBlobs     bool
+		serverCaps      *capability.List
+		maxBytes        int64
 	}{
 		"filtering server fetches an older commit without blobs": {
 			server:      filtered,
@@ -135,18 +139,18 @@ func TestFetchSourceTree(t *testing.T) {
 			wantScope: "git:040000:" + object(inside, "app/chart"),
 		},
 		"repository root": {
-			server:        filtered,
-			commit:        first,
-			root:          "",
-			wantScope:     "git:040000:" + object(first, ""),
-			wantSubmodule: true,
+			server:          filtered,
+			commit:          first,
+			root:            "",
+			wantScope:       "git:040000:" + object(first, ""),
+			wantUnsupported: UnsupportedSubmodule,
 		},
 		"slash means the repository root": {
-			server:        filtered,
-			commit:        first,
-			root:          "/",
-			wantScope:     "git:040000:" + object(first, ""),
-			wantSubmodule: true,
+			server:          filtered,
+			commit:          first,
+			root:            "/",
+			wantScope:       "git:040000:" + object(first, ""),
+			wantUnsupported: UnsupportedSubmodule,
 		},
 		"leading slash is relative to the repository": {
 			server:    filtered,
@@ -178,12 +182,19 @@ func TestFetchSourceTree(t *testing.T) {
 			root:      "bomb",
 			wantScope: "git:040000:" + object(shapes, "bomb"),
 		},
+		"non-canonical tree under the directory": {
+			server:          filtered,
+			commit:          shapes,
+			root:            "legacy",
+			wantScope:       "git:040000:" + object(shapes, "legacy"),
+			wantUnsupported: UnsupportedNonCanonical,
+		},
 		"submodule under the directory": {
-			server:        filtered,
-			commit:        first,
-			root:          "vendor",
-			wantScope:     "git:040000:" + object(first, "vendor"),
-			wantSubmodule: true,
+			server:          filtered,
+			commit:          first,
+			root:            "vendor",
+			wantScope:       "git:040000:" + object(first, "vendor"),
+			wantUnsupported: UnsupportedSubmodule,
 		},
 		"missing directory": {
 			server:       filtered,
@@ -235,9 +246,9 @@ func TestFetchSourceTree(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tc.wantScope, scope)
 
-			submodule, err := tree.HasSubmodule(context.Background(), tc.root)
+			unsupported, err := tree.Unsupported(context.Background(), tc.root)
 			require.NoError(t, err)
-			assert.Equal(t, tc.wantSubmodule, submodule)
+			assert.Equal(t, tc.wantUnsupported, unsupported)
 
 			if tc.wantNoBlobs {
 				blobs, err := tree.s.IterEncodedObjects(plumbing.BlobObject)

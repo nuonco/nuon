@@ -153,7 +153,7 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 		if run.VCSConnectionCommit != nil {
 			runSHA = run.VCSConnectionCommit.SHA
 		}
-		if normalizeRepo(repo) == normalizeRepo(i.Repository) && branch == runBranch && runSHA != "" && (ref == branch || ref == runSHA) {
+		if SameRepo(repo, i.Repository) && branch == runBranch && runSHA != "" && (ref == branch || ref == runSHA) {
 			ref, requested, resolvedFrom = runSHA, branch, sourceidentity.ResolvedFromBranchRun
 		}
 	}
@@ -186,12 +186,12 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 	if err != nil {
 		return nil, err
 	}
-	submodule, err := tree.HasSubmodule(ctx, i.Root)
+	unsupported, err := tree.Unsupported(ctx, i.Root)
 	if err != nil {
 		return nil, err
 	}
-	if submodule {
-		i.MarkUnknown("git_submodules_not_materialized")
+	if unsupported != "" {
+		i.MarkUnknown(unsupported)
 		i.Seal()
 		return i, i.Validate()
 	}
@@ -262,6 +262,10 @@ func SaveSandbox(ctx context.Context, db *gorm.DB, id string, identity *sourceid
 		return tx.Model(&current).Select("source_identity", "source_checksum", "checksum").Updates(app.AppSandboxBuild{SourceIdentity: identity, Checksum: identity.ConfigChecksum}).Error
 	})
 	return identity, err
+}
+
+func SameRepo(a, b string) bool {
+	return a != "" && b != "" && normalizeRepo(a) == normalizeRepo(b)
 }
 
 func normalizeRepo(repo string) string {

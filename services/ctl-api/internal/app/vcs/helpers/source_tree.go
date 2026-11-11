@@ -8,6 +8,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
@@ -19,9 +20,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/client"
+	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
 
-	githubpkg "github.com/nuonco/nuon/pkg/github/repo"
 	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -32,7 +33,10 @@ var (
 	ErrSourceTreeTooLarge     = errors.New("source tree exceeds the size limit")
 )
 
-const maxSourceTreeBytes = 128 << 20
+const (
+	maxSourceTreeBytes = 128 << 20
+	sourceFetchTimeout = 3 * time.Minute
+)
 
 type limitedStorage struct {
 	*memory.Storage
@@ -72,12 +76,14 @@ func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit s
 			return tree, nil
 		}
 	}
-	result, err, _ := h.sourceFetches.Do(key, func() (any, error) {
+	fetches := h.sourceFetches.DoChan(key, func() (any, error) {
 		if h.sourceTrees != nil {
 			if tree, ok := h.sourceTrees.Get(key); ok {
 				return tree, nil
 			}
 		}
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), sourceFetchTimeout)
+		defer cancel()
 		token := ""
 		var err error
 		if connection != nil {
@@ -88,13 +94,11 @@ func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit s
 		if err != nil {
 			return nil, err
 		}
-		url, auth := fmt.Sprintf("https://github.com/%s/%s.git", owner, repo), transport.AuthMethod(nil)
+		var auth transport.AuthMethod
 		if token != "" {
-			if url, auth, err = githubpkg.CloneURLAuth(githubpkg.RepoPath(owner, repo, token)); err != nil {
-				return nil, err
-			}
+			auth = &githttp.BasicAuth{Username: "x-access-token", Password: token}
 		}
-		tree, err := fetchSourceTree(ctx, url, auth, commit, githubUploadPackCapabilities(), maxSourceTreeBytes)
+		tree, err := fetchSourceTree(ctx, fmt.Sprintf("https://github.com/%s/%s.git", owner, repo), auth, commit, githubUploadPackCapabilities(), maxSourceTreeBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -103,10 +107,15 @@ func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit s
 		}
 		return tree, nil
 	})
-	if err != nil {
-		return nil, err
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-fetches:
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		return res.Val.(*SourceTree), nil
 	}
-	return result.(*SourceTree), nil
 }
 
 func githubUploadPackCapabilities() *capability.List {
@@ -203,48 +212,73 @@ func (t *SourceTree) Scope(root string) (string, error) {
 	return fmt.Sprintf("git:%06o:%s", uint32(entry.Mode), entry.Hash), nil
 }
 
-func (t *SourceTree) HasSubmodule(ctx context.Context, root string) (bool, error) {
+const (
+	UnsupportedSubmodule    = "git_submodules_not_materialized"
+	UnsupportedNonCanonical = "git_noncanonical_tree"
+)
+
+func (t *SourceTree) Unsupported(ctx context.Context, root string) (string, error) {
 	tree := t.root
 	if root = sourceidentity.CleanRoot(root); root != "" {
 		entry, err := t.entry(root)
 		if errors.Is(err, ErrSourceDirectoryMissing) {
-			return false, nil
+			return "", nil
 		}
 		if err != nil {
-			return false, err
+			return "", err
 		}
 		if entry.Mode != filemode.Dir {
-			return entry.Mode == filemode.Submodule, nil
+			return unsupportedMode(entry.Mode), nil
 		}
 		if tree, err = object.GetTree(t.s, entry.Hash); err != nil {
-			return false, err
+			return "", err
 		}
 	}
 	seen := map[plumbing.Hash]bool{tree.Hash: true}
 	pending := []*object.Tree{tree}
 	for len(pending) > 0 {
 		if err := ctx.Err(); err != nil {
-			return false, err
+			return "", err
 		}
 		tree, pending = pending[len(pending)-1], pending[:len(pending)-1]
+		canonical, err := t.canonical(tree)
+		if err != nil {
+			return "", err
+		}
+		if !canonical {
+			return UnsupportedNonCanonical, nil
+		}
 		for _, entry := range tree.Entries {
-			switch entry.Mode {
-			case filemode.Submodule:
-				return true, nil
-			case filemode.Dir:
-				if seen[entry.Hash] {
-					continue
-				}
-				seen[entry.Hash] = true
-				next, err := object.GetTree(t.s, entry.Hash)
-				if err != nil {
-					return false, err
-				}
-				pending = append(pending, next)
+			if reason := unsupportedMode(entry.Mode); reason != "" {
+				return reason, nil
 			}
+			if entry.Mode != filemode.Dir || seen[entry.Hash] {
+				continue
+			}
+			seen[entry.Hash] = true
+			next, err := object.GetTree(t.s, entry.Hash)
+			if err != nil {
+				return "", err
+			}
+			pending = append(pending, next)
 		}
 	}
-	return false, nil
+	return "", nil
+}
+
+func unsupportedMode(mode filemode.FileMode) string {
+	if mode == filemode.Submodule {
+		return UnsupportedSubmodule
+	}
+	return ""
+}
+
+func (t *SourceTree) canonical(tree *object.Tree) (bool, error) {
+	obj := t.s.NewEncodedObject()
+	if err := tree.Encode(obj); err != nil {
+		return false, err
+	}
+	return obj.Hash() == tree.Hash, nil
 }
 
 func (t *SourceTree) entry(root string) (*object.TreeEntry, error) {
