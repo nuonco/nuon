@@ -1,4 +1,4 @@
-import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { GroupApprovalActions } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import {
   PlanInstallChanges,
   type TPlanInstallFacts,
@@ -42,8 +42,7 @@ export const PlanDiffPanel = ({
                 key: step.id!,
                 groupName,
                 actions: (
-                  <GroupActionButton
-                    action="approve"
+                  <GroupApprovalActions
                     target={{
                       orgId: org?.id ?? '',
                       workflowId: resolvedWorkflowId!,
