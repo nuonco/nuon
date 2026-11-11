@@ -30,6 +30,12 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get gitSrc")
 	}
+	if workflow.GetVersion(ctx, "build-source-identity-plan-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		build, err = activities.AwaitGetComponentBuildWithConfigByID(ctx, req.ComponentBuildID)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	dstCfg, err := activities.AwaitGetComponentOCIRegistryRepositoryByComponentID(ctx, cmp.ID)
 	if err != nil {
@@ -39,6 +45,7 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 	plan := &plantypes.BuildPlan{
 		ComponentID:      cmp.ID,
 		ComponentBuildID: build.ID,
+		SourceIdentity:   build.SourceIdentity,
 
 		Src:    gitSrc,
 		Dst:    dstCfg,

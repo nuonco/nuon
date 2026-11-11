@@ -107,6 +107,12 @@ type Helpers struct {
 	stateMetrics     *state.Metrics
 }
 
+func (h *Helpers) WithDB(db *gorm.DB) *Helpers {
+	scoped := *h
+	scoped.db = db
+	return &scoped
+}
+
 func New(params Params) *Helpers {
 	return &Helpers{
 		l:                params.L,

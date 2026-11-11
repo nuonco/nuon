@@ -389,7 +389,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 			return errors.Wrap(res.Error, "unable to create install stack version run")
 		}
 
-		if err := s.helpers.RecordInstallStackVersionApplied(ctx, tx, stackVersion, requestType); err != nil {
+		if err := s.helpers.WithDB(tx).RecordInstallStackVersionApplied(ctx, stackVersion, requestType); err != nil {
 			return err
 		}
 		return nil

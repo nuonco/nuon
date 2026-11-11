@@ -32,7 +32,7 @@ type AppComponentBuild struct {
 	// build runner job id
 	BuildRunnerJobID string `json:"build_runner_job_id,omitempty"`
 
-	// checksum of our intermediate component config
+	// checksum
 	Checksum string `json:"checksum,omitempty"`
 
 	// component config connection
@@ -121,13 +121,16 @@ type AppComponentBuild struct {
 	// SignatureVerification is empty when the outcome is unknown (older builds, or failures before verification ran).
 	SignatureVerification string `json:"signature_verification,omitempty"`
 
-	// checksum of the component's source directory at build time
+	// source checksum
 	SourceChecksum string `json:"source_checksum,omitempty"`
 
 	// SourceDigest is the manifest list digest of the resolved source ref,
 	// e.g. "sha256:abc...". This is the canonical content address of what was
 	// pulled and is used for build dedup.
 	SourceDigest string `json:"source_digest,omitempty"`
+
+	// source identity
+	SourceIdentity *SourceidentityIdentity `json:"source_identity,omitempty"`
 
 	// SourceImage is the repository portion of SourceRef without tag/digest, e.g. "nginx".
 	SourceImage string `json:"source_image,omitempty"`
@@ -200,6 +203,10 @@ func (m *AppComponentBuild) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRunnerJob(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSourceIdentity(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -438,6 +445,29 @@ func (m *AppComponentBuild) validateRunnerJob(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppComponentBuild) validateSourceIdentity(formats strfmt.Registry) error {
+	if swag.IsZero(m.SourceIdentity) { // not required
+		return nil
+	}
+
+	if m.SourceIdentity != nil {
+		if err := m.SourceIdentity.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_identity")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_identity")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppComponentBuild) validateStatusV2(formats strfmt.Registry) error {
 	if swag.IsZero(m.StatusV2) { // not required
 		return nil
@@ -525,6 +555,10 @@ func (m *AppComponentBuild) ContextValidate(ctx context.Context, formats strfmt.
 	}
 
 	if err := m.contextValidateRunnerJob(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSourceIdentity(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -760,6 +794,31 @@ func (m *AppComponentBuild) contextValidateReleases(ctx context.Context, formats
 }
 
 func (m *AppComponentBuild) contextValidateRunnerJob(ctx context.Context, formats strfmt.Registry) error {
+
+	return nil
+}
+
+func (m *AppComponentBuild) contextValidateSourceIdentity(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SourceIdentity != nil {
+
+		if swag.IsZero(m.SourceIdentity) { // not required
+			return nil
+		}
+
+		if err := m.SourceIdentity.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_identity")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_identity")
+			}
+
+			return err
+		}
+	}
 
 	return nil
 }

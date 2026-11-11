@@ -36,7 +36,7 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelpers *appshelpers.Helpers, cf
 
 	// Uploads inside the sync transaction: keys are content addressed, so an object
 	// left behind by a rollback is inert.
-	if err := appsHelpers.UploadCustomNestedStackTemplates(ctx, db, obj); err != nil {
+	if err := appsHelpers.WithDB(db).UploadCustomNestedStackTemplates(ctx, obj); err != nil {
 		return sync.SyncInternalErr{
 			Description: "unable to upload custom nested stack templates",
 			Err:         err,
