@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/driftresolution"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appliedstate"
 )
 
 type SetDeployPlannedAtRequest struct {
@@ -29,78 +29,32 @@ func (a *Activities) SetDeployPlannedAt(ctx context.Context, req SetDeployPlanne
 }
 
 type SetDeployAppliedAtRequest struct {
-	DeployID string `validate:"required"`
+	DeployID           string `validate:"required"`
+	RecordDependencies bool
 }
 
 // @temporal-gen-v2 activity
 func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployAppliedAtRequest) error {
-	appliedAt := time.Now().UTC()
-	var deploy app.InstallDeploy
-	if err := a.db.WithContext(ctx).
-		Preload("InstallComponent", func(db *gorm.DB) *gorm.DB {
-			return db.Unscoped()
-		}).
-		Preload("ComponentBuild.ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
-			return db.Unscoped()
-		}).
-		Where(app.InstallDeploy{ID: req.DeployID}).
-		First(&deploy).Error; err != nil {
-		return fmt.Errorf("unable to get install deploy: %w", err)
+	if req.RecordDependencies {
+		var deploy app.InstallDeploy
+		if err := a.db.WithContext(ctx).
+			Preload("InstallComponent", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
+			Where(app.InstallDeploy{ID: req.DeployID}).First(&deploy).Error; err != nil {
+			return fmt.Errorf("unable to get install deploy: %w", err)
+		}
+		if deploy.InstallComponent == nil {
+			return fmt.Errorf("install component %s not found for deploy %s", deploy.InstallComponentID, deploy.ID)
+		}
+		buildIDs, err := a.helpers.AppliedBuildIDs(ctx, deploy.InstallComponent.InstallID)
+		if err != nil {
+			return fmt.Errorf("unable to get dependency builds: %w", err)
+		}
+		if err := a.db.WithContext(ctx).Model(&app.InstallDeploy{ID: deploy.ID}).Select("dependency_build_ids").
+			Updates(&app.InstallDeploy{DependencyBuildIDs: buildIDs}).Error; err != nil {
+			return fmt.Errorf("unable to save dependency builds: %w", err)
+		}
 	}
-	installComponent := deploy.InstallComponent
-	if installComponent == nil {
-		return fmt.Errorf("install component %s not found for deploy %s", deploy.InstallComponentID, deploy.ID)
-	}
-
-	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if _, err := driftresolution.LockInstall(ctx, tx, installComponent.InstallID); err != nil {
-			return err
-		}
-		if err := tx.Select("applied_at").Where(app.InstallDeploy{ID: deploy.ID}).First(&deploy).Error; err != nil {
-			return err
-		}
-		if deploy.AppliedAt != nil {
-			appliedAt = *deploy.AppliedAt
-		}
-		if err := tx.Model(&app.InstallDeploy{}).Where(app.InstallDeploy{ID: deploy.ID}).Update("applied_at", appliedAt).Error; err != nil {
-			return err
-		}
-		var ref app.AppConfigRef
-		operation := "record"
-		switch deploy.Type {
-		case app.InstallDeployTypeRecover:
-			return nil
-		case app.InstallDeployTypeTeardown:
-			operation = "clear"
-			ref = app.AppConfigRef{
-				ExpectedConfigID: installComponent.AppConfigRef.ExpectedConfigID,
-			}
-		default:
-			appConfigID := ""
-			if deploy.ComponentBuild != nil {
-				appConfigID = deploy.ComponentBuild.ComponentConfigConnection.AppConfigID
-			}
-			if appConfigID == "" {
-				return fmt.Errorf("component build %s has no app config", deploy.ComponentBuildID)
-			}
-
-			at := appliedAt
-			ref = app.AppConfigRef{
-				ExpectedConfigID:    appConfigID,
-				AppliedConfigID:     appConfigID,
-				AppliedConfigAt:     &at,
-				AppliedConfigByType: app.AppConfigRefByTypeInstallDeploys,
-				AppliedConfigByID:   deploy.ID,
-			}
-		}
-		if err := tx.WithContext(ctx).
-			Model(&app.InstallComponent{}).
-			Where(app.InstallComponent{ID: deploy.InstallComponentID}).
-			Update("app_config_ref", ref).Error; err != nil {
-			return fmt.Errorf("unable to %s actual deploy on install component: %w", operation, err)
-		}
-		return nil
-	})
+	return appliedstate.RecordDeploy(ctx, a.db, req.DeployID)
 }
 
 type SetSandboxRunPlannedAtRequest struct {
@@ -126,72 +80,5 @@ type SetSandboxRunAppliedAtRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) SetSandboxRunAppliedAt(ctx context.Context, req SetSandboxRunAppliedAtRequest) error {
-	appliedAt := time.Now().UTC()
-	var run app.InstallSandboxRun
-	if err := a.db.WithContext(ctx).
-		Where(app.InstallSandboxRun{ID: req.SandboxRunID}).
-		First(&run).Error; err != nil {
-		return fmt.Errorf("unable to get install sandbox run: %w", err)
-	}
-
-	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if _, err := driftresolution.LockInstall(ctx, tx, run.InstallID); err != nil {
-			return err
-		}
-		if err := tx.Select("applied_at").Where(app.InstallSandboxRun{ID: run.ID}).First(&run).Error; err != nil {
-			return err
-		}
-		if run.AppliedAt != nil {
-			appliedAt = *run.AppliedAt
-		}
-		if err := tx.Model(&app.InstallSandboxRun{}).Where(app.InstallSandboxRun{ID: run.ID}).Update("applied_at", appliedAt).Error; err != nil {
-			return err
-		}
-		if run.InstallSandboxID == nil || *run.InstallSandboxID == "" {
-			return nil
-		}
-		var ref app.AppConfigRef
-		switch run.RunType {
-		case app.SandboxRunTypeProvision, app.SandboxRunTypeReprovision:
-			if run.AppSandboxConfigID == "" {
-				return nil
-			}
-			var sandboxConfig app.AppSandboxConfig
-			if err := tx.WithContext(ctx).Unscoped().
-				Select("id", "app_config_id").
-				Where(app.AppSandboxConfig{ID: run.AppSandboxConfigID}).
-				First(&sandboxConfig).Error; err != nil {
-				return fmt.Errorf("unable to get app sandbox config for sandbox run: %w", err)
-			}
-			at := appliedAt
-			ref = app.AppConfigRef{
-				ExpectedConfigID:    sandboxConfig.AppConfigID,
-				AppliedConfigID:     sandboxConfig.AppConfigID,
-				AppliedConfigAt:     &at,
-				AppliedConfigByType: app.AppConfigRefByTypeInstallSandboxRuns,
-				AppliedConfigByID:   run.ID,
-			}
-		case app.SandboxRunTypeDeprovision:
-			var existing app.InstallSandbox
-			if err := tx.WithContext(ctx).
-				Select("id", "app_config_ref").
-				Where(app.InstallSandbox{ID: *run.InstallSandboxID}).
-				First(&existing).Error; err != nil {
-				return fmt.Errorf("unable to get install sandbox: %w", err)
-			}
-			ref = app.AppConfigRef{
-				ExpectedConfigID: existing.AppConfigRef.ExpectedConfigID,
-			}
-		default:
-			return nil
-		}
-
-		if err := tx.WithContext(ctx).
-			Model(&app.InstallSandbox{}).
-			Where(app.InstallSandbox{ID: *run.InstallSandboxID}).
-			Update("app_config_ref", ref).Error; err != nil {
-			return fmt.Errorf("unable to record actual sandbox run on install sandbox: %w", err)
-		}
-		return nil
-	})
+	return appliedstate.RecordSandboxRun(ctx, a.db, req.SandboxRunID)
 }

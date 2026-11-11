@@ -1574,6 +1574,9 @@ export type TInstallDeploymentsResponse = {
   has_more: boolean
 }
 
+export type TInstallDeploymentSourceDiff =
+  components['schemas']['service.InstallDeploymentSourceDiff']
+
 export type TInstallDeploymentSummariesResponse = {
   deployments: TInstallDeploymentSummary[]
   page: number

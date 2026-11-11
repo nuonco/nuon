@@ -13,9 +13,11 @@ import (
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
 
+	deferExternalSources := workflow.GetVersion(ctx, "app-branch-external-comparison-deferred-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	out, err := activities.AwaitComputeAndStoreAppBranchRunComparison(ctx, &activities.ComputeAndStoreAppBranchRunComparisonInput{
-		AppBranchID: s.AppBranchID,
-		RunID:       s.RunID,
+		AppBranchID:          s.AppBranchID,
+		RunID:                s.RunID,
+		DeferExternalSources: deferExternalSources,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to compute run comparison: %w", err)

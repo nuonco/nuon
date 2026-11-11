@@ -98,7 +98,7 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 					}
 				}
 				if checksumsEqual(oldConn, newConn) {
-					if entry.BuildChanged || len(entry.ImpactReasons) > 0 {
+					if len(entry.ImpactReasons) > 0 {
 						diff.Changed = append(diff.Changed, entry)
 					} else {
 						diff.Unchanged = append(diff.Unchanged, entry)
@@ -154,6 +154,12 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 				diff.SandboxBuildNewID = newSandboxBuildID
 			}
 
+			if err := applySourceChanges(ctx, db, diff, CompositeBaselines{
+				Fallback: oldAppConfigID,
+				Sandbox:  oldAppConfigID,
+			}, map[string]*app.AppConfig{oldAppConfigID: &oldAppCfg, newAppConfigID: &newAppCfg}, &newAppCfg); err != nil {
+				return nil, err
+			}
 			return diff, nil
 		}
 	}
@@ -186,10 +192,13 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 // ref to the install's deployed config before calling, so a legacy install is
 // not treated as brand new.
 type CompositeBaselines struct {
-	Fallback   string
-	Stack      string
-	Sandbox    string
-	Components map[string]string
+	Fallback           string
+	Stack              string
+	Sandbox            string
+	Components         map[string]string
+	ComponentBuilds    map[string]*app.ComponentBuild
+	DependencyBuildIDs map[string]map[string]string
+	SandboxBuildID     *string
 }
 
 // ComputeCompositeInstallConfigDiff unions a stack slice, a sandbox slice, and
@@ -245,6 +254,9 @@ func ComputeCompositeInstallConfigDiff(ctx context.Context, db *gorm.DB, baselin
 	}
 
 	if err := fillComponentSlices(diff, baselines, loaded, &newAppCfg, graphBetween); err != nil {
+		return nil, err
+	}
+	if err := applySourceChanges(ctx, db, diff, baselines, loaded, &newAppCfg); err != nil {
 		return nil, err
 	}
 	sortComponentEntries(diff)
@@ -373,12 +385,12 @@ func fillComponentSlices(
 	sort.Strings(ordered)
 
 	for _, id := range ordered {
-		baselineID := baselines.Components[id]
-		if baselineID == "" {
+		baselineID, hasBaseline := baselines.Components[id]
+		if !hasBaseline {
 			baselineID = baselines.Fallback
 		}
 		oldConn := connOn(loaded[baselineID], id)
-		if oldConn == nil && baselines.Components[id] == "" {
+		if oldConn == nil && !hasBaseline {
 			oldConn = connOnAnyBaseline(loaded, baselines, id)
 		}
 		newConn := newByID[id]
@@ -408,7 +420,7 @@ func fillComponentSlices(
 				entry.ImpactReasons = append([]pkgdiff.ImpactReason(nil), component.ImpactReasons...)
 			}
 		}
-		if checksumsEqual(oldConn, newConn) && !entry.BuildChanged && len(entry.ImpactReasons) == 0 {
+		if checksumsEqual(oldConn, newConn) && len(entry.ImpactReasons) == 0 {
 			diff.Unchanged = append(diff.Unchanged, entry)
 			continue
 		}
@@ -474,7 +486,7 @@ func sortComponentEntries(diff *app.InstallConfigDiff) {
 	less(diff.Unchanged)
 }
 
-func intermediateConfigDiff(ctx context.Context, oldCfg, newCfg *app.AppConfig) (*pkgdiff.Diff, error) {
+func intermediateConfigDiff(ctx context.Context, oldCfg, newCfg *app.AppConfig, changedInputs ...pkgdiff.NodeID) (*pkgdiff.Diff, error) {
 	oldIntermediate, oldOK, err := loadIntermediateConfig(ctx, oldCfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load old intermediate config: %w", err)
@@ -486,7 +498,7 @@ func intermediateConfigDiff(ctx context.Context, oldCfg, newCfg *app.AppConfig) 
 	if !oldOK || !newOK {
 		return nil, nil
 	}
-	return newIntermediate.Diff(oldIntermediate), nil
+	return newIntermediate.Diff(oldIntermediate, changedInputs...), nil
 }
 
 func loadIntermediateConfig(ctx context.Context, appCfg *app.AppConfig) (*config.AppConfig, bool, error) {
@@ -502,6 +514,9 @@ func loadIntermediateConfig(ctx context.Context, appCfg *app.AppConfig) (*config
 	decoder.UseNumber()
 	if err := decoder.Decode(&cfg); err != nil {
 		return nil, false, err
+	}
+	for _, component := range cfg.Components {
+		component.Checksum = ""
 	}
 	return &cfg, true, nil
 }
@@ -575,9 +590,8 @@ func componentDiffEntry(oldConn, newConn *app.ComponentConfigConnection) app.Com
 	if oldConn != nil {
 		entry.OldChecksum = oldConn.Checksum
 		entry.OldBuildID = cccBuildID(oldConn)
-		entry.BuildChanged = checksumsEqual(oldConn, newConn) && entry.OldBuildID != entry.NewBuildID &&
-			(entry.OldBuildID != "" || entry.NewBuildID != "")
 	}
+	entry.BuildChanged = entry.OldBuildID != entry.NewBuildID
 	return entry
 }
 

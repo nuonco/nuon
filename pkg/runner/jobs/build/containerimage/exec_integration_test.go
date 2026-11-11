@@ -3,8 +3,10 @@ package containerimage
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -14,6 +16,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
@@ -114,4 +117,65 @@ func TestExecReportsSignatureOutcome(t *testing.T) {
 		require.False(t, result.Success)
 		require.Equal(t, signature.VerifyStep, result.ErrorMetadata["step"])
 	})
+}
+
+type tagResolver map[string]string
+
+func (r tagResolver) Resolve(_ context.Context, _ *configs.OCIRegistryRepository, ref string) (*ocispec.Descriptor, error) {
+	if strings.HasPrefix(ref, "sha256:") {
+		return &ocispec.Descriptor{Digest: digest.Digest(ref), MediaType: ocispec.MediaTypeImageIndex}, nil
+	}
+	return &ocispec.Descriptor{Digest: digest.Digest(r[ref]), MediaType: ocispec.MediaTypeImageIndex}, nil
+}
+
+func (r tagResolver) Tags(context.Context, *configs.OCIRegistryRepository) ([]string, error) {
+	tags := make([]string, 0, len(r))
+	for tag := range r {
+		tags = append(tags, tag)
+	}
+	return tags, nil
+}
+
+func TestExecResumedUpdatePolicyBuildReportsSelectedTag(t *testing.T) {
+	const claimed = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+	const newer = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+	for name, tc := range map[string]struct {
+		tags    tagResolver
+		wantTag string
+	}{
+		"selected tag still points at the claimed digest": {tags: tagResolver{"1.25.4": newer, "1.25.5": claimed}, wantTag: "1.25.5"},
+		"a newer tag was published since the claim":       {tags: tagResolver{"1.25.5": claimed, "1.25.6": newer}, wantTag: ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			identity := sourceidentity.New("image", "config")
+			identity.Digest, identity.Captured = claimed, true
+			identity.Seal()
+			client := &resultClient{}
+			h := &handler{
+				apiClient:  client,
+				ociCopy:    &recordingCopier{},
+				ociResolve: tc.tags,
+				state: &handlerState{
+					jobID:          "job-1",
+					jobExecutionID: "exec-1",
+					resultTag:      "bld-1",
+					plan:           &plantypes.BuildPlan{SourceIdentity: identity},
+					regCfg:         &configs.OCIRegistryRepository{},
+					cfg: &plantypes.ContainerImagePullPlan{
+						Image:        "ghcr.io/acme/api",
+						UpdatePolicy: "~1.25",
+						RepoCfg: &configs.OCIRegistryRepository{
+							RegistryType: configs.OCIRegistryTypePublicOCI,
+							Repository:   "ghcr.io/acme/api",
+							OCIAuth:      &configs.OCIRegistryAuth{},
+						},
+					},
+				},
+			}
+			ctx := pkgctx.SetLogger(context.Background(), zap.NewNop())
+			require.NoError(t, h.Exec(ctx, &models.AppRunnerJob{ID: "job-1"}, &models.AppRunnerJobExecution{ID: "exec-1"}))
+			require.Equal(t, claimed, client.result.SourceDigest)
+			require.Equal(t, tc.wantTag, client.result.ResolvedTag)
+		})
+	}
 }

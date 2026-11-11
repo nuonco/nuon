@@ -200,7 +200,7 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 			if installRunbook.Install.Name != "" {
 				metadata[app.WorkflowMetadataKeyOwnerName] = installRunbook.Install.Name
 			}
-			created, err := h.appsHelpers.CreateWorkflowWithDB(ctx, tx, installRunbook.InstallID, "installs", app.WorkflowTypeRunbookRun, metadata, false, approvalOption, req.Role)
+			created, err := h.appsHelpers.WithDB(tx).CreateWorkflowForOwner(ctx, installRunbook.InstallID, "installs", app.WorkflowTypeRunbookRun, metadata, false, approvalOption, req.Role)
 			if err != nil {
 				return err
 			}
