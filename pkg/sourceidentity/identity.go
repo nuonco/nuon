@@ -9,6 +9,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/opencontainers/go-digest"
 )
@@ -58,6 +59,14 @@ type Reads struct {
 
 const MaxInputs = 1000
 
+// How a Git source's commit was chosen. Provenance is recorded for display and
+// is not part of the checksum.
+const (
+	ResolvedFromCommit    = "commit"
+	ResolvedFromBranchRun = "branch_run"
+	ResolvedFromLookup    = "lookup"
+)
+
 const InputsOverLimit = "source_inputs_over_limit"
 
 type Identity struct {
@@ -76,6 +85,10 @@ type Identity struct {
 	Captured       bool     `json:"captured"`
 	Inputs         []Input  `json:"inputs,omitempty"`
 	InputsRecorded bool     `json:"inputs_recorded,omitempty"`
+
+	Ref          string     `json:"ref,omitempty"`
+	ResolvedFrom string     `json:"resolved_from,omitempty"`
+	ResolvedAt   *time.Time `json:"resolved_at,omitempty"`
 }
 
 func Hash(value any) string {
@@ -251,6 +264,11 @@ func (i *Identity) Validate() error {
 	}
 	if i.Commit != "" && !IsCommit(i.Commit) {
 		return fmt.Errorf("source commit must be immutable")
+	}
+	switch i.ResolvedFrom {
+	case "", ResolvedFromCommit, ResolvedFromBranchRun, ResolvedFromLookup:
+	default:
+		return fmt.Errorf("invalid source resolution %q", i.ResolvedFrom)
 	}
 	if strings.HasPrefix(i.Digest, "git:") {
 		parts := strings.Split(i.Digest, ":")

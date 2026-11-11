@@ -56,8 +56,17 @@ type SourceidentityIdentity struct {
 	// reasons
 	Reasons []string `json:"reasons"`
 
+	// ref
+	Ref string `json:"ref,omitempty"`
+
 	// repository
 	Repository string `json:"repository,omitempty"`
+
+	// resolved at
+	ResolvedAt string `json:"resolved_at,omitempty"`
+
+	// resolved from
+	ResolvedFrom string `json:"resolved_from,omitempty"`
 
 	// root
 	Root string `json:"root,omitempty"`

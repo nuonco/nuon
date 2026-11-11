@@ -10765,7 +10765,10 @@ export interface components {
       inputs_recorded?: boolean;
       kind?: string;
       reasons?: string[];
+      ref?: string;
       repository?: string;
+      resolved_at?: string;
+      resolved_from?: string;
       root?: string;
       version?: number;
     };

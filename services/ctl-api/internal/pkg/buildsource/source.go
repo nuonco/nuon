@@ -29,6 +29,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -134,7 +135,8 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 	if ref == "" {
 		ref = branch
 	}
-	if runID != nil && *runID != "" && (ref == branch || ref == "") {
+	requested, resolvedFrom := ref, sourceidentity.ResolvedFromCommit
+	if runID != nil && *runID != "" {
 		var run app.AppBranchRun
 		if err := db.WithContext(ctx).Preload("VCSConnectionCommit").Preload("AppBranchConfig.ConnectedGithubVCSConfig").Preload("AppBranchConfig.PublicGitVCSConfig").Where(app.AppBranchRun{ID: *runID}).First(&run).Error; err != nil {
 			return nil, err
@@ -146,12 +148,12 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 		if cfg := run.AppBranchConfig.PublicGitVCSConfig; cfg != nil {
 			repo, runBranch = cfg.Repo, cfg.Branch
 		}
-		if normalizeRepo(repo) == normalizeRepo(i.Repository) && branch == runBranch {
-			if run.VCSConnectionCommit != nil {
-				ref = run.VCSConnectionCommit.SHA
-			} else if run.HeadSHA != "" {
-				ref = run.HeadSHA
-			}
+		runSHA := run.HeadSHA
+		if run.VCSConnectionCommit != nil {
+			runSHA = run.VCSConnectionCommit.SHA
+		}
+		if normalizeRepo(repo) == normalizeRepo(i.Repository) && branch == runBranch && runSHA != "" && (ref == branch || ref == runSHA) {
+			ref, requested, resolvedFrom = runSHA, branch, sourceidentity.ResolvedFromBranchRun
 		}
 	}
 	if !sourceidentity.IsCommit(ref) {
@@ -160,11 +162,16 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 		if err != nil {
 			return nil, err
 		}
+		resolvedFrom = sourceidentity.ResolvedFromLookup
 	}
 	if !sourceidentity.IsCommit(ref) {
 		return nil, fmt.Errorf("source did not resolve to a full commit SHA")
 	}
-	i.Commit = ref
+	i.Commit, i.ResolvedFrom = ref, resolvedFrom
+	if resolvedFrom != sourceidentity.ResolvedFromCommit {
+		resolvedAt := time.Now().UTC()
+		i.Ref, i.ResolvedAt = requested, &resolvedAt
+	}
 	orgID, connection, err := sourceAccess(connected, public)
 	if err != nil {
 		return nil, err

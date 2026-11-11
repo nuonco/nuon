@@ -82,6 +82,12 @@ func reportedBuildSource(expected, actual *sourceidentity.Identity) *sourceident
 	return &unverified
 }
 
+func keepProvenance(expected, actual *sourceidentity.Identity) {
+	if expected != nil && actual != nil {
+		actual.Ref, actual.ResolvedFrom, actual.ResolvedAt = expected.Ref, expected.ResolvedFrom, expected.ResolvedAt
+	}
+}
+
 func applyBuildSource(tx *gorm.DB, job *app.RunnerJob, source *app.ComponentBuild, claim bool) error {
 	actual := source.SourceIdentity
 	switch job.OwnerType {
@@ -94,6 +100,7 @@ func applyBuildSource(tx *gorm.DB, job *app.RunnerJob, source *app.ComponentBuil
 			return err
 		}
 		actual = reportedBuildSource(b.SourceIdentity, actual)
+		keepProvenance(b.SourceIdentity, actual)
 		if actual != nil {
 			b.SourceIdentity = actual
 			b.Checksum = actual.ConfigChecksum
@@ -119,6 +126,7 @@ func applyBuildSource(tx *gorm.DB, job *app.RunnerJob, source *app.ComponentBuil
 			return err
 		}
 		actual = reportedBuildSource(b.SourceIdentity, actual)
+		keepProvenance(b.SourceIdentity, actual)
 		if actual != nil {
 			b.SourceIdentity = actual
 			b.Checksum = actual.ConfigChecksum
