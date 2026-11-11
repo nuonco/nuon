@@ -2,7 +2,6 @@ package activities
 
 import (
 	"context"
-	"strings"
 
 	"github.com/pkg/errors"
 
@@ -23,8 +22,7 @@ func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string,
 
 	var resp *handler.ReadyResponse
 	err := handler.RetryUpdate(ctx, handler.ReadyHandlerName, func(err error) bool {
-		return strings.HasPrefix(err.Error(), "unable to call query handler: unknown update ready.") ||
-			strings.HasPrefix(err.Error(), "unable get response: unknown update ready.")
+		return handler.IsUnknownUpdate(err, handler.ReadyHandlerName)
 	}, func() error {
 		startOp := a.handlerStartOperation(workflowID, queueID, updateID, info.TaskQueue)
 		rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,

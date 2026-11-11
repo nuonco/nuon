@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
@@ -40,12 +42,17 @@ func RetryUpdate(ctx context.Context, updateName string, retryable func(error) b
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return ctx.Err()
+			return fmt.Errorf("%s handler not registered: %w", updateName, errors.Join(ctx.Err(), lastErr))
 		case <-timer.C:
 		}
 		delay = min(delay*2, updateWithStartMaxDelay)
 	}
 	return fmt.Errorf("%s handler not registered after %d attempts: %w", updateName, updateWithStartMaxAttempts, lastErr)
+}
+
+func IsUnknownUpdate(err error, updateName string) bool {
+	var appErr *temporal.ApplicationError
+	return errors.As(err, &appErr) && strings.HasPrefix(appErr.Message(), "unknown update "+updateName+".")
 }
 
 // UpdateWithStartOptions configures the update sent to a handler workflow.
