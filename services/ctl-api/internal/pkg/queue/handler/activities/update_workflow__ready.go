@@ -21,9 +21,12 @@ func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string,
 	info := activity.GetInfo(ctx)
 
 	var resp *handler.ReadyResponse
+	var prevRunID string
+	var replacements int
+	var runReplaced bool
 	err := handler.RetryUpdate(ctx, handler.ReadyHandlerName, func(err error) bool {
-		return handler.IsUnknownUpdate(err, handler.ReadyHandlerName)
-	}, func() error {
+		return !runReplaced && handler.IsUnknownUpdate(err, handler.ReadyHandlerName)
+	}, func(ctx context.Context) error {
 		startOp := a.handlerStartOperation(workflowID, queueID, updateID, info.TaskQueue)
 		rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
 			info.WorkflowNamespace,
@@ -40,6 +43,13 @@ func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string,
 			return errors.Wrap(err, "unable to call query handler")
 		}
 
+		// Resolve the run-id so callers can pin subsequent updates to this exact run.
+		run, err := startOp.Get(ctx)
+		if err != nil {
+			return errors.Wrap(err, "unable to get handler workflow run")
+		}
+		runID := run.GetRunID()
+
 		var result handler.ReadyResponse
 		if err := rawResp.Get(ctx, &result); err != nil {
 			wrapped := errors.Wrap(err, "unable get response")
@@ -51,15 +61,18 @@ func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string,
 					wrapped,
 				)
 			}
+			if prevRunID != "" && prevRunID != runID {
+				replacements++
+			}
+			if replacements > 1 {
+				runReplaced = true
+				return errors.Wrapf(wrapped, "handler run %s replaced run %s, the second replacement during this update", runID, prevRunID)
+			}
+			prevRunID = runID
 			return wrapped
 		}
 
-		// Resolve the run-id so callers can pin subsequent updates to this exact run.
-		run, err := startOp.Get(ctx)
-		if err != nil {
-			return errors.Wrap(err, "unable to get handler workflow run")
-		}
-		result.RunID = run.GetRunID()
+		result.RunID = runID
 		resp = &result
 		return nil
 	})

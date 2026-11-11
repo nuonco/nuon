@@ -36,7 +36,7 @@ func (c *Client) updateWithStartUntilCompleted(
 	var accepted bool
 	return handler.RetryUpdate(ctx, updateName, func(err error) bool {
 		return accepted && isColdHostUpdateRejection(err, updateName)
-	}, func() error {
+	}, func(ctx context.Context) error {
 		handle, err := c.updateWithStartUntilAccepted(ctx, qs, updateName, args...)
 		accepted = err == nil
 		if err != nil {
@@ -54,7 +54,7 @@ func updateWithStartUntilAccepted(
 	var handle tclient.WorkflowUpdateHandle
 	err := handler.RetryUpdate(ctx, updateName, func(err error) bool {
 		return isColdHostUpdateStartRace(err, updateName)
-	}, func() error {
+	}, func(context.Context) error {
 		var err error
 		handle, err = submit()
 		return err
