@@ -105,6 +105,7 @@ func TestFetchSourceTree(t *testing.T) {
 		wantSubmodule bool
 		wantNoBlobs   bool
 		serverCaps    *capability.List
+		maxBytes      int64
 	}{
 		"filtering server fetches an older commit without blobs": {
 			server:      filtered,
@@ -206,10 +207,20 @@ func TestFetchSourceTree(t *testing.T) {
 			commit:       first,
 			wantFetchErr: ErrSourceCommitNotFound,
 		},
+		"pack over the size limit": {
+			server:       filtered,
+			commit:       inside,
+			maxBytes:     64,
+			wantFetchErr: ErrSourceTreeTooLarge,
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			tree, err := fetchSourceTree(context.Background(), "file://"+tc.server, nil, tc.commit, tc.serverCaps)
+			maxBytes := int64(maxSourceTreeBytes)
+			if tc.maxBytes > 0 {
+				maxBytes = tc.maxBytes
+			}
+			tree, err := fetchSourceTree(context.Background(), "file://"+tc.server, nil, tc.commit, tc.serverCaps, maxBytes)
 			if tc.wantFetchErr != nil {
 				require.ErrorIs(t, err, tc.wantFetchErr)
 				return
@@ -243,7 +254,7 @@ func TestFetchSourceTree(t *testing.T) {
 
 	trees := map[string]*SourceTree{}
 	for _, commit := range []string{first, outside, inside, shapes} {
-		tree, err := fetchSourceTree(context.Background(), "file://"+filtered, nil, commit, nil)
+		tree, err := fetchSourceTree(context.Background(), "file://"+filtered, nil, commit, nil, maxSourceTreeBytes)
 		require.NoError(t, err)
 		trees[commit] = tree
 	}

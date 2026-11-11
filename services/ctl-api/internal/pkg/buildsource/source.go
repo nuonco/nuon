@@ -27,6 +27,7 @@ package buildsource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -177,6 +178,11 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 		return nil, err
 	}
 	tree, err := vcs.GetSourceTree(ctx, orgID, i.Repository, i.Commit, connection)
+	if errors.Is(err, vcshelpers.ErrSourceTreeTooLarge) {
+		i.MarkUnknown("git_source_tree_too_large")
+		i.Seal()
+		return i, i.Validate()
+	}
 	if err != nil {
 		return nil, err
 	}

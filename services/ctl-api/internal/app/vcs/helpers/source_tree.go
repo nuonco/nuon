@@ -29,7 +29,22 @@ import (
 var (
 	ErrSourceCommitNotFound   = errors.New("pinned commit not found")
 	ErrSourceDirectoryMissing = errors.New("source directory is missing from pinned commit")
+	ErrSourceTreeTooLarge     = errors.New("source tree exceeds the size limit")
 )
+
+const maxSourceTreeBytes = 128 << 20
+
+type limitedStorage struct {
+	*memory.Storage
+	remaining int64
+}
+
+func (s *limitedStorage) SetEncodedObject(o plumbing.EncodedObject) (plumbing.Hash, error) {
+	if s.remaining -= o.Size(); s.remaining < 0 {
+		return plumbing.ZeroHash, ErrSourceTreeTooLarge
+	}
+	return s.Storage.SetEncodedObject(o)
+}
 
 type SourceTree struct {
 	s    storer.EncodedObjectStorer
@@ -79,7 +94,7 @@ func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit s
 				return nil, err
 			}
 		}
-		tree, err := fetchSourceTree(ctx, url, auth, commit, githubUploadPackCapabilities())
+		tree, err := fetchSourceTree(ctx, url, auth, commit, githubUploadPackCapabilities(), maxSourceTreeBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +117,7 @@ func githubUploadPackCapabilities() *capability.List {
 	return caps
 }
 
-func fetchSourceTree(ctx context.Context, url string, auth transport.AuthMethod, commit string, serverCaps *capability.List) (*SourceTree, error) {
+func fetchSourceTree(ctx context.Context, url string, auth transport.AuthMethod, commit string, serverCaps *capability.List, maxBytes int64) (*SourceTree, error) {
 	ep, err := transport.NewEndpoint(url)
 	if err != nil {
 		return nil, err
@@ -159,7 +174,7 @@ func fetchSourceTree(ctx context.Context, url string, auth transport.AuthMethod,
 		pack = sideband.NewDemuxer(sideband.Sideband, resp)
 	}
 	st := memory.NewStorage()
-	if err := packfile.UpdateObjectStorage(st, pack); err != nil {
+	if err := packfile.UpdateObjectStorage(&limitedStorage{Storage: st, remaining: maxBytes}, pack); err != nil {
 		return nil, fmt.Errorf("unable to read pinned commit: %w", err)
 	}
 	c, err := object.GetCommit(st, hash)

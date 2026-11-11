@@ -183,13 +183,16 @@ func DirectoryChanged(ctx context.Context, vcs *vcshelpers.Helpers, connected *a
 		repository = public.Repo
 	}
 	base, err := vcs.GetSourceTree(ctx, orgID, repository, baseSHA, connection)
-	if errors.Is(err, vcshelpers.ErrSourceCommitNotFound) {
+	if errors.Is(err, vcshelpers.ErrSourceCommitNotFound) || errors.Is(err, vcshelpers.ErrSourceTreeTooLarge) {
 		return true, nil
 	}
 	if err != nil {
 		return false, err
 	}
 	head, err := vcs.GetSourceTree(ctx, orgID, repository, headSHA, connection)
+	if errors.Is(err, vcshelpers.ErrSourceTreeTooLarge) {
+		return true, nil
+	}
 	if err != nil {
 		return false, err
 	}
