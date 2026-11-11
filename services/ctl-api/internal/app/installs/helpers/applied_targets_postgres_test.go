@@ -106,10 +106,11 @@ type appliedHistory struct {
 }
 
 func newAppliedHistory(t require.TestingT, db *gorm.DB, n int) *appliedHistory {
+	helpers := installhelpers.New(installhelpers.Params{DB: db})
 	h := &appliedHistory{
 		db:         db,
-		helpers:    installhelpers.New(installhelpers.Params{DB: db}),
-		activities: installactivities.New(installactivities.Params{DB: db}),
+		helpers:    helpers,
+		activities: installactivities.New(installactivities.Params{DB: db, Helpers: helpers}),
 		install:    app.Install{ID: historyID("install", 0), CreatedByID: historyID("account", 0), AppConfigID: historyID("early-pin", 0)},
 		actual:     make([]appliedReceiptFact, n+2),
 		refs:       make([]app.AppConfigRef, n+2),
@@ -182,6 +183,9 @@ func (h *appliedHistory) append(t require.TestingT, resource, revision int, even
 				consumed[h.components[i].ComponentID] = h.actual[i].buildID
 			}
 		}
+		if event == "sync" {
+			consumed = nil
+		}
 		deploy := app.InstallDeploy{ID: id, InstallComponentID: h.components[resource].ID,
 			ComponentBuildID: buildID, AppConfigID: cfgID, DependencyBuildIDs: consumed,
 			CreatedByID: historyID("account", 0), StatusDescription: "attempt",
@@ -189,7 +193,7 @@ func (h *appliedHistory) append(t require.TestingT, resource, revision int, even
 			CreatedAt: at, UpdatedAt: at, InstallWorkflowID: &wf.ID}
 		persistHistoryRow(t, h.db, &deploy)
 		if advances && !legacy || event == "recover" {
-			require.NoError(t, h.activities.SetDeployAppliedAt(context.Background(), installactivities.SetDeployAppliedAtRequest{DeployID: id}))
+			require.NoError(t, h.activities.SetDeployAppliedAt(context.Background(), installactivities.SetDeployAppliedAtRequest{DeployID: id, RecordDependencies: event == "sync"}))
 		}
 		if advances {
 			h.actual[resource] = appliedReceiptFact{operationID: id, configID: cfgID, buildID: buildID, consumed: consumed}
@@ -555,4 +559,23 @@ func TestRecordAppliedConfigPrecedencePostgres(t *testing.T) {
 			h.check(t)
 		})
 	}
+}
+
+func TestImageSyncRecordsDependencyReceiptPostgres(t *testing.T) {
+	db := appliedHistoryPostgres(t)
+	tx := db.Begin()
+	require.NoError(t, tx.Error)
+	defer tx.Rollback()
+	h := newAppliedHistory(t, tx, 2)
+	h.append(t, 0, 0, "apply", false)
+	h.append(t, 2, 0, "apply", false)
+	h.append(t, 1, 0, "sync", false)
+	want := map[string]string{
+		h.components[0].ComponentID: h.actual[0].buildID,
+		h.components[1].ComponentID: h.actual[1].buildID,
+		"sandbox":                   h.actual[2].buildID,
+	}
+	var deploy app.InstallDeploy
+	require.NoError(t, tx.Where(app.InstallDeploy{ID: h.actual[1].operationID}).First(&deploy).Error)
+	require.Equal(t, want, deploy.DependencyBuildIDs)
 }

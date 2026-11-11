@@ -143,7 +143,7 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 	}
 
 	if workflow.GetVersion(ctx, "image-sync-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		if err := activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{DeployID: installDeploy.ID}); err != nil {
+		if err := activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{DeployID: installDeploy.ID, RecordDependencies: true}); err != nil {
 			return errors.Wrap(err, "unable to record applied image sync")
 		}
 	}

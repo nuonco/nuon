@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appliedstate"
 )
@@ -27,11 +29,31 @@ func (a *Activities) SetDeployPlannedAt(ctx context.Context, req SetDeployPlanne
 }
 
 type SetDeployAppliedAtRequest struct {
-	DeployID string `validate:"required"`
+	DeployID           string `validate:"required"`
+	RecordDependencies bool
 }
 
 // @temporal-gen-v2 activity
 func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployAppliedAtRequest) error {
+	if req.RecordDependencies {
+		var deploy app.InstallDeploy
+		if err := a.db.WithContext(ctx).
+			Preload("InstallComponent", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
+			Where(app.InstallDeploy{ID: req.DeployID}).First(&deploy).Error; err != nil {
+			return fmt.Errorf("unable to get install deploy: %w", err)
+		}
+		if deploy.InstallComponent == nil {
+			return fmt.Errorf("install component %s not found for deploy %s", deploy.InstallComponentID, deploy.ID)
+		}
+		buildIDs, err := a.helpers.AppliedBuildIDs(ctx, deploy.InstallComponent.InstallID)
+		if err != nil {
+			return fmt.Errorf("unable to get dependency builds: %w", err)
+		}
+		if err := a.db.WithContext(ctx).Model(&app.InstallDeploy{ID: deploy.ID}).Select("dependency_build_ids").
+			Updates(&app.InstallDeploy{DependencyBuildIDs: buildIDs}).Error; err != nil {
+			return fmt.Errorf("unable to save dependency builds: %w", err)
+		}
+	}
 	return appliedstate.RecordDeploy(ctx, a.db, req.DeployID)
 }
 
