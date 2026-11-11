@@ -24,8 +24,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const managementACRRegistryVersion = "inline-build-management-acr-registry-v1"
-
 type Signal struct {
 	ComponentID string `json:"component_id" validate:"required"`
 	BuildID     string `json:"build_id"` // optional; if set, skip build creation and trigger pre-created build
@@ -96,7 +94,9 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		return errors.Wrap(err, "unable to create log stream")
 	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, logStream.ID)
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
@@ -192,22 +192,15 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		return notify(fmt.Errorf("unable to create job: %w", err))
 	}
 
-	cloudProvider, _ := activities.AwaitGetCloudProvider(ctx, &activities.GetCloudProviderRequest{})
-	managementIAMRoleARN, _ := activities.AwaitGetManagementIAMRoleARN(ctx, &activities.GetManagementIAMRoleARNRequest{})
-	var managementACRRegistryURL string
-	if workflow.GetVersion(ctx, managementACRRegistryVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		managementACRRegistryURL, err = activities.AwaitGetManagementACRRegistryURL(ctx, &activities.GetManagementACRRegistryURLRequest{})
-		if err != nil {
-			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
-			return notify(errors.Wrap(err, "unable to get management acr registry url"))
-		}
+	managementACRRegistryURL, err := activities.AwaitGetManagementACRRegistryURL(ctx, &activities.GetManagementACRRegistryURLRequest{})
+	if err != nil {
+		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
+		return notify(errors.Wrap(err, "unable to get management acr registry url"))
 	}
 	runPlan, err := plan.AwaitCreateComponentBuildPlan(ctx, &plan.CreateComponentBuildPlanRequest{
 		ComponentID:              fullComp.ID,
 		ComponentBuildID:         buildID,
 		WorkflowID:               fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
-		CloudProvider:            cloudProvider,
-		ManagementIAMRoleARN:     managementIAMRoleARN,
 		ManagementACRRegistryURL: managementACRRegistryURL,
 	})
 	if err != nil {

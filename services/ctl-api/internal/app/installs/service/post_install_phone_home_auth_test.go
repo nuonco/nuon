@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -262,4 +263,42 @@ func TestPhoneHomeRejectionReasonsAreStable(t *testing.T) {
 	assert.Equal(t, "no_target_account", phoneHomeRejectNoTargetAccount)
 	assert.Equal(t, "skipped", phoneHomeAuthSkipped)
 	assert.Equal(t, "", phoneHomeAuthOK, "an empty reason must mean verified")
+}
+
+func TestInstallPhoneHomeRejectsOversizedBody(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	oversized := []byte(`{"request_type":"Update","padding":"` + strings.Repeat("x", maxPhoneHomeBody) + `"}`)
+
+	for name, tc := range map[string]struct {
+		cfg           *internal.Config
+		contentLength int64
+		wantErr       string
+	}{
+		"declared length over cap is rejected before auth": {
+			cfg:           &internal.Config{PhoneHomeAuthRequired: true},
+			contentLength: maxPhoneHomeBody + 1,
+			wantErr:       errPhoneHomeBodyTooLarge.Error(),
+		},
+		"streamed body over cap is cut off during decode": {
+			cfg:           &internal.Config{},
+			contentLength: -1,
+			wantErr:       "request body too large",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(oversized))
+			ctx.Request.Header.Set("Content-Type", "application/json")
+			ctx.Request.ContentLength = tc.contentLength
+
+			require.NotPanics(t, func() {
+				(&service{cfg: tc.cfg}).InstallPhoneHome(ctx)
+			})
+			require.Len(t, ctx.Errors, 1)
+			var invalidRequest stderr.ErrInvalidRequest
+			assert.ErrorAs(t, ctx.Errors[0].Err, &invalidRequest)
+			assert.Contains(t, ctx.Errors[0].Error(), tc.wantErr)
+		})
+	}
 }

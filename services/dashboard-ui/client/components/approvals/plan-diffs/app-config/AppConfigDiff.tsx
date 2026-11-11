@@ -17,6 +17,7 @@ import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TDiffNode } from '@/lib/ctl-api/apps/get-app-config-diff'
+import { formatEmbeddedTomlContent } from '@/lib/diffs/embedded-toml'
 import { diffLines } from '@/utils/code-utils'
 import { cn } from '@/utils/classnames'
 import { scrollElementIntoView } from '@/utils/scroll'
@@ -47,7 +48,6 @@ const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; 
 const COMPONENT_TYPE_ICON: Record<string, { icon: TIconVariant; brandClass: string }> = {
   helm_chart: { icon: 'Helm', brandClass: 'text-[#0F1689] dark:text-[#6A70D6]' },
   terraform_module: { icon: 'Terraform', brandClass: 'text-[#7B42BC] dark:text-[#A878E0]' },
-  docker_build: { icon: 'Docker', brandClass: 'text-[#2496ED] dark:text-[#56B4F9]' },
   external_image: { icon: 'OCI', brandClass: 'text-[#262261] dark:text-[#8B87D1]' },
   kubernetes_manifest: { icon: 'Kubernetes', brandClass: 'text-[#326CE5] dark:text-[#5A8DEF]' },
   job: { icon: 'AWSLambda', brandClass: 'text-[#FF9900] dark:text-[#FFB340]' },
@@ -458,43 +458,6 @@ function langForFile(name: string): string {
     return 'bash'
   }
   return 'yaml'
-}
-
-const EMBEDDED_CONTENT_KEYS = new Set([
-  'content',
-  'contents',
-  'inline_contents',
-  'var_file',
-])
-
-function decodeEscapedContent(value: string, quote: string): string {
-  return value
-    .replace(/\\r\\n/g, '\n')
-    .replace(/\\n/g, '\n')
-    .replace(/\\r/g, '\n')
-    .replace(/\\t/g, '  ')
-    .replace(new RegExp(`\\\\${quote}`, 'g'), quote)
-}
-
-export function formatEmbeddedTomlContent(source: string): string {
-  return source
-    .split('\n')
-    .map((line) => {
-      const match = line.match(
-        /^(\s*)([A-Za-z0-9_-]+)(\s*=\s*)(["'])(.*)\4\s*$/
-      )
-      if (!match) return line
-
-      const [, indent, key, assignment, quote, value] = match
-      if (!EMBEDDED_CONTENT_KEYS.has(key) || !/\\[nrt]/.test(value)) {
-        return line
-      }
-
-      const decoded = decodeEscapedContent(value, quote)
-      const fence = quote.repeat(3)
-      return `${indent}${key}${assignment}${fence}\n${decoded}\n${indent}${fence}`
-    })
-    .join('\n')
 }
 
 const FileDiffRow = ({

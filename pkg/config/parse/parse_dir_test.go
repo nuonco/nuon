@@ -2,6 +2,10 @@ package parse
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -560,4 +564,246 @@ func TestSourceMemberIdentityNamedIAMPolicyUsesFileStem(t *testing.T) {
 	})
 	require.Equal(t, "permission_policy", kind)
 	require.Equal(t, "logs", name)
+}
+
+func TestParseDirWithSourceComponentSymlinks(t *testing.T) {
+	const component = `name = "acme-chart"
+type = "helm_chart"
+chart_name = "acme-chart"
+[helm_repo]
+repo_url = "https://example.com"
+chart = "acme-chart"
+version = "1.0.0"
+`
+	tests := map[string]struct {
+		absolute bool
+		outside  bool
+		dir      bool
+		nested   bool
+	}{
+		"relative file":              {},
+		"relative directory":         {dir: true},
+		"absolute in-repo file":      {absolute: true},
+		"absolute in-repo directory": {absolute: true, dir: true},
+		"nested absolute file":       {absolute: true, nested: true},
+		"absolute outside file":      {absolute: true, outside: true},
+		"relative outside file":      {outside: true},
+		"relative outside directory": {outside: true, dir: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			repo := filepath.Join(root, "repo")
+			configDir := filepath.Join(repo, "nuon")
+			components := filepath.Join(configDir, "components")
+			require.NoError(t, os.MkdirAll(components, 0o700))
+			shared := filepath.Join(repo, "shared")
+			if tc.outside {
+				shared = filepath.Join(root, "outside")
+			}
+			require.NoError(t, os.MkdirAll(shared, 0o700))
+			require.NoError(t, os.WriteFile(filepath.Join(shared, "chart.toml"), []byte(component), 0o600))
+			files := map[string]string{
+				"metadata.toml": `version = "v2"`,
+				"sandbox.toml": `terraform_version = "1.11.3"
+[public_repo]
+repo = "acme/example-sandbox"
+directory = "."
+branch = "main"
+`,
+				"runner.toml": `runner_type = "aws"
+helm_driver = "configmap"
+init_script_url = "https://example.com/init.sh"
+`,
+			}
+			for path, contents := range files {
+				require.NoError(t, os.WriteFile(filepath.Join(configDir, path), []byte(contents), 0o600))
+			}
+			link := filepath.Join(components, "chart.toml")
+			target := filepath.Join(shared, "chart.toml")
+			if tc.dir {
+				link = filepath.Join(components, "charts")
+				target = shared
+			}
+			if tc.nested {
+				require.NoError(t, os.Mkdir(filepath.Join(components, "nested"), 0o700))
+				link = filepath.Join(components, "nested", "chart.toml")
+			}
+			if !tc.absolute {
+				var err error
+				target, err = filepath.Rel(filepath.Dir(link), target)
+				require.NoError(t, err)
+			}
+			require.NoError(t, os.Symlink(target, link))
+			result, err := ParseDirWithSource(context.Background(), ParseConfig{
+				Dirname: configDir, SourceRoot: repo,
+				FileProcessor: func(_ string, obj map[string]any) map[string]any { return obj },
+			})
+			if tc.absolute || tc.outside {
+				require.Nil(t, result)
+				require.ErrorContains(t, err, "unable to resolve config symlink")
+				require.ErrorContains(t, err, "use a relative symlink whose target stays within the repository")
+				linkPath, relErr := filepath.Rel(configDir, link)
+				require.NoError(t, relErr)
+				require.ErrorContains(t, err, linkPath)
+				return
+			}
+			require.NoError(t, err)
+			require.Len(t, result.Config.Components, 1)
+			require.Equal(t, "acme-chart", result.Config.Components[0].Name)
+			path := "components/chart.toml"
+			if tc.dir {
+				path = "components/charts/chart.toml"
+			} else {
+				require.NotEmpty(t, result.Config.Components[0].Checksum)
+			}
+			require.Equal(t, component, result.Source.Files[path])
+			require.Equal(t, path, result.Source.Members["component:acme-chart"])
+		})
+	}
+}
+
+func TestParseDirWithSourceConfinesWorkerImports(t *testing.T) {
+	const canary = "outside-worker-canary"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, canary)
+	}))
+	t.Cleanup(server.Close)
+	tests := map[string]struct {
+		reference       func(string) string
+		wantError       bool
+		configSubdir    string
+		repositoryRoot  bool
+		tomlSymlink     bool
+		gcpModule       bool
+		rawValues       bool
+		componentSource bool
+	}{
+		"repository file":              {reference: func(string) string { return "./inside.txt" }},
+		"authored hidden file":         {reference: func(string) string { return "./.config/inside.txt" }},
+		"Git metadata":                 {reference: func(string) string { return "./.git/config" }, wantError: true},
+		"Git metadata file alias":      {reference: func(string) string { return "./metadata-alias" }, wantError: true},
+		"Git metadata directory alias": {reference: func(string) string { return "./metadata-dir/config" }, wantError: true},
+		"repository sibling": {
+			reference: func(string) string { return "../shared.txt" }, configSubdir: "config", repositoryRoot: true,
+		},
+		"sibling without repository root": {
+			reference: func(string) string { return "../shared.txt" }, configSubdir: "config", wantError: true,
+		},
+		"outside explicit repository root": {
+			reference: func(string) string { return "../../outside.txt" }, configSubdir: "config", repositoryRoot: true, wantError: true,
+		},
+		"outside absolute":                    {reference: func(root string) string { return "file://" + filepath.Join(root, "outside.txt") }, wantError: true},
+		"outside traversal":                   {reference: func(string) string { return "../outside.txt" }, wantError: true},
+		"outside encoded path":                {reference: func(root string) string { return "file://" + filepath.Join(root, "repo") + "/%2e%2e/outside.txt" }, wantError: true},
+		"outside symlink":                     {reference: func(string) string { return "./escape.txt" }, wantError: true},
+		"outside TOML symlink":                {reference: func(string) string { return "./inside.txt" }, tomlSymlink: true, wantError: true},
+		"internal HTTP":                       {reference: func(string) string { return server.URL + "/canary" }, wantError: true},
+		"GCP module reference is not fetched": {reference: func(string) string { return "git::https://example.com/acme/modules.git//gcp/modules/network" }, gcpModule: true},
+		"raw values file":                     {reference: func(string) string { return "./inside.txt" }, rawValues: true},
+		"raw values sibling":                  {reference: func(string) string { return "../shared.txt" }, configSubdir: "config", repositoryRoot: true, rawValues: true},
+		"raw values outside":                  {reference: func(root string) string { return filepath.Join(root, "outside.txt") }, rawValues: true, wantError: true},
+		"raw values symlink":                  {reference: func(string) string { return "./escape.txt" }, rawValues: true, wantError: true},
+		"component source inside":             {reference: func(string) string { return "./source-component.toml" }, componentSource: true},
+		"component source outside":            {reference: func(root string) string { return filepath.Join(root, "outside-component.toml") }, componentSource: true, wantError: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			repo := filepath.Join(root, "repo")
+			configDir := filepath.Join(repo, tc.configSubdir)
+			require.NoError(t, os.MkdirAll(filepath.Join(configDir, "components"), 0o700))
+			require.NoError(t, os.MkdirAll(filepath.Join(configDir, ".git"), 0o700))
+			require.NoError(t, os.MkdirAll(filepath.Join(configDir, ".config"), 0o700))
+			require.NoError(t, os.WriteFile(filepath.Join(configDir, ".git/config"), []byte(canary), 0o600))
+			require.NoError(t, os.WriteFile(filepath.Join(configDir, ".config/inside.txt"), []byte("repository contents"), 0o600))
+			require.NoError(t, os.Symlink(".git/config", filepath.Join(configDir, "metadata-alias")))
+			require.NoError(t, os.Symlink(".git", filepath.Join(configDir, "metadata-dir")))
+			require.NoError(t, os.WriteFile(filepath.Join(repo, "shared.txt"), []byte("repository contents"), 0o600))
+			require.NoError(t, os.WriteFile(filepath.Join(root, "outside.txt"), []byte(canary), 0o600))
+			require.NoError(t, os.Symlink(filepath.Join(root, "outside.txt"), filepath.Join(configDir, "escape.txt")))
+			reference := tc.reference(root)
+			if tc.rawValues || tc.componentSource {
+				reference = "./inside.txt"
+			}
+			files := map[string]string{
+				"metadata.toml": `version = "v2"`,
+				"sandbox.toml": `terraform_version = "1.11.3"
+[public_repo]
+repo = "acme/example-sandbox"
+directory = "."
+branch = "main"
+`,
+				"runner.toml": `runner_type = "aws"
+helm_driver = "configmap"
+init_script_url = "https://example.com/init.sh"
+`,
+				"inside.txt": "repository contents",
+				"stack.toml": fmt.Sprintf(`type = "aws-cloudformation"
+name = "acme-stack"
+vpc_nested_template_url = "https://s3.amazonaws.com/acme/vpc.yaml"
+runner_nested_template_url = "https://s3.amazonaws.com/acme/runner.yaml"
+[[custom_nested_stacks]]
+name = "custom-stack"
+index = 0
+template_url = %q
+`, reference),
+			}
+			if tc.gcpModule {
+				files["stack.toml"] = strings.Replace(files["stack.toml"], "aws-cloudformation", "gcp-terraform", 1)
+			}
+			if tc.rawValues || tc.componentSource {
+				component := `name = "acme-chart"
+type = "helm_chart"
+chart_name = "acme-chart"
+[helm_repo]
+repo_url = "https://example.com"
+chart = "acme-chart"
+version = "1.0.0"
+`
+				if tc.rawValues {
+					files["components/chart.toml"] = component + fmt.Sprintf("[[values_file]]\npath = %q\n", tc.reference(root))
+				} else {
+					files["components/chart.toml"] = fmt.Sprintf("source = %q\n", tc.reference(root))
+					files["source-component.toml"] = component
+					require.NoError(t, os.WriteFile(filepath.Join(root, "outside-component.toml"), []byte(component), 0o600))
+				}
+			}
+			for path, contents := range files {
+				require.NoError(t, os.WriteFile(filepath.Join(configDir, path), []byte(contents), 0o600))
+			}
+			if tc.tomlSymlink {
+				outside := filepath.Join(root, "outside-stack.toml")
+				require.NoError(t, os.WriteFile(outside, []byte(files["stack.toml"]), 0o600))
+				require.NoError(t, os.Remove(filepath.Join(configDir, "stack.toml")))
+				require.NoError(t, os.Symlink(outside, filepath.Join(configDir, "stack.toml")))
+			}
+			parseCfg := ParseConfig{
+				Dirname: configDir, SkipBranches: true, SkipInstalls: true,
+				FileProcessor: func(_ string, obj map[string]any) map[string]any { return obj },
+			}
+			if tc.repositoryRoot {
+				parseCfg.SourceRoot = repo
+			}
+			result, err := ParseDirWithSource(context.Background(), parseCfg)
+			if tc.wantError {
+				require.Error(t, err)
+				require.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				if tc.gcpModule {
+					require.Equal(t, tc.reference(root), result.Config.Stack.CustomNestedStacks[0].TemplateURL)
+					require.Empty(t, result.Config.Stack.CustomNestedStacks[0].Contents)
+				} else {
+					require.Equal(t, "repository contents", result.Config.Stack.CustomNestedStacks[0].Contents)
+				}
+				if tc.rawValues {
+					require.Equal(t, "repository contents", result.Config.Components[0].HelmChart.ValuesFiles[0].Contents)
+				}
+				if tc.componentSource {
+					require.Equal(t, "acme-chart", result.Config.Components[0].HelmChart.ChartName)
+				}
+			}
+		})
+	}
 }

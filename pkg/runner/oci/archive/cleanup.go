@@ -2,24 +2,32 @@ package ociarchive
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
+
+	"github.com/spf13/afero"
 )
 
 func (a *archive) Cleanup(ctx context.Context) error {
-	if a.tmpDir != "" {
-		os.RemoveAll(a.tmpDir)
-	}
-
+	var errs []error
 	if a.store != nil {
-		if err := a.store.Close(); err != nil {
-			return fmt.Errorf("unable to close file store backing archive: %w", err)
+		errs = append(errs, a.store.Close())
+	}
+	if a.workFS != nil {
+		entries, err := afero.ReadDir(a.workFS, ".")
+		errs = append(errs, err)
+		for _, entry := range entries {
+			errs = append(errs, a.workFS.RemoveAll(entry.Name()))
+		}
+		errs = append(errs, a.workFS.Close())
+		a.workFS = nil
+	}
+	if a.tmpDir != "" {
+		// Only remove an empty directory at the display path, never recursively
+		// delete a replacement tree if the job root was renamed.
+		if err := os.Remove(a.tmpDir); err != nil && !os.IsNotExist(err) {
+			errs = append(errs, err)
 		}
 	}
-
-	if a.basePath != "" {
-		os.RemoveAll(a.basePath)
-	}
-
-	return nil
+	return errors.Join(errs...)
 }

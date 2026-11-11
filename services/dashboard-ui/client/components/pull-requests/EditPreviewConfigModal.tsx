@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { PullRequestConfigure } from '@/components/playground/pull-request/PullRequestConfigure'
-import type {
-  TPlaygroundInstallCandidate,
-  TPlaygroundPullRequest,
-} from '@/components/playground/pull-request/fixtures'
 import type { IModal } from '@/components/surfaces/Modal'
 import { getPreviewInstallCandidates } from '@/lib'
 import type { TAppBranchPreviewConfig, TInstall } from '@/types'
+import { PullRequestConfigure } from './PullRequestConfigure'
+import type {
+  TPlaygroundInstallCandidate,
+  TPlaygroundPullRequest,
+} from './fixtures'
 
 const candidateFromInstall = (
   install: TInstall
@@ -63,7 +63,6 @@ export const EditPreviewConfigModal = ({
 
   return (
     <PullRequestConfigure
-      presentation="modal"
       pullRequest={pullRequest}
       installs={(installs.data?.installs ?? []).map(candidateFromInstall)}
       githubLocked

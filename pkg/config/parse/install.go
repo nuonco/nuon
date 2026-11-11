@@ -48,15 +48,19 @@ func ParseInstallConfig(r io.Reader, v *validator.Validate) (*config.Install, er
 // LoadInstallUIDefinition fetches an install override's ui_definition into
 // UIDefinitionContents. An unset path is a no-op. The config syncer uploads
 // whatever this leaves in the field.
-func LoadInstallUIDefinition(ctx context.Context, cfg *config.Install, rootDir string) error {
+func LoadInstallUIDefinition(ctx context.Context, cfg *config.Install, opts *get.Options) error {
 	if cfg == nil || cfg.StackOverrides == nil || strings.TrimSpace(cfg.StackOverrides.UIDefinition) == "" {
 		return nil
 	}
+	var options get.Options
+	if opts != nil {
+		options = *opts
+	}
+	if options.FieldTimeout <= 0 {
+		options.FieldTimeout = defaultFieldGetTimeout
+	}
 	cfg.StackOverrides.UIDefinitionContents = cfg.StackOverrides.UIDefinition
-	if err := get.Parse(ctx, cfg.StackOverrides, &get.Options{
-		FieldTimeout: defaultFieldGetTimeout,
-		RootDir:      rootDir,
-	}); err != nil {
+	if err := get.Parse(ctx, cfg.StackOverrides, &options); err != nil {
 		return fmt.Errorf("ui_definition: %w", err)
 	}
 	return nil

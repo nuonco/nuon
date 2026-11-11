@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -23,6 +24,12 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	opCtx, end := op.Tool(ctx, "oci", "unpack")
 	ctx = opCtx
 	defer func() { end(retErr) }()
+	if a.store == nil {
+		return fmt.Errorf("archive is not initialized")
+	}
+	if err := a.store.checkOpen(); err != nil {
+		return err
+	}
 
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
@@ -42,7 +49,7 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	// the child span PreCopy opened. Per-layer pulls run concurrently via
 	// oras's worker pool, so a sync.Map is required.
 	spans := new(sync.Map)
-	var totalBytes int64
+	var totalBytes atomic.Int64
 
 	fields := func(desc ocispec.Descriptor) []zap.Field {
 		return []zap.Field{
@@ -71,7 +78,7 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 		return nil
 	}
 	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		totalBytes += desc.Size
+		totalBytes.Add(desc.Size)
 		if endFn, ok := spans.LoadAndDelete(desc.Digest); ok {
 			endFn.(op.EndFunc)(nil)
 		}
@@ -109,8 +116,8 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 
 	l.Info(
 		fmt.Sprintf("finished pulling artifact (%s across all layers) in %s",
-			humanize.Bytes(uint64(totalBytes)), time.Since(pullStart)),
-		zap.Int64("total_bytes", totalBytes),
+			humanize.Bytes(uint64(totalBytes.Load())), time.Since(pullStart)),
+		zap.Int64("total_bytes", totalBytes.Load()),
 		zap.String("manifest_digest", string(manifest.Digest)),
 	)
 

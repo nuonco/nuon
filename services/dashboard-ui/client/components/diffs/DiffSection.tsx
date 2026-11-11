@@ -10,7 +10,7 @@ export type { TDiffOperation } from '@/lib/diffs'
 const RAIL_CLASSES: Record<TDiffOperation, string> = {
   create: '!border-l-diff-add',
   update: '!border-l-diff-change',
-  replace: '!border-l-primary-500',
+  replace: '!border-l-fuchsia-500 dark:!border-l-fuchsia-300',
   delete: '!border-l-diff-remove',
   read: '!border-l-diff-neutral',
   forget: '!border-l-blue-500',
@@ -20,7 +20,7 @@ const RAIL_CLASSES: Record<TDiffOperation, string> = {
 const TINT_CLASSES: Record<TDiffOperation, string> = {
   create: 'bg-diff-add-section',
   update: 'bg-diff-change-section',
-  replace: 'bg-primary-50 dark:bg-primary-950',
+  replace: 'bg-fuchsia-50 dark:bg-fuchsia-300/4',
   delete: 'bg-diff-remove-section',
   read: 'bg-diff-neutral-section',
   forget: 'bg-blue-50 dark:bg-blue-950',
@@ -30,7 +30,7 @@ const TINT_CLASSES: Record<TDiffOperation, string> = {
 const HOVER_CLASSES: Record<TDiffOperation, string> = {
   create: 'hover:bg-diff-add-row!',
   update: 'hover:bg-diff-change-row!',
-  replace: '',
+  replace: 'hover:bg-fuchsia-100! dark:hover:bg-fuchsia-300/10!',
   delete: 'hover:bg-diff-remove-row!',
   read: 'hover:bg-diff-neutral-row!',
   forget: '',

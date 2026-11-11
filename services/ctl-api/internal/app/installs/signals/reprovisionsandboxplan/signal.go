@@ -60,7 +60,10 @@ var (
 	_ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 	_ signal.SignalWithOnRetry                      = (*Signal)(nil)
 	_ signal.SignalWithApprovalValidation           = (*Signal)(nil)
+	_ signal.SignalWithSkipGroup                    = (*Signal)(nil)
 )
+
+func (s *Signal) SkipGroup() bool { return true }
 
 func (s *Signal) ValidateApproval(ctx workflow.Context) error {
 	if s.InstallID == "" || s.FlowID == "" {
@@ -271,7 +274,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create log stream")
 	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, logStream.ID)
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 
@@ -280,7 +285,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	err = s.executeSandboxPlan(ctx, install, installRun, s.FlowStepID, s.SandboxMode, s.cfg.DNSRootDomain)
 	if err != nil {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 		return err
 	}
 

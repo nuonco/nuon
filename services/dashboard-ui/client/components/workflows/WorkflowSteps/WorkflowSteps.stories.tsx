@@ -826,3 +826,74 @@ export const GeneratingMoreSteps = () => (
 )
 
 export const Empty = () => wrap([])
+
+export const SkipBypassedTeardownApply = () =>
+  wrap([
+    {
+      ...base,
+      id: 'step-teardown-plan',
+      name: 'teardown sync and plan database',
+      step_target_type: 'install_deploys',
+      execution_type: 'approval',
+      group_idx: 9,
+      idx: 100,
+      result_directive: 'continue',
+      status: {
+        status: 'user-skipped',
+        status_human_description: 'Step was skipped by the user.',
+        history: [],
+      },
+    } as TWorkflowStep,
+    {
+      ...base,
+      id: 'step-teardown-apply',
+      name: 'teardown apply plan database',
+      step_target_type: 'install_deploys',
+      group_idx: 9,
+      idx: 101,
+      finished: true,
+      execution_time: 9000000000,
+      status: { status: 'success', history: [] },
+    } as TWorkflowStep,
+  ])
+
+export const SkipBypassedWithPolicyWarning = () =>
+  wrap([
+    {
+      ...base,
+      id: 'step-teardown-plan-policy',
+      name: 'teardown sync and plan database',
+      step_target_type: 'install_deploys',
+      execution_type: 'approval',
+      group_idx: 10,
+      idx: 100,
+      result_directive: 'continue',
+      status: {
+        status: 'user-skipped',
+        status_human_description: 'Step was skipped by the user.',
+        history: [],
+        metadata: {
+          passed_policy_ids: ['pol-tags'],
+          warn_violations: [
+            {
+              policy_id: 'pol-public-endpoint',
+              message:
+                "EKS cluster 'module.eks.aws_eks_cluster.this[0]' has public endpoint access enabled - ensure this is intentional for demo/development environments",
+              severity: 'warn',
+            },
+          ],
+        },
+      },
+    } as TWorkflowStep,
+    {
+      ...base,
+      id: 'step-teardown-apply-policy',
+      name: 'teardown apply plan database',
+      step_target_type: 'install_deploys',
+      group_idx: 10,
+      idx: 101,
+      finished: true,
+      execution_time: 9000000000,
+      status: { status: 'success', history: [] },
+    } as TWorkflowStep,
+  ])

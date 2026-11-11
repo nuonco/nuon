@@ -335,6 +335,33 @@ function hasStepStarted(status?: string): boolean {
   return !!status && status !== 'pending' && status !== 'not-attempted'
 }
 
+export type TBypassedSkip = {
+  skipped: TWorkflowStep
+  ranAnyway: TWorkflowStep
+}
+
+// The backend only discards the rest of a group on skip when the step's signal
+// opts into `skip-group`; otherwise the group just continues to the next idx,
+// which can mean a later step in the same attempt still ran.
+export function bypassedSkipsInGroup(
+  groupSteps: TWorkflowStep[]
+): TBypassedSkip[] {
+  const bypassed: TBypassedSkip[] = []
+  for (const skipped of groupSteps) {
+    if (skipped.status?.status !== 'user-skipped') continue
+    if (skipped.result_directive === 'skip-group') continue
+    const ranAnyway = groupSteps.find(
+      (candidate) =>
+        candidate.id !== skipped.id &&
+        candidate.group_retry_idx === skipped.group_retry_idx &&
+        (candidate.idx ?? 0) > (skipped.idx ?? 0) &&
+        hasStepStarted(candidate.status?.status)
+    )
+    if (ranAnyway) bypassed.push({ skipped, ranAnyway })
+  }
+  return bypassed
+}
+
 export type TStepButtonsCfg = {
   cancel: boolean
   approval: boolean

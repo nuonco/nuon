@@ -2,6 +2,7 @@ package kubernetes_manifest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -11,9 +12,15 @@ import (
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
-func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) (retErr error) {
+	defer func() {
+		if retErr != nil {
+			retErr = errors.Join(retErr, h.Cleanup(ctx, job, jobExecution))
+		}
+	}()
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
@@ -24,6 +31,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		l.Info("initializing workspace for inline manifest")
 		wkspace, err := workspace.New(h.v,
 			workspace.WithLogger(l),
+			workspace.WithFS(h.fs),
 			workspace.WithWorkspaceID(jobExecution.ID),
 		)
 		if err != nil {
@@ -39,6 +47,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		l.Info("initializing workspace from git source", zap.String("repo_url", h.state.plan.Src.URL))
 		wkspace, err := workspace.New(h.v,
 			workspace.WithLogger(l),
+			workspace.WithFS(h.fs),
 			workspace.WithGitSource(h.state.plan.Src),
 			workspace.WithWorkspaceID(jobExecution.ID),
 		)
@@ -56,12 +65,20 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		l.Error("unable to initialize workspace", zap.Error(err))
 		return fmt.Errorf("unable to initialize workspace: %w", err)
 	}
+	h.state.source, err = sourcefs.From(h.state.workspace.FS(), h.state.workspace.Root())
+	if err != nil {
+		return fmt.Errorf("unable to open build source: %w", err)
+	}
 
 	arch := ociarchive.New()
 	if err := arch.Initialize(ctx); err != nil {
 		return fmt.Errorf("unable to initialize archive: %w", err)
 	}
 	h.state.arch = arch
+	h.state.archiveSource, err = sourcefs.From(arch.FS(), arch.BasePath())
+	if err != nil {
+		return fmt.Errorf("unable to open archive source: %w", err)
+	}
 
 	return nil
 }

@@ -7,6 +7,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/mitchellh/go-homedir"
+
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
 // TODO(jm): this should be a global decoder hook
@@ -14,7 +16,19 @@ func ReadSource(val string) ([]byte, error) {
 	return ReadSourceFrom(val, "")
 }
 
-func ReadSourceFrom(val, baseDir string) ([]byte, error) {
+func ReadSourceFrom(val, baseDir string, sources ...*sourcefs.FS) ([]byte, error) {
+	if len(sources) > 0 && sources[0] != nil {
+		path := val
+		if baseDir != "" && !filepath.IsAbs(path) {
+			path = filepath.Join(baseDir, path)
+		}
+		byts, err := sources[0].ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read file: %w", err)
+		}
+		return byts, nil
+	}
+
 	path, err := expandSourcePath(val, baseDir)
 	if err != nil {
 		return nil, fmt.Errorf("unable to expand source path: %w", err)
@@ -32,8 +46,8 @@ func LoadSource(val string) (map[string]interface{}, error) {
 	return LoadSourceFrom(val, "")
 }
 
-func LoadSourceFrom(val, baseDir string) (map[string]interface{}, error) {
-	byts, err := ReadSourceFrom(val, baseDir)
+func LoadSourceFrom(val, baseDir string, sources ...*sourcefs.FS) (map[string]interface{}, error) {
+	byts, err := ReadSourceFrom(val, baseDir, sources...)
 	if err != nil {
 		return nil, err
 	}

@@ -41,22 +41,6 @@ func (s *vcsIntegrationTestSuite) SetupTest() {
 	s.orgID = org.ID
 }
 
-func (s *vcsIntegrationTestSuite) TestCreateConnection() {
-	s.T().Run("success", func(t *testing.T) {
-		// add a vcs connection to the org
-		vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
-		vcs, err := s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
-		require.Nil(t, err)
-		require.NotNil(t, vcs)
-		require.Equal(t, vcs.GithubInstallID, *(vcsReq.GithubInstallID))
-	})
-	s.T().Run("invalid request", func(t *testing.T) {
-		org, err := s.apiClient.CreateVCSConnection(s.ctx, &models.ServiceCreateConnectionRequest{})
-		require.Error(t, err)
-		require.Nil(t, org)
-	})
-}
-
 func (s *vcsIntegrationTestSuite) TestCreateConnectionCallback() {
 	s.apiClient.SetOrgID("")
 
@@ -93,10 +77,7 @@ func (s *vcsIntegrationTestSuite) TestCreateConnectionCallback() {
 }
 
 func (s *vcsIntegrationTestSuite) TestGetConnections() {
-	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
-	vcs, err := s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), vcs)
+	s.createVCSConnection(s.orgID, *generics.GetFakeObj[*string]())
 
 	s.T().Run("success", func(t *testing.T) {
 		// add a vcs connection to the org
@@ -107,18 +88,15 @@ func (s *vcsIntegrationTestSuite) TestGetConnections() {
 }
 
 func (s *vcsIntegrationTestSuite) TestGetConnection() {
-	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
-	vcs, err := s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), vcs)
+	githubInstallID := *generics.GetFakeObj[*string]()
+	vcs := s.createVCSConnection(s.orgID, githubInstallID)
 
 	s.T().Run("success", func(t *testing.T) {
-		// add a currentVCS connection to the org
 		currentVCS, err := s.apiClient.GetVCSConnection(s.ctx, vcs.ID)
 		require.Nil(t, err)
 		require.NotNil(t, currentVCS)
 
-		require.Equal(t, currentVCS.GithubInstallID, *(vcsReq.GithubInstallID))
+		require.Equal(t, githubInstallID, currentVCS.GithubInstallID)
 	})
 }
 

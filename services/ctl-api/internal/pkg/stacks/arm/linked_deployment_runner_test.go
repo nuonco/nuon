@@ -3,6 +3,7 @@ package arm
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -103,5 +104,15 @@ func TestGetRunnerLinkedDeployment_CustomTemplateReceivesVMSize(t *testing.T) {
 	got := params["runnerVmSize"].(map[string]any)["value"]
 	if got != "[parameters('runnerVmSize')]" {
 		t.Errorf("runnerVmSize = %v, want the hoisted parameter", got)
+	}
+}
+
+func TestBuildRunnerCustomData_NoAuthResource(t *testing.T) {
+	inp := minimalTemplateInput()
+
+	const audience = "api://11111111-1111-1111-1111-111111111111"
+	got := (&Templates{cfg: &internal.Config{AzureRunnerAuthAudience: audience}}).buildRunnerCustomData(inp)
+	if strings.Contains(got, "AZURE_RUNNER_AUTH_RESOURCE") || strings.Contains(got, audience) {
+		t.Fatalf("custom data pins the auth audience, so changing it needs a reimage:\n%s", got)
 	}
 }

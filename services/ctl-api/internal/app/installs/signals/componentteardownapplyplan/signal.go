@@ -182,12 +182,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("component ID is required")
 	}
 
-	installDeploy, err := activities.AwaitGetInstallDeployForApplyStep(ctx, activities.GetInstallDeployForApplyStep{
-		InstallWorkflowID: s.FlowID,
-		ComponentID:       s.ComponentID,
-	})
+	var installDeploy *app.InstallDeploy
+	if workflow.GetVersion(ctx, "teardown-apply-plan-authorization-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		installDeploy, err = activities.AwaitGetInstallDeployForApplyStep(ctx, activities.GetInstallDeployForApplyStep{
+			InstallWorkflowID: s.FlowID,
+			ComponentID:       s.ComponentID,
+		})
+		if err != nil {
+			s.updateDeployStatus(ctx, "", app.InstallDeployStatusError, "unable to get install deploy from previous step")
+		}
+	} else {
+		installDeploy, err = activities.AwaitGetApprovedInstallDeployForApplyStep(ctx, activities.GetApprovedInstallDeployForApplyStepRequest{
+			InstallWorkflowID: s.FlowID,
+			ComponentID:       s.ComponentID,
+			ApplyStepID:       s.InstallWorkflowStepID,
+		})
+	}
 	if err != nil {
-		s.updateDeployStatus(ctx, "", app.InstallDeployStatusError, "unable to get install deploy from previous step")
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
@@ -211,6 +222,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to hydrate log stream")
 	}
+	defer func() {
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, logStream.ID)
+	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -283,10 +299,6 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	if err != nil {
 		return err
 	}
-
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
-	}()
 
 	op := app.RunnerJobOperationTypeApplyPlan
 	jobTyp := build.ComponentConfigConnection.Type.DeployJobType()

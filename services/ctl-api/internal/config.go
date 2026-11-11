@@ -112,6 +112,7 @@ func init() {
 	config.RegisterDefault("runner_container_image_signature_identity_regexp", `^https://github\.com/nuonco/nuon/\.github/workflows/service\.yml@refs/heads/main$`)
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("stack_api_url", "http://localhost:8093")
+	config.RegisterDefault("azure_runner_auth_audience", "")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
 	config.RegisterDefault("telemetry_jwks", "")
@@ -200,7 +201,12 @@ func init() {
 	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
 
 	// OAuth 2.0 authorization server (used by MCP clients)
-	config.RegisterDefault("oauth_dcr_enabled", true)           // allow dynamic client registration (RFC 7591)
+	config.RegisterDefault("oauth_dcr_enabled", true) // allow dynamic client registration (RFC 7591)
+	config.RegisterDefault("oauth_dcr_redirect_hosts", []string{
+		"claude.ai", "www.claude.ai", "claude.com",
+		"cursor.com", "www.cursor.com",
+		"vscode.dev", "insiders.vscode.dev",
+	})
 	config.RegisterDefault("oauth_access_token_ttl", 60)        // minutes
 	config.RegisterDefault("oauth_refresh_token_ttl", 30*24*60) // minutes (30 days)
 
@@ -217,6 +223,7 @@ func init() {
 	config.RegisterDefault("use_legacy_maintenance_role_default", false)
 
 	config.RegisterDefault("gcp_legacy_role_fallback", false)
+	config.RegisterDefault("legacy_image_auth_enabled", true)
 
 	config.RegisterDefault("cors_allow_all_origins", false)
 	config.RegisterDefault("cors_allow_loopback_origins", false)
@@ -338,6 +345,10 @@ type Config struct {
 	GithubAppID            string `config:"github_app_id" validate:"required"`
 	GithubAppKey           string `config:"github_app_key" validate:"required"`
 	GithubAppKeySecretName string `config:"github_app_key_secret_name" validate:"required"`
+	// OAuth client of the same GitHub App, used to confirm that the user who
+	// finished an install actually owns the installation_id they report.
+	GithubAppClientID     string `config:"github_app_client_id"`
+	GithubAppClientSecret string `config:"github_app_client_secret"`
 
 	// base urls for filling in various fields on objects
 	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url" validate:"required"`
@@ -376,6 +387,9 @@ type Config struct {
 	DisableOrgCreation   bool `config:"disable_org_creation"`
 
 	DisableVCSConnectionCallback bool `config:"disable_vcs_connection_callback"`
+	// Skips the GitHub user-authorization check on the connection callback.
+	// For local stacks and e2e runs without an OAuth client; never set in prod.
+	DisableVCSConnectionOwnershipCheck bool `config:"disable_vcs_connection_ownership_check"`
 
 	// OIDC workload identity federation
 	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)
@@ -386,9 +400,10 @@ type Config struct {
 	PublicRunnerProcessShutdowns bool `config:"public_runner_process_shutdowns"`
 
 	// OAuth 2.0 authorization server (MCP clients)
-	OAuthDCREnabled      bool `config:"oauth_dcr_enabled"`
-	OAuthAccessTokenTTL  int  `config:"oauth_access_token_ttl"`  // minutes
-	OAuthRefreshTokenTTL int  `config:"oauth_refresh_token_ttl"` // minutes
+	OAuthDCREnabled       bool     `config:"oauth_dcr_enabled"`
+	OAuthDCRRedirectHosts []string `config:"oauth_dcr_redirect_hosts"`
+	OAuthAccessTokenTTL   int      `config:"oauth_access_token_ttl"`  // minutes
+	OAuthRefreshTokenTTL  int      `config:"oauth_refresh_token_ttl"` // minutes
 
 	// Nuon Auth: Default Provider ConfigS
 	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA
@@ -403,12 +418,16 @@ type Config struct {
 	PostHogHost string `config:"posthog_host"`
 
 	// links
-	AppURL        string `config:"app_url" validate:"required"`
-	RunnerAPIURL  string `config:"runner_api_url" validate:"required"`
-	StackAPIURL   string `config:"stack_api_url"`
-	PublicAPIURL  string `config:"public_api_url" validate:"required"`
-	AdminAPIURL   string `config:"admin_api_url" validate:"required"`
-	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`
+	AppURL       string `config:"app_url" validate:"required"`
+	RunnerAPIURL string `config:"runner_api_url" validate:"required"`
+	StackAPIURL  string `config:"stack_api_url"`
+	// AzureRunnerAuthAudience is the Nuon app audience (api://<client-id>) runners
+	// should request instead of an ARM token. Empty leaves runner auth on the ARM
+	// audience. When set, runner auth accepts both, and new Azure stacks request it.
+	AzureRunnerAuthAudience string `config:"azure_runner_auth_audience"`
+	PublicAPIURL            string `config:"public_api_url" validate:"required"`
+	AdminAPIURL             string `config:"admin_api_url" validate:"required"`
+	TemporalUIURL           string `config:"temporal_ui_url" validate:"required"`
 
 	// flags for controlling the background workers
 	ForceSandboxMode           bool          `config:"force_sandbox_mode"`
@@ -644,6 +663,8 @@ type Config struct {
 	UseLegacyMaintenanceRoleDefault bool `config:"use_legacy_maintenance_role_default"`
 
 	GCPLegacyRoleFallback bool `config:"gcp_legacy_role_fallback"`
+
+	LegacyImageAuthEnabled bool `config:"legacy_image_auth_enabled"`
 }
 
 func (c *Config) IsAWS() bool {

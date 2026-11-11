@@ -63,7 +63,7 @@ const mockComponents: TInstallComponent[] = [
     component_id: 'comp-004',
     component: {
       name: 'worker-service',
-      type: 'docker_build',
+      type: 'external_image',
     },
     status_v2: { status: 'deploying', status_human_description: 'Deploy in progress' },
     install_deploys: [],

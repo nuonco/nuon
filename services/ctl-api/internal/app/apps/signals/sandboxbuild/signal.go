@@ -18,8 +18,6 @@ import (
 // SignalType is the type for direct (non-branch) sandbox build signals.
 const SignalType signal.SignalType = "app-sandbox-build"
 
-const resolveSourceVersion = "app-sandbox-build-resolve-source-v1"
-
 // Signal triggers a sandbox build for a given app config.
 // If AppSandboxBuildID is set, the existing build record is used; otherwise a new one is created.
 type Signal struct {
@@ -92,14 +90,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	l.Info("sandbox build started", "build_id", build.ID)
 
-	if workflow.GetVersion(ctx, resolveSourceVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		if _, err := activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
-			AppConfigID: s.AppConfigID,
-			BuildID:     build.ID,
-		}); err != nil {
-			updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, activities.SandboxSourceFailureDescription(err))
-			return fmt.Errorf("unable to resolve sandbox build source: %w", err)
-		}
+	if _, err := activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
+		AppConfigID: s.AppConfigID,
+		BuildID:     build.ID,
+	}); err != nil {
+		updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, activities.SandboxSourceFailureDescription(err))
+		return fmt.Errorf("unable to resolve sandbox build source: %w", err)
 	}
 
 	// Create log stream
@@ -114,7 +110,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	} else if logStream != nil {
 		logStreamID = logStream.ID
 		defer func() {
-			_ = activities.AwaitCloseLogStream(ctx, activities.CloseLogStreamRequest{
+			closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+			defer cancel()
+			_ = activities.AwaitCloseLogStream(closeCtx, activities.CloseLogStreamRequest{
 				LogStreamID: logStreamID,
 			})
 		}()

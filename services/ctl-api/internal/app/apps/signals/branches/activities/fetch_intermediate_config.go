@@ -2,28 +2,48 @@ package activities
 
 import (
 	"context"
-	"os"
+	"errors"
+	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/temporal"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
 	"github.com/nuonco/nuon/pkg/config/validate"
+	"github.com/nuonco/nuon/pkg/workspace"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/branchrunerrors"
 )
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @as-wrapper
-// @by-field sourceDir
 // @local
-func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir string) (*config.AppConfig, error) {
-	defer os.RemoveAll(sourceDir)
-
+func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir string, workspaceID string) (_ *config.AppConfig, retErr error) {
+	if !filepath.IsLocal(workspaceID) || workspaceID == "." || strings.ContainsAny(workspaceID, `/\`) {
+		return nil, fmt.Errorf("invalid workspace ID %q", workspaceID)
+	}
 	v := validator.New()
+	ws, err := workspace.New(v, workspace.WithID(workspaceID))
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := ws.Cleanup(context.WithoutCancel(ctx)); err != nil {
+			retErr = errors.Join(retErr, err)
+		}
+	}()
+	parent, err := filepath.EvalSymlinks(filepath.Dir(ws.Root()))
+	if err != nil {
+		return nil, err
+	}
+
 	parseResult, err := parse.ParseDirWithSource(ctx, parse.ParseConfig{
 		Dirname:       sourceDir,
+		SourceRoot:    filepath.Join(parent, workspaceID),
 		V:             v,
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 		SkipBranches:  true,
@@ -36,7 +56,12 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 	cfg.SourceArchive = parseResult.Source
 
 	if err := validate.Validate(ctx, v, cfg); err != nil {
-		return nil, configValidationFailed(err)
+		if !config.IsWarningErr(err) {
+			return nil, configValidationFailed(err)
+		}
+		a.l.Warn("app config validation warnings",
+			zap.String("workspace_id", workspaceID),
+			zap.Error(err))
 	}
 
 	return cfg, nil

@@ -11,21 +11,27 @@ import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummar
 import {
   TemplateChangesButton,
   TemplateChangesContent,
+  configChangesBaseline,
   useConfigVersionLabel,
 } from '@/components/branches/ConfigChanges'
-import { BuildPanel } from '@/components/builds/BuildPanel'
+import {
+  BuildPanel,
+  buildPanelKey,
+  parseBuildPanelKey,
+} from '@/components/builds/BuildPanel'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import {
   InstallDeploymentPanel,
   PendingInstallPanel,
+  deploymentPanelKey,
+  parseDeploymentPanelKey,
 } from '@/components/installs/InstallDeploymentPanel'
-import { stepStatusCategory } from '@/components/branches/shared/step-status'
+import { usePanelDeepLinks } from '@/hooks/use-panel-deep-links'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
 import { commitUrl } from './run-source'
 import type { TAPIError } from '@/types'
 import { BranchOverview } from './BranchOverview'
-import type { TFailedBuildLink } from './overview-shared'
 import {
   buildOverviewLoadingStages,
   groupCompositeError,
@@ -66,6 +72,25 @@ export const BranchOverviewContainer = () => {
     repoSlug,
     isLoading,
   } = useRolloutGroups()
+  usePanelDeepLinks((key) => {
+    const build = parseBuildPanelKey(key)
+    if (build) return <BuildPanel {...build} />
+    const deployment = parseDeploymentPanelKey(key)
+    if (!deployment || isLoading) return null
+    const install = groups
+      .flatMap((group) => group.installs)
+      .find((item) => item.id === deployment.installId)
+    return (
+      <InstallDeploymentPanel
+        orgId={orgId}
+        appId={appId}
+        {...deployment}
+        title={install?.name ?? deployment.installId}
+        repo={repoSlug}
+        initialTab="workflow"
+      />
+    )
+  })
   const approvals = useGroupPlanApprovals(
     rollout?.id
       ? {
@@ -85,7 +110,6 @@ export const BranchOverviewContainer = () => {
   })
 
   const {
-    builds,
     buildsPending,
     metaBuilds,
     runBuilds,
@@ -98,18 +122,6 @@ export const BranchOverviewContainer = () => {
     branchRunId,
     workflowSteps,
     isRunTerminal: isTerminalRunStatus(rolloutWorkflow?.status?.status),
-  })
-  const failedBuilds: TFailedBuildLink[] = (builds ?? []).flatMap((build) => {
-    const status = build.status_v2?.status || build.status
-    if (stepStatusCategory(status) !== 'error') return []
-    if (!orgId || !appId || !build.component_id || !build.id) return []
-    return [
-      {
-        id: build.id,
-        name: build.component_name || build.component_id,
-        href: `/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`,
-      },
-    ]
   })
   const configSections = useBranchConfigSections({
     branchId,
@@ -195,6 +207,7 @@ export const BranchOverviewContainer = () => {
     author: rollout?.commit?.author ?? rollout?.author,
     createdAt: rollout?.commit?.createdAt,
     source: rollout?.source,
+    baseline: configChangesBaseline(comparison, { orgId, appId, branchId }),
     isPending: changesPending,
     isLoading: configSections.isLoading || buildsPending,
     isError: configSections.isError,
@@ -273,7 +286,6 @@ export const BranchOverviewContainer = () => {
         buildRows={buildRows}
         buildRowsLoading={buildRowsLoading}
         compositeError={failure}
-        failedBuilds={failedBuilds}
         rolloutHref={rolloutHref}
         groupHref={groupHref}
         approvals={approvals}
@@ -283,20 +295,23 @@ export const BranchOverviewContainer = () => {
         approvedVersionsLoading={approvedVersions.isLoading}
         onSelectInstall={(install) => {
           if (!install.id || install.id.startsWith('queued-')) return
-          addPanel(
-            install.workflowId ? (
-              <InstallDeploymentPanel
-                orgId={orgId}
-                appId={appId}
-                installId={install.id}
-                workflowId={install.workflowId}
-                title={install.name}
-                repo={repoSlug}
-                initialTab="workflow"
-              />
-            ) : (
+          if (!install.workflowId) {
+            addPanel(
               <PendingInstallPanel title={install.name} status={install.status} />
             )
+            return
+          }
+          addPanel(
+            <InstallDeploymentPanel
+              orgId={orgId}
+              appId={appId}
+              installId={install.id}
+              workflowId={install.workflowId}
+              title={install.name}
+              repo={repoSlug}
+              initialTab="workflow"
+            />,
+            deploymentPanelKey(install.id, install.workflowId)
           )
         }}
         onSelectBuild={(build) =>
@@ -306,7 +321,8 @@ export const BranchOverviewContainer = () => {
                   componentId={build.componentId}
                   buildId={build.id}
                   title={build.name}
-                />
+                />,
+                buildPanelKey(build.componentId, build.id)
               )
             : undefined
         }

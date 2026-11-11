@@ -1,6 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 import type { TInstallWorkflowStep } from '@/types'
-import { filterWorkflowPanelSteps } from './WorkflowRunPanelContainer'
+import {
+  filterWorkflowPanelSteps,
+  parseWorkflowRunPanelKey,
+  workflowRunPanelKey,
+} from './WorkflowRunPanelContainer'
+
+test('workflow run panel keys round trip', () => {
+  expect(parseWorkflowRunPanelKey(workflowRunPanelKey('inw123'))).toBe('inw123')
+  expect(parseWorkflowRunPanelKey('runbook-history-rb1')).toBeNull()
+})
 
 describe('filterWorkflowPanelSteps', () => {
   test('hides internal steps from the horizontal pipeline', () => {

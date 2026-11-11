@@ -39,7 +39,6 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 		ID: buildID,
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get build", err))
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
@@ -65,7 +64,6 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 		JobID: buildJobID,
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get job execution", err))
 		return fmt.Errorf("unable to get runner job execution: %w", err)
 	}
 
@@ -73,13 +71,11 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 		RunnerJobExecutionID: jobExec.ID,
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get job execution result", err))
 		return fmt.Errorf("unable to get runner job execution result: %w", err)
 	}
 
 	payload, err := parseHelmBuildPolicyPayload(jobExecResult)
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to parse helm policy input", err))
 		return fmt.Errorf("unable to parse helm policy input: %w", err)
 	}
 
@@ -128,7 +124,6 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 				l.Error("named policy evaluation failed", zap.Error(err))
 				w.recordComponentPolicyEvaluationFailure(ctx, l, buildJobID)
 				description := truncateErrorMessage("unable to evaluate named policy checks", err)
-				w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, description)
 				w.failRunnerJob(ctx, buildJobID, description)
 				return fmt.Errorf("helm policy evaluation failed: %w", err)
 			}
@@ -159,6 +154,10 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 				policyInputCounts[policyID] = len(payload.PolicyInput)
 			}
 			componentID := build.ComponentConfigConnection.ComponentID
+			componentApp := build.ComponentConfigConnection.Component.App
+			if componentApp == nil {
+				componentApp = &app.App{}
+			}
 			if _, err := sharedactivities.AwaitPersistPolicyReport(ctx, &sharedactivities.PersistPolicyReportRequest{
 				OrgID:             orgID,
 				AppID:             build.ComponentConfigConnection.Component.AppID,
@@ -170,8 +169,8 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 				CheckResults:      checkResults,
 				PolicyIDs:         policyIDs,
 				PolicyInputCounts: policyInputCounts,
-				OrgName:           build.ComponentConfigConnection.Component.App.Org.Name,
-				AppName:           build.ComponentConfigConnection.Component.App.Name,
+				OrgName:           componentApp.Org.Name,
+				AppName:           componentApp.Name,
 				ComponentName:     build.ComponentConfigConnection.Component.Name,
 			}); err != nil {
 				l.Warn("failed to persist policy report", zap.Error(err))
@@ -196,9 +195,8 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 		}
 		description := formatPolicyViolations("policy violations", denyViolations)
 		l.Error("policy evaluation failed", zap.Int("deny_count", len(denyViolations)))
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPolicyFailed, description)
 		w.failRunnerJob(ctx, buildJobID, description)
-		return fmt.Errorf("helm policy check failed: %s", description)
+		return temporal.NewNonRetryableApplicationError(description, "component-build-policy", nil)
 	}
 
 	if len(warnViolations) > 0 {

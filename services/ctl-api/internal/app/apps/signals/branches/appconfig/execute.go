@@ -70,7 +70,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return
 		}
 		logStreamClosed = true
-		if err := activities.AwaitCloseLogStream(ctx, activities.CloseLogStreamRequest{
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		if err := activities.AwaitCloseLogStream(closeCtx, activities.CloseLogStreamRequest{
 			LogStreamID: logStream.ID,
 		}); err != nil {
 			l.Warn("unable to close log stream", "error", err)
@@ -123,7 +125,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"source_dir", sourceDir)
 
 	intermediateConfig, err := activities.LocalAwaitFetchIntermediateConfig(ctx, activities.FetchIntermediateConfigRequest{
-		SourceDir: sourceDir,
+		SourceDir:   sourceDir,
+		WorkspaceID: cloneResult.WorkspaceID,
 	})
 	if err != nil {
 		if detail, ok := branchrunerrors.ValidationDetail(err); ok {

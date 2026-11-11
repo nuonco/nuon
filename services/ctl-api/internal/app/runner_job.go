@@ -100,7 +100,6 @@ const (
 	RunnerJobTypeHealthCheck RunnerJobType = "health-check"
 
 	// build job types
-	RunnerJobTypeDockerBuild             RunnerJobType = "docker-build"
 	RunnerJobTypeContainerImageBuild     RunnerJobType = "container-image-build"
 	RunnerJobTypeTerraformModuleBuild    RunnerJobType = "terraform-module-build"
 	RunnerJobTypeHelmChartBuild          RunnerJobType = "helm-chart-build"
@@ -158,8 +157,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 	switch r {
 
 	// builds
-	case RunnerJobTypeDockerBuild,
-		RunnerJobTypeContainerImageBuild,
+	case RunnerJobTypeContainerImageBuild,
 		RunnerJobTypeNOOPBuild,
 		RunnerJobTypeTerraformModuleBuild,
 		RunnerJobTypeHelmChartBuild,
@@ -362,6 +360,11 @@ func (a *RunnerJob) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 				"created_at DESC",
 			},
+		},
+		{
+			Name:    indexes.Name(db, &RunnerJob{}, "log_stream_id"),
+			Columns: []string{"log_stream_id"},
+			Option:  "WHERE deleted_at = 0",
 		},
 	}
 }

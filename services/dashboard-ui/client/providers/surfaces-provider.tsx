@@ -1,16 +1,16 @@
-import { useLocation, useSearchParams } from 'react-router'
+import { useLocation } from 'react-router'
 import React, {
   createContext,
   useState,
   useCallback,
   useEffect,
-  useRef,
   type ReactElement,
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
 import { type IPanel } from '@/components/surfaces/Panel'
 import { type IModal } from '@/components/surfaces/Modal'
+import { useReplaceSearchParams } from '@/hooks/use-replace-search-params'
 
 const uuid = () => crypto.randomUUID()
 
@@ -35,11 +35,6 @@ type TSurfacesContext = {
   panels: TPanels
   modals: TModals
   addPanel: (content: TPanelEl, panelKey?: string, panelId?: string) => string
-  addPanelIfEmpty: (
-    content: TPanelEl,
-    panelKey?: string,
-    panelId?: string
-  ) => string | undefined
   updatePanel: (id: string, content: TPanelEl) => void
   clearPanels: () => void
   removePanel: (id: string, panelKey?: string) => void
@@ -78,9 +73,16 @@ export const withoutPanelKey = (params: URLSearchParams, key: string) => {
 
 export function SurfacesProvider({ children }: { children: ReactNode }) {
   const [panels, setPanels] = useState<TPanels>([])
-  const autoOpenPending = useRef(false)
   const { pathname } = useLocation()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const replaceSearch = useReplaceSearchParams()
+  const updateSearch = useCallback(
+    (update: (params: URLSearchParams) => URLSearchParams) => {
+      replaceSearch((params) => {
+        update(params)
+      })
+    },
+    [replaceSearch]
+  )
 
   useEffect(() => {
     setPanels((ps) => ps.filter((p) => p.pathname === pathname))
@@ -89,8 +91,11 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
   const addPanel = useCallback(
     (content: TPanelEl, panelKey?: string, panelId?: string): string => {
       const id = panelId || uuid()
-      const order = panelKeyStack(searchParams)
+      const order = panelKeyStack(window.location.search)
       setPanels((ps) => {
+        if (panelKey && ps.some((p) => p.key === panelKey && p.isVisible)) {
+          return ps
+        }
         const withNew = [
           ...ps,
           {
@@ -113,30 +118,11 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
           .map(({ panel }) => panel)
       })
       if (panelKey) {
-        setSearchParams((prev) => withPanelKey(new URLSearchParams(prev), panelKey), {
-          replace: true,
-        })
+        updateSearch((params) => withPanelKey(params, panelKey))
       }
       return id
     },
-    [pathname, searchParams, setSearchParams]
-  )
-
-  useEffect(() => {
-    if (panels.length === 0) autoOpenPending.current = false
-  }, [panels.length])
-
-  const addPanelIfEmpty = useCallback(
-    (
-      content: TPanelEl,
-      panelKey?: string,
-      panelId?: string
-    ): string | undefined => {
-      if (panels.length > 0 || autoOpenPending.current) return undefined
-      autoOpenPending.current = true
-      return addPanel(content, panelKey, panelId)
-    },
-    [addPanel, panels.length]
+    [pathname, updateSearch]
   )
 
   const updatePanel = useCallback((id: string, content: TPanelEl) => {
@@ -151,30 +137,23 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       setTimeout(() => {
         setPanels((ps) => ps.filter((p) => p?.id !== id))
         if (panelKey) {
-          setSearchParams(
-            (prev) => withoutPanelKey(new URLSearchParams(prev), panelKey),
-            { replace: true }
-          )
+          updateSearch((params) => withoutPanelKey(params, panelKey))
         }
       }, 160)
     },
-    [setSearchParams]
+    [updateSearch]
   )
 
   const clearPanels = useCallback(() => {
     setPanels((ps) => ps.map((p) => ({ ...p, isVisible: false })))
     setTimeout(() => {
       setPanels([])
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          next.delete(PANEL_PARAM)
-          return next
-        },
-        { replace: true }
-      )
+      updateSearch((params) => {
+        params.delete(PANEL_PARAM)
+        return params
+      })
     }, 160)
-  }, [setSearchParams])
+  }, [updateSearch])
 
   const [modals, setModals] = useState<TModals>([])
 
@@ -186,18 +165,14 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
         { id, key: modalKey, content, isVisible: true },
       ])
       if (modalKey) {
-        setSearchParams(
-          (prev) => {
-            const next = new URLSearchParams(prev)
-            next.set('modal', modalKey)
-            return next
-          },
-          { replace: true }
-        )
+        updateSearch((params) => {
+          params.set('modal', modalKey)
+          return params
+        })
       }
       return id
     },
-    [setSearchParams]
+    [updateSearch]
   )
 
   const removeModal = useCallback(
@@ -208,18 +183,14 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       setTimeout(() => {
         setModals((ms) => ms.filter((m) => m?.id !== id))
         if (modalKey) {
-          setSearchParams(
-            (prev) => {
-              const next = new URLSearchParams(prev)
-              next.delete('modal')
-              return next
-            },
-            { replace: true }
-          )
+          updateSearch((params) => {
+            params.delete('modal')
+            return params
+          })
         }
       }, 160)
     },
-    [setSearchParams]
+    [updateSearch]
   )
 
   return (
@@ -228,7 +199,6 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
         panels,
         modals,
         addPanel,
-        addPanelIfEmpty,
         updatePanel,
         clearPanels,
         removePanel,

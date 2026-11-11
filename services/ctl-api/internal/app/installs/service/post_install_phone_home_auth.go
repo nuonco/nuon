@@ -174,7 +174,7 @@ func (s *service) verifyPhoneHomeCredential(
 	}
 
 	object := permissions.Object(install.OrgID, permissions.KindPhoneHome, stackVersion.ID)
-	if err := acct.AllPermissions.CanPerform(object, permissions.PermissionCreate); err != nil {
+	if err := acct.Authority.CanPerform(object, permissions.PermissionCreate, false); err != nil {
 		return phoneHomeRejectWrongAccount, rejectPhoneHome(phoneHomeRejectWrongAccount, err)
 	}
 

@@ -26,6 +26,9 @@ type connectState struct {
 	Onboarding bool   `json:"b,omitempty"`
 	TokenHash  string `json:"t"`
 	ExpiresAt  int64  `json:"e"`
+	// InstallationID is set between the GitHub setup redirect and the OAuth
+	// callback, so the id reported by the install can be bound to the code.
+	InstallationID string `json:"i,omitempty"`
 }
 
 func tokenHash(token string) string {
@@ -34,18 +37,24 @@ func tokenHash(token string) string {
 }
 
 func (h *ConnectHandler) setConnectState(c *gin.Context, orgID, token string, onboarding bool) (string, error) {
+	return h.writeConnectState(c, connectState{
+		OrgID:      orgID,
+		Onboarding: onboarding,
+		TokenHash:  tokenHash(token),
+	})
+}
+
+// writeConnectState seals state under a fresh nonce and expiry and returns the
+// nonce, which the next GitHub redirect must echo back as `state`.
+func (h *ConnectHandler) writeConnectState(c *gin.Context, state connectState) (string, error) {
 	buf := make([]byte, 32)
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
 	nonce := base64.RawURLEncoding.EncodeToString(buf)
-	value, err := sealConnectState(connectState{
-		Nonce:      nonce,
-		OrgID:      orgID,
-		Onboarding: onboarding,
-		TokenHash:  tokenHash(token),
-		ExpiresAt:  time.Now().Add(connectStateTTL).Unix(),
-	})
+	state.Nonce = nonce
+	state.ExpiresAt = time.Now().Add(connectStateTTL).Unix()
+	value, err := sealConnectState(state)
 	if err != nil {
 		return "", err
 	}

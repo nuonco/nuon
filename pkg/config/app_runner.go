@@ -87,7 +87,7 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead")
 }
 
-func (a *AppRunnerConfig) parse(rootDir string) error {
+func (a *AppRunnerConfig) parse(cfg ParseOptions) error {
 	if a == nil {
 		return ErrConfig{
 			Description: "an app runner config is required",
@@ -101,7 +101,7 @@ func (a *AppRunnerConfig) parse(rootDir string) error {
 	}
 
 	if a.Source != "" {
-		obj, err := source.LoadSourceFrom(a.Source, rootDir)
+		obj, err := source.LoadSourceFrom(a.Source, cfg.RootDir, cfg.Source)
 		if err != nil {
 			return ErrConfig{
 				Description: fmt.Sprintf("unable to load source %s", a.Source),

@@ -143,14 +143,20 @@ func (s *VCSServiceTestSuite) SetupTest() {
 		},
 	}, nil).AnyTimes()
 
-	// Create the VCS service manually with the mock
+	s.registerService(false)
+}
+
+// registerService builds the VCS service with the mock GitHub client and
+// mounts it on a fresh router.
+func (s *VCSServiceTestSuite) registerService(disableOwnershipCheck bool) {
 	svc := &service{
-		l:           s.service.L,
-		db:          s.service.DB,
-		v:           s.service.V,
-		ghClient:    s.mockGH,
-		helpers:     s.service.Helpers,
-		queueClient: s.service.QueueClient,
+		l:                     s.service.L,
+		db:                    s.service.DB,
+		v:                     s.service.V,
+		ghClient:              s.mockGH,
+		helpers:               s.service.Helpers,
+		queueClient:           s.service.QueueClient,
+		disableOwnershipCheck: disableOwnershipCheck,
 	}
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -162,6 +168,12 @@ func (s *VCSServiceTestSuite) SetupTest() {
 
 	err := svc.RegisterPublicRoutes(s.router)
 	require.NoError(s.T(), err)
+}
+
+// withOwnershipCheckDisabled remounts the service the way a local stack runs
+// it, with disable_vcs_connection_ownership_check set.
+func (s *VCSServiceTestSuite) withOwnershipCheckDisabled() {
+	s.registerService(true)
 }
 
 func (s *VCSServiceTestSuite) TearDownTest() {

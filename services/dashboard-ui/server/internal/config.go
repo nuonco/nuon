@@ -32,17 +32,19 @@ func init() {
 	// path it does in the cluster
 	config.RegisterDefault("nuon_kafka_ui_url", "http://localhost:8092")
 	config.RegisterDefault("nuon_grafana_ui_url", "")
+	config.RegisterDefault("trusted_proxies", []string{})
 }
 
 type Config struct {
-	HTTPPort    string   `config:"http_port" validate:"required"`
-	LogLevel    string   `config:"log_level"`
-	ServiceName string   `config:"service_name"`
-	Version     string   `config:"version"`
-	GitRef      string   `config:"git_ref"`
-	Middlewares []string `config:"middlewares"`
-	DistDir     string   `config:"dist_dir"`
-	PublicDir   string   `config:"public_dir"`
+	HTTPPort       string   `config:"http_port" validate:"required"`
+	LogLevel       string   `config:"log_level"`
+	ServiceName    string   `config:"service_name"`
+	Version        string   `config:"version"`
+	GitRef         string   `config:"git_ref"`
+	Middlewares    []string `config:"middlewares"`
+	TrustedProxies []string `config:"trusted_proxies"`
+	DistDir        string   `config:"dist_dir"`
+	PublicDir      string   `config:"public_dir"`
 
 	APIUrl string `config:"nuon_api_url"`
 	// InternalAPIUrl is the ctl-api address this process dials. The browser still
@@ -51,14 +53,18 @@ type Config struct {
 	InternalAPIUrl string `config:"nuon_api_internal_url"`
 	// RunnerAPIUrl is the runner API install stacks authenticate against. A different
 	// host from APIUrl, and the audience a stack's OIDC trust policy names.
-	RunnerAPIUrl             string `config:"nuon_runner_api_url"`
-	AdminAPIUrl              string `config:"nuon_admin_api_url"`
-	TemporalUIUrl            string `config:"nuon_temporal_ui_url"`
-	KafkaUIUrl               string `config:"nuon_kafka_ui_url"`
-	GrafanaUIUrl             string `config:"nuon_grafana_ui_url"`
-	AuthServiceUrl           string `config:"nuon_auth_service_url"`
-	AppUrl                   string `config:"nuon_app_url"`
-	GithubAppName            string `config:"github_app_name"`
+	RunnerAPIUrl   string `config:"nuon_runner_api_url"`
+	AdminAPIUrl    string `config:"nuon_admin_api_url"`
+	TemporalUIUrl  string `config:"nuon_temporal_ui_url"`
+	KafkaUIUrl     string `config:"nuon_kafka_ui_url"`
+	GrafanaUIUrl   string `config:"nuon_grafana_ui_url"`
+	AuthServiceUrl string `config:"nuon_auth_service_url"`
+	AppUrl         string `config:"nuon_app_url"`
+	GithubAppName  string `config:"github_app_name"`
+	// OAuth client ID of the GitHub App. When set, /connect sends the user
+	// through GitHub's user-authorization flow so ctl-api can confirm they own
+	// the installation they report.
+	GithubAppClientID        string `config:"github_app_client_id"`
 	PylonAppID               string `config:"pylon_app_id"`
 	DatadogEnv               string `config:"datadog_env"`
 	DatadogAPIKey            string `config:"datadog_api_key"`

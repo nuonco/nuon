@@ -18,6 +18,8 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse/dir"
 	"github.com/nuonco/nuon/pkg/config/parse/get"
+	"github.com/nuonco/nuon/pkg/rootfs"
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
 const (
@@ -79,7 +81,31 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 	}
 
 	fs := afero.NewOsFs()
-	cfgFS := afero.NewBasePathFs(fs, fp)
+	var cfgFS afero.Fs = afero.NewBasePathFs(fs, fp)
+	var getSource *sourcefs.FS
+	if source != nil {
+		root := parseCfg.SourceRoot
+		if root == "" {
+			root = fp
+		}
+		rooted, err := rootfs.Open(root)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to open repository root")
+		}
+		defer rooted.Close()
+		rel, err := filepath.Rel(rooted.Root(), fp)
+		if err != nil || !filepath.IsLocal(rel) {
+			return nil, errors.New("config directory escapes repository")
+		}
+		cfgFS = rooted
+		if rel != "." {
+			cfgFS = afero.NewBasePathFs(rooted, rel)
+		}
+		getSource, err = sourcefs.From(rooted, rooted.Root())
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to open repository source")
+		}
+	}
 
 	// parse the directory
 	var obj ConfigDir
@@ -87,7 +113,7 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		Root: fp,
 		Ext:  ".toml",
 		ParserFn: func(rc io.ReadCloser, s string, a any) error {
-			return parseTomlFile(rc, s, a, parseCfg.FileProcessor, fp)
+			return parseTomlFile(rc, s, a, parseCfg.FileProcessor, config.WithRootDir(fp), config.WithSource(getSource))
 		},
 		OnParsedFile: sourceFileRecorder(source),
 	}
@@ -140,7 +166,9 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 	// Copy TemplateURL to Contents for go-getter to fetch template content.
 	if appCfg.Stack != nil {
 		for i := range appCfg.Stack.CustomNestedStacks {
-			appCfg.Stack.CustomNestedStacks[i].Contents = appCfg.Stack.CustomNestedStacks[i].TemplateURL
+			if getSource == nil || appCfg.Stack.Type != "gcp-terraform" {
+				appCfg.Stack.CustomNestedStacks[i].Contents = appCfg.Stack.CustomNestedStacks[i].TemplateURL
+			}
 		}
 		if appCfg.Stack.UIDefinition != "" {
 			appCfg.Stack.UIDefinitionContents = appCfg.Stack.UIDefinition
@@ -162,6 +190,7 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 	if err := get.Parse(ctx, appCfg, &get.Options{
 		FieldTimeout: fieldTimeout,
 		RootDir:      fp,
+		Source:       getSource,
 		OnLocalFile:  localSourceFileRecorder(source),
 	}); err != nil {
 		return nil, ParseErr{
@@ -170,7 +199,7 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		}
 	}
 
-	err = appCfg.Parse(config.WithRootDir(fp))
+	err = appCfg.Parse(config.WithRootDir(fp), config.WithSource(getSource))
 	if err != nil {
 		return nil, ParseErr{
 			Description: "error parsing config",

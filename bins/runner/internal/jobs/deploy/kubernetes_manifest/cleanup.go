@@ -7,5 +7,10 @@ import (
 )
 
 func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	return nil
+	if h.state == nil || h.state.arch == nil {
+		return nil
+	}
+	arch := h.state.arch
+	h.state.arch = nil
+	return arch.Cleanup(ctx)
 }

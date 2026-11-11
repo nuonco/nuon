@@ -13,6 +13,10 @@ import { DiffFilter } from './DiffFilter'
 import { DiffSection } from './DiffSection'
 import { DiffSections } from './DiffSections'
 import { DiffEmptyState } from './DiffEmptyState'
+import {
+  DestructiveChangeBanner,
+  destructiveChanges,
+} from './DestructiveChangeBanner'
 
 export interface IKubernetesDiff
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -31,6 +35,7 @@ export const KubernetesDiff = ({
 
   return (
     <Card className={cn('flex flex-col gap-3', className)} {...props}>
+      <DestructiveChangeBanner changes={destructiveChanges(group.sections)} />
       <header className="flex flex-wrap items-start justify-between gap-3 px-1">
         <span className="flex min-w-0 flex-col">
           <Text as="h2" variant="h3">

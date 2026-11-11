@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
@@ -84,6 +85,13 @@ func NewAPI(p APIParams) (*API, error) {
 	handler := gin.New()
 	handler.Use(gin.Recovery())
 	handler.Use(gin.Logger())
+	proxies := p.Config.TrustedProxies
+	if len(proxies) == 0 {
+		proxies = nil
+	}
+	if err := handler.SetTrustedProxies(proxies); err != nil {
+		return nil, fmt.Errorf("unable to configure trusted proxies: %w", err)
+	}
 
 	api := &API{
 		cfg:         p.Config,
@@ -93,8 +101,10 @@ func NewAPI(p APIParams) (*API, error) {
 		spa:         p.SPA,
 		handler:     handler,
 		srv: &http.Server{
-			Addr:    fmt.Sprintf("0.0.0.0:%s", port),
-			Handler: handler.Handler(),
+			Addr:              fmt.Sprintf("0.0.0.0:%s", port),
+			Handler:           handler.Handler(),
+			ReadHeaderTimeout: 5 * time.Second,
+			ReadTimeout:       30 * time.Second,
 		},
 	}
 

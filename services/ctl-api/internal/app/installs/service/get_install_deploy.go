@@ -45,7 +45,7 @@ func (s *service) GetInstallComponentDeploy(ctx *gin.Context) {
 	}
 
 	componentID := ctx.Param("component_id")
-	if installDeploy.InstallComponent.ComponentID != componentID {
+	if installDeploy.InstallComponent == nil || installDeploy.InstallComponent.ComponentID != componentID {
 		ctx.Error(stderr.ErrNotFound{
 			Err:         gorm.ErrRecordNotFound,
 			Description: fmt.Sprintf("deploy %s does not belong to component %s", deployID, componentID),
@@ -108,6 +108,11 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 		First(&installDeploy, "install_deploys.id = ?", deployID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
+	}
+	for i := range installDeploy.RunnerJobs {
+		if err := installDeploy.RunnerJobs[i].Plan.RedactCredentials(); err != nil {
+			return nil, err
+		}
 	}
 	if len(installDeploy.RunnerJobs) > 0 {
 		compositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{

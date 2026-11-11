@@ -59,7 +59,7 @@ export const Rows = () => (
     />
     <BuildRow
       rowId="c3"
-      type="docker_build"
+      type="external_image"
       build={{
         component_id: 'c3',
         component_name: 'api',
@@ -109,7 +109,7 @@ export const InProgress = () => (
   <RowList>
     <BuildRow
       rowId="c1"
-      type="docker_build"
+      type="external_image"
       build={{
         component_id: 'c1',
         component_name: 'api',

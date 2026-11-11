@@ -2,14 +2,12 @@ package pulumi
 
 import (
 	"context"
-	"fmt"
 
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
-	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 )
 
 func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -23,11 +21,6 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 	h.state.srcTag = h.state.plan.SrcTag
 
 	l.Info("artifact repo", zap.Any("repo", h.state.srcCfg.Repository))
-	arch := ociarchive.New()
-	if err := arch.Initialize(ctx); err != nil {
-		return fmt.Errorf("unable to initialize archive: %w", err)
-	}
-	h.state.arch = arch
 
 	return nil
 }

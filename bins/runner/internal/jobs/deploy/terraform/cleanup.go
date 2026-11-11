@@ -9,12 +9,20 @@ import (
 )
 
 func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	if err := h.state.arch.Cleanup(ctx); err != nil {
-		h.errRecorder.Record("unable to cleanup archive", err)
+	if h.state == nil {
+		return nil
 	}
 
-	if err := h.state.tfWorkspace.Cleanup(ctx); err != nil {
-		return errors.Wrap(err, "unable to cleanup")
+	if h.state.arch != nil {
+		if err := h.state.arch.Cleanup(ctx); err != nil {
+			h.errRecorder.Record("unable to cleanup archive", err)
+		}
+	}
+
+	if h.state.tfWorkspace != nil {
+		if err := h.state.tfWorkspace.Cleanup(ctx); err != nil {
+			return errors.Wrap(err, "unable to cleanup")
+		}
 	}
 
 	return nil

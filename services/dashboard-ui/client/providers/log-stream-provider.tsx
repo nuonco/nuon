@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
+import { usePanelVisibility } from '@/hooks/use-panel-visibility'
 import { buildServerFilters } from '@/hooks/use-log-filters'
 import { LogsPageSkeleton } from '@/components/log-stream/SSELogs'
 import { getLogStreamLogs, logFiltersToQuery } from '@/lib'
@@ -47,6 +48,7 @@ export function LogStreamProvider({
   renderWhilePending?: boolean
 }) {
   const { org } = useOrg()
+  const isPanelTop = usePanelVisibility()
   const [searchParams] = useSearchParams()
   const isNewestFirst = searchParams.get('sort') !== 'asc'
 
@@ -79,6 +81,7 @@ export function LogStreamProvider({
   const reconnectAttemptRef = useRef(0)
   const connStateRef = useRef<ConnectionState>('disconnected')
   const seedRequestedRef = useRef(false)
+  const finalSyncRequestedRef = useRef(false)
   const isNewestFirstRef = useRef(isNewestFirst)
   const logStreamIdRef = useRef(logStreamId)
 
@@ -122,13 +125,34 @@ export function LogStreamProvider({
     [appendLogs]
   )
 
+  const fetchFreshestLogs = useCallback(
+    (streamId: string, orgId: string) => {
+      if (finalSyncRequestedRef.current) return
+      finalSyncRequestedRef.current = true
+
+      getLogStreamLogs({
+        logStreamId: streamId,
+        orgId,
+        order: 'desc',
+        filters: serverFiltersRef.current,
+      })
+        .then((newest) => {
+          if (streamId !== logStreamIdRef.current) return
+          if (!Array.isArray(newest)) return
+          appendLogs(newest)
+        })
+        .catch(() => {})
+    },
+    [appendLogs]
+  )
+
   const setConnState = (state: ConnectionState) => {
     if (connStateRef.current === state) return
     connStateRef.current = state
     setConnectionState(state)
   }
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
       eventSourceRef.current = null
@@ -138,7 +162,103 @@ export function LogStreamProvider({
       reconnectTimeoutRef.current = null
     }
     setConnState('disconnected')
-  }
+  }, [])
+
+  const connectSSE = useCallback(() => {
+    if (!logStreamId || !org?.id) return
+    if (eventSourceRef.current) return
+
+    setConnState('connecting')
+    setError(null)
+
+    const url = `/api/orgs/${org.id}/log-streams/${logStreamId}/logs/sse${sseQuery ? `?${sseQuery}` : ''}`
+    const eventSource = new EventSource(url)
+    eventSourceRef.current = eventSource
+
+    eventSource.onmessage = (event) => {
+      try {
+        const newLogs: TOTELLog[] = JSON.parse(event.data)
+        appendLogs(newLogs)
+        setConnState('connected')
+        reconnectAttemptRef.current = 0
+      } catch {
+        setError({
+          error: 'Failed to parse log data',
+          description:
+            'The log data received from the server could not be parsed as valid JSON',
+          user_error: false,
+        })
+      }
+    }
+
+    eventSource.addEventListener('status', (event: MessageEvent) => {
+      if (event.data === 'catching-up') {
+        setIsCatchingUp(true)
+        seedNewestPage(logStreamId, org.id)
+      } else if (event.data === 'live') {
+        setIsCatchingUp(false)
+      } else if (event.data === 'complete') {
+        isCompleteRef.current = true
+        setIsCatchingUp(false)
+        eventSource.close()
+        eventSourceRef.current = null
+        setConnState('disconnected')
+        fetchFreshestLogs(logStreamId, org.id)
+      }
+    })
+
+    eventSource.addEventListener('error', (event: MessageEvent) => {
+      try {
+        const errorData = JSON.parse(event.data)
+        setError({
+          error: errorData.error || 'Server error occurred',
+          description:
+            errorData.description ||
+            'An error was received from the log streaming server',
+          user_error: errorData.user_error || false,
+          meta: errorData.meta,
+        })
+      } catch {
+        setError({
+          error: 'Server error occurred',
+          description:
+            'Failed to parse error message from the log streaming server',
+          user_error: false,
+        })
+      }
+    })
+
+    eventSource.onerror = () => {
+      eventSource.close()
+      eventSourceRef.current = null
+
+      if (isCompleteRef.current) return
+
+      setConnState('reconnecting')
+      const backoffDelay = Math.min(
+        1000 * Math.pow(2, reconnectAttemptRef.current),
+        30000
+      )
+      reconnectAttemptRef.current += 1
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connectSSE()
+      }, backoffDelay)
+    }
+
+    eventSource.onopen = () => {
+      setConnState('connected')
+      setError(null)
+      reconnectAttemptRef.current = 0
+    }
+  }, [
+    logStreamId,
+    org?.id,
+    sseQuery,
+    appendLogs,
+    seedNewestPage,
+    fetchFreshestLogs,
+  ])
 
   useEffect(() => {
     if (!logStreamId || !org?.id) return
@@ -146,104 +266,27 @@ export function LogStreamProvider({
     isCompleteRef.current = false
     reconnectAttemptRef.current = 0
     seedRequestedRef.current = false
+    finalSyncRequestedRef.current = false
     logStreamIdRef.current = logStreamId
     seenIdsRef.current = new Set()
     setLogs([])
     setError(null)
     setIsCatchingUp(false)
 
-    const connectSSE = () => {
-      if (eventSourceRef.current) return
-
-      setConnState('connecting')
-      setError(null)
-
-      const url = `/api/orgs/${org.id}/log-streams/${logStreamId}/logs/sse${sseQuery ? `?${sseQuery}` : ''}`
-      const eventSource = new EventSource(url)
-      eventSourceRef.current = eventSource
-
-      eventSource.onmessage = (event) => {
-        try {
-          const newLogs: TOTELLog[] = JSON.parse(event.data)
-          appendLogs(newLogs)
-          setConnState('connected')
-          reconnectAttemptRef.current = 0
-        } catch {
-          setError({
-            error: 'Failed to parse log data',
-            description:
-              'The log data received from the server could not be parsed as valid JSON',
-            user_error: false,
-          })
-        }
-      }
-
-      eventSource.addEventListener('status', (event: MessageEvent) => {
-        if (event.data === 'catching-up') {
-          setIsCatchingUp(true)
-          seedNewestPage(logStreamId, org.id)
-        } else if (event.data === 'live') {
-          setIsCatchingUp(false)
-        } else if (event.data === 'complete') {
-          isCompleteRef.current = true
-          setIsCatchingUp(false)
-          eventSource.close()
-          eventSourceRef.current = null
-          setConnState('disconnected')
-        }
-      })
-
-      eventSource.addEventListener('error', (event: MessageEvent) => {
-        try {
-          const errorData = JSON.parse(event.data)
-          setError({
-            error: errorData.error || 'Server error occurred',
-            description:
-              errorData.description ||
-              'An error was received from the log streaming server',
-            user_error: errorData.user_error || false,
-            meta: errorData.meta,
-          })
-        } catch {
-          setError({
-            error: 'Server error occurred',
-            description:
-              'Failed to parse error message from the log streaming server',
-            user_error: false,
-          })
-        }
-      })
-
-      eventSource.onerror = () => {
-        eventSource.close()
-        eventSourceRef.current = null
-
-        if (isCompleteRef.current) return
-
-        setConnState('reconnecting')
-        const backoffDelay = Math.min(
-          1000 * Math.pow(2, reconnectAttemptRef.current),
-          30000
-        )
-        reconnectAttemptRef.current += 1
-
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connectSSE()
-        }, backoffDelay)
-      }
-
-      eventSource.onopen = () => {
-        setConnState('connected')
-        setError(null)
-        reconnectAttemptRef.current = 0
-      }
-    }
-
     connectSSE()
     return () => {
       disconnect()
     }
   }, [logStreamId, org?.id, runnerJobId, sseQuery])
+
+  useEffect(() => {
+    if (!logStreamId || !org?.id) return
+    if (isPanelTop) {
+      if (!isCompleteRef.current) connectSSE()
+    } else {
+      disconnect()
+    }
+  }, [isPanelTop, logStreamId, org?.id, connectSSE, disconnect])
 
   // Switching to newest-first while a long catch-up is still draining needs the
   // same seed; the `catching-up` event has already come and gone by then.

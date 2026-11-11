@@ -3,11 +3,12 @@ package ociarchive
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
@@ -15,6 +16,7 @@ import (
 
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/op"
+	"github.com/nuonco/nuon/pkg/sourcefs"
 )
 
 const (
@@ -25,6 +27,9 @@ const (
 	maxArchiveLayers           = 400
 )
 
+// FileRef maps an input in the supplied source filesystem to an archive name.
+// AbsPath may be source-relative or absolute within the source root; RelPath
+// must be a canonical, slash-separated relative archive path.
 type FileRef struct {
 	AbsPath  string `mapstructure:"abs_path,omitempty"`
 	RelPath  string `mapstructure:"rel_path,omitempty"`
@@ -36,38 +41,45 @@ type archiveLayer struct {
 	files []FileRef
 }
 
-func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef) (retErr error) {
+func (r *archive) Pack(ctx context.Context, log *zap.Logger, source *sourcefs.FS, filePaths []FileRef) (retErr error) {
 	opCtx, end := op.Tool(ctx, "oci", "pack")
 	ctx = opCtx
 	defer func() { end(retErr) }()
 	if l, err := pkgctx.Logger(ctx); err == nil && l != nil {
 		log = l
 	}
-
-	nonEmptyFiles := make([]FileRef, 0, len(filePaths))
-	for _, file := range filePaths {
-		stat, err := os.Stat(file.AbsPath)
-		if err != nil {
-			return fmt.Errorf("unable to stat file: %w", err)
-		}
-		if stat.Size() < 1 {
-			log.Info("skipping empty file", zap.String("path", file.RelPath))
-			continue
-		}
-		nonEmptyFiles = append(nonEmptyFiles, file)
+	if source == nil {
+		return fmt.Errorf("archive source filesystem is required")
+	}
+	if r.store == nil {
+		return fmt.Errorf("archive is not initialized")
+	}
+	if err := r.store.checkOpen(); err != nil {
+		return err
 	}
 
-	archiveLayers := groupArchiveLayers(nonEmptyFiles)
+	archiveLayers := groupArchiveLayers(filePaths)
 	layers := make([]v1.Descriptor, 0, len(archiveLayers))
 	for i, archiveLayer := range archiveLayers {
-		tarPath := filepath.Join(r.tmpDir, fmt.Sprintf("archive-v1-%03d.tar.gz", i))
-		if err := writeTarLayer(tarPath, archiveLayer.files); err != nil {
+		tarPath := fmt.Sprintf("layers/archive-v1-%03d.tar.gz", i)
+		out, err := r.workFS.OpenFile(tarPath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+		if err != nil {
 			return fmt.Errorf("unable to create tar layer %q: %w", archiveLayer.title, err)
 		}
-
-		layer, err := r.store.Add(ctx, archiveLayer.title, tarLayerMediaType, tarPath)
-		if err != nil {
-			return fmt.Errorf("unable to add tar layer %q: %w", archiveLayer.title, err)
+		writeErr := writeTarLayer(out, source, archiveLayer.files)
+		var layer v1.Descriptor
+		if writeErr == nil {
+			layer, writeErr = r.addLayer(ctx, archiveLayer.title, out)
+		}
+		closeErr := out.Close()
+		if writeErr != nil {
+			return fmt.Errorf("unable to create tar layer %q: %w", archiveLayer.title, writeErr)
+		}
+		if closeErr != nil {
+			return fmt.Errorf("unable to close tar layer %q: %w", archiveLayer.title, closeErr)
+		}
+		if err := r.workFS.Remove(tarPath); err != nil {
+			return fmt.Errorf("unable to remove staged tar layer %q: %w", archiveLayer.title, err)
 		}
 		layer.Annotations[orasfile.AnnotationUnpack] = "true"
 		layers = append(layers, layer)
@@ -83,7 +95,8 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef
 		return fmt.Errorf("unable to pack manifest: %w", err)
 	}
 
-	if err := r.store.Tag(ctx, descriptor, defaultLocalTag); err != nil {
+	// Packing publishes the CAS without extracting a second copy of the inputs.
+	if err := r.store.contentStore.Tag(ctx, descriptor, defaultLocalTag); err != nil {
 		return fmt.Errorf("unable to tag manifest: %w", err)
 	}
 
@@ -94,6 +107,30 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef
 	log.Info("found tag", zap.String("tag", defaultLocalTag))
 
 	return nil
+}
+
+func (r *archive) addLayer(ctx context.Context, title string, input io.ReadSeeker) (v1.Descriptor, error) {
+	if _, err := input.Seek(0, io.SeekStart); err != nil {
+		return v1.Descriptor{}, err
+	}
+	digester := digest.Canonical.Digester()
+	size, err := io.Copy(digester.Hash(), &contextReader{ctx: ctx, reader: input})
+	if err != nil {
+		return v1.Descriptor{}, err
+	}
+	if _, err := input.Seek(0, io.SeekStart); err != nil {
+		return v1.Descriptor{}, err
+	}
+	desc := v1.Descriptor{
+		MediaType:   tarLayerMediaType,
+		Digest:      digester.Digest(),
+		Size:        size,
+		Annotations: map[string]string{v1.AnnotationTitle: title},
+	}
+	if err := r.store.Push(ctx, desc, &contextReader{ctx: ctx, reader: input}); err != nil {
+		return v1.Descriptor{}, err
+	}
+	return desc, nil
 }
 
 func groupArchiveLayers(files []FileRef) []archiveLayer {

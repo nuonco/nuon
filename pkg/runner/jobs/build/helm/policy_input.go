@@ -9,7 +9,6 @@ import (
 
 	"go.uber.org/zap"
 	chart "helm.sh/helm/v4/pkg/chart/v2"
-	"helm.sh/helm/v4/pkg/chart/v2/loader"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/pkg/errors"
@@ -26,14 +25,9 @@ func (h *handler) buildPolicyInput(ctx context.Context, l *zap.Logger) ([]Admiss
 		return nil, nil
 	}
 
-	chartPath := h.state.chartPath
-	if chartPath == "" {
-		l.Debug("policy input skipped: chart path missing")
+	if h.state.chart == nil {
+		l.Debug("policy input skipped: chart missing")
 		return nil, nil
-	}
-	chart, err := loader.Load(chartPath)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to load chart")
 	}
 
 	values, err := helm.ChartValues(h.state.cfg.ValuesFiles, h.state.cfg.Values, "")
@@ -43,7 +37,7 @@ func (h *handler) buildPolicyInput(ctx context.Context, l *zap.Logger) ([]Admiss
 	l.Debug("policy input helm values loaded", zap.Int("values_files_count", len(h.state.cfg.ValuesFiles)), zap.Int("values_count", len(values)))
 	values = sanitizePolicyValues(values)
 
-	policyInputs, err := toPolicyAdmissionInputs(chart, values)
+	policyInputs, err := toPolicyAdmissionInputs(h.state.chart, values)
 	if err != nil {
 		return nil, err
 	}

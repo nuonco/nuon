@@ -154,8 +154,7 @@ func toolAndServiceForJobType(jobType models.AppRunnerJobType) (string, string) 
 		return "sync_secrets", "runner.sandbox.sync_secrets"
 	case models.AppRunnerJobTypeActionsDashWorkflow:
 		return "action", "runner.sandbox.action"
-	case models.AppRunnerJobTypeDockerDashBuild,
-		models.AppRunnerJobTypeContainerDashImageDashBuild:
+	case models.AppRunnerJobTypeContainerDashImageDashBuild:
 		return "docker", "runner.sandbox.docker"
 	case models.AppRunnerJobTypeOciDashSync:
 		return "oci_sync", "runner.sandbox.oci_sync"
@@ -562,7 +561,7 @@ func (h *Handler) writeTerraformSandboxMode(ctx context.Context, plan *plantypes
 	params := url.Values{
 		"job_id":       {h.job.ID},
 		"workspace_id": {plan.WorkspaceID},
-		"token":        {h.cfg.RunnerAPIToken},
+		"token":        {h.cfg.APIToken()},
 	}
 
 	u, err := url.JoinPath(h.cfg.RunnerAPIURL, "/v1/terraform-backend")

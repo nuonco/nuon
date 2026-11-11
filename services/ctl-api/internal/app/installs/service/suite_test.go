@@ -29,6 +29,7 @@ import (
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -102,6 +103,7 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 		}),
 		fx.Provide(New),
 		fx.Provide(cloudconnectionshelpers.New),
+		fx.Supply(&sharedactivities.Activities{}),
 		fx.Populate(&s.deps, &s.installsService),
 	)
 

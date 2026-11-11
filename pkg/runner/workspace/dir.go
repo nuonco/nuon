@@ -1,34 +1,53 @@
 package workspace
 
 import (
-	"io/fs"
-	"os"
+	"errors"
 	"path/filepath"
-)
+	"strings"
 
-const (
-	defaultWorkspaceDirPermissions fs.FileMode = 0o777
+	"github.com/nuonco/nuon/pkg/rootfs"
 )
 
 func (w *workspace) rootDir() string {
+	if w.owned != nil {
+		return w.owned.Root()
+	}
 	return filepath.Join(w.TmpRootDir, w.ID)
 }
 
 func (w *workspace) initRootDir() error {
 	w.L.Info("initializing new workspace at " + w.rootDir())
-	if err := os.MkdirAll(w.rootDir(), defaultWorkspaceDirPermissions); err != nil {
+	parent, child, err := rootfs.PrepareFS(w.backing, w.TmpRootDir, w.ID, false)
+	if err != nil {
 		return err
 	}
-
+	w.parent, w.fs = parent, child
+	w.owned, _ = child.(*rootfs.FS)
 	return nil
 }
 
 func (w *workspace) cleanupDir() error {
-	if err := os.RemoveAll(w.rootDir()); err != nil {
-		return err
+	if w.parent != nil {
+		return w.parent.RemoveAll(w.ID)
 	}
+	if w.fs != nil {
+		return w.fs.RemoveAll(".")
+	}
+	return rootfs.RemoveFS(w.backing, w.TmpRootDir, w.ID)
+}
 
-	return nil
+func (w *workspace) closeRoot() error {
+	var errs []error
+	if w.owned != nil {
+		errs = append(errs, w.owned.Close())
+		w.owned = nil
+	}
+	if w.parent != nil {
+		errs = append(errs, w.parent.Close())
+		w.parent = nil
+	}
+	w.fs = nil
+	return errors.Join(errs...)
 }
 
 func (w *workspace) Root() string {
@@ -40,8 +59,10 @@ func (w *workspace) AbsPath(path string) string {
 }
 
 func (w *workspace) IsFile(path string) bool {
-	fp := w.AbsPath(path)
-	stat, err := os.Stat(fp)
+	if w.fs == nil {
+		return false
+	}
+	stat, err := w.fs.Stat(relativePath(path))
 	if err != nil {
 		return false
 	}
@@ -53,8 +74,10 @@ func (w *workspace) IsFile(path string) bool {
 }
 
 func (w *workspace) IsDir(path string) bool {
-	fp := w.AbsPath(path)
-	stat, err := os.Stat(fp)
+	if w.fs == nil {
+		return false
+	}
+	stat, err := w.fs.Stat(relativePath(path))
 	if err != nil {
 		return false
 	}
@@ -62,12 +85,11 @@ func (w *workspace) IsDir(path string) bool {
 }
 
 func (w *workspace) RmDir(path string) error {
-	fp := w.AbsPath(path)
 	if !w.IsDir(path) {
 		return nil
 	}
 
-	if err := os.RemoveAll(fp); err != nil {
+	if err := w.fs.RemoveAll(relativePath(path)); err != nil {
 		return err
 	}
 
@@ -75,8 +97,10 @@ func (w *workspace) RmDir(path string) error {
 }
 
 func (w *workspace) IsExecutable(path string) bool {
-	fp := w.AbsPath(path)
-	stat, err := os.Stat(fp)
+	if w.fs == nil {
+		return false
+	}
+	stat, err := w.fs.Stat(relativePath(path))
 	if err != nil {
 		return false
 	}
@@ -85,4 +109,12 @@ func (w *workspace) IsExecutable(path string) bool {
 	}
 
 	return stat.Mode()&0o111 != 0
+}
+
+func relativePath(name string) string {
+	name = strings.TrimLeft(name, "/")
+	if name == "" {
+		return "."
+	}
+	return name
 }

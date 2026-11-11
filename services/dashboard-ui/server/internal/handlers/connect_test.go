@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -275,6 +276,131 @@ func TestStartConnectGithub(t *testing.T) {
 			t.Fatalf("status = %d", rec.Code)
 		}
 	})
+}
+
+func oauthConfig(apiURL string) *internal.Config {
+	cfg := testConfig(apiURL)
+	cfg.GithubAppClientID = "Iv1.clientid"
+	return cfg
+}
+
+// callbackBody is what the dashboard sends ctl-api for a connection callback.
+type callbackBody struct {
+	OrgID           string `json:"org_id"`
+	GithubInstallID string `json:"github_install_id"`
+	Code            string `json:"code"`
+}
+
+func captureCallback(t *testing.T, got *callbackBody) func(http.ResponseWriter, *http.Request) {
+	t.Helper()
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(got); err != nil {
+			t.Errorf("decode callback body: %v", err)
+		}
+		jsonResponse(http.StatusCreated, `{"id":"vcsconn123"}`)(w, r)
+	}
+}
+
+func TestConnectWithOAuthClient(t *testing.T) {
+	var got callbackBody
+	api := (&fakeCtlAPI{callback: captureCallback(t, &got), org: allowOrg(), validate: allowToken()}).start(t)
+	h := NewConnectHandler(oauthConfig(api.URL), zap.NewNop())
+
+	started := startConnect(t, h, "org_id=orgabc123", authed())
+	installNonce := mustState(t, started)
+	installState := stateCookie(t, started)
+
+	// GitHub setup URL: must bounce to the authorize page, not ctl-api.
+	setup := serve(t, h.RegisterRoutes, "/connect?installation_id=42&state="+url.QueryEscape(installNonce), authed(), installState)
+	if setup.Code != http.StatusFound {
+		t.Fatalf("setup status = %d", setup.Code)
+	}
+	authorize, err := url.Parse(setup.Header().Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if authorize.Host != "github.com" || authorize.Path != "/login/oauth/authorize" {
+		t.Fatalf("setup Location = %q", setup.Header().Get("Location"))
+	}
+	if q := authorize.Query(); q.Get("client_id") != "Iv1.clientid" || q.Get("redirect_uri") != "http://app.example.test/connect/oauth" {
+		t.Fatalf("authorize query = %q", authorize.RawQuery)
+	}
+	oauthNonce := authorize.Query().Get("state")
+	if oauthNonce == "" || oauthNonce == installNonce {
+		t.Fatalf("oauth state = %q (install state %q)", oauthNonce, installNonce)
+	}
+	oauthState := stateCookie(t, setup)
+	if got.GithubInstallID != "" {
+		t.Fatal("ctl-api must not be called before the user authorizes")
+	}
+
+	// GitHub callback URL: forwards code and the stashed installation id.
+	done := serve(t, h.RegisterRoutes, "/connect/oauth?code=c0de&state="+url.QueryEscape(oauthNonce), authed(), oauthState)
+	if loc := done.Header().Get("Location"); loc != "/orgabc123/apps?vcs-connected=vcsconn123" {
+		t.Fatalf("oauth Location = %q", loc)
+	}
+	if got.Code != "c0de" || got.GithubInstallID != "42" || got.OrgID != "orgabc123" {
+		t.Fatalf("callback body = %+v", got)
+	}
+
+	t.Run("install nonce cannot finish the oauth step", func(t *testing.T) {
+		got = callbackBody{}
+		rec := serve(t, h.RegisterRoutes, "/connect/oauth?code=c0de&state="+url.QueryEscape(installNonce), authed(), oauthState)
+		if loc := rec.Header().Get("Location"); loc != "/orgabc123/apps" {
+			t.Fatalf("Location = %q", loc)
+		}
+		if got.Code != "" {
+			t.Fatal("ctl-api must not be called with a mismatched state")
+		}
+	})
+
+	t.Run("oauth step without a code", func(t *testing.T) {
+		got = callbackBody{}
+		rec := serve(t, h.RegisterRoutes, "/connect/oauth?state="+url.QueryEscape(oauthNonce), authed(), oauthState)
+		if loc := rec.Header().Get("Location"); loc != "/orgabc123/apps" {
+			t.Fatalf("Location = %q", loc)
+		}
+		if got.Code != "" {
+			t.Fatal("ctl-api must not be called without a code")
+		}
+	})
+
+	t.Run("oauth step without a stashed installation", func(t *testing.T) {
+		got = callbackBody{}
+		// A cookie from the start step has no installation id yet.
+		rec := serve(t, h.RegisterRoutes, "/connect/oauth?code=c0de&state="+url.QueryEscape(installNonce), authed(), installState)
+		if loc := rec.Header().Get("Location"); loc != "/orgabc123/apps" {
+			t.Fatalf("Location = %q", loc)
+		}
+		if got.Code != "" {
+			t.Fatal("ctl-api must not be called without an installation id")
+		}
+	})
+
+	t.Run("forged installation id is rejected before the oauth hop", func(t *testing.T) {
+		started := startConnect(t, h, "org_id=orgabc123", authed())
+		nonce := mustState(t, started)
+		rec := serve(t, h.RegisterRoutes, "/connect?installation_id=../evil&state="+url.QueryEscape(nonce), authed(), stateCookie(t, started))
+		if loc := rec.Header().Get("Location"); loc != "/orgabc123/apps" {
+			t.Fatalf("Location = %q", loc)
+		}
+	})
+}
+
+func TestConnectWithoutOAuthClientSendsNoCode(t *testing.T) {
+	var got callbackBody
+	api := (&fakeCtlAPI{callback: captureCallback(t, &got), org: allowOrg(), validate: allowToken()}).start(t)
+	h := NewConnectHandler(testConfig(api.URL), zap.NewNop())
+
+	started := startConnect(t, h, "org_id=orgabc123", authed())
+	nonce := mustState(t, started)
+	rec := serve(t, h.RegisterRoutes, "/connect?installation_id=42&state="+url.QueryEscape(nonce), authed(), stateCookie(t, started))
+	if loc := rec.Header().Get("Location"); loc != "/orgabc123/apps?vcs-connected=vcsconn123" {
+		t.Fatalf("Location = %q", loc)
+	}
+	if got.Code != "" || got.GithubInstallID != "42" {
+		t.Fatalf("callback body = %+v", got)
+	}
 }
 
 func mustState(t *testing.T, rec *httptest.ResponseRecorder) string {

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/azure"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -51,7 +52,15 @@ func (s *service) GetInstallStackByInstallID(ctx *gin.Context) {
 		return
 	}
 
+	setAzureRunnerAuthAppID(s, installStack)
 	ctx.JSON(http.StatusOK, installStack)
+}
+
+func setAzureRunnerAuthAppID(s *service, stack *app.InstallStack) {
+	if stack == nil || s.cfg == nil {
+		return
+	}
+	stack.AzureRunnerAuthAppID = azure.RunnerAuthAppID(s.cfg.AzureRunnerAuthAudience)
 }
 
 func (s *service) getInstallStack(ctx context.Context, installID, orgID string) (*app.InstallStack, error) {

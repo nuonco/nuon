@@ -1,61 +1,18 @@
-import { afterEach, expect, test } from 'bun:test'
+import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, useSearchParams } from 'react-router'
+import { BrowserRouter, useSearchParams } from 'react-router'
 import { Panel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { SurfacesProvider } from './surfaces-provider'
 
-afterEach(cleanup)
-
-const Probe = () => {
-  const { addPanel, addPanelIfEmpty, panels } = useSurfaces()
-  return (
-    <>
-      <div data-testid="panel-count">{panels.length}</div>
-      <button onClick={() => addPanel(<Panel heading="Manual" />)}>
-        Open manual panel
-      </button>
-      <button
-        onClick={() => {
-          addPanelIfEmpty(<Panel heading="First automatic" />)
-          addPanelIfEmpty(<Panel heading="Second automatic" />)
-        }}
-      >
-        Auto-open panels
-      </button>
-    </>
-  )
+const setURL = (search = '') => {
+  ;(window as any).happyDOM.setURL(`http://localhost/page${search}`)
 }
 
-const renderProbe = () =>
-  render(
-    <MemoryRouter>
-      <SurfacesProvider>
-        <Probe />
-      </SurfacesProvider>
-    </MemoryRouter>
-  )
-
-test('automatic panels do not open over an existing panel', () => {
-  renderProbe()
-
-  fireEvent.click(screen.getByText('Open manual panel'))
-  fireEvent.click(screen.getByText('Auto-open panels'))
-
-  expect(screen.getByTestId('panel-count')).toHaveTextContent('1')
-  expect(screen.getByText('Manual')).toBeTruthy()
-  expect(screen.queryByText('First automatic')).toBeNull()
-  expect(screen.queryByText('Second automatic')).toBeNull()
-})
-
-test('simultaneous automatic panels open at most one panel', () => {
-  renderProbe()
-
-  fireEvent.click(screen.getByText('Auto-open panels'))
-
-  expect(screen.getByTestId('panel-count')).toHaveTextContent('1')
-  expect(screen.getByText('First automatic')).toBeTruthy()
-  expect(screen.queryByText('Second automatic')).toBeNull()
+beforeEach(() => setURL())
+afterEach(() => {
+  cleanup()
+  ;(window as any).happyDOM.setURL('about:blank')
 })
 
 const KeyedProbe = () => {
@@ -76,6 +33,24 @@ const KeyedProbe = () => {
         Open plan diff
       </button>
       <button
+        onClick={() =>
+          addPanel(
+            <Panel heading="Group">
+              <button
+                onClick={() =>
+                  addPanel(<Panel heading="Plan diff" />, 'plan-diff-1')
+                }
+              >
+                Open nested plan diff
+              </button>
+            </Panel>,
+            'group-1'
+          )
+        }
+      >
+        Open group with trigger
+      </button>
+      <button
         onClick={() => {
           const top = panels.at(-1)
           if (top) removePanel(top.id, top.key)
@@ -89,11 +64,11 @@ const KeyedProbe = () => {
 
 const renderKeyedProbe = () =>
   render(
-    <MemoryRouter>
+    <BrowserRouter>
       <SurfacesProvider>
         <KeyedProbe />
       </SurfacesProvider>
-    </MemoryRouter>
+    </BrowserRouter>
   )
 
 test('stacking a keyed panel over another keyed panel keeps both keys in the url', async () => {
@@ -115,13 +90,25 @@ test('stacking a keyed panel over another keyed panel keeps both keys in the url
   expect(screen.getByTestId('search').textContent).toContain('group-1')
 })
 
+test('a panel opened from inside another panel keeps the parent key', () => {
+  renderKeyedProbe()
+
+  fireEvent.click(screen.getByText('Open group with trigger'))
+  fireEvent.click(screen.getByText('Open nested plan diff'))
+
+  expect(screen.getByTestId('search').textContent).toBe(
+    'panel=group-1&panel=plan-diff-1'
+  )
+})
+
 test('deep-linked panels stack in url order when opened out of order', () => {
+  setURL('?panel=group-1&panel=plan-diff-1')
   render(
-    <MemoryRouter initialEntries={['/?panel=group-1&panel=plan-diff-1']}>
+    <BrowserRouter>
       <SurfacesProvider>
         <KeyedProbe />
       </SurfacesProvider>
-    </MemoryRouter>
+    </BrowserRouter>
   )
 
   fireEvent.click(screen.getByText('Open plan diff'))
