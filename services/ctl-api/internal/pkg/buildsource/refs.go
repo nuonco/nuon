@@ -53,32 +53,36 @@ func ResolveRef(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, conne
 		return resolve()
 	}
 	key := "source-ref:" + sourceidentity.Hash([]string{orgID, scope, normalizeRepo(repository), ref})
-	var sha string
-	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))", runID+key).Error; err != nil {
-			return err
-		}
+	pinned := func() (string, error) {
 		var run app.AppBranchRun
-		if err := tx.Select("id", "org_id", "labels").Where(app.AppBranchRun{ID: runID}).First(&run).Error; err != nil {
-			return err
+		if err := db.WithContext(ctx).Select("id", "org_id", "labels").Where(app.AppBranchRun{ID: runID}).First(&run).Error; err != nil {
+			return "", err
 		}
 		if run.OrgID != orgID {
-			return fmt.Errorf("source config does not belong to branch run org")
+			return "", fmt.Errorf("source config does not belong to branch run org")
 		}
-		if pinned := run.Labels[key]; pinned != "" {
-			if !sourceidentity.IsCommit(pinned) {
-				return fmt.Errorf("invalid pinned source ref")
-			}
-			sha = pinned
-			return nil
+		pin := run.Labels[key]
+		if pin != "" && !sourceidentity.IsCommit(pin) {
+			return "", fmt.Errorf("invalid pinned source ref")
 		}
-		var err error
-		sha, err = resolve()
-		if err != nil {
-			return err
-		}
-		return tx.Model(&app.AppBranchRun{}).Where(app.AppBranchRun{ID: runID}).
-			UpdateColumn("labels", gorm.Expr("COALESCE(labels, '{}'::jsonb) || jsonb_build_object(?::text, ?::text)", key, sha)).Error
-	})
-	return sha, err
+		return pin, nil
+	}
+	if pin, err := pinned(); err != nil || pin != "" {
+		return pin, err
+	}
+	sha, err := resolve()
+	if err != nil {
+		return "", err
+	}
+	if err := db.WithContext(ctx).Model(&app.AppBranchRun{}).
+		Where(app.AppBranchRun{ID: runID}).
+		Where("COALESCE(labels->>?, '') = ''", key).
+		UpdateColumn("labels", gorm.Expr("COALESCE(labels, '{}'::jsonb) || jsonb_build_object(?::text, ?::text)", key, sha)).Error; err != nil {
+		return "", err
+	}
+	pin, err := pinned()
+	if err == nil && pin == "" {
+		err = fmt.Errorf("source ref pin was not recorded")
+	}
+	return pin, err
 }
