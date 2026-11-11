@@ -64,6 +64,13 @@ func (s *InstallsServiceTestSuite) seedBranch(name string, groups []app.AppBranc
 	return branch, cfg
 }
 
+func (s *InstallsServiceTestSuite) runWithFreshApp(name string, fn func()) {
+	s.Run(name, func() {
+		s.SetupTest()
+		fn()
+	})
+}
+
 func (s *InstallsServiceTestSuite) removeFallbackAppConfig() {
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(s.testAppConfig).Error)
 }
@@ -119,7 +126,7 @@ func selectingGroup(name string, match labels.Labels) app.AppBranchInstallGroup 
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLabels() {
-	s.Run("no branches and no labels uses the fallback config", func() {
+	s.runWithFreshApp("no branches and no labels uses the fallback config", func() {
 		s.expectQueueCreation()
 		res := s.createInstallWithLabels("no-branches-no-labels", nil)
 		require.Equal(s.T(), http.StatusCreated, res.code, string(res.body))
@@ -128,7 +135,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.Equal(s.T(), s.testAppConfig.ID, install.AppConfigID)
 	})
 
-	s.Run("no branches with labels still uses the fallback config", func() {
+	s.runWithFreshApp("no branches with labels still uses the fallback config", func() {
 		s.expectQueueCreation()
 		res := s.createInstallWithLabels("no-branches-with-labels", map[string]string{"env": "prod"})
 		require.Equal(s.T(), http.StatusCreated, res.code, string(res.body))
@@ -137,7 +144,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.Equal(s.T(), s.testAppConfig.ID, install.AppConfigID)
 	})
 
-	s.Run("branch with unlabeled default group and no request labels does not join", func() {
+	s.runWithFreshApp("branch with unlabeled default group and no request labels does not join", func() {
 		s.expectQueueCreation()
 		s.seedBranch("prod", []app.AppBranchInstallGroup{defaultGroup()}, branchCfgStateActive)
 		res := s.createInstallWithLabels("unlabeled-default-no-labels", nil)
@@ -146,7 +153,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.False(s.T(), install.AppBranchID.Valid)
 	})
 
-	s.Run("branch with unlabeled default group and labeled request does not join", func() {
+	s.runWithFreshApp("branch with unlabeled default group and labeled request does not join", func() {
 		s.expectQueueCreation()
 		s.seedBranch("prod", []app.AppBranchInstallGroup{defaultGroup()}, branchCfgStateActive)
 		res := s.createInstallWithLabels("unlabeled-default-with-labels", map[string]string{"env": "prod"})
@@ -155,7 +162,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.False(s.T(), install.AppBranchID.Valid)
 	})
 
-	s.Run("branch with a group selecting matching labels joins that branch", func() {
+	s.runWithFreshApp("branch with a group selecting matching labels joins that branch", func() {
 		s.expectQueueCreation()
 		branch, cfg := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		res := s.createInstallWithLabels("matching-labels-joins", map[string]string{"env": "prod"})
@@ -166,7 +173,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.Equal(s.T(), cfg.ID, install.AppConfigID)
 	})
 
-	s.Run("branch selecting env=prod falls back when labels do not match", func() {
+	s.runWithFreshApp("branch selecting env=prod falls back when labels do not match", func() {
 		s.expectQueueCreation()
 		s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		res := s.createInstallWithLabels("non-matching-labels-fallback", map[string]string{"env": "stage"})
@@ -176,7 +183,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.Equal(s.T(), s.testAppConfig.ID, install.AppConfigID)
 	})
 
-	s.Run("branch selecting env=prod falls back when request has no labels", func() {
+	s.runWithFreshApp("branch selecting env=prod falls back when request has no labels", func() {
 		s.expectQueueCreation()
 		s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		res := s.createInstallWithLabels("no-labels-fallback", nil)
@@ -185,7 +192,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.False(s.T(), install.AppBranchID.Valid)
 	})
 
-	s.Run("labels selecting only one of two branches joins it", func() {
+	s.runWithFreshApp("labels selecting only one of two branches joins it", func() {
 		s.expectQueueCreation()
 		branchA, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		s.seedBranch("stage", []app.AppBranchInstallGroup{selectingGroup("stage", labels.Labels{"env": "stage"})}, branchCfgStateActive)
@@ -196,7 +203,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.Equal(s.T(), branchA.ID, install.AppBranchID.String)
 	})
 
-	s.Run("labels matching two branches returns a 400 naming both", func() {
+	s.runWithFreshApp("labels matching two branches returns a 400 naming both", func() {
 		branchA, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		branchB, _ := s.seedBranch("acme", []app.AppBranchInstallGroup{selectingGroup("acme", labels.Labels{"customer": "acme"})}, branchCfgStateActive)
 		res := s.createInstallWithLabels("two-branches-both-match", map[string]string{"env": "prod", "customer": "acme"})
@@ -206,7 +213,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		s.assertNoInstallCreated("two-branches-both-match")
 	})
 
-	s.Run("two branches selecting the same labels returns a 400 naming both", func() {
+	s.runWithFreshApp("two branches selecting the same labels returns a 400 naming both", func() {
 		branchA, _ := s.seedBranch("prod-a", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		branchB, _ := s.seedBranch("prod-b", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		res := s.createInstallWithLabels("two-branches-same-selector", map[string]string{"env": "prod"})
@@ -215,7 +222,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.Contains(s.T(), string(res.body), branchB.Name)
 	})
 
-	s.Run("matching branch with an unlabeled default sibling still joins the matching branch", func() {
+	s.runWithFreshApp("matching branch with an unlabeled default sibling still joins the matching branch", func() {
 		s.expectQueueCreation()
 		branchA, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		s.seedBranch("other", []app.AppBranchInstallGroup{defaultGroup()}, branchCfgStateActive)
@@ -226,7 +233,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.Equal(s.T(), branchA.ID, install.AppBranchID.String)
 	})
 
-	s.Run("soft-deleted matching branch is ignored, falls back", func() {
+	s.runWithFreshApp("soft-deleted matching branch is ignored, falls back", func() {
 		s.expectQueueCreation()
 		branch, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(branch).Error)
@@ -236,7 +243,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.False(s.T(), install.AppBranchID.Valid)
 	})
 
-	s.Run("another app's matching branch is ignored, falls back", func() {
+	s.runWithFreshApp("another app's matching branch is ignored, falls back", func() {
 		s.expectQueueCreation()
 		otherApp := s.deps.Seeder.CreateApp(s.ctx, s.T())
 		otherBranch := &app.AppBranch{AppID: otherApp.ID, Name: "prod"}
@@ -258,7 +265,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 		assert.False(s.T(), install.AppBranchID.Valid)
 	})
 
-	s.Run("only the branch's latest config selectors are considered", func() {
+	s.runWithFreshApp("only the branch's latest config selectors are considered", func() {
 		s.expectQueueCreation()
 		branch, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		newerCfg := s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
@@ -280,7 +287,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallChoosesAmongAppBranchesByLab
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallLabelsUsedForBranchMatching() {
-	s.Run("app default labels alone match a branch", func() {
+	s.runWithFreshApp("app default labels alone match a branch", func() {
 		s.expectQueueCreation()
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(s.testApp).
 			Update("default_labels", labels.Labels{"env": "prod"}).Error)
@@ -293,7 +300,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallLabelsUsedForBranchMatching(
 		assert.Equal(s.T(), branch.ID, install.AppBranchID.String)
 	})
 
-	s.Run("request label conflicting with app default label still errors before matching", func() {
+	s.runWithFreshApp("request label conflicting with app default label still errors before matching", func() {
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(s.testApp).
 			Update("default_labels", labels.Labels{"env": "prod"}).Error)
 		s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
@@ -303,7 +310,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallLabelsUsedForBranchMatching(
 		assert.Contains(s.T(), string(res.body), "cannot be overridden")
 	})
 
-	s.Run("only templated labels do not match a branch and the template is stored", func() {
+	s.runWithFreshApp("only templated labels do not match a branch and the template is stored", func() {
 		s.expectQueueCreation()
 		s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "*"})}, branchCfgStateActive)
 
@@ -314,7 +321,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallLabelsUsedForBranchMatching(
 		assert.Equal(s.T(), "{{ .nuon.install.name }}", install.LabelTemplates["env"])
 	})
 
-	s.Run("a static label alongside a templated one still matches a branch", func() {
+	s.runWithFreshApp("a static label alongside a templated one still matches a branch", func() {
 		s.expectQueueCreation()
 		branch, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 
@@ -330,7 +337,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallLabelsUsedForBranchMatching(
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallGroupInsideMatchedBranch() {
-	s.Run("joining by labels assigns the matching labeled group", func() {
+	s.runWithFreshApp("joining by labels assigns the matching labeled group", func() {
 		s.expectQueueCreation()
 		branch, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		res := s.createInstallWithLabels("joins-labeled-group", map[string]string{"env": "prod"})
@@ -339,7 +346,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallGroupInsideMatchedBranch() {
 		s.assertActiveConnection(install.ID, branch.ID, "prod", app.InstallAppBranchGroupAssignmentSourceLabels)
 	})
 
-	s.Run("joining by labels assigns a default group that is itself selected by labels", func() {
+	s.runWithFreshApp("joining by labels assigns a default group that is itself selected by labels", func() {
 		s.expectQueueCreation()
 		group := defaultGroup()
 		group.LabelSelector = &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}}
@@ -350,7 +357,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallGroupInsideMatchedBranch() {
 		s.assertActiveConnection(install.ID, branch.ID, "default", app.InstallAppBranchGroupAssignmentSourceLabels)
 	})
 
-	s.Run("labels matching two groups on the matched branch error without creating an install", func() {
+	s.runWithFreshApp("labels matching two groups on the matched branch error without creating an install", func() {
 		s.seedBranch("prod", []app.AppBranchInstallGroup{
 			selectingGroup("gold", labels.Labels{"env": "prod", "tier": "gold"}),
 			selectingGroup("prod", labels.Labels{"env": "prod"}),
@@ -361,7 +368,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallGroupInsideMatchedBranch() {
 		s.assertNoInstallCreated("matches-two-groups")
 	})
 
-	s.Run("explicit app_branch_group on a label-matched branch wins over label matching", func() {
+	s.runWithFreshApp("explicit app_branch_group on a label-matched branch wins over label matching", func() {
 		s.expectQueueCreation()
 		branch, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{
 			selectingGroup("gold", labels.Labels{"env": "prod"}),
@@ -384,7 +391,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallGroupInsideMatchedBranch() {
 		s.assertActiveConnection(install.ID, branch.ID, "silver", app.InstallAppBranchGroupAssignmentSourceExplicit)
 	})
 
-	s.Run("explicit app_branch_group naming an unknown group on a label-matched branch errors", func() {
+	s.runWithFreshApp("explicit app_branch_group naming an unknown group on a label-matched branch errors", func() {
 		s.seedBranch("prod", []app.AppBranchInstallGroup{
 			selectingGroup("gold", labels.Labels{"env": "prod"}),
 		}, branchCfgStateActive)
@@ -403,7 +410,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallGroupInsideMatchedBranch() {
 		assert.Contains(s.T(), rr.Body.String(), "does not exist")
 	})
 
-	s.Run("app_branch_group is ignored when no branch matches by labels", func() {
+	s.runWithFreshApp("app_branch_group is ignored when no branch matches by labels", func() {
 		s.expectQueueCreation()
 		body := CreateInstallV2Request{
 			AppID: s.testApp.ID,
@@ -423,7 +430,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallGroupInsideMatchedBranch() {
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallExplicitAppBranchUnchangedByLabelMatching() {
-	s.Run("explicit app_branch wins even when labels match a different branch", func() {
+	s.runWithFreshApp("explicit app_branch wins even when labels match a different branch", func() {
 		s.expectQueueCreation()
 		s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		branchB, _ := s.seedBranch("stage", []app.AppBranchInstallGroup{defaultGroup()}, branchCfgStateActive)
@@ -445,7 +452,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallExplicitAppBranchUnchangedBy
 		assert.Equal(s.T(), branchB.ID, install.AppBranchID.String)
 	})
 
-	s.Run("explicit app_branch with a default group and non-matching labels uses the default group", func() {
+	s.runWithFreshApp("explicit app_branch with a default group and non-matching labels uses the default group", func() {
 		s.expectQueueCreation()
 		branch, _ := s.seedBranch("stage", []app.AppBranchInstallGroup{defaultGroup()}, branchCfgStateActive)
 
@@ -465,7 +472,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallExplicitAppBranchUnchangedBy
 		s.assertActiveConnection(install.ID, branch.ID, "default", app.InstallAppBranchGroupAssignmentSourceDefault)
 	})
 
-	s.Run("explicit app_branch with no default group and non-matching labels errors", func() {
+	s.runWithFreshApp("explicit app_branch with no default group and non-matching labels errors", func() {
 		branch, _ := s.seedBranch("stage", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 
 		body := CreateInstallV2Request{
@@ -481,7 +488,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallExplicitAppBranchUnchangedBy
 		assert.Contains(s.T(), rr.Body.String(), "does not match an install group")
 	})
 
-	s.Run("explicit app_branch avoids the ambiguous-match error even when labels fit two other branches", func() {
+	s.runWithFreshApp("explicit app_branch avoids the ambiguous-match error even when labels fit two other branches", func() {
 		s.expectQueueCreation()
 		s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		s.seedBranch("acme", []app.AppBranchInstallGroup{selectingGroup("acme", labels.Labels{"customer": "acme"})}, branchCfgStateActive)
@@ -504,7 +511,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallExplicitAppBranchUnchangedBy
 		assert.Equal(s.T(), explicit.ID, install.AppBranchID.String)
 	})
 
-	s.Run("explicit app_branch naming another app's branch is rejected", func() {
+	s.runWithFreshApp("explicit app_branch naming another app's branch is rejected", func() {
 		otherApp := s.deps.Seeder.CreateApp(s.ctx, s.T())
 		otherBranch := &app.AppBranch{AppID: otherApp.ID, Name: "prod"}
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(otherBranch).Error)
@@ -524,7 +531,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallExplicitAppBranchUnchangedBy
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallMatchedBranchConfigStates() {
-	s.Run("matched branch pins its older locked config when a newer one is still building", func() {
+	s.runWithFreshApp("matched branch pins its older locked config when a newer one is still building", func() {
 		s.expectQueueCreation()
 		branch, lockedCfg := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		s.createBranchConfig(branch, false)
@@ -535,7 +542,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallMatchedBranchConfigStates() 
 		assert.Equal(s.T(), lockedCfg.ID, install.AppConfigID)
 	})
 
-	s.Run("matched branch still building errors without a fallback", func() {
+	s.runWithFreshApp("matched branch still building errors without a fallback", func() {
 		branch := &app.AppBranch{AppID: s.testApp.ID, Name: uniqueBranchName("prod")}
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
 		_ = s.createBranchConfig(branch, false)
@@ -553,7 +560,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallMatchedBranchConfigStates() 
 		s.assertNoInstallCreated("matched-branch-building")
 	})
 
-	s.Run("matched branch with only preview configs errors without a fallback", func() {
+	s.runWithFreshApp("matched branch with only preview configs errors without a fallback", func() {
 		s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStatePreviewOnly)
 
 		res := s.createInstallWithLabels("matched-branch-preview-only", map[string]string{"env": "prod"})
@@ -577,7 +584,7 @@ func (s *InstallsServiceTestSuite) addAppInput(appConfigID, name string) {
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallMatchedBranchInputOnlyBranchDefines() {
-	s.Run("matched branch config defines an input the fallback config does not, request input accepted", func() {
+	s.runWithFreshApp("matched branch config defines an input the fallback config does not, request input accepted", func() {
 		s.expectQueueCreation()
 		branch, cfg := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		s.addAppInput(cfg.ID, "x")
@@ -602,7 +609,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallMatchedBranchInputOnlyBranch
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallNoMatchAndNoFallback() {
-	s.Run("branches exist, no apps-sync config, no labels errors with the no-branch-match wording", func() {
+	s.runWithFreshApp("branches exist, no apps-sync config, no labels errors with the no-branch-match wording", func() {
 		s.removeFallbackAppConfig()
 		s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 
@@ -612,7 +619,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallNoMatchAndNoFallback() {
 		s.assertNoInstallCreated("no-sync-config-no-labels")
 	})
 
-	s.Run("branches exist, no apps-sync config, non-matching labels errors with the no-branch-match wording", func() {
+	s.runWithFreshApp("branches exist, no apps-sync config, non-matching labels errors with the no-branch-match wording", func() {
 		s.removeFallbackAppConfig()
 		s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 
@@ -622,7 +629,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallNoMatchAndNoFallback() {
 		s.assertNoInstallCreated("no-sync-config-no-match")
 	})
 
-	s.Run("no branches and no apps-sync config keeps the original sync-your-app message", func() {
+	s.runWithFreshApp("no branches and no apps-sync config keeps the original sync-your-app message", func() {
 		s.removeFallbackAppConfig()
 
 		res := s.createInstallWithLabels("no-branches-no-config", nil)
@@ -631,7 +638,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallNoMatchAndNoFallback() {
 		s.assertNoInstallCreated("no-branches-no-config")
 	})
 
-	s.Run("branches and fallback config exist, no label match, request sets an input only branches define errors with appended explanation", func() {
+	s.runWithFreshApp("branches and fallback config exist, no label match, request sets an input only branches define errors with appended explanation", func() {
 		_, cfg := s.seedBranch("prod", []app.AppBranchInstallGroup{selectingGroup("prod", labels.Labels{"env": "prod"})}, branchCfgStateActive)
 		s.addAppInput(cfg.ID, "y")
 
