@@ -11,8 +11,6 @@ type CreateComponentBuildPlanRequest struct {
 	ComponentBuildID string
 
 	WorkflowID               string
-	CloudProvider            string
-	ManagementIAMRoleARN     string
 	ManagementACRRegistryURL string
 }
 
@@ -23,8 +21,6 @@ type CreateComponentBuildPlanRequest struct {
 // @id-template {{.Req.WorkflowID}}
 func CreateComponentBuildPlan(ctx workflow.Context, req *CreateComponentBuildPlanRequest) (*plantypes.BuildPlan, error) {
 	p := Planner{
-		cloudProvider:            req.CloudProvider,
-		managementIAMRoleARN:     req.ManagementIAMRoleARN,
 		managementACRRegistryURL: req.ManagementACRRegistryURL,
 	}
 	return p.createComponentBuildPlan(ctx, req)

@@ -45,23 +45,6 @@ func GetHelmComponent(name string) *config.Component {
 	}
 }
 
-// GetDockerBuildComponent returns a fake docker build component with the given name.
-func GetDockerBuildComponent(name string) *config.Component {
-	return &config.Component{
-		Type: config.DockerBuildComponentType,
-		Name: name,
-		DockerBuild: &config.DockerBuildComponentConfig{
-			Dockerfile: "Dockerfile",
-			PublicRepo: &config.PublicRepoConfig{
-				Repo:      "https://github.com/nuonco/docker-starter",
-				Directory: "/",
-				Branch:    "main",
-			},
-			EnvVarMap: map[string]string{},
-		},
-	}
-}
-
 // GetKubernetesManifestComponent returns a fake kubernetes manifest component with the given name.
 func GetKubernetesManifestComponent(name string) *config.Component {
 	return &config.Component{
@@ -114,10 +97,6 @@ func fakeTerraformComponent(v reflect.Value) (interface{}, error) {
 
 func fakeHelmComponent(v reflect.Value) (interface{}, error) {
 	return GetHelmComponent(generics.GetFakeObj[string]()), nil
-}
-
-func fakeDockerComponent(v reflect.Value) (interface{}, error) {
-	return GetDockerBuildComponent(generics.GetFakeObj[string]()), nil
 }
 
 func fakeKubernetesManifestComponent(v reflect.Value) (interface{}, error) {

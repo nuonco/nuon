@@ -9,7 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/publicnet"
+	"github.com/nuonco/nuon/pkg/publicnet/templatefetch"
 )
+
+func useLocalTemplateClient(t *testing.T) {
+	t.Helper()
+	prev := templateOutputsClient
+	templateOutputsClient = templatefetch.NewLocalClient()
+	t.Cleanup(func() { templateOutputsClient = prev })
+}
 
 func TestValidateCustomNestedStackOutputs_NilStack(t *testing.T) {
 	err := ValidateCustomNestedStackOutputs(&config.AppConfig{})
@@ -43,6 +52,7 @@ Outputs:
 	mux.HandleFunc("/b.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(templateB))
 	})
+	useLocalTemplateClient(t)
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
@@ -77,6 +87,7 @@ Outputs:
 	mux.HandleFunc("/b.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(templateB))
 	})
+	useLocalTemplateClient(t)
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
@@ -117,6 +128,7 @@ Outputs:
 	mux.HandleFunc("/additional.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(additionalTemplate))
 	})
+	useLocalTemplateClient(t)
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
@@ -135,6 +147,7 @@ Outputs:
 }
 
 func TestValidateCustomNestedStackOutputs_UnfetchableTemplateSkipped(t *testing.T) {
+	useLocalTemplateClient(t)
 	err := ValidateCustomNestedStackOutputs(&config.AppConfig{
 		Stack: &config.StackConfig{
 			CustomNestedStacks: []config.CustomNestedStack{
@@ -143,6 +156,57 @@ func TestValidateCustomNestedStackOutputs_UnfetchableTemplateSkipped(t *testing.
 		},
 	})
 	assert.NoError(t, err)
+}
+
+func TestValidateTemplateURLsRefuseNonPublicHosts(t *testing.T) {
+	azureWithRunner := func(url string) *config.AppConfig {
+		return &config.AppConfig{
+			Stack: &config.StackConfig{Type: "azure-bicep", RunnerNestedTemplateURL: url},
+			Permissions: &config.PermissionsConfig{
+				ProvisionRole: &config.AppAWSIAMRole{CloudPlatform: "azure"},
+			},
+		}
+	}
+
+	tests := map[string]struct {
+		validate func(*config.AppConfig) error
+		cfg      func(url string) *config.AppConfig
+	}{
+		"custom nested stack": {
+			validate: ValidateCustomNestedStackOutputs,
+			cfg: func(url string) *config.AppConfig {
+				return &config.AppConfig{Stack: &config.StackConfig{
+					CustomNestedStacks: []config.CustomNestedStack{{Name: "my_stack", TemplateURL: url}},
+				}}
+			},
+		},
+		"vpc nested template": {
+			validate: ValidateCustomNestedStackOutputs,
+			cfg: func(url string) *config.AppConfig {
+				return &config.AppConfig{Stack: &config.StackConfig{
+					VPCNestedTemplateURL: url,
+					CustomNestedStacks:   []config.CustomNestedStack{{Name: "my_stack"}},
+				}}
+			},
+		},
+		"azure runner nested template": {
+			validate: ValidateAzureRunnerIdentities,
+			cfg:      azureWithRunner,
+		},
+	}
+
+	for name, tt := range tests {
+		for _, url := range []string{
+			"https://127.0.0.1/template.yaml",
+			"https://169.254.169.254/latest/meta-data/",
+		} {
+			t.Run(name+" "+url, func(t *testing.T) {
+				err := tt.validate(tt.cfg(url))
+				require.ErrorIs(t, err, publicnet.ErrNonPublic)
+				assert.False(t, config.IsWarningErr(err))
+			})
+		}
+	}
 }
 
 func TestValidateAzureCustomNestedStacksChecksInstallOverrides(t *testing.T) {

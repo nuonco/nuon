@@ -1,4 +1,5 @@
 import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
+import { DeleteActionRunLogsButton } from '@/components/actions/DeleteActionRunLogs'
 import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
 import { Icon } from '@/components/common/Icon'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
@@ -61,6 +62,12 @@ export const InstallActionRunHeaderContainer = ({
       isAdmin={isAdmin}
       step={step}
       cancelWorkflowButton={cancelButton}
+      deleteLogsButton={
+        <DeleteActionRunLogsButton
+          actionName={actionName}
+          installActionRun={installActionRun}
+        />
+      }
       runActionButton={
         hasManualTrigger && actionWorkflow ? (
           <InstallActionManualRunButton

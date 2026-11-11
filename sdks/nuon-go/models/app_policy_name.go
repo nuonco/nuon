@@ -62,6 +62,9 @@ const (
 
 	// AppPolicyNamePhoneHome captures enum value "phone_home"
 	AppPolicyNamePhoneHome AppPolicyName = "phone_home"
+
+	// AppPolicyNameLogStream captures enum value "log_stream"
+	AppPolicyNameLogStream AppPolicyName = "log_stream"
 )
 
 // for schema
@@ -69,7 +72,7 @@ var appPolicyNameEnum []any
 
 func init() {
 	var res []AppPolicyName
-	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","runner_job","hosted_installer","stack","telemetry_collector","phone_home"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","runner_job","hosted_installer","stack","telemetry_collector","phone_home","log_stream"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

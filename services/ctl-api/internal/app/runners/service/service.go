@@ -106,7 +106,7 @@ var _ apiPkg.Service = (*service)(nil)
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runner-jobs", s.ListRunnerJobsCtlAPI)
 	api.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlanPublic)
-	api.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlan)
+	api.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlanPublic)
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
 	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJobPublic)
 
@@ -188,6 +188,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runners.POST("/update-health-check-cron", s.AdminUpdateHealthCheckCron)
 		runners.POST("/migrate-cron-emitters", s.AdminMigrateCronEmitters)
 		runners.POST("/toggle-cron-emitters", s.AdminToggleCronEmitters)
+		runners.POST("/revoke-unused-tokens", s.AdminRevokeUnusedTokens)
 
 		// sandbox management
 		runners.GET("/sandbox", s.AdminListSandboxRunners)
@@ -212,6 +213,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			runner.POST("/invalidate-service-account-token", s.AdminInvalidateRunnerServiceAccountToken)
 			runner.POST("/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken)
 			runner.GET("/service-account", s.AdminGetRunnerServiceAccount)
+			runner.POST("/revoke-unused-tokens", s.AdminRevokeRunnerUnusedTokens)
 
 			// job management
 			runner.POST("/flush-orphaned-jobs", s.AdminFlushOrphanedJobs)
@@ -395,7 +397,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	org.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
 
 	// TODO(jm): these will be moved to the otel namespace
-	org.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
+	require.OrgInstallOrLogStreamRoute(api, "log_stream_id").POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
 	// installs
 	installs := org.Group("/v1/installs")

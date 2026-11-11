@@ -19,8 +19,6 @@ const (
 	TerraformModuleComponentType ComponentType = "terraform_module"
 	// HelmChartComponentType is the type for a helm chart component
 	HelmChartComponentType ComponentType = "helm_chart"
-	// DockerBuildComponentType is the type for a docker build component
-	DockerBuildComponentType ComponentType = "docker_build"
 	// ContainerImageComponentType is the type for an external image component
 	ContainerImageComponentType ComponentType = "container_image"
 	ExternalImageComponentType  ComponentType = "external_image"
@@ -40,8 +38,6 @@ func (c ComponentType) APIType() models.AppComponentType {
 		return models.AppComponentTypeTerraformModule
 	case HelmChartComponentType:
 		return models.AppComponentTypeHelmChart
-	case DockerBuildComponentType:
-		return models.AppComponentTypeDockerBuild
 	case ContainerImageComponentType:
 		return models.AppComponentTypeExternalImage
 	case JobComponentType:
@@ -79,7 +75,6 @@ type Component struct {
 	// WARNING: properties below should be ignored by nuonhash when empty
 	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" toml:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
 	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" toml:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
-	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" toml:"docker_build,omitempty" jsonschema:"oneof_required=docker_build" nuonhash:"omitempty"`
 	Job                *JobComponentConfig                `mapstructure:"job,omitempty" toml:"job,omitempty" jsonschema:"oneof_required=job" nuonhash:"omitempty"`
 	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" toml:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
 	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" toml:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
@@ -104,12 +99,6 @@ func (c *Component) parse(cfg ParseOptions) error {
 
 	if c.TerraformModule != nil {
 		if err := c.TerraformModule.Parse(); err != nil {
-			return err
-		}
-	}
-
-	if c.DockerBuild != nil {
-		if err := c.DockerBuild.Parse(); err != nil {
 			return err
 		}
 	}
@@ -161,10 +150,6 @@ func (a *Component) Validate() error {
 		return a.TerraformModule.Validate()
 	}
 
-	if a.DockerBuild != nil {
-		return a.DockerBuild.Validate()
-	}
-
 	if a.ExternalImage != nil {
 		return a.ExternalImage.Validate()
 	}
@@ -214,9 +199,6 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Configuration for Helm chart deployments. Required when type is 'helm_chart'").
 		Field("terraform_module").Short("terraform module component configuration").OneOfRequired("terraform_module").
 		Long("Configuration for Terraform module deployments. Required when type is 'terraform_module'").
-		Field("docker_build").Short("docker build component configuration").OneOfRequired("docker_build").
-		Deprecated("docker_build components are deprecated and no longer supported; use a container_image component instead").
-		Long("Deprecated: docker_build components are no longer supported. Use a container_image component to reference a pre-built image instead").
 		Field("external_image").Short("container image component configuration").OneOfRequired("external_image").
 		Long("Configuration for external container images (e.g., from Docker Hub or ECR). Required when type is 'container_image' or 'external_image'").
 		Field("kubernetes_manifest").Short("kubernetes manifest component configuration").OneOfRequired("kubernetes_manifest").

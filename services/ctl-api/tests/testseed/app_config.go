@@ -193,24 +193,6 @@ func (s *Seeder) CreateTerraformComponentConfigConnection(ctx context.Context, t
 	return ccc
 }
 
-// CreateDockerBuildComponentConfigConnection persists a ComponentConfigConnection with a DockerBuildComponentConfig.
-func (s *Seeder) CreateDockerBuildComponentConfigConnection(ctx context.Context, t *testing.T, componentID, appConfigID string) *app.ComponentConfigConnection {
-	ccc := &app.ComponentConfigConnection{
-		ComponentID: componentID,
-		AppConfigID: appConfigID,
-		DockerBuildComponentConfig: &app.DockerBuildComponentConfig{
-			Dockerfile: "Dockerfile",
-			PublicGitVCSConfig: &app.PublicGitVCSConfig{
-				Repo:      "https://github.com/fake/docker-component",
-				Branch:    "main",
-				Directory: "/",
-			},
-		},
-	}
-	require.NoError(t, s.db.WithContext(ctx).Create(ccc).Error)
-	return ccc
-}
-
 // CreateKubernetesManifestComponentConfigConnection persists a ComponentConfigConnection with a KubernetesManifestComponentConfig.
 func (s *Seeder) CreateKubernetesManifestComponentConfigConnection(ctx context.Context, t *testing.T, componentID, appConfigID string) *app.ComponentConfigConnection {
 	ccc := &app.ComponentConfigConnection{
@@ -321,14 +303,12 @@ func (s *Seeder) CreateAppConfig(ctx context.Context, t *testing.T, appID string
 	// One component of each type
 	helmComp := s.CreateComponent(ctx, t, appID, app.ComponentTypeHelmChart)
 	tfComp := s.CreateComponent(ctx, t, appID, app.ComponentTypeTerraformModule)
-	dockerComp := s.CreateComponent(ctx, t, appID, app.ComponentTypeDockerBuild)
 	k8sComp := s.CreateComponent(ctx, t, appID, app.ComponentTypeKubernetesManifest)
 	extImageComp := s.CreateComponent(ctx, t, appID, app.ComponentTypeExternalImage)
 	jobComp := s.CreateComponent(ctx, t, appID, app.ComponentTypeJob)
 
 	helmCCC := s.CreateHelmComponentConfigConnection(ctx, t, helmComp.ID, cfg.ID)
 	tfCCC := s.CreateTerraformComponentConfigConnection(ctx, t, tfComp.ID, cfg.ID)
-	dockerCCC := s.CreateDockerBuildComponentConfigConnection(ctx, t, dockerComp.ID, cfg.ID)
 	k8sCCC := s.CreateKubernetesManifestComponentConfigConnection(ctx, t, k8sComp.ID, cfg.ID)
 	extImageCCC := s.CreateExternalImageComponentConfigConnection(ctx, t, extImageComp.ID, cfg.ID)
 	jobCCC := s.CreateJobComponentConfigConnection(ctx, t, jobComp.ID, cfg.ID)
@@ -339,7 +319,7 @@ func (s *Seeder) CreateAppConfig(ctx context.Context, t *testing.T, appID string
 
 	// Finalize: set status active and populate ComponentIDs (mirrors real sync finish)
 	componentIDs := pq.StringArray{
-		helmComp.ID, tfComp.ID, dockerComp.ID,
+		helmComp.ID, tfComp.ID,
 		k8sComp.ID, extImageComp.ID, jobComp.ID,
 	}
 	activeStatusV2 := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive))
@@ -354,7 +334,7 @@ func (s *Seeder) CreateAppConfig(ctx context.Context, t *testing.T, appID string
 
 	// Do this at the end or GORM makes a bunch of duplicates for some reason.
 	cfg.ComponentConfigConnections = []app.ComponentConfigConnection{
-		*helmCCC, *tfCCC, *dockerCCC, *k8sCCC, *extImageCCC, *jobCCC,
+		*helmCCC, *tfCCC, *k8sCCC, *extImageCCC, *jobCCC,
 	}
 
 	return cfg

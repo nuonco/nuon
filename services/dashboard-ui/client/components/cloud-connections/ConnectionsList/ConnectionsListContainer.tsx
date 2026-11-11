@@ -11,10 +11,19 @@ export const ConnectionsListContainer = () => {
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') ?? ''
+  const platform = searchParams.get('platform') || undefined
+  const preset = searchParams.get('preset') || undefined
   const query = useQuery({
-    queryKey: ['cloud-connections', org?.id, offset, q],
+    queryKey: ['cloud-connections', org?.id, offset, q, platform, preset],
     queryFn: () =>
-      getCloudConnections({ orgId: org.id, offset, limit: LIMIT, q }),
+      getCloudConnections({
+        orgId: org.id,
+        offset,
+        limit: LIMIT,
+        q,
+        platform,
+        preset,
+      }),
     enabled: !!org?.id,
     placeholderData: keepPreviousData,
   })

@@ -33,6 +33,15 @@ const (
 	// AppCloudConnectionPresetStacks captures enum value "stacks"
 	AppCloudConnectionPresetStacks AppCloudConnectionPreset = "stacks"
 
+	// AppCloudConnectionPresetEcr captures enum value "ecr"
+	AppCloudConnectionPresetEcr AppCloudConnectionPreset = "ecr"
+
+	// AppCloudConnectionPresetGar captures enum value "gar"
+	AppCloudConnectionPresetGar AppCloudConnectionPreset = "gar"
+
+	// AppCloudConnectionPresetAcr captures enum value "acr"
+	AppCloudConnectionPresetAcr AppCloudConnectionPreset = "acr"
+
 	// AppCloudConnectionPresetCustom captures enum value "custom"
 	AppCloudConnectionPresetCustom AppCloudConnectionPreset = "custom"
 )
@@ -42,7 +51,7 @@ var appCloudConnectionPresetEnum []any
 
 func init() {
 	var res []AppCloudConnectionPreset
-	if err := json.Unmarshal([]byte(`["stacks","custom"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["stacks","ecr","gar","acr","custom"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

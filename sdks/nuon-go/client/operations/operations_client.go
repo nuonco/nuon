@@ -190,8 +190,6 @@ type ClientService interface {
 
 	CreateAppConfigV2(params *CreateAppConfigV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppConfigV2Created, error)
 
-	CreateAppDockerBuildComponentConfig(params *CreateAppDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppDockerBuildComponentConfigCreated, error)
-
 	CreateAppExternalImageComponentConfig(params *CreateAppExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppExternalImageComponentConfigCreated, error)
 
 	CreateAppHelmComponentConfig(params *CreateAppHelmComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppHelmComponentConfigCreated, error)
@@ -242,11 +240,11 @@ type ClientService interface {
 
 	CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCurrentOrgWebhookCreated, error)
 
-	CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error)
-
 	CreateExternalImageComponentConfig(params *CreateExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalImageComponentConfigCreated, error)
 
 	CreateHelmComponentConfig(params *CreateHelmComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateHelmComponentConfigCreated, error)
+
+	CreateImageRepository(params *CreateImageRepositoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateImageRepositoryCreated, error)
 
 	CreateInstall(params *CreateInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallCreated, error)
 
@@ -340,7 +338,11 @@ type ClientService interface {
 
 	DeleteCurrentOrgWebhook(params *DeleteCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteCurrentOrgWebhookNoContent, error)
 
+	DeleteImageRepository(params *DeleteImageRepositoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteImageRepositoryNoContent, error)
+
 	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
+
+	DeleteInstallActionRunLogs(params *DeleteInstallActionRunLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallActionRunLogsOK, error)
 
 	DeleteInstallTelemetryCollector(params *DeleteInstallTelemetryCollectorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallTelemetryCollectorNoContent, error)
 
@@ -579,6 +581,8 @@ type ClientService interface {
 	GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserOK, error)
 
 	GetDriftedObjects(params *GetDriftedObjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDriftedObjectsOK, error)
+
+	GetImageRepository(params *GetImageRepositoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetImageRepositoryOK, error)
 
 	GetInstall(params *GetInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOK, error)
 
@@ -901,6 +905,8 @@ type ClientService interface {
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error)
 
 	ListCloudConnections(params *ListCloudConnectionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCloudConnectionsOK, error)
+
+	ListImageRepositories(params *ListImageRepositoriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListImageRepositoriesOK, error)
 
 	ListOIDCTrustPolicies(params *ListOIDCTrustPoliciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOIDCTrustPoliciesOK, error)
 
@@ -2869,52 +2875,6 @@ func (a *Client) CreateAppConfigV2(params *CreateAppConfigV2Params, authInfo run
 }
 
 /*
-CreateAppDockerBuildComponentConfig creates a docker build component config
-
-Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
-*/
-func (a *Client) CreateAppDockerBuildComponentConfig(params *CreateAppDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppDockerBuildComponentConfigCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewCreateAppDockerBuildComponentConfigParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "CreateAppDockerBuildComponentConfig",
-		Method:             "POST",
-		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/configs/docker-build",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateAppDockerBuildComponentConfigReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*CreateAppDockerBuildComponentConfigCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for CreateAppDockerBuildComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
 CreateAppExternalImageComponentConfig creates an external image component config
 
 Create an external image component config.
@@ -3877,7 +3837,7 @@ func (a *Client) CreateCLIEvent(params *CreateCLIEventParams, authInfo runtime.C
 /*
 CreateCloudConnection creates a cloud connection
 
-Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+Create an org-bound AWS, GCP, or Azure identity. Optional repository arrays generate initial read-only setup material but are not stored or used as an allowlist. ECR and GAR use default_region for image connection matching. ACR requires a subscription UUID, existing Entra application client ID and service principal, tenant UUID, registry ARM ID, and bare login server. Its registry must already use RBAC Registry + ABAC Repository Permissions; setup never changes registry mode. Cloud IAM authorizes image pulls. Custom renders AWS trust only.
 */
 func (a *Client) CreateCloudConnection(params *CreateCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCloudConnectionCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -4057,52 +4017,6 @@ func (a *Client) CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, 
 }
 
 /*
-CreateDockerBuildComponentConfig creates a docker build component config
-
-Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
-*/
-func (a *Client) CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewCreateDockerBuildComponentConfigParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "CreateDockerBuildComponentConfig",
-		Method:             "POST",
-		PathPattern:        "/v1/components/{component_id}/configs/docker-build",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateDockerBuildComponentConfigReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*CreateDockerBuildComponentConfigCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for CreateDockerBuildComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
 CreateExternalImageComponentConfig creates an external image component config
 
 Create an external image component config.
@@ -4191,6 +4105,52 @@ func (a *Client) CreateHelmComponentConfig(params *CreateHelmComponentConfigPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateHelmComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateImageRepository registers an image repository
+
+Save an exact ECR ARN, GAR repository resource, or ACR repository path against an existing org-owned image connection. Pending connections are allowed; image use requires verification. Does not change cloud permissions.
+*/
+func (a *Client) CreateImageRepository(params *CreateImageRepositoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateImageRepositoryCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateImageRepositoryParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateImageRepository",
+		Method:             "POST",
+		PathPattern:        "/v1/image-repositories",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateImageRepositoryReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateImageRepositoryCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateImageRepository: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -6315,6 +6275,52 @@ func (a *Client) DeleteCurrentOrgWebhook(params *DeleteCurrentOrgWebhookParams, 
 }
 
 /*
+DeleteImageRepository removes an image repository assignment
+
+Does not revoke cloud permissions or change existing image configuration connection pins.
+*/
+func (a *Client) DeleteImageRepository(params *DeleteImageRepositoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteImageRepositoryNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteImageRepositoryParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteImageRepository",
+		Method:             "DELETE",
+		PathPattern:        "/v1/image-repositories/{repository_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteImageRepositoryReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteImageRepositoryNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteImageRepository: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 DeleteInstall deletes an install
 
 Delete an install.
@@ -6357,6 +6363,63 @@ func (a *Client) DeleteInstall(params *DeleteInstallParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	DeleteInstallActionRunLogs deletes the logs and trace spans of an action run
+
+	Permanently delete the logs and trace spans of a finished action run, for example after a command printed a secret.
+
+Only org admins can delete logs, and only after the run has ended, including runs that failed, timed out, or were
+cancelled. The run itself and its outputs are kept. The
+log stream is marked with `logs_deleted_at` and `logs_deleted_by_id` from the first deletion. Calling this again
+deletes any records that arrived late and keeps the original marker.
+
+Once the logs are deleted, the log stream's write token is revoked, new writes to the stream are dropped, and reads of
+the stream return no logs or spans. Trace spans are removed in the background after the call returns.
+
+Rotate any secret that was exposed: deleting the logs does not undo the exposure, and copies held in the ingestion
+queue expire on their own retention schedule. If that queue is replayed before then, call this endpoint again.
+*/
+func (a *Client) DeleteInstallActionRunLogs(params *DeleteInstallActionRunLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallActionRunLogsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteInstallActionRunLogsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteInstallActionRunLogs",
+		Method:             "DELETE",
+		PathPattern:        "/v1/installs/{install_id}/actions/runs/{run_id}/logs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteInstallActionRunLogsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteInstallActionRunLogsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteInstallActionRunLogs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -11465,7 +11528,6 @@ You can pass in a valid source argument to render within a specific config file:
 - installer
 - sandbox
 - runner
-- docker_build
 - container_image
 - helm
 - terraform
@@ -11532,7 +11594,6 @@ You can pass in a valid source argument to render within a specific config file:
 - installer
 - sandbox
 - runner
-- docker_build
 - container_image
 - helm
 - terraform
@@ -11956,6 +12017,50 @@ func (a *Client) GetDriftedObjects(params *GetDriftedObjectsParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetDriftedObjects: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetImageRepository gets an image repository
+*/
+func (a *Client) GetImageRepository(params *GetImageRepositoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetImageRepositoryOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetImageRepositoryParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetImageRepository",
+		Method:             "GET",
+		PathPattern:        "/v1/image-repositories/{repository_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetImageRepositoryReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetImageRepositoryOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetImageRepository: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -19370,6 +19475,50 @@ func (a *Client) ListCloudConnections(params *ListCloudConnectionsParams, authIn
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ListCloudConnections: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListImageRepositories lists image repositories
+*/
+func (a *Client) ListImageRepositories(params *ListImageRepositoriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListImageRepositoriesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListImageRepositoriesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListImageRepositories",
+		Method:             "GET",
+		PathPattern:        "/v1/image-repositories",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListImageRepositoriesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListImageRepositoriesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListImageRepositories: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

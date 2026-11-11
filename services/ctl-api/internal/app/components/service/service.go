@@ -102,7 +102,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			{
 				configs.POST("/terraform-module", s.CreateAppTerraformModuleComponentConfig)
 				configs.POST("/helm", s.CreateAppHelmComponentConfig)
-				configs.POST("/docker-build", s.CreateAppDockerBuildComponentConfig)
 				configs.POST("/external-image", s.CreateAppExternalImageComponentConfig)
 				configs.POST("/job", s.CreateAppJobComponentConfig)
 				configs.POST("/kubernetes-manifest", s.CreateAppKubernetesManifestComponentConfig)
@@ -131,7 +130,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		{
 			s.POST(deprecatedConfigs, "/terraform-module", s.CreateTerraformModuleComponentConfig, apiPkg.APIContextTypePublic, true)
 			s.POST(deprecatedConfigs, "/helm", s.CreateHelmComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.POST(deprecatedConfigs, "/docker-build", s.CreateDockerBuildComponentConfig, apiPkg.APIContextTypePublic, true)
 			s.POST(deprecatedConfigs, "/external-image", s.CreateExternalImageComponentConfig, apiPkg.APIContextTypePublic, true)
 			s.POST(deprecatedConfigs, "/job", s.CreateJobComponentConfig, apiPkg.APIContextTypePublic, true)
 			s.POST(deprecatedConfigs, "/kubernetes-manifest", s.CreateKubernetesManifestComponentConfig, apiPkg.APIContextTypePublic, true)

@@ -26,9 +26,6 @@ func EnsureContainerImagePullAuth(ctx workflow.Context, plan *plantypes.BuildPla
 	}
 
 	cfg := plan.ContainerImagePullPlan.RepoCfg
-	if err := EnsureGARAuth(ctx, cfg); err != nil {
-		return errors.Wrap(err, "unable to get GAR access token")
-	}
 	if err := EnsureACRAuth(ctx, cfg); err != nil {
 		return errors.Wrap(err, "unable to get ACR access token")
 	}

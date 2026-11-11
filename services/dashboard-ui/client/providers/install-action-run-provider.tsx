@@ -2,7 +2,11 @@ import { createContext, useMemo, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useSSEResourceQuery, isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
+import { usePanelVisibility } from '@/hooks/use-panel-visibility'
+import {
+  useSSEResourceQuery,
+  isTerminalStatusV2,
+} from '@/lib/sse/use-sse-resource-query'
 import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getInstallActionRun } from '@/lib'
 import { createSSEQueryListener } from '@/lib/sse-listeners'
@@ -32,24 +36,36 @@ export function InstallActionRunProvider({
   const { org } = useOrg()
   const { install } = useInstall()
   const queryClient = useQueryClient()
+  const isPanelTop = usePanelVisibility()
 
-  const extraListeners = useMemo(() => ({
-    workflow: createSSEQueryListener<TWorkflow>(
-      queryClient,
-      (data) => ['workflow', org?.id, data?.id]
-    ),
-  }), [queryClient, org?.id])
+  const extraListeners = useMemo(
+    () => ({
+      workflow: createSSEQueryListener<TWorkflow>(queryClient, (data) => [
+        'workflow',
+        org?.id,
+        data?.id,
+      ]),
+    }),
+    [queryClient, org?.id]
+  )
 
   const onRefreshError = useRefreshErrorToast()
 
-  const { data: installActionRun, isLoading, error, refetch } = useSSEResourceQuery<TInstallActionRun>({
-    sseUrl: org?.id && install?.id && runId
-      ? `/api/orgs/${org.id}/installs/${install.id}/action-runs/${runId}/sse`
-      : undefined,
+  const {
+    data: installActionRun,
+    isLoading,
+    error,
+    refetch,
+  } = useSSEResourceQuery<TInstallActionRun>({
+    sseUrl:
+      org?.id && install?.id && runId
+        ? `/api/orgs/${org.id}/installs/${install.id}/action-runs/${runId}/sse`
+        : undefined,
     queryKey: ['install-action-run', org?.id, install?.id, runId],
-    queryFn: () => getInstallActionRun({ orgId: org!.id, installId: install!.id, runId }),
+    queryFn: () =>
+      getInstallActionRun({ orgId: org!.id, installId: install!.id, runId }),
     enabled: !!org?.id && !!install?.id && !!runId,
-    shouldPoll,
+    shouldPoll: shouldPoll && isPanelTop,
     eventName: 'action-run',
     onError: onRefreshError,
     extraListeners,
@@ -60,7 +76,9 @@ export function InstallActionRunProvider({
   if (isLoading || !installActionRun) return <ProviderLoading />
 
   return (
-    <InstallActionRunContext.Provider value={{ installActionRun, refresh: refetch }}>
+    <InstallActionRunContext.Provider
+      value={{ installActionRun, refresh: refetch }}
+    >
       {children}
     </InstallActionRunContext.Provider>
   )

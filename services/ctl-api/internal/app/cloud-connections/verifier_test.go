@@ -35,6 +35,7 @@ func TestAWSVerification(t *testing.T) {
 		preset         app.CloudConnectionPreset
 		allowForeign   bool
 		denyStacks     bool
+		denyECR        bool
 		assumeError    string
 		wantStatus     app.CloudConnectionStatus
 		wantMessage    string
@@ -75,6 +76,13 @@ func TestAWSVerification(t *testing.T) {
 			preset: app.CloudConnectionPresetStacks, denyStacks: true, wantStatus: app.CloudConnectionStatusError, wantProbes: 1,
 			wantMessage: "The role lacks CloudFormation read access required to manage install stacks.",
 		},
+		"ECR authorization denied": {
+			preset: app.CloudConnectionPresetECR, denyECR: true, wantStatus: app.CloudConnectionStatusError, wantProbes: 1,
+			wantMessage: "The role lacks ecr:GetAuthorizationToken. Attach the ECR permissions policy in step 3.",
+		},
+		"ECR authorization accepted": {
+			preset: app.CloudConnectionPresetECR, wantStatus: app.CloudConnectionStatusVerified, wantProbes: 1,
+		},
 		"foreign subject accepted": {
 			preset: app.CloudConnectionPresetCustom, retry: true, allowForeign: true, wantStatus: app.CloudConnectionStatusError,
 		},
@@ -82,6 +90,17 @@ func TestAWSVerification(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			probes, exchanges := 0, 0
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if strings.HasSuffix(r.Header.Get("X-Amz-Target"), ".GetAuthorizationToken") {
+					probes++
+					w.Header().Set("Content-Type", "application/x-amz-json-1.1")
+					if tc.denyECR {
+						w.WriteHeader(http.StatusForbidden)
+						fmt.Fprint(w, `{"__type":"AccessDeniedException","message":"Denied ecr:GetAuthorizationToken for acme role"}`)
+						return
+					}
+					fmt.Fprint(w, `{"authorizationData":[]}`)
+					return
+				}
 				_ = r.ParseForm()
 				w.Header().Set("Content-Type", "text/xml")
 				deny := func() {
@@ -125,11 +144,12 @@ func TestAWSVerification(t *testing.T) {
 			defer server.Close()
 			t.Setenv("AWS_ENDPOINT_URL_STS", server.URL)
 			t.Setenv("AWS_ENDPOINT_URL_CLOUDFORMATION", server.URL)
+			t.Setenv("AWS_ENDPOINT_URL_ECR", server.URL)
 			t.Setenv("AWS_EC2_METADATA_DISABLED", "true")
 			connection := &app.CloudConnection{ID: "cc_acme", OrgID: "org_acme", Platform: app.CloudPlatformAWS, Preset: tc.preset, TargetID: "123456789012", Principal: "arn:aws:iam::123456789012:role/acme", DefaultRegion: "us-east-1"}
 			now, sleeps := time.Now(), 0
 			core, logs := observer.New(zap.DebugLevel)
-			verifier := NewAWSVerifier(issuer, zap.New(core)).(*awsVerifier)
+			verifier := NewVerifier(issuer, zap.New(core)).(*providerVerifier)
 			verifier.now = func() time.Time { return now }
 			verifier.sleep = func(ctx context.Context, duration time.Duration) error {
 				require.Equal(t, 5*time.Second, duration)
@@ -142,7 +162,14 @@ func TestAWSVerification(t *testing.T) {
 			require.Equal(t, tc.wantSleeps, sleeps)
 			require.Equal(t, tc.wantStatus, result.Status)
 			if tc.wantMessage != "" {
-				require.Equal(t, tc.wantMessage, result.Message)
+				require.Contains(t, result.Message, tc.wantMessage)
+			}
+			if tc.assumeError != "" && tc.assumeFailures == 0 {
+				require.Contains(t, result.Message, tc.assumeError+": Raw AWS diagnostic")
+			}
+			if tc.denyStacks && tc.preset == app.CloudConnectionPresetStacks || tc.denyECR {
+				require.Contains(t, result.Message, "AccessDenied")
+				require.Contains(t, result.Message, "Denied")
 			}
 			if tc.wantExchanges != 0 {
 				require.Equal(t, tc.wantExchanges, exchanges)
@@ -199,7 +226,7 @@ func TestVerificationErrorMessage(t *testing.T) {
 	}{
 		"AWS error": {
 			err:  fmt.Errorf("probe: %w", &smithy.GenericAPIError{Code: "Throttling", Message: "Raw AWS diagnostic"}),
-			want: "Verification failed: Throttling",
+			want: "Verification failed: Throttling: Raw AWS diagnostic",
 		},
 		"timeout": {
 			err:  fmt.Errorf("probe: %w", context.DeadlineExceeded),
@@ -211,7 +238,7 @@ func TestVerificationErrorMessage(t *testing.T) {
 		},
 		"unexpected error": {
 			err:  fmt.Errorf("a long internal diagnostic"),
-			want: "Verification failed: unable to complete the AWS verification request",
+			want: "Verification failed: a long internal diagnostic",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

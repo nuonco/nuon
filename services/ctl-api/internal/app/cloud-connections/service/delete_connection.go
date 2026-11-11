@@ -55,6 +55,17 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 			}
 			return stderr.ErrConflict{Err: errors.New(description), Description: description}
 		}
+		var repositoryReferences int64
+		if err := tx.Model(&app.ImageRepository{}).Where(app.ImageRepository{OrgID: orgID, CloudConnectionID: connection.ID}).Count(&repositoryReferences).Error; err != nil {
+			return fmt.Errorf("count image repository references: %w", err)
+		}
+		if repositoryReferences > 0 {
+			description := fmt.Sprintf("This connection is assigned to %d image repositories. Remove those assignments in Settings > Image repositories first.", repositoryReferences)
+			if repositoryReferences == 1 {
+				description = "This connection is assigned to 1 image repository. Remove that assignment in Settings > Image repositories first."
+			}
+			return stderr.ErrConflict{Err: errors.New(description), Description: description}
+		}
 		if err := s.helpers.TerminateConnectionQueue(ctx, connection.ID); err != nil {
 			return fmt.Errorf("terminate cloud connection queue: %w", err)
 		}

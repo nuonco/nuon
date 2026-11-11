@@ -159,12 +159,13 @@ func (s *service) OAuthFinish(c *gin.Context) {
 		"RedirectHost":  redirectHost,
 		"AdminScope":    string(app.RoleTypeOrgAdmin),
 		"ReadOnlyScope": string(app.RoleTypeOrgReadOnly),
+		"CLILogin":      client.IsNuonCLI(),
 	})
 }
 
-// OAuthConsent handles POST /oauth/consent — the user has chosen a role on the
-// consent screen. It records the selected scope, issues the authorization code,
-// and redirects back to the client.
+// OAuthConsent handles POST /oauth/consent. MCP clients record the role picked
+// on the consent screen. The Nuon CLI records no scope; its code exchange issues
+// a Nuon auth token instead of an OAuth access token.
 func (s *service) OAuthConsent(c *gin.Context) {
 	requestID := c.PostForm("rid")
 	if !s.requireOAuthRequestCookie(c, requestID) {
@@ -180,8 +181,22 @@ func (s *service) OAuthConsent(c *gin.Context) {
 		return
 	}
 
+	var client app.OAuthClient
+	err := s.db.WithContext(c.Request.Context()).Where(&app.OAuthClient{ID: authCode.ClientID}).First(&client).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		s.respondError(c, http.StatusBadRequest, fmt.Errorf("unknown client"))
+		return
+	}
+	if err != nil {
+		s.l.Error("failed to look up oauth client", zap.Error(err))
+		s.redirectOAuthError(c, authCode.RedirectURI, authCode.ClientState, "server_error", "failed to look up client")
+		return
+	}
+
 	scope := c.PostForm("scope")
-	if scope != string(app.RoleTypeOrgAdmin) {
+	if client.IsNuonCLI() {
+		scope = ""
+	} else if scope != string(app.RoleTypeOrgAdmin) {
 		scope = string(app.RoleTypeOrgReadOnly)
 	}
 
@@ -202,8 +217,12 @@ func (s *service) OAuthConsent(c *gin.Context) {
 		}
 		res := tx.Model(&authCode).
 			Where(map[string]any{"code": "", "consumed": false}).
-			Select("code", "account_id", "scope", "source_token_id").
-			Updates(&authCode)
+			Updates(map[string]any{
+				"code":            code,
+				"account_id":      tokenInfo.AccountID,
+				"scope":           scope,
+				"source_token_id": tokenInfo.TokenID,
+			})
 		if res.Error != nil {
 			return res.Error
 		}

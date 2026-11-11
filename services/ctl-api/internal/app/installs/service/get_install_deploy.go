@@ -109,6 +109,11 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
 	}
+	for i := range installDeploy.RunnerJobs {
+		if err := installDeploy.RunnerJobs[i].Plan.RedactCredentials(); err != nil {
+			return nil, err
+		}
+	}
 	if len(installDeploy.RunnerJobs) > 0 {
 		compositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
 			OwnerID:   installDeploy.ID,

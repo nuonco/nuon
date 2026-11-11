@@ -63,10 +63,10 @@ type InstallSandboxRun struct {
 	PolicyReports []PolicyReport `json:"policy_reports,omitzero" gorm:"polymorphic:Owner;polymorphicValue:install_sandbox_runs" temporaljson:"policy_reports,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID     string  `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
-	Org       Org     `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
-	InstallID string  `json:"install_id,omitzero" gorm:"not null;default null" temporaljson:"install_id,omitzero,omitempty"`
-	Install   Install `swaggerignore:"true" json:"-" temporaljson:"install,omitzero,omitempty"`
+	OrgID     string   `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org       Org      `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
+	InstallID string   `json:"install_id,omitzero" gorm:"not null;default null" temporaljson:"install_id,omitzero,omitempty"`
+	Install   *Install `swaggerignore:"true" json:"-" temporaljson:"install,omitzero,omitempty"`
 
 	// TODO: once we run a backfill we can make this non pointer
 	InstallSandboxID *string         `json:"install_sandbox_id,omitzero" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
