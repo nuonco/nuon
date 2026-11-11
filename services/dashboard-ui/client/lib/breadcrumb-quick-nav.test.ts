@@ -44,10 +44,30 @@ describe('installQuickNavHref', () => {
     ).toBe(`${targetBasePath}/configuration/inputs`)
   })
 
-  test('falls back to the install root for resource details', () => {
+  test('preserves the deployments list', () => {
     expect(
       installQuickNavHref({
-        pathname: `${currentBasePath}/deployments/deploy-1`,
+        pathname: `${currentBasePath}/deployments`,
+        currentBasePath,
+        targetBasePath,
+      })
+    ).toBe(`${targetBasePath}/deployments`)
+  })
+
+  test('falls back from a deployment detail to the deployments list', () => {
+    expect(
+      installQuickNavHref({
+        pathname: `${currentBasePath}/deployments/deploy-1/changes`,
+        currentBasePath,
+        targetBasePath,
+      })
+    ).toBe(`${targetBasePath}/deployments`)
+  })
+
+  test('falls back to the install root for pages outside the new sections', () => {
+    expect(
+      installQuickNavHref({
+        pathname: `${currentBasePath}/components/cmp-1/deploys`,
         currentBasePath,
         targetBasePath,
       })
@@ -80,5 +100,24 @@ describe('withBreadcrumbQuickNav', () => {
     expect(
       crumbs.filter((crumb) => crumb.quickNav).map((crumb) => crumb.text)
     ).toEqual(['production'])
+  })
+
+  test('carries the install app branch so the switcher can scope to it', () => {
+    const installPath = '/org-1/apps/app-1/installs/install-1'
+    const [crumb] = withBreadcrumbQuickNav(
+      [{ path: installPath, text: 'production' }],
+      {
+        install: {
+          enabled: true,
+          orgId: 'org-1',
+          appId: 'app-1',
+          resourceId: 'install-1',
+          name: 'production',
+          appBranchId: 'branch-1',
+        },
+      }
+    )
+
+    expect(crumb.quickNav?.appBranchId).toBe('branch-1')
   })
 })
