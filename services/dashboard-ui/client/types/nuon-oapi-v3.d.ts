@@ -2063,8 +2063,8 @@ export interface paths {
   };
   "/v1/installs/{install_id}/deployments/{workflow_id}/source-diff": {
     /**
-     * compare captured source for a deployment resource
-     * @description Compare the resource's frozen previously applied and selected builds. File content is fetched only when path is provided.
+     * get the GitHub compare link for a deployment resource
+     * @description Returns a GitHub compare URL between the commits of the resource's build for the install's pinned app config and its build for this deployment's app config. The URL is empty when the builds are not in the same GitHub repository, use the same commit, or have the same source digest. Nuon does not read the repository for this response.
      */
     get: operations["GetInstallDeploymentSourceDiff"];
   };
@@ -9827,40 +9827,8 @@ export interface components {
       skipped_by_policy?: boolean;
       warn_count?: number;
     };
-    "service.InstallDeploymentSourceBuild": {
-      commit?: string;
-      coverage?: string;
-      digest?: string;
-      id?: string;
-      repository?: string;
-      root?: string;
-    };
     "service.InstallDeploymentSourceDiff": {
-      after?: components["schemas"]["service.InstallDeploymentSourceBuild"];
-      before?: components["schemas"]["service.InstallDeploymentSourceBuild"];
-      files?: components["schemas"]["service.InstallDeploymentSourceFile"][];
-      /** @enum {string} */
-      kind?: "component" | "sandbox";
-      message?: string;
-      name?: string;
-      partial?: boolean;
-      reasons?: string[];
-      selected_file?: components["schemas"]["service.InstallDeploymentSourceFileContent"];
-      /** @enum {string} */
-      status?: "available" | "unavailable" | "unsupported";
-    };
-    "service.InstallDeploymentSourceFile": {
-      after_executable?: boolean;
-      before_executable?: boolean;
-      /** @enum {string} */
-      change?: "added" | "modified" | "removed";
-      path?: string;
-    };
-    "service.InstallDeploymentSourceFileContent": {
-      after?: string;
-      before?: string;
-      path?: string;
-      unavailable_reason?: string;
+      compare_url?: string;
     };
     "service.InstallDeploymentStep": {
       approval_response_id?: string;
@@ -25897,8 +25865,8 @@ export interface operations {
     };
   };
   /**
-   * compare captured source for a deployment resource
-   * @description Compare the resource's frozen previously applied and selected builds. File content is fetched only when path is provided.
+   * get the GitHub compare link for a deployment resource
+   * @description Returns a GitHub compare URL between the commits of the resource's build for the install's pinned app config and its build for this deployment's app config. The URL is empty when the builds are not in the same GitHub repository, use the same commit, or have the same source digest. Nuon does not read the repository for this response.
    */
   GetInstallDeploymentSourceDiff: {
     parameters: {
@@ -25907,8 +25875,6 @@ export interface operations {
         kind: "component" | "sandbox";
         /** @description resource name */
         name: string;
-        /** @description changed source file path */
-        path?: string;
       };
       path: {
         /** @description install ID */

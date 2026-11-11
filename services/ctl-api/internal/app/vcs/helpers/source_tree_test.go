@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp/capability"
@@ -86,24 +85,12 @@ func TestFetchSourceTree(t *testing.T) {
 		}
 		bomb = gitInput(entries.String(), "mktree")
 	}
-	leaf, err := hex.DecodeString(gitInput("100644 blob "+object(inside, "app/README.md")+"\tf\n", "mktree"))
-	require.NoError(t, err)
-	rebomb := ""
-	for range 10 {
-		var entries strings.Builder
-		for i := range 10 {
-			fmt.Fprintf(&entries, "040000 d%d\x00%s", i, leaf)
-		}
-		rebomb = gitInput(entries.String(), "hash-object", "-t", "tree", "--literally", "-w", "--stdin")
-		leaf, err = hex.DecodeString(rebomb)
-		require.NoError(t, err)
-	}
 	link := gitInput("../other/main.tf", "hash-object", "-w", "--stdin")
 	tools := gitInput("120000 blob "+link+"\tmain.tf\n", "mktree")
 	readme, err := hex.DecodeString(object(inside, "app/README.md"))
 	require.NoError(t, err)
 	legacy := gitInput("100664 README.md\x00"+string(readme), "hash-object", "-t", "tree", "--literally", "-w", "--stdin")
-	rootEntries := git(src, "ls-tree", inside) + "\n040000 tree " + bomb + "\tbomb\n040000 tree " + rebomb + "\trebomb\n040000 tree " + tools + "\ttools\n040000 tree " + legacy + "\tlegacy\n"
+	rootEntries := git(src, "ls-tree", inside) + "\n040000 tree " + bomb + "\tbomb\n040000 tree " + tools + "\ttools\n040000 tree " + legacy + "\tlegacy\n"
 	shapes := gitInput("shapes", "commit-tree", gitInput(rootEntries, "mktree"), "-p", inside)
 	git(src, "update-ref", "refs/heads/shapes", shapes)
 
@@ -275,72 +262,6 @@ func TestFetchSourceTree(t *testing.T) {
 				}))
 				assert.Zero(t, count)
 			}
-		})
-	}
-
-	trees := map[string]*SourceTree{}
-	for _, commit := range []string{first, outside, inside, shapes} {
-		tree, err := fetchSourceTree(context.Background(), "file://"+filtered, nil, commit, nil, maxSourceTreeBytes)
-		require.NoError(t, err)
-		trees[commit] = tree
-	}
-	type change struct {
-		path          string
-		before, after bool
-	}
-	diffs := map[string]struct {
-		before, after         string
-		beforeName, afterName string
-		limit                 int
-		want                  []change
-		wantTruncated         bool
-	}{
-		"directory unchanged by changes elsewhere": {before: first, after: outside, beforeName: "app", afterName: "app"},
-		"changed file under the directory": {
-			before: first, after: inside, beforeName: "app", afterName: "app",
-			want: []change{{"chart/values.yaml", true, true}},
-		},
-		"repository root": {
-			before: first, after: outside,
-			want: []change{{"other/main.tf", true, true}, {"vendor/lib", true, false}},
-		},
-		"a new source lists every file as added": {
-			after: first, afterName: "app",
-			want: []change{{"README.md", false, true}, {"chart/values.yaml", false, true}},
-		},
-		"a moved directory compares the two directories": {
-			before: first, after: inside, beforeName: "app/chart", afterName: "app",
-			want: []change{{"README.md", false, true}, {"chart/values.yaml", false, true}, {"values.yaml", true, false}},
-		},
-		"a file root compares the file": {
-			before: first, after: inside, beforeName: "app/chart/values.yaml", afterName: "app/chart/values.yaml",
-			want: []change{{"", true, true}},
-		},
-		"the limit truncates": {
-			before: inside, after: shapes, limit: 1,
-			want:          []change{{"bomb/d0/d0/d0/d0/d0/d0/d0/d0/d0/d0/f", false, true}},
-			wantTruncated: true,
-		},
-		"repeated subtree pairs are compared once": {
-			before: shapes, after: shapes, beforeName: "bomb", afterName: "rebomb",
-		},
-	}
-	for name, tc := range diffs {
-		t.Run("diff/"+name, func(t *testing.T) {
-			limit := tc.limit
-			if limit == 0 {
-				limit = 100
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-			found, truncated, err := DiffSources(ctx, trees[tc.before], tc.beforeName, trees[tc.after], tc.afterName, limit)
-			require.NoError(t, err)
-			var got []change
-			for _, c := range found {
-				got = append(got, change{c.Path, c.Before != nil, c.After != nil})
-			}
-			assert.Equal(t, tc.want, got)
-			assert.Equal(t, tc.wantTruncated, truncated)
 		})
 	}
 

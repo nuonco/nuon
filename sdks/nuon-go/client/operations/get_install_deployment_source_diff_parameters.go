@@ -79,12 +79,6 @@ type GetInstallDeploymentSourceDiffParams struct {
 	*/
 	Name string
 
-	/* Path.
-
-	   changed source file path
-	*/
-	Path *string
-
 	/* WorkflowID.
 
 	   workflow ID
@@ -177,17 +171,6 @@ func (o *GetInstallDeploymentSourceDiffParams) SetName(name string) {
 	o.Name = name
 }
 
-// WithPath adds the path to the get install deployment source diff params
-func (o *GetInstallDeploymentSourceDiffParams) WithPath(path *string) *GetInstallDeploymentSourceDiffParams {
-	o.SetPath(path)
-	return o
-}
-
-// SetPath adds the path to the get install deployment source diff params
-func (o *GetInstallDeploymentSourceDiffParams) SetPath(path *string) {
-	o.Path = path
-}
-
 // WithWorkflowID adds the workflowID to the get install deployment source diff params
 func (o *GetInstallDeploymentSourceDiffParams) WithWorkflowID(workflowID string) *GetInstallDeploymentSourceDiffParams {
 	o.SetWorkflowID(workflowID)
@@ -229,23 +212,6 @@ func (o *GetInstallDeploymentSourceDiffParams) WriteToRequest(r runtime.ClientRe
 
 		if err := r.SetQueryParam("name", qName); err != nil {
 			return err
-		}
-	}
-
-	if o.Path != nil {
-
-		// query param path
-		var qrPath string
-
-		if o.Path != nil {
-			qrPath = *o.Path
-		}
-		qPath := qrPath
-		if qPath != "" {
-
-			if err := r.SetQueryParam("path", qPath); err != nil {
-				return err
-			}
 		}
 	}
 
