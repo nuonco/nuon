@@ -112,19 +112,20 @@ func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []
 	if err := workflow.Await(ctx, func() bool { return completed == workers }); err != nil {
 		return err
 	}
-	if err := errors.Join(selectionErrors...); err != nil {
-		return err
+	selectionErr := errors.Join(selectionErrors...)
+	if selectionErr != nil && workflow.GetVersion(ctx, "branch-builds-await-after-selection-error-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return selectionErr
 	}
 
 	hasBuilds := false
 	for _, build := range builds {
-		if !build.Skipped {
+		if !build.Skipped && build.Status != "error" {
 			hasBuilds = true
 			break
 		}
 	}
 	if !hasBuilds {
-		return nil
+		return selectionErr
 	}
 	l.Info("all builds enqueued, awaiting build completions")
 	for {
@@ -141,7 +142,7 @@ func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []
 				switch br.Status {
 				case string(app.ComponentBuildStatusActive):
 					builds[i].Status = "success"
-				case string(app.ComponentBuildStatusError), "cancelled":
+				case string(app.ComponentBuildStatusError), string(app.ComponentBuildStatusPolicyFailed), "cancelled":
 					builds[i].Status = "error"
 				}
 			}
@@ -155,9 +156,9 @@ func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []
 		}
 		if allDone {
 			if result.HasError {
-				return fmt.Errorf("one or more component builds failed")
+				return errors.Join(selectionErr, fmt.Errorf("one or more component builds failed"))
 			}
-			return nil
+			return selectionErr
 		}
 		if err := workflow.Sleep(ctx, 5*time.Second); err != nil {
 			return fmt.Errorf("sleep interrupted: %w", err)

@@ -422,7 +422,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			switch br.Status {
 			case string(app.ComponentBuildStatusActive):
 				s.setBuildStatus(builds, br.ComponentID, "success")
-			case string(app.ComponentBuildStatusError), "cancelled":
+			case string(app.ComponentBuildStatusError), string(app.ComponentBuildStatusPolicyFailed), "cancelled":
 				s.setBuildStatus(builds, br.ComponentID, "error")
 			}
 		}
