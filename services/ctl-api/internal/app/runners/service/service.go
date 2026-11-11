@@ -211,7 +211,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			// service account management
 			runner.POST("/service-account-token", s.AdminCreateRunnerServiceAccountToken)
 			runner.POST("/invalidate-service-account-token", s.AdminInvalidateRunnerServiceAccountToken)
-			runner.POST("/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken)
+			s.POST(runner, "/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken, apiPkg.APIContextTypeInternal, true)
 			runner.GET("/service-account", s.AdminGetRunnerServiceAccount)
 			runner.POST("/revoke-unused-tokens", s.AdminRevokeRunnerUnusedTokens)
 
