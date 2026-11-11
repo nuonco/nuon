@@ -3,16 +3,26 @@ package service
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"html/template"
+	"io/fs"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/nuonco/nuon/pkg/nuonauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func s256(verifier string) string {
 	sum := sha256.Sum256([]byte(verifier))
 	return base64.RawURLEncoding.EncodeToString(sum[:])
+}
+
+func TestAuthTemplatesParse(t *testing.T) {
+	sub, err := fs.Sub(tmplFS, "templates")
+	assert.NoError(t, err)
+	_, err = template.ParseFS(sub, "*.tmpl")
+	assert.NoError(t, err)
 }
 
 func TestVerifyPKCE(t *testing.T) {
@@ -79,4 +89,26 @@ func TestOAuthClientAllowsRedirectURI(t *testing.T) {
 	assert.True(t, client.AllowsRedirectURI("http://localhost:9000/cb"))
 	assert.False(t, client.AllowsRedirectURI("https://a.example/other"), "exact match only")
 	assert.False(t, client.AllowsRedirectURI("https://b.example/cb"))
+	assert.False(t, client.AllowsRedirectURI("http://localhost:9001/cb"), "mcp clients do not ignore loopback port")
+}
+
+func TestNuonCLIAllowsLoopbackPort(t *testing.T) {
+	client := app.OAuthClient{
+		ID:           nuonauth.CLIClientID,
+		RedirectURIs: []string{nuonauth.CLILoopbackRedirectURI},
+	}
+	assert.True(t, client.AllowsRedirectURI("http://127.0.0.1:54321/callback"))
+	assert.True(t, client.AllowsRedirectURI("http://localhost:9/callback"))
+	assert.True(t, client.AllowsRedirectURI("http://[::1]:5000/callback"))
+	assert.False(t, client.AllowsRedirectURI("http://127.0.0.1:54321/other"))
+	assert.False(t, client.AllowsRedirectURI("https://127.0.0.1:54321/callback"))
+	assert.False(t, client.AllowsRedirectURI("http://127.0.0.1:54321/callback?code=1"))
+	assert.False(t, client.AllowsRedirectURI("http://evil.example/callback"))
+
+	mcp := app.OAuthClient{
+		ID:           "oacother00000000000000000",
+		RedirectURIs: []string{"http://127.0.0.1:1111/cb"},
+	}
+	assert.True(t, mcp.AllowsRedirectURI("http://127.0.0.1:1111/cb"))
+	assert.False(t, mcp.AllowsRedirectURI("http://127.0.0.1:2222/cb"))
 }

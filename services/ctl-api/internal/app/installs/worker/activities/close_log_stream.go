@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/credentialcleanup"
 )
 
 type CloseLogStreamRequest struct {
@@ -26,9 +27,12 @@ func (a *Activities) CloseLogStream(ctx context.Context, req CloseLogStreamReque
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to update")
 	}
+	if err := credentialcleanup.EnqueueForLogStream(ctx, a.db, a.queueClient, req.LogStreamID); err != nil {
+		return errors.Wrap(err, "enqueue credential cleanup")
+	}
 
-	if err := a.acctClient.InvalidateLogStreamTokens(ctx, req.LogStreamID); err != nil {
-		return errors.Wrap(err, "unable to revoke log stream tokens")
+	if err := a.acctClient.DeleteServiceAccount(ctx, req.LogStreamID); err != nil {
+		return errors.Wrap(err, "unable to delete log stream service account")
 	}
 
 	return nil
