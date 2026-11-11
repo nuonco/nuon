@@ -50,10 +50,17 @@ func (s *service) GetInstallCreateTarget(ctx *gin.Context) {
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	appBranchID := ctx.Query("app_branch_id")
 
-	_ = org
-	_ = appID
-	_ = lbls
-	_ = appBranchID
+	target, err := s.installsHelpers.ResolveCreateInstallTarget(ctx, org.ID, appID, lbls, appBranchID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
-	ctx.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
+	ctx.JSON(http.StatusOK, InstallCreateTargetResponse{
+		AppConfigID:                    target.AppConfigID,
+		AppBranchID:                    target.AppBranchID,
+		AppBranchName:                  target.AppBranchName,
+		AppBranchGroup:                 target.AppBranchGroup,
+		AppBranchGroupAssignmentSource: target.AppBranchGroupAssignmentSource,
+	})
 }
