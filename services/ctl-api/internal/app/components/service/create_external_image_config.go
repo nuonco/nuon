@@ -55,7 +55,7 @@ type CreateExternalImageComponentConfigRequest struct {
 	// source registry, filters to those satisfying the constraint, and
 	// uses the highest matching tag. Tag becomes optional in this case.
 	UpdatePolicy                 string `json:"update_policy,omitempty"`
-	BuildTimeout                 string `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	BuildTimeout                 string `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "10m", "30m")
 	DeployTimeout                string `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	MaxAutoRetries               *int   `json:"max_auto_retries,omitempty"`
 	SkipNoops                    *bool  `json:"skip_noops,omitempty"`

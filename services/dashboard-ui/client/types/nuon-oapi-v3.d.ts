@@ -4750,7 +4750,7 @@ export interface components {
       app_config_id?: string;
       app_config_version?: number;
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h"). Max 1h. */
+      /** @description Duration string for build operations (e.g., "10m", "30m"). Max 30m. */
       build_timeout?: string;
       checksum?: string;
       component_dependency_ids?: string[];
@@ -8996,7 +8996,7 @@ export interface components {
       auto_approve_on_policies_passing?: boolean;
       aws_ecr_image_config?: components["schemas"]["service.awsECRImageConfigRequest"];
       azure_acr_image_config?: components["schemas"]["service.azureACRImageConfigRequest"];
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       checksum?: string;
       default_enabled?: boolean;
@@ -9024,7 +9024,7 @@ export interface components {
     "service.CreateHelmComponentConfigRequest": {
       app_config_id?: string;
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       chart_name: string;
       checksum?: string;
@@ -9181,7 +9181,7 @@ export interface components {
       app_config_id?: string;
       args?: string[];
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       checksum?: string;
       cmd?: string[];
@@ -9204,7 +9204,7 @@ export interface components {
     "service.CreateKubernetesManifestComponentConfigRequest": {
       app_config_id?: string;
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       checksum?: string;
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
@@ -9425,7 +9425,7 @@ export interface components {
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       checksum?: string;
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
