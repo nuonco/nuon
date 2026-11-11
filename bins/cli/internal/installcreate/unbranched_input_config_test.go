@@ -99,6 +99,55 @@ func TestUnbranchedInputConfigSkipsInactiveConfigs(t *testing.T) {
 	}
 }
 
+func TestUnbranchedInputConfigPrefersStatusV2(t *testing.T) {
+	api := &unbranchedConfigAPI{
+		pages: [][]*models.AppAppConfig{{
+			{
+				ID:       "stale-cfg",
+				Status:   models.AppAppConfigStatusActive,
+				StatusV2: &models.AppCompositeStatus{Status: models.AppStatus(models.AppAppConfigStatusPending)},
+			},
+			{
+				ID:       "active-cfg",
+				Status:   models.AppAppConfigStatusPending,
+				StatusV2: &models.AppCompositeStatus{Status: models.AppStatusActive},
+			},
+		}},
+		configs: map[string]*models.AppAppConfig{
+			"active-cfg": {ID: "active-cfg", Input: &models.AppAppInputConfig{ID: "active-inputs"}},
+		},
+	}
+
+	got, err := UnbranchedInputConfig(context.Background(), api, "app")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != "active-inputs" {
+		t.Fatalf("got %s", got.ID)
+	}
+}
+
+func TestUnbranchedInputConfigStopsAtNewestConfigWithoutInputs(t *testing.T) {
+	api := &unbranchedConfigAPI{
+		pages: [][]*models.AppAppConfig{{
+			{ID: "newest-cfg", Status: models.AppAppConfigStatusActive},
+			{ID: "older-cfg", Status: models.AppAppConfigStatusActive},
+		}},
+		configs: map[string]*models.AppAppConfig{
+			"newest-cfg": {ID: "newest-cfg"},
+			"older-cfg":  {ID: "older-cfg", Input: &models.AppAppInputConfig{ID: "older-inputs"}},
+		},
+	}
+
+	_, err := UnbranchedInputConfig(context.Background(), api, "app")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if err.Error() != "app config newest-cfg has no input config" {
+		t.Fatalf("got %q", err.Error())
+	}
+}
+
 func TestUnbranchedInputConfigFindsMatchOnLaterPage(t *testing.T) {
 	api := &unbranchedConfigAPI{
 		pages: [][]*models.AppAppConfig{
