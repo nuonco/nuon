@@ -541,17 +541,17 @@ func (s *appInstallSyncer) inputConfigForNewInstall(
 // is left without an app_branch: the server re-resolves the same match when
 // it creates the install.
 func (s *appInstallSyncer) resolveNewInstallInputConfig(ctx context.Context, installCfg *config.Install, dryRun bool) (*models.AppAppInputConfig, error) {
-	target, inputCfg, err := installcreate.ResolveCreateTarget(ctx, s.api, s.appID, installCfg.Labels, "")
+	assignment, inputCfg, err := installcreate.ResolveInstallAssignment(ctx, s.api, s.appID, installCfg.Labels, "")
 	if err != nil {
 		return nil, err
 	}
-	if target.AppBranchID == "" {
+	if assignment.AppBranchID == "" {
 		return inputCfg, nil
 	}
 
-	matchedBranch, err := s.api.GetAppBranch(ctx, s.appID, target.AppBranchID)
+	matchedBranch, err := s.api.GetAppBranch(ctx, s.appID, assignment.AppBranchID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting app branch %q: %w", target.AppBranchName, err)
+		return nil, fmt.Errorf("error getting app branch %q: %w", assignment.AppBranchName, err)
 	}
 	matchedBranch, err = s.awaitBranchConfig(ctx, matchedBranch, dryRun)
 	if err != nil {

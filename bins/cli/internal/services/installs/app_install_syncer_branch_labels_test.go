@@ -13,18 +13,18 @@ import (
 
 type labelTargetAPI struct {
 	nuon.Client
-	target      *models.ServiceInstallCreateTargetResponse
-	targetErr   error
-	branches    map[string]*models.AppAppBranch
-	configs     map[string]*models.AppAppConfig
-	targetCalls []map[string]string
-	latestCalls int
-	created     []*models.ServiceCreateInstallRequest
+	assignment      *models.ServiceInstallAssignmentResponse
+	assignmentErr   error
+	branches        map[string]*models.AppAppBranch
+	configs         map[string]*models.AppAppConfig
+	assignmentCalls []map[string]string
+	latestCalls     int
+	created         []*models.ServiceCreateInstallRequest
 }
 
-func (a *labelTargetAPI) GetInstallCreateTarget(_ context.Context, _ string, lbls map[string]string, _ string) (*models.ServiceInstallCreateTargetResponse, error) {
-	a.targetCalls = append(a.targetCalls, lbls)
-	return a.target, a.targetErr
+func (a *labelTargetAPI) GetInstallAssignment(_ context.Context, _ string, lbls map[string]string, _ string) (*models.ServiceInstallAssignmentResponse, error) {
+	a.assignmentCalls = append(a.assignmentCalls, lbls)
+	return a.assignment, a.assignmentErr
 }
 
 func (a *labelTargetAPI) GetAppBranch(_ context.Context, _, branchID string) (*models.AppAppBranch, error) {
@@ -59,7 +59,7 @@ func (a *labelTargetAPI) GetWorkflow(context.Context, string) (*models.AppWorkfl
 
 func branchMatchedByLabelsAPI() *labelTargetAPI {
 	return &labelTargetAPI{
-		target: &models.ServiceInstallCreateTargetResponse{
+		assignment: &models.ServiceInstallAssignmentResponse{
 			AppConfigID:    "branch-config",
 			AppBranchID:    "branch-internal",
 			AppBranchName:  "acme-internal",
@@ -105,8 +105,8 @@ func TestSyncNewInstallMatchedByLabelsValidatesAgainstTheBranchConfig(t *testing
 	if err != nil {
 		t.Fatalf("expected the branch-only input to be accepted, got: %v", err)
 	}
-	if len(api.targetCalls) != 1 || api.targetCalls[0]["deploy_group"] != "acme-internal" {
-		t.Fatalf("expected one create-target lookup with the install's labels, got %v", api.targetCalls)
+	if len(api.assignmentCalls) != 1 || api.assignmentCalls[0]["deploy_group"] != "acme-internal" {
+		t.Fatalf("expected one install assignment lookup with the install's labels, got %v", api.assignmentCalls)
 	}
 	if api.latestCalls != 0 {
 		t.Fatalf("expected GetAppInputLatestConfig to not be called, got %d calls", api.latestCalls)
@@ -133,8 +133,8 @@ func TestSyncNewInstallMatchedByLabelsDryRunDoesNotCreate(t *testing.T) {
 	if got != nil {
 		t.Fatalf("dry-run install = %#v, want nil", got)
 	}
-	if len(api.targetCalls) != 1 {
-		t.Fatalf("expected one create-target lookup, got %d", len(api.targetCalls))
+	if len(api.assignmentCalls) != 1 {
+		t.Fatalf("expected one install assignment lookup, got %d", len(api.assignmentCalls))
 	}
 	if len(api.created) != 0 {
 		t.Fatalf("expected no create request on dry run, got %d", len(api.created))
@@ -143,7 +143,7 @@ func TestSyncNewInstallMatchedByLabelsDryRunDoesNotCreate(t *testing.T) {
 
 func TestSyncNewInstallWithoutLabelsValidatesAgainstTheFallbackTarget(t *testing.T) {
 	api := &labelTargetAPI{
-		target: &models.ServiceInstallCreateTargetResponse{AppConfigID: "fallback-config"},
+		assignment: &models.ServiceInstallAssignmentResponse{AppConfigID: "fallback-config"},
 		configs: map[string]*models.AppAppConfig{
 			"fallback-config": appConfigWithInputs("fallback-config", "region"),
 		},
@@ -171,14 +171,14 @@ func TestSyncNewInstallWithoutLabelsValidatesAgainstTheFallbackTarget(t *testing
 	}
 }
 
-func TestSyncNewInstallSurfacesCreateTargetUserErrorsBeforeCreating(t *testing.T) {
+func TestSyncNewInstallSurfacesInstallAssignmentUserErrorsBeforeCreating(t *testing.T) {
 	for name, description := range map[string]string{
 		"labels match two branches":                              "The install's labels match more than one app branch (acme-a, acme-b). Set app_branch on the install to choose one.",
 		"labels match no branch and there is no fallback config": "This install has no app_branch and its labels don't match any app branch's install groups. Add labels that a branch selects, or set app_branch.",
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &labelTargetAPI{
-				targetErr: &operations.GetInstallCreateTargetBadRequest{Payload: &models.StderrErrResponse{
+				assignmentErr: &operations.GetInstallAssignmentBadRequest{Payload: &models.StderrErrResponse{
 					UserError:   true,
 					Error:       "invalid request",
 					Description: description,
@@ -216,8 +216,8 @@ func TestSyncNewInstallWithExplicitAppBranchSkipsLabelMatching(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(api.targetCalls) != 0 {
-		t.Fatalf("expected no create-target lookup with an explicit app_branch, got %d", len(api.targetCalls))
+	if len(api.assignmentCalls) != 0 {
+		t.Fatalf("expected no install assignment lookup with an explicit app_branch, got %d", len(api.assignmentCalls))
 	}
 	if len(api.created) != 1 || api.created[0].AppBranchID != "branch-explicit" {
 		t.Fatalf("expected one create request on the explicit branch, got %#v", api.created)

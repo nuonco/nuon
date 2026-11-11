@@ -38,7 +38,7 @@ func TestClassifyErrorExitCode(t *testing.T) {
 
 func TestClassifyErrorWrappedAPIUserError(t *testing.T) {
 	description := "The install's labels match more than one app branch (acme-a, acme-b). Set app_branch on the install to choose one."
-	err := fmt.Errorf("error resolving install create target: %w", &operations.GetInstallCreateTargetBadRequest{
+	err := fmt.Errorf("error resolving install assignment: %w", &operations.GetInstallAssignmentBadRequest{
 		Payload: &models.StderrErrResponse{UserError: true, Error: "invalid request", Description: description},
 	})
 

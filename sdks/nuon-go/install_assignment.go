@@ -30,11 +30,11 @@ func encodeLabelsQuery(labels map[string]string) *string {
 	return &encoded
 }
 
-// GetInstallCreateTarget returns the app config, and any app branch and
+// GetInstallAssignment returns the app config, and any app branch and
 // group, that a new install with these labels and appBranchID would start
 // on. It does not create anything.
-func (c *client) GetInstallCreateTarget(ctx context.Context, appID string, labels map[string]string, appBranchID string) (*models.ServiceInstallCreateTargetResponse, error) {
-	params := &operations.GetInstallCreateTargetParams{
+func (c *client) GetInstallAssignment(ctx context.Context, appID string, labels map[string]string, appBranchID string) (*models.ServiceInstallAssignmentResponse, error) {
+	params := &operations.GetInstallAssignmentParams{
 		Context: ctx,
 		AppID:   appID,
 		Labels:  encodeLabelsQuery(labels),
@@ -43,7 +43,7 @@ func (c *client) GetInstallCreateTarget(ctx context.Context, appID string, label
 		params.AppBranchID = &appBranchID
 	}
 
-	resp, err := c.genClient.Operations.GetInstallCreateTarget(params, c.getOrgIDAuthInfo())
+	resp, err := c.genClient.Operations.GetInstallAssignment(params, c.getOrgIDAuthInfo())
 	if err != nil {
 		return nil, err
 	}

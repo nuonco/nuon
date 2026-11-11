@@ -61,9 +61,9 @@ func TestInputConfigForInstallWithoutPinUsesLatest(t *testing.T) {
 	}
 }
 
-func TestResolveInputConfigWithoutBranchUsesTheCreateTargetConfig(t *testing.T) {
-	api := &createTargetAPI{
-		target: &models.ServiceInstallCreateTargetResponse{AppConfigID: "fallback-cfg"},
+func TestResolveInputConfigWithoutBranchUsesTheInstallAssignmentConfig(t *testing.T) {
+	api := &installAssignmentAPI{
+		assignment: &models.ServiceInstallAssignmentResponse{AppConfigID: "fallback-cfg"},
 		appConfigResponse: &models.AppAppConfig{
 			ID:     "fallback-cfg",
 			Status: models.AppAppConfigStatusActive,

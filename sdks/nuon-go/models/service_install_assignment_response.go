@@ -14,10 +14,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ServiceInstallCreateTargetResponse service install create target response
+// ServiceInstallAssignmentResponse service install assignment response
 //
-// swagger:model service.InstallCreateTargetResponse
-type ServiceInstallCreateTargetResponse struct {
+// swagger:model service.InstallAssignmentResponse
+type ServiceInstallAssignmentResponse struct {
 
 	// app branch group
 	AppBranchGroup string `json:"app_branch_group,omitempty"`
@@ -35,8 +35,8 @@ type ServiceInstallCreateTargetResponse struct {
 	AppConfigID string `json:"app_config_id,omitempty"`
 }
 
-// Validate validates this service install create target response
-func (m *ServiceInstallCreateTargetResponse) Validate(formats strfmt.Registry) error {
+// Validate validates this service install assignment response
+func (m *ServiceInstallAssignmentResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAppBranchGroupAssignmentSource(formats); err != nil {
@@ -49,7 +49,7 @@ func (m *ServiceInstallCreateTargetResponse) Validate(formats strfmt.Registry) e
 	return nil
 }
 
-func (m *ServiceInstallCreateTargetResponse) validateAppBranchGroupAssignmentSource(formats strfmt.Registry) error {
+func (m *ServiceInstallAssignmentResponse) validateAppBranchGroupAssignmentSource(formats strfmt.Registry) error {
 	if swag.IsZero(m.AppBranchGroupAssignmentSource) { // not required
 		return nil
 	}
@@ -70,8 +70,8 @@ func (m *ServiceInstallCreateTargetResponse) validateAppBranchGroupAssignmentSou
 	return nil
 }
 
-// ContextValidate validate this service install create target response based on the context it is used
-func (m *ServiceInstallCreateTargetResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this service install assignment response based on the context it is used
+func (m *ServiceInstallAssignmentResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateAppBranchGroupAssignmentSource(ctx, formats); err != nil {
@@ -84,7 +84,7 @@ func (m *ServiceInstallCreateTargetResponse) ContextValidate(ctx context.Context
 	return nil
 }
 
-func (m *ServiceInstallCreateTargetResponse) contextValidateAppBranchGroupAssignmentSource(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallAssignmentResponse) contextValidateAppBranchGroupAssignmentSource(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.AppBranchGroupAssignmentSource) { // not required
 		return nil
@@ -107,7 +107,7 @@ func (m *ServiceInstallCreateTargetResponse) contextValidateAppBranchGroupAssign
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceInstallCreateTargetResponse) MarshalBinary() ([]byte, error) {
+func (m *ServiceInstallAssignmentResponse) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -115,8 +115,8 @@ func (m *ServiceInstallCreateTargetResponse) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceInstallCreateTargetResponse) UnmarshalBinary(b []byte) error {
-	var res ServiceInstallCreateTargetResponse
+func (m *ServiceInstallAssignmentResponse) UnmarshalBinary(b []byte) error {
+	var res ServiceInstallAssignmentResponse
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -40,7 +40,7 @@ func InputConfigForInstall(ctx context.Context, api nuon.Client, install *models
 // latest-input behavior.
 func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID string) (*models.AppAppInputConfig, error) {
 	if appBranchID == "" {
-		_, inputCfg, err := ResolveCreateTarget(ctx, api, appID, nil, "")
+		_, inputCfg, err := ResolveInstallAssignment(ctx, api, appID, nil, "")
 		return inputCfg, err
 	}
 
@@ -93,29 +93,29 @@ func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID
 	return cfg.Input, nil
 }
 
-// ResolveCreateTarget asks the server which app config, and any app branch
+// ResolveInstallAssignment asks the server which app config, and any app branch
 // and group, a new install with these labels and appBranchID would start on,
-// then returns that target along with the input config it should validate
+// then returns that assignment along with the input config it should validate
 // against.
-func ResolveCreateTarget(ctx context.Context, api nuon.Client, appID string, labels map[string]string, appBranchID string) (*models.ServiceInstallCreateTargetResponse, *models.AppAppInputConfig, error) {
-	target, err := api.GetInstallCreateTarget(ctx, appID, labels, appBranchID)
+func ResolveInstallAssignment(ctx context.Context, api nuon.Client, appID string, labels map[string]string, appBranchID string) (*models.ServiceInstallAssignmentResponse, *models.AppAppInputConfig, error) {
+	assignment, err := api.GetInstallAssignment(ctx, appID, labels, appBranchID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error resolving install create target: %w", err)
+		return nil, nil, fmt.Errorf("error resolving install assignment: %w", err)
 	}
-	if target == nil || target.AppConfigID == "" {
-		return nil, nil, fmt.Errorf("install create target for app %s has no app config", appID)
+	if assignment == nil || assignment.AppConfigID == "" {
+		return nil, nil, fmt.Errorf("install assignment for app %s has no app config", appID)
 	}
 
 	recurse := true
-	cfg, err := api.GetAppConfig(ctx, appID, target.AppConfigID, &recurse)
+	cfg, err := api.GetAppConfig(ctx, appID, assignment.AppConfigID, &recurse)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to get app config %s: %w", target.AppConfigID, err)
+		return nil, nil, fmt.Errorf("unable to get app config %s: %w", assignment.AppConfigID, err)
 	}
 	if cfg == nil || cfg.Input == nil {
-		return nil, nil, fmt.Errorf("app config %s has no input config", target.AppConfigID)
+		return nil, nil, fmt.Errorf("app config %s has no input config", assignment.AppConfigID)
 	}
 	hydrateInputGroups(cfg.Input)
-	return target, cfg.Input, nil
+	return assignment, cfg.Input, nil
 }
 
 // hydrateInputGroups mirrors the nested shape returned by the latest-input

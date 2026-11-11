@@ -54,9 +54,9 @@ func NoBranchForInstallError(name string) error {
 	}
 }
 
-// CreateInstallTarget describes the app config, and any app branch and group,
+// InstallAssignment describes the app config, and any app branch and group,
 // that a new install would start on given its labels and optional app_branch.
-type CreateInstallTarget struct {
+type InstallAssignment struct {
 	AppConfigID                    string
 	AppBranchID                    string
 	AppBranchName                  string
@@ -64,10 +64,10 @@ type CreateInstallTarget struct {
 	AppBranchGroupAssignmentSource app.InstallAppBranchGroupAssignmentSource
 }
 
-// ResolveCreateInstallTarget determines which app config, and any app branch
+// ResolveInstallAssignment determines which app config, and any app branch
 // and group, a new install with reqLabels and appBranchID would start on,
 // without creating anything.
-func (s *Helpers) ResolveCreateInstallTarget(ctx context.Context, orgID, appID string, reqLabels map[string]string, appBranchID string) (*CreateInstallTarget, error) {
+func (s *Helpers) ResolveInstallAssignment(ctx context.Context, orgID, appID string, reqLabels map[string]string, appBranchID string) (*InstallAssignment, error) {
 	parentApp := app.App{}
 	if err := s.db.WithContext(ctx).Where(app.App{OrgID: orgID}).First(&parentApp, "id = ?", appID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get app: %w", err)
@@ -83,17 +83,17 @@ func (s *Helpers) ResolveCreateInstallTarget(ctx context.Context, orgID, appID s
 		return nil, err
 	}
 
-	target := &CreateInstallTarget{AppConfigID: pin.AppConfig.ID}
+	assignment := &InstallAssignment{AppConfigID: pin.AppConfig.ID}
 	if pin.BranchID == "" {
-		return target, nil
+		return assignment, nil
 	}
 
 	var branch app.AppBranch
 	if err := s.db.WithContext(ctx).First(&branch, "id = ?", pin.BranchID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get app branch: %w", err)
 	}
-	target.AppBranchID = branch.ID
-	target.AppBranchName = branch.Name
+	assignment.AppBranchID = branch.ID
+	assignment.AppBranchName = branch.Name
 
 	groups, err := s.appsHelpers.LatestConfigInstallGroups(ctx, pin.BranchID)
 	if err != nil {
@@ -107,8 +107,8 @@ func (s *Helpers) ResolveCreateInstallTarget(ctx context.Context, orgID, appID s
 	if group == nil {
 		return nil, appshelpers.NoMatchingInstallGroupError(&candidate)
 	}
-	target.AppBranchGroup = group.Name
-	target.AppBranchGroupAssignmentSource = source
+	assignment.AppBranchGroup = group.Name
+	assignment.AppBranchGroupAssignmentSource = source
 
-	return target, nil
+	return assignment, nil
 }

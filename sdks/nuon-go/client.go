@@ -106,7 +106,7 @@ type Client interface {
 	DeleteAppBranch(ctx context.Context, appID, appBranchID string) error
 	CreateAppBranchConfig(ctx context.Context, appID, appBranchID string, req *models.ServiceCreateAppBranchConfigRequest) (*models.AppAppBranchConfig, error)
 	GetAppBranchLatestConfig(ctx context.Context, appID, appBranchID string) (*models.AppAppBranchConfig, error)
-	GetInstallCreateTarget(ctx context.Context, appID string, labels map[string]string, appBranchID string) (*models.ServiceInstallCreateTargetResponse, error)
+	GetInstallAssignment(ctx context.Context, appID string, labels map[string]string, appBranchID string) (*models.ServiceInstallAssignmentResponse, error)
 	GetAppBranchPreviewSources(ctx context.Context, appID, appBranchID string) (*models.HelpersListPreviewSourcesResult, error)
 	GetAppBranchPreviewInstallCandidates(ctx context.Context, appID, appBranchID, configID string) (*models.ServicePreviewInstallCandidatesResponse, error)
 	TriggerAppBranchRun(ctx context.Context, appID, appBranchID string, req *models.ServiceTriggerAppBranchRunRequest) (*models.AppAppBranchRun, error)

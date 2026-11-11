@@ -26,7 +26,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-type GetInstallCreateTargetTestService struct {
+type GetInstallAssignmentTestService struct {
 	fx.In
 
 	DB          *gorm.DB `name:"psql"`
@@ -38,11 +38,11 @@ type GetInstallCreateTargetTestService struct {
 	Seeder      *testseed.Seeder
 }
 
-type GetInstallCreateTargetTestSuite struct {
+type GetInstallAssignmentTestSuite struct {
 	tests.BaseDBTestSuite
 
 	fxApp         *fxtest.App
-	service       GetInstallCreateTargetTestService
+	service       GetInstallAssignmentTestService
 	router        *gin.Engine
 	ctx           context.Context
 	testOrg       *app.Org
@@ -51,15 +51,15 @@ type GetInstallCreateTargetTestSuite struct {
 	testAppConfig *app.AppConfig
 }
 
-func TestGetInstallCreateTargetSuite(t *testing.T) {
+func TestGetInstallAssignmentSuite(t *testing.T) {
 	if os.Getenv("INTEGRATION") != "true" {
 		t.Skip("INTEGRATION is not set, skipping")
 		return
 	}
-	suite.Run(t, new(GetInstallCreateTargetTestSuite))
+	suite.Run(t, new(GetInstallAssignmentTestSuite))
 }
 
-func (s *GetInstallCreateTargetTestSuite) SetupSuite() {
+func (s *GetInstallAssignmentTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
@@ -74,7 +74,7 @@ func (s *GetInstallCreateTargetTestSuite) SetupSuite() {
 	s.SetDB(s.service.DB)
 }
 
-func (s *GetInstallCreateTargetTestSuite) SetupTest() {
+func (s *GetInstallAssignmentTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 
 	s.ctx = context.Background()
@@ -93,11 +93,11 @@ func (s *GetInstallCreateTargetTestSuite) SetupTest() {
 	require.NoError(s.T(), s.service.AppsService.RegisterPublicRoutes(s.router))
 }
 
-func (s *GetInstallCreateTargetTestSuite) TearDownSuite() {
+func (s *GetInstallAssignmentTestSuite) TearDownSuite() {
 	s.fxApp.RequireStop()
 }
 
-func (s *GetInstallCreateTargetTestSuite) seedBranch(name string, groups []app.AppBranchInstallGroup) (*app.AppBranch, *app.AppConfig) {
+func (s *GetInstallAssignmentTestSuite) seedBranch(name string, groups []app.AppBranchInstallGroup) (*app.AppBranch, *app.AppConfig) {
 	branch := &app.AppBranch{AppID: s.testApp.ID, Name: name}
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(branch).Error)
 
@@ -116,8 +116,8 @@ func (s *GetInstallCreateTargetTestSuite) seedBranch(name string, groups []app.A
 	return branch, cfg
 }
 
-func (s *GetInstallCreateTargetTestSuite) getTarget(appID, labelsQuery, appBranchID string) *httptest.ResponseRecorder {
-	path := fmt.Sprintf("/v1/apps/%s/install-create-target", appID)
+func (s *GetInstallAssignmentTestSuite) getTarget(appID, labelsQuery, appBranchID string) *httptest.ResponseRecorder {
+	path := fmt.Sprintf("/v1/apps/%s/install-assignment", appID)
 	if labelsQuery != "" || appBranchID != "" {
 		path += "?"
 		if labelsQuery != "" {
@@ -137,7 +137,7 @@ func (s *GetInstallCreateTargetTestSuite) getTarget(appID, labelsQuery, appBranc
 	return rr
 }
 
-func (s *GetInstallCreateTargetTestSuite) assertNothingCreated() {
+func (s *GetInstallAssignmentTestSuite) assertNothingCreated() {
 	var installCount, connectionCount int64
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Model(&app.Install{}).Where(app.Install{AppID: s.testApp.ID}).Count(&installCount).Error)
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Model(&app.InstallAppBranchConnection{}).Where(app.InstallAppBranchConnection{OrgID: s.testOrg.ID}).Count(&connectionCount).Error)
@@ -145,7 +145,7 @@ func (s *GetInstallCreateTargetTestSuite) assertNothingCreated() {
 	assert.Zero(s.T(), connectionCount)
 }
 
-func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsMatchedBranchAndGroup() {
+func (s *GetInstallAssignmentTestSuite) TestGetInstallAssignmentReturnsMatchedBranchAndGroup() {
 	branch, cfg := s.seedBranch("prod", []app.AppBranchInstallGroup{{
 		Name:          "prod",
 		LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}},
@@ -154,7 +154,7 @@ func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsMatch
 	rr := s.getTarget(s.testApp.ID, "env:prod", "")
 	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
 
-	var resp InstallCreateTargetResponse
+	var resp InstallAssignmentResponse
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Equal(s.T(), branch.ID, resp.AppBranchID)
 	assert.Equal(s.T(), branch.Name, resp.AppBranchName)
@@ -165,11 +165,11 @@ func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsMatch
 	s.assertNothingCreated()
 }
 
-func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsFallbackConfigWhenNoBranchMatches() {
+func (s *GetInstallAssignmentTestSuite) TestGetInstallAssignmentReturnsFallbackConfigWhenNoBranchMatches() {
 	rr := s.getTarget(s.testApp.ID, "", "")
 	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
 
-	var resp InstallCreateTargetResponse
+	var resp InstallAssignmentResponse
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Equal(s.T(), s.testAppConfig.ID, resp.AppConfigID)
 	assert.Empty(s.T(), resp.AppBranchID)
@@ -177,7 +177,7 @@ func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsFallb
 	s.assertNothingCreated()
 }
 
-func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsSameAmbiguityErrorAsCreate() {
+func (s *GetInstallAssignmentTestSuite) TestGetInstallAssignmentReturnsSameAmbiguityErrorAsCreate() {
 	branchA, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{{
 		Name:          "prod",
 		LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}},
@@ -195,7 +195,7 @@ func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsSameA
 	s.assertNothingCreated()
 }
 
-func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsNoBranchMatchError() {
+func (s *GetInstallAssignmentTestSuite) TestGetInstallAssignmentReturnsNoBranchMatchError() {
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Delete(s.testAppConfig).Error)
 	s.seedBranch("prod", []app.AppBranchInstallGroup{{
 		Name:          "prod",
@@ -209,7 +209,7 @@ func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsNoBra
 	s.assertNothingCreated()
 }
 
-func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetHonorsExplicitAppBranchID() {
+func (s *GetInstallAssignmentTestSuite) TestGetInstallAssignmentHonorsExplicitAppBranchID() {
 	s.seedBranch("prod", []app.AppBranchInstallGroup{{
 		Name:          "prod",
 		LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}},
@@ -219,7 +219,7 @@ func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetHonorsExplic
 	rr := s.getTarget(s.testApp.ID, "env:prod", branchB.ID)
 	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
 
-	var resp InstallCreateTargetResponse
+	var resp InstallAssignmentResponse
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Equal(s.T(), branchB.ID, resp.AppBranchID)
 	assert.Equal(s.T(), cfgB.ID, resp.AppConfigID)
@@ -227,7 +227,7 @@ func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetHonorsExplic
 	s.assertNothingCreated()
 }
 
-func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetAppliesAppDefaultLabelsWithoutQueryLabels() {
+func (s *GetInstallAssignmentTestSuite) TestGetInstallAssignmentAppliesAppDefaultLabelsWithoutQueryLabels() {
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Model(s.testApp).Update("default_labels", labels.Labels{"env": "prod"}).Error)
 	branch, _ := s.seedBranch("prod", []app.AppBranchInstallGroup{{
 		Name:          "prod",
@@ -237,14 +237,14 @@ func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetAppliesAppDe
 	rr := s.getTarget(s.testApp.ID, "", "")
 	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
 
-	var resp InstallCreateTargetResponse
+	var resp InstallAssignmentResponse
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Equal(s.T(), branch.ID, resp.AppBranchID)
 
 	s.assertNothingCreated()
 }
 
-func (s *GetInstallCreateTargetTestSuite) TestGetInstallCreateTargetReturnsNotFoundForAnotherOrgsApp() {
+func (s *GetInstallAssignmentTestSuite) TestGetInstallAssignmentReturnsNotFoundForAnotherOrgsApp() {
 	otherCtx, _ := s.service.Seeder.EnsureOrg(context.Background(), s.T())
 	otherApp := s.service.Seeder.CreateApp(otherCtx, s.T())
 

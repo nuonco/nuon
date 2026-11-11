@@ -366,8 +366,8 @@ func (a *dryRunInputsAPI) GetAppInputLatestConfig(context.Context, string) (*mod
 	return a.latestInput, nil
 }
 
-func (a *dryRunInputsAPI) GetInstallCreateTarget(context.Context, string, map[string]string, string) (*models.ServiceInstallCreateTargetResponse, error) {
-	return &models.ServiceInstallCreateTargetResponse{AppConfigID: "fallback-config"}, nil
+func (a *dryRunInputsAPI) GetInstallAssignment(context.Context, string, map[string]string, string) (*models.ServiceInstallAssignmentResponse, error) {
+	return &models.ServiceInstallAssignmentResponse{AppConfigID: "fallback-config"}, nil
 }
 
 func appConfigWithInputs(id string, names ...string) *models.AppAppConfig {
