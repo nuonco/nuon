@@ -35,6 +35,7 @@ import (
 	onboardingactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 
 	// Register install queue signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/signals/credentialcleanup"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/tokencleanup"
