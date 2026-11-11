@@ -1,0 +1,405 @@
+package helpers
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"path"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/filemode"
+	"github.com/go-git/go-git/v5/plumbing/format/packfile"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp/capability"
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp/sideband"
+	"github.com/go-git/go-git/v5/plumbing/storer"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/client"
+	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/storage/memory"
+
+	"github.com/nuonco/nuon/pkg/sourceidentity"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+)
+
+var (
+	ErrSourceCommitNotFound   = errors.New("pinned commit not found")
+	ErrSourceDirectoryMissing = errors.New("source directory is missing from pinned commit")
+	ErrSourceTreeTooLarge     = errors.New("source tree exceeds the size limit")
+)
+
+const (
+	maxSourceTreeBytes = 128 << 20
+	sourceFetchTimeout = 3 * time.Minute
+)
+
+type limitedStorage struct {
+	*memory.Storage
+	remaining int64
+}
+
+func (s *limitedStorage) SetEncodedObject(o plumbing.EncodedObject) (plumbing.Hash, error) {
+	if s.remaining -= o.Size(); s.remaining < 0 {
+		return plumbing.ZeroHash, ErrSourceTreeTooLarge
+	}
+	return s.Storage.SetEncodedObject(o)
+}
+
+type SourceTree struct {
+	s    storer.EncodedObjectStorer
+	root *object.Tree
+}
+
+func (h *Helpers) GetSourceTree(ctx context.Context, orgID, repository, commit string, connection *app.VCSConnection) (*SourceTree, error) {
+	if !sourceidentity.IsCommit(commit) {
+		return nil, fmt.Errorf("source tree requires an immutable commit")
+	}
+	owner, repo, err := parseOwnerRepo(repository)
+	if err != nil {
+		return nil, err
+	}
+	scope := "public"
+	if connection != nil {
+		if connection.OrgID != orgID {
+			return nil, fmt.Errorf("source connection does not belong to org")
+		}
+		scope = connection.ID
+	}
+	key := orgID + "\n" + scope + "\n" + owner + "/" + repo + "\n" + commit
+	if h.sourceTrees != nil {
+		if tree, ok := h.sourceTrees.Get(key); ok {
+			return tree, nil
+		}
+	}
+	fetches := h.sourceFetches.DoChan(key, func() (any, error) {
+		if h.sourceTrees != nil {
+			if tree, ok := h.sourceTrees.Get(key); ok {
+				return tree, nil
+			}
+		}
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), sourceFetchTimeout)
+		defer cancel()
+		token := ""
+		var err error
+		if connection != nil {
+			token, err = h.CreateInstallationToken(ctx, connection, repo)
+		} else {
+			token, _, err = h.ResolvePublicRepoCloneToken(ctx, h.l, orgID, owner, repo)
+		}
+		if err != nil {
+			return nil, err
+		}
+		var auth transport.AuthMethod
+		if token != "" {
+			auth = &githttp.BasicAuth{Username: "x-access-token", Password: token}
+		}
+		tree, err := fetchSourceTree(ctx, fmt.Sprintf("https://github.com/%s/%s.git", owner, repo), auth, commit, githubUploadPackCapabilities(), maxSourceTreeBytes)
+		if err != nil {
+			return nil, err
+		}
+		if h.sourceTrees != nil {
+			h.sourceTrees.Add(key, tree)
+		}
+		return tree, nil
+	})
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-fetches:
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		return res.Val.(*SourceTree), nil
+	}
+}
+
+func githubUploadPackCapabilities() *capability.List {
+	caps := capability.NewList()
+	for _, c := range []capability.Capability{capability.OFSDelta, capability.Sideband64k, capability.Shallow, capability.Filter} {
+		_ = caps.Set(c)
+	}
+	return caps
+}
+
+func fetchSourceTree(ctx context.Context, url string, auth transport.AuthMethod, commit string, serverCaps *capability.List, maxBytes int64) (*SourceTree, error) {
+	ep, err := transport.NewEndpoint(url)
+	if err != nil {
+		return nil, err
+	}
+	cli, err := client.NewClient(ep)
+	if err != nil {
+		return nil, err
+	}
+	sess, err := cli.NewUploadPackSession(ep, auth)
+	if err != nil {
+		return nil, err
+	}
+	defer sess.Close()
+	if serverCaps == nil {
+		adv, err := sess.AdvertisedReferencesContext(ctx)
+		if errors.Is(err, transport.ErrEmptyRemoteRepository) {
+			return nil, ErrSourceCommitNotFound
+		}
+		if err != nil {
+			return nil, fmt.Errorf("unable to read source repository: %w", err)
+		}
+		serverCaps = adv.Capabilities
+	}
+
+	hash := plumbing.NewHash(commit)
+	req := packp.NewUploadPackRequestFromCapabilities(serverCaps)
+	req.Wants = []plumbing.Hash{hash}
+	if serverCaps.Supports(capability.Shallow) {
+		if err := req.Capabilities.Set(capability.Shallow); err != nil {
+			return nil, err
+		}
+		req.Depth = packp.DepthCommits(1)
+	}
+	if serverCaps.Supports(capability.Filter) {
+		if err := req.Capabilities.Set(capability.Filter); err != nil {
+			return nil, err
+		}
+		req.Filter = packp.FilterBlobNone()
+	}
+	resp, err := sess.UploadPack(ctx, req)
+	if errors.Is(err, transport.ErrEmptyUploadPackRequest) || (err != nil && strings.Contains(err.Error(), "not our ref")) {
+		return nil, ErrSourceCommitNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch pinned commit: %w", err)
+	}
+	defer resp.Close()
+
+	var pack io.Reader = resp
+	switch {
+	case req.Capabilities.Supports(capability.Sideband64k):
+		pack = sideband.NewDemuxer(sideband.Sideband64k, resp)
+	case req.Capabilities.Supports(capability.Sideband):
+		pack = sideband.NewDemuxer(sideband.Sideband, resp)
+	}
+	st := memory.NewStorage()
+	if err := packfile.UpdateObjectStorage(&limitedStorage{Storage: st, remaining: maxBytes}, pack); err != nil {
+		return nil, fmt.Errorf("unable to read pinned commit: %w", err)
+	}
+	c, err := object.GetCommit(st, hash)
+	if errors.Is(err, plumbing.ErrObjectNotFound) {
+		return nil, ErrSourceCommitNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	root, err := c.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("pinned commit has no source tree: %w", err)
+	}
+	return &SourceTree{s: st, root: root}, nil
+}
+
+func (t *SourceTree) Scope(root string) (string, error) {
+	root = sourceidentity.CleanRoot(root)
+	if root == "" {
+		return "git:040000:" + t.root.Hash.String(), nil
+	}
+	entry, err := t.entry(root)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("git:%06o:%s", uint32(entry.Mode), entry.Hash), nil
+}
+
+const (
+	UnsupportedSubmodule    = "git_submodules_not_materialized"
+	UnsupportedNonCanonical = "git_noncanonical_tree"
+)
+
+func (t *SourceTree) Unsupported(ctx context.Context, root string) (string, error) {
+	tree := t.root
+	if root = sourceidentity.CleanRoot(root); root != "" {
+		entry, err := t.entry(root)
+		if errors.Is(err, ErrSourceDirectoryMissing) {
+			return "", nil
+		}
+		if err != nil {
+			return "", err
+		}
+		if entry.Mode != filemode.Dir {
+			return unsupportedMode(entry.Mode), nil
+		}
+		if tree, err = object.GetTree(t.s, entry.Hash); err != nil {
+			return "", err
+		}
+	}
+	seen := map[plumbing.Hash]bool{tree.Hash: true}
+	pending := []*object.Tree{tree}
+	for len(pending) > 0 {
+		if err := ctx.Err(); err != nil {
+			return "", err
+		}
+		tree, pending = pending[len(pending)-1], pending[:len(pending)-1]
+		canonical, err := t.canonical(tree)
+		if err != nil {
+			return "", err
+		}
+		if !canonical {
+			return UnsupportedNonCanonical, nil
+		}
+		for _, entry := range tree.Entries {
+			if reason := unsupportedMode(entry.Mode); reason != "" {
+				return reason, nil
+			}
+			if entry.Mode != filemode.Dir || seen[entry.Hash] {
+				continue
+			}
+			seen[entry.Hash] = true
+			next, err := object.GetTree(t.s, entry.Hash)
+			if err != nil {
+				return "", err
+			}
+			pending = append(pending, next)
+		}
+	}
+	return "", nil
+}
+
+func unsupportedMode(mode filemode.FileMode) string {
+	if mode == filemode.Submodule {
+		return UnsupportedSubmodule
+	}
+	return ""
+}
+
+func (t *SourceTree) canonical(tree *object.Tree) (bool, error) {
+	obj := t.s.NewEncodedObject()
+	if err := tree.Encode(obj); err != nil {
+		return false, err
+	}
+	return obj.Hash() == tree.Hash, nil
+}
+
+func (t *SourceTree) entry(root string) (*object.TreeEntry, error) {
+	if path.IsAbs(root) || root == ".." || strings.HasPrefix(root, "../") {
+		return nil, fmt.Errorf("source directory escapes repository")
+	}
+	tree := t.root
+	parts := strings.Split(root, "/")
+	for i, name := range parts {
+		var entry *object.TreeEntry
+		for j := range tree.Entries {
+			if tree.Entries[j].Name == name {
+				entry = &tree.Entries[j]
+				break
+			}
+		}
+		if entry == nil {
+			return nil, fmt.Errorf("%w: %s", ErrSourceDirectoryMissing, root)
+		}
+		if i == len(parts)-1 || entry.Mode == filemode.Symlink {
+			return entry, nil
+		}
+		if entry.Mode != filemode.Dir {
+			return nil, fmt.Errorf("%w: %s", ErrSourceDirectoryMissing, root)
+		}
+		next, err := object.GetTree(t.s, entry.Hash)
+		if err != nil {
+			return nil, err
+		}
+		tree = next
+	}
+	return nil, fmt.Errorf("%w: %s", ErrSourceDirectoryMissing, root)
+}
+
+type SourceChange struct {
+	Path          string
+	Before, After *object.TreeEntry
+}
+
+func DiffSources(ctx context.Context, before *SourceTree, beforeName string, after *SourceTree, afterName string, limit int) ([]SourceChange, bool, error) {
+	var changes []SourceChange
+	truncated := false
+	var diff func(string, *object.TreeEntry, *object.TreeEntry) (bool, error)
+	diff = func(name string, b, a *object.TreeEntry) (bool, error) {
+		if err := ctx.Err(); err != nil {
+			return false, err
+		}
+		if b != nil && a != nil && b.Mode == a.Mode && b.Hash == a.Hash {
+			return true, nil
+		}
+		children := map[string][2]*object.TreeEntry{}
+		for side, entry := range []*object.TreeEntry{b, a} {
+			if entry == nil {
+				continue
+			}
+			if entry.Mode != filemode.Dir {
+				pair := children[""]
+				pair[side] = entry
+				children[""] = pair
+				continue
+			}
+			tree := before
+			if side == 1 {
+				tree = after
+			}
+			t, err := object.GetTree(tree.s, entry.Hash)
+			if err != nil {
+				return false, err
+			}
+			for i := range t.Entries {
+				pair := children[t.Entries[i].Name]
+				pair[side] = &t.Entries[i]
+				children[t.Entries[i].Name] = pair
+			}
+		}
+		names := make([]string, 0, len(children))
+		for child := range children {
+			names = append(names, child)
+		}
+		sort.Strings(names)
+		for _, child := range names {
+			pair := children[child]
+			if child == "" {
+				if len(changes) == limit {
+					truncated = true
+					return false, nil
+				}
+				changes = append(changes, SourceChange{Path: name, Before: pair[0], After: pair[1]})
+				continue
+			}
+			ok, err := diff(path.Join(name, child), pair[0], pair[1])
+			if err != nil || !ok {
+				return ok, err
+			}
+		}
+		return true, nil
+	}
+	b, err := before.Lookup(beforeName)
+	if err != nil {
+		return nil, false, err
+	}
+	a, err := after.Lookup(afterName)
+	if err != nil {
+		return nil, false, err
+	}
+	if _, err := diff("", b, a); err != nil {
+		return nil, false, err
+	}
+	return changes, truncated, nil
+}
+
+func (t *SourceTree) Lookup(name string) (*object.TreeEntry, error) {
+	if t == nil {
+		return nil, nil
+	}
+	if name = sourceidentity.CleanRoot(name); name == "" {
+		return &object.TreeEntry{Mode: filemode.Dir, Hash: t.root.Hash}, nil
+	}
+	entry, err := t.entry(name)
+	if errors.Is(err, ErrSourceDirectoryMissing) {
+		return nil, nil
+	}
+	return entry, err
+}
