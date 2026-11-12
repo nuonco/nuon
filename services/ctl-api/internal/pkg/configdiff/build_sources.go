@@ -242,11 +242,11 @@ func applySourceChanges(ctx context.Context, db *gorm.DB, diff *app.InstallConfi
 func consumedChangedRoots(receipt map[string]string, componentID string, consumed, applied map[string]*app.ComponentBuild, consumedSandbox, appliedSandbox *app.AppSandboxBuild, appliedSandboxCfg *app.AppSandboxConfig, cfg *app.AppConfig) []pkgdiff.NodeID {
 	var roots []pkgdiff.NodeID
 	for _, conn := range cfg.ComponentConfigConnections {
-		if conn.ComponentID != componentID && dependencyAppliedSince(consumed[receipt[conn.ComponentID]], applied[conn.ComponentID]) {
+		if conn.ComponentID != componentID && DependencyAppliedSince(consumed[receipt[conn.ComponentID]], applied[conn.ComponentID]) {
 			roots = append(roots, config.ComponentResourceID(conn.ComponentName))
 		}
 	}
-	if sandboxAppliedSince(consumedSandbox, appliedSandbox, appliedSandboxCfg) {
+	if SandboxAppliedSince(consumedSandbox, appliedSandbox, appliedSandboxCfg) {
 		roots = append(roots, config.SandboxResourceID)
 	}
 	return roots
@@ -264,7 +264,7 @@ func consumedImpactReasons(reasons []pkgdiff.ImpactReason, roots []pkgdiff.NodeI
 	return kept
 }
 
-func dependencyAppliedSince(consumed, applied *app.ComponentBuild) bool {
+func DependencyAppliedSince(consumed, applied *app.ComponentBuild) bool {
 	if applied == nil || applied.ID == "" {
 		return false
 	}
@@ -275,7 +275,7 @@ func dependencyAppliedSince(consumed, applied *app.ComponentBuild) bool {
 		!(checksumsEqual(&consumed.ComponentConfigConnection, &applied.ComponentConfigConnection) && ComponentSourcesEqual(consumed, applied))
 }
 
-func sandboxAppliedSince(consumed, applied *app.AppSandboxBuild, appliedCfg *app.AppSandboxConfig) bool {
+func SandboxAppliedSince(consumed, applied *app.AppSandboxBuild, appliedCfg *app.AppSandboxConfig) bool {
 	if applied == nil || applied.ID == "" {
 		return false
 	}

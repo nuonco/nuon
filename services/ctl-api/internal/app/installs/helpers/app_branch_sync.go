@@ -397,7 +397,7 @@ func (h *Helpers) InstallCompositeBaselines(ctx context.Context, install *app.In
 		}
 		if applied != nil {
 			baselines.Sandbox = applied.AppSandboxConfig.AppConfigID
-			buildID, err := h.appliedSandboxBuildID(ctx, applied)
+			buildID, err := h.AppliedSandboxBuildID(ctx, applied)
 			if err != nil {
 				return baselines, err
 			}
