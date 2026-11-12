@@ -1,4 +1,4 @@
-package kube
+package clientcfg
 
 import (
 	"context"
@@ -10,9 +10,10 @@ import (
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
-func (c *ClusterInfo) fetchEnv(ctx context.Context) ([]clientcmdapi.ExecEnvVar, error) {
+func fetchEnv(ctx context.Context, c *kube.ClusterInfo) ([]clientcmdapi.ExecEnvVar, error) {
 	envVars := c.EnvVars
 	if envVars == nil {
 		envVars = make(map[string]string)
