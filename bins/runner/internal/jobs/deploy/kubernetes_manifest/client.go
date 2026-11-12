@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/restmapper"
 
-	"github.com/nuonco/nuon/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube/clientcfg"
 )
 
 type kubernetesClient struct {
@@ -28,7 +28,7 @@ func (k *kubernetesClient) resourcesforGroupVersion(gv string) (*metav1.APIResou
 }
 
 func (h *handler) getClient(ctx context.Context) (*kubernetesClient, error) {
-	kubeCfg, err := kube.ConfigForCluster(ctx, h.state.plan.KubernetesManifestDeployPlan.ClusterInfo)
+	kubeCfg, err := clientcfg.ConfigForCluster(ctx, h.state.plan.KubernetesManifestDeployPlan.ClusterInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get kube config")
 	}

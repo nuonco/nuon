@@ -15,12 +15,12 @@ import (
 
 	"github.com/nuonco/nuon/pkg/helm"
 	nuondriver "github.com/nuonco/nuon/pkg/helm/driver"
-	"github.com/nuonco/nuon/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube/clientcfg"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 func (h *handler) actionInit(ctx context.Context, l *zap.Logger) (*action.Configuration, *rest.Config, error) {
-	kubeCfg, err := kube.ConfigForCluster(ctx, h.state.plan.HelmDeployPlan.ClusterInfo)
+	kubeCfg, err := clientcfg.ConfigForCluster(ctx, h.state.plan.HelmDeployPlan.ClusterInfo)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get kube config")
 	}
