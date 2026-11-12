@@ -48,7 +48,6 @@ type ReconcileTarget struct {
 	Current            bool
 	InFlightWorkflowID string
 
-	Diff     *app.InstallConfigDiff
 	Blockers []ReconcileBlocker
 }
 
@@ -150,27 +149,24 @@ func (h *Helpers) ResolveReconcileTarget(ctx context.Context, install *app.Insta
 		})
 	}
 
+	err = h.CheckInstallRunnerForWorkflow(ctx, install.ID, app.WorkflowTypeAppBranchConfigUpdate, map[string]string{})
+	switch {
+	case err == nil:
+		return target, nil
+	case !errors.Is(err, ErrRunnerDisabled):
+		return nil, fmt.Errorf("unable to check install runner: %w", err)
+	}
+
 	diff, err := h.AppBranchConfigDiff(ctx, install, target.AppConfigID)
 	if err != nil {
 		return nil, err
 	}
-	target.Diff = diff
-
-	metadata := map[string]string{}
-	if diff != nil && diff.StackChanged {
-		metadata[app.WorkflowMetadataKeyStackChanged] = "true"
-	}
-	err = h.CheckInstallRunnerForWorkflow(ctx, install.ID, app.WorkflowTypeAppBranchConfigUpdate, metadata)
-	switch {
-	case errors.Is(err, ErrRunnerDisabled):
+	if diff == nil || !diff.StackChanged {
 		target.Blockers = append(target.Blockers, ReconcileBlocker{
 			Code:    ReconcileBlockerRunnerDisabled,
 			Message: "The install's runner is disabled. Apply the install stack to re-enable it.",
 		})
-	case err != nil:
-		return nil, fmt.Errorf("unable to check install runner: %w", err)
 	}
-
 	return target, nil
 }
 

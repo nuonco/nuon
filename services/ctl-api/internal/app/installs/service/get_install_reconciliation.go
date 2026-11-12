@@ -29,27 +29,18 @@ type InstallReconciliationBlocker struct {
 	WorkflowID string `json:"workflow_id,omitempty"`
 }
 
-type InstallReconciliationDiffSummary struct {
-	StackChanged   bool `json:"stack_changed"`
-	SandboxChanged bool `json:"sandbox_changed"`
-	Added          int  `json:"added"`
-	Changed        int  `json:"changed"`
-	Removed        int  `json:"removed"`
-}
-
 type InstallReconciliationResponse struct {
-	Status             string                            `json:"status" enums:"current,behind,in_progress,blocked"`
-	AppBranchID        string                            `json:"app_branch_id,omitempty"`
-	AppBranchName      string                            `json:"app_branch_name,omitempty"`
-	InstallGroupID     string                            `json:"install_group_id,omitempty"`
-	InstallGroupName   string                            `json:"install_group_name,omitempty"`
-	Applied            *InstallReconciliationConfig      `json:"applied,omitempty"`
-	Target             *InstallReconciliationConfig      `json:"target,omitempty"`
-	SkippedRuns        []InstallOverviewCommit           `json:"skipped_runs"`
-	SkippedRunCount    int64                             `json:"skipped_run_count"`
-	InFlightWorkflowID string                            `json:"in_flight_workflow_id,omitempty"`
-	Blockers           []InstallReconciliationBlocker    `json:"blockers"`
-	DiffSummary        *InstallReconciliationDiffSummary `json:"diff_summary,omitempty"`
+	Status             string                         `json:"status" enums:"current,behind,in_progress,blocked"`
+	AppBranchID        string                         `json:"app_branch_id,omitempty"`
+	AppBranchName      string                         `json:"app_branch_name,omitempty"`
+	InstallGroupID     string                         `json:"install_group_id,omitempty"`
+	InstallGroupName   string                         `json:"install_group_name,omitempty"`
+	Applied            *InstallReconciliationConfig   `json:"applied,omitempty"`
+	Target             *InstallReconciliationConfig   `json:"target,omitempty"`
+	SkippedRuns        []InstallOverviewCommit        `json:"skipped_runs"`
+	SkippedRunCount    int64                          `json:"skipped_run_count"`
+	InFlightWorkflowID string                         `json:"in_flight_workflow_id,omitempty"`
+	Blockers           []InstallReconciliationBlocker `json:"blockers"`
 }
 
 // @ID						GetInstallReconciliation
@@ -140,16 +131,6 @@ func (s *service) installReconciliation(ctx context.Context, install *app.Instal
 			WorkflowID: b.WorkflowID,
 		})
 	}
-	if target.Diff != nil {
-		resp.DiffSummary = &InstallReconciliationDiffSummary{
-			StackChanged:   target.Diff.StackChanged,
-			SandboxChanged: target.Diff.SandboxChanged || target.Diff.SandboxBuildChanged,
-			Added:          len(target.Diff.Added),
-			Changed:        len(target.Diff.Changed),
-			Removed:        len(target.Diff.Removed),
-		}
-	}
-
 	if !target.HasTarget() {
 		return resp, nil
 	}

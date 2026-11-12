@@ -34,9 +34,6 @@ type ServiceInstallReconciliationResponse struct {
 	// blockers
 	Blockers []*ServiceInstallReconciliationBlocker `json:"blockers"`
 
-	// diff summary
-	DiffSummary *ServiceInstallReconciliationDiffSummary `json:"diff_summary,omitempty"`
-
 	// in flight workflow id
 	InFlightWorkflowID string `json:"in_flight_workflow_id,omitempty"`
 
@@ -69,10 +66,6 @@ func (m *ServiceInstallReconciliationResponse) Validate(formats strfmt.Registry)
 	}
 
 	if err := m.validateBlockers(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateDiffSummary(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -142,29 +135,6 @@ func (m *ServiceInstallReconciliationResponse) validateBlockers(formats strfmt.R
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallReconciliationResponse) validateDiffSummary(formats strfmt.Registry) error {
-	if swag.IsZero(m.DiffSummary) { // not required
-		return nil
-	}
-
-	if m.DiffSummary != nil {
-		if err := m.DiffSummary.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("diff_summary")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("diff_summary")
-			}
-
-			return err
-		}
 	}
 
 	return nil
@@ -283,10 +253,6 @@ func (m *ServiceInstallReconciliationResponse) ContextValidate(ctx context.Conte
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateDiffSummary(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateSkippedRuns(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -350,31 +316,6 @@ func (m *ServiceInstallReconciliationResponse) contextValidateBlockers(ctx conte
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallReconciliationResponse) contextValidateDiffSummary(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.DiffSummary != nil {
-
-		if swag.IsZero(m.DiffSummary) { // not required
-			return nil
-		}
-
-		if err := m.DiffSummary.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("diff_summary")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("diff_summary")
-			}
-
-			return err
-		}
 	}
 
 	return nil
