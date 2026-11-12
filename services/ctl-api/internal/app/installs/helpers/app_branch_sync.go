@@ -216,8 +216,6 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	oldAppConfigID := install.AppliedAppConfigID()
-
 	var diff *app.InstallConfigDiff
 	if !input.DeferDiff {
 		computed, err := h.AppBranchConfigDiff(ctx, &install, input.NewAppConfigID)
@@ -229,7 +227,7 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 
 	update := app.InstallAppConfigVersion{
 		InstallID:      input.InstallID,
-		OldAppConfigID: oldAppConfigID,
+		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
 		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
 	}
@@ -329,14 +327,11 @@ func (h *Helpers) SaveInstallConfigDiffBlob(ctx context.Context, installConfigVe
 	return nil
 }
 
-// AppBranchConfigDiff diffs newAppConfigID against each entity's applied app
-// config. install.AppConfigID is the early pin and is not a baseline.
+// AppBranchConfigDiff diffs newAppConfigID against the install's desired app
+// config. Changes the install failed or skipped applying show up as drift in
+// install alignment, not here.
 func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install, newAppConfigID string) (*app.InstallConfigDiff, error) {
-	baselines, err := h.InstallCompositeBaselines(ctx, install)
-	if err != nil {
-		return nil, err
-	}
-	diff, err := configdiff.ComputeCompositeInstallConfigDiff(ctx, h.db, baselines, newAppConfigID)
+	diff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, install.AppConfigID, newAppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)
 	}
