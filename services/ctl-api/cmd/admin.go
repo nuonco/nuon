@@ -4,15 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 	"time"
 
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/table"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/adminops"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 const (
@@ -81,6 +86,30 @@ func (c *cli) registerAdmin() {
 	runnersCmd.AddCommand(runnersUpdateCmd)
 	adminCmd.AddCommand(runnersCmd)
 
+	migrationsCmd := &cobra.Command{
+		Use:   "migrations",
+		Short: "inspect database migrations",
+	}
+
+	migrationsListCmd := &cobra.Command{
+		Use:   "list",
+		Short: "list recorded migrations and their status",
+		Args:  cobra.NoArgs,
+		Run: func(*cobra.Command, []string) {
+			c.runAdmin("migrations list", func(ctx context.Context, deps *adminDeps) (any, error) {
+				rows, err := deps.Ops.ListMigrations(ctx)
+				if err != nil {
+					return nil, err
+				}
+
+				writeMigrationsTable(os.Stdout, rows)
+				return adminops.SummarizeMigrations(rows), nil
+			})
+		},
+	}
+	migrationsCmd.AddCommand(migrationsListCmd)
+	adminCmd.AddCommand(migrationsCmd)
+
 	rootCmd.AddCommand(adminCmd)
 }
 
@@ -138,6 +167,34 @@ func (c *cli) execAdmin(op adminOperation) (any, error) {
 	}
 
 	return op(ctx, &deps)
+}
+
+func writeMigrationsTable(w io.Writer, rows []migrations.MigrationModel) {
+	t := table.New().
+		Border(lipgloss.NormalBorder()).
+		Headers("NAME", "STATUS", "CREATED", "UPDATED", "ERROR").
+		StyleFunc(func(int, int) lipgloss.Style {
+			return lipgloss.NewStyle().Padding(0, 1)
+		})
+
+	for _, row := range rows {
+		t.Row(
+			row.Name,
+			string(row.Status),
+			row.CreatedAt.UTC().Format(time.RFC3339),
+			row.UpdatedAt.UTC().Format(time.RFC3339),
+			firstLine(row.Error),
+		)
+	}
+
+	lipgloss.Fprintln(w, t)
+}
+
+func firstLine(s string) string {
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		return s[:i]
+	}
+	return s
 }
 
 func writeAdminResult(res adminResult) int {
