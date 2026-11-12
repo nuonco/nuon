@@ -73,6 +73,11 @@ func (a *Account) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{"id"},
 			Option:  "WHERE deleted_at = 0 AND account_type <> 'service'",
 		},
+		{
+			Name:    indexes.Name(db, &Account{}, "live_log_stream"),
+			Columns: []string{"id"},
+			Option:  "WHERE deleted_at = 0 AND account_type = 'service' AND email LIKE 'log%@serviceaccount.nuon.co'",
+		},
 	}
 }
 

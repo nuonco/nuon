@@ -14,6 +14,7 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -37,6 +38,7 @@ type Activities struct {
 	blobSvc                 blobstore.Service
 	queueClient             *queueclient.Client
 	flowsClient             *flowclient.Client
+	acctClient              *account.Client
 }
 
 type Params struct {
@@ -55,6 +57,7 @@ type Params struct {
 	AutoLinkHelper          *autolink.Helper
 	BlobSvc                 blobstore.Service
 	FlowsClient             *flowclient.Client
+	AccountClient           *account.Client
 }
 
 func New(params Params) (*Activities, error) {
@@ -79,5 +82,6 @@ func New(params Params) (*Activities, error) {
 		blobSvc:                 params.BlobSvc,
 		queueClient:             params.QueueClient,
 		flowsClient:             params.FlowsClient,
+		acctClient:              params.AccountClient,
 	}, nil
 }
