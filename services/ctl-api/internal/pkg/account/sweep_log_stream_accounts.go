@@ -30,6 +30,9 @@ type SweepLogStreamAccountsResult struct {
 func (c *Client) SweepLogStreamAccounts(ctx context.Context, req SweepLogStreamAccountsRequest) (*SweepLogStreamAccountsResult, error) {
 	out := &SweepLogStreamAccountsResult{}
 	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("SET LOCAL plan_cache_mode = force_custom_plan").Error; err != nil {
+			return errors.Wrap(err, "unable to force custom query plans")
+		}
 		query := tx.Table("accounts").
 			Joins("LEFT JOIN log_streams ON log_streams.id = accounts.subject AND log_streams.deleted_at = 0").
 			Where("accounts.deleted_at = 0 AND accounts.account_type = 'service' AND accounts.email LIKE 'log%@serviceaccount.nuon.co'").
