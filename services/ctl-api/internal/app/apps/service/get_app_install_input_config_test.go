@@ -98,9 +98,6 @@ func (s *AppInstallInputConfigTestSuite) errDescription(rr *httptest.ResponseRec
 	return resp.Description
 }
 
-// TestNoBranchReturnsAppsSyncConfigEvenWithNewerBranchConfig covers the
-// customer-reported case: a branch has a newer config with extra inputs, but
-// an unbranched install must still be pinned to the apps-sync config.
 func (s *AppInstallInputConfigTestSuite) TestNoBranchReturnsAppsSyncConfigEvenWithNewerBranchConfig() {
 	ctx := s.testCtx
 
@@ -125,7 +122,6 @@ func (s *AppInstallInputConfigTestSuite) TestNoBranchReturnsAppsSyncConfigEvenWi
 	assert.Equal(s.T(), expected.ID, resp.ID)
 }
 
-// TestWithAppBranchIDReturnsBranchConfig covers the branch-pinned path.
 func (s *AppInstallInputConfigTestSuite) TestWithAppBranchIDReturnsBranchConfig() {
 	ctx := s.testCtx
 
@@ -148,8 +144,6 @@ func (s *AppInstallInputConfigTestSuite) TestWithAppBranchIDReturnsBranchConfig(
 	assert.Equal(s.T(), expected.ID, resp.ID)
 }
 
-// TestBranchFromAnotherAppReturnsBadRequest covers an app_branch_id that
-// belongs to a different app.
 func (s *AppInstallInputConfigTestSuite) TestBranchFromAnotherAppReturnsBadRequest() {
 	ctx := s.testCtx
 
@@ -161,8 +155,6 @@ func (s *AppInstallInputConfigTestSuite) TestBranchFromAnotherAppReturnsBadReque
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
 }
 
-// TestNoAppsSyncConfigWithBranchesReturnsBadRequest covers an app whose only
-// configs live on app branches.
 func (s *AppInstallInputConfigTestSuite) TestNoAppsSyncConfigWithBranchesReturnsBadRequest() {
 	ctx := s.testCtx
 
@@ -175,19 +167,15 @@ func (s *AppInstallInputConfigTestSuite) TestNoAppsSyncConfigWithBranchesReturns
 
 	rr := s.makeRequest("/v1/apps/" + s.testApp.ID + "/install-input-config")
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
-	assert.Contains(s.T(), s.errDescription(rr), "app branch")
+	assert.Equal(s.T(), "No app config from nuon apps sync exists for this app; its configs are on app branches. Choose an app branch for this install.", s.errDescription(rr))
 }
 
-// TestNoConfigAndNoBranchesReturnsBadRequest covers an app that has never
-// been synced.
 func (s *AppInstallInputConfigTestSuite) TestNoConfigAndNoBranchesReturnsBadRequest() {
 	rr := s.makeRequest("/v1/apps/" + s.testApp.ID + "/install-input-config")
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
 	assert.Equal(s.T(), "No active app config found. Please sync your app configuration before creating an install.", s.errDescription(rr))
 }
 
-// TestInputLatestConfigStillReturnsNewestConfigOfAnyKind guards that
-// input-latest-config keeps its own, unrelated behavior.
 func (s *AppInstallInputConfigTestSuite) TestInputLatestConfigStillReturnsNewestConfigOfAnyKind() {
 	ctx := s.testCtx
 

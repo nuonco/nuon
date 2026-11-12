@@ -341,7 +341,7 @@ func TestUnknownInputsError(t *testing.T) {
 type dryRunInputsAPI struct {
 	nuon.Client
 	configs        map[string]*models.AppAppConfig
-	latestInput    *models.AppAppInputConfig
+	installInput   *models.AppAppInputConfig
 	fetched        []string
 	branches       []*models.AppAppBranch
 	listedBranches bool
@@ -354,21 +354,11 @@ func (a *dryRunInputsAPI) GetAppBranches(context.Context, string, *models.GetPag
 
 func (a *dryRunInputsAPI) GetAppConfig(_ context.Context, _, appConfigID string, _ *bool) (*models.AppAppConfig, error) {
 	a.fetched = append(a.fetched, appConfigID)
-	if appConfigID == "latest-cfg" {
-		return &models.AppAppConfig{ID: "latest-cfg", Input: a.latestInput}, nil
-	}
 	cfg, ok := a.configs[appConfigID]
 	if !ok {
 		return nil, fmt.Errorf("no app config %s", appConfigID)
 	}
 	return cfg, nil
-}
-
-func (a *dryRunInputsAPI) GetAppConfigs(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error) {
-	if a.latestInput == nil {
-		return nil, false, nil
-	}
-	return []*models.AppAppConfig{{ID: "latest-cfg", Status: models.AppAppConfigStatusActive}}, false, nil
 }
 
 func (a *dryRunInputsAPI) GetInstallCurrentInputs(context.Context, string) (*models.AppInstallInputs, error) {
@@ -379,12 +369,8 @@ func (a *dryRunInputsAPI) GenerateCLIInstallConfig(context.Context, string) ([]b
 	return []byte("name = \"acme\"\n"), nil
 }
 
-func (a *dryRunInputsAPI) GetAppInputLatestConfig(context.Context, string) (*models.AppAppInputConfig, error) {
-	return a.latestInput, nil
-}
-
 func (a *dryRunInputsAPI) GetAppInstallInputConfig(context.Context, string, string) (*models.AppAppInputConfig, error) {
-	return a.latestInput, nil
+	return a.installInput, nil
 }
 
 func appConfigWithInputs(id string, names ...string) *models.AppAppConfig {
@@ -481,7 +467,7 @@ func TestSyncExistingInstallDryRunAllowsInputDeclaredOnlyOnPin(t *testing.T) {
 
 func TestSyncNewInstallDryRunRejectsUnknownInput(t *testing.T) {
 	api := &dryRunInputsAPI{
-		latestInput: &models.AppAppInputConfig{
+		installInput: &models.AppAppInputConfig{
 			Inputs: []*models.AppAppInput{{Name: "region"}},
 		},
 	}
@@ -504,7 +490,7 @@ func TestSyncNewInstallDryRunRejectsUnknownInput(t *testing.T) {
 
 func TestSyncNewInstallUnknownInputWithoutBranchExplainsAppBranch(t *testing.T) {
 	api := &dryRunInputsAPI{
-		latestInput: &models.AppAppInputConfig{
+		installInput: &models.AppAppInputConfig{
 			Inputs: []*models.AppAppInput{{Name: "region"}},
 		},
 		branches: []*models.AppAppBranch{{ID: "branch-1", Name: "prod"}},
@@ -531,7 +517,7 @@ func TestSyncNewInstallUnknownInputWithoutBranchExplainsAppBranch(t *testing.T) 
 
 func TestSyncNewInstallUnknownInputWithoutBranchesOmitsAppBranchHint(t *testing.T) {
 	api := &dryRunInputsAPI{
-		latestInput: &models.AppAppInputConfig{
+		installInput: &models.AppAppInputConfig{
 			Inputs: []*models.AppAppInput{{Name: "region"}},
 		},
 	}
@@ -549,75 +535,17 @@ func TestSyncNewInstallUnknownInputWithoutBranchesOmitsAppBranchHint(t *testing.
 	}
 }
 
-type appsSyncOnlyAPI struct {
-	nuon.Client
-	configs  []*models.AppAppConfig
-	byID     map[string]*models.AppAppConfig
-	branches []*models.AppAppBranch
-}
-
-func (a *appsSyncOnlyAPI) GetAppConfigs(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error) {
-	return a.configs, false, nil
-}
-
-func (a *appsSyncOnlyAPI) GetAppConfig(_ context.Context, _, id string, _ *bool) (*models.AppAppConfig, error) {
-	return a.byID[id], nil
-}
-
-func (a *appsSyncOnlyAPI) GetAppBranches(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
-	return a.branches, false, nil
-}
-
-// GetAppInstallInputConfig mimics the server's unbranched install pin: the
-// newest config with no app_branch_id, regardless of newer branch configs.
-func (a *appsSyncOnlyAPI) GetAppInstallInputConfig(_ context.Context, appID, appBranchID string) (*models.AppAppInputConfig, error) {
-	for _, cfg := range a.configs {
-		if cfg.AppBranchID != "" {
-			continue
-		}
-		full := a.byID[cfg.ID]
-		if full == nil || full.Input == nil {
-			return nil, fmt.Errorf("app config %s has no input config", cfg.ID)
-		}
-		return full.Input, nil
-	}
-	return nil, fmt.Errorf("no apps-sync config found")
-}
-
-func TestInputConfigForNewInstallWithoutBranchUsesAppsSyncConfig(t *testing.T) {
-	api := &appsSyncOnlyAPI{
-		configs: []*models.AppAppConfig{
-			{ID: "branch-cfg", AppBranchID: "b1", Status: models.AppAppConfigStatusActive},
-			{ID: "sync-cfg", Status: models.AppAppConfigStatusActive},
-		},
-		byID: map[string]*models.AppAppConfig{
-			"sync-cfg": appConfigWithInputs("sync-cfg", "legacy_only"),
-		},
-	}
-	syncer := &appInstallSyncer{api: api, appID: "app-1"}
-	got, err := syncer.inputConfigForNewInstall(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(got.Inputs) != 1 || got.Inputs[0].Name != "legacy_only" {
-		t.Fatalf("got %#v", got)
-	}
-}
-
-func TestSyncNewInstallAcceptsInputOnlyInAppsSyncConfig(t *testing.T) {
-	api := &appsSyncOnlyAPI{
-		configs: []*models.AppAppConfig{
-			{ID: "sync-cfg", Status: models.AppAppConfigStatusActive},
-		},
-		byID: map[string]*models.AppAppConfig{
-			"sync-cfg": appConfigWithInputs("sync-cfg", "legacy_only"),
+func TestSyncNewInstallDryRunAllowsDeclaredInput(t *testing.T) {
+	api := &dryRunInputsAPI{
+		installInput: &models.AppAppInputConfig{
+			Inputs: []*models.AppAppInput{{Name: "region"}},
 		},
 	}
 	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
 	cfg := &config.Install{
 		Name: "acme",
 		InputGroups: []config.InputGroup{{
-			Inputs: map[string]string{"legacy_only": "1"},
+			Inputs: map[string]string{"region": "us-east-1"},
 		}},
 	}
 
@@ -627,33 +555,6 @@ func TestSyncNewInstallAcceptsInputOnlyInAppsSyncConfig(t *testing.T) {
 	}
 	if got != nil {
 		t.Fatalf("dry-run install = %#v, want nil", got)
-	}
-}
-
-func TestSyncNewInstallRejectsInputOnlyOnNewerBranchConfig(t *testing.T) {
-	api := &appsSyncOnlyAPI{
-		configs: []*models.AppAppConfig{
-			{ID: "sync-cfg", Status: models.AppAppConfigStatusActive},
-		},
-		byID: map[string]*models.AppAppConfig{
-			"sync-cfg": appConfigWithInputs("sync-cfg", "region"),
-		},
-		branches: []*models.AppAppBranch{{ID: "b1", Name: "prod"}},
-	}
-	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
-	cfg := &config.Install{
-		Name: "acme",
-		InputGroups: []config.InputGroup{{
-			Inputs: map[string]string{"newer_branch_only": "1"},
-		}},
-	}
-
-	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
-	if err == nil || !strings.Contains(err.Error(), "unknown input(s): newer_branch_only") {
-		t.Fatalf("err = %v", err)
-	}
-	if !strings.Contains(err.Error(), "app_branch") {
-		t.Fatalf("err = %v, want app_branch hint", err)
 	}
 }
 
