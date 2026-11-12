@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 const (
@@ -18,8 +20,10 @@ const (
 	// itself to every org on their next stack regeneration — including orgs with
 	// phone-home auth off, who have no reason to take the change. Bumping this is a
 	// deliberate act; use PhoneHomeScriptURL to try a script out first.
-	DefaultAWSPhoneHomeScript = "https://raw.githubusercontent.com/nuonco/runner/refs/tags/aws-v0.1.10/scripts/aws/phonehome.py"
+	DefaultAWSPhoneHomeScript = "https://raw.githubusercontent.com/nuonco/runner/refs/tags/aws-v0.1.12/scripts/aws/phonehome.py"
 )
+
+var phoneHomeScriptFetchClient = stacks.NewTemplateFetchClient()
 
 type GetPhoneHomeScriptRequest struct {
 	// URL is the app's AppRunnerConfig.PhoneHomeScriptURL. Empty falls back to the
@@ -52,9 +56,7 @@ func FetchPhoneHomeScriptRaw(ctx context.Context, appURL, envURL string) ([]byte
 	defer cancel()
 
 	r = r.WithContext(ctx)
-	client := http.DefaultClient
-
-	resp, err := client.Do(r)
+	resp, err := phoneHomeScriptFetchClient.Do(r)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch phone-home script")
 	}

@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/nuonauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -107,6 +108,8 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 	api.POST("/oauth/consent", s.OAuthConsent)
 	api.POST("/oauth/token", s.OAuthToken)
 
+	api.GET(nuonauth.CLICompletePath, s.CLIComplete)
+
 	return nil
 }
 
@@ -170,7 +173,10 @@ func New(params Params) (*service, error) {
 		zap.String("provider_id", defaultIP.ID))
 
 	params.LC.Append(fx.Hook{
-		OnStart: func(context.Context) error {
+		OnStart: func(ctx context.Context) error {
+			if err := s.ensureCLIClient(ctx); err != nil {
+				return fmt.Errorf("ensure cli oauth client: %w", err)
+			}
 			go s.runOAuthCleanup()
 			return nil
 		},

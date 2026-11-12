@@ -264,7 +264,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create log stream")
 	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, logStream.ID)
 	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
@@ -277,7 +279,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	err = s.executeSandboxPlan(ctx, install, installRun, s.FlowStepID, s.SandboxMode, s.cfg.DNSRootDomain)
 	if err != nil {
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "error deprovisioning")
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 		return err
 	}
 

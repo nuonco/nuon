@@ -20,6 +20,7 @@ export interface IRunCommit {
   sha?: string
   shaUrl?: string
   createdAt?: string
+  committedAt?: string
 }
 
 export interface IRunBaseline {
@@ -38,7 +39,24 @@ export interface IRunSourceCard {
   commit?: IRunCommit
   previewMode?: string
   baseline?: IRunBaseline
+  runAt?: string
 }
+
+const Age = ({ label, time }: { label: string; time?: string }) =>
+  time ? (
+    <span className="inline-flex items-center gap-1">
+      <Text as="span" variant="subtext" theme="neutral">
+        {label}
+      </Text>
+      <Time
+        as="span"
+        variant="subtext"
+        theme="neutral"
+        time={time}
+        format="relative"
+      />
+    </span>
+  ) : null
 
 const TRIGGER_LABEL: Record<TRunSource['kind'], string> = {
   'pull-request': 'Pull request',
@@ -124,6 +142,7 @@ export const RunCommitSummary = ({
   author,
   commit,
   previewMode,
+  runAt,
 }: IRunSourceCard) => {
   const commitSha = commit?.sha ?? sha
   const commitHref = commit?.shaUrl ?? shaUrl
@@ -160,14 +179,8 @@ export const RunCommitSummary = ({
             {commitAuthor}
           </Text>
         ) : null}
-        {commit?.createdAt ? (
-          <Time
-            variant="subtext"
-            theme="neutral"
-            time={commit.createdAt}
-            format="relative"
-          />
-        ) : null}
+        <Age label="Commit was" time={commit?.committedAt} />
+        <Age label="Branch run was" time={runAt} />
         <Text variant="subtext" theme="neutral">
           · {TRIGGER_LABEL[source.kind]}
         </Text>
@@ -191,6 +204,7 @@ export const RunSourceCard = ({
   commit,
   previewMode,
   baseline,
+  runAt,
 }: IRunSourceCard) => {
   const commitSha = commit?.sha ?? sha
   const commitUrl = commit?.shaUrl ?? shaUrl
@@ -213,7 +227,7 @@ export const RunSourceCard = ({
             {message || title}
           </Text>
         </ShowMore>
-        {commitSha || commitAuthor || commit?.createdAt ? (
+        {commitSha || commitAuthor || commit?.committedAt || runAt ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {commitSha ? <CommitLink sha={commitSha} href={commitUrl} /> : null}
             {commit?.avatarUrl ? (
@@ -229,14 +243,8 @@ export const RunSourceCard = ({
                 {commitAuthor}
               </Text>
             ) : null}
-            {commit?.createdAt ? (
-              <Time
-                variant="subtext"
-                theme="neutral"
-                time={commit.createdAt}
-                format="relative"
-              />
-            ) : null}
+            <Age label="Commit was" time={commit?.committedAt} />
+            <Age label="Branch run was" time={runAt} />
           </span>
         ) : null}
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">

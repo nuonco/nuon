@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type Params struct {
@@ -27,6 +28,7 @@ type Params struct {
 	AuthzClient             *authz.Client
 	Cfg                     *internal.Config
 	Features                *features.Features
+	QueueClient             *queueclient.Client
 	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
 }
 
@@ -40,6 +42,7 @@ type Activities struct {
 	authzClient             *authz.Client
 	cfg                     *internal.Config
 	features                *features.Features
+	queueClient             *queueclient.Client
 	cloudConnectionsHelpers *cloudconnectionshelpers.Helpers
 }
 
@@ -54,6 +57,7 @@ func New(params Params) *Activities {
 		acctClient:              params.AcctClient,
 		authzClient:             params.AuthzClient,
 		features:                params.Features,
+		queueClient:             params.QueueClient,
 		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
 	}
 }

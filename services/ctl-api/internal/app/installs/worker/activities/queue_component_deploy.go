@@ -31,11 +31,11 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		return nil, err
 	}
 
+	appConfigID, err := buildselection.InstallConfigID(ctx, a.db, install, req.WorkflowID)
+	if err != nil {
+		return nil, err
+	}
 	if req.Type != app.InstallDeployTypeTeardown {
-		appConfigID, err := buildselection.InstallConfigID(ctx, a.db, install, req.WorkflowID)
-		if err != nil {
-			return nil, err
-		}
 		if err := buildselection.ValidateComponent(ctx, a.db, appConfigID, req.ComponentID, req.BuildID); err != nil {
 			return nil, err
 		}
@@ -61,6 +61,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		Status:             "queued",
 		StatusDescription:  "waiting to be deployed to install",
 		ComponentBuildID:   req.BuildID,
+		AppConfigID:        appConfigID,
 		Type:               req.Type,
 		InstallWorkflowID:  installWorkflowID,
 		Role:               req.Role,

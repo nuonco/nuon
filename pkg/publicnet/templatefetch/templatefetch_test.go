@@ -1,4 +1,4 @@
-package stacks
+package templatefetch
 
 import (
 	"io"
@@ -16,12 +16,12 @@ func TestTemplateFetchClient_RefusesPlainHTTP(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	_, err := NewTemplateFetchClient().Get(srv.URL)
+	_, err := NewClient().Get(srv.URL)
 	require.ErrorContains(t, err, "must use https")
 }
 
 func TestTemplateFetchClient_RefusesNonPublicHosts(t *testing.T) {
-	client := NewTemplateFetchClient()
+	client := NewClient()
 	for _, u := range []string{
 		"https://127.0.0.1/template.json",
 		"https://169.254.169.254/latest/meta-data/",
@@ -36,7 +36,7 @@ func TestTemplateFetchClient_RefusesNonPublicHosts(t *testing.T) {
 }
 
 func TestTemplateFetchClient_RefusesCredentialsAndOtherSchemes(t *testing.T) {
-	client := NewTemplateFetchClient()
+	client := NewClient()
 
 	_, err := client.Get("https://user:pass@example.com/template.json")
 	require.ErrorContains(t, err, "without credentials")
@@ -58,8 +58,8 @@ func TestTemplateFetchClient_RefusesRedirectOffHTTPS(t *testing.T) {
 
 	// An insecure client is needed to reach the TLS test server at all; the
 	// redirect must still be refused when the client is strict about scheme.
-	client := NewTemplateFetchClient()
-	client.Transport = templateTransport{base: srv.Client().Transport, allowInsecure: false}
+	client := NewClient()
+	client.Transport = transport{base: srv.Client().Transport, allowInsecure: false}
 
 	_, err := client.Get(srv.URL)
 	require.ErrorContains(t, err, "must use https")
@@ -71,7 +71,7 @@ func TestTemplateFetchClient_InsecureAllowsLocalhost(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	resp, err := NewLocalTemplateFetchClient().Get(srv.URL)
+	resp, err := NewLocalClient().Get(srv.URL)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
@@ -85,7 +85,7 @@ func TestTemplateFetchClient_CapsBody(t *testing.T) {
 		// Stream without a Content-Length so the cap is enforced on the read path.
 		w.Header().Set("Transfer-Encoding", "chunked")
 		chunk := strings.Repeat("x", 64<<10)
-		for written := 0; written <= MaxTemplateFetchBytes; written += len(chunk) {
+		for written := 0; written <= MaxBytes; written += len(chunk) {
 			if _, err := io.WriteString(w, chunk); err != nil {
 				return
 			}
@@ -93,7 +93,7 @@ func TestTemplateFetchClient_CapsBody(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	resp, err := NewLocalTemplateFetchClient().Get(srv.URL)
+	resp, err := NewLocalClient().Get(srv.URL)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
@@ -108,6 +108,6 @@ func TestTemplateFetchClient_CapsBodyByContentLength(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	_, err := NewLocalTemplateFetchClient().Get(srv.URL)
+	_, err := NewLocalClient().Get(srv.URL)
 	require.ErrorContains(t, err, "exceeds")
 }

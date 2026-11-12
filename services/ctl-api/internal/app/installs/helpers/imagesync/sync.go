@@ -142,6 +142,12 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 		return errors.Wrap(err, "unable to create oci artifact")
 	}
 
+	if workflow.GetVersion(ctx, "image-sync-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{DeployID: installDeploy.ID, RecordDependencies: true}); err != nil {
+			return errors.Wrap(err, "unable to record applied image sync")
+		}
+	}
+
 	return nil
 }
 
@@ -177,7 +183,9 @@ func Sync(ctx workflow.Context, req SyncRequest) (*app.InstallDeploy, error) {
 		return nil, errors.Wrap(err, "unable to create log stream")
 	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, logStream.ID)
 	}()
 
 	syncCtx := cctx.SetLogStreamWorkflowContext(ctx, logStream)

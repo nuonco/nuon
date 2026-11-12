@@ -1,12 +1,16 @@
 package plantypes
 
-import "github.com/nuonco/nuon/pkg/plugins/configs"
+import (
+	"github.com/nuonco/nuon/pkg/plugins/configs"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
+)
 
 type BuildPlan struct {
 	ComponentID      string `json:"component_id"`
 	ComponentBuildID string `json:"component_build_id"`
 
-	Src *GitSource `json:"git_source"`
+	Src            *GitSource               `json:"git_source"`
+	SourceIdentity *sourceidentity.Identity `json:"source_identity,omitempty"`
 
 	Dst    *configs.OCIRegistryRepository `json:"dst_registry" validate:"required"`
 	DstTag string                         `json:"dst_tag" validate:"required"`

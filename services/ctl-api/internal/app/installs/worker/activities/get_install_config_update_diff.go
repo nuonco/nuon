@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 )
 
 type GetInstallAppConfigVersionDiffInput struct {
@@ -37,6 +38,19 @@ func (a *Activities) GetInstallAppConfigVersionDiff(ctx context.Context, input *
 	var diff app.InstallConfigDiff
 	if err := json.Unmarshal([]byte(diffJSON), &diff); err != nil {
 		return nil, fmt.Errorf("unable to parse diff: %w", err)
+	}
+
+	if diff.SandboxBuildChanged && !diff.SandboxChanged {
+		var builds []*app.AppSandboxBuild
+		if err := a.db.WithContext(ctx).Unscoped().
+			Where("id IN ?", []string{diff.SandboxBuildOldID, diff.SandboxBuildNewID}).Find(&builds).Error; err != nil {
+			return nil, fmt.Errorf("unable to get sandbox builds for config diff: %w", err)
+		}
+		byID := make(map[string]*app.AppSandboxBuild, len(builds))
+		for _, build := range builds {
+			byID[build.ID] = build
+		}
+		diff.SandboxChanged = !configdiff.SandboxSourcesEqual(byID[diff.SandboxBuildOldID], byID[diff.SandboxBuildNewID])
 	}
 
 	return &diff, nil

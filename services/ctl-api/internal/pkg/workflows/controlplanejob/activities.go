@@ -20,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/pkg/redact"
 	runnercontrolplane "github.com/nuonco/nuon/pkg/runner/controlplane"
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -29,7 +30,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all"
 	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -47,6 +50,7 @@ type Activities struct {
 	statusActivities        *statusactivities.Activities
 	kafka                   *kafka.Producer
 	cloudConnectionsHelpers cloudconnections.ImageAuthorizer
+	vcsHelpers              *vcshelpers.Helpers
 }
 
 type ActivityParams struct {
@@ -62,6 +66,7 @@ type ActivityParams struct {
 	StatusActivities        *statusactivities.Activities
 	Kafka                   *kafka.Producer
 	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	VcsHelpers              *vcshelpers.Helpers
 }
 
 func NewActivities(params ActivityParams) *Activities {
@@ -75,6 +80,7 @@ func NewActivities(params ActivityParams) *Activities {
 		statusActivities:        params.StatusActivities,
 		kafka:                   params.Kafka,
 		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
+		vcsHelpers:              params.VcsHelpers,
 	}
 }
 
@@ -321,6 +327,10 @@ func (a *Activities) GetJobCompositePlan(ctx context.Context, jobID string) (*mo
 		}
 	}
 
+	compositePlan, err := runnerhelpers.ResumeBuildSource(ctx, a.db, jobID, compositePlan)
+	if err != nil {
+		return nil, err
+	}
 	if err := a.authorizeImageSource(ctx, jobID, compositePlan); err != nil {
 		return nil, err
 	}
@@ -422,6 +432,43 @@ func (a *Activities) CreateJobExecutionResult(ctx context.Context, jobID, execut
 	ctx = cctx.SetOrgIDContext(ctx, job.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, job.CreatedByID)
 
+	metadata := req.SourceIdentity
+	if req.SourceCapture != nil {
+		metadata = req.SourceCapture
+	}
+	var identity *sourceidentity.Identity
+	if metadata != nil {
+		data, err := json.Marshal(metadata)
+		if err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(data, &identity); err != nil {
+			return nil, err
+		}
+	}
+	if req.SourceCapture != nil {
+		if err := runnerhelpers.ClaimBuildSource(ctx, a.db, job, executionID, identity); err != nil {
+			return nil, err
+		}
+		return &models.AppRunnerJobExecutionResult{}, nil
+	}
+	var reads *sourceidentity.Reads
+	if req.SourceReads != nil {
+		reads = &sourceidentity.Reads{Read: req.SourceReads.Read, Stat: req.SourceReads.Stat}
+	}
+	source := &app.ComponentBuild{
+		SourceIdentity: buildsource.ReportedSource(ctx, a.db, a.vcsHelpers, a.l, job, req.Success, identity, reads), SourceRef: req.SourceRef, SourceImage: req.SourceImage,
+		ResolvedTag: req.ResolvedTag, SourceDigest: req.SourceDigest, SourceMediaType: req.SourceMediaType,
+		NoOp: req.NoOp,
+	}
+	if req.ResolvedAt != "" {
+		parsed, err := time.Parse(time.RFC3339Nano, req.ResolvedAt)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse resolved_at: %w", err)
+		}
+		source.ResolvedAt = &parsed
+	}
+
 	resolveProvider := func() errparse.Provider {
 		return errparse.ResolveRunnerJobProvider(ctx, a.db, job)
 	}
@@ -462,7 +509,7 @@ func (a *Activities) CreateJobExecutionResult(ctx context.Context, jobID, execut
 		result.ContentsDisplay = byts
 	}
 
-	persisted, created, err := runnerhelpers.CreateJobExecutionResultIfAbsent(ctx, a.db, &result)
+	persisted, created, err := runnerhelpers.PersistBuildResult(ctx, a.db, job, &result, source)
 	if err != nil {
 		return nil, err
 	}
@@ -483,9 +530,6 @@ func (a *Activities) CreateJobExecutionResult(ctx context.Context, jobID, execut
 	}
 
 	if created {
-		if err := a.applyComponentBuildSourceIdentity(ctx, job, req); err != nil {
-			a.l.Warn("unable to apply component build source identity", zap.Error(err))
-		}
 		a.refreshOwnerCompositeError(ctx, job, result.CompositeError)
 	}
 
@@ -509,39 +553,6 @@ func (a *Activities) refreshOwnerCompositeError(ctx context.Context, job *app.Ru
 	if res.Error != nil {
 		a.l.Warn("unable to refresh owner composite error", zap.String("owner_type", job.OwnerType), zap.String("owner_id", job.OwnerID), zap.Error(res.Error))
 	}
-}
-
-func (a *Activities) applyComponentBuildSourceIdentity(ctx context.Context, job *app.RunnerJob, req *models.ServiceCreateRunnerJobExecutionResultRequest) error {
-	if req.SourceDigest == "" || job.OwnerType != "component_builds" || job.OwnerID == "" {
-		return nil
-	}
-
-	var resolvedAt *time.Time
-	if req.ResolvedAt != "" {
-		parsed, err := time.Parse(time.RFC3339Nano, req.ResolvedAt)
-		if err != nil {
-			return fmt.Errorf("unable to parse resolved_at: %w", err)
-		}
-		resolvedAt = &parsed
-	}
-
-	build := app.ComponentBuild{ID: job.OwnerID}
-	updates := app.ComponentBuild{
-		SourceRef:       req.SourceRef,
-		SourceImage:     req.SourceImage,
-		ResolvedTag:     req.ResolvedTag,
-		SourceDigest:    req.SourceDigest,
-		SourceMediaType: req.SourceMediaType,
-		ResolvedAt:      resolvedAt,
-		NoOp:            req.NoOp,
-	}
-	if err := a.db.WithContext(ctx).
-		Model(&build).
-		Select("source_ref", "source_image", "resolved_tag", "source_digest", "source_media_type", "resolved_at", "no_op").
-		Updates(updates).Error; err != nil {
-		return fmt.Errorf("unable to update component build source identity: %w", err)
-	}
-	return nil
 }
 
 func (a *Activities) CreateJobExecutionOutputs(ctx context.Context, jobID, executionID string, req *models.ServiceCreateRunnerJobExecutionOutputsRequest) (*models.AppRunnerJobExecutionOutputs, error) {
