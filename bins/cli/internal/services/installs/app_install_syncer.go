@@ -126,7 +126,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 	if err := unknownInputsError(appInputCfg.Inputs, finalInputs); err != nil {
-		return nil, err
+		return nil, s.withUnbranchedInstallHint(ctx, installCfg, err)
 	}
 	installCfg.InputGroups = []config.InputGroup{{
 		Inputs: finalInputs,
@@ -510,9 +510,9 @@ func (s *appInstallSyncer) inputConfigForNewInstall(
 	branch *models.AppAppBranch,
 ) (*models.AppAppInputConfig, error) {
 	if branch == nil {
-		appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
+		appInputCfg, err := installcreate.ResolveInputConfig(ctx, s.api, s.appID, "")
 		if err != nil {
-			return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
+			return nil, err
 		}
 		return appInputCfg, nil
 	}
@@ -527,6 +527,20 @@ func (s *appInstallSyncer) inputConfigForNewInstall(
 		return nil, fmt.Errorf("latest app config %s for app branch %q has no input configuration", appConfig.ID, branch.Name)
 	}
 	return appConfig.Input, nil
+}
+
+func (s *appInstallSyncer) withUnbranchedInstallHint(ctx context.Context, installCfg *config.Install, err error) error {
+	if installCfg.AppBranch != "" {
+		return err
+	}
+	branches, _, listErr := s.api.GetAppBranches(ctx, s.appID, &models.GetPaginatedQuery{Limit: 1})
+	if listErr != nil || len(branches) == 0 {
+		return err
+	}
+	return fmt.Errorf(
+		"%w; install config %q has no app_branch, so it uses the app config from the last `nuon apps sync`; set app_branch to create the install on an app branch",
+		err, installCfg.Name,
+	)
 }
 
 func branchID(branch *models.AppAppBranch) string {

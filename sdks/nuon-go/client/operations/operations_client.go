@@ -486,6 +486,8 @@ type ClientService interface {
 
 	GetAppInputLatestConfig(params *GetAppInputLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInputLatestConfigOK, error)
 
+	GetAppInstallInputConfig(params *GetAppInstallInputConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInstallInputConfigOK, error)
+
 	GetAppInstallSync(params *GetAppInstallSyncParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInstallSyncOK, error)
 
 	GetAppInstallSyncs(params *GetAppInstallSyncsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInstallSyncsOK, error)
@@ -9748,6 +9750,52 @@ func (a *Client) GetAppInputLatestConfig(params *GetAppInputLatestConfigParams, 
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppInputLatestConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppInstallInputConfig gets the input config a new install would be created with
+
+Returns the input config that a new install would be created with for this app, optionally pinned to an app branch. Unlike `input-latest-config`, which always returns the newest input config of any kind, this endpoint mirrors the server's install-creation rules: without an `app_branch_id` it returns the latest config from `nuon apps sync`, and with one it returns the branch's latest deployable config.
+*/
+func (a *Client) GetAppInstallInputConfig(params *GetAppInstallInputConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInstallInputConfigOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppInstallInputConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppInstallInputConfig",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/install-input-config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppInstallInputConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppInstallInputConfigOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppInstallInputConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
