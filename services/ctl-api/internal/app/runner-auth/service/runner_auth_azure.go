@@ -19,6 +19,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 )
 
+const azureTokenVerificationFailed = "failed to verify Azure identity token"
+
 type RunnerAuthAzureRequest struct {
 	Token       string `json:"token" validate:"required"`
 	RunnerID    string `json:"runner_id,omitempty"`
@@ -105,7 +107,7 @@ func (s *service) verifyAzureJWT(ctx context.Context, tokenStr, expectedTenantID
 		return nil, fmt.Errorf("token tenant %q does not match install tenant", tenantID)
 	}
 
-	issuerURL, err := workloadjwt.AzureIssuer(tenantID)
+	issuerURL, err := workloadjwt.AzureIssuer(strings.ToLower(expectedTenantID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to build issuer: %w", err)
 	}
@@ -221,7 +223,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		s.l.Warn("runner auth azure: missing runner id")
 		ctx.Error(stderr.ErrAuthentication{
 			Err:         errors.New("authentication failed"),
-			Description: "unable to determine runner identity",
+			Description: azureTokenVerificationFailed,
 		})
 		ctx.Abort()
 		return
@@ -236,7 +238,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		}
 		ctx.Error(stderr.ErrAuthentication{
 			Err:         errors.New("authentication failed"),
-			Description: "runner not recognized",
+			Description: azureTokenVerificationFailed,
 		})
 		ctx.Abort()
 		return
@@ -250,7 +252,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 			zap.Error(err))
 		ctx.Error(stderr.ErrAuthentication{
 			Err:         errors.New("authentication failed"),
-			Description: "runner not associated with an install",
+			Description: azureTokenVerificationFailed,
 		})
 		ctx.Abort()
 		return
@@ -267,7 +269,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 			zap.Error(err))
 		ctx.Error(stderr.ErrAuthentication{
 			Err:         errors.New("authentication failed"),
-			Description: "runner identity does not match expected configuration",
+			Description: azureTokenVerificationFailed,
 		})
 		ctx.Abort()
 		return
@@ -281,7 +283,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 			zap.Error(err))
 		ctx.Error(stderr.ErrAuthentication{
 			Err:         errors.New("authentication failed"),
-			Description: "failed to verify Azure identity token",
+			Description: azureTokenVerificationFailed,
 		})
 		ctx.Abort()
 		return
@@ -389,7 +391,7 @@ func matchAzureRunnerClaims(installID string, outputs *app.AzureStackOutputs, cl
 		return fmt.Errorf("install %s does not have a subscription tenant ID in stack outputs", installID)
 	}
 
-	if claims.TenantID != expectedTenantID {
+	if !strings.EqualFold(claims.TenantID, expectedTenantID) {
 		return fmt.Errorf("tenant ID mismatch: got %s, expected %s", claims.TenantID, expectedTenantID)
 	}
 
