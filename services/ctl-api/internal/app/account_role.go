@@ -77,6 +77,12 @@ func (a *AccountRole) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
+			Name: indexes.Name(db, &AccountRole{}, "role_id"),
+			Columns: []string{
+				"role_id",
+			},
+		},
+		{
 			Name: indexes.Name(db, &AccountRole{}, "org_id"),
 			Columns: []string{
 				"org_id",
