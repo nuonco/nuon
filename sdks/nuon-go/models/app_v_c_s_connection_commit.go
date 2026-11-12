@@ -26,6 +26,9 @@ type AppVCSConnectionCommit struct {
 	// author name
 	AuthorName string `json:"author_name,omitempty"`
 
+	// Git committer time. CreatedAt is when this row was stored during the run.
+	CommittedAt string `json:"committed_at,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
