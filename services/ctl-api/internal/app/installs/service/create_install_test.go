@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -301,4 +303,84 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2PinsLatestLockedBranchConf
 	var install app.Install
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
 	assert.Equal(s.T(), locked.ID, install.AppConfigID)
+}
+
+func (s *InstallsServiceTestSuite) createInstallWithInputs(appBranchID string, inputs map[string]*string) *httptest.ResponseRecorder {
+	body := CreateInstallV2Request{
+		AppID: s.testApp.ID,
+		CreateInstallParams: helpers.CreateInstallParams{
+			Name:        "acme",
+			AppBranchID: appBranchID,
+			AWSAccount:  &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
+			Inputs:      inputs,
+		},
+	}
+	return s.makeRequest(http.MethodPost, "/v1/installs", body)
+}
+
+func (s *InstallsServiceTestSuite) errDescription(rr *httptest.ResponseRecorder) string {
+	var resp stderr.ErrResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp), rr.Body.String())
+	return resp.Description
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputWithoutBranchExplainsAppBranch() {
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+
+	val := "1"
+	rr := s.createInstallWithInputs("", map[string]*string{"branch_only": &val})
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+
+	desc := s.errDescription(rr)
+	assert.Contains(s.T(), desc, "branch_only")
+	assert.Contains(s.T(), desc, "app_branch")
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputWithoutBranchesOmitsAppBranchHint() {
+	val := "1"
+	rr := s.createInstallWithInputs("", map[string]*string{"retired": &val})
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+
+	desc := s.errDescription(rr)
+	assert.Equal(s.T(), "input retired defined for install does not exist in the app inputs", desc)
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputOnBranchOmitsAppBranchHint() {
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	s.createBranchConfig(branch, true)
+
+	val := "1"
+	rr := s.createInstallWithInputs(branch.ID, map[string]*string{"retired": &val})
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+
+	desc := s.errDescription(rr)
+	assert.Equal(s.T(), "input retired defined for install does not exist in the app inputs", desc)
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutBranchWhenOnlyBranchConfigsExplainsAppBranch() {
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(s.testAppConfig).
+		Update("app_branch_id", branch.ID).Error)
+
+	rr := s.createInstallWithInputs("", nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+
+	desc := s.errDescription(rr)
+	assert.Contains(s.T(), desc, "its configs are on app branches")
+	assert.Contains(s.T(), desc, "Choose an app branch for this install")
+	assert.NotContains(s.T(), desc, "Please sync your app configuration")
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutAnyConfigAsksForSync() {
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(s.testAppConfig).Error)
+
+	rr := s.createInstallWithInputs("", nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+
+	desc := s.errDescription(rr)
+	assert.Equal(s.T(), "No active app config found. Please sync your app configuration before creating an install.", desc)
 }
