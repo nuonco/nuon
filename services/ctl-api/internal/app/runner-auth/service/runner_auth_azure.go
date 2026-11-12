@@ -263,7 +263,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 
 	outputs, err := s.getAzureStackOutputs(reqCtx, install)
 	if err != nil {
-		s.l.Warn("runner auth azure: install has no azure identity configured",
+		s.l.Warn("runner auth azure: failed to get azure stack outputs",
 			zap.String("runner_id", runner.ID),
 			zap.String("install_id", install.ID),
 			zap.Error(err))
