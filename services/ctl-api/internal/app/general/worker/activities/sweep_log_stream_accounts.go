@@ -48,7 +48,6 @@ func (a *Activities) SweepLogStreamAccounts(ctx context.Context, req SweepLogStr
 	a.mw.Count("general.log_stream_account_sweep.selected", int64(res.Selected), tags)
 	a.mw.Count("general.log_stream_account_sweep.deleted", int64(res.Deleted), tags)
 	a.mw.Count("general.log_stream_account_sweep.skipped", int64(res.Skipped), tags)
-	a.mw.Count("general.log_stream_account_sweep.streams_closed", int64(res.StreamsClosed), tags)
 
 	return &SweepLogStreamAccountsResponse{SweepLogStreamAccountsResult: *res, Enabled: true}, nil
 }

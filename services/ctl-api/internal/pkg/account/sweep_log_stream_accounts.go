@@ -21,50 +21,41 @@ type SweepLogStreamAccountsRequest struct {
 }
 
 type SweepLogStreamAccountsResult struct {
-	Selected      int    `json:"selected"`
-	Deleted       int    `json:"deleted"`
-	Skipped       int    `json:"skipped"`
-	StreamsClosed int    `json:"streams_closed"`
-	LastID        string `json:"last_id"`
-}
-
-type logStreamAccountCandidate struct {
-	ID         string
-	StreamID   *string
-	StreamOpen *bool
+	Selected int    `json:"selected"`
+	Deleted  int    `json:"deleted"`
+	Skipped  int    `json:"skipped"`
+	LastID   string `json:"last_id"`
 }
 
 func (c *Client) SweepLogStreamAccounts(ctx context.Context, req SweepLogStreamAccountsRequest) (*SweepLogStreamAccountsResult, error) {
 	out := &SweepLogStreamAccountsResult{}
 	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var candidates []logStreamAccountCandidate
-		if err := tx.Table("accounts").
-			Select("accounts.id", "log_streams.id AS stream_id", "log_streams.open AS stream_open").
+		query := tx.Table("accounts").
 			Joins("LEFT JOIN log_streams ON log_streams.id = accounts.subject AND log_streams.deleted_at = 0").
 			Where("accounts.deleted_at = 0 AND accounts.account_type = 'service' AND accounts.email LIKE 'log%@serviceaccount.nuon.co'").
 			Where("accounts.id > ?", req.AfterID).
 			Where("accounts.updated_at < ?", req.IdleBefore).
 			Where("NOT EXISTS (SELECT 1 FROM tokens WHERE tokens.account_id = accounts.id AND tokens.deleted_at = 0 AND tokens.expires_at > ?)", time.Now()).
+			Where("NOT EXISTS (SELECT 1 FROM managed_service_accounts WHERE managed_service_accounts.account_id = accounts.id)").
 			Where("log_streams.id IS NULL OR NOT log_streams.open OR log_streams.created_at < ?", req.OpenStreamBefore).
 			Order("accounts.id").
-			Limit(req.Limit).
-			Clauses(clause.Locking{Strength: "UPDATE", Table: clause.Table{Name: "accounts"}, Options: "SKIP LOCKED"}).
-			Scan(&candidates).Error; err != nil {
+			Limit(req.Limit)
+		if !req.DryRun {
+			query = query.Clauses(clause.Locking{Strength: "UPDATE", Table: clause.Table{Name: "accounts"}, Options: "SKIP LOCKED"})
+		}
+		var candidates []string
+		if err := query.Pluck("accounts.id", &candidates).Error; err != nil {
 			return errors.Wrap(err, "unable to select idle log stream accounts")
 		}
 		out.Selected = len(candidates)
 		if len(candidates) == 0 {
 			return nil
 		}
-		out.LastID = candidates[len(candidates)-1].ID
+		out.LastID = candidates[len(candidates)-1]
 
-		ids := make([]string, 0, len(candidates))
-		for _, cand := range candidates {
-			ids = append(ids, cand.ID)
-		}
 		var issued []string
 		if err := tx.Model(&app.Token{}).
-			Where("account_id IN ? AND expires_at > ?", ids, time.Now()).
+			Where("account_id IN ? AND expires_at > ?", candidates, time.Now()).
 			Distinct("account_id").
 			Pluck("account_id", &issued).Error; err != nil {
 			return errors.Wrap(err, "unable to recheck log stream account tokens")
@@ -73,10 +64,10 @@ func (c *Client) SweepLogStreamAccounts(ctx context.Context, req SweepLogStreamA
 		for _, id := range issued {
 			skip[id] = struct{}{}
 		}
-		ids = ids[:0]
-		for _, cand := range candidates {
-			if _, ok := skip[cand.ID]; !ok {
-				ids = append(ids, cand.ID)
+		ids := make([]string, 0, len(candidates))
+		for _, id := range candidates {
+			if _, ok := skip[id]; !ok {
+				ids = append(ids, id)
 			}
 		}
 		blocked, err := authz.PrivateRoleBlockedAccounts(tx, ids)
@@ -88,14 +79,9 @@ func (c *Client) SweepLogStreamAccounts(ctx context.Context, req SweepLogStreamA
 		}
 
 		ids = ids[:0]
-		var openStreamIDs []string
-		for _, cand := range candidates {
-			if _, ok := skip[cand.ID]; ok {
-				continue
-			}
-			ids = append(ids, cand.ID)
-			if cand.StreamOpen != nil && *cand.StreamOpen {
-				openStreamIDs = append(openStreamIDs, *cand.StreamID)
+		for _, id := range candidates {
+			if _, ok := skip[id]; !ok {
+				ids = append(ids, id)
 			}
 		}
 		out.Skipped = len(skip)
@@ -103,13 +89,6 @@ func (c *Client) SweepLogStreamAccounts(ctx context.Context, req SweepLogStreamA
 			return nil
 		}
 
-		if len(openStreamIDs) > 0 {
-			res := tx.Model(&app.LogStream{}).Where("id IN ?", openStreamIDs).Update("open", false)
-			if res.Error != nil {
-				return errors.Wrap(res.Error, "unable to close log streams")
-			}
-			out.StreamsClosed = int(res.RowsAffected)
-		}
 		if err := deleteServiceAccounts(tx, ids); err != nil {
 			return err
 		}

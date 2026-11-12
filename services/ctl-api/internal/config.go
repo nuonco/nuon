@@ -604,6 +604,7 @@ type Config struct {
 	// When enabled (default), the daily cron hard-deletes process_healthcheck and healthcheck queue signals older than 7 days.
 	QueueSignalCleanupEnabled bool `config:"queue_signal_cleanup_enabled"`
 
+	// LogStreamAccountSweepMode controls the log stream service account sweep: "on" deletes idle accounts, "dry-run" only counts them, anything else (the default) is off.
 	LogStreamAccountSweepMode string `config:"log_stream_account_sweep_mode"`
 
 	// BlobBackfillRatePerSecond caps how many S3 PUTs/sec the blob backfill activity issues. Defaults to 500 when unset.

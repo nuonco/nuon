@@ -22,7 +22,7 @@ func (w *Workflows) SweepLogStreamAccounts(ctx workflow.Context) error {
 	}
 
 	var afterID string
-	var selected, deleted, skipped, closed int
+	var selected, deleted, skipped int
 	for i := 0; i < sweepLogStreamAccountsMaxBatches; i++ {
 		resp, err := activities.AwaitSweepLogStreamAccounts(ctx, activities.SweepLogStreamAccountsRequest{
 			AfterID:   afterID,
@@ -37,7 +37,6 @@ func (w *Workflows) SweepLogStreamAccounts(ctx workflow.Context) error {
 		selected += resp.Selected
 		deleted += resp.Deleted
 		skipped += resp.Skipped
-		closed += resp.StreamsClosed
 		if resp.Selected < sweepLogStreamAccountsBatchSize {
 			break
 		}
@@ -47,7 +46,6 @@ func (w *Workflows) SweepLogStreamAccounts(ctx workflow.Context) error {
 	l.Info("swept log stream accounts",
 		zap.Int("selected", selected),
 		zap.Int("deleted", deleted),
-		zap.Int("skipped", skipped),
-		zap.Int("streams_closed", closed))
+		zap.Int("skipped", skipped))
 	return nil
 }
