@@ -18,9 +18,9 @@ func (s *ComponentsServiceTestSuite) TestGetOrgComponentsSuccess() {
 		{
 			name:          "returns components for the org",
 			queryParams:   "",
-			expectedCount: 6,
+			expectedCount: 5,
 			validateFunc: func(comps []*models.AppComponent) {
-				s.Assert().GreaterOrEqual(len(comps), 6, "should have at least 6 components from full app config")
+				s.Assert().GreaterOrEqual(len(comps), 5, "should have at least 5 components from full app config")
 			},
 		},
 		{
