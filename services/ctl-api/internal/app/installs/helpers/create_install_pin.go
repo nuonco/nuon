@@ -67,10 +67,10 @@ func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID stri
 	}, nil
 }
 
-// CreateInstallInputConfig returns the input config a new install would be
+// InputConfigForNewInstall returns the input config a new install would be
 // pinned to for the given app and optional app branch, matching
 // resolveCreateInstallPin.
-func (s *Helpers) CreateInstallInputConfig(ctx context.Context, orgID, appID, appBranchID string) (*app.AppInputConfig, error) {
+func (s *Helpers) InputConfigForNewInstall(ctx context.Context, orgID, appID, appBranchID string) (*app.AppInputConfig, error) {
 	pin, err := s.resolveCreateInstallPin(ctx, orgID, appID, &CreateInstallParams{AppBranchID: appBranchID})
 	if err != nil {
 		return nil, err

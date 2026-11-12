@@ -39,7 +39,7 @@ func InputConfigForInstall(ctx context.Context, api nuon.Client, install *models
 // install creation will pin, matching the server's selection rules exactly.
 func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID string) (*models.AppAppInputConfig, error) {
 	if appBranchID == "" {
-		return createInstallInputConfig(ctx, api, appID)
+		return fetchNewInstallInputConfig(ctx, api, appID)
 	}
 
 	branch, err := api.GetAppBranch(ctx, appID, appBranchID)
@@ -89,6 +89,18 @@ func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID
 	}
 	hydrateInputGroups(cfg.Input)
 	return cfg.Input, nil
+}
+
+func fetchNewInstallInputConfig(ctx context.Context, api nuon.Client, appID string) (*models.AppAppInputConfig, error) {
+	cfg, err := api.GetAppInstallInputConfig(ctx, appID, "")
+	if nuon.IsMissingRoute(err) {
+		return api.GetAppInputLatestConfig(ctx, appID)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install input config for app %s: %w", appID, err)
+	}
+	hydrateInputGroups(cfg)
+	return cfg, nil
 }
 
 // hydrateInputGroups mirrors the nested shape returned by the latest-input

@@ -41,7 +41,7 @@ func (s *service) GetAppInstallInputConfig(ctx *gin.Context) {
 		return
 	}
 
-	inputConfig, err := s.installsHelpers.CreateInstallInputConfig(ctx, org.ID, appID, appBranchID)
+	inputConfig, err := s.installsHelpers.InputConfigForNewInstall(ctx, org.ID, appID, appBranchID)
 	if err != nil {
 		ctx.Error(err)
 		return
