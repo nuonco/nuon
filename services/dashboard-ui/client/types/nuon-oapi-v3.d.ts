@@ -7134,6 +7134,7 @@ export interface components {
       author_avatar_url?: string;
       author_email?: string;
       author_name?: string;
+      /** @description Git committer time. CreatedAt is when this row was stored during the run. */
       committed_at?: string;
       created_at?: string;
       created_by_id?: string;
