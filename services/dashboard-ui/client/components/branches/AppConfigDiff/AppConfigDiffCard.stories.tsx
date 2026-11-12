@@ -72,6 +72,17 @@ export const Pending = () => (
   </div>
 )
 
+export const Failed = () => (
+  <div className="max-w-3xl">
+    <AppConfigDiffCard
+      sections={[]}
+      summary={null}
+      isError
+      versionLabel="v5 → v6"
+    />
+  </div>
+)
+
 export const Snapshot = () => (
   <div className="max-w-3xl">
     <AppConfigDiffCard

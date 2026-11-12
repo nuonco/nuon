@@ -125,8 +125,7 @@ export const InstallVersionDetails = ({
           <Divider dividerWord="Config diff" />
           <AppConfigDiff
             appConfigId={version.new_app_config_id}
-            installId={installId}
-            oldConfigId={installId ? undefined : version?.old_app_config_id}
+            oldConfigId={version.old_app_config_id}
             appId={appId}
           />
         </>
