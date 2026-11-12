@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/go-github/v50/github"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -20,11 +21,13 @@ type GithubClient interface {
 	GetInstallation(ctx context.Context, installID string) (*github.Installation, error)
 	ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error)
 	CreateOrgWebhook(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string, secret string) (int64, error)
+	FindOrgWebhookByURL(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string) (int64, error)
 }
 
 type Params struct {
 	fx.In
 
+	L              *zap.Logger
 	Cfg            *internal.Config
 	DB             *gorm.DB `name:"psql"`
 	GhClient       GithubClient
@@ -34,6 +37,7 @@ type Params struct {
 }
 
 type Activities struct {
+	l              *zap.Logger
 	cfg            *internal.Config
 	db             *gorm.DB
 	ghClient       GithubClient
@@ -44,6 +48,7 @@ type Activities struct {
 
 func New(params Params) *Activities {
 	return &Activities{
+		l:              params.L,
 		cfg:            params.Cfg,
 		db:             params.DB,
 		ghClient:       params.GhClient,
