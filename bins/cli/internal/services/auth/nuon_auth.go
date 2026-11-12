@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/pkg/browser"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -22,6 +23,10 @@ const (
 	nuonAuthDeviceCodeGrantType = "urn:ietf:params:oauth:grant-type:device_code"
 	nuonAuthDefaultPollInterval = 5 * time.Second
 	nuonAuthSlowDownIncrement   = 5 * time.Second
+
+	// loopbackMinCtlAPIVersion is the first control-plane release that serves
+	// the CLI authorization-code grant. Older releases only have device login.
+	loopbackMinCtlAPIVersion = "0.19.1289"
 )
 
 // NuonAuthDeviceAuthorizationResponse is the device authorization response (RFC 8628 §3.2).
@@ -63,17 +68,47 @@ func (a *Service) loopbackLoginEnabled() bool {
 }
 
 // loginWithNuonAuth signs the CLI in. An interactive terminal uses the
-// authorization-code grant with a 127.0.0.1 callback. Anything else uses the
-// device authorization grant.
+// authorization-code grant with a 127.0.0.1 callback when this control plane
+// has it. Anything else uses the device authorization grant.
 func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIConfig) (*LoginResult, error) {
 	authBaseURL := a.nuonAuthBaseURL(cfg.RootDomain)
-	if a.loopbackLoginEnabled() {
+	if a.loopbackLoginEnabled() && a.ctlAPISupportsLoopback(ctx) {
 		result, err := a.loginWithLoopback(ctx, authBaseURL)
 		if !errors.Is(err, errLoopbackUnavailable) {
 			return result, err
 		}
 	}
 	return a.loginWithDeviceCode(ctx, authBaseURL)
+}
+
+// ctlAPISupportsLoopback reports whether this control plane serves the CLI
+// loopback grant. A release older than 0.19.1289 does not. A value that is
+// not a release number, such as the git hash local and stage builds report,
+// is a current build and does. A failed lookup uses device login, which both
+// generations serve.
+func (a *Service) ctlAPISupportsLoopback(ctx context.Context) bool {
+	if a.api == nil {
+		return true
+	}
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	remote, err := a.api.GetVersion(ctx)
+	if err != nil || remote == nil {
+		return false
+	}
+	return loopbackSupportedByCtlAPI(remote.Version)
+}
+
+func loopbackSupportedByCtlAPI(version string) bool {
+	parsed, err := semver.NewVersion(strings.TrimSpace(version))
+	if err != nil {
+		return true
+	}
+	minimum, err := semver.NewVersion(loopbackMinCtlAPIVersion)
+	if err != nil {
+		return true
+	}
+	return !parsed.LessThan(minimum)
 }
 
 // loginWithDeviceCode performs the device authorization grant (RFC 8628) against the Nuon auth service.
