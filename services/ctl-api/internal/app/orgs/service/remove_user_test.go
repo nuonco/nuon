@@ -72,7 +72,11 @@ func (s *RemoveUserTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(s.T()),
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T:               s.T(),
+			Mocks:           &tests.TestMocks{MockTC: newPermissiveTemporalMock(s.T())},
+			CustomValidator: true,
+		}),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
