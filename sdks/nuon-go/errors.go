@@ -152,6 +152,16 @@ func IsNotFound(err error) bool {
 	return stderr.IsCode(404)
 }
 
+// IsMissingRoute reports whether err is a 404 without a JSON error body, which
+// is how a control plane that predates an endpoint responds to it.
+func IsMissingRoute(err error) bool {
+	var apiErr *httpAPIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	return apiErr.statusCode == http.StatusNotFound && apiErr.payload == nil
+}
+
 func IsBadRequest(err error) bool {
 	stderr, ok := err.(stderrResponse)
 	if !ok {

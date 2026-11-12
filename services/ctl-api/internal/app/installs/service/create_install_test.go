@@ -370,7 +370,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutBranchWhenOnlyBranc
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
 
 	desc := s.errDescription(rr)
-	assert.Contains(s.T(), desc, "app_branch")
+	assert.Contains(s.T(), desc, "its configs are on app branches")
+	assert.Contains(s.T(), desc, "Choose an app branch for this install")
 	assert.NotContains(s.T(), desc, "Please sync your app configuration")
 }
 

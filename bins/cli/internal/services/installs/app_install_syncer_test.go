@@ -383,6 +383,10 @@ func (a *dryRunInputsAPI) GetAppInputLatestConfig(context.Context, string) (*mod
 	return a.latestInput, nil
 }
 
+func (a *dryRunInputsAPI) GetAppInstallInputConfig(context.Context, string, string) (*models.AppAppInputConfig, error) {
+	return a.latestInput, nil
+}
+
 func appConfigWithInputs(id string, names ...string) *models.AppAppConfig {
 	inputs := make([]*models.AppAppInput, len(names))
 	for i, name := range names {
@@ -562,6 +566,22 @@ func (a *appsSyncOnlyAPI) GetAppConfig(_ context.Context, _, id string, _ *bool)
 
 func (a *appsSyncOnlyAPI) GetAppBranches(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
 	return a.branches, false, nil
+}
+
+// GetAppInstallInputConfig mimics the server's unbranched install pin: the
+// newest config with no app_branch_id, regardless of newer branch configs.
+func (a *appsSyncOnlyAPI) GetAppInstallInputConfig(_ context.Context, appID, appBranchID string) (*models.AppAppInputConfig, error) {
+	for _, cfg := range a.configs {
+		if cfg.AppBranchID != "" {
+			continue
+		}
+		full := a.byID[cfg.ID]
+		if full == nil || full.Input == nil {
+			return nil, fmt.Errorf("app config %s has no input config", cfg.ID)
+		}
+		return full.Input, nil
+	}
+	return nil, fmt.Errorf("no apps-sync config found")
 }
 
 func TestInputConfigForNewInstallWithoutBranchUsesAppsSyncConfig(t *testing.T) {
