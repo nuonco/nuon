@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -666,6 +667,84 @@ func TestBasicsElement_WithoutAllowedValuesKeepsExistingControls(t *testing.T) {
 		if output != test.wantExpression {
 			t.Errorf("%s output = %q, want %q", test.parameter.Type, output, test.wantExpression)
 		}
+	}
+}
+
+func TestBasicsElement_IntDefaultsFromJSONRenderAsPlainIntegers(t *testing.T) {
+	tests := map[string]struct {
+		parameterJSON string
+		wantType      string
+		wantDefault   string
+		wantLabels    []string
+	}{
+		"textbox default at one million": {
+			parameterJSON: `{"type":"int","defaultValue":1000000}`,
+			wantType:      "Microsoft.Common.TextBox",
+			wantDefault:   "1000000",
+		},
+		"textbox default above int32": {
+			parameterJSON: `{"type":"int","defaultValue":1073741824}`,
+			wantType:      "Microsoft.Common.TextBox",
+			wantDefault:   "1073741824",
+		},
+		"textbox default just below one million": {
+			parameterJSON: `{"type":"int","defaultValue":999999}`,
+			wantType:      "Microsoft.Common.TextBox",
+			wantDefault:   "999999",
+		},
+		"textbox negative default": {
+			parameterJSON: `{"type":"int","defaultValue":-1000000}`,
+			wantType:      "Microsoft.Common.TextBox",
+			wantDefault:   "-1000000",
+		},
+		"textbox zero default": {
+			parameterJSON: `{"type":"int","defaultValue":0}`,
+			wantType:      "Microsoft.Common.TextBox",
+			wantDefault:   "0",
+		},
+		"dropdown labels and default": {
+			parameterJSON: `{"type":"int","defaultValue":1000000,"allowedValues":[1000000,2000000]}`,
+			wantType:      "Microsoft.Common.DropDown",
+			wantDefault:   "1000000",
+			wantLabels:    []string{"1000000", "2000000"},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			var parameter ARMParameter
+			if err := json.Unmarshal([]byte(test.parameterJSON), &parameter); err != nil {
+				t.Fatal(err)
+			}
+
+			element, _, ok := basicsElement("size", parameter, "", "")
+			if !ok {
+				t.Fatal("parameter was not rendered")
+			}
+			if got := element["type"]; got != test.wantType {
+				t.Fatalf("type = %v, want %s", got, test.wantType)
+			}
+			if got := element["defaultValue"]; got != test.wantDefault {
+				t.Errorf("defaultValue = %#v, want %q", got, test.wantDefault)
+			}
+
+			if test.wantType == "Microsoft.Common.TextBox" {
+				regex := element["constraints"].(map[string]any)["regex"].(string)
+				if !regexp.MustCompile(regex).MatchString(test.wantDefault) {
+					t.Errorf("defaultValue %q does not satisfy regex %q", test.wantDefault, regex)
+				}
+			}
+
+			entries, _ := element["constraints"].(map[string]any)["allowedValues"].([]any)
+			if len(entries) != len(test.wantLabels) {
+				t.Fatalf("got %d dropdown entries, want %d", len(entries), len(test.wantLabels))
+			}
+			for i, entry := range entries {
+				if got := entry.(map[string]any)["label"]; got != test.wantLabels[i] {
+					t.Errorf("entry %d label = %#v, want %q", i, got, test.wantLabels[i])
+				}
+			}
+		})
 	}
 }
 

@@ -75,7 +75,7 @@ func (a *Activities) checkBuildsComplete(ctx context.Context, runID string) (*Aw
 
 func isTerminalBuildStatus(s app.ComponentBuildStatus) bool {
 	switch s {
-	case app.ComponentBuildStatusActive, app.ComponentBuildStatusError, "cancelled":
+	case app.ComponentBuildStatusActive, app.ComponentBuildStatusError, app.ComponentBuildStatusPolicyFailed, "cancelled":
 		return true
 	default:
 		return false

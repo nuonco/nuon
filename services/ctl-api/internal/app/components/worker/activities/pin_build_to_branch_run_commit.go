@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/google/go-github/v50/github"
 	"gorm.io/gorm"
@@ -12,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/vcserrors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
@@ -77,6 +77,16 @@ func (a *Activities) resolveBuildOwnCommit(ctx context.Context, build *app.Compo
 	if ref == "" {
 		return nil
 	}
+
+	runID := ""
+	if build.AppBranchRunID != nil {
+		runID = *build.AppBranchRunID
+	}
+	pinned, err := buildsource.ResolveRef(ctx, a.db, a.vcsHelpers, connectedCfg, publicCfg, runID, ref)
+	if err != nil {
+		return a.failBuildSource(ctx, build.ID, repo, ref, err)
+	}
+	ref = pinned
 
 	var (
 		vcsCommit *app.VCSConnectionCommit
@@ -189,10 +199,7 @@ func runBranchRepo(run *app.AppBranchRun) (repo, branch string) {
 func buildTracksBranchSource(run *app.AppBranchRun, build *app.ComponentBuild) bool {
 	branchRepo, branchName := runBranchRepo(run)
 	cmpRepo, cmpBranch := buildRepoRef(buildVCSConfigs(build))
-	if branchRepo == "" || cmpRepo == "" || branchName == "" || cmpBranch == "" {
-		return false
-	}
-	return strings.EqualFold(branchRepo, cmpRepo) && branchName == cmpBranch
+	return branchName != "" && branchName == cmpBranch && buildsource.SameRepo(branchRepo, cmpRepo)
 }
 
 func buildRefCanBePinned(build *app.ComponentBuild) bool {

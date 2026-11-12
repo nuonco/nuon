@@ -38,6 +38,9 @@ type VCSConnectionCommit struct {
 	AuthorEmail     string `json:"author_email,omitzero" temporaljson:"author_email,omitzero,omitempty"`
 	AuthorAvatarURL string `json:"author_avatar_url,omitzero" temporaljson:"author_avatar_url,omitzero,omitempty"`
 	Message         string `json:"message,omitzero" temporaljson:"message,omitzero,omitempty"`
+
+	// Git committer time. CreatedAt is when this row was stored during the run.
+	CommittedAt *time.Time `json:"committed_at,omitempty" temporaljson:"committed_at,omitzero,omitempty"`
 }
 
 func (v *VCSConnectionCommit) Indexes(db *gorm.DB) []migrations.Index {

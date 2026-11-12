@@ -18,12 +18,6 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-var (
-	AuthDomain   string
-	AuthClientID string
-	AuthAudience string
-)
-
 // LoginResult contains the result of an authentication flow
 type LoginResult struct {
 	AccessToken string
@@ -48,7 +42,7 @@ func (a *Service) Login(ctx context.Context) error {
 
 	cfg, err := a.api.GetCLIConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("couldn't get cli config: %w", err)
+		return err
 	}
 	if warn, block := version.Assess(cfg); warn != "" || block != nil {
 		if warn != "" {

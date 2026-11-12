@@ -222,6 +222,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to hydrate log stream")
 	}
+	defer func() {
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, logStream.ID)
+	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -239,12 +244,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
-	_ = activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
+	baselineErr := activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
 		DeployID: installDeploy.ID,
 	})
-
-	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
-	s.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")
+	if baselineErr != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		baselineErr = errors.Wrap(baselineErr, "unable to record component teardown baseline")
+		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "applied, but unable to record the applied baseline")
+	} else {
+		baselineErr = nil
+		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
+		s.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")
+	}
 
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{
 		InstallID:       install.ID,
@@ -256,7 +266,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
-	return nil
+	return baselineErr
 }
 
 func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, sandboxMode bool) error {
@@ -294,10 +304,6 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	if err != nil {
 		return err
 	}
-
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
-	}()
 
 	op := app.RunnerJobOperationTypeApplyPlan
 	jobTyp := build.ComponentConfigConnection.Type.DeployJobType()

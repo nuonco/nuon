@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -38,6 +39,11 @@ func (h *Client) EnsureLogStreamRole(ctx context.Context, orgID, logStreamID, ac
 	}
 	ctx = cctx.SetAccountIDContext(ctx, accountID)
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var acct struct{ ID string }
+		if err := tx.Model(&app.Account{}).Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where(app.Account{ID: accountID}).Take(&acct).Error; err != nil {
+			return fmt.Errorf("lock log stream account: %w", err)
+		}
 		var existing app.Role
 		err := tx.Joins("JOIN account_roles ON account_roles.role_id = roles.id AND account_roles.deleted_at = 0").
 			Where("account_roles.account_id = ?", accountID).

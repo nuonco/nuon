@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
+
+var openBrowser = browser.OpenURL
 
 const (
 	nuonAuthDeviceCodeGrantType = "urn:ietf:params:oauth:grant-type:device_code"
@@ -48,10 +51,33 @@ func buildAuthURL(rootDomain string) string {
 	return fmt.Sprintf("https://auth.%s", rootDomain)
 }
 
-// loginWithNuonAuth performs the device authorization grant (RFC 8628) against the Nuon auth service.
-func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIConfig) (*LoginResult, error) {
-	authBaseURL := buildAuthURL(cfg.RootDomain)
+func (a *Service) nuonAuthBaseURL(rootDomain string) string {
+	if a.authBaseURLOverride != "" {
+		return a.authBaseURLOverride
+	}
+	return buildAuthURL(rootDomain)
+}
 
+func (a *Service) loopbackLoginEnabled() bool {
+	return a.cfg != nil && a.cfg.Interactive
+}
+
+// loginWithNuonAuth signs the CLI in. An interactive terminal uses the
+// authorization-code grant with a 127.0.0.1 callback. Anything else uses the
+// device authorization grant.
+func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIConfig) (*LoginResult, error) {
+	authBaseURL := a.nuonAuthBaseURL(cfg.RootDomain)
+	if a.loopbackLoginEnabled() {
+		result, err := a.loginWithLoopback(ctx, authBaseURL)
+		if !errors.Is(err, errLoopbackUnavailable) {
+			return result, err
+		}
+	}
+	return a.loginWithDeviceCode(ctx, authBaseURL)
+}
+
+// loginWithDeviceCode performs the device authorization grant (RFC 8628) against the Nuon auth service.
+func (a *Service) loginWithDeviceCode(ctx context.Context, authBaseURL string) (*LoginResult, error) {
 	authz, err := startNuonDeviceAuthorization(ctx, authBaseURL)
 	if err != nil {
 		return nil, err
@@ -67,7 +93,7 @@ func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIC
 	fmt.Printf("If the browser does not open, visit %s and enter the code.\n", authz.VerificationURI)
 	fmt.Println("Never approve a login code that someone else sent you.")
 
-	browser.OpenURL(openURL)
+	_ = openBrowser(openURL)
 
 	interval := time.Duration(authz.Interval) * time.Second
 	if interval <= 0 {

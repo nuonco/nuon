@@ -1,7 +1,7 @@
 import { useDeepLinkedPanels } from '@/hooks/use-deep-linked-panels'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { GroupApprovalActions } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import type { TTrackGroup } from '@/components/branches/BranchOverview/RolloutTrack'
 import type { TInstallWorkflowStep } from '@/types'
 import { BranchRunApproval } from './BranchRunApproval'
@@ -94,8 +94,7 @@ export const useGroupPlanApprovals = (
               groupName,
               onReview: () => openReview(step, group),
               actions: (
-                <GroupActionButton
-                  action="approve"
+                <GroupApprovalActions
                   target={{
                     orgId: org?.id ?? '',
                     workflowId: run.id,

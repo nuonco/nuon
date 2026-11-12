@@ -95,6 +95,7 @@ export type TNavLink = {
     appId: string
     resourceId: string
     basePath: string
+    appBranchId?: string
   }
 }
 

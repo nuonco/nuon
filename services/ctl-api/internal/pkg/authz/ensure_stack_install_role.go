@@ -116,21 +116,3 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 		return ensurePrivateRole(tx, accountID, want)
 	})
 }
-
-func DeleteStackInstallRoles(tx *gorm.DB, accountID string) error {
-	var roles []app.Role
-	if err := tx.Unscoped().Joins("JOIN account_roles ON account_roles.role_id = roles.id").
-		Where("account_roles.account_id = ?", accountID).Where(app.Role{RoleType: app.RoleTypeStack}).
-		Distinct("roles.*").Find(&roles).Error; err != nil {
-		return fmt.Errorf("load legacy stack roles for deletion: %w", err)
-	}
-	for _, role := range roles {
-		if err := validatePrivateRole(tx, accountID, role.OrgID.ValueString(), &role); err != nil {
-			return err
-		}
-		if err := deletePrivateRole(tx, accountID, role.ID); err != nil {
-			return err
-		}
-	}
-	return nil
-}

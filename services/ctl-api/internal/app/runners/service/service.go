@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -45,6 +46,7 @@ type Params struct {
 	AccountClient        *account.Client
 	Helpers              *helpers.Helpers
 	InstallsHelpers      *installshelpers.Helpers
+	VcsHelpers           *vcshelpers.Helpers
 	EndpointAudit        *apiPkg.EndpointAudit
 	RunnerHeartbeatCache *RunnerHeartbeatCache
 	Heartbeater          *heartbeater.Heartbeater
@@ -71,6 +73,7 @@ type service struct {
 	acctClient             *account.Client
 	helpers                *helpers.Helpers
 	installsHelpers        *installshelpers.Helpers
+	vcsHelpers             *vcshelpers.Helpers
 	runnerHeartbeatCache   *RunnerHeartbeatCache
 	heartbeater            *heartbeater.Heartbeater
 	kafka                  *kafka.Producer
@@ -211,7 +214,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			// service account management
 			runner.POST("/service-account-token", s.AdminCreateRunnerServiceAccountToken)
 			runner.POST("/invalidate-service-account-token", s.AdminInvalidateRunnerServiceAccountToken)
-			runner.POST("/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken)
+			s.POST(runner, "/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken, apiPkg.APIContextTypeInternal, true)
 			runner.GET("/service-account", s.AdminGetRunnerServiceAccount)
 			runner.POST("/revoke-unused-tokens", s.AdminRevokeRunnerUnusedTokens)
 
@@ -438,6 +441,7 @@ func New(params Params) (*service, error) {
 		acctClient:             params.AccountClient,
 		helpers:                params.Helpers,
 		installsHelpers:        params.InstallsHelpers,
+		vcsHelpers:             params.VcsHelpers,
 		runnerHeartbeatCache:   params.RunnerHeartbeatCache,
 		heartbeater:            params.Heartbeater,
 		kafka:                  params.Kafka,

@@ -10,6 +10,7 @@ func NewSandboxState() *SandboxState {
 type SandboxState struct {
 	Populated bool `json:"populated"`
 
+	BuildID string                 `json:"build_id,omitempty"`
 	Status  string                 `json:"status"`
 	Type    string                 `json:"type"`
 	Version string                 `json:"version"`
