@@ -82,7 +82,7 @@ func (c *cli) registerAdmin() {
 		},
 	}
 	runnersUpdateCmd.Flags().BoolVar(&updateOpts.DryRun, "dry-run", false, "report the runners that would be updated without changing them")
-	runnersUpdateCmd.Flags().BoolVar(&updateOpts.RestartSignal, "restart-signal", true, "enqueue a restart signal for each updated runner")
+	runnersUpdateCmd.Flags().BoolVar(&updateOpts.Shutdown, "shutdown", true, "enqueue a graceful shutdown signal for each updated runner so it restarts on the new tag")
 	runnersCmd.AddCommand(runnersUpdateCmd)
 	adminCmd.AddCommand(runnersCmd)
 
