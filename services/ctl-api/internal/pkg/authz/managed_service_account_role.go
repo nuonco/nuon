@@ -142,44 +142,130 @@ func validatePrivateRole(tx *gorm.DB, accountID, orgID string, role *app.Role) e
 	return nil
 }
 
-func DeleteManagedServiceAccountRole(tx *gorm.DB, accountID string) error {
-	var binding app.ManagedServiceAccount
-	if err := tx.Unscoped().Where(app.ManagedServiceAccount{AccountID: accountID}).Find(&binding).Error; err != nil {
+func DeleteManagedServiceAccountRoles(tx *gorm.DB, accountIDs []string) error {
+	var bindings []app.ManagedServiceAccount
+	if err := tx.Unscoped().Where("account_id IN ? AND private_role_id IS NOT NULL", accountIDs).Find(&bindings).Error; err != nil {
 		return fmt.Errorf("load private role ownership for deletion: %w", err)
 	}
-	if binding.PrivateRoleID == nil {
-		return nil
-	}
-	var role app.Role
-	if err := tx.Unscoped().Where(app.Role{ID: *binding.PrivateRoleID}).First(&role).Error; err != nil {
-		return fmt.Errorf("load private service account role for deletion: %w", err)
-	}
-	if err := validatePrivateRole(tx, accountID, binding.OrgID, &role); err != nil {
-		return err
-	}
-	if err := tx.Unscoped().Model(&binding).Update("private_role_id", nil).Error; err != nil {
-		return fmt.Errorf("clear private role ownership: %w", err)
-	}
-	return deletePrivateRole(tx, accountID, role.ID)
-}
-
-func DeletePrivateRoles(tx *gorm.DB, accountID string) error {
-	var roles []app.Role
-	if err := tx.Unscoped().Joins("JOIN account_roles ON account_roles.role_id = roles.id").
-		Where("account_roles.account_id = ?", accountID).
-		Where("roles.role_type IN ?", app.PrivateRoleTypes).
-		Distinct("roles.*").Find(&roles).Error; err != nil {
-		return fmt.Errorf("load private roles for deletion: %w", err)
-	}
-	for _, role := range roles {
-		if err := validatePrivateRole(tx, accountID, role.OrgID.ValueString(), &role); err != nil {
+	for _, binding := range bindings {
+		var role app.Role
+		if err := tx.Unscoped().Where(app.Role{ID: *binding.PrivateRoleID}).First(&role).Error; err != nil {
+			return fmt.Errorf("load private service account role for deletion: %w", err)
+		}
+		if err := validatePrivateRole(tx, binding.AccountID, binding.OrgID, &role); err != nil {
 			return err
 		}
-		if err := deletePrivateRole(tx, accountID, role.ID); err != nil {
+		if err := tx.Unscoped().Model(&binding).Update("private_role_id", nil).Error; err != nil {
+			return fmt.Errorf("clear private role ownership: %w", err)
+		}
+		if err := deletePrivateRole(tx, binding.AccountID, role.ID); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func DeletePrivateRoles(tx *gorm.DB, accountIDs []string) error {
+	roleIDs, blocked, err := privateRolesOf(tx, accountIDs)
+	if err != nil {
+		return err
+	}
+	for accountID, roleID := range blocked {
+		return fmt.Errorf("role %s held by account %s is shared or not a private role", roleID, accountID)
+	}
+	if len(roleIDs) == 0 {
+		return nil
+	}
+	if err := tx.Unscoped().Where("account_id IN ? AND role_id IN ?", accountIDs, roleIDs).Delete(&app.AccountRole{}).Error; err != nil {
+		return fmt.Errorf("remove private role assignments: %w", err)
+	}
+	if err := tx.Unscoped().Where("role_id IN ?", roleIDs).Delete(&app.Policy{}).Error; err != nil {
+		return fmt.Errorf("delete private role policies: %w", err)
+	}
+	if err := tx.Unscoped().Where("id IN ?", roleIDs).Delete(&app.Role{}).Error; err != nil {
+		return fmt.Errorf("delete private roles: %w", err)
+	}
+	return nil
+}
+
+func PrivateRoleBlockedAccounts(tx *gorm.DB, accountIDs []string) (map[string]struct{}, error) {
+	_, blocked, err := privateRolesOf(tx, accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]struct{}, len(blocked))
+	for accountID := range blocked {
+		out[accountID] = struct{}{}
+	}
+	return out, nil
+}
+
+func privateRolesOf(tx *gorm.DB, accountIDs []string) ([]string, map[string]string, error) {
+	if len(accountIDs) == 0 {
+		return nil, nil, nil
+	}
+	var holders []app.AccountRole
+	if err := tx.Unscoped().Model(&app.AccountRole{}).
+		Select("account_roles.account_id", "account_roles.role_id").
+		Joins("JOIN roles ON roles.id = account_roles.role_id").
+		Where("account_roles.account_id IN ?", accountIDs).
+		Where("roles.role_type IN ?", app.PrivateRoleTypes).
+		Find(&holders).Error; err != nil {
+		return nil, nil, fmt.Errorf("load private roles for deletion: %w", err)
+	}
+	if len(holders) == 0 {
+		return nil, nil, nil
+	}
+	roleIDs := make([]string, 0, len(holders))
+	seen := make(map[string]struct{}, len(holders))
+	for _, h := range holders {
+		if _, ok := seen[h.RoleID]; !ok {
+			seen[h.RoleID] = struct{}{}
+			roleIDs = append(roleIDs, h.RoleID)
+		}
+	}
+
+	bad := map[string]struct{}{}
+	var roles []app.Role
+	if err := tx.Unscoped().Select("id", "managed", "contexts").Where("id IN ?", roleIDs).Find(&roles).Error; err != nil {
+		return nil, nil, fmt.Errorf("load private roles for validation: %w", err)
+	}
+	for _, role := range roles {
+		if role.Managed || len(role.Contexts) != 0 {
+			bad[role.ID] = struct{}{}
+		}
+	}
+	var shared []string
+	if err := tx.Unscoped().Model(&app.AccountRole{}).
+		Where("role_id IN ? AND account_id NOT IN ?", roleIDs, accountIDs).
+		Distinct("role_id").Pluck("role_id", &shared).Error; err != nil {
+		return nil, nil, fmt.Errorf("validate private role assignments: %w", err)
+	}
+	for _, roleID := range shared {
+		bad[roleID] = struct{}{}
+	}
+
+	blocked := map[string]string{}
+	for changed := true; changed; {
+		changed = false
+		for _, h := range holders {
+			if _, ok := bad[h.RoleID]; ok {
+				if _, ok := blocked[h.AccountID]; !ok {
+					blocked[h.AccountID] = h.RoleID
+					changed = true
+				}
+			}
+		}
+		for _, h := range holders {
+			if _, ok := blocked[h.AccountID]; ok {
+				if _, ok := bad[h.RoleID]; !ok {
+					bad[h.RoleID] = struct{}{}
+					changed = true
+				}
+			}
+		}
+	}
+	return roleIDs, blocked, nil
 }
 
 func deletePrivateRole(tx *gorm.DB, accountID, roleID string) error {

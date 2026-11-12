@@ -251,6 +251,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		app.GET("/latest-break-glass-config", s.GetLatestAppBreakGlassConfig)
 		app.GET("/runner-latest-config", s.GetAppRunnerLatestConfig)
 		app.GET("/input-latest-config", s.GetAppInputLatestConfig)
+		app.GET("/install-input-config", s.GetAppInstallInputConfig)
 		app.GET("/latest-policies-config", s.GetLatestAppPoliciesConfig)
 		app.GET("/latest-config", s.GetAppLatestConfig)
 		app.GET("/sandbox-latest-config", s.GetAppSandboxLatestConfig)
