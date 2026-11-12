@@ -41,6 +41,7 @@ type AppBranchConfigUpdateInput struct {
 	PlanOnly       bool
 	Callback       callback.Ref
 	DeferDiff      bool
+	TriggeredBy    string
 }
 
 // AppBranchConfigUpdate is the workflow and version created for a config update.
@@ -237,6 +238,9 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 	if input.InstallGroupID != "" {
 		update.InstallGroupID = &input.InstallGroupID
 	}
+	if input.TriggeredBy != "" {
+		update.Metadata = map[string]string{app.WorkflowMetadataKeyTriggeredBy: input.TriggeredBy}
+	}
 	if err := CreateInstallAppConfigVersionRow(ctx, h.db, &update); err != nil {
 		return nil, fmt.Errorf("unable to create install config update: %w", err)
 	}
@@ -256,6 +260,9 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 	}
 	if input.InstallGroupID != "" {
 		metadata["install_group_id"] = input.InstallGroupID
+	}
+	if input.TriggeredBy != "" {
+		metadata[app.WorkflowMetadataKeyTriggeredBy] = input.TriggeredBy
 	}
 	if input.Callback.WorkflowID != "" {
 		metadata["group_workflow_id"] = input.Callback.WorkflowID

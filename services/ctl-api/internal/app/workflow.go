@@ -175,6 +175,8 @@ func (i WorkflowType) RequiresInstallRunner() bool {
 
 type WorkflowMetadataKey string
 
+const WorkflowTriggeredByReconcile = "reconcile"
+
 const (
 	WorkflowMetadataKeyWorkflowNameSuffix = "workflow-name-suffix"
 	WorkflowMetadataKeyRole               = "role"
@@ -185,6 +187,7 @@ const (
 	WorkflowMetadataKeyStackChanged       = "stack_changed"
 	WorkflowMetadataKeyTriggeredByID      = "triggered_by_id"
 	WorkflowMetadataKeyResolveDrift       = "resolve_drift"
+	WorkflowMetadataKeyTriggeredBy        = "triggered_by"
 
 	// misspelled key written by workflows created before triggered_by_id; remove once none remain in flight.
 	workflowMetadataKeyTriggeredByIDLegacy = "triggerred_by_id"

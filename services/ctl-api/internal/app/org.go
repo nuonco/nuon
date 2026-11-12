@@ -80,6 +80,7 @@ const (
 	OrgFeatureInstallUIWizards        OrgFeature = "install-ui-wizards"
 	OrgFeaturePRPreviewUI             OrgFeature = "pr-preview-ui"
 	OrgFeatureManualBuildSelection    OrgFeature = "allow-manual-build-selection"
+	OrgFeatureInstallReconciliation   OrgFeature = "install-reconciliation"
 )
 
 type OrgTelemetrySettings struct {
@@ -242,6 +243,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureInstallUIWizards:        false,
 		OrgFeaturePRPreviewUI:             false,
 		OrgFeatureManualBuildSelection:    false,
+		OrgFeatureInstallReconciliation:   false,
 	}
 }
 
@@ -263,6 +265,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureInstallUIWizards,
 		OrgFeaturePRPreviewUI,
 		OrgFeatureManualBuildSelection,
+		OrgFeatureInstallReconciliation,
 	}
 }
 
@@ -293,6 +296,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureInstallUIWizards:        "Enable the install create and teardown wizards in the dashboard.",
 		OrgFeaturePRPreviewUI:             "Enable the pull request preview page in the dashboard.",
 		OrgFeatureManualBuildSelection:    "Temporarily allow manual component build selection for installs with branch-run app configs whose builds are pinned, bypassing the requirement to deploy through an app branch run.",
+		OrgFeatureInstallReconciliation:   "Let an install that has fallen behind its app branch reconcile onto the branch's latest deployable config: a diff preview and a one-click reconcile workflow in the dashboard, plus the install reconciliation API.",
 	}
 }
 
