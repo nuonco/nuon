@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -25,6 +26,18 @@ func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID stri
 	if req.AppBranchID == "" {
 		cfg, err := s.latestActiveAppConfig(ctx, orgID, appID, "")
 		if err != nil {
+			var userErr stderr.ErrUser
+			if !errors.As(err, &userErr) {
+				return nil, err
+			}
+			hasBranches, branchErr := s.appHasBranches(ctx, orgID, appID)
+			if branchErr != nil {
+				return nil, branchErr
+			}
+			if hasBranches {
+				userErr.Description = "No app config from nuon apps sync exists for this app; its configs are on app branches. Choose an app branch for this install."
+				return nil, userErr
+			}
 			return nil, err
 		}
 		return &createInstallPin{AppConfig: cfg}, nil
@@ -52,6 +65,56 @@ func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID stri
 		AppConfig: cfg,
 		BranchID:  branch.ID,
 	}, nil
+}
+
+// InputConfigForNewInstall returns the input config a new install would be
+// pinned to for the given app and optional app branch, matching
+// resolveCreateInstallPin.
+func (s *Helpers) InputConfigForNewInstall(ctx context.Context, orgID, appID, appBranchID string) (*app.AppInputConfig, error) {
+	pin, err := s.resolveCreateInstallPin(ctx, orgID, appID, &CreateInstallParams{AppBranchID: appBranchID})
+	if err != nil {
+		return nil, err
+	}
+
+	inputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, pin.AppConfig.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get pinned app input config: %w", err)
+	}
+	if inputConfig == nil || inputConfig.ID == "" {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("no input config found for app config %s", pin.AppConfig.ID),
+			Description: "No input config exists for the app config a new install would use.",
+		}
+	}
+
+	return inputConfig, nil
+}
+
+func (s *Helpers) withUnbranchedInstallHint(ctx context.Context, orgID, appID string, pin *createInstallPin, err error) error {
+	var userErr stderr.ErrUser
+	if pin.BranchID != "" || !errors.As(err, &userErr) {
+		return err
+	}
+	hasBranches, branchErr := s.appHasBranches(ctx, orgID, appID)
+	if branchErr != nil {
+		return branchErr
+	}
+	if !hasBranches {
+		return err
+	}
+	userErr.Description = strings.TrimSuffix(userErr.Description, ".") + ". This install has no app_branch, so it uses the app config from the last nuon apps sync. Choose an app branch for this install."
+	return userErr
+}
+
+func (s *Helpers) appHasBranches(ctx context.Context, orgID, appID string) (bool, error) {
+	var count int64
+	if err := s.db.WithContext(ctx).
+		Model(&app.AppBranch{}).
+		Where(app.AppBranch{OrgID: orgID, AppID: appID}).
+		Count(&count).Error; err != nil {
+		return false, fmt.Errorf("unable to check app branches: %w", err)
+	}
+	return count > 0, nil
 }
 
 // LatestActiveBranchAppConfig returns the app config a branch currently

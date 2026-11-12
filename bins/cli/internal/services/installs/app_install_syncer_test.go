@@ -340,9 +340,16 @@ func TestUnknownInputsError(t *testing.T) {
 
 type dryRunInputsAPI struct {
 	nuon.Client
-	configs     map[string]*models.AppAppConfig
-	latestInput *models.AppAppInputConfig
-	fetched     []string
+	configs        map[string]*models.AppAppConfig
+	installInput   *models.AppAppInputConfig
+	fetched        []string
+	branches       []*models.AppAppBranch
+	listedBranches bool
+}
+
+func (a *dryRunInputsAPI) GetAppBranches(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
+	a.listedBranches = true
+	return a.branches, false, nil
 }
 
 func (a *dryRunInputsAPI) GetAppConfig(_ context.Context, _, appConfigID string, _ *bool) (*models.AppAppConfig, error) {
@@ -362,8 +369,8 @@ func (a *dryRunInputsAPI) GenerateCLIInstallConfig(context.Context, string) ([]b
 	return []byte("name = \"acme\"\n"), nil
 }
 
-func (a *dryRunInputsAPI) GetAppInputLatestConfig(context.Context, string) (*models.AppAppInputConfig, error) {
-	return a.latestInput, nil
+func (a *dryRunInputsAPI) GetAppInstallInputConfig(context.Context, string, string) (*models.AppAppInputConfig, error) {
+	return a.installInput, nil
 }
 
 func appConfigWithInputs(id string, names ...string) *models.AppAppConfig {
@@ -460,7 +467,7 @@ func TestSyncExistingInstallDryRunAllowsInputDeclaredOnlyOnPin(t *testing.T) {
 
 func TestSyncNewInstallDryRunRejectsUnknownInput(t *testing.T) {
 	api := &dryRunInputsAPI{
-		latestInput: &models.AppAppInputConfig{
+		installInput: &models.AppAppInputConfig{
 			Inputs: []*models.AppAppInput{{Name: "region"}},
 		},
 	}
@@ -478,5 +485,108 @@ func TestSyncNewInstallDryRunRejectsUnknownInput(t *testing.T) {
 	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
 	if err == nil || err.Error() != "unknown input(s): components.whoami.helm_values, retired" {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestSyncNewInstallUnknownInputWithoutBranchExplainsAppBranch(t *testing.T) {
+	api := &dryRunInputsAPI{
+		installInput: &models.AppAppInputConfig{
+			Inputs: []*models.AppAppInput{{Name: "region"}},
+		},
+		branches: []*models.AppAppBranch{{ID: "branch-1", Name: "prod"}},
+	}
+	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
+	cfg := &config.Install{
+		Name: "acme",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"retired": "1"},
+		}},
+	}
+
+	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
+	if err == nil {
+		t.Fatal("expected unknown input error")
+	}
+	if !strings.HasPrefix(err.Error(), "unknown input(s): retired") {
+		t.Fatalf("err = %v", err)
+	}
+	if !strings.Contains(err.Error(), "app_branch") {
+		t.Fatalf("err = %v, want app_branch hint", err)
+	}
+}
+
+func TestSyncNewInstallUnknownInputWithoutBranchesOmitsAppBranchHint(t *testing.T) {
+	api := &dryRunInputsAPI{
+		installInput: &models.AppAppInputConfig{
+			Inputs: []*models.AppAppInput{{Name: "region"}},
+		},
+	}
+	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
+	cfg := &config.Install{
+		Name: "acme",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"retired": "1"},
+		}},
+	}
+
+	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
+	if err == nil || err.Error() != "unknown input(s): retired" {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestSyncNewInstallDryRunAllowsDeclaredInput(t *testing.T) {
+	api := &dryRunInputsAPI{
+		installInput: &models.AppAppInputConfig{
+			Inputs: []*models.AppAppInput{{Name: "region"}},
+		},
+	}
+	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
+	cfg := &config.Install{
+		Name: "acme",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"region": "us-east-1"},
+		}},
+	}
+
+	got, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != nil {
+		t.Fatalf("dry-run install = %#v, want nil", got)
+	}
+}
+
+func TestSyncNewInstallUnknownInputOnBranchOmitsAppBranchHint(t *testing.T) {
+	branch := &models.AppAppBranch{
+		ID:        "branch-1",
+		Name:      "prod",
+		LatestRun: &models.AppAppBranchRun{AppConfigID: "cfg-1"},
+	}
+	api := &dryRunInputsAPI{
+		configs:  map[string]*models.AppAppConfig{"cfg-1": appConfigWithInputs("cfg-1", "region")},
+		branches: []*models.AppAppBranch{branch},
+	}
+	syncer := &appInstallSyncer{
+		api:               api,
+		appID:             "app-1",
+		asJSON:            true,
+		branchesByInstall: map[string]*models.AppAppBranch{"acme": branch},
+	}
+	cfg := &config.Install{
+		Name:      "acme",
+		AppBranch: "prod",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"retired": "1"},
+		}},
+	}
+
+	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
+	if err == nil || err.Error() != "unknown input(s): retired" {
+		t.Fatalf("err = %v", err)
+	}
+	if api.listedBranches {
+		t.Fatal("expected no app branch list call when app_branch is set")
 	}
 }

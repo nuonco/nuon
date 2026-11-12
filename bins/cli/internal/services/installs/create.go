@@ -281,6 +281,7 @@ func (s *Service) resolveCreateInstallBranch(ctx context.Context, appID, appBran
 		return nil, fmt.Errorf("--install-group-id requires --app-branch-id")
 	}
 	if appBranchID == "" && (asJSON || !s.cfg.Interactive) {
+		fmt.Fprintln(os.Stderr, "no --app-branch-id; using the app config from the last nuon apps sync")
 		return &createInstallBranch{}, nil
 	}
 
