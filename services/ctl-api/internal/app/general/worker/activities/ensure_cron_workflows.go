@@ -117,7 +117,7 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	logStreamAccountSweepOpts := tclient.StartWorkflowOptions{
 		ID:                    "general-log-stream-account-sweep-cron",
 		TaskQueue:             workflows.APITaskQueue,
-		CronSchedule:          "* * * * *",
+		CronSchedule:          "*/15 * * * *",
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,

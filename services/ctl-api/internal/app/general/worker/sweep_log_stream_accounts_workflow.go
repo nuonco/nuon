@@ -14,7 +14,7 @@ import (
 
 const (
 	sweepLogStreamAccountsBatchSize  = 1000
-	sweepLogStreamAccountsMaxBatches = 10
+	sweepLogStreamAccountsRunBudget  = 12 * time.Minute
 	sweepLogStreamAccountsBatchPause = time.Second
 )
 
@@ -26,7 +26,8 @@ func (w *Workflows) SweepLogStreamAccounts(ctx workflow.Context) error {
 
 	var afterID string
 	var selected, deleted, skipped int
-	for i := 0; i < sweepLogStreamAccountsMaxBatches; i++ {
+	deadline := workflow.Now(ctx).Add(sweepLogStreamAccountsRunBudget)
+	for workflow.Now(ctx).Before(deadline) {
 		resp, err := activities.AwaitSweepLogStreamAccounts(ctx, activities.SweepLogStreamAccountsRequest{
 			AfterID:   afterID,
 			BatchSize: sweepLogStreamAccountsBatchSize,
