@@ -289,5 +289,9 @@ func (m *Migrations) All() []migrations.Migration {
 				ON cloud_connections (org_id, platform, principal, deleted_at);
 				DROP INDEX IF EXISTS idx_cloud_connections_org_platform_principal_deleted;`,
 		},
+		migrations.Migration{
+			Name: "155-tokens-account-roles-indexes",
+			Fn:   m.Migration155TokensAccountRolesIndexes,
+		},
 	)
 }
