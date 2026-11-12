@@ -2285,6 +2285,20 @@ export interface paths {
      */
     get: operations["GetInstallReadme"];
   };
+  "/v1/installs/{install_id}/reconcile": {
+    /**
+     * reconcile an install onto its app branch
+     * @description Starts the workflow that brings the install onto its app branch's latest deployable config. expected_app_config_id is the config the caller reviewed; the request fails with 409 when the branch has since moved to another config, when the install is blocked, or when it has no deployable target. When the install already runs the target config, or a workflow is already rolling it out, nothing is created and the current state is returned with 200. plan_only runs the workflow without applying it. Requires the install-reconciliation org feature.
+     */
+    post: operations["ReconcileInstall"];
+  };
+  "/v1/installs/{install_id}/reconciliation": {
+    /**
+     * install reconciliation state
+     * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+     */
+    get: operations["GetInstallReconciliation"];
+  };
   "/v1/installs/{install_id}/reprovision": {
     /**
      * reprovision an install
@@ -9989,6 +10003,39 @@ export interface components {
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
     };
+    "service.InstallReconciliationBlocker": {
+      code?: string;
+      message?: string;
+      workflow_id?: string;
+    };
+    "service.InstallReconciliationConfig": {
+      app_branch_run_id?: string;
+      app_config_id?: string;
+      commit?: components["schemas"]["service.InstallOverviewCommit"];
+      version?: number;
+    };
+    "service.InstallReconciliationDiffSummary": {
+      added?: number;
+      changed?: number;
+      removed?: number;
+      sandbox_changed?: boolean;
+      stack_changed?: boolean;
+    };
+    "service.InstallReconciliationResponse": {
+      app_branch_id?: string;
+      app_branch_name?: string;
+      applied?: components["schemas"]["service.InstallReconciliationConfig"];
+      blockers?: components["schemas"]["service.InstallReconciliationBlocker"][];
+      diff_summary?: components["schemas"]["service.InstallReconciliationDiffSummary"];
+      in_flight_workflow_id?: string;
+      install_group_id?: string;
+      install_group_name?: string;
+      skipped_run_count?: number;
+      skipped_runs?: components["schemas"]["service.InstallOverviewCommit"][];
+      /** @enum {string} */
+      status?: "current" | "behind" | "in_progress" | "blocked";
+      target?: components["schemas"]["service.InstallReconciliationConfig"];
+    };
     "service.InstallStackUpdate": {
       input_diff?: components["schemas"]["app.StackVersionRunInputDiff"];
       role_diff?: components["schemas"]["app.StackVersionRunRoleDiff"];
@@ -10188,6 +10235,15 @@ export interface components {
       original?: string;
       readme?: string;
       warnings?: string[];
+    };
+    "service.ReconcileInstallRequest": {
+      expected_app_config_id: string;
+      plan_only?: boolean;
+    };
+    "service.ReconcileInstallResponse": {
+      install_app_config_version_id?: string;
+      reconciliation?: components["schemas"]["service.InstallReconciliationResponse"];
+      workflow_id?: string;
     };
     "service.RecoverInstallComponentHelmReleaseRequest": {
       request_id?: string;
@@ -27543,6 +27599,124 @@ export interface operations {
       206: {
         content: {
           "application/json": components["schemas"]["service.Readme"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * reconcile an install onto its app branch
+   * @description Starts the workflow that brings the install onto its app branch's latest deployable config. expected_app_config_id is the config the caller reviewed; the request fails with 409 when the branch has since moved to another config, when the install is blocked, or when it has no deployable target. When the install already runs the target config, or a workflow is already rolling it out, nothing is created and the current state is returned with 200. plan_only runs the workflow without applying it. Requires the install-reconciliation org feature.
+   */
+  ReconcileInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ReconcileInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ReconcileInstallResponse"];
+        };
+      };
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.ReconcileInstallResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * install reconciliation state
+   * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+   */
+  GetInstallReconciliation: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallReconciliationResponse"];
         };
       };
       /** @description Bad Request */

@@ -1641,3 +1641,11 @@ export type TInstallBranchTracking =
   components['schemas']['service.InstallBranchTracking']
 export type TInstallOverviewCommit =
   components['schemas']['service.InstallOverviewCommit']
+export type TInstallReconciliation =
+  components['schemas']['service.InstallReconciliationResponse']
+export type TInstallReconciliationConfig =
+  components['schemas']['service.InstallReconciliationConfig']
+export type TInstallReconciliationBlocker =
+  components['schemas']['service.InstallReconciliationBlocker']
+export type TReconcileInstallResponse =
+  components['schemas']['service.ReconcileInstallResponse']
