@@ -22,6 +22,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
+	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
@@ -52,6 +55,8 @@ import (
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
+	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
@@ -205,6 +210,11 @@ func startFlowApp(t *testing.T) TestService {
 		fx.Provide(emitterclient.New),
 		fx.Provide(vcshelpers.New),
 		fx.Provide(appshelpers.New),
+		fx.Provide(func() *slackclient.Client { return slackclient.New() }),
+		fx.Provide(autolink.New),
+		fx.Provide(runnershelpers.New),
+		fx.Provide(orgshelpers.New),
+		fx.Provide(cloudconnectionshelpers.New),
 
 		// all activity providers
 		fx.Provide(statusactivities.New),
