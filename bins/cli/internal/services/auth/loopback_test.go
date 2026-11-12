@@ -15,6 +15,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/pkg/nuonauth"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -22,6 +23,21 @@ func TestLoopbackLoginEnabled(t *testing.T) {
 	require.True(t, (&Service{cfg: &config.Config{Interactive: true}}).loopbackLoginEnabled())
 	require.False(t, (&Service{cfg: &config.Config{Interactive: false}}).loopbackLoginEnabled())
 	require.False(t, (&Service{}).loopbackLoginEnabled())
+}
+
+func TestLoopbackSupportedByCtlAPI(t *testing.T) {
+	require.False(t, loopbackSupportedByCtlAPI("0.19.1288"))
+	require.True(t, loopbackSupportedByCtlAPI("0.19.1289"))
+	require.True(t, loopbackSupportedByCtlAPI("0.19.1291"))
+	require.True(t, loopbackSupportedByCtlAPI("8fdb54d"))
+	require.True(t, loopbackSupportedByCtlAPI("development"))
+	require.True(t, loopbackSupportedByCtlAPI(""))
+
+	ctx := context.Background()
+	require.True(t, (&Service{}).ctlAPISupportsLoopback(ctx))
+	require.False(t, (&Service{api: &versionAPI{err: errors.New("dial")}}).ctlAPISupportsLoopback(ctx))
+	require.False(t, (&Service{api: &versionAPI{version: &nuon.APIVersion{Version: "0.19.1109"}}}).ctlAPISupportsLoopback(ctx))
+	require.True(t, (&Service{api: &versionAPI{version: &nuon.APIVersion{Version: "8fdb54d"}}}).ctlAPISupportsLoopback(ctx))
 }
 
 const testCompleteURL = "https://auth.example.test/cli/complete"
@@ -168,6 +184,106 @@ func TestLoopbackLoginExchangesCode(t *testing.T) {
 	require.NotEmpty(t, sawVerifier)
 }
 
+func TestInteractiveLoginUsesDeviceCodeBeforeLoopbackRelease(t *testing.T) {
+	opened := false
+	orig := openBrowser
+	openBrowser = func(string) error {
+		opened = true
+		return nil
+	}
+	t.Cleanup(func() { openBrowser = orig })
+
+	var paths []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		switch r.URL.Path {
+		case "/device/authorize":
+			w.Header().Set("Content-Type", "application/json")
+			require.NoError(t, json.NewEncoder(w).Encode(NuonAuthDeviceAuthorizationResponse{
+				DeviceCode:      "dev",
+				UserCode:        "ABCD-EFGH",
+				VerificationURI: "https://auth.example.test/device",
+				ExpiresIn:       30,
+				Interval:        1,
+			}))
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"expired_token","error_description":"device code has expired"}`))
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	svc := &Service{
+		cfg:                 &config.Config{Interactive: true},
+		authBaseURLOverride: srv.URL,
+		api:                 &versionAPI{version: &nuon.APIVersion{Version: "0.19.1288"}},
+	}
+	_, err := svc.loginWithNuonAuth(context.Background(), &models.ServiceCLIConfig{RootDomain: "example.test"})
+	require.Error(t, err)
+	require.True(t, opened)
+	require.Equal(t, []string{"/device/authorize", "/device/token"}, paths)
+}
+
+func TestInteractiveLoginUsesLoopbackForGitHashVersion(t *testing.T) {
+	var sawPath string
+	tokenSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sawPath = r.URL.Path
+		if r.URL.Path != "/oauth/token" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"access_token": "nuon-token",
+			"token_type":   "Bearer",
+			"expires_in":   86400,
+			"email":        "ada@example.com",
+		})
+	}))
+	t.Cleanup(tokenSrv.Close)
+
+	orig := openBrowser
+	openBrowser = func(raw string) error {
+		authURL, err := url.Parse(raw)
+		require.NoError(t, err)
+		redirect, err := url.Parse(authURL.Query().Get("redirect_uri"))
+		require.NoError(t, err)
+		callback := &url.URL{
+			Scheme: "http",
+			Host:   redirect.Host,
+			Path:   redirect.Path,
+			RawQuery: url.Values{
+				"code":  {"the-code"},
+				"state": {authURL.Query().Get("state")},
+			}.Encode(),
+		}
+		go func() {
+			deadline := time.Now().Add(2 * time.Second)
+			for time.Now().Before(deadline) {
+				resp, err := http.Get(callback.String())
+				if err == nil {
+					resp.Body.Close()
+					return
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+		}()
+		return nil
+	}
+	t.Cleanup(func() { openBrowser = orig })
+
+	svc := &Service{
+		cfg:                 &config.Config{Interactive: true},
+		authBaseURLOverride: tokenSrv.URL,
+		api:                 &versionAPI{version: &nuon.APIVersion{Version: "8fdb54d"}},
+	}
+	result, err := svc.loginWithNuonAuth(context.Background(), &models.ServiceCLIConfig{RootDomain: "example.test"})
+	require.NoError(t, err)
+	require.Equal(t, "nuon-token", result.AccessToken)
+	require.Equal(t, "/oauth/token", sawPath)
+}
+
 func TestNonInteractiveLoginUsesDeviceAuthorization(t *testing.T) {
 	opened := false
 	orig := openBrowser
@@ -245,6 +361,16 @@ func TestInteractiveLoginFallsBackWhenLoopbackCannotBind(t *testing.T) {
 	require.Error(t, err)
 	require.NotContains(t, paths, "/oauth/authorize")
 	require.Equal(t, "/device/authorize", paths[0])
+}
+
+type versionAPI struct {
+	nuon.Client
+	version *nuon.APIVersion
+	err     error
+}
+
+func (v *versionAPI) GetVersion(context.Context) (*nuon.APIVersion, error) {
+	return v.version, v.err
 }
 
 func listenLocal(t *testing.T) net.Listener {
