@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -12,7 +14,8 @@ import (
 
 const (
 	sweepLogStreamAccountsBatchSize  = 1000
-	sweepLogStreamAccountsMaxBatches = 20
+	sweepLogStreamAccountsRunBudget  = 12 * time.Minute
+	sweepLogStreamAccountsBatchPause = time.Second
 )
 
 func (w *Workflows) SweepLogStreamAccounts(ctx workflow.Context) error {
@@ -23,7 +26,8 @@ func (w *Workflows) SweepLogStreamAccounts(ctx workflow.Context) error {
 
 	var afterID string
 	var selected, deleted, skipped int
-	for i := 0; i < sweepLogStreamAccountsMaxBatches; i++ {
+	deadline := workflow.Now(ctx).Add(sweepLogStreamAccountsRunBudget)
+	for workflow.Now(ctx).Before(deadline) {
 		resp, err := activities.AwaitSweepLogStreamAccounts(ctx, activities.SweepLogStreamAccountsRequest{
 			AfterID:   afterID,
 			BatchSize: sweepLogStreamAccountsBatchSize,
@@ -41,6 +45,9 @@ func (w *Workflows) SweepLogStreamAccounts(ctx workflow.Context) error {
 			break
 		}
 		afterID = resp.LastID
+		if err := workflow.Sleep(ctx, sweepLogStreamAccountsBatchPause); err != nil {
+			return err
+		}
 	}
 
 	l.Info("swept log stream accounts",
