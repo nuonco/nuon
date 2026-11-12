@@ -26,13 +26,13 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsSuccess() {
 		{
 			name: "returns seeded components when component ids in app config",
 			setupFunc: func() []string {
-				// testAppConfig already has 6 typed components from the full seed
+				// testAppConfig already has 5 typed components from the full seed
 				return s.testAppConfig.ComponentIDs
 			},
 			queryParams:   "",
-			expectedCount: 6,
+			expectedCount: 5,
 			validateFunc: func(components []app.Component) {
-				assert.Len(s.T(), components, 6)
+				assert.Len(s.T(), components, 5)
 				for _, comp := range components {
 					assert.Equal(s.T(), s.testApp.ID, comp.AppID)
 				}

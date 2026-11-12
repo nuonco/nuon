@@ -268,9 +268,9 @@ func (s *OAuthCLITestSuite) TestCLICompletePage() {
 	require.Equal(s.T(), http.StatusOK, denied.Code)
 	assert.Contains(s.T(), denied.Body.String(), "CLI Access Denied")
 
-	failed := s.do(http.MethodGet, "/cli/complete?result=%3Cscript%3E", nil)
+	failed := s.do(http.MethodGet, "/cli/complete?result=%3Cscript%3Ealert(1)%3C/script%3E", nil)
 	require.Equal(s.T(), http.StatusBadRequest, failed.Code)
-	assert.NotContains(s.T(), failed.Body.String(), "<script>")
+	assert.NotContains(s.T(), failed.Body.String(), "alert(1)")
 }
 
 type oauthTokenHTTPResponse struct {
