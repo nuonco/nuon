@@ -240,3 +240,34 @@ func TestBindAzureRunnerInstall(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "does not match runner install")
 }
+
+func TestVerifyAzureJWT_RejectsTenantBeforeVerify(t *testing.T) {
+	tokenFor := func(tid string) string {
+		payload := base64.RawURLEncoding.EncodeToString([]byte(`{"tid":"` + tid + `"}`))
+		return "eyJhbGciOiJSUzI1NiJ9." + payload + ".sig"
+	}
+
+	tests := map[string]struct {
+		tokenTenantID    string
+		expectedTenantID string
+	}{
+		"a tid for another tenant": {
+			tokenTenantID:    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+			expectedTenantID: runnerTenantID,
+		},
+		"an install with no stored tenant": {
+			tokenTenantID:    runnerTenantID,
+			expectedTenantID: "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := &service{}
+
+			_, err := s.verifyAzureJWT(t.Context(), tokenFor(tc.tokenTenantID), tc.expectedTenantID)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "does not match install tenant")
+		})
+	}
+}
