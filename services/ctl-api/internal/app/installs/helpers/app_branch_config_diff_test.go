@@ -2,7 +2,10 @@ package helpers_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -11,6 +14,7 @@ import (
 	"go.uber.org/fx/fxtest"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
@@ -30,9 +34,10 @@ type appBranchConfigDiffDeps struct {
 type AppBranchConfigDiffTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app  *fxtest.App
-	deps appBranchConfigDiffDeps
-	ctx  context.Context
+	app    *fxtest.App
+	deps   appBranchConfigDiffDeps
+	ctx    context.Context
+	builds map[string]string
 }
 
 func TestAppBranchConfigDiffSuite(t *testing.T) {
@@ -77,6 +82,7 @@ type changeClassFixture struct {
 }
 
 func (s *AppBranchConfigDiffTestSuite) seedPair() changeClassFixture {
+	s.builds = map[string]string{}
 	a := s.deps.Seed.CreateApp(s.ctx, s.T())
 	oldCfg := s.deps.Seed.CreateBareAppConfig(s.ctx, s.T(), a.ID)
 	newCfg := s.deps.Seed.CreateBareAppConfig(s.ctx, s.T(), a.ID)
@@ -96,6 +102,8 @@ func (s *AppBranchConfigDiffTestSuite) seedPair() changeClassFixture {
 	s.connection(worker.ID, newCfg.ID, "worker-same", "worker-build")
 	s.deps.Seed.CreateAppRunnerConfig(s.ctx, s.T(), a.ID, oldCfg.ID)
 	s.deps.Seed.CreateAppRunnerConfig(s.ctx, s.T(), a.ID, newCfg.ID)
+	s.sandboxBuild(a.ID, oldCfg.ID, oldSandbox.ID)
+	s.sandboxBuild(a.ID, newCfg.ID, newSandbox.ID)
 
 	install := s.deps.Seed.CreateInstall(s.ctx, s.T(), a)
 	s.pin(install, newCfg.ID, newCfg.ID)
@@ -111,12 +119,50 @@ func (s *AppBranchConfigDiffTestSuite) seedPair() changeClassFixture {
 	}
 }
 
-func (s *AppBranchConfigDiffTestSuite) connection(componentID, appConfigID, checksum, buildID string) {
+func (s *AppBranchConfigDiffTestSuite) connection(componentID, appConfigID, checksum, source string) {
 	conn := s.deps.Seed.CreateTerraformComponentConfigConnection(s.ctx, s.T(), componentID, appConfigID)
+	buildID, ok := s.builds[source]
+	if !ok {
+		buildID = s.componentBuild(conn.ID, source)
+		s.builds[source] = buildID
+	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(conn).Updates(map[string]any{
 		"checksum":        checksum,
 		"latest_build_id": buildID,
 	}).Error)
+}
+
+func (s *AppBranchConfigDiffTestSuite) sourceIdentity(source string) *sourceidentity.Identity {
+	sum := sha256.Sum256([]byte(source))
+	digest := hex.EncodeToString(sum[:])
+	identity := sourceidentity.New("terraform", source)
+	identity.Captured = true
+	identity.Commit = digest[:40]
+	identity.Repository = "https://example.com/acme/repo"
+	identity.Files = []sourceidentity.File{{Path: "main.tf", SHA256: digest}}
+	identity.Seal()
+	return identity
+}
+
+func (s *AppBranchConfigDiffTestSuite) componentBuild(connID, source string) string {
+	identity := s.sourceIdentity(source)
+	build := app.ComponentBuild{
+		ComponentConfigConnectionID: connID,
+		Status:                      app.ComponentBuildStatusActive,
+		StatusDescription:           "active",
+		SourceIdentity:              identity,
+		SourceChecksum:              identity.Checksum,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&build).Error)
+	return build.ID
+}
+
+func (s *AppBranchConfigDiffTestSuite) latestBuild(appConfigID, componentID string) (string, string) {
+	var conn app.ComponentConfigConnection
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Where(app.ComponentConfigConnection{AppConfigID: appConfigID, ComponentID: componentID}).
+		First(&conn).Error)
+	return conn.ID, conn.LatestBuildID.String
 }
 
 func (s *AppBranchConfigDiffTestSuite) pin(install *app.Install, appConfigID, appliedID string) {
@@ -140,6 +186,26 @@ func (s *AppBranchConfigDiffTestSuite) sandboxRef(installID, appConfigID string)
 		Model(&app.InstallSandbox{}).
 		Where("install_id = ?", installID).
 		Update("app_config_ref", app.AppConfigRef{AppliedConfigID: appConfigID}).Error)
+
+	var sandbox app.InstallSandbox
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.InstallSandbox{InstallID: installID}).First(&sandbox).Error)
+	var sandboxCfg app.AppSandboxConfig
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.AppSandboxConfig{AppConfigID: appConfigID}).First(&sandboxCfg).Error)
+	var build app.AppSandboxBuild
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.AppSandboxBuild{AppConfigID: appConfigID}).First(&build).Error)
+
+	appliedAt := time.Now()
+	run := app.InstallSandboxRun{
+		InstallID:          installID,
+		InstallSandboxID:   &sandbox.ID,
+		AppSandboxConfigID: sandboxCfg.ID,
+		AppSandboxBuildID:  build.ID,
+		RunType:            app.SandboxRunTypeProvision,
+		Status:             app.SandboxRunStatusActive,
+		StatusDescription:  "active",
+		AppliedAt:          &appliedAt,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&run).Error)
 }
 
 func (s *AppBranchConfigDiffTestSuite) componentRef(installID, componentID, appConfigID string) {
@@ -150,6 +216,20 @@ func (s *AppBranchConfigDiffTestSuite) componentRef(installID, componentID, appC
 		AppConfigRef: app.AppConfigRef{AppliedConfigID: appConfigID},
 	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&component).Error)
+
+	_, buildID := s.latestBuild(appConfigID, componentID)
+	appliedAt := time.Now()
+	deploy := app.InstallDeploy{
+		InstallComponentID: component.ID,
+		ComponentBuildID:   buildID,
+		AppConfigID:        appConfigID,
+		Status:             app.InstallDeployStatusActive,
+		StatusDescription:  "active",
+		StatusV2:           app.NewCompositeStatus(s.ctx, app.StatusSuccess),
+		Type:               app.InstallDeployTypeApply,
+		AppliedAt:          &appliedAt,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&deploy).Error)
 }
 
 func (s *AppBranchConfigDiffTestSuite) diff(f changeClassFixture) *app.InstallConfigDiff {
@@ -204,14 +284,12 @@ func (s *AppBranchConfigDiffTestSuite) TestSandboxConfig() {
 	diff := s.diff(f)
 	s.False(diff.StackChanged)
 	s.True(diff.SandboxChanged)
-	s.False(diff.SandboxBuildChanged)
+	s.True(diff.SandboxBuildChanged)
 	s.Empty(diff.Changed)
 }
 
 func (s *AppBranchConfigDiffTestSuite) TestSandboxSource() {
 	f := s.seedPair()
-	s.sandboxBuild(f.appID, f.oldID, f.oldSandbox.ID)
-	s.sandboxBuild(f.appID, f.newID, f.newSandbox.ID)
 	s.stackRef(f.install.ID, f.newID)
 	s.sandboxRef(f.install.ID, f.oldID)
 
@@ -223,12 +301,15 @@ func (s *AppBranchConfigDiffTestSuite) TestSandboxSource() {
 }
 
 func (s *AppBranchConfigDiffTestSuite) sandboxBuild(appID, appConfigID, sandboxConfigID string) {
+	identity := s.sourceIdentity("sandbox")
 	build := app.AppSandboxBuild{
 		AppID:              appID,
 		AppConfigID:        appConfigID,
 		AppSandboxConfigID: sandboxConfigID,
 		Status:             app.AppSandboxBuildStatusActive,
 		StatusDescription:  "active",
+		SourceIdentity:     identity,
+		SourceChecksum:     identity.Checksum,
 	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&build).Error)
 }
@@ -251,9 +332,9 @@ func (s *AppBranchConfigDiffTestSuite) TestComponentConfig() {
 
 func (s *AppBranchConfigDiffTestSuite) TestComponentSource() {
 	f := s.seedPair()
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.ComponentConfigConnection{}).
-		Where("app_config_id = ? AND component_id = ?", f.oldID, f.componentID).
-		Update("latest_build_id", "build-old").Error)
+	oldConnID, _ := s.latestBuild(f.oldID, f.componentID)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.ComponentConfigConnection{ID: oldConnID}).
+		Update("latest_build_id", s.componentBuild(oldConnID, "build-same")).Error)
 	s.componentRef(f.install.ID, f.componentID, f.oldID)
 
 	diff := s.diff(f)
@@ -273,6 +354,7 @@ func (s *AppBranchConfigDiffTestSuite) TestComponentAdded() {
 	f.billingID = billing.ID
 	s.connection(billing.ID, f.newID, "billing", "billing-build")
 	s.pin(f.install, f.newID, f.oldID)
+	s.sandboxRef(f.install.ID, f.oldID)
 
 	diff := s.diff(f)
 	s.Equal([]string{billing.ID}, s.componentIDs(diff.Added))

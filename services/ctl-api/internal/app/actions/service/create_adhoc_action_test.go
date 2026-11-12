@@ -172,7 +172,7 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocAction() {
 				require.NoError(s.T(), res.Error)
 				require.Len(s.T(), run.Steps, 1)
 
-				evSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+				evSignals := tests.GetQueueSignalsByOwner(s.T(), s.service.DB, resp.WorkflowID)
 				require.Len(s.T(), evSignals, 1)
 				assert.Equal(s.T(), executeflow.SignalType, evSignals[0].Type)
 			},
