@@ -26,8 +26,8 @@ func TestImageConnectionModes(t *testing.T) {
 	}{
 		"legacy ECR":                    {ecr: &app.AWSECRImageConfig{IAMRoleARN: "arn:aws:iam::123456789012:role/acme"}, legacy: true},
 		"legacy ECR disabled":           {ecr: &app.AWSECRImageConfig{IAMRoleARN: "arn:aws:iam::123456789012:role/acme"}, wantIs: ErrLegacyImageAuthDisabled},
-		"legacy GAR impersonation":      {gar: &app.GCPGARImageConfig{ServiceAccountEmail: "acme@example.com"}, legacy: true},
-		"legacy GAR federation":         {gar: &app.GCPGARImageConfig{WorkloadIdentityProvider: "provider"}, legacy: true},
+		"legacy GAR impersonation":      {gar: &app.GCPGARImageConfig{ServiceAccountEmail: "acme@example.com"}, legacy: true, wantIs: ErrLegacyImageAuthDisabled},
+		"legacy GAR federation":         {gar: &app.GCPGARImageConfig{WorkloadIdentityProvider: "provider"}, legacy: true, wantIs: ErrLegacyImageAuthDisabled},
 		"legacy GAR disabled":           {gar: &app.GCPGARImageConfig{ServiceAccountEmail: "acme@example.com"}, wantIs: ErrLegacyImageAuthDisabled},
 		"saved ambient GAR":             {gar: &app.GCPGARImageConfig{ID: "saved"}, legacy: true},
 		"saved ambient GAR disabled":    {gar: &app.GCPGARImageConfig{ID: "saved"}, wantIs: ErrLegacyImageAuthDisabled},
