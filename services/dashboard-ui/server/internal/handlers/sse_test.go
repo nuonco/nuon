@@ -142,6 +142,45 @@ func TestRunSSEStreamPartialEmitOnError(t *testing.T) {
 	}
 }
 
+func TestRunSSEStreamReportsFailureStreakOnce(t *testing.T) {
+	fail := sseScriptStep{err: fmt.Errorf("upstream down")}
+	body := runScriptedStream(t, []sseScriptStep{fail, fail, fail, fail}, nil)
+
+	if got := strings.Count(body, "event: fetch-error\n"); got != 1 {
+		t.Errorf("fetch-error events = %d, want 1 for a continuous streak\nbody:\n%s", got, body)
+	}
+}
+
+func TestRunSSEStreamReportsFailureAgainAfterRecovery(t *testing.T) {
+	fail := sseScriptStep{err: fmt.Errorf("upstream down")}
+	ok := sseScriptStep{res: sseFetchResult{Events: []sseEvent{event("build", `{"v":1}`)}}}
+	body := runScriptedStream(t, []sseScriptStep{fail, fail, ok, fail, fail}, nil)
+
+	if got := strings.Count(body, "event: fetch-error\n"); got != 2 {
+		t.Errorf("fetch-error events = %d, want 2 (one per streak)\nbody:\n%s", got, body)
+	}
+}
+
+func TestBackoffRetryDelay(t *testing.T) {
+	cases := []struct {
+		base   time.Duration
+		errors int
+		want   time.Duration
+	}{
+		{5 * time.Second, 0, 5 * time.Second},
+		{5 * time.Second, 1, 10 * time.Second},
+		{5 * time.Second, 3, 40 * time.Second},
+		{5 * time.Second, 4, sseErrorRetryMaxDelay},
+		{5 * time.Second, 50, sseErrorRetryMaxDelay},
+		{2 * sseErrorRetryMaxDelay, 3, 2 * sseErrorRetryMaxDelay},
+	}
+	for _, tc := range cases {
+		if got := backoffRetryDelay(tc.base, tc.errors); got != tc.want {
+			t.Errorf("backoffRetryDelay(%v, %d) = %v, want %v", tc.base, tc.errors, got, tc.want)
+		}
+	}
+}
+
 func TestRunSSEStreamSilentRetry(t *testing.T) {
 	body := runScriptedStream(t, []sseScriptStep{
 		{err: fmt.Errorf("marshal build: %w", errSSESilentRetry)},
