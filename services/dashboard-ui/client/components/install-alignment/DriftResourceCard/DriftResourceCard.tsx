@@ -40,6 +40,13 @@ export interface IDriftResourceCard {
   resolving?: boolean
   resource: TInstallAlignmentResource
   view?: TCollectionView
+  /**
+   * Proposed: this resource isn't running the install's app config because
+   * of a failed update, a skipped step, or a manual override — distinct from
+   * ordinary state drift. There is no single-resource resolve action; the
+   * whole install must be reconciled via the Reconcile install modal.
+   */
+  outOfSync?: boolean
 }
 
 const KIND_ICONS: Record<TInstallAlignmentResourceKind, TIconVariant> = {
@@ -84,6 +91,7 @@ export const DriftResourceCard = ({
   nameHref,
   onResolve,
   onViewPlan,
+  outOfSync = false,
   resolveError,
   resolving = false,
   resource,
@@ -111,9 +119,12 @@ export const DriftResourceCard = ({
       ? isImage
         ? 'An image sync is pending or in progress.'
         : 'A deployment is pending or in progress.'
-      : isImage
-        ? 'This image version hasn’t been synced.'
-        : resource.reason) ||
+      : outOfSync
+        ? resource.reason ||
+          'This resource isn’t running the install’s app config. Reconcile the install to fix it.'
+        : isImage
+          ? 'This image version hasn’t been synced.'
+          : resource.reason) ||
     (isStateDrift
       ? 'Live resources differ from what was last applied.'
       : 'Saved changes haven’t taken effect.')
@@ -183,7 +194,11 @@ export const DriftResourceCard = ({
             !isGrid && 'sm:justify-end'
           )}
         >
-          {isStateDrift && !openDeployment ? (
+          {outOfSync && !openDeployment ? (
+            <Badge size="sm" theme="warn">
+              Out of sync with app config
+            </Badge>
+          ) : isStateDrift && !openDeployment ? (
             <Badge size="sm" theme="warn">
               Drift detected
             </Badge>
@@ -196,7 +211,7 @@ export const DriftResourceCard = ({
                   : REASON_STATUS_LABELS[reasonStatus]}
             </Status>
           ) : null}
-          {onViewPlan ? (
+          {!outOfSync && onViewPlan ? (
             <Button variant="secondary" onClick={onViewPlan}>
               <Icon variant="FileTextIcon" size={16} />
               View plan
@@ -206,7 +221,7 @@ export const DriftResourceCard = ({
             <Button variant="secondary" href={deploymentHref}>
               {isImage ? 'View sync' : 'View deployment'}
             </Button>
-          ) : !openDeployment && isDrifted(resource) && onResolve ? (
+          ) : !outOfSync && !openDeployment && isDrifted(resource) && onResolve ? (
             <Button
               variant="secondary"
               onClick={onResolve}

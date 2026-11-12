@@ -37,15 +37,28 @@ export const InstallBranchBannerContainer = ({
       ? `/${org.id}/apps/${install.app_id}/branches/${run.branch_id}/runs/${run.workflow_id}`
       : undefined
 
-  const reconcileStatus = reconciliation?.status
+  // `out_of_sync` and `failed_workflow_id` are a proposed extension of
+  // TInstallReconciliation (see reconcile-mock-types.ts) — not on the real
+  // type yet, so they're read defensively off the fetched data.
+  const reconciliationData = reconciliation as
+    | (Omit<NonNullable<typeof reconciliation>, 'status'> & {
+        status?: IInstallBranchBannerReconcile['status']
+        out_of_sync?: boolean
+        failed_workflow_id?: string
+        deploy_plan?: unknown[]
+      })
+    | undefined
+  const reconcileStatus = reconciliationData?.status
+  const outOfSync = !!reconciliationData?.out_of_sync
   const reconcile: IInstallBranchBannerReconcile | undefined =
     install &&
     reconciliation?.target?.app_config_id &&
     (reconcileStatus === 'behind' ||
       reconcileStatus === 'blocked' ||
-      reconcileStatus === 'in_progress')
+      reconcileStatus === 'in_progress' ||
+      reconcileStatus === 'out_of_sync')
       ? {
-          status: reconcileStatus,
+          status: reconcileStatus as IInstallBranchBannerReconcile['status'],
           appliedVersion: reconciliation.applied?.version,
           targetVersion: reconciliation.target.version,
           workflowHref: reconciliation.in_flight_workflow_id
@@ -53,6 +66,15 @@ export const InstallBranchBannerContainer = ({
                 installId: install.id,
                 appId: install.app_id,
                 suffix: `/workflows/${reconciliation.in_flight_workflow_id}`,
+              })
+            : undefined,
+          outOfSync,
+          outOfSyncResourceCount: reconciliationData?.deploy_plan?.length,
+          failedWorkflowHref: reconciliationData?.failed_workflow_id
+            ? installLink({
+                installId: install.id,
+                appId: install.app_id,
+                suffix: `/workflows/${reconciliationData.failed_workflow_id}`,
               })
             : undefined,
           action:

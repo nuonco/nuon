@@ -7,6 +7,12 @@ import { InstallView } from './InstallView'
 import type { TFixture } from './install-fixture'
 import { viewPath } from './install-fixture'
 import { resourcesFixture } from './page-fixtures'
+import {
+  behindAndOutOfSyncReconciliation,
+  failedUpdateReconciliation,
+  manualChangeReconciliation,
+} from './reconcile-mock-fixtures'
+import type { TMockInstallReconciliation } from './reconcile-mock-types'
 import type {
   TInstallOverviewCommit,
   TInstallReconciliation,
@@ -38,11 +44,14 @@ const reconciliationOf = (
   ...overrides,
 })
 
-const page = (runsBehind: number, reconciliation: TInstallReconciliation) => {
+const page = (
+  runsBehind: number,
+  reconciliation: TInstallReconciliation | TMockInstallReconciliation
+) => {
   const base = resourcesFixture('active')
   const fixture: TFixture = (url, init) => {
     if (url.pathname.endsWith('/reconciliation')) {
-      return { body: reconciliation }
+      return { body: reconciliation as TInstallReconciliation }
     }
     if (
       url.pathname.includes('/app-configs/') &&
@@ -123,3 +132,12 @@ export const InProgress = () =>
     0,
     reconciliationOf({ status: 'in_progress', in_flight_workflow_id: 'wf-1' })
   )
+
+export const OutOfSyncFailedUpdate = () =>
+  page(0, failedUpdateReconciliation())
+
+export const OutOfSyncManualChange = () =>
+  page(0, manualChangeReconciliation())
+
+export const BehindAndOutOfSync = () =>
+  page(2, behindAndOutOfSyncReconciliation())

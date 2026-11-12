@@ -110,3 +110,55 @@ export const Grid = () => (
     />
   </div>
 )
+
+export const OutOfSync = () => (
+  <DriftResourceCard
+    branchRunHref="#branch-run"
+    nameHref="#component"
+    outOfSync
+    resource={unappliedResource({
+      id: 'ic-api',
+      name: 'api',
+      reason: 'This component failed to deploy during the last update.',
+    })}
+  />
+)
+
+export const OutOfSyncList = () => (
+  <div className="flex flex-col divide-y">
+    <DriftResourceCard
+      branchRunHref="#branch-run"
+      nameHref="#component"
+      outOfSync
+      resource={unappliedResource({
+        id: 'ic-api-image',
+        name: 'api (image)',
+        kind: 'image',
+        component_type: undefined,
+        reason: 'A newer build was never synced after the failed update.',
+      })}
+    />
+    <DriftResourceCard
+      branchRunHref="#branch-run"
+      nameHref="#component"
+      outOfSync
+      resource={unappliedResource({
+        id: 'ic-worker',
+        name: 'worker',
+        reason:
+          'The update workflow stopped before this component was deployed.',
+      })}
+    />
+    <DriftResourceCard
+      outOfSync
+      resource={unappliedResource({
+        id: 'sbx-1',
+        kind: 'sandbox',
+        name: 'sandbox',
+        component_id: undefined,
+        component_type: undefined,
+        reason: 'Depends on the api component, which hasn’t deployed yet.',
+      })}
+    />
+  </div>
+)

@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { SuccessfulBranchRuns } from '@/components/installs/InstallBranchBanner/SuccessfulBranchRuns'
+import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
-import { Icon } from '@/components/common/Icon'
+import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
+import { Toggle } from '@/components/common/form/Toggle'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type {
   TAPIError,
@@ -14,10 +16,16 @@ import type {
   TInstallReconciliation,
   TInstallReconciliationConfig,
 } from '@/types'
+import {
+  DEPLOY_PLAN_KIND_LABELS,
+  DEPLOY_PLAN_REASON_LABELS,
+  type TMockDeployPlanItem,
+  type TMockInstallReconciliation,
+} from '@/views/install/reconcile-mock-types'
 
 interface IReconcileInstallModal extends Omit<IModal, 'onSubmit'> {
   installName: string
-  reconciliation?: TInstallReconciliation
+  reconciliation?: TInstallReconciliation | TMockInstallReconciliation
   isLoading: boolean
   isPending: boolean
   error?: TAPIError | null
@@ -25,7 +33,62 @@ interface IReconcileInstallModal extends Omit<IModal, 'onSubmit'> {
   getRunHref: (run?: TInstallOverviewCommit) => string | undefined
   diff?: ReactNode
   onSubmit: () => void
+  /** Proposed dry-run (plan only) option — presentational, not yet wired. */
+  planOnly?: boolean
+  onPlanOnlyChange?: (planOnly: boolean) => void
 }
+
+const DEPLOY_PLAN_KIND_ICONS: Record<TMockDeployPlanItem['kind'], TIconVariant> = {
+  component: 'CubeIcon',
+  image: 'CubeIcon',
+  sandbox: 'ShippingContainerIcon',
+  stack: 'StackIcon',
+}
+
+const DeployPlanList = ({ items }: { items: TMockDeployPlanItem[] }) => (
+  <div className="flex flex-col gap-2">
+    <Text variant="label" theme="neutral" weight="strong">
+      Deploy plan
+    </Text>
+    <Card className="!p-0 !gap-0 divide-y" data-testid="reconcile-deploy-plan">
+      {items
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map((item) => (
+          <div
+            key={item.id}
+            className="flex flex-wrap items-center justify-between gap-2 p-3"
+          >
+            <span className="flex items-center gap-2 min-w-0">
+              <Text
+                variant="subtext"
+                theme="neutral"
+                family="mono"
+                className="w-5 shrink-0 text-right"
+              >
+                {item.order}
+              </Text>
+              <Icon variant={DEPLOY_PLAN_KIND_ICONS[item.kind]} size={16} />
+              <Text family="mono" weight="strong" className="break-all">
+                {item.name}
+              </Text>
+              <Badge size="sm" theme="none">
+                {DEPLOY_PLAN_KIND_LABELS[item.kind]}
+              </Badge>
+            </span>
+            <span className="flex items-center gap-2">
+              <Badge size="sm" theme="warn">
+                {DEPLOY_PLAN_REASON_LABELS[item.reason]}
+              </Badge>
+            </span>
+            <Text variant="subtext" theme="neutral" className="basis-full">
+              {item.reason_message}
+            </Text>
+          </div>
+        ))}
+    </Card>
+  </div>
+)
 
 const configLabel = (config?: TInstallReconciliationConfig) =>
   config?.version ? `config v${config.version}` : 'no config'
@@ -62,15 +125,23 @@ export const ReconcileInstallModal = ({
   getRunHref,
   diff,
   onSubmit,
+  planOnly,
+  onPlanOnlyChange,
   ...props
 }: IReconcileInstallModal) => {
   const branchName = reconciliation?.app_branch_name
   const onBranch = branchName ? `the ${branchName} branch` : 'its app branch'
   const status = reconciliation?.status
+  const outOfSync =
+    status === 'out_of_sync' ||
+    !!(reconciliation as TMockInstallReconciliation | undefined)?.out_of_sync
   const canReconcile =
-    status === 'behind' && !!reconciliation?.target?.app_config_id
+    (status === 'behind' || status === 'out_of_sync') &&
+    !!reconciliation?.target?.app_config_id
   const blockers = reconciliation?.blockers ?? []
   const skippedCount = reconciliation?.skipped_run_count ?? 0
+  const deployPlan = (reconciliation as TMockInstallReconciliation | undefined)
+    ?.deploy_plan
 
   return (
     <Modal
@@ -84,8 +155,11 @@ export const ReconcileInstallModal = ({
       primaryActionTrigger={{
         children: isPending ? (
           <span className="flex items-center gap-2">
-            <Icon variant="Loading" /> Reconciling install
+            <Icon variant="Loading" />{' '}
+            {planOnly ? 'Planning reconcile' : 'Reconciling install'}
           </span>
+        ) : planOnly ? (
+          'Plan reconcile'
         ) : (
           'Reconcile install'
         ),
@@ -143,11 +217,34 @@ export const ReconcileInstallModal = ({
 
             {canReconcile ? (
               <Text variant="body">
-                Reconciling {installName} will move it from{' '}
-                {configLabel(reconciliation.applied)} to{' '}
-                {configLabel(reconciliation.target)} on {onBranch}. The changes
-                below are applied in one workflow.
+                {outOfSync ? (
+                  <>
+                    {installName} isn’t fully running{' '}
+                    {configLabel(reconciliation.target)} on {onBranch}.
+                    Reconciling will redeploy the components below in order.
+                  </>
+                ) : (
+                  <>
+                    Reconciling {installName} will move it from{' '}
+                    {configLabel(reconciliation.applied)} to{' '}
+                    {configLabel(reconciliation.target)} on {onBranch}. The
+                    changes below are applied in one workflow.
+                  </>
+                )}
               </Text>
+            ) : null}
+
+            {canReconcile && onPlanOnlyChange ? (
+              <Toggle
+                checked={!!planOnly}
+                onChange={onPlanOnlyChange}
+                label="Dry run (plan only)"
+                description="Preview the deploy plan without applying any changes."
+              />
+            ) : null}
+
+            {canReconcile && deployPlan?.length ? (
+              <DeployPlanList items={deployPlan} />
             ) : null}
 
             {reconciliation.target ? (

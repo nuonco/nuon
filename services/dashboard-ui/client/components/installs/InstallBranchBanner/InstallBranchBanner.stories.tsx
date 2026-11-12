@@ -19,6 +19,12 @@ import type {
   TInstallOverviewCommit,
   TInstallReconciliation,
 } from '@/types'
+import {
+  behindAndOutOfSyncReconciliation,
+  failedUpdateReconciliation,
+  manualChangeReconciliation,
+} from '@/views/install/reconcile-mock-fixtures'
+import type { TMockInstallReconciliation } from '@/views/install/reconcile-mock-types'
 
 const messages = [
   'Enable request tracing for the API',
@@ -65,7 +71,7 @@ const page = (
   count?: number,
   error = false,
   excludedStatuses: string[] = [],
-  reconciliation?: TInstallReconciliation
+  reconciliation?: TInstallReconciliation | TMockInstallReconciliation
 ) => {
   const base = resourcesFixture('active')
   const deployments = deploymentsFixture('results')
@@ -99,7 +105,7 @@ const page = (
   }
   const fixture: TFixture = (url, init) => {
     if (url.pathname.endsWith('/reconciliation')) {
-      return { body: reconciliation }
+      return { body: reconciliation as TInstallReconciliation }
     }
     if (reconciliation && url.pathname.endsWith('/orgs/current')) {
       const reply = appRuns(url, init)
@@ -216,3 +222,9 @@ export const ReconcileInProgress = () =>
     [],
     reconciliationOf({ status: 'in_progress', in_flight_workflow_id: 'wf-1' })
   )
+export const OutOfSyncFailedUpdate = () =>
+  page(0, false, [], failedUpdateReconciliation())
+export const OutOfSyncManualChange = () =>
+  page(0, false, [], manualChangeReconciliation())
+export const BehindAndOutOfSync = () =>
+  page(2, false, [], behindAndOutOfSyncReconciliation())

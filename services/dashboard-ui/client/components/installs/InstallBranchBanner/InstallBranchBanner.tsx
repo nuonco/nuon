@@ -9,11 +9,17 @@ const compactBanner =
   '!py-2 items-center [&>div:first-child]:!mt-0 [&>div:first-child]:self-center'
 
 export interface IInstallBranchBannerReconcile {
-  status: 'behind' | 'blocked' | 'in_progress'
+  status: 'behind' | 'blocked' | 'in_progress' | 'out_of_sync'
   appliedVersion?: number
   targetVersion?: number
   workflowHref?: string
   action?: ReactNode
+  /** True when the install isn't fully running its configured app config. */
+  outOfSync?: boolean
+  /** The update workflow that failed partway, if that's the cause. */
+  failedWorkflowHref?: string
+  /** Count of components/images/sandboxes/stacks reconcile will redeploy. */
+  outOfSyncResourceCount?: number
 }
 
 export interface IInstallBranchBanner {
@@ -78,11 +84,17 @@ export const InstallBranchBanner = ({
 
   if (reconcile) {
     const { appliedVersion, targetVersion } = reconcile
+    const outOfSync =
+      reconcile.status === 'out_of_sync' || reconcile.outOfSync
+    const resourceCount = reconcile.outOfSyncResourceCount
+    const resourceCountLabel = resourceCount
+      ? `${resourceCount} ${resourceCount === 1 ? 'component isn’t' : 'components aren’t'} running app config${targetVersion ? ` v${targetVersion}` : ''}.`
+      : null
     return (
       <Banner
-        theme="neutral"
+        theme={outOfSync ? 'warn' : 'neutral'}
         className={compactBanner}
-        data-testid="branch-banner"
+        data-testid={outOfSync ? 'branch-banner-out-of-sync' : 'branch-banner'}
       >
         <div className="flex flex-wrap justify-between items-center gap-3 w-full">
           <Text variant="subtext">
@@ -94,6 +106,30 @@ export const InstallBranchBanner = ({
                   <Link href={reconcile.workflowHref} variant="inline">
                     View workflow
                   </Link>
+                ) : null}
+              </>
+            ) : outOfSync ? (
+              <>
+                {reconcile.failedWorkflowHref ? (
+                  <>
+                    The last update didn’t finish.{' '}
+                    {resourceCountLabel}{' '}
+                    <Link href={reconcile.failedWorkflowHref} variant="inline">
+                      View the failed workflow
+                    </Link>
+                    .
+                  </>
+                ) : (
+                  <>
+                    {resourceCountLabel ??
+                      'Some components don’t match the app config.'}
+                  </>
+                )}{' '}
+                {reconcile.status === 'behind' ? (
+                  <>
+                    {branchLink} has also moved on since then — reconcile
+                    will bring this install to the latest config.
+                  </>
                 ) : null}
               </>
             ) : appliedVersion && targetVersion ? (

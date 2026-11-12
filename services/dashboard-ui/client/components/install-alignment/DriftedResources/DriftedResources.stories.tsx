@@ -14,6 +14,7 @@ import {
   inputUpdateResource,
   inSyncResources,
   mixedAlignmentResources,
+  unappliedResource,
 } from '@/components/__fixtures__/install-alignment'
 import type { TInstallAlignmentResource } from '@/types'
 import { explanationEvidence, hasOngoingDeployment } from '../alignment-utils'
@@ -21,7 +22,8 @@ import { DriftResourceCard } from '../DriftResourceCard'
 import { DriftedResources, type IDriftedResources } from './DriftedResources'
 
 const card =
-  (view: TCollectionView) => (resource: TInstallAlignmentResource) => (
+  (view: TCollectionView, outOfSyncIds: Set<string> = new Set()) =>
+  (resource: TInstallAlignmentResource) => (
     <DriftResourceCard
       resource={resource}
       view={view}
@@ -30,14 +32,19 @@ const card =
       lastAttemptHref="#last-attempt"
       deploymentHref="#deployment"
       onViewPlan={resource.plan ? () => {} : undefined}
+      outOfSync={outOfSyncIds.has(resource.id ?? '')}
     />
   )
 
 const Interactive = ({
   initialView = 'grid',
+  outOfSyncIds,
   resources = [...mixedAlignmentResources(12), ...inSyncResources()],
   ...props
-}: Partial<IDriftedResources> & { initialView?: TCollectionView }) => {
+}: Partial<IDriftedResources> & {
+  initialView?: TCollectionView
+  outOfSyncIds?: Set<string>
+}) => {
   const [view, setView] = useState<TCollectionView>(initialView)
   const [search, setSearch] = useState('')
   return (
@@ -56,7 +63,7 @@ const Interactive = ({
         resources={resources}
         search={search}
         view={view}
-        renderCard={card(view)}
+        renderCard={card(view, outOfSyncIds)}
         {...props}
       />
     </div>
@@ -163,6 +170,45 @@ export const SomeNotCompared = () => (
     ]}
   />
 )
+export const OutOfSync = () => {
+  const outOfSyncResources = [
+    unappliedResource({
+      id: 'ic-api-image',
+      name: 'api (image)',
+      kind: 'image',
+      component_type: undefined,
+      reason: 'A newer build was never synced after the failed update.',
+    }),
+    unappliedResource({
+      id: 'ic-api',
+      name: 'api',
+      reason: 'This component failed to deploy during the last update.',
+    }),
+    unappliedResource({
+      id: 'ic-worker',
+      name: 'worker',
+      reason:
+        'The update workflow stopped before this component was deployed.',
+    }),
+    unappliedResource({
+      id: 'sbx-1',
+      kind: 'sandbox',
+      name: 'sandbox',
+      component_id: undefined,
+      component_type: undefined,
+      reason: 'Depends on the api component, which hasn’t deployed yet.',
+    }),
+  ]
+  return (
+    <Interactive
+      initialView="list"
+      initialDriftFilter="changes-not-applied"
+      resources={outOfSyncResources}
+      outOfSyncIds={new Set(outOfSyncResources.map((resource) => resource.id!))}
+    />
+  )
+}
+
 export const Loading = () => <Interactive resources={[]} loading />
 export const LoadFailed = () => (
   <Interactive

@@ -2,8 +2,15 @@ export default {
   title: 'Features / Installs / Management / Reconcile install',
 }
 
+import { useState } from 'react'
 import { ModalStory } from '@/components/__stories__/helpers'
 import type { TInstallReconciliation } from '@/types'
+import {
+  behindAndOutOfSyncReconciliation,
+  failedUpdateReconciliation,
+  manualChangeReconciliation,
+} from '@/views/install/reconcile-mock-fixtures'
+import type { TMockInstallReconciliation } from '@/views/install/reconcile-mock-types'
 import { ReconcileInstallModal } from './ReconcileInstall'
 
 const noop = () => {}
@@ -47,6 +54,29 @@ const Story = (props: Partial<Parameters<typeof ReconcileInstallModal>[0]>) => (
     />
   </ModalStory>
 )
+
+const DryRunStory = ({
+  reconciliation,
+}: {
+  reconciliation: TMockInstallReconciliation
+}) => {
+  const [planOnly, setPlanOnly] = useState(false)
+  return (
+    <ModalStory>
+      <ReconcileInstallModal
+        installName="acme-prod"
+        reconciliation={reconciliation}
+        isLoading={false}
+        isPending={false}
+        repo="acme/payments"
+        getRunHref={getRunHref}
+        planOnly={planOnly}
+        onPlanOnlyChange={setPlanOnly}
+        onSubmit={noop}
+      />
+    </ModalStory>
+  )
+}
 
 export const Behind = () => <Story />
 
@@ -99,5 +129,25 @@ export const SubmitFailed = () => (
       description: '',
       user_error: true,
     }}
+  />
+)
+
+export const OutOfSyncFailedUpdate = () => (
+  <DryRunStory reconciliation={failedUpdateReconciliation()} />
+)
+
+export const OutOfSyncManualChange = () => (
+  <DryRunStory reconciliation={manualChangeReconciliation()} />
+)
+
+export const BehindAndOutOfSync = () => (
+  <DryRunStory reconciliation={behindAndOutOfSyncReconciliation()} />
+)
+
+export const OutOfSyncDryRun = () => (
+  <Story
+    reconciliation={failedUpdateReconciliation()}
+    planOnly
+    onPlanOnlyChange={() => {}}
   />
 )
