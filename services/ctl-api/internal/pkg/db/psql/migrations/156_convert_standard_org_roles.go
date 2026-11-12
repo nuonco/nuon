@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"slices"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -11,13 +12,12 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 func (m *Migrations) Migration156ConvertStandardOrgRoles(ctx context.Context, db *gorm.DB) error {
 	counts := make(map[string]int)
 	defer func() {
-		m.l.Info("standard org role conversion results", zap.Any("counts", counts))
+		m.l.Info("compatible role conversion results", zap.Any("counts", counts))
 	}()
 	lastID := ""
 	for {
@@ -43,15 +43,7 @@ func (m *Migrations) Migration156ConvertStandardOrgRoles(ctx context.Context, db
 					return err
 				}
 				counts["eligible"]++
-				var api permissions.API
-				if classification.LegacyAPI != nil {
-					api = *classification.LegacyAPI
-				}
-				bundle, err := permissions.RolePolicy(permissions.RoleName(source.Role.RoleType), api)
-				if err != nil {
-					return err
-				}
-				document, err := bundle.MarshalJSON()
+				document, err := classification.Policy.MarshalJSON()
 				if err != nil {
 					return err
 				}
@@ -79,7 +71,7 @@ func (m *Migrations) Migration156ConvertStandardOrgRoles(ctx context.Context, db
 			}, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 			if err != nil {
 				counts["failed"]++
-				return fmt.Errorf("convert standard role %s: %w", role.ID, err)
+				return fmt.Errorf("convert compatible role %s: %w", role.ID, err)
 			}
 			switch classification.Status {
 			case "eligible":
@@ -89,7 +81,7 @@ func (m *Migrations) Migration156ConvertStandardOrgRoles(ctx context.Context, db
 			case "skipped":
 				counts["skipped"]++
 				counts["skipped_"+classification.Reason]++
-				m.l.Debug("standard org role conversion skipped", zap.String("role_id", role.ID), zap.String("reason", classification.Reason))
+				m.l.Debug("compatible role conversion skipped", zap.String("role_id", role.ID), zap.String("reason", classification.Reason))
 			}
 		}
 		lastID = roles[len(roles)-1].ID
@@ -115,38 +107,93 @@ func loadStandardOrgRoleSnapshot(db *gorm.DB, roleID string) (authz.OrgRoleSnaps
 		return source, err
 	}
 	source.Private = private > 0
-	if !source.Role.HasPolicyDocument() && (source.Private ||
-		(source.Role.RoleType != app.RoleTypeOrgAdmin && source.Role.RoleType != app.RoleTypeOrgReadOnly)) {
-		return source, nil
+	if !source.Role.HasPolicyDocument() {
+		switch source.Role.RoleType {
+		case app.RoleTypeOrgAdmin, app.RoleTypeOrgReadOnly, app.RoleTypeOrgSupport, app.RoleTypeInstaller, app.RoleTypeRunner:
+			if source.Private {
+				return source, nil
+			}
+		case app.RoleTypeRunnerInstall, app.RoleTypeRunnerJob, app.RoleTypeStack, app.RoleTypeTelemetryCollector, app.RoleTypePhoneHome, app.RoleTypeLogStream:
+		default:
+			return source, nil
+		}
 	}
 	source.Role.Org = &app.Org{}
 	if err := db.Unscoped().Model(&app.Org{}).Select("id", "deleted_at").
 		Where(&app.Org{ID: source.Role.OrgID.String}, "id").Scan(source.Role.Org).Error; err != nil {
 		return source, err
 	}
-	if err := db.Model(&app.Role{}).Where(&app.Role{OrgID: source.Role.OrgID}, "org_id").Scan(&source.OrgRoles).Error; err != nil {
-		return source, err
-	}
 	if err := db.Model(&app.AccountRole{}).Where(app.AccountRole{RoleID: roleID}).Scan(&source.Bindings).Error; err != nil {
 		return source, err
 	}
-	for i := range source.Bindings {
-		binding := &source.Bindings[i]
-		if err := db.Unscoped().Model(&app.Account{}).Select("id", "deleted_at").
-			Where(&app.Account{ID: binding.AccountID}, "id").Scan(&binding.Account).Error; err != nil {
+	for batch := range slices.Chunk(source.Bindings, 500) {
+		accountIDs := make([]string, 0, len(batch))
+		for _, binding := range batch {
+			accountIDs = append(accountIDs, binding.AccountID)
+		}
+		var accounts []app.Account
+		if err := db.Unscoped().Model(&app.Account{}).Select("id", "deleted_at", "subject", "account_type").
+			Where("id IN ?", accountIDs).Scan(&accounts).Error; err != nil {
 			return source, err
 		}
-		if err := db.Model(&app.Role{}).
+		byID := make(map[string]app.Account, len(accounts))
+		for _, account := range accounts {
+			byID[account.ID] = account
+		}
+		for i := range batch {
+			batch[i].Account = byID[batch[i].AccountID]
+		}
+	}
+	if source.Role.HasPolicyDocument() {
+		return source, nil
+	}
+	switch source.Role.RoleType {
+	case app.RoleTypeRunnerInstall, app.RoleTypeRunnerJob, app.RoleTypeStack, app.RoleTypeTelemetryCollector, app.RoleTypePhoneHome, app.RoleTypeLogStream:
+		err := loadScopedRoleResource(db, &source)
+		return source, err
+	}
+	if err := db.Model(&app.Role{}).Where(&app.Role{OrgID: source.Role.OrgID, RoleType: source.Role.RoleType}, "org_id", "role_type").Scan(&source.OrgRoles).Error; err != nil {
+		return source, err
+	}
+	for batch := range slices.Chunk(source.Bindings, 500) {
+		accountIDs := make([]string, 0, len(batch))
+		for _, binding := range batch {
+			accountIDs = append(accountIDs, binding.AccountID)
+		}
+		var heldRoles []struct {
+			AccountID string
+			app.Role  `gorm:"embedded"`
+		}
+		if err := db.Model(&app.Role{}).Select("account_roles.account_id, roles.*").
 			Joins("JOIN account_roles ON account_roles.role_id = roles.id AND account_roles.deleted_at = 0").
-			Where("account_roles.account_id = ?", binding.AccountID).
-			Scan(&binding.Account.Roles).Error; err != nil {
+			Where("account_roles.account_id IN ?", accountIDs).
+			Scan(&heldRoles).Error; err != nil {
 			return source, err
 		}
-		for j := range binding.Account.Roles {
-			role := &binding.Account.Roles[j]
-			if err := db.Model(&app.Policy{}).Where(app.Policy{RoleID: role.ID}).Scan(&role.Policies).Error; err != nil {
+		policiesByRole := make(map[string][]app.Policy, len(heldRoles))
+		roleIDs := make([]string, 0, len(heldRoles))
+		for _, held := range heldRoles {
+			if _, ok := policiesByRole[held.ID]; !ok {
+				roleIDs = append(roleIDs, held.ID)
+				policiesByRole[held.ID] = nil
+			}
+		}
+		for ids := range slices.Chunk(roleIDs, 500) {
+			var policies []app.Policy
+			if err := db.Model(&app.Policy{}).Where("role_id IN ?", ids).Scan(&policies).Error; err != nil {
 				return source, err
 			}
+			for _, policy := range policies {
+				policiesByRole[policy.RoleID] = append(policiesByRole[policy.RoleID], policy)
+			}
+		}
+		rolesByAccount := make(map[string][]app.Role, len(batch))
+		for _, held := range heldRoles {
+			held.Policies = policiesByRole[held.ID]
+			rolesByAccount[held.AccountID] = append(rolesByAccount[held.AccountID], held.Role)
+		}
+		for i := range batch {
+			batch[i].Account.Roles = rolesByAccount[batch[i].AccountID]
 		}
 	}
 	return source, nil

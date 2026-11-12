@@ -59,7 +59,7 @@ func ResourcePolicy(api API, scope Scope, permission PermissionID) (Policy, erro
 		}
 	}
 	switch scope.Kind {
-	case KindInstall, KindRunnerJob, KindPhoneHome:
+	case KindInstall, KindRunnerJob, KindPhoneHome, KindLogStream:
 	default:
 		return Policy{}, fmt.Errorf("unsupported resource rule scope %q", scope.Kind)
 	}
@@ -128,7 +128,7 @@ func DecodePolicy(version int, data []byte) (Policy, error) {
 			return Policy{}, fmt.Errorf("resource rule requires an explicit resource ID")
 		}
 		switch rule.Scope.Kind {
-		case KindInstall, KindRunnerJob, KindPhoneHome:
+		case KindInstall, KindRunnerJob, KindPhoneHome, KindLogStream:
 		default:
 			return Policy{}, fmt.Errorf("unsupported resource rule scope %q", rule.Scope.Kind)
 		}

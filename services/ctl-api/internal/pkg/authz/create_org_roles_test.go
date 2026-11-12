@@ -34,11 +34,7 @@ func TestStandardOrgRoles(t *testing.T) {
 	}
 
 	for _, role := range roles {
-		version := app.RoleVersionV2
-		if role.RoleType == app.RoleTypeOrgAdmin || role.RoleType == app.RoleTypeOrgReadOnly {
-			version = app.RoleVersionV3
-		}
-		require.Equal(t, version, role.Version, "role %s", role.RoleType)
+		require.Equal(t, app.RoleVersionV3, role.Version, "role %s", role.RoleType)
 		require.Len(t, role.Policies, 1, "role %s", role.RoleType)
 		projection, err := role.Policies[0].PermissionProjection()
 		require.NoError(t, err)
@@ -70,5 +66,8 @@ func TestStandardOrgRoles(t *testing.T) {
 	require.NoError(t, set.CanPerform(orgID, permissions.PermissionRead))
 	require.Error(t, set.CanPerform(orgID, permissions.PermissionCreate))
 	require.Equal(t, string(permissions.APICtl), *projection[permissions.APIPermissionKey])
-	require.Equal(t, string(permissions.APIRunner), *seen[app.RoleTypeRunner].Policies[0].Permissions[permissions.APIPermissionKey])
+	runnerPolicy := seen[app.RoleTypeRunner].Policies[0]
+	projection, err = runnerPolicy.PermissionProjection()
+	require.NoError(t, err)
+	require.Equal(t, string(permissions.APIRunner), *projection[permissions.APIPermissionKey])
 }

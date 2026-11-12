@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-func scopedRolePolicy(role *app.Role) (permissions.Policy, error) {
+func ScopedRolePolicy(role *app.Role) (permissions.Policy, error) {
 	if len(role.Policies) != 1 {
 		return permissions.Policy{}, fmt.Errorf("scoped role requires one policy")
 	}
@@ -26,6 +26,9 @@ func scopedRolePolicy(role *app.Role) (permissions.Policy, error) {
 		objectKind, scopeKind, permission = permissions.KindRunnerJob, permissions.KindRunnerJob, permissions.RunnerJobAll
 	case app.RoleTypePhoneHome:
 		objectKind, scopeKind, permission = permissions.KindPhoneHome, permissions.KindPhoneHome, permissions.PhoneHomeCreate
+		verb = permissions.PermissionCreate
+	case app.RoleTypeLogStream:
+		objectKind, scopeKind, permission = permissions.KindLogStream, permissions.KindLogStream, permissions.LogStreamCreate
 		verb = permissions.PermissionCreate
 	default:
 		return permissions.Policy{}, fmt.Errorf("unsupported scoped role type %q", role.RoleType)

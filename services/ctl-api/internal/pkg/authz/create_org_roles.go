@@ -106,10 +106,15 @@ func standardOrgRoles(orgID string) ([]app.Role, error) {
 	}
 	for i := range roles {
 		role := &roles[i]
-		if role.RoleType != app.RoleTypeOrgAdmin && role.RoleType != app.RoleTypeOrgReadOnly {
-			continue
+		name := permissions.RoleOrgAdmin
+		if role.RoleType == app.RoleTypeOrgReadOnly {
+			name = permissions.RoleOrgReader
 		}
-		policy, err := permissions.RolePolicy(permissions.RoleName(role.RoleType), permissions.APICtl)
+		api, _, err := APIFromRole(role)
+		if err != nil {
+			return nil, err
+		}
+		policy, err := permissions.RolePolicy(name, api)
 		if err != nil {
 			return nil, err
 		}

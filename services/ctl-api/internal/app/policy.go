@@ -57,7 +57,7 @@ type Policy struct {
 	// Permissions are used to track granular permissions for each domain
 	Permissions         pgtype.Hstore `json:"-" gorm:"type:hstore" temporaljson:"permissions,omitzero,omitempty"`
 	ResponsePermissions pgtype.Hstore `json:"permissions" gorm:"-" swaggertype:"object,string" temporaljson:"-"`
-	Document            []byte        `json:"-" gorm:"type:jsonb" temporaljson:"document,omitzero,omitempty"`
+	Document            []byte        `json:"-" gorm:"type:jsonb;check:policies_single_authority,document IS NULL OR permissions IS NULL OR permissions = ''::hstore" temporaljson:"document,omitzero,omitempty"`
 }
 
 func (a *Policy) DecodeDocument() (permissions.Policy, error) {

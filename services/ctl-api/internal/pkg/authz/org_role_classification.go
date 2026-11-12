@@ -12,6 +12,7 @@ type OrgRoleSnapshot struct {
 	OrgRoles []app.Role
 	Bindings []app.AccountRole
 	Private  bool
+	Resource *ScopedRoleSnapshot
 }
 
 type OrgRoleClassification struct {
@@ -19,6 +20,7 @@ type OrgRoleClassification struct {
 	Reason      string
 	Permissions permissions.PermissionSet
 	LegacyAPI   *permissions.API
+	Policy      *permissions.Policy
 }
 
 func ClassifyOrgRole(source OrgRoleSnapshot) (OrgRoleClassification, error) {
@@ -38,10 +40,16 @@ func ClassifyOrgRole(source OrgRoleSnapshot) (OrgRoleClassification, error) {
 		}
 	}
 	if !hasDocument {
-		if source.Private {
-			return skip("private_role")
-		}
-		if role.RoleType != app.RoleTypeOrgAdmin && role.RoleType != app.RoleTypeOrgReadOnly {
+		switch role.RoleType {
+		case app.RoleTypeRunnerInstall, app.RoleTypeRunnerJob, app.RoleTypeStack, app.RoleTypeTelemetryCollector, app.RoleTypePhoneHome, app.RoleTypeLogStream:
+		case app.RoleTypeOrgAdmin, app.RoleTypeOrgReadOnly, app.RoleTypeOrgSupport, app.RoleTypeInstaller, app.RoleTypeRunner:
+			if source.Private {
+				return skip("private_role")
+			}
+		default:
+			if source.Private {
+				return skip("private_role")
+			}
 			return skip("unsupported_role_type")
 		}
 		if role.Version != app.RoleVersionV1 && role.Version != app.RoleVersionV2 {
@@ -79,6 +87,25 @@ func ClassifyOrgRole(source OrgRoleSnapshot) (OrgRoleClassification, error) {
 	if hasDocument {
 		return OrgRoleClassification{Status: "already_v3"}, nil
 	}
+	switch role.RoleType {
+	case app.RoleTypeRunnerInstall, app.RoleTypeRunnerJob, app.RoleTypeStack, app.RoleTypeTelemetryCollector, app.RoleTypePhoneHome, app.RoleTypeLogStream:
+		document, err := ScopedRolePolicy(&role)
+		if err != nil {
+			return skip("legacy_grant_mismatch")
+		}
+		grants, err := document.Compile(orgID, scope)
+		if err != nil {
+			return OrgRoleClassification{}, err
+		}
+		if reason := scopedRoleOwnership(source, grants[0].Scope); reason != "" {
+			return skip(reason)
+		}
+		var api *permissions.API
+		if value := document.API(); value != "" {
+			api = &value
+		}
+		return OrgRoleClassification{Status: "eligible", Permissions: grants[0].Permissions, LegacyAPI: api, Policy: &document}, nil
+	}
 	standardRoles := 0
 	foundRole := false
 	for _, other := range source.OrgRoles {
@@ -90,20 +117,24 @@ func ClassifyOrgRole(source OrgRoleSnapshot) (OrgRoleClassification, error) {
 	if standardRoles != 1 || !foundRole {
 		return skip("ambiguous_standard_role")
 	}
-	verb := permissions.PermissionRead
-	if role.RoleType == app.RoleTypeOrgAdmin {
-		verb = permissions.PermissionAll
+	verb := permissions.PermissionAll
+	bundleName := permissions.RoleOrgAdmin
+	if role.RoleType == app.RoleTypeOrgReadOnly {
+		verb, bundleName = permissions.PermissionRead, permissions.RoleOrgReader
 	}
 	keys := 1
 	var api *permissions.API
 	if role.Version == app.RoleVersionV2 {
 		keys++
 		value := policy.Permissions[permissions.APIPermissionKey]
-		if value == nil || *value != string(permissions.APICtl) {
+		expected := permissions.APICtl
+		if role.RoleType == app.RoleTypeRunner {
+			expected = permissions.APIRunner
+		}
+		if value == nil || *value != string(expected) {
 			return skip("legacy_api_mismatch")
 		}
-		ctl := permissions.APICtl
-		api = &ctl
+		api = &expected
 	}
 	value := policy.Permissions[orgID]
 	if len(policy.Permissions) != keys || value == nil || *value != string(verb) {
@@ -142,7 +173,11 @@ func ClassifyOrgRole(source OrgRoleSnapshot) (OrgRoleClassification, error) {
 			}
 		}
 	}
-	bundle, err := permissions.RolePolicy(permissions.RoleName(role.RoleType), permissions.APICtl)
+	var retainedAPI permissions.API
+	if api != nil {
+		retainedAPI = *api
+	}
+	bundle, err := permissions.RolePolicy(bundleName, retainedAPI)
 	if err != nil {
 		return OrgRoleClassification{}, err
 	}
@@ -150,5 +185,5 @@ func ClassifyOrgRole(source OrgRoleSnapshot) (OrgRoleClassification, error) {
 	if err != nil {
 		return OrgRoleClassification{}, err
 	}
-	return OrgRoleClassification{Status: "eligible", Permissions: grants[0].Permissions, LegacyAPI: api}, nil
+	return OrgRoleClassification{Status: "eligible", Permissions: grants[0].Permissions, LegacyAPI: api, Policy: &bundle}, nil
 }

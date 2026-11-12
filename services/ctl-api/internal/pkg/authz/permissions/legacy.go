@@ -58,6 +58,8 @@ func LegacySources(grants []ScopedPermissions) (map[string]PermissionSource, err
 				kind = KindRunnerJob
 			case grant.Scope.Kind == KindPhoneHome && permission == PhoneHomeCreate:
 				kind, verb = KindPhoneHome, PermissionCreate
+			case grant.Scope.Kind == KindLogStream && permission == LogStreamCreate:
+				kind, verb = KindLogStream, PermissionCreate
 			default:
 				return nil, fmt.Errorf("permission %q at %q scope is not supported by the legacy operation adapter", permission, grant.Scope.Kind)
 			}

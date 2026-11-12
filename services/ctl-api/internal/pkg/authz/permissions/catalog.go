@@ -33,6 +33,7 @@ const (
 	StackAll            PermissionID = "stack.all"
 	PhoneHomeCreate     PermissionID = "phone_home.create"
 	LogStreamRead       PermissionID = "log_stream.read"
+	LogStreamCreate     PermissionID = "log_stream.create"
 	LogStreamWrite      PermissionID = "log_stream.write"
 	StackRead           PermissionID = "stack.read"
 	StackReport         PermissionID = "stack.report"
@@ -71,6 +72,7 @@ var permissionTargets = map[PermissionID][]ResourceKind{
 	StackAll:            {KindStack},
 	PhoneHomeCreate:     {KindPhoneHome},
 	LogStreamRead:       {KindLogStream},
+	LogStreamCreate:     {KindLogStream},
 	LogStreamWrite:      {KindLogStream},
 	StackRead:           {KindStack},
 	StackReport:         {KindStack, KindPhoneHome},
