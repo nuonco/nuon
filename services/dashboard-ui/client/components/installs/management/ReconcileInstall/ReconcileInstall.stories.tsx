@@ -29,7 +29,6 @@ const behind: TInstallReconciliation = {
   skipped_runs: [commit(1), commit(2), commit(3)],
   skipped_run_count: 3,
   blockers: [],
-  diff_summary: { added: 1, changed: 2, removed: 0 },
 }
 
 const getRunHref = () => undefined
