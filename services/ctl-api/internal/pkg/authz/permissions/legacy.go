@@ -16,6 +16,61 @@ type AccountPermissions struct {
 	Sources map[string]PermissionSource
 }
 
+func LegacySources(grants []ScopedPermissions) (map[string]PermissionSource, error) {
+	sources := make(map[string]PermissionSource)
+	for i := range grants {
+		grant := &grants[i]
+		if err := grant.Scope.ValidateShape(); err != nil {
+			return nil, err
+		}
+		add := func(object string, verb Permission, set PermissionSet) error {
+			if _, exists := sources[object]; exists {
+				return fmt.Errorf("multiple rules target legacy object %q", object)
+			}
+			sources[object] = PermissionSource{
+				Permission: verb, Grant: &ScopedPermissions{Scope: grant.Scope, Permissions: set},
+			}
+			return nil
+		}
+		if grant.Scope.Kind == KindOrg {
+			verb, err := LegacyOrgPermission(grant.Permissions)
+			if err != nil {
+				return nil, err
+			}
+			if verb != PermissionUnknown {
+				if err := add(grant.Scope.OrgID, verb, grant.Permissions); err != nil {
+					return nil, err
+				}
+			}
+			continue
+		}
+		for permission := range grant.Permissions {
+			var kind ResourceKind
+			verb := PermissionAll
+			switch {
+			case grant.Scope.Kind == KindInstall && permission == InstallAll:
+				kind = KindInstall
+			case grant.Scope.Kind == KindInstall && permission == TelemetryAll:
+				kind = KindTelemetry
+			case grant.Scope.Kind == KindInstall && permission == StackAll:
+				kind = KindStack
+			case grant.Scope.Kind == KindRunnerJob && permission == RunnerJobAll:
+				kind = KindRunnerJob
+			case grant.Scope.Kind == KindPhoneHome && permission == PhoneHomeCreate:
+				kind, verb = KindPhoneHome, PermissionCreate
+			case grant.Scope.Kind == KindLogStream && permission == LogStreamCreate:
+				kind, verb = KindLogStream, PermissionCreate
+			default:
+				return nil, fmt.Errorf("permission %q at %q scope is not supported by the legacy operation adapter", permission, grant.Scope.Kind)
+			}
+			if err := add(Object(grant.Scope.OrgID, kind, grant.Scope.ID), verb, PermissionSet{permission: {}}); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return sources, nil
+}
+
 func (p *AccountPermissions) Add(object string, source PermissionSource) {
 	if previous, ok := p.Sources[object]; ok && previous.Permission == PermissionAll {
 		return
@@ -50,6 +105,11 @@ func (p *AccountPermissions) CanPerform(object string, verb Permission, readOnly
 	}
 	if err := p.Legacy().CanPerform(object, verb); err == nil {
 		return nil
+	}
+	if source, ok := p.Sources[object]; ok && source.Grant != nil && source.Grant.Scope.Kind != KindOrg {
+		if source.Permission == PermissionAll || source.Permission == verb {
+			return nil
+		}
 	}
 	orgID, _, _ := strings.Cut(object, ":")
 	required := OrgWrite

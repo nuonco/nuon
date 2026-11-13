@@ -16,11 +16,19 @@ import (
 )
 
 func (h *Client) EnsureManagedServiceAccountRole(ctx context.Context, accountID string, want *app.Role) error {
-	if want == nil || want.OrgID.Empty() || want.RoleType == "" || want.Managed || len(want.Contexts) != 0 || len(want.Policies) != 1 || len(want.Policies[0].Permissions) == 0 {
+	if want == nil || want.OrgID.Empty() || want.RoleType == "" || want.Managed || len(want.Contexts) != 0 || len(want.Policies) != 1 {
 		return fmt.Errorf("managed service account requires a private role with one explicit policy")
 	}
 	orgID := want.OrgID.ValueString()
-	for object, verb := range want.Policies[0].Permissions {
+	want.Policies[0].OrgID = want.OrgID
+	projection, err := want.Policies[0].PermissionProjection()
+	if err != nil {
+		return err
+	}
+	if len(projection) == 0 {
+		return fmt.Errorf("managed service account requires an explicit grant")
+	}
+	for object, verb := range projection {
 		if verb == nil {
 			return fmt.Errorf("private role grant requires a permission")
 		}
@@ -84,7 +92,7 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 		}
 	} else {
 		var role app.Role
-		if err := tx.Preload("Policies").Where(app.Role{ID: want.ID}).First(&role).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Policies").Where(app.Role{ID: want.ID}).First(&role).Error; err != nil {
 			return fmt.Errorf("load private service account role: %w", err)
 		}
 		if err := validatePrivateRole(tx, accountID, want.OrgID.ValueString(), &role); err != nil {
@@ -94,20 +102,66 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 			return fmt.Errorf("private service account role has a different role type")
 		}
 		if len(role.Policies) == 0 {
+			if role.Version >= app.RoleVersionV3 {
+				return fmt.Errorf("private service account role is missing its document policy")
+			}
 			policy := want.Policies[0]
 			policy.RoleID = want.ID
 			policy.OrgID = want.OrgID
 			if err := tx.Create(&policy).Error; err != nil {
 				return fmt.Errorf("create private service account policy: %w", err)
 			}
+			role.Policies = []app.Policy{policy}
 		} else if len(role.Policies) != 1 {
 			return fmt.Errorf("private service account role has multiple policies")
-		} else if !reflect.DeepEqual(role.Policies[0].Permissions, want.Policies[0].Permissions) {
-			if err := tx.Model(&app.Policy{}).Where(app.Policy{ID: role.Policies[0].ID}).
-				Update("permissions", want.Policies[0].Permissions).Error; err != nil {
-				return fmt.Errorf("converge private service account policy: %w", err)
+		} else {
+			existing := &role.Policies[0]
+			current, err := existing.PermissionProjection()
+			if err != nil {
+				return err
+			}
+			desired, err := want.Policies[0].PermissionProjection()
+			if err != nil {
+				return err
+			}
+			var document []byte
+			if existing.Document != nil {
+				if _, err := ScopedRolePolicy(&role); err != nil {
+					return fmt.Errorf("refuse to reconcile unsupported private role document %s: %w", role.ID, err)
+				}
+				delete(desired, permissions.APIPermissionKey)
+				version := app.RoleVersionV1
+				if api, ok := current[permissions.APIPermissionKey]; ok {
+					desired[permissions.APIPermissionKey] = api
+					version = app.RoleVersionV2
+				}
+				target := app.Role{OrgID: role.OrgID, RoleType: role.RoleType, Version: version,
+					Policies: []app.Policy{{OrgID: role.OrgID, Permissions: desired}}}
+				policy, err := ScopedRolePolicy(&target)
+				if err != nil {
+					return err
+				}
+				document, err = policy.MarshalJSON()
+				if err != nil {
+					return err
+				}
+			}
+			if !reflect.DeepEqual(current, desired) {
+				values := map[string]any{"permissions": desired, "document": nil}
+				if existing.Document != nil {
+					values = map[string]any{"permissions": nil, "document": document}
+				}
+				if err := tx.Model(&app.Policy{}).Where(app.Policy{ID: existing.ID}).Updates(values).Error; err != nil {
+					return fmt.Errorf("converge private service account policy: %w", err)
+				}
+				if existing.Document != nil {
+					existing.Document, existing.Permissions = document, nil
+				} else {
+					existing.Permissions = desired
+				}
 			}
 		}
+		want.Version, want.Policies = role.Version, role.Policies
 	}
 
 	var count int64
