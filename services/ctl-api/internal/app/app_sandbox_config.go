@@ -88,6 +88,14 @@ func (c *AppSandboxConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &AppSandboxConfig{}, "app_config_id"),
+			Columns: []string{
+				"app_config_id",
+				"deleted_at",
+			},
+			Concurrently: true,
+		},
 	}
 }
 
