@@ -16,6 +16,238 @@ Before starting, ensure you have:
 - The [Nuon CLI](/cli) installed and authenticated
 - Basic familiarity with [OPA Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) syntax
 
+## Named checks
+
+Use `package nuon.checks` to get a separate result for every named check in a
+policy. Existing `package nuon` policies, including the examples below, continue
+to use their existing `deny` and `warn` rules. Both formats can coexist in an app;
+choose one format per policy file. No change to `policies.toml` is needed.
+
+```rego
+package nuon.checks
+
+import data.nuon.lib.check
+
+# METADATA
+# title: No public buckets
+# description: S3 buckets must not use public ACLs.
+check_public_buckets contains check.finding(
+    sprintf("Bucket %s has a public ACL", [resource.address]),
+) if {
+    some resource in input.plan.resource_changes
+    resource.type == "aws_s3_bucket"
+    changing(resource)
+    resource.change.after.acl in {"public-read", "public-read-write"}
+}
+
+# METADATA
+# title: Environment tags
+# custom:
+#   action: warn
+check_environment_tags contains check.finding(
+    sprintf("Resource %s is missing its Environment tag", [resource.address]),
+) if {
+    some resource in input.plan.resource_changes
+    changing(resource)
+    not resource.change.after.tags.Environment
+}
+
+changing(resource) if {
+    some action in resource.change.actions
+    action in {"create", "update"}
+}
+```
+
+- Each `check_*` rule is a finding set. Multiple clauses with the same name
+  contribute to the same check. Other rules and functions remain ordinary Rego
+  helpers; reserve the `check_` prefix for checks.
+- `check.finding(message)` is provided by Nuon. The message must be a nonempty
+  string. Include resource identity in the message when findings should remain
+  distinct: Rego sets deduplicate identical findings within an input. There is
+  no explicit pass branch: an empty set passes.
+- Metadata is optional. `title` defaults to the rule name; `description` is
+  optional. `custom.action` can be `deny`, `warn`, or `skip_apply`: a check's
+  action overrides the package default, which defaults to `deny` when omitted.
+  `skip_apply` is supported only for `terraform_module` and `sandbox` policies.
+  Attach at most one metadata block to a check, even when it has several
+  clauses. It describes the whole check; `scope: document` is not required.
+- Mixing legacy `deny` or `warn` rules into `package nuon.checks` is rejected.
+
+### Package defaults
+
+Place metadata immediately before `package nuon.checks` to set the default
+action for checks in that policy file. No explicit `scope` is needed.
+This example checks Pod objects only; it does not inspect pod templates in
+Deployments, StatefulSets, Jobs, or CronJobs.
+
+```rego
+# METADATA
+# custom:
+#   action: warn
+package nuon.checks
+
+import data.nuon.lib.check
+
+# METADATA
+# title: Environment tag
+check_environment_tag contains check.finding("Missing Environment tag") if {
+    not input.review.object.metadata.labels.Environment
+}
+
+# METADATA
+# title: No privileged containers
+# custom:
+#   action: deny
+check_privileged contains check.finding(
+    sprintf("Container %s is privileged", [container.name]),
+) if {
+    some container in input.review.object.spec.containers
+    container.securityContext.privileged == true
+}
+```
+
+For a Pod input, a missing label warns, while a privileged container blocks
+deployment. Other workload kinds need checks for their pod-template paths.
+The inheritance order is **check action → package action → deny**.
+
+- Only `custom.action` inherits. Package `title` and `description` do not become
+  check titles or descriptions. Check metadata that omits `custom.action`
+  still inherits the package action.
+- A check's action applies to all its clauses, regardless of which clause
+  carries the metadata. Keep at most one metadata block per named check.
+- Defaults stay local to the policy file. Other files using `package
+  nuon.checks` have their own defaults.
+- Actions must be `deny`, `warn`, or `skip_apply` at both levels. The same
+  policy-type restrictions apply to inherited actions. Setting `custom.action`
+  on a helper rule or function is rejected; unrelated helper metadata is allowed.
+- Empty finding sets still pass. Evaluation errors still block, including
+  checks that inherit `warn` or `skip_apply`.
+- Legacy `package nuon` policies do not use this inheritance or validation;
+  their existing `deny` and `warn` rules continue to determine the outcome.
+
+**A package-level `warn` default also makes newly added checks warnings unless
+they explicitly set `custom.action: deny`.**
+
+### Automatically skipping apply
+
+Use `custom.action: skip_apply` when a matching check should leave the existing
+infrastructure unchanged instead of failing the workflow. This action is
+supported only in named-check OPA policies with type `terraform_module` or
+`sandbox`. It is not supported for Helm, Kubernetes, container image, or Pulumi
+policies, or as a legacy `skip_apply` rule in `package nuon`.
+
+For example, create `policies/skip-destructive-apply.rego` to skip an apply
+when its plan includes a deletion or replacement:
+
+```rego policies/skip-destructive-apply.rego
+package nuon.checks
+
+import data.nuon.lib.check
+
+# METADATA
+# title: Retain infrastructure on destructive changes
+# description: Skip apply when the plan deletes or replaces a resource.
+# custom:
+#   action: skip_apply
+check_destructive_changes contains check.finding(
+    sprintf("Plan deletes or replaces %s", [resource.address]),
+) if {
+    some resource in input.plan.resource_changes
+    "delete" in resource.change.actions
+}
+```
+
+Register it in `policies.toml` for a Terraform component, a sandbox, or both:
+
+```toml policies.toml
+[[policy]]
+name       = "retain-database"
+type       = "terraform_module"
+engine     = "opa"
+components = ["database"]
+contents   = "./policies/skip-destructive-apply.rego"
+
+[[policy]]
+name     = "retain-sandbox"
+type     = "sandbox"
+engine   = "opa"
+contents = "./policies/skip-destructive-apply.rego"
+```
+
+Replace `database` with your component name. Sandbox policies are not scoped
+by `components`. The action belongs in Rego metadata, not in `policies.toml`.
+
+- An empty finding set passes and does not request a skip. Terraform
+  replacements include `delete` in their actions, so this example matches
+  replacements as well as deletions.
+- A matching check skips the **entire component or sandbox apply**, not just
+  the resources named in its findings. Existing applied state is retained;
+  the proposed configuration is not recorded as applied. Other workflow steps
+  can continue, but skipping initial provisioning does not create the
+  infrastructure that later steps may need.
+- Skip checks do not bypass denials or evaluation errors: those still block
+  the change. Warnings can be reported alongside an automatically skipped apply.
+- Policy reports show the skip findings and identify an apply that was
+  **automatically skipped by policy**.
+
+<Note>
+  Policies run on teardown by default. This example can therefore also skip a
+  component teardown or sandbox deprovision. To run the policy only during
+  deploys, set `apply_on_teardown = false` on the relevant `[[policy]]` entries.
+</Note>
+
+### Check results
+
+The policy report API includes `policies[].checks`, with one result per named
+check, aggregated across the evaluated inputs:
+
+| `decision` | Meaning |
+| --- | --- |
+| `pass` | Every evaluation succeeded and returned no findings. |
+| `warn` | A warning check returned findings. |
+| `skip_apply` | A skip check returned findings. The apply can be skipped if no policy denies or errors. |
+| `deny` | A blocking check returned findings. |
+| `error` | Input decoding, Rego evaluation, or finding validation failed. |
+
+Each result includes `check_id`, `title`, optional `description`, `findings`,
+`errors`, and `input_count`. Findings contain the authored message plus
+Nuon-supplied `input_index` and, when available, `input_identity`. This identifies
+the evaluated input, not an exact resource field or line within a plan. Engine
+errors carry a code and message with the same input attribution. Evaluation
+errors block the change, regardless of the check's configured action.
+
+A runtime error, such as malformed JSON passed to `json.unmarshal`, prevents
+that check from returning findings for the affected input. Findings from other
+checks and successfully evaluated inputs remain in the report.
+
+Missing fields have Rego's usual undefined behavior: a rule that accesses a
+missing field may produce no findings. **Pass means no findings, not proof that
+every expected field or resource was inspected.** Use explicit missing-field
+checks where absence should block deployment.
+
+Policy reports show the overall outcome alongside individual check results.
+Skip findings are separate from warnings and denials. A check's `skip_apply`
+decision alone does not mean the apply was skipped: another check can still
+deny the change or fail evaluation.
+
+### Testing locally with OPA
+
+Nuon supplies its helper module automatically. With the standalone OPA CLI,
+load `pkg/policies/opa/check.rego` from the matching Nuon source version alongside
+your policy:
+
+```sh
+opa eval --strict-builtin-errors \
+  --data /path/to/nuon/pkg/policies/opa/check.rego \
+  --data policies/security.rego --input input.json \
+  'data.nuon.checks'
+```
+
+This displays the raw finding sets, not Nuon's final policy decision or workflow
+outcome.
+Keep the input envelope appropriate to the policy type (`input.plan` for
+Terraform, `input.review` for Kubernetes, or the image metadata input).
+
 ## Create the Policy Directory Structure
 
 Create a `policies/` directory in your app root to store policy files:
@@ -270,8 +502,9 @@ Policy results are also visible in the Nuon Dashboard:
    - **Passed**: Green checkmark if all policies passed
    - **Denies**: Red indicators with violation messages
    - **Warnings**: Orange indicators with warning messages
+   - **Automatically skipped by policy**: Skip findings explaining why the component or sandbox apply was skipped
 
-Each violation displays the policy name and the specific message from your `deny` or `warn` rule.
+Each finding displays the policy name and the authored message from your rule or named check. Skip findings are separate from warnings and denials.
 
 ![Workflow policy violations](../images/concepts/policies/workflow-policy-violations.png)
 
