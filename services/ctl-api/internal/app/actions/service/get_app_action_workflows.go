@@ -100,7 +100,7 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, branchID, 
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("labels", lbls)).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v1"))
+			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v2"))
 		}).
 		Preload("Configs.Triggers").
 		Preload("Configs.Triggers.Component").
@@ -128,7 +128,20 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, branchID, 
 
 	if triggerTypes != "" {
 		tx = tx.Where(
-			"action_workflows.id IN (SELECT awc.action_workflow_id FROM action_workflow_configs_latest_view_v1 awc JOIN action_workflow_trigger_configs awtc ON awtc.action_workflow_config_id = awc.id WHERE awtc.type = ? AND awtc.deleted_at = 0)",
+			`EXISTS (
+				SELECT 1 FROM action_workflow_configs awc
+				WHERE awc.id = (
+					SELECT awc2.id FROM action_workflow_configs awc2
+					WHERE awc2.action_workflow_id = action_workflows.id
+					ORDER BY awc2.created_at DESC, awc2.id DESC
+					LIMIT 1
+				)
+					AND EXISTS (
+						SELECT 1 FROM action_workflow_trigger_configs awtc
+						WHERE awtc.action_workflow_config_id = awc.id
+							AND awtc.type = ? AND awtc.deleted_at = 0
+					)
+			)`,
 			triggerTypes,
 		)
 	}
