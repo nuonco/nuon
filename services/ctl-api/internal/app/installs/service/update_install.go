@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
 	installupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -95,11 +97,17 @@ func (s *service) UpdateInstall(ctx *gin.Context) {
 }
 
 func (s *service) updateInstall(ctx context.Context, installID string, req *UpdateInstallRequest) (*app.Install, error) {
-	currentInstall := app.Install{
-		ID: installID,
+	// Scope every read and write to the caller's org so this handler stays safe even
+	// if the installauth middleware is bypassed (NUO-1150).
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org: %w", err)
 	}
 
-	res := s.db.WithContext(ctx).First(&currentInstall, "id = ?", installID)
+	currentInstall := app.Install{}
+	res := s.db.WithContext(ctx).
+		Where(app.Install{ID: installID, OrgID: orgID}).
+		First(&currentInstall)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
@@ -107,7 +115,8 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 	// update or create install config
 	if req.InstallConfig != nil {
 		installConfig := app.InstallConfig{
-			InstallID:      installID,
+			InstallID:      currentInstall.ID,
+			OrgID:          orgID,
 			ApprovalOption: req.InstallConfig.ApprovalOption,
 		}
 		res := s.db.WithContext(ctx).Clauses(clause.OnConflict{
@@ -115,6 +124,10 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 				{Name: "deleted_at"},
 				{Name: "install_id"},
 			},
+			// never rewrite a config row owned by another org
+			Where: clause.Where{Exprs: []clause.Expression{
+				clause.Eq{Column: clause.Column{Table: "install_configs", Name: "org_id"}, Value: orgID},
+			}},
 			DoUpdates: clause.AssignmentColumns([]string{
 				"approval_option",
 			}),
@@ -122,7 +135,13 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 			Create(&installConfig)
 
 		if res.Error != nil {
-			return nil, fmt.Errorf("unable to write routes: %w", res.Error)
+			return nil, fmt.Errorf("unable to upsert install config: %w", res.Error)
+		}
+		if res.RowsAffected == 0 {
+			return nil, stderr.ErrNotFound{
+				Err:         errors.New("install config not found"),
+				Description: "install config not found",
+			}
 		}
 	}
 
@@ -136,6 +155,7 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 	res = s.db.WithContext(ctx).
 		Scopes(scopes.WithPatcher(patcher.PatcherOptions{})).
 		Model(&currentInstall).
+		Where(app.Install{OrgID: orgID}).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
