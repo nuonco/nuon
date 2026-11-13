@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/size"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
@@ -28,7 +29,9 @@ type API struct {
 	port                  string
 	name                  string
 	configuredMiddlewares []string
-	endpointAudit         *EndpointAudit
+	// maxRequestSize overrides cfg.MaxRequestSize for this server when set.
+	maxRequestSize int64
+	endpointAudit  *EndpointAudit
 	// created after initializing
 	srv     *http.Server
 	handler *gin.Engine
@@ -38,6 +41,11 @@ type API struct {
 
 func (a *API) init(httpMetrics *metrics.HTTPMetrics) error {
 	a.handler = gin.New()
+	limit := a.cfg.MaxRequestSize
+	if a.maxRequestSize > 0 {
+		limit = a.maxRequestSize
+	}
+	a.handler.Use(size.LimitRequestBody(limit, a.l.With(zap.String("api", a.name))))
 	if httpMetrics != nil {
 		a.handler.Use(func(c *gin.Context) {
 			metrics.SetHTTPRoute(c.Request.Context(), c.FullPath())

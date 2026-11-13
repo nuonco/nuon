@@ -14,6 +14,7 @@ func NewRunnerAPI(params Params) (*API, error) {
 		services:              params.Services,
 		middlewares:           params.Middlewares,
 		configuredMiddlewares: params.Cfg.RunnerMiddlewares,
+		maxRequestSize:        params.Cfg.RunnerMaxRequestSize,
 		l:                     params.L,
 		db:                    params.DB,
 		endpointAudit:         params.EndpointAudit,
