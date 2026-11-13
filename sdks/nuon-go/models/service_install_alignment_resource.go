@@ -19,11 +19,17 @@ import (
 // swagger:model service.InstallAlignmentResource
 type ServiceInstallAlignmentResource struct {
 
+	// applied build
+	AppliedBuild *ServiceInstallAlignmentBuild `json:"applied_build,omitempty"`
+
 	// applied build id
 	AppliedBuildID string `json:"applied_build_id,omitempty"`
 
 	// applied config id
 	AppliedConfigID string `json:"applied_config_id,omitempty"`
+
+	// blocking attempt
+	BlockingAttempt *ServiceInstallAlignmentAttempt `json:"blocking_attempt,omitempty"`
 
 	// category
 	Category ServiceInstallAlignmentCategory `json:"category,omitempty"`
@@ -33,6 +39,12 @@ type ServiceInstallAlignmentResource struct {
 
 	// component type
 	ComponentType string `json:"component_type,omitempty"`
+
+	// earlier attempts
+	EarlierAttempts int64 `json:"earlier_attempts,omitempty"`
+
+	// expected build
+	ExpectedBuild *ServiceInstallAlignmentBuild `json:"expected_build,omitempty"`
 
 	// expected build id
 	ExpectedBuildID string `json:"expected_build_id,omitempty"`
@@ -49,14 +61,8 @@ type ServiceInstallAlignmentResource struct {
 	// kind
 	Kind ServiceInstallAlignmentResourceKind `json:"kind,omitempty"`
 
-	// last attempt
-	LastAttempt *ServiceInstallAlignmentAttempt `json:"last_attempt,omitempty"`
-
 	// name
 	Name string `json:"name,omitempty"`
-
-	// newer branch runs
-	NewerBranchRuns *int64 `json:"newer_branch_runs,omitempty"`
 
 	// open deployment
 	OpenDeployment *ServiceInstallAlignmentOpenDeployment `json:"open_deployment,omitempty"`
@@ -75,7 +81,19 @@ type ServiceInstallAlignmentResource struct {
 func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAppliedBuild(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateBlockingAttempt(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCategory(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateExpectedBuild(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -84,10 +102,6 @@ func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) erro
 	}
 
 	if err := m.validateKind(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLastAttempt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -102,6 +116,52 @@ func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) erro
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceInstallAlignmentResource) validateAppliedBuild(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppliedBuild) { // not required
+		return nil
+	}
+
+	if m.AppliedBuild != nil {
+		if err := m.AppliedBuild.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("applied_build")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("applied_build")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallAlignmentResource) validateBlockingAttempt(formats strfmt.Registry) error {
+	if swag.IsZero(m.BlockingAttempt) { // not required
+		return nil
+	}
+
+	if m.BlockingAttempt != nil {
+		if err := m.BlockingAttempt.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("blocking_attempt")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("blocking_attempt")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -121,6 +181,29 @@ func (m *ServiceInstallAlignmentResource) validateCategory(formats strfmt.Regist
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallAlignmentResource) validateExpectedBuild(formats strfmt.Registry) error {
+	if swag.IsZero(m.ExpectedBuild) { // not required
+		return nil
+	}
+
+	if m.ExpectedBuild != nil {
+		if err := m.ExpectedBuild.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("expected_build")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("expected_build")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -165,29 +248,6 @@ func (m *ServiceInstallAlignmentResource) validateKind(formats strfmt.Registry) 
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) validateLastAttempt(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastAttempt) { // not required
-		return nil
-	}
-
-	if m.LastAttempt != nil {
-		if err := m.LastAttempt.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("last_attempt")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("last_attempt")
-			}
-
-			return err
-		}
 	}
 
 	return nil
@@ -243,7 +303,19 @@ func (m *ServiceInstallAlignmentResource) validatePlan(formats strfmt.Registry) 
 func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAppliedBuild(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateBlockingAttempt(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCategory(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateExpectedBuild(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -252,10 +324,6 @@ func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, f
 	}
 
 	if err := m.contextValidateKind(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateLastAttempt(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -270,6 +338,56 @@ func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, f
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceInstallAlignmentResource) contextValidateAppliedBuild(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AppliedBuild != nil {
+
+		if swag.IsZero(m.AppliedBuild) { // not required
+			return nil
+		}
+
+		if err := m.AppliedBuild.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("applied_build")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("applied_build")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallAlignmentResource) contextValidateBlockingAttempt(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.BlockingAttempt != nil {
+
+		if swag.IsZero(m.BlockingAttempt) { // not required
+			return nil
+		}
+
+		if err := m.BlockingAttempt.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("blocking_attempt")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("blocking_attempt")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -290,6 +408,31 @@ func (m *ServiceInstallAlignmentResource) contextValidateCategory(ctx context.Co
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallAlignmentResource) contextValidateExpectedBuild(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ExpectedBuild != nil {
+
+		if swag.IsZero(m.ExpectedBuild) { // not required
+			return nil
+		}
+
+		if err := m.ExpectedBuild.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("expected_build")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("expected_build")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -337,31 +480,6 @@ func (m *ServiceInstallAlignmentResource) contextValidateKind(ctx context.Contex
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) contextValidateLastAttempt(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.LastAttempt != nil {
-
-		if swag.IsZero(m.LastAttempt) { // not required
-			return nil
-		}
-
-		if err := m.LastAttempt.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("last_attempt")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("last_attempt")
-			}
-
-			return err
-		}
 	}
 
 	return nil

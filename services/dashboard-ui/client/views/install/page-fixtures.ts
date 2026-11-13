@@ -797,8 +797,9 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
       expected_build_id: 'bld-cmp-search',
       expected_config_id: APP_CONFIG_ID,
       applied_build_id: undefined,
+      applied_build: undefined,
       applied_config_id: undefined,
-      last_attempt: {
+      blocking_attempt: {
         id: 'wf-input-enable-search',
         workflow_id: 'wf-input-enable-search',
         type: 'component_enabled',
@@ -1121,8 +1122,8 @@ const resolveDriftFixture = (
     resource.open_deployment = finished
       ? undefined
       : { id, status, created_at: workflow.created_at }
-    if (finished) {
-      resource.last_attempt = {
+    if (finished && denied) {
+      resource.blocking_attempt = {
         id: `${id}-deploy`,
         workflow_id: id,
         status,
@@ -1290,12 +1291,15 @@ export const resourcesFixture = (
     )
     if (image) {
       image.status = 'cancelled'
-      image.last_attempt = { ...image.last_attempt!, status: 'cancelled' }
+      image.blocking_attempt = {
+        ...image.blocking_attempt!,
+        status: 'cancelled',
+      }
       image.explanation = {
         summary:
           'The image sync was cancelled before this version was copied to the install’s registry.',
         status: 'cancelled',
-        workflow_id: image.last_attempt.workflow_id,
+        workflow_id: image.blocking_attempt.workflow_id,
       }
     }
   }

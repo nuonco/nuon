@@ -19,8 +19,8 @@ import (
 // swagger:model service.InstallAlignmentAttempt
 type ServiceInstallAlignmentAttempt struct {
 
-	// branch run
-	BranchRun *ServiceInstallOverviewCommit `json:"branch_run,omitempty"`
+	// build id
+	BuildID string `json:"build_id,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -30,6 +30,9 @@ type ServiceInstallAlignmentAttempt struct {
 
 	// status
 	Status string `json:"status,omitempty"`
+
+	// step id
+	StepID string `json:"step_id,omitempty"`
 
 	// type
 	Type AppWorkflowType `json:"type,omitempty"`
@@ -42,10 +45,6 @@ type ServiceInstallAlignmentAttempt struct {
 func (m *ServiceInstallAlignmentAttempt) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateBranchRun(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateType(formats); err != nil {
 		res = append(res, err)
 	}
@@ -53,29 +52,6 @@ func (m *ServiceInstallAlignmentAttempt) Validate(formats strfmt.Registry) error
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceInstallAlignmentAttempt) validateBranchRun(formats strfmt.Registry) error {
-	if swag.IsZero(m.BranchRun) { // not required
-		return nil
-	}
-
-	if m.BranchRun != nil {
-		if err := m.BranchRun.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("branch_run")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("branch_run")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -104,10 +80,6 @@ func (m *ServiceInstallAlignmentAttempt) validateType(formats strfmt.Registry) e
 func (m *ServiceInstallAlignmentAttempt) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateBranchRun(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateType(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -115,31 +87,6 @@ func (m *ServiceInstallAlignmentAttempt) ContextValidate(ctx context.Context, fo
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceInstallAlignmentAttempt) contextValidateBranchRun(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.BranchRun != nil {
-
-		if swag.IsZero(m.BranchRun) { // not required
-			return nil
-		}
-
-		if err := m.BranchRun.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("branch_run")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("branch_run")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
