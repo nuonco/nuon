@@ -139,10 +139,14 @@ func (r *statusRecorder) Flush() {
 }
 
 func mcpEndpointFromRequest(r *http.Request) string {
-	if r.URL.Path == "/" || r.URL.Path == "" {
+	switch r.URL.Path {
+	case "/", "":
 		return "unauthenticated"
+	case "/.well-known/oauth-protected-resource":
+		return "oauth_protected_resource"
+	default:
+		return "unknown"
 	}
-	return strings.ReplaceAll(r.URL.Path, "-", "_")
 }
 
 func mcpRPCEndpoint(method, toolName string) string {
