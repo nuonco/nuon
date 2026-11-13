@@ -60,7 +60,7 @@ var nestedFieldContracts = []nestedFieldContract{
 	{reflect.TypeFor[AppSecret](), "Name:identity DisplayName:display_name Description:description Required:required AutoGenerate:auto_generate Format:format Default:default KubernetesSync:kubernetes_sync KubernetesSecretNamespace:kubernetes_secret_namespace KubernetesSecretName:kubernetes_secret_name KubernetesSyncTargets:nested"},
 	{reflect.TypeFor[KubernetesSyncTarget](), "Namespaces:namespaces Name:name Key:key"},
 	{reflect.TypeFor[PermissionsConfig](), "ProvisionRole:nested DeprovisionRole:nested MaintenanceRole:nested CustomRoles:nested Roles:ingress-normalized NamedPolicies:nested"},
-	{reflect.TypeFor[AppAWSIAMRole](), "Type:type CloudPlatform:cloud_platform Name:name Description:description DisplayName:display_name Policies:nested PermissionsBoundary:permissions_boundary EnabledInStack:enabled_in_stack NamedPolicies:nested"},
+	{reflect.TypeFor[AppAWSIAMRole](), "Type:type CloudPlatform:cloud_platform Name:name Description:description DisplayName:display_name Policies:nested PermissionsBoundary:permissions_boundary EnabledInStack:enabled_in_stack NamedPolicies:nested EKSAccess:eks_access"},
 	{reflect.TypeFor[AppAWSIAMPolicy](), "ManagedPolicyName:managed_policy_name Name:name Contents:contents GCPPermissions:gcp_permissions GCPPredefinedRole:gcp_predefined_role AzureActions:azure_actions AzureBuiltInRoles:azure_built_in_roles"},
 	{reflect.TypeFor[NamedIAMPolicy](), "Name:identity Description:description Contents:contents SourceFile:provenance"},
 	{reflect.TypeFor[NamedPolicyRef](), "Name:named_policies"},
@@ -357,6 +357,14 @@ func nestedEditValue(v reflect.Value, typ reflect.Type, field, word string, numb
 		return
 	}
 	switch v.Kind() {
+	case reflect.Struct:
+		if v.Type() != reflect.TypeFor[AppAWSIAMRoleEKSAccess]() {
+			panic(fmt.Sprintf("no authored edit for %v.%s", typ, field))
+		}
+		v.Set(reflect.ValueOf(AppAWSIAMRoleEKSAccess{
+			ClusterName: word,
+			Policies:    []AppAWSIAMRoleEKSAccessPolicy{{PolicyARN: "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"}},
+		}))
 	case reflect.Bool:
 		v.SetBool(!v.Bool())
 	case reflect.Int, reflect.Int64:

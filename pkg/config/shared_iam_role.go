@@ -20,6 +20,8 @@ type AppAWSIAMRole struct {
 	EnabledInStack *bool `mapstructure:"enabled_in_stack,omitempty" toml:"enabled_in_stack,omitempty"`
 
 	NamedPolicies []NamedPolicyRef `mapstructure:"named_policies,omitempty" toml:"named_policies,omitempty"`
+
+	EKSAccess *AppAWSIAMRoleEKSAccess `mapstructure:"eks_access,omitempty" toml:"eks_access,omitempty"`
 }
 
 func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -55,7 +57,9 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("enabled_in_stack").Short("whether the role is on by default").
 		Long("CloudFormation and Azure only. Defaults to true, or false for break glass roles. When false, the role is created once the customer turns it on").
 		Field("named_policies").Short("named IAM policies to attach").
-		Long("Named IAM policies to attach to this role, referenced by name. Use [[named_policies]] like [[policies]]. The name must match a named policy defined under permissions. Those policies are created even when this role is disabled")
+		Long("Named IAM policies to attach to this role, referenced by name. Use [[named_policies]] like [[policies]]. The name must match a named policy defined under permissions. Those policies are created even when this role is disabled").
+		Field("eks_access").Short("[AWS] EKS access entry for the role").
+		Long("[AWS CloudFormation only] EKS access entry the install stack creates alongside the role, so cluster access is granted and removed with the role. Break glass and custom roles only; provision, maintenance and deprovision keep their access entries in the sandbox")
 }
 
 // ValidateRoleGrants rejects a role that grants nothing. policies is empty only

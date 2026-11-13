@@ -50,6 +50,7 @@ func IAMRole(role *config.AppAWSIAMRole, appConfigID string, roleType app.AWSIAM
 		EnabledInStack:          generics.NewNullBoolFromPtr(role.EnabledInStack),
 		Policies:                IAMPolicies(role.Policies, appConfigID),
 		NamedPolicyNames:        names,
+		EKSAccess:               EKSAccess(role.EKSAccess),
 	}
 }
 
