@@ -1,12 +1,14 @@
 package helpers
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -263,64 +265,33 @@ func TestFetchSourceTree(t *testing.T) {
 		})
 	}
 
-	trees := map[string]*SourceTree{}
-	for _, commit := range []string{first, outside, inside, shapes} {
-		tree, err := fetchSourceTree(context.Background(), "file://"+filtered, nil, commit, nil, maxSourceTreeBytes)
+	t.Run("pack size counts inflated objects, delta payloads, and delta targets", func(t *testing.T) {
+		cmd := exec.Command("git", "pack-objects", "--revs", "--stdout", "--filter=blob:none")
+		cmd.Dir = src
+		cmd.Stdin = strings.NewReader(inside + "\n")
+		pack, err := cmd.Output()
 		require.NoError(t, err)
-		trees[commit] = tree
-	}
-	type change struct {
-		path          string
-		before, after bool
-	}
-	diffs := map[string]struct {
-		before, after         string
-		beforeName, afterName string
-		limit                 int
-		want                  []change
-		wantTruncated         bool
-	}{
-		"directory unchanged by changes elsewhere": {before: first, after: outside, beforeName: "app", afterName: "app"},
-		"changed file under the directory": {
-			before: first, after: inside, beforeName: "app", afterName: "app",
-			want: []change{{"chart/values.yaml", true, true}},
-		},
-		"repository root": {
-			before: first, after: outside,
-			want: []change{{"other/main.tf", true, true}, {"vendor/lib", true, false}},
-		},
-		"a new source lists every file as added": {
-			after: first, afterName: "app",
-			want: []change{{"README.md", false, true}, {"chart/values.yaml", false, true}},
-		},
-		"a moved directory compares the two directories": {
-			before: first, after: inside, beforeName: "app/chart", afterName: "app",
-			want: []change{{"README.md", false, true}, {"chart/values.yaml", false, true}, {"values.yaml", true, false}},
-		},
-		"a file root compares the file": {
-			before: first, after: inside, beforeName: "app/chart/values.yaml", afterName: "app/chart/values.yaml",
-			want: []change{{"", true, true}},
-		},
-		"the limit truncates": {
-			before: inside, after: shapes, limit: 1,
-			want:          []change{{"bomb/d0/d0/d0/d0/d0/d0/d0/d0/d0/d0/f", false, true}},
-			wantTruncated: true,
-		},
-	}
-	for name, tc := range diffs {
-		t.Run("diff/"+name, func(t *testing.T) {
-			limit := tc.limit
-			if limit == 0 {
-				limit = 100
-			}
-			found, truncated, err := DiffSources(context.Background(), trees[tc.before], tc.beforeName, trees[tc.after], tc.afterName, limit)
+		objects := strings.Fields(git(src, "rev-list", "--objects", "--no-object-names", "--filter=blob:none", inside))
+		var total int64
+		for _, size := range strings.Fields(gitInput(strings.Join(objects, "\n")+"\n", "cat-file", "--batch-check=%(objectsize)")) {
+			n, err := strconv.ParseInt(size, 10, 64)
 			require.NoError(t, err)
-			var got []change
-			for _, c := range found {
-				got = append(got, change{c.Path, c.Before != nil, c.After != nil})
+			total += n
+		}
+		packPath := filepath.Join(t.TempDir(), "objects.pack")
+		require.NoError(t, os.WriteFile(packPath, pack, 0o600))
+		git(src, "index-pack", packPath)
+		deltas := 0
+		for _, line := range strings.Split(git(src, "verify-pack", "-v", strings.TrimSuffix(packPath, ".pack")+".idx"), "\n") {
+			if fields := strings.Fields(line); len(fields) == 7 {
+				n, err := strconv.ParseInt(fields[2], 10, 64)
+				require.NoError(t, err)
+				total += n
+				deltas++
 			}
-			assert.Equal(t, tc.want, got)
-			assert.Equal(t, tc.wantTruncated, truncated)
-		})
-	}
+		}
+		require.NotZero(t, deltas)
+		require.NoError(t, checkPackSize(bytes.NewReader(pack), total))
+		require.ErrorIs(t, checkPackSize(bytes.NewReader(pack), total-1), ErrSourceTreeTooLarge)
+	})
 }

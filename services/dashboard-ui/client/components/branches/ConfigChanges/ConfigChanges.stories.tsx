@@ -5,10 +5,6 @@ export default {
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
-import {
-  sourceDiff,
-  sourceDiffContents,
-} from '@/components/installs/InstallDeploymentSourceDiff/source-diff.fixtures'
 import { ConfigChangesLoading } from './ConfigChangesLoading'
 import { ConfigChangesViewer } from './ConfigChangesViewer'
 import { TemplateChangesButton } from './TemplateChangesButton'
@@ -202,11 +198,10 @@ const InstallChangesStory = ({ config = false }: { config?: boolean }) => {
       'component',
       'api',
     ]
-    const comparison = { ...sourceDiff, name: 'api' }
-    client.setQueryData(key, comparison)
-    for (const [path, selected_file] of Object.entries(sourceDiffContents)) {
-      client.setQueryData([...key, path], { ...comparison, selected_file })
-    }
+    client.setQueryData(key, {
+      compare_url:
+        'https://github.com/acme/example/compare/1111111111111111111111111111111111111111..2222222222222222222222222222222222222222',
+    })
   }, [client])
   return (
     <ConfigChangesViewer

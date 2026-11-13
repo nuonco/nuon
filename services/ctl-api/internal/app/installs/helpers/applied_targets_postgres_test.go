@@ -578,4 +578,10 @@ func TestImageSyncRecordsDependencyReceiptPostgres(t *testing.T) {
 	var deploy app.InstallDeploy
 	require.NoError(t, tx.Where(app.InstallDeploy{ID: h.actual[1].operationID}).First(&deploy).Error)
 	require.Equal(t, want, deploy.DependencyBuildIDs)
+	baselines, err := h.helpers.InstallCompositeBaselines(context.Background(), &h.install)
+	require.NoError(t, err)
+	require.Equal(t, want, baselines.DependencyBuildIDs[h.components[1].ComponentID])
+	applied, err := h.helpers.AppliedBuildIDs(context.Background(), h.install.ID)
+	require.NoError(t, err)
+	require.Equal(t, want, applied)
 }

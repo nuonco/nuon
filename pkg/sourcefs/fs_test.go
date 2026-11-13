@@ -414,9 +414,13 @@ func TestRecordedReads(t *testing.T) {
 			},
 			wantRead: []string{"charts/common/Chart.yaml"},
 		},
-		"a glob lists its literal base directory": {
+		"a glob records each directory it lists": {
 			op:       func(s *sourcefs.FS) error { _, err := s.Glob("modules/*/main.tf"); return err },
-			wantRead: []string{"modules"}, wantStat: []string{"modules/net/main.tf"},
+			wantRead: []string{"modules", "modules/net"}, wantStat: []string{"modules/net/main.tf"},
+		},
+		"a wildcard through a directory link records the target even with no match": {
+			op:       func(s *sourcefs.FS) error { _, err := s.Glob("app/k/*/x.yaml"); return err },
+			wantRead: []string{"app/k", "outside"}, wantStat: []string{"app/k/link"},
 		},
 		"a literal glob that matches nothing records the missing path": {
 			op:       func(s *sourcefs.FS) error { _, err := s.Glob("shared/none.tf"); return err },
@@ -431,7 +435,7 @@ func TestRecordedReads(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := t.TempDir()
-			for _, dir := range []string{"app", "shared", "modules/net", "charts/common"} {
+			for _, dir := range []string{"app/k", "outside", "shared", "modules/net", "charts/common"} {
 				require.NoError(t, os.MkdirAll(filepath.Join(root, dir), 0755))
 			}
 			for _, file := range []string{"app/main.tf", "shared/extra.tf", "modules/net/main.tf", "charts/common/Chart.yaml"} {
@@ -439,6 +443,7 @@ func TestRecordedReads(t *testing.T) {
 			}
 			require.NoError(t, os.Symlink("../shared/extra.tf", filepath.Join(root, "app/link.tf")))
 			require.NoError(t, os.Symlink("../modules", filepath.Join(root, "app/modules")))
+			require.NoError(t, os.Symlink("../../outside", filepath.Join(root, "app/k/link")))
 			source, err := sourcefs.New(afero.NewOsFs(), root)
 			require.NoError(t, err)
 			t.Cleanup(func() { require.NoError(t, source.Close()) })

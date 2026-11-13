@@ -13831,9 +13831,9 @@ func (a *Client) GetInstallDeployment(params *GetInstallDeploymentParams, authIn
 }
 
 /*
-GetInstallDeploymentSourceDiff compares captured source for a deployment resource
+GetInstallDeploymentSourceDiff gets the git hub compare link for a deployment resource
 
-Compare the resource's frozen previously applied and selected builds. File content is fetched only when path is provided.
+Returns a GitHub compare URL between the commits of the resource's build for the install's pinned app config and its build for this deployment's app config. The URL is empty when the builds are not in the same GitHub repository, use the same commit, or have the same source digest. Nuon does not read the repository for this response.
 */
 func (a *Client) GetInstallDeploymentSourceDiff(params *GetInstallDeploymentSourceDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentSourceDiffOK, error) {
 	// NOTE: parameters are not validated before sending
