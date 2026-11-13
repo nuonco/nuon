@@ -607,6 +607,9 @@ type Config struct {
 	// LogStreamAccountSweepMode controls the log stream service account sweep: "on" deletes idle accounts, "dry-run" only counts them, anything else (the default) is off.
 	LogStreamAccountSweepMode string `config:"log_stream_account_sweep_mode"`
 
+	// DeadTokenCleanupMode controls the hard delete of long-revoked and long-expired tokens: "on" deletes them, "dry-run" only counts them, anything else (the default) is off.
+	DeadTokenCleanupMode string `config:"dead_token_cleanup_mode"`
+
 	// BlobBackfillRatePerSecond caps how many S3 PUTs/sec the blob backfill activity issues. Defaults to 500 when unset.
 	BlobBackfillRatePerSecond int `config:"blob_backfill_rate_per_second"`
 
