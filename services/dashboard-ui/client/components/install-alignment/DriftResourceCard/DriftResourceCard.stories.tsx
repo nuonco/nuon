@@ -4,6 +4,7 @@ export default {
 
 import {
   causeResources,
+  inputUpdateResource,
   openDeploymentResource,
   stateDriftResource,
   unappliedResource,
@@ -12,9 +13,9 @@ import { explanationEvidence } from '../alignment-utils'
 import { DriftResourceCard } from './DriftResourceCard'
 
 const links = {
-  branchRunHref: '#branch-run',
+  buildHref: (buildId: string) => `#build-${buildId}`,
   explanationHref: '#evidence',
-  lastAttemptHref: '#last-attempt',
+  historyHref: '#deploy-history',
   deploymentHref: '#deployment',
   nameHref: '#component',
   onResolve: () => {},
@@ -42,6 +43,33 @@ export const ResolveError = () => (
   />
 )
 
+export const PolicyDenied = () => (
+  <DriftResourceCard
+    {...links}
+    onViewPlan={undefined}
+    resource={unappliedResource({
+      blocking_attempt: {
+        id: 'dep-ic-api',
+        status: 'policy-failed',
+        created_at: new Date(Date.now() - 2 * 3_600_000).toISOString(),
+        workflow_id: 'wf-attempt-ic-api',
+        build_id: 'bld-selected',
+      },
+      earlier_attempts: 1,
+      plan: undefined,
+      explanation: {
+        summary: 'A policy denied the latest deployment.',
+        status: 'policy-failed',
+        workflow_id: 'wf-attempt-ic-api',
+      },
+    })}
+  />
+)
+
+export const InputsChanged = () => (
+  <DriftResourceCard {...links} resource={inputUpdateResource()} />
+)
+
 export const OpenDeployment = () => (
   <DriftResourceCard {...links} resource={openDeploymentResource()} />
 )
@@ -65,9 +93,9 @@ export const NeverAttempted = () => (
     explanationHref={undefined}
     onViewPlan={undefined}
     resource={unappliedResource({
-      last_attempt: undefined,
+      blocking_attempt: undefined,
+      earlier_attempts: 0,
       plan: undefined,
-      newer_branch_runs: null,
       explanation: { summary: 'No deployment has started for these changes.' },
     })}
   />

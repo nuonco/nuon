@@ -13,7 +13,6 @@ import type {
   TInstallAlignmentResourceKind,
 } from '@/types'
 import {
-  branchRunHref,
   explanationEvidence,
   hasOngoingDeployment,
   isDrifted,
@@ -50,13 +49,20 @@ export const useDriftCardProps = () => {
               suffix: `/components/${resource.component_id}`,
             })
           : undefined,
-      branchRunHref: branchRunHref({
-        orgId: org?.id,
-        appId: install?.app_id,
-        commit: resource.last_attempt?.branch_run,
-      }),
+      buildHref:
+        resource.component_id && install?.app_id
+          ? (buildId: string) =>
+              `/${org?.id}/apps/${install.app_id}/components/${resource.component_id}/builds/${buildId}`
+          : undefined,
+      historyHref:
+        resource.kind === 'component' || resource.kind === 'image'
+          ? installLink({
+              installId: install?.id,
+              appId: install?.app_id,
+              suffix: `/components/${resource.component_id}/deploys`,
+            })
+          : undefined,
       explanationHref: workflowHref(evidence?.workflowId, evidence?.stepId),
-      lastAttemptHref: workflowHref(resource.last_attempt?.workflow_id),
       deploymentHref: workflowHref(resource.open_deployment?.id),
       metadata:
         resource.kind === 'image' && resource.component_id ? (

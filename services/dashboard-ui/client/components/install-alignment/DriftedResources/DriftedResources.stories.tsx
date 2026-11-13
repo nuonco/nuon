@@ -26,8 +26,7 @@ const card =
       resource={resource}
       view={view}
       explanationHref={explanationEvidence(resource) ? '#evidence' : undefined}
-      branchRunHref="#branch-run"
-      lastAttemptHref="#last-attempt"
+      historyHref="#deploy-history"
       deploymentHref="#deployment"
       onViewPlan={resource.plan ? () => {} : undefined}
     />

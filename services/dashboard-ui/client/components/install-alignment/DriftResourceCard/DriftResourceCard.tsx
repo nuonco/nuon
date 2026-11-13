@@ -1,13 +1,11 @@
-import { useId, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import type { TCollectionView } from '@/components/common/CollectionViewToggle'
-import { Expand } from '@/components/common/Expand'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
-import { LabeledValue } from '@/components/common/LabeledValue'
-import { Link, LINK_COLOR_CLASSES } from '@/components/common/Link'
+import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -15,23 +13,24 @@ import { ComponentType } from '@/components/components/ComponentType'
 import type {
   TAPIError,
   TComponentType,
+  TInstallAlignmentBuild,
   TInstallAlignmentResource,
   TInstallAlignmentResourceKind,
 } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
+  buildRef,
   driftExplanation,
   explanationEvidence,
   hasOngoingDeployment,
   isDrifted,
-  shortSha,
 } from '../alignment-utils'
 
 export interface IDriftResourceCard {
-  branchRunHref?: string
+  buildHref?: (buildId: string) => string | undefined
   deploymentHref?: string
   explanationHref?: string
-  lastAttemptHref?: string
+  historyHref?: string
   metadata?: ReactNode
   nameHref?: string
   onResolve?: () => void
@@ -49,37 +48,58 @@ const KIND_ICONS: Record<TInstallAlignmentResourceKind, TIconVariant> = {
   stack: 'StackIcon',
 }
 
-const newerRunsLabel = (count?: number | null) =>
-  count ? `${count} newer branch ${count === 1 ? 'run' : 'runs'}` : null
-
-const attemptLabel = (type?: string) =>
-  type === 'input_update'
-    ? 'Last input update'
-    : type === 'component_enabled'
-      ? 'Last enable attempt'
-      : type === 'component_disabled'
-        ? 'Last disable attempt'
-        : 'Last attempt'
-
-const DETAIL_ROW = '!flex-row flex-wrap items-center !gap-1.5'
-
 const REASON_STATUS_LABELS: Record<string, string> = {
   cancelled: 'Workflow cancelled',
   error: 'Deployment failed',
+  'policy-failed': 'Denied by policy',
+  'policy-skipped': 'Skipped by policy',
+  'auto-skipped': 'No changes',
   'failed-pending-retry': 'Failed — awaiting retry',
   'awaiting-retry': 'Failed — awaiting retry',
   'approval-awaiting': 'Awaiting approval',
   'awaiting-approval': 'Awaiting approval',
+  'approval-denied': 'Approval denied',
+  'approval-expired': 'Approval expired',
   'user-skipped': 'Deploy skipped',
   'not-attempted': 'Blocked by earlier step',
   discarded: 'Blocked by earlier step',
+  unknown: 'Outcome unknown',
+}
+
+const earlierAttemptsLabel = (count: number) =>
+  `${count} earlier ${count === 1 ? 'attempt' : 'attempts'}`
+
+const BuildRef = ({
+  build,
+  href,
+}: {
+  build?: TInstallAlignmentBuild
+  href?: string
+}) => {
+  const ref = buildRef(build)
+  if (!ref) {
+    return (
+      <Text as="span" variant="subtext" theme="neutral">
+        Not deployed
+      </Text>
+    )
+  }
+  return href ? (
+    <Link href={href} variant="inline" className="!font-mono text-sm">
+      {ref}
+    </Link>
+  ) : (
+    <Text as="span" family="mono" variant="subtext">
+      {ref}
+    </Text>
+  )
 }
 
 export const DriftResourceCard = ({
-  branchRunHref,
+  buildHref,
   deploymentHref,
   explanationHref,
-  lastAttemptHref,
+  historyHref,
   metadata,
   nameHref,
   onResolve,
@@ -89,51 +109,48 @@ export const DriftResourceCard = ({
   resource,
   view = 'list',
 }: IDriftResourceCard) => {
-  const detailsId = useId()
   const isGrid = view === 'grid'
   const openDeployment = hasOngoingDeployment(resource)
     ? resource.open_deployment
     : undefined
-  const lastAttempt = resource.last_attempt
-  const branchRun = lastAttempt?.branch_run
-  const newerRuns = newerRunsLabel(resource.newer_branch_runs)
   const isImage = resource.kind === 'image'
   const ongoingOnly = !!openDeployment && !isDrifted(resource)
+  const isStateDrift = resource.category === 'state-drift-detected'
   const explanation = ongoingOnly
     ? isImage
-      ? 'Open the sync to view its progress.'
-      : 'Open the deployment to view its progress.'
+      ? 'An image sync is pending or in progress.'
+      : 'A deployment is pending or in progress.'
     : driftExplanation(resource)
   const evidenceWorkflowId = explanationEvidence(resource)?.workflowId
-  const isStateDrift = resource.category === 'state-drift-detected'
-  const consequence =
-    (ongoingOnly
-      ? isImage
-        ? 'An image sync is pending or in progress.'
-        : 'A deployment is pending or in progress.'
-      : isImage
-        ? 'This image version hasn’t been synced.'
-        : resource.reason) ||
-    (isStateDrift
-      ? 'Live resources differ from what was last applied.'
-      : 'Saved changes haven’t taken effect.')
   const reasonStatus = openDeployment
     ? (evidenceWorkflowId === openDeployment.id &&
         resource.explanation?.status) ||
       openDeployment.status
     : resource.explanation?.status
-  const evidenceAttempt =
-    evidenceWorkflowId === openDeployment?.id
-      ? openDeployment
-      : evidenceWorkflowId && evidenceWorkflowId === lastAttempt?.workflow_id
-        ? lastAttempt
+  const evidenceTime = openDeployment
+    ? openDeployment.created_at
+    : isStateDrift
+      ? resource.plan?.created_at
+      : evidenceWorkflowId &&
+          evidenceWorkflowId === resource.blocking_attempt?.workflow_id
+        ? resource.blocking_attempt?.created_at
         : undefined
 
-  const showLastAttempt =
-    !!lastAttempt?.status &&
-    !!lastAttemptHref &&
-    lastAttempt.workflow_id !== evidenceWorkflowId
-  const showBranchRun = !!(branchRun?.sha || branchRun?.workflow_id)
+  const expected = resource.expected_build
+  const applied = resource.applied_build
+  const showBuilds =
+    !isStateDrift && !!expected?.id && expected.id !== applied?.id
+  const consequence = showBuilds
+    ? undefined
+    : (isImage && !isStateDrift
+        ? 'This image version hasn’t been synced.'
+        : resource.reason) ||
+      (isStateDrift
+        ? 'Live resources differ from what was last applied.'
+        : 'Saved changes haven’t taken effect.')
+  const earlier = openDeployment
+    ? (resource.earlier_attempts ?? 0) + (resource.blocking_attempt ? 1 : 0)
+    : (resource.earlier_attempts ?? 0)
 
   const name = (
     <Text
@@ -154,7 +171,7 @@ export const DriftResourceCard = ({
   )
 
   const content = (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <div
         className={cn(
           'flex flex-col gap-2',
@@ -233,109 +250,74 @@ export const DriftResourceCard = ({
         </Banner>
       ) : null}
 
-      <Expand
-        id={detailsId}
-        headerClassName={cn(
-          LINK_COLOR_CLASSES,
-          '!p-1 !justify-start text-left rounded-md [&>svg]:shrink-0 focus-visible:[--tw-outline-style:solid] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-400/80'
-        )}
-        heading={
-          <Text
-            variant="subtext"
-            className="underline underline-offset-2"
-            data-testid="drift-consequence"
-          >
-            {consequence}
+      {showBuilds ? (
+        <div
+          className="flex flex-wrap items-center gap-x-2 gap-y-1"
+          data-testid="drift-builds"
+        >
+          <Text as="span" variant="subtext" theme="neutral">
+            Live
           </Text>
-        }
-      >
-        <div className="flex flex-col gap-3 pt-3" data-testid="drift-details">
-          <LabeledValue
-            label={
-              ongoingOnly ? 'Progress' : isStateDrift ? 'Detected by' : 'Why'
-            }
-          >
-            <Text variant="subtext" data-testid="drift-explanation">
-              {explanation}
-            </Text>
-          </LabeledValue>
-          {explanationHref && evidenceWorkflowId ? (
-            <LabeledValue
-              label={isStateDrift ? 'Drift scan' : 'Related workflow'}
-            >
-              <span className="flex flex-wrap items-center gap-3">
-                <Link href={explanationHref}>
-                  {isStateDrift ? 'View drift scan' : 'View workflow'}
-                </Link>
-                {evidenceAttempt?.created_at ? (
-                  <Text variant="subtext" theme="neutral">
-                    Started{' '}
-                    <Time
-                      time={evidenceAttempt.created_at}
-                      format="relative"
-                      variant="subtext"
-                      theme="neutral"
-                    />
-                  </Text>
-                ) : null}
-              </span>
-            </LabeledValue>
-          ) : null}
-          {showLastAttempt ? (
-            <LabeledValue
-              label={attemptLabel(lastAttempt?.type)}
-              className={DETAIL_ROW}
-            >
-              <span className="flex flex-wrap items-center gap-2">
-                <Link href={lastAttemptHref}>
-                  <Status status={lastAttempt!.status} />
-                </Link>
-                {lastAttempt?.created_at ? (
-                  <Text variant="subtext" theme="neutral">
-                    Started{' '}
-                    <Time
-                      time={lastAttempt.created_at}
-                      format="relative"
-                      variant="subtext"
-                      theme="neutral"
-                    />
-                  </Text>
-                ) : null}
-              </span>
-            </LabeledValue>
-          ) : null}
-          {showBranchRun ? (
-            <LabeledValue
-              label="Last attempted branch run"
-              className={DETAIL_ROW}
-            >
-              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                {branchRunHref ? (
-                  <Link
-                    href={branchRunHref}
-                    className={cn(
-                      'inline-flex items-center gap-2',
-                      branchRun?.sha && '!font-mono'
-                    )}
-                  >
-                    <Icon variant="GitCommitIcon" size={14} />
-                    {shortSha(branchRun?.sha) ?? 'View run'}
-                  </Link>
-                ) : branchRun?.sha ? (
-                  <Text as="span" family="mono" variant="subtext">
-                    {shortSha(branchRun.sha)}
-                  </Text>
-                ) : null}
-                {newerRuns ? (
-                  <Text variant="subtext" theme="neutral">
-                    {newerRuns}
-                  </Text>
-                ) : null}
-              </span>
-            </LabeledValue>
+          <BuildRef
+            build={applied}
+            href={applied?.id ? buildHref?.(applied.id) : undefined}
+          />
+          <Icon
+            variant="ArrowRightIcon"
+            size={14}
+            className="text-cool-grey-600 dark:text-cool-grey-500"
+          />
+          <Text as="span" variant="subtext" theme="neutral">
+            Wanted
+          </Text>
+          <BuildRef build={expected} href={buildHref?.(expected!.id!)} />
+        </div>
+      ) : (
+        <Text variant="subtext" data-testid="drift-consequence">
+          {consequence}
+        </Text>
+      )}
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Text variant="subtext" data-testid="drift-explanation">
+          {explanation}
+        </Text>
+        {explanationHref && evidenceWorkflowId && !openDeployment ? (
+          <Link href={explanationHref}>
+            {isStateDrift ? 'View drift scan' : 'View workflow'}
+          </Link>
+        ) : null}
+        {evidenceTime ? (
+          <Time
+            time={evidenceTime}
+            format="relative"
+            variant="subtext"
+            theme="neutral"
+          />
+        ) : null}
+      </div>
+
+      {earlier > 0 && !isStateDrift ? (
+        <div
+          className="flex flex-wrap items-center gap-x-3 gap-y-1"
+          data-testid="drift-history"
+        >
+          <Text variant="subtext" theme="neutral">
+            {earlierAttemptsLabel(earlier)}
+            {applied?.id ? (
+              <>
+                {' since '}
+                <Text as="span" family="mono" variant="subtext" theme="neutral">
+                  {buildRef(applied)}
+                </Text>
+              </>
+            ) : null}
+          </Text>
+          {historyHref ? (
+            <Link href={historyHref}>View deploy history</Link>
           ) : null}
         </div>
-      </Expand>
+      ) : null}
     </div>
   )
 

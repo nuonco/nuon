@@ -48,13 +48,21 @@ const (
 )
 
 type InstallAlignmentAttempt struct {
-	ID         string                 `json:"id"`
-	Status     string                 `json:"status"`
-	CreatedAt  time.Time              `json:"created_at"`
-	WorkflowID string                 `json:"workflow_id,omitempty"`
-	Type       app.WorkflowType       `json:"type,omitempty"`
-	BranchRun  *InstallOverviewCommit `json:"branch_run,omitempty"`
+	ID         string           `json:"id"`
+	Status     string           `json:"status"`
+	CreatedAt  time.Time        `json:"created_at"`
+	WorkflowID string           `json:"workflow_id,omitempty"`
+	StepID     string           `json:"step_id,omitempty"`
+	Type       app.WorkflowType `json:"type,omitempty"`
+	BuildID    string           `json:"build_id,omitempty"`
 } // @name service.InstallAlignmentAttempt
+
+type InstallAlignmentBuild struct {
+	ID          string    `json:"id"`
+	SHA         string    `json:"sha,omitempty"`
+	ResolvedTag string    `json:"resolved_tag,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+} // @name service.InstallAlignmentBuild
 
 type InstallAlignmentOpenDeployment struct {
 	ID        string           `json:"id"`
@@ -99,15 +107,20 @@ type InstallAlignmentResource struct {
 	AppliedBuildID   string                          `json:"applied_build_id,omitempty"`
 	ExpectedConfigID string                          `json:"expected_config_id,omitempty"`
 	AppliedConfigID  string                          `json:"applied_config_id,omitempty"`
-	LastAttempt      *InstallAlignmentAttempt        `json:"last_attempt,omitempty"`
+	ExpectedBuild    *InstallAlignmentBuild          `json:"expected_build,omitempty"`
+	AppliedBuild     *InstallAlignmentBuild          `json:"applied_build,omitempty"`
+	BlockingAttempt  *InstallAlignmentAttempt        `json:"blocking_attempt,omitempty"`
+	EarlierAttempts  int                             `json:"earlier_attempts,omitempty"`
 	OpenDeployment   *InstallAlignmentOpenDeployment `json:"open_deployment,omitempty"`
 	Plan             *InstallAlignmentPlan           `json:"plan,omitempty"`
-	NewerBranchRuns  *int                            `json:"newer_branch_runs,omitempty" extensions:"x-nullable"`
 	Explanation      *InstallAlignmentExplanation    `json:"explanation,omitempty"`
 
-	appliedAt     *time.Time
-	inputsDiffer  bool
-	inputsUnknown bool
+	appliedAt         *time.Time
+	attemptsSince     *time.Time
+	wantsTeardown     bool
+	blockingAfterDeny bool
+	inputsDiffer      bool
+	inputsUnknown     bool
 } // @name service.InstallAlignmentResource
 
 type InstallAlignment struct {
@@ -341,6 +354,10 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 			res.AppliedConfigID = applied.ComponentBuild.ComponentConfigConnection.AppConfigID
 		}
 		res.appliedAt = applied.AppliedAt
+		res.attemptsSince = applied.AppliedAt
+		if res.attemptsSince == nil {
+			res.attemptsSince = &applied.CreatedAt
+		}
 	}
 	inactive := ic.Status == app.InstallComponentStatusInactive || ic.Status == app.InstallComponentStatusDeleted || ic.Status == app.InstallComponentStatusDisabled
 	last := st.latestDeploys[ic.ID]
@@ -357,6 +374,7 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 	case !st.componentEnabled(target) && !inactive && (applied != nil || ic.EverDeployed()):
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "This component is disabled, but is still deployed."
+		res.wantsTeardown = true
 	case !st.componentEnabled(target):
 		res.Category = InstallAlignmentCategoryDisabled
 		res.Reason = "component is disabled on this install"
@@ -418,6 +436,10 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 	if st.appliedSandbox != nil {
 		res.AppliedConfigID = st.appliedSandbox.AppSandboxConfig.AppConfigID
 		res.appliedAt = st.appliedSandbox.AppliedAt
+		res.attemptsSince = st.appliedSandbox.AppliedAt
+		if res.attemptsSince == nil {
+			res.attemptsSince = &st.appliedSandbox.CreatedAt
+		}
 	}
 
 	switch {
@@ -456,6 +478,7 @@ func (st *installAlignmentState) stackResource() *InstallAlignmentResource {
 		ExpectedConfigID: st.install.AppConfigID,
 		AppliedConfigID:  st.stack.AppConfigRef.AppliedConfigID,
 		appliedAt:        st.stack.AppConfigRef.AppliedConfigAt,
+		attemptsSince:    st.stack.AppConfigRef.AppliedConfigAt,
 	}
 	applied := st.stack.AppConfigRef.AppliedConfigID
 	switch {
@@ -512,13 +535,18 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 
 	for i := range alignment.Resources {
 		res := &alignment.Resources[i]
-		res.LastAttempt = ev.lastAttempts[res.ID]
 		res.OpenDeployment = open[res.ID]
 		res.Plan = ev.plans[res.ID]
 		if res.Plan != nil && res.appliedAt != nil && res.Plan.CreatedAt.Before(*res.appliedAt) {
 			res.Plan = nil
 		}
 		res.applyDriftEvidence(ev)
+	}
+	if err := s.loadBuildSummaries(ctx, alignment); err != nil {
+		return nil, err
+	}
+	if err := s.loadBlockingAttempts(ctx, st, alignment, ev.inputAttempts); err != nil {
+		return nil, err
 	}
 	if err := s.explainInstallAlignment(ctx, st, alignment); err != nil {
 		return nil, err
@@ -541,7 +569,7 @@ func (res *InstallAlignmentResource) applyDriftEvidence(ev *alignmentEvidence) {
 }
 
 type alignmentEvidence struct {
-	lastAttempts  map[string]*InstallAlignmentAttempt
+	inputAttempts map[string]*app.Workflow
 	plans         map[string]*InstallAlignmentPlan
 	drifted       map[string]bool
 	inputsAligned map[string]bool
@@ -549,12 +577,11 @@ type alignmentEvidence struct {
 
 func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmentState) (*alignmentEvidence, error) {
 	ev := &alignmentEvidence{
-		lastAttempts:  map[string]*InstallAlignmentAttempt{},
+		inputAttempts: map[string]*app.Workflow{},
 		plans:         map[string]*InstallAlignmentPlan{},
 		drifted:       map[string]bool{},
 		inputsAligned: map[string]bool{},
 	}
-	attemptWorkflowIDs := []string{}
 
 	icIDs := make([]string, 0, len(st.components))
 	targetByResource := map[string]*installhelpers.ComponentTarget{}
@@ -565,16 +592,6 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmen
 	if len(icIDs) > 0 {
 		lastDeploys := st.latestDeploys
 		for icID, d := range lastDeploys {
-			attempt := &InstallAlignmentAttempt{
-				ID:        d.ID,
-				Status:    string(d.Status),
-				CreatedAt: d.CreatedAt,
-			}
-			if d.InstallWorkflowID != nil {
-				attempt.WorkflowID = *d.InstallWorkflowID
-				attemptWorkflowIDs = append(attemptWorkflowIDs, *d.InstallWorkflowID)
-			}
-			ev.lastAttempts[icID] = attempt
 			applied := st.appliedDeploys[icID]
 			target := targetByResource[icID]
 			if target != nil && target.Build != nil && target.Build.ID == d.ComponentBuildID &&
@@ -627,16 +644,6 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmen
 			return nil, err
 		}
 		if last != nil {
-			attempt := &InstallAlignmentAttempt{
-				ID:        last.ID,
-				Status:    string(last.Status),
-				CreatedAt: last.CreatedAt,
-			}
-			if last.InstallWorkflowID != nil {
-				attempt.WorkflowID = *last.InstallWorkflowID
-				attemptWorkflowIDs = append(attemptWorkflowIDs, *last.InstallWorkflowID)
-			}
-			ev.lastAttempts[st.sandbox.ID] = attempt
 			if st.expectedSandbox != nil && last.AppSandboxConfigID == st.expectedSandbox.ID &&
 				last.Status == app.SandboxRunAutoSkipped && last.PlannedAt != nil &&
 				last.StatusV2.Metadata["policy_action"] != "skip_apply" &&
@@ -670,78 +677,8 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmen
 		}
 	}
 
-	if st.stack != nil {
-		var version app.InstallStackVersion
-		err := s.db.WithContext(ctx).
-			Select("id", "status", "created_at").
-			Where(app.InstallStackVersion{InstallStackID: st.stack.ID}).
-			Order("created_at DESC").
-			First(&version).Error
-		if err != nil && !isNotFound(err) {
-			return nil, fmt.Errorf("unable to get latest install stack version: %w", err)
-		}
-		if err == nil {
-			attempt := &InstallAlignmentAttempt{
-				ID:        version.ID,
-				Status:    string(version.Status.Status),
-				CreatedAt: version.CreatedAt,
-			}
-			var step app.WorkflowStep
-			err = s.db.WithContext(ctx).
-				Select("id", "install_workflow_id").
-				Where(app.WorkflowStep{StepTargetID: version.ID, StepTargetType: string(app.WorkflowStepTargetTypeInstallStackVersions)}).
-				Order("created_at DESC").
-				First(&step).Error
-			if err != nil && !isNotFound(err) {
-				return nil, fmt.Errorf("unable to get install stack version workflow: %w", err)
-			}
-			if err == nil && step.InstallWorkflowID != "" {
-				attempt.WorkflowID = step.InstallWorkflowID
-				attemptWorkflowIDs = append(attemptWorkflowIDs, step.InstallWorkflowID)
-			}
-			ev.lastAttempts[st.stack.ID] = attempt
-		}
-	}
-
 	if err := s.addInputWorkflowAttempts(ctx, st, ev); err != nil {
 		return nil, err
-	}
-	if len(attemptWorkflowIDs) > 0 {
-		var workflows []app.Workflow
-		if err := s.db.WithContext(ctx).Select("id", "type").
-			Where("id IN ?", attemptWorkflowIDs).Find(&workflows).Error; err != nil {
-			return nil, fmt.Errorf("unable to get attempt workflow types: %w", err)
-		}
-		types := make(map[string]app.WorkflowType, len(workflows))
-		for _, wf := range workflows {
-			types[wf.ID] = wf.Type
-		}
-		for _, attempt := range ev.lastAttempts {
-			if t := types[attempt.WorkflowID]; t != "" {
-				attempt.Type = t
-			}
-		}
-		var versions []app.InstallAppConfigVersion
-		if err := s.db.WithContext(ctx).
-			Preload("AppBranchRun").
-			Preload("AppBranchRun.VCSConnectionCommit").
-			Where(app.InstallAppConfigVersion{InstallID: st.install.ID, OrgID: st.install.OrgID}).
-			Where("workflow_id IN ?", attemptWorkflowIDs).
-			Where("app_branch_run_id IS NOT NULL").
-			Find(&versions).Error; err != nil {
-			return nil, fmt.Errorf("unable to get install app config versions for attempts: %w", err)
-		}
-		byWorkflow := map[string]*app.AppBranchRun{}
-		for i := range versions {
-			if versions[i].WorkflowID != nil && versions[i].AppBranchRun.ID != "" {
-				byWorkflow[*versions[i].WorkflowID] = &versions[i].AppBranchRun
-			}
-		}
-		for _, attempt := range ev.lastAttempts {
-			if run := byWorkflow[attempt.WorkflowID]; run != nil {
-				attempt.BranchRun = CommitFromRun(run)
-			}
-		}
 	}
 
 	return ev, nil
