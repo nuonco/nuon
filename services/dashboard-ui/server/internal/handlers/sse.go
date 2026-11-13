@@ -122,6 +122,16 @@ func backoffRetryDelay(base time.Duration, consecutiveErrors int) time.Duration 
 	return min(delay, maxDelay)
 }
 
+// A 403 or 404 will not succeed on a later poll. The client opens a new
+// stream when this one drops, so it has to be told to stop.
+func sseTerminalStatus(err error) bool {
+	var coder interface{ Code() int }
+	if !errors.As(err, &coder) {
+		return false
+	}
+	return coder.Code() == http.StatusForbidden || coder.Code() == http.StatusNotFound
+}
+
 // runSSEStream writes SSE headers and runs the poll loop: fetch, emit events
 // whose hash changed, handle finished state and the grace-period close, send
 // keepalives, and honor context cancellation at every wait.
@@ -198,6 +208,10 @@ func runSSEStream(c *gin.Context, cfg sseStreamConfig) {
 			if !errors.Is(fetchErr, errSSESilentRetry) && consecutiveErrors == 0 {
 				b, _ := json.Marshal(map[string]string{"error": cfg.ClientErrMsg})
 				sendEvent(sseEvent{Name: "fetch-error", Data: b})
+			}
+			if sseTerminalStatus(fetchErr) {
+				sendEvent(sseEvent{Name: "closed", Data: []byte("true")})
+				return
 			}
 			delay := backoffRetryDelay(cfg.ErrorRetryDelay, consecutiveErrors)
 			consecutiveErrors++

@@ -142,12 +142,36 @@ func TestRunSSEStreamPartialEmitOnError(t *testing.T) {
 	}
 }
 
+type statusError struct{ code int }
+
+func (e *statusError) Error() string { return fmt.Sprintf("status %d", e.code) }
+func (e *statusError) Code() int     { return e.code }
+
+func TestRunSSEStreamClosesOnTerminalStatus(t *testing.T) {
+	for _, code := range []int{http.StatusForbidden, http.StatusNotFound} {
+		t.Run(http.StatusText(code), func(t *testing.T) {
+			fail := sseScriptStep{err: fmt.Errorf("get workflow: %w", &statusError{code: code})}
+			body := runScriptedStream(t, []sseScriptStep{fail, fail, fail, fail}, nil)
+
+			if got := strings.Count(body, "event: fetch-error\n"); got != 1 {
+				t.Errorf("fetch-error events = %d, want 1\nbody:\n%s", got, body)
+			}
+			if got := strings.Count(body, "event: closed\ndata: true"); got != 1 {
+				t.Errorf("closed events = %d, want 1\nbody:\n%s", got, body)
+			}
+		})
+	}
+}
+
 func TestRunSSEStreamReportsFailureStreakOnce(t *testing.T) {
 	fail := sseScriptStep{err: fmt.Errorf("upstream down")}
 	body := runScriptedStream(t, []sseScriptStep{fail, fail, fail, fail}, nil)
 
 	if got := strings.Count(body, "event: fetch-error\n"); got != 1 {
 		t.Errorf("fetch-error events = %d, want 1 for a continuous streak\nbody:\n%s", got, body)
+	}
+	if strings.Contains(body, "event: closed") {
+		t.Errorf("a retryable failure must not close the stream\nbody:\n%s", body)
 	}
 }
 
