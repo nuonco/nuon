@@ -241,7 +241,7 @@ func (c *ComponentConfigConnection) UseView() bool {
 }
 
 func (c *ComponentConfigConnection) ViewVersion() string {
-	return "v3"
+	return "v4"
 }
 
 func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
@@ -259,6 +259,11 @@ func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
 		{
 			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 3),
 			SQL:           viewsql.ComponentConfigConnectionsV3,
+			AlwaysReapply: true,
+		},
+		{
+			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 4),
+			SQL:           viewsql.ComponentConfigConnectionsV4,
 			AlwaysReapply: true,
 		},
 		{
