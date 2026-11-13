@@ -57,6 +57,27 @@ func TestStackTemplateRenderError_sections(t *testing.T) {
 	}
 }
 
+func TestStackTemplateRenderError_howToFix(t *testing.T) {
+	cases := []struct {
+		name            string
+		appSyncDisabled bool
+		want            string
+	}{
+		{"app sync enabled", false, "Fix the app stack config, then re-run `nuon apps sync` or run your app branch with the fix to regenerate the template."},
+		{"app sync disabled", true, "Fix the app stack config, then run your app branch with the fix to regenerate the template."},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			e := &StackTemplateRenderError{Platform: "aws", AppSyncDisabled: tc.appSyncDisabled}
+			sections := e.Sections()
+			last := sections[len(sections)-1]
+			if last.Heading != "How to fix" || last.Body != tc.want {
+				t.Errorf("last section = %q: %q, want How to fix: %q", last.Heading, last.Body, tc.want)
+			}
+		})
+	}
+}
+
 func TestStackTemplateRenderError_noDetailSkipsCodeSection(t *testing.T) {
 	e := &StackTemplateRenderError{Platform: "gcp"}
 	for _, s := range e.Sections() {
