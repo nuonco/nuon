@@ -2,7 +2,9 @@ package containerimage
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -38,29 +40,27 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		UpdatePolicy: h.state.cfg.UpdatePolicy,
 	}
 	var selected string
+	var tags []string
 	pinned := ""
 	if i := h.state.plan.SourceIdentity; i != nil {
 		pinned = i.Digest
 	}
 	if spec.UpdatePolicy != "" {
 		l.Info(fmt.Sprintf("resolving image source %s with update_policy %q", spec.Image, spec.UpdatePolicy))
-		tags, terr := h.ociResolve.Tags(ctx, srcCfg)
-		var serr error
-		if terr == nil {
-			selected, serr = updatepolicy.SelectHighestMatching(tags, spec.UpdatePolicy)
+		tags, err = h.ociResolve.Tags(ctx, srcCfg)
+		if err != nil {
+			h.writeErrorResult(ctx, "list tags for update_policy", err)
+			return fmt.Errorf("unable to list source tags: %w", err)
 		}
-		switch {
-		case pinned != "" && (terr != nil || serr != nil):
-			selected = ""
-		case terr != nil:
-			h.writeErrorResult(ctx, "list tags for update_policy", terr)
-			return fmt.Errorf("unable to list source tags: %w", terr)
-		case serr != nil:
-			h.writeErrorResult(ctx, "select tag for update_policy", serr)
-			return fmt.Errorf("unable to select tag for update_policy %q: %w", spec.UpdatePolicy, serr)
-		default:
-			l.Info(fmt.Sprintf("update_policy %q selected tag %q from %d source tags", spec.UpdatePolicy, selected, len(tags)))
+		selected, err = updatepolicy.SelectHighestMatching(tags, spec.UpdatePolicy)
+		if pinned != "" && errors.Is(err, updatepolicy.ErrNoMatchingTag) {
+			selected, err = "", nil
 		}
+		if err != nil {
+			h.writeErrorResult(ctx, "select tag for update_policy", err)
+			return fmt.Errorf("unable to select tag for update_policy %q: %w", spec.UpdatePolicy, err)
+		}
+		l.Info(fmt.Sprintf("update_policy %q selected tag %q from %d source tags", spec.UpdatePolicy, selected, len(tags)))
 	}
 	srcTag := spec.PullRef(selected)
 	if pinned != "" {
@@ -83,10 +83,13 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	resolvedDigest := string(desc.Digest)
 	if pinned != "" && selected != "" {
-		// A retry is pinned to the claimed digest; report the selected tag
-		// only if it still points at that digest.
-		if tagged, err := h.ociResolve.Resolve(ctx, srcCfg, spec.PullRef(selected)); err != nil || string(tagged.Digest) != resolvedDigest {
-			selected = ""
+		selected, err = h.pinnedTag(ctx, spec, tags, resolvedDigest)
+		if err != nil {
+			h.writeErrorResult(ctx, "resolve tag for pinned digest", err)
+			return fmt.Errorf("unable to find a tag for pinned digest %s: %w", resolvedDigest, err)
+		}
+		if selected == "" {
+			l.Warn(fmt.Sprintf("could not confirm a tag matching update_policy %q for pinned digest %s (checked up to %d tags; tags that failed to resolve were skipped); reporting the build without a resolved tag", spec.UpdatePolicy, resolvedDigest, maxPinnedTagCandidates))
 		}
 	}
 	identity, err := sourceidentity.ResolveImage(h.state.plan.SourceIdentity, resolvedDigest)
@@ -142,4 +145,34 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		h.errRecorder.Record("write job execution result", err)
 	}
 	return nil
+}
+
+const maxPinnedTagCandidates = 20
+
+// pinnedTag returns the highest tag matching the update policy that resolves
+// to a retry's claimed digest. Newer matching tags may have been published
+// since the claim, so the highest match alone is not enough.
+func (h *handler) pinnedTag(ctx context.Context, spec imageref.Spec, tags []string, pinned string) (string, error) {
+	tags = slices.Clone(tags)
+	for range maxPinnedTagCandidates {
+		tag, err := updatepolicy.SelectHighestMatching(tags, spec.UpdatePolicy)
+		if errors.Is(err, updatepolicy.ErrNoMatchingTag) {
+			return "", nil
+		}
+		if err != nil {
+			return "", err
+		}
+		tags = slices.DeleteFunc(tags, func(t string) bool { return t == tag })
+		desc, err := h.ociResolve.Resolve(ctx, h.state.cfg.RepoCfg, spec.PullRef(tag))
+		if err != nil {
+			if ctx.Err() != nil {
+				return "", ctx.Err()
+			}
+			continue
+		}
+		if string(desc.Digest) == pinned {
+			return tag, nil
+		}
+	}
+	return "", nil
 }

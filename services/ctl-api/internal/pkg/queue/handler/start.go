@@ -20,13 +20,19 @@ const (
 	updateWithStartMaxAttempts  = 15
 	updateWithStartInitialDelay = 50 * time.Millisecond
 	updateWithStartMaxDelay     = 5 * time.Second
+	updateWithStartDeadlineGap  = time.Second
 )
 
-func RetryUpdate(ctx context.Context, updateName string, retryable func(error) bool, submit func() error) error {
+func RetryUpdate(ctx context.Context, updateName string, retryable func(error) bool, submit func(context.Context) error) error {
 	delay := updateWithStartInitialDelay
 	var lastErr error
 	for attempt := 1; attempt <= updateWithStartMaxAttempts; attempt++ {
-		err := submit()
+		attemptCtx, cancel := ctx, context.CancelFunc(func() {})
+		if deadline, ok := ctx.Deadline(); ok {
+			attemptCtx, cancel = context.WithDeadline(ctx, deadline.Add(-updateWithStartDeadlineGap))
+		}
+		err := submit(attemptCtx)
+		cancel()
 		if err == nil {
 			return nil
 		}
@@ -38,11 +44,15 @@ func RetryUpdate(ctx context.Context, updateName string, retryable func(error) b
 			break
 		}
 
+		if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) <= delay+updateWithStartDeadlineGap {
+			return fmt.Errorf("%s handler not registered: %w: %w", updateName, context.DeadlineExceeded, lastErr)
+		}
+
 		timer := time.NewTimer(delay)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return fmt.Errorf("%s handler not registered: %w", updateName, errors.Join(ctx.Err(), lastErr))
+			return fmt.Errorf("%s handler not registered: %w: %w", updateName, ctx.Err(), lastErr)
 		case <-timer.C:
 		}
 		delay = min(delay*2, updateWithStartMaxDelay)

@@ -102,10 +102,9 @@ func (k KubernetesManifestComponentConfig) JSONSchemaExtend(schema *jsonschema.S
 		Field("health").Short("component health configuration").
 		Long("Live health checking configuration for this component. Health checking is enabled by default; use this block to tune the stabilization window or make deploys block on health").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for build operations (e.g., \"30m\", \"1h\"). Default: 5m. Max: 1h").
+		Long("Duration string for build operations (e.g., \"10m\", \"30m\"). Default: 5m. Max: 30m").
 		Default("5m").
 		Example("30m").
-		Example("1h").
 		Field("deploy_timeout").Short("deploy operation timeout").
 		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\"). Default: 15m. Max: 1h").
 		Default("15m").

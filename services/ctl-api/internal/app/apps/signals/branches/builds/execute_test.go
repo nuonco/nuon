@@ -3,6 +3,7 @@ package builds
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -66,6 +67,7 @@ func TestComponentsAsReadyAwaitsEnqueuedBuildsAfterSelectionError(t *testing.T) 
 	for _, tc := range []struct {
 		name        string
 		buildStatus app.ComponentBuildStatus
+		orphans     []branchactivities.BuildResult
 		wantErrs    []string
 	}{
 		{
@@ -77,6 +79,18 @@ func TestComponentsAsReadyAwaitsEnqueuedBuildsAfterSelectionError(t *testing.T) 
 			name:        "policy failed build",
 			buildStatus: app.ComponentBuildStatusPolicyFailed,
 			wantErrs:    []string{"component component-1: prepare source", "github unavailable", "one or more component builds failed"},
+		},
+		{
+			name:        "queued row orphaned by failed component",
+			buildStatus: app.ComponentBuildStatusActive,
+			orphans:     []branchactivities.BuildResult{{BuildID: "build-1", ComponentID: "component-1", Status: string(app.ComponentBuildStatusQueued)}},
+			wantErrs:    []string{"component component-1: prepare source", "github unavailable"},
+		},
+		{
+			name:        "queued row orphaned by retried build record",
+			buildStatus: app.ComponentBuildStatusActive,
+			orphans:     []branchactivities.BuildResult{{BuildID: "build-2-orphan", ComponentID: "component-2", Status: string(app.ComponentBuildStatusQueued)}},
+			wantErrs:    []string{"component component-1: prepare source", "github unavailable"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -105,8 +119,8 @@ func TestComponentsAsReadyAwaitsEnqueuedBuildsAfterSelectionError(t *testing.T) 
 			}, time.Second)
 			env.OnActivity((*branchactivities.Activities).CheckBuildsComplete, mock.Anything, mock.Anything, mock.Anything).
 				Return(&branchactivities.AwaitBuildsCompleteOutput{
-					Builds:   []branchactivities.BuildResult{{BuildID: "build-2", ComponentID: "component-2", Status: string(tc.buildStatus)}},
-					AllDone:  true,
+					Builds:   append(tc.orphans, branchactivities.BuildResult{BuildID: "build-2", ComponentID: "component-2", Status: string(tc.buildStatus)}),
+					AllDone:  len(tc.orphans) == 0,
 					HasError: tc.buildStatus != app.ComponentBuildStatusActive,
 				}, nil).Once()
 
@@ -122,6 +136,85 @@ func TestComponentsAsReadyAwaitsEnqueuedBuildsAfterSelectionError(t *testing.T) 
 			require.Equal(t, "error", builds[0].Status)
 			require.Equal(t, "build-2", builds[1].BuildID)
 			env.AssertExpectations(t)
+		})
+	}
+}
+
+func TestComponentsAsReadyStopsAwaitingBuildsAtDeadline(t *testing.T) {
+	tests := map[string]struct {
+		statuses    []app.ComponentBuildStatus
+		wantErr     string
+		wantStatus  string
+		wantPolls   int
+		maxPolls    int
+		wantChanges int
+	}{
+		"times out after the await timeout": {
+			statuses:    []app.ComponentBuildStatus{app.ComponentBuildStatusBuilding},
+			wantErr:     fmt.Sprintf("timed out after %s waiting for component builds", buildsAwaitTimeout),
+			wantStatus:  "error",
+			maxPolls:    int(buildsAwaitTimeout/(5*time.Second)) + 10,
+			wantChanges: 4,
+		},
+		"waits past the max build timeout for a queued build": {
+			statuses:    append(slices.Repeat([]app.ComponentBuildStatus{app.ComponentBuildStatusQueued}, int((app.MaxBuildTimeout+10*time.Second)/(5*time.Second))+1), app.ComponentBuildStatusActive),
+			wantStatus:  "success",
+			wantPolls:   int((app.MaxBuildTimeout+10*time.Second)/(5*time.Second)) + 2,
+			maxPolls:    int((app.MaxBuildTimeout+10*time.Second)/(5*time.Second)) + 2,
+			wantChanges: 4,
+		},
+		"reports only status and build changes": {
+			statuses:    []app.ComponentBuildStatus{app.ComponentBuildStatusBuilding, app.ComponentBuildStatusBuilding, app.ComponentBuildStatusBuilding, app.ComponentBuildStatusActive},
+			wantStatus:  "success",
+			wantPolls:   4,
+			maxPolls:    4,
+			wantChanges: 4,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var suite testsuite.WorkflowTestSuite
+			env := suite.NewTestWorkflowEnvironment()
+			env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+			env.SetTestTimeout(time.Minute)
+			sig := &Signal{RunID: "run-1"}
+
+			env.OnActivity((*branchactivities.Activities).GetComponentByID, mock.Anything, mock.Anything, mock.Anything).
+				Return(&app.Component{}, nil)
+			env.OnActivity((*sharedactivities.Activities).EnqueueSignalToOwner, mock.Anything, mock.Anything, mock.Anything).
+				Return(&sharedactivities.EnqueueSignalToOwnerResponse{}, nil)
+			env.RegisterDelayedCallback(func() {
+				env.SignalWorkflow(callback.SignalName("enqueue-component-1"), callback.Result{Status: "ok"})
+			}, time.Second)
+			polls := 0
+			env.OnActivity((*branchactivities.Activities).CheckBuildsComplete, mock.Anything, mock.Anything, mock.Anything).
+				Return(func(*branchactivities.Activities, context.Context, branchactivities.CheckBuildsCompleteRequest) (*branchactivities.AwaitBuildsCompleteOutput, error) {
+					status := tc.statuses[min(polls, len(tc.statuses)-1)]
+					polls++
+					return &branchactivities.AwaitBuildsCompleteOutput{
+						Builds: []branchactivities.BuildResult{{BuildID: "build-1", ComponentID: "component-1", Status: string(status)}},
+					}, nil
+				})
+
+			changes := 0
+			builds := []buildEntry{{ComponentID: "component-1"}}
+			env.ExecuteWorkflow(func(ctx workflow.Context) error {
+				return sig.componentsAsReady(ctx, workflow.GetLogger(ctx), builds, "config-new", "", false, func() { changes++ })
+			})
+
+			if tc.wantErr != "" {
+				require.ErrorContains(t, env.GetWorkflowError(), tc.wantErr)
+			} else {
+				require.NoError(t, env.GetWorkflowError())
+			}
+			require.Equal(t, tc.wantStatus, builds[0].Status)
+			require.Equal(t, "build-1", builds[0].BuildID)
+			if tc.wantPolls > 0 {
+				require.Equal(t, tc.wantPolls, polls)
+			}
+			require.LessOrEqual(t, polls, tc.maxPolls)
+			require.Equal(t, tc.wantChanges, changes)
 		})
 	}
 }

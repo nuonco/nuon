@@ -28,6 +28,7 @@ func (a *Activities) checkBuildsComplete(ctx context.Context, runID string) (*Aw
 	err := a.db.WithContext(ctx).
 		Select("id, status, component_config_connection_id").
 		Where("app_branch_run_id = ?", runID).
+		Order("created_at ASC").
 		Find(&builds).Error
 	if err != nil {
 		return nil, fmt.Errorf("unable to get builds for run %s: %w", runID, err)
@@ -43,10 +44,13 @@ func (a *Activities) checkBuildsComplete(ctx context.Context, runID string) (*Aw
 	}
 
 	var conns []app.ComponentConfigConnection
-	a.db.WithContext(ctx).
+	if err := a.db.WithContext(ctx).
+		Unscoped().
 		Select("id, component_id").
 		Where("id IN ?", connIDs).
-		Find(&conns)
+		Find(&conns).Error; err != nil {
+		return nil, fmt.Errorf("unable to get component config connections for run %s: %w", runID, err)
+	}
 	connMap := make(map[string]string, len(conns))
 	for _, c := range conns {
 		connMap[c.ID] = c.ComponentID

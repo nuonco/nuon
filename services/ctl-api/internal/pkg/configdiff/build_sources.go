@@ -3,6 +3,7 @@ package configdiff
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"gorm.io/gorm"
@@ -90,7 +91,7 @@ func applySourceChanges(ctx context.Context, db *gorm.DB, diff *app.InstallConfi
 	dependencyBuilds := map[string]*app.ComponentBuild{}
 	if len(dependencyBuildIDs) > 0 {
 		var builds []*app.ComponentBuild
-		if err := db.WithContext(ctx).Unscoped().Where("id IN ?", dependencyBuildIDs).Find(&builds).Error; err != nil {
+		if err := db.WithContext(ctx).Unscoped().Preload("ComponentConfigConnection", unscoped).Where("id IN ?", dependencyBuildIDs).Find(&builds).Error; err != nil {
 			return fmt.Errorf("unable to get consumed component sources: %w", err)
 		}
 		for i := range builds {
@@ -100,7 +101,11 @@ func applySourceChanges(ctx context.Context, db *gorm.DB, diff *app.InstallConfi
 	sandboxBuilds := map[string]*app.AppSandboxBuild{}
 	if len(sandboxBuildIDs) > 0 {
 		var builds []*app.AppSandboxBuild
-		if err := db.WithContext(ctx).Unscoped().Where("id IN ?", sandboxBuildIDs).Find(&builds).Error; err != nil {
+		if err := db.WithContext(ctx).Unscoped().
+			Preload("AppSandboxConfig", unscoped).
+			Preload("AppSandboxConfig.ConnectedGithubVCSConfig", unscoped).
+			Preload("AppSandboxConfig.PublicGitVCSConfig", unscoped).
+			Where("id IN ?", sandboxBuildIDs).Find(&builds).Error; err != nil {
 			return fmt.Errorf("unable to get consumed sandbox sources: %w", err)
 		}
 		for i := range builds {
@@ -150,12 +155,16 @@ func applySourceChanges(ctx context.Context, db *gorm.DB, diff *app.InstallConfi
 		diff.SandboxBuildNewID = nextSources.sandbox.ID
 	}
 	diff.SandboxBuildChanged = diff.SandboxBuildOldID != diff.SandboxBuildNewID
+	var appliedSandboxCfg *app.AppSandboxConfig
+	if cfg := loaded[baselines.Sandbox]; cfg != nil {
+		appliedSandboxCfg = &cfg.SandboxConfig
+	}
 	graphs := map[string]*pkgdiff.Diff{}
 	fallbackImpacts := map[string]map[pkgdiff.NodeID][]pkgdiff.ImpactReason{}
-	changed := append([]app.ComponentDiffEntry(nil), diff.Changed...)
-	unchanged := make([]app.ComponentDiffEntry, 0, len(diff.Unchanged))
-	entries := append(changed, diff.Unchanged...)
+	receiptRoots := map[string][]pkgdiff.NodeID{}
+	entries := append(append([]app.ComponentDiffEntry(nil), diff.Changed...), diff.Unchanged...)
 	diff.Changed = nil
+	diff.Unchanged = nil
 	for _, entry := range entries {
 		baselineID, ok := baselines.Components[entry.ComponentID]
 		if !ok {
@@ -172,13 +181,8 @@ func applySourceChanges(ctx context.Context, db *gorm.DB, diff *app.InstallConfi
 		graphKey := baselineID
 		receipt := baselines.DependencyBuildIDs[entry.ComponentID]
 		oldCfg := loaded[baselineID]
-		if receipt != nil || baselines.ComponentBuilds != nil {
+		if receipt != nil {
 			graphKey += ":" + entry.ComponentID
-			oldSources = &configBuildSources{components: map[string]*app.ComponentBuild{}, sandbox: sandboxBuilds[receipt["sandbox"]]}
-			for _, conn := range next.ComponentConfigConnections {
-				oldSources.components[conn.ComponentID] = dependencyBuilds[receipt[conn.ComponentID]]
-			}
-			oldSources.components[entry.ComponentID] = oldBuild
 		}
 		entry.OldBuildID = ""
 		if oldBuild != nil {
@@ -187,14 +191,23 @@ func applySourceChanges(ctx context.Context, db *gorm.DB, diff *app.InstallConfi
 		entry.BuildChanged = entry.OldBuildID != entry.NewBuildID && (entry.OldBuildID != "" || entry.NewBuildID != "")
 		graph, ok := graphs[graphKey]
 		if !ok {
-			roots := sourceChangedRoots(oldSources, nextSources, next)
-			for _, conn := range next.ComponentConfigConnections {
-				if oldConn := connOn(oldCfg, conn.ComponentID); oldConn == nil || !checksumsEqual(oldConn, &conn) {
-					roots = append(roots, config.ComponentResourceID(conn.ComponentName))
+			var roots []pkgdiff.NodeID
+			if receipt != nil {
+				roots = consumedChangedRoots(receipt, entry.ComponentID, dependencyBuilds, baselines.ComponentBuilds, sandboxBuilds[receipt["sandbox"]], oldSandbox.sandbox, appliedSandboxCfg, next)
+				receiptRoots[graphKey] = roots
+			} else {
+				roots = sourceChangedRoots(oldSources, nextSources, next)
+				for _, conn := range next.ComponentConfigConnections {
+					if oldConn := connOn(oldCfg, conn.ComponentID); oldConn == nil || !checksumsEqual(oldConn, &conn) {
+						roots = append(roots, config.ComponentResourceID(conn.ComponentName))
+					}
 				}
-			}
-			if oldCfg == nil || !sandboxConfigEqual(oldCfg.SandboxConfig, next.SandboxConfig) {
-				roots = append(roots, config.SandboxResourceID)
+				if oldCfg == nil || !sandboxConfigEqual(oldCfg.SandboxConfig, next.SandboxConfig) {
+					roots = append(roots, config.SandboxResourceID)
+				}
+				if diff.StackChanged {
+					roots = append(roots, config.StackResourceID)
+				}
 			}
 			graph, err = intermediateConfigDiff(ctx, loaded[baselineID], next, roots...)
 			if err != nil {
@@ -212,16 +225,65 @@ func applySourceChanges(ctx context.Context, db *gorm.DB, diff *app.InstallConfi
 		} else if reasons := fallbackImpacts[graphKey][config.ComponentResourceID(entry.ComponentName)]; len(reasons) > 0 {
 			entry.ImpactReasons = reasons
 		}
+		if receipt != nil {
+			entry.ImpactReasons = consumedImpactReasons(entry.ImpactReasons, receiptRoots[graphKey])
+		}
 		nextBuild := nextSources.components[entry.ComponentID]
 		if entry.OldChecksum != "" && entry.OldChecksum == entry.NewChecksum && len(entry.ImpactReasons) == 0 &&
 			!componentSourceChanged(oldBuild, nextBuild) {
-			unchanged = append(unchanged, entry)
+			diff.Unchanged = append(diff.Unchanged, entry)
 		} else {
 			diff.Changed = append(diff.Changed, entry)
 		}
 	}
-	diff.Unchanged = unchanged
 	return nil
+}
+
+func consumedChangedRoots(receipt map[string]string, componentID string, consumed, applied map[string]*app.ComponentBuild, consumedSandbox, appliedSandbox *app.AppSandboxBuild, appliedSandboxCfg *app.AppSandboxConfig, cfg *app.AppConfig) []pkgdiff.NodeID {
+	var roots []pkgdiff.NodeID
+	for _, conn := range cfg.ComponentConfigConnections {
+		if conn.ComponentID != componentID && DependencyAppliedSince(consumed[receipt[conn.ComponentID]], applied[conn.ComponentID]) {
+			roots = append(roots, config.ComponentResourceID(conn.ComponentName))
+		}
+	}
+	if SandboxAppliedSince(consumedSandbox, appliedSandbox, appliedSandboxCfg) {
+		roots = append(roots, config.SandboxResourceID)
+	}
+	return roots
+}
+
+func consumedImpactReasons(reasons []pkgdiff.ImpactReason, roots []pkgdiff.NodeID) []pkgdiff.ImpactReason {
+	var kept []pkgdiff.ImpactReason
+	for _, reason := range reasons {
+		upstream := reason.From == config.SandboxResourceID || strings.HasPrefix(string(reason.From), string(config.ComponentResourceID("")))
+		if upstream && !slices.Contains(roots, reason.From) {
+			continue
+		}
+		kept = append(kept, reason)
+	}
+	return kept
+}
+
+func DependencyAppliedSince(consumed, applied *app.ComponentBuild) bool {
+	if applied == nil || applied.ID == "" {
+		return false
+	}
+	if consumed == nil {
+		return true
+	}
+	return consumed.ID != applied.ID &&
+		!(checksumsEqual(&consumed.ComponentConfigConnection, &applied.ComponentConfigConnection) && ComponentSourcesEqual(consumed, applied))
+}
+
+func SandboxAppliedSince(consumed, applied *app.AppSandboxBuild, appliedCfg *app.AppSandboxConfig) bool {
+	if applied == nil || applied.ID == "" {
+		return false
+	}
+	if consumed == nil {
+		return true
+	}
+	return consumed.ID != applied.ID &&
+		!(appliedCfg != nil && sandboxConfigEqual(consumed.AppSandboxConfig, *appliedCfg) && SandboxSourcesEqual(consumed, applied))
 }
 
 func componentSourceChanged(old, next *app.ComponentBuild) bool {
@@ -266,9 +328,15 @@ func persistedDependencyImpacts(old, next *app.AppConfig, roots []pkgdiff.NodeID
 					graph.AddDependency(dependent, config.ComponentResourceID(ref.Name), pkgdiff.EdgeReasonComponentReference)
 				case refs.RefTypeSandbox:
 					graph.AddDependency(dependent, config.SandboxResourceID, pkgdiff.EdgeReasonSandboxOutput)
+				case refs.RefTypeInstallStack:
+					graph.AddDependency(dependent, config.StackResourceID, pkgdiff.EdgeReasonInstallStackOutput)
 				}
 			}
 		}
 	}
 	return graph.Propagate(roots...)
+}
+
+func unscoped(db *gorm.DB) *gorm.DB {
+	return db.Unscoped()
 }

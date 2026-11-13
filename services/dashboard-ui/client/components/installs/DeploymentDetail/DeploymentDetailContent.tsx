@@ -33,6 +33,7 @@ import { getPolicyViolationCounts } from '@/utils/workflow-utils'
 import { humanize } from '@/utils/string-utils'
 import { DeploymentConfigChanges } from './DeploymentConfigChanges'
 import {
+  deploymentBuildChanged,
   deploymentChangeDescription,
   deploymentOutcomes,
   deploymentSteps,
@@ -107,7 +108,10 @@ const DeploymentTemplateDiff = ({
         .map((build) => ({
           ...build,
           sourceDiffTarget:
-            org?.id && installId && deployment?.id
+            org?.id &&
+            installId &&
+            deployment?.id &&
+            deploymentBuildChanged(deployment, build.kind, build.name)
               ? {
                   orgId: org.id,
                   installId,
@@ -117,7 +121,7 @@ const DeploymentTemplateDiff = ({
                 }
               : undefined,
         })),
-    [templateBuilds, scope, org?.id, installId, deployment?.id]
+    [templateBuilds, scope, org?.id, installId, deployment]
   )
   const config = useBranchConfigSections({
     branchId,

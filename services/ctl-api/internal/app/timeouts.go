@@ -5,7 +5,7 @@ import "time"
 const (
 	// Build timeout bounds (applies to build operations)
 	MinBuildTimeout = time.Second * 1
-	MaxBuildTimeout = time.Hour * 1
+	MaxBuildTimeout = time.Minute * 30
 
 	// Deploy timeout bounds (applies to deploy operations)
 	MinDeployTimeout = time.Second * 1

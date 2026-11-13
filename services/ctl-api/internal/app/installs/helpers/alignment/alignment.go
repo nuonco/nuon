@@ -8,7 +8,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -24,7 +23,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -136,10 +134,17 @@ type installAlignmentState struct {
 	expectedSandbox  *app.AppSandboxConfig
 	stack            *app.InstallStack
 	stackHasVersions bool
-	compositeDiff    *app.InstallConfigDiff
-	compositeErr     error
 	inputs           *app.InstallInputs
 	appConfigs       map[string]*app.AppConfig
+
+	appliedBuilds         map[string]*app.ComponentBuild
+	consumedBuilds        map[string]*app.ComponentBuild
+	consumedSandboxBuilds map[string]*app.AppSandboxBuild
+	appliedSandboxBuild   *app.AppSandboxBuild
+	appliedSandboxConfig  *app.AppSandboxConfig
+	sandboxChanged        bool
+	stackChanged          bool
+	stackErr              error
 }
 
 func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.Install) (*installAlignmentState, error) {
@@ -253,18 +258,8 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 		st.stackHasVersions = count > 0
 	}
 
-	if install.AppConfigID != "" {
-		diffCtx := blobstore.WithBlobService(ctx, s.blobSvc)
-		baselines, err := s.installs.InstallCompositeBaselines(diffCtx, install)
-		st.compositeErr = err
-		if err == nil {
-			st.compositeDiff, st.compositeErr = configdiff.ComputeCompositeInstallConfigDiff(diffCtx, s.db, baselines, install.AppConfigID)
-		}
-		if st.compositeErr != nil {
-			s.l.Warn("unable to compute install alignment config diff",
-				zap.String("install_id", install.ID),
-				zap.Error(st.compositeErr))
-		}
+	if err := s.loadDependencyState(ctx, st); err != nil {
+		return nil, err
 	}
 
 	return st, nil
@@ -388,17 +383,12 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 		res.Category = InstallAlignmentCategoryInSync
 	}
 	if res.Category == InstallAlignmentCategoryInSync {
-		if st.compositeErr != nil {
-			res.Category = InstallAlignmentCategoryUnknown
-			res.Reason = "unable to compare the applied component dependencies with the selected config"
-		} else if st.compositeDiff != nil {
-			for _, entry := range st.compositeDiff.Changed {
-				if entry.ComponentID == ic.ComponentID && len(entry.ImpactReasons) > 0 {
-					res.Category = InstallAlignmentCategoryChangesNotApplied
-					res.Reason = "Component dependency changes haven’t been applied."
-					break
-				}
-			}
+		switch changed, verified := st.dependenciesAppliedSince(ic.ComponentID, target.Config, applied); {
+		case changed:
+			res.Category = InstallAlignmentCategoryChangesNotApplied
+			res.Reason = "Component dependency changes haven’t been applied."
+		case !verified:
+			res.Reason = "Dependencies not verified. Upstream builds weren’t recorded for this deployment."
 		}
 	}
 	if res.Kind == InstallAlignmentResourceKindComponent && target != nil && target.Build != nil && applied != nil {
@@ -443,10 +433,7 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 	case st.appliedSandbox == nil:
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "The sandbox hasn’t been set up yet."
-	case st.compositeErr != nil || st.compositeDiff == nil:
-		res.Category = InstallAlignmentCategoryUnknown
-		res.Reason = "unable to compare the applied sandbox config with the selected config"
-	case st.compositeDiff.SandboxChanged:
+	case st.sandboxChanged:
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "Sandbox configuration changes haven’t been applied."
 	default:
@@ -484,10 +471,10 @@ func (st *installAlignmentState) stackResource() *InstallAlignmentResource {
 	case applied == st.install.AppConfigID:
 		res.Category = InstallAlignmentCategoryInSync
 		res.Reason = "stack state drift is not scanned"
-	case st.compositeErr != nil || st.compositeDiff == nil:
+	case st.stackErr != nil:
 		res.Category = InstallAlignmentCategoryUnknown
 		res.Reason = "unable to compare the applied stack config with the selected config"
-	case st.compositeDiff.StackChanged:
+	case st.stackChanged:
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "Stack configuration changes haven’t been applied."
 	default:
@@ -770,8 +757,7 @@ func sandboxScanMatchesApplied(st *installAlignmentState, scan *app.InstallSandb
 	if st.appliedSandbox.AppSandboxConfigID == st.expectedSandbox.ID {
 		return true
 	}
-	return st.compositeErr == nil && st.compositeDiff != nil &&
-		!st.compositeDiff.SandboxChanged
+	return !st.sandboxChanged
 }
 
 func (s *Helpers) latestInstallDeploysByComponent(ctx context.Context, icIDs []string, planOnly bool) (map[string]*app.InstallDeploy, error) {

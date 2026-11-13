@@ -21,7 +21,7 @@ type BuildRequest struct {
 }
 
 // @temporal-gen-v2 workflow
-// @execution-timeout 60m
+// @execution-timeout 40m
 // @task-timeout 30m
 func (w *Workflows) Build(ctx workflow.Context, sreq BuildRequest) (retErr error) {
 	defer func() {
