@@ -29,7 +29,7 @@ func APIFromRole(role *app.Role) (permissions.API, bool, error) {
 			if err != nil {
 				return "", true, err
 			}
-			api, has = document.API(), true
+			api, has = document.API(), document.API() != ""
 		}
 		if !has {
 			continue
@@ -40,10 +40,10 @@ func APIFromRole(role *app.Role) (permissions.API, bool, error) {
 		found = api
 		ok = true
 	}
-	if !ok {
+	if !ok && !hasDocument {
 		return "", true, fmt.Errorf("role %s is missing an api permission", role.RoleType)
 	}
-	return found, true, nil
+	return found, ok, nil
 }
 
 func APIForRoles(roles []app.Role) (permissions.API, bool, error) {

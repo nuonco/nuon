@@ -39,16 +39,13 @@ func (c *Client) LoadAccountPermissions(ctx context.Context, account *app.Accoun
 			if err != nil {
 				return nil, err
 			}
-			for _, grant := range grants {
-				verb, err := permissions.LegacyOrgPermission(grant.Permissions)
-				if err != nil {
-					return nil, err
-				}
-				if verb != permissions.PermissionUnknown {
-					loaded.Add(grant.Scope.OrgID, permissions.PermissionSource{
-						RoleID: role.ID, PolicyID: role.Policies[0].ID, Permission: verb, Grant: &grant,
-					})
-				}
+			sources, err := permissions.LegacySources(grants)
+			if err != nil {
+				return nil, err
+			}
+			for object, source := range sources {
+				source.RoleID, source.PolicyID = role.ID, role.Policies[0].ID
+				loaded.Add(object, source)
 			}
 			continue
 		}
