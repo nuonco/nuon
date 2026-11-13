@@ -95,6 +95,11 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	maps.Copy(tmpl.Conditions, roleConditions)
 	roleParamLabels := t.getRolesParamLabels(inp)
 	maps.Copy(paramlabels, roleParamLabels)
+	maps.Copy(tmpl.Resources, t.getEKSAccessResources(inp, tb))
+	eksAccessParams := t.getEKSAccessParameters(inp)
+	maps.Copy(tmpl.Parameters, eksAccessParams)
+	maps.Copy(tmpl.Conditions, t.getEKSAccessConditions(inp))
+	maps.Copy(paramlabels, t.getEKSAccessParamLabels(inp))
 
 	// custom nested stacks
 	existingResourceKeys := map[string]bool{}
@@ -182,7 +187,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		"Label": map[string]any{
 			"default": "Access Permissions",
 		},
-		"Parameters": pkggenerics.SortedMapToKeys(t.getRolesParameters(inp)),
+		"Parameters": append(pkggenerics.SortedMapToKeys(t.getRolesParameters(inp)), pkggenerics.SortedMapToKeys(eksAccessParams)...),
 	})
 	pgs = append(pgs, paramGroups...)
 

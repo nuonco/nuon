@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"reflect"
@@ -653,11 +654,23 @@ func diffIAMRole(key string, old, new *AppAWSIAMRole) *diff.Diff {
 			diff.NewDiff(diff.WithKey("permissions_boundary"), diff.WithStringDiff(old.PermissionsBoundary, new.PermissionsBoundary)),
 			diff.NewDiff(diff.WithKey("enabled_in_stack"), diff.WithStringDiff(oldEnabled, newEnabled)),
 			diff.NewDiff(diff.WithKey("named_policies"), diff.WithStringSliceDiff(NamedPolicyRefNames(old.NamedPolicies), NamedPolicyRefNames(new.NamedPolicies))),
+			diff.NewDiff(diff.WithKey("eks_access"), diff.WithContentDiff(eksAccessDiffContent(old.EKSAccess), eksAccessDiffContent(new.EKSAccess))),
 			diffIAMPolicies(old.Policies, new.Policies),
 		},
 	)
 	result.ResourceID = roleNodeID(old, new)
 	return result
+}
+
+func eksAccessDiffContent(access *AppAWSIAMRoleEKSAccess) string {
+	if access == nil {
+		return ""
+	}
+	byts, err := json.MarshalIndent(access, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("%+v", *access)
+	}
+	return string(byts)
 }
 
 func diffIAMRoles(prefix string, old, new []*AppAWSIAMRole) []*diff.Diff {
