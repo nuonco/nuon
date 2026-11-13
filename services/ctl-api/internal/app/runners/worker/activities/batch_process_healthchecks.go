@@ -102,12 +102,6 @@ func (a *Activities) BatchProcessHealthchecks(ctx context.Context, req BatchProc
 		runner, hasRunner := page.runnersByID[p.RunnerID]
 		tags := a.processHealthTags(&p, runner, hasRunner, page)
 
-		queue, hasQueue := page.queuesByName[fmt.Sprintf("runner-process-%s", p.ID)]
-		if !hasQueue {
-			resp.MissingQueue++
-			continue
-		}
-
 		hb, hasHB := page.heartbeatsByProcess[p.ID]
 		var hbAt *time.Time
 		if hasHB {
@@ -115,10 +109,17 @@ func (a *Activities) BatchProcessHealthchecks(ctx context.Context, req BatchProc
 			tags["runner_version"] = hb.Version
 		}
 
+		action := decideProcessHealth(now, &p, hbAt)
+
+		queue, hasQueue := page.queuesByName[fmt.Sprintf("runner-process-%s", p.ID)]
+		if !hasQueue && action != processActionInactive {
+			resp.MissingQueue++
+			continue
+		}
+
 		ectx := cctx.SetOrgIDContext(ctx, p.OrgID)
 		ectx = cctx.SetAccountIDContext(ectx, p.CreatedByID)
 
-		action := decideProcessHealth(now, &p, hbAt)
 		switch action {
 		case processActionNoop:
 			if !hasHB {
@@ -129,7 +130,7 @@ func (a *Activities) BatchProcessHealthchecks(ctx context.Context, req BatchProc
 		case processActionShutdown:
 			a.handleBatchProcessShutdown(ectx, &p, now, resp)
 		case processActionInactive:
-			a.handleBatchProcessInactive(ectx, &p, queue, now, tags, resp)
+			a.handleBatchProcessInactive(ectx, &p, queue, hasQueue, now, tags, resp)
 		case processActionOffline:
 			if row, ok := a.handleBatchProcessOffline(ectx, &p, now, resp); ok {
 				healthRows = append(healthRows, row)
@@ -329,7 +330,7 @@ func (a *Activities) handleBatchProcessShutdown(ectx context.Context, p *app.Run
 	resp.Shutdowns++
 }
 
-func (a *Activities) handleBatchProcessInactive(ectx context.Context, p *app.RunnerProcess, queue app.Queue, now time.Time, tags map[string]string, resp *BatchProcessHealthchecksResponse) {
+func (a *Activities) handleBatchProcessInactive(ectx context.Context, p *app.RunnerProcess, queue app.Queue, hasQueue bool, now time.Time, tags map[string]string, resp *BatchProcessHealthchecksResponse) {
 	updated, err := a.guardedProcessStatusUpdate(ectx, p, app.RunnerProcessStatusInactive, "no heartbeat received for 5 minutes")
 	if err != nil {
 		resp.Errors++
@@ -349,6 +350,10 @@ func (a *Activities) handleBatchProcessInactive(ectx context.Context, p *app.Run
 	a.mw.Incr("runner.process.stop", stopTags)
 	if p.StartedAt != nil {
 		a.mw.Timing("runner.process.latency", now.Sub(*p.StartedAt), stopTags)
+	}
+
+	if !hasQueue {
+		return
 	}
 
 	if _, err := a.queueClient.EnqueueSignal(ectx, &queueclient.EnqueueSignalRequest{

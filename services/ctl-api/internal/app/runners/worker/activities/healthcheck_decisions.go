@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	processOfflineTimeout  = 1 * time.Minute
-	processInactiveTimeout = 5 * time.Minute
+	processOfflineTimeout      = 1 * time.Minute
+	processInactiveTimeout     = 5 * time.Minute
+	processFirstHeartbeatGrace = 10 * time.Minute
 
 	runnerUnhealthyAlertDelay = 15 * time.Minute
 
@@ -160,8 +161,8 @@ const (
 )
 
 // decideProcessHealth encodes processhealthcheck.Signal.Execute's branch
-// order: status gate, shutdown_requested short-circuit, nil-heartbeat no-op,
-// then heartbeat-age tiers.
+// order: status gate, shutdown_requested short-circuit, nil-heartbeat no-op
+// within processFirstHeartbeatGrace of start, then heartbeat-age tiers.
 func decideProcessHealth(now time.Time, process *app.RunnerProcess, heartbeatAt *time.Time) processHealthAction {
 	switch process.ProcessStatus() {
 	case app.RunnerProcessStatusActive, app.RunnerProcessStatusOffline:
@@ -174,6 +175,9 @@ func decideProcessHealth(now time.Time, process *app.RunnerProcess, heartbeatAt 
 	}
 
 	if heartbeatAt == nil {
+		if process.StartedAt != nil && now.Sub(*process.StartedAt) >= processFirstHeartbeatGrace {
+			return processActionInactive
+		}
 		return processActionNoop
 	}
 
