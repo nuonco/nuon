@@ -15,29 +15,40 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-func readBody(ctx *gin.Context) ([]byte, error) {
-	body, err := io.ReadAll(ctx.Request.Body)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read request body: %w", err)
+const maxWebhookBody = 25 << 20
+
+func parseGitHubSignature(header string) ([]byte, bool) {
+	sig, ok := strings.CutPrefix(header, "sha256=")
+	if !ok || len(sig) != hex.EncodedLen(sha256.Size) {
+		return nil, false
 	}
-	return body, nil
+
+	decoded, err := hex.DecodeString(sig)
+	if err != nil {
+		return nil, false
+	}
+	return decoded, true
 }
 
-func verifyGitHubSignature(secret string, signature string, body []byte) bool {
-	if signature == "" || secret == "" {
-		return false
+func readBody(ctx *gin.Context) ([]byte, bool, error) {
+	body, err := io.ReadAll(io.LimitReader(ctx.Request.Body, maxWebhookBody+1))
+	if err != nil {
+		return nil, false, fmt.Errorf("unable to read request body: %w", err)
 	}
+	if len(body) > maxWebhookBody {
+		return nil, true, nil
+	}
+	return body, false, nil
+}
 
-	sig := strings.TrimPrefix(signature, "sha256=")
-	if sig == signature {
+func verifyGitHubSignature(secret string, signature []byte, body []byte) bool {
+	if secret == "" {
 		return false
 	}
 
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write(body)
-	expected := hex.EncodeToString(mac.Sum(nil))
-
-	return hmac.Equal([]byte(sig), []byte(expected))
+	return hmac.Equal(signature, mac.Sum(nil))
 }
 
 // @ID						WriteWebhookEvent
@@ -50,11 +61,23 @@ func verifyGitHubSignature(secret string, signature string, body []byte) bool {
 // @Failure					400	{object}	stderr.ErrResponse
 // @Failure					401	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
+// @Failure					413	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					200	{object}	app.GithubEvent
 // @Router					/v1/vcs/webhooks/{subscription_id}/events [post]
 func (s *service) WriteWebhookEvent(ctx *gin.Context) {
 	subscriptionID := ctx.Param("subscription_id")
+
+	signature, ok := parseGitHubSignature(ctx.GetHeader("X-Hub-Signature-256"))
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
+		return
+	}
+
+	if ctx.Request.ContentLength > maxWebhookBody {
+		ctx.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "request body too large"})
+		return
+	}
 
 	var sub app.VCSWebhookSubscription
 	if err := s.db.WithContext(ctx).First(&sub, "id = ?", subscriptionID).Error; err != nil {
@@ -62,13 +85,16 @@ func (s *service) WriteWebhookEvent(ctx *gin.Context) {
 		return
 	}
 
-	body, err := readBody(ctx)
+	body, tooLarge, err := readBody(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
+	if tooLarge {
+		ctx.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "request body too large"})
+		return
+	}
 
-	signature := ctx.GetHeader("X-Hub-Signature-256")
 	if !verifyGitHubSignature(sub.WebhookSecret, signature, body) {
 		s.l.Warn("webhook signature verification failed",
 			zap.String("subscription_id", subscriptionID),
