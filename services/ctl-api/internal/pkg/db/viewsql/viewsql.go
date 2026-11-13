@@ -70,6 +70,9 @@ var ComponentConfigConnectionsV2 string
 //go:embed component_config_connections_v3.sql
 var ComponentConfigConnectionsV3 string
 
+//go:embed component_config_connections_v4.sql
+var ComponentConfigConnectionsV4 string
+
 //go:embed latest_component_config_connections_view_v1.sql
 var LatestComponentConfigConnectionsV1 string
 
