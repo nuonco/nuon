@@ -20,8 +20,13 @@ func (m *middleware) Name() string {
 	return "size"
 }
 
+// Handler is a no-op: the cap is applied per server in api.init, ahead of every middleware. "size" stays
+// registered because deployed middleware lists name it, and applying max_request_size here would
+// override the runner API's higher limit.
 func (m *middleware) Handler() gin.HandlerFunc {
-	return LimitRequestBody(m.cfg.MaxRequestSize, m.l)
+	return func(c *gin.Context) {
+		c.Next()
+	}
 }
 
 // LimitRequestBody caps request bodies at limit and warns once a request reads past half of it, so a

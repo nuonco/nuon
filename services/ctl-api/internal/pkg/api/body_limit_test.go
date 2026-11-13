@@ -8,14 +8,25 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/size"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
+// Mounts the same "error" and "size" middlewares the deployed configs list, so a configured
+// middleware re-applying max_request_size would show up as a 413 on the runner server.
 func TestServerBodyLimitOverride(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	cfg := &internal.Config{MaxRequestSize: 16, RunnerMaxRequestSize: 64}
+	l := zap.NewNop()
+	mws := []middlewares.Middleware{
+		stderr.New(l, cfg),
+		size.New(size.Params{Cfg: cfg, L: l}),
+	}
 
 	for name, tc := range map[string]struct {
 		override int64
@@ -27,11 +38,23 @@ func TestServerBodyLimitOverride(t *testing.T) {
 		"runner server still rejects past its own limit": {override: cfg.RunnerMaxRequestSize, size: 65, want: http.StatusRequestEntityTooLarge},
 	} {
 		t.Run(name, func(t *testing.T) {
-			a := &API{cfg: cfg, l: zap.NewNop(), name: "test", maxRequestSize: tc.override}
-			if err := a.init(nil); err != nil {
-				t.Fatal(err)
+			a := &API{
+				cfg:                   cfg,
+				l:                     l,
+				name:                  "test",
+				maxRequestSize:        tc.override,
+				middlewares:           mws,
+				configuredMiddlewares: []string{"error", "size"},
 			}
-			a.handler.POST("/", func(c *gin.Context) { c.Status(http.StatusOK) })
+			require.NoError(t, a.init(nil))
+			require.NoError(t, a.registerMiddlewares())
+			a.handler.POST("/", func(c *gin.Context) {
+				if _, err := c.GetRawData(); err != nil {
+					c.Error(err)
+					return
+				}
+				c.Status(http.StatusOK)
+			})
 
 			rec := httptest.NewRecorder()
 			a.handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(make([]byte, tc.size))))

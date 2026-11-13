@@ -39,6 +39,19 @@ func NewCachedResponseWriter(w gin.ResponseWriter) *CachedResponseWriter {
 	}
 }
 
+// maxLoggedRequestBody bounds how much of a request body is buffered for error logs.
+const maxLoggedRequestBody = 64 << 10
+
+type prefixedBody struct {
+	io.Reader
+	io.Closer
+}
+
+func isBodyTooLarge(err error) bool {
+	var tooLarge *http.MaxBytesError
+	return errors.As(err, &tooLarge)
+}
+
 type middleware struct {
 	l   *zap.Logger
 	cfg *internal.Config
@@ -50,20 +63,20 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Capture the request body
+		// Keep only a prefix for error logs and stream the rest, so a handler's own checks (signatures,
+		// per-route caps) run before the full body is in memory.
 		var requestBody string
 		if c.Request.Body != nil {
-			b, err := io.ReadAll(c.Request.Body)
-			var tooLarge *http.MaxBytesError
-			if errors.As(err, &tooLarge) {
-				c.Abort()
-				if !c.Writer.Written() {
-					c.Status(http.StatusRequestEntityTooLarge)
-				}
+			prefix, err := io.ReadAll(io.LimitReader(c.Request.Body, maxLoggedRequestBody))
+			if isBodyTooLarge(err) {
+				c.AbortWithStatus(http.StatusRequestEntityTooLarge)
 				return
 			}
-			requestBody = string(b)
-			c.Request.Body = io.NopCloser(bytes.NewReader(b)) // Restore the body for the actual handler to use
+			requestBody = string(prefix)
+			c.Request.Body = &prefixedBody{
+				Reader: io.MultiReader(bytes.NewReader(prefix), c.Request.Body),
+				Closer: c.Request.Body,
+			}
 		}
 
 		// Capture the response body
@@ -88,6 +101,15 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		err := c.Errors[0]
+
+		if isBodyTooLarge(err) {
+			c.JSON(http.StatusRequestEntityTooLarge, ErrResponse{
+				Error:       "request body too large",
+				UserError:   true,
+				Description: err.Error(),
+			})
+			return
+		}
 
 		// Check if this is a binding error
 		if err.Type == gin.ErrorTypeBind {
