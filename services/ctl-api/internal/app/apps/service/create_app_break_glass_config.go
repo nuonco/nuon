@@ -70,7 +70,7 @@ func (s *service) CreateAppBreakGlasssConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppBreakGlassConfig(ctx context.Context, appID string, req *CreateAppBreakGlassConfigRequest) (*app.AppBreakGlassConfig, error) {
-	obj, err := build.BreakGlassConfig(appID, req.AppConfigID, toConfigRoles(&req.Roles))
+	obj, err := build.BreakGlassConfig(appID, req.AppConfigID, s.stackTypeForAppConfig(ctx, req.AppConfigID), toConfigRoles(&req.Roles))
 	if err != nil {
 		return nil, stderr.NewInvalidRequest(err)
 	}
