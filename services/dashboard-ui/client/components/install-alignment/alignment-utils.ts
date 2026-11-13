@@ -1,5 +1,6 @@
 import { ACTIVE_DEPLOYMENT_STATUSES } from '@/components/installs/DeploymentDetail/deployment-progress'
 import type {
+  TInstallAlignmentBuild,
   TInstallAlignmentResource,
   TInstallAlignmentResourceKind,
   TInstallOverviewCommit,
@@ -128,6 +129,9 @@ export const driftCounts = (drifted: TInstallAlignmentResource[]) => {
 }
 
 export const shortSha = (sha?: string) => sha?.slice(0, 7)
+
+export const buildRef = (build?: TInstallAlignmentBuild) =>
+  shortSha(build?.sha) || build?.resolved_tag || build?.id
 
 export const branchRunHref = ({
   appId,

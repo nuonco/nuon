@@ -51,6 +51,12 @@ export const alignmentPlan = (resourceId: string, planOnly = false) => ({
   changes_noop: 0,
 })
 
+export const alignmentBuild = (id: string, sha: string, hours = 30) => ({
+  id,
+  sha,
+  created_at: hoursAgo(hours),
+})
+
 export const alignmentResource = (
   overrides: Partial<TInstallAlignmentResource> = {}
 ): TInstallAlignmentResource => ({
@@ -64,21 +70,41 @@ export const alignmentResource = (
   ...overrides,
 })
 
+export const liveFields = (
+  componentId: string,
+  sha = '4f1d9c2a7be03e5d8a6c1b4f7a9e3c5b2d8f1a0e'
+): Partial<TInstallAlignmentResource> => ({
+  expected_build_id: `bld-${componentId}`,
+  applied_build_id: `bld-${componentId}`,
+  applied_build: alignmentBuild(`bld-${componentId}`, sha, 76),
+  applied_deploy_id: `dep-live-${componentId}`,
+  applied_deploy_at: hoursAgo(72),
+})
+
 export const unappliedResource = (
   overrides: Partial<TInstallAlignmentResource> = {}
 ) =>
   alignmentResource({
     category: 'changes-not-applied',
-    reason: 'This component hasn’t been deployed yet.',
+    reason: 'The deployed version doesn’t match this install’s configuration.',
     status: 'error',
-    last_attempt: {
+    expected_build_id: 'bld-selected',
+    applied_build_id: 'bld-applied',
+    expected_build: alignmentBuild('bld-selected', selectedCommit.sha!, 8),
+    applied_build: alignmentBuild(
+      'bld-applied',
+      '4f1d9c2a7be03e5d8a6c1b4f7a9e3c5b2d8f1a0e',
+      72
+    ),
+    blocking_attempt: {
       id: `dep-${overrides.id ?? 'ic-api'}`,
       status: 'error',
       created_at: hoursAgo(5),
       workflow_id: `wf-attempt-${overrides.id ?? 'ic-api'}`,
-      branch_run: selectedCommit,
+      step_id: `step-wf-attempt-${overrides.id ?? 'ic-api'}`,
+      build_id: 'bld-selected',
     },
-    newer_branch_runs: 3,
+    earlier_attempts: 2,
     plan: alignmentPlan(overrides.id ?? 'ic-api'),
     explanation: {
       summary: 'The latest deployment failed.',
@@ -115,22 +141,23 @@ export const inputUpdateResource = (
     reason: 'Saved input changes haven’t taken effect.',
     expected_build_id: 'bld-selected',
     applied_build_id: 'bld-selected',
+    applied_build: alignmentBuild('bld-selected', selectedCommit.sha!, 8),
     expected_config_id: 'cfg-selected',
     applied_config_id: 'cfg-selected',
-    last_attempt: {
+    blocking_attempt: {
       id: `wf-input-${overrides.id ?? 'ic-api'}`,
       workflow_id: `wf-input-${overrides.id ?? 'ic-api'}`,
       type: 'input_update',
       status: 'cancelled',
       created_at: hoursAgo(2),
     },
+    earlier_attempts: 0,
     explanation: {
       summary:
         'Applying the input changes was cancelled. The saved values haven’t taken effect.',
       status: 'cancelled',
       workflow_id: `wf-input-${overrides.id ?? 'ic-api'}`,
     },
-    newer_branch_runs: null,
     plan: undefined,
     ...overrides,
   })
@@ -141,14 +168,6 @@ export const stateDriftResource = (
   alignmentResource({
     category: 'state-drift-detected',
     reason: 'Live resources differ from what was last applied.',
-    last_attempt: {
-      id: `dep-${overrides.id ?? 'ic-api'}`,
-      status: 'success',
-      created_at: hoursAgo(30),
-      workflow_id: `wf-attempt-${overrides.id ?? 'ic-api'}`,
-      branch_run: selectedCommit,
-    },
-    newer_branch_runs: 0,
     plan: alignmentPlan(overrides.id ?? 'ic-api', true),
     ...overrides,
   })
@@ -176,7 +195,7 @@ const names = [
 const types = ['helm_chart', 'terraform_module', 'kubernetes_manifest']
 
 type TAttemptType = NonNullable<
-  TInstallAlignmentResource['last_attempt']
+  TInstallAlignmentResource['blocking_attempt']
 >['type']
 
 const openWorkflow = (resourceId: string, status: string) => ({
@@ -208,14 +227,15 @@ const pastAttempt = (resourceId: string, status: string) => ({
   status,
   created_at: hoursAgo(5),
   workflow_id: `wf-attempt-${resourceId}`,
-  branch_run: selectedCommit,
+  build_id: 'bld-selected',
 })
 
 const openCause = (index: number, status: string, summary: string) => {
   const base = causeBase(index)
   return openDeploymentResource({
     ...base,
-    last_attempt: undefined,
+    blocking_attempt: undefined,
+    earlier_attempts: 0,
     open_deployment: openWorkflow(base.id, status),
     explanation: explained(summary, `wf-open-${base.id}`, status),
   })
@@ -225,7 +245,7 @@ const attemptCause = (index: number, status: string, summary: string) => {
   const base = causeBase(index)
   return unappliedResource({
     ...base,
-    last_attempt: pastAttempt(base.id, status),
+    blocking_attempt: pastAttempt(base.id, status),
     explanation: explained(summary, `wf-attempt-${base.id}`, status),
   })
 }
@@ -241,7 +261,7 @@ const cancelledCause = (index: number, type: TAttemptType, summary: string) => {
         : type === 'component_disabled'
           ? 'This component is disabled, but is still deployed.'
           : 'Saved input changes haven’t taken effect.',
-    last_attempt: {
+    blocking_attempt: {
       id: workflowId,
       workflow_id: workflowId,
       type,
@@ -257,13 +277,11 @@ export const causeResources = (): TInstallAlignmentResource[] => [
     ...causeBase(0),
     status: 'active',
     reason: 'The deployed version doesn’t match this install’s configuration.',
-    expected_build_id: 'bld-api-selected',
-    applied_build_id: 'bld-api-applied',
     expected_config_id: 'cfg-selected',
     applied_config_id: 'cfg-applied',
-    last_attempt: pastAttempt(causeBase(0).id, 'active'),
+    blocking_attempt: undefined,
+    earlier_attempts: 0,
     plan: undefined,
-    newer_branch_runs: null,
     explanation: { summary: 'No deployment has started for these changes.' },
   }),
   openCause(1, 'queued', 'The deployment is queued and hasn’t started yet.'),
@@ -273,7 +291,7 @@ export const causeResources = (): TInstallAlignmentResource[] => [
       'in-progress',
       'The deployment is in progress. These changes haven’t taken effect yet.'
     ),
-    last_attempt: pastAttempt(causeBase(2).id, 'error'),
+    blocking_attempt: pastAttempt(causeBase(2).id, 'error'),
   },
   openCause(3, 'approval-awaiting', 'These changes are waiting for approval.'),
   attemptCause(
@@ -302,7 +320,11 @@ export const causeResources = (): TInstallAlignmentResource[] => [
     'component_disabled',
     'Disabling this component was cancelled. It is still deployed.'
   ),
-  attemptCause(10, 'user-skipped', 'Deployment of this resource was skipped.'),
+  attemptCause(
+    10,
+    'user-skipped',
+    'The deployment of this resource was skipped.'
+  ),
   {
     ...attemptCause(
       11,
@@ -323,16 +345,12 @@ export const causeResources = (): TInstallAlignmentResource[] => [
   stateDriftResource(causeBase(13)),
   unappliedResource({
     ...causeBase(14),
-    last_attempt: undefined,
+    blocking_attempt: undefined,
+    earlier_attempts: 0,
     plan: undefined,
-    newer_branch_runs: null,
     explanation: undefined,
   }),
-  attemptCause(
-    15,
-    'error',
-    'An earlier operation failed, so deployment of this resource couldn’t start.'
-  ),
+  attemptCause(15, 'policy-failed', 'A policy denied the latest deployment.'),
   attemptCause(
     16,
     'cancelled',
@@ -358,6 +376,7 @@ export const inSyncResources = (count = 3): TInstallAlignmentResource[] =>
       id: `ic-synced-${index}`,
       name: `synced-${index}`,
       component_id: `cmp-synced-${index}`,
+      ...liveFields(`cmp-synced-${index}`),
     })
   )
 

@@ -87,9 +87,7 @@ test('ongoing resources appear once above drift, without hiding their unapplied 
   expect(
     within(ongoing).getByRole('heading', { name: 'running-deploy' })
   ).toBeTruthy()
-  expect(
-    within(ongoing).getByText('This component hasn’t been deployed yet.')
-  ).toBeTruthy()
+  expect(within(ongoing).getAllByTestId('drift-builds')).toHaveLength(1)
   expect(within(ongoing).getByText('In progress')).toBeTruthy()
   expect(within(ongoing).queryByText('Workflow cancelled')).toBeNull()
   expect(
@@ -168,7 +166,7 @@ test('a stopped deployment returns to drift until its changes are actually appli
         alignmentResource({
           id: 'changing',
           name: 'changing',
-          last_attempt: { id: 'failed-redeploy', status: 'error' },
+          blocking_attempt: { id: 'failed-redeploy', status: 'error' },
         }),
       ]}
     />
@@ -259,11 +257,6 @@ test('images describe recorded registry syncs separately from deployment drift',
     within(unapplied).getByRole('heading', { name: 'cancelled-image' })
   ).toBeTruthy()
   expect(within(unapplied).getByText('Sync cancelled')).toBeTruthy()
-  fireEvent.click(
-    within(unapplied).getAllByRole('button', {
-      name: 'This image version hasn’t been synced.',
-    })[0]
-  )
   expect(
     within(unapplied).getByText('The latest image sync failed.')
   ).toBeTruthy()

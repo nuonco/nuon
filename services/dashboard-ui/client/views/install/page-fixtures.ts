@@ -6,6 +6,7 @@ import {
   alignmentResource,
   inputUpdateResource,
   installOverview,
+  liveFields,
   openDeploymentResource,
   stateDriftResource,
   unappliedResource,
@@ -797,8 +798,9 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
       expected_build_id: 'bld-cmp-search',
       expected_config_id: APP_CONFIG_ID,
       applied_build_id: undefined,
+      applied_build: undefined,
       applied_config_id: undefined,
-      last_attempt: {
+      blocking_attempt: {
         id: 'wf-input-enable-search',
         workflow_id: 'wf-input-enable-search',
         type: 'component_enabled',
@@ -812,7 +814,10 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
         workflow_id: 'wf-input-enable-search',
       },
     }),
-    alignmentResource(component('cmp-scheduler', 'scheduler', 'pulumi')),
+    alignmentResource({
+      ...component('cmp-scheduler', 'scheduler', 'pulumi'),
+      ...liveFields('cmp-scheduler'),
+    }),
     openDeploymentResource({
       ...component('cmp-migrate', 'migrate', 'job'),
       open_deployment: {
@@ -854,6 +859,7 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
     }),
     alignmentResource({
       ...component('cmp-worker-image', 'worker-image', 'external_image'),
+      ...liveFields('cmp-worker-image'),
       kind: 'image',
     }),
     alignmentResource({
@@ -864,6 +870,7 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
     }),
     alignmentResource({
       ...component('cmp-webhooks-image', 'webhooks-image', 'external_image'),
+      ...liveFields('cmp-webhooks-image'),
       kind: 'image',
     }),
   ]
@@ -910,6 +917,7 @@ const inSyncAlignment = () =>
           component_type: type,
           kind: type === 'external_image' ? 'image' : 'component',
           expected_config_id: APP_CONFIG_ID,
+          ...liveFields(id),
         })
       ),
     ],
@@ -1121,8 +1129,8 @@ const resolveDriftFixture = (
     resource.open_deployment = finished
       ? undefined
       : { id, status, created_at: workflow.created_at }
-    if (finished) {
-      resource.last_attempt = {
+    if (finished && denied) {
+      resource.blocking_attempt = {
         id: `${id}-deploy`,
         workflow_id: id,
         status,
@@ -1132,6 +1140,10 @@ const resolveDriftFixture = (
     if (finished && !denied) {
       resource.category = 'in-sync'
       resource.status = 'active'
+      resource.applied_build_id = resource.expected_build_id
+      resource.applied_build = resource.expected_build
+      resource.applied_deploy_id = `${id}-deploy`
+      resource.applied_deploy_at = new Date(approvedAt! + 2000).toISOString()
       resource.reason = undefined
       resource.explanation = undefined
       resource.plan = undefined
@@ -1290,12 +1302,15 @@ export const resourcesFixture = (
     )
     if (image) {
       image.status = 'cancelled'
-      image.last_attempt = { ...image.last_attempt!, status: 'cancelled' }
+      image.blocking_attempt = {
+        ...image.blocking_attempt!,
+        status: 'cancelled',
+      }
       image.explanation = {
         summary:
           'The image sync was cancelled before this version was copied to the install’s registry.',
         status: 'cancelled',
-        workflow_id: image.last_attempt.workflow_id,
+        workflow_id: image.blocking_attempt.workflow_id,
       }
     }
   }

@@ -9652,12 +9652,19 @@ export interface components {
       resources?: components["schemas"]["service.InstallAlignmentResource"][];
     };
     "service.InstallAlignmentAttempt": {
-      branch_run?: components["schemas"]["service.InstallOverviewCommit"];
+      build_id?: string;
       created_at?: string;
       id?: string;
       status?: string;
+      step_id?: string;
       type?: components["schemas"]["app.WorkflowType"];
       workflow_id?: string;
+    };
+    "service.InstallAlignmentBuild": {
+      created_at?: string;
+      id?: string;
+      resolved_tag?: string;
+      sha?: string;
     };
     /** @enum {string} */
     "service.InstallAlignmentCategory": "changes-not-applied" | "state-drift-detected" | "in-sync" | "unknown" | "disabled" | "torn-down";
@@ -9689,19 +9696,23 @@ export interface components {
       workflow_id?: string;
     };
     "service.InstallAlignmentResource": {
+      applied_build?: components["schemas"]["service.InstallAlignmentBuild"];
       applied_build_id?: string;
       applied_config_id?: string;
+      applied_deploy_at?: string;
+      applied_deploy_id?: string;
+      blocking_attempt?: components["schemas"]["service.InstallAlignmentAttempt"];
       category?: components["schemas"]["service.InstallAlignmentCategory"];
       component_id?: string;
       component_type?: string;
+      earlier_attempts?: number;
+      expected_build?: components["schemas"]["service.InstallAlignmentBuild"];
       expected_build_id?: string;
       expected_config_id?: string;
       explanation?: components["schemas"]["service.InstallAlignmentExplanation"];
       id?: string;
       kind?: components["schemas"]["service.InstallAlignmentResourceKind"];
-      last_attempt?: components["schemas"]["service.InstallAlignmentAttempt"];
       name?: string;
-      newer_branch_runs?: number | null;
       open_deployment?: components["schemas"]["service.InstallAlignmentOpenDeployment"];
       plan?: components["schemas"]["service.InstallAlignmentPlan"];
       reason?: string;
