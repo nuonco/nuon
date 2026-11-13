@@ -32,7 +32,7 @@ title: 'Helm'
 | **`skip_crds`**<br/>boolean | skip Helm chart CRDs If true, Helm will not install CRDs from the chart's crds directory. CRDs rendered from templates are not skipped | **Optional**<br/>Default: `"false"` | `"true"` |
 | **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled | **Optional** | `"0 2 * * *"` |
 | **`health`**<br/>[ComponentHealthConfig](#health) | component health configuration Live health checking configuration for this component. Health checking is enabled by default; use this block to tune the stabilization window or make deploys block on... | **Optional** | - |
-| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "10m", "30m"). Default: 5m. Max: 30m | **Optional**<br/>Default: `"5m"` | `"30m"` |
 | **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 30m. Max: 1h | **Optional**<br/>Default: `"30m"` | `"30m"`, `"1h"` |
 | **`max_auto_retries`**<br/>integer | maximum automatic retry attempts on deploy failure Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled) | **Optional**<br/>Default: `"0"` | `"3"`, `"5"` |
 | **`skip_noops`**<br/>boolean | Skip the deploy step when the plan has no changes (a no-op). Defaults to false | **Optional**<br/>Default: `"false"` | `"true"` |

@@ -16,10 +16,8 @@ export const getInstallDeploymentSourceDiff = ({
   workflowId,
   kind,
   name,
-  path,
-}: TInstallDeploymentSourceDiffTarget & { path?: string }) =>
+}: TInstallDeploymentSourceDiffTarget) =>
   api<TInstallDeploymentSourceDiff>({
-    path: `installs/${installId}/deployments/${workflowId}/source-diff${buildQueryParams({ kind, name, path })}`,
+    path: `installs/${installId}/deployments/${workflowId}/source-diff${buildQueryParams({ kind, name })}`,
     orgId,
-    abortTimeout: path ? 30000 : undefined,
   })

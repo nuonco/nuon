@@ -293,6 +293,34 @@ func loadBaselineConfigs(ctx context.Context, db *gorm.DB, baselines CompositeBa
 	return loaded, nil
 }
 
+func StackChanged(ctx context.Context, db *gorm.DB, oldAppConfigID, newAppConfigID string) (bool, error) {
+	var cfgs []app.AppConfig
+	if err := preload(db.WithContext(ctx)).Where("id IN ?", []string{oldAppConfigID, newAppConfigID}).Find(&cfgs).Error; err != nil {
+		return false, fmt.Errorf("unable to get app configs: %w", err)
+	}
+	var oldCfg, newCfg *app.AppConfig
+	for i := range cfgs {
+		switch cfgs[i].ID {
+		case oldAppConfigID:
+			oldCfg = &cfgs[i]
+		case newAppConfigID:
+			newCfg = &cfgs[i]
+		}
+	}
+	if newCfg == nil {
+		return false, fmt.Errorf("unable to get new app config: %w", gorm.ErrRecordNotFound)
+	}
+	graph, err := intermediateConfigDiff(ctx, oldCfg, newCfg)
+	if err != nil {
+		return false, err
+	}
+	diff := &app.InstallConfigDiff{}
+	if err := fillStackSlice(diff, oldCfg, newCfg, graph); err != nil {
+		return false, err
+	}
+	return diff.StackChanged, nil
+}
+
 func fillStackSlice(diff *app.InstallConfigDiff, oldCfg, newCfg *app.AppConfig, graphDiff *pkgdiff.Diff) error {
 	if oldCfg == nil {
 		if newCfg.StackConfig.ID != "" {

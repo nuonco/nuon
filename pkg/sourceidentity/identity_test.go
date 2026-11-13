@@ -407,7 +407,7 @@ func TestIdentityUnknownReasonProperties(t *testing.T) {
 
 func TestExternalReads(t *testing.T) {
 	for name, tc := range map[string]struct {
-		root               string
+		root, digest       string
 		read, stat         []string
 		wantRead, wantStat []string
 	}{
@@ -431,12 +431,24 @@ func TestExternalReads(t *testing.T) {
 			root: "app", read: []string{"lib", "."}, stat: []string{"x"},
 			wantRead: []string{"."},
 		},
+		"stats of a directory root's ancestors are not inputs": {
+			root: "apps/web/tf", digest: "git:040000:" + strings.Repeat("a", 40), stat: []string{".", "apps", "apps/web", "apps/webx", "apps/web/tfx", "apps/other"},
+			wantStat: []string{"apps/other", "apps/web/tfx", "apps/webx"},
+		},
+		"stats of a symlink root's ancestors stay inputs": {
+			root: "a/b/c/tf", digest: "git:120000:" + strings.Repeat("a", 40), stat: []string{"a", "a/b", "a/b/c", "x"},
+			wantStat: []string{"a", "a/b", "a/b/c", "x"},
+		},
+		"a listed ancestor of the root is still a read": {
+			root: "apps/web/tf", read: []string{"apps"}, stat: []string{"apps", "apps/web"},
+			wantRead: []string{"apps"},
+		},
 		"the repository root as the source directory has nothing outside": {
 			root: "/", read: []string{"lib"}, stat: []string{"x"},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			got := sourceidentity.ExternalReads(tc.root, tc.read, tc.stat)
+			got := sourceidentity.ExternalReads(tc.root, tc.digest, tc.read, tc.stat)
 			require.Equal(t, tc.wantRead, got.Read)
 			require.Equal(t, tc.wantStat, got.Stat)
 		})

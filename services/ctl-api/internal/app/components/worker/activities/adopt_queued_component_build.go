@@ -31,7 +31,7 @@ func (a *Activities) AdoptQueuedComponentBuild(ctx context.Context, req AdoptQue
 	if err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var ccc app.ComponentConfigConnection
 		err := tx.
-			Select("id").
+			Select("id", "latest_build_id").
 			Where(app.ComponentConfigConnection{
 				AppConfigID: req.AppConfigID,
 				ComponentID: req.ComponentID,
@@ -44,15 +44,18 @@ func (a *Activities) AdoptQueuedComponentBuild(ctx context.Context, req AdoptQue
 			}
 			return fmt.Errorf("unable to get config connection: %w", err)
 		}
+		if !ccc.LatestBuildID.Valid || ccc.LatestBuildID.String == "" {
+			return nil
+		}
 
 		var bld app.ComponentBuild
 		err = tx.
 			Select("id").
 			Where(app.ComponentBuild{
+				ID:                          ccc.LatestBuildID.String,
 				ComponentConfigConnectionID: ccc.ID,
 				Status:                      app.ComponentBuildStatusQueued,
 			}).
-			Order("created_at DESC").
 			First(&bld).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {

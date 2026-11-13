@@ -421,11 +421,7 @@ func (f *FS) Glob(pattern string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	base := globBase(rel)
-	if resolved, err := f.resolve(base); err == nil {
-		f.record(resolved, base != rel)
-	}
-	matches, err := afero.Glob(f.fs, rel)
+	matches, err := f.glob(rel)
 	if err != nil {
 		return nil, err
 	}
@@ -436,6 +432,62 @@ func (f *FS) Glob(pattern string) ([]string, error) {
 		}
 	}
 	return visible, nil
+}
+
+// glob matches like afero.Glob and records each directory it lists, so a
+// wildcard that crosses a link records where the link leads even when nothing
+// matches there.
+func (f *FS) glob(pattern string) ([]string, error) {
+	if !hasMeta(pattern) {
+		if resolved, err := f.resolve(pattern); err == nil {
+			f.stat(resolved)
+		}
+		if _, err := lstat(f.fs, pattern); err != nil {
+			return nil, nil
+		}
+		return []string{pattern}, nil
+	}
+	dir, file := filepath.Split(pattern)
+	dir = filepath.Clean(dir)
+	dirs := []string{dir}
+	if hasMeta(dir) {
+		var err error
+		if dirs, err = f.glob(dir); err != nil {
+			return nil, err
+		}
+	}
+	var matches []string
+	for _, dir := range dirs {
+		resolved, err := f.resolve(dir)
+		if err != nil {
+			continue
+		}
+		info, err := lstat(f.fs, resolved)
+		if err != nil || !info.IsDir() {
+			f.stat(resolved)
+			continue
+		}
+		f.record(resolved, true)
+		listing, err := f.fs.Open(resolved)
+		if err != nil {
+			continue
+		}
+		names, _ := listing.Readdirnames(-1)
+		if err := listing.Close(); err != nil {
+			return nil, err
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			matched, err := filepath.Match(file, name)
+			if err != nil {
+				return nil, err
+			}
+			if matched {
+				matches = append(matches, filepath.Join(dir, name))
+			}
+		}
+	}
+	return matches, nil
 }
 
 func (f *FS) Walk(name string, fn filepath.WalkFunc) error {
@@ -459,17 +511,7 @@ func (f *FS) Walk(name string, fn filepath.WalkFunc) error {
 	})
 }
 
-// globBase is the deepest directory of a pattern that has no glob syntax.
-func globBase(pattern string) string {
-	base := "."
-	for _, part := range strings.Split(pattern, string(filepath.Separator)) {
-		if strings.ContainsAny(part, `*?[\`) {
-			break
-		}
-		base = filepath.Join(base, part)
-	}
-	return base
-}
+func hasMeta(pattern string) bool { return strings.ContainsAny(pattern, "*?[") }
 
 func within(root, name string) bool {
 	rel, err := filepath.Rel(root, name)

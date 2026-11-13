@@ -16,7 +16,10 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-const componentSelectionConcurrency = 10
+const (
+	componentSelectionConcurrency = 10
+	buildsAwaitTimeout            = time.Hour
+)
 
 func (s *Signal) buildsAsReady(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID, previousAppConfigID string, force bool) ([]buildEntry, error) {
 	builds := make([]buildEntry, len(appConfig.ComponentIDs)+1)
@@ -126,11 +129,73 @@ func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []
 	if !hasBuilds {
 		return selectionErr
 	}
+	awaitOwnEntries := workflow.GetVersion(ctx, "branch-builds-await-own-entries-v1", workflow.DefaultVersion, 1) == 1
+	deadline := workflow.Now(ctx).Add(buildsAwaitTimeout)
 	l.Info("all builds enqueued, awaiting build completions")
 	for {
 		result, err := activities.AwaitCheckBuildsCompleteByRunID(ctx, s.RunID)
 		if err != nil {
 			return fmt.Errorf("unable to check build statuses: %w", err)
+		}
+		if awaitOwnEntries {
+			latest := make(map[string]activities.BuildResult, len(result.Builds))
+			for _, br := range result.Builds {
+				latest[br.ComponentID] = br
+			}
+			allDone, buildFailed, updated := true, false, false
+			for i := range builds {
+				if builds[i].Skipped {
+					continue
+				}
+				br, ok := latest[builds[i].ComponentID]
+				if ok && builds[i].BuildID != br.BuildID {
+					builds[i].BuildID = br.BuildID
+					updated = true
+				}
+				if selectionErrors[i] != nil {
+					continue
+				}
+				if !ok {
+					allDone = false
+					continue
+				}
+				status := "in-progress"
+				switch br.Status {
+				case string(app.ComponentBuildStatusActive):
+					status = "success"
+				case string(app.ComponentBuildStatusError), string(app.ComponentBuildStatusPolicyFailed), "cancelled":
+					status = "error"
+					buildFailed = true
+				default:
+					allDone = false
+				}
+				if builds[i].Status != status {
+					builds[i].Status = status
+					updated = true
+				}
+			}
+			if updated {
+				changed()
+			}
+			if allDone {
+				if buildFailed {
+					return errors.Join(selectionErr, fmt.Errorf("one or more component builds failed"))
+				}
+				return selectionErr
+			}
+			if !workflow.Now(ctx).Before(deadline) {
+				for i := range builds {
+					if !builds[i].Skipped && builds[i].Status != "success" {
+						builds[i].Status = "error"
+					}
+				}
+				changed()
+				return errors.Join(selectionErr, fmt.Errorf("timed out after %s waiting for component builds", buildsAwaitTimeout))
+			}
+			if err := workflow.Sleep(ctx, 5*time.Second); err != nil {
+				return fmt.Errorf("sleep interrupted: %w", err)
+			}
+			continue
 		}
 		for _, br := range result.Builds {
 			for i := range builds {

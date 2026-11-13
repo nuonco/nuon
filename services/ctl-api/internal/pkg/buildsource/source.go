@@ -159,19 +159,26 @@ func prepareGit(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, i *so
 	}
 	if !sourceidentity.IsCommit(ref) {
 		var err error
-		ref, err = ResolveRef(ctx, db, vcs, connected, public, generics.FromPtrStr(runID), ref)
+		var pinned bool
+		ref, pinned, err = resolveRef(ctx, db, vcs, connected, public, generics.FromPtrStr(runID), ref)
 		if err != nil {
 			return nil, err
 		}
 		resolvedFrom = sourceidentity.ResolvedFromLookup
+		if pinned {
+			resolvedFrom = sourceidentity.ResolvedFromBranchRun
+		}
 	}
 	if !sourceidentity.IsCommit(ref) {
 		return nil, fmt.Errorf("source did not resolve to a full commit SHA")
 	}
 	i.Commit, i.ResolvedFrom = ref, resolvedFrom
 	if resolvedFrom != sourceidentity.ResolvedFromCommit {
+		i.Ref = requested
+	}
+	if resolvedFrom == sourceidentity.ResolvedFromLookup {
 		resolvedAt := time.Now().UTC()
-		i.Ref, i.ResolvedAt = requested, &resolvedAt
+		i.ResolvedAt = &resolvedAt
 	}
 	orgID, connection, err := sourceAccess(connected, public)
 	if err != nil {
