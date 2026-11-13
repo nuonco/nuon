@@ -7,6 +7,9 @@ import (
 //go:embed action_workflow_configs_latest_view_v1.sql
 var ActionWorkflowConfigsViewV1 string
 
+//go:embed action_workflow_configs_latest_view_v2.sql
+var ActionWorkflowConfigsViewV2 string
+
 //go:embed app_label_keys_view_v1.sql
 var AppLabelKeysViewV1 string
 

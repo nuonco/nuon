@@ -161,6 +161,21 @@ func (a *ActionWorkflowTriggerConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &ActionWorkflowTriggerConfig{}, "action_workflow_config_id"),
+			Columns: []string{
+				"action_workflow_config_id",
+			},
+			Concurrently: true,
+		},
+		{
+			Name: indexes.Name(db, &ActionWorkflowTriggerConfig{}, "type_deleted_at"),
+			Columns: []string{
+				"type",
+				"deleted_at",
+			},
+			Concurrently: true,
+		},
 	}
 }
 
