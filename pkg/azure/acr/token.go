@@ -159,6 +159,12 @@ func exchangeRepositoryToken(ctx context.Context, credential azcore.TokenCredent
 	return token, nil
 }
 
+// AccessToken exchanges a refresh token for an access token limited to scope,
+// for example repository:org/app:pull,push.
+func AccessToken(ctx context.Context, acrService, scope, refreshToken string) (string, error) {
+	return getAccessToken(ctx, acrService, scope, refreshToken)
+}
+
 const (
 	maxExchangeFailureBody = 16 * 1024
 	maxExchangeDiagnostic  = 2048
