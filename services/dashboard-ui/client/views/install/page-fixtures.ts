@@ -6,6 +6,7 @@ import {
   alignmentResource,
   inputUpdateResource,
   installOverview,
+  liveFields,
   openDeploymentResource,
   stateDriftResource,
   unappliedResource,
@@ -813,7 +814,10 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
         workflow_id: 'wf-input-enable-search',
       },
     }),
-    alignmentResource(component('cmp-scheduler', 'scheduler', 'pulumi')),
+    alignmentResource({
+      ...component('cmp-scheduler', 'scheduler', 'pulumi'),
+      ...liveFields('cmp-scheduler'),
+    }),
     openDeploymentResource({
       ...component('cmp-migrate', 'migrate', 'job'),
       open_deployment: {
@@ -855,6 +859,7 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
     }),
     alignmentResource({
       ...component('cmp-worker-image', 'worker-image', 'external_image'),
+      ...liveFields('cmp-worker-image'),
       kind: 'image',
     }),
     alignmentResource({
@@ -865,6 +870,7 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
     }),
     alignmentResource({
       ...component('cmp-webhooks-image', 'webhooks-image', 'external_image'),
+      ...liveFields('cmp-webhooks-image'),
       kind: 'image',
     }),
   ]
@@ -911,6 +917,7 @@ const inSyncAlignment = () =>
           component_type: type,
           kind: type === 'external_image' ? 'image' : 'component',
           expected_config_id: APP_CONFIG_ID,
+          ...liveFields(id),
         })
       ),
     ],
@@ -1133,6 +1140,10 @@ const resolveDriftFixture = (
     if (finished && !denied) {
       resource.category = 'in-sync'
       resource.status = 'active'
+      resource.applied_build_id = resource.expected_build_id
+      resource.applied_build = resource.expected_build
+      resource.applied_deploy_id = `${id}-deploy`
+      resource.applied_deploy_at = new Date(approvedAt! + 2000).toISOString()
       resource.reason = undefined
       resource.explanation = undefined
       resource.plan = undefined

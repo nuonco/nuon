@@ -8,6 +8,7 @@ import {
   type TComponentConfigTypeText,
 } from '@/components/components/ComponentTypeFilter'
 import { DriftedResources } from '@/components/install-alignment/DriftedResources'
+import { LiveBuild } from '@/components/install-alignment/LiveBuild'
 import { usePanelDeepLinks } from '@/hooks/use-panel-deep-links'
 import {
   hasOngoingDeployment,
@@ -231,6 +232,24 @@ export const InstallComponentsListContainer = () => {
           <InstallComponentLatestDeploy
             componentId={componentId}
             showHealth={showHealth}
+            live={
+              alignment?.applied_deploy_id ? (
+                <LiveBuild
+                  appliedAt={alignment.applied_deploy_at}
+                  build={alignment.applied_build}
+                  buildHref={
+                    alignment.applied_build?.id && install?.app_id
+                      ? `/${org?.id}/apps/${install.app_id}/components/${componentId}/builds/${alignment.applied_build.id}`
+                      : undefined
+                  }
+                  deployHref={installLink({
+                    installId: install?.id,
+                    appId: install?.app_id,
+                    suffix: `/components/${componentId}/deploys/${alignment.applied_deploy_id}`,
+                  })}
+                />
+              ) : undefined
+            }
           />
         ) : null,
       }

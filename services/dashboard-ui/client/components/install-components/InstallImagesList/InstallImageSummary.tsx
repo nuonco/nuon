@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { Badge } from '@/components/common/Badge'
@@ -20,6 +21,7 @@ export interface IInstallImageSummary {
   buildHref?: string
   buildLoading?: boolean
   deploy?: TDeploy
+  live?: ReactNode
   sourceRef?: string
   syncHref?: string
   syncLoading?: boolean
@@ -30,6 +32,7 @@ export const InstallImageSummary = ({
   buildHref,
   buildLoading = false,
   deploy,
+  live,
   sourceRef,
   syncHref,
   syncLoading = false,
@@ -41,55 +44,57 @@ export const InstallImageSummary = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Text variant="subtext" weight="strong" theme="neutral">
-          Latest sync
-        </Text>
-        {showSyncEmpty ? (
-          <EmptyState
-            variant="table"
-            size="sm"
-            emptyTitle="No syncs yet"
-            emptyMessage="Syncs appear here once this image is synced to the install."
-          />
-        ) : (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
-              <LabeledStatus
-                label="Status"
-                loading={syncLoading}
-                statusProps={{ status: deploy?.status_v2?.status }}
-                tooltipProps={{
-                  tipContent: deploy?.status_v2?.status_human_description,
-                  position: 'bottom',
-                }}
-              />
-              <LabeledValue label="Started" loading={syncLoading}>
-                <Time
-                  variant="subtext"
-                  time={deploy?.created_at}
-                  format="relative"
+      {live ?? (
+        <div className="flex flex-col gap-2">
+          <Text variant="subtext" weight="strong" theme="neutral">
+            Latest sync
+          </Text>
+          {showSyncEmpty ? (
+            <EmptyState
+              variant="table"
+              size="sm"
+              emptyTitle="No syncs yet"
+              emptyMessage="Syncs appear here once this image is synced to the install."
+            />
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
+                <LabeledStatus
+                  label="Status"
+                  loading={syncLoading}
+                  statusProps={{ status: deploy?.status_v2?.status }}
+                  tooltipProps={{
+                    tipContent: deploy?.status_v2?.status_human_description,
+                    position: 'bottom',
+                  }}
                 />
-              </LabeledValue>
-              <LabeledValue label="Duration" loading={syncLoading}>
-                <Duration
-                  variant="subtext"
-                  beginTime={deploy?.created_at}
-                  endTime={deploy?.updated_at}
-                />
-              </LabeledValue>
-              <LabeledValue label="Type" loading={syncLoading}>
-                <Text variant="subtext">
-                  {deploy?.install_deploy_type === 'teardown'
-                    ? 'Teardown'
-                    : 'Sync'}
-                </Text>
-              </LabeledValue>
+                <LabeledValue label="Started" loading={syncLoading}>
+                  <Time
+                    variant="subtext"
+                    time={deploy?.created_at}
+                    format="relative"
+                  />
+                </LabeledValue>
+                <LabeledValue label="Duration" loading={syncLoading}>
+                  <Duration
+                    variant="subtext"
+                    beginTime={deploy?.created_at}
+                    endTime={deploy?.updated_at}
+                  />
+                </LabeledValue>
+                <LabeledValue label="Type" loading={syncLoading}>
+                  <Text variant="subtext">
+                    {deploy?.install_deploy_type === 'teardown'
+                      ? 'Teardown'
+                      : 'Sync'}
+                  </Text>
+                </LabeledValue>
+              </div>
+              {syncHref ? <Link href={syncHref}>View sync</Link> : null}
             </div>
-            {syncHref ? <Link href={syncHref}>View sync</Link> : null}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col gap-2 border-t pt-4">
         <Text variant="subtext" weight="strong" theme="neutral">
@@ -140,11 +145,7 @@ export const InstallImageSummary = ({
               >
                 {build?.source_digest ? (
                   <ClickToCopy>
-                    <Text
-                      variant="subtext"
-                      family="mono"
-                      className="break-all"
-                    >
+                    <Text variant="subtext" family="mono" className="break-all">
                       {build.source_digest}
                     </Text>
                   </ClickToCopy>
@@ -182,9 +183,11 @@ export const InstallImageSummary = ({
 
 export const InstallImageSummaryContainer = ({
   componentId,
+  live,
   sourceRef,
 }: {
   componentId: string
+  live?: ReactNode
   sourceRef?: string
 }) => {
   const { org } = useOrg()
@@ -201,7 +204,7 @@ export const InstallImageSummaryContainer = ({
         componentId,
       }),
     refetchInterval: 20000,
-    enabled: !!org?.id && !!install?.id && !!componentId,
+    enabled: !!org?.id && !!install?.id && !!componentId && !live,
   })
 
   const { data: builds, isLoading: buildLoading } = useQuery({
@@ -220,7 +223,8 @@ export const InstallImageSummaryContainer = ({
 
   const latestDeploy = installComponent?.install_deploys?.[0]
   const latestBuild = builds?.data?.[0]
-  const build = builds?.data?.find((item) => !!item.source_digest) ?? latestBuild
+  const build =
+    builds?.data?.find((item) => !!item.source_digest) ?? latestBuild
 
   return (
     <InstallImageSummary
@@ -232,10 +236,15 @@ export const InstallImageSummaryContainer = ({
       }
       buildLoading={buildLoading}
       deploy={latestDeploy}
+      live={live}
       sourceRef={sourceRef}
       syncHref={
         latestDeploy?.id
-          ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/components/${componentId}/deploys/${latestDeploy.id}` })
+          ? installLink({
+              installId: install?.id,
+              appId: install?.app_id,
+              suffix: `/components/${componentId}/deploys/${latestDeploy.id}`,
+            })
           : undefined
       }
       syncLoading={syncLoading}

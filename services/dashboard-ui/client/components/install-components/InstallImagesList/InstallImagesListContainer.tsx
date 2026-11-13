@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DebouncedSearchInput } from '@/components/common/DeboundedSearch'
 import { DriftedResources } from '@/components/install-alignment/DriftedResources'
+import { LiveBuild } from '@/components/install-alignment/LiveBuild'
 import {
   hasOngoingDeployment,
   listedResources,
@@ -13,6 +14,7 @@ import {
   useResourceComponentPanelLinks,
 } from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
@@ -31,6 +33,7 @@ const LIMIT = 10
 export const InstallImagesListContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { appConfig } = useInstallAppConfig()
   const [searchParams, setSearchParams] = useSearchParams()
   const {
@@ -116,14 +119,15 @@ export const InstallImagesListContainer = () => {
     )
     const latestDeploy = installComponent.install_deploys?.[0]
     const appliedConfigId = installComponent.app_config_ref?.applied_config_id
+    const alignment = overview?.alignment?.resources?.find(
+      (resource) => resource.id === installComponent.id
+    )
 
     return {
       id: componentId || (installComponent.id ?? ''),
       name: component?.name ?? 'Image',
       type: component?.type,
-      alignment: overview?.alignment?.resources?.find(
-        (resource) => resource.id === installComponent.id
-      )?.category,
+      alignment: alignment?.category,
       status: installComponent.status_v2?.status ?? installComponent.status,
       consumers: componentId ? (
         <ImageConsumersContainer componentId={componentId} />
@@ -143,6 +147,25 @@ export const InstallImagesListContainer = () => {
         <InstallImageSummaryContainer
           componentId={componentId}
           sourceRef={config?.external_image?.image_url}
+          live={
+            alignment?.applied_deploy_id ? (
+              <LiveBuild
+                appliedAt={alignment.applied_deploy_at}
+                build={alignment.applied_build}
+                buildHref={
+                  alignment.applied_build?.id && install?.app_id
+                    ? `/${org?.id}/apps/${install.app_id}/components/${componentId}/builds/${alignment.applied_build.id}`
+                    : undefined
+                }
+                deployHref={installLink({
+                  installId: install?.id,
+                  appId: install?.app_id,
+                  suffix: `/components/${componentId}/deploys/${alignment.applied_deploy_id}`,
+                })}
+                variant="sync"
+              />
+            ) : undefined
+          }
         />
       ) : null,
     }

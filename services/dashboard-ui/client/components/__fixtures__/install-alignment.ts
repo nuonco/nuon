@@ -70,6 +70,17 @@ export const alignmentResource = (
   ...overrides,
 })
 
+export const liveFields = (
+  componentId: string,
+  sha = '4f1d9c2a7be03e5d8a6c1b4f7a9e3c5b2d8f1a0e'
+): Partial<TInstallAlignmentResource> => ({
+  expected_build_id: `bld-${componentId}`,
+  applied_build_id: `bld-${componentId}`,
+  applied_build: alignmentBuild(`bld-${componentId}`, sha, 76),
+  applied_deploy_id: `dep-live-${componentId}`,
+  applied_deploy_at: hoursAgo(72),
+})
+
 export const unappliedResource = (
   overrides: Partial<TInstallAlignmentResource> = {}
 ) =>
@@ -365,6 +376,7 @@ export const inSyncResources = (count = 3): TInstallAlignmentResource[] =>
       id: `ic-synced-${index}`,
       name: `synced-${index}`,
       component_id: `cmp-synced-${index}`,
+      ...liveFields(`cmp-synced-${index}`),
     })
   )
 
