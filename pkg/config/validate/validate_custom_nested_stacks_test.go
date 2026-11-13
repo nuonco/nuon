@@ -226,3 +226,35 @@ func TestValidateAzureCustomNestedStacksChecksInstallOverrides(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "az bicep build --file ./arm/storage.bicep --outfile ./arm/storage.json")
 }
+
+func TestValidateCustomNestedStackOutputs_LocalFileUsesLoadedContents(t *testing.T) {
+	contents := `
+AWSTemplateFormatVersion: '2010-09-09'
+Outputs:
+  SharedOutput:
+    Value: a
+`
+	err := ValidateCustomNestedStackOutputs(&config.AppConfig{
+		Stack: &config.StackConfig{
+			CustomNestedStacks: []config.CustomNestedStack{
+				{Name: "stack_a", TemplateURL: "./cloudformation/a/stack.yaml", Index: 0, Contents: contents},
+				{Name: "stack_b", TemplateURL: "./cloudformation/b/stack.yaml", Index: 1, Contents: contents},
+			},
+		},
+	})
+	require.Error(t, err)
+	assert.True(t, config.IsWarningErr(err), "local template paths must not be refused: %v", err)
+	assert.Contains(t, err.Error(), "SharedOutput")
+}
+
+func TestValidateCustomNestedStackOutputs_GCPModulePathSkipped(t *testing.T) {
+	err := ValidateCustomNestedStackOutputs(&config.AppConfig{
+		Stack: &config.StackConfig{
+			Type: "gcp-terraform",
+			CustomNestedStacks: []config.CustomNestedStack{
+				{Name: "bucket", TemplateURL: "github.com/acme/install-stacks//gcp/modules/bucket", Index: 0},
+			},
+		},
+	})
+	assert.NoError(t, err)
+}
