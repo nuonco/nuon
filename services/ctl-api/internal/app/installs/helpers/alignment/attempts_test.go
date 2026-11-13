@@ -209,7 +209,7 @@ func denied(status app.Status) app.CompositeStatus {
 	}}
 }
 
-func (s *BlockingAttemptsSuite) applyHistory(f *attemptFixture) {
+func (s *BlockingAttemptsSuite) applyHistory(f *attemptFixture) *app.InstallDeploy {
 	success := []app.CompositeStatus{{Status: app.WorkflowStepApprovalStatusApproved}, {Status: app.StatusSuccess}}
 	s.deploy(f, seededDeploy{build: "A", minute: 1, status: "active", applied: true, workflow: s.workflow(f, app.StatusSuccess, false), steps: success})
 	s.deploy(f, seededDeploy{build: "B", minute: 2, status: "error", workflow: s.workflow(f, app.StatusError, false),
@@ -219,12 +219,13 @@ func (s *BlockingAttemptsSuite) applyHistory(f *attemptFixture) {
 		steps: []app.CompositeStatus{denied(app.StatusError)}})
 	s.deploy(f, seededDeploy{build: "E", minute: 5, status: "error", workflow: s.workflow(f, app.StatusSuccess, false),
 		steps: []app.CompositeStatus{{Status: app.StatusUserSkipped}}})
-	s.deploy(f, seededDeploy{build: "F", minute: 6, status: "active", applied: true, workflow: s.workflow(f, app.StatusSuccess, false), steps: success})
+	deployF, _ := s.deploy(f, seededDeploy{build: "F", minute: 6, status: "active", applied: true, workflow: s.workflow(f, app.StatusSuccess, false), steps: success})
+	return deployF
 }
 
 func (s *BlockingAttemptsSuite) TestHistoryBeforeLastApplyIsNotShown() {
 	f := s.seed("A", "B", "C", "D", "E", "F")
-	s.applyHistory(f)
+	deployF := s.applyHistory(f)
 
 	s.target(f, "F")
 	res := s.read(f)
@@ -234,6 +235,9 @@ func (s *BlockingAttemptsSuite) TestHistoryBeforeLastApplyIsNotShown() {
 	s.Nil(res.Explanation)
 	s.Require().NotNil(res.AppliedBuild)
 	s.Equal(f.builds["F"], res.AppliedBuild.ID)
+	s.Equal(deployF.ID, res.AppliedDeployID)
+	s.Require().NotNil(res.AppliedDeployAt)
+	s.WithinDuration(f.base.Add(6*time.Minute+30*time.Second), *res.AppliedDeployAt, time.Millisecond)
 
 	s.addBuild(f, "G")
 	s.target(f, "G")
