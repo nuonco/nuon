@@ -4,10 +4,9 @@ import {
   type TPlanInstallFacts,
 } from '@/components/branches/PlanInstallChanges'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
-import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflowStep } from '@/types'
-import { BranchRunApproval } from './BranchRunApproval'
-import { getGroupName } from './use-group-plan-href'
+import { BranchRunApproval } from '../BranchRunApproval'
+import { getGroupName } from '../use-group-plan-href'
 
 const awaitingApproval = (step: TInstallWorkflowStep, workflowId?: string) =>
   step.execution_type === 'approval' &&
@@ -15,22 +14,24 @@ const awaitingApproval = (step: TInstallWorkflowStep, workflowId?: string) =>
   !step.approval?.response &&
   !!step.approval?.id &&
   !!step.id &&
-  !!(workflowId || step.install_workflow_id)
+  !!workflowId
+
+export interface IPlanDiffPanel extends IPanel {
+  step: TInstallWorkflowStep
+  orgId: string
+  workflowId?: string
+  installFacts?: TPlanInstallFacts
+}
 
 export const PlanDiffPanel = ({
   step,
-  installFacts,
+  orgId,
   workflowId,
+  installFacts,
   ...props
-}: IPanel & {
-  step: TInstallWorkflowStep
-  installFacts?: TPlanInstallFacts
-  workflowId?: string
-}) => {
-  const { org } = useOrg()
+}: IPlanDiffPanel) => {
   const groupName = getGroupName(step.name)
-  const resolvedWorkflowId = workflowId || step.install_workflow_id
-  const showApproval = awaitingApproval(step, resolvedWorkflowId)
+  const showApproval = awaitingApproval(step, workflowId)
 
   return (
     <Panel {...props} size="3/4" heading={`Plan for ${groupName}`}>
@@ -44,8 +45,8 @@ export const PlanDiffPanel = ({
                 actions: (
                   <GroupApprovalActions
                     target={{
-                      orgId: org?.id ?? '',
-                      workflowId: resolvedWorkflowId!,
+                      orgId,
+                      workflowId: workflowId!,
                       stepId: step.id!,
                       approvalId: step.approval!.id!,
                       groupName,
