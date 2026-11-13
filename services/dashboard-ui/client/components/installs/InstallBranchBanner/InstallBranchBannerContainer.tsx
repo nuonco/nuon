@@ -2,10 +2,16 @@ import { Link } from '@/components/common/Link'
 import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallOverview } from '@/hooks/use-install-overview'
+import { useInstallLink } from '@/hooks/use-install-path'
+import { useInstallReconciliation } from '@/hooks/use-install-reconciliation'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TInstallOverviewCommit } from '@/types'
-import { InstallBranchBanner } from './InstallBranchBanner'
+import { ReconcileInstallButton } from '../management/ReconcileInstall'
+import {
+  InstallBranchBanner,
+  type IInstallBranchBannerReconcile,
+} from './InstallBranchBanner'
 import { SuccessfulBranchRuns } from './SuccessfulBranchRuns'
 
 export const InstallBranchBannerContainer = ({
@@ -17,6 +23,8 @@ export const InstallBranchBannerContainer = ({
   const { install } = useInstall()
   const { addPanel } = useSurfaces()
   const { data, error, refetch } = useInstallOverview()
+  const { data: reconciliation } = useInstallReconciliation()
+  const installLink = useInstallLink()
   const tracking = data?.branch_tracking
   const branchName = tracking?.target_branch ?? install?.app_branch?.name
   const branchId = tracking?.branch_id ?? install?.app_branch?.id
@@ -29,7 +37,38 @@ export const InstallBranchBannerContainer = ({
       ? `/${org.id}/apps/${install.app_id}/branches/${run.branch_id}/runs/${run.workflow_id}`
       : undefined
 
-  if (!error && !(tracking?.runs_behind && tracking.runs_behind > 0)) {
+  const reconcileStatus = reconciliation?.status
+  const reconcile: IInstallBranchBannerReconcile | undefined =
+    install &&
+    reconciliation?.target?.app_config_id &&
+    (reconcileStatus === 'behind' ||
+      reconcileStatus === 'blocked' ||
+      reconcileStatus === 'in_progress')
+      ? {
+          status: reconcileStatus,
+          pinnedVersion: reconciliation.pinned?.version,
+          targetVersion: reconciliation.target.version,
+          workflowHref: reconciliation.in_flight_workflow_id
+            ? installLink({
+                installId: install.id,
+                appId: install.app_id,
+                suffix: `/workflows/${reconciliation.in_flight_workflow_id}`,
+              })
+            : undefined,
+          action:
+            reconcileStatus === 'in_progress' ? undefined : (
+              <ReconcileInstallButton>
+                Reconcile install
+              </ReconcileInstallButton>
+            ),
+        }
+      : undefined
+
+  if (
+    !error &&
+    !reconcile &&
+    !(tracking?.runs_behind && tracking.runs_behind > 0)
+  ) {
     return null
   }
 
@@ -39,6 +78,7 @@ export const InstallBranchBannerContainer = ({
         error={error}
         onRetry={() => void refetch()}
         runsBehind={tracking?.runs_behind}
+        reconcile={reconcile}
         branchName={branchName}
         branchHref={branchHref}
         onViewRuns={() =>

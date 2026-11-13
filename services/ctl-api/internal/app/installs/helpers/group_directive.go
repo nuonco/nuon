@@ -25,6 +25,21 @@ type GroupDirectiveDecision struct {
 }
 
 func (h *Helpers) PriorInFlightInstallUpdate(ctx context.Context, installID, excludeWorkflowID string) (*PriorInstallUpdate, error) {
+	version, err := h.inFlightInstallUpdateVersion(ctx, installID, excludeWorkflowID)
+	if err != nil {
+		return nil, err
+	}
+	if version == nil || version.WorkflowID == nil || *version.WorkflowID == "" {
+		return nil, nil
+	}
+	prior := &PriorInstallUpdate{WorkflowID: *version.WorkflowID}
+	if version.AppBranchRunID != nil {
+		prior.AppBranchRunID = *version.AppBranchRunID
+	}
+	return prior, nil
+}
+
+func (h *Helpers) inFlightInstallUpdateVersion(ctx context.Context, installID, excludeWorkflowID string) (*app.InstallAppConfigVersion, error) {
 	var version app.InstallAppConfigVersion
 	q := h.db.WithContext(ctx).
 		Model(&app.InstallAppConfigVersion{}).
@@ -44,14 +59,7 @@ func (h *Helpers) PriorInFlightInstallUpdate(ctx context.Context, installID, exc
 	if err != nil {
 		return nil, fmt.Errorf("unable to get in-flight install update: %w", err)
 	}
-	if version.WorkflowID == nil || *version.WorkflowID == "" {
-		return nil, nil
-	}
-	prior := &PriorInstallUpdate{WorkflowID: *version.WorkflowID}
-	if version.AppBranchRunID != nil {
-		prior.AppBranchRunID = *version.AppBranchRunID
-	}
-	return prior, nil
+	return &version, nil
 }
 
 func (h *Helpers) InstallWorkflowTerminal(ctx context.Context, workflowID string) (bool, error) {

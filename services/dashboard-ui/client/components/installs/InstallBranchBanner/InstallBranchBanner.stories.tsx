@@ -14,7 +14,11 @@ import {
   deploymentsFixture,
   resourcesFixture,
 } from '@/views/install/page-fixtures'
-import type { TInstallBranchTracking, TInstallOverviewCommit } from '@/types'
+import type {
+  TInstallBranchTracking,
+  TInstallOverviewCommit,
+  TInstallReconciliation,
+} from '@/types'
 
 const messages = [
   'Enable request tracing for the API',
@@ -43,10 +47,26 @@ const runCommit = (
         : { trigger: 'tag', tag: 'v2.4.0' },
 })
 
+const reconciliationOf = (
+  overrides: Partial<TInstallReconciliation> = {}
+): TInstallReconciliation => ({
+  status: 'behind',
+  app_branch_id: 'br-1',
+  app_branch_name: 'main',
+  pinned: { app_config_id: 'cfg-1', version: 3, commit: runCommit(5) },
+  applied: { app_config_id: 'cfg-1', version: 3, commit: runCommit(5) },
+  target: { app_config_id: 'cfg-4', version: 6, commit: runCommit(0) },
+  skipped_runs: [runCommit(0), runCommit(1), runCommit(2)],
+  skipped_run_count: 3,
+  blockers: [],
+  ...overrides,
+})
+
 const page = (
   count?: number,
   error = false,
-  excludedStatuses: string[] = []
+  excludedStatuses: string[] = [],
+  reconciliation?: TInstallReconciliation
 ) => {
   const base = resourcesFixture('active')
   const deployments = deploymentsFixture('results')
@@ -79,6 +99,20 @@ const page = (
       .slice(0, 50),
   }
   const fixture: TFixture = (url, init) => {
+    if (url.pathname.endsWith('/reconciliation')) {
+      return { body: reconciliation }
+    }
+    if (reconciliation && url.pathname.endsWith('/orgs/current')) {
+      const reply = appRuns(url, init)
+      const org = (reply?.body ?? {}) as { features?: Record<string, boolean> }
+      return {
+        ...reply,
+        body: {
+          ...org,
+          features: { ...org.features, 'install-reconciliation': true },
+        },
+      }
+    }
     if (url.pathname.endsWith('/overview')) {
       return error
         ? { body: { error: 'Unable to load branch tracking' }, status: 500 }
@@ -156,3 +190,30 @@ export const FailedAndCanceledRuns = () =>
 export const OnlyFailedAndCanceledRuns = () =>
   page(0, false, ['failed', 'cancelled'])
 export const LoadFailed = () => page(0, true)
+export const ReconcileAvailable = () =>
+  page(0, false, [], reconciliationOf())
+export const ReconcileWithRunsBehind = () =>
+  page(3, false, [], reconciliationOf())
+export const ReconcileBlocked = () =>
+  page(
+    0,
+    false,
+    [],
+    reconciliationOf({
+      status: 'blocked',
+      blockers: [
+        {
+          code: 'install_busy',
+          message: 'Another workflow is running on this install.',
+          workflow_id: 'wf-busy',
+        },
+      ],
+    })
+  )
+export const ReconcileInProgress = () =>
+  page(
+    0,
+    false,
+    [],
+    reconciliationOf({ status: 'in_progress', in_flight_workflow_id: 'wf-1' })
+  )

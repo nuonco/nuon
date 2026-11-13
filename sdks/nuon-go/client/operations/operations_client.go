@@ -688,6 +688,8 @@ type ClientService interface {
 
 	GetInstallReadme(params *GetInstallReadmeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallReadmeOK, *GetInstallReadmePartialContent, error)
 
+	GetInstallReconciliation(params *GetInstallReconciliationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallReconciliationOK, error)
+
 	GetInstallResources(params *GetInstallResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallResourcesOK, error)
 
 	GetInstallRoleUsages(params *GetInstallRoleUsagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRoleUsagesOK, error)
@@ -957,6 +959,8 @@ type ClientService interface {
 	PruneTokens(params *PruneTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PruneTokensOK, error)
 
 	PutInstallComponentHealthCheck(params *PutInstallComponentHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutInstallComponentHealthCheckOK, error)
+
+	ReconcileInstall(params *ReconcileInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReconcileInstallOK, *ReconcileInstallCreated, error)
 
 	RecoverInstallComponentHelmRelease(params *RecoverInstallComponentHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RecoverInstallComponentHelmReleaseCreated, error)
 
@@ -14499,6 +14503,52 @@ func (a *Client) GetInstallReadme(params *GetInstallReadmeParams, authInfo runti
 }
 
 /*
+GetInstallReconciliation installs reconciliation state
+
+Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+*/
+func (a *Client) GetInstallReconciliation(params *GetInstallReconciliationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallReconciliationOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallReconciliationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallReconciliation",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/reconciliation",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallReconciliationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallReconciliationOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallReconciliation: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallResources lives resource explorer for an install
 
 Returns the latest observed state of every resource the install's components manage, filterable by component, kind, namespace, health, and provider.
@@ -20706,6 +20756,52 @@ func (a *Client) PutInstallComponentHealthCheck(params *PutInstallComponentHealt
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for PutInstallComponentHealthCheck: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ReconcileInstall reconciles an install onto its app branch
+
+Starts the workflow that brings the install onto its app branch's latest deployable config. expected_app_config_id is the config the caller reviewed; the request fails with 409 when the branch has since moved to another config, when the install is blocked, or when it has no deployable target. When the install already runs the target config, or a workflow is already rolling it out, nothing is created and the current state is returned with 200. plan_only runs the workflow without applying it. Requires the install-reconciliation org feature.
+*/
+func (a *Client) ReconcileInstall(params *ReconcileInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReconcileInstallOK, *ReconcileInstallCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewReconcileInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ReconcileInstall",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/reconcile",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ReconcileInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *ReconcileInstallOK:
+		return value, nil, nil
+	case *ReconcileInstallCreated:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

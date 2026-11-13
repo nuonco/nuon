@@ -2,6 +2,7 @@ package app
 
 import (
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -121,3 +122,21 @@ func TestAppBranchRunName(t *testing.T) {
 		})
 	}
 }
+
+func TestReconcileWorkflowName(t *testing.T) {
+	reconcile := pgtype.Hstore{WorkflowMetadataKeyTriggeredBy: ptrString(WorkflowTriggeredByReconcile)}
+
+	running := &Workflow{Type: WorkflowTypeAppBranchConfigUpdate, Metadata: reconcile}
+	require.Equal(t, "Reconciling install", running.ComputeName())
+
+	finished := &Workflow{Type: WorkflowTypeAppBranchConfigUpdate, Metadata: reconcile, FinishedAt: time.Now()}
+	require.Equal(t, "Reconciled install", finished.ComputeName())
+
+	branchUpdate := &Workflow{Type: WorkflowTypeAppBranchConfigUpdate}
+	require.Equal(t, "Branch config update", branchUpdate.ComputeName())
+
+	other := &Workflow{Type: WorkflowTypeManualDeploy, Metadata: reconcile}
+	require.Equal(t, "Deploying to install", other.ComputeName())
+}
+
+func ptrString(v string) *string { return &v }

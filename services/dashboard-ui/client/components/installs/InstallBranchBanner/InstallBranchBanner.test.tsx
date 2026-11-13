@@ -31,6 +31,46 @@ test('shows the count and tracked branch with singular copy', () => {
   ).toBe('/org-1/apps/app-1/branches/br-1')
 })
 
+test('offers reconciliation from the branch tip even when no runs are counted behind', () => {
+  render(
+    <MemoryRouter>
+      <InstallBranchBanner
+        runsBehind={0}
+        branchName="release"
+        reconcile={{
+          status: 'behind',
+          pinnedVersion: 3,
+          targetVersion: 6,
+          action: <button type="button">Reconcile install</button>,
+        }}
+      />
+    </MemoryRouter>
+  )
+  expect(screen.getByText('config v3')).toBeTruthy()
+  expect(screen.getByText(/is on config v6/)).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Reconcile install' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'View branch runs' })).toBeNull()
+})
+
+test('links to the running workflow while a reconciliation is in progress', () => {
+  render(
+    <MemoryRouter>
+      <InstallBranchBanner
+        branchName="release"
+        reconcile={{
+          status: 'in_progress',
+          targetVersion: 6,
+          workflowHref: '/org-1/installs/inst-1/workflows/wf-1',
+        }}
+      />
+    </MemoryRouter>
+  )
+  expect(screen.getByText(/Reconciling this install onto/)).toBeTruthy()
+  expect(
+    screen.getByRole('link', { name: 'View workflow' }).getAttribute('href')
+  ).toBe('/org-1/installs/inst-1/workflows/wf-1')
+})
+
 test('reports a failed refresh rather than showing a stale count', () => {
   render(
     <InstallBranchBanner

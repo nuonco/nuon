@@ -34,6 +34,13 @@ func computeWorkflowName(w *Workflow) string {
 		return appBranchRunName(w) + suffix
 	}
 
+	if w.Type == WorkflowTypeAppBranchConfigUpdate && metaValue(w, WorkflowMetadataKeyTriggeredBy) == WorkflowTriggeredByReconcile {
+		if !w.FinishedAt.IsZero() {
+			return "Reconciled install" + suffix
+		}
+		return "Reconciling install" + suffix
+	}
+
 	var base string
 	if !w.FinishedAt.IsZero() {
 		base = w.Type.PastTenseName()

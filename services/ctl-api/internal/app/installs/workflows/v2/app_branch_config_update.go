@@ -28,8 +28,13 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		return nil, errors.New("new_app_config_id not found in workflow metadata")
 	}
 
+	triggeredBy := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyTriggeredBy])
+	if triggeredBy == "" {
+		triggeredBy = "app-branch"
+	}
+
 	useGroupDirective := workflow.GetVersion(ctx, appBranchGroupDirectiveVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if useGroupDirective {
+	if useGroupDirective && triggeredBy != app.WorkflowTriggeredByReconcile {
 		if err := classifyAndMaybeWait(ctx, flw, installID, newAppConfigID); err != nil {
 			return nil, err
 		}
@@ -63,8 +68,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		DryRun:         flw.PlanOnly,
 		AppBranchRunID: appBranchRunID,
 		InstallGroupID: installGroupID,
-		TriggeredBy:    "app-branch",
-		Metadata:       map[string]string{"source": "app-branch"},
+		TriggeredBy:    triggeredBy,
+		Metadata:       map[string]string{"source": triggeredBy},
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create update app config step")

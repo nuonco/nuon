@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	dataconverter "github.com/nuonco/nuon/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
@@ -136,6 +137,8 @@ type appBranchConfigUpdateSuite struct {
 	// graphRequests records what the workflow asked the app graph to be ordered
 	// against.
 	graphRequests []activities.GetAppGraphRequest
+
+	classifyCalls int
 }
 
 func TestAppBranchConfigUpdateSuite(t *testing.T) {
@@ -157,6 +160,7 @@ func (s *appBranchConfigUpdateSuite) SetupTest() {
 		DeadlockDetectionTimeout: time.Minute,
 	})
 	s.graphRequests = nil
+	s.classifyCalls = 0
 
 	// Registering by name is what lets the test env deserialize each call's
 	// arguments before handing them to the mock; without it the mock sees zero
@@ -220,8 +224,9 @@ func (s *appBranchConfigUpdateSuite) mockActivities(diff *app.InstallConfigDiff,
 
 	s.env.OnActivity("GetInstallStack", mock.Anything, mock.Anything).Return(
 		&app.InstallStack{ID: "stk-1"}, nil).Maybe()
-	s.env.OnActivity("ClassifyInstallGroupDirective", mock.Anything, mock.Anything).Return(
-		&activities.ClassifyInstallGroupDirectiveResponse{Directive: "await"}, nil)
+	s.env.OnActivity("ClassifyInstallGroupDirective", mock.Anything, mock.Anything).
+		Run(func(mock.Arguments) { s.classifyCalls++ }).
+		Return(&activities.ClassifyInstallGroupDirectiveResponse{Directive: "await"}, nil)
 	s.env.OnActivity("SendInstallGroupDirective", mock.Anything, mock.Anything).Return(
 		&activities.SendInstallGroupDirectiveResponse{}, nil).Maybe()
 	s.env.OnActivity("InstallUpdateTerminal", mock.Anything, mock.Anything).Return(
@@ -249,8 +254,12 @@ func (s *appBranchConfigUpdateSuite) workflow() *app.Workflow {
 }
 
 func (s *appBranchConfigUpdateSuite) run(diff *app.InstallConfigDiff, graphOrder []string) *app.GenerateStepsResult {
+	return s.runWorkflow(s.workflow(), diff, graphOrder)
+}
+
+func (s *appBranchConfigUpdateSuite) runWorkflow(flw *app.Workflow, diff *app.InstallConfigDiff, graphOrder []string) *app.GenerateStepsResult {
 	s.mockActivities(diff, graphOrder)
-	s.env.ExecuteWorkflow(AppBranchConfigUpdate, s.workflow())
+	s.env.ExecuteWorkflow(AppBranchConfigUpdate, flw)
 
 	s.Require().True(s.env.IsWorkflowCompleted())
 	s.Require().NoError(s.env.GetWorkflowError())
@@ -331,6 +340,58 @@ func (s *appBranchConfigUpdateSuite) TestWithoutStackChangeGatesUpFront() {
 	s.Require().Len(gateIndexes(names), 1)
 	s.Equal(-1, indexOf(names, "await install stack"))
 	s.Less(indexOf(names, runnerHealthyStepName), indexOf(names, "sync and plan existing"))
+}
+
+func (s *appBranchConfigUpdateSuite) updateAppConfigSignal(result *app.GenerateStepsResult) *updateappconfig.Signal {
+	for _, step := range result.Steps {
+		if step.Name != "update app config" {
+			continue
+		}
+		s.Require().NotNil(step.QueueSignal)
+		sig, ok := step.QueueSignal.Signal.(*updateappconfig.Signal)
+		s.Require().True(ok)
+		return sig
+	}
+	s.FailNow("no update app config step")
+	return nil
+}
+
+func (s *appBranchConfigUpdateSuite) TestBranchRolloutKeepsAppBranchSourceAndClassifies() {
+	result := s.run(
+		&app.InstallConfigDiff{Changed: []app.ComponentDiffEntry{{ComponentID: existingCompID}}},
+		[]string{existingCompID},
+	)
+
+	s.Equal(1, s.classifyCalls)
+	sig := s.updateAppConfigSignal(result)
+	s.Equal("app-branch", sig.TriggeredBy)
+	s.Equal("app-branch", sig.Metadata["source"])
+}
+
+func (s *appBranchConfigUpdateSuite) TestReconcileSkipsGroupDirectiveAndTagsTheConfigUpdate() {
+	flw := s.workflow()
+	flw.Metadata[app.WorkflowMetadataKeyTriggeredBy] = generics.ToPtr(app.WorkflowTriggeredByReconcile)
+
+	result := s.runWorkflow(
+		flw,
+		&app.InstallConfigDiff{Changed: []app.ComponentDiffEntry{{ComponentID: existingCompID}}},
+		[]string{existingCompID},
+	)
+
+	s.Zero(s.classifyCalls)
+	sig := s.updateAppConfigSignal(result)
+	s.Equal(app.WorkflowTriggeredByReconcile, sig.TriggeredBy)
+	s.Equal(app.WorkflowTriggeredByReconcile, sig.Metadata["source"])
+	s.Equal([]string{"existing"}, deployedComponents(result.Steps))
+}
+
+func (s *appBranchConfigUpdateSuite) TestReconcileWithEmptyDiffOnlyUpdatesTheConfig() {
+	flw := s.workflow()
+	flw.Metadata[app.WorkflowMetadataKeyTriggeredBy] = generics.ToPtr(app.WorkflowTriggeredByReconcile)
+
+	result := s.runWorkflow(flw, &app.InstallConfigDiff{}, []string{existingCompID})
+
+	s.Equal([]string{"update app config"}, stepNames(result.Steps))
 }
 
 func stepNames(steps []*app.WorkflowStep) []string {
