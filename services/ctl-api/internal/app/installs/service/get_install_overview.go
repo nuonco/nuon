@@ -121,8 +121,6 @@ func (s *service) getInstallOverview(ctx context.Context, orgID, installID strin
 			Error:     "Resource alignment unavailable",
 			Resources: []InstallAlignmentResource{},
 		}
-	} else {
-		err = s.alignmentBranchRunCounts(ctx, &install, tracking.BranchID, alignment)
 	}
 	if err != nil && !errors.Is(err, context.Canceled) {
 		s.l.Warn("unable to complete install alignment",
