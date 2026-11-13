@@ -9,7 +9,8 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Link } from '@/components/common/Link'
 import { useInstall } from '@/hooks/use-install'
-import { useInstallLink } from '@/hooks/use-install-path'
+import { useInstallLink, useInstallNested } from '@/hooks/use-install-path'
+import { installStatusSuffix } from '@/lib/install-path'
 import type { TWorkflowStep } from '@/types'
 import type { IStepDetails } from './types'
 
@@ -59,6 +60,7 @@ const StepHistoryStatus = ({
 export const StepMetadata = ({ step }: IStepDetails) => {
   const { install } = useInstall()
   const installLink = useInstallLink()
+  const nested = useInstallNested()
 
   return (
     <div className="flex flex-col gap-2">
@@ -123,7 +125,11 @@ export const StepMetadata = ({ step }: IStepDetails) => {
       </Expand>
 
       <Link
-        href={installLink({ installId: install?.id, appId: install?.app_id, suffix: `/workflows` })}
+        href={installLink({
+          installId: install?.id,
+          appId: install?.app_id,
+          suffix: installStatusSuffix('workflows', nested),
+        })}
       >
         View workflows
       </Link>
