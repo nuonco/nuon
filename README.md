@@ -38,6 +38,16 @@ Nuon is a platform that software vendors can use to quickly and securely offer B
 
 The fastest way to get started with Nuon is to [sign up for a free trial](https://app.nuon.co) on Nuon Cloud.
 
+Install the `nuon` command line tool and log in:
+
+```sh
+brew install nuonco/tap/nuon
+nuon auth login
+```
+
+Not using Homebrew? See the [other install options](https://docs.nuon.co/cli). Then follow the
+[quickstart](https://docs.nuon.co/get-started/quickstart) to install an example app into an AWS account.
+
 The docs for creating your first app are [here](https://docs.nuon.co/get-started/create-your-first-app). Nuon maintains
 a list of [example apps](https://github.com/nuonco/example-app-configs) to test Nuon and install them into AWS. We will
 add more examples that install into Azure and Google Cloud.
@@ -48,10 +58,10 @@ Nuon supports three deployment models:
 
 - **Nuon Cloud** — Fully managed, multi-tenant SaaS hosted by Nuon. The fastest way to get started;
   [sign up for a free trial](https://app.nuon.co).
-- **Nuon BYOC** — Single-tenant Nuon control plane deployed into your AWS account, managed remotely by Nuon. You own the
-  infrastructure and data. See the [BYOC docs](https://docs.nuon.co/guides/byoc).
+- **Nuon BYOC** — Single-tenant Nuon control plane deployed into your AWS or Google Cloud account, managed remotely by
+  Nuon. You own the infrastructure and data. See the [BYOC docs](https://docs.nuon.co/guides/byoc).
 - **Nuon Self-Hosted** — Deploy and operate Nuon entirely within your own infrastructure, with no dependency on Nuon
-  Cloud. Supported on AWS. See the [self-hosted docs](https://docs.nuon.co/guides/self-hosted).
+  Cloud. Supported on AWS, Azure, and Google Cloud. See the [self-hosted docs](https://docs.nuon.co/guides/self-hosted).
 
 See the full [deployment options guide](https://docs.nuon.co/guides/deployment-options) for a detailed comparison.
 
@@ -60,13 +70,19 @@ See the full [deployment options guide](https://docs.nuon.co/guides/deployment-o
 Browse our docs [here](https://docs.nuon.co) or visit a specific section below:
 
 - [Concepts](https://docs.nuon.co/concepts/overview): apps, components, actions, inputs, installs, workflows
-- [Architecture](https://docs.nuon.co/runner-architecture): control plane, runner, [CLI](https://docs.nuon.co/cli),
+- [Architecture](https://docs.nuon.co/architecture/platform): control plane, runner, [CLI](https://docs.nuon.co/cli),
   [API](https://docs.nuon.co/nuon-api)
-- [Deployment options](https://docs.nuon.co/deployment-options): Nuon Cloud, Nuon BYOC, and Nuon Self-Hosted
-- [Guides](https://docs.nuon.co/guides): technical info on component types, actions, variables,
+- [Deployment options](https://docs.nuon.co/guides/deployment-options): Nuon Cloud, Nuon BYOC, and Nuon Self-Hosted
+- [Guides](https://docs.nuon.co/guides/building-nuon-apps): technical info on component types, actions, variables,
   and more
 
 Also browse the [Nuon blog](https://nuon.co/blog) for technical posts on specific features and example app guides.
+
+## For AI agents
+
+- Every docs page is available as markdown. Start from the index at https://docs.nuon.co/llms.txt.
+- Working in this repository: read [AGENTS.md](AGENTS.md).
+- Operating Nuon from an agent: see the [Nuon MCP guide](https://docs.nuon.co/guides/agents/overview).
 
 ## Support
 

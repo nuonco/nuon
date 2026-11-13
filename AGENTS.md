@@ -7,6 +7,18 @@ Product concepts and deployment options: [README.md](README.md) and https://docs
 
 When working in a package, read that package's `AGENTS.md`.
 
+## If you are here to use Nuon
+
+The rest of this file is for changing Nuon's code. To deploy an app with Nuon instead:
+
+- Install the CLI: `brew install nuonco/tap/nuon`. Other options are in [docs/cli.mdx](docs/cli.mdx).
+- Follow the quickstart: [docs/get-started/quickstart.mdx](docs/get-started/quickstart.mdx), published at
+  https://docs.nuon.co/get-started/quickstart.md.
+- Every docs page is published as markdown. The index is https://docs.nuon.co/llms.txt; the source is `docs/`.
+- App config lives in git and ships through an app branch: add a branch file, run
+  `nuon branches sync --file <branch file>` once, then push to the tracked git branch. See
+  [docs/guides/app-branches.mdx](docs/guides/app-branches.mdx).
+
 ## Architecture
 
 ```
