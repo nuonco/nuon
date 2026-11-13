@@ -63,7 +63,7 @@ const mockTerraformConfig: TComponentConfig = {
   version: 2,
   type: 'terraform_module',
   checksum: 'b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7',
-  build_timeout: '45m',
+  build_timeout: '20m',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
   component_id: 'cmp456',

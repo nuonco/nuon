@@ -8,6 +8,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/nuonco/nuon/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube/clientcfg"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 )
 
 func WriteConfig(ctx context.Context, cfg *kube.ClusterInfo, fp string) error {
-	kubeCfg, err := kube.ConfigForCluster(ctx, cfg)
+	kubeCfg, err := clientcfg.ConfigForCluster(ctx, cfg)
 	if err != nil {
 		return errors.Wrap(err, "unable to get kube config")
 	}

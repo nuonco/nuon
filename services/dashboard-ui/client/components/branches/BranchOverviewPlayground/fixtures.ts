@@ -383,7 +383,7 @@ const componentEntry = ({
       id,
       type,
       version: 14,
-      buildTimeout: '1h',
+      buildTimeout: '30m',
       deployTimeout: '1h',
       config,
       dependents,

@@ -233,14 +233,14 @@ func (h *Helpers) AppliedBuildIDs(ctx context.Context, installID string) (map[st
 		return nil, err
 	}
 	if run != nil {
-		if ids["sandbox"], err = h.appliedSandboxBuildID(ctx, run); err != nil {
+		if ids["sandbox"], err = h.AppliedSandboxBuildID(ctx, run); err != nil {
 			return nil, err
 		}
 	}
 	return ids, nil
 }
 
-func (h *Helpers) appliedSandboxBuildID(ctx context.Context, run *app.InstallSandboxRun) (string, error) {
+func (h *Helpers) AppliedSandboxBuildID(ctx context.Context, run *app.InstallSandboxRun) (string, error) {
 	if run.AppSandboxBuildID != "" {
 		return run.AppSandboxBuildID, nil
 	}

@@ -38,7 +38,6 @@ func (c *Client) SweepLogStreamAccounts(ctx context.Context, req SweepLogStreamA
 			Where("accounts.deleted_at = 0 AND accounts.account_type = 'service' AND accounts.email LIKE 'log%@serviceaccount.nuon.co'").
 			Where("accounts.id > ?", req.AfterID).
 			Where("accounts.updated_at < ?", req.IdleBefore).
-			Where("NOT EXISTS (SELECT 1 FROM tokens WHERE tokens.account_id = accounts.id AND tokens.deleted_at = 0 AND tokens.expires_at > ?)", time.Now()).
 			Where("NOT EXISTS (SELECT 1 FROM managed_service_accounts WHERE managed_service_accounts.account_id = accounts.id)").
 			Where("log_streams.id IS NULL OR NOT log_streams.open OR log_streams.created_at < ?", req.OpenStreamBefore).
 			Order("accounts.id").

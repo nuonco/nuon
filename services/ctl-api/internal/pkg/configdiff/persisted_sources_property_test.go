@@ -128,19 +128,64 @@ func (m persistedSourceModel) edges() [][2]int {
 	return [][2]int{{1, 0}, {2, 4}, {3, 1}}
 }
 
+func persistedVersion(slot int) int {
+	if slot >= 3 {
+		return 0
+	}
+	return min(slot, 2)
+}
+
+func (m persistedSourceModel) appliedSandbox(later bool) int {
+	if m.sandboxBuild != -2 {
+		return m.sandboxBuild
+	}
+	return m.baselineBuild(m.sandbox, later && !m.sandboxPinned)
+}
+
+func (m persistedSourceModel) appliedSince(consumed, applied, resource int) bool {
+	if applied < 0 {
+		return false
+	}
+	return consumed < 0 || !((resource == 4 || m.configValues[persistedVersion(consumed)][resource] == m.configValues[persistedVersion(applied)][resource]) &&
+		m.equal(consumed, applied, resource))
+}
+
 func (m persistedSourceModel) impacts(i int, later bool) []pkgdiff.ImpactReason {
 	var direct, reached [2][5]bool
+	var roots [5]bool
 	version := m.baselines[i]
+	consumed := -1
+	if slot := m.receipts[i]; slot == 0 || slot == 2 || slot == 3 {
+		consumed = slot
+	}
 	for resource := range 5 {
-		old := m.baselineBuild(version, later && (resource != 4 || !m.sandboxPinned))
-		if m.buildMap || m.receipts[i] != -2 {
-			old = m.receipts[i]
-		}
-		if resource == i {
-			old = m.oldBuild(i, later)
-		}
 		direct[0][resource] = resource < 4 && m.configValues[version][resource] != m.configValues[2][resource]
-		direct[1][resource] = direct[0][resource] || !m.equal(old, 2, resource)
+		var root bool
+		if m.receipts[i] != -2 {
+			applied := -1
+			if resource == 4 {
+				applied = m.appliedSandbox(later)
+			} else if m.buildMap && m.buildOverride[resource] >= 0 {
+				applied = m.buildOverride[resource]
+			}
+			root = resource != i && m.appliedSince(consumed, applied, resource)
+		} else {
+			root = direct[0][resource] || !m.equal(m.baselineBuild(version, later && (resource != 4 || !m.sandboxPinned)), 2, resource)
+		}
+		roots[resource] = root
+		direct[1][resource] = root || m.intermediate && direct[0][resource]
+	}
+	if m.receipts[i] != -2 {
+		if m.intermediate && direct[0][i] {
+			return nil
+		}
+		var reasons []pkgdiff.ImpactReason
+		for _, edge := range m.edges() {
+			if edge[0] == i && roots[edge[1]] {
+				reasons = append(reasons, m.edgeReason(edge))
+			}
+		}
+		return reasons
 	}
 	reached = direct
 	var reasons []pkgdiff.ImpactReason
@@ -161,13 +206,7 @@ func (m persistedSourceModel) impacts(i int, later bool) []pkgdiff.ImpactReason 
 		var nextReasons []pkgdiff.ImpactReason
 		for _, edge := range m.edges() {
 			if edge[0] == i && reached[stage][edge[1]] {
-				reason := pkgdiff.EdgeReasonComponentDependency
-				if edge[1] == 4 {
-					reason = pkgdiff.EdgeReasonSandboxOutput
-				} else if i == 1 && m.dependencyRef {
-					reason = pkgdiff.EdgeReasonComponentReference
-				}
-				nextReasons = append(nextReasons, pkgdiff.ImpactReason{From: persistedResource(edge[1]), Edge: reason})
+				nextReasons = append(nextReasons, m.edgeReason(edge))
 			}
 		}
 		if len(nextReasons) > 0 {
@@ -175,6 +214,16 @@ func (m persistedSourceModel) impacts(i int, later bool) []pkgdiff.ImpactReason 
 		}
 	}
 	return reasons
+}
+
+func (m persistedSourceModel) edgeReason(edge [2]int) pkgdiff.ImpactReason {
+	reason := pkgdiff.EdgeReasonComponentDependency
+	if edge[1] == 4 {
+		reason = pkgdiff.EdgeReasonSandboxOutput
+	} else if edge[0] == 1 && m.dependencyRef {
+		reason = pkgdiff.EdgeReasonComponentReference
+	}
+	return pkgdiff.ImpactReason{From: persistedResource(edge[1]), Edge: reason}
 }
 
 func persistedResource(i int) pkgdiff.NodeID {
@@ -288,7 +337,7 @@ func seedPersistedSourceModel(t require.TestingT, db *gorm.DB, m persistedSource
 			baselines.ComponentBuilds[id] = nil
 			if m.buildOverride[i] >= 0 {
 				var build app.ComponentBuild
-				require.NoError(t, db.Unscoped().Where(app.ComponentBuild{ID: persistedFactID(40+m.buildOverride[i], i)}).First(&build).Error)
+				require.NoError(t, db.Unscoped().Preload("ComponentConfigConnection", unscoped).Where(app.ComponentBuild{ID: persistedFactID(40+m.buildOverride[i], i)}).First(&build).Error)
 				baselines.ComponentBuilds[id] = &build
 			} else if m.buildOverride[i] == -3 {
 				baselines.ComponentBuilds[id] = &app.ComponentBuild{}
@@ -367,34 +416,37 @@ func requirePersistedSourceModel(t require.TestingT, m persistedSourceModel, dif
 		}
 	}
 	require.Len(t, entries, 4)
+	old := m.appliedSandbox(later)
+	var categories [4]string
+	var reasons [4][]pkgdiff.ImpactReason
+	for i := range 4 {
+		categories[i] = "added"
+		if m.baselines[i] >= 0 {
+			reasons[i] = m.impacts(i, later)
+			categories[i] = "unchanged"
+			if m.configValues[m.baselines[i]][i] != m.configValues[2][i] || !m.equal(m.oldBuild(i, later), 2, i) || len(reasons[i]) > 0 {
+				categories[i] = "changed"
+			}
+		}
+	}
 	expected := map[string][]string{"added": {}, "changed": {}, "unchanged": {}, "removed": {}}
 	for i := range 4 {
 		id := persistedFactID(10, i)
 		entry := entries[id]
 		require.Equal(t, fmt.Sprintf("resource-%d", i), entry.ComponentName)
-		category, oldID := "added", ""
+		oldID := ""
 		if m.baselines[i] >= 0 {
-			old := m.oldBuild(i, later)
-			if old >= 0 {
-				oldID = persistedFactID(40+old, i)
+			if build := m.oldBuild(i, later); build >= 0 {
+				oldID = persistedFactID(40+build, i)
 			}
-			reasons := m.impacts(i, later)
-			require.ElementsMatch(t, reasons, entry.ImpactReasons, "resource=%d model=%+v", i, m)
-			category = "unchanged"
-			if m.configValues[m.baselines[i]][i] != m.configValues[2][i] || !m.equal(old, 2, i) || len(reasons) > 0 {
-				category = "changed"
-			}
+			require.ElementsMatch(t, reasons[i], entry.ImpactReasons, "resource=%d model=%+v", i, m)
 		}
-		expected[category] = append(expected[category], id)
+		expected[categories[i]] = append(expected[categories[i]], id)
 		require.Equal(t, oldID, entry.OldBuildID, "resource=%d", i)
 		require.Equal(t, persistedFactID(42, i), entry.NewBuildID)
 		require.Equal(t, oldID != entry.NewBuildID, entry.BuildChanged)
 	}
 	require.Equal(t, expected, want, "model=%+v later=%t", m, later)
-	old := m.sandboxBuild
-	if old == -2 {
-		old = m.baselineBuild(m.sandbox, later && !m.sandboxPinned)
-	}
 	oldID := ""
 	if old >= 0 {
 		oldID = persistedFactID(60, old)
@@ -593,4 +645,64 @@ func TestCompositeReceiptIsolationAndEmptyOverridesProperties(t *testing.T) {
 			}()
 		}
 	}, hegel.WithTestCases(8))
+}
+
+func TestCompositeDependentReceiptDecidesRedeploy(t *testing.T) {
+	t.Parallel()
+	db := isolatedConfigDiffDB(t)
+	for name, tc := range map[string]struct {
+		baselines, buildOverride, receipts [4]int
+		wantChanged                        []int
+		wantAdded                          []int
+	}{
+		"only the dependent that consumed an older dependency build is flagged": {
+			baselines:     [4]int{2, 2, 2, 2},
+			buildOverride: [4]int{2, 2, 2, 2},
+			receipts:      [4]int{2, 0, 2, 2},
+			wantChanged:   []int{1},
+		},
+		"a skipped dependency is flagged without flagging dependents that consumed what it applied": {
+			baselines:     [4]int{0, 2, 2, 2},
+			buildOverride: [4]int{0, 2, 2, 2},
+			receipts:      [4]int{0, 0, 0, 0},
+			wantChanged:   []int{0},
+		},
+		"a re-added dependency does not redeploy dependents that consumed its current config": {
+			baselines:     [4]int{-1, 2, 2, 2},
+			buildOverride: [4]int{2, 2, 2, 2},
+			receipts:      [4]int{2, 2, 2, 2},
+			wantAdded:     []int{0},
+		},
+	} {
+		for _, intermediate := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s intermediate=%t", name, intermediate), func(t *testing.T) {
+				m := persistedSourceModel{buildMap: true, sandboxBuild: 2, intermediate: intermediate, baselines: tc.baselines, buildOverride: tc.buildOverride, receipts: tc.receipts}
+				for slot := range 5 {
+					for resource := range 5 {
+						m.sources[slot][resource] = persistedSourceFact{known: true}
+					}
+				}
+				m.configValues[2][0] = 1
+				tx := db.Begin()
+				require.NoError(t, tx.Error)
+				defer tx.Rollback()
+				ctx, baselines := seedPersistedSourceModel(t, tx, m)
+				diff, err := ComputeCompositeInstallConfigDiff(ctx, tx, baselines, persistedFactID(20, 2))
+				require.NoError(t, err)
+				requirePersistedSourceModel(t, m, diff, false)
+				ids := func(entries []app.ComponentDiffEntry) []int {
+					out := []int{}
+					for _, entry := range entries {
+						var index int
+						_, err := fmt.Sscanf(entry.ComponentName, "resource-%d", &index)
+						require.NoError(t, err)
+						out = append(out, index)
+					}
+					return out
+				}
+				require.ElementsMatch(t, append([]int{}, tc.wantChanged...), ids(diff.Changed))
+				require.ElementsMatch(t, append([]int{}, tc.wantAdded...), ids(diff.Added))
+			})
+		}
+	}
 }

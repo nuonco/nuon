@@ -12,17 +12,17 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/restart"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/gracefulshutdown"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 const (
-	enqueueSourceRunnerRestart = "admin-runners-update"
-	runnerOwnerType            = "runners"
-	runnerGroupPageSize        = 100
-	runnerUpdateConcurrency    = 10
+	enqueueSourceRunnerShutdown = "admin-runners-update"
+	runnerOwnerType             = "runners"
+	runnerGroupPageSize         = 100
+	runnerUpdateConcurrency     = 10
 )
 
 type RunnerUpdateFailure struct {
@@ -31,27 +31,27 @@ type RunnerUpdateFailure struct {
 }
 
 type UpdateRunnersOptions struct {
-	DryRun        bool
-	RestartSignal bool
+	DryRun   bool
+	Shutdown bool
 }
 
 type UpdateRunnersResult struct {
-	Tag            string                `json:"tag"`
-	DryRun         bool                  `json:"dry_run"`
-	RestartSignal  bool                  `json:"restart_signal"`
-	Total          int                   `json:"total"`
-	Updated        int                   `json:"updated"`
-	Skipped        int                   `json:"skipped"`
-	Failed         int                   `json:"failed"`
-	RestartSkipped int                   `json:"restart_skipped,omitempty"`
-	RunnerIDs      []string              `json:"runner_ids,omitempty"`
-	Failures       []RunnerUpdateFailure `json:"failures,omitempty"`
+	Tag             string                `json:"tag"`
+	DryRun          bool                  `json:"dry_run"`
+	Shutdown        bool                  `json:"shutdown"`
+	Total           int                   `json:"total"`
+	Updated         int                   `json:"updated"`
+	Skipped         int                   `json:"skipped"`
+	Failed          int                   `json:"failed"`
+	ShutdownSkipped int                   `json:"shutdown_skipped,omitempty"`
+	RunnerIDs       []string              `json:"runner_ids,omitempty"`
+	Failures        []RunnerUpdateFailure `json:"failures,omitempty"`
 
 	mu sync.Mutex
 }
 
 func (o *Ops) UpdateInstallRunners(ctx context.Context, tag string, opts UpdateRunnersOptions) (*UpdateRunnersResult, error) {
-	res := &UpdateRunnersResult{Tag: tag, DryRun: opts.DryRun, RestartSignal: opts.RestartSignal}
+	res := &UpdateRunnersResult{Tag: tag, DryRun: opts.DryRun, Shutdown: opts.Shutdown}
 
 	after := ""
 	for {
@@ -140,7 +140,7 @@ func (o *Ops) updateRunnerGroup(ctx context.Context, group *app.RunnerGroup, tag
 		return
 	}
 
-	if !opts.RestartSignal {
+	if !opts.Shutdown {
 		res.record(func() {
 			res.Total += len(group.Runners)
 			res.Updated += len(group.Runners)
@@ -149,7 +149,7 @@ func (o *Ops) updateRunnerGroup(ctx context.Context, group *app.RunnerGroup, tag
 	}
 
 	for _, runner := range group.Runners {
-		sent, err := o.restartRunner(ctx, runner.ID)
+		sent, err := o.shutdownRunner(ctx, runner.ID)
 		res.record(func() {
 			res.Total++
 			if err != nil {
@@ -158,7 +158,7 @@ func (o *Ops) updateRunnerGroup(ctx context.Context, group *app.RunnerGroup, tag
 			}
 			res.Updated++
 			if !sent {
-				res.RestartSkipped++
+				res.ShutdownSkipped++
 			}
 		})
 	}
@@ -179,7 +179,7 @@ func (o *Ops) updateRunnerGroupSettings(ctx context.Context, runnerGroupID, tag 
 	return nil
 }
 
-func (o *Ops) restartRunner(ctx context.Context, runnerID string) (bool, error) {
+func (o *Ops) shutdownRunner(ctx context.Context, runnerID string) (bool, error) {
 	var q app.Queue
 	res := o.db.WithContext(ctx).
 		Where(app.Queue{
@@ -189,7 +189,7 @@ func (o *Ops) restartRunner(ctx context.Context, runnerID string) (bool, error) 
 		}).
 		First(&q)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		zap.L().Warn("runner has no signals queue, skipping restart signal", zap.String("runner_id", runnerID))
+		zap.L().Warn("runner has no signals queue, skipping shutdown signal", zap.String("runner_id", runnerID))
 		return false, nil
 	}
 	if res.Error != nil {
@@ -200,14 +200,14 @@ func (o *Ops) restartRunner(ctx context.Context, runnerID string) (bool, error) 
 		QueueID:   q.ID,
 		OwnerID:   runnerID,
 		OwnerType: runnerOwnerType,
-		Signal:    &restart.Signal{RunnerID: runnerID},
+		Signal:    &gracefulshutdown.Signal{RunnerID: runnerID},
 	})
 	if err != nil {
-		return false, fmt.Errorf("unable to enqueue restart signal: %w", err)
+		return false, fmt.Errorf("unable to enqueue shutdown signal: %w", err)
 	}
 
-	if err := o.enqueuer.EnqueueInline(ctx, resp.ID, enqueueSourceRunnerRestart); err != nil {
-		return false, fmt.Errorf("unable to dispatch restart signal: %w", err)
+	if err := o.enqueuer.EnqueueInline(ctx, resp.ID, enqueueSourceRunnerShutdown); err != nil {
+		return false, fmt.Errorf("unable to dispatch shutdown signal: %w", err)
 	}
 
 	return true, nil
