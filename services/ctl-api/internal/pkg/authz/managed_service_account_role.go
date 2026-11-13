@@ -126,6 +126,9 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 			}
 			var document []byte
 			if existing.Document != nil {
+				if _, err := ScopedRolePolicy(&role); err != nil {
+					return fmt.Errorf("refuse to reconcile unsupported private role document %s: %w", role.ID, err)
+				}
 				delete(desired, permissions.APIPermissionKey)
 				version := app.RoleVersionV1
 				if api, ok := current[permissions.APIPermissionKey]; ok {
