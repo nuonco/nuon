@@ -39,7 +39,7 @@ test('offers reconciliation from the branch tip even when no runs are counted be
         branchName="release"
         reconcile={{
           status: 'behind',
-          appliedVersion: 3,
+          pinnedVersion: 3,
           targetVersion: 6,
           action: <button type="button">Reconcile install</button>,
         }}

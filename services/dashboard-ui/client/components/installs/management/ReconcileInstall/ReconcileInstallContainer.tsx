@@ -27,7 +27,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
-import { getInstallAppConfigTreeDiff, reconcileInstall } from '@/lib'
+import { getAppConfigDiff, reconcileInstall } from '@/lib'
 import type { TInstallOverviewCommit, TInstallReconciliation } from '@/types'
 import { ReconcileInstallModal } from './ReconcileInstall'
 
@@ -48,33 +48,39 @@ export const ReconcileInstallModalContainer = ({
     refetch,
   } = useInstallReconciliation()
   const target = reconciliation?.target
-  const applied = reconciliation?.applied
+  const pinned = reconciliation?.pinned
 
   const {
-    data: treeDiff,
+    data: configDiff,
     isLoading: diffLoading,
     isError: diffError,
   } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: [
-      'install-app-config-tree-diff',
+      'app-config-diff',
       org?.id,
-      install?.id,
+      install?.app_id,
+      pinned?.app_config_id,
       target?.app_config_id,
     ],
     queryFn: () =>
-      getInstallAppConfigTreeDiff({
+      getAppConfigDiff({
         orgId: org!.id,
-        installId: install!.id,
+        appId: install!.app_id!,
         configId: target!.app_config_id!,
+        oldConfigId: pinned?.app_config_id,
       }),
-    enabled: !!org?.id && !!install?.id && !!target?.app_config_id,
+    enabled:
+      !!org?.id &&
+      !!install?.app_id &&
+      !!pinned?.app_config_id &&
+      !!target?.app_config_id,
     retry: 1,
   })
-  const diffSections = treeDiff?.diff ? extractSections(treeDiff.diff) : []
+  const diffSections = configDiff?.diff ? extractSections(configDiff.diff) : []
   const versionLabel = target?.version
-    ? applied?.version
-      ? `v${applied.version} → v${target.version}`
+    ? pinned?.version
+      ? `v${pinned.version} → v${target.version}`
       : `v${target.version}`
     : undefined
 
@@ -144,7 +150,7 @@ export const ReconcileInstallModalContainer = ({
       repo={overview?.branch_tracking?.repo}
       getRunHref={getRunHref}
       diff={
-        !target?.app_config_id ? undefined : diffLoading && !treeDiff ? (
+        !target?.app_config_id ? undefined : diffLoading && !configDiff ? (
           <ConfigChangesLoading />
         ) : diffError ? (
           <Text variant="subtext" theme="neutral">
@@ -155,8 +161,8 @@ export const ReconcileInstallModalContainer = ({
             sections={diffSections}
             versionLabel={versionLabel}
             previousSha={
-              applied?.commit?.sha && applied.commit.sha !== target.commit?.sha
-                ? applied.commit.sha
+              pinned?.commit?.sha && pinned.commit.sha !== target.commit?.sha
+                ? pinned.commit.sha
                 : undefined
             }
             sha={target.commit?.sha}

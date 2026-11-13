@@ -53,6 +53,7 @@ const reconciliationOf = (
   status: 'behind',
   app_branch_id: 'br-1',
   app_branch_name: 'main',
+  pinned: { app_config_id: 'cfg-1', version: 3, commit: runCommit(5) },
   applied: { app_config_id: 'cfg-1', version: 3, commit: runCommit(5) },
   target: { app_config_id: 'cfg-4', version: 6, commit: runCommit(0) },
   skipped_runs: [runCommit(0), runCommit(1), runCommit(2)],

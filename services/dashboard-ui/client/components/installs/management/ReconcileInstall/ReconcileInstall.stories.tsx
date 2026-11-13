@@ -24,6 +24,7 @@ const behind: TInstallReconciliation = {
   status: 'behind',
   app_branch_id: 'br-1',
   app_branch_name: 'main',
+  pinned: { app_config_id: 'cfg-1', version: 3, commit: commit(5) },
   applied: { app_config_id: 'cfg-1', version: 3, commit: commit(5) },
   target: { app_config_id: 'cfg-4', version: 6, commit: commit(1) },
   skipped_runs: [commit(1), commit(2), commit(3)],

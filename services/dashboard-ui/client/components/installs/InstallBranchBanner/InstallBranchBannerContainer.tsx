@@ -46,7 +46,7 @@ export const InstallBranchBannerContainer = ({
       reconcileStatus === 'in_progress')
       ? {
           status: reconcileStatus,
-          appliedVersion: reconciliation.applied?.version,
+          pinnedVersion: reconciliation.pinned?.version,
           targetVersion: reconciliation.target.version,
           workflowHref: reconciliation.in_flight_workflow_id
             ? installLink({

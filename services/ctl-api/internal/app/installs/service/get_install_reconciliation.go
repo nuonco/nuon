@@ -35,6 +35,7 @@ type InstallReconciliationResponse struct {
 	AppBranchName      string                         `json:"app_branch_name,omitempty"`
 	InstallGroupID     string                         `json:"install_group_id,omitempty"`
 	InstallGroupName   string                         `json:"install_group_name,omitempty"`
+	Pinned             *InstallReconciliationConfig   `json:"pinned,omitempty"`
 	Applied            *InstallReconciliationConfig   `json:"applied,omitempty"`
 	Target             *InstallReconciliationConfig   `json:"target,omitempty"`
 	SkippedRuns        []InstallOverviewCommit        `json:"skipped_runs"`
@@ -45,7 +46,7 @@ type InstallReconciliationResponse struct {
 
 // @ID						GetInstallReconciliation
 // @Summary				install reconciliation state
-// @Description			Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+// @Description			Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. pinned is the install's selected app config, which is the config a reconcile diffs from. status is current when the install already runs the target, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the pinned config and the target. Requires the install-reconciliation org feature.
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json
@@ -155,36 +156,49 @@ func (s *service) installReconciliation(ctx context.Context, install *app.Instal
 		resp.Target.Version = tipConfig.Version
 	}
 
-	var appliedConfig *app.AppConfig
-	if target.AppliedAppConfigID != "" {
-		appliedConfig, err = s.reconciliationAppConfig(ctx, install, target.AppliedAppConfigID)
-		if err != nil {
-			return nil, err
-		}
-		resp.Applied = &InstallReconciliationConfig{AppConfigID: target.AppliedAppConfigID}
-		if appliedConfig != nil {
-			resp.Applied.Version = appliedConfig.Version
-		}
-		appliedRun, err := s.reconciliationRunForConfig(ctx, install, target.AppBranchID, target.AppliedAppConfigID)
-		if err != nil {
-			return nil, err
-		}
-		if appliedRun != nil {
-			resp.Applied.AppBranchRunID = appliedRun.ID
-			resp.Applied.Commit = commitFromRun(appliedRun)
-		}
+	pinned, pinnedConfig, err := s.reconciliationConfig(ctx, install, target.AppBranchID, install.AppConfigID)
+	if err != nil {
+		return nil, err
+	}
+	resp.Pinned = pinned
+	resp.Applied, _, err = s.reconciliationConfig(ctx, install, target.AppBranchID, target.AppliedAppConfigID)
+	if err != nil {
+		return nil, err
 	}
 
 	if target.Current || tipConfig == nil {
 		return resp, nil
 	}
-	runs, count, err := s.reconciliationSkippedRuns(ctx, install, target.AppBranchID, appliedConfig, tipConfig, tipRun.ID)
+	runs, count, err := s.reconciliationSkippedRuns(ctx, install, target.AppBranchID, pinnedConfig, tipConfig, tipRun.ID)
 	if err != nil {
 		return nil, err
 	}
 	resp.SkippedRuns = runs
 	resp.SkippedRunCount = count
 	return resp, nil
+}
+
+func (s *service) reconciliationConfig(ctx context.Context, install *app.Install, branchID, configID string) (*InstallReconciliationConfig, *app.AppConfig, error) {
+	if configID == "" {
+		return nil, nil, nil
+	}
+	cfg, err := s.reconciliationAppConfig(ctx, install, configID)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := &InstallReconciliationConfig{AppConfigID: configID}
+	if cfg != nil {
+		out.Version = cfg.Version
+	}
+	run, err := s.reconciliationRunForConfig(ctx, install, branchID, configID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if run != nil {
+		out.AppBranchRunID = run.ID
+		out.Commit = commitFromRun(run)
+	}
+	return out, cfg, nil
 }
 
 func (s *service) reconciliationAppConfig(ctx context.Context, install *app.Install, configID string) (*app.AppConfig, error) {

@@ -30,6 +30,7 @@ const reconciliationOf = (
   status: 'behind',
   app_branch_id: 'br-1',
   app_branch_name: 'main',
+  pinned: { app_config_id: 'cfg-1', version: 3, commit: commit(5) },
   applied: { app_config_id: 'cfg-1', version: 3, commit: commit(5) },
   target: { app_config_id: 'cfg-4', version: 6, commit: commit(1) },
   skipped_runs: [commit(1), commit(2), commit(3)],
@@ -44,10 +45,7 @@ const page = (runsBehind: number, reconciliation: TInstallReconciliation) => {
     if (url.pathname.endsWith('/reconciliation')) {
       return { body: reconciliation }
     }
-    if (
-      url.pathname.includes('/app-configs/') &&
-      url.pathname.endsWith('/diff')
-    ) {
+    if (url.pathname.includes('/configs/') && url.pathname.endsWith('/diff')) {
       return { body: {} }
     }
     const reply = base(url, init)

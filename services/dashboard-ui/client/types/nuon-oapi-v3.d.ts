@@ -9997,6 +9997,7 @@ export interface components {
       in_flight_workflow_id?: string;
       install_group_id?: string;
       install_group_name?: string;
+      pinned?: components["schemas"]["service.InstallReconciliationConfig"];
       skipped_run_count?: number;
       skipped_runs?: components["schemas"]["service.InstallOverviewCommit"][];
       /** @enum {string} */

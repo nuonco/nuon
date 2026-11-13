@@ -10,7 +10,7 @@ const compactBanner =
 
 export interface IInstallBranchBannerReconcile {
   status: 'behind' | 'blocked' | 'in_progress'
-  appliedVersion?: number
+  pinnedVersion?: number
   targetVersion?: number
   workflowHref?: string
   action?: ReactNode
@@ -77,7 +77,7 @@ export const InstallBranchBanner = ({
   )
 
   if (reconcile) {
-    const { appliedVersion, targetVersion } = reconcile
+    const { pinnedVersion, targetVersion } = reconcile
     return (
       <Banner
         theme="neutral"
@@ -96,9 +96,9 @@ export const InstallBranchBanner = ({
                   </Link>
                 ) : null}
               </>
-            ) : appliedVersion && targetVersion ? (
+            ) : pinnedVersion && targetVersion ? (
               <>
-                This install is on <strong>config v{appliedVersion}</strong>.{' '}
+                This install is on <strong>config v{pinnedVersion}</strong>.{' '}
                 {branchLink} is on config v{targetVersion}.
               </>
             ) : (

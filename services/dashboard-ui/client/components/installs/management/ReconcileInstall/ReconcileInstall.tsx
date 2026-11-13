@@ -144,7 +144,7 @@ export const ReconcileInstallModal = ({
             {canReconcile ? (
               <Text variant="body">
                 Reconciling {installName} will move it from{' '}
-                {configLabel(reconciliation.applied)} to{' '}
+                {configLabel(reconciliation.pinned)} to{' '}
                 {configLabel(reconciliation.target)} on {onBranch}. The changes
                 below are applied in one workflow.
               </Text>
@@ -154,15 +154,15 @@ export const ReconcileInstallModal = ({
               <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                 <Card className="!gap-2 !p-4 min-w-0">
                   <Text variant="label" theme="neutral" weight="strong">
-                    Applied
+                    Selected
                   </Text>
                   <Text variant="body" weight="strong">
-                    {configLabel(reconciliation.applied)}
+                    {configLabel(reconciliation.pinned)}
                   </Text>
                   <ConfigCommit
-                    config={reconciliation.applied}
+                    config={reconciliation.pinned}
                     repo={repo}
-                    href={getRunHref(reconciliation.applied?.commit)}
+                    href={getRunHref(reconciliation.pinned?.commit)}
                   />
                 </Card>
                 <div className="hidden items-center justify-center px-1 md:flex">
