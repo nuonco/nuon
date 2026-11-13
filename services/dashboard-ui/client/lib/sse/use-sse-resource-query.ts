@@ -72,6 +72,7 @@ export function useSSEResourceQuery<TData>({
   const {
     connected: sseConnected,
     suspended: sseSuspended,
+    closed: sseClosed,
     disconnect,
   } = useResourceSSE({
     url: sseUrl,
@@ -84,7 +85,7 @@ export function useSSEResourceQuery<TData>({
     queryKey,
     queryFn,
     refetchInterval: (query) => {
-      if (sseConnected) return false
+      if (sseConnected || sseClosed) return false
       if (!shouldPoll) return false
       if (isFinished?.(query.state.data)) return finishedPollMs
       return sseSuspended ? finishedPollMs : fallbackPollMs
