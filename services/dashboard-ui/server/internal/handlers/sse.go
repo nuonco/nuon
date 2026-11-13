@@ -23,6 +23,7 @@ const (
 	sseOrgStatusPollInterval = 5 * time.Second
 	sseFinishedPollInterval  = 30 * time.Second
 	sseErrorRetryDelay       = 5 * time.Second
+	sseErrorRetryMaxDelay    = 60 * time.Second
 	sseFinishedGracePeriod   = 2 * time.Minute
 	sseMaxStreamLifetime     = 30 * time.Minute
 )
@@ -72,7 +73,6 @@ func sseAuth(c *gin.Context, cfg *internal.Config, l *zap.Logger) (nuon.Client, 
 }
 
 type sseEvent struct {
-	// Name is the SSE event name; empty means an unnamed bare "data:" event.
 	Name string
 	Data []byte
 }
@@ -99,14 +99,11 @@ type sseFetchResult struct {
 var errSSESilentRetry = errors.New("sse: silent retry")
 
 type sseStreamConfig struct {
-	Fetch        func(ctx context.Context) (sseFetchResult, error)
-	ClientErrMsg string
-	// PollInterval defaults to sseWatchPollInterval.
-	PollInterval time.Duration
-	// FinishedPollInterval defaults to sseFinishedPollInterval.
+	Fetch                func(ctx context.Context) (sseFetchResult, error)
+	ClientErrMsg         string
+	PollInterval         time.Duration
 	FinishedPollInterval time.Duration
-	// ErrorRetryDelay defaults to sseErrorRetryDelay.
-	ErrorRetryDelay time.Duration
+	ErrorRetryDelay      time.Duration
 	// FinishedGracePeriod of zero means the stream never self-closes.
 	FinishedGracePeriod time.Duration
 	// MaxLifetime defaults to sseMaxStreamLifetime. The stream emits an
@@ -114,6 +111,25 @@ type sseStreamConfig struct {
 	// reconnect based on recent user activity.
 	MaxLifetime time.Duration
 	Log         *zap.Logger
+}
+
+func backoffRetryDelay(base time.Duration, consecutiveErrors int) time.Duration {
+	maxDelay := max(base, sseErrorRetryMaxDelay)
+	delay := base
+	for i := 0; i < consecutiveErrors && delay < maxDelay; i++ {
+		delay *= 2
+	}
+	return min(delay, maxDelay)
+}
+
+// A 403 or 404 will not succeed on a later poll. The client opens a new
+// stream when this one drops, so it has to be told to stop.
+func sseTerminalStatus(err error) bool {
+	var coder interface{ Code() int }
+	if !errors.As(err, &coder) {
+		return false
+	}
+	return coder.Code() == http.StatusForbidden || coder.Code() == http.StatusNotFound
 }
 
 // runSSEStream writes SSE headers and runs the poll loop: fetch, emit events
@@ -144,6 +160,7 @@ func runSSEStream(c *gin.Context, cfg sseStreamConfig) {
 	hashes := map[string]string{}
 	start := time.Now()
 	var finishedAt time.Time
+	consecutiveErrors := 0
 
 	sendEvent := func(ev sseEvent) {
 		if ev.Name == "" {
@@ -188,17 +205,24 @@ func runSSEStream(c *gin.Context, cfg sseStreamConfig) {
 			if cfg.Log != nil {
 				cfg.Log.Error("sse fetch failed", zap.String("path", c.FullPath()), zap.Error(fetchErr))
 			}
-			if !errors.Is(fetchErr, errSSESilentRetry) {
+			if !errors.Is(fetchErr, errSSESilentRetry) && consecutiveErrors == 0 {
 				b, _ := json.Marshal(map[string]string{"error": cfg.ClientErrMsg})
 				sendEvent(sseEvent{Name: "fetch-error", Data: b})
 			}
+			if sseTerminalStatus(fetchErr) {
+				sendEvent(sseEvent{Name: "closed", Data: []byte("true")})
+				return
+			}
+			delay := backoffRetryDelay(cfg.ErrorRetryDelay, consecutiveErrors)
+			consecutiveErrors++
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(cfg.ErrorRetryDelay):
+			case <-time.After(delay):
 			}
 			continue
 		}
+		consecutiveErrors = 0
 
 		if cfg.FinishedGracePeriod > 0 && primaryChanged {
 			if res.Finished {
