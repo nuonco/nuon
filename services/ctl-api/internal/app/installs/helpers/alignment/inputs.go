@@ -75,13 +75,10 @@ func (s *Helpers) addInputWorkflowAttempts(ctx context.Context, st *installAlign
 	for i := range workflows {
 		wf := &workflows[i]
 		for id := range st.inputWorkflowTargets(wf) {
-			if last := ev.lastAttempts[id]; last != nil && !wf.CreatedAt.After(last.CreatedAt) {
+			if last := ev.inputAttempts[id]; last != nil && !wf.CreatedAt.After(last.CreatedAt) {
 				continue
 			}
-			ev.lastAttempts[id] = &InstallAlignmentAttempt{
-				ID: wf.ID, WorkflowID: wf.ID, Type: wf.Type,
-				Status: string(wf.Status.Status), CreatedAt: wf.CreatedAt,
-			}
+			ev.inputAttempts[id] = wf
 		}
 	}
 	return nil
