@@ -5,6 +5,7 @@ export default {
 import { useState } from 'react'
 import type { TCollectionView } from '@/components/common/CollectionViewToggle'
 import { SearchInput } from '@/components/common/SearchInput'
+import { LiveBuild } from '@/components/install-alignment/LiveBuild'
 import type { TComponentBuild, TDeploy } from '@/types'
 import { InstallImageSummary } from './InstallImageSummary'
 import {
@@ -86,6 +87,30 @@ const ListStory = ({
 export const Default = () => <ListStory />
 
 export const Grid = () => <ListStory initialView="grid" />
+
+export const Synced = () => (
+  <InstallImagesList
+    images={[
+      image({
+        image: (
+          <InstallImageSummary
+            build={build}
+            buildHref="#"
+            live={
+              <LiveBuild
+                appliedAt="2026-09-22T14:04:00Z"
+                build={{ id: build.id, sha: build.vcs_connection_commit?.sha }}
+                buildHref="#"
+                deployHref="#"
+                variant="sync"
+              />
+            }
+          />
+        ),
+      }),
+    ]}
+  />
+)
 
 export const NeverBuilt = () => (
   <InstallImagesList

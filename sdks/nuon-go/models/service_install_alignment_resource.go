@@ -28,6 +28,12 @@ type ServiceInstallAlignmentResource struct {
 	// applied config id
 	AppliedConfigID string `json:"applied_config_id,omitempty"`
 
+	// applied deploy at
+	AppliedDeployAt string `json:"applied_deploy_at,omitempty"`
+
+	// applied deploy id
+	AppliedDeployID string `json:"applied_deploy_id,omitempty"`
+
 	// blocking attempt
 	BlockingAttempt *ServiceInstallAlignmentAttempt `json:"blocking_attempt,omitempty"`
 

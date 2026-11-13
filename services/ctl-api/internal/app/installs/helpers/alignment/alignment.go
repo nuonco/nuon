@@ -105,6 +105,8 @@ type InstallAlignmentResource struct {
 	Reason           string                          `json:"reason,omitempty"`
 	ExpectedBuildID  string                          `json:"expected_build_id,omitempty"`
 	AppliedBuildID   string                          `json:"applied_build_id,omitempty"`
+	AppliedDeployID  string                          `json:"applied_deploy_id,omitempty"`
+	AppliedDeployAt  *time.Time                      `json:"applied_deploy_at,omitempty"`
 	ExpectedConfigID string                          `json:"expected_config_id,omitempty"`
 	AppliedConfigID  string                          `json:"applied_config_id,omitempty"`
 	ExpectedBuild    *InstallAlignmentBuild          `json:"expected_build,omitempty"`
@@ -346,6 +348,11 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 	applied := st.appliedDeploys[ic.ID]
 	if applied != nil {
 		res.AppliedBuildID = applied.ComponentBuildID
+		res.AppliedDeployID = applied.ID
+		res.AppliedDeployAt = applied.AppliedAt
+		if res.AppliedDeployAt == nil {
+			res.AppliedDeployAt = &applied.UpdatedAt
+		}
 		res.AppliedConfigID = applied.AppConfigID
 		if res.AppliedConfigID == "" {
 			res.AppliedConfigID = ic.AppConfigRef.AppliedConfigID

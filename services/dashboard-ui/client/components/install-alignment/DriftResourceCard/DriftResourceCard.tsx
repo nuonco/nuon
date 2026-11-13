@@ -13,7 +13,6 @@ import { ComponentType } from '@/components/components/ComponentType'
 import type {
   TAPIError,
   TComponentType,
-  TInstallAlignmentBuild,
   TInstallAlignmentResource,
   TInstallAlignmentResourceKind,
 } from '@/types'
@@ -25,6 +24,7 @@ import {
   hasOngoingDeployment,
   isDrifted,
 } from '../alignment-utils'
+import { BuildRef } from '../LiveBuild'
 
 export interface IDriftResourceCard {
   buildHref?: (buildId: string) => string | undefined
@@ -68,32 +68,6 @@ const REASON_STATUS_LABELS: Record<string, string> = {
 
 const earlierAttemptsLabel = (count: number) =>
   `${count} earlier ${count === 1 ? 'attempt' : 'attempts'}`
-
-const BuildRef = ({
-  build,
-  href,
-}: {
-  build?: TInstallAlignmentBuild
-  href?: string
-}) => {
-  const ref = buildRef(build)
-  if (!ref) {
-    return (
-      <Text as="span" variant="subtext" theme="neutral">
-        Not deployed
-      </Text>
-    )
-  }
-  return href ? (
-    <Link href={href} variant="inline" className="!font-mono text-sm">
-      {ref}
-    </Link>
-  ) : (
-    <Text as="span" family="mono" variant="subtext">
-      {ref}
-    </Text>
-  )
-}
 
 export const DriftResourceCard = ({
   buildHref,

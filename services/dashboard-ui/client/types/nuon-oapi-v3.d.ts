@@ -9685,6 +9685,8 @@ export interface components {
       applied_build?: components["schemas"]["service.InstallAlignmentBuild"];
       applied_build_id?: string;
       applied_config_id?: string;
+      applied_deploy_at?: string;
+      applied_deploy_id?: string;
       blocking_attempt?: components["schemas"]["service.InstallAlignmentAttempt"];
       category?: components["schemas"]["service.InstallAlignmentCategory"];
       component_id?: string;
