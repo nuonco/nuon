@@ -39,6 +39,13 @@ func NewCachedResponseWriter(w gin.ResponseWriter) *CachedResponseWriter {
 	}
 }
 
+const maxLoggedRequestBody = 64 << 10
+
+type prefixedBody struct {
+	io.Reader
+	io.Closer
+}
+
 type middleware struct {
 	l   *zap.Logger
 	cfg *internal.Config
@@ -50,12 +57,14 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Capture the request body
 		var requestBody string
 		if c.Request.Body != nil {
-			b, _ := io.ReadAll(c.Request.Body)
-			requestBody = string(b)
-			c.Request.Body = io.NopCloser(bytes.NewReader(b)) // Restore the body for the actual handler to use
+			prefix, _ := io.ReadAll(io.LimitReader(c.Request.Body, maxLoggedRequestBody))
+			requestBody = string(prefix)
+			c.Request.Body = &prefixedBody{
+				Reader: io.MultiReader(bytes.NewReader(prefix), c.Request.Body),
+				Closer: c.Request.Body,
+			}
 		}
 
 		// Capture the response body
