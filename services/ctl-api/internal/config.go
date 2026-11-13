@@ -119,8 +119,10 @@ func init() {
 	config.RegisterDefault("telemetry_jwt_issuer", "")
 	config.RegisterDefault("telemetry_relay_endpoint", "")
 
-	// max request sizes to prevent too large of requests
-	config.RegisterDefault("max_request_size", 32<<20)
+	// Body caps. The runner API carries Terraform state uploads (largest seen ~15 MB on the wire);
+	// the public API's largest legitimate bodies are GitHub webhooks (largest seen ~5 MB).
+	config.RegisterDefault("max_request_size", 16<<20)
+	config.RegisterDefault("runner_max_request_size", 32<<20)
 	config.RegisterDefault("max_request_duration", time.Second*30)
 
 	config.RegisterDefault("app_repository_name_template", "%s/%s")
@@ -550,8 +552,9 @@ type Config struct {
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
 	DisableAnalytics bool   `config:"disable_analytics"`
 
-	MaxRequestSize     int64         `config:"max_request_size" validate:"required"`
-	MaxRequestDuration time.Duration `config:"max_request_duration" validate:"required"`
+	MaxRequestSize       int64         `config:"max_request_size" validate:"required"`
+	RunnerMaxRequestSize int64         `config:"runner_max_request_size" validate:"required"`
+	MaxRequestDuration   time.Duration `config:"max_request_duration" validate:"required"`
 
 	// Force debug mode for everything
 	ForceDebugMode              bool `config:"force_debug_mode"`
