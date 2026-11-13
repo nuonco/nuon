@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,10 +16,26 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+// Matches the public API cap; GitHub allows up to 25 MB but the largest payload seen is ~5 MB.
+const maxWebhookBody = 16 << 20
+
+var errWebhookBodyTooLarge = errors.New("webhook body too large")
+
+// readBody bounds the read because the HMAC can only be checked after the whole body is in memory.
 func readBody(ctx *gin.Context) ([]byte, error) {
-	body, err := io.ReadAll(ctx.Request.Body)
+	if ctx.Request.ContentLength > maxWebhookBody {
+		return nil, errWebhookBodyTooLarge
+	}
+	body, err := io.ReadAll(io.LimitReader(ctx.Request.Body, maxWebhookBody+1))
 	if err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			return nil, errWebhookBodyTooLarge
+		}
 		return nil, fmt.Errorf("unable to read request body: %w", err)
+	}
+	if len(body) > maxWebhookBody {
+		return nil, errWebhookBodyTooLarge
 	}
 	return body, nil
 }
@@ -56,6 +73,12 @@ func verifyGitHubSignature(secret string, signature string, body []byte) bool {
 func (s *service) WriteWebhookEvent(ctx *gin.Context) {
 	subscriptionID := ctx.Param("subscription_id")
 
+	signature := ctx.GetHeader("X-Hub-Signature-256")
+	if !strings.HasPrefix(signature, "sha256=") {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
+		return
+	}
+
 	var sub app.VCSWebhookSubscription
 	if err := s.db.WithContext(ctx).First(&sub, "id = ?", subscriptionID).Error; err != nil {
 		ctx.Error(fmt.Errorf("webhook subscription not found: %w", err))
@@ -63,12 +86,15 @@ func (s *service) WriteWebhookEvent(ctx *gin.Context) {
 	}
 
 	body, err := readBody(ctx)
+	if errors.Is(err, errWebhookBodyTooLarge) {
+		ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{"error": err.Error()})
+		return
+	}
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	signature := ctx.GetHeader("X-Hub-Signature-256")
 	if !verifyGitHubSignature(sub.WebhookSecret, signature, body) {
 		s.l.Warn("webhook signature verification failed",
 			zap.String("subscription_id", subscriptionID),
