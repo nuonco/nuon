@@ -1,0 +1,39 @@
+---
+title: 045 - Changed-Component Deploys and Private Registries
+description: Branch runs build and deploy only the components a commit changes. Pull private images from ECR, Artifact Registry, and ACR through cloud connections.
+boost: 0.3
+---
+
+_November 13, 2026_
+
+## Deploy only what changed
+
+- A branch run rebuilds a component only when its config, its source directory, or a file its last build read has changed
+- Each component and the sandbox deploy only when they differ from their last successful apply, including the builds they use from dependencies
+- Each deployment lists the changed files behind it and the commit it built from
+
+Edit one component's Helm template, and the next branch run deploys that component. The sandbox and every other component stay as they are.
+
+<Note>Builds from earlier releases don't record their source details. The first branch run after this release rebuilds each Git component and the sandbox once, and redeploys components that have dependencies.</Note>
+
+<Card title="What a run rebuilds" icon="code-branch" href="/guides/app-branches#what-a-run-rebuilds" horizontal />
+
+---
+
+## Private image registries
+
+- Pull private images from Amazon ECR, Google Artifact Registry, and Azure Container Registry with no credentials in app config
+- Assign each image repository to a verified [cloud connection](/guides/cloud-connections) under **Settings > Image repositories**
+- Each connection comes with generated setup to apply in the cloud account: Terraform or the cloud's CLI, plus CloudFormation on AWS
+
+Image credentials already in app config keep working.
+
+<Card title="Private image registries" icon="box" href="/guides/private-image-registries" horizontal />
+
+---
+
+## Other updates in this release
+
+### Delete action run logs
+
+If an action prints a secret, an org admin can delete that run's logs from the action run page once the run ends. The run and its outputs stay, so a secret in an output needs separate handling.
