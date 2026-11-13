@@ -68,24 +68,24 @@ func TestResolveCreateInstallBranchPrintsNoticeWithoutAppBranchID(t *testing.T) 
 	var branch *createInstallBranch
 	stderr := captureStderr(t, func() {
 		var err error
-		branch, err = s.resolveCreateInstallBranch(context.Background(), "app-1", "", "", true)
+		branch, err = s.resolveCreateInstallBranch(context.Background(), "app-1", "", "", true, false)
 		require.NoError(t, err)
 	})
 
 	assert.Equal(t, "", branch.branchID)
-	assert.Contains(t, stderr, "no --app-branch-id; using the app config from the last nuon apps sync")
+	assert.Contains(t, stderr, "no --app-branch-id; using the latest sync config")
 }
 
-func TestResolveCreateInstallBranchOmitsNoticeWithoutBranches(t *testing.T) {
+func TestResolveCreateInstallBranchPrintsNoticeWithoutBranches(t *testing.T) {
 	api := &branchListAPI{}
 	s := &Service{api: api, cfg: &config.Config{Interactive: false}}
 
 	stderr := captureStderr(t, func() {
-		_, err := s.resolveCreateInstallBranch(context.Background(), "app-1", "", "", true)
+		_, err := s.resolveCreateInstallBranch(context.Background(), "app-1", "", "", true, false)
 		require.NoError(t, err)
 	})
 
-	assert.Equal(t, "", stderr)
+	assert.Contains(t, stderr, "no --app-branch-id; using the latest sync config")
 }
 
 func TestResolveCreateInstallBranchOmitsNoticeWithAppBranchID(t *testing.T) {
@@ -94,10 +94,57 @@ func TestResolveCreateInstallBranchOmitsNoticeWithAppBranchID(t *testing.T) {
 	s := &Service{api: api, cfg: &config.Config{Interactive: false}}
 
 	stderr := captureStderr(t, func() {
-		got, err := s.resolveCreateInstallBranch(context.Background(), "app-1", "b1", "", true)
+		got, err := s.resolveCreateInstallBranch(context.Background(), "app-1", "b1", "", true, false)
 		require.NoError(t, err)
 		assert.Equal(t, "b1", got.branchID)
 	})
 
 	assert.Equal(t, "", stderr)
+}
+
+func TestResolveCreateInstallBranchRequiresAppBranchIDWhenAppSyncDisabled(t *testing.T) {
+	api := &branchListAPI{branches: []*models.AppAppBranch{{ID: "b1", Name: "prod"}}}
+	s := &Service{api: api, cfg: &config.Config{Interactive: false}}
+
+	stderr := captureStderr(t, func() {
+		_, err := s.resolveCreateInstallBranch(context.Background(), "app-1", "", "", true, true)
+		require.EqualError(t, err, "--app-branch-id is required when disable-app-sync is enabled")
+	})
+
+	assert.Equal(t, "", stderr)
+}
+
+func TestResolveCreateInstallBranchWithoutBranchesWhenAppSyncDisabled(t *testing.T) {
+	api := &branchListAPI{}
+	s := &Service{api: api, cfg: &config.Config{Interactive: false}}
+
+	_, err := s.resolveCreateInstallBranch(context.Background(), "app-1", "", "", true, true)
+	require.EqualError(t, err, "app has no app branches and disable-app-sync is enabled; create one with `nuon branches sync`")
+}
+
+func TestResolveCreateInstallBranchAcceptsAppBranchIDWhenAppSyncDisabled(t *testing.T) {
+	api := &branchListAPI{branches: []*models.AppAppBranch{{ID: "b1", Name: "prod"}}}
+	s := &Service{api: api, cfg: &config.Config{Interactive: false}}
+
+	got, err := s.resolveCreateInstallBranch(context.Background(), "app-1", "b1", "", true, true)
+	require.NoError(t, err)
+	assert.Equal(t, "b1", got.branchID)
+}
+
+func TestBranchSelectorItems(t *testing.T) {
+	branches := []*models.AppAppBranch{{ID: "b1", Name: "prod"}}
+
+	values := func(allowSkip bool) []string {
+		var got []string
+		for _, item := range branchSelectorItems(branches, allowSkip) {
+			got = append(got, item.Value())
+		}
+		return got
+	}
+
+	assert.Equal(t, []string{"b1", skipBranchID}, values(true))
+	assert.Equal(t, []string{"b1"}, values(false))
+
+	items := branchSelectorItems(branches, true)
+	assert.Equal(t, "Skip app branch (use the latest sync config)", items[len(items)-1].Title())
 }

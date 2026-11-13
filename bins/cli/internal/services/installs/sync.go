@@ -47,12 +47,13 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, conf
 	if err != nil {
 		return ui.PrintError(fmt.Errorf("unable to read org features: %w", err))
 	}
+	appSyncDisabled := org.Features["disable-app-sync"]
 	branchesByInstall, err := resolveInstallConfigBranches(
 		ctx,
 		s.api,
 		appID,
 		installCfgs,
-		org.Features["disable-app-sync"],
+		appSyncDisabled,
 	)
 	if err != nil {
 		return ui.PrintError(err)
@@ -63,7 +64,7 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, conf
 		return ui.PrintError(fmt.Errorf("error listing installs for app %s: %w", appID, err))
 	}
 
-	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID, s.cfg.Interactive, asJSON, approveAll, branchesByInstall)
+	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID, s.cfg.Interactive, asJSON, approveAll, appSyncDisabled, branchesByInstall)
 
 	results := make([]syncedInstall, 0, len(installCfgs))
 	for _, installCfg := range installCfgs {
