@@ -25,6 +25,8 @@ type Index struct {
 	Option  string
 	Type    string
 	Comment string
+
+	Concurrently bool
 }
 
 type indexModel interface {
@@ -78,6 +80,11 @@ func (m *Migrator) applyIndexes(ctx context.Context, obj any) error {
 	}
 
 	toAdd, toDel := generics.DiffMaps(expected, existing)
+	for name, idx := range expected {
+		if idx.(gormIndex).idx.Concurrently {
+			toAdd[name] = idx
+		}
+	}
 
 	for _, idx := range toAdd {
 		if err := m.applyIndex(ctx, obj, idx.(gormIndex).idx); err != nil {
@@ -109,10 +116,25 @@ type BuildIndexOptionsInterface interface {
 
 func (m *Migrator) applyIndex(ctx context.Context, obj any, idx Index) error {
 	if m.db.WithContext(ctx).Migrator().HasIndex(obj, idx.Name) {
-		m.l.Debug("index already exists",
+		invalid := false
+		if idx.Concurrently {
+			if err := m.db.WithContext(ctx).Raw(m.opts.InvalidIndexSQL, idx.Name).Scan(&invalid).Error; err != nil {
+				return errors.Wrapf(err, "unable to check index %s", idx.Name)
+			}
+		}
+		if !invalid {
+			m.l.Debug("index already exists",
+				zap.String("model", plugins.TableName(m.db, obj)),
+				zap.String("index", idx.Name))
+			return nil
+		}
+
+		m.l.Warn("rebuilding invalid index",
 			zap.String("model", plugins.TableName(m.db, obj)),
 			zap.String("index", idx.Name))
-		return nil
+		if err := m.db.WithContext(ctx).Exec(m.opts.DropIndexConcurrentlyTmpl, clause.Column{Name: idx.Name}).Error; err != nil {
+			return errors.Wrapf(err, "unable to drop invalid index %s", idx.Name)
+		}
 	}
 
 	args := []any{
@@ -129,8 +151,14 @@ func (m *Migrator) applyIndex(ctx context.Context, obj any, idx Index) error {
 	}
 	args = append(args, clause.Expr{SQL: columns})
 
+	unique := idx.UniqueValue.Valid && idx.UniqueValue.Bool
 	tmpl := m.opts.CreateIndexTmpl
-	if idx.UniqueValue.Valid && idx.UniqueValue.Bool {
+	switch {
+	case idx.Concurrently && unique:
+		tmpl = m.opts.CreateUniqueIndexConcurrentlyTmpl
+	case idx.Concurrently:
+		tmpl = m.opts.CreateIndexConcurrentlyTmpl
+	case unique:
 		tmpl = m.opts.CreateUniqueIndexTmpl
 	}
 	if idx.PrimaryValue.Valid && idx.PrimaryValue.Bool {
