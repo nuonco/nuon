@@ -19,6 +19,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/orgfeatures"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -167,13 +169,34 @@ func (s *AppInstallInputConfigTestSuite) TestNoAppsSyncConfigWithBranchesReturns
 
 	rr := s.makeRequest("/v1/apps/" + s.testApp.ID + "/install-input-config")
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
-	assert.Equal(s.T(), "No app config from nuon apps sync exists for this app; its configs are on app branches. Choose an app branch for this install.", s.errDescription(rr))
+	assert.Equal(s.T(), "No sync config exists for this app. Run `nuon apps sync`, or choose an app branch.", s.errDescription(rr))
 }
 
 func (s *AppInstallInputConfigTestSuite) TestNoConfigAndNoBranchesReturnsBadRequest() {
 	rr := s.makeRequest("/v1/apps/" + s.testApp.ID + "/install-input-config")
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
-	assert.Equal(s.T(), "No active app config found. Please sync your app configuration before creating an install.", s.errDescription(rr))
+	assert.Equal(s.T(), "No sync config exists for this app. Run `nuon apps sync`, or choose an app branch.", s.errDescription(rr))
+}
+
+func (s *AppInstallInputConfigTestSuite) TestNoBranchWhenAppSyncDisabledReturnsBadRequest() {
+	s.service.Seeder.CreateAppConfig(s.testCtx, s.T(), s.testApp.ID)
+	require.NoError(s.T(), s.service.DB.WithContext(s.testCtx).
+		Model(&app.Org{ID: s.testOrg.ID}).
+		Update("features", types.StringBoolMap{string(app.OrgFeatureDisableAppSync): true}).Error)
+
+	rr := s.makeRequest("/v1/apps/" + s.testApp.ID + "/install-input-config")
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "App sync is disabled for this org. Choose an app branch for this install.", s.errDescription(rr))
+}
+
+func (s *AppInstallInputConfigTestSuite) TestNoBranchWhenAppSyncDisabledByDeploymentReturnsBadRequest() {
+	s.service.Seeder.CreateAppConfig(s.testCtx, s.T(), s.testApp.ID)
+	orgfeatures.SetForced(string(app.OrgFeatureDisableAppSync))
+	s.T().Cleanup(func() { orgfeatures.SetForced("") })
+
+	rr := s.makeRequest("/v1/apps/" + s.testApp.ID + "/install-input-config")
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "App sync is disabled for this org. Choose an app branch for this install.", s.errDescription(rr))
 }
 
 func (s *AppInstallInputConfigTestSuite) TestInputLatestConfigStillReturnsNewestConfigOfAnyKind() {

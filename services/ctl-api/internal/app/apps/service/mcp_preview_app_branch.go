@@ -21,7 +21,7 @@ type mcpPreviewAppBranchInput struct {
 	GitRef      string `json:"git_ref,omitempty" jsonschema:"git branch or ref to preview; mutually exclusive with pr_number and app_config_id"`
 	HeadSHA     string `json:"head_sha,omitempty" jsonschema:"optional commit SHA for the preview source"`
 	Mode        string `json:"mode,omitempty" jsonschema:"plan-only (default), apply, or build-only. Ask the user before apply"`
-	AppConfigID string `json:"app_config_id,omitempty" jsonschema:"synced app config ID for a local-source preview (after nuon apps sync). HTTP MCP cannot read the local workspace"`
+	AppConfigID string `json:"app_config_id,omitempty" jsonschema:"synced app config ID for a local-source preview (after nuon apps sync). HTTP MCP cannot read the local workspace. When disable-app-sync is on, use pr_number or git_ref"`
 	ConfigID    string `json:"config_id,omitempty" jsonschema:"optional app branch config ID; defaults to the latest config on the branch"`
 	Force       bool   `json:"force,omitempty" jsonschema:"force rebuild all components"`
 	AutoApprove bool   `json:"auto_approve,omitempty" jsonschema:"skip the approval gate before deploy steps"`

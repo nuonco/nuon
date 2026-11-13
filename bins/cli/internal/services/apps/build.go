@@ -28,7 +28,14 @@ func (s *Service) Build(ctx context.Context, appID, configID, requestID string) 
 			return ui.PrintError(errors.Wrap(err, "unable to get app configs"))
 		}
 		if len(configs) == 0 {
-			return ui.PrintError(fmt.Errorf("no app configs found; run 'nuon apps sync' first"))
+			org, err := s.api.GetOrg(ctx)
+			if err != nil {
+				return ui.PrintError(fmt.Errorf("unable to read org features: %w", err))
+			}
+			if org.Features[disableAppSyncFeature] {
+				return ui.PrintError(fmt.Errorf("no app configs found; run an app branch first"))
+			}
+			return ui.PrintError(fmt.Errorf("no app configs found; run `nuon apps sync` or run an app branch first"))
 		}
 		configID = configs[0].ID
 	}

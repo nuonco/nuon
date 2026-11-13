@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/orgfeatures"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -324,29 +325,19 @@ func (s *InstallsServiceTestSuite) errDescription(rr *httptest.ResponseRecorder)
 	return resp.Description
 }
 
-func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputWithoutBranchExplainsAppBranch() {
-	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+const (
+	unknownInputSyncOrBranchRun = `Unknown input "retired": the app config doesn't define it. Add it, then run ` + "`nuon apps sync`" + ` or run your app branch.`
+	unknownInputBranchRun       = `Unknown input "retired": the app config doesn't define it. Add it, then run your app branch.`
+)
 
-	val := "1"
-	rr := s.createInstallWithInputs("", map[string]*string{"branch_only": &val})
-	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
-
-	desc := s.errDescription(rr)
-	assert.Contains(s.T(), desc, "branch_only")
-	assert.Contains(s.T(), desc, "app_branch")
-}
-
-func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputWithoutBranchesOmitsAppBranchHint() {
+func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputWithoutBranchSuggestsAppSyncOrBranchRun() {
 	val := "1"
 	rr := s.createInstallWithInputs("", map[string]*string{"retired": &val})
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
-
-	desc := s.errDescription(rr)
-	assert.Equal(s.T(), "input retired defined for install does not exist in the app inputs", desc)
+	assert.Equal(s.T(), unknownInputSyncOrBranchRun, s.errDescription(rr))
 }
 
-func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputOnBranchOmitsAppBranchHint() {
+func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputOnBranchSuggestsAppSyncOrBranchRun() {
 	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
 	s.createBranchConfig(branch, true)
@@ -354,12 +345,60 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputOnBranchOmitsA
 	val := "1"
 	rr := s.createInstallWithInputs(branch.ID, map[string]*string{"retired": &val})
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
-
-	desc := s.errDescription(rr)
-	assert.Equal(s.T(), "input retired defined for install does not exist in the app inputs", desc)
+	assert.Equal(s.T(), unknownInputSyncOrBranchRun, s.errDescription(rr))
 }
 
-func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutBranchWhenOnlyBranchConfigsExplainsAppBranch() {
+func (s *InstallsServiceTestSuite) addRequiredInput(appConfigID string) {
+	var inputCfg app.AppInputConfig
+	require.NoError(s.T(), s.deps.DB.
+		Preload("AppInputs").
+		Where(app.AppInputConfig{AppConfigID: appConfigID}).
+		First(&inputCfg).Error)
+	require.NotEmpty(s.T(), inputCfg.AppInputs)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.AppInput{
+		AppInputConfigID: inputCfg.ID,
+		AppInputGroupID:  inputCfg.AppInputs[0].AppInputGroupID,
+		Name:             "size",
+		DisplayName:      "Size",
+		Type:             app.AppInputTypeString,
+		Required:         true,
+		Source:           app.AppInputSourceVendor,
+	}).Error)
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2MissingRequiredInputOmitsUnknownInputHint() {
+	s.addRequiredInput(s.testAppConfig.ID)
+
+	rr := s.createInstallWithInputs("", nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "size is required, please add a value value for the input", s.errDescription(rr))
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2MissingRequiredInputWhenAppSyncDisabledOmitsUnknownInputHint() {
+	s.setOrgFeatures(app.OrgFeatureDisableAppSync)
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	branchConfig := s.createBranchConfig(branch, true)
+	s.addRequiredInput(branchConfig.ID)
+
+	rr := s.createInstallWithInputs(branch.ID, nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "size is required, please add a value value for the input", s.errDescription(rr))
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2UnknownInputOnBranchWhenAppSyncDisabledSuggestsBranchRun() {
+	s.setOrgFeatures(app.OrgFeatureDisableAppSync)
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	s.createBranchConfig(branch, true)
+
+	val := "1"
+	rr := s.createInstallWithInputs(branch.ID, map[string]*string{"retired": &val})
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), unknownInputBranchRun, s.errDescription(rr))
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutBranchAndNoActiveConfigAsksForSyncOrBranch() {
 	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
@@ -368,11 +407,44 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutBranchWhenOnlyBranc
 
 	rr := s.createInstallWithInputs("", nil)
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "No sync config exists for this app. Run `nuon apps sync`, or choose an app branch.", s.errDescription(rr))
+}
 
-	desc := s.errDescription(rr)
-	assert.Contains(s.T(), desc, "its configs are on app branches")
-	assert.Contains(s.T(), desc, "Choose an app branch for this install")
-	assert.NotContains(s.T(), desc, "Please sync your app configuration")
+func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutBranchWhenAppSyncDisabledRequiresAppBranch() {
+	s.setOrgFeatures(app.OrgFeatureDisableAppSync)
+
+	rr := s.createInstallWithInputs("", nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "App sync is disabled for this org. Choose an app branch for this install.", s.errDescription(rr))
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutBranchWhenAppSyncDisabledByDeploymentRequiresAppBranch() {
+	orgfeatures.SetForced(string(app.OrgFeatureDisableAppSync))
+	s.T().Cleanup(func() { orgfeatures.SetForced("") })
+
+	rr := s.createInstallWithInputs("", nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "App sync is disabled for this org. Choose an app branch for this install.", s.errDescription(rr))
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2WithBranchWhenAppSyncDisabled() {
+	s.expectQueueCreation()
+	s.setOrgFeatures(app.OrgFeatureDisableAppSync)
+
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	branchConfig := s.createBranchConfig(branch, true)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.AppBranchConfig{
+		AppBranchID:   branch.ID,
+		InstallGroups: []app.AppBranchInstallGroup{{Name: "Default", Order: 0, Default: true}},
+	}).Error)
+
+	rr := s.createInstallWithInputs(branch.ID, nil)
+	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+
+	var install app.Install
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
+	assert.Equal(s.T(), branchConfig.ID, install.AppConfigID)
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutAnyConfigAsksForSync() {
@@ -380,7 +452,46 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2WithoutAnyConfigAsksForSyn
 
 	rr := s.createInstallWithInputs("", nil)
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "No sync config exists for this app. Run `nuon apps sync`, or choose an app branch.", s.errDescription(rr))
+}
 
-	desc := s.errDescription(rr)
-	assert.Equal(s.T(), "No active app config found. Please sync your app configuration before creating an install.", desc)
+func (s *InstallsServiceTestSuite) TestCreateInstallV2ExplicitBranchWithoutActiveConfig() {
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+
+	rr := s.createInstallWithInputs(branch.ID, nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "The selected app branch has no app config yet. Run the app branch first.", s.errDescription(rr))
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2ExplicitBranchWithoutActiveConfigWhenAppSyncDisabled() {
+	s.setOrgFeatures(app.OrgFeatureDisableAppSync)
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+
+	rr := s.createInstallWithInputs(branch.ID, nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "The selected app branch has no app config yet. Run the app branch first.", s.errDescription(rr))
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2NoSandboxOrRunnerConfig() {
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(&app.AppSandboxConfig{}, "app_id = ?", s.testApp.ID).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(&app.AppRunnerConfig{}, "app_id = ?", s.testApp.ID).Error)
+
+	rr := s.createInstallWithInputs("", nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "No sandbox or runner config found. Add them, then run `nuon apps sync` or run your app branch.", s.errDescription(rr))
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2NoSandboxOrRunnerConfigWhenAppSyncDisabled() {
+	s.setOrgFeatures(app.OrgFeatureDisableAppSync)
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	s.createBranchConfig(branch, true)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(&app.AppSandboxConfig{}, "app_id = ?", s.testApp.ID).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(&app.AppRunnerConfig{}, "app_id = ?", s.testApp.ID).Error)
+
+	rr := s.createInstallWithInputs(branch.ID, nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	assert.Equal(s.T(), "No sandbox or runner config found. Add them, then run your app branch.", s.errDescription(rr))
 }

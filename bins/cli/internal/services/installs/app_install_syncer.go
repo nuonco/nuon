@@ -40,13 +40,14 @@ type appInstallSyncer struct {
 	interactive       bool
 	asJSON            bool
 	approveAll        bool
+	appSyncDisabled   bool
 	branchesByInstall map[string]*models.AppAppBranch
 }
 
 func newAppInstallSyncer(
 	api nuon.Client,
 	appID, orgID string,
-	interactive, asJSON, approveAll bool,
+	interactive, asJSON, approveAll, appSyncDisabled bool,
 	branchesByInstall map[string]*models.AppAppBranch,
 ) *appInstallSyncer {
 	return &appInstallSyncer{
@@ -56,6 +57,7 @@ func newAppInstallSyncer(
 		interactive:       interactive,
 		asJSON:            asJSON,
 		approveAll:        approveAll,
+		appSyncDisabled:   appSyncDisabled,
 		branchesByInstall: branchesByInstall,
 	}
 }
@@ -126,7 +128,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 	if err := unknownInputsError(appInputCfg.Inputs, finalInputs); err != nil {
-		return nil, s.withUnbranchedInstallHint(ctx, installCfg, err)
+		return nil, s.withUnknownInputHint(err)
 	}
 	installCfg.InputGroups = []config.InputGroup{{
 		Inputs: finalInputs,
@@ -529,18 +531,11 @@ func (s *appInstallSyncer) inputConfigForNewInstall(
 	return appConfig.Input, nil
 }
 
-func (s *appInstallSyncer) withUnbranchedInstallHint(ctx context.Context, installCfg *config.Install, err error) error {
-	if installCfg.AppBranch != "" {
-		return err
+func (s *appInstallSyncer) withUnknownInputHint(err error) error {
+	if s.appSyncDisabled {
+		return fmt.Errorf("%w; add it, then run your app branch", err)
 	}
-	branches, _, listErr := s.api.GetAppBranches(ctx, s.appID, &models.GetPaginatedQuery{Limit: 1})
-	if listErr != nil || len(branches) == 0 {
-		return err
-	}
-	return fmt.Errorf(
-		"%w; install config %q has no app_branch, so it uses the app config from the last `nuon apps sync`; set app_branch to create the install on an app branch",
-		err, installCfg.Name,
-	)
+	return fmt.Errorf("%w; add it, then run `nuon apps sync` or run your app branch", err)
 }
 
 func branchID(branch *models.AppAppBranch) string {
