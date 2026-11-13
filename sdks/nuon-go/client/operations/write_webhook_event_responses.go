@@ -49,6 +49,12 @@ func (o *WriteWebhookEventReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
+	case 413:
+		result := NewWriteWebhookEventRequestEntityTooLarge()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewWriteWebhookEventInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -329,6 +335,76 @@ func (o *WriteWebhookEventNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *WriteWebhookEventNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewWriteWebhookEventRequestEntityTooLarge creates a WriteWebhookEventRequestEntityTooLarge with default headers values
+func NewWriteWebhookEventRequestEntityTooLarge() *WriteWebhookEventRequestEntityTooLarge {
+	return &WriteWebhookEventRequestEntityTooLarge{}
+}
+
+/*
+WriteWebhookEventRequestEntityTooLarge describes a response with status code 413, with default header values.
+
+Request Entity Too Large
+*/
+type WriteWebhookEventRequestEntityTooLarge struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this write webhook event request entity too large response has a 2xx status code
+func (o *WriteWebhookEventRequestEntityTooLarge) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this write webhook event request entity too large response has a 3xx status code
+func (o *WriteWebhookEventRequestEntityTooLarge) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this write webhook event request entity too large response has a 4xx status code
+func (o *WriteWebhookEventRequestEntityTooLarge) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this write webhook event request entity too large response has a 5xx status code
+func (o *WriteWebhookEventRequestEntityTooLarge) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this write webhook event request entity too large response a status code equal to that given
+func (o *WriteWebhookEventRequestEntityTooLarge) IsCode(code int) bool {
+	return code == 413
+}
+
+// Code gets the status code for the write webhook event request entity too large response
+func (o *WriteWebhookEventRequestEntityTooLarge) Code() int {
+	return 413
+}
+
+func (o *WriteWebhookEventRequestEntityTooLarge) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/vcs/webhooks/{subscription_id}/events][%d] writeWebhookEventRequestEntityTooLarge %s", 413, payload)
+}
+
+func (o *WriteWebhookEventRequestEntityTooLarge) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/vcs/webhooks/{subscription_id}/events][%d] writeWebhookEventRequestEntityTooLarge %s", 413, payload)
+}
+
+func (o *WriteWebhookEventRequestEntityTooLarge) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *WriteWebhookEventRequestEntityTooLarge) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
