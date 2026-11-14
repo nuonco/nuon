@@ -148,6 +148,13 @@ export const Overview = () => (
         description: 'Loads the app selector.',
       },
       {
+        name: 'appSyncDisabled',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Requires a selected app branch to create an install. No unbranched config is offered.',
+      },
+      {
         name: 'requireTargetAccount',
         type: 'boolean',
         default: 'false',

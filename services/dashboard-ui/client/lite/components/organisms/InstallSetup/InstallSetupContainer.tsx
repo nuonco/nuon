@@ -97,6 +97,7 @@ const branchFromApi = (branch: TAppBranch): IInstallSetupBranch | undefined => {
 
 export const InstallSetupContainer = () => {
   const { org, orgId } = useOrg()
+  const appSyncDisabled = !!org?.features?.['disable-app-sync']
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { addToast } = useToast()
@@ -268,7 +269,8 @@ export const InstallSetupContainer = () => {
       if (!selectedBranchId) return false
       const hasActive = !!resolveInstallConfig(
         query.state.data,
-        selectedBranchId
+        selectedBranchId,
+        appSyncDisabled
       ).config
       return branchConfigWaitState({
         hasBranch: true,
@@ -280,7 +282,7 @@ export const InstallSetupContainer = () => {
     },
   })
   const { config: selectedConfig, branchId: effectiveBranchId } =
-    resolveInstallConfig(configList, selectedBranchId)
+    resolveInstallConfig(configList, selectedBranchId, appSyncDisabled)
   const branchWait = branchConfigWaitState({
     hasBranch: !!selectedBranchId && !installId,
     hasActiveConfig: !!selectedConfig,
@@ -377,6 +379,7 @@ export const InstallSetupContainer = () => {
             : undefined
       }
       requireTargetAccount={!!org?.features?.['phone-home-auth']}
+      appSyncDisabled={appSyncDisabled}
       pending={mutation.isPending}
       error={mutation.error}
       install={existingInstall}

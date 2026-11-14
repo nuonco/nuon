@@ -27,10 +27,12 @@ export const CollectorSetupContainer = ({
   install,
   orgId,
   onNavigate,
+  appSyncDisabled = false,
 }: {
   install: TInstall
   orgId: string
   onNavigate: () => void
+  appSyncDisabled?: boolean
 }) => {
   const id = useId()
   const installId = install.id!
@@ -64,8 +66,7 @@ export const CollectorSetupContainer = ({
   })
   const tokens = useQuery({
     queryKey: ['tokens', orgId, collector.data?.account_id],
-    queryFn: () =>
-      listTokens({ orgId, accountId: collector.data?.account_id }),
+    queryFn: () => listTokens({ orgId, accountId: collector.data?.account_id }),
     enabled: isOrgAdmin && !!collector.data?.account_id,
     retry: false,
   })
@@ -462,11 +463,23 @@ export const CollectorSetupContainer = ({
                   </Text>
                   <Text as="li" variant="subtext">
                     <Text variant="subtext" weight="strong">
-                      Sync the app config.
+                      {appSyncDisabled
+                        ? 'Update the app config.'
+                        : 'Sync the app config.'}
                     </Text>{' '}
-                    Run <Code variant="inline">nuon apps sync</Code> from the
-                    app config directory to publish the component, label, and
-                    input. This does not deploy existing installs.
+                    {appSyncDisabled ? (
+                      <>
+                        Run your app branch to publish the component, label, and
+                        input. This does not deploy existing installs.
+                      </>
+                    ) : (
+                      <>
+                        Run <Code variant="inline">nuon apps sync</Code> from
+                        the app config directory, or run your app branch, to
+                        publish the component, label, and input. This does not
+                        deploy existing installs.
+                      </>
+                    )}
                   </Text>
                   <Text as="li" variant="subtext">
                     <Text variant="subtext" weight="strong">

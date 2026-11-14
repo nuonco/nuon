@@ -139,4 +139,130 @@ describe('InstallSetup', () => {
     expect(onDiscard).toHaveBeenCalledTimes(1)
     expect(loadDraft(orgId, wizard)).toBeUndefined()
   })
+
+  test('when app sync is disabled, no branches shows the app-branch empty state and blocks submission without a branch', () => {
+    saveDraft(orgId, `${wizard}-flag`, {
+      progress: { app: true, details: true },
+      values: {
+        appId: 'app_payments',
+        name: 'production',
+        location: 'us-west-2',
+        accountId: '',
+        autoApprove: false,
+        stackOnly: false,
+        labels: [],
+        inputs: [],
+        branchId: '',
+        installGroupId: '',
+      },
+    })
+
+    render(
+      <InstallSetup
+        apps={[
+          {
+            id: 'app_payments',
+            name: 'Payments API',
+            platform: 'aws',
+            updatedLabel: 'synced just now',
+          },
+        ]}
+        branches={[]}
+        inputs={[]}
+        platform="aws"
+        appSyncDisabled
+        configurationReady
+        persistence={{ orgId, wizard: `${wizard}-flag` }}
+        onAppChange={() => {}}
+        onBranchChange={() => {}}
+        onSubmit={() => {}}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '1. App' }))
+    expect(
+      screen.getByText(
+        'This app has no app branches. Create an app branch, then come back to create installs once it has a successful run.'
+      )
+    ).toBeTruthy()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: '3. Labels and inputs' })
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Create install' })
+    ).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  test('flag off shows the branch enrollment caption for optional enrollment', () => {
+    render(
+      <InstallSetup
+        apps={[
+          {
+            id: 'app_payments',
+            name: 'Payments API',
+            platform: 'aws',
+            updatedLabel: 'synced just now',
+          },
+        ]}
+        branches={[]}
+        inputs={[]}
+        platform="aws"
+        configurationReady
+        persistence={{ orgId, wizard: `${wizard}-caption-off` }}
+        onAppChange={() => {}}
+        onBranchChange={() => {}}
+        onSubmit={() => {}}
+      />
+    )
+
+    fireEvent.click(screen.getByText('Choose an app'))
+    fireEvent.click(screen.getByRole('option', { name: /Payments API/ }))
+
+    expect(
+      screen.getByText(
+        'Join an install group now, or enroll this install later.'
+      )
+    ).toBeTruthy()
+    expect(
+      screen.queryByText('Choose an app branch for this install.')
+    ).toBeNull()
+  })
+
+  test('when app sync is disabled, shows the branch enrollment caption for required enrollment', () => {
+    render(
+      <InstallSetup
+        apps={[
+          {
+            id: 'app_payments',
+            name: 'Payments API',
+            platform: 'aws',
+            updatedLabel: 'synced just now',
+          },
+        ]}
+        branches={[]}
+        inputs={[]}
+        platform="aws"
+        appSyncDisabled
+        configurationReady
+        persistence={{ orgId, wizard: `${wizard}-caption-on` }}
+        onAppChange={() => {}}
+        onBranchChange={() => {}}
+        onSubmit={() => {}}
+      />
+    )
+
+    fireEvent.click(screen.getByText('Choose an app'))
+    fireEvent.click(screen.getByRole('option', { name: /Payments API/ }))
+
+    expect(
+      screen.getByText('Choose an app branch for this install.')
+    ).toBeTruthy()
+    expect(
+      screen.queryByText(
+        'Join an install group now, or enroll this install later.'
+      )
+    ).toBeNull()
+  })
 })

@@ -64,6 +64,7 @@ export interface IInstallSetup {
     body: string
   }
   appsLoading?: boolean
+  appSyncDisabled?: boolean
   requireTargetAccount?: boolean
   pending?: boolean
   error?: Error | TAPIError
@@ -229,6 +230,7 @@ const BranchEnrollment = ({
   selectedBranchId,
   selectedGroupId,
   readOnly,
+  appSyncDisabled,
   onSelect,
   onClear,
 }: {
@@ -236,6 +238,7 @@ const BranchEnrollment = ({
   selectedBranchId: string
   selectedGroupId: string
   readOnly: boolean
+  appSyncDisabled: boolean
   onSelect: (branchId: string, groupId: string) => void
   onClear: () => void
 }) => (
@@ -244,10 +247,12 @@ const BranchEnrollment = ({
       <span className="flex flex-col gap-1">
         <span className="flex items-center gap-2">
           <Text weight="medium">App branch enrollment</Text>
-          <Badge>Optional</Badge>
+          {appSyncDisabled ? null : <Badge>Optional</Badge>}
         </span>
         <Text variant="caption" color="tertiary">
-          Join an install group now, or enroll this install later.
+          {appSyncDisabled
+            ? 'Choose an app branch for this install.'
+            : 'Join an install group now, or enroll this install later.'}
         </Text>
       </span>
       {!readOnly && selectedGroupId ? (
@@ -318,7 +323,9 @@ const BranchEnrollment = ({
       </div>
     ) : (
       <Text variant="caption" color="tertiary">
-        This app has no app branches. You can continue without enrollment.
+        {appSyncDisabled
+          ? 'This app has no app branches. Create an app branch, then come back to create installs once it has a successful run.'
+          : 'This app has no app branches. You can continue without enrollment.'}
       </Text>
     )}
   </div>
@@ -348,6 +355,7 @@ export const InstallSetup = ({
   configurationReady = false,
   configurationNotice,
   appsLoading = false,
+  appSyncDisabled = false,
   requireTargetAccount = false,
   pending = false,
   error,
@@ -506,6 +514,7 @@ export const InstallSetup = ({
                       selectedBranchId={values.branchId}
                       selectedGroupId={field.state.value}
                       readOnly={readOnly}
+                      appSyncDisabled={appSyncDisabled}
                       onSelect={(branchId, groupId) => {
                         form.setFieldValue('branchId', branchId)
                         form.setFieldValue('inputs', [])
@@ -839,7 +848,11 @@ export const InstallSetup = ({
                 label="Create install"
                 loading={pending}
                 disabled={
-                  !configurationReady || !inputsValid || pending || !!install
+                  !configurationReady ||
+                  !inputsValid ||
+                  pending ||
+                  !!install ||
+                  (appSyncDisabled && !values.branchId)
                 }
                 onClick={() => onSubmit(values)}
               />
@@ -882,6 +895,7 @@ export const InstallSetup = ({
     [
       apps,
       appsLoading,
+      appSyncDisabled,
       branches,
       configurationLoading,
       configurationNotice,

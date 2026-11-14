@@ -16,8 +16,16 @@ const mockBranches: TAppBranch[] = [
       {
         id: 'cfg-1',
         install_groups: [
-          { id: 'g1', name: 'Production', label_selector: { match_labels: { env: 'production' } } },
-          { id: 'g2', name: 'Staging', label_selector: { match_labels: { env: 'staging' } } },
+          {
+            id: 'g1',
+            name: 'Production',
+            label_selector: { match_labels: { env: 'production' } },
+          },
+          {
+            id: 'g2',
+            name: 'Staging',
+            label_selector: { match_labels: { env: 'staging' } },
+          },
         ],
       },
     ],
@@ -29,7 +37,11 @@ const mockBranches: TAppBranch[] = [
       {
         id: 'cfg-2',
         install_groups: [
-          { id: 'g3', name: 'Dev', label_selector: { match_labels: { env: 'dev' } } },
+          {
+            id: 'g3',
+            name: 'Dev',
+            label_selector: { match_labels: { env: 'dev' } },
+          },
         ],
       },
     ],
@@ -48,6 +60,7 @@ export const Default = () => {
       <BranchStep
         branches={mockBranches}
         selected={selected}
+        allowSkip
         onSelect={setSelected}
         onSkip={noop}
       />
@@ -62,6 +75,7 @@ export const WithSelection = () => {
       <BranchStep
         branches={mockBranches}
         selected={selected}
+        allowSkip
         onSelect={setSelected}
         onSkip={noop}
       />
@@ -74,8 +88,24 @@ export const Empty = () => (
     <BranchStep
       branches={[]}
       selected={null}
+      allowSkip
       onSelect={noop}
       onSkip={noop}
     />
   </div>
 )
+
+export const AppSyncDisabled = () => {
+  const [selected, setSelected] = useState<TAppBranch | null>(null)
+  return (
+    <div className="p-6 max-w-lg">
+      <BranchStep
+        branches={mockBranches}
+        selected={selected}
+        allowSkip={false}
+        onSelect={setSelected}
+        onSkip={noop}
+      />
+    </div>
+  )
+}
