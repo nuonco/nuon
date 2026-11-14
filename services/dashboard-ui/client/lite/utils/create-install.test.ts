@@ -120,6 +120,27 @@ describe('create install helpers', () => {
     ).toEqual({ config: undefined, branchId: '' })
   })
 
+  test('when app sync is disabled, never returns an unbranched config and requires a selected branch', () => {
+    const configs = [
+      { id: 'cfg_sync', status: 'active' },
+      {
+        id: 'cfg_branch',
+        status: 'active',
+        app_branch_id: 'branch_main',
+      },
+    ] as TAppConfig[]
+
+    expect(resolveInstallConfig(configs, undefined, true)).toEqual({
+      config: undefined,
+      branchId: '',
+    })
+
+    expect(resolveInstallConfig(configs, 'branch_main', true)).toEqual({
+      config: configs[0],
+      branchId: 'branch_main',
+    })
+  })
+
   test('reads inputs from the flat array the API populates', () => {
     expect(
       installSetupInputs({
