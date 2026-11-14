@@ -20,12 +20,13 @@ import (
 
 func TestUnchangedLegacyImageSync(t *testing.T) {
 	for name, tc := range map[string]struct {
-		image *config.ExternalImageComponentConfig
+		image   *config.ExternalImageComponentConfig
+		wantErr error
 	}{
 		"ECR role":        {image: &config.ExternalImageComponentConfig{AWSECRImageConfig: &config.AWSECRConfig{IAMRoleARN: "arn:aws:iam::123456789012:role/acme", AWSRegion: "us-east-1", ImageURL: "123456789012.dkr.ecr.us-east-1.amazonaws.com/acme", Tag: "v1"}}},
-		"GAR account":     {image: &config.ExternalImageComponentConfig{GCPGARImageConfig: &config.GCPGARConfig{ServiceAccountEmail: "acme@example.com", GCPRegion: "us-central1", GCPProjectID: "acme", ImageURL: "us-central1-docker.pkg.dev/acme/repo/image", Tag: "v1"}}},
+		"GAR account":     {image: &config.ExternalImageComponentConfig{GCPGARImageConfig: &config.GCPGARConfig{ServiceAccountEmail: "acme@example.com", GCPRegion: "us-central1", GCPProjectID: "acme", ImageURL: "us-central1-docker.pkg.dev/acme/repo/image", Tag: "v1"}}, wantErr: cloudconnections.ErrLegacyImageAuthDisabled},
 		"GAR ambient":     {image: &config.ExternalImageComponentConfig{GCPGARImageConfig: &config.GCPGARConfig{GCPRegion: "us-central1", GCPProjectID: "acme", ImageURL: "us-central1-docker.pkg.dev/acme/repo/image", Tag: "v1"}}},
-		"GAR federation":  {image: &config.ExternalImageComponentConfig{GCPGARImageConfig: &config.GCPGARConfig{WorkloadIdentityProvider: "provider", GCPRegion: "us-central1", GCPProjectID: "acme", ImageURL: "us-central1-docker.pkg.dev/acme/repo/image", Tag: "v1"}}},
+		"GAR federation":  {image: &config.ExternalImageComponentConfig{GCPGARImageConfig: &config.GCPGARConfig{WorkloadIdentityProvider: "provider", GCPRegion: "us-central1", GCPProjectID: "acme", ImageURL: "us-central1-docker.pkg.dev/acme/repo/image", Tag: "v1"}}, wantErr: cloudconnections.ErrLegacyImageAuthDisabled},
 		"ACR ambient":     {image: &config.ExternalImageComponentConfig{AzureACRImageConfig: &config.AzureACRConfig{RegistryURL: "acme.azurecr.io", ImageURL: "acme.azurecr.io/repo", Tag: "v1"}}},
 		"ACR secret":      {image: &config.ExternalImageComponentConfig{AzureACRImageConfig: &config.AzureACRConfig{RegistryURL: "acme.azurecr.io", ImageURL: "acme.azurecr.io/repo", Tag: "v1", TenantID: "tenant", ClientID: "client", ClientSecretName: "secret"}}},
 		"ACR certificate": {image: &config.ExternalImageComponentConfig{AzureACRImageConfig: &config.AzureACRConfig{RegistryURL: "acme.azurecr.io", ImageURL: "acme.azurecr.io/repo", Tag: "v1", TenantID: "tenant", ClientID: "client", ClientCertificateName: "cert"}}},
@@ -59,7 +60,12 @@ func TestUnchangedLegacyImageSync(t *testing.T) {
 				t.Fatal("unchanged sync must reuse the saved config without creating a config or build")
 			}))
 			state := &sync.State{}
-			require.NoError(t, SyncComponent(context.Background(), SyncComponentParams{DB: db, Component: component, AppID: "app", AppConfigID: "appconfig", State: state, DispatchBuilds: true, LegacyImageAuth: true}))
+			err = SyncComponent(context.Background(), SyncComponentParams{DB: db, Component: component, AppID: "app", AppConfigID: "appconfig", State: state, DispatchBuilds: true, LegacyImageAuth: true})
+			if tc.wantErr != nil {
+				require.ErrorIs(t, err, tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
 			require.Len(t, state.Components, 1)
 			require.Equal(t, "saved_config", state.Components[0].ConfigID)
 			require.Nil(t, state.Result)

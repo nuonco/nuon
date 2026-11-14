@@ -14,6 +14,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -97,14 +98,15 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 	}
 
 	if cfg.GCPGARImageConfig != nil {
+		if cfg.GCPGARImageConfig.ServiceAccountEmail != "" || cfg.GCPGARImageConfig.WorkloadIdentityProvider != "" {
+			return nil, cloudconnections.ErrLegacyImageAuthDisabled
+		}
 		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
 		return &configs.OCIRegistryRepository{
-			RegistryType:             configs.OCIRegistryTypeGAR,
-			Repository:               cfg.ImageURL,
-			Region:                   cfg.GCPGARImageConfig.GCPRegion,
-			LoginServer:              garLoginServer,
-			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
-			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
+			RegistryType: configs.OCIRegistryTypeGAR,
+			Repository:   cfg.ImageURL,
+			Region:       cfg.GCPGARImageConfig.GCPRegion,
+			LoginServer:  garLoginServer,
 		}, nil
 	}
 

@@ -32,7 +32,10 @@ func GARConnection(ctx context.Context, db *gorm.DB, orgID string, cfg *app.GCPG
 		if cfg.CloudConnectionID != "" {
 			return nil, stderr.NewInvalidRequest(errors.New("GAR cloud connection access cannot be combined with service_account_email or workload_identity_provider"))
 		}
-		return legacyImageAuth(legacy, ErrLegacyImageAuthDisabled)
+		// The legacy flag still covers ECR and ACR. A component-chosen GAR
+		// identity is the shared control-plane credential impersonating whatever
+		// service account the config names, so it stays refused.
+		return nil, ErrLegacyImageAuthDisabled
 	}
 	if cfg.ID != "" && cfg.CloudConnectionID == "" {
 		return legacyImageAuth(legacy, ErrLegacyImageAuthDisabled)
