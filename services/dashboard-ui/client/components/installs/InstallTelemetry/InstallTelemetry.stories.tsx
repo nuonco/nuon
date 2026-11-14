@@ -23,12 +23,14 @@ const SetupModal = ({
   setupRequired = false,
   member = false,
   runner = false,
+  appSyncDisabled = false,
   ...props
 }: IModal & {
   managed?: boolean
   setupRequired?: boolean
   member?: boolean
   runner?: boolean
+  appSyncDisabled?: boolean
 }) => {
   const [saved, setSaved] = useState(false)
   const [client] = useState(() => {
@@ -99,6 +101,7 @@ const SetupModal = ({
           install={{ ...install, runner_status: runner ? 'active' : 'offline' }}
           orgId={orgId}
           onNavigate={() => {}}
+          appSyncDisabled={appSyncDisabled}
         />
       </InstallTelemetryModal>
     </QueryClientProvider>
@@ -128,6 +131,11 @@ export const Member = () => (
 export const RunnerCollector = () => (
   <ModalStory>
     <SetupModal runner />
+  </ModalStory>
+)
+export const AppSyncDisabled = () => (
+  <ModalStory>
+    <SetupModal appSyncDisabled />
   </ModalStory>
 )
 export const Summary = () => (

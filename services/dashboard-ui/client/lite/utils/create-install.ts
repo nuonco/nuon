@@ -114,10 +114,15 @@ export const pickInstallConfig = (
 
 export const resolveInstallConfig = (
   configs?: TAppConfig[],
-  selectedBranchId?: string
+  selectedBranchId?: string,
+  appSyncDisabled = false
 ): { config?: TAppConfig; branchId: string } => {
   if (selectedBranchId) {
     return { config: pickInstallConfig(configs), branchId: selectedBranchId }
+  }
+
+  if (appSyncDisabled) {
+    return { config: undefined, branchId: '' }
   }
 
   const unbranched = pickInstallConfig(configs, true)

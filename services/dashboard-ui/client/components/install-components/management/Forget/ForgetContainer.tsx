@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { forgetComponent } from '@/lib'
@@ -23,9 +24,7 @@ interface IForgetComponentGates {
   isConfigLoading?: boolean
 }
 
-interface IForgetComponentModalContainer
-  extends IModal,
-    IForgetComponentGates {
+interface IForgetComponentModalContainer extends IModal, IForgetComponentGates {
   component: TComponent
 }
 
@@ -40,11 +39,16 @@ export const ForgetComponentModalContainer = ({
   const { user } = useAuth()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
+  const appSyncDisabled = useOrgFeatureFlag('disable-app-sync')
   const { install } = useInstall()
   const installLink = useInstallLink()
   const { addToast } = useToast()
 
-  const { mutate: execute, isPending: isLoading, error } = useMutation({
+  const {
+    mutate: execute,
+    isPending: isLoading,
+    error,
+  } = useMutation({
     mutationFn: () =>
       forgetComponent({
         orgId: org.id,
@@ -68,7 +72,13 @@ export const ForgetComponentModalContainer = ({
         </Toast>
       )
       removeModal(props.modalId)
-      navigate(installLink({ installId: install.id, appId: install.app_id, suffix: `/components` }))
+      navigate(
+        installLink({
+          installId: install.id,
+          appId: install.app_id,
+          suffix: `/components`,
+        })
+      )
     },
     onError: (err: any) => {
       trackEvent({
@@ -99,6 +109,7 @@ export const ForgetComponentModalContainer = ({
       isTornDown={isTornDown}
       isInConfig={isInConfig}
       isConfigLoading={isConfigLoading}
+      appSyncDisabled={appSyncDisabled}
       teardownAction={
         <TeardownComponentButton component={component} variant="secondary" />
       }
@@ -107,7 +118,9 @@ export const ForgetComponentModalContainer = ({
   )
 }
 
-interface IForgetComponentButton extends IButtonAsButton, IForgetComponentGates {
+interface IForgetComponentButton
+  extends IButtonAsButton,
+    IForgetComponentGates {
   component: TComponent
 }
 

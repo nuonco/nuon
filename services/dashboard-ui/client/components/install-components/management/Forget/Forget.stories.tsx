@@ -81,3 +81,17 @@ export const WithError = () => (
     />
   </ModalStory>
 )
+
+export const AppSyncDisabled = () => (
+  <ModalStory>
+    <ForgetComponentModal
+      componentName="web-server"
+      isLoading={false}
+      error={null}
+      onConfirm={noop}
+      isTornDown
+      isInConfig
+      appSyncDisabled
+    />
+  </ModalStory>
+)

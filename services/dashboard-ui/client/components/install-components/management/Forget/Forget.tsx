@@ -14,6 +14,7 @@ interface IForgetComponentModal extends IModal {
   isTornDown?: boolean
   isInConfig?: boolean
   isConfigLoading?: boolean
+  appSyncDisabled?: boolean
   teardownAction?: ReactNode
 }
 
@@ -54,6 +55,7 @@ export const ForgetComponentModal = ({
   isTornDown = true,
   isInConfig = false,
   isConfigLoading = false,
+  appSyncDisabled = false,
   teardownAction,
   ...props
 }: IForgetComponentModal) => {
@@ -66,13 +68,7 @@ export const ForgetComponentModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="error"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="TrashIcon" size="24" />
           Forget {componentName}?
         </Text>
@@ -129,9 +125,18 @@ export const ForgetComponentModal = ({
               title="Removed from app config"
             >
               <Text variant="subtext" theme="neutral">
-                Remove the component from your config, then run{' '}
-                <Code variant="inline">nuon apps sync</Code> to update the app
-                configuration.
+                {appSyncDisabled ? (
+                  <>
+                    Remove the component from your config, then run your app
+                    branch to update the app configuration.
+                  </>
+                ) : (
+                  <>
+                    Remove the component from your config, then run{' '}
+                    <Code variant="inline">nuon apps sync</Code> or run your app
+                    branch to update the app configuration.
+                  </>
+                )}
               </Text>
             </ChecklistItem>
           </div>
