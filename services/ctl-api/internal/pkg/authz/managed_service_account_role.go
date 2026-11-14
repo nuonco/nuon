@@ -87,6 +87,19 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 	}
 	if want.ID == "" {
 		want.Policies[0].OrgID = want.OrgID
+		switch want.RoleType {
+		case app.RoleTypeRunnerInstall, app.RoleTypeRunnerJob, app.RoleTypeStack, app.RoleTypeTelemetryCollector, app.RoleTypePhoneHome, app.RoleTypeLogStream:
+			policy, err := ScopedRolePolicy(want)
+			if err != nil {
+				return err
+			}
+			document, err := policy.MarshalJSON()
+			if err != nil {
+				return err
+			}
+			want.Policies[0].Document, want.Policies[0].Permissions = document, nil
+			want.Version = app.RoleVersionV3
+		}
 		if err := tx.Create(want).Error; err != nil {
 			return fmt.Errorf("create private service account role: %w", err)
 		}

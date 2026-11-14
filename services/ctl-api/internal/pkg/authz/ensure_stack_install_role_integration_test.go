@@ -93,8 +93,10 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureIsConvergent() {
 	require.Len(t, roles[0].Policies, 1)
 	assert.Equal(t, acct.ID, roles[0].CreatedByID, "the account is its own creator")
 
+	projection, err := roles[0].Policies[0].PermissionProjection()
+	require.NoError(t, err)
 	set := permissions.Set(permissions.NewSet())
-	require.NoError(t, set.Add(roles[0].Policies[0].Permissions))
+	require.NoError(t, set.Add(projection))
 	require.NoError(t, set.CanPerform(permissions.StackObject(org.ID, installID), permissions.PermissionRead))
 	require.NoError(t, set.CanPerform(permissions.StackObject(org.ID, installID), permissions.PermissionCreate))
 	require.Error(t, set.CanPerform(org.ID, permissions.PermissionRead), "the grant must not widen to the org")
@@ -117,12 +119,13 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureUpgradesReadToAll() {
 	// Rewind to the old grant in place, the way an existing row looks.
 	roles := s.rolesFor(acct.ID)
 	require.Len(t, roles, 1)
+	require.NoError(t, s.deps.DB.Model(&app.Role{}).Where("id = ?", roles[0].ID).Update("version", app.RoleVersionV1).Error)
 	require.NoError(t, s.deps.DB.
 		Model(&app.Policy{}).
 		Where("id = ?", roles[0].Policies[0].ID).
-		Update("permissions", pgtype.Hstore(map[string]*string{
+		Updates(map[string]any{"document": nil, "permissions": pgtype.Hstore(map[string]*string{
 			permissions.StackObject(org.ID, installID): permissions.PermissionRead.ToStrPtr(),
-		})).Error)
+		})}).Error)
 
 	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, org.ID, installID, acct.ID))
 
@@ -182,8 +185,10 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureKeepsAPIForBoundAccount() {
 	second := s.requireStackAPI(accountID)
 	assert.Equal(t, first.ID, second.ID)
 
+	projection, err := second.Policies[0].PermissionProjection()
+	require.NoError(t, err)
 	set := permissions.Set(permissions.NewSet())
-	require.NoError(t, set.Add(second.Policies[0].Permissions))
+	require.NoError(t, set.Add(projection))
 	require.NoError(t, set.CanPerform(permissions.StackObject(orgID, installID), permissions.PermissionCreate))
 	require.Error(t, set.CanPerform(orgID, permissions.PermissionRead))
 }
@@ -195,12 +200,13 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureRestoresStrippedAPIForBoundA
 
 	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
 	role := s.requireStackAPI(accountID)
+	require.NoError(t, s.deps.DB.Model(&app.Role{}).Where("id = ?", role.ID).Update("version", app.RoleVersionV2).Error)
 	require.NoError(t, s.deps.DB.
 		Model(&app.Policy{}).
 		Where("id = ?", role.Policies[0].ID).
-		Update("permissions", pgtype.Hstore(map[string]*string{
+		Updates(map[string]any{"document": nil, "permissions": pgtype.Hstore(map[string]*string{
 			permissions.StackObject(orgID, installID): permissions.PermissionAll.ToStrPtr(),
-		})).Error)
+		})}).Error)
 
 	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
 	s.requireStackAPI(accountID)
@@ -217,9 +223,9 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureLeavesV1BoundRoleUnscoped() 
 	require.NoError(t, s.deps.DB.
 		Model(&app.Policy{}).
 		Where("id = ?", role.Policies[0].ID).
-		Update("permissions", pgtype.Hstore(map[string]*string{
+		Updates(map[string]any{"document": nil, "permissions": pgtype.Hstore(map[string]*string{
 			permissions.StackObject(orgID, installID): permissions.PermissionAll.ToStrPtr(),
-		})).Error)
+		})}).Error)
 
 	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, orgID, installID, accountID))
 
