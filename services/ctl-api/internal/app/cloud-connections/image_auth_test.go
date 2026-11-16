@@ -11,7 +11,43 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/orgfeatures"
 )
+
+func TestECRConnectionMissingPinMessageHonorsDisableAppSync(t *testing.T) {
+	cfg := &app.AWSECRImageConfig{ID: "saved", AWSRegion: "us-east-1"}
+
+	conn, err := ECRConnection(context.Background(), nil, "org_acme", cfg, "", true)
+	require.Nil(t, conn)
+	require.ErrorContains(t, err, "run `nuon apps sync` or run your app branch before building")
+
+	orgfeatures.SetForced(string(app.OrgFeatureDisableAppSync))
+	t.Cleanup(func() { orgfeatures.SetForced("") })
+
+	conn, err = ECRConnection(context.Background(), nil, "org_acme", cfg, "", true)
+	require.Nil(t, conn)
+	require.ErrorContains(t, err, "; run your app branch before building")
+	require.NotContains(t, err.Error(), "nuon apps sync")
+}
+
+func TestECRConnectionMissingPinMessageHonorsOrgDisableAppSync(t *testing.T) {
+	db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=localhost dbname=unused"}), &gorm.Config{DryRun: true, DisableAutomaticPing: true})
+	require.NoError(t, err)
+	require.NoError(t, db.Callback().Query().After("gorm:query").Register("org", func(tx *gorm.DB) {
+		org, ok := tx.Statement.Dest.(*app.Org)
+		require.True(t, ok)
+		require.Contains(t, tx.Statement.Vars, "org_acme")
+		org.ID = "org_acme"
+		org.Features = map[string]bool{string(app.OrgFeatureDisableAppSync): true}
+		tx.RowsAffected = 1
+	}))
+
+	cfg := &app.AWSECRImageConfig{ID: "saved", AWSRegion: "us-east-1"}
+	conn, err := ECRConnection(context.Background(), db, "org_acme", cfg, "", true)
+	require.Nil(t, conn)
+	require.ErrorContains(t, err, "; run your app branch before building")
+	require.NotContains(t, err.Error(), "nuon apps sync")
+}
 
 func TestImageConnectionModes(t *testing.T) {
 	const garImage, acrImage = "us-central1-docker.pkg.dev/acme/repo/image", "acme.azurecr.io/repo"
