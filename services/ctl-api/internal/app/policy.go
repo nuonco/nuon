@@ -57,7 +57,7 @@ type Policy struct {
 	// Permissions are used to track granular permissions for each domain
 	Permissions         pgtype.Hstore `json:"-" gorm:"type:hstore" temporaljson:"permissions,omitzero,omitempty"`
 	ResponsePermissions pgtype.Hstore `json:"permissions" gorm:"-" swaggertype:"object,string" temporaljson:"-"`
-	Document            []byte        `json:"-" gorm:"type:jsonb" temporaljson:"document,omitzero,omitempty"`
+	Document            []byte        `json:"-" gorm:"type:jsonb;check:policies_single_authority,document IS NULL OR permissions IS NULL OR permissions = ''::hstore" temporaljson:"document,omitzero,omitempty"`
 }
 
 func (a *Policy) DecodeDocument() (permissions.Policy, error) {
@@ -122,13 +122,16 @@ func (a *Policy) PermissionProjection() (pgtype.Hstore, error) {
 	if err != nil {
 		return nil, err
 	}
-	verb, err := permissions.LegacyOrgPermission(grants[0].Permissions)
+	sources, err := permissions.LegacySources(grants)
 	if err != nil {
 		return nil, err
 	}
-	projection := pgtype.Hstore{permissions.APIPermissionKey: generics.ToPtr(string(document.API()))}
-	if verb != permissions.PermissionUnknown {
-		projection[orgID] = verb.ToStrPtr()
+	projection := make(pgtype.Hstore)
+	if document.API() != "" {
+		projection[permissions.APIPermissionKey] = generics.ToPtr(string(document.API()))
+	}
+	for object, source := range sources {
+		projection[object] = source.Permission.ToStrPtr()
 	}
 	return projection, nil
 }

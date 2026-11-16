@@ -95,9 +95,12 @@ const ConfirmGroupActionModal = ({
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['branch-run'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-step'] })
       removeModal(props.modalId)
     },
     onError: (err: TAPIError) => {
+      queryClient.invalidateQueries({ queryKey: ['branch-run'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-step'] })
       addToast(
         <Toast
           heading={action === 'approve' ? 'Approval failed' : 'Skip failed'}

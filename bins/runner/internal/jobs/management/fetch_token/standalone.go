@@ -35,7 +35,7 @@ func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, ru
 	provider := detectCloudProvider(ctx)
 	switch provider {
 	case "gcp":
-		return fetchTokenGCP(ctx, apiClient, refreshable)
+		return fetchTokenGCP(ctx, apiClient, runnerID, refreshable)
 	case "aws":
 		switch authMethod {
 		case "sts":
@@ -167,33 +167,29 @@ func fetchTokenAWSIID(ctx context.Context, apiClient nuonrunner.Client, runnerID
 	}, nil
 }
 
-func fetchTokenGCP(ctx context.Context, apiClient nuonrunner.Client, refreshable bool) (*FetchTokenResult, error) {
+func fetchTokenGCP(ctx context.Context, apiClient nuonrunner.Client, runnerID string, refreshable bool) (*FetchTokenResult, error) {
 	apiURL := os.Getenv("RUNNER_API_URL")
 	if apiURL == "" {
 		apiURL = "https://runner.nuon.co"
 	}
 
-	// Step 1: Get identity token (JWT) - proves who we are (project, SA, instance)
+	if runnerID == "" {
+		var err error
+		runnerID, err = pkggcp.GetRunnerID(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	identityToken, err := pkggcp.GetIdentityToken(ctx, apiURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get GCP identity token: %w", err)
 	}
 
-	// Step 2: Build metadata request - lets server independently read our instance
-	// metadata (including nuon_runner_id). Mirrors the AWS presigned DescribeTags pattern.
-	metadataReq, err := pkggcp.BuildMetadataRequest(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build GCP metadata request: %w", err)
-	}
-
 	resp, err := apiClient.RunnerAuthGCP(ctx, &models.ServiceRunnerAuthGCPRequest{
 		IdentityToken: &identityToken,
-		Metadata: &models.GcpMetadataRequest{
-			Method:  metadataReq.Method,
-			URL:     metadataReq.URL,
-			Headers: metadataReq.Headers,
-		},
-		Refreshable: refreshable,
+		RunnerID:      runnerID,
+		Refreshable:   refreshable,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to authenticate with GCP: %w", err)

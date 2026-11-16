@@ -119,8 +119,10 @@ func init() {
 	config.RegisterDefault("telemetry_jwt_issuer", "")
 	config.RegisterDefault("telemetry_relay_endpoint", "")
 
-	// max request sizes to prevent too large of requests
-	config.RegisterDefault("max_request_size", 1024*50)
+	// Body caps. The runner API carries Terraform state uploads (largest seen ~15 MB on the wire);
+	// the public API's largest legitimate bodies are GitHub webhooks (largest seen ~5 MB).
+	config.RegisterDefault("max_request_size", 16<<20)
+	config.RegisterDefault("runner_max_request_size", 32<<20)
 	config.RegisterDefault("max_request_duration", time.Second*30)
 
 	config.RegisterDefault("app_repository_name_template", "%s/%s")
@@ -550,8 +552,9 @@ type Config struct {
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
 	DisableAnalytics bool   `config:"disable_analytics"`
 
-	MaxRequestSize     int64         `config:"max_request_size" validate:"required"`
-	MaxRequestDuration time.Duration `config:"max_request_duration" validate:"required"`
+	MaxRequestSize       int64         `config:"max_request_size" validate:"required"`
+	RunnerMaxRequestSize int64         `config:"runner_max_request_size" validate:"required"`
+	MaxRequestDuration   time.Duration `config:"max_request_duration" validate:"required"`
 
 	// Force debug mode for everything
 	ForceDebugMode              bool `config:"force_debug_mode"`
@@ -606,6 +609,9 @@ type Config struct {
 
 	// LogStreamAccountSweepMode controls the log stream service account sweep: "on" deletes idle accounts, "dry-run" only counts them, anything else (the default) is off.
 	LogStreamAccountSweepMode string `config:"log_stream_account_sweep_mode"`
+
+	// DeadTokenCleanupMode controls the hard delete of long-revoked and long-expired tokens: "on" deletes them, "dry-run" only counts them, anything else (the default) is off.
+	DeadTokenCleanupMode string `config:"dead_token_cleanup_mode"`
 
 	// BlobBackfillRatePerSecond caps how many S3 PUTs/sec the blob backfill activity issues. Defaults to 500 when unset.
 	BlobBackfillRatePerSecond int `config:"blob_backfill_rate_per_second"`

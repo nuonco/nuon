@@ -70,7 +70,7 @@ func validGrants(grants []ScopedPermissions) bool {
 
 func grantsPermit(grants []ScopedPermissions, permission PermissionID, target ResolvedTarget) bool {
 	for _, grant := range grants {
-		if _, ok := grant.Permissions[permission]; ok && grant.Scope.covers(target) {
+		if grant.Permissions.permits(permission, target.Kind) && grant.Scope.covers(target) {
 			return true
 		}
 	}

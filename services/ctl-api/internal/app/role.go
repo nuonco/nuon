@@ -133,7 +133,7 @@ func (a *Role) CompilePermissions(binding AccountRole) ([]permissions.ScopedPerm
 	if err != nil {
 		return nil, err
 	}
-	if _, err := permissions.LegacyOrgPermission(grants[0].Permissions); err != nil {
+	if _, err := permissions.LegacySources(grants); err != nil {
 		return nil, fmt.Errorf("policy %s: %w", policy.ID, err)
 	}
 	return grants, nil

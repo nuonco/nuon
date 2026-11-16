@@ -9,6 +9,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
+type unknownInputError struct {
+	name string
+}
+
+func (e unknownInputError) Error() string {
+	return fmt.Sprintf("input name %s does not exist in app inputs", e.name)
+}
+
 func (s *Helpers) ValidateInstallInputs(ctx context.Context, appInputCfg *app.AppInputConfig, inputs map[string]*string) error {
 	if appInputCfg == nil {
 		if len(inputs) > 0 {
@@ -32,8 +40,8 @@ func (s *Helpers) ValidateInstallInputs(ctx context.Context, appInputCfg *app.Ap
 	for name, val := range inputs {
 		if _, ok := appInputNames[name]; !ok {
 			return stderr.ErrUser{
-				Err:         fmt.Errorf("input name %s does not exist in app inputs", name),
-				Description: "input " + name + " defined for install does not exist in the app inputs",
+				Err:         unknownInputError{name: name},
+				Description: fmt.Sprintf("Unknown input %q: the app config doesn't define it.", name),
 			}
 		}
 

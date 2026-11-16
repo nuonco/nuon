@@ -23,16 +23,46 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/retry"
 	"sigs.k8s.io/yaml"
+
+	"github.com/nuonco/nuon/pkg/publicnet"
 )
 
+// Real chart sources redirect once or twice (http to https, GitHub release
+// assets, registry blobs to a CDN). Matches pkg/publicnet/templatefetch.
+const maxChartRepositoryRedirects = 3
+
+// chartRepositoryLocal lets tests reach httptest servers: it drops the
+// public-address check and pulls OCI charts over plain HTTP. Production code
+// never sets it.
+var chartRepositoryLocal = false
+
+// newChartRepositoryClient fetches publisher-supplied Helm repositories, chart
+// dependencies, and index.yaml chart URLs. Builds run on the control-plane
+// executor, so every connection, including each redirect hop and OCI token
+// realm, dials only public addresses. Proxy environment variables are ignored:
+// a proxy would make the connection on our behalf and skip that check.
 func newChartRepositoryClient() *http.Client {
+	dialer := &net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}
+	dial := publicnet.DialContext(dialer)
+	if chartRepositoryLocal {
+		dial = dialer.DialContext
+	}
 	return &http.Client{
 		Timeout: 120 * time.Second,
 		Transport: &http.Transport{
-			Proxy:                 http.ProxyFromEnvironment,
-			DialContext:           (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+			DialContext:           dial,
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: time.Second,
+		},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) > maxChartRepositoryRedirects {
+				return fmt.Errorf("chart repository: stopped after %d redirects", maxChartRepositoryRedirects)
+			}
+			if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
+				return fmt.Errorf("chart repository: refusing redirect to %q", req.URL.Scheme)
+			}
+			req.Header.Del("Referer")
+			return nil
 		},
 	}
 }
@@ -188,7 +218,7 @@ func (f *chartRepositoryFetcher) fetchOCI(ctx context.Context, reference, versio
 	if err != nil {
 		return nil, err
 	}
-	r.PlainHTTP = true // Retain this handler's existing plain-HTTP OCI behavior.
+	r.PlainHTTP = chartRepositoryLocal
 	ociClient := *f.client
 	ociClient.Transport = retry.NewTransport(f.client.Transport)
 	r.Client = &auth.Client{Client: &ociClient, Cache: auth.NewCache()}

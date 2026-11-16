@@ -12,11 +12,25 @@ export const isNewInstallIAEnabled = (
   features?: { [key: string]: boolean } | null
 ) => !!features?.['new-app-ia']
 
+const NESTED_PAGE_SUFFIX: Record<string, string> = {
+  '/sandbox': '/resources/sandbox',
+  '/stacks': '/resources',
+}
+
 const workflowDetailSuffix = (suffix: string) =>
   suffix.replace(
     /^\/(?:workflows|history)\/([^/?#]+)(.*)$/,
     '/deployments/$1$2'
   )
+
+const nestedInstallSuffix = (suffix: string) => {
+  const detail = workflowDetailSuffix(suffix)
+  if (detail !== suffix) return detail
+  const match = /^([^?#]*)(.*)$/.exec(suffix)
+  if (!match) return suffix
+  const mapped = NESTED_PAGE_SUFFIX[match[1]]
+  return mapped ? `${mapped}${match[2]}` : suffix
+}
 
 export const installRunActivitySuffix = (
   nested: boolean,
@@ -96,7 +110,7 @@ export const installHref = ({
     nested && appId
       ? `/${orgId}/apps/${appId}/installs/${installId}`
       : `/${orgId}/installs/${installId}`
-  const page = nested ? workflowDetailSuffix(suffix) : suffix
+  const page = nested ? nestedInstallSuffix(suffix) : suffix
   if (!page) return base
   if (page.startsWith('/') || page.startsWith('?') || page.startsWith('#')) {
     return `${base}${page}`

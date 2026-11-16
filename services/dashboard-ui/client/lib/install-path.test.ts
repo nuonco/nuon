@@ -73,6 +73,41 @@ test('workflow detail nests under deployments when the new install IA is on', ()
   expect(
     installHref({
       orgId: 'org-1',
+      appId: 'app-1',
+      installId: 'inst-1',
+      nested: true,
+      suffix: '/sandbox',
+    })
+  ).toBe('/org-1/apps/app-1/installs/inst-1/resources/sandbox')
+  expect(
+    installHref({
+      orgId: 'org-1',
+      appId: 'app-1',
+      installId: 'inst-1',
+      nested: true,
+      suffix: '/sandbox/runs/run-1',
+    })
+  ).toBe('/org-1/apps/app-1/installs/inst-1/sandbox/runs/run-1')
+  expect(
+    installHref({
+      orgId: 'org-1',
+      appId: 'app-1',
+      installId: 'inst-1',
+      nested: true,
+      suffix: '/stacks',
+    })
+  ).toBe('/org-1/apps/app-1/installs/inst-1/resources')
+  expect(
+    installHref({
+      orgId: 'org-1',
+      appId: 'app-1',
+      installId: 'inst-1',
+      suffix: '/sandbox',
+    })
+  ).toBe('/org-1/installs/inst-1/sandbox')
+  expect(
+    installHref({
+      orgId: 'org-1',
       installId: 'inst-1',
       suffix: '/history/wf-1',
     })
