@@ -40,7 +40,7 @@ func (m *Middleware) Handler(required permissions.API) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		if _, operationBased := require.OperationAPI(ctx); operationBased {
+		if _, operationBased := require.OperationAPI(ctx); operationBased && authz.HasAuthority(ctx) {
 			authority, err := authz.AuthorityFromContext(ctx)
 			orgID, orgErr := cctx.OrgIDFromContext(ctx)
 			if err != nil || orgErr != nil || authority.ValidateIdentity(acct.ID, cctx.TokenIDFromContext(ctx), orgID, required) != nil {

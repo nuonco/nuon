@@ -2,36 +2,49 @@
 
 Implements the coordinated plan in [spec 009](prompt.md), using [spec 008's native model](../008-customer-rbac-foundation/native-grants-model.md). Status describes local work, not production activation. Current implementation owner is this thread; other workstream ownership has not been assigned.
 
-## Current checkpoint: operation guards; credential integration is local
+## Active priority: spec 008 endpoint enforcement before spec 009 management
 
-The pure engine and design are checkpointed in local commit `26c68cd1f2`; projection-independent native loading, domain-owned install/job/log resolution, and scoped ID queries in `3b2161b8e8`; bounded request authority and native Gin guards in `4f27e5983f`. Persisted ceilings and native authentication are the next uncommitted increment. None of these checkpoints has been pushed. M0's complete route/writer/cohort inventory and remaining API contracts are not finished. No customer-facing capability is newly assignable, and no production route has switched authorization engines.
+The active deliverable is [spec 008's grant-model supplement](../008-customer-rbac-foundation/native-grants-model.md): granular grants enforced by existing product endpoints, preserving existing access as the migration baseline. Spec 008's original v3 rollout is already shipped; that is distinct from this unfinished enforcement change. Service-account authoring, delegation, token lifecycle APIs and the picker are deferred until grants work on the existing API.
+
+The pure engine and design are checkpointed in local commit `26c68cd1f2`; projection-independent loading, domain-owned install/job/log resolution, and scoped ID queries in `3b2161b8e8`; bounded request authority and Gin guards in `4f27e5983f`; persisted ceilings, bounded authentication and naming cleanup in `55398b12a6`. These commits remain local and unpushed. The uncommitted endpoint integration below switches the declared routes for format-4 accounts only; no deployed route or persisted production role has changed.
+
+The subsequent uncommitted containment, owned-policy management, bounded-token lifecycle and supporting model/legacy-writer edits are preserved in the local Git stash named `Deferred spec 009: grant management and bounded-token lifecycle` (stash object `d2e13d0a948a2f79ae27599ef86e44f6f87f5e7c`). The stash includes new files and its verification record; it excludes unrelated spec 007 work. Restore it selectively after foundation integration, not as a dependency on shipping management APIs. Reuse its format-4 model support where required by the foundation.
+
+Foundation integration order:
+
+1. Map current endpoint decisions and policy/credential cohorts to explicit operations. Define verified conversion of existing effective access, not conversion by policy name or a guessed legacy CRUD adapter. Account for the old reducer's order-dependent mixtures.
+2. Connect format-4 account grants to authentication and org admission for existing supported credentials, independently of the future service-account creation flow. The committed bounded-static-only path is not the final foundation contract. Preserve current credential restrictions; do not invent unrestricted ceilings or OR old and new evaluators.
+3. Convert real install detail/list and job/log handlers together with ownership and SQL filtering before pagination/counts. Verify scoped grants, existing Reader/Admin access, credential restrictions and denial behavior through those actual handlers. Continue related endpoint families against the operation inventory; unsupported families remain explicitly unfinished, not implicitly covered by bundle names.
+4. Convert the relevant policy constructors/reconciliation and verified persisted cohorts, then retire their legacy enforcement. New authoring APIs and UI must not become a prerequisite for using grants on existing endpoints. Do not run shared migrations or activate production changes without authorization.
+
+The acceptance criterion is usable granular authorization on existing product routes with demonstrated baseline compatibility, not merely a working evaluator or the ability to mint a scoped credential. The full route/writer/cohort inventory remains incomplete.
 
 | Shared contract | Implemented behavior | Remaining integration |
 | --- | --- | --- |
 | Catalog | `DefaultCatalog` supplies the initial org/app/install/job/log definitions. `NewCatalog` validates references, cycles, supported scopes and matcher availability, and flattens nested bundles. `Definitions` returns copied authoring metadata; `Revision` identifies normalized definitions | Add verified domain operations through this catalog; readiness/actor-specific assignment eligibility belongs to the API rollout, not catalog existence |
-| Policy document | `Catalog.DecodePolicy` strictly decodes format 4; `NormalizePolicy` validates and copies grants, normalizes explicit ID/permission duplicates, and retains authored bundle references. `Policy` is the serialization DTO | Existing DB policy hooks still decode v3 and demand legacy projection; ordinary format-4 writes remain disabled. The new loader reads grant records independently of those projection hooks |
-| Compilation | `Catalog.Compile` binds the document to a trusted org. `Role.CompileGrants` validates role/policy/binding ownership without legacy projection. `LoadAccountGrants` checks live bindings; `LoadAuthority` combines them with a required ceiling and authenticated request identity. Authentication loads this authority for tokens with explicit ceilings and operation-based routes | No production route or writer is activated. Recompile authored documents on catalog revision changes |
-| Point matching | `Catalog.Match` evaluates resolved facts. Domain `access` helpers supply live, tenant-checked install/job/log ownership through `Resources.Resolve` and loaded job/stream helpers | Request paths have not adopted the helpers; other target families and unsupported owner cases remain unconverted |
-| Credential limit | Grants union within the account and within the ceiling, then intersect on operation/resource pairs. Nullable `Token.PermissionCeiling` persists authored format-4 references. SQL NULL keeps the existing credential path; an explicit empty policy denies all operations. Bounded-token authentication supports direct static service-account tokens on declared org-scoped ctl-api routes | Issuance/delegation, inventory/rotation, other credential protocols and reader-capable rollback rehearsal remain. No shared schema has been migrated |
-| Collections | Domain resource sets expose `Resources.AuthorizedIDs`, using the same ownership queries as their point resolver. Grant alternatives union, then intersect with independent ceiling alternatives; no fetch-then-filter adapter | Route queries must apply the subquery before pagination/counts/aggregates. Production-sized query-plan/index verification and HTTP coverage remain |
+| Policy document | `Catalog.DecodePolicy` strictly decodes format 4; normal Policy and AccountRole hooks now accept valid grant documents without legacy projection and preserve authored references | Built-in constructors/reconciliation and persisted cohort conversion remain |
+| Compilation | `Catalog.Compile` binds the document to a trusted org. `Role.CompileGrants` validates role/policy/binding ownership. `LoadAccountGrants` checks live bindings; `LoadAuthority` combines them with any persisted ceiling and authenticated request identity | No production activation. Recompile authored documents on catalog revision changes |
+| Point matching | Declared org/app/install/job/log routes use explicit operations and domain ownership. Authenticated legacy accounts retain their existing route checks; grant requests never fall back after denial | Other target families, mutation/continuation contracts and unsupported owner cases remain unconverted |
+| Credential limit | Account and ceiling alternatives independently union, then intersect on operation/resource pairs. SQL NULL means no additional ceiling, not an invented grant. Existing credentials can use format-4 account authority on declared org-scoped ctl-api routes; explicit bounded-token admission remains direct static service accounts only | Issuance/delegation, inventory/rotation, global and mixed-org account integration, full credential-cohort and rollback rehearsal remain. No shared schema has been migrated |
+| Collections | App, org/app install, and org/runner job lists apply `Resources.AuthorizedIDs` before existing pagination and filters; no fetch-then-filter adapter | Other collections/aggregates and production-sized query-plan/index verification remain |
 | Product API | Native policy and catalog data types are available | Preview/ETag/owned-policy and token DTOs, transactional writes, delegation checks and API endpoints remain unimplemented |
 
-The v3 catalog/checker remains separate because IDs such as `install.read` have different v3 meanings. Its document type and decoder are now named `LegacyPolicy` and `DecodeLegacyPolicy`. Existing `MatchPermissions`, `CanPerform`, writers, routes and database data have not switched authority. Shared resource-kind validation was extracted without changing accepted v3 scopes. The grant-preservation changes are included in the engine checkpoint.
+The v3 catalog/checker remains separate because IDs such as `install.read` have different v3 meanings. Its document type and decoder are named `LegacyPolicy` and `DecodeLegacyPolicy`. Existing accounts, constructors and database data have not been converted. A request with captured grant authority takes precedence over legacy authority; mixed v3/v4 bindings in that org fail rather than unioning incompatible semantics. Shared resource-kind validation preserves accepted v3 scopes.
 
 The initial native catalog deliberately omits `org.write`: spec 008 requires its complete compatibility mapping before defining it. `install.write` includes deletion and cancellation; no Editor preset has been invented. Metadata is not a claim that the corresponding routes are ready for customer assignment.
 
 ## Coverage queue
 
-This is a starting queue, not a completed route census. All rows still use existing request authorization. Each needs concrete route/helper/continuation entries and evidence before its native capability can activate.
+This is a starting queue, not a completed route census. Only the concrete routes recorded below have adopted grant enforcement. Each remaining family needs route/helper/continuation entries and evidence before activation.
 
 | Family | Source entry points to inventory | Current native coverage | Missing proof / contract |
 | --- | --- | --- | --- |
-| Org/app reads | `apps/service/service.go`, org middleware, org services | Pure read bundle/point semantics only | Response classification, concrete ownership, all routes and list/count filtering |
-| Installs and lifecycle | `installs/service/service.go`, `get_install.go`, mutation helpers/workflows | Native point resolution and scoped ID queries at org/app/install scopes | HTTP integration, full alternate-path coverage, embedded data contract, referenced-target and destructive-cascade checks |
-| Jobs and logs | `runners/service/service.go`, `get_runner_jobs_ctl_api.go`, stream handlers and owner constructors | Explicit polymorphic ownership, same-operation/build job-log relations, scoped ID queries and PostgreSQL point/list parity controls | Remaining owner census, production query plans, and stream/download/SSE/HTTP integration |
+| Org/app reads | `apps/service/service.go`, org middleware, org services | Current-org detail, app detail and filtered app list | Other org/app responses and collection contracts |
+| Installs and lifecycle | `installs/service/service.go`, `get_install.go`, mutation helpers/workflows | Detail, org list and app list with real HTTP validation; embedded response unchanged | Other read endpoints, mutation/continuation contracts, referenced-target and destructive-cascade checks |
+| Jobs and logs | `runners/service/service.go`, `get_runner_jobs_ctl_api.go`, stream handlers and owner constructors | Job detail/plans/cancel, org/runner lists, stream metadata/logs/tail/spans guards | Full owner census, production query plans and successful ClickHouse-backed stream/tail/span reads |
 | Builds, actions, workflows | App/component/action/workflow registrations and helpers | Not integrated | Operation inventory, admission, approval/retry/cancel checks and bounded continuation authority |
 | Service accounts and access administration | `accounts/service/service.go`, `service_account.go`, `authz/set_account_role.go` | DTO/model primitives only | Owned-policy writes preserving unrelated bindings, delegation, preview, concurrency and native-aware old-client behavior |
-| Credentials | `tokens/service/service.go`, token model, account token helpers/auth loaders | Persisted ceilings and real native authentication for direct static service-account tokens; existing expiry/soft-delete checks retained | Issuance validation, inventory/rotation/source-lineage integration, full historical-cohort and rollback verification |
+| Credentials | `tokens/service/service.go`, token model, account token helpers/auth loaders | Grant-aware authentication independent of future issuance APIs; optional ceilings and existing OAuth read-only restrictions | Global/mixed-org account paths, issuance validation, inventory/rotation/source-lineage integration, full historical-cohort and rollback verification |
 | Remaining customer families | Section 3 of spec 009 and current registrations, not historical spec inventory alone | Not integrated | Telemetry, state/config disclosure, stacks/reporting, integrations/trust, triggers/delivery, notebooks/reports and explicit transport exclusions |
 
 ## Compatibility retirement queue
@@ -39,11 +52,32 @@ This is a starting queue, not a completed route census. All rows still use exist
 | Path | Why it remains | Removal gate |
 | --- | --- | --- |
 | V3 decoding and legacy projection in policy/account/role hooks | Existing persisted data and writers still use it | Current cohort conversion evidence, projection-independent native loading, converted writers/reconciliation and supported upgrade verification |
-| Old object/CRUD request checks and broad org middleware | Domain routes have not adopted atomic operations/scoped predicates | Per-route/cohort authority recorded, complete entry-point mapping, baseline decision/response parity or explicit approved differences |
+| Old object/CRUD request checks and broad org middleware | Existing v3 cohorts and unconverted domain routes still depend on them | Complete entry-point mapping and cohort conversion, baseline parity or explicit approved differences |
 | Singular-role service-account replacement | Existing API/UI still depend on it | Native owned-policy API and clients work; old writers cannot erase native access or unrelated bindings |
 | Existing credential admission | Existing tokens have no native ceiling; other credential protocols and production routes remain unconverted | Historical restrictions preserved, required ceiling failures deny, issuance/revocation/rotation checks and native-capable rollback verified |
 
 Unconverted paths are unfinished work. Native grants must never fall through to broad legacy authorization. No compatibility path is removed merely because current role policies are believed to be v3.
+
+## Existing endpoint integration (uncommitted)
+
+Sixteen existing ctl-api registrations now declare operations:
+
+- `org.inspect`: GET `/v1/orgs/current`.
+- `app.inspect`: GET `/v1/apps`, `/v1/apps/:app_id`.
+- `install.inspect`: GET `/v1/installs`, `/v1/apps/:app_id/installs`, `/v1/installs/:install_id`.
+- `runner_job.inspect`: GET `/v1/runner-jobs`, `/v1/runners/:runner_id/jobs`, `/v1/runner-jobs/:runner_job_id`, and its `/plan` and `/composite-plan` variants.
+- `runner_job.cancel`: POST `/v1/runner-jobs/:runner_job_id/cancel`.
+- `log_stream.read`: GET `/v1/log-streams/:log_stream_id`, `/logs`, `/logs/tail`, `/spans`.
+
+Format-4 bindings select the grant loader on these routes, including existing credentials whose ceiling is SQL NULL. V3 accounts retain their original org/resource/API checks. Explicit ceilings still select the bounded path, and malformed/mixed authority cannot downgrade. App/install detail authorization resolves the same name-or-ID record returned by the handler. The old singular-role replacement helper refuses to erase format-4 bindings; broader writer conversion is still pending.
+
+Disposable PostgreSQL 17 validation passed 118 assertions under the race detector through the actual domain route registrations and handlers, real bearer authentication, org/API/authorization/pagination middleware, GORM model tables and afterquery/view/pagination plugins. Policy and binding fixtures used ordinary save hooks. Checks covered selected/multiple/wildcard installs, future installs, filtered lists and offset boundaries, app/org isolation, app-owned job/log exclusions, inspect versus read, asymmetric cancellation with persisted status, v3 Reader/Admin controls, OAuth read-only denial, optional/empty/malformed ceilings, legacy replacement rejection, narrowing, revoked bindings, mixed/malformed policies, plan redaction, name/ID collisions, runner-scoped lists and rejection of an unconverted mutation. Denied log/tail/span and composite-plan requests were exercised, but successful ClickHouse payload reads and composite-plan reconstruction were not. The actual install view was used; other required views were simplified fixtures, not a full service migration rehearsal. Auth and OAuth token types were exercised on service-account fixtures, plus a human-account static-token read; these were not complete login flows.
+
+Existing authz, account, app-model, all middleware, affected domain-service, account/token-service and MCP tests passed with `-race`; targeted vet, affected-package generation and diff checks passed. This does not imply their environment-gated integration suites ran. No shared data, existing roles, migration, deployment or UI changed. The authoring/token work remains shelved. This is the first real integration path, not completion of spec 008 or permission to migrate current accounts. Install lifecycle writes, remaining route coverage, policy writers/reconciliation and verified cohort conversion remain foundation work before the service-account product resumes.
+
+## Historical checkpoints
+
+The entries below record what was verified at each earlier checkpoint. Their then-current limitations are superseded by the current contract and endpoint-integration sections above.
 
 ## Verification recorded for the engine checkpoint
 

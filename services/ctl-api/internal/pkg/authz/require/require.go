@@ -14,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -186,6 +187,10 @@ func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, 
 	description := noun(kind) + " not found"
 
 	guard := func(ctx *gin.Context) {
+		if _, declared := OperationAPI(ctx); declared && authz.HasAuthority(ctx) {
+			ctx.Next()
+			return
+		}
 		verb := permission(ctx)
 		if verb == permissions.PermissionUnknown {
 			ctx.Error(stderr.ErrSystem{

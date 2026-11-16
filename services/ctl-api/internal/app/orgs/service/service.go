@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -77,7 +78,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// update your current org
 		current := orgs.Group("/current")
 		{
-			current.GET("", s.GetOrg)
+			require.OperationRoute(current, permissions.APICtl, permissions.OrgInspect, s.orgTarget).GET("", s.GetOrg)
 			current.DELETE("", s.DeleteOrg)
 			current.PATCH("", s.UpdateOrg)
 			current.PATCH("/telemetry", s.UpdateOrgTelemetry)

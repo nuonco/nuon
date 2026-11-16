@@ -108,7 +108,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 					return
 				}
 			} else {
-				acct, err = m.acctClient.FetchAccount(ctx, acctToken.AccountID)
+				acct, err = m.authenticateAccount(ctx, acctToken)
 			}
 			if err != nil {
 				ctx.Error(err)

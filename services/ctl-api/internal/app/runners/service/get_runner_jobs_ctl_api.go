@@ -10,6 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -151,6 +153,14 @@ func (s *service) getRunnerJobsCtlAPI(ctx *gin.Context, orgID string, runnerID s
 		Limit(limit).
 		Scopes(scopes.WithOffsetPagination).
 		Where(where)
+
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		tx = tx.Where("runner_jobs.id IN (?)", ids)
+	}
 
 	if len(statuses) != 0 {
 		tx = tx.Where("status in (?)", statuses)

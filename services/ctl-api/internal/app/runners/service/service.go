@@ -107,17 +107,18 @@ const (
 var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	api.GET("/v1/runner-jobs", s.ListRunnerJobsCtlAPI)
-	api.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlanPublic)
-	api.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlanPublic)
-	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
-	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJobPublic)
+	require.CollectionRoute(api, permissions.APICtl, permissions.RunnerJobInspect, s.jobResources).GET("/v1/runner-jobs", s.ListRunnerJobsCtlAPI)
+	jobs := require.OperationRoute(api, permissions.APICtl, permissions.RunnerJobInspect, s.jobTarget)
+	jobs.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlanPublic)
+	jobs.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlanPublic)
+	require.OperationRoute(api, permissions.APICtl, permissions.RunnerJobCancel, s.jobTarget).POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
+	jobs.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJobPublic)
 
 	runners := api.Group("/v1/runners/:runner_id", require.RunnerInOrg(s.db))
 	{
 		runners.GET("", s.GetRunnerCtlAPI)
 		runners.GET("/connected", s.GetRunnerConnectStatus)
-		runners.GET("/jobs", s.GetRunnerJobsCtlAPI)
+		require.CollectionRoute(runners, permissions.APICtl, permissions.RunnerJobInspect, s.jobResources).GET("/jobs", s.GetRunnerJobsCtlAPI)
 		runners.GET("/recent-health-checks", s.GetRunnerRecentHealthChecks)
 		runners.GET("/latest-heart-beat", s.GetRunnerLatestHeartBeat)
 		runners.GET("/heart-beats/latest", s.GetLatestRunnerHeartBeatFromView)
@@ -172,10 +173,11 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET(tfBackendPath, s.GetTerraformCurrentStateData)
 	api.POST(tfBackendPath, s.UpdateTerraformState)
 
-	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
-	api.GET("/v1/log-streams/:log_stream_id/logs/tail", s.LogStreamTailLogs)
-	api.GET("/v1/log-streams/:log_stream_id/spans", s.LogStreamReadSpans)
-	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
+	streams := require.OperationRoute(api, permissions.APICtl, permissions.LogStreamRead, s.logStreamTarget)
+	streams.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
+	streams.GET("/v1/log-streams/:log_stream_id/logs/tail", s.LogStreamTailLogs)
+	streams.GET("/v1/log-streams/:log_stream_id/spans", s.LogStreamReadSpans)
+	streams.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
 
 	return nil
 }

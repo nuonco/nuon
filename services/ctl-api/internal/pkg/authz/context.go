@@ -15,6 +15,10 @@ func SetAuthorityGinContext(ctx *gin.Context, authority *Authority) {
 	ctx.Set(authorityKey, authority)
 }
 
+func HasAuthority(ctx cctx.ValueContext) bool {
+	return ctx.Value(authorityKey) != nil
+}
+
 func AuthorityFromContext(ctx cctx.ValueContext) (*Authority, error) {
 	authority, ok := ctx.Value(authorityKey).(*Authority)
 	if !ok || authority == nil {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"time"
@@ -74,6 +75,27 @@ func (a *Policy) DecodeDocument() (permissions.LegacyPolicy, error) {
 	return policy, nil
 }
 
+func (a *Policy) HasGrantDocument() bool {
+	var header struct {
+		Format int `json:"format"`
+	}
+	return json.Unmarshal(a.Document, &header) == nil && header.Format == permissions.PolicyFormatV4
+}
+
+func (a *Policy) DecodeGrants(catalog *permissions.Catalog) (permissions.Policy, error) {
+	if a.Document == nil || len(a.Permissions) != 0 {
+		return permissions.Policy{}, fmt.Errorf("policy %s requires a grant document as its only authority", a.ID)
+	}
+	document, err := catalog.DecodePolicy(a.Document)
+	if err != nil {
+		return permissions.Policy{}, err
+	}
+	if _, err := catalog.Compile(document, a.OrgID.ValueString()); err != nil {
+		return permissions.Policy{}, err
+	}
+	return document, nil
+}
+
 func (a *Policy) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
@@ -104,6 +126,22 @@ func (a *Policy) AfterQuery(tx *gorm.DB) error {
 }
 
 func (a *Policy) BeforeSave(tx *gorm.DB) error {
+	if a.HasGrantDocument() {
+		catalog, err := permissions.DefaultCatalog()
+		if err != nil {
+			return err
+		}
+		document, err := a.DecodeGrants(catalog)
+		if err != nil {
+			return err
+		}
+		a.Document, err = json.Marshal(document)
+		if err != nil {
+			return err
+		}
+		a.ResponsePermissions = make(pgtype.Hstore)
+		return nil
+	}
 	var err error
 	a.ResponsePermissions, err = a.PermissionProjection()
 	return err
@@ -112,6 +150,16 @@ func (a *Policy) BeforeSave(tx *gorm.DB) error {
 func (a *Policy) PermissionProjection() (pgtype.Hstore, error) {
 	if a.Document == nil {
 		return maps.Clone(a.Permissions), nil
+	}
+	if a.HasGrantDocument() {
+		catalog, err := permissions.DefaultCatalog()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := a.DecodeGrants(catalog); err != nil {
+			return nil, err
+		}
+		return make(pgtype.Hstore), nil
 	}
 	document, err := a.DecodeDocument()
 	if err != nil {

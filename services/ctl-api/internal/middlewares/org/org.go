@@ -83,7 +83,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		// make sure account has access to org
 		perm := permissions.FromRequest(ctx)
-		if api, operationBased := require.OperationAPI(ctx); operationBased {
+		if api, operationBased := require.OperationAPI(ctx); operationBased && authz.HasAuthority(ctx) {
 			var authority *authz.Authority
 			authority, err = authz.AuthorityFromContext(ctx)
 			if err == nil {

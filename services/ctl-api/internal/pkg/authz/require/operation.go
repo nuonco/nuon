@@ -18,6 +18,10 @@ func OperationRoute(router gin.IRouter, api permissions.API, operation permissio
 	resolve func(*gin.Context) (permissions.Target, error),
 ) *gin.RouterGroup {
 	return operationGroup(router, api, func(ctx *gin.Context) {
+		if legacyRequest(ctx) {
+			ctx.Next()
+			return
+		}
 		authority, err := requestAuthority(ctx, api)
 		if err != nil {
 			operationFailure(ctx, err)
@@ -46,6 +50,10 @@ func CollectionRoute(router gin.IRouter, api permissions.API, operation permissi
 	resources func(*gin.Context) (*authz.Resources, error),
 ) *gin.RouterGroup {
 	return operationGroup(router, api, func(ctx *gin.Context) {
+		if legacyRequest(ctx) {
+			ctx.Next()
+			return
+		}
 		authority, err := requestAuthority(ctx, api)
 		if err != nil {
 			operationFailure(ctx, err)
@@ -73,6 +81,11 @@ func CollectionIDs(ctx *gin.Context) (*gorm.DB, error) {
 		return nil, fmt.Errorf("collection requires an authorized ID query")
 	}
 	return ids.Session(&gorm.Session{}), nil
+}
+
+func legacyRequest(ctx *gin.Context) bool {
+	account, err := cctx.AccountFromGinContext(ctx)
+	return err == nil && account.Authority != nil && !authz.HasAuthority(ctx)
 }
 
 const operationAPIKey = "nuon.authz.operation_api"

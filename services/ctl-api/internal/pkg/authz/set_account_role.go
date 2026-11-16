@@ -16,6 +16,13 @@ import (
 // account's OrgInvite records, so it is safe for in-place role changes.
 func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string, roleType app.RoleType) error {
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		usesGrants, err := New(Params{DB: tx}).AccountUsesGrants(ctx, accountID, orgID)
+		if err != nil {
+			return err
+		}
+		if usesGrants {
+			return fmt.Errorf("cannot replace scoped grants with a legacy org role")
+		}
 		var role app.Role
 		if err := tx.
 			Where(app.Role{

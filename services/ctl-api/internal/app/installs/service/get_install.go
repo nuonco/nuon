@@ -39,10 +39,14 @@ func (s *service) GetInstall(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 
-	install, err := s.findInstall(ctx, org.ID, installID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
-		return
+	value, _ := ctx.Get(authorizedInstallKey)
+	install, loaded := value.(*app.Install)
+	if !loaded {
+		install, err = s.findInstall(ctx, org.ID, installID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
+			return
+		}
 	}
 
 	includeDriftedObjects := ctx.DefaultQuery("include_drifted_objects", "false")

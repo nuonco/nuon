@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -61,6 +62,14 @@ func (c *AccountRole) BeforeSave(tx *gorm.DB) error {
 	}
 	binding := *c
 	binding.Org = &org
+	if len(role.Policies) == 1 && role.Policies[0].HasGrantDocument() {
+		catalog, err := permissions.DefaultCatalog()
+		if err != nil {
+			return err
+		}
+		_, err = role.CompileGrants(binding, catalog)
+		return err
+	}
 	if _, err := role.CompileLegacyPermissions(binding); err != nil {
 		return err
 	}

@@ -9,6 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -85,6 +87,14 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 		Scopes(labels.WithLabels("labels", lbls))
 
 	table := views.TableOrViewName(s.db, &app.Install{}, "")
+
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		tx = tx.Where(table+".id IN (?)", ids)
+	}
 
 	if q != "" {
 		queryPattern := "%" + q + "%"

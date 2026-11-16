@@ -62,6 +62,24 @@ func (c *Client) LoadLegacyAccountPermissions(ctx context.Context, account *app.
 	return loaded, nil
 }
 
+func (c *Client) AccountUsesGrants(ctx context.Context, accountID, orgID string) (bool, error) {
+	if accountID == "" || orgID == "" {
+		return false, fmt.Errorf("grant selection requires account and org IDs")
+	}
+	db := c.db.WithContext(ctx)
+	roles := db.Model(&app.AccountRole{}).Select("role_id").Where(app.AccountRole{AccountID: accountID, OrgID: generics.NewNullString(orgID)})
+	var policies []app.Policy
+	if err := db.Model(&app.Policy{}).Where("role_id IN (?)", roles).Scan(&policies).Error; err != nil {
+		return false, err
+	}
+	for _, policy := range policies {
+		if policy.HasGrantDocument() {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (c *Client) LoadAccountGrants(ctx context.Context, accountID, orgID string, catalog *permissions.Catalog) ([]*permissions.CompiledPolicy, error) {
 	if accountID == "" {
 		return nil, fmt.Errorf("account grants require an account ID")

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -54,4 +55,14 @@ func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
 	}
 
 	return &org, nil
+}
+
+func (s *service) orgTarget(ctx *gin.Context) (permissions.Target, error) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	return permissions.Target{ResolvedTarget: permissions.ResolvedTarget{
+		Scope: permissions.Scope{Kind: permissions.KindOrg, OrgID: org.ID, ID: org.ID},
+	}}, nil
 }

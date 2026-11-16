@@ -34,16 +34,17 @@ func (c *Client) LoadAuthority(ctx context.Context, catalog *permissions.Catalog
 	if _, err := permissions.ParseAPI(string(input.API)); err != nil {
 		return nil, err
 	}
-	if len(input.Ceiling) == 0 {
-		return nil, fmt.Errorf("bounded credential requires an explicit ceiling document")
-	}
-	document, err := catalog.DecodePolicy(input.Ceiling)
-	if err != nil {
-		return nil, fmt.Errorf("decode credential ceiling: %w", err)
-	}
-	ceiling, err := catalog.Compile(document, input.OrgID)
-	if err != nil {
-		return nil, fmt.Errorf("compile credential ceiling: %w", err)
+	var ceiling []*permissions.CompiledPolicy
+	if input.Ceiling != nil {
+		document, err := catalog.DecodePolicy(input.Ceiling)
+		if err != nil {
+			return nil, fmt.Errorf("decode credential ceiling: %w", err)
+		}
+		compiled, err := catalog.Compile(document, input.OrgID)
+		if err != nil {
+			return nil, fmt.Errorf("compile credential ceiling: %w", err)
+		}
+		ceiling = []*permissions.CompiledPolicy{compiled}
 	}
 	grants, err := c.LoadAccountGrants(ctx, input.AccountID, input.OrgID, catalog)
 	if err != nil {
@@ -51,12 +52,12 @@ func (c *Client) LoadAuthority(ctx context.Context, catalog *permissions.Catalog
 	}
 	return &Authority{
 		accountID: input.AccountID, credentialID: input.CredentialID, orgID: input.OrgID,
-		api: input.API, catalog: catalog, grants: grants, ceiling: []*permissions.CompiledPolicy{ceiling},
+		api: input.API, catalog: catalog, grants: grants, ceiling: ceiling,
 	}, nil
 }
 
 func (a *Authority) ValidateIdentity(accountID, credentialID, orgID string, api permissions.API) error {
-	if a == nil || a.catalog == nil || a.ceiling == nil ||
+	if a == nil || a.catalog == nil ||
 		a.accountID != accountID || a.credentialID != credentialID || a.orgID != orgID || a.api != api {
 		return fmt.Errorf("authority does not match the authenticated request")
 	}
@@ -64,7 +65,7 @@ func (a *Authority) ValidateIdentity(accountID, credentialID, orgID string, api 
 }
 
 func (a *Authority) Check(operation permissions.PermissionID, target permissions.Target) permissions.PermissionMatch {
-	if a == nil || a.catalog == nil || a.ceiling == nil {
+	if a == nil || a.catalog == nil {
 		return permissions.PermissionMatch{Reason: permissions.ReasonInvalidCeiling}
 	}
 	if target.OrgID != a.orgID {
@@ -76,8 +77,8 @@ func (a *Authority) Check(operation permissions.PermissionID, target permissions
 }
 
 func (a *Authority) AuthorizedIDs(ctx context.Context, operation permissions.PermissionID, resources *Resources) (*gorm.DB, error) {
-	if a == nil || a.catalog == nil || a.ceiling == nil {
-		return nil, fmt.Errorf("authority requires a credential ceiling")
+	if a == nil || a.catalog == nil {
+		return nil, fmt.Errorf("authority was not loaded")
 	}
 	return resources.AuthorizedIDs(ctx, a.catalog, permissions.Query{
 		API: a.api, Permission: operation, Kind: resources.kind, OrgID: a.orgID, Grants: a.grants, Ceiling: a.ceiling,

@@ -16,6 +16,7 @@ import (
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
@@ -69,10 +70,10 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	apps := ge.Group("/v1/apps")
 	{
 		apps.POST("", s.CreateApp)
-		apps.GET("", s.GetApps)
+		require.CollectionRoute(apps, permissions.APICtl, permissions.AppInspect, s.appResources).GET("", s.GetApps)
 		appByID := apps.Group("/:app_id", require.AppInOrg(s.db))
 		appByID.PATCH("", s.UpdateApp)
-		appByID.GET("", s.GetApp)
+		require.OperationRoute(appByID, permissions.APICtl, permissions.AppInspect, s.appTarget).GET("", s.GetApp)
 		appByID.DELETE("", s.DeleteApp)
 	}
 
