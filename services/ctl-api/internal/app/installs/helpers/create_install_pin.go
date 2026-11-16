@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"gorm.io/gorm"
 
@@ -20,23 +19,26 @@ type createInstallPin struct {
 }
 
 // resolveCreateInstallPin decides which app config a new install starts on.
-// Omitting a branch always uses the latest unbranched config from apps sync,
-// even when the app also has branches.
+// Omitting a branch uses the latest unbranched config from apps sync, even
+// when the app also has branches, unless the org has disable-app-sync.
 func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID string, req *CreateInstallParams) (*createInstallPin, error) {
 	if req.AppBranchID == "" {
+		appSyncDisabled, err := s.featuresClient.OrgHasFeature(ctx, orgID, app.OrgFeatureDisableAppSync)
+		if err != nil {
+			return nil, fmt.Errorf("unable to check disable-app-sync: %w", err)
+		}
+		if appSyncDisabled {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("app %s: app branch required when disable-app-sync is enabled", appID),
+				Description: "App sync is disabled for this org. Choose an app branch for this install.",
+			}
+		}
+
 		cfg, err := s.latestActiveAppConfig(ctx, orgID, appID, "")
 		if err != nil {
 			var userErr stderr.ErrUser
 			if !errors.As(err, &userErr) {
 				return nil, err
-			}
-			hasBranches, branchErr := s.appHasBranches(ctx, orgID, appID)
-			if branchErr != nil {
-				return nil, branchErr
-			}
-			if hasBranches {
-				userErr.Description = "No app config from nuon apps sync exists for this app; its configs are on app branches. Choose an app branch for this install."
-				return nil, userErr
 			}
 			return nil, err
 		}
@@ -90,31 +92,22 @@ func (s *Helpers) InputConfigForNewInstall(ctx context.Context, orgID, appID, ap
 	return inputConfig, nil
 }
 
-func (s *Helpers) withUnbranchedInstallHint(ctx context.Context, orgID, appID string, pin *createInstallPin, err error) error {
+func (s *Helpers) withUnknownInputHint(ctx context.Context, orgID string, err error) error {
 	var userErr stderr.ErrUser
-	if pin.BranchID != "" || !errors.As(err, &userErr) {
+	var unknownErr unknownInputError
+	if !errors.As(err, &userErr) || !errors.As(userErr.Err, &unknownErr) {
 		return err
 	}
-	hasBranches, branchErr := s.appHasBranches(ctx, orgID, appID)
-	if branchErr != nil {
-		return branchErr
+	appSyncDisabled, flagErr := s.featuresClient.OrgHasFeature(ctx, orgID, app.OrgFeatureDisableAppSync)
+	if flagErr != nil {
+		return flagErr
 	}
-	if !hasBranches {
-		return err
+	if appSyncDisabled {
+		userErr.Description = userErr.Description + " Add it, then run your app branch."
+	} else {
+		userErr.Description = userErr.Description + " Add it, then run `nuon apps sync` or run your app branch."
 	}
-	userErr.Description = strings.TrimSuffix(userErr.Description, ".") + ". This install has no app_branch, so it uses the app config from the last nuon apps sync. Choose an app branch for this install."
 	return userErr
-}
-
-func (s *Helpers) appHasBranches(ctx context.Context, orgID, appID string) (bool, error) {
-	var count int64
-	if err := s.db.WithContext(ctx).
-		Model(&app.AppBranch{}).
-		Where(app.AppBranch{OrgID: orgID, AppID: appID}).
-		Count(&count).Error; err != nil {
-		return false, fmt.Errorf("unable to check app branches: %w", err)
-	}
-	return count > 0, nil
 }
 
 // LatestActiveBranchAppConfig returns the app config a branch currently
@@ -155,7 +148,7 @@ func (s *Helpers) latestActiveAppConfig(ctx context.Context, orgID, appID, branc
 			if branchID == "" {
 				return nil, stderr.ErrUser{
 					Err:         fmt.Errorf("no active app config found for app %s", appID),
-					Description: "No active app config found. Please sync your app configuration before creating an install.",
+					Description: "No sync config exists for this app. Run `nuon apps sync`, or choose an app branch.",
 				}
 			}
 			var building app.AppConfig
@@ -167,7 +160,7 @@ func (s *Helpers) latestActiveAppConfig(ctx context.Context, orgID, appID, branc
 			}
 			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("no active app config found for app branch %s", branchID),
-				Description: "The selected app branch has no active app config. Sync the branch before creating an install.",
+				Description: "The selected app branch has no app config yet. Run the app branch first.",
 			}
 		}
 		return nil, fmt.Errorf("unable to get app config: %w", err)

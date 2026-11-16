@@ -32,11 +32,16 @@ func (a *Activities) SetInstallStackVersionCompositeError(ctx context.Context, r
 
 	var data *compositeerrors.CompositeErrorData
 	if req.Detail != "" {
-		var err error
+		appSyncDisabled, err := a.stackVersionInstallAppSyncDisabled(ctx, req.StackVersionID)
+		if err != nil {
+			l.Warn("unable to check disable-app-sync for stack version", zap.Error(err))
+		}
+
 		data, err = compositeerrors.New(
 			&stackerrors.StackTemplateRenderError{
-				Platform: req.Platform,
-				Detail:   req.Detail,
+				Platform:        req.Platform,
+				Detail:          req.Detail,
+				AppSyncDisabled: appSyncDisabled,
 			},
 			compositeerrors.WithSource("install_stack_versions", req.StackVersionID),
 		)
@@ -67,4 +72,25 @@ func (a *Activities) SetInstallStackVersionCompositeError(ctx context.Context, r
 
 	l.Info("updated install stack version composite error")
 	return nil
+}
+
+// stackVersionInstallAppSyncDisabled reports whether disable-app-sync is
+// enabled for the org that owns the install behind the given stack version.
+func (a *Activities) stackVersionInstallAppSyncDisabled(ctx context.Context, stackVersionID string) (bool, error) {
+	var version app.InstallStackVersion
+	if err := a.db.WithContext(ctx).
+		Select("install_id").
+		Where(app.InstallStackVersion{ID: stackVersionID}).
+		First(&version).Error; err != nil {
+		return false, fmt.Errorf("unable to get install stack version %s: %w", stackVersionID, err)
+	}
+
+	var install app.Install
+	if err := a.db.WithContext(ctx).
+		Select("org_id").
+		Where(app.Install{ID: version.InstallID}).
+		First(&install).Error; err != nil {
+		return false, fmt.Errorf("unable to get install %s: %w", version.InstallID, err)
+	}
+	return a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureDisableAppSync)
 }
