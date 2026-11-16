@@ -138,8 +138,13 @@ const groupsOf = (
     const key = installAppBranchGroup(install) ?? ''
     byGroup.set(key, [...(byGroup.get(key) ?? []), install])
   }
+  const order = (name: string) =>
+    config?.install_groups?.find((group) => group.name === name)?.order ??
+    Number.MAX_SAFE_INTEGER
   return [...byGroup.entries()]
-    .sort(([a], [b]) => (!a ? 1 : !b ? -1 : a.localeCompare(b)))
+    .sort(([a], [b]) =>
+      !a ? 1 : !b ? -1 : order(a) - order(b) || a.localeCompare(b)
+    )
     .map(([key, members]) => ({
       key: key || 'no-group',
       name: key || undefined,

@@ -4,6 +4,7 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import { EmptyState } from '@/components/common/EmptyState'
+import { HealthBars, type IHealthBar } from '@/components/common/HealthBars'
 import { ID } from '@/components/common/ID'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
@@ -16,13 +17,18 @@ import { Table } from '@/components/common/Table'
 import { Text, type TTextTheme } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ToggleButton } from '@/components/common/ToggleButton'
+import { GroupLabels } from '@/components/branches/InstallGroupCards/GroupLabels'
+import { Panel } from '@/components/surfaces/Panel'
 import { InstallStatusAxis } from '@/components/installs/InstallStatusSummary'
 import { INSTALL_STATUS_AXES } from '@/components/installs/InstallStatusSummary/InstallStatusSummary'
 import { useInstallHref } from '@/hooks/use-install-path'
 import type { TAppBranchConfig, TInstall, TInstallStatus } from '@/types'
 import { cn } from '@/utils/classnames'
+import { getStatusTheme } from '@/utils/status-utils'
+import { humanize } from '@/utils/string-utils'
 import {
   groupFleet,
+  healthFilterValue,
   labelOptions,
   matchesFilters,
   summarizeFleet,
@@ -30,7 +36,7 @@ import {
   type TFleetGroup,
   type TFleetRunnerFilter,
 } from './fleet'
-import { HealthFilterDropdown } from './HealthFilterDropdown'
+import { HealthFilterDropdown, healthFilterLabel } from './HealthFilterDropdown'
 
 export interface IInstallFleet {
   installs: TInstall[]
@@ -201,6 +207,29 @@ const GroupSelectorLabels = ({
   </>
 )
 
+const TABLE_VISIBLE_COUNT = 5
+
+const useVisibleInstalls = (installs: TInstall[], visibleCount: number) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+  return {
+    visible: isExpanded ? installs : installs.slice(0, visibleCount),
+    viewMore:
+      installs.length > visibleCount ? (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded((expanded) => !expanded)}
+          >
+            {isExpanded
+              ? 'Show less'
+              : `View more (${installs.length - visibleCount})`}
+          </Button>
+        </div>
+      ) : null,
+  }
+}
+
 const GroupName = ({ group }: { group: TFleetGroup }) =>
   group.name ? (
     <Text variant="subtext" weight="strong" family="mono">
@@ -249,23 +278,26 @@ const FleetGroupTable = ({
   group: TFleetGroup
   columns: ColumnDef<TInstall>[]
   labelColors?: Record<string, string>
-}) => (
-  <div className="flex flex-col gap-3">
-    <div className="flex flex-wrap items-center gap-2">
-      <GroupName group={group} />
-      <GroupSelectorLabels group={group} labelColors={labelColors} />
-      <Status variant="badge" status={group.worst} />
-      <Text variant="subtext" theme="neutral">
-        {plural(group.installs.length, 'install')}
-      </Text>
+}) => {
+  const { visible, viewMore } = useVisibleInstalls(
+    group.installs,
+    TABLE_VISIBLE_COUNT
+  )
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <GroupName group={group} />
+        <GroupSelectorLabels group={group} labelColors={labelColors} />
+        <Status variant="badge" status={group.worst} />
+        <Text variant="subtext" theme="neutral">
+          {plural(group.installs.length, 'install')}
+        </Text>
+      </div>
+      <Table<TInstall> columns={columns} data={visible} enableSearch={false} />
+      {viewMore}
     </div>
-    <Table<TInstall>
-      columns={columns}
-      data={group.installs}
-      enableSearch={false}
-    />
-  </div>
-)
+  )
+}
 
 const FleetBranchSection = ({
   branch,
@@ -291,42 +323,170 @@ const FleetBranchSection = ({
   </div>
 )
 
+const BAR_CLASSES: Record<string, string> = {
+  success: 'bg-green-600 dark:bg-green-500',
+  error: 'bg-red-600 dark:bg-red-500',
+  warn: 'bg-orange-500 dark:bg-orange-400',
+  info: 'bg-blue-600 dark:bg-blue-500',
+  neutral: 'bg-cool-grey-300 dark:bg-dark-grey-600',
+}
+
+const healthBarClass = (install: TInstall) =>
+  BAR_CLASSES[getStatusTheme(install.composite_health_status ?? 'unknown')] ??
+  BAR_CLASSES.neutral
+
+const InstallBarTooltip = ({ install }: { install: TInstall }) => (
+  <div className="flex flex-col gap-0.5 w-44">
+    <Text variant="subtext" weight="strong" family="mono">
+      {install.name}
+    </Text>
+    <Text variant="label" theme="neutral">
+      Health: {humanize(install.composite_health_status ?? 'unknown')}
+    </Text>
+  </div>
+)
+
+const GroupHealthBars = ({ installs }: { installs: TInstall[] }) => {
+  const bars: IHealthBar[] = installs.map((install) => ({
+    key: install.id ?? install.name ?? '',
+    colorClass: healthBarClass(install),
+    ariaLabel: `${install.name}: ${humanize(install.composite_health_status ?? 'unknown')}`,
+    tooltip: <InstallBarTooltip install={install} />,
+  }))
+  return (
+    <HealthBars
+      grow
+      bars={bars}
+      className={installs.length === 1 ? 'w-12' : 'w-full'}
+      barClassName="h-5 rounded-xs"
+    />
+  )
+}
+
+const INSTALL_CARD_CLASS =
+  'flex w-full flex-wrap items-center justify-between gap-3 rounded-md border bg-elevation-2 px-4 py-3 shadow-sm'
+
+const FleetGroupPanelBody = ({
+  group,
+  statusById,
+}: {
+  group: TFleetGroup
+  statusById: Record<string, TInstallStatus>
+}) => {
+  const [search, setSearch] = useState('')
+  const [health, setHealth] = useState<string>()
+  const healthOptions = [
+    ...new Set(group.installs.map((install) => healthFilterValue(install))),
+  ]
+  const installs = group.installs.filter((install) =>
+    matchesFilters(install, {
+      search,
+      labels: new Set(),
+      health: health ? new Set([health]) : undefined,
+    })
+  )
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+          <Status status={group.worst} />
+          <Text variant="subtext" theme="neutral">
+            {plural(group.installs.length, 'install')}
+          </Text>
+        </div>
+        <GroupLabels
+          match={
+            group.labels
+              ? { kind: 'labels', labels: group.labels }
+              : { kind: 'default' }
+          }
+        />
+        <GroupHealthBars installs={group.installs} />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <SearchInput
+            labelClassName="flex-1"
+            className="w-full md:min-w-0"
+            placeholder="Search installs"
+            value={search}
+            onChange={setSearch}
+          />
+          <RadioFilterDropdown
+            id={`fleet-group-${group.key}-health`}
+            label="Health"
+            options={healthOptions.map((value) => ({
+              value,
+              label: healthFilterLabel(value),
+            }))}
+            selected={health}
+            onChange={setHealth}
+          />
+        </div>
+        {installs.length ? (
+          <ul className="flex flex-col gap-2">
+            {installs.map((install) => (
+              <li key={install.id} className={INSTALL_CARD_CLASS}>
+                <InstallNameCell install={install} />
+                <InstallStatusAxes status={statusById[install.id ?? '']} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Text variant="subtext" theme="neutral">
+            No installs match.
+          </Text>
+        )}
+      </div>
+    </div>
+  )
+}
+
 const FleetGroupCard = ({
+  branch,
   group,
   statusById,
   labelColors,
 }: {
+  branch: TFleetBranch
   group: TFleetGroup
   statusById: Record<string, TInstallStatus>
   labelColors?: Record<string, string>
 }) => (
-  <Card className="!p-4 !gap-3">
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <GroupName group={group} />
-        <Status variant="badge" status={group.worst} />
+  <Card className="!p-4 !gap-3 w-64 shrink-0">
+    <div className="flex items-center justify-between gap-2">
+      <GroupName group={group} />
+      <Status variant="badge" status={group.worst} />
+    </div>
+    {group.labels ? (
+      <div className="flex flex-wrap gap-1">
+        <GroupSelectorLabels group={group} labelColors={labelColors} />
       </div>
-      {group.labels ? (
-        <div className="flex flex-wrap gap-1">
-          <GroupSelectorLabels group={group} labelColors={labelColors} />
-        </div>
-      ) : null}
+    ) : null}
+    <GroupHealthBars installs={group.installs} />
+    <div className="flex items-center justify-between gap-2">
       <Text variant="subtext" theme="neutral">
         {plural(group.installs.length, 'install')}
       </Text>
+      <Panel
+        panelKey={`fleet-group-${branch.key}-${group.key}`}
+        size="half"
+        heading={group.name ?? 'No install group'}
+        triggerButton={{
+          variant: 'ghost',
+          size: 'sm',
+          children: 'View installs',
+        }}
+      >
+        <FleetGroupPanelBody group={group} statusById={statusById} />
+      </Panel>
     </div>
-    <ul className="flex flex-col divide-y border-t">
-      {group.installs.map((install) => (
-        <li key={install.id} className="flex flex-col gap-2 py-3 last:pb-0">
-          <InstallNameCell install={install} />
-          <InstallStatusAxes status={statusById[install.id ?? '']} wrap />
-        </li>
-      ))}
-    </ul>
   </Card>
 )
 
-const FleetBoard = ({
+const FleetLanes = ({
   branches,
   statusById,
   labelColors,
@@ -335,18 +495,21 @@ const FleetBoard = ({
   statusById: Record<string, TInstallStatus>
   labelColors?: Record<string, string>
 }) => (
-  <div className="flex items-start gap-4 overflow-x-auto pb-2">
+  <div className="flex flex-col gap-8 md:gap-10">
     {branches.map((branch) => (
-      <div key={branch.key} className="flex w-80 shrink-0 flex-col gap-4">
+      <div key={branch.key} className="flex flex-col gap-4">
         <BranchHeading branch={branch} />
-        {branch.groups.map((group) => (
-          <FleetGroupCard
-            key={group.key}
-            group={group}
-            statusById={statusById}
-            labelColors={labelColors}
-          />
-        ))}
+        <div className="flex items-stretch gap-4 overflow-x-auto pb-2">
+          {branch.groups.map((group) => (
+            <FleetGroupCard
+              key={group.key}
+              branch={branch}
+              group={group}
+              statusById={statusById}
+              labelColors={labelColors}
+            />
+          ))}
+        </div>
       </div>
     ))}
   </div>
@@ -397,7 +560,7 @@ export const InstallFleet = ({
             {
               value: 'board',
               label: <Icon variant="SquaresFourIcon" size={16} />,
-              ariaLabel: 'Board view',
+              ariaLabel: 'Rollout lanes',
             },
           ]}
         />
@@ -470,7 +633,7 @@ export const InstallFleet = ({
           action={<Button onClick={clearFilters}>Clear filters</Button>}
         />
       ) : view === 'board' ? (
-        <FleetBoard
+        <FleetLanes
           branches={branches}
           statusById={statusById}
           labelColors={labelColors}

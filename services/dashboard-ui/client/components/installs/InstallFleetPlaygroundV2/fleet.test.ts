@@ -33,14 +33,23 @@ describe('groupFleet', () => {
 
   test('attaches the branch config label selector to the group', () => {
     const branches = groupFleet(mixedFleet, mixedFleetConfigs)
-    const main = branches[0]
-    expect(main.groups.find((group) => group.name === 'production')?.labels).toEqual({
+    expect(
+      branches[0].groups.find((group) => group.name === 'production')?.labels
+    ).toEqual({
       env: 'prod',
     })
     expect(branches[1].groups[0].labels).toEqual({
       cadence: 'monthly',
       env: 'prod',
     })
+  })
+
+  test('orders install groups by their rollout order in the branch config', () => {
+    const main = groupFleet(mixedFleet, mixedFleetConfigs)[0]
+    expect(main.groups.map((group) => group.name)).toEqual([
+      'stage',
+      'production',
+    ])
   })
 })
 
