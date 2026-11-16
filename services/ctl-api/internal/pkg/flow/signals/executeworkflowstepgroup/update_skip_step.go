@@ -158,7 +158,7 @@ func recordSkipOnTarget(ctx workflow.Context, step *app.WorkflowStep) {
 	if workflow.GetVersion(ctx, "skip-records-target-status-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 		return
 	}
-	meta := map[string]any{"skipped_status": string(step.Status.Status)}
+	meta := map[string]any{}
 	if deny, ok := step.Status.Metadata[executeworkflowstep.DenyViolationsKey]; ok {
 		meta[executeworkflowstep.DenyViolationsKey] = deny
 	}

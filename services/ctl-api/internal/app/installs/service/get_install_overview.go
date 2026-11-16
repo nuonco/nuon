@@ -117,16 +117,16 @@ func (s *service) getInstallOverview(ctx context.Context, orgID, installID strin
 	}
 	alignment, err := s.alignment.Read(ctx, &install)
 	if err != nil {
+		if !errors.Is(err, context.Canceled) {
+			s.l.Warn("unable to complete install alignment",
+				zap.String("install_id", install.ID),
+				zap.String("org_id", install.OrgID),
+				zap.Error(err))
+		}
 		alignment = &InstallAlignment{
 			Error:     "Resource alignment unavailable",
 			Resources: []InstallAlignmentResource{},
 		}
-	}
-	if err != nil && !errors.Is(err, context.Canceled) {
-		s.l.Warn("unable to complete install alignment",
-			zap.String("install_id", install.ID),
-			zap.String("org_id", install.OrgID),
-			zap.Error(err))
 	}
 	overview.Alignment = alignment
 	return overview, nil
