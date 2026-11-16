@@ -96,11 +96,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 		return nil, err
 	}
 	res := &target.resource
-	open, err := s.openDeployments(ctx, st)
-	if err != nil {
-		return nil, err
-	}
-	if existing := open[res.ID]; existing != nil {
+	if existing := st.openDeployments()[res.ID]; existing != nil {
 		return &ResolveResult{WorkflowID: existing.ID}, nil
 	}
 	if err := validateResolvable(res); err != nil {
@@ -187,11 +183,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 			if freshTarget.resource.ExpectedBuildID != res.ExpectedBuildID {
 				return nil, stderr.ErrConflict{Err: fmt.Errorf("resolution build changed"), Description: "the selected build changed; reload Resources and try again"}
 			}
-			open, err := scoped.openDeployments(ctx, fresh)
-			if err != nil {
-				return nil, err
-			}
-			if existing := open[res.ID]; existing != nil {
+			if existing := fresh.openDeployments()[res.ID]; existing != nil {
 				return nil, &openDeploymentExistsError{workflowID: existing.ID}
 			}
 			ref, err := driftresolution.AppliedRef(ctx, tx, resolution)
