@@ -329,7 +329,7 @@ func runMigrator(ctx context.Context, db *gorm.DB) error {
 		L:            logger,
 		Cfg:          testConfig,
 		MW:           metricsWriter,
-		Opts:         migrations.NewOpts(),
+		Opts:         psql.MigratorOpts(),
 		TableOpts:    map[string]string{},
 	})
 

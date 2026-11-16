@@ -46,6 +46,9 @@ var DriftsViewV3 string
 //go:embed drifts_view_v4.sql
 var DriftsViewV4 string
 
+//go:embed drifts_view_v5.sql
+var DriftsViewV5 string
+
 //go:embed app_configs_view_v2.sql
 var AppConfigViewV2 string
 
@@ -99,6 +102,12 @@ var InstallStackVersionRunsStateViewV1 string
 
 //go:embed install_deploys_latest_view_v1.sql
 var InstallDeploysLatestViewV1 string
+
+//go:embed component_config_connections_selected_build_view_v1.sql
+var ComponentConfigConnectionsSelectedBuildViewV1 string
+
+//go:embed install_deploys_live_view_v1.sql
+var InstallDeploysLiveViewV1 string
 
 //go:embed install_inputs_view_v1.sql
 var InstallInputsViewV1 string

@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -104,62 +105,25 @@ func (h *Helpers) AppliedInstallDeploys(ctx context.Context, installComponents [
 		return applied, nil
 	}
 
-	refDeployIDs := make([]string, 0, len(installComponents))
-	legacyIDs := make([]string, 0)
+	ids := make([]string, 0, len(installComponents))
+	installIDs := map[string]struct{}{}
 	for i := range installComponents {
-		ref := installComponents[i].AppConfigRef
-		if ref.AppliedConfigByID != "" && ref.AppliedConfigByType == app.AppConfigRefByTypeInstallDeploys {
-			if ref.AppliedConfigID != "" {
-				refDeployIDs = append(refDeployIDs, ref.AppliedConfigByID)
-			}
-			continue
-		}
-		if ref.AppliedConfigByID == "" {
-			legacyIDs = append(legacyIDs, installComponents[i].ID)
-		}
-	}
-
-	if len(legacyIDs) > 0 {
-		var latest []string
-		if err := h.db.WithContext(ctx).Raw(`
-			SELECT DISTINCT ON (install_component_id) id
-			FROM install_deploys
-			WHERE deleted_at = 0
-			  AND install_component_id IN ?
-			  AND type IS DISTINCT FROM ?
-			  AND NOT EXISTS (
-				SELECT 1 FROM install_workflows w
-				WHERE w.id = install_deploys.install_workflow_id AND w.plan_only = true
-			  )
-			  AND (
-				applied_at IS NOT NULL
-				OR (type = ? AND COALESCE(NULLIF(status_v2->>'status', ''), status) = ?)
-			  )
-			ORDER BY install_component_id, COALESCE(applied_at, updated_at) DESC, created_at DESC`,
-			legacyIDs, app.InstallDeployTypeRecover, app.InstallDeployTypeSync, app.InstallDeployStatusActive,
-		).Scan(&latest).Error; err != nil {
-			return nil, fmt.Errorf("unable to get latest applied install deploys: %w", err)
-		}
-		refDeployIDs = append(refDeployIDs, latest...)
-	}
-	if len(refDeployIDs) == 0 {
-		return applied, nil
+		ids = append(ids, installComponents[i].ID)
+		installIDs[installComponents[i].InstallID] = struct{}{}
 	}
 
 	var deploys []*app.InstallDeploy
 	if err := h.db.WithContext(ctx).
+		Scopes(scopes.WithOverrideTable("install_deploys_live_view_v1")).
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
 			return db.Unscoped()
 		}).
-		Where("id IN ?", refDeployIDs).
+		Where("install_id IN ? AND install_component_id IN ?", generics.MapToKeys(installIDs), ids).
 		Find(&deploys).Error; err != nil {
 		return nil, fmt.Errorf("unable to get applied install deploys: %w", err)
 	}
 	for i := range deploys {
-		if deploys[i].Type == app.InstallDeployTypeTeardown {
-			continue
-		}
 		applied[deploys[i].InstallComponentID] = deploys[i]
 	}
 	return applied, nil
