@@ -153,6 +153,7 @@ export const DeployComponentModalContainer = ({
           currentBuildId={currentBuildId}
           currentDeployStatus={currentDeployStatus}
           installAppConfigId={install?.app_config_id}
+          installAppBranchId={install?.app_branch_id}
           onSelectBuild={onSelectBuild}
           onClose={onClose}
         />
