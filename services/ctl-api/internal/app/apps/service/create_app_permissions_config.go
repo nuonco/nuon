@@ -41,6 +41,8 @@ type AppAWSIAMRoleConfig struct {
 	Policies []AppAWSIAMPolicyConfig `json:"policies" validate:"dive"`
 
 	NamedPolicyNames []string `json:"named_policy_names,omitempty"`
+
+	EKSAccess *app.AppAWSIAMRoleEKSAccess `json:"eks_access,omitempty"`
 }
 
 type AppAWSIAMPolicyConfig struct {
@@ -84,6 +86,26 @@ func (a AppAWSIAMRoleConfig) toConfig() *config.AppAWSIAMRole {
 		EnabledInStack:      a.EnabledInStack,
 		Policies:            policies,
 		NamedPolicies:       config.NamedPolicyRefs(a.NamedPolicyNames),
+		EKSAccess:           a.eksAccessConfig(),
+	}
+}
+
+func (a AppAWSIAMRoleConfig) eksAccessConfig() *config.AppAWSIAMRoleEKSAccess {
+	if a.EKSAccess == nil {
+		return nil
+	}
+	policies := make([]config.AppAWSIAMRoleEKSAccessPolicy, 0, len(a.EKSAccess.Policies))
+	for _, policy := range a.EKSAccess.Policies {
+		policies = append(policies, config.AppAWSIAMRoleEKSAccessPolicy{
+			PolicyARN:   policy.PolicyARN,
+			AccessScope: policy.AccessScope,
+			Namespaces:  policy.Namespaces,
+		})
+	}
+	return &config.AppAWSIAMRoleEKSAccess{
+		ClusterName:      a.EKSAccess.ClusterName,
+		KubernetesGroups: a.EKSAccess.KubernetesGroups,
+		Policies:         policies,
 	}
 }
 
