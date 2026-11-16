@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
@@ -48,14 +49,21 @@ const (
 )
 
 type InstallAlignmentAttempt struct {
-	ID         string           `json:"id"`
-	Status     string           `json:"status"`
-	CreatedAt  time.Time        `json:"created_at"`
-	WorkflowID string           `json:"workflow_id,omitempty"`
-	StepID     string           `json:"step_id,omitempty"`
-	Type       app.WorkflowType `json:"type,omitempty"`
-	BuildID    string           `json:"build_id,omitempty"`
+	ID         string                 `json:"id"`
+	Status     string                 `json:"status"`
+	CreatedAt  time.Time              `json:"created_at"`
+	WorkflowID string                 `json:"workflow_id,omitempty"`
+	StepID     string                 `json:"step_id,omitempty"`
+	Type       app.WorkflowType       `json:"type,omitempty"`
+	BuildID    string                 `json:"build_id,omitempty"`
+	Run        *InstallOverviewCommit `json:"run,omitempty"`
 } // @name service.InstallAlignmentAttempt
+
+type InstallAlignmentOrigin struct {
+	WorkflowID   string                 `json:"workflow_id,omitempty"`
+	WorkflowType app.WorkflowType       `json:"workflow_type,omitempty"`
+	Run          *InstallOverviewCommit `json:"run,omitempty"`
+} // @name service.InstallAlignmentOrigin
 
 type InstallAlignmentBuild struct {
 	ID          string    `json:"id"`
@@ -111,6 +119,8 @@ type InstallAlignmentResource struct {
 	AppliedConfigID  string                          `json:"applied_config_id,omitempty"`
 	ExpectedBuild    *InstallAlignmentBuild          `json:"expected_build,omitempty"`
 	AppliedBuild     *InstallAlignmentBuild          `json:"applied_build,omitempty"`
+	ExpectedBy       *InstallAlignmentOrigin         `json:"expected_by,omitempty"`
+	AppliedBy        *InstallAlignmentOrigin         `json:"applied_by,omitempty"`
 	BlockingAttempt  *InstallAlignmentAttempt        `json:"blocking_attempt,omitempty"`
 	EarlierAttempts  int                             `json:"earlier_attempts,omitempty"`
 	OpenDeployment   *InstallAlignmentOpenDeployment `json:"open_deployment,omitempty"`
@@ -118,6 +128,7 @@ type InstallAlignmentResource struct {
 	Explanation      *InstallAlignmentExplanation    `json:"explanation,omitempty"`
 
 	appliedAt         *time.Time
+	appliedWorkflowID string
 	attemptsSince     *time.Time
 	wantsTeardown     bool
 	blockingAfterDeny bool
@@ -365,6 +376,7 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 		if res.attemptsSince == nil {
 			res.attemptsSince = &applied.CreatedAt
 		}
+		res.appliedWorkflowID = generics.FromPtrStr(applied.InstallWorkflowID)
 	}
 	inactive := ic.Status == app.InstallComponentStatusInactive || ic.Status == app.InstallComponentStatusDeleted || ic.Status == app.InstallComponentStatusDisabled
 	last := st.latestDeploys[ic.ID]
@@ -443,6 +455,7 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 	if st.appliedSandbox != nil {
 		res.AppliedConfigID = st.appliedSandbox.AppSandboxConfig.AppConfigID
 		res.appliedAt = st.appliedSandbox.AppliedAt
+		res.appliedWorkflowID = generics.FromPtrStr(st.appliedSandbox.InstallWorkflowID)
 		res.attemptsSince = st.appliedSandbox.AppliedAt
 		if res.attemptsSince == nil {
 			res.attemptsSince = &st.appliedSandbox.CreatedAt
@@ -556,6 +569,9 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 		return nil, err
 	}
 	if err := s.explainInstallAlignment(ctx, st, alignment); err != nil {
+		return nil, err
+	}
+	if err := s.loadOrigins(ctx, st, alignment); err != nil {
 		return nil, err
 	}
 	return alignment, nil
