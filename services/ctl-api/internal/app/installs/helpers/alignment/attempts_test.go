@@ -265,15 +265,13 @@ func (s *BlockingAttemptsSuite) TestNewestRealAttemptAtWantedBuildBlocks() {
 	s.deploy(f, seededDeploy{build: "G", minute: 8, status: "pending-approval", workflow: s.workflow(f, app.StatusError, false),
 		steps: []app.CompositeStatus{denied(app.StatusError)}})
 	skippedWF := s.workflow(f, app.StatusCancelled, false)
-	_, skippedSteps := s.deploy(f, seededDeploy{build: "G", minute: 9, status: "error", workflow: skippedWF,
+	_, skippedSteps := s.deploy(f, seededDeploy{build: "G", minute: 9, status: "user-skipped", workflow: skippedWF,
 		steps: []app.CompositeStatus{{Status: app.StatusUserSkipped}}})
 	s.deploy(f, seededDeploy{build: "G", minute: 10, status: "queued"})
 	s.deploy(f, seededDeploy{build: "G", minute: 11, status: "retried", workflow: s.workflow(f, app.StatusError, false),
 		steps: []app.CompositeStatus{{Status: app.StatusError}}})
 	s.deploy(f, seededDeploy{build: "G", minute: 12, status: "drifted", workflow: s.workflow(f, app.StatusSuccess, true),
 		steps: []app.CompositeStatus{{Status: app.WorkflowStepApprovalStatusApproved}}})
-	s.deploy(f, seededDeploy{build: "G", minute: 13, status: "error", workflow: s.workflow(f, app.StatusError, false),
-		steps: []app.CompositeStatus{{Status: app.StatusError}}, retried: []bool{true}})
 
 	res := s.read(f)
 	s.Require().NotNil(res.BlockingAttempt)
@@ -288,55 +286,89 @@ func (s *BlockingAttemptsSuite) TestNewestRealAttemptAtWantedBuildBlocks() {
 	s.Equal("The deployment of this resource was skipped.", res.Explanation.Summary)
 }
 
-func (s *BlockingAttemptsSuite) TestOutcomeComesFromStepsNotDeployRow() {
+func (s *BlockingAttemptsSuite) TestOutcomeComesFromDeployRow() {
+	deny := map[string]any{"deny_violations": []any{map[string]any{"policy_id": "pol-1", "message": "public buckets are not allowed"}}}
 	for name, tc := range map[string]struct {
 		rowStatus  string
 		v2Metadata map[string]any
+		applied    bool
 		wfStatus   app.Status
 		noWorkflow bool
+		open       bool
 		steps      []app.CompositeStatus
-		retried    []bool
 		want       string
 		summary    string
 	}{
-		"policy deny leaves the row at pending-approval": {
-			rowStatus: "pending-approval", wfStatus: app.StatusError,
-			steps: []app.CompositeStatus{denied(app.StatusError)},
-			want:  "policy-failed", summary: "A policy denied the latest deployment.",
+		"policy deny": {
+			rowStatus: "error", v2Metadata: deny, wfStatus: app.StatusError,
+			want: "policy-failed", summary: "A policy denied the latest deployment.",
 		},
 		"user skip after a policy deny": {
-			rowStatus: "pending-approval", wfStatus: app.StatusError,
-			steps: []app.CompositeStatus{denied(app.StatusUserSkipped)},
-			want:  "user-skipped", summary: "A policy denied the latest deployment, and it was skipped.",
+			rowStatus: "user-skipped", v2Metadata: deny, wfStatus: app.StatusSuccess,
+			want: "user-skipped", summary: "A policy denied the latest deployment, and it was skipped.",
 		},
-		"empty row status, workflow stopped before the step": {
-			rowStatus: "", wfStatus: app.StatusError,
-			want: "not-attempted", summary: "The deployment stopped before it reached this resource.",
+		"user skip": {
+			rowStatus: "user-skipped", wfStatus: app.StatusSuccess,
+			want: "user-skipped", summary: "The deployment of this resource was skipped.",
 		},
-		"empty row status, step never started, workflow failed elsewhere": {
-			rowStatus: "", wfStatus: app.StatusError,
-			steps: []app.CompositeStatus{{Status: ""}},
-			want:  "not-attempted",
+		"failure awaiting retry": {
+			rowStatus: "error", wfStatus: app.StatusFailedPendingRetry, open: true,
+			want: "failed-pending-retry", summary: "The deployment failed and is waiting to be retried.",
 		},
-		"denied approval recorded only on the row": {
-			rowStatus: "approval-denied", wfStatus: app.StatusError,
-			steps: []app.CompositeStatus{{Status: app.WorkflowStepApprovalStatusApproved}},
+		"awaiting approval": {
+			rowStatus: "pending-approval", wfStatus: app.AwaitingApproval, open: true,
+			want: "approval-awaiting",
+		},
+		"queued in a running workflow": {
+			rowStatus: "queued", wfStatus: app.StatusInProgress, open: true,
+			want: "queued",
+		},
+		"failure, even when the plan step succeeded": {
+			rowStatus: "error", wfStatus: app.StatusError,
+			steps: []app.CompositeStatus{{Status: app.StatusSuccess}},
+			want:  "error", summary: "The latest deployment failed.",
+		},
+		"denied approval, even when the plan step succeeded": {
+			rowStatus: "approval-denied", wfStatus: app.StatusCancelled,
+			steps: []app.CompositeStatus{{Status: app.StatusSuccess}},
 			want:  "approval-denied",
 		},
-		"approval denied on the step": {
-			rowStatus: "pending-approval", wfStatus: app.StatusError,
-			steps: []app.CompositeStatus{{Status: app.WorkflowStepApprovalStatusApprovalDenied}},
-			want:  "approval-denied",
+		"expired approval": {
+			rowStatus: "approval-expired", wfStatus: app.StatusError,
+			want: "approval-expired",
+		},
+		"cancelled": {
+			rowStatus: "cancelled", wfStatus: app.StatusCancelled,
+			want: "cancelled",
 		},
 		"policy skip_apply": {
 			rowStatus: "auto-skipped", v2Metadata: map[string]any{"policy_action": "skip_apply"}, wfStatus: app.StatusSuccess,
-			steps: []app.CompositeStatus{{Status: app.StatusAutoSkipped, Metadata: map[string]any{"check": "policy-skip-apply"}}},
-			want:  "policy-skipped",
+			want: "policy-skipped",
 		},
-		"cancelled workflow with the plan still running": {
-			rowStatus: "planning", wfStatus: app.StatusCancelled,
-			steps: []app.CompositeStatus{{Status: app.StatusPlanning}},
-			want:  "cancelled", summary: "The deployment was cancelled before these changes took effect.",
+		"noop plan": {
+			rowStatus: "auto-skipped", wfStatus: app.StatusSuccess,
+			want: "auto-skipped",
+		},
+		"still awaiting approval when the workflow was cancelled": {
+			rowStatus: "pending-approval", wfStatus: app.StatusCancelled,
+			want: "cancelled", summary: "The deployment was cancelled before these changes took effect.",
+		},
+		"queued when the workflow failed elsewhere": {
+			rowStatus: "queued", wfStatus: app.StatusError,
+			want: "not-attempted", summary: "The deployment stopped before it reached this resource.",
+		},
+		"queued when the workflow finished without it": {
+			rowStatus: "queued", wfStatus: app.StatusSuccess,
+			want: "not-attempted",
+		},
+		"empty status when the workflow failed elsewhere": {
+			rowStatus: "", wfStatus: app.StatusError,
+			want: "not-attempted",
+		},
+		"policy deny from before the row recorded it": {
+			rowStatus: "pending-approval", wfStatus: app.StatusError,
+			steps: []app.CompositeStatus{denied(app.StatusError)},
+			want:  "not-attempted",
 		},
 		"failed deploy outside any workflow": {
 			rowStatus: "error", noWorkflow: true,
@@ -344,16 +376,11 @@ func (s *BlockingAttemptsSuite) TestOutcomeComesFromStepsNotDeployRow() {
 		"orphaned queued row": {
 			rowStatus: "queued", noWorkflow: true,
 		},
-		"orphaned empty row": {
-			rowStatus: "", noWorkflow: true,
+		"successful sync without applied_at": {
+			rowStatus: "active", wfStatus: app.StatusSuccess,
 		},
-		"step-less row in a successful workflow": {
-			rowStatus: "queued", wfStatus: app.StatusSuccess,
-		},
-		"only retried steps": {
-			rowStatus: "error", wfStatus: app.StatusError,
-			steps:   []app.CompositeStatus{{Status: app.StatusError}},
-			retried: []bool{true},
+		"applied with a failed health check": {
+			rowStatus: "health-failed", applied: true, wfStatus: app.StatusError,
 		},
 	} {
 		s.Run(name, func() {
@@ -361,14 +388,33 @@ func (s *BlockingAttemptsSuite) TestOutcomeComesFromStepsNotDeployRow() {
 			s.deploy(f, seededDeploy{build: "F", minute: 1, status: "active", applied: true, workflow: s.workflow(f, app.StatusSuccess, false),
 				steps: []app.CompositeStatus{{Status: app.StatusSuccess}}})
 			s.target(f, "G")
-			d := seededDeploy{build: "G", minute: 2, status: tc.rowStatus, v2Metadata: tc.v2Metadata, steps: tc.steps, retried: tc.retried}
+			d := seededDeploy{build: "G", minute: 2, status: tc.rowStatus, v2Metadata: tc.v2Metadata, steps: tc.steps}
 			if !tc.noWorkflow {
 				d.workflow = s.workflow(f, tc.wfStatus, false)
 			}
 			s.deploy(f, d)
+			if tc.applied {
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.InstallDeploy{}).
+					Where("install_component_id = ? AND component_build_id = ?", f.ic.ID, f.builds["G"]).
+					Update("applied_at", f.base.Add(3*time.Minute)).Error)
+			}
 
 			res := s.read(f)
+			if tc.applied {
+				s.Nil(res.BlockingAttempt)
+				return
+			}
 			s.Equal(alignment.InstallAlignmentCategoryChangesNotApplied, res.Category)
+			if tc.open {
+				s.Nil(res.BlockingAttempt)
+				s.NotNil(res.OpenDeployment)
+				s.Require().NotNil(res.Explanation)
+				s.Equal(tc.want, res.Explanation.Status)
+				if tc.summary != "" {
+					s.Equal(tc.summary, res.Explanation.Summary)
+				}
+				return
+			}
 			if tc.want == "" {
 				s.Nil(res.BlockingAttempt)
 				s.Require().NotNil(res.Explanation)
