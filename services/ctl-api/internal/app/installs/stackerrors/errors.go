@@ -27,6 +27,9 @@ type StackTemplateRenderError struct {
 	// Detail is the sanitised error message from the renderer (untrusted; rendered
 	// as a code block).
 	Detail string `json:"detail,omitempty"`
+	// AppSyncDisabled selects the fix hint wording: whether the org has
+	// disable-app-sync enabled.
+	AppSyncDisabled bool `json:"app_sync_disabled,omitempty"`
 }
 
 var _ compositeerrors.CompositeError = (*StackTemplateRenderError)(nil)
@@ -52,7 +55,11 @@ func (e *StackTemplateRenderError) Sections() []compositeerrors.Section {
 	if e.Detail != "" {
 		sections = append(sections, compositeerrors.CodeSection("Error detail", e.Detail))
 	}
-	sections = append(sections, compositeerrors.MarkdownSection("How to fix", "Review your app stack config and fix the configuration error, then re-run `nuon apps sync` to regenerate the template."))
+	fix := "Fix the app stack config, then run your app branch with the fix to regenerate the template."
+	if !e.AppSyncDisabled {
+		fix = "Fix the app stack config, then re-run `nuon apps sync` or run your app branch with the fix to regenerate the template."
+	}
+	sections = append(sections, compositeerrors.MarkdownSection("How to fix", fix))
 	return sections
 }
 

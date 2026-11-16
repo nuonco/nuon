@@ -269,7 +269,14 @@ export const BranchOverviewContainer = () => {
         }
         configChanges={
           configParseFailure ??
-          (branchRunId ? <TemplateChangesContent {...changesProps} /> : null)
+          (branchRunId ? (
+            <TemplateChangesContent
+              {...changesProps}
+              versionLabel={undefined}
+              previousSha={undefined}
+              sha={undefined}
+            />
+          ) : null)
         }
         configChangesKey={[
           configError ? 'parse-error' : '',

@@ -269,7 +269,10 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 		l.Info("sandbox-mode enabled, creating fake access info")
 		accessInfo = generics.GetFakeObj[*activities.OrgECRAccessInfo]()
 	} else {
-		accessInfo, err = activities.AwaitGetOrgECRAccessInfo(ctx, install.OrgID)
+		accessInfo, err = activities.AwaitGetOrgECRAccessInfo(ctx, &activities.GetOrgECRAccessInfoRequest{
+			OrgID: install.OrgID,
+			AppID: install.AppID,
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get access info")
 		}
