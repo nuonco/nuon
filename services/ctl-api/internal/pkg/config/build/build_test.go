@@ -280,7 +280,7 @@ func TestPermissionsConfigRejectsMutuallyExclusivePolicy(t *testing.T) {
 }
 
 func TestBreakGlassConfigBuildsRoles(t *testing.T) {
-	obj, err := BreakGlassConfig("app1", "cfg1", []*config.AppAWSIAMRole{role("bg")})
+	obj, err := BreakGlassConfig("app1", "cfg1", "aws-cloudformation", []*config.AppAWSIAMRole{role("bg")})
 	require.NoError(t, err)
 
 	require.Len(t, obj.Roles, 1)
@@ -785,21 +785,21 @@ func TestInlinePolicyAllowsEmptyStatementList(t *testing.T) {
 		{Name: "placeholder", Contents: `{"Version":"2012-10-17","Statement":[]}`},
 	}
 
-	_, err := BreakGlassConfig("app1", "cfg1", []*config.AppAWSIAMRole{bg})
+	_, err := BreakGlassConfig("app1", "cfg1", "aws-cloudformation", []*config.AppAWSIAMRole{bg})
 	require.NoError(t, err)
 }
 
 func TestInlinePolicyStillRejectsMalformed(t *testing.T) {
 	bad := role("bad")
 	bad.Policies = []config.AppAWSIAMPolicy{{Name: "broken", Contents: `{"Statement": [`}}
-	_, err := BreakGlassConfig("app1", "cfg1", []*config.AppAWSIAMRole{bad})
+	_, err := BreakGlassConfig("app1", "cfg1", "aws-cloudformation", []*config.AppAWSIAMRole{bad})
 	require.Error(t, err)
 
 	noEffect := role("no-effect")
 	noEffect.Policies = []config.AppAWSIAMPolicy{
 		{Name: "no-effect", Contents: `{"Statement":[{"Action":"s3:*"}]}`},
 	}
-	_, err = BreakGlassConfig("app1", "cfg1", []*config.AppAWSIAMRole{noEffect})
+	_, err = BreakGlassConfig("app1", "cfg1", "aws-cloudformation", []*config.AppAWSIAMRole{noEffect})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Effect")
 }

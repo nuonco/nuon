@@ -17,7 +17,12 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		return nil
 	}
 
-	obj, err := build.BreakGlassConfig(appID, appConfigID, cfg.BreakGlass.Roles)
+	stackType := ""
+	if cfg.Stack != nil {
+		stackType = cfg.Stack.Type
+	}
+
+	obj, err := build.BreakGlassConfig(appID, appConfigID, stackType, cfg.BreakGlass.Roles)
 	if err != nil {
 		return sync.SyncErr{
 			Resource:    "break-glass",
