@@ -17,6 +17,7 @@ import (
 const (
 	appBranchGroupDirectiveVersion   = "app-branch-group-directive-v1"
 	appBranchConfigOnlyDeployVersion = "app-branch-config-only-deploy-v1"
+	appBranchDisabledTeardownVersion = "app-branch-disabled-teardown-v1"
 )
 
 func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -104,9 +105,19 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	deployComponentIDs := filterComponentsByDiff(componentIDs, newAppCfg, diff)
 
+	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
+
+	var disableComponentIDs []string
+	if workflow.GetVersion(ctx, appBranchDisabledTeardownVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		disableComponentIDs, err = activeDisabledComponentIDs(ctx, dg, componentIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// A stack change recycles the runner, so gating on the outgoing one would
 	// block the apply that brings its replacement up.
-	if !stackChanged && (sandboxChanged || len(deployComponentIDs) > 0) {
+	if !stackChanged && (sandboxChanged || len(deployComponentIDs) > 0 || len(disableComponentIDs) > 0) {
 		sg.nextGroupEager()
 		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 			InstallID: installID,
@@ -136,8 +147,6 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		steps = append(steps, step)
 	}
 
-	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
-
 	if sandboxChanged {
 		flw.Metadata["skip_components"] = generics.ToPtr("true")
 
@@ -154,7 +163,41 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 	steps = append(steps, deploySteps...)
 
+	disableSteps, err := componentDisableSteps(ctx, dg, dg.reverseTopoSort(disableComponentIDs), nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to generate component teardown steps")
+	}
+	steps = append(steps, disableSteps...)
+
 	return sg.Result(steps), nil
+}
+
+func activeDisabledComponentIDs(ctx workflow.Context, dg *genCtx, componentIDs []string) ([]string, error) {
+	var disabled []string
+	for _, id := range componentIDs {
+		if _, ok := dg.cccByComp[id]; ok && !dg.effectiveEnabled(id) {
+			disabled = append(disabled, id)
+		}
+	}
+	if len(disabled) == 0 {
+		return nil, nil
+	}
+
+	installComps, err := activities.AwaitGetInstallComponentsBatch(ctx, activities.GetInstallComponentsBatchRequest{
+		InstallID:    dg.installID,
+		ComponentIDs: disabled,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to batch get install components for disabled components")
+	}
+
+	var active []string
+	for _, id := range disabled {
+		if ic, ok := installComps[id]; ok && ic != nil && ic.Status == app.InstallComponentStatusActive {
+			active = append(active, id)
+		}
+	}
+	return active, nil
 }
 
 func classifyAndMaybeWait(ctx workflow.Context, flw *app.Workflow, installID, newAppConfigID string) error {
