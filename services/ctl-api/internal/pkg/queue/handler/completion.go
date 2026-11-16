@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// holdCallbacksAwaitingApprovalVersion gates holding callbacks for a flow that
-// idled out parked on an approval; in-flight histories sent them as success.
-const holdCallbacksAwaitingApprovalVersion = "completion-callbacks-hold-awaiting-approval-v1"
-
 // sendCompletionCallbacks sends Temporal signals to all registered parent
 // workflows with the handler's terminal status.
 //
@@ -47,9 +43,7 @@ func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 		case app.StatusFailedPendingRetry:
 			return
 		case app.AwaitingApproval:
-			if workflow.GetVersion(ctx, holdCallbacksAwaitingApprovalVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-				return
-			}
+			return
 		case app.StatusError, app.StatusCancelled:
 			result = callback.Result{
 				Status:            string(outcome.Status),

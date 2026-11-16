@@ -796,14 +796,12 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		Status:                 app.StatusSuccess,
 		StatusHumanDescription: "successfully executed workflow",
 	}
-	if workflow.GetVersion(ctx, skippedStepsFailedStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		failedStatus, err := s.skippedStepsFailedStatus(ctx)
-		if err != nil {
-			return err
-		}
-		if failedStatus != nil {
-			finalStatus = *failedStatus
-		}
+	failedStatus, err := s.skippedStepsFailedStatus(ctx)
+	if err != nil {
+		return err
+	}
+	if failedStatus != nil {
+		finalStatus = *failedStatus
 	}
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -1348,10 +1346,6 @@ const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
 // workflowCompleteTerminalErrorVersion gates terminal errored steps counting as
 // complete because in-flight histories previously parked after every error.
 const workflowCompleteTerminalErrorVersion = "execute-flow-terminal-error-complete-v1"
-
-// skippedStepsFailedStatusVersion gates the step lookup before the final flow
-// status write; in-flight histories wrote success with no activity before it.
-const skippedStepsFailedStatusVersion = "execute-flow-skipped-steps-failed-status-v1"
 
 // stopIfRunnerDisabled halts a workflow whose install runner was disabled after
 // it started. Creation already rejects these, so without this the workflow would
