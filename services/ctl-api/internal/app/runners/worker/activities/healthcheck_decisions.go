@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	processOfflineTimeout      = 1 * time.Minute
-	processInactiveTimeout     = 5 * time.Minute
-	processFirstHeartbeatGrace = 10 * time.Minute
+	processOfflineTimeout       = 1 * time.Minute
+	processInactiveTimeout      = 5 * time.Minute
+	processFirstHeartbeatGrace  = 10 * time.Minute
+	processShutdownStaleTimeout = 1 * time.Hour
 
 	runnerUnhealthyAlertDelay = 15 * time.Minute
 
@@ -160,14 +161,25 @@ const (
 	processActionActive
 )
 
-// decideProcessHealth encodes processhealthcheck.Signal.Execute's branch
-// order: status gate, shutdown_requested short-circuit, nil-heartbeat no-op
-// within processFirstHeartbeatGrace of start, then heartbeat-age tiers.
+// decideProcessHealth differs from processhealthcheck.Signal.Execute in two
+// ways: a process that stopped heartbeating goes inactive before a pending
+// shutdown_requested is honoured, since a dead process never acts on it, and a
+// process stuck mid-shutdown goes inactive after processShutdownStaleTimeout
+// without a heartbeat.
 func decideProcessHealth(now time.Time, process *app.RunnerProcess, heartbeatAt *time.Time) processHealthAction {
 	switch process.ProcessStatus() {
 	case app.RunnerProcessStatusActive, app.RunnerProcessStatusOffline:
+	case app.RunnerProcessStatusPendingShutdown, app.RunnerProcessStatusShuttingDown:
+		if heartbeatStale(now, process.StartedAt, heartbeatAt, processShutdownStaleTimeout, processShutdownStaleTimeout) {
+			return processActionInactive
+		}
+		return processActionNoop
 	default:
 		return processActionNoop
+	}
+
+	if heartbeatStale(now, process.StartedAt, heartbeatAt, processFirstHeartbeatGrace, processInactiveTimeout) {
+		return processActionInactive
 	}
 
 	if val, ok := process.CompositeStatus.Metadata["shutdown_requested"]; ok && val != nil {
@@ -175,19 +187,24 @@ func decideProcessHealth(now time.Time, process *app.RunnerProcess, heartbeatAt 
 	}
 
 	if heartbeatAt == nil {
-		if process.StartedAt != nil && now.Sub(*process.StartedAt) >= processFirstHeartbeatGrace {
-			return processActionInactive
-		}
 		return processActionNoop
 	}
 
-	switch age := now.Sub(*heartbeatAt); {
-	case age >= processInactiveTimeout:
-		return processActionInactive
-	case age >= processOfflineTimeout:
+	if now.Sub(*heartbeatAt) >= processOfflineTimeout {
 		return processActionOffline
 	}
 	return processActionActive
+}
+
+func isShuttingDownProcessStatus(status app.RunnerProcessStatus) bool {
+	return status == app.RunnerProcessStatusPendingShutdown || status == app.RunnerProcessStatusShuttingDown
+}
+
+func heartbeatStale(now time.Time, startedAt, heartbeatAt *time.Time, firstHeartbeatGrace, timeout time.Duration) bool {
+	if heartbeatAt == nil {
+		return startedAt != nil && now.Sub(*startedAt) >= firstHeartbeatGrace
+	}
+	return now.Sub(*heartbeatAt) >= timeout
 }
 
 // decideVersionWarning lifts processhealthcheck.Signal.checkVersionMismatch's
