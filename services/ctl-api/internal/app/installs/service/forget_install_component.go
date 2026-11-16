@@ -70,9 +70,13 @@ func (s *service) ForgetInstallComponent(ctx *gin.Context) {
 	}
 
 	if activeComponentIDs[componentID] {
+		desc := "This component is still in the app config. Remove it, run `nuon apps sync` or run your app branch, then try again."
+		if appSyncDisabled, flagErr := s.featuresClient.OrgHasFeature(ctx, org.ID, app.OrgFeatureDisableAppSync); flagErr == nil && appSyncDisabled {
+			desc = "This component is still in the app config. Remove it, run your app branch, then try again."
+		}
 		ctx.Error(stderr.ErrUser{
 			Err:         errors.New("Component still in app config. Remove it before forgetting"),
-			Description: "This component is still referenced in the app configuration. Please remove it from your app config by running 'nuon apps sync' after removing the component from your nuon.yaml file, then try again.",
+			Description: desc,
 		})
 		return
 	}
