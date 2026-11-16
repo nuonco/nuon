@@ -816,10 +816,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	return nil
 }
 
-// skippedStepsFailedStatus returns an error status for a workflow whose
-// skip-on-failure steps failed, or nil when none did. Those steps let the rest
-// of the workflow run, but a plain success would hide the failure from the
-// workflow status and from parents awaiting its completion callback.
 func (s *Signal) skippedStepsFailedStatus(ctx workflow.Context) (*app.CompositeStatus, error) {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, s.WorkflowID)
 	if err != nil {
