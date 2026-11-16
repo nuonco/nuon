@@ -132,7 +132,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	if err := s.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs); err != nil {
-		return nil, s.withUnbranchedInstallHint(ctx, orgID, appID, pin, err)
+		return nil, s.withUnknownInputHint(ctx, orgID, err)
 	}
 
 	sandboxConfigID := pin.AppConfig.SandboxConfig.ID
@@ -144,9 +144,17 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		runnerConfigID = parentApp.AppRunnerConfigs[0].ID
 	}
 	if sandboxConfigID == "" || runnerConfigID == "" {
+		appSyncDisabled, flagErr := s.featuresClient.OrgHasFeature(ctx, orgID, app.OrgFeatureDisableAppSync)
+		if flagErr != nil {
+			return nil, fmt.Errorf("unable to check disable-app-sync: %w", flagErr)
+		}
+		desc := "No sandbox or runner config found. Add them, then run your app branch."
+		if !appSyncDisabled {
+			desc = "No sandbox or runner config found. Add them, then run `nuon apps sync` or run your app branch."
+		}
 		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("no sandbox or runner config found for app %s", appID),
-			Description: "No sandbox or runner config found. Please sync your app configuration before creating an install.",
+			Description: desc,
 		}
 	}
 

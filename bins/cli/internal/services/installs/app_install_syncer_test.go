@@ -483,39 +483,12 @@ func TestSyncNewInstallDryRunRejectsUnknownInput(t *testing.T) {
 	}
 
 	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
-	if err == nil || err.Error() != "unknown input(s): components.whoami.helm_values, retired" {
+	if err == nil || err.Error() != "unknown input(s): components.whoami.helm_values, retired; add it, then run `nuon apps sync` or run your app branch" {
 		t.Fatalf("err = %v", err)
 	}
 }
 
-func TestSyncNewInstallUnknownInputWithoutBranchExplainsAppBranch(t *testing.T) {
-	api := &dryRunInputsAPI{
-		installInput: &models.AppAppInputConfig{
-			Inputs: []*models.AppAppInput{{Name: "region"}},
-		},
-		branches: []*models.AppAppBranch{{ID: "branch-1", Name: "prod"}},
-	}
-	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true}
-	cfg := &config.Install{
-		Name: "acme",
-		InputGroups: []config.InputGroup{{
-			Inputs: map[string]string{"retired": "1"},
-		}},
-	}
-
-	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
-	if err == nil {
-		t.Fatal("expected unknown input error")
-	}
-	if !strings.HasPrefix(err.Error(), "unknown input(s): retired") {
-		t.Fatalf("err = %v", err)
-	}
-	if !strings.Contains(err.Error(), "app_branch") {
-		t.Fatalf("err = %v, want app_branch hint", err)
-	}
-}
-
-func TestSyncNewInstallUnknownInputWithoutBranchesOmitsAppBranchHint(t *testing.T) {
+func TestSyncNewInstallUnknownInputWithoutBranchSuggestsAppSyncOrBranchRun(t *testing.T) {
 	api := &dryRunInputsAPI{
 		installInput: &models.AppAppInputConfig{
 			Inputs: []*models.AppAppInput{{Name: "region"}},
@@ -530,7 +503,27 @@ func TestSyncNewInstallUnknownInputWithoutBranchesOmitsAppBranchHint(t *testing.
 	}
 
 	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
-	if err == nil || err.Error() != "unknown input(s): retired" {
+	if err == nil || err.Error() != "unknown input(s): retired; add it, then run `nuon apps sync` or run your app branch" {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestSyncNewInstallUnknownInputWhenAppSyncDisabledSuggestsBranchRun(t *testing.T) {
+	api := &dryRunInputsAPI{
+		installInput: &models.AppAppInputConfig{
+			Inputs: []*models.AppAppInput{{Name: "region"}},
+		},
+	}
+	syncer := &appInstallSyncer{api: api, appID: "app-1", asJSON: true, appSyncDisabled: true}
+	cfg := &config.Install{
+		Name: "acme",
+		InputGroups: []config.InputGroup{{
+			Inputs: map[string]string{"retired": "1"},
+		}},
+	}
+
+	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
+	if err == nil || err.Error() != "unknown input(s): retired; add it, then run your app branch" {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -558,7 +551,7 @@ func TestSyncNewInstallDryRunAllowsDeclaredInput(t *testing.T) {
 	}
 }
 
-func TestSyncNewInstallUnknownInputOnBranchOmitsAppBranchHint(t *testing.T) {
+func TestSyncNewInstallUnknownInputOnBranchSuggestsAppSyncOrBranchRun(t *testing.T) {
 	branch := &models.AppAppBranch{
 		ID:        "branch-1",
 		Name:      "prod",
@@ -583,7 +576,7 @@ func TestSyncNewInstallUnknownInputOnBranchOmitsAppBranchHint(t *testing.T) {
 	}
 
 	_, err := syncer.syncNewInstall(context.Background(), cfg, true, false, true)
-	if err == nil || err.Error() != "unknown input(s): retired" {
+	if err == nil || err.Error() != "unknown input(s): retired; add it, then run `nuon apps sync` or run your app branch" {
 		t.Fatalf("err = %v", err)
 	}
 	if api.listedBranches {
