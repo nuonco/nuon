@@ -23,8 +23,14 @@ type PSQLParams struct {
 	MetricsWriter metrics.Writer
 }
 
-func NewPSQLMigrator(p PSQLParams, lc fx.Lifecycle) *migrations.Migrator {
+func MigratorOpts() *migrations.Opts {
 	opts := migrations.NewOpts()
+	opts.DropViewSQLTmpl = "DROP VIEW IF EXISTS %s CASCADE"
+	return opts
+}
+
+func NewPSQLMigrator(p PSQLParams, lc fx.Lifecycle) *migrations.Migrator {
+	opts := MigratorOpts()
 	return migrations.New(migrations.Params{
 		Models:       AllModels(),
 		Migrations:   p.Migrations.All(),

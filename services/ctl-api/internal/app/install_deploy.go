@@ -234,6 +234,11 @@ func (i *InstallDeploy) Views(db *gorm.DB) []migrations.View {
 			AlwaysReapply: true,
 		},
 		{
+			Name:          views.CustomViewName(db, &InstallDeploy{}, "live_view_v1"),
+			SQL:           viewsql.InstallDeploysLiveViewV1,
+			AlwaysReapply: true,
+		},
+		{
 			Name:          views.CustomViewName(db, &InstallDeploy{}, "state_view_v1"),
 			SQL:           viewsql.InstallDeploysStateViewV1,
 			AlwaysReapply: true,
