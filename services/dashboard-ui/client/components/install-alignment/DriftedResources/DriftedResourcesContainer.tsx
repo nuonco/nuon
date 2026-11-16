@@ -4,7 +4,6 @@ import { ImageConsumersContainer } from '@/components/install-components/Install
 import { useInstall } from '@/hooks/use-install'
 import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useInstallLink } from '@/hooks/use-install-path'
-import { useOrg } from '@/hooks/use-org'
 import { useResolveInstallDrift } from '@/hooks/use-resolve-install-drift'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type {
@@ -20,14 +19,17 @@ import {
 } from '../alignment-utils'
 import { DriftPlanPanel } from '../DriftPlanPanel'
 import { DriftResourceCard } from '../DriftResourceCard'
+import { useOriginHref } from '../LiveBuild'
 import { DriftedResources } from './DriftedResources'
 
 export const useDriftCardProps = () => {
-  const { org } = useOrg()
   const { install } = useInstall()
   const installLink = useInstallLink()
   const { addPanel } = useSurfaces()
   const resolve = useResolveInstallDrift()
+  const originHref = useOriginHref()
+  const { data: overview } = useInstallOverview()
+  const repo = overview?.branch_tracking?.repo
   const workflowHref = (workflowId?: string, stepId?: string) =>
     workflowId
       ? installLink({
@@ -49,11 +51,8 @@ export const useDriftCardProps = () => {
               suffix: `/components/${resource.component_id}`,
             })
           : undefined,
-      buildHref:
-        resource.component_id && install?.app_id
-          ? (buildId: string) =>
-              `/${org?.id}/apps/${install.app_id}/components/${resource.component_id}/builds/${buildId}`
-          : undefined,
+      originHref,
+      repo,
       historyHref:
         resource.kind === 'component' || resource.kind === 'image'
           ? installLink({
@@ -102,9 +101,12 @@ export const DriftedResourcesContainer = ({
   const [searchParams] = useSearchParams()
   const { data, error, isLoading, refetch } = useInstallOverview()
   const cardProps = useDriftCardProps()
+  const originHref = useOriginHref()
 
   return (
     <DriftedResources
+      originHref={originHref}
+      repo={data?.branch_tracking?.repo}
       resources={resourcesOfKinds(data?.alignment?.resources, kinds).filter(
         (resource) =>
           (resource.category !== 'torn-down' ||

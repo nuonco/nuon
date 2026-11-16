@@ -13,21 +13,20 @@ import { ComponentType } from '@/components/components/ComponentType'
 import type {
   TAPIError,
   TComponentType,
+  TInstallAlignmentOrigin,
   TInstallAlignmentResource,
   TInstallAlignmentResourceKind,
 } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
-  buildRef,
   driftExplanation,
   explanationEvidence,
   hasOngoingDeployment,
   isDrifted,
 } from '../alignment-utils'
-import { BuildRef } from '../LiveBuild'
+import { RunRef } from '../LiveBuild'
 
 export interface IDriftResourceCard {
-  buildHref?: (buildId: string) => string | undefined
   deploymentHref?: string
   explanationHref?: string
   historyHref?: string
@@ -35,6 +34,8 @@ export interface IDriftResourceCard {
   nameHref?: string
   onResolve?: () => void
   onViewPlan?: () => void
+  originHref?: (origin?: TInstallAlignmentOrigin) => string | undefined
+  repo?: string
   resolveError?: TAPIError | null
   resolving?: boolean
   resource: TInstallAlignmentResource
@@ -70,7 +71,6 @@ const earlierAttemptsLabel = (count: number) =>
   `${count} earlier ${count === 1 ? 'attempt' : 'attempts'}`
 
 export const DriftResourceCard = ({
-  buildHref,
   deploymentHref,
   explanationHref,
   historyHref,
@@ -78,6 +78,8 @@ export const DriftResourceCard = ({
   nameHref,
   onResolve,
   onViewPlan,
+  originHref,
+  repo,
   resolveError,
   resolving = false,
   resource,
@@ -122,6 +124,14 @@ export const DriftResourceCard = ({
       (isStateDrift
         ? 'Live resources differ from what was last applied.'
         : 'Saved changes haven’t taken effect.')
+  const attempt = resource.blocking_attempt
+  const attemptOrigin =
+    !openDeployment &&
+    attempt?.run &&
+    evidenceWorkflowId &&
+    evidenceWorkflowId === attempt.workflow_id
+      ? { run: attempt.run, workflow_id: attempt.workflow_id }
+      : undefined
   const earlier = openDeployment
     ? (resource.earlier_attempts ?? 0) + (resource.blocking_attempt ? 1 : 0)
     : (resource.earlier_attempts ?? 0)
@@ -226,25 +236,32 @@ export const DriftResourceCard = ({
 
       {showBuilds ? (
         <div
-          className="flex flex-wrap items-center gap-x-2 gap-y-1"
+          className="flex flex-wrap items-center gap-x-1.5 gap-y-1"
           data-testid="drift-builds"
         >
           <Text as="span" variant="subtext" theme="neutral">
-            Live
+            {applied?.id ? 'Running' : 'Not deployed yet'}
           </Text>
-          <BuildRef
-            build={applied}
-            href={applied?.id ? buildHref?.(applied.id) : undefined}
-          />
-          <Icon
-            variant="ArrowRightIcon"
-            size={14}
-            className="text-cool-grey-600 dark:text-cool-grey-500"
-          />
-          <Text as="span" variant="subtext" theme="neutral">
-            Wanted
-          </Text>
-          <BuildRef build={expected} href={buildHref?.(expected!.id!)} />
+          {applied?.id ? (
+            <>
+              <RunRef
+                origin={resource.applied_by}
+                href={originHref?.(resource.applied_by)}
+                repo={repo}
+              />
+              {resource.applied_deploy_at ? (
+                <Text as="span" variant="subtext" theme="neutral" flex nowrap>
+                  · {isImage ? 'synced' : 'deployed'}
+                  <Time
+                    time={resource.applied_deploy_at}
+                    format="relative"
+                    variant="subtext"
+                    theme="neutral"
+                  />
+                </Text>
+              ) : null}
+            </>
+          ) : null}
         </div>
       ) : (
         <Text variant="subtext" data-testid="drift-consequence">
@@ -256,6 +273,13 @@ export const DriftResourceCard = ({
         <Text variant="subtext" data-testid="drift-explanation">
           {explanation}
         </Text>
+        {attemptOrigin ? (
+          <RunRef
+            origin={attemptOrigin}
+            href={originHref?.(attemptOrigin)}
+            repo={repo}
+          />
+        ) : null}
         {explanationHref && evidenceWorkflowId && !openDeployment ? (
           <Link href={explanationHref}>
             {isStateDrift ? 'View drift scan' : 'View workflow'}
@@ -278,14 +302,9 @@ export const DriftResourceCard = ({
         >
           <Text variant="subtext" theme="neutral">
             {earlierAttemptsLabel(earlier)}
-            {applied?.id ? (
-              <>
-                {' since '}
-                <Text as="span" family="mono" variant="subtext" theme="neutral">
-                  {buildRef(applied)}
-                </Text>
-              </>
-            ) : null}
+            {applied?.id
+              ? ` since the live ${isImage ? 'sync' : 'deploy'}`
+              : null}
           </Text>
           {historyHref ? (
             <Link href={historyHref}>View deploy history</Link>

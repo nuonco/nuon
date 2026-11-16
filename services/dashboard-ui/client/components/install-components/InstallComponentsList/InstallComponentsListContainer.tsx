@@ -8,7 +8,10 @@ import {
   type TComponentConfigTypeText,
 } from '@/components/components/ComponentTypeFilter'
 import { DriftedResources } from '@/components/install-alignment/DriftedResources'
-import { LiveBuild } from '@/components/install-alignment/LiveBuild'
+import {
+  LiveBuild,
+  useOriginHref,
+} from '@/components/install-alignment/LiveBuild'
 import { usePanelDeepLinks } from '@/hooks/use-panel-deep-links'
 import {
   hasOngoingDeployment,
@@ -71,6 +74,7 @@ export const InstallComponentsListContainer = () => {
   const { install } = useInstall()
   const { addPanel } = useSurfaces()
   const installLink = useInstallLink()
+  const originHref = useOriginHref()
   const [searchParams, setSearchParams] = useSearchParams()
   const showHealth = !!org?.features?.['component-health']
   const {
@@ -236,12 +240,9 @@ export const InstallComponentsListContainer = () => {
               alignment?.applied_deploy_id ? (
                 <LiveBuild
                   appliedAt={alignment.applied_deploy_at}
-                  build={alignment.applied_build}
-                  buildHref={
-                    alignment.applied_build?.id && install?.app_id
-                      ? `/${org?.id}/apps/${install.app_id}/components/${componentId}/builds/${alignment.applied_build.id}`
-                      : undefined
-                  }
+                  origin={alignment.applied_by}
+                  originHref={originHref(alignment.applied_by)}
+                  repo={overview?.branch_tracking?.repo}
                   deployHref={installLink({
                     installId: install?.id,
                     appId: install?.app_id,
@@ -279,7 +280,9 @@ export const InstallComponentsListContainer = () => {
     showHealth,
     addPanel,
     installLink,
+    originHref,
     alignmentById,
+    overview?.branch_tracking?.repo,
   ])
 
   const tornDown: TInstallComponentListItem[] = resourcesOfKinds(

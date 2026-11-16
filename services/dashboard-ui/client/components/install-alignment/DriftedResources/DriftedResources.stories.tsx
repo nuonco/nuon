@@ -28,6 +28,10 @@ const card =
       explanationHref={explanationEvidence(resource) ? '#evidence' : undefined}
       historyHref="#deploy-history"
       deploymentHref="#deployment"
+      originHref={(origin) =>
+        origin?.run ? `#run-${origin.run.run_id}` : undefined
+      }
+      repo="acme/payments"
       onViewPlan={resource.plan ? () => {} : undefined}
     />
   )
@@ -56,6 +60,10 @@ const Interactive = ({
         search={search}
         view={view}
         renderCard={card(view)}
+        originHref={(origin) =>
+          origin?.run ? `#run-${origin.run.run_id}` : undefined
+        }
+        repo="acme/payments"
         {...props}
       />
     </div>

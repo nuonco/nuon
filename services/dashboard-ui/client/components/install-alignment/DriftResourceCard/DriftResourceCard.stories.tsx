@@ -5,15 +5,22 @@ export default {
 import {
   causeResources,
   inputUpdateResource,
+  manualOrigin,
   openDeploymentResource,
+  selectedCommit,
   stateDriftResource,
   unappliedResource,
 } from '@/components/__fixtures__/install-alignment'
+import type { TInstallAlignmentOrigin } from '@/types'
 import { explanationEvidence } from '../alignment-utils'
 import { DriftResourceCard } from './DriftResourceCard'
 
 const links = {
-  buildHref: (buildId: string) => `#build-${buildId}`,
+  originHref: (origin?: TInstallAlignmentOrigin) =>
+    origin?.run
+      ? `#run-${origin.run.run_id}`
+      : `#workflow-${origin?.workflow_id}`,
+  repo: 'acme/payments',
   explanationHref: '#evidence',
   historyHref: '#deploy-history',
   deploymentHref: '#deployment',
@@ -54,6 +61,7 @@ export const PolicyDenied = () => (
         created_at: new Date(Date.now() - 2 * 3_600_000).toISOString(),
         workflow_id: 'wf-attempt-ic-api',
         build_id: 'bld-selected',
+        run: selectedCommit,
       },
       earlier_attempts: 1,
       plan: undefined,
@@ -63,6 +71,13 @@ export const PolicyDenied = () => (
         workflow_id: 'wf-attempt-ic-api',
       },
     })}
+  />
+)
+
+export const LiveFromManualDeploy = () => (
+  <DriftResourceCard
+    {...links}
+    resource={unappliedResource({ applied_by: manualOrigin })}
   />
 )
 

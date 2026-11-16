@@ -9662,6 +9662,7 @@ export interface components {
       build_id?: string;
       created_at?: string;
       id?: string;
+      run?: components["schemas"]["service.InstallOverviewCommit"];
       status?: string;
       step_id?: string;
       type?: components["schemas"]["app.WorkflowType"];
@@ -9687,6 +9688,11 @@ export interface components {
       status?: string;
       type?: components["schemas"]["app.WorkflowType"];
     };
+    "service.InstallAlignmentOrigin": {
+      run?: components["schemas"]["service.InstallOverviewCommit"];
+      workflow_id?: string;
+      workflow_type?: components["schemas"]["app.WorkflowType"];
+    };
     "service.InstallAlignmentPlan": {
       approval_id?: string;
       changes_create?: number;
@@ -9705,6 +9711,7 @@ export interface components {
     "service.InstallAlignmentResource": {
       applied_build?: components["schemas"]["service.InstallAlignmentBuild"];
       applied_build_id?: string;
+      applied_by?: components["schemas"]["service.InstallAlignmentOrigin"];
       applied_config_id?: string;
       applied_deploy_at?: string;
       applied_deploy_id?: string;
@@ -9715,6 +9722,7 @@ export interface components {
       earlier_attempts?: number;
       expected_build?: components["schemas"]["service.InstallAlignmentBuild"];
       expected_build_id?: string;
+      expected_by?: components["schemas"]["service.InstallAlignmentOrigin"];
       expected_config_id?: string;
       explanation?: components["schemas"]["service.InstallAlignmentExplanation"];
       id?: string;

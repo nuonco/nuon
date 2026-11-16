@@ -3,7 +3,10 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DebouncedSearchInput } from '@/components/common/DeboundedSearch'
 import { DriftedResources } from '@/components/install-alignment/DriftedResources'
-import { LiveBuild } from '@/components/install-alignment/LiveBuild'
+import {
+  LiveBuild,
+  useOriginHref,
+} from '@/components/install-alignment/LiveBuild'
 import {
   hasOngoingDeployment,
   listedResources,
@@ -34,6 +37,7 @@ export const InstallImagesListContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const installLink = useInstallLink()
+  const originHref = useOriginHref()
   const { appConfig } = useInstallAppConfig()
   const [searchParams, setSearchParams] = useSearchParams()
   const {
@@ -151,12 +155,9 @@ export const InstallImagesListContainer = () => {
             alignment?.applied_deploy_id ? (
               <LiveBuild
                 appliedAt={alignment.applied_deploy_at}
-                build={alignment.applied_build}
-                buildHref={
-                  alignment.applied_build?.id && install?.app_id
-                    ? `/${org?.id}/apps/${install.app_id}/components/${componentId}/builds/${alignment.applied_build.id}`
-                    : undefined
-                }
+                origin={alignment.applied_by}
+                originHref={originHref(alignment.applied_by)}
+                repo={overview?.branch_tracking?.repo}
                 deployHref={installLink({
                   installId: install?.id,
                   appId: install?.app_id,

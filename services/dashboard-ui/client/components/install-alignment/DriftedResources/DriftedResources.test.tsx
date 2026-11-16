@@ -134,6 +134,12 @@ test('ongoing resources appear once above drift, without hiding their unapplied 
   fireEvent.click(all)
   expect(within(drift).getAllByTestId('drift-resource-card')).toHaveLength(2)
   expect(within(ongoing).getAllByTestId('drift-resource-card')).toHaveLength(2)
+  expect(screen.queryByTestId('drift-wanted')).toBeNull()
+  expect(
+    screen.getByText(
+      'Saved configuration or input changes haven’t been deployed.'
+    )
+  ).toBeTruthy()
 })
 
 test('a stopped deployment returns to drift until its changes are actually applied', () => {
@@ -186,6 +192,10 @@ test('ongoing and drift pagination are independent and both reset when searching
   fireEvent.click(screen.getByRole('button', { name: 'Next ongoing page' }))
   expect(screen.getByRole('heading', { name: 'ongoing-2' })).toBeTruthy()
   expect(screen.getByRole('heading', { name: 'drift-0' })).toBeTruthy()
+  const wanted = screen.getAllByTestId('drift-wanted')
+  expect(wanted).toHaveLength(1)
+  expect(wanted[0].textContent).toStartWith('Saved changes fromv1.4.2')
+  expect(wanted[0].textContent).toEndWith('haven’t been deployed.')
   fireEvent.click(screen.getByRole('button', { name: 'Next drifted page' }))
   expect(screen.getByRole('heading', { name: 'drift-2' })).toBeTruthy()
   expect(screen.getByRole('heading', { name: 'ongoing-2' })).toBeTruthy()

@@ -1175,6 +1175,8 @@ export type TInstallAlignmentAttempt =
   components['schemas']['service.InstallAlignmentAttempt']
 export type TInstallAlignmentBuild =
   components['schemas']['service.InstallAlignmentBuild']
+export type TInstallAlignmentOrigin =
+  components['schemas']['service.InstallAlignmentOrigin']
 export type TResolveInstallDriftBody =
   components['schemas']['service.ResolveInstallDriftRequest']
 

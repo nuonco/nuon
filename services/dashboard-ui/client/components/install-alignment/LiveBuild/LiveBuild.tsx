@@ -1,75 +1,118 @@
+import {
+  CommitLink,
+  PullRequestLink,
+  TagLink,
+} from '@/components/common/GitReferenceLink'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import type { TInstallAlignmentBuild } from '@/types'
-import { buildRef } from '../alignment-utils'
+import type { TInstallAlignmentOrigin } from '@/types'
+import { humanize } from '@/utils/string-utils'
 
-export const BuildRef = ({
-  build,
-  href,
+const SourceMark = ({
+  origin,
+  repo,
 }: {
-  build?: TInstallAlignmentBuild
-  href?: string
+  origin: TInstallAlignmentOrigin
+  repo?: string
 }) => {
-  const ref = buildRef(build)
-  if (!ref) {
+  const run = origin.run
+  if (run?.metadata?.pr_number) {
+    return (
+      <PullRequestLink
+        number={run.metadata.pr_number}
+        repo={repo}
+        className="shrink-0"
+      />
+    )
+  }
+  if (run?.metadata?.tag) {
+    return (
+      <TagLink
+        tag={run.metadata.tag}
+        repo={repo}
+        className="max-w-36 truncate shrink-0"
+      />
+    )
+  }
+  return <CommitLink sha={run?.sha} repo={repo} className="shrink-0" />
+}
+
+export const RunRef = ({
+  emptyLabel = 'Not deployed',
+  href,
+  origin,
+  repo,
+}: {
+  emptyLabel?: string
+  href?: string
+  origin?: TInstallAlignmentOrigin
+  repo?: string
+}) => {
+  if (!origin?.run && !origin?.workflow_type) {
     return (
       <Text as="span" variant="subtext" theme="neutral">
-        Not deployed
+        {emptyLabel}
       </Text>
     )
   }
-  return href ? (
-    <Link href={href} variant="inline" className="!font-mono text-sm">
-      {ref}
-    </Link>
-  ) : (
-    <Text as="span" family="mono" variant="subtext">
-      {ref}
-    </Text>
+  const label = origin.run
+    ? origin.run.message?.split('\n')[0] || 'View run'
+    : humanize(origin.workflow_type!)
+  return (
+    <span className="flex items-center gap-1.5 min-w-0" data-testid="run-ref">
+      {origin.run ? <SourceMark origin={origin} repo={repo} /> : null}
+      {href ? (
+        <Link href={href} className="truncate min-w-0">
+          {label}
+        </Link>
+      ) : (
+        <Text as="span" variant="subtext" className="truncate min-w-0">
+          {label}
+        </Text>
+      )}
+    </span>
   )
 }
 
 export interface ILiveBuild {
   appliedAt?: string
-  build?: TInstallAlignmentBuild
-  buildHref?: string
   deployHref?: string
+  origin?: TInstallAlignmentOrigin
+  originHref?: string
+  repo?: string
   variant?: 'deploy' | 'sync'
 }
 
 export const LiveBuild = ({
   appliedAt,
-  build,
-  buildHref,
   deployHref,
+  origin,
+  originHref,
+  repo,
   variant = 'deploy',
 }: ILiveBuild) => (
   <div
-    className="flex flex-wrap items-center gap-x-3 gap-y-1"
+    className="flex flex-wrap items-center gap-x-1.5 gap-y-1"
     data-testid="live-build"
   >
-    <div className="flex items-center gap-2">
-      <Text as="span" variant="subtext" theme="neutral">
-        Live
-      </Text>
-      <BuildRef build={build} href={buildHref} />
-    </div>
+    <Text as="span" variant="subtext" theme="neutral">
+      {variant === 'sync' ? 'Synced' : 'Deployed'}
+    </Text>
+    {origin ? <RunRef origin={origin} href={originHref} repo={repo} /> : null}
     {appliedAt ? (
-      <div className="flex items-center gap-1">
-        <Text as="span" variant="subtext" theme="neutral">
-          {variant === 'sync' ? 'Synced' : 'Applied'}
-        </Text>
+      <Text as="span" variant="subtext" theme="neutral" flex nowrap>
+        {origin ? '·' : null}
         <Time
           time={appliedAt}
           format="relative"
           variant="subtext"
           theme="neutral"
         />
-      </div>
+      </Text>
     ) : null}
     {deployHref ? (
-      <Link href={deployHref}>
+      <Link href={deployHref} className="ml-1.5">
         {variant === 'sync' ? 'View sync' : 'View deployment'}
       </Link>
     ) : null}

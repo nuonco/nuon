@@ -2,21 +2,43 @@ export default {
   title: 'Features / Installs / Alignment / Live build',
 }
 
-import { alignmentBuild } from '@/components/__fixtures__/install-alignment'
+import {
+  alignmentCommit,
+  liveCommit,
+  manualOrigin,
+  runOrigin,
+  selectedCommit,
+} from '@/components/__fixtures__/install-alignment'
 import { LiveBuild } from './LiveBuild'
 
-const build = alignmentBuild(
-  'bld-live',
-  '4f1d9c2a7be03e5d8a6c1b4f7a9e3c5b2d8f1a0e',
-  76
-)
 const appliedAt = new Date(Date.now() - 72 * 3_600_000).toISOString()
 
 export const Deploy = () => (
   <LiveBuild
     appliedAt={appliedAt}
-    build={build}
-    buildHref="#build"
+    origin={runOrigin(liveCommit)}
+    originHref="#run"
+    repo="acme/payments"
+    deployHref="#deploy"
+  />
+)
+
+export const TaggedRun = () => (
+  <LiveBuild
+    appliedAt={appliedAt}
+    origin={runOrigin(selectedCommit)}
+    originHref="#run"
+    repo="acme/payments"
+    deployHref="#deploy"
+  />
+)
+
+export const PushRun = () => (
+  <LiveBuild
+    appliedAt={appliedAt}
+    origin={runOrigin(alignmentCommit(3))}
+    originHref="#run"
+    repo="acme/payments"
     deployHref="#deploy"
   />
 )
@@ -24,19 +46,24 @@ export const Deploy = () => (
 export const Sync = () => (
   <LiveBuild
     appliedAt={appliedAt}
-    build={build}
-    buildHref="#build"
+    origin={runOrigin(liveCommit)}
+    originHref="#run"
+    repo="acme/payments"
     deployHref="#sync"
     variant="sync"
   />
 )
 
-export const TagOnly = () => (
+export const ManualDeploy = () => (
   <LiveBuild
     appliedAt={appliedAt}
-    build={{ id: 'bld-tag', resolved_tag: '1.14.2' }}
+    origin={manualOrigin}
+    originHref="#workflow"
+    repo="acme/payments"
     deployHref="#deploy"
   />
 )
 
-export const NoBuild = () => <LiveBuild deployHref="#deploy" />
+export const NoOrigin = () => (
+  <LiveBuild appliedAt={appliedAt} deployHref="#deploy" />
+)

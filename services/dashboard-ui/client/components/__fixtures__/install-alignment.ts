@@ -1,4 +1,5 @@
 import type {
+  TInstallAlignmentOrigin,
   TInstallAlignmentResource,
   TInstallBranchTracking,
   TInstallOverview,
@@ -33,7 +34,27 @@ export const alignmentCommit = (
   ...overrides,
 })
 
-export const selectedCommit = alignmentCommit(6)
+export const selectedCommit = alignmentCommit(6, {
+  metadata: { tag: 'v1.4.2' },
+})
+
+export const liveCommit = alignmentCommit(1, {
+  sha: '4f1d9c2a7be03e5d8a6c1b4f7a9e3c5b2d8f1a0e',
+  metadata: { pr_number: 412 },
+})
+
+export const runOrigin = (
+  commit: TInstallOverviewCommit
+): TInstallAlignmentOrigin => ({
+  workflow_id: `wf-install-${commit.run_id}`,
+  workflow_type: 'app_branch_config_update',
+  run: commit,
+})
+
+export const manualOrigin: TInstallAlignmentOrigin = {
+  workflow_id: 'wf-manual-deploy',
+  workflow_type: 'manual_deploy',
+}
 
 export const alignmentPlan = (resourceId: string, planOnly = false) => ({
   workflow_id: `wf-plan-${resourceId}`,
@@ -79,6 +100,7 @@ export const liveFields = (
   applied_build: alignmentBuild(`bld-${componentId}`, sha, 76),
   applied_deploy_id: `dep-live-${componentId}`,
   applied_deploy_at: hoursAgo(72),
+  applied_by: runOrigin(liveCommit),
 })
 
 export const unappliedResource = (
@@ -96,6 +118,9 @@ export const unappliedResource = (
       '4f1d9c2a7be03e5d8a6c1b4f7a9e3c5b2d8f1a0e',
       72
     ),
+    applied_deploy_at: hoursAgo(72),
+    applied_by: runOrigin(liveCommit),
+    expected_by: runOrigin(selectedCommit),
     blocking_attempt: {
       id: `dep-${overrides.id ?? 'ic-api'}`,
       status: 'error',
@@ -103,6 +128,7 @@ export const unappliedResource = (
       workflow_id: `wf-attempt-${overrides.id ?? 'ic-api'}`,
       step_id: `step-wf-attempt-${overrides.id ?? 'ic-api'}`,
       build_id: 'bld-selected',
+      run: selectedCommit,
     },
     earlier_attempts: 2,
     plan: alignmentPlan(overrides.id ?? 'ic-api'),
