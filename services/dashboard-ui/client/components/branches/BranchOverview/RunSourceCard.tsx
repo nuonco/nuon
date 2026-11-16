@@ -137,15 +137,11 @@ export const RunSourceMark = ({ source }: { source: TRunSource }) => {
 export const RunCommitSummary = ({
   source,
   title,
-  sha,
-  shaUrl,
   author,
   commit,
   previewMode,
   runAt,
 }: IRunSourceCard) => {
-  const commitSha = commit?.sha ?? sha
-  const commitHref = commit?.shaUrl ?? shaUrl
   const commitAuthor = commit?.author ?? author
   const message = commit?.message || title
   const [subject, ...rest] = message.split('\n')
@@ -165,7 +161,6 @@ export const RunCommitSummary = ({
         </ShowMore>
       ) : null}
       <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        {commitSha ? <CommitLink sha={commitSha} href={commitHref} /> : null}
         {commit?.avatarUrl ? (
           <Avatar
             src={commit.avatarUrl}
