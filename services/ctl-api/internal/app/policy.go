@@ -60,16 +60,16 @@ type Policy struct {
 	Document            []byte        `json:"-" gorm:"type:jsonb;check:policies_single_authority,document IS NULL OR permissions IS NULL OR permissions = ''::hstore" temporaljson:"document,omitzero,omitempty"`
 }
 
-func (a *Policy) DecodeDocument() (permissions.Policy, error) {
+func (a *Policy) DecodeDocument() (permissions.LegacyPolicy, error) {
 	if a.Document == nil {
-		return permissions.Policy{}, fmt.Errorf("policy %s has no document", a.ID)
+		return permissions.LegacyPolicy{}, fmt.Errorf("policy %s has no document", a.ID)
 	}
 	if len(a.Permissions) != 0 {
-		return permissions.Policy{}, fmt.Errorf("policy %s has both document and legacy permissions", a.ID)
+		return permissions.LegacyPolicy{}, fmt.Errorf("policy %s has both document and legacy permissions", a.ID)
 	}
-	policy, err := permissions.DecodePolicy(permissions.PolicyFormatV3, a.Document)
+	policy, err := permissions.DecodeLegacyPolicy(permissions.PolicyFormatV3, a.Document)
 	if err != nil {
-		return permissions.Policy{}, fmt.Errorf("policy %s: %w", a.ID, err)
+		return permissions.LegacyPolicy{}, fmt.Errorf("policy %s: %w", a.ID, err)
 	}
 	return policy, nil
 }

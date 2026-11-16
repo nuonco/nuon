@@ -1,12 +1,14 @@
 package app
 
 import (
+	"encoding/json"
 	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -51,6 +53,8 @@ type Token struct {
 	Token     string    `gorm:"unique" json:"-" temporaljson:"token,omitzero,omitempty"`
 	TokenType TokenType `json:"token_type,omitzero" temporaljson:"token_type,omitzero,omitempty"`
 
+	PermissionCeiling []byte `json:"-" gorm:"type:jsonb" temporaljson:"permission_ceiling,omitzero,omitempty"`
+
 	// claim data
 	ExpiresAt time.Time `json:"expires_at,omitzero" gorm:"notnull" temporaljson:"expires_at,omitzero,omitempty"`
 	IssuedAt  time.Time `json:"issued_at,omitzero" gorm:"notnull" temporaljson:"issued_at,omitzero,omitempty"`
@@ -63,6 +67,25 @@ type Token struct {
 func (a *Token) BeforeCreate(tx *gorm.DB) error {
 	a.ID = domains.NewUserTokenID()
 	return nil
+}
+
+func (a *Token) BeforeSave(tx *gorm.DB) error {
+	if a.PermissionCeiling == nil {
+		return nil
+	}
+	catalog, err := permissions.DefaultCatalog()
+	if err != nil {
+		return err
+	}
+	policy, err := catalog.DecodePolicy(a.PermissionCeiling)
+	if err != nil {
+		return err
+	}
+	if _, err := catalog.Compile(policy, a.OrgID); err != nil {
+		return err
+	}
+	a.PermissionCeiling, err = json.Marshal(policy)
+	return err
 }
 
 func (a *Token) Indexes(db *gorm.DB) []migrations.Index {

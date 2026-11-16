@@ -55,7 +55,7 @@ func (s *Server) authenticateToken(r *http.Request) (*app.Account, *app.Token, e
 		return nil, nil, fmt.Errorf("unable to fetch account: %w", res.Error)
 	}
 
-	authority, err := authz.New(authz.Params{DB: s.db}).LoadAccountPermissions(r.Context(), &acct)
+	authority, err := authz.New(authz.Params{DB: s.db}).LoadLegacyAccountPermissions(r.Context(), &acct)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to load account permissions: %w", err)
 	}

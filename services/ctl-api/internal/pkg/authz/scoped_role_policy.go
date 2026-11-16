@@ -8,9 +8,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-func ScopedRolePolicy(role *app.Role) (permissions.Policy, error) {
+func ScopedRolePolicy(role *app.Role) (permissions.LegacyPolicy, error) {
 	if len(role.Policies) != 1 {
-		return permissions.Policy{}, fmt.Errorf("scoped role requires one policy")
+		return permissions.LegacyPolicy{}, fmt.Errorf("scoped role requires one policy")
 	}
 	var objectKind, scopeKind permissions.ResourceKind
 	var permission permissions.PermissionID
@@ -31,22 +31,22 @@ func ScopedRolePolicy(role *app.Role) (permissions.Policy, error) {
 		objectKind, scopeKind, permission = permissions.KindLogStream, permissions.KindLogStream, permissions.LogStreamCreate
 		verb = permissions.PermissionCreate
 	default:
-		return permissions.Policy{}, fmt.Errorf("unsupported scoped role type %q", role.RoleType)
+		return permissions.LegacyPolicy{}, fmt.Errorf("unsupported scoped role type %q", role.RoleType)
 	}
 	projection, err := role.Policies[0].PermissionProjection()
 	if err != nil {
-		return permissions.Policy{}, err
+		return permissions.LegacyPolicy{}, err
 	}
 	api, enforced, err := APIFromRole(role)
 	if err != nil {
-		return permissions.Policy{}, err
+		return permissions.LegacyPolicy{}, err
 	}
 	keys := 1
 	if enforced {
 		keys++
 	}
 	if len(projection) != keys {
-		return permissions.Policy{}, fmt.Errorf("scoped role has an unexpected policy shape")
+		return permissions.LegacyPolicy{}, fmt.Errorf("scoped role has an unexpected policy shape")
 	}
 	prefix := permissions.Object(role.OrgID.String, objectKind, "")
 	for object, value := range projection {
@@ -54,11 +54,11 @@ func ScopedRolePolicy(role *app.Role) (permissions.Policy, error) {
 			continue
 		}
 		if !strings.HasPrefix(object, prefix) || value == nil || *value != string(verb) {
-			return permissions.Policy{}, fmt.Errorf("scoped role has an unexpected resource grant")
+			return permissions.LegacyPolicy{}, fmt.Errorf("scoped role has an unexpected resource grant")
 		}
-		return permissions.ResourcePolicy(api, permissions.Scope{
+		return permissions.LegacyResourcePolicy(api, permissions.Scope{
 			Kind: scopeKind, OrgID: role.OrgID.String, ID: strings.TrimPrefix(object, prefix),
 		}, permission)
 	}
-	return permissions.Policy{}, fmt.Errorf("scoped role requires a resource grant")
+	return permissions.LegacyPolicy{}, fmt.Errorf("scoped role requires a resource grant")
 }

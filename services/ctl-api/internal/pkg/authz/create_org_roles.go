@@ -114,7 +114,7 @@ func standardOrgRoles(orgID string) ([]app.Role, error) {
 		if err != nil {
 			return nil, err
 		}
-		policy, err := permissions.RolePolicy(name, api)
+		policy, err := permissions.LegacyRolePolicy(name, api)
 		if err != nil {
 			return nil, err
 		}

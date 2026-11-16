@@ -9,10 +9,10 @@ const (
 	RoleOrgAdmin  RoleName = "org_admin"
 )
 
-func RolePolicy(name RoleName, api API) (Policy, error) {
+func LegacyRolePolicy(name RoleName, api API) (LegacyPolicy, error) {
 	if api != "" {
 		if _, err := ParseAPI(string(api)); err != nil {
-			return Policy{}, err
+			return LegacyPolicy{}, err
 		}
 	}
 	values := []PermissionID{OrgRead}
@@ -21,11 +21,11 @@ func RolePolicy(name RoleName, api API) (Policy, error) {
 	case RoleOrgAdmin:
 		values = append(values, OrgWrite)
 	default:
-		return Policy{}, fmt.Errorf("invalid role %q", name)
+		return LegacyPolicy{}, fmt.Errorf("invalid role %q", name)
 	}
 	set, err := NewPermissionSet(values...)
 	if err != nil {
-		return Policy{}, err
+		return LegacyPolicy{}, err
 	}
-	return Policy{kind: PolicyKindBundle, api: api, bindingKind: KindOrg, permissions: set}, nil
+	return LegacyPolicy{kind: PolicyKindBundle, api: api, bindingKind: KindOrg, permissions: set}, nil
 }

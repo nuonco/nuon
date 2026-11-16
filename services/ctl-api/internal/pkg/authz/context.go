@@ -9,6 +9,20 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
+const authorityKey = "nuon.authz.authority"
+
+func SetAuthorityGinContext(ctx *gin.Context, authority *Authority) {
+	ctx.Set(authorityKey, authority)
+}
+
+func AuthorityFromContext(ctx cctx.ValueContext) (*Authority, error) {
+	authority, ok := ctx.Value(authorityKey).(*Authority)
+	if !ok || authority == nil {
+		return nil, fmt.Errorf("authority was not set by authentication")
+	}
+	return authority, nil
+}
+
 func CanCreate(ctx *gin.Context, objectID string) error {
 	acct, err := cctx.AccountFromContext(ctx)
 	if err != nil {

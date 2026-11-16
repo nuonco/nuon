@@ -95,7 +95,21 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 		if acctToken != nil {
-			acct, err := m.acctClient.FetchAccount(ctx, acctToken.AccountID)
+			var acct *app.Account
+			if acctToken.PermissionCeiling != nil {
+				acct, err = m.authenticateBoundedToken(ctx, acctToken)
+				if err != nil {
+					m.l.Warn("bounded token authentication denied", zap.Error(err))
+					ctx.Error(stderr.ErrAuthorization{
+						Err:         fmt.Errorf("token is not allowed on this route"),
+						Description: "token is not allowed on this route",
+					})
+					ctx.Abort()
+					return
+				}
+			} else {
+				acct, err = m.acctClient.FetchAccount(ctx, acctToken.AccountID)
+			}
 			if err != nil {
 				ctx.Error(err)
 				ctx.Abort()

@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -82,7 +83,23 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		// make sure account has access to org
 		perm := permissions.FromRequest(ctx)
-		err = acct.Authority.CanPerform(org.ID, perm, false)
+		if api, operationBased := require.OperationAPI(ctx); operationBased {
+			var authority *authz.Authority
+			authority, err = authz.AuthorityFromContext(ctx)
+			if err == nil {
+				err = authority.ValidateIdentity(acct.ID, cctx.TokenIDFromContext(ctx), org.ID, api)
+			}
+			if err != nil {
+				ctx.Error(stderr.ErrAuthorization{
+					Err:         fmt.Errorf("token is not allowed in this org"),
+					Description: "token is not allowed in this org",
+				})
+				ctx.Abort()
+				return
+			}
+		} else {
+			err = acct.Authority.CanPerform(org.ID, perm, false)
+		}
 		if err != nil {
 			ctx.Error(require.PermissionDeniedError(acct, org.ID, perm, require.ScopeFromPath(ctx.FullPath())))
 			ctx.Abort()

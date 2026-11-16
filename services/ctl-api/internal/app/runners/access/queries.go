@@ -37,37 +37,37 @@ var ownerQueries = []struct {
 	{"runner_operations", operations, false},
 }
 
-func Jobs(db *gorm.DB, orgID string) (*authz.NativeResources, error) {
+func Jobs(db *gorm.DB, orgID string) (*authz.Resources, error) {
 	return jobResources(db, orgID, "")
 }
 
-func LogStreams(db *gorm.DB, orgID string) (*authz.NativeResources, error) {
+func LogStreams(db *gorm.DB, orgID string) (*authz.Resources, error) {
 	return logResources(db, orgID, "")
 }
 
-func JobTarget(ctx context.Context, db *gorm.DB, job app.RunnerJob) (permissions.NativeTarget, error) {
+func JobTarget(ctx context.Context, db *gorm.DB, job app.RunnerJob) (permissions.Target, error) {
 	if job.DeletedAt != 0 || job.OwnerType == "" {
-		return permissions.NativeTarget{}, gorm.ErrRecordNotFound
+		return permissions.Target{}, gorm.ErrRecordNotFound
 	}
 	resources, err := jobResources(db, job.OrgID, job.OwnerType)
 	if err != nil {
-		return permissions.NativeTarget{}, err
+		return permissions.Target{}, err
 	}
 	return resources.Resolve(ctx, job.ID)
 }
 
-func LogStreamTarget(ctx context.Context, db *gorm.DB, stream app.LogStream) (permissions.NativeTarget, error) {
+func LogStreamTarget(ctx context.Context, db *gorm.DB, stream app.LogStream) (permissions.Target, error) {
 	if stream.DeletedAt != 0 || stream.OwnerType == "" {
-		return permissions.NativeTarget{}, gorm.ErrRecordNotFound
+		return permissions.Target{}, gorm.ErrRecordNotFound
 	}
 	resources, err := logResources(db, stream.OrgID, stream.OwnerType)
 	if err != nil {
-		return permissions.NativeTarget{}, err
+		return permissions.Target{}, err
 	}
 	return resources.Resolve(ctx, stream.ID)
 }
 
-func jobResources(db *gorm.DB, orgID, ownerType string) (*authz.NativeResources, error) {
+func jobResources(db *gorm.DB, orgID, ownerType string) (*authz.Resources, error) {
 	owners, err := owners(db, orgID, ownerType)
 	if err != nil {
 		return nil, err
@@ -75,10 +75,10 @@ func jobResources(db *gorm.DB, orgID, ownerType string) (*authz.NativeResources,
 	targets := db.Session(&gorm.Session{NewDB: true}).Raw(`SELECT j.id, j.org_id, o.app_id, o.install_id
 		FROM runner_jobs j JOIN (?) o ON o.id = j.owner_id AND o.owner_type = j.owner_type AND o.org_id = j.org_id
 		WHERE j.deleted_at = 0`, owners)
-	return authz.NewNativeResources(targets, permissions.KindRunnerJob, orgID)
+	return authz.NewResources(targets, permissions.KindRunnerJob, orgID)
 }
 
-func logResources(db *gorm.DB, orgID, ownerType string) (*authz.NativeResources, error) {
+func logResources(db *gorm.DB, orgID, ownerType string) (*authz.Resources, error) {
 	owners, err := owners(db, orgID, ownerType)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func logResources(db *gorm.DB, orgID, ownerType string) (*authz.NativeResources,
 		 AND j.owner_type = s.owner_type AND j.owner_id = s.owner_id AND o.job_logs) AS related_job_ids
 		FROM log_streams s JOIN (?) o ON o.id = s.owner_id AND o.owner_type = s.owner_type AND o.org_id = s.org_id
 		WHERE s.deleted_at = 0`, owners)
-	return authz.NewNativeResources(targets, permissions.KindLogStream, orgID)
+	return authz.NewResources(targets, permissions.KindLogStream, orgID)
 }
 
 func owners(db *gorm.DB, orgID, ownerType string) (*gorm.DB, error) {

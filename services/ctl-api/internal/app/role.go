@@ -108,7 +108,7 @@ func (a *Role) HasPolicyDocument() bool {
 	return false
 }
 
-func (a *Role) CompilePermissions(binding AccountRole) ([]permissions.ScopedPermissions, error) {
+func (a *Role) CompileLegacyPermissions(binding AccountRole) ([]permissions.ScopedPermissions, error) {
 	if !a.HasPolicyDocument() {
 		return nil, nil
 	}
@@ -131,13 +131,13 @@ func (a *Role) CompilePermissions(binding AccountRole) ([]permissions.ScopedPerm
 	return grants, nil
 }
 
-func (a *Role) CompileNativePermissions(binding AccountRole, catalog *permissions.Catalog) (*permissions.CompiledPolicy, error) {
+func (a *Role) CompileGrants(binding AccountRole, catalog *permissions.Catalog) (*permissions.CompiledPolicy, error) {
 	if err := a.validateDocumentBinding(binding); err != nil {
 		return nil, err
 	}
 	policy := &a.Policies[0]
 	if policy.Document == nil || len(policy.Permissions) != 0 {
-		return nil, fmt.Errorf("policy %s requires a native document as its only authority", policy.ID)
+		return nil, fmt.Errorf("policy %s requires a grant document as its only authority", policy.ID)
 	}
 	document, err := catalog.DecodePolicy(policy.Document)
 	if err != nil {

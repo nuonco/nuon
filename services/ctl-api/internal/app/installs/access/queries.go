@@ -9,8 +9,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-func Resources(db *gorm.DB, orgID string) (*authz.NativeResources, error) {
-	return authz.NewNativeResources(Installs(db, orgID), permissions.KindInstall, orgID)
+func Resources(db *gorm.DB, orgID string) (*authz.Resources, error) {
+	return authz.NewResources(Installs(db, orgID), permissions.KindInstall, orgID)
 }
 
 func Installs(db *gorm.DB, orgID string) *gorm.DB {

@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-type NativeAuthorityInput struct {
+type AuthorityInput struct {
 	AccountID    string
 	CredentialID string
 	OrgID        string
@@ -17,7 +17,7 @@ type NativeAuthorityInput struct {
 	Ceiling      []byte
 }
 
-type NativeAuthority struct {
+type Authority struct {
 	accountID    string
 	credentialID string
 	orgID        string
@@ -27,59 +27,59 @@ type NativeAuthority struct {
 	ceiling      []*permissions.CompiledPolicy
 }
 
-func (c *Client) LoadNativeAuthority(ctx context.Context, catalog *permissions.Catalog, input NativeAuthorityInput) (*NativeAuthority, error) {
+func (c *Client) LoadAuthority(ctx context.Context, catalog *permissions.Catalog, input AuthorityInput) (*Authority, error) {
 	if input.AccountID == "" || input.CredentialID == "" {
-		return nil, fmt.Errorf("native authority requires authenticated account and credential IDs")
+		return nil, fmt.Errorf("authority requires authenticated account and credential IDs")
 	}
 	if _, err := permissions.ParseAPI(string(input.API)); err != nil {
 		return nil, err
 	}
 	if len(input.Ceiling) == 0 {
-		return nil, fmt.Errorf("native credential requires an explicit ceiling document")
+		return nil, fmt.Errorf("bounded credential requires an explicit ceiling document")
 	}
 	document, err := catalog.DecodePolicy(input.Ceiling)
 	if err != nil {
-		return nil, fmt.Errorf("decode native credential ceiling: %w", err)
+		return nil, fmt.Errorf("decode credential ceiling: %w", err)
 	}
 	ceiling, err := catalog.Compile(document, input.OrgID)
 	if err != nil {
-		return nil, fmt.Errorf("compile native credential ceiling: %w", err)
+		return nil, fmt.Errorf("compile credential ceiling: %w", err)
 	}
-	grants, err := c.LoadNativeAccountPermissions(ctx, input.AccountID, input.OrgID, catalog)
+	grants, err := c.LoadAccountGrants(ctx, input.AccountID, input.OrgID, catalog)
 	if err != nil {
 		return nil, err
 	}
-	return &NativeAuthority{
+	return &Authority{
 		accountID: input.AccountID, credentialID: input.CredentialID, orgID: input.OrgID,
 		api: input.API, catalog: catalog, grants: grants, ceiling: []*permissions.CompiledPolicy{ceiling},
 	}, nil
 }
 
-func (a *NativeAuthority) ValidateIdentity(accountID, credentialID, orgID string, api permissions.API) error {
+func (a *Authority) ValidateIdentity(accountID, credentialID, orgID string, api permissions.API) error {
 	if a == nil || a.catalog == nil || a.ceiling == nil ||
 		a.accountID != accountID || a.credentialID != credentialID || a.orgID != orgID || a.api != api {
-		return fmt.Errorf("native authority does not match the authenticated request")
+		return fmt.Errorf("authority does not match the authenticated request")
 	}
 	return nil
 }
 
-func (a *NativeAuthority) Check(operation permissions.PermissionID, target permissions.NativeTarget) permissions.PermissionMatch {
+func (a *Authority) Check(operation permissions.PermissionID, target permissions.Target) permissions.PermissionMatch {
 	if a == nil || a.catalog == nil || a.ceiling == nil {
 		return permissions.PermissionMatch{Reason: permissions.ReasonInvalidCeiling}
 	}
 	if target.OrgID != a.orgID {
 		return permissions.PermissionMatch{Reason: permissions.ReasonInvalidTarget}
 	}
-	return a.catalog.Match(permissions.NativePermissionCheck{
+	return a.catalog.Match(permissions.Check{
 		API: a.api, Permission: operation, Target: target, Grants: a.grants, Ceiling: a.ceiling,
 	})
 }
 
-func (a *NativeAuthority) AuthorizedIDs(ctx context.Context, operation permissions.PermissionID, resources *NativeResources) (*gorm.DB, error) {
+func (a *Authority) AuthorizedIDs(ctx context.Context, operation permissions.PermissionID, resources *Resources) (*gorm.DB, error) {
 	if a == nil || a.catalog == nil || a.ceiling == nil {
-		return nil, fmt.Errorf("native authority requires a credential ceiling")
+		return nil, fmt.Errorf("authority requires a credential ceiling")
 	}
-	return resources.AuthorizedIDs(ctx, a.catalog, permissions.NativePermissionQuery{
+	return resources.AuthorizedIDs(ctx, a.catalog, permissions.Query{
 		API: a.api, Permission: operation, Kind: resources.kind, OrgID: a.orgID, Grants: a.grants, Ceiling: a.ceiling,
 	})
 }

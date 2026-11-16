@@ -61,7 +61,7 @@ func (c *AccountRole) BeforeSave(tx *gorm.DB) error {
 	}
 	binding := *c
 	binding.Org = &org
-	if _, err := role.CompilePermissions(binding); err != nil {
+	if _, err := role.CompileLegacyPermissions(binding); err != nil {
 		return err
 	}
 

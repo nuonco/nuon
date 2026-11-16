@@ -1,78 +1,111 @@
 package permissions
 
-type ScopedPermissions struct {
-	Scope       Scope
-	Permissions PermissionSet
+import "slices"
+
+type Target struct {
+	ResolvedTarget
+	RelatedJobs []Scope
 }
 
-type PermissionCheck struct {
+type Check struct {
+	API        API
 	Permission PermissionID
-	Target     ResolvedTarget
-	Grants     []ScopedPermissions
-	Ceiling    []ScopedPermissions
+	Target     Target
+	Grants     []*CompiledPolicy
+	Ceiling    []*CompiledPolicy
 }
 
-type MatchReason string
+const ReasonInvalidAPI MatchReason = "invalid_api"
 
-const (
-	ReasonMatched           MatchReason = "matched"
-	ReasonInvalidPermission MatchReason = "invalid_permission"
-	ReasonInvalidTarget     MatchReason = "invalid_target"
-	ReasonInvalidGrant      MatchReason = "invalid_grant"
-	ReasonInvalidCeiling    MatchReason = "invalid_ceiling"
-	ReasonNoGrant           MatchReason = "no_grant"
-	ReasonCeilingExceeded   MatchReason = "ceiling_exceeded"
-)
-
-type PermissionMatch struct {
-	Matched bool
-	Reason  MatchReason
-}
-
-func MatchPermissions(input PermissionCheck) PermissionMatch {
-	if _, err := ParsePermissionID(string(input.Permission)); err != nil {
+func (c *Catalog) Match(input Check) PermissionMatch {
+	if _, err := ParseAPI(string(input.API)); err != nil {
+		return PermissionMatch{Reason: ReasonInvalidAPI}
+	}
+	definition, ok := c.definitions[input.Permission]
+	if !ok || len(definition.Members) != 0 {
 		return PermissionMatch{Reason: ReasonInvalidPermission}
 	}
 	if err := input.Target.ValidateShape(); err != nil {
 		return PermissionMatch{Reason: ReasonInvalidTarget}
 	}
-	if !input.Permission.AppliesTo(input.Target.Kind) {
+	if !slices.Contains(definition.Targets, input.Target.Kind) {
 		return PermissionMatch{Reason: ReasonInvalidTarget}
 	}
-	if !validGrants(input.Grants) {
+	for _, job := range input.Target.RelatedJobs {
+		if input.Target.Kind != KindLogStream || job.Kind != KindRunnerJob || job.OrgID != input.Target.OrgID || job.ValidateShape() != nil {
+			return PermissionMatch{Reason: ReasonInvalidTarget}
+		}
+	}
+	grants, err := c.operationScopes(input.Grants, input.Target.OrgID, input.API, input.Permission)
+	if err != nil {
 		return PermissionMatch{Reason: ReasonInvalidGrant}
 	}
-	if !validGrants(input.Ceiling) {
+	ceiling, err := c.operationScopes(input.Ceiling, input.Target.OrgID, input.API, input.Permission)
+	if err != nil {
 		return PermissionMatch{Reason: ReasonInvalidCeiling}
 	}
-	if !grantsPermit(input.Grants, input.Permission, input.Target) {
+	if !scopesPermit(grants, input) {
 		return PermissionMatch{Reason: ReasonNoGrant}
 	}
-	if !grantsPermit(input.Ceiling, input.Permission, input.Target) {
+	if input.Ceiling != nil && !scopesPermit(ceiling, input) {
 		return PermissionMatch{Reason: ReasonCeilingExceeded}
 	}
 	return PermissionMatch{Matched: true, Reason: ReasonMatched}
 }
 
-func validGrants(grants []ScopedPermissions) bool {
-	for _, grant := range grants {
-		if err := grant.Scope.ValidateShape(); err != nil {
-			return false
-		}
-		for permission := range grant.Permissions {
-			if _, err := ParsePermissionID(string(permission)); err != nil {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-func grantsPermit(grants []ScopedPermissions, permission PermissionID, target ResolvedTarget) bool {
-	for _, grant := range grants {
-		if grant.Permissions.permits(permission, target.Kind) && grant.Scope.covers(target) {
+func scopesPermit(scopes []GrantScope, input Check) bool {
+	for _, scope := range scopes {
+		if scope.covers(input.Target, input.Permission) {
 			return true
 		}
 	}
 	return false
+}
+
+func (s GrantScope) covers(target Target, operation PermissionID) bool {
+	var rootID string
+	switch s.Kind {
+	case KindOrg:
+		rootID = target.OrgID
+	case KindApp:
+		rootID = target.AppID
+	case KindInstall:
+		rootID = target.InstallID
+	case KindRunnerJob:
+		if target.Kind == KindLogStream && operation == LogStreamRead {
+			for _, job := range target.RelatedJobs {
+				if s.selects(job.ID) {
+					return true
+				}
+			}
+			return false
+		}
+		if target.Kind == KindRunnerJob {
+			rootID = target.ID
+		}
+	default:
+		if s.Kind == target.Kind {
+			rootID = target.ID
+		}
+	}
+	return rootID != "" && s.selects(rootID)
+}
+
+func (s GrantScope) selects(id string) bool {
+	return slices.Contains(s.IDs, "*") || slices.Contains(s.IDs, id)
+}
+
+func scopeSupports(scope, target ResourceKind, operation PermissionID) bool {
+	switch scope {
+	case KindOrg:
+		return true
+	case KindApp:
+		return target != KindOrg
+	case KindInstall:
+		return target != KindOrg && target != KindApp
+	case KindRunnerJob:
+		return target == KindRunnerJob || (target == KindLogStream && operation == LogStreamRead)
+	default:
+		return scope == target
+	}
 }

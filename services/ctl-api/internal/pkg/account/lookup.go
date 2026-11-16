@@ -32,7 +32,7 @@ func (c *Client) FindAccount(ctx context.Context, emailOrSubjectOrID string) (*a
 		return nil, fmt.Errorf("unable to find account %s: %w", emailOrSubjectOrID, res.Error)
 	}
 
-	authority, err := authz.New(authz.Params{DB: c.db}).LoadAccountPermissions(ctx, &acct)
+	authority, err := authz.New(authz.Params{DB: c.db}).LoadLegacyAccountPermissions(ctx, &acct)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load account permissions: %w", err)
 	}

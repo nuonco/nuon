@@ -11,22 +11,22 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-func (r *NativeResources) AuthorizedIDs(ctx context.Context, catalog *permissions.Catalog, input permissions.NativePermissionQuery) (*gorm.DB, error) {
+func (r *Resources) AuthorizedIDs(ctx context.Context, catalog *permissions.Catalog, input permissions.Query) (*gorm.DB, error) {
 	if input.Kind != r.kind || input.OrgID != r.orgID {
-		return nil, fmt.Errorf("native query must match the resource kind and org")
+		return nil, fmt.Errorf("permission query must match the resource kind and org")
 	}
 	grants, ceiling, err := catalog.QueryScopes(input)
 	if err != nil {
 		return nil, err
 	}
-	query := r.query.WithContext(ctx).Select("native_target.id").Where(nativeScopePredicate(input.Kind, grants))
+	query := r.query.WithContext(ctx).Select("permission_target.id").Where(scopePredicate(input.Kind, grants))
 	if ceiling != nil {
-		query = query.Where(nativeScopePredicate(input.Kind, ceiling))
+		query = query.Where(scopePredicate(input.Kind, ceiling))
 	}
 	return query, nil
 }
 
-func nativeScopePredicate(kind permissions.ResourceKind, scopes []permissions.NativeScope) clause.Expression {
+func scopePredicate(kind permissions.ResourceKind, scopes []permissions.GrantScope) clause.Expression {
 	alternatives := make([]clause.Expression, 0, len(scopes))
 	for _, scope := range scopes {
 		column := ""
@@ -40,10 +40,10 @@ func nativeScopePredicate(kind permissions.ResourceKind, scopes []permissions.Na
 		case permissions.KindRunnerJob:
 			if kind == permissions.KindLogStream {
 				if slices.Contains(scope.IDs, "*") {
-					alternatives = append(alternatives, clause.Expr{SQL: "jsonb_array_length(native_target.related_job_ids) > 0"})
+					alternatives = append(alternatives, clause.Expr{SQL: "jsonb_array_length(permission_target.related_job_ids) > 0"})
 				} else {
 					alternatives = append(alternatives, clause.Expr{
-						SQL: "EXISTS (SELECT 1 FROM jsonb_array_elements_text(native_target.related_job_ids) AS related_job(id) WHERE related_job.id IN ?)", Vars: []any{scope.IDs},
+						SQL: "EXISTS (SELECT 1 FROM jsonb_array_elements_text(permission_target.related_job_ids) AS related_job(id) WHERE related_job.id IN ?)", Vars: []any{scope.IDs},
 					})
 				}
 				continue
@@ -59,7 +59,7 @@ func nativeScopePredicate(kind permissions.ResourceKind, scopes []permissions.Na
 		if column == "" {
 			continue
 		}
-		field := clause.Column{Table: "native_target", Name: column}
+		field := clause.Column{Table: "permission_target", Name: column}
 		if slices.Contains(scope.IDs, "*") {
 			alternatives = append(alternatives, clause.Neq{Column: field, Value: ""})
 		} else {

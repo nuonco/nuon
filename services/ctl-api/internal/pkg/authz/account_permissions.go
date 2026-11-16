@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-func (c *Client) LoadAccountPermissions(ctx context.Context, account *app.Account) (*permissions.AccountPermissions, error) {
+func (c *Client) LoadLegacyAccountPermissions(ctx context.Context, account *app.Account) (*permissions.AccountPermissions, error) {
 	if account == nil || account.ID == "" || account.DeletedAt != 0 {
 		return nil, fmt.Errorf("permissions require a live account")
 	}
@@ -36,7 +36,7 @@ func (c *Client) LoadAccountPermissions(ctx context.Context, account *app.Accoun
 			if len(bound) != 1 || bound[0].AccountID != account.ID {
 				return nil, fmt.Errorf("role %s requires one live account binding", role.ID)
 			}
-			grants, err := role.CompilePermissions(bound[0])
+			grants, err := role.CompileLegacyPermissions(bound[0])
 			if err != nil {
 				return nil, err
 			}
@@ -62,9 +62,9 @@ func (c *Client) LoadAccountPermissions(ctx context.Context, account *app.Accoun
 	return loaded, nil
 }
 
-func (c *Client) LoadNativeAccountPermissions(ctx context.Context, accountID, orgID string, catalog *permissions.Catalog) ([]*permissions.CompiledPolicy, error) {
+func (c *Client) LoadAccountGrants(ctx context.Context, accountID, orgID string, catalog *permissions.Catalog) ([]*permissions.CompiledPolicy, error) {
 	if accountID == "" {
-		return nil, fmt.Errorf("native permissions require an account ID")
+		return nil, fmt.Errorf("account grants require an account ID")
 	}
 	if err := (permissions.Scope{Kind: permissions.KindOrg, OrgID: orgID, ID: orgID}).ValidateShape(); err != nil {
 		return nil, err
@@ -72,20 +72,20 @@ func (c *Client) LoadNativeAccountPermissions(ctx context.Context, accountID, or
 	db := c.db.WithContext(ctx)
 	var account app.Account
 	if err := db.Select("id").Where(&app.Account{ID: accountID}).First(&account).Error; err != nil {
-		return nil, fmt.Errorf("native permissions require a live account: %w", err)
+		return nil, fmt.Errorf("account grants require a live account: %w", err)
 	}
 	var org app.Org
 	result := db.Model(&app.Org{}).Select("id").Where(&app.Org{ID: orgID}).Scan(&org)
 	if result.Error != nil {
-		return nil, fmt.Errorf("load native permissions org: %w", result.Error)
+		return nil, fmt.Errorf("load account grants org: %w", result.Error)
 	}
 	if result.RowsAffected != 1 {
-		return nil, fmt.Errorf("native permissions require a live org")
+		return nil, fmt.Errorf("account grants require a live org")
 	}
 	var bindings []app.AccountRole
 	if err := db.Where(&app.AccountRole{AccountID: accountID, OrgID: generics.NewNullString(orgID)}).
 		Find(&bindings).Error; err != nil {
-		return nil, fmt.Errorf("load native account bindings: %w", err)
+		return nil, fmt.Errorf("load account grant bindings: %w", err)
 	}
 	loaded := make([]*permissions.CompiledPolicy, 0, len(bindings))
 	if len(bindings) == 0 {
@@ -95,14 +95,14 @@ func (c *Client) LoadNativeAccountPermissions(ctx context.Context, accountID, or
 	seen := make(map[string]bool, len(bindings))
 	for _, binding := range bindings {
 		if binding.RoleID == "" || seen[binding.RoleID] {
-			return nil, fmt.Errorf("native permissions require one live binding per role")
+			return nil, fmt.Errorf("account grants require one live binding per role")
 		}
 		seen[binding.RoleID] = true
 		roleIDs = append(roleIDs, binding.RoleID)
 	}
 	var roles []app.Role
 	if err := db.Model(&app.Role{}).Where(map[string]any{"id": roleIDs}).Scan(&roles).Error; err != nil {
-		return nil, fmt.Errorf("load native roles: %w", err)
+		return nil, fmt.Errorf("load grant roles: %w", err)
 	}
 	byRole := make(map[string]*app.Role, len(roles))
 	for i := range roles {
@@ -110,7 +110,7 @@ func (c *Client) LoadNativeAccountPermissions(ctx context.Context, accountID, or
 	}
 	var policies []app.Policy
 	if err := db.Model(&app.Policy{}).Where(map[string]any{"role_id": roleIDs}).Scan(&policies).Error; err != nil {
-		return nil, fmt.Errorf("load native policies: %w", err)
+		return nil, fmt.Errorf("load grant policies: %w", err)
 	}
 	for _, policy := range policies {
 		if role := byRole[policy.RoleID]; role != nil {
@@ -120,10 +120,10 @@ func (c *Client) LoadNativeAccountPermissions(ctx context.Context, accountID, or
 	for _, binding := range bindings {
 		role := byRole[binding.RoleID]
 		if role == nil {
-			return nil, fmt.Errorf("native binding %s requires a live role", binding.ID)
+			return nil, fmt.Errorf("grant binding %s requires a live role", binding.ID)
 		}
 		binding.Org = &org
-		compiled, err := role.CompileNativePermissions(binding, catalog)
+		compiled, err := role.CompileGrants(binding, catalog)
 		if err != nil {
 			return nil, err
 		}
