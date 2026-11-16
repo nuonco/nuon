@@ -7,6 +7,7 @@ import type { TAppBranch } from '@/types'
 interface IBranchStep {
   branches: TAppBranch[]
   selected: TAppBranch | null
+  allowSkip: boolean
   onSelect: (branch: TAppBranch) => void
   onSkip: () => void
 }
@@ -14,6 +15,7 @@ interface IBranchStep {
 export const BranchStep = ({
   branches,
   selected,
+  allowSkip,
   onSelect,
   onSkip,
 }: IBranchStep) => {
@@ -77,15 +79,17 @@ export const BranchStep = ({
         })}
       </div>
 
-      <div className="flex flex-col items-start gap-1 border-t border-cool-grey-200 pt-4 dark:border-dark-grey-600">
-        <Button variant="secondary" onClick={onSkip}>
-          Skip app branch
-        </Button>
-        <Text variant="subtext" theme="neutral">
-          This install will use the most recent config from{' '}
-          <code>nuon apps sync</code> and will not belong to an app branch.
-        </Text>
-      </div>
+      {allowSkip ? (
+        <div className="flex flex-col items-start gap-1 border-t border-cool-grey-200 pt-4 dark:border-dark-grey-600">
+          <Button variant="secondary" onClick={onSkip}>
+            Skip app branch
+          </Button>
+          <Text variant="subtext" theme="neutral">
+            This install will use the latest sync config and won&apos;t belong
+            to an app branch.
+          </Text>
+        </div>
+      ) : null}
     </div>
   )
 }
