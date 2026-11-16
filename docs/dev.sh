@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Runs the mintlify dev server for local docs development.
 #
-# mint refuses to run on node 25+, and bun reports itself as node 25+, so `npx`
-# backed by bun (or an active node 25+) fails. This finds a supported node and
-# runs mint under it.
+# mint refuses to run on node 25+, and bun reports itself as node 25+, so
+# `bunx --bun` (or an active node 25+) fails. This finds a supported node and
+# runs mint under it, using bunx only to fetch mint.
 set -euo pipefail
 
 MINT_VERSION="${MINT_VERSION:-4.2.314}"
@@ -46,11 +46,14 @@ if ! NODE_BIN="$(find_node)"; then
   exit 1
 fi
 
+if ! command -v bun >/dev/null 2>&1; then
+  echo "docs: bun is required (https://bun.sh)." >&2
+  exit 1
+fi
+
 NODE_DIR="$(dirname "$NODE_BIN")"
 echo "docs: using node $("$NODE_BIN" --version) from $NODE_DIR"
 
-# docs/.npmrc sets min-release-age, which makes npx refuse the pinned mint version
-export NPM_CONFIG_MIN_RELEASE_AGE=0
 export PATH="$NODE_DIR:$PATH"
 
-exec "$NODE_DIR/npx" --yes "mint@${MINT_VERSION}" dev --no-open --port "$PORT"
+exec bunx "mint@${MINT_VERSION}" dev --no-open --port "$PORT"
