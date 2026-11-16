@@ -6,6 +6,7 @@ Requires=docker.service
 [Service]
 TimeoutStartSec=0
 User=runner
+SupplementaryGroups=docker
 ExecStartPre=-/bin/sh -c "/usr/bin/docker stop $(/usr/bin/docker ps -a -q --filter=\"name=%n\")"
 ExecStartPre=-/bin/sh -c "/usr/bin/docker rm   $(/usr/bin/docker ps -a -q --filter=\"name=%n\")"
 EnvironmentFile=/opt/nuon/runner/image
