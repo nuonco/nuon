@@ -44,6 +44,12 @@ func LegacySources(grants []ScopedPermissions) (map[string]PermissionSource, err
 			}
 			continue
 		}
+		if grant.Scope.Kind == KindInstall && grant.Permissions.equals(RunnerJobInstallPermissions) {
+			if err := add(Object(grant.Scope.OrgID, KindInstall, grant.Scope.ID), PermissionAll, grant.Permissions); err != nil {
+				return nil, err
+			}
+			continue
+		}
 		for permission := range grant.Permissions {
 			var kind ResourceKind
 			verb := PermissionAll
