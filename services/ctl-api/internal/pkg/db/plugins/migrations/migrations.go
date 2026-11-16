@@ -124,7 +124,12 @@ func (a *Migrator) claimMigration(ctx context.Context, name string) (bool, error
 // maxMigrationErrLen keeps a runaway error string from bloating the row
 const maxMigrationErrLen = 2000
 
+const migrationStatusTimeout = 30 * time.Second
+
 func (a *Migrator) updateMigrationStatus(ctx context.Context, name string, status MigrationStatus, cause error) error {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), migrationStatusTimeout)
+	defer cancel()
+
 	updates := map[string]any{
 		"status":     status,
 		"updated_at": time.Now(),
@@ -210,9 +215,8 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 		return fmt.Errorf("unable to claim migration: %w", err)
 	}
 	if !claimed {
-		a.l.Info("migration already in progress", zap.String("name", migration.Name))
 		statusDescription = "already_in_progress"
-		return nil
+		return fmt.Errorf("migration %s is in progress in another run", migration.Name)
 	}
 
 	fail := func(cause error, desc string) error {
