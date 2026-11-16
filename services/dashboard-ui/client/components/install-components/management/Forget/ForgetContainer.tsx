@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { forgetComponent } from '@/lib'
@@ -40,6 +41,7 @@ export const ForgetComponentModalContainer = ({
   const { user } = useAuth()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
+  const appSyncDisabled = useOrgFeatureFlag('disable-app-sync')
   const { install } = useInstall()
   const installLink = useInstallLink()
   const { addToast } = useToast()
@@ -99,6 +101,7 @@ export const ForgetComponentModalContainer = ({
       isTornDown={isTornDown}
       isInConfig={isInConfig}
       isConfigLoading={isConfigLoading}
+      appSyncDisabled={appSyncDisabled}
       teardownAction={
         <TeardownComponentButton component={component} variant="secondary" />
       }
