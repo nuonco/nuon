@@ -261,6 +261,7 @@ type processHealthCase struct {
 	shutdownRequested any
 	hasShutdownKey    bool
 	heartbeatAge      *time.Duration
+	startedAge        *time.Duration
 	want              processHealthAction
 }
 
@@ -268,8 +269,26 @@ func processAge(d time.Duration) *time.Duration { return &d }
 
 func processHealthCases() []processHealthCase {
 	cases := []processHealthCase{
-		{name: "shutdown requested wins over stale heartbeat", status: app.RunnerProcessStatusActive,
-			shutdownRequested: true, hasShutdownKey: true, heartbeatAge: processAge(6 * time.Minute), want: processActionShutdown},
+		{name: "stale heartbeat wins over shutdown requested", status: app.RunnerProcessStatusActive,
+			shutdownRequested: true, hasShutdownKey: true, heartbeatAge: processAge(6 * time.Minute), want: processActionInactive},
+		{name: "shutdown requested wins over offline-age heartbeat", status: app.RunnerProcessStatusActive,
+			shutdownRequested: true, hasShutdownKey: true, heartbeatAge: processAge(2 * time.Minute), want: processActionShutdown},
+		{name: "no heartbeat past grace wins over shutdown requested", status: app.RunnerProcessStatusActive,
+			shutdownRequested: true, hasShutdownKey: true, startedAge: processAge(11 * time.Minute), want: processActionInactive},
+		{name: "no heartbeat within grace with shutdown requested is shutdown", status: app.RunnerProcessStatusActive,
+			shutdownRequested: true, hasShutdownKey: true, startedAge: processAge(5 * time.Minute), want: processActionShutdown},
+		{name: "pending-shutdown with 59m heartbeat is noop", status: app.RunnerProcessStatusPendingShutdown,
+			heartbeatAge: processAge(59 * time.Minute), want: processActionNoop},
+		{name: "pending-shutdown with 1h heartbeat is inactive", status: app.RunnerProcessStatusPendingShutdown,
+			heartbeatAge: processAge(time.Hour), want: processActionInactive},
+		{name: "shutting-down with 2h heartbeat is inactive", status: app.RunnerProcessStatusShuttingDown,
+			heartbeatAge: processAge(2 * time.Hour), want: processActionInactive},
+		{name: "pending-shutdown without heartbeat started 2h ago is inactive", status: app.RunnerProcessStatusPendingShutdown,
+			startedAge: processAge(2 * time.Hour), want: processActionInactive},
+		{name: "shutting-down without heartbeat started 30m ago is noop", status: app.RunnerProcessStatusShuttingDown,
+			startedAge: processAge(30 * time.Minute), want: processActionNoop},
+		{name: "pending-shutdown without heartbeat or start time is noop", status: app.RunnerProcessStatusPendingShutdown,
+			want: processActionNoop},
 		{name: "shutdown requested wins over fresh heartbeat on offline process", status: app.RunnerProcessStatusOffline,
 			shutdownRequested: true, hasShutdownKey: true, heartbeatAge: processAge(10 * time.Second), want: processActionShutdown},
 		{name: "nil shutdown_requested value is ignored", status: app.RunnerProcessStatusActive,
