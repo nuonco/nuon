@@ -1,6 +1,7 @@
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { ActionRunLogsDeleted } from '@/components/actions/DeleteActionRunLogs'
 import { InstallActionRunLogs } from '@/components/actions/InstallActionRunLogs'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
@@ -16,7 +17,9 @@ export const ActionRunLogsPage = () => {
   return (
     <div className="flex flex-col gap-6">
       <PageTitle segments={['Logs', install?.name]} />
-      {logStream ? (
+      {logStream?.logs_deleted_at ? (
+        <ActionRunLogsDeleted />
+      ) : logStream ? (
         <LogStreamProvider logStreamId={logStream.id}>
           <LogViewerProvider>
             <InstallActionRunLogs actionConfig={installActionRun?.config} />

@@ -62,6 +62,17 @@ func (s *service) queryMCPLogs(ctx context.Context, orgID, logStreamID string, f
 		return mcpLogPage{}, fmt.Errorf("invalid cursor: %w", err)
 	}
 
+	var logStream app.LogStream
+	if err := s.db.WithContext(ctx).
+		Select("id", "logs_deleted_at").
+		Where(app.LogStream{ID: logStreamID, OrgID: orgID}).
+		First(&logStream).Error; err != nil {
+		return mcpLogPage{}, fmt.Errorf("unable to get log stream: %w", err)
+	}
+	if logStream.LogsDeletedAt != nil {
+		return mcpLogPage{LogStreamID: logStreamID, Logs: []mcpLogEntry{}}, nil
+	}
+
 	queryCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 

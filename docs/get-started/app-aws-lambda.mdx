@@ -135,7 +135,7 @@ application is installed on top of the sandbox infrastructure.
 In this example, there are several components that make up the AWS Lambda app,
 including:
 
-- A Docker image with a Dockerfile and Go app stored in ECR
+- A pre-built container image stored in ECR
 - A DynamoDB table to store data
 - A Lambda function to process requests
 - An API Gateway to expose the Lambda function to the internet
@@ -145,21 +145,15 @@ In the app root directory, navigate to the `components` directory. Notice there
 are several files here, one for each component. Numbers are prefixed to the file
 names to easily show the dependency order.
 
-The Docker build component creates a container image including the Go
-application code and pushes it to ECR.
+The external image component references the pre-built container image
+containing the Go application, stored in ECR.
 
 ```toml 0-docker-image.toml
-# docker-build
-name   = "docker_image"
-type = "docker_build"
+# docker-image
+name = "docker_image"
+type = "external_image"
 
-dockerfile = "Dockerfile"
-
-[public_repo]
-repo      = "nuonco/example-app-configs"
-directory = "aws-lambda/src/components/api"
-branch    = "main"
-
+image_url = "public.ecr.aws/acme/aws-lambda/api:latest"
 ```
 
 The DynamoDB component creates a DynamoDB table using Terraform to store data

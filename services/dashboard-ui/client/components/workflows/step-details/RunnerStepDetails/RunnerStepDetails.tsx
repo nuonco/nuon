@@ -7,7 +7,8 @@ import {
   ProcessCardComponent,
 } from '@/components/runners/ProcessCard'
 import type { TRunnerProcess, TRunnerSettings, TWorkflowStep } from '@/types'
-import { useInstallLink } from '@/hooks/use-install-path'
+import { useInstallLink, useInstallNested } from '@/hooks/use-install-path'
+import { installStatusSuffix } from '@/lib/install-path'
 
 export interface IRunnerStepDetails {
   step?: TWorkflowStep
@@ -25,6 +26,7 @@ export const RunnerStepDetails = ({
   settings,
 }: IRunnerStepDetails) => {
   const installLink = useInstallLink()
+  const nested = useInstallNested()
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
@@ -32,7 +34,13 @@ export const RunnerStepDetails = ({
           Install runner
         </Text>
 
-        <Link href={installLink({ orgId: orgId, installId: step?.owner_id, suffix: `/runner` })}>
+        <Link
+          href={installLink({
+            orgId: orgId,
+            installId: step?.owner_id,
+            suffix: installStatusSuffix('runner', nested),
+          })}
+        >
           View runner
         </Link>
       </div>

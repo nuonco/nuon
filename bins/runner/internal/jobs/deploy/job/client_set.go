@@ -3,11 +3,11 @@ package job
 import (
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/nuonco/nuon/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube/clientcfg"
 )
 
 func (p *handler) getClientset() (*kubernetes.Clientset, error) {
-	config, err := kube.GetKubeConfig()
+	config, err := clientcfg.GetKubeConfig()
 	if err != nil {
 		return nil, err
 	}

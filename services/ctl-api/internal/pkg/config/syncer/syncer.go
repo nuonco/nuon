@@ -118,9 +118,7 @@ func (s *syncer) Sync(ctx context.Context) error {
 		}
 	}
 	s.orgID = orgID
-	if err := s.validateFeatureCompatibility(ctx); err != nil {
-		return err
-	}
+	ctx = vcshelpers.WithRepoAccessCache(ctx)
 
 	// Initialize state
 	s.state = &sync.State{
@@ -151,10 +149,6 @@ func (s *syncer) Sync(ctx context.Context) error {
 	}
 
 	return s.persistState(ctx)
-}
-
-func (s *syncer) validateFeatureCompatibility(_ context.Context) error {
-	return sync.RejectDockerBuildComponentsForFeature(s.cfg)
 }
 
 type syncStep struct {
@@ -273,15 +267,16 @@ func (s *syncer) syncSteps() []syncStep {
 			Resource: fmt.Sprintf("component-sync-%s", c.Name),
 			Method: func(ctx context.Context) error {
 				return components.SyncComponent(ctx, components.SyncComponentParams{
-					DB:             s.db,
-					Helpers:        s.componentHelpers,
-					VCSHelper:      s.vcsHelpers,
-					TFClient:       s.tfClient,
-					Component:      c,
-					AppID:          s.appID,
-					AppConfigID:    s.appConfigID,
-					State:          s.state,
-					DispatchBuilds: s.dispatchBuilds,
+					DB:              s.db,
+					Helpers:         s.componentHelpers,
+					VCSHelper:       s.vcsHelpers,
+					TFClient:        s.tfClient,
+					Component:       c,
+					AppID:           s.appID,
+					AppConfigID:     s.appConfigID,
+					State:           s.state,
+					DispatchBuilds:  s.dispatchBuilds,
+					LegacyImageAuth: s.componentHelpers.LegacyImageAuthEnabled(),
 				})
 			},
 		})

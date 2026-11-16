@@ -63,7 +63,6 @@ func (s *service) GetAppBranchRunBuilds(ctx *gin.Context) {
 		Preload("ComponentConfigConnection.Component").
 		Preload("ComponentConfigConnection.HelmComponentConfig").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
-		Preload("ComponentConfigConnection.DockerBuildComponentConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("ComponentConfigConnection.JobComponentConfig").
 		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").

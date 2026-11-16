@@ -9,13 +9,11 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
-
-const sourceAfterBuildVersion = "app-branch-sandbox-build-source-after-build-v1"
-const reuseSandboxBuildVersion = "app-branch-sandbox-build-reuse-v1"
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
@@ -32,38 +30,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
-	sourceAfterBuild := workflow.GetVersion(ctx, sourceAfterBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-
-	var (
-		sandboxConfig *app.AppSandboxConfig
-		source        *activities.ResolveSandboxBuildSourceOutput
-	)
-	if sourceAfterBuild {
-		sandbox, err := activities.AwaitGetSandboxBuildConfig(ctx, &activities.GetSandboxBuildConfigInput{
-			AppConfigID: run.AppConfigID,
-		})
-		if err != nil {
-			return fmt.Errorf("unable to get sandbox build config: %w", err)
-		}
-		if sandbox == nil || sandbox.Skipped || sandbox.SandboxConfig == nil {
-			l.Info("no sandbox config found for app config, skipping sandbox build", "app_config_id", run.AppConfigID)
-			return nil
-		}
-		sandboxConfig = sandbox.SandboxConfig
-	} else {
-		source, err = activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
-			AppConfigID: run.AppConfigID,
-			RunID:       s.RunID,
-		})
-		if err != nil {
-			return fmt.Errorf("unable to resolve sandbox build source: %w", err)
-		}
-		if source == nil || source.Skipped || source.SandboxConfig == nil {
-			l.Info("no sandbox config found for app config, skipping sandbox build", "app_config_id", run.AppConfigID)
-			return nil
-		}
-		sandboxConfig = source.SandboxConfig
+	sandbox, err := activities.AwaitGetSandboxBuildConfig(ctx, &activities.GetSandboxBuildConfigInput{
+		AppConfigID: run.AppConfigID,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to get sandbox build config: %w", err)
 	}
+	if sandbox == nil || sandbox.Skipped || sandbox.SandboxConfig == nil {
+		l.Info("no sandbox config found for app config, skipping sandbox build", "app_config_id", run.AppConfigID)
+		return nil
+	}
+	sandboxConfig := sandbox.SandboxConfig
 
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
 	if err != nil {
@@ -73,8 +50,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	if workflow.GetVersion(ctx, reuseSandboxBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
-		(!run.Force || workflow.GetVersion(ctx, "sandbox-build-respect-force-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion) {
+	if !s.ReuseChecked && !run.Force {
 		reused, reuseErr := activities.AwaitFindReusableSandboxBuild(ctx, &activities.FindReusableSandboxBuildInput{
 			AppID:       appConfig.AppID,
 			AppConfigID: run.AppConfigID,
@@ -111,9 +87,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		CreatedByID:        run.CreatedByID,
 		AppBranchRunID:     s.RunID,
 	}
-	if !sourceAfterBuild {
-		createReq.VCSConnectionCommitID = source.VCSConnectionCommitID
-	}
 	build, err := activities.AwaitCreateSandboxBuild(ctx, createReq)
 	if err != nil {
 		return fmt.Errorf("unable to create sandbox build: %w", err)
@@ -135,16 +108,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if sourceAfterBuild {
-		source, err = activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
-			AppConfigID: run.AppConfigID,
-			RunID:       s.RunID,
-			BuildID:     build.ID,
-		})
-		if err != nil {
-			s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, activities.SandboxSourceFailureDescription(err))
-			return fmt.Errorf("unable to resolve sandbox build source: %w", err)
-		}
+	source, err := activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
+		AppConfigID: run.AppConfigID,
+		RunID:       s.RunID,
+		BuildID:     build.ID,
+	})
+	if err != nil {
+		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, activities.SandboxSourceFailureDescription(err))
+		return fmt.Errorf("unable to resolve sandbox build source: %w", err)
 	}
 	if source == nil || source.GitSource == nil {
 		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to resolve sandbox source")
@@ -165,7 +136,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	} else if logStream != nil {
 		logStreamID = logStream.ID
 		defer func() {
-			_ = activities.AwaitCloseLogStream(ctx, activities.CloseLogStreamRequest{
+			closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+			defer cancel()
+			_ = activities.AwaitCloseLogStream(closeCtx, activities.CloseLogStreamRequest{
 				LogStreamID: logStreamID,
 			})
 		}()
@@ -189,13 +162,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get OCI registry for sandbox build: %w", err)
 	}
 
-	tfPlan := &plantypes.TerraformBuildPlan{
-		Labels: map[string]string{
-			"app_id":               appConfig.AppID,
-			"app_sandbox_build_id": build.ID,
-		},
-		VendorProviders:  true,
-		TerraformVersion: sandboxConfig.TerraformVersion,
+	tfPlan := buildsource.SandboxInputs(sandboxConfig)
+	tfPlan.Labels = map[string]string{
+		"app_id":               appConfig.AppID,
+		"app_sandbox_build_id": build.ID,
 	}
 
 	isSandboxOrg, err := activities.AwaitIsOrgSandboxMode(ctx, activities.IsOrgSandboxModeRequest{
@@ -208,6 +178,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	compositePlan := plantypes.CompositePlan{
 		BuildPlan: &plantypes.BuildPlan{
 			Src:                gitSource,
+			SourceIdentity:     source.SourceIdentity,
 			Dst:                dstCfg,
 			DstTag:             build.ID,
 			TerraformBuildPlan: tfPlan,

@@ -20,12 +20,6 @@ const COMPONENT_TYPE_CONFIG: Record<
   TComponentType | 'pulumi_module' | 'unknown',
   IComponentTypeConfig
 > = {
-  docker_build: {
-    abbr: 'Docker',
-    brandColorClass: 'text-[#2496ED] dark:text-[#56B4F9]',
-    icon: 'Docker',
-    name: 'Docker',
-  },
   external_image: {
     abbr: 'OCI',
     brandColorClass: 'text-[#262261] dark:text-[#8B87D1]',

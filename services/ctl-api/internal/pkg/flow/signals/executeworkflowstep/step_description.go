@@ -7,7 +7,7 @@ import (
 
 	"go.temporal.io/sdk/temporal"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
+	"github.com/nuonco/nuon/pkg/redact"
 )
 
 const stepDescriptionMaxLen = 512
@@ -41,7 +41,7 @@ func abandonedHumanDescription(err error) string {
 // credentials before a raw message is shown to a user.
 func sanitizeStepDescription(message string) string {
 	cleaned := temporalErrorMetadataPattern.ReplaceAllString(message, "")
-	cleaned = compositeerrors.RedactDiagnosticSecrets(cleaned)
+	cleaned = redact.DiagnosticSecrets(cleaned)
 	for _, line := range strings.Split(cleaned, "\n") {
 		line = strings.TrimSpace(temporalErrorPrefixPattern.ReplaceAllString(strings.TrimSpace(line), ""))
 		if line == "" {

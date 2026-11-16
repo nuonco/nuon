@@ -28,6 +28,7 @@ import {
   deploymentSteps,
   deploymentTabOrder,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
+import { useSearchParamState } from '@/hooks/use-search-param-state'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { getInstallDeployment } from '@/lib'
 import { WorkflowProvider } from '@/providers/workflow-provider'
@@ -79,6 +80,9 @@ const DeploymentPanelContent = ({
     steps: deploymentSteps(workflow),
   }
   const [tabOrder] = useState(() => deploymentTabOrder(workflow?.type))
+  const [tab, setTab] = useSearchParamState('deployment_tab', {
+    clearOnUnmount: true,
+  })
   const noWorkflow = (
     <EmptyState
       emptyTitle="No workflow"
@@ -90,6 +94,7 @@ const DeploymentPanelContent = ({
       <DeploymentTemplateContent
         deployment={record}
         appId={appId}
+        installId={installId}
         workflow={workflow}
         isLoading={recordPending}
         isError={recordError}
@@ -134,6 +139,8 @@ const DeploymentPanelContent = ({
       <Tabs
         naturalHeight
         initActiveTab={initialTab ?? tabOrder[0]}
+        activeTab={tab}
+        onTabChange={setTab}
         tabsClassName="mt-4"
         tabControlsClassName="!gap-2 md:!gap-6 [&>button]:px-1 md:[&>button]:px-3"
         tabLabels={Object.fromEntries(
@@ -182,8 +189,15 @@ export const DeploymentDetailBody = (props: TDeploymentDetailBody) => (
 )
 
 export const DeploymentDetailPanel = (props: IDeploymentDetailPanel) => {
-  const { deployment, orgId, appId, installId, repo, initialTab, ...panelProps } =
-    props
+  const {
+    deployment,
+    orgId,
+    appId,
+    installId,
+    repo,
+    initialTab,
+    ...panelProps
+  } = props
   return (
     <Panel
       heading={deployment.title}

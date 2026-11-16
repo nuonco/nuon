@@ -8,7 +8,10 @@ import {
   listedResources,
   resourcePage,
 } from '@/components/install-alignment/alignment-utils'
-import { ResourceComponentActions } from '@/components/install-components/ResourceComponentActions'
+import {
+  ResourceComponentActions,
+  useResourceComponentPanelLinks,
+} from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
@@ -22,7 +25,7 @@ import {
   type TInstallImageListItem,
 } from './InstallImagesList'
 
-const IMAGE_TYPES = 'external_image,docker_build'
+const IMAGE_TYPES = 'external_image'
 const LIMIT = 10
 
 export const InstallImagesListContainer = () => {
@@ -101,6 +104,7 @@ export const InstallImagesListContainer = () => {
     enabled: !!org?.id && !!install?.id && !overviewLoading && pageIds !== '',
   })
   const rows = pageIds === '' ? undefined : result?.data
+  useResourceComponentPanelLinks({ isLoading, rows, variant: 'image' })
 
   const toListItem = (
     installComponent: TInstallComponent

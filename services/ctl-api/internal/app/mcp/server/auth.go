@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
 // authenticateToken validates the bearer access token and returns the associated
@@ -53,6 +54,12 @@ func (s *Server) authenticateToken(r *http.Request) (*app.Account, *app.Token, e
 		s.l.Warn("MCP auth: unable to fetch account", zap.Error(res.Error))
 		return nil, nil, fmt.Errorf("unable to fetch account: %w", res.Error)
 	}
+
+	authority, err := authz.New(authz.Params{DB: s.db}).LoadAccountPermissions(r.Context(), &acct)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to load account permissions: %w", err)
+	}
+	acct.Authority = authority
 
 	return &acct, &userToken, nil
 }

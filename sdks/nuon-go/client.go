@@ -67,6 +67,12 @@ type Client interface {
 	GetCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error)
 	VerifyCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error)
 	DeleteCloudConnection(ctx context.Context, connectionID string) error
+	GetCloudConnectionSetup(ctx context.Context, connectionID string, repositories []string) (*models.ServiceSetupResponse, error)
+
+	CreateImageRepository(ctx context.Context, req *models.ServiceCreateImageRepositoryRequest) (*models.AppImageRepository, error)
+	ListImageRepositories(ctx context.Context, query *ListImageRepositoriesQuery) ([]*models.AppImageRepository, bool, error)
+	GetImageRepository(ctx context.Context, repositoryID string) (*models.AppImageRepository, error)
+	DeleteImageRepository(ctx context.Context, repositoryID string) error
 
 	// roles and service accounts
 	ListRoles(ctx context.Context) ([]*models.AppRole, error)
@@ -159,6 +165,7 @@ type Client interface {
 	// app input config methods
 	CreateAppInputConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInputConfigRequest) (*models.AppAppInputConfig, error)
 	GetAppInputLatestConfig(ctx context.Context, appID string) (*models.AppAppInputConfig, error)
+	GetAppInstallInputConfig(ctx context.Context, appID, appBranchID string) (*models.AppAppInputConfig, error)
 	GetAppInputConfig(ctx context.Context, appID, appInputConfigID string) (*models.AppAppInputConfig, error)
 	GetAppInputConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppInputConfig, bool, error)
 
@@ -350,7 +357,6 @@ type Client interface {
 	CreateTerraformModuleComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateTerraformModuleComponentConfigRequest) (*models.AppTerraformModuleComponentConfig, error)
 	CreatePulumiComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreatePulumiComponentConfigRequest) (*models.AppPulumiComponentConfig, error)
 	CreateHelmComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateHelmComponentConfigRequest) (*models.AppHelmComponentConfig, error)
-	CreateDockerBuildComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateDockerBuildComponentConfigRequest) (*models.AppDockerBuildComponentConfig, error)
 	CreateExternalImageComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateExternalImageComponentConfigRequest) (*models.AppExternalImageComponentConfig, error)
 	CreateJobComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateJobComponentConfigRequest) (*models.AppJobComponentConfig, error)
 	GetComponentConfigs(ctx context.Context, componentID string, query *models.GetPaginatedQuery) ([]*models.AppComponentConfigConnection, bool, error)

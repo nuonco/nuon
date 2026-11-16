@@ -21,7 +21,7 @@ const mockInstall = {
   install_components: [
     { component_id: 'comp-1', component: { name: 'networking', type: 'terraform_module' } },
     { component_id: 'comp-2', component: { name: 'ingress-nginx', type: 'helm_chart' } },
-    { component_id: 'comp-3', component: { name: 'api-server', type: 'docker_build' } },
+    { component_id: 'comp-3', component: { name: 'api-server', type: 'external_image' } },
   ],
 } as TInstall
 
@@ -42,7 +42,7 @@ function createSeededQueryClient() {
   })
   qc.setQueryData(['install-component', 'comp-3'], {
     component_id: 'comp-3',
-    component: { name: 'api-server', type: 'docker_build' },
+    component: { name: 'api-server', type: 'external_image' },
     status: 'active',
   })
 

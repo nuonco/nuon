@@ -33,6 +33,7 @@ func AllModels() []any {
 		&app.Webhook{},
 		&app.OrgInvite{},
 		&app.CloudConnection{},
+		&app.ImageRepository{},
 
 		// slack
 		&app.SlackInstallation{},
@@ -129,7 +130,6 @@ func AllModels() []any {
 		&app.ComponentConfigConnection{},
 		&app.HelmComponentConfig{},
 		&app.TerraformModuleComponentConfig{},
-		&app.DockerBuildComponentConfig{},
 		&app.JobComponentConfig{},
 		&app.KubernetesManifestComponentConfig{},
 		&app.PulumiComponentConfig{},

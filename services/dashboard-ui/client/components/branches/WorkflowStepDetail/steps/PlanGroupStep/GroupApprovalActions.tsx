@@ -95,9 +95,12 @@ const ConfirmGroupActionModal = ({
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['branch-run'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-step'] })
       removeModal(props.modalId)
     },
     onError: (err: TAPIError) => {
+      queryClient.invalidateQueries({ queryKey: ['branch-run'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-step'] })
       addToast(
         <Toast
           heading={action === 'approve' ? 'Approval failed' : 'Skip failed'}
@@ -147,10 +150,10 @@ const ConfirmGroupActionModal = ({
 
 const ACTION_LABEL: Record<
   GroupAction,
-  { label: string; variant: 'primary' | 'danger' }
+  { label: string; variant: 'primary' | 'secondary' }
 > = {
   approve: { label: 'Approve', variant: 'primary' },
-  'deny-skip-current': { label: 'Skip', variant: 'danger' },
+  'deny-skip-current': { label: 'Skip', variant: 'secondary' },
 }
 
 export const GroupActionButton = ({

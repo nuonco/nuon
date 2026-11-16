@@ -6,11 +6,11 @@ import { ComponentDependencyTable } from './ComponentDependencyTable'
 import type { GraphNode, GraphEdge } from './ComponentDependencyGraph'
 
 const nodes: GraphNode[] = [
-  { id: 'cmp-api', name: 'api', type: 'docker_build', role: 'current' },
+  { id: 'cmp-api', name: 'api', type: 'external_image', role: 'current' },
   { id: 'cmp-db', name: 'database', type: 'terraform_module', role: 'dependency' },
   { id: 'cmp-cache', name: 'cache', type: 'helm_chart', role: 'dependency' },
-  { id: 'cmp-worker', name: 'worker', type: 'docker_build', role: 'dependent' },
-  { id: 'cmp-web', name: 'web', type: 'docker_build', role: 'dependent' },
+  { id: 'cmp-worker', name: 'worker', type: 'external_image', role: 'dependent' },
+  { id: 'cmp-web', name: 'web', type: 'external_image', role: 'dependent' },
 ]
 
 const edges: GraphEdge[] = [
@@ -44,7 +44,7 @@ export const LongList = () => {
     ...Array.from({ length: 12 }, (_, i) => ({
       id: `cmp-dep-${i}`,
       name: `service-${i}`,
-      type: 'docker_build' as GraphNode['type'],
+      type: 'external_image' as GraphNode['type'],
       role: 'dependent' as const,
     })),
   ]

@@ -3,13 +3,12 @@ package validate
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/publicnet/templatefetch"
 )
 
 type armParametersShape struct {
@@ -31,6 +30,9 @@ func ValidateAzureRunnerIdentities(a *config.AppConfig) error {
 	}
 
 	params, err := fetchTemplateParameters(a.Stack.RunnerNestedTemplateURL)
+	if templatefetch.IsRefused(err) {
+		return fmt.Errorf("runner_nested_template_url %q cannot be fetched: %w", a.Stack.RunnerNestedTemplateURL, err)
+	}
 	if err != nil {
 		// Don't fail validation on a transient fetch error; the render-time
 		// check in ctl-api still enforces this.
@@ -58,15 +60,7 @@ func hasAzurePermissionRole(p *config.PermissionsConfig) bool {
 }
 
 func fetchTemplateParameters(templateURL string) (map[string]json.RawMessage, error) {
-	resp, err := templateOutputsClient.Get(templateURL)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, templateURL)
-	}
-	body, err := io.ReadAll(resp.Body)
+	body, err := fetchTemplate(templateURL)
 	if err != nil {
 		return nil, err
 	}

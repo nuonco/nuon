@@ -9,13 +9,31 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-const (
-	fetchTimeout     = 10 * time.Second
-	maxTemplateBytes = 10 << 20 // 10 MB
-)
+// templateFetchClient fetches the vendor-supplied template and UI definition
+// URLs referenced by app config. It only reaches https endpoints on the public
+// internet; see stacks.NewTemplateFetchClient. Tests swap it for an insecure
+// client so they can serve templates from localhost.
+var templateFetchClient = stacks.NewTemplateFetchClient()
+
+// WithTemplateFetchClient returns a copy that fetches vendor URLs with client.
+// It exists for tests outside this package that serve templates from
+// localhost; production code never overrides the client.
+func (t *Templates) WithTemplateFetchClient(client *http.Client) *Templates {
+	cp := *t
+	cp.fetchClient = client
+	return &cp
+}
+
+func (t *Templates) templateClient() *http.Client {
+	if t.fetchClient != nil {
+		return t.fetchClient
+	}
+	return templateFetchClient
+}
 
 type armTemplateResource struct {
 	Type           string                 `json:"type"`
@@ -109,9 +127,8 @@ func (t *armTemplateShape) hasManagedIdentity() bool {
 	return false
 }
 
-func fetchARMTemplate(templateURL string) (*armTemplateShape, error) {
-	client := &http.Client{Timeout: fetchTimeout}
-	resp, err := client.Get(templateURL)
+func (t *Templates) fetchARMTemplate(templateURL string) (*armTemplateShape, error) {
+	resp, err := t.templateClient().Get(templateURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch template %s: %w", templateURL, err)
 	}
@@ -121,7 +138,8 @@ func fetchARMTemplate(templateURL string) (*armTemplateShape, error) {
 		return nil, fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, templateURL)
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxTemplateBytes))
+	// The client fails the read past stacks.MaxTemplateFetchBytes.
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read template body: %w", err)
 	}

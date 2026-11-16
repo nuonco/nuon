@@ -593,44 +593,6 @@ func (s *AppConfigDiffSuite) TestTerraformModuleDiff() {
 	s.Equal(diff.OpNoop, tfVer.Diff.Op)
 }
 
-// --- Test: Docker build diff ---
-
-func (s *AppConfigDiffSuite) TestDockerBuildDiff() {
-	old := baseConfig()
-	old.Components = ComponentList{
-		{
-			Name: "api",
-			Type: DockerBuildComponentType,
-			DockerBuild: &DockerBuildComponentConfig{
-				Dockerfile: "Dockerfile",
-			},
-		},
-	}
-	new := baseConfig()
-	new.Components = ComponentList{
-		{
-			Name: "api",
-			Type: DockerBuildComponentType,
-			DockerBuild: &DockerBuildComponentConfig{
-				Dockerfile: "Dockerfile.prod",
-				EnvVarMap:  map[string]string{"GO_ENV": "production"},
-			},
-		},
-	}
-
-	d := new.Diff(old)
-	comps := findChild(d, "components")
-	api := findChild(comps, "component.api")
-	s.Require().NotNil(api)
-
-	df := findChild(api, "dockerfile")
-	s.Require().NotNil(df)
-	s.Equal(diff.OpChange, df.Diff.Op)
-
-	ev := findChild(api, "env_vars")
-	s.Require().NotNil(ev)
-}
-
 // --- Test: External image diff ---
 
 func (s *AppConfigDiffSuite) TestExternalImageDiff() {
@@ -1283,7 +1245,6 @@ func TestAppConfigDiff_MeaningfulEditProperties(t *testing.T) {
 		{"pulumi", "components", func(c *AppConfig) { c.Components[3].Pulumi.Runtime = "python" }},
 		{"image", "components", func(c *AppConfig) { c.Components[4].ExternalImage.PublicImageConfig.Tag += "-changed" }},
 		{"job", "components", func(c *AppConfig) { c.Components[5].Job.Tag += "-changed" }},
-		{"docker", "components", func(c *AppConfig) { c.Components[6].DockerBuild.Dockerfile += "-changed" }},
 		{"action", "actions", func(c *AppConfig) { c.Actions[0].Steps[0].InlineContents += "\necho changed\n" }},
 		{"runbook", "runbooks", func(c *AppConfig) { c.Runbooks[0].Steps[0].Command += " changed" }},
 	}
@@ -1387,9 +1348,6 @@ func TestAppConfigDiff_ComponentLifecycle(t *testing.T) {
 		{HelmChartComponentType, func() *Component {
 			return &Component{HelmChart: &HelmChartComponentConfig{ChartName: "chart_" + value}}
 		}, "chart_name"},
-		{DockerBuildComponentType, func() *Component {
-			return &Component{DockerBuild: &DockerBuildComponentConfig{Dockerfile: "Dockerfile_" + value}}
-		}, "dockerfile"},
 		{ContainerImageComponentType, func() *Component {
 			return &Component{ExternalImage: &ExternalImageComponentConfig{PublicImageConfig: &PublicImageConfig{ImageURL: "example.com/" + value, Tag: "v1"}}}
 		}, "public_image"},
@@ -1540,7 +1498,6 @@ func generatedDiffConfig(t *hegel.T) *AppConfig {
 		{Name: "pulumi", Type: PulumiComponentType, Pulumi: &PulumiComponentConfig{Runtime: "go", ConfigMap: maps.Clone(labels)}},
 		{Name: "image", Type: ContainerImageComponentType, ExternalImage: &ExternalImageComponentConfig{PublicImageConfig: &PublicImageConfig{ImageURL: "example.com/acme", Tag: "v1"}}},
 		{Name: "job", Type: JobComponentType, Job: &JobComponentConfig{ImageURL: "example.com/acme", Tag: "v1", Cmd: []string{"sh", "-c"}, Args: []string{text}}},
-		{Name: "docker", Type: DockerBuildComponentType, DockerBuild: &DockerBuildComponentConfig{Dockerfile: "Dockerfile", EnvVarMap: maps.Clone(labels)}},
 	}
 	for _, name := range drawDistinctStrings(t, hegel.FromRegex(`[a-z]{1,8}`, true), 1, 5) {
 		cfg.Actions = append(cfg.Actions, &ActionConfig{Name: name, Labels: maps.Clone(labels), Steps: []*ActionStepConfig{{Name: "inspect", InlineContents: text, EnvVarMap: maps.Clone(labels)}}})

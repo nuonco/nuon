@@ -2,6 +2,8 @@ export default {
   title: 'Features / Branches / Changes',
 }
 
+import { useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import { ConfigChangesLoading } from './ConfigChangesLoading'
 import { ConfigChangesViewer } from './ConfigChangesViewer'
@@ -168,6 +170,61 @@ export const BuildsOnly = () => (
   <ConfigChangesViewer sections={[]} builds={builds} versionLabel="v14" />
 )
 BuildsOnly.storyName = 'Builds only'
+
+const installBuild: TTemplateBuildChange = {
+  id: 'bld-selected',
+  name: 'api',
+  kind: 'component',
+  status: 'success',
+  changeReason: 'source_changed',
+  href: '#',
+  sourceDiffTarget: {
+    orgId: 'org-acme',
+    installId: 'ins-acme',
+    workflowId: 'wf-deploy',
+    kind: 'component',
+    name: 'api',
+  },
+}
+
+const InstallChangesStory = ({ config = false }: { config?: boolean }) => {
+  const client = useQueryClient()
+  useEffect(() => {
+    const key = [
+      'install-deployment-source-diff',
+      'org-acme',
+      'ins-acme',
+      'wf-deploy',
+      'component',
+      'api',
+    ]
+    client.setQueryData(key, {
+      compare_url:
+        'https://github.com/acme/example/compare/1111111111111111111111111111111111111111..2222222222222222222222222222222222222222',
+    })
+  }, [client])
+  return (
+    <ConfigChangesViewer
+      sections={
+        config ? [{ ...sections[0], entities: [sections[0].entities[1]] }] : []
+      }
+      builds={[
+        {
+          ...installBuild,
+          changeReason: config ? 'source_and_config' : 'source_changed',
+        },
+      ]}
+    />
+  )
+}
+
+export const InstallSourceChanges = () => <InstallChangesStory />
+InstallSourceChanges.storyName = 'Install source changes'
+
+export const InstallSourceAndConfigChanges = () => (
+  <InstallChangesStory config />
+)
+InstallSourceAndConfigChanges.storyName = 'Install source and config changes'
 
 export const Button = () => (
   <TemplateChangesButton

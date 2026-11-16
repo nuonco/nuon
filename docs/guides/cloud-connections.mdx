@@ -1,15 +1,18 @@
 ---
 title: "Cloud Connections"
-description: "Connect Nuon to AWS with short-lived OIDC credentials and an access preset."
-keywords: ["cloud connections", "OIDC", "AWS", "install stacks"]
+description: "Connect Nuon to AWS, Google Cloud, or Azure with short-lived OIDC credentials and an access preset."
+keywords: ["cloud connections", "OIDC", "AWS", "GCP", "Azure", "install stacks"]
 ---
 
-A cloud connection gives Nuon access to an AWS account without storing a long-lived cloud credential. Connections belong to an organization. Choose one access preset:
+A cloud connection is an identity Nuon assumes in your cloud: a target — an AWS account, Google Cloud project, or Azure container registry — plus a principal that trusts Nuon's OIDC tokens, such as an IAM role, GCP service account, or Microsoft Entra application. Connections belong to an organization and are saved without storing a long-lived cloud credential. Choose one access preset:
 
 - **`stacks`** — setup includes a permissions policy for creating, updating, and deleting Nuon CloudFormation install stacks.
+- **`ecr`** — image repository access (Amazon ECR): read-only permissions for selected repositories.
+- **`gar`** — image repository access (Google Artifact Registry).
+- **`acr`** — image repository access (Azure Container Registry).
 - **`custom`** — setup includes only the OIDC trust configuration. Attach your own permissions policy to the IAM role before using it for stack operations.
 
-Only AWS connections are supported. A preset describes setup and verification behavior; it does not restrict the permissions you attach to the role.
+AWS supports `stacks`, `ecr`, and `custom`. GCP supports `gar`. Azure supports `acr`. A preset describes setup and verification behavior; the cloud provider enforces the permissions attached to the principal.
 
 ## OIDC trust model
 
@@ -17,13 +20,15 @@ Nuon mints a short-lived OIDC token when it needs to perform an operation. The r
 
 - **Issuer** — your Nuon control plane's public API URL.
 - **Subject** — `org:<org_id>:connection:<connection_id>`, unique to one connection.
-- **Audience** — `sts.amazonaws.com`.
+- **Audience** — `sts.amazonaws.com` for AWS, the generated `//iam.googleapis.com/projects/<project_number>/locations/global/workloadIdentityPools/<pool>/providers/nuon` for GCP, or `api://AzureADTokenExchange` for Azure.
 
-Create and get responses include the exact values and self-contained Terraform, AWS CLI, and CloudFormation setup material.
+Create and get responses include the exact values and self-contained setup material: Terraform, AWS CLI, and CloudFormation for AWS; Terraform and gcloud CLI for GCP; Terraform and Azure CLI for Azure.
+
+The connection's organization and saved identity/trust tuple are immutable after creation.
 
 ## Create and configure a connection
 
-Create the connection first. This saves the connection in Nuon; it does not create the IAM role or OIDC provider in AWS.
+Creating a connection saves it in Nuon; it does not create the IAM role or OIDC provider in AWS. Connections are identity only and take no repository inputs.
 
 ```bash
 nuon cloud-connections create \
@@ -37,7 +42,7 @@ nuon cloud-connections create \
 
 Open the setup link printed below the command's output. It takes you to **Run in your cloud**, where you can choose **AWS CLI**, **Terraform**, or **CloudFormation** and apply the generated setup in the target AWS account. You can also reach this page from **Settings → Cloud connections → select your connection → View setup runbook**.
 
-Each setup option creates an OIDC provider and an IAM role with a trust policy restricted to the connection. The `stacks` preset also includes an explicit action allowlist covering the resources in Nuon's install stack templates. It does not include image registry access. With `--preset custom`, no permissions policy is generated: attach your own policy.
+The `stacks` preset also includes an explicit action allowlist covering the resources in Nuon's install stack templates. With `--preset custom`, no permissions policy is generated: attach your own policy. The `ecr`, `gar`, and `acr` presets are for private images and carry their own prerequisites and repository setup; see [Private image registries](/guides/private-image-registries).
 
 After applying the setup, verify the connection from the dashboard's **Verify** step or run:
 
@@ -47,18 +52,30 @@ nuon cloud-connections verify <connection-id>
 
 The command waits for the result by default. Once the status is `verified`, the connection is available in the install creation wizard. For scripts, `create --output json` and `get <connection-id> --output json` include the generated setup material in `setup` without the human-readable next-step instructions.
 
-Verification exchanges a Nuon OIDC token for temporary AWS credentials, checks the returned identity, and confirms that a foreign connection subject cannot assume the role. For `stacks`, it also makes a read-only CloudFormation `DescribeStacks` probe. This probe does not prove that every stack operation is permitted. For `custom`, verification checks identity and trust only; you are responsible for the permissions required by your stacks.
+Verification exchanges a Nuon OIDC token for temporary cloud credentials, checks the returned identity, and confirms that a foreign connection subject cannot assume the role. For `stacks`, it also makes a read-only CloudFormation `DescribeStacks` probe. This probe does not prove that every stack operation is permitted. For `custom`, verification checks identity and trust only; you are responsible for the permissions required by your operations.
 
 ## Use connections for install stacks
 
-When creating an AWS install, select a **verified AWS connection** with either preset. The connection binding is immutable after creation: a connection cannot be added, replaced, or removed from an existing install. Nuon uses the pinned connection for CloudFormation stack creation, updates, and deletion. If no connection is selected at creation, the install remains customer-managed.
+When creating an AWS install, select a **verified AWS connection** whose role has stack-management permissions. The connection binding is immutable after creation: a connection cannot be added, replaced, or removed from an existing install. Nuon uses the pinned connection for CloudFormation stack creation, updates, and deletion. If no connection is selected at creation, the install remains customer-managed.
 
 A connection referenced by an install cannot be deleted; the API returns HTTP 409. Delete the referencing installs before deleting the connection.
 
+## Share a principal across connections
+
+Connections in the same organization may reference the same IAM role, GCP service account, or Entra application. Sharing gives you one place to revoke Nuon's access, but every connection on the shared principal gets the combined permissions of all of them, and revoking it cuts them all off at once. **Prefer a separate principal per connection** unless you specifically want that blast radius. New connections default to their own role or service account name; sharing is opt-in through the dashboard's **Principal** dropdown or by passing an existing principal to `create`.
+
+Each connection keeps its own ID, exact federation subject, verification status, and saved assignments. Presets select setup and verification behavior; they are not permission boundaries. In setup instructions, choose **Existing role** or **Existing service account** when reusing a cloud resource: the instructions preserve existing trust and grants and add federation only for the current connection's exact subject. Apply updates serially for a shared principal; read-and-merge cloud IAM updates are not atomic.
+
+On AWS, deleting the account's IAM OIDC provider for the Nuon issuer cuts off every Nuon role in that account at once, including roles shared by multiple connections. Deleting a connection stops Nuon from using it, but does not remove cloud trust or permissions; review those separately without disturbing other connections.
+
 ## CLI
 
-Use `nuon cloud-connections list|get|create|verify|delete`. Responses report the preset, status, status message, and last verification time.
+Use `nuon cloud-connections list|get|create|verify|delete`. Responses report the preset, status, status message, and last verification time. Connections are identity only: create and verify them without repository names. For private image repositories, use [`nuon image-repositories`](/guides/private-image-registries#cli).
 
-Nuon verifies connections on demand, not on a recurring schedule. The last verification time records the most recent verification attempt; a verified status does not guarantee that AWS trust or permissions have not changed since then. Use `verify` after changing the role or its policies. A failed verification updates the connection's status and emits `cloud-connection-verification-failed` for notification subscriptions.
+Nuon verifies connections on demand, not on a recurring schedule. The last verification time records the most recent verification attempt; a verified status does not guarantee that cloud trust or permissions have not changed since then. Use `verify` after changing the role or its policies. A failed verification updates the connection's status and emits `cloud-connection-verification-failed` for notification subscriptions.
 
-Stack operations still obtain temporary AWS credentials through the connection when needed. This does not repeat the full verification checks, including the foreign-subject trust check.
+Stack operations still obtain temporary cloud credentials through the connection when needed. This does not repeat the full verification checks, including the foreign-subject trust check.
+
+## Private image registries
+
+For private images, Nuon uses saved **image repository** assignments that map an exact ECR, GAR, or ACR repository to a verified connection's pull identity. See [Private image registries](/guides/private-image-registries) for adding image repositories, per-registry prerequisites and setup, and the image repository API.

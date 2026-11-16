@@ -36,7 +36,7 @@ jobs:
       )
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           sparse-checkout: ci-triggers.yml
           sparse-checkout-cone-mode: false
@@ -47,7 +47,7 @@ jobs:
         with:
           config: ci-triggers.yml
 
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v3.0.4
         id: filter
         with:
           filters: ${{ steps.ci_triggers.outputs['services'] }}

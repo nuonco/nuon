@@ -485,3 +485,21 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 		})
 	}
 }
+
+func (s *LogStreamWriteLogsTestSuite) TestDropsWritesToDeletedLogStream() {
+	deletedAt := time.Now()
+	logStream := &app.LogStream{
+		ID:            domains.NewLogStreamID(),
+		OrgID:         s.testOrg.ID,
+		OwnerID:       s.testOrg.ID,
+		Open:          true,
+		LogsDeletedAt: &deletedAt,
+	}
+	ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(logStream).Error)
+
+	body := s.buildOTLPLogExportRequest([]string{"AWS_SECRET_ACCESS_KEY=example"})
+	rr := s.makeRequest("POST", fmt.Sprintf("/v1/log-streams/%s/logs", logStream.ID), body)
+	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+	assert.Zero(s.T(), s.countLogsInCH(logStream.ID))
+}

@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
@@ -24,7 +22,7 @@ var alignmentComponentSignalTypes = []string{
 	string(componentteardownsyncandplan.SignalType),
 }
 
-func (s *Helpers) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *installAlignmentState, alignment *InstallAlignment) error {
+func (s *Helpers) explainInstallAlignment(ctx context.Context, st *installAlignmentState, alignment *InstallAlignment) error {
 	var resourceIDs, workflowIDs []string
 	var since *time.Time
 	unboundedHistory := false
@@ -82,7 +80,7 @@ func (s *Helpers) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *
 		ResourceID string
 		WorkflowID string
 	}
-	if err := db.WithContext(ctx).Raw(`
+	if err := s.db.WithContext(ctx).Raw(`
 		SELECT DISTINCT ON (resource_id) resource_id, workflow_id, created_at
 		FROM (
 			SELECT CASE
@@ -123,7 +121,7 @@ func (s *Helpers) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *
 	stepsByWorkflow := map[string][]*alignmentStep{}
 	if len(workflowIDs) > 0 {
 		var workflows []app.Workflow
-		if err := db.WithContext(ctx).Select("id", "type", "status", "created_at").
+		if err := s.db.WithContext(ctx).Select("id", "type", "status", "created_at").
 			Where(app.Workflow{OwnerID: st.install.ID, OwnerType: "installs", OrgID: st.install.OrgID}).
 			Where("id IN ?", workflowIDs).Find(&workflows).Error; err != nil {
 			return fmt.Errorf("unable to get explanation workflows: %w", err)
@@ -132,7 +130,7 @@ func (s *Helpers) explainInstallAlignment(ctx context.Context, db *gorm.DB, st *
 			workflowsByID[workflows[i].ID] = &workflows[i]
 		}
 		var steps []alignmentStep
-		if err := db.WithContext(ctx).Table("install_workflow_steps AS s").
+		if err := s.db.WithContext(ctx).Table("install_workflow_steps AS s").
 			Select("s.id", "s.install_workflow_id", "s.status", "s.step_target_type", "s.step_target_id", "s.metadata", "s.retried",
 				"s.queue_signal->>'type' AS signal_type", "s.queue_signal->'data'->>'ComponentID' AS signal_component_id",
 				"COALESCE(NULLIF(s.queue_signal->'data'->>'BuildID', ''), d.component_build_id) AS signal_build_id",

@@ -181,7 +181,9 @@ func (w *Workflows) executeNotebookRun(ctx workflow.Context, ref NotebookRunRef)
 		return
 	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(runCtx, ls.ID)
+		closeCtx, cancel := workflow.NewDisconnectedContext(runCtx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, ls.ID)
 	}()
 	runCtx = cctx.SetLogStreamWorkflowContext(runCtx, ls)
 

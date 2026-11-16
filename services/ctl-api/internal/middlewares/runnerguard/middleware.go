@@ -19,6 +19,7 @@ import (
 const (
 	runnerPrefix = "run"
 	jobPrefix    = "job"
+	logPrefix    = "log"
 )
 
 type Middleware struct {
@@ -85,6 +86,10 @@ func (m *Middleware) InstallHandler() gin.HandlerFunc {
 			return
 		}
 		prefix, prefixErr := shortid.GetPrefix(acct.Subject)
+		if prefixErr == nil && prefix == logPrefix {
+			m.authorizeLogToken(ctx, acct.Subject)
+			return
+		}
 		if prefixErr != nil || (prefix != runnerPrefix && prefix != jobPrefix) {
 			ctx.Next()
 			return
@@ -139,6 +144,16 @@ func (m *Middleware) InstallHandler() gin.HandlerFunc {
 		cctx.SetRunnerGinContext(ctx, &runner)
 		ctx.Next()
 	}
+}
+
+func (m *Middleware) authorizeLogToken(ctx *gin.Context, subject string) {
+	if ctx.Request.Method == http.MethodPost &&
+		ctx.FullPath() == "/v1/log-streams/:log_stream_id/logs" &&
+		ctx.Param("log_stream_id") == subject {
+		ctx.Next()
+		return
+	}
+	notFound(ctx, fmt.Errorf("log token %s", subject))
 }
 
 func (m *Middleware) authorizeJob(ctx *gin.Context, runnerID string) error {

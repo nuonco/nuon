@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 )
 
 func (h *Helpers) Credentials(ctx context.Context, connection *app.CloudConnection, sessionName string) (*credentials.Config, error) {
@@ -20,7 +21,7 @@ func (h *Helpers) Credentials(ctx context.Context, connection *app.CloudConnecti
 	if connection.Platform != app.CloudPlatformAWS || connection.Status != app.CloudConnectionStatusVerified {
 		return nil, fmt.Errorf("cloud connection must be a verified AWS connection")
 	}
-	token, err := h.issuer.Mint(ctx, fmt.Sprintf("org:%s:connection:%s", connection.OrgID, connection.ID), "sts.amazonaws.com", 15*time.Minute)
+	token, err := h.issuer.Mint(ctx, cloudconnections.Subject(connection), "sts.amazonaws.com", 15*time.Minute)
 	if err != nil {
 		return nil, err
 	}

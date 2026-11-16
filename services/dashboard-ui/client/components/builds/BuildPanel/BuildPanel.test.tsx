@@ -56,7 +56,7 @@ test('shows the build page summary, logs, and trace', async () => {
         JSON.stringify({
           id: 'cmp-api',
           name: 'api',
-          type: 'docker_build',
+          type: 'external_image',
           app_id: 'app-acme',
         }),
         { status: 200, headers: { 'content-type': 'application/json' } }

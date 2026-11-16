@@ -166,7 +166,7 @@ func (s *GetRunnerJobCompositePlanTestSuite) TestGetRunnerJobCompositePlan() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -219,7 +219,7 @@ func (s *GetRunnerJobCompositePlanTestSuite) TestGetRunnerJobCompositePlan() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -408,7 +408,7 @@ func (s *GetRunnerJobCompositePlanTestSuite) TestGetRunnerJobCompositePlan() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -489,7 +489,7 @@ func (s *GetRunnerJobCompositePlanTestSuite) TestGetRunnerJobCompositePlan() {
 					Status:            app.RunnerJobStatusAvailable,
 					StatusDescription: "test job",
 					Group:             app.RunnerJobGroupBuild,
-					Type:              app.RunnerJobTypeDockerBuild,
+					Type:              app.RunnerJobTypeContainerImageBuild,
 					Operation:         app.RunnerJobOperationTypeBuild,
 					QueueTimeout:      5 * time.Minute,
 					AvailableTimeout:  10 * time.Minute,
@@ -555,7 +555,7 @@ func (s *GetRunnerJobCompositePlanTestSuite) TestGetRunnerJobCompositePlanAllJob
 	}{
 		{
 			group:    app.RunnerJobGroupBuild,
-			typ:      app.RunnerJobTypeDockerBuild,
+			typ:      app.RunnerJobTypeContainerImageBuild,
 			planJSON: `{"component_build_id": "build123"}`,
 			validateFunc: func(cp *plantypes.CompositePlan) {
 				assert.NotNil(s.T(), cp.BuildPlan)

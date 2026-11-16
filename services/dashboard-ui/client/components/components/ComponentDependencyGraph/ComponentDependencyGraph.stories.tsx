@@ -11,7 +11,7 @@ const webAppNodes: GraphNode[] = [
   { id: 'rds', name: 'postgres', type: 'terraform_module', role: 'dependency' },
   { id: 'eks', name: 'eks_cluster', type: 'terraform_module', role: 'dependency' },
   { id: 'api', name: 'api_server', type: 'helm_chart', role: 'current' },
-  { id: 'frontend', name: 'frontend', type: 'docker_build', role: 'dependent' },
+  { id: 'frontend', name: 'frontend', type: 'external_image', role: 'dependent' },
   { id: 'worker', name: 'background_worker', type: 'helm_chart', role: 'dependent' },
 ]
 
@@ -42,7 +42,7 @@ export const DependenciesOnly = () => (
       nodes={[
         { id: 'vpc', name: 'vpc', type: 'terraform_module', role: 'dependency' },
         { id: 'api', name: 'api_server', type: 'helm_chart', role: 'dependency' },
-        { id: 'frontend', name: 'frontend', type: 'docker_build', role: 'current' },
+        { id: 'frontend', name: 'frontend', type: 'external_image', role: 'current' },
       ]}
       edges={[
         { sourceId: 'vpc', targetId: 'api' },

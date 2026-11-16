@@ -19,6 +19,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 )
 
+const azureTokenVerificationFailed = "failed to verify Azure identity token"
+
 type RunnerAuthAzureRequest struct {
 	Token       string `json:"token" validate:"required"`
 	RunnerID    string `json:"runner_id,omitempty"`
@@ -90,7 +92,7 @@ func azureClaimsFromVerified(claims map[string]any) (*azureClaims, error) {
 	}, nil
 }
 
-func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureClaims, error) {
+func (s *service) verifyAzureJWT(ctx context.Context, tokenStr, expectedTenantID string) (*azureClaims, error) {
 	tokenStr = strings.TrimSpace(tokenStr)
 	if err := workloadjwt.RequireCompactJWT(tokenStr); err != nil {
 		return nil, err
@@ -101,7 +103,11 @@ func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureCl
 		return nil, fmt.Errorf("failed to extract tenant ID: %w", err)
 	}
 
-	issuerURL, err := workloadjwt.AzureIssuer(tenantID)
+	if expectedTenantID == "" || !strings.EqualFold(tenantID, expectedTenantID) {
+		return nil, fmt.Errorf("token tenant %q does not match install tenant", tenantID)
+	}
+
+	issuerURL, err := workloadjwt.AzureIssuer(strings.ToLower(expectedTenantID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to build issuer: %w", err)
 	}
@@ -213,19 +219,78 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 
 	reqCtx := ctx.Request.Context()
 
-	azClaims, err := s.verifyAzureJWT(reqCtx, req.Token)
-	if err != nil {
-		s.l.Warn("runner auth azure: JWT verification failed", zap.Error(err))
+	if req.RunnerID == "" {
+		s.l.Warn("runner auth azure: missing runner id")
 		ctx.Error(stderr.ErrAuthentication{
 			Err:         errors.New("authentication failed"),
-			Description: "failed to verify Azure identity token",
+			Description: azureTokenVerificationFailed,
+		})
+		ctx.Abort()
+		return
+	}
+
+	runner, err := s.getRunnerWithGroup(reqCtx, req.RunnerID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.l.Warn("runner auth azure: runner not found", zap.String("runner_id", req.RunnerID))
+		} else {
+			s.l.Error("runner auth azure: failed to get runner", zap.String("runner_id", req.RunnerID), zap.Error(err))
+		}
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: azureTokenVerificationFailed,
+		})
+		ctx.Abort()
+		return
+	}
+	metricTags["runner_id"] = runner.ID
+
+	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
+	if err != nil {
+		s.l.Warn("runner auth azure: failed to get install for runner",
+			zap.String("runner_id", runner.ID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: azureTokenVerificationFailed,
+		})
+		ctx.Abort()
+		return
+	}
+	metricTags["install_id"] = install.ID
+	metricTags["install_name"] = install.Name
+	metricTags["org_id"] = install.OrgID
+
+	outputs, err := s.getAzureStackOutputs(reqCtx, install)
+	if err != nil {
+		s.l.Warn("runner auth azure: failed to get azure stack outputs",
+			zap.String("runner_id", runner.ID),
+			zap.String("install_id", install.ID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: azureTokenVerificationFailed,
+		})
+		ctx.Abort()
+		return
+	}
+
+	azClaims, err := s.verifyAzureJWT(reqCtx, req.Token, outputs.SubscriptionTenantID)
+	if err != nil {
+		s.l.Warn("runner auth azure: JWT verification failed",
+			zap.String("runner_id", runner.ID),
+			zap.String("install_id", install.ID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: azureTokenVerificationFailed,
 		})
 		ctx.Abort()
 		return
 	}
 	metricTags["audience"] = azClaims.Audience
 
-	runnerID, subscriptionID, miridInstallID, err := resolveAzureRunnerIdentity(azClaims, req.RunnerID)
+	runnerID, subscriptionID, miridInstallID, err := resolveAzureRunnerIdentity(azClaims, runner.ID)
 	if err != nil {
 		s.l.Warn("runner auth azure: failed to resolve runner identity",
 			zap.String("xms_mirid", azClaims.XMSMirID),
@@ -237,38 +302,6 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-
-	runner, err := s.getRunnerWithGroup(reqCtx, runnerID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.l.Warn("runner auth azure: runner not found", zap.String("runner_id", runnerID))
-		} else {
-			s.l.Error("runner auth azure: failed to get runner", zap.String("runner_id", runnerID), zap.Error(err))
-		}
-		ctx.Error(stderr.ErrAuthentication{
-			Err:         errors.New("authentication failed"),
-			Description: "runner not recognized",
-		})
-		ctx.Abort()
-		return
-	}
-	metricTags["runner_id"] = runner.ID
-
-	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
-	if err != nil {
-		s.l.Warn("runner auth azure: failed to get install for runner",
-			zap.String("runner_id", runnerID),
-			zap.Error(err))
-		ctx.Error(stderr.ErrAuthentication{
-			Err:         errors.New("authentication failed"),
-			Description: "runner not associated with an install",
-		})
-		ctx.Abort()
-		return
-	}
-	metricTags["install_id"] = install.ID
-	metricTags["install_name"] = install.Name
-	metricTags["org_id"] = install.OrgID
 
 	if err := bindAzureRunnerInstall(install.ID, miridInstallID); err != nil {
 		s.l.Warn("runner auth azure: vmss install mismatch",
@@ -285,7 +318,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.validateRunnerAzureIdentity(reqCtx, install, azClaims, subscriptionID); err != nil {
+	if err := matchAzureRunnerClaims(install.ID, outputs, azClaims, subscriptionID); err != nil {
 		s.l.Warn("runner auth azure: identity validation failed",
 			zap.String("runner_id", runnerID),
 			zap.String("install_id", install.ID),
@@ -335,17 +368,21 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 	})
 }
 
-func (s *service) validateRunnerAzureIdentity(ctx context.Context, install *app.Install, claims *azureClaims, subscriptionID string) error {
+func (s *service) getAzureStackOutputs(ctx context.Context, install *app.Install) (*app.AzureStackOutputs, error) {
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {
-		return fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)
+		return nil, fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)
 	}
 
-	if installStack.InstallStackOutputs.AzureStackOutputs == nil {
-		return fmt.Errorf("install %s does not have Azure stack outputs configured", install.ID)
+	outputs := installStack.InstallStackOutputs.AzureStackOutputs
+	if outputs == nil {
+		return nil, fmt.Errorf("install %s does not have Azure stack outputs configured", install.ID)
+	}
+	if outputs.SubscriptionTenantID == "" {
+		return nil, fmt.Errorf("install %s does not have a subscription tenant ID in stack outputs", install.ID)
 	}
 
-	return matchAzureRunnerClaims(install.ID, installStack.InstallStackOutputs.AzureStackOutputs, claims, subscriptionID)
+	return outputs, nil
 }
 
 func matchAzureRunnerClaims(installID string, outputs *app.AzureStackOutputs, claims *azureClaims, subscriptionID string) error {
@@ -354,7 +391,7 @@ func matchAzureRunnerClaims(installID string, outputs *app.AzureStackOutputs, cl
 		return fmt.Errorf("install %s does not have a subscription tenant ID in stack outputs", installID)
 	}
 
-	if claims.TenantID != expectedTenantID {
+	if !strings.EqualFold(claims.TenantID, expectedTenantID) {
 		return fmt.Errorf("tenant ID mismatch: got %s, expected %s", claims.TenantID, expectedTenantID)
 	}
 

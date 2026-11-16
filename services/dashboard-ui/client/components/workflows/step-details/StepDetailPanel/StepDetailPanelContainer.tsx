@@ -1,15 +1,25 @@
 import { useSearchParams } from 'react-router'
-import { useCallback, useContext, useEffect, type ReactNode } from 'react'
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Loading } from '@/components/common/Loading'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { useOrg } from '@/hooks/use-org'
+import { usePanelVisibility } from '@/hooks/use-panel-visibility'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { getWorkflowStep } from '@/lib'
-import { InstallAppConfigContext, InstallAppConfigProvider } from '@/providers/install-app-config-provider'
+import {
+  InstallAppConfigContext,
+  InstallAppConfigProvider,
+} from '@/providers/install-app-config-provider'
 import { InstallContext, InstallProvider } from '@/providers/install-provider'
 import { hasPanelKey } from '@/providers/surfaces-provider'
 import type { TWorkflowStep } from '@/types'
@@ -23,6 +33,8 @@ import { VerifyHealthStepDetails } from '../verify-health-details'
 import { SyncSecretsStepDetails } from '../SyncSecretsStepDetails'
 import { StepTitle } from '../StepTitle'
 import { StepDetailPanel } from './StepDetailPanel'
+
+const STEP_FINISHED_POLL_GRACE_MS = 2 * 60_000
 
 type TPanelSize = IPanel['size']
 
@@ -111,6 +123,8 @@ export const StepDetailPanelContainer = ({
   ...props
 }: IStepDetailPanelContainer) => {
   const { org } = useOrg()
+  const isPanelTop = usePanelVisibility()
+  const finishedAtRef = useRef<number | null>(null)
 
   const { data: step = initStep } = useQuery<TWorkflowStep>({
     queryKey: [
@@ -126,8 +140,15 @@ export const StepDetailPanelContainer = ({
         workflowStepId: initStep.id,
       }),
     refetchInterval: (query) => {
-      if (!shouldPoll) return false
-      if (query.state.data?.finished) return 30_000
+      if (!shouldPoll || !isPanelTop) return false
+      if (query.state.data?.finished) {
+        if (finishedAtRef.current === null) finishedAtRef.current = Date.now()
+        if (Date.now() - finishedAtRef.current > STEP_FINISHED_POLL_GRACE_MS) {
+          return false
+        }
+        return 30_000
+      }
+      finishedAtRef.current = null
       if (!query.state.data?.step_target_type) return 1_500
       return pollInterval
     },

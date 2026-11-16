@@ -6,16 +6,15 @@ import (
 	"fmt"
 	"strings"
 
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-func (s *Helpers) validateResolvePlan(ctx context.Context, db *gorm.DB, st *installAlignmentState, res *InstallAlignmentResource, approvalID string, allowUnresponded bool) (*alignmentApproval, error) {
+func (s *Helpers) validateResolvePlan(ctx context.Context, st *installAlignmentState, res *InstallAlignmentResource, approvalID string, allowUnresponded bool) (*alignmentApproval, error) {
 	var approval app.WorkflowStepApproval
-	err := db.WithContext(ctx).Preload("Response").Preload("InstallWorkflowStep").
+	err := s.db.WithContext(ctx).Preload("Response").Preload("InstallWorkflowStep").
 		Where(app.WorkflowStepApproval{ID: approvalID, OrgID: st.install.OrgID}).First(&approval).Error
 	if err != nil {
 		if isNotFound(err) {
@@ -24,7 +23,7 @@ func (s *Helpers) validateResolvePlan(ctx context.Context, db *gorm.DB, st *inst
 		return nil, fmt.Errorf("unable to get approved plan: %w", err)
 	}
 	var wf app.Workflow
-	err = db.WithContext(ctx).Where(app.Workflow{ID: approval.InstallWorkflowStep.InstallWorkflowID, OrgID: st.install.OrgID,
+	err = s.db.WithContext(ctx).Where(app.Workflow{ID: approval.InstallWorkflowStep.InstallWorkflowID, OrgID: st.install.OrgID,
 		OwnerID: st.install.ID, OwnerType: "installs"}).First(&wf).Error
 	if err != nil {
 		if isNotFound(err) {
@@ -52,7 +51,7 @@ func (s *Helpers) validateResolvePlan(ctx context.Context, db *gorm.DB, st *inst
 			return nil, invalid("the plan does not belong to this component")
 		}
 		var deploy app.InstallDeploy
-		if err := db.WithContext(ctx).Where(app.InstallDeploy{ID: approval.OwnerID, OrgID: st.install.OrgID,
+		if err := s.db.WithContext(ctx).Where(app.InstallDeploy{ID: approval.OwnerID, OrgID: st.install.OrgID,
 			InstallComponentID: res.ID}).First(&deploy).Error; err != nil {
 			if isNotFound(err) {
 				return nil, invalid("the plan does not belong to this component")
@@ -67,7 +66,7 @@ func (s *Helpers) validateResolvePlan(ctx context.Context, db *gorm.DB, st *inst
 			return nil, invalid("the plan does not belong to this sandbox")
 		}
 		var run app.InstallSandboxRun
-		if err := db.WithContext(ctx).Where(app.InstallSandboxRun{ID: approval.OwnerID, OrgID: st.install.OrgID,
+		if err := s.db.WithContext(ctx).Where(app.InstallSandboxRun{ID: approval.OwnerID, OrgID: st.install.OrgID,
 			InstallID: st.install.ID}).First(&run).Error; err != nil {
 			if isNotFound(err) {
 				return nil, invalid("the plan does not belong to this sandbox")
@@ -126,7 +125,7 @@ func (s *Helpers) findApprovedResolvePlan(ctx context.Context, st *installAlignm
 		return nil, fmt.Errorf("unable to find approved plans: %w", err)
 	}
 	for _, id := range ids {
-		aa, err := s.validateResolvePlan(ctx, s.db, st, res, id, false)
+		aa, err := s.validateResolvePlan(ctx, st, res, id, false)
 		if err == nil {
 			return aa, nil
 		}
@@ -139,14 +138,14 @@ func (s *Helpers) findApprovedResolvePlan(ctx context.Context, st *installAlignm
 	return nil, nil
 }
 
-func (s *Helpers) ensureResolvePlanApproved(ctx context.Context, tx *gorm.DB, approvalID string) (*app.WorkflowStepApprovalResponse, error) {
+func (s *Helpers) ensureResolvePlanApproved(ctx context.Context, approvalID string) (*app.WorkflowStepApprovalResponse, error) {
 	var locked app.WorkflowStepApproval
-	if err := tx.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE"}).Select("id").
+	if err := s.db.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE"}).Select("id").
 		Where(app.WorkflowStepApproval{ID: approvalID}).First(&locked).Error; err != nil {
 		return nil, fmt.Errorf("unable to lock approval: %w", err)
 	}
 	var existing app.WorkflowStepApprovalResponse
-	err := tx.WithContext(ctx).Where(app.WorkflowStepApprovalResponse{InstallWorkflowStepApprovalID: approvalID}).First(&existing).Error
+	err := s.db.WithContext(ctx).Where(app.WorkflowStepApprovalResponse{InstallWorkflowStepApprovalID: approvalID}).First(&existing).Error
 	if err == nil {
 		if existing.Type != app.WorkflowStepApprovalResponseTypeApprove || strings.HasPrefix(existing.Note, "auto-approved") {
 			return nil, stderr.ErrUser{Err: fmt.Errorf("plan %s was not explicitly approved", approvalID), Description: "the plan was not explicitly approved"}
@@ -161,7 +160,7 @@ func (s *Helpers) ensureResolvePlanApproved(ctx context.Context, tx *gorm.DB, ap
 		Type:                          app.WorkflowStepApprovalResponseTypeApprove,
 		Note:                          "approved via resolve drift",
 	}
-	if err := tx.WithContext(ctx).Create(&response).Error; err != nil {
+	if err := s.db.WithContext(ctx).Create(&response).Error; err != nil {
 		return nil, fmt.Errorf("unable to create approval response: %w", err)
 	}
 	return &response, nil

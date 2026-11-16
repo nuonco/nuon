@@ -17,6 +17,11 @@ type Opts struct {
 	CreateUniqueIndexTmpl string
 	CreatePKIndexTmpl     string
 	DropIndexTmpl         string
+
+	CreateIndexConcurrentlyTmpl       string
+	CreateUniqueIndexConcurrentlyTmpl string
+	DropIndexConcurrentlyTmpl         string
+	InvalidIndexSQL                   string
 }
 
 func NewOpts() *Opts {
@@ -28,6 +33,15 @@ func NewOpts() *Opts {
 		CreateUniqueIndexTmpl: "CREATE UNIQUE INDEX ? ON ? (?)",
 		CreatePKIndexTmpl:     "CREATE PRIMARY KEY INDEX ? ON ? (?)",
 		CreateIndexTmpl:       "CREATE INDEX ? ON ? (?)",
+
+		CreateIndexConcurrentlyTmpl:       "CREATE INDEX CONCURRENTLY ? ON ? (?)",
+		CreateUniqueIndexConcurrentlyTmpl: "CREATE UNIQUE INDEX CONCURRENTLY ? ON ? (?)",
+		DropIndexConcurrentlyTmpl:         "DROP INDEX CONCURRENTLY IF EXISTS ?",
+		InvalidIndexSQL: `SELECT EXISTS (
+			SELECT 1 FROM pg_index i
+			JOIN pg_class c ON c.oid = i.indexrelid
+			WHERE c.relname = ? AND NOT i.indisvalid
+		)`,
 	}
 }
 

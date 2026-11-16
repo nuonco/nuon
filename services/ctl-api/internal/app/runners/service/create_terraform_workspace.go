@@ -41,6 +41,10 @@ func (s *service) CreateTerraformWorkspace(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
+	if err := s.workspaceOwnerAllowed(ctx, req.OwnerType, req.OwnerID); err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	workspace := app.TerraformWorkspace{
 		OwnerID:   req.OwnerID,

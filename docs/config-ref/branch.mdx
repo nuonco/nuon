@@ -26,7 +26,7 @@ title: 'Branch'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`repo`**<br/>string | repository identifier Identifier of the connected repository configured in the Nuon platform | **✅ Required** | `"my-repo"`, `"production-infrastructure"` |
-| **`directory`**<br/>string | directory path Path within the repository to the configuration files | **✅ Required** | `"terraform"`, `"infra/terraform"` |
+| **`directory`**<br/>string | directory path Path within the repository to the configuration files. For component and sandbox sources, this is both the build root and the Git change-detection boundary; dependencies outside it a... | **✅ Required** | `"terraform"`, `"infra/terraform"` |
 | **`branch`**<br/>string | Git branch Git branch to checkout and use for deployments | **✅ Required** | `"main"`, `"develop"`, `"production"` |
 
 ### `public_repo`
@@ -34,7 +34,7 @@ title: 'Branch'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`repo`**<br/>string | repository URL HTTPS URL to the public Git repository | **✅ Required** | `"https://github.com/user/repo.git"`, `"https://github.com/user/terraform-modules.git"` |
-| **`directory`**<br/>string | directory path Path within the repository to the configuration files | **✅ Required** | `"terraform"`, `"infra/terraform"` |
+| **`directory`**<br/>string | directory path Path within the repository to the configuration files. For component and sandbox sources, this is both the build root and the Git change-detection boundary; dependencies outside it a... | **✅ Required** | `"terraform"`, `"infra/terraform"` |
 | **`branch`**<br/>string | Git branch Git branch to checkout and use for deployments | **✅ Required** | `"main"`, `"develop"`, `"production"` |
 
 ### `install_groups`

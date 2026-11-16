@@ -8,6 +8,7 @@ import { fieldErrorMessage } from './field-error'
 export interface IFormRadioGroupOption {
   value: string
   label: ReactNode
+  description?: ReactNode
   disabled?: boolean
 }
 
@@ -46,7 +47,26 @@ export const FormRadioGroup = ({
             onChange={() => field.handleChange(option.value)}
             onBlur={field.handleBlur}
             disabled={disabled || option.disabled}
-            labelProps={{ labelText: option.label }}
+            labelProps={{
+              className: option.description != null ? 'items-start' : undefined,
+              labelText:
+                option.description != null ? (
+                  <>
+                    <Text variant="body" weight="strong">
+                      {option.label}
+                    </Text>
+                    <Text variant="subtext" theme="neutral">
+                      {option.description}
+                    </Text>
+                  </>
+                ) : (
+                  option.label
+                ),
+              labelTextProps:
+                option.description != null
+                  ? { as: 'div', className: 'flex flex-col gap-0.5' }
+                  : undefined,
+            }}
           />
         ))}
       </div>

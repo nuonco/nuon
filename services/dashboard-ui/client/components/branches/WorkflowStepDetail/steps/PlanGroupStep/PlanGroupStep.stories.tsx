@@ -61,7 +61,7 @@ const mixedSection: DiffSectionData = {
     {
       name: 'legacy_worker',
       op: 'remove',
-      componentType: 'docker_build',
+      componentType: 'external_image',
       fields: [{ key: 'image', op: 'remove', diff: '- image: legacy:1' }],
     },
   ],
@@ -183,7 +183,7 @@ const excludedSections: DiffSectionData[] = [
 
 const actions = (
   <>
-    <Button variant="danger">Skip</Button>
+    <Button variant="secondary">Skip</Button>
     <Button variant="primary">Approve</Button>
   </>
 )

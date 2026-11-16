@@ -22,11 +22,6 @@ interface IComponentTypeConfig {
 }
 
 const COMPONENT_TYPES: Record<TComponentTypeValue, IComponentTypeConfig> = {
-  docker_build: {
-    abbr: 'Docker',
-    brand: 'Docker',
-    name: 'Docker',
-  },
   external_image: {
     abbr: 'OCI',
     brand: 'OCI',

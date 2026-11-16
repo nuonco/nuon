@@ -14,7 +14,6 @@ You can pass in a valid source argument to render within a specific config file:
 - installer
 - sandbox
 - runner
-- docker_build
 - container_image
 - helm
 - terraform

@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/generic"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -118,7 +119,7 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component build composite error: %w", err)
 	}
-	if jobCompositeError != nil || bld.RunnerJob.ID != "" {
+	if jobCompositeError != nil && (bld.CompositeError == nil || bld.CompositeError.Type == generic.GenericErrorType || jobCompositeError.Type != generic.GenericErrorType) {
 		bld.CompositeError = jobCompositeError
 	}
 

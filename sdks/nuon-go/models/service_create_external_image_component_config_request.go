@@ -32,7 +32,7 @@ type ServiceCreateExternalImageComponentConfigRequest struct {
 	// azure acr image config
 	AzureAcrImageConfig *ServiceAzureACRImageConfigRequest `json:"azure_acr_image_config,omitempty"`
 
-	// Duration string for build operations (e.g., "30m", "1h")
+	// Duration string for build operations (e.g., "10m", "30m")
 	BuildTimeout string `json:"build_timeout,omitempty"`
 
 	// checksum

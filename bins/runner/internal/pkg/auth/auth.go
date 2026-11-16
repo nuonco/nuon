@@ -55,6 +55,7 @@ func New(params Params) (*Token, error) {
 		zap.String("runner_id", result.RunnerID),
 		zap.String("instance_id", result.InstanceID),
 		zap.Time("expires_at", result.ExpiresAt),
+		zap.String("audience", result.Audience),
 	)
 
 	return &Token{Value: result.Token, ExpiresAt: result.ExpiresAt}, nil

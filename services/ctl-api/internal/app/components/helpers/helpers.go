@@ -36,6 +36,16 @@ func New(params Params) *Helpers {
 	}
 }
 
+func (h *Helpers) WithDB(db *gorm.DB) *Helpers {
+	scoped := *h
+	scoped.db = db
+	return &scoped
+}
+
 func (h *Helpers) QueueClient() *queueclient.Client {
 	return h.queueClient
+}
+
+func (h *Helpers) LegacyImageAuthEnabled() bool {
+	return h.cfg.LegacyImageAuthEnabled
 }

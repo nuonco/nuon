@@ -11,18 +11,8 @@ import (
 )
 
 func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Component, error) {
-	return s.getComponent(ctx, s.db, cmpID)
-}
-
-// GetComponentInTx reads the component through the caller's transaction so
-// config connections created within that transaction are visible.
-func (s *Helpers) GetComponentInTx(ctx context.Context, tx *gorm.DB, cmpID string) (*app.Component, error) {
-	return s.getComponent(ctx, tx, cmpID)
-}
-
-func (s *Helpers) getComponent(ctx context.Context, db *gorm.DB, cmpID string) (*app.Component, error) {
 	cmp := app.Component{}
-	res := db.WithContext(ctx).
+	res := s.db.WithContext(ctx).
 		// preload org
 		Preload("Org").
 		Preload("Org.RunnerGroup").
@@ -45,12 +35,6 @@ func (s *Helpers) getComponent(ctx context.Context, db *gorm.DB, cmpID string) (
 		Preload("ComponentConfigs.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-
-		// preload all docker configs
-		Preload("ComponentConfigs.DockerBuildComponentConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").

@@ -121,6 +121,8 @@ type AppBranchRun struct {
 
 	Request *WorkflowRequest `json:"-" gorm:"column:request;type:jsonb;serializer:json" swaggerignore:"true" temporaljson:"request,omitzero,omitempty"`
 
+	SourceRefs labels.Labels `json:"-" gorm:"type:jsonb" swaggerignore:"true" temporaljson:"source_refs,omitzero,omitempty"`
+
 	AwaitingApproval bool `json:"awaiting_approval,omitzero" gorm:"-" temporaljson:"awaiting_approval,omitzero,omitempty"`
 
 	labels.Labeled

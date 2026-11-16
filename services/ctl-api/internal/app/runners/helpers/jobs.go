@@ -23,10 +23,9 @@ const (
 func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duration {
 	timeouts := map[app.RunnerJobType]time.Duration{
 		// build timeouts
-		app.RunnerJobTypeDockerBuild:          time.Minute * 60,
-		app.RunnerJobTypeContainerImageBuild:  time.Minute * 15,
+		app.RunnerJobTypeContainerImageBuild:  time.Minute * 10,
 		app.RunnerJobTypeHelmChartBuild:       time.Minute * 5,
-		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 15,
+		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 10,
 		app.RunnerJobTypePulumiBuild:          time.Minute * 5,
 
 		// sync timeouts

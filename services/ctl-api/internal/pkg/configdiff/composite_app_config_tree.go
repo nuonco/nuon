@@ -154,15 +154,14 @@ func (in *compositeTreeInputs) spliceComponents(root *pkgdiff.Diff) {
 
 	for _, name := range ordered {
 		baselineID := in.Baselines.Fallback
-		explicit := ""
+		hasBaseline := false
 		if id := in.ComponentIDsByName[name]; id != "" {
-			explicit = in.Baselines.Components[id]
-		}
-		if explicit != "" {
-			baselineID = explicit
+			if explicit, ok := in.Baselines.Components[id]; ok {
+				baselineID, hasBaseline = explicit, true
+			}
 		}
 		if baselineID == in.Baselines.Fallback {
-			if componentNode(root, name) != nil {
+			if componentNode(root, name) != nil || hasBaseline {
 				continue
 			}
 			node := in.componentOnOtherBaseline(name)

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -32,7 +31,7 @@ func (a *Activities) HydrateLogStream(ctx context.Context, req *HydrateLogStream
 		return nil, generics.TemporalGormError(res.Error, fmt.Sprintf("unable to get log stream %s", req.LogStreamID))
 	}
 
-	token, err := a.acctClient.CreateToken(ctx, account.ServiceAccountEmail(stream.ID), queueLogStreamTokenDuration)
+	token, err := a.acctClient.IssueLogStreamToken(ctx, stream.OrgID, stream.ID, queueLogStreamTokenDuration)
 	if err != nil {
 		return nil, fmt.Errorf("create log stream token: %w", err)
 	}

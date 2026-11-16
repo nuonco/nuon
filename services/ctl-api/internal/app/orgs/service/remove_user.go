@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/credentialcleanup"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -61,6 +63,17 @@ func (s *service) RemoveUser(ctx *gin.Context) {
 		return authz.New(authz.Params{DB: tx}).RemoveAccountOrgRoles(ctx, org.ID, req.UserID)
 	}); err != nil {
 		ctx.Error(err)
+		return
+	}
+	if err := s.helpers.EnqueueOrgSignal(ctx, helpers.EnqueueOrgSignalParams{
+		OrgID: org.ID,
+		Signal: credentialcleanup.Request{
+			AccountID: req.UserID,
+			OrgID:     org.ID,
+		}.Signal(),
+		IdempotencyKey: credentialcleanup.Request{AccountID: req.UserID, OrgID: org.ID}.IdempotencyKey(),
+	}); err != nil {
+		ctx.Error(fmt.Errorf("enqueue credential cleanup: %w", err))
 		return
 	}
 

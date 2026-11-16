@@ -19,6 +19,7 @@ export interface IAppConfigDiffCard {
   headerAction?: ReactNode
   isLoading?: boolean
   isPending?: boolean
+  isError?: boolean
   isOpen?: boolean
   focus?: TConfigDiffFocus | null
   className?: string
@@ -34,6 +35,7 @@ export const AppConfigDiffCard = ({
   headerAction,
   isLoading = false,
   isPending = false,
+  isError = false,
   isOpen = true,
   focus,
   className,
@@ -41,6 +43,7 @@ export const AppConfigDiffCard = ({
   expandId = 'config-changes',
 }: IAppConfigDiffCard) => {
   const showPending = isPending && sections.length === 0
+  const showError = isError && sections.length === 0
 
   return (
     <Expand
@@ -66,7 +69,7 @@ export const AppConfigDiffCard = ({
               <Text variant="subtext" theme="neutral">
                 Pending
               </Text>
-            ) : !isLoading && presentation === 'diff' ? (
+            ) : !isLoading && !showError && presentation === 'diff' ? (
               <ChangeCountSummary
                 added={summary?.added ?? 0}
                 updated={summary?.changed ?? 0}
@@ -85,6 +88,15 @@ export const AppConfigDiffCard = ({
             <EmptyState
               emptyTitle="Calculating config diff"
               emptyMessage="Changes appear after the app config builds."
+              variant="diagram"
+              size="sm"
+            />
+          </div>
+        ) : showError ? (
+          <div className="px-4 py-3 text-center">
+            <EmptyState
+              emptyTitle="Config diff failed"
+              emptyMessage="Unable to load the config changes."
               variant="diagram"
               size="sm"
             />

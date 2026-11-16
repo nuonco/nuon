@@ -143,6 +143,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	}); err != nil {
 		return nil, fmt.Errorf("unable to mark step %s as skipped: %w", req.StepID, err)
 	}
+	executeworkflowstepgroup.NotifyOnSkip(ctx, step)
 
 	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
 		if sg, ok := step.QueueSignal.Signal.(signal.SignalWithSkipGroup); ok && sg.SkipGroup() {
@@ -320,6 +321,7 @@ func (s *Signal) skipStepResidentLegacy(ctx workflow.Context, req SkipStepReques
 		}); err != nil {
 			return nil, fmt.Errorf("unable to mark step %s as skipped: %w", step.ID, err)
 		}
+		executeworkflowstepgroup.NotifyOnSkip(ctx, step)
 		if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowStepResultDirective(ctx, workflowactivities.UpdateFlowStepResultDirectiveRequest{
 			StepID:    step.ID,
 			Directive: string(skipDirective),

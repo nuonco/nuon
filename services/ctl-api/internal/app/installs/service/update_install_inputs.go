@@ -320,11 +320,11 @@ func splitCSV(s string) []string {
 }
 
 func (s *service) getLatestInstallInputs(ctx context.Context, installID string) (*app.InstallInputs, error) {
-	return s.getLatestInstallInputsTx(ctx, s.db, installID)
+	return s.helpers.LatestInstallInputs(ctx, installID)
 }
 
 func (s *service) getLatestInstallInputsTx(ctx context.Context, db *gorm.DB, installID string) (*app.InstallInputs, error) {
-	return s.helpers.LatestInstallInputs(ctx, db, installID)
+	return s.helpers.WithDB(db).LatestInstallInputs(ctx, installID)
 }
 
 func (s *service) getLatestAppInputConfig(ctx context.Context, appID string) (*app.AppInputConfig, error) {

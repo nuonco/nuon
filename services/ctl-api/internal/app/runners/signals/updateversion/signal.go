@@ -53,6 +53,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get runner")
 	}
 
+	ctx = cctx.SetOrgIDWorkflowContext(ctx, runner.OrgID)
+	ctx = cctx.SetAccountIDWorkflowContext(ctx, runner.CreatedByID)
+
 	// Create a logstream tied to the healthcheck
 	logStream, err := activities.AwaitCreateLogStreamByOperationID(ctx, s.HealthCheckID)
 	if err != nil {

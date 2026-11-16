@@ -84,7 +84,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	// flight; terminal statuses still land synchronously and in order.
 	// The deferred Close() is a guard against panics — WriteTerminal
 	// is idempotent (stopOnce) so the normal path is unaffected.
-	coalescer := newStatusCoalescer(job.ID, execution.ID, l, j.writeJobExecutionStatus)
+	coalescer := newStatusCoalescer(ctx, job.ID, execution.ID, l, j.writeJobExecutionStatus)
 	j.attachCoalescer(execution.ID, coalescer)
 	defer func() {
 		coalescer.Close()

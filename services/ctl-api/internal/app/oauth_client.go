@@ -1,12 +1,16 @@
 package app
 
 import (
+	"net"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/nuonauth"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 )
 
@@ -33,13 +37,47 @@ func (a *OAuthClient) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AllowsRedirectURI reports whether uri exactly matches one of the client's
-// registered redirect URIs.
+func (a *OAuthClient) IsNuonCLI() bool {
+	return a.ID == nuonauth.CLIClientID
+}
+
+// AllowsRedirectURI reports whether uri matches one of the client's registered
+// redirect URIs. The Nuon CLI client ignores the port on loopback redirects so
+// it can listen on 127.0.0.1:0 (RFC 8252). Every other client is an exact match.
 func (a *OAuthClient) AllowsRedirectURI(uri string) bool {
-	for _, r := range a.RedirectURIs {
-		if r == uri {
+	for _, registered := range a.RedirectURIs {
+		if registered == uri {
+			return true
+		}
+		if a.IsNuonCLI() && loopbackRedirectMatch(registered, uri) {
 			return true
 		}
 	}
 	return false
+}
+
+func loopbackRedirectMatch(registered, requested string) bool {
+	reg, err := url.Parse(registered)
+	if err != nil {
+		return false
+	}
+	req, err := url.Parse(requested)
+	if err != nil {
+		return false
+	}
+	if reg.Scheme != "http" || req.Scheme != "http" {
+		return false
+	}
+	if reg.Path != req.Path || reg.RawQuery != "" || req.RawQuery != "" || reg.Fragment != "" || req.Fragment != "" {
+		return false
+	}
+	return isLoopbackHostname(reg.Hostname()) && isLoopbackHostname(req.Hostname())
+}
+
+func isLoopbackHostname(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }

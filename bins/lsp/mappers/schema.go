@@ -54,7 +54,6 @@ func BuildPropertyMap(schema *jsonschema.Schema) (map[string]map[string]*jsonsch
 func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hierarchicalMap map[string]map[string]*jsonschema.Schema, requiredMap map[string]map[string]bool, defsLookup map[string]*jsonschema.Schema) {
 	ignoredOneOffs := []string{
 		"component_type",
-		"docker_build",
 		"external_image",
 		"helm_chart",
 		"job",

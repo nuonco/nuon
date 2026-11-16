@@ -79,7 +79,10 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 				if len(role.Policies) != 1 {
 					return fmt.Errorf("legacy stack role has an unexpected policy")
 				}
-				perms := role.Policies[0].Permissions
+				perms, err := role.Policies[0].PermissionProjection()
+				if err != nil {
+					return err
+				}
 				api, hasAPI := perms[permissions.APIPermissionKey]
 				if hasAPI && (api == nil || *api != string(permissions.APIStack)) {
 					return fmt.Errorf("legacy stack role has an unexpected policy")
@@ -103,10 +106,22 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 		}
 		if binding.PrivateRoleID != nil {
 			var private app.Role
-			if err := tx.Select("id", "version").Where(app.Role{ID: *binding.PrivateRoleID}).Take(&private).Error; err != nil {
+			if err := tx.Preload("Policies").Where(app.Role{ID: *binding.PrivateRoleID}).Take(&private).Error; err != nil {
 				return fmt.Errorf("load stack private role: %w", err)
 			}
-			if private.Version >= app.RoleVersionV2 {
+			if private.HasPolicyDocument() {
+				api, enforced, err := APIFromRole(&private)
+				if err != nil {
+					return err
+				}
+				if enforced {
+					if api != permissions.APIStack {
+						return fmt.Errorf("stack role has an unexpected api restriction")
+					}
+					want.Version = app.RoleVersionV2
+					want.Policies[0].Permissions[permissions.APIPermissionKey] = generics.ToPtr(string(api))
+				}
+			} else if private.Version >= app.RoleVersionV2 {
 				want.Policies[0].Permissions[permissions.APIPermissionKey] = generics.ToPtr(string(permissions.APIStack))
 			}
 		}
@@ -115,22 +130,4 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 		}
 		return ensurePrivateRole(tx, accountID, want)
 	})
-}
-
-func DeleteStackInstallRoles(tx *gorm.DB, accountID string) error {
-	var roles []app.Role
-	if err := tx.Unscoped().Joins("JOIN account_roles ON account_roles.role_id = roles.id").
-		Where("account_roles.account_id = ?", accountID).Where(app.Role{RoleType: app.RoleTypeStack}).
-		Distinct("roles.*").Find(&roles).Error; err != nil {
-		return fmt.Errorf("load legacy stack roles for deletion: %w", err)
-	}
-	for _, role := range roles {
-		if err := validatePrivateRole(tx, accountID, role.OrgID.ValueString(), &role); err != nil {
-			return err
-		}
-		if err := deletePrivateRole(tx, accountID, role.ID); err != nil {
-			return err
-		}
-	}
-	return nil
 }

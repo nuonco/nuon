@@ -55,7 +55,7 @@ jobs:
       semver: ${{ steps.semver.outputs.nextStrict }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
@@ -69,7 +69,7 @@ jobs:
 
       - name: Determine next version
         id: semver
-        uses: ./.github/actions/cross-repo-semver
+        uses: $/.github/actions/cross-repo-semver
         with:
           sibling_repo: nuonco/mono
           token: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
@@ -88,12 +88,12 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
         with:
           sparse-checkout: .github/actions/await-ctl-api-integration
 
       - name: Await ctl-api integration
-        uses: ./.github/actions/await-ctl-api-integration
+        uses: $/.github/actions/await-ctl-api-integration
         with:
           sha: ${{ needs.tag.outputs.sha }}
           ref: ${{ github.event.inputs.branch }}
@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2
+        uses: rtCamp/action-slack-notify@v2.4.1
         env:
           SLACK_ICON_EMOJI: 🤖
           SLACK_USERNAME: github-bot
@@ -175,7 +175,7 @@ jobs:
         id: check
 
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2
+        uses: rtCamp/action-slack-notify@v2.4.1
         env:
           SLACK_ICON_EMOJI: 🤖
           SLACK_USERNAME: github-bot
@@ -189,7 +189,7 @@ jobs:
             *triggered by* - ${{ github.actor }}
 
       - name: Update datadog
-        uses: masci/datadog@v1
+        uses: masci/datadog@v1.9.4
         with:
           api-key: ${{ secrets.DATADOG_API_KEY }}
           api-url: "https://us5.datadoghq.com"

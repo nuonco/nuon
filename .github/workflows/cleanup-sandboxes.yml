@@ -23,10 +23,10 @@ jobs:
       DISABLE_GITHUB_OIDC: true
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
       - name: Setup nuonctl
-        uses: ./actions/setup-nuonctl
+        uses: $/actions/setup-nuonctl
 
       - name: Install aws-nuke
         run: |

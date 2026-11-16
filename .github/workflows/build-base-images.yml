@@ -16,6 +16,15 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+  actions: read
+
 jobs:
   build-base:
     name: build-base
@@ -26,12 +35,12 @@ jobs:
       NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
       DISABLE_GITHUB_OIDC: ${{ inputs.disable_github_oidc }}
     steps:
-      - uses: FranzDiebold/github-env-vars-action@v2
+      - uses: FranzDiebold/github-env-vars-action@v2.10.0
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
       - name: Setup nuonctl
-        uses: ./actions/setup-nuonctl
+        uses: $/actions/setup-nuonctl
 
       - name: Use nuon buildkit in infra-shared-ci
         if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}

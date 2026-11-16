@@ -47,6 +47,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	}); err != nil {
 		return nil, fmt.Errorf("unable to mark step %s as skipped: %w", req.StepID, err)
 	}
+	NotifyOnSkip(ctx, step)
 
 	// Determine the directive: skip-group if the signal declares it, otherwise continue.
 	skipDirective := skipStepDirective(step)
@@ -116,14 +117,36 @@ func SkipSettledStep(ctx workflow.Context, step *app.WorkflowStep) error {
 			return err
 		}
 	}
-	return statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusUserSkipped,
 			StatusHumanDescription: "Step was skipped by the user.",
 			Metadata:               map[string]any{"skipped": true},
 		},
-	})
+	}); err != nil {
+		return err
+	}
+	NotifyOnSkip(ctx, step)
+	return nil
+}
+
+// NotifyOnSkip runs a signal's OnSkip hook. The version gate keeps replays of
+// skips that completed before the hook was called from scheduling new work.
+func NotifyOnSkip(ctx workflow.Context, step *app.WorkflowStep) {
+	if workflow.GetVersion(ctx, "skip-notifies-signal-on-skip-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return
+	}
+	if step == nil || step.QueueSignal == nil || step.QueueSignal.Signal == nil {
+		return
+	}
+	hook, ok := step.QueueSignal.Signal.(signal.SignalWithOnSkip)
+	if !ok {
+		return
+	}
+	if err := hook.OnSkip(ctx); err != nil {
+		workflow.GetLogger(ctx).Warn("OnSkip hook failed", "error", err)
+	}
 }
 
 func skipStepDirective(step *app.WorkflowStep) directive.Step {

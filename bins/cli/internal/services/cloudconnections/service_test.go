@@ -135,7 +135,9 @@ func TestCreateNextSteps(t *testing.T) {
 				Setup: &models.ServiceSetupResponse{IssuerURL: "https://api.example.com"},
 			}
 			api := &creationClient{connection: connection, dashboard: tc.dashboard, configErr: tc.configErr}
-			require.NoError(t, New(api, nil).Create(context.Background(), "acme-production", "aws", "123456789012", "arn:aws:iam::123456789012:role/nuon", "us-west-2", "stacks", tc.asJSON))
+			require.NoError(t, New(api, nil).Create(context.Background(), &models.ServiceCreateRequest{
+				Name: "acme-production", Platform: "aws", TargetID: "123456789012", Principal: "arn:aws:iam::123456789012:role/nuon", DefaultRegion: "us-west-2", Preset: models.AppCloudConnectionPresetStacks,
+			}, tc.asJSON))
 			bytes, err := os.ReadFile(output.Name())
 			require.NoError(t, err)
 			if tc.asJSON {

@@ -109,7 +109,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		SignalOwnerType: "component_builds",
 	})
 	if err != nil {
-		return fmt.Errorf("unable to enqueue build signal: %w", err)
+		err = fmt.Errorf("unable to enqueue build signal: %w", err)
+		if workflow.GetVersion(ctx, "queuebuild-fail-build-on-enqueue-error-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return err
+		}
+		return activities.FailBuild(ctx, buildID, err)
 	}
 
 	return nil

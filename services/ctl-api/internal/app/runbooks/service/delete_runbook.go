@@ -41,14 +41,22 @@ func (s *service) DeleteRunbook(ctx *gin.Context) {
 		return
 	}
 
-	branchNames, err := s.branchesUsingRunbookAsPostDeploy(ctx, org.ID, appID, runbookID)
+	var runbook app.Runbook
+	if res := s.db.WithContext(ctx).
+		Where(app.Runbook{OrgID: org.ID, AppID: appID, ID: runbookID}).
+		First(&runbook); res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to get runbook: %w", res.Error))
+		return
+	}
+
+	branchNames, err := s.branchesUsingRunbookAsPostDeploy(ctx, org.ID, runbook.AppID, runbook.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 	if len(branchNames) > 0 {
 		ctx.Error(stderr.ErrConflict{
-			Err: fmt.Errorf("runbook %s is a post-deploy runbook on branch(es): %s", runbookID, strings.Join(branchNames, ", ")),
+			Err: fmt.Errorf("runbook %s is a post-deploy runbook on branch(es): %s", runbook.ID, strings.Join(branchNames, ", ")),
 			Description: fmt.Sprintf(
 				"this runbook runs after deploys on branch(es) %s. Remove it from those branches' post-deploy runbooks first, otherwise their next run would try to execute a deleted runbook.",
 				strings.Join(branchNames, ", "),
@@ -58,10 +66,14 @@ func (s *service) DeleteRunbook(ctx *gin.Context) {
 	}
 
 	res := s.db.WithContext(ctx).
-		Where(app.Runbook{OrgID: org.ID}).
-		Delete(&app.Runbook{}, "id = ?", runbookID)
+		Where(app.Runbook{OrgID: runbook.OrgID, AppID: runbook.AppID, ID: runbook.ID}).
+		Delete(&app.Runbook{})
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to delete runbook: %w", res.Error))
+		return
+	}
+	if res.RowsAffected == 0 {
+		ctx.Error(fmt.Errorf("unable to delete runbook: %w", gorm.ErrRecordNotFound))
 		return
 	}
 

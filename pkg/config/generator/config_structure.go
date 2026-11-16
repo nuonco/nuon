@@ -143,8 +143,6 @@ func (c *ConfigStructure) AddComponent(cfd ConfigFileDefinition) error {
 				cfd.Header = "terraform"
 			case config.HelmChartComponentType:
 				cfd.Header = "helm"
-			case config.DockerBuildComponentType:
-				cfd.Header = "docker-build"
 			case config.ContainerImageComponentType, config.ExternalImageComponentType:
 				cfd.Header = "container-image"
 			case config.KubernetesManifestComponentType:

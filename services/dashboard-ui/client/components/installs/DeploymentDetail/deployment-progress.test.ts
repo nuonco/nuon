@@ -6,6 +6,7 @@ import type {
   TWorkflowStep,
 } from '@/types'
 import {
+  deploymentBuildChanged,
   deploymentChangeDescription,
   deploymentOutcomes,
   deploymentStepContext,
@@ -492,6 +493,80 @@ test('template scope covers the resources a deployment touched', () => {
     ],
     components: [],
   })
+})
+
+test('a resource build changed only when its change group has two different builds', () => {
+  const record = {
+    ...deployment,
+    change_groups: [
+      {
+        id: 'wf-example-component-cmp-api',
+        scope: 'component',
+        label: 'Component',
+        resource_name: 'api',
+        summary: 'api',
+        changes: [
+          {
+            path: 'build',
+            operation: 'change',
+            previous_value: 'bld-old',
+            next_value: 'bld-new',
+          },
+        ],
+      },
+      {
+        id: 'wf-example-component-cmp-worker',
+        scope: 'component',
+        label: 'Component',
+        resource_name: 'worker',
+        summary: 'worker',
+        changes: [
+          {
+            path: 'build',
+            operation: 'change',
+            previous_value: 'bld-worker',
+            next_value: 'bld-worker',
+          },
+        ],
+      },
+      {
+        id: 'wf-example-component-cmp-billing',
+        scope: 'component',
+        label: 'Component',
+        resource_name: 'billing',
+        summary: 'billing',
+        changes: [
+          { path: 'build', operation: 'add', next_value: 'bld-billing' },
+        ],
+      },
+      {
+        id: 'wf-example-sandbox',
+        scope: 'sandbox',
+        label: 'Sandbox',
+        summary: 'Sandbox configuration changed',
+        changes: [
+          {
+            path: 'config',
+            operation: 'change',
+            previous_value: 'sbx-old',
+            next_value: 'sbx-new',
+          },
+          {
+            path: 'build',
+            operation: 'change',
+            previous_value: 'sbb-old',
+            next_value: 'sbb-new',
+          },
+        ],
+      },
+    ],
+  } satisfies TInstallDeploymentRecord
+  expect(deploymentBuildChanged(record, 'component', 'api')).toBe(true)
+  expect(deploymentBuildChanged(record, 'component', 'worker')).toBe(false)
+  expect(deploymentBuildChanged(record, 'component', 'billing')).toBe(false)
+  expect(deploymentBuildChanged(record, 'component', 'search')).toBe(false)
+  expect(deploymentBuildChanged(record, 'sandbox', 'sandbox')).toBe(true)
+  expect(deploymentBuildChanged(deployment, 'sandbox', 'sandbox')).toBe(false)
 })
 
 test('failed deployment context selects the failed step and only later unstarted work', () => {

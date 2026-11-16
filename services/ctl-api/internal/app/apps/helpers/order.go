@@ -21,10 +21,9 @@ func (h *Helpers) getDeployOrderFromGraph(ctx context.Context, grph graph.Graph[
 
 		typeOrder := map[app.ComponentType]int{
 			"external_image":   0,
-			"docker_build":     1,
-			"terraform_module": 2,
-			"helm_chart":       3,
-			"job":              4,
+			"terraform_module": 1,
+			"helm_chart":       2,
+			"job":              3,
 		}
 		aType := typeOrder[aNode.Type]
 		bType := typeOrder[bNode.Type]

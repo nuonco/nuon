@@ -52,6 +52,9 @@ func (s *service) getWorkspace(ctx *gin.Context, id string) (*app.TerraformWorks
 	if workspace == nil {
 		return nil, fmt.Errorf("workspace not found")
 	}
+	if err := s.workspaceOwnerAllowed(ctx, workspace.OwnerType, workspace.OwnerID); err != nil {
+		return nil, err
+	}
 
 	return workspace, nil
 }

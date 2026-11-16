@@ -95,13 +95,12 @@ func ToolForRunnerJob(runnerJob *app.RunnerJob) Tool {
 		app.RunnerJobTypePulumiBuild,
 		app.RunnerJobTypeSandboxPulumi:
 		return ToolPulumi
-	case app.RunnerJobTypeDockerBuild:
-		return ToolDocker
 	case app.RunnerJobTypeKubrenetesManifestDeploy,
 		app.RunnerJobTypeKubernetesManifestBuild:
 		return ToolKubernetes
 	case app.RunnerJobTypeContainerImageBuild,
-		app.RunnerJobTypeOCISync:
+		app.RunnerJobTypeOCISync,
+		app.RunnerJobTypeFetchImageMetadata:
 		return ToolOCI
 	default:
 		return ToolUnknown

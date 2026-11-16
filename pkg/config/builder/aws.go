@@ -13,7 +13,6 @@ func newAWSBuilder() *awsBuilder {
 		AttributeHelmCharts:    b.applyHelmCharts,
 		AttributeKubernetes:    b.applyKubernetes,
 		AttributeLambda:        b.applyLambda,
-		AttributeDockerImage:   b.applyDockerImage,
 		AttributeCustomScripts: b.applyCustomScripts,
 	}
 	return b
@@ -140,21 +139,6 @@ func (b *awsBuilder) applyLambda(cfg *config.AppConfig) {
 			PublicRepo: &config.PublicRepoConfig{
 				Repo:      sampleRepo,
 				Directory: "samples/lambda",
-				Branch:    sampleBranch,
-			},
-		},
-	})
-}
-
-func (b *awsBuilder) applyDockerImage(cfg *config.AppConfig) {
-	cfg.Components = append(cfg.Components, &config.Component{
-		Name: "sample-docker-build",
-		Type: config.DockerBuildComponentType,
-		DockerBuild: &config.DockerBuildComponentConfig{
-			Dockerfile: "Dockerfile",
-			PublicRepo: &config.PublicRepoConfig{
-				Repo:      sampleRepo,
-				Directory: "samples/docker-build",
 				Branch:    sampleBranch,
 			},
 		},

@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
@@ -78,6 +79,7 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		if err := s.helpers.MaybeEnqueueInitialHealthCheck(ctx, runnerID, process); err != nil {
 			s.l.Warn("unable to maybe enqueue initial health check", zap.String("process_id", req.ProcessID), zap.Error(err))
 		}
+		s.recordProcessToken(ctx, process, cctx.TokenIDFromContext(ctx))
 	}
 
 	runner, err := s.heartbeatGetRunner(ctx, runnerID)
@@ -131,6 +133,36 @@ func (s *service) heartbeatGetRunnerProcess(ctx context.Context, runnerID, proce
 	}
 
 	return &process, nil
+}
+
+func (s *service) recordProcessToken(ctx context.Context, process *app.RunnerProcess, tokenID string) {
+	if tokenID == "" || process.TokenID == tokenID {
+		return
+	}
+
+	if err := s.db.WithContext(ctx).
+		Model(&app.RunnerProcess{}).
+		Where(app.RunnerProcess{ID: process.ID}).
+		Update("token_id", tokenID).Error; err != nil {
+		s.l.Warn("unable to record runner process token", zap.String("process_id", process.ID), zap.Error(err))
+		return
+	}
+
+	if process.TokenID == "" {
+		return
+	}
+
+	revoked, err := s.helpers.RevokeReplacedToken(ctx, process.RunnerID, process.TokenID)
+	if err != nil {
+		s.l.Warn("unable to revoke replaced runner token", zap.String("process_id", process.ID), zap.Error(err))
+		return
+	}
+	if revoked > 0 {
+		s.l.Info("revoked replaced runner token",
+			zap.String("runner_id", process.RunnerID),
+			zap.String("process_id", process.ID),
+			zap.String("token_id", process.TokenID))
+	}
 }
 
 func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, req CreateRunnerHeartBeatRequest) (*app.RunnerHeartBeat, error) {

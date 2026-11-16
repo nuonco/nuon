@@ -30,6 +30,12 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get gitSrc")
 	}
+	if workflow.GetVersion(ctx, "build-source-identity-plan-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		build, err = activities.AwaitGetComponentBuildWithConfigByID(ctx, req.ComponentBuildID)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	dstCfg, err := activities.AwaitGetComponentOCIRegistryRepositoryByComponentID(ctx, cmp.ID)
 	if err != nil {
@@ -39,6 +45,7 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 	plan := &plantypes.BuildPlan{
 		ComponentID:      cmp.ID,
 		ComponentBuildID: build.ID,
+		SourceIdentity:   build.SourceIdentity,
 
 		Src:    gitSrc,
 		Dst:    dstCfg,
@@ -46,14 +53,6 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 	}
 
 	switch build.ComponentConfigConnection.Type {
-	case app.ComponentTypeDockerBuild:
-		l.Info("generating docker build plan")
-		subPlan, err := p.createDockerBuildPlan(ctx, build)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create docker build plan")
-		}
-		plan.DockerBuildPlan = subPlan
-
 	case app.ComponentTypeExternalImage:
 		l.Info("generating container image build plan")
 		subPlan, err := p.createContainerImageBuildPlan(ctx, build)

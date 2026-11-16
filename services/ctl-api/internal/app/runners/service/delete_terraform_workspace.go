@@ -39,6 +39,10 @@ func (s *service) DeleteTerraformWorkpace(ctx *gin.Context) {
 }
 
 func (s *service) deleteWorkspace(ctx *gin.Context, id string) (*app.TerraformWorkspace, error) {
+	if _, err := s.getWorkspace(ctx, id); err != nil {
+		return nil, err
+	}
+
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		return nil, err

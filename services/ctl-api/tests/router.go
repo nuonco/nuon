@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/pagination"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -89,7 +90,13 @@ func NewTestRouter(opts RouterOptions) *gin.Engine {
 			cctx.SetOrgGinContext(c, opts.TestOrg)
 		}
 		if opts.TestAcc != nil {
-			cctx.SetAccountGinContext(c, testAccount(c, opts))
+			acct, err := testAccount(c, opts)
+			if err != nil {
+				c.Error(err)
+				c.Abort()
+				return
+			}
+			cctx.SetAccountGinContext(c, acct)
 		}
 		c.Next()
 	})
@@ -97,7 +104,7 @@ func NewTestRouter(opts RouterOptions) *gin.Engine {
 	return router
 }
 
-func testAccount(c *gin.Context, opts RouterOptions) *app.Account {
+func testAccount(c *gin.Context, opts RouterOptions) (*app.Account, error) {
 	acct := *opts.TestAcc
 
 	perms := permissions.Set(permissions.NewSet())
@@ -105,17 +112,18 @@ func testAccount(c *gin.Context, opts RouterOptions) *app.Account {
 		perms[k] = v
 	}
 	if opts.DB != nil {
-		var loaded app.Account
-		res := opts.DB.WithContext(c.Request.Context()).
-			Preload("Roles").
-			Preload("Roles.Org").
-			Preload("Roles.Policies").
-			First(&loaded, "id = ?", acct.ID)
-		if res.Error == nil {
-			for _, role := range loaded.Roles {
-				for _, policy := range role.Policies {
-					_ = perms.Add(policy.Permissions)
-				}
+		loaded, err := account.New(account.Params{DB: opts.DB}).FetchAccount(c.Request.Context(), acct.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, role := range loaded.Roles {
+			if role.HasPolicyDocument() {
+				return loaded, nil
+			}
+		}
+		for _, role := range loaded.Roles {
+			for _, policy := range role.Policies {
+				_ = perms.Add(policy.Permissions)
 			}
 		}
 	}
@@ -123,6 +131,10 @@ func testAccount(c *gin.Context, opts RouterOptions) *app.Account {
 		perms[opts.TestOrg.ID] = permissions.PermissionAll
 	}
 	acct.AllPermissions = perms
+	acct.Authority = &permissions.AccountPermissions{Sources: make(map[string]permissions.PermissionSource)}
+	for object, verb := range perms {
+		acct.Authority.Add(object, permissions.PermissionSource{Permission: verb})
+	}
 
-	return &acct
+	return &acct, nil
 }

@@ -97,6 +97,16 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	//
 	// dg.addedImageDepSyncs is shared with the dependents call below so a
 	// shared image dep is only synced once across both call sites.
+	if unsupportedComponentType(*comp) {
+		sg.nextGroup()
+		skipStep, err := unsupportedComponentTypeSkipStep(ctx, sg, installID, *comp, "skipped deploy "+comp.Name)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, skipStep)
+		return sg.Result(steps), nil
+	}
+
 	if !flw.PlanOnly && !comp.Type.IsImage() && generics.FromPtrStr(deployDependencies) == strconv.FormatBool(true) {
 		depSyncSteps, err := getImageDepSyncSteps(ctx, dg, comp.ID, 0, map[string]int{comp.ID: 0})
 		if err != nil {

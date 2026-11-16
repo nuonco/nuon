@@ -6,7 +6,7 @@ import { getBranchRunBuilds, getComponents } from '@/lib'
 import type { TComponentType } from '@/types'
 import { RuntimeChanges, type IRuntimeChangeRow } from './RuntimeChanges'
 
-const IMAGE_TYPES: TComponentType[] = ['docker_build', 'external_image']
+const IMAGE_TYPES: TComponentType[] = ['external_image']
 
 interface IRuntimeChangesContainer {
   branchId: string

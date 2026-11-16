@@ -18,16 +18,20 @@ func revokeAccountCredentials(tx *gorm.DB, accountID string) error {
 		return errors.Wrap(err, "unable to lock account for revocation")
 	}
 
-	if res := tx.Where(app.Token{AccountID: accountID}).Delete(&app.Token{}); res.Error != nil {
+	return deleteAccountCredentials(tx, []string{accountID})
+}
+
+func deleteAccountCredentials(tx *gorm.DB, accountIDs []string) error {
+	if res := tx.Where("account_id IN ?", accountIDs).Delete(&app.Token{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to revoke account tokens")
 	}
-	if res := tx.Where(app.OAuthRefreshToken{AccountID: accountID}).Delete(&app.OAuthRefreshToken{}); res.Error != nil {
+	if res := tx.Where("account_id IN ?", accountIDs).Delete(&app.OAuthRefreshToken{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to revoke account refresh tokens")
 	}
-	if res := tx.Where(app.OAuthAuthorizationCode{AccountID: accountID}).Delete(&app.OAuthAuthorizationCode{}); res.Error != nil {
+	if res := tx.Where("account_id IN ?", accountIDs).Delete(&app.OAuthAuthorizationCode{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to revoke account authorization codes")
 	}
-	if res := tx.Where(app.DeviceAuthorization{AccountID: accountID}).Delete(&app.DeviceAuthorization{}); res.Error != nil {
+	if res := tx.Where("account_id IN ?", accountIDs).Delete(&app.DeviceAuthorization{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to revoke account device authorizations")
 	}
 	return nil

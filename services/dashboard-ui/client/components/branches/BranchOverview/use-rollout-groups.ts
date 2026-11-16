@@ -335,7 +335,8 @@ export const useRolloutGroups = () => {
         runId: workflowId!,
       }),
     enabled: !!orgId && !!appId && !!branchId && !!workflowId,
-    refetchInterval: 5000,
+    refetchInterval: (query) =>
+      TERMINAL.has(query.state.data?.status?.status ?? '') ? false : 5000,
     placeholderData: keepPreviousData,
   })
   const rolloutRun =
@@ -505,8 +506,10 @@ export const useRolloutGroups = () => {
                 sha,
                 shaUrl: commitUrl(repoSlug, sha),
                 createdAt: branchRun?.vcs_connection_commit?.created_at,
+                committedAt: branchRun?.vcs_connection_commit?.committed_at,
               }
             : undefined,
+        runAt: branchRun?.created_at ?? rolloutRun.created_at,
       }
     : undefined
 

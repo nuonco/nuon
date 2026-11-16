@@ -41,10 +41,9 @@ func (j JobComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("-c 'echo hello'").
 		Example("script.py").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for build operations (e.g., \"30m\", \"1h\"). Default: 5m. Max: 1h").
+		Long("Duration string for build operations (e.g., \"10m\", \"30m\"). Default: 5m. Max: 30m").
 		Default("5m").
 		Example("30m").
-		Example("1h").
 		Field("deploy_timeout").Short("deploy operation timeout").
 		Long("Duration string for job execution (e.g., \"30m\", \"1h\"). Default: 15m. Max: 1h").
 		Default("15m").

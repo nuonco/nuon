@@ -143,7 +143,7 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 	}()
 
 	// migrate install inputs BEFORE updating app_config_id
-	if err := s.installsHelpers.MigrateInstallInputsToNewConfig(ctx, tx, installConfigMap, appConfigID); err != nil {
+	if err := s.installsHelpers.WithDB(tx).MigrateInstallInputsToNewConfig(ctx, installConfigMap, appConfigID); err != nil {
 		tx.Rollback()
 		return stderr.ErrSystem{
 			Err:         fmt.Errorf("unable to migrate install inputs: %w", err),

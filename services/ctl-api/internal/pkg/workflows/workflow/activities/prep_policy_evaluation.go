@@ -235,6 +235,9 @@ func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRun
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get sandbox run")
 	}
+	if sandboxRun.Install == nil {
+		return nil, errors.Errorf("sandbox run %s has no install", sandboxRunID)
+	}
 
 	return &policyContext{
 		AppConfigID:      sandboxRun.Install.AppConfigID,
@@ -310,8 +313,6 @@ func componentTypeToPolicyType(ct app.ComponentType) config.AppPolicyType {
 		return config.AppPolicyTypeHelmChart
 	case app.ComponentTypeKubernetesManifest:
 		return config.AppPolicyTypeKubernetesManifest
-	case app.ComponentTypeDockerBuild:
-		return config.AppPolicyTypeDockerBuild
 	case app.ComponentTypeExternalImage:
 		return config.AppPolicyTypeContainerImage
 	case app.ComponentTypePulumi:

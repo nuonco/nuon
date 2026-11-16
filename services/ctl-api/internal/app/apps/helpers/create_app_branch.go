@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -22,7 +20,7 @@ func (h *Helpers) CreateAppBranch(
 	name string,
 	opts ...app.AppBranchManagedBy,
 ) (*app.AppBranch, error) {
-	branch, err := h.CreateAppBranchWithDB(ctx, h.db, appID, name, opts...)
+	branch, err := h.CreateAppBranchRecord(ctx, appID, name, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -35,9 +33,8 @@ func (h *Helpers) CreateAppBranch(
 
 // Queue creation starts Temporal workflows, so a transactional caller must call
 // EnsureAppBranchQueues itself once committed.
-func (h *Helpers) CreateAppBranchWithDB(
+func (h *Helpers) CreateAppBranchRecord(
 	ctx context.Context,
-	db *gorm.DB,
 	appID string,
 	name string,
 	opts ...app.AppBranchManagedBy,
@@ -54,7 +51,7 @@ func (h *Helpers) CreateAppBranchWithDB(
 	}
 
 	// Create branch first to get ID
-	if err := db.WithContext(ctx).Create(&branch).Error; err != nil {
+	if err := h.db.WithContext(ctx).Create(&branch).Error; err != nil {
 		return nil, fmt.Errorf("unable to create app branch: %w", err)
 	}
 

@@ -2,6 +2,8 @@ package nuon
 
 import (
 	"context"
+	"net/http"
+	"net/url"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -30,6 +32,19 @@ func (c *client) GetAppInputLatestConfig(ctx context.Context, appID string) (*mo
 	}
 
 	return resp.Payload, nil
+}
+
+func (c *client) GetAppInstallInputConfig(ctx context.Context, appID, appBranchID string) (*models.AppAppInputConfig, error) {
+	requestURL := c.APIURL + "/v1/apps/" + url.PathEscape(appID) + "/install-input-config"
+	if appBranchID != "" {
+		requestURL += "?" + url.Values{"app_branch_id": {appBranchID}}.Encode()
+	}
+
+	var cfg models.AppAppInputConfig
+	if err := c.triggerRequest(ctx, http.MethodGet, requestURL, nil, http.StatusOK, &cfg); err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
 
 func (c *client) GetAppInputConfig(ctx context.Context, appID, appInputConfigID string) (*models.AppAppInputConfig, error) {

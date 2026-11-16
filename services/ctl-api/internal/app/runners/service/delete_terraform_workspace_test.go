@@ -141,7 +141,7 @@ func (s *DeleteTerraformWorkspaceTestSuite) TestDeleteTerraformWorkspace() {
 			setupFunc: func() string {
 				return "twsnonexistent123456789012"
 			},
-			expectedCode: http.StatusOK,
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name: "workspace in different org not accessible",
@@ -179,7 +179,7 @@ func (s *DeleteTerraformWorkspaceTestSuite) TestDeleteTerraformWorkspace() {
 
 				return ws2.ID
 			},
-			expectedCode: http.StatusOK,
+			expectedCode: http.StatusNotFound,
 			validateFunc: func(workspaceID string) {
 				// Verify workspace still exists (wasn't deleted)
 				var ws app.TerraformWorkspace

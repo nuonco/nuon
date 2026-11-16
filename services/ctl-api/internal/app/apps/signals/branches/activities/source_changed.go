@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	pkgconfig "github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 )
 
 type componentSource struct {
@@ -24,22 +25,6 @@ func normalizeRepoPath(p string) string {
 		return ""
 	}
 	return p
-}
-
-func normalizeRepoURL(repo string) string {
-	repo = strings.TrimSuffix(repo, ".git")
-	repo = strings.TrimPrefix(repo, "https://github.com/")
-	repo = strings.TrimPrefix(repo, "http://github.com/")
-	repo = strings.TrimPrefix(repo, "git@github.com:")
-	repo = strings.TrimSuffix(repo, "/")
-	return strings.ToLower(repo)
-}
-
-func repoURLsEqual(a, b string) bool {
-	if a == "" || b == "" {
-		return false
-	}
-	return normalizeRepoURL(a) == normalizeRepoURL(b)
 }
 
 // pathMatchesDirectory reports whether path is under directory (or equal to it).
@@ -71,7 +56,7 @@ func anyPathMatchesDirectory(changedPaths []string, directory string) bool {
 }
 
 func componentSourceChanged(src componentSource, branchRepo string, changedPaths []string) bool {
-	if !repoURLsEqual(src.Repo, branchRepo) {
+	if !buildsource.SameRepo(src.Repo, branchRepo) {
 		return false
 	}
 	return anyPathMatchesDirectory(changedPaths, src.Directory)

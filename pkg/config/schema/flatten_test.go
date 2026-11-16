@@ -85,16 +85,6 @@ func TestComponentSchemasAcceptRealConfigs(t *testing.T) {
 			}`,
 		},
 		{
-			schemaType: "docker-build",
-			name:       "docker build",
-			doc: `{
-				"name": "toml_docker_build",
-				"type": "docker_build",
-				"dockerfile": "Dockerfile",
-				"connected_repo": {"directory": "deployment", "repo": "nuonco/nuon", "branch": "main"}
-			}`,
-		},
-		{
 			schemaType: "terraform",
 			name:       "terraform module",
 			doc: `{
@@ -124,7 +114,7 @@ func TestComponentSchemasAcceptRealConfigs(t *testing.T) {
 			doc: `{
 				"name": "toml_job",
 				"type": "job",
-				"image_url": "{{.nuon.components.e2e_docker_build.image.repository.uri}}",
+				"image_url": "{{.nuon.components.toml_container_image.image.repository.uri}}",
 				"tag": "latest",
 				"cmd": ["printenv"],
 				"args": [""],
@@ -187,7 +177,7 @@ func TestComponentSchemasStillRejectInvalidConfigs(t *testing.T) {
 		},
 		{
 			schemaType: "terraform",
-			name:       "wrong component type value",
+			name:       "removed docker_build type value",
 			doc:        `{"name": "tf", "type": "docker_build"}`,
 		},
 	}
@@ -257,7 +247,7 @@ func TestCheckComponentBranches(t *testing.T) {
 // unsatisfiable allOf composition.
 func TestComponentSchemasAreFlattened(t *testing.T) {
 	for _, schemaType := range []string{
-		"container-image", "docker-build", "helm", "job", "kubernetes-manifest", "terraform",
+		"container-image", "helm", "job", "kubernetes-manifest", "terraform",
 	} {
 		t.Run(schemaType, func(t *testing.T) {
 			schm, err := LookupSchemaType(schemaType)
@@ -293,7 +283,7 @@ func TestComponentSchemasAreFlattened(t *testing.T) {
 func TestComponentSchemasHaveUniqueIDs(t *testing.T) {
 	seen := make(map[string]string)
 	for _, schemaType := range []string{
-		"container-image", "docker-build", "helm", "job", "kubernetes-manifest", "terraform",
+		"container-image", "helm", "job", "kubernetes-manifest", "terraform",
 	} {
 		schm, err := LookupSchemaType(schemaType)
 		if err != nil {

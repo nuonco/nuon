@@ -94,7 +94,7 @@ func OrgOrInstallRoute(router gin.IRouter) *gin.RouterGroup {
 			return
 		}
 
-		if err := acct.AllPermissions.CanPerform(orgID, verb); err == nil {
+		if err := acct.Authority.CanPerform(orgID, verb, false); err == nil {
 			ctx.Next()
 			return
 		}
@@ -103,7 +103,71 @@ func OrgOrInstallRoute(router gin.IRouter) *gin.RouterGroup {
 			runner.RunnerGroup.Type == app.RunnerGroupTypeInstall &&
 			runner.RunnerGroup.OwnerID != "" {
 			obj := permissions.Object(orgID, permissions.KindInstall, runner.RunnerGroup.OwnerID)
-			if err := acct.AllPermissions.CanPerform(obj, verb); err == nil {
+			if err := acct.Authority.CanPerform(obj, verb, false); err == nil {
+				ctx.Next()
+				return
+			}
+		}
+
+		ctx.Error(PermissionDeniedError(acct, orgID, verb, ScopeFromPath(ctx.FullPath())))
+		ctx.Abort()
+	})
+}
+
+// OrgInstallOrLogStreamRoute is OrgOrInstallRoute plus a grant on the log stream
+// named by paramName. A log-stream account holds that grant and no org or install grant.
+func OrgInstallOrLogStreamRoute(router gin.IRouter, paramName string) *gin.RouterGroup {
+	return group(router, func(ctx *gin.Context) {
+		verb := permissions.FromRequest(ctx)
+		if verb == permissions.PermissionUnknown {
+			ctx.Error(stderr.ErrSystem{
+				Err:         fmt.Errorf("cannot infer permission for %s; use require.Route with an explicit permission", ctx.Request.Method),
+				Description: "invalid route authorization configuration",
+			})
+			ctx.Abort()
+			return
+		}
+
+		acct, err := cctx.AccountFromGinContext(ctx)
+		if err != nil {
+			cctx.GetLogger(ctx, zap.NewNop()).Info("route authorization denied",
+				zap.String("route", ctx.FullPath()),
+				zap.Error(fmt.Errorf("unable to resolve account from request: %w", err)),
+			)
+			ctx.Error(stderr.ErrNotFound{Err: errors.New("not found"), Description: "not found"})
+			ctx.Abort()
+			return
+		}
+
+		orgID, err := cctx.OrgIDFromContext(ctx)
+		if err != nil {
+			cctx.GetLogger(ctx, zap.NewNop()).Info("route authorization denied",
+				zap.String("route", ctx.FullPath()),
+				zap.Error(fmt.Errorf("unable to resolve org from request: %w", err)),
+			)
+			ctx.Error(stderr.ErrNotFound{Err: errors.New("not found"), Description: "not found"})
+			ctx.Abort()
+			return
+		}
+
+		if err := acct.Authority.CanPerform(orgID, verb, false); err == nil {
+			ctx.Next()
+			return
+		}
+
+		if runner, err := cctx.RunnerFromContext(ctx); err == nil &&
+			runner.RunnerGroup.Type == app.RunnerGroupTypeInstall &&
+			runner.RunnerGroup.OwnerID != "" {
+			obj := permissions.Object(orgID, permissions.KindInstall, runner.RunnerGroup.OwnerID)
+			if err := acct.Authority.CanPerform(obj, verb, false); err == nil {
+				ctx.Next()
+				return
+			}
+		}
+
+		if id := ctx.Param(paramName); id != "" {
+			obj := permissions.Object(orgID, permissions.KindLogStream, id)
+			if err := acct.Authority.CanPerform(obj, verb, false); err == nil {
 				ctx.Next()
 				return
 			}
@@ -159,7 +223,7 @@ func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, 
 		}
 
 		if kind == permissions.KindOrg {
-			if err := acct.AllPermissions.CanPerform(orgID, verb); err != nil {
+			if err := acct.Authority.CanPerform(orgID, verb, false); err != nil {
 				ctx.Error(PermissionDeniedError(acct, orgID, verb, ScopeFromPath(ctx.FullPath())))
 				ctx.Abort()
 				return
@@ -177,7 +241,7 @@ func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, 
 		// The declared verb, not the one inferred from the request method: the
 		// route says what it does, the method is only a hint.
 		obj := permissions.Object(orgID, kind, id)
-		if err := acct.AllPermissions.CanPerform(obj, verb); err != nil {
+		if err := acct.Authority.CanPerform(obj, verb, false); err != nil {
 			notFound(fmt.Errorf("account %s cannot %s %s %s: %w", acct.ID, verb, kind, id, err))
 			return
 		}

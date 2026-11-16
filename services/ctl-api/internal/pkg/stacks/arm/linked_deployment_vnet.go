@@ -256,7 +256,7 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 	}
 
 	// Custom VNet template — fetch and inspect declared parameters.
-	armTmpl, err := fetchARMTemplate(templateURL)
+	armTmpl, err := t.fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("VNet linked deployment: %w", err)
 	}

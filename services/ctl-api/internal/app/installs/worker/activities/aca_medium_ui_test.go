@@ -87,7 +87,7 @@ func TestAcaMediumUIDefinition(t *testing.T) {
 	ui.SourceURL = server.URL + "/" + wantKey
 
 	inp := acaMediumTemplateInput(cfg, ui)
-	tmpl := arm.NewTemplates(arm.Params{Cfg: &internal.Config{}})
+	tmpl := arm.NewTemplates(arm.Params{Cfg: &internal.Config{}}).WithTemplateFetchClient(stacks.NewLocalTemplateFetchClient())
 
 	rendered, checksum, err := tmpl.QuickLinkUIDefinition(inp)
 	require.NoError(t, err)

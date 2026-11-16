@@ -79,7 +79,6 @@ func TestSyntheticComponentOverrideInputs(t *testing.T) {
 	components := ComponentList{
 		{Name: "vpc", Type: TerraformModuleComponentType},
 		{Name: "clickhouse", Type: HelmChartComponentType},
-		{Name: "api", Type: DockerBuildComponentType},             // ignored
 		{Name: "manifest", Type: KubernetesManifestComponentType}, // ignored
 		nil, // ignored
 	}

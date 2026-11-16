@@ -78,7 +78,7 @@ const mixedOps: InstallDiffEntry = {
     componentsSection([
       { name: 'redis', op: 'add', componentType: 'helm_chart', fields: [] },
       { name: 'application_load_balancer', op: 'change', componentType: 'helm_chart', fields: [] },
-      { name: 'legacy_worker', op: 'remove', componentType: 'docker_build', fields: [] },
+      { name: 'legacy_worker', op: 'remove', componentType: 'external_image', fields: [] },
     ]),
     infrastructureSection(true, false),
   ],

@@ -7,20 +7,20 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/publicnet/templatefetch"
 )
 
 type cfnOutputsShape struct {
 	Outputs map[string]struct{} `yaml:"Outputs" json:"Outputs"`
 }
 
-var templateOutputsClient = &http.Client{Timeout: 30 * time.Second}
+var templateOutputsClient = templatefetch.NewClient()
 
-func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
+func fetchTemplate(templateURL string) ([]byte, error) {
 	resp, err := templateOutputsClient.Get(templateURL)
 	if err != nil {
 		return nil, err
@@ -31,12 +31,20 @@ func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
 		return nil, fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, templateURL)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
+}
+
+func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
+	body, err := fetchTemplate(templateURL)
 	if err != nil {
 		return nil, err
 	}
+	return parseTemplateOutputs(templateURL, body)
+}
 
+func parseTemplateOutputs(templateURL string, body []byte) (map[string]struct{}, error) {
 	var tmpl cfnOutputsShape
+	var err error
 	if strings.HasSuffix(templateURL, ".json") {
 		err = json.Unmarshal(body, &tmpl)
 	} else {
@@ -51,6 +59,11 @@ func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
 
 func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 	if a.Stack == nil || len(a.Stack.CustomNestedStacks) == 0 {
+		return nil
+	}
+	// gcp-terraform template_urls are module addresses, not templates with
+	// CloudFormation outputs.
+	if a.Stack.Type == "gcp-terraform" {
 		return nil
 	}
 
@@ -69,6 +82,9 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 			continue
 		}
 		outputs, err := fetchTemplateOutputs(templateURL)
+		if templatefetch.IsRefused(err) {
+			return fmt.Errorf("%s nested template URL %q cannot be fetched: %w", resourceName, templateURL, err)
+		}
 		if err != nil {
 			continue
 		}
@@ -85,7 +101,10 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 			continue
 		}
 
-		outputs, err := fetchTemplateOutputs(stack.TemplateURL)
+		outputs, err := customNestedStackOutputs(stack)
+		if templatefetch.IsRefused(err) {
+			return fmt.Errorf("custom_nested_stacks (%s): template_url %q cannot be fetched: %w", stack.Name, stack.TemplateURL, err)
+		}
 		if err != nil {
 			continue
 		}
@@ -120,4 +139,14 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 		Warning:     true,
 		Err:         fmt.Errorf("custom nested stack output warnings: %s", strings.Join(warnings, "; ")),
 	}
+}
+
+// customNestedStackOutputs reads outputs from the contents the parser already
+// loaded through go-getter, which is how template_url may name a local file.
+// Only a stack without loaded contents is fetched over the network.
+func customNestedStackOutputs(stack config.CustomNestedStack) (map[string]struct{}, error) {
+	if stack.Contents != "" {
+		return parseTemplateOutputs(stack.TemplateURL, []byte(stack.Contents))
+	}
+	return fetchTemplateOutputs(stack.TemplateURL)
 }

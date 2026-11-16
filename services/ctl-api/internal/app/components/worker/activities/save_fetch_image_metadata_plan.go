@@ -8,15 +8,27 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
-	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/azure/acr"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 )
+
+func (a *Activities) getComponentBuildWithExternalImageConfig(ctx context.Context, buildID string) (*app.ComponentBuild, error) {
+	var bld app.ComponentBuild
+
+	res := a.db.WithContext(ctx).
+		Scopes(helpers.PreloadComponentBuildConfig).
+		First(&bld, "id = ?", buildID)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get component build")
+	}
+
+	return &bld, nil
+}
 
 type SaveFetchImageMetadataPlanRequest struct {
 	JobID   string `validate:"required"`
@@ -78,31 +90,10 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 
 func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
 	if cfg.AWSECRImageConfig != nil {
-		assumeRole := &credentials.AssumeRoleConfig{
-			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
-			SessionName:            "fetch-image-metadata",
-			SessionDurationSeconds: 30 * 60,
-			UseGCPOIDC:             a.cfg.IsGCP(),
-		}
-
-		// Control-plane jobs run as the ctl-api pod identity, which the
-		// vendor's ECR pull role does not trust — vendors grant the Nuon
-		// management account, so hop through the management role first.
-		if a.cfg.IsAWS() && a.cfg.ManagementIAMRoleARN != "" {
-			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
-				IAMRoleARN: a.cfg.ManagementIAMRoleARN,
-			}
-		}
-
 		return &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeECR,
 			Repository:   cfg.ImageURL,
 			Region:       cfg.AWSECRImageConfig.AWSRegion,
-
-			ECRAuth: &credentials.Config{
-				Region:     cfg.AWSECRImageConfig.AWSRegion,
-				AssumeRole: assumeRole,
-			},
 		}, nil
 	}
 
@@ -126,6 +117,13 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, 
 			return nil, err
 		}
 
+		if cfg.AzureACRImageConfig.UsesCloudConnection() {
+			return &configs.OCIRegistryRepository{
+				RegistryType: configs.OCIRegistryTypeACR,
+				Repository:   cfg.ImageURL,
+				LoginServer:  cfg.AzureACRImageConfig.RegistryURL,
+			}, nil
+		}
 		acrCfg := &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeACR,
 			Repository:   cfg.ImageURL,

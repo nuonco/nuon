@@ -27,10 +27,6 @@ func (a *Activities) CreateBuildJob(ctx context.Context, req *CreateBuildJobRequ
 		return nil, fmt.Errorf("unable to get component build: %w", err)
 	}
 
-	if req.Type == app.RunnerJobTypeDockerBuild {
-		return nil, fmt.Errorf("docker_build components are not supported by control-plane builds; replace this component with a container_image component")
-	}
-
 	ctx = cctx.SetAccountIDContext(ctx, bld.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, bld.OrgID)
 

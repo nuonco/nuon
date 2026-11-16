@@ -48,7 +48,6 @@ const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; 
 const COMPONENT_TYPE_ICON: Record<string, { icon: TIconVariant; brandClass: string }> = {
   helm_chart: { icon: 'Helm', brandClass: 'text-[#0F1689] dark:text-[#6A70D6]' },
   terraform_module: { icon: 'Terraform', brandClass: 'text-[#7B42BC] dark:text-[#A878E0]' },
-  docker_build: { icon: 'Docker', brandClass: 'text-[#2496ED] dark:text-[#56B4F9]' },
   external_image: { icon: 'OCI', brandClass: 'text-[#262261] dark:text-[#8B87D1]' },
   kubernetes_manifest: { icon: 'Kubernetes', brandClass: 'text-[#326CE5] dark:text-[#5A8DEF]' },
   job: { icon: 'AWSLambda', brandClass: 'text-[#FF9900] dark:text-[#FFB340]' },

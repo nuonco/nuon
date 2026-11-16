@@ -534,14 +534,6 @@ export interface paths {
      */
     get: operations["GetAppComponentConfigs"];
   };
-  "/v1/apps/{app_id}/components/{component_id}/configs/docker-build": {
-    /**
-     * create a docker build component config
-     * @deprecated
-     * @description Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
-     */
-    post: operations["CreateAppDockerBuildComponentConfig"];
-  };
   "/v1/apps/{app_id}/components/{component_id}/configs/external-image": {
     /**
      * create an external image component config
@@ -1123,7 +1115,7 @@ export interface paths {
     get: operations["ListCloudConnections"];
     /**
      * create a cloud connection
-     * @description Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+     * @description Create an org-bound AWS, GCP, or Azure identity. Optional repository arrays generate initial read-only setup material but are not stored or used as an allowlist. ECR and GAR use default_region for image connection matching. ACR requires a subscription UUID, existing Entra application client ID and service principal, tenant UUID, registry ARM ID, and bare login server. Its registry must already use RBAC Registry + ABAC Repository Permissions; setup never changes registry mode. Cloud IAM authorizes image pulls. Custom renders AWS trust only.
      */
     post: operations["CreateCloudConnection"];
   };
@@ -1211,14 +1203,6 @@ export interface paths {
      * @description Returns all configurations for the provided component.
      */
     get: operations["GetComponentConfigs"];
-  };
-  "/v1/components/{component_id}/configs/docker-build": {
-    /**
-     * create a docker build component config
-     * @deprecated
-     * @description Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
-     */
-    post: operations["CreateDockerBuildComponentConfig"];
   };
   "/v1/components/{component_id}/configs/external-image": {
     /**
@@ -1340,7 +1324,6 @@ export interface paths {
      * - installer
      * - sandbox
      * - runner
-     * - docker_build
      * - container_image
      * - helm
      * - terraform
@@ -1368,7 +1351,6 @@ export interface paths {
      * - installer
      * - sandbox
      * - runner
-     * - docker_build
      * - container_image
      * - helm
      * - terraform
@@ -1390,6 +1372,24 @@ export interface paths {
      * @description Add an entry to the waitlist.
      */
     post: operations["CreateWaitlist"];
+  };
+  "/v1/image-repositories": {
+    /** list image repositories */
+    get: operations["ListImageRepositories"];
+    /**
+     * register an image repository
+     * @description Save an exact ECR ARN, GAR repository resource, or ACR repository path against an existing org-owned image connection. Pending connections are allowed; image use requires verification. Does not change cloud permissions.
+     */
+    post: operations["CreateImageRepository"];
+  };
+  "/v1/image-repositories/{repository_id}": {
+    /** get an image repository */
+    get: operations["GetImageRepository"];
+    /**
+     * remove an image repository assignment
+     * @description Does not revoke cloud permissions or change existing image configuration connection pins.
+     */
+    delete: operations["DeleteImageRepository"];
   };
   "/v1/install-workflows/{install_workflow_id}": {
     /**
@@ -1648,6 +1648,24 @@ export interface paths {
      * @description Return an install action workflow run by id.
      */
     get: operations["GetInstallActionRun"];
+  };
+  "/v1/installs/{install_id}/actions/runs/{run_id}/logs": {
+    /**
+     * delete the logs and trace spans of an action run
+     * @description Permanently delete the logs and trace spans of a finished action run, for example after a command printed a secret.
+     *
+     * Only org admins can delete logs, and only after the run has ended, including runs that failed, timed out, or were
+     * cancelled. The run itself and its outputs are kept. The
+     * log stream is marked with `logs_deleted_at` and `logs_deleted_by_id` from the first deletion. Calling this again
+     * deletes any records that arrived late and keeps the original marker.
+     *
+     * Once the logs are deleted, the log stream's write token is revoked, new writes to the stream are dropped, and reads of
+     * the stream return no logs or spans. Trace spans are removed in the background after the call returns.
+     *
+     * Rotate any secret that was exposed: deleting the logs does not undo the exposure, and copies held in the ingestion
+     * queue expire on their own retention schedule. If that queue is replayed before then, call this endpoint again.
+     */
+    delete: operations["DeleteInstallActionRunLogs"];
   };
   "/v1/installs/{install_id}/actions/runs/{run_id}/steps/{step_id}": {
     /**
@@ -2043,6 +2061,13 @@ export interface paths {
      */
     get: operations["GetInstallDeployment"];
   };
+  "/v1/installs/{install_id}/deployments/{workflow_id}/source-diff": {
+    /**
+     * get the GitHub compare link for a deployment resource
+     * @description Returns a GitHub compare URL between the commits of the resource's build for the install's pinned app config and its build for this deployment's app config. The URL is empty when the builds are not in the same GitHub repository, use the same commit, or have the same source digest. Nuon does not read the repository for this response.
+     */
+    get: operations["GetInstallDeploymentSourceDiff"];
+  };
   "/v1/installs/{install_id}/deploys": {
     /**
      * get all deploys to an install
@@ -2259,6 +2284,20 @@ export interface paths {
      * inputs and component outputs.
      */
     get: operations["GetInstallReadme"];
+  };
+  "/v1/installs/{install_id}/reconcile": {
+    /**
+     * reconcile an install onto its app branch
+     * @description Starts the workflow that brings the install onto its app branch's latest deployable config. expected_app_config_id is the config the caller reviewed; the request fails with 409 when the branch has since moved to another config, when the install is blocked, or when it has no deployable target. When the install already runs the target config, or a workflow is already rolling it out, nothing is created and the current state is returned with 200. plan_only runs the workflow without applying it. Requires the install-reconciliation org feature.
+     */
+    post: operations["ReconcileInstall"];
+  };
+  "/v1/installs/{install_id}/reconciliation": {
+    /**
+     * install reconciliation state
+     * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+     */
+    get: operations["GetInstallReconciliation"];
   };
   "/v1/installs/{install_id}/reprovision": {
     /**
@@ -3622,12 +3661,13 @@ export interface components {
     };
     "app.AWSECRImageConfig": {
       aws_region?: string;
+      /** @description actual configuration */
+      cloud_connection_id?: string;
       /** @description connection to parent model */
       component_config_id?: string;
       component_config_type?: string;
       created_at?: string;
       created_by_id?: string;
-      /** @description actual configuration */
       iam_role_arn?: string;
       id?: string;
       updated_at?: string;
@@ -4364,6 +4404,7 @@ export interface components {
       app_config_id?: string;
       app_id?: string;
       app_sandbox_config_id?: string;
+      checksum?: string;
       composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
@@ -4371,6 +4412,8 @@ export interface components {
       id?: string;
       log_stream?: components["schemas"]["app.LogStream"];
       runner_job?: components["schemas"]["app.RunnerJob"];
+      source_checksum?: string;
+      source_identity?: components["schemas"]["sourceidentity.Identity"];
       status?: string;
       status_description?: string;
       status_v2?: components["schemas"]["app.CompositeStatus"];
@@ -4506,13 +4549,14 @@ export interface components {
        * never the material itself.
        */
       client_secret_name?: string;
+      /** @description actual configuration */
+      cloud_connection_id?: string;
       /** @description connection to parent model */
       component_config_id?: string;
       component_config_type?: string;
       created_at?: string;
       created_by_id?: string;
       id?: string;
-      /** @description actual configuration */
       registry_url?: string;
       tenant_id?: string;
       updated_at?: string;
@@ -4575,15 +4619,19 @@ export interface components {
       subscription_tenant_id?: string;
     };
     "app.CloudConnection": {
+      azure_registry_id?: string;
+      azure_registry_login_server?: string;
+      azure_tenant_id?: string;
       created_at?: string;
       created_by_id?: string;
       default_region?: string;
+      gcp_project_number?: string;
       id?: string;
       last_verified_at?: string;
       name?: string;
       org_id?: string;
       /** @enum {string} */
-      platform?: "aws";
+      platform?: "aws" | "gcp" | "azure";
       preset?: components["schemas"]["app.CloudConnectionPreset"];
       principal?: string;
       queues?: components["schemas"]["app.Queue"][];
@@ -4594,7 +4642,7 @@ export interface components {
       verification_requested_at?: string;
     };
     /** @enum {string} */
-    "app.CloudConnectionPreset": "stacks" | "custom";
+    "app.CloudConnectionPreset": "stacks" | "ecr" | "gar" | "acr" | "custom";
     /** @enum {string} */
     "app.CloudConnectionStatus": "pending" | "verified" | "error";
     /** @enum {string} */
@@ -4631,7 +4679,6 @@ export interface components {
       app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
       build_runner_job_id?: string;
-      /** @description checksum of our intermediate component config */
       checksum?: string;
       component_config_connection?: components["schemas"]["app.ComponentConfigConnection"];
       /** @description DEPRECATED: will retain the field to connect against the last component config connection that set this build */
@@ -4684,7 +4731,6 @@ export interface components {
       runner_job?: components["schemas"]["app.RunnerJob"];
       /** @description SignatureVerification is empty when the outcome is unknown (older builds, or failures before verification ran). */
       signature_verification?: string;
-      /** @description checksum of the component's source directory at build time */
       source_checksum?: string;
       /**
        * @description SourceDigest is the manifest list digest of the resolved source ref,
@@ -4692,6 +4738,7 @@ export interface components {
        * pulled and is used for build dedup.
        */
       source_digest?: string;
+      source_identity?: components["schemas"]["sourceidentity.Identity"];
       /** @description SourceImage is the repository portion of SourceRef without tag/digest, e.g. "nginx". */
       source_image?: string;
       /**
@@ -4717,7 +4764,7 @@ export interface components {
       app_config_id?: string;
       app_config_version?: number;
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h"). Max 1h. */
+      /** @description Duration string for build operations (e.g., "10m", "30m"). Max 30m. */
       build_timeout?: string;
       checksum?: string;
       component_dependency_ids?: string[];
@@ -4728,7 +4775,6 @@ export interface components {
       default_enabled?: boolean;
       /** @description Duration string for deploy operations (e.g., "30m", "1h"). Max 1h. */
       deploy_timeout?: string;
-      docker_build?: components["schemas"]["app.DockerBuildComponentConfig"];
       drift_schedule?: string;
       external_image?: components["schemas"]["app.ExternalImageComponentConfig"];
       health_block_deploy?: boolean | null;
@@ -4815,7 +4861,7 @@ export interface components {
       retain?: string[];
     };
     /** @enum {string} */
-    "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
+    "app.ComponentType": "terraform_module" | "helm_chart" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
     "app.CompositeStatus": {
       /**
        * @description CompositeError is the parsed, structured cause of a failure status. The
@@ -4848,22 +4894,6 @@ export interface components {
       updated_at?: string;
       vcs_connection?: components["schemas"]["app.VCSConnection"];
       vcs_connection_id?: string;
-    };
-    "app.DockerBuildComponentConfig": {
-      build_args?: string[];
-      /** @description value */
-      component_config_connection_id?: string;
-      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
-      created_at?: string;
-      created_by_id?: string;
-      dockerfile?: string;
-      env_vars?: {
-        [key: string]: string;
-      };
-      id?: string;
-      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
-      target?: string;
-      updated_at?: string;
     };
     "app.DriftedObject": {
       app_sandbox_config_id?: string;
@@ -4913,6 +4943,7 @@ export interface components {
       updated_at?: string;
     };
     "app.GCPGARImageConfig": {
+      cloud_connection_id?: string;
       component_config_id?: string;
       component_config_type?: string;
       created_at?: string;
@@ -5032,6 +5063,18 @@ export interface components {
       chart?: string;
       repo_url?: string;
       version?: string;
+    };
+    "app.ImageRepository": {
+      cloud_connection?: components["schemas"]["app.CloudConnection"];
+      cloud_connection_id?: string;
+      created_at?: string;
+      id?: string;
+      image_url_prefix?: string;
+      org_id?: string;
+      /** @enum {string} */
+      platform?: "aws" | "gcp" | "azure";
+      repository?: string;
+      updated_at?: string;
     };
     "app.Install": {
       app_branch?: components["schemas"]["app.AppBranch"];
@@ -5698,9 +5741,14 @@ export interface components {
       workflow_id?: string;
     };
     "app.InstallStack": {
-      /** @description This control plane's Entra app id for runner login. Empty when the control plane still accepts only ARM tokens. */
-      azure_runner_auth_app_id?: string;
       app_config_ref?: components["schemas"]["app.AppConfigRef"];
+      /**
+       * @description AzureRunnerAuthAppID is this control plane's Entra app id for runner
+       * login. Set on read from server config, never stored. Empty when the
+       * control plane still accepts only ARM tokens, so the dashboard can hide
+       * the tenant consent step.
+       */
+      azure_runner_auth_app_id?: string;
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -5879,6 +5927,8 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      logs_deleted_at?: string;
+      logs_deleted_by_id?: string;
       open?: boolean;
       org_id?: string;
       owner_id?: string;
@@ -6192,7 +6242,6 @@ export interface components {
       created_by_id?: string;
       id?: string;
       name?: components["schemas"]["app.PolicyName"];
-      /** @description Permissions are used to track granular permissions for each domain */
       permissions?: {
         [key: string]: string;
       };
@@ -6205,7 +6254,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_job" | "hosted_installer" | "stack" | "telemetry_collector" | "phone_home";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_job" | "hosted_installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -6414,7 +6463,7 @@ export interface components {
       version?: number;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -6770,7 +6819,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobStatus": "queued" | "available" | "in-progress" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
     /** @enum {string} */
-    "app.RunnerJobType": "health-check" | "docker-build" | "container-image-build" | "terraform-module-build" | "helm-chart-build" | "kubernetes-manifest-build" | "pulumi-build" | "noop-build" | "sandbox-build" | "oci-sync" | "noop-sync" | "fetch-image-metadata" | "terraform-deploy" | "helm-chart-deploy" | "job-deploy" | "kubernetes-manifest-deploy" | "pulumi-deploy" | "noop-deploy" | "shut-down" | "update-version" | "noop" | "mng-vm-shut-down" | "mng-shut-down" | "mng-runner-update-version" | "mng-runner-restart" | "mng-fetch-token" | "sandbox-terraform" | "sandbox-terraform-plan" | "sandbox-pulumi" | "sandbox-sync-secrets" | "runner-helm" | "runner-terraform" | "runner-local" | "actions-workflow";
+    "app.RunnerJobType": "health-check" | "container-image-build" | "terraform-module-build" | "helm-chart-build" | "kubernetes-manifest-build" | "pulumi-build" | "noop-build" | "sandbox-build" | "oci-sync" | "noop-sync" | "fetch-image-metadata" | "terraform-deploy" | "helm-chart-deploy" | "job-deploy" | "kubernetes-manifest-deploy" | "pulumi-deploy" | "noop-deploy" | "shut-down" | "update-version" | "noop" | "mng-vm-shut-down" | "mng-shut-down" | "mng-runner-update-version" | "mng-runner-restart" | "mng-fetch-token" | "sandbox-terraform" | "sandbox-terraform-plan" | "sandbox-pulumi" | "sandbox-sync-secrets" | "runner-helm" | "runner-terraform" | "runner-local" | "actions-workflow";
     "app.RunnerOperation": {
       created_at?: string;
       created_by_id?: string;
@@ -7099,6 +7148,8 @@ export interface components {
       author_avatar_url?: string;
       author_email?: string;
       author_name?: string;
+      /** @description Git committer time. CreatedAt is when this row was stored during the run. */
+      committed_at?: string;
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -7485,7 +7536,7 @@ export interface components {
     /** @enum {string} */
     "config.AppPolicyEngine": "kyverno" | "opa";
     /** @enum {string} */
-    "config.AppPolicyType": "kubernetes_cluster" | "terraform_module" | "helm_chart" | "kubernetes_manifest" | "docker_build" | "container_image" | "pulumi" | "sandbox";
+    "config.AppPolicyType": "kubernetes_cluster" | "terraform_module" | "helm_chart" | "kubernetes_manifest" | "container_image" | "pulumi" | "sandbox";
     "config.CustomNestedStack": {
       contents?: string;
       contents_hash?: string;
@@ -7916,7 +7967,6 @@ export interface components {
       component_build_id?: string;
       component_id?: string;
       container_image_pull_plan?: components["schemas"]["plantypes.ContainerImagePullPlan"];
-      docker_build_plan?: components["schemas"]["plantypes.DockerBuildPlan"];
       dst_registry: components["schemas"]["configs.OCIRegistryRepository"];
       dst_tag: string;
       git_source?: components["schemas"]["plantypes.GitSource"];
@@ -7924,6 +7974,7 @@ export interface components {
       kubernetes_manifest_build_plan?: components["schemas"]["plantypes.KubernetesManifestBuildPlan"];
       pulumi_build_plan?: components["schemas"]["plantypes.PulumiBuildPlan"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      source_identity?: components["schemas"]["sourceidentity.Identity"];
       terraform_build_plan?: components["schemas"]["plantypes.TerraformBuildPlan"];
     };
     "plantypes.CompositePlan": {
@@ -7991,14 +8042,6 @@ export interface components {
       /** @description Teardown is only set on plans for teardown deploys. */
       teardown?: components["schemas"]["plantypes.TeardownPlan"];
       terraform?: components["schemas"]["plantypes.TerraformDeployPlan"];
-    };
-    "plantypes.DockerBuildPlan": {
-      build_args?: {
-        [key: string]: string;
-      };
-      context?: string;
-      dockerfile?: string;
-      target?: string;
     };
     "plantypes.FetchImageMetadataPlan": {
       include_attestation_layers?: boolean;
@@ -8425,7 +8468,7 @@ export interface components {
       type?: components["schemas"]["service.AppConfigTemplateType"];
     };
     /** @enum {string} */
-    "service.AppConfigTemplateType": "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc" | "azure-aks" | "flat" | "top-level" | "installer" | "runner" | "sandbox" | "inputs" | "terraform" | "terraformInfra" | "helm" | "docker-build" | "job" | "container-image" | "ecr-container-image";
+    "service.AppConfigTemplateType": "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc" | "azure-aks" | "flat" | "top-level" | "installer" | "runner" | "sandbox" | "inputs" | "terraform" | "terraformInfra" | "helm" | "job" | "container-image" | "ecr-container-image";
     "service.AppGroupRequest": {
       description: string;
       display_name: string;
@@ -8631,15 +8674,19 @@ export interface components {
       repo: string;
     };
     "service.ConnectionListResponse": {
+      azure_registry_id?: string;
+      azure_registry_login_server?: string;
+      azure_tenant_id?: string;
       created_at?: string;
       created_by_id?: string;
       default_region?: string;
+      gcp_project_number?: string;
       id?: string;
       last_verified_at?: string;
       name?: string;
       org_id?: string;
       /** @enum {string} */
-      platform?: "aws";
+      platform?: "aws" | "gcp" | "azure";
       preset?: components["schemas"]["app.CloudConnectionPreset"];
       principal?: string;
       queues?: components["schemas"]["app.Queue"][];
@@ -8652,15 +8699,19 @@ export interface components {
       verification_requested_at?: string;
     };
     "service.ConnectionResponse": {
+      azure_registry_id?: string;
+      azure_registry_login_server?: string;
+      azure_tenant_id?: string;
       created_at?: string;
       created_by_id?: string;
       default_region?: string;
+      gcp_project_number?: string;
       id?: string;
       last_verified_at?: string;
       name?: string;
       org_id?: string;
       /** @enum {string} */
-      platform?: "aws";
+      platform?: "aws" | "gcp" | "azure";
       preset?: components["schemas"]["app.CloudConnectionPreset"];
       principal?: string;
       queues?: components["schemas"]["app.Queue"][];
@@ -8674,6 +8725,7 @@ export interface components {
       verification_requested_at?: string;
     };
     "service.ConnectionUsage": {
+      image_repositories?: number;
       installs?: number;
     };
     "service.CreateActionWorkflowConfigRequest": {
@@ -8953,38 +9005,12 @@ export interface components {
       webhook_secret?: string;
       webhook_url: string;
     };
-    "service.CreateDockerBuildComponentConfigRequest": {
-      app_config_id?: string;
-      auto_approve_on_policies_passing?: boolean;
-      build_args?: string[];
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
-      build_timeout?: string;
-      checksum?: string;
-      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
-      default_enabled?: boolean;
-      dependencies?: string[];
-      /** @description Duration string for deploy operations (e.g., "30m", "1h") */
-      deploy_timeout?: string;
-      dockerfile: string;
-      env_vars?: {
-        [key: string]: string;
-      };
-      max_auto_retries?: number;
-      operation_roles?: {
-        [key: string]: string;
-      };
-      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
-      references?: string[];
-      skip_noops?: boolean;
-      target?: string;
-      toggleable?: boolean;
-    };
     "service.CreateExternalImageComponentConfigRequest": {
       app_config_id?: string;
       auto_approve_on_policies_passing?: boolean;
       aws_ecr_image_config?: components["schemas"]["service.awsECRImageConfigRequest"];
       azure_acr_image_config?: components["schemas"]["service.azureACRImageConfigRequest"];
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       checksum?: string;
       default_enabled?: boolean;
@@ -9012,7 +9038,7 @@ export interface components {
     "service.CreateHelmComponentConfigRequest": {
       app_config_id?: string;
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       chart_name: string;
       checksum?: string;
@@ -9046,6 +9072,10 @@ export interface components {
         [key: string]: string;
       };
       values_files?: string[];
+    };
+    "service.CreateImageRepositoryRequest": {
+      cloud_connection_id: string;
+      repository: string;
     };
     "service.CreateInstallActionWorkflowRunRequest": {
       action_workflow_config_id: string;
@@ -9165,7 +9195,7 @@ export interface components {
       app_config_id?: string;
       args?: string[];
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       checksum?: string;
       cmd?: string[];
@@ -9188,7 +9218,7 @@ export interface components {
     "service.CreateKubernetesManifestComponentConfigRequest": {
       app_config_id?: string;
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       checksum?: string;
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
@@ -9287,10 +9317,17 @@ export interface components {
       version?: string;
     };
     "service.CreateRequest": {
+      acr_repositories?: string[];
+      azure_registry_id?: string;
+      azure_registry_login_server?: string;
+      azure_tenant_id?: string;
       default_region?: string;
+      ecr_repository_arns?: string[];
+      gar_repositories?: string[];
+      gcp_project_number?: string;
       name?: string;
       /** @enum {string} */
-      platform?: "aws";
+      platform?: "aws" | "gcp" | "azure";
       preset?: components["schemas"]["app.CloudConnectionPreset"];
       principal?: string;
       target_id?: string;
@@ -9402,7 +9439,7 @@ export interface components {
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
       auto_approve_on_policies_passing?: boolean;
-      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
       build_timeout?: string;
       checksum?: string;
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
@@ -9804,6 +9841,9 @@ export interface components {
       skipped_by_policy?: boolean;
       warn_count?: number;
     };
+    "service.InstallDeploymentSourceDiff": {
+      compare_url?: string;
+    };
     "service.InstallDeploymentStep": {
       approval_response_id?: string;
       component_name?: string;
@@ -9930,6 +9970,39 @@ export interface components {
     };
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
+    };
+    "service.InstallReconciliationBlocker": {
+      code?: string;
+      message?: string;
+      workflow_id?: string;
+    };
+    "service.InstallReconciliationConfig": {
+      app_branch_run_id?: string;
+      app_config_id?: string;
+      commit?: components["schemas"]["service.InstallOverviewCommit"];
+      version?: number;
+    };
+    "service.InstallReconciliationDiffSummary": {
+      added?: number;
+      changed?: number;
+      removed?: number;
+      sandbox_changed?: boolean;
+      stack_changed?: boolean;
+    };
+    "service.InstallReconciliationResponse": {
+      app_branch_id?: string;
+      app_branch_name?: string;
+      applied?: components["schemas"]["service.InstallReconciliationConfig"];
+      blockers?: components["schemas"]["service.InstallReconciliationBlocker"][];
+      diff_summary?: components["schemas"]["service.InstallReconciliationDiffSummary"];
+      in_flight_workflow_id?: string;
+      install_group_id?: string;
+      install_group_name?: string;
+      skipped_run_count?: number;
+      skipped_runs?: components["schemas"]["service.InstallOverviewCommit"][];
+      /** @enum {string} */
+      status?: "current" | "behind" | "in_progress" | "blocked";
+      target?: components["schemas"]["service.InstallReconciliationConfig"];
     };
     "service.InstallStackUpdate": {
       input_diff?: components["schemas"]["app.StackVersionRunInputDiff"];
@@ -10131,6 +10204,15 @@ export interface components {
       readme?: string;
       warnings?: string[];
     };
+    "service.ReconcileInstallRequest": {
+      expected_app_config_id: string;
+      plan_only?: boolean;
+    };
+    "service.ReconcileInstallResponse": {
+      install_app_config_version_id?: string;
+      reconciliation?: components["schemas"]["service.InstallReconciliationResponse"];
+      workflow_id?: string;
+    };
     "service.RecoverInstallComponentHelmReleaseRequest": {
       request_id?: string;
       role?: string;
@@ -10258,6 +10340,7 @@ export interface components {
       cli?: string;
       cloudformation?: string;
       issuer_url?: string;
+      permissions_cli?: string;
       permissions_policy?: {
         [key: string]: unknown;
       };
@@ -10690,6 +10773,36 @@ export interface components {
       authorities?: components["schemas"]["signature.Authority"][];
       require_signature?: boolean;
     };
+    "sourceidentity.File": {
+      executable?: boolean;
+      path?: string;
+      sha256?: string;
+    };
+    "sourceidentity.Identity": {
+      captured?: boolean;
+      chart_version?: string;
+      checksum?: string;
+      commit?: string;
+      config_checksum?: string;
+      coverage?: string;
+      digest?: string;
+      files?: components["schemas"]["sourceidentity.File"][];
+      inputs?: components["schemas"]["sourceidentity.Input"][];
+      inputs_recorded?: boolean;
+      kind?: string;
+      reasons?: string[];
+      ref?: string;
+      repository?: string;
+      resolved_at?: string;
+      resolved_from?: string;
+      root?: string;
+      version?: number;
+    };
+    "sourceidentity.Input": {
+      entry?: string;
+      path?: string;
+      stat?: boolean;
+    };
     "sql.NullBool": {
       bool?: boolean;
       /** @description Valid is true if Bool is not NULL */
@@ -10782,6 +10895,7 @@ export interface components {
       status?: string;
     };
     "state.SandboxState": {
+      build_id?: string;
       outputs?: {
         [key: string]: unknown;
       };
@@ -14940,71 +15054,6 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * create a docker build component config
-   * @deprecated
-   * @description Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
-   */
-  CreateAppDockerBuildComponentConfig: {
-    parameters: {
-      path: {
-        /** @description app ID */
-        app_id: string;
-        /** @description component ID */
-        component_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.CreateDockerBuildComponentConfigRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["app.DockerBuildComponentConfig"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Conflict */
-      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -19767,7 +19816,7 @@ export interface operations {
     parameters: {
       query: {
         /** @description app template type */
-        type: "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc" | "azure-aks" | "flat" | "top-level" | "installer" | "runner" | "sandbox" | "inputs" | "terraform" | "terraformInfra" | "helm" | "docker-build" | "job" | "container-image" | "ecr-container-image";
+        type: "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc" | "azure-aks" | "flat" | "top-level" | "installer" | "runner" | "sandbox" | "inputs" | "terraform" | "terraformInfra" | "helm" | "job" | "container-image" | "ecr-container-image";
       };
       path: {
         /** @description app ID */
@@ -19984,8 +20033,12 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search by name, account, or role ARN */
+        /** @description search by name, account, project, subscription, or principal */
         q?: string;
+        /** @description cloud platform */
+        platform?: "aws" | "gcp" | "azure";
+        /** @description comma-separated access presets: stacks, ecr, gar, acr, custom */
+        preset?: string;
       };
     };
     responses: {
@@ -19999,7 +20052,7 @@ export interface operations {
   };
   /**
    * create a cloud connection
-   * @description Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+   * @description Create an org-bound AWS, GCP, or Azure identity. Optional repository arrays generate initial read-only setup material but are not stored or used as an allowlist. ECR and GAR use default_region for image connection matching. ACR requires a subscription UUID, existing Entra application client ID and service principal, tenant UUID, registry ARM ID, and bare login server. Its registry must already use RBAC Registry + ABAC Repository Permissions; setup never changes registry mode. Cloud IAM authorizes image pulls. Custom renders AWS trust only.
    */
   CreateCloudConnection: {
     /** @description Input */
@@ -20035,12 +20088,6 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Conflict */
-      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -20094,6 +20141,12 @@ export interface operations {
   /** get cloud connection setup material */
   GetCloudConnectionSetup: {
     parameters: {
+      query?: {
+        /** @description Transient exact ECR ARN, GAR resource, or ACR repository path for read-only grant generation; not stored */
+        repository?: string[];
+        /** @description Reuse an existing principal in Terraform/CloudFormation; AWS trust contribution must be merged in the original owning role. CLI always detects and reuses existing identities. */
+        existing_principal?: boolean;
+      };
       path: {
         /** @description connection ID */
         connection_id: string;
@@ -20636,69 +20689,6 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * create a docker build component config
-   * @deprecated
-   * @description Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
-   */
-  CreateDockerBuildComponentConfig: {
-    parameters: {
-      path: {
-        /** @description component ID */
-        component_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.CreateDockerBuildComponentConfigRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["app.DockerBuildComponentConfig"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Conflict */
-      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -21455,7 +21445,6 @@ export interface operations {
    * - installer
    * - sandbox
    * - runner
-   * - docker_build
    * - container_image
    * - helm
    * - terraform
@@ -21528,7 +21517,6 @@ export interface operations {
    * - installer
    * - sandbox
    * - runner
-   * - docker_build
    * - container_image
    * - helm
    * - terraform
@@ -21641,6 +21629,188 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.Waitlist"];
+        };
+      };
+    };
+  };
+  /** list image repositories */
+  ListImageRepositories: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description search by repository or image URL prefix */
+        q?: string;
+        /** @description cloud platform */
+        platform?: "aws" | "gcp" | "azure";
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ImageRepository"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * register an image repository
+   * @description Save an exact ECR ARN, GAR repository resource, or ACR repository path against an existing org-owned image connection. Pending connections are allowed; image use requires verification. Does not change cloud permissions.
+   */
+  CreateImageRepository: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateImageRepositoryRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ImageRepository"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an image repository */
+  GetImageRepository: {
+    parameters: {
+      path: {
+        /** @description repository ID */
+        repository_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ImageRepository"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * remove an image repository assignment
+   * @description Does not revoke cloud permissions or change existing image configuration connection pins.
+   */
+  DeleteImageRepository: {
+    parameters: {
+      path: {
+        /** @description repository ID */
+        repository_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -23284,6 +23454,69 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallActionWorkflowRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete the logs and trace spans of an action run
+   * @description Permanently delete the logs and trace spans of a finished action run, for example after a command printed a secret.
+   *
+   * Only org admins can delete logs, and only after the run has ended, including runs that failed, timed out, or were
+   * cancelled. The run itself and its outputs are kept. The
+   * log stream is marked with `logs_deleted_at` and `logs_deleted_by_id` from the first deletion. Calling this again
+   * deletes any records that arrived late and keeps the original marker.
+   *
+   * Once the logs are deleted, the log stream's write token is revoked, new writes to the stream are dropped, and reads of
+   * the stream return no logs or spans. Trace spans are removed in the background after the call returns.
+   *
+   * Rotate any secret that was exposed: deleting the logs does not undo the exposure, and copies held in the ingestion
+   * queue expire on their own retention schedule. If that queue is replayed before then, call this endpoint again.
+   */
+  DeleteInstallActionRunLogs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.LogStream"];
         };
       };
       /** @description Bad Request */
@@ -25688,6 +25921,64 @@ export interface operations {
     };
   };
   /**
+   * get the GitHub compare link for a deployment resource
+   * @description Returns a GitHub compare URL between the commits of the resource's build for the install's pinned app config and its build for this deployment's app config. The URL is empty when the builds are not in the same GitHub repository, use the same commit, or have the same source digest. Nuon does not read the repository for this response.
+   */
+  GetInstallDeploymentSourceDiff: {
+    parameters: {
+      query: {
+        /** @description resource kind */
+        kind: "component" | "sandbox";
+        /** @description resource name */
+        name: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallDeploymentSourceDiff"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get all deploys to an install
    * @deprecated
    * @description Returns all deployments for an install.
@@ -27274,6 +27565,124 @@ export interface operations {
       206: {
         content: {
           "application/json": components["schemas"]["service.Readme"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * reconcile an install onto its app branch
+   * @description Starts the workflow that brings the install onto its app branch's latest deployable config. expected_app_config_id is the config the caller reviewed; the request fails with 409 when the branch has since moved to another config, when the install is blocked, or when it has no deployable target. When the install already runs the target config, or a workflow is already rolling it out, nothing is created and the current state is returned with 200. plan_only runs the workflow without applying it. Requires the install-reconciliation org feature.
+   */
+  ReconcileInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ReconcileInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ReconcileInstallResponse"];
+        };
+      };
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.ReconcileInstallResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * install reconciliation state
+   * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+   */
+  GetInstallReconciliation: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallReconciliationResponse"];
         };
       };
       /** @description Bad Request */

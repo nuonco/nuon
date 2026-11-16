@@ -8,6 +8,7 @@ import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
 import { usePrefetchLogStreamSpans } from '@/hooks/use-prefetch-log-stream-spans'
+import { useStepTab } from '@/components/workflows/step-details/use-step-tab'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
 
@@ -18,6 +19,7 @@ export const SandboxRunApply = ({
   sandboxRun?: TSandboxRun
 }) => {
   usePrefetchLogStreamSpans(sandboxRun?.log_stream?.id)
+  const [tab, setTab] = useStepTab()
 
   return (
     <>
@@ -56,6 +58,8 @@ export const SandboxRunApply = ({
               <LogViewerProvider>
                 <Tabs
                   naturalHeight
+                  activeTab={tab}
+                  onTabChange={setTab}
                   tabs={{
                     logs: <SSELogs />,
                     trace: (

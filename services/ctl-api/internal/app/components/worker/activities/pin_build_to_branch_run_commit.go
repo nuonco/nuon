@@ -4,23 +4,48 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
+	"time"
 
 	"github.com/google/go-github/v50/github"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/redact"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/vcserrors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
+
+const pinBuildMarkErrorTimeout = 10 * time.Second
 
 func (a *Activities) pinBuildToBranchRunCommit(ctx context.Context, buildID, appConfigID string) error {
 	if buildID == "" || appConfigID == "" {
 		return nil
 	}
 
+	err := a.pinBuildSource(ctx, buildID, appConfigID)
+	if err == nil {
+		return nil
+	}
+	description := compositeerrors.TruncateRunes(redact.DiagnosticSecrets("Unable to pin build source: "+compositeerrors.ErrorMessage(err)), 499)
+	markCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), pinBuildMarkErrorTimeout)
+	defer cancel()
+	if res := a.db.WithContext(markCtx).
+		Model(&app.ComponentBuild{}).
+		Where(app.ComponentBuild{ID: buildID, Status: app.ComponentBuildStatusQueued}).
+		Select("status", "status_description").
+		Updates(app.ComponentBuild{
+			Status:            app.ComponentBuildStatusError,
+			StatusDescription: description,
+		}); res.Error != nil {
+		return errors.Join(err, fmt.Errorf("unable to mark component build failed: %w", res.Error))
+	}
+	return err
+}
+
+func (a *Activities) pinBuildSource(ctx context.Context, buildID, appConfigID string) error {
 	var build app.ComponentBuild
 	if res := a.db.WithContext(ctx).
 		Scopes(helpers.PreloadComponentBuildConfig).
@@ -77,6 +102,16 @@ func (a *Activities) resolveBuildOwnCommit(ctx context.Context, build *app.Compo
 	if ref == "" {
 		return nil
 	}
+
+	runID := ""
+	if build.AppBranchRunID != nil {
+		runID = *build.AppBranchRunID
+	}
+	pinned, err := buildsource.ResolveRef(ctx, a.db, a.vcsHelpers, connectedCfg, publicCfg, runID, ref)
+	if err != nil {
+		return a.failBuildSource(ctx, build.ID, repo, ref, err)
+	}
+	ref = pinned
 
 	var (
 		vcsCommit *app.VCSConnectionCommit
@@ -189,10 +224,7 @@ func runBranchRepo(run *app.AppBranchRun) (repo, branch string) {
 func buildTracksBranchSource(run *app.AppBranchRun, build *app.ComponentBuild) bool {
 	branchRepo, branchName := runBranchRepo(run)
 	cmpRepo, cmpBranch := buildRepoRef(buildVCSConfigs(build))
-	if branchRepo == "" || cmpRepo == "" || branchName == "" || cmpBranch == "" {
-		return false
-	}
-	return strings.EqualFold(branchRepo, cmpRepo) && branchName == cmpBranch
+	return branchName != "" && branchName == cmpBranch && buildsource.SameRepo(branchRepo, cmpRepo)
 }
 
 func buildRefCanBePinned(build *app.ComponentBuild) bool {
@@ -214,8 +246,6 @@ func buildVCSConfigs(build *app.ComponentBuild) (*app.ConnectedGithubVCSConfig, 
 		return ccc.TerraformModuleComponentConfig.ConnectedGithubVCSConfig, ccc.TerraformModuleComponentConfig.PublicGitVCSConfig
 	case ccc.HelmComponentConfig != nil:
 		return ccc.HelmComponentConfig.ConnectedGithubVCSConfig, ccc.HelmComponentConfig.PublicGitVCSConfig
-	case ccc.DockerBuildComponentConfig != nil:
-		return ccc.DockerBuildComponentConfig.ConnectedGithubVCSConfig, ccc.DockerBuildComponentConfig.PublicGitVCSConfig
 	case ccc.KubernetesManifestComponentConfig != nil:
 		return ccc.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig, ccc.KubernetesManifestComponentConfig.PublicGitVCSConfig
 	case ccc.PulumiComponentConfig != nil:

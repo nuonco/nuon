@@ -31,6 +31,9 @@ type ServiceSetupResponse struct {
 	// issuer url
 	IssuerURL string `json:"issuer_url,omitempty"`
 
+	// permissions cli
+	PermissionsCli string `json:"permissions_cli,omitempty"`
+
 	// permissions policy
 	PermissionsPolicy map[string]any `json:"permissions_policy,omitempty"`
 

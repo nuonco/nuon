@@ -92,12 +92,6 @@ func (s *service) getComponentConfig(ctx *gin.Context, cmpID, cfgID string) (*ap
 		Preload("HelmComponentConfig.ConnectedGithubVCSConfig").
 		Preload("HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
-		// preload all docker configs
-		Preload("DockerBuildComponentConfig").
-		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-		Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-
 		// preload all external image configs
 		Preload("ExternalImageComponentConfig").
 		Preload("ExternalImageComponentConfig.AWSECRImageConfig").

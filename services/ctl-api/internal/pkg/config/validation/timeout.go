@@ -17,7 +17,7 @@ func ValidateBuildTimeout(timeout string) error {
 		return stderr.ErrUser{
 			Err:         errors.New("invalid_timeout"),
 			Code:        "invalid_timeout",
-			Description: "timeout must be a valid duration (e.g., '30m', '45m')",
+			Description: "timeout must be a valid duration (e.g., '10m', '30m')",
 		}
 	}
 

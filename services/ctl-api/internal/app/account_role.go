@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -39,6 +40,31 @@ func (c *AccountRole) BeforeSave(tx *gorm.DB) error {
 		c.OrgID = generics.NewNullString(orgIDFromContext(tx.Statement.Context))
 	}
 
+	db := tx.Session(&gorm.Session{NewDB: true})
+	var role Role
+	if err := db.Unscoped().
+		Preload("Policies", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
+		Where(&Role{ID: c.RoleID}, "id").
+		Find(&role).Error; err != nil {
+		return err
+	}
+	if !role.HasPolicyDocument() {
+		return nil
+	}
+	var account Account
+	if err := db.Select("id").Where(&Account{ID: c.AccountID}, "id").First(&account).Error; err != nil {
+		return fmt.Errorf("document policy binding requires a live account: %w", err)
+	}
+	var org Org
+	if err := db.Select("id").Where(&Org{ID: c.OrgID.String}, "id").First(&org).Error; err != nil {
+		return fmt.Errorf("document policy binding requires a live org: %w", err)
+	}
+	binding := *c
+	binding.Org = &org
+	if _, err := role.CompilePermissions(binding); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -48,6 +74,12 @@ func (a *AccountRole) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &AccountRole{}, "account_id"),
 			Columns: []string{
 				"account_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &AccountRole{}, "role_id"),
+			Columns: []string{
+				"role_id",
 			},
 		},
 		{

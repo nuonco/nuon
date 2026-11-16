@@ -620,7 +620,17 @@ func (s *service) buildInstallDeployments(ctx *gin.Context, orgID, installID str
 	}
 	versionsByWorkflowID := make(map[string]*app.InstallAppConfigVersion)
 	diffsByWorkflowID := make(map[string]*app.InstallConfigDiff)
+	var sandboxWorkflowIDs []string
 	if len(workflowIDs) > 0 {
+		if err := s.db.WithContext(ctx).Model(&app.WorkflowStep{}).
+			Where("install_workflow_id IN ?", workflowIDs).
+			Where("step_target_type IN ?", []app.WorkflowStepTargetType{
+				app.WorkflowStepTargetTypeInstallSandboxRun,
+				app.WorkflowStepTargetTypeInstallSandboxRuns,
+			}).
+			Distinct().Pluck("install_workflow_id", &sandboxWorkflowIDs).Error; err != nil {
+			return nil, fmt.Errorf("unable to query deployment sandbox steps: %w", err)
+		}
 		var versions []app.InstallAppConfigVersion
 		if err := s.db.WithContext(ctx).
 			Preload("AppBranchRun").
@@ -678,7 +688,13 @@ func (s *service) buildInstallDeployments(ctx *gin.Context, orgID, installID str
 
 	deployments := make([]InstallDeployment, 0, len(workflows))
 	for i := range workflows {
-		d := buildInstallDeployment(&workflows[i], versionsByWorkflowID[workflows[i].ID], diffsByWorkflowID[workflows[i].ID], buildsByID, fallbackBranch)
+		diff := diffsByWorkflowID[workflows[i].ID]
+		if diff != nil && diff.SandboxBuildChanged && !diff.SandboxChanged && !containsString(sandboxWorkflowIDs, workflows[i].ID) {
+			copied := *diff
+			copied.SandboxBuildChanged = false
+			diff = &copied
+		}
+		d := buildInstallDeployment(&workflows[i], versionsByWorkflowID[workflows[i].ID], diff, buildsByID, fallbackBranch)
 		if d.AppBranch == nil || d.AppBranch.RunID == "" {
 			if ref := sandboxBranches[workflows[i].ID]; ref != nil {
 				copied := *ref

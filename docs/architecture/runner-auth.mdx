@@ -111,9 +111,9 @@ authentication fails.
 ## GCP — Identity Token
 
 GCP instances can fetch a signed identity JWT from the Compute Engine metadata
-service. The token is audience-scoped and signed by Google's JWKS. The runner
-also fetches an OAuth2 access token and constructs a presigned Compute API
-request so Nuon can independently read instance metadata.
+service. The token is audience-scoped and signed by Google's JWKS. Google APIs
+reject it, so it cannot be used against the customer's project. The runner
+sends no OAuth2 access token.
 
 ### Flow
 
@@ -122,18 +122,13 @@ Runner (GCE)                 Metadata Service                 Nuon
   |                                |                            |
   |--- GET identity token -------->|                            |
   |<-- signed JWT -----------------|                            |
-  |--- GET access token ---------->|                            |
-  |<-- OAuth2 token ---------------|                            |
+  |--- GET nuon_runner_id -------->|                            |
+  |<-- runner ID ------------------|                            |
   |                                |                            |
   |--- request token ------------------------------------------>|
   |                                |                            |
   |                                |   validate JWT (JWKS)      |
   |                                |   extract claims           |
-  |                                |                            |
-  |                                |<-- Compute API call -------|
-  |                                |--- instance metadata ----->|
-  |                                |                            |
-  |                                |   cross-validate IDs       |
   |                                |   validate project +       |
   |                                |   service account vs       |
   |                                |   install stack            |
@@ -144,17 +139,17 @@ Runner (GCE)                 Metadata Service                 Nuon
 ### What the runner sends
 
 - The identity JWT from the metadata service
-- A presigned Compute API request (method, URL, Bearer token). The runner builds
-  the request but does not execute it.
+- The runner ID, read from the instance's `nuon_runner_id` metadata key
 
 ### What Nuon verifies
 
 1. Validates the JWT signature using Google's JWKS
 2. Extracts claims: project ID, instance ID, zone, service account
-3. Independently executes the Compute API request to read instance metadata
-4. Cross-validates the instance ID from the JWT against the Compute API response
-5. Reads the runner ID from the instance's custom metadata key
-6. Validates the project ID and service account email against the install's stack outputs
+3. Looks up the runner by the provided runner ID
+4. Validates the project ID and service account email against the install's stack outputs
+
+The runner service account is created per install, so a token signed for one
+install's service account cannot authenticate another install's runner.
 
 ## Azure — Managed Identity
 

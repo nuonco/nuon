@@ -1,1 +1,1 @@
-export { BuildPanel } from './BuildPanel'
+export { BuildPanel, buildPanelKey, parseBuildPanelKey } from './BuildPanel'

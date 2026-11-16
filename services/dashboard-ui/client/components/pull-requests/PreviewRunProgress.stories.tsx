@@ -43,7 +43,7 @@ export const Building = () => (
       {
         component_id: 'cmp-api',
         component_name: 'api',
-        component_type: 'docker_build',
+        component_type: 'external_image',
         status: 'success',
         change_reason: 'source_changed',
       },

@@ -21,14 +21,35 @@ import (
 // swagger:model service.CreateRequest
 type ServiceCreateRequest struct {
 
+	// acr repositories
+	AcrRepositories []string `json:"acr_repositories"`
+
+	// azure registry id
+	AzureRegistryID string `json:"azure_registry_id,omitempty"`
+
+	// azure registry login server
+	AzureRegistryLoginServer string `json:"azure_registry_login_server,omitempty"`
+
+	// azure tenant id
+	AzureTenantID string `json:"azure_tenant_id,omitempty"`
+
 	// default region
 	DefaultRegion string `json:"default_region,omitempty"`
+
+	// ecr repository arns
+	EcrRepositoryArns []string `json:"ecr_repository_arns"`
+
+	// gar repositories
+	GarRepositories []string `json:"gar_repositories"`
+
+	// gcp project number
+	GcpProjectNumber string `json:"gcp_project_number,omitempty"`
 
 	// name
 	Name string `json:"name,omitempty"`
 
 	// platform
-	// Enum: ["aws"]
+	// Enum: ["aws","gcp","azure"]
 	Platform string `json:"platform,omitempty"`
 
 	// preset
@@ -63,7 +84,7 @@ var serviceCreateRequestTypePlatformPropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["aws"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["aws","gcp","azure"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -75,6 +96,12 @@ const (
 
 	// ServiceCreateRequestPlatformAws captures enum value "aws"
 	ServiceCreateRequestPlatformAws string = "aws"
+
+	// ServiceCreateRequestPlatformGcp captures enum value "gcp"
+	ServiceCreateRequestPlatformGcp string = "gcp"
+
+	// ServiceCreateRequestPlatformAzure captures enum value "azure"
+	ServiceCreateRequestPlatformAzure string = "azure"
 )
 
 // prop value enum

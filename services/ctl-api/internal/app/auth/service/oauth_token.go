@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/nuonauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -73,6 +74,11 @@ func (s *service) oauthTokenAuthorizationCode(c *gin.Context) {
 		return
 	}
 
+	if clientID == nuonauth.CLIClientID {
+		s.redeemCLIAuthorizationCode(c, authCode)
+		return
+	}
+
 	s.redeemOAuthGrant(c, &app.OAuthAuthorizationCode{}, authCode.ID, oauthGrant{
 		AccountID:     authCode.AccountID,
 		ClientID:      authCode.ClientID,
@@ -122,6 +128,75 @@ func (s *service) oauthTokenRefresh(c *gin.Context) {
 		Scope:         refresh.Scope,
 		SourceTokenID: refresh.SourceTokenID,
 	}, "refresh token already used")
+}
+
+// redeemCLIAuthorizationCode issues the same Nuon auth token as device login.
+// MCP clients keep the short-lived OAuth access token and refresh token.
+func (s *service) redeemCLIAuthorizationCode(c *gin.Context, authCode app.OAuthAuthorizationCode) {
+	if authCode.ClientID != nuonauth.CLIClientID {
+		oauthError(c, http.StatusBadRequest, "invalid_client", "client_id mismatch")
+		return
+	}
+
+	ctx := c.Request.Context()
+	var account app.Account
+	err := s.db.WithContext(ctx).Where(&app.Account{ID: authCode.AccountID}).First(&account).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		oauthError(c, http.StatusBadRequest, "invalid_grant", "account no longer exists")
+		return
+	}
+	if err != nil {
+		s.l.Error("failed to find account for cli authorization", zap.Error(err))
+		oauthError(c, http.StatusInternalServerError, "server_error", "failed to issue token")
+		return
+	}
+
+	var tokenValue string
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockGrantSource(tx, account.ID, authCode.SourceTokenID, true); err != nil {
+			return err
+		}
+
+		res := tx.Model(&app.OAuthAuthorizationCode{}).
+			Where("id = ? AND consumed = ?", authCode.ID, false).
+			Update("consumed", true)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return errOAuthGrantConsumed
+		}
+
+		var err error
+		tokenValue, err = s.createToken(tx, &account, authCode.SourceTokenID)
+		return err
+	})
+	if errors.Is(err, errOAuthGrantConsumed) {
+		oauthError(c, http.StatusBadRequest, "invalid_grant", "authorization code already used")
+		return
+	}
+	if errors.Is(err, errTokenNotFound) {
+		oauthError(c, http.StatusBadRequest, "invalid_grant", "credential source no longer exists")
+		return
+	}
+	if err != nil {
+		s.l.Error("failed to issue cli authorization token", zap.Error(err))
+		oauthError(c, http.StatusInternalServerError, "server_error", "failed to issue token")
+		return
+	}
+
+	s.l.Info("cli authorization token issued",
+		zap.String("account_id", account.ID),
+		zap.String("client_id", authCode.ClientID))
+
+	c.Header("Cache-Control", "no-store")
+	c.Header("Pragma", "no-cache")
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": tokenValue,
+		"token_type":   "Bearer",
+		"expires_in":   s.cfg.NuonAuthTokenTTL * 60,
+		"email":        account.Email,
+	})
 }
 
 type oauthGrant struct {

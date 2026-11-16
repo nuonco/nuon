@@ -48,7 +48,7 @@ func Sync(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpe
 				Err:         res.Error,
 			}
 		}
-		if err := installHelpers.MigrateInstallRoles(ctx, tx, appID, *obj); err != nil {
+		if err := installHelpers.WithDB(tx).MigrateInstallRoles(ctx, appID, *obj); err != nil {
 			return sync.SyncInternalErr{
 				Description: "unable to create app permissions config",
 				Err:         err,

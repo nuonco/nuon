@@ -66,7 +66,6 @@ type ComponentConfigConnection struct {
 	TerraformModuleComponentConfig    *TerraformModuleComponentConfig    `json:"terraform_module,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"terraform_module_component_config,omitzero,omitempty"`
 	HelmComponentConfig               *HelmComponentConfig               `json:"helm,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"helm_component_config,omitzero,omitempty"`
 	ExternalImageComponentConfig      *ExternalImageComponentConfig      `json:"external_image,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"external_image_component_config,omitzero,omitempty"`
-	DockerBuildComponentConfig        *DockerBuildComponentConfig        `json:"docker_build,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"docker_build_component_config,omitzero,omitempty"`
 	JobComponentConfig                *JobComponentConfig                `json:"job,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"job_component_config,omitzero,omitempty"`
 	KubernetesManifestComponentConfig *KubernetesManifestComponentConfig `json:"kubernetes_manifest,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"kubernetes_manifest_component_config,omitzero,omitempty"`
 	PulumiComponentConfig             *PulumiComponentConfig             `json:"pulumi,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"pulumi_component_config,omitzero,omitempty"`
@@ -74,7 +73,7 @@ type ComponentConfigConnection struct {
 	References                        pq.StringArray                     `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
 	Checksum                          string                             `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
 	DriftSchedule                     string                             `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
-	BuildTimeout                      string                             `json:"build_timeout,omitempty" gorm:"default:null" temporaljson:"build_timeout,omitzero,omitempty"`   // Duration string for build operations (e.g., "30m", "1h"). Max 1h.
+	BuildTimeout                      string                             `json:"build_timeout,omitempty" gorm:"default:null" temporaljson:"build_timeout,omitzero,omitempty"`   // Duration string for build operations (e.g., "10m", "30m"). Max 30m.
 	DeployTimeout                     string                             `json:"deploy_timeout,omitempty" gorm:"default:null" temporaljson:"deploy_timeout,omitzero,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
 	MaxAutoRetries                    *int                               `json:"max_auto_retries,omitempty" gorm:"default:null" temporaljson:"max_auto_retries,omitzero,omitempty"`
 	SkipNoops                         *bool                              `json:"skip_noops,omitempty" gorm:"default:null" temporaljson:"skip_noops,omitzero,omitempty"`
@@ -242,7 +241,7 @@ func (c *ComponentConfigConnection) UseView() bool {
 }
 
 func (c *ComponentConfigConnection) ViewVersion() string {
-	return "v3"
+	return "v4"
 }
 
 func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
@@ -260,6 +259,11 @@ func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
 		{
 			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 3),
 			SQL:           viewsql.ComponentConfigConnectionsV3,
+			AlwaysReapply: true,
+		},
+		{
+			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 4),
+			SQL:           viewsql.ComponentConfigConnectionsV4,
 			AlwaysReapply: true,
 		},
 		{
@@ -322,9 +326,6 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	if c.TerraformModuleComponentConfig != nil {
 		c.Type = ComponentTypeTerraformModule
 	}
-	if c.DockerBuildComponentConfig != nil {
-		c.Type = ComponentTypeDockerBuild
-	}
 	if c.ExternalImageComponentConfig != nil {
 		c.Type = ComponentTypeExternalImage
 	}
@@ -345,9 +346,6 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	} else if c.HelmComponentConfig != nil {
 		c.ConnectedGithubVCSConfig = c.HelmComponentConfig.ConnectedGithubVCSConfig
 		c.PublicGitVCSConfig = c.HelmComponentConfig.PublicGitVCSConfig
-	} else if c.DockerBuildComponentConfig != nil {
-		c.ConnectedGithubVCSConfig = c.DockerBuildComponentConfig.ConnectedGithubVCSConfig
-		c.PublicGitVCSConfig = c.DockerBuildComponentConfig.PublicGitVCSConfig
 	} else if c.KubernetesManifestComponentConfig != nil {
 		c.ConnectedGithubVCSConfig = c.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig
 		c.PublicGitVCSConfig = c.KubernetesManifestComponentConfig.PublicGitVCSConfig

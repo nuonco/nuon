@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/restmapper"
 
 	"github.com/nuonco/nuon/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube/clientcfg"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
@@ -144,7 +145,7 @@ func (e *Engine) collectCluster(
 	sandboxNS map[string]string,
 	clusterErr *string,
 ) error {
-	restCfg, err := kube.ConfigForCluster(ctx, ci)
+	restCfg, err := clientcfg.ConfigForCluster(ctx, ci)
 	if err != nil {
 		return fmt.Errorf("unable to build cluster config: %w", err)
 	}

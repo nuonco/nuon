@@ -124,7 +124,6 @@ func TestLookupSchemaTypeNormalizesUnderscores(t *testing.T) {
 	}{
 		{"container-image", true},
 		{"container_image", true},
-		{"docker_build", true},
 		{"job", true},
 		{"runner", true},
 		{"unknown-type", false},

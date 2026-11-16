@@ -26,7 +26,7 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	Variables                    map[string]*string `json:"variables" validate:"required"`
 	VariablesFiles               []string           `json:"variables_files,omitempty"`
 	EnvVars                      map[string]*string `json:"env_vars" validate:"required"`
-	BuildTimeout                 string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	BuildTimeout                 string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "10m", "30m")
 	DeployTimeout                string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	MaxAutoRetries               *int               `json:"max_auto_retries,omitempty"`
 	SkipNoops                    *bool              `json:"skip_noops,omitempty"`

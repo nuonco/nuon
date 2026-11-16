@@ -7,7 +7,7 @@ export default {
 }
 
 const TYPES: TComponentTypeValue[] = [
-  'docker_build',
+  'external_image',
   'external_image',
   'helm_chart',
   'terraform_module',
@@ -98,7 +98,7 @@ export const Mono = () => (
 
 export const Sizes = () => (
   <div className="flex flex-col gap-5 p-8">
-    <ComponentType type="docker_build" variant="caption" iconSize={14} />
+    <ComponentType type="external_image" variant="caption" iconSize={14} />
     <ComponentType type="helm_chart" variant="body" iconSize={18} />
     <ComponentType
       type="terraform_module"

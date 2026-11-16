@@ -201,8 +201,8 @@ func (a *Activities) revokeClosedLogStreams(ctx context.Context, streamIDs map[s
 		if stream.Open && stream.DeletedAt == 0 {
 			continue
 		}
-		if err := a.acctClient.DeleteServiceAccount(ctx, stream.ID); err != nil {
-			return fmt.Errorf("delete log stream service account: %w", err)
+		if err := a.acctClient.RevokeServiceAccountCredentials(ctx, stream.ID); err != nil {
+			return fmt.Errorf("revoke log stream credentials: %w", err)
 		}
 		out.LogStreamAccounts++
 	}

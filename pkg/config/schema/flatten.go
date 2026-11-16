@@ -19,7 +19,6 @@ import (
 var componentNestedConfigKeys = map[string]struct{}{
 	"helm_chart":          {},
 	"terraform_module":    {},
-	"docker_build":        {},
 	"job":                 {},
 	"external_image":      {},
 	"kubernetes_manifest": {},

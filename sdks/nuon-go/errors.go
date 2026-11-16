@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -58,6 +59,46 @@ func newHTTPAPIError(statusCode int, body string) error {
 	}
 }
 
+type cliConfigHTTPError struct {
+	httpAPIError
+	message string
+}
+
+func (e *cliConfigHTTPError) Error() string {
+	return e.message
+}
+
+func newCLIConfigHTTPError(statusCode int, body []byte) error {
+	message := cliConfigStatusMessage(statusCode)
+	payload := new(models.StderrErrResponse)
+	if err := json.Unmarshal(body, payload); err == nil && (payload.Description != "" || payload.Error != "" || payload.UserError) {
+		return &cliConfigHTTPError{
+			httpAPIError: httpAPIError{
+				statusCode: statusCode,
+				body:       string(body),
+				payload:    payload,
+			},
+			message: message,
+		}
+	}
+
+	return &cliConfigHTTPError{
+		httpAPIError: httpAPIError{
+			statusCode: statusCode,
+			body:       string(body),
+			payload: &models.StderrErrResponse{
+				Description: message,
+				Error:       http.StatusText(statusCode),
+			},
+		},
+		message: message,
+	}
+}
+
+func cliConfigStatusMessage(statusCode int) string {
+	return fmt.Sprintf("Failed to retrieve cli-config. Request return %d", statusCode)
+}
+
 // ToUserError returns the error as a user error if possible
 func ToUserError(inputErr error) (*models.StderrErrResponse, bool) {
 	var (
@@ -109,6 +150,16 @@ func IsNotFound(err error) bool {
 	}
 
 	return stderr.IsCode(404)
+}
+
+// IsMissingRoute reports whether err is a 404 without a JSON error body, which
+// is how a control plane that predates an endpoint responds to it.
+func IsMissingRoute(err error) bool {
+	var apiErr *httpAPIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	return apiErr.statusCode == http.StatusNotFound && apiErr.payload == nil
 }
 
 func IsBadRequest(err error) bool {

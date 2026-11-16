@@ -209,7 +209,7 @@ func TestChartArchivePAXRetainsSizeLimits(t *testing.T) {
 	}
 }
 
-func TestChartArchiveRejectsMaliciousEntriesBeforeMaterialization(t *testing.T) {
+func TestPulledChartRejectsMaliciousEntriesBeforePublishing(t *testing.T) {
 	cases := map[string]chartArchiveEntry{
 		"parent":         {name: "acme/../../canary", data: "overwritten"},
 		"inner parent":   {name: "acme/templates/../canary", data: "overwritten"},
@@ -256,7 +256,7 @@ func TestChartArchiveRejectsMaliciousEntriesBeforeMaterialization(t *testing.T) 
 				chartArchiveEntry{name: "acme/charts/dir/Chart.yaml", data: "apiVersion: v2\nname: dir\nversion: 1.0.0\n"},
 				entry,
 			)
-			_, err := materializeChartArchive(fs, bytes.NewReader(data))
+			_, err := publishPulledChart(fs, data)
 			require.Error(t, err)
 			entries, err := afero.ReadDir(fs, ".")
 			require.NoError(t, err)
@@ -266,41 +266,6 @@ func TestChartArchiveRejectsMaliciousEntriesBeforeMaterialization(t *testing.T) 
 			require.Equal(t, "untouched", string(got))
 		})
 	}
-}
-
-func TestChartArchiveMaterializationPreservesHelmSemantics(t *testing.T) {
-	child := chartArchiveFixture(t,
-		chartArchiveEntry{name: "child/Chart.yaml", data: "apiVersion: v2\nname: child\nversion: 0.1.0\nannotations:\n  example.com/metadata: retained\n"},
-		chartArchiveEntry{name: "child/README.md", data: "child README"},
-	)
-	data := chartArchiveFixture(t,
-		chartArchiveEntry{name: "acme/Chart.yaml", data: acmeChartMetadata},
-		chartArchiveEntry{name: "acme/.helmignore", data: "ignored.txt\n"},
-		chartArchiveEntry{name: "acme/ignored.txt", data: "not packaged"},
-		chartArchiveEntry{name: "acme/values.yaml", data: "name: from-archive\n"},
-		chartArchiveEntry{name: "acme/templates/config.yaml", data: "\xef\xbb\xbfapiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: {{ .Values.name }}\n"},
-		chartArchiveEntry{name: "acme/charts/child.tgz", data: string(child)},
-	)
-	fs, source := pinnedChartSource(t, t.TempDir())
-	dir, err := materializeChartArchive(fs, bytes.NewReader(data))
-	require.NoError(t, err)
-	want, err := loader.Load(filepath.Join(fs.Root(), dir))
-	require.NoError(t, err)
-	got, err := loadChart(source, dir)
-	require.NoError(t, err)
-	require.Equal(t, want, got)
-	h := &handler{state: initializedChartState(t, source)}
-	packagePath, err := h.loadAndPackageChart(t.Context(), zap.NewNop(), dir)
-	require.NoError(t, err)
-	packaged, err := loader.Load(packagePath)
-	require.NoError(t, err)
-	require.Equal(t, "retained", packaged.Dependencies()[0].Metadata.Annotations["example.com/metadata"])
-	require.True(t, packaged.ModTime.Equal(time.Unix(1700000000, 0)))
-	require.NoError(t, afero.WriteFile(fs, filepath.Join(dir, "templates/config.yaml"), []byte("{{ invalid"), 0600))
-	inputs, err := h.buildPolicyInput(context.Background(), zap.NewNop())
-	require.NoError(t, err)
-	require.Len(t, inputs, 1)
-	require.Equal(t, "from-archive", inputs[0].Review.Object["metadata"].(map[string]interface{})["name"])
 }
 
 func TestSubchartTarAssetsRemainOpaque(t *testing.T) {
@@ -530,7 +495,7 @@ func TestChartArchiveRejectsUnsafeOutputComponents(t *testing.T) {
 			fs, _ := pinnedChartSource(t, t.TempDir())
 			metadata := fmt.Sprintf("apiVersion: v2\nname: %q\nversion: 1.0.0\n", name)
 			data := chartArchiveFixture(t, chartArchiveEntry{name: "acme/Chart.yaml", data: metadata})
-			_, err := materializeChartArchive(fs, bytes.NewReader(data))
+			_, err := publishPulledChart(fs, data)
 			require.Error(t, err)
 			entries, err := afero.ReadDir(fs, ".")
 			require.NoError(t, err)

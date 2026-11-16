@@ -43,8 +43,8 @@ const rows = [
     buildHref: '#',
   },
   {
-    buildId: 'blddockerbuildexample00000',
-    componentName: 'api_docker_build',
+    buildId: 'bldapiimageexample00000000',
+    componentName: 'api_image',
     componentHref: '#',
     image: undefined,
     resolvedTag: undefined,

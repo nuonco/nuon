@@ -8,6 +8,7 @@ import {
   type TComponentConfigTypeText,
 } from '@/components/components/ComponentTypeFilter'
 import { DriftedResources } from '@/components/install-alignment/DriftedResources'
+import { usePanelDeepLinks } from '@/hooks/use-panel-deep-links'
 import {
   hasOngoingDeployment,
   listedResources,
@@ -15,7 +16,10 @@ import {
   resourcesOfKinds,
 } from '@/components/install-alignment/alignment-utils'
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
-import { ResourceComponentActions } from '@/components/install-components/ResourceComponentActions'
+import {
+  ResourceComponentActions,
+  useResourceComponentPanelLinks,
+} from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useInstallLink } from '@/hooks/use-install-path'
@@ -51,6 +55,9 @@ const ENABLED_FILTER_OPTIONS = [
 ]
 
 const LIMIT = 10
+
+const idFromKey = (key: string, prefix: string) =>
+  key.startsWith(prefix) ? key.slice(prefix.length) : ''
 
 const enabledRank = (enabled?: boolean | null) => {
   if (enabled === false) return 2
@@ -154,6 +161,23 @@ export const InstallComponentsListContainer = () => {
     enabled: !!org?.id && !!install?.id && !overviewLoading && pageIds !== '',
   })
   const rows = pageIds === '' ? undefined : result?.data
+
+  useResourceComponentPanelLinks({ isLoading, rows })
+  usePanelDeepLinks((key) => {
+    const detailId = idFromKey(key, 'install-component-')
+    if (!detailId) return null
+    if (isLoading && !rows) return null
+    const match = rows?.find(
+      (item) => (item.component?.id ?? item.component_id) === detailId
+    )
+    return (
+      <InstallComponentDetailPanel
+        componentId={detailId}
+        disabled={match?.enabled === false}
+        name={match?.component?.name}
+      />
+    )
+  })
 
   const components = useMemo(() => {
     const toListItem = (

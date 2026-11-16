@@ -14,6 +14,8 @@ import './Tabs.css'
 
 interface ITabs extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   initActiveTab?: string
+  activeTab?: string | null
+  onTabChange?: (tabKey: string) => void
   tabs: Record<string, ReactNode>
   // Overrides a tab's label. Otherwise derived from the key, which lowercases
   // everything after the first character.
@@ -27,6 +29,8 @@ interface ITabs extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
 export const Tabs = ({
   className,
   initActiveTab,
+  activeTab: controlledTab,
+  onTabChange,
   tabControlsClassName,
   tabs,
   tabLabels,
@@ -48,7 +52,13 @@ export const Tabs = ({
   const [hoveredTabLeft, setHoveredTabLeft] = useState<number | undefined>(
     undefined
   )
-  const [activeTab, setActiveTab] = useState(initActiveTab || tabKeys.at(0))
+  const [uncontrolledTab, setActiveTab] = useState(
+    initActiveTab || tabKeys.at(0)
+  )
+  const activeTab =
+    controlledTab && tabKeys.includes(controlledTab)
+      ? controlledTab
+      : uncontrolledTab
   const [containerHeight, setContainerHeight] = useState<number | undefined>(
     undefined
   )
@@ -160,6 +170,7 @@ export const Tabs = ({
             isActive={tabKey === activeTab}
             onClick={() => {
               setActiveTab(tabKey)
+              onTabChange?.(tabKey)
             }}
             variant="tab"
             ref={(el) => {

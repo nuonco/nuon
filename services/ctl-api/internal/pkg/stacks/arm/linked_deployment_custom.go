@@ -144,7 +144,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		)
 
 		// Fetch template, validate structure, and extract parameters
-		armTmpl, err := fetchARMTemplate(templateURL)
+		armTmpl, err := t.fetchARMTemplate(templateURL)
 		if err != nil {
 			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): %w", i, stack.Name, err)
 		}

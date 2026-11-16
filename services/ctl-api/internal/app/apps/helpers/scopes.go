@@ -119,11 +119,6 @@ func PreloadAppConfigComponentConfigConnections(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigConnections.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnections.HelmComponentConfig.ConnectedGithubVCSConfig").
 
-		// preload all docker configs
-		Preload("ComponentConfigConnections.DockerBuildComponentConfig").
-		Preload("ComponentConfigConnections.DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("ComponentConfigConnections.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-
 		// preload all external image configs
 		Preload("ComponentConfigConnections.ExternalImageComponentConfig").
 
@@ -151,11 +146,6 @@ func PreloadComponentConfigConnections(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigs.HelmComponentConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all docker configs
-		Preload("ComponentConfigs.DockerBuildComponentConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
 
 		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").

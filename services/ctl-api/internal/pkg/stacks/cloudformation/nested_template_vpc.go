@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/awslabs/goformation/v7/cloudformation"
 	nestedcloudformation "github.com/awslabs/goformation/v7/cloudformation/cloudformation"
@@ -92,10 +91,30 @@ type cfnTemplateShape struct {
 	Outputs    map[string]struct{}          `yaml:"Outputs"`
 }
 
-var templateFetchClient = &http.Client{Timeout: 30 * time.Second}
+// templateFetchClient fetches the vendor-supplied nested stack template URLs
+// referenced by app config. It only reaches https endpoints on the public
+// internet; see stacks.NewTemplateFetchClient. Tests swap it for an insecure
+// client so they can serve templates from localhost.
+var templateFetchClient = stacks.NewTemplateFetchClient()
+
+// WithTemplateFetchClient returns a copy that fetches vendor URLs with client.
+// It exists for tests outside this package that serve templates from
+// localhost; production code never overrides the client.
+func (tpl *Templates) WithTemplateFetchClient(client *http.Client) *Templates {
+	cp := *tpl
+	cp.fetchClient = client
+	return &cp
+}
+
+func (tpl *Templates) templateClient() *http.Client {
+	if tpl.fetchClient != nil {
+		return tpl.fetchClient
+	}
+	return templateFetchClient
+}
 
 func (tpl *Templates) fetchTemplate(templateURL string) (*cfnTemplateShape, error) {
-	resp, err := templateFetchClient.Get(templateURL)
+	resp, err := tpl.templateClient().Get(templateURL)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +124,7 @@ func (tpl *Templates) fetchTemplate(templateURL string) (*cfnTemplateShape, erro
 		return nil, fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, templateURL)
 	}
 
+	// The client fails the read past stacks.MaxTemplateFetchBytes.
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

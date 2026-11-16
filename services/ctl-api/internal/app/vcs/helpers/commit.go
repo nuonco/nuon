@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v50/github"
 
@@ -63,13 +64,11 @@ func (h *Helpers) GetPublicGitVCSConfigCommit(ctx context.Context, cfg *app.Publ
 // parseOwnerRepo extracts the GitHub owner and repo name from either
 // an "owner/repo" string or a "https://github.com/owner/repo" URL.
 func parseOwnerRepo(repoStr string) (string, string, error) {
-	// Try owner/repo format first
 	owner, repo, err := githubpkg.ParseRepo(repoStr)
 	if err == nil {
 		return owner, repo, nil
 	}
 
-	// Try URL format: https://github.com/owner/repo[.git]
 	trimmed := strings.TrimPrefix(repoStr, "https://github.com/")
 	if trimmed == repoStr {
 		return "", "", fmt.Errorf("unsupported repo format: %s", repoStr)
@@ -96,13 +95,13 @@ func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryC
 		vcsCommit.VCSConnectionID = generics.ToPtr(vcsConnectionID)
 	}
 
-	// Populate commit metadata with defensive nil checking
 	if ghCommit.Commit != nil {
 		if ghCommit.Commit.Author != nil {
 			vcsCommit.AuthorName = generics.FromPtrStr(ghCommit.Commit.Author.Name)
 			vcsCommit.AuthorEmail = generics.FromPtrStr(ghCommit.Commit.Author.Email)
 		}
 		vcsCommit.Message = generics.FromPtrStr(ghCommit.Commit.Message)
+		vcsCommit.CommittedAt = gitCommitTime(ghCommit)
 	}
 
 	if ghCommit.Author != nil {
@@ -110,4 +109,19 @@ func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryC
 	}
 
 	return vcsCommit
+}
+
+func gitCommitTime(ghCommit *github.RepositoryCommit) *time.Time {
+	commit := ghCommit.GetCommit()
+	if commit == nil {
+		return nil
+	}
+	for _, who := range []*github.CommitAuthor{commit.GetCommitter(), commit.GetAuthor()} {
+		if who == nil || who.Date == nil || who.Date.Time.IsZero() {
+			continue
+		}
+		t := who.Date.Time.UTC()
+		return &t
+	}
+	return nil
 }

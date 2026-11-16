@@ -59,7 +59,9 @@ func (s *service) getLogStream(ctx context.Context, logStreamID string) (*app.Lo
 // OwnerType and ParentLogStreamID, both effectively immutable for the life
 // of the stream, so per-batch Postgres lookups are wasted I/O once we've
 // seen a stream once. Cache miss falls back to getLogStream and primes the
-// LRU. Renames / re-parenting take up to logStreamCacheTTL to propagate.
+// LRU. Renames / re-parenting take up to logStreamCacheTTL to propagate, and
+// so does LogsDeletedAt, which the writer uses to drop batches for a stream
+// whose logs were deleted.
 func (s *service) getCachedLogStream(ctx context.Context, logStreamID string) (*app.LogStream, error) {
 	if cached, ok := s.logStreamCache.Get(logStreamID); ok {
 		return cached, nil

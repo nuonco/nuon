@@ -117,6 +117,15 @@ func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install, 
 			continue
 		}
 
+		if unsupportedComponentType(comp) {
+			skipStep, err := unsupportedComponentTypeSkipStep(ctx, dg.sg, dg.installID, comp, "skipped teardown "+comp.Name)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, skipStep)
+			continue
+		}
+
 		if generics.SliceContains(installComp.StatusV2.Status, []app.Status{
 			app.Status(app.InstallComponentStatusInactive),
 			app.Status(""),

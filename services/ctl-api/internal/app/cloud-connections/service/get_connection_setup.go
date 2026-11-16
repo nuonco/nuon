@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -15,6 +16,8 @@ import (
 // @Security APIKey
 // @Security OrgID
 // @Param connection_id path string true "connection ID"
+// @Param repository query []string false "Transient exact ECR ARN, GAR resource, or ACR repository path for read-only grant generation; not stored" collectionFormat(multi)
+// @Param existing_principal query bool false "Reuse an existing principal in Terraform/CloudFormation; AWS trust contribution must be merged in the original owning role. CLI always detects and reuses existing identities." default(false)
 // @Success 200 {object} SetupResponse
 // @Router /v1/cloud-connections/{connection_id}/setup [get]
 func (s *service) Setup(ctx *gin.Context) {
@@ -28,5 +31,19 @@ func (s *service) Setup(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, s.setup(connection))
+	repositories := ctx.QueryArray("repository")
+	for _, repository := range repositories {
+		if err := cloudconnections.ValidateImageRepository(connection, repository); err != nil {
+			ctx.Error(userError(err))
+			return
+		}
+	}
+	var query struct {
+		ExistingPrincipal bool `form:"existing_principal"`
+	}
+	if err := ctx.ShouldBindQuery(&query); err != nil {
+		ctx.Error(userError(err))
+		return
+	}
+	ctx.JSON(http.StatusOK, s.setupWithPrincipal(connection, query.ExistingPrincipal, repositories...))
 }

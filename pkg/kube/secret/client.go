@@ -8,7 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/nuonco/nuon/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube/clientcfg"
 )
 
 func (k *k8sSecretManager) getClient(ctx context.Context) (*kubernetes.Clientset, error) {
@@ -18,12 +18,12 @@ func (k *k8sSecretManager) getClient(ctx context.Context) (*kubernetes.Clientset
 	)
 
 	if k.ClusterInfo != nil {
-		kubeCfg, err = kube.ConfigForCluster(ctx, k.ClusterInfo)
+		kubeCfg, err = clientcfg.ConfigForCluster(ctx, k.ClusterInfo)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get kube config")
 		}
 	} else {
-		kubeCfg, err = kube.GetKubeConfig()
+		kubeCfg, err = clientcfg.GetKubeConfig()
 		if err != nil {
 			return nil, fmt.Errorf("unable to get default kube config: %w", err)
 		}

@@ -1,6 +1,7 @@
 import { api } from '@/lib'
 import type {
   TCloudConnection,
+  TCloudConnectionSetup,
   TCloudConnectionSummary,
   TCreateCloudConnectionRequest,
   TPaginationParams,
@@ -26,13 +27,17 @@ export const getCloudConnections = ({
   limit,
   offset,
   q,
+  platform,
+  preset,
 }: {
   orgId: string
   q?: string
+  platform?: string
+  preset?: string
 } & TPaginationParams) =>
   api<TCloudConnectionSummary[]>({
     orgId,
-    path: `cloud-connections${buildQueryParams({ limit, offset, q })}`,
+    path: `cloud-connections${buildQueryParams({ limit, offset, q, platform, preset })}`,
     paginated: true,
   })
 
@@ -60,6 +65,26 @@ export const verifyCloudConnection = ({
     orgId,
     path: `cloud-connections/${connectionId}/verify`,
   })
+
+export const getCloudConnectionSetup = ({
+  connectionId,
+  orgId,
+  repositories = [],
+  existingPrincipal = false,
+}: {
+  connectionId: string
+  orgId: string
+  repositories?: string[]
+  existingPrincipal?: boolean
+}) => {
+  const params = new URLSearchParams()
+  repositories.forEach((repository) => params.append('repository', repository))
+  if (existingPrincipal) params.set('existing_principal', 'true')
+  return api<TCloudConnectionSetup>({
+    orgId,
+    path: `cloud-connections/${connectionId}/setup${params.size ? `?${params}` : ''}`,
+  })
+}
 
 export const deleteCloudConnection = ({
   connectionId,

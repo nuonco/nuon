@@ -2,7 +2,10 @@ package helpers_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -11,10 +14,10 @@ import (
 	"go.uber.org/fx/fxtest"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/sourceidentity"
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -30,9 +33,10 @@ type appBranchConfigDiffDeps struct {
 type AppBranchConfigDiffTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app  *fxtest.App
-	deps appBranchConfigDiffDeps
-	ctx  context.Context
+	app    *fxtest.App
+	deps   appBranchConfigDiffDeps
+	ctx    context.Context
+	builds map[string]string
 }
 
 func TestAppBranchConfigDiffSuite(t *testing.T) {
@@ -77,6 +81,7 @@ type changeClassFixture struct {
 }
 
 func (s *AppBranchConfigDiffTestSuite) seedPair() changeClassFixture {
+	s.builds = map[string]string{}
 	a := s.deps.Seed.CreateApp(s.ctx, s.T())
 	oldCfg := s.deps.Seed.CreateBareAppConfig(s.ctx, s.T(), a.ID)
 	newCfg := s.deps.Seed.CreateBareAppConfig(s.ctx, s.T(), a.ID)
@@ -88,17 +93,19 @@ func (s *AppBranchConfigDiffTestSuite) seedPair() changeClassFixture {
 		Where("app_config_id IN ?", []string{oldCfg.ID, newCfg.ID}).
 		Updates(map[string]any{"name": "shared-stack", "description": "shared"}).Error)
 
-	component := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeDockerBuild)
-	worker := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeDockerBuild)
+	component := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeTerraformModule)
+	worker := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeTerraformModule)
 	s.connection(component.ID, oldCfg.ID, "checksum-same", "build-same")
 	s.connection(component.ID, newCfg.ID, "checksum-same", "build-same")
 	s.connection(worker.ID, oldCfg.ID, "worker-same", "worker-build")
 	s.connection(worker.ID, newCfg.ID, "worker-same", "worker-build")
 	s.deps.Seed.CreateAppRunnerConfig(s.ctx, s.T(), a.ID, oldCfg.ID)
 	s.deps.Seed.CreateAppRunnerConfig(s.ctx, s.T(), a.ID, newCfg.ID)
+	s.sandboxBuild(a.ID, oldCfg.ID, oldSandbox.ID)
+	s.sandboxBuild(a.ID, newCfg.ID, newSandbox.ID)
 
 	install := s.deps.Seed.CreateInstall(s.ctx, s.T(), a)
-	s.pin(install, newCfg.ID, newCfg.ID)
+	s.pin(install, oldCfg.ID)
 	return changeClassFixture{
 		appID:       a.ID,
 		install:     install,
@@ -111,57 +118,59 @@ func (s *AppBranchConfigDiffTestSuite) seedPair() changeClassFixture {
 	}
 }
 
-func (s *AppBranchConfigDiffTestSuite) connection(componentID, appConfigID, checksum, buildID string) {
-	conn := s.deps.Seed.CreateDockerBuildComponentConfigConnection(s.ctx, s.T(), componentID, appConfigID)
+func (s *AppBranchConfigDiffTestSuite) connection(componentID, appConfigID, checksum, source string) {
+	conn := s.deps.Seed.CreateTerraformComponentConfigConnection(s.ctx, s.T(), componentID, appConfigID)
+	buildID, ok := s.builds[source]
+	if !ok {
+		buildID = s.componentBuild(conn.ID, source)
+		s.builds[source] = buildID
+	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(conn).Updates(map[string]any{
 		"checksum":        checksum,
 		"latest_build_id": buildID,
 	}).Error)
 }
 
-func (s *AppBranchConfigDiffTestSuite) pin(install *app.Install, appConfigID, appliedID string) {
-	install.AppConfigID = appConfigID
-	install.AppConfigRef = app.AppConfigRef{AppliedConfigID: appliedID, ExpectedConfigID: appliedID}
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
-		"app_config_id":  appConfigID,
-		"app_config_ref": install.AppConfigRef,
-	}).Error)
+func (s *AppBranchConfigDiffTestSuite) sourceIdentity(source string) *sourceidentity.Identity {
+	sum := sha256.Sum256([]byte(source))
+	digest := hex.EncodeToString(sum[:])
+	identity := sourceidentity.New("terraform", source)
+	identity.Captured = true
+	identity.Commit = digest[:40]
+	identity.Repository = "https://example.com/acme/repo"
+	identity.Files = []sourceidentity.File{{Path: "main.tf", SHA256: digest}}
+	identity.Seal()
+	return identity
 }
 
-func (s *AppBranchConfigDiffTestSuite) stackRef(installID, appConfigID string) {
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Model(&app.InstallStack{}).
-		Where("install_id = ?", installID).
-		Update("app_config_ref", app.AppConfigRef{AppliedConfigID: appConfigID}).Error)
-}
-
-func (s *AppBranchConfigDiffTestSuite) sandboxRef(installID, appConfigID string) {
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Model(&app.InstallSandbox{}).
-		Where("install_id = ?", installID).
-		Update("app_config_ref", app.AppConfigRef{AppliedConfigID: appConfigID}).Error)
-}
-
-func (s *AppBranchConfigDiffTestSuite) componentRef(installID, componentID, appConfigID string) {
-	component := app.InstallComponent{
-		InstallID:    installID,
-		ComponentID:  componentID,
-		Status:       app.InstallComponentStatusActive,
-		AppConfigRef: app.AppConfigRef{AppliedConfigID: appConfigID},
+func (s *AppBranchConfigDiffTestSuite) componentBuild(connID, source string) string {
+	identity := s.sourceIdentity(source)
+	build := app.ComponentBuild{
+		ComponentConfigConnectionID: connID,
+		Status:                      app.ComponentBuildStatusActive,
+		StatusDescription:           "active",
+		SourceIdentity:              identity,
+		SourceChecksum:              identity.Checksum,
 	}
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&component).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&build).Error)
+	return build.ID
+}
+
+func (s *AppBranchConfigDiffTestSuite) latestBuild(appConfigID, componentID string) (string, string) {
+	var conn app.ComponentConfigConnection
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Where(app.ComponentConfigConnection{AppConfigID: appConfigID, ComponentID: componentID}).
+		First(&conn).Error)
+	return conn.ID, conn.LatestBuildID.String
+}
+
+func (s *AppBranchConfigDiffTestSuite) pin(install *app.Install, appConfigID string) {
+	install.AppConfigID = appConfigID
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.Install{ID: install.ID}).
+		Update("app_config_id", appConfigID).Error)
 }
 
 func (s *AppBranchConfigDiffTestSuite) diff(f changeClassFixture) *app.InstallConfigDiff {
-	single, err := configdiff.ComputeInstallConfigDiff(s.ctx, s.deps.DB, f.install.AppConfigID, f.newID)
-	require.NoError(s.T(), err)
-	s.False(single.StackChanged)
-	s.False(single.SandboxChanged)
-	s.False(single.SandboxBuildChanged)
-	s.Empty(single.Added)
-	s.Empty(single.Changed)
-	s.Empty(single.Removed)
-
 	diff, err := s.deps.Helpers.AppBranchConfigDiff(s.ctx, f.install, f.newID)
 	require.NoError(s.T(), err)
 	return diff
@@ -180,14 +189,10 @@ func (s *AppBranchConfigDiffTestSuite) TestStackConfig() {
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.AppStackConfig{}).
 		Where("app_config_id = ?", f.oldID).
 		Update("name", "previous-stack").Error)
-	s.stackRef(f.install.ID, f.oldID)
-	s.sandboxRef(f.install.ID, f.newID)
-	s.componentRef(f.install.ID, f.componentID, f.newID)
 
 	diff := s.diff(f)
 	s.True(diff.StackChanged)
 	s.False(diff.SandboxChanged)
-	s.False(diff.SandboxBuildChanged)
 	s.Empty(diff.Added)
 	s.Empty(diff.Changed)
 	s.Empty(diff.Removed)
@@ -198,22 +203,16 @@ func (s *AppBranchConfigDiffTestSuite) TestSandboxConfig() {
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.PublicGitVCSConfig{}).
 		Where("id = ?", f.oldSandbox.PublicGitVCSConfig.ID).
 		Update("branch", "release").Error)
-	s.stackRef(f.install.ID, f.newID)
-	s.sandboxRef(f.install.ID, f.oldID)
 
 	diff := s.diff(f)
 	s.False(diff.StackChanged)
 	s.True(diff.SandboxChanged)
-	s.False(diff.SandboxBuildChanged)
+	s.True(diff.SandboxBuildChanged)
 	s.Empty(diff.Changed)
 }
 
 func (s *AppBranchConfigDiffTestSuite) TestSandboxSource() {
 	f := s.seedPair()
-	s.sandboxBuild(f.appID, f.oldID, f.oldSandbox.ID)
-	s.sandboxBuild(f.appID, f.newID, f.newSandbox.ID)
-	s.stackRef(f.install.ID, f.newID)
-	s.sandboxRef(f.install.ID, f.oldID)
 
 	diff := s.diff(f)
 	s.False(diff.StackChanged)
@@ -223,12 +222,15 @@ func (s *AppBranchConfigDiffTestSuite) TestSandboxSource() {
 }
 
 func (s *AppBranchConfigDiffTestSuite) sandboxBuild(appID, appConfigID, sandboxConfigID string) {
+	identity := s.sourceIdentity("sandbox")
 	build := app.AppSandboxBuild{
 		AppID:              appID,
 		AppConfigID:        appConfigID,
 		AppSandboxConfigID: sandboxConfigID,
 		Status:             app.AppSandboxBuildStatusActive,
 		StatusDescription:  "active",
+		SourceIdentity:     identity,
+		SourceChecksum:     identity.Checksum,
 	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&build).Error)
 }
@@ -238,9 +240,6 @@ func (s *AppBranchConfigDiffTestSuite) TestComponentConfig() {
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.ComponentConfigConnection{}).
 		Where("app_config_id = ? AND component_id = ?", f.oldID, f.componentID).
 		Update("checksum", "checksum-old").Error)
-	s.stackRef(f.install.ID, f.newID)
-	s.sandboxRef(f.install.ID, f.newID)
-	s.componentRef(f.install.ID, f.componentID, f.oldID)
 
 	diff := s.diff(f)
 	s.False(diff.StackChanged)
@@ -251,23 +250,26 @@ func (s *AppBranchConfigDiffTestSuite) TestComponentConfig() {
 
 func (s *AppBranchConfigDiffTestSuite) TestComponentSource() {
 	f := s.seedPair()
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.ComponentConfigConnection{}).
-		Where("app_config_id = ? AND component_id = ?", f.oldID, f.componentID).
-		Update("latest_build_id", "build-old").Error)
-	s.componentRef(f.install.ID, f.componentID, f.oldID)
+	oldConnID, _ := s.latestBuild(f.oldID, f.componentID)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.ComponentConfigConnection{ID: oldConnID}).
+		Update("latest_build_id", s.componentBuild(oldConnID, "build-same")).Error)
 
 	diff := s.diff(f)
-	s.Equal([]string{f.componentID}, s.componentIDs(diff.Changed))
-	s.True(diff.Changed[0].BuildChanged)
+	s.Empty(diff.Changed)
+	s.ElementsMatch([]string{f.componentID, f.workerID}, s.componentIDs(diff.Unchanged))
+	for _, entry := range diff.Unchanged {
+		if entry.ComponentID == f.componentID {
+			s.True(entry.BuildChanged)
+		}
+	}
 	s.False(diff.StackChanged)
 }
 
 func (s *AppBranchConfigDiffTestSuite) TestComponentAdded() {
 	f := s.seedPair()
-	billing := s.deps.Seed.CreateComponent(s.ctx, s.T(), f.appID, app.ComponentTypeDockerBuild)
+	billing := s.deps.Seed.CreateComponent(s.ctx, s.T(), f.appID, app.ComponentTypeTerraformModule)
 	f.billingID = billing.ID
 	s.connection(billing.ID, f.newID, "billing", "billing-build")
-	s.pin(f.install, f.newID, f.oldID)
 
 	diff := s.diff(f)
 	s.Equal([]string{billing.ID}, s.componentIDs(diff.Added))
@@ -279,9 +281,8 @@ func (s *AppBranchConfigDiffTestSuite) TestComponentAdded() {
 
 func (s *AppBranchConfigDiffTestSuite) TestComponentRemoved() {
 	f := s.seedPair()
-	legacy := s.deps.Seed.CreateComponent(s.ctx, s.T(), f.appID, app.ComponentTypeDockerBuild)
+	legacy := s.deps.Seed.CreateComponent(s.ctx, s.T(), f.appID, app.ComponentTypeTerraformModule)
 	s.connection(legacy.ID, f.oldID, "legacy", "legacy-build")
-	s.componentRef(f.install.ID, legacy.ID, f.oldID)
 
 	diff := s.diff(f)
 	s.Equal([]string{legacy.ID}, s.componentIDs(diff.Removed))
@@ -297,10 +298,6 @@ func (s *AppBranchConfigDiffTestSuite) TestMixedPartial() {
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.ComponentConfigConnection{}).
 		Where("app_config_id = ? AND component_id = ?", f.oldID, f.componentID).
 		Update("checksum", "checksum-old").Error)
-	s.stackRef(f.install.ID, f.newID)
-	s.sandboxRef(f.install.ID, f.oldID)
-	s.componentRef(f.install.ID, f.componentID, f.oldID)
-	s.componentRef(f.install.ID, f.workerID, f.newID)
 
 	diff := s.diff(f)
 	s.False(diff.StackChanged)
@@ -312,33 +309,84 @@ func (s *AppBranchConfigDiffTestSuite) TestMixedPartial() {
 
 func (s *AppBranchConfigDiffTestSuite) TestNeverApplied() {
 	f := s.seedPair()
-	s.pin(f.install, f.newID, "")
 
 	diff := s.diff(f)
-	s.True(diff.StackChanged)
-	s.True(diff.SandboxChanged)
-	s.ElementsMatch([]string{f.componentID, f.workerID}, s.componentIDs(diff.Added))
+	s.False(diff.StackChanged)
+	s.False(diff.SandboxChanged)
+	s.Empty(diff.Added)
 	s.Empty(diff.Changed)
 	s.Empty(diff.Removed)
+	s.ElementsMatch([]string{f.componentID, f.workerID}, s.componentIDs(diff.Unchanged))
 }
 
-func (s *AppBranchConfigDiffTestSuite) TestEmptyStackRefUsesActiveStackVersion() {
-	f := s.seedPair()
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.AppStackConfig{}).
-		Where("app_config_id = ?", f.oldID).
-		Update("name", "previous-stack").Error)
-	var stack app.InstallStack
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Where(app.InstallStack{InstallID: f.install.ID}).
-		First(&stack).Error)
-	version := app.InstallStackVersion{
-		InstallID:      f.install.ID,
-		InstallStackID: stack.ID,
-		AppConfigID:    f.oldID,
-		Status:         app.CompositeStatus{Status: app.InstallStackVersionStatusActive},
-	}
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&version).Error)
+type updateFixture struct {
+	appID    string
+	install  *app.Install
+	producer string
+	consumer string
+	initial  string
+}
 
-	diff := s.diff(f)
-	s.True(diff.StackChanged)
+func (s *AppBranchConfigDiffTestSuite) seedUpdates() updateFixture {
+	a := s.deps.Seed.CreateApp(s.ctx, s.T())
+	producer := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeTerraformModule)
+	consumer := s.deps.Seed.CreateComponent(s.ctx, s.T(), a.ID, app.ComponentTypeTerraformModule)
+	f := updateFixture{appID: a.ID, producer: producer.ID, consumer: consumer.ID}
+	f.initial = s.branchConfig(f, "1", "1")
+	f.install = s.deps.Seed.CreateInstall(s.ctx, s.T(), a)
+	return f
+}
+
+func (s *AppBranchConfigDiffTestSuite) branchConfig(f updateFixture, producer, consumer string) string {
+	cfg := s.deps.Seed.CreateBareAppConfig(s.ctx, s.T(), f.appID)
+	s.deps.Seed.CreateAppSandboxConfig(s.ctx, s.T(), f.appID, cfg.ID)
+	s.deps.Seed.CreateAppStackConfig(s.ctx, s.T(), f.appID, cfg.ID)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.AppStackConfig{}).
+		Where(app.AppStackConfig{AppConfigID: cfg.ID}).
+		Updates(map[string]any{"name": "shared-stack", "description": "shared"}).Error)
+	s.deps.Seed.CreateAppRunnerConfig(s.ctx, s.T(), f.appID, cfg.ID)
+	s.connection(f.producer, cfg.ID, "producer-"+producer, "producer-build-"+producer)
+	s.connection(f.consumer, cfg.ID, "consumer-"+consumer, "consumer-build-"+consumer)
+	return cfg.ID
+}
+
+func (s *AppBranchConfigDiffTestSuite) configUpdate(f updateFixture, appConfigID string, started ...app.WorkflowStepTargetType) {
+	wf := s.deps.Seed.CreateWorkflow(s.ctx, s.T(), f.install.ID, app.WorkflowTypeAppBranchConfigUpdate)
+	pending := s.deps.Seed.CreateWorkflowStep(s.ctx, s.T(), wf.ID)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(pending).
+		Update("step_target_type", string(app.WorkflowStepTargetTypeInstallDeploys)).Error)
+	for _, target := range started {
+		step := s.deps.Seed.CreateWorkflowStep(s.ctx, s.T(), wf.ID)
+		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(step).Updates(map[string]any{
+			"step_target_type": string(target),
+			"started_at":       time.Now(),
+		}).Error)
+	}
+	version := app.InstallAppConfigVersion{InstallID: f.install.ID, NewAppConfigID: appConfigID, WorkflowID: &wf.ID}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&version).Error)
+}
+
+func (s *AppBranchConfigDiffTestSuite) changedSince(f updateFixture, newAppConfigID string) []string {
+	diff, err := s.deps.Helpers.AppBranchConfigDiff(s.ctx, f.install, newAppConfigID)
+	require.NoError(s.T(), err)
+	s.Empty(diff.Added)
+	s.Empty(diff.Removed)
+	return s.componentIDs(diff.Changed)
+}
+
+func (s *AppBranchConfigDiffTestSuite) TestDiffsFromTheDesiredConfigWhateverDeployed() {
+	f := s.seedUpdates()
+	s.configUpdate(f, f.initial, app.WorkflowStepTargetTypeInstallDeploys)
+	skipped := s.branchConfig(f, "2", "1")
+	s.configUpdate(f, skipped)
+	s.pin(f.install, skipped)
+
+	s.Equal([]string{f.consumer}, s.changedSince(f, s.branchConfig(f, "2", "2")))
+}
+
+func (s *AppBranchConfigDiffTestSuite) TestComponentChangedAgainRedeploys() {
+	f := s.seedUpdates()
+	s.pin(f.install, s.branchConfig(f, "2", "1"))
+
+	s.Equal([]string{f.producer}, s.changedSince(f, s.branchConfig(f, "3", "1")))
 }

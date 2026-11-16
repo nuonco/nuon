@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/labels"
@@ -25,10 +23,6 @@ type CreateComponentParams struct {
 }
 
 func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentParams) (*app.Component, error) {
-	return h.CreateComponentWithDB(ctx, h.db, params)
-}
-
-func (h *Helpers) CreateComponentWithDB(ctx context.Context, db *gorm.DB, params *CreateComponentParams) (*app.Component, error) {
 	component := app.Component{
 		AppID:             params.AppID,
 		Name:              params.Name,
@@ -37,7 +31,7 @@ func (h *Helpers) CreateComponentWithDB(ctx context.Context, db *gorm.DB, params
 		Status:            "queued",
 		StatusDescription: "waiting for queue to provision component",
 	}
-	res := db.WithContext(ctx).Create(&component)
+	res := h.db.WithContext(ctx).Create(&component)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create component: %w", res.Error)
 	}

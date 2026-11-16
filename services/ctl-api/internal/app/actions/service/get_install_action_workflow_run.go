@@ -84,6 +84,11 @@ func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install action workflow runs: %w", res.Error)
 	}
+	if run.RunnerJob != nil {
+		if err := run.RunnerJob.Plan.RedactCredentials(); err != nil {
+			return nil, err
+		}
+	}
 
 	if err := s.resolveRunTriggers(ctx, []*app.InstallActionWorkflowRun{run}); err != nil {
 		return nil, err

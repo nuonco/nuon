@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewGetCloudConnectionSetupParams creates a new GetCloudConnectionSetupParams object,
@@ -67,6 +68,18 @@ type GetCloudConnectionSetupParams struct {
 	*/
 	ConnectionID string
 
+	/* ExistingPrincipal.
+
+	   Reuse an existing principal in Terraform/CloudFormation; AWS trust contribution must be merged in the original owning role. CLI always detects and reuses existing identities.
+	*/
+	ExistingPrincipal *bool
+
+	/* Repository.
+
+	   Transient exact ECR ARN, GAR resource, or ACR repository path for read-only grant generation; not stored
+	*/
+	Repository []string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -84,7 +97,18 @@ func (o *GetCloudConnectionSetupParams) WithDefaults() *GetCloudConnectionSetupP
 //
 // All values with no default are reset to their zero value.
 func (o *GetCloudConnectionSetupParams) SetDefaults() {
-	// no default values defined for this parameter
+	var (
+		existingPrincipalDefault = bool(false)
+	)
+
+	val := GetCloudConnectionSetupParams{
+		ExistingPrincipal: &existingPrincipalDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get cloud connection setup params
@@ -131,6 +155,28 @@ func (o *GetCloudConnectionSetupParams) SetConnectionID(connectionID string) {
 	o.ConnectionID = connectionID
 }
 
+// WithExistingPrincipal adds the existingPrincipal to the get cloud connection setup params
+func (o *GetCloudConnectionSetupParams) WithExistingPrincipal(existingPrincipal *bool) *GetCloudConnectionSetupParams {
+	o.SetExistingPrincipal(existingPrincipal)
+	return o
+}
+
+// SetExistingPrincipal adds the existingPrincipal to the get cloud connection setup params
+func (o *GetCloudConnectionSetupParams) SetExistingPrincipal(existingPrincipal *bool) {
+	o.ExistingPrincipal = existingPrincipal
+}
+
+// WithRepository adds the repository to the get cloud connection setup params
+func (o *GetCloudConnectionSetupParams) WithRepository(repository []string) *GetCloudConnectionSetupParams {
+	o.SetRepository(repository)
+	return o
+}
+
+// SetRepository adds the repository to the get cloud connection setup params
+func (o *GetCloudConnectionSetupParams) SetRepository(repository []string) {
+	o.Repository = repository
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetCloudConnectionSetupParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -144,8 +190,53 @@ func (o *GetCloudConnectionSetupParams) WriteToRequest(r runtime.ClientRequest, 
 		return err
 	}
 
+	if o.ExistingPrincipal != nil {
+
+		// query param existing_principal
+		var qrExistingPrincipal bool
+
+		if o.ExistingPrincipal != nil {
+			qrExistingPrincipal = *o.ExistingPrincipal
+		}
+		qExistingPrincipal := swag.FormatBool(qrExistingPrincipal)
+		if qExistingPrincipal != "" {
+
+			if err := r.SetQueryParam("existing_principal", qExistingPrincipal); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Repository != nil {
+
+		// binding items for repository
+		joinedRepository := o.bindParamRepository(reg)
+
+		// query array param repository
+		if err := r.SetQueryParam("repository", joinedRepository...); err != nil {
+			return err
+		}
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
+}
+
+// bindParamGetCloudConnectionSetup binds the parameter repository
+func (o *GetCloudConnectionSetupParams) bindParamRepository(formats strfmt.Registry) []string {
+	repositoryIR := o.Repository
+
+	var repositoryIC []string
+	for _, repositoryIIR := range repositoryIR { // explode []string
+
+		repositoryIIV := repositoryIIR // string as string
+		repositoryIC = append(repositoryIC, repositoryIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	repositoryIS := swag.JoinByFormat(repositoryIC, "multi")
+
+	return repositoryIS
 }

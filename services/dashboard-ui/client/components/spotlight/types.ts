@@ -98,7 +98,7 @@ export const spotlightInstallPath = ({
   return `${base}${suffix}`
 }
 
-const IMAGE_COMPONENT_TYPES = new Set(['docker_build', 'external_image'])
+const IMAGE_COMPONENT_TYPES = new Set(['external_image'])
 
 export const isSpotlightImageComponent = (type?: string) =>
   !!type && IMAGE_COMPONENT_TYPES.has(type)

@@ -11,7 +11,7 @@ import {
   TemplateChangesContent,
 } from '@/components/branches/ConfigChanges'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
-import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { GroupApprovalActions } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import { AppContext } from '@/providers/app-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TInstallWorkflowStep } from '@/types'
@@ -229,7 +229,7 @@ const storyDeploymentFetch = (fallback: typeof fetch): typeof fetch =>
       return storyJson({
         id: componentId,
         name: componentId === 'cmp-cache' ? 'cache' : 'api',
-        type: componentId === 'cmp-cache' ? 'helm_chart' : 'docker_build',
+        type: componentId === 'cmp-cache' ? 'helm_chart' : 'external_image',
         app_id: 'app-acme',
       })
     }
@@ -385,7 +385,9 @@ const rollout: TOverviewRollout = {
     sha: 'a1b2c3d4e5f6',
     shaUrl: 'https://github.com/acme/platform/commit/a1b2c3d4e5f6',
     createdAt: '2026-10-15T13:40:00Z',
+    committedAt: '2026-10-12T09:00:00Z',
   },
+  runAt: '2026-10-15T14:12:00Z',
 }
 
 const changeSections: DiffSectionData[] = [
@@ -443,6 +445,13 @@ const changeProps = {
   source: rollout.source,
 }
 
+const pageChangeProps = {
+  ...changeProps,
+  versionLabel: undefined,
+  previousSha: undefined,
+  sha: undefined,
+}
+
 const changes = <TemplateChangesButton {...changeProps} />
 
 const completedBuilds = [
@@ -470,7 +479,7 @@ const props = {
   hasPlan: true,
   rollout,
   changes,
-  configChanges: <TemplateChangesContent {...changeProps} />,
+  configChanges: <TemplateChangesContent {...pageChangeProps} />,
   configChangesKey: 'v6-v7-cache',
   buildRows: completedBuilds,
   groups,
@@ -773,7 +782,7 @@ const PrimaryPlanApproval = () => {
               />,
               `plan-diff-${primaryPlanStep.id}`
             ),
-          actions: <GroupActionButton action="approve" target={target} />,
+          actions: <GroupApprovalActions target={target} />,
         },
       ]}
     />

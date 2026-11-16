@@ -3,10 +3,9 @@ package plan
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/pkg/errors"
-
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
@@ -16,33 +15,20 @@ func (p *Planner) createKubernetesManifestBuildPlan(ctx workflow.Context, bld *a
 		return nil, err
 	}
 
-	cfg := bld.ComponentConfigConnection.KubernetesManifestComponentConfig
-	if cfg == nil {
-		return nil, errors.New("kubernetes manifest component config is nil")
+	inputs, err := buildsource.ComponentInputs(&bld.ComponentConfigConnection)
+	if err != nil {
+		return nil, err
+	}
+	plan := inputs.KubernetesManifestBuildPlan
+	plan.Labels = map[string]string{
+		"component_id":       bld.ComponentID,
+		"component_build_id": bld.ID,
 	}
 
-	plan := &plantypes.KubernetesManifestBuildPlan{
-		Labels: map[string]string{
-			"component_id":       bld.ComponentID,
-			"component_build_id": bld.ID,
-		},
-	}
-
-	switch {
-	case cfg.Kustomize != nil && cfg.Kustomize.Path != "":
+	if plan.SourceType == "kustomize" {
 		l.Info("generating kustomize build plan")
-		plan.SourceType = "kustomize"
-		plan.KustomizePath = cfg.Kustomize.Path
-		plan.KustomizeConfig = &plantypes.KustomizeBuildConfig{
-			Patches:        cfg.Kustomize.Patches,
-			EnableHelm:     cfg.Kustomize.EnableHelm,
-			LoadRestrictor: cfg.Kustomize.LoadRestrictor,
-		}
-
-	default:
+	} else {
 		l.Info("generating inline manifest build plan")
-		plan.SourceType = "inline"
-		plan.InlineManifest = cfg.Manifest
 	}
 
 	return plan, nil

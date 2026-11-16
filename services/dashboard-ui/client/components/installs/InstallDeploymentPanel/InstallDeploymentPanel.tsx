@@ -20,6 +20,14 @@ export interface IInstallDeploymentPanel extends IPanel {
   initialTab?: TDeploymentTab
 }
 
+export const deploymentPanelKey = (installId: string, workflowId: string) =>
+  `deployment-${installId}-${workflowId}`
+
+export const parseDeploymentPanelKey = (key: string) => {
+  const match = key.match(/^deployment-([a-z0-9]+)-([a-z0-9]+)$/)
+  return match ? { installId: match[1], workflowId: match[2] } : null
+}
+
 const unavailable = (
   <Text variant="subtext" theme="neutral">
     This deployment could not be loaded.
@@ -64,6 +72,7 @@ export const InstallDeploymentPanel = ({
       heading={title}
       size="3/4"
       aria-label="Deployment details"
+      panelKey={deploymentPanelKey(installId, workflowId)}
       {...panelProps}
     >
       <InstallProvider

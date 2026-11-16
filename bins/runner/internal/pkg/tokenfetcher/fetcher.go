@@ -16,6 +16,7 @@ type TokenFetchResult struct {
 	Token      string
 	// ExpiresAt is zero when the control plane did not report an expiry.
 	ExpiresAt time.Time
+	Audience  string
 }
 
 // TokenFetcher defines the interface for cloud-specific token fetching.

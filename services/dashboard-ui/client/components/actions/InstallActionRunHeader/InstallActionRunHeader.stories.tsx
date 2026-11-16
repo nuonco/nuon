@@ -56,6 +56,22 @@ export const Admin = () => (
   />
 )
 
+export const OrgAdmin = () => (
+  <InstallActionRunHeader
+    actionId="action-1"
+    actionName="deploy-step"
+    workflow={mockWorkflow}
+    installActionRun={mockRun}
+    basePath="/org-1/installs/install-1"
+    isAdmin={false}
+    step={{ id: 'step-1' } as any}
+    cancelWorkflowButton={null}
+    deleteLogsButton={<Button variant="danger">Delete logs</Button>}
+    runnerJobPlanButton={<Button>View plan</Button>}
+    runActionButton={<Button>Run action</Button>}
+  />
+)
+
 export const NoWorkflow = () => (
   <InstallActionRunHeader
     actionId="action-1"

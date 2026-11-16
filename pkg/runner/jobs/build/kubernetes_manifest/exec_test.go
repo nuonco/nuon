@@ -88,7 +88,7 @@ func TestExecPackagesPinnedManifest(t *testing.T) {
 				}
 				h, err := New(HandlerParams{V: validator.New(), APIClient: client, OCICopy: copier, FS: fs})
 				require.NoError(t, err)
-				h.state = &handlerState{cfg: &plantypes.KubernetesManifestBuildPlan{SourceType: "inline", InlineManifest: manifest}}
+				h.state = &handlerState{plan: &plantypes.BuildPlan{}, cfg: &plantypes.KubernetesManifestBuildPlan{SourceType: "inline", InlineManifest: manifest}}
 				require.NoError(t, h.Initialize(ctx, job, execution))
 				t.Cleanup(func() { require.NoError(t, h.Cleanup(ctx, job, execution)) })
 				if backend == "memory" {

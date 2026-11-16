@@ -34,6 +34,10 @@ func (s *service) DeleteTerraformWorkspaceStateJSON(ctx *gin.Context) {
 		})
 		return
 	}
+	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
+		ctx.Error(err)
+		return
+	}
 	err := s.helpers.DeleteStateJSON(ctx, workspaceID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to delete state json: %w", err))

@@ -18,7 +18,8 @@ keywords:
 By default, actions run on the install [runner](/concepts/runners). Setting `image` executes the
 action inside a container image you provide.
 
-To learn more about actions, see the [Actions](/concepts/actions) concept page.
+To learn more about actions, see the [Actions](/concepts/actions) concept page. For a migration walkthrough, see
+[Database migrations](/guides/database-migrations).
 
 ## Configure it
 
@@ -48,7 +49,7 @@ DATABASE_URL = "{{.nuon.install.sandbox.outputs.database_url}}"
 Ship it the same way as any other action: commit it and push to the git branch your
 [app branch](/guides/app-branches) tracks.
 
-Everything else about the action is unchanged: triggers, `timeout` (30 minutes maximum), `role`,
+Everything else about the action is unchanged: triggers, `timeout` (1 hour maximum), `role`,
 `enable_kube_config`, `env_vars`, and templating all behave exactly as they do when the action runs
 on the runner. See [Configure actions](/guides/actions).
 

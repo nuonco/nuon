@@ -19,12 +19,27 @@ type createInstallPin struct {
 }
 
 // resolveCreateInstallPin decides which app config a new install starts on.
-// Omitting a branch always uses the latest unbranched config from apps sync,
-// even when the app also has branches.
+// Omitting a branch uses the latest unbranched config from apps sync, even
+// when the app also has branches, unless the org has disable-app-sync.
 func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID string, req *CreateInstallParams) (*createInstallPin, error) {
 	if req.AppBranchID == "" {
+		appSyncDisabled, err := s.featuresClient.OrgHasFeature(ctx, orgID, app.OrgFeatureDisableAppSync)
+		if err != nil {
+			return nil, fmt.Errorf("unable to check disable-app-sync: %w", err)
+		}
+		if appSyncDisabled {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("app %s: app branch required when disable-app-sync is enabled", appID),
+				Description: "App sync is disabled for this org. Choose an app branch for this install.",
+			}
+		}
+
 		cfg, err := s.latestActiveAppConfig(ctx, orgID, appID, "")
 		if err != nil {
+			var userErr stderr.ErrUser
+			if !errors.As(err, &userErr) {
+				return nil, err
+			}
 			return nil, err
 		}
 		return &createInstallPin{AppConfig: cfg}, nil
@@ -52,6 +67,47 @@ func (s *Helpers) resolveCreateInstallPin(ctx context.Context, orgID, appID stri
 		AppConfig: cfg,
 		BranchID:  branch.ID,
 	}, nil
+}
+
+// InputConfigForNewInstall returns the input config a new install would be
+// pinned to for the given app and optional app branch, matching
+// resolveCreateInstallPin.
+func (s *Helpers) InputConfigForNewInstall(ctx context.Context, orgID, appID, appBranchID string) (*app.AppInputConfig, error) {
+	pin, err := s.resolveCreateInstallPin(ctx, orgID, appID, &CreateInstallParams{AppBranchID: appBranchID})
+	if err != nil {
+		return nil, err
+	}
+
+	inputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, pin.AppConfig.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get pinned app input config: %w", err)
+	}
+	if inputConfig == nil || inputConfig.ID == "" {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("no input config found for app config %s", pin.AppConfig.ID),
+			Description: "No input config exists for the app config a new install would use.",
+		}
+	}
+
+	return inputConfig, nil
+}
+
+func (s *Helpers) withUnknownInputHint(ctx context.Context, orgID string, err error) error {
+	var userErr stderr.ErrUser
+	var unknownErr unknownInputError
+	if !errors.As(err, &userErr) || !errors.As(userErr.Err, &unknownErr) {
+		return err
+	}
+	appSyncDisabled, flagErr := s.featuresClient.OrgHasFeature(ctx, orgID, app.OrgFeatureDisableAppSync)
+	if flagErr != nil {
+		return flagErr
+	}
+	if appSyncDisabled {
+		userErr.Description = userErr.Description + " Add it, then run your app branch."
+	} else {
+		userErr.Description = userErr.Description + " Add it, then run `nuon apps sync` or run your app branch."
+	}
+	return userErr
 }
 
 // LatestActiveBranchAppConfig returns the app config a branch currently
@@ -92,7 +148,7 @@ func (s *Helpers) latestActiveAppConfig(ctx context.Context, orgID, appID, branc
 			if branchID == "" {
 				return nil, stderr.ErrUser{
 					Err:         fmt.Errorf("no active app config found for app %s", appID),
-					Description: "No active app config found. Please sync your app configuration before creating an install.",
+					Description: "No sync config exists for this app. Run `nuon apps sync`, or choose an app branch.",
 				}
 			}
 			var building app.AppConfig
@@ -104,7 +160,7 @@ func (s *Helpers) latestActiveAppConfig(ctx context.Context, orgID, appID, branc
 			}
 			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("no active app config found for app branch %s", branchID),
-				Description: "The selected app branch has no active app config. Sync the branch before creating an install.",
+				Description: "The selected app branch has no app config yet. Run the app branch first.",
 			}
 		}
 		return nil, fmt.Errorf("unable to get app config: %w", err)

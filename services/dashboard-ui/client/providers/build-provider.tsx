@@ -1,6 +1,10 @@
 import { createContext, type ReactNode } from 'react'
 import { useOrg } from '@/hooks/use-org'
-import { useSSEResourceQuery, isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
+import { usePanelVisibility } from '@/hooks/use-panel-visibility'
+import {
+  useSSEResourceQuery,
+  isTerminalStatusV2,
+} from '@/lib/sse/use-sse-resource-query'
 import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { useStatusToast } from '@/hooks/use-status-toast'
 import { getComponentBuild } from '@/lib'
@@ -31,17 +35,23 @@ export function BuildProvider({
   shouldPoll?: boolean
 }) {
   const { org } = useOrg()
+  const isPanelTop = usePanelVisibility()
 
   const onRefreshError = useRefreshErrorToast()
 
-  const { data: build, isLoading, error } = useSSEResourceQuery<TBuild>({
-    sseUrl: org?.id && componentId && buildId
-      ? `/api/orgs/${org.id}/components/${componentId}/builds/${buildId}/sse`
-      : undefined,
+  const {
+    data: build,
+    isLoading,
+    error,
+  } = useSSEResourceQuery<TBuild>({
+    sseUrl:
+      org?.id && componentId && buildId
+        ? `/api/orgs/${org.id}/components/${componentId}/builds/${buildId}/sse`
+        : undefined,
     queryKey: ['build', org?.id, componentId, buildId],
     queryFn: () => getComponentBuild({ orgId: org!.id, componentId, buildId }),
     enabled: !!org?.id && !!componentId && !!buildId,
-    shouldPoll,
+    shouldPoll: shouldPoll && isPanelTop,
     eventName: 'build',
     onError: onRefreshError,
     isFinished: isTerminalStatusV2,
@@ -57,8 +67,6 @@ export function BuildProvider({
   if (isLoading || !build) return <ProviderLoading />
 
   return (
-    <BuildContext.Provider value={{ build }}>
-      {children}
-    </BuildContext.Provider>
+    <BuildContext.Provider value={{ build }}>{children}</BuildContext.Provider>
   )
 }

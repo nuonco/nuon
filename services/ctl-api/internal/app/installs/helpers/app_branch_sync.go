@@ -216,8 +216,6 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	oldAppConfigID := install.AppliedAppConfigID()
-
 	var diff *app.InstallConfigDiff
 	if !input.DeferDiff {
 		computed, err := h.AppBranchConfigDiff(ctx, &install, input.NewAppConfigID)
@@ -229,7 +227,7 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 
 	update := app.InstallAppConfigVersion{
 		InstallID:      input.InstallID,
-		OldAppConfigID: oldAppConfigID,
+		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
 		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
 	}
@@ -329,14 +327,11 @@ func (h *Helpers) SaveInstallConfigDiffBlob(ctx context.Context, installConfigVe
 	return nil
 }
 
-// AppBranchConfigDiff diffs newAppConfigID against each entity's applied app
-// config. install.AppConfigID is the early pin and is not a baseline.
+// AppBranchConfigDiff diffs newAppConfigID against the install's desired app
+// config. Changes the install failed or skipped applying show up as drift in
+// install alignment, not here.
 func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install, newAppConfigID string) (*app.InstallConfigDiff, error) {
-	baselines, err := h.installCompositeBaselines(ctx, install)
-	if err != nil {
-		return nil, err
-	}
-	diff, err := configdiff.ComputeCompositeInstallConfigDiff(ctx, h.db, baselines, newAppConfigID)
+	diff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, install.AppConfigID, newAppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)
 	}
@@ -346,7 +341,7 @@ func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install,
 // CompositeAppConfigTree is the hierarchical diff for an install. Each entity
 // is compared to its own applied app config.
 func (h *Helpers) CompositeAppConfigTree(ctx context.Context, install *app.Install, newAppConfigID string) (*pkgdiff.Diff, error) {
-	baselines, err := h.installCompositeBaselines(ctx, install)
+	baselines, err := h.InstallCompositeBaselines(ctx, install)
 	if err != nil {
 		return nil, err
 	}
@@ -357,13 +352,16 @@ func (h *Helpers) CompositeAppConfigTree(ctx context.Context, install *app.Insta
 	return tree, nil
 }
 
-func (h *Helpers) installCompositeBaselines(ctx context.Context, install *app.Install) (configdiff.CompositeBaselines, error) {
+func (h *Helpers) InstallCompositeBaselines(ctx context.Context, install *app.Install) (configdiff.CompositeBaselines, error) {
 	fallback := install.AppliedAppConfigID()
+	unknownSandboxBuild := ""
 	baselines := configdiff.CompositeBaselines{
-		Fallback:   fallback,
-		Stack:      fallback,
-		Sandbox:    fallback,
-		Components: map[string]string{},
+		Fallback:           fallback,
+		Stack:              fallback,
+		SandboxBuildID:     &unknownSandboxBuild,
+		Components:         map[string]string{},
+		ComponentBuilds:    map[string]*app.ComponentBuild{},
+		DependencyBuildIDs: map[string]map[string]string{},
 	}
 
 	var stack app.InstallStack
@@ -392,14 +390,47 @@ func (h *Helpers) installCompositeBaselines(ctx context.Context, install *app.In
 	default:
 		return baselines, fmt.Errorf("unable to get install sandbox: %w", err)
 	}
+	if sandbox.ID != "" {
+		applied, err := h.AppliedInstallSandboxRun(ctx, &sandbox)
+		if err != nil {
+			return baselines, err
+		}
+		if applied != nil {
+			baselines.Sandbox = applied.AppSandboxConfig.AppConfigID
+			buildID, err := h.AppliedSandboxBuildID(ctx, applied)
+			if err != nil {
+				return baselines, err
+			}
+			baselines.SandboxBuildID = &buildID
+		}
+	}
 
 	var components []app.InstallComponent
 	if err := h.db.WithContext(ctx).Where(app.InstallComponent{InstallID: install.ID}).Find(&components).Error; err != nil {
 		return baselines, fmt.Errorf("unable to get install components: %w", err)
 	}
-	for _, component := range components {
+	applied, err := h.AppliedInstallDeploys(ctx, components)
+	if err != nil {
+		return baselines, err
+	}
+	for i := range components {
+		component := &components[i]
+		baselines.Components[component.ComponentID] = ""
+		baselines.ComponentBuilds[component.ComponentID] = nil
 		if component.AppConfigRef.AppliedConfigID != "" {
 			baselines.Components[component.ComponentID] = component.AppConfigRef.AppliedConfigID
+		}
+		if deploy := applied[component.ID]; deploy != nil {
+			baselines.ComponentBuilds[component.ComponentID] = deploy.ComponentBuild
+			baselines.DependencyBuildIDs[component.ComponentID] = deploy.DependencyBuildIDs
+			baseline := deploy.AppConfigID
+			if baseline == "" {
+				baseline = component.AppConfigRef.AppliedConfigID
+			}
+			if baseline == "" && deploy.ComponentBuild != nil {
+				baseline = deploy.ComponentBuild.ComponentConfigConnection.AppConfigID
+			}
+			baselines.Components[component.ComponentID] = baseline
 		}
 	}
 	return baselines, nil

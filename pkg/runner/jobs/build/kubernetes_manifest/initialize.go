@@ -69,6 +69,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	if err != nil {
 		return fmt.Errorf("unable to open build source: %w", err)
 	}
+	h.state.source.Record()
 
 	arch := ociarchive.New()
 	if err := arch.Initialize(ctx); err != nil {

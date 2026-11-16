@@ -29,6 +29,12 @@ type AppLogStream struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// logs deleted at
+	LogsDeletedAt string `json:"logs_deleted_at,omitempty"`
+
+	// logs deleted by id
+	LogsDeletedByID string `json:"logs_deleted_by_id,omitempty"`
+
 	// open
 	Open bool `json:"open,omitempty"`
 

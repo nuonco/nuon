@@ -16,7 +16,7 @@ const componentsSection: DiffSectionData = {
     {
       name: 'api',
       op: 'add',
-      componentType: 'docker_build',
+      componentType: 'external_image',
       fields: [{ key: 'image', op: 'add', diff: '+ image: api:latest' }],
     },
     {
@@ -69,6 +69,17 @@ export const Loading = () => (
 export const Pending = () => (
   <div className="max-w-3xl">
     <AppConfigDiffCard sections={[]} summary={null} isPending />
+  </div>
+)
+
+export const Failed = () => (
+  <div className="max-w-3xl">
+    <AppConfigDiffCard
+      sections={[]}
+      summary={null}
+      isError
+      versionLabel="v5 → v6"
+    />
   </div>
 )
 

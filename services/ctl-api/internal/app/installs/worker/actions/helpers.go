@@ -45,7 +45,9 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, ls.ID)
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
 

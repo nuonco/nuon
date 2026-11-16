@@ -21,8 +21,8 @@ type InstallRoles struct {
 	OrgID       string                `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org         Org                   `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	InstallID string  `json:"install_id,omitzero" gorm:"notnull;default null" temporaljson:"install_id,omitzero,omitempty"`
-	Install   Install `json:"-" temporaljson:"install,omitzero,omitempty"`
+	InstallID string   `json:"install_id,omitzero" gorm:"notnull;default null" temporaljson:"install_id,omitzero,omitempty"`
+	Install   *Install `json:"-" temporaljson:"install,omitzero,omitempty"`
 
 	AppRoleConfigID string              `json:"app_role_config_id,omitzero" gorm:"notnull;default null" temporaljson:"app_role_config_id,omitzero,omitempty"`
 	AppRoleConfig   AppAWSIAMRoleConfig `json:"app_role_config,omitzero" temporaljson:"app_role_config,omitzero,omitempty"`

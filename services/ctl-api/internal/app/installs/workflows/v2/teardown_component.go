@@ -67,7 +67,13 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	steps = append(steps, preDeploySteps...)
 
 	sg.nextGroup() // teardown sync + plan + apply
-	if !comp.Type.IsImage() {
+	if unsupportedComponentType(*comp) {
+		skipStep, err := unsupportedComponentTypeSkipStep(ctx, sg, installID, *comp, "skipped teardown "+comp.Name)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, skipStep)
+	} else if !comp.Type.IsImage() {
 		// Resolve install component ID for v2 signals
 		installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 			InstallID:   installID,

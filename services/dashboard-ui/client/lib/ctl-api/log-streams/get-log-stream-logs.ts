@@ -70,23 +70,3 @@ export const getLogStreamLogs = ({
     orgId,
     headers: offset ? { 'X-Nuon-API-Offset': offset } : {},
   })
-
-export const getLogStreamLogsWithMeta = ({
-  logStreamId,
-  orgId,
-  offset,
-  order = 'asc',
-  filters,
-}: {
-  logStreamId: string
-  orgId: string
-  offset?: string
-  order?: 'asc' | 'desc'
-  filters?: TLogStreamFilters
-}) =>
-  api<TOTELLog[]>({
-    path: `log-streams/${logStreamId}/logs${buildLogQueryString({ order, filters })}`,
-    orgId,
-    headers: offset ? { 'X-Nuon-API-Offset': offset } : {},
-    withMeta: true,
-  })

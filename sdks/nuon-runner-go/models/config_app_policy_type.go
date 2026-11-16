@@ -42,9 +42,6 @@ const (
 	// ConfigAppPolicyTypeKubernetesManifest captures enum value "kubernetes_manifest"
 	ConfigAppPolicyTypeKubernetesManifest ConfigAppPolicyType = "kubernetes_manifest"
 
-	// ConfigAppPolicyTypeDockerBuild captures enum value "docker_build"
-	ConfigAppPolicyTypeDockerBuild ConfigAppPolicyType = "docker_build"
-
 	// ConfigAppPolicyTypeContainerImage captures enum value "container_image"
 	ConfigAppPolicyTypeContainerImage ConfigAppPolicyType = "container_image"
 
@@ -60,7 +57,7 @@ var configAppPolicyTypeEnum []any
 
 func init() {
 	var res []ConfigAppPolicyType
-	if err := json.Unmarshal([]byte(`["kubernetes_cluster","terraform_module","helm_chart","kubernetes_manifest","docker_build","container_image","pulumi","sandbox"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["kubernetes_cluster","terraform_module","helm_chart","kubernetes_manifest","container_image","pulumi","sandbox"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

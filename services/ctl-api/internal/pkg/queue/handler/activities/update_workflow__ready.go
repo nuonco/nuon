@@ -20,42 +20,65 @@ import (
 func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string, updateID string, queueID string) (*handler.ReadyResponse, error) {
 	info := activity.GetInfo(ctx)
 
-	startOp := a.handlerStartOperation(workflowID, queueID, updateID, info.TaskQueue)
-	rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
-		info.WorkflowNamespace,
-		tclient.UpdateWithStartWorkflowOptions{
-			UpdateOptions: tclient.UpdateWorkflowOptions{
-				UpdateID:     updateID + "-ready",
-				WorkflowID:   workflowID,
-				UpdateName:   handler.ReadyHandlerName,
-				WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			},
-			StartWorkflowOperation: startOp,
-		})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to call query handler")
-	}
-
-	var resp handler.ReadyResponse
-	if err := rawResp.Get(ctx, &resp); err != nil {
-		wrapped := errors.Wrap(err, "unable get response")
-		var appErr *temporal.ApplicationError
-		if errors.As(err, &appErr) && appErr.Type() == "AcceptedUpdateCompletedWorkflow" {
-			return nil, temporal.NewNonRetryableApplicationError(
-				appErr.Message(),
-				appErr.Type(),
-				wrapped,
-			)
+	var resp *handler.ReadyResponse
+	var prevRunID string
+	var replacements int
+	var runReplaced bool
+	err := handler.RetryUpdate(ctx, handler.ReadyHandlerName, func(err error) bool {
+		return !runReplaced && handler.IsUnknownUpdate(err, handler.ReadyHandlerName)
+	}, func(ctx context.Context) error {
+		startOp := a.handlerStartOperation(workflowID, queueID, updateID, info.TaskQueue)
+		rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
+			info.WorkflowNamespace,
+			tclient.UpdateWithStartWorkflowOptions{
+				UpdateOptions: tclient.UpdateWorkflowOptions{
+					UpdateID:     updateID + "-ready",
+					WorkflowID:   workflowID,
+					UpdateName:   handler.ReadyHandlerName,
+					WaitForStage: tclient.WorkflowUpdateStageCompleted,
+				},
+				StartWorkflowOperation: startOp,
+			})
+		if err != nil {
+			return errors.Wrap(err, "unable to call query handler")
 		}
-		return nil, wrapped
-	}
 
-	// Resolve the run-id so callers can pin subsequent updates to this exact run.
-	run, err := startOp.Get(ctx)
+		// Resolve the run-id so callers can pin subsequent updates to this exact run.
+		run, err := startOp.Get(ctx)
+		if err != nil {
+			return errors.Wrap(err, "unable to get handler workflow run")
+		}
+		runID := run.GetRunID()
+
+		var result handler.ReadyResponse
+		if err := rawResp.Get(ctx, &result); err != nil {
+			wrapped := errors.Wrap(err, "unable get response")
+			var appErr *temporal.ApplicationError
+			if errors.As(err, &appErr) && appErr.Type() == "AcceptedUpdateCompletedWorkflow" {
+				return temporal.NewNonRetryableApplicationError(
+					appErr.Message(),
+					appErr.Type(),
+					wrapped,
+				)
+			}
+			if prevRunID != "" && prevRunID != runID {
+				replacements++
+			}
+			if replacements > 1 {
+				runReplaced = true
+				return errors.Wrapf(wrapped, "handler run %s replaced run %s, the second replacement during this update", runID, prevRunID)
+			}
+			prevRunID = runID
+			return wrapped
+		}
+
+		result.RunID = runID
+		resp = &result
+		return nil
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get handler workflow run")
+		return nil, err
 	}
-	resp.RunID = run.GetRunID()
 
-	return &resp, nil
+	return resp, nil
 }

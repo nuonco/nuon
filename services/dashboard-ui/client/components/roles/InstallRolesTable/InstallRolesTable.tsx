@@ -8,6 +8,7 @@ import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel } from '@/components/surfaces/Panel'
+import { usePanelDeepLinks } from '@/hooks/use-panel-deep-links'
 import { InstallRoleDetail } from '../InstallRoleDetail'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
 import type { TNamedIAMPolicy } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
@@ -38,6 +39,21 @@ export const InstallRolesTable = ({
   isLoading?: boolean
   pagination?: Omit<IPagination, 'position'>
 }) => {
+  usePanelDeepLinks((key) => {
+    const role = roles.find(
+      (item) => key === `${item.id}-name` || key === `${item.id}-action`
+    )
+    if (!role) return null
+    return (
+      <Panel
+        heading={<RolePanelHeading role={role} />}
+        panelKey={key}
+        size="3/4"
+      >
+        <InstallRoleDetail installRole={role} namedPolicies={namedPolicies} />
+      </Panel>
+    )
+  })
   const columns = useMemo<ColumnDef<TInstallRole, unknown>[]>(
     () => [
       {

@@ -164,7 +164,6 @@ func flowTemplates() []FlowTemplate {
 				{JobType: "kubernetes-manifest-deploy", LogTemplate: "kubernetes-manifest", PlanTemplate: "kube-manifest-apply", OutputTemplate: "kube-outputs", DurationMs: 1000, Enabled: true},
 				{JobType: "sandbox-terraform", LogTemplate: "terraform-apply", PlanTemplate: "terraform-apply", OutputTemplate: "terraform-outputs", DurationMs: 1000, Enabled: true},
 				{JobType: "sandbox-terraform-plan", LogTemplate: "terraform-plan", PlanTemplate: "terraform-apply", DurationMs: 500, Enabled: true},
-				{JobType: "docker-build", LogTemplate: "docker-build", DurationMs: 2000, Enabled: true},
 				{JobType: "oci-sync", LogTemplate: "oci-sync", DurationMs: 1000, Enabled: true},
 			},
 		},

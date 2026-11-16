@@ -3,6 +3,7 @@ package fxmodules
 import (
 	"go.uber.org/fx"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/adminops"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -14,6 +15,7 @@ import (
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 // HelpersModule provides all domain-specific helper functions
@@ -24,10 +26,12 @@ var HelpersModule = fx.Module("helpers",
 	fx.Provide(actionshelpers.New),
 	fx.Provide(componentshelpers.New),
 	fx.Provide(cloudconnectionshelpers.New),
+	fx.Provide(sharedactivities.New),
 	fx.Provide(orgshelpers.New),
 	fx.Provide(appshelpers.New),
 	fx.Provide(installshelpers.New),
 	fx.Provide(runnershelpers.New),
 	fx.Provide(generalhelpers.New),
 	fx.Provide(runbookshelpers.New),
+	fx.Provide(adminops.New),
 )

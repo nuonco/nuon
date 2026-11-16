@@ -4,18 +4,12 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
-	"github.com/spf13/afero"
-	"github.com/spf13/afero/mem"
-	"golang.org/x/sys/unix"
 	"helm.sh/helm/v4/pkg/chart/loader/archive"
 	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
 	"helm.sh/helm/v4/pkg/chart/v2/loader"
@@ -152,82 +146,6 @@ func checkChartPaths(chart *chartv2.Chart) error {
 	for _, dep := range chart.Dependencies() {
 		if err := checkChartPaths(dep); err != nil {
 			return err
-		}
-	}
-	return nil
-}
-
-func materializeChartArchive(fs afero.Fs, in io.ReadSeeker) (string, error) {
-	files, err := chartArchiveFiles(in)
-	if err != nil {
-		return "", err
-	}
-	chart, err := loadChartFiles(files)
-	if err != nil {
-		return "", err
-	}
-	dir, err := afero.TempDir(fs, ".", ".helm-chart-")
-	if err != nil {
-		return "", err
-	}
-	if err := materializeChart(fs, dir, chart); err != nil {
-		fs.RemoveAll(dir)
-		return "", err
-	}
-	return dir, nil
-}
-
-// Raw retains Helm's metadata, lockfiles, dependency archives, and timestamps;
-// using SaveDir here would reserialize them and omit some of that information.
-func materializeChart(fs afero.Fs, dir string, chart *chartv2.Chart) error {
-	if err := checkChartPaths(chart); err != nil {
-		return err
-	}
-	for _, file := range chart.Raw {
-		if err := chartFilePath(file.Name); err != nil {
-			return err
-		}
-	}
-	if err := fs.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
-	for _, file := range chart.Raw {
-		name := filepath.Join(dir, filepath.FromSlash(file.Name))
-		if err := fs.MkdirAll(filepath.Dir(name), 0700); err != nil {
-			return err
-		}
-		out, err := fs.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-		if err != nil {
-			return err
-		}
-		_, writeErr := out.Write(file.Data)
-		handle := out
-		for {
-			base, ok := handle.(*afero.BasePathFile)
-			if !ok {
-				break
-			}
-			handle = base.File
-		}
-		var timestampErr error
-		if writeErr == nil {
-			switch handle := handle.(type) {
-			case interface{ Fd() uintptr }:
-				// A name can be replaced with an outside hardlink even under a pinned root.
-				timestamp := unix.NsecToTimeval(file.ModTime.UnixNano())
-				timestampErr = unix.Futimes(int(handle.Fd()), []unix.Timeval{timestamp, timestamp})
-			case *mem.File:
-			default:
-				timestampErr = fmt.Errorf("unsupported chart output file %T", handle)
-			}
-		}
-		closeErr := out.Close()
-		if err := errors.Join(writeErr, timestampErr, closeErr); err != nil {
-			return err
-		}
-		if memory, ok := handle.(*mem.File); ok {
-			// Afero's writable memory handle resets mtime during Close.
-			mem.SetModTime(memory.Data(), file.ModTime)
 		}
 	}
 	return nil

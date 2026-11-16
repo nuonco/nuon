@@ -4,11 +4,7 @@ import type { TConfigDiffFocus } from '@/components/approvals/plan-diffs/config-
 import { useOrg } from '@/hooks/use-org'
 import { AppContext } from '@/providers/app-provider'
 import { scrollElementIntoView } from '@/utils/scroll'
-import {
-  getAppConfigs,
-  getAppConfigDiff,
-  getInstallAppConfigTreeDiff,
-} from '@/lib'
+import { getAppConfigs, getAppConfigDiff } from '@/lib'
 import {
   extractSections,
   computeSummary,
@@ -18,8 +14,6 @@ import { AppConfigDiffCard } from './AppConfigDiffCard'
 interface IAppConfigDiffContainer {
   appConfigId: string
   oldConfigId?: string
-  nilBaseline?: boolean
-  installId?: string
   appId?: string
   className?: string
   focus?: TConfigDiffFocus | null
@@ -27,9 +21,7 @@ interface IAppConfigDiffContainer {
 
 export const AppConfigDiffContainer = ({
   appConfigId,
-  oldConfigId: oldConfigIdProp,
-  nilBaseline,
-  installId,
+  oldConfigId,
   appId: appIdProp,
   className,
   focus,
@@ -42,45 +34,31 @@ export const AppConfigDiffContainer = ({
 
   const { data: recentConfigs } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['app-configs', org?.id, appId],
+    queryKey: ['app-configs', org?.id, appId, 'recent'],
     queryFn: () => getAppConfigs({ orgId: org!.id, appId: appId!, limit: 10 }),
     enabled: !!org?.id && !!appId && !!appConfigId,
   })
 
-  const previousConfigs = (recentConfigs || []).filter(
-    (c) => c.id !== appConfigId
-  )
-  const previousFallback = nilBaseline ? undefined : previousConfigs[0]
-  const oldConfig = oldConfigIdProp
-    ? ((recentConfigs || []).find((c) => c.id === oldConfigIdProp) ??
-      previousFallback)
-    : previousFallback
-  const oldConfigId = nilBaseline
-    ? oldConfigIdProp || undefined
-    : oldConfigIdProp || oldConfig?.id
+  const oldConfig = oldConfigId
+    ? (recentConfigs || []).find((c) => c.id === oldConfigId)
+    : undefined
   const newConfig = (recentConfigs || []).find((c) => c.id === appConfigId)
 
-  const { data: diffData, isLoading } = useQuery({
+  const {
+    data: diffData,
+    isLoading,
+    isError,
+  } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: installId
-      ? ['install-app-config-tree-diff', org?.id, installId, appConfigId]
-      : ['app-config-diff', org?.id, appId, appConfigId, oldConfigId],
+    queryKey: ['app-config-diff', org?.id, appId, appConfigId, oldConfigId],
     queryFn: () =>
-      installId
-        ? getInstallAppConfigTreeDiff({
-            orgId: org!.id,
-            installId,
-            configId: appConfigId,
-          })
-        : getAppConfigDiff({
-            orgId: org!.id,
-            appId: appId!,
-            configId: appConfigId,
-            oldConfigId,
-          }),
-    enabled: installId
-      ? !!org?.id && !!appConfigId
-      : !!org?.id && !!appId && !!appConfigId,
+      getAppConfigDiff({
+        orgId: org!.id,
+        appId: appId!,
+        configId: appConfigId,
+        oldConfigId: oldConfigId || undefined,
+      }),
+    enabled: !!org?.id && !!appId && !!appConfigId,
     retry: 1,
   })
 
@@ -99,11 +77,8 @@ export const AppConfigDiffContainer = ({
 
   const newVersion = newConfig?.version
   const oldVersion = oldConfig?.version
-  const versionLabel = installId
-    ? newVersion != null
-      ? `v${newVersion}`
-      : null
-    : newVersion != null
+  const versionLabel =
+    newVersion != null
       ? oldVersion != null
         ? `v${oldVersion} → v${newVersion}`
         : `v${newVersion}`
@@ -116,6 +91,7 @@ export const AppConfigDiffContainer = ({
         summary={summary}
         versionLabel={versionLabel}
         isLoading={isLoading && !diffData}
+        isError={isError && !diffData}
         isOpen={cardOpen}
         focus={focus}
         className={className}

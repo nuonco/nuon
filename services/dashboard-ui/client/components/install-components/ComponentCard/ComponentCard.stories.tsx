@@ -22,10 +22,10 @@ export const HelmChart = () => (
   />
 )
 
-export const DockerBuild = () => (
+export const ExternalImage = () => (
   <ComponentCard
     name="api-server"
-    type="docker_build"
+    type="external_image"
     status="error"
     href="/org-123/installs/inst-456/components/comp-def"
   />

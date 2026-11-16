@@ -145,13 +145,6 @@ func ComponentConnectionInputFromConfig(comp *config.Component, componentID, app
 	}
 
 	switch {
-	case comp.DockerBuild != nil:
-		obj := comp.DockerBuild
-		in.BuildTimeout = obj.BuildTimeout
-		in.DeployTimeout = obj.DeployTimeout
-		in.MaxAutoRetries = obj.MaxAutoRetries
-		in.SkipNoops = obj.SkipNoops
-		in.AutoApproveOnPoliciesPassing = obj.AutoApproveOnPoliciesPassing
 	case comp.HelmChart != nil:
 		obj := comp.HelmChart
 		in.BuildTimeout = obj.BuildTimeout

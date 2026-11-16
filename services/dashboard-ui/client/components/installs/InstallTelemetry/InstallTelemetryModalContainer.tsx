@@ -4,6 +4,7 @@ import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -21,6 +22,7 @@ export const InstallTelemetryModalContainer = ({
   ...props
 }: { install: TInstall; orgId: string } & Omit<IModal, 'onSubmit'>) => {
   const queryClient = useQueryClient()
+  const appSyncDisabled = useOrgFeatureFlag('disable-app-sync')
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const installId = install.id!
@@ -101,6 +103,7 @@ export const InstallTelemetryModalContainer = ({
         install={install}
         orgId={orgId}
         onNavigate={() => removeModal(props.modalId)}
+        appSyncDisabled={appSyncDisabled}
       />
     </InstallTelemetryModal>
   )

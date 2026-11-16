@@ -2,6 +2,7 @@ import { createContext, useEffect, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
+import { usePanelVisibility } from '@/hooks/use-panel-visibility'
 import { useSSEResourceQuery } from '@/lib/sse/use-sse-resource-query'
 import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getWorkflow } from '@/lib'
@@ -45,6 +46,7 @@ export const WorkflowProvider = ({
   const { org } = useOrg()
   const queryClient = useQueryClient()
   const [sseEnabled, setSseEnabled] = useState(shouldPoll)
+  const isPanelTop = usePanelVisibility()
 
   const onRefreshError = useRefreshErrorToast()
 
@@ -61,8 +63,8 @@ export const WorkflowProvider = ({
     queryKey: ['workflow', org?.id, workflowId],
     queryFn: () => getWorkflow({ orgId: org!.id, workflowId }),
     enabled: !!org?.id && !!workflowId,
-    shouldPoll,
-    sseEnabled,
+    shouldPoll: shouldPoll && isPanelTop,
+    sseEnabled: sseEnabled && isPanelTop,
     eventName: 'workflow',
     onError: onRefreshError,
     isFinished: (data) => !!data?.finished,

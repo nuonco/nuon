@@ -147,7 +147,7 @@ func (s *RunnerOtelWriteTracesTestSuite) setupTestData() {
 		Status:            app.RunnerJobStatusQueued,
 		StatusDescription: "test job",
 		Group:             app.RunnerJobGroupBuild,
-		Type:              app.RunnerJobTypeDockerBuild,
+		Type:              app.RunnerJobTypeContainerImageBuild,
 		Operation:         app.RunnerJobOperationTypeBuild,
 		QueueTimeout:      5 * time.Minute,
 		AvailableTimeout:  10 * time.Minute,

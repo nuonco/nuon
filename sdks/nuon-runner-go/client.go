@@ -137,6 +137,7 @@ type Client interface {
 	RunnerAuthAWSIID(ctx context.Context, req *models.ServiceRunnerAuthAWSIIDRequest) (*models.ServiceRunnerAuthAWSIIDResponse, error)
 	RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAuthGCPRequest) (*models.ServiceRunnerAuthGCPResponse, error)
 	RunnerAuthAzure(ctx context.Context, req *models.ServiceRunnerAuthAzureRequest) (*models.ServiceRunnerAuthAzureResponse, error)
+	GetPublicSettings(ctx context.Context, runnerID string) (*models.ServiceRunnerPublicSettings, error)
 }
 
 var _ Client = (*client)(nil)

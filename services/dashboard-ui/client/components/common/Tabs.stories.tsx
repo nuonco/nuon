@@ -428,3 +428,37 @@ export const NaturalHeight = () => {
     </div>
   )
 }
+
+export const Controlled = () => {
+  const [tab, setTab] = useState<string | null>('trace')
+
+  return (
+    <div className="space-y-4">
+      <Text variant="subtext" theme="neutral">
+        Active tab: {tab ?? 'none'}
+      </Text>
+      <Tabs
+        naturalHeight
+        activeTab={tab}
+        onTabChange={setTab}
+        tabs={{
+          summary: (
+            <div className="py-4">
+              <Text>Summary</Text>
+            </div>
+          ),
+          logs: (
+            <div className="py-4">
+              <Text>Logs</Text>
+            </div>
+          ),
+          trace: (
+            <div className="py-4">
+              <Text>Trace</Text>
+            </div>
+          ),
+        }}
+      />
+    </div>
+  )
+}

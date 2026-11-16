@@ -8,8 +8,10 @@ import {
 } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import type { IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import {
   buildCreateInstallBody,
@@ -23,25 +25,22 @@ import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { trackEvent } from '@/lib/posthog-analytics'
 import {
-  getAppConfigs,
   getAppConfig,
   getAppBranches,
+  getAppInstallInputConfig,
   getBranchConfigs,
   getBranchWorkflowRuns,
   createAppInstall,
-  getCloudConnections,
   installNameTaken,
 } from '@/lib'
-import type {
-  TApp,
-  TAppBranch,
-  TAppConfig,
-  TCloudConnectionSummary,
-} from '@/types'
+import type { TApp, TAppBranch, TAppConfig } from '@/types'
 import {
   BRANCH_CONFIG_POLL_MS,
   branchConfigWaitState,
 } from '@/lib/branch-config-wait'
+import { AppContext } from '@/providers/app-provider'
+import { CreateBranchModal } from '@/components/branches/CreateBranchModal'
+import { StepErrorLog } from '@/components/workflows/step-details/StepErrorLog'
 import { BranchStep } from './BranchStep'
 import {
   GroupStep,
@@ -55,6 +54,7 @@ import {
 } from './CreateInstallFormFields'
 import { FormSkeleton } from './FormSkeleton'
 import { useInstallLink } from '@/hooks/use-install-path'
+import { useCloudConnections } from '@/components/cloud-connections/queries'
 
 export type CreateInstallPhase = 'select-branch' | 'form' | 'pick-group'
 
@@ -88,6 +88,12 @@ export const pickCreateInstallConfig = (
   )
 }
 
+const CreateBranchModalForApp = ({ app, ...props }: IModal & { app: TApp }) => (
+  <AppContext.Provider value={{ app, labelColors: {}, refresh: () => {} }}>
+    <CreateBranchModal {...props} />
+  </AppContext.Provider>
+)
+
 interface ICreateInstallFromAppContainer {
   app: TApp
   initialBranchId?: string
@@ -107,8 +113,9 @@ export const CreateInstallFromAppContainer = ({
   const { org } = useOrg()
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { removeModal } = useSurfaces()
+  const { addModal, removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const appSyncDisabled = useOrgFeatureFlag('disable-app-sync')
   const queryClient = useQueryClient()
   const platform = app.runner_config?.app_runner_type
   const requireTargetAccount = useOrgFeatureFlag('phone-home-auth')
@@ -143,6 +150,11 @@ export const CreateInstallFromAppContainer = ({
   })
   const hasBranches = !branchesError && (branchList?.data ?? []).length > 0
 
+  const openCreateBranchModal = () => {
+    if (modalId) removeModal(modalId)
+    addModal(<CreateBranchModalForApp app={app} />)
+  }
+
   // Opening from a branch page preselects that branch and skips the picker.
   // Applied once so Back still returns to the picker.
   useEffect(() => {
@@ -159,20 +171,22 @@ export const CreateInstallFromAppContainer = ({
 
   const phase: CreateInstallPhase = (() => {
     if (!initialBranchApplied) return 'select-branch'
-    if (hasBranches && !branchDecisionMade) return 'select-branch'
+    if ((hasBranches || appSyncDisabled) && !branchDecisionMade)
+      return 'select-branch'
     if (selectedBranch && pendingFormValues !== null) return 'pick-group'
     return 'form'
   })()
 
   const {
-    data: unbranchedConfigs,
-    isLoading: unbranchedConfigsLoading,
-    error: unbranchedConfigsError,
+    data: installInputConfig,
+    isLoading: installInputConfigLoading,
+    error: installInputConfigError,
   } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['app-configs', org?.id, app.id],
-    queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id }),
-    enabled: !!org?.id && phase === 'form' && !selectedBranch,
+    queryKey: ['app-install-input-config', org?.id, app.id],
+    queryFn: () => getAppInstallInputConfig({ orgId: org.id, appId: app.id }),
+    enabled:
+      !!org?.id && phase === 'form' && !selectedBranch && !appSyncDisabled,
   })
 
   const branchRunsKey = [
@@ -248,11 +262,9 @@ export const CreateInstallFromAppContainer = ({
         requireActive: true,
         fallbackToFirst: false,
       })?.id
-    : pickCreateInstallConfig(unbranchedConfigs, {
-        requireUnbranched: true,
-        requireActive: true,
-        fallbackToFirst: false,
-      })?.id
+    : appSyncDisabled
+      ? undefined
+      : installInputConfig?.app_config_id
 
   const branchWait = branchConfigWaitState({
     hasBranch: phase === 'form' && !!selectedBranch,
@@ -278,25 +290,8 @@ export const CreateInstallFromAppContainer = ({
   })
 
   const { data: cloudConnections, isLoading: cloudConnectionsLoading } =
-    useQuery({
-      placeholderData: keepPreviousData,
-      queryKey: ['cloud-connections', org?.id, 'all'],
-      queryFn: async () => {
-        const all: TCloudConnectionSummary[] = []
-        let offset = 0
-        for (;;) {
-          const { data, pagination } = await getCloudConnections({
-            orgId: org.id,
-            offset,
-            limit: 100,
-          })
-          const page = data ?? []
-          all.push(...page)
-          if (!pagination?.hasNext || page.length === 0) return all
-          offset += page.length
-        }
-      },
-      enabled: !!org?.id && cloudConnectionsEnabled && phase === 'form',
+    useCloudConnections(org?.id || '', {
+      enabled: cloudConnectionsEnabled && phase === 'form',
     })
 
   const {
@@ -366,33 +361,14 @@ export const CreateInstallFromAppContainer = ({
   })
 
   const isFormLoading =
-    unbranchedConfigsLoading ||
+    installInputConfigLoading ||
     branchConfigsLoading ||
     configLoading ||
     (cloudConnectionsEnabled && cloudConnectionsLoading)
 
-  const missingBranchConfigError =
-    branchWait.phase === 'failed'
-      ? { error: branchWait.message || 'This branch run failed.' }
-      : undefined
-  const missingUnbranchedConfigError =
-    phase === 'form' &&
-    !selectedBranch &&
-    !unbranchedConfigsLoading &&
-    !unbranchedConfigsError &&
-    !configId
-      ? {
-          error:
-            'No active config from `nuon apps sync` was found. Sync the app before creating an install without a branch.',
-        }
-      : undefined
   const loadError =
     phase === 'form'
-      ? unbranchedConfigsError ||
-        branchConfigsError ||
-        configError ||
-        missingBranchConfigError ||
-        missingUnbranchedConfigError
+      ? installInputConfigError || branchConfigsError || configError
       : undefined
   const inputConfig = config?.input
     ? {
@@ -408,7 +384,11 @@ export const CreateInstallFromAppContainer = ({
     : undefined
 
   const formReady =
-    phase === 'form' && !isFormLoading && !loadError && !!inputConfig
+    phase === 'form' &&
+    !isFormLoading &&
+    !loadError &&
+    branchWait.phase !== 'failed' &&
+    !!inputConfig
 
   const validateName = useCallback(
     async (name: string) => {
@@ -534,10 +514,23 @@ export const CreateInstallFromAppContainer = ({
         {onBack ? backButton : null}
         {branchesLoading ? (
           <FormSkeleton />
+        ) : appSyncDisabled && !hasBranches ? (
+          <EmptyState
+            variant="diagram"
+            emptyTitle="No app branches yet"
+            emptyMessage="Create an app branch, then come back to create installs once it has a successful run."
+            action={
+              <Button variant="secondary" onClick={openCreateBranchModal}>
+                <Icon variant="PlusIcon" size={16} />
+                Create branch
+              </Button>
+            }
+          />
         ) : (
           <BranchStep
             branches={branchList?.data ?? []}
             selected={selectedBranch}
+            allowSkip={!appSyncDisabled}
             onSelect={setSelectedBranch}
             onSkip={() => {
               setSelectedBranch(null)
@@ -586,6 +579,17 @@ export const CreateInstallFromAppContainer = ({
         <Banner theme="error">
           {(loadError as any)?.error || 'Unable to load app configuration'}
         </Banner>
+      ) : branchWait.phase === 'failed' ? (
+        <StepErrorLog
+          heading="This app branch's first run failed"
+          linkLabel="View branch"
+          logsHref={`/${org?.id}/apps/${app.id}/branches/${selectedBranch?.id}`}
+          onLinkClick={() => removeModal(modalId)}
+          text={branchWait.message || 'This branch run failed.'}
+        >
+          Installs need an app config from a successful branch run. Fix the
+          error below, then run the branch again.
+        </StepErrorLog>
       ) : branchWait.phase === 'waiting' ? (
         <>
           <Banner theme="default">
@@ -606,6 +610,8 @@ export const CreateInstallFromAppContainer = ({
                   (connection) =>
                     connection.platform === installPlatform &&
                     connection.platform === 'aws' &&
+                    (connection.preset === 'stacks' ||
+                      connection.preset === 'custom') &&
                     connection.status === 'verified'
                 )
               : undefined

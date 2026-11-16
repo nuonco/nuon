@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
@@ -22,35 +23,44 @@ import (
 type Params struct {
 	fx.In
 
-	Cfg         *internal.Config
-	GhClient    *github.Client
-	DB          *gorm.DB `name:"psql"`
-	V           *validator.Validate
-	L           *zap.Logger
-	VcsHelpers  *vcshelpers.Helpers
-	QueueClient *queueclient.Client
+	Cfg            *internal.Config
+	GhClient       *github.Client
+	DB             *gorm.DB `name:"psql"`
+	V              *validator.Validate
+	L              *zap.Logger
+	VcsHelpers     *vcshelpers.Helpers
+	QueueClient    *queueclient.Client
+	FeaturesClient *features.Features
 }
 
 type Helpers struct {
-	cfg         *internal.Config
-	ghClient    *github.Client
-	db          *gorm.DB
-	v           *validator.Validate
-	l           *zap.Logger
-	vcsHelpers  *vcshelpers.Helpers
-	queueClient *queueclient.Client
+	cfg            *internal.Config
+	ghClient       *github.Client
+	db             *gorm.DB
+	v              *validator.Validate
+	l              *zap.Logger
+	vcsHelpers     *vcshelpers.Helpers
+	queueClient    *queueclient.Client
+	featuresClient *features.Features
 }
 
 func New(params Params) *Helpers {
 	return &Helpers{
-		v:           params.V,
-		cfg:         params.Cfg,
-		ghClient:    params.GhClient,
-		db:          params.DB,
-		l:           params.L,
-		vcsHelpers:  params.VcsHelpers,
-		queueClient: params.QueueClient,
+		v:              params.V,
+		cfg:            params.Cfg,
+		ghClient:       params.GhClient,
+		db:             params.DB,
+		l:              params.L,
+		vcsHelpers:     params.VcsHelpers,
+		queueClient:    params.QueueClient,
+		featuresClient: params.FeaturesClient,
 	}
+}
+
+func (h *Helpers) WithDB(db *gorm.DB) *Helpers {
+	helper := *h
+	helper.db = db
+	return &helper
 }
 
 // VCSHelpers returns the VCS helpers for git source resolution and token creation.
@@ -67,7 +77,7 @@ func (h *Helpers) QueueClient() *queueclient.Client {
 // templates and persists the resulting hashes and ready status. This runs inline
 // with the config write so a stack generated from the config always finds its
 // templates already in S3.
-func (h *Helpers) UploadCustomNestedStackTemplates(ctx context.Context, db *gorm.DB, stackConfig *app.AppStackConfig) error {
+func (h *Helpers) UploadCustomNestedStackTemplates(ctx context.Context, stackConfig *app.AppStackConfig) error {
 	if len(stackConfig.CustomNestedStacks) == 0 && !stackUINeedsUpload(stackConfig.UIDefinition) {
 		return nil
 	}
@@ -92,7 +102,7 @@ func (h *Helpers) UploadCustomNestedStackTemplates(ctx context.Context, db *gorm
 		return nil
 	}
 
-	if res := db.WithContext(ctx).
+	if res := h.db.WithContext(ctx).
 		Model(stackConfig).
 		Select(columns).
 		Updates(stackConfig); res.Error != nil {

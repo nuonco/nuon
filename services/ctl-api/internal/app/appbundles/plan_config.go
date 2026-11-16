@@ -99,9 +99,6 @@ func exportComponentConfigConnections(ctx context.Context, db *gorm.DB, appConfi
 			Preload("HelmComponentConfig").
 			Preload("HelmComponentConfig.PublicGitVCSConfig").
 			Preload("HelmComponentConfig.ConnectedGithubVCSConfig").
-			Preload("DockerBuildComponentConfig").
-			Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
-			Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig").
 			Preload("ExternalImageComponentConfig").
 			Preload("JobComponentConfig").
 			Preload("KubernetesManifestComponentConfig").

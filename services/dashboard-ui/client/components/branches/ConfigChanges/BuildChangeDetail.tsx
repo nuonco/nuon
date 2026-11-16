@@ -3,6 +3,7 @@ import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { InstallDeploymentSourceCompareLink } from '@/components/installs/InstallDeploymentSourceCompareLink'
 import {
   changeReasonBadgeTheme,
   changeReasonLabel,
@@ -17,9 +18,12 @@ export const BuildChangeDetail = ({
   const subject = build.commit?.message?.split('\n')[0]
 
   return (
-    <span className="flex flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-2">
       <span className="flex flex-wrap items-center justify-between gap-3">
-        <span className="flex flex-wrap items-center gap-3">
+        <span className="flex min-w-0 flex-wrap items-center gap-3">
+          <Text family="mono" className="break-all">
+            {build.name}
+          </Text>
           {build.changeReason ? (
             <Badge size="sm" theme={changeReasonBadgeTheme(build.changeReason)}>
               {changeReasonLabel(build.changeReason)}
@@ -27,7 +31,14 @@ export const BuildChangeDetail = ({
           ) : null}
           <Status status={build.status} />
         </span>
-        {build.href ? <Link href={build.href}>View build</Link> : null}
+        <span className="flex items-center gap-4">
+          {build.sourceDiffTarget ? (
+            <InstallDeploymentSourceCompareLink
+              target={build.sourceDiffTarget}
+            />
+          ) : null}
+          {build.href ? <Link href={build.href}>View build</Link> : null}
+        </span>
       </span>
       {build.commit ? (
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -44,6 +55,6 @@ export const BuildChangeDetail = ({
           ) : null}
         </span>
       ) : null}
-    </span>
+    </div>
   )
 }

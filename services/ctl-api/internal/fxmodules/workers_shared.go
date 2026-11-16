@@ -19,7 +19,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signalhooks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/hooks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
@@ -36,6 +35,7 @@ import (
 	onboardingactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 
 	// Register install queue signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/signals/credentialcleanup"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/tokencleanup"
@@ -77,7 +77,6 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(workflowstepawaitingretry.NewNotifier),
 	fx.Provide(releasedrunbooks.NewNotifier),
 	fx.Provide(controlplanejob.NewActivities),
-	fx.Provide(activities.New),
 	fx.Provide(onboardingactivities.New),
 
 	// workflows

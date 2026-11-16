@@ -6,7 +6,7 @@ interface ICloudPlatform extends Omit<IText, 'children'> {
   colorVariant?: 'mono' | 'color'
   displayVariant?: 'abbr' | 'name' | 'icon-only'
   iconSize?: string
-  platform: TCloudPlatform
+  platform: TCloudPlatform | 'unknown'
 }
 
 interface ICloudPlatformConfig {
@@ -24,13 +24,13 @@ const CLOUD_PLATFORM_CONFIG: Record<
     abbr: 'AWS',
     iconVariant: 'AWS',
     iconVariantColor: 'AWSColor',
-    name: 'Amazone Web Services',
+    name: 'Amazon Web Services',
   },
   azure: {
     abbr: 'Azure',
     iconVariant: 'Azure',
     iconVariantColor: 'AzureColor',
-    name: 'Micosoft Azure',
+    name: 'Microsoft Azure',
   },
   gcp: {
     abbr: 'GCP',
@@ -45,6 +45,10 @@ const CLOUD_PLATFORM_CONFIG: Record<
     name: 'Unknown',
   },
 } as const
+
+export const cloudPlatformName = (platform?: TCloudPlatform) =>
+  (platform ? CLOUD_PLATFORM_CONFIG[platform] : undefined)?.name ||
+  CLOUD_PLATFORM_CONFIG.unknown.name
 
 export const CloudPlatform = ({
   colorVariant = 'mono',

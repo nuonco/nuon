@@ -20,6 +20,7 @@ import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { useApp } from '@/hooks/use-app'
 import { useBuild } from '@/hooks/use-build'
 import { useOrg } from '@/hooks/use-org'
+import { useSearchParamState } from '@/hooks/use-search-param-state'
 import { getComponent } from '@/lib'
 import { BuildProvider } from '@/providers/build-provider'
 import type { TComponent } from '@/types'
@@ -28,7 +29,15 @@ import { isImageBuild } from '@/utils/image-ref'
 export interface IBuildPanel extends Omit<IPanel, 'heading'> {
   buildId: string
   componentId: string
-  title: string
+  title?: string
+}
+
+export const buildPanelKey = (componentId: string, buildId: string) =>
+  `build-${componentId}-${buildId}`
+
+export const parseBuildPanelKey = (key: string) => {
+  const match = key.match(/^build-([a-z0-9]+)-([a-z0-9]+)$/)
+  return match ? { componentId: match[1], buildId: match[2] } : null
 }
 
 const BuildPanelContent = ({
@@ -39,6 +48,9 @@ const BuildPanelContent = ({
   const { build } = useBuild()
   const { app } = useApp()
   const { org } = useOrg()
+  const [tab, setTab] = useSearchParamState('build_tab', {
+    clearOnUnmount: true,
+  })
   const status = build?.status_v2?.status
   const activity = build?.status_v2?.status_human_description
   const jobs = build?.runner_job ? [build.runner_job] : []
@@ -118,6 +130,8 @@ const BuildPanelContent = ({
       <Tabs
         naturalHeight
         initActiveTab="summary"
+        activeTab={tab}
+        onTabChange={setTab}
         tabsClassName="mt-4"
         tabControlsClassName="!gap-2 md:!gap-6 [&>button]:px-1 md:[&>button]:px-3"
         tabs={{
@@ -192,13 +206,13 @@ export const BuildPanel = ({
             <ComponentType type={component.type} displayVariant="icon-only" />
           ) : null}
           <Text variant="base" weight="strong" className="truncate">
-            {title}
+            {title || component?.name}
           </Text>
         </span>
       }
       size="3/4"
       aria-label="Build details"
-      panelKey={`build-${componentId}-${buildId}`}
+      panelKey={buildPanelKey(componentId, buildId)}
       {...panelProps}
     >
       <BuildPanelBody

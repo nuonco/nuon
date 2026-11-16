@@ -157,6 +157,7 @@ func (a *Activities) evaluateRule(
 	query, err := rego.New(
 		rego.Query(queryStr),
 		rego.Module("policy.rego", contents),
+		rego.Capabilities(policyopa.Capabilities()),
 	).PrepareForEval(ctx)
 	if err != nil {
 		l.Error("unable to prepare OPA query", zap.String("query", queryStr), zap.Error(err))

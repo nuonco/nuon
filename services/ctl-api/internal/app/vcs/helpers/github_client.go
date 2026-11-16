@@ -21,6 +21,9 @@ type GithubClient interface {
 	DeleteInstallation(ctx context.Context, installID string) error
 	ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error)
 	CreateOrgWebhook(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string, secret string) (int64, error)
+	// FindOrgWebhookByURL returns the ID of the org hook delivering to
+	// webhookURL, or 0 when none does.
+	FindOrgWebhookByURL(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string) (int64, error)
 	// VerifyInstallationOwnership exchanges a user-authorization code and
 	// confirms installID is visible to that user. Returns
 	// githubauth.ErrInstallationNotOwned when it is not.
@@ -107,6 +110,30 @@ func (h *Helpers) CreateOrgWebhook(ctx context.Context, vcsConn *app.VCSConnecti
 	}
 
 	return created.GetID(), nil
+}
+
+func (h *Helpers) FindOrgWebhookByURL(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string) (int64, error) {
+	ghClient, err := h.GetVCSConnectionClient(ctx, vcsConn)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create GitHub client: %w", err)
+	}
+
+	opts := &github.ListOptions{PerPage: 100}
+	for {
+		hooks, resp, err := ghClient.Organizations.ListHooks(ctx, vcsConn.GithubAccountName, opts)
+		if err != nil {
+			return 0, fmt.Errorf("failed to list org webhooks: %w", err)
+		}
+		for _, hook := range hooks {
+			if url, _ := hook.Config["url"].(string); url == webhookURL {
+				return hook.GetID(), nil
+			}
+		}
+		if resp.NextPage == 0 {
+			return 0, nil
+		}
+		opts.Page = resp.NextPage
+	}
 }
 
 func (h *Helpers) ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error) {

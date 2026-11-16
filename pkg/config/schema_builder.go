@@ -308,6 +308,15 @@ func (fb *FieldBuilder) Examples(values ...any) *FieldBuilder {
 	return fb.setProperty(prop)
 }
 
+func (fb *FieldBuilder) HideDocs() *FieldBuilder {
+	prop := fb.getProperty()
+	if prop.Extras == nil {
+		prop.Extras = map[string]interface{}{}
+	}
+	prop.Extras["hide_in_docs"] = true
+	return fb.setProperty(prop)
+}
+
 // OneOfRequired marks the field as part of a one-of constraint group with the given group name.
 // This is used to indicate that exactly one field in the group must be present.
 // The group name should match the value in the struct tag (e.g., jsonschema:"oneof_required=group_name").

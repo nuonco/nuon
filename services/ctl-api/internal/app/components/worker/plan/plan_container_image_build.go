@@ -9,18 +9,23 @@ import (
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 
-	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
-	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/azure/acr"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.ComponentBuild) (*plantypes.ContainerImagePullPlan, error) {
+	inputs, err := buildsource.ComponentInputs(&bld.ComponentConfigConnection)
+	if err != nil {
+		return nil, err
+	}
+	plan := inputs.ContainerImagePullPlan
+
 	srcRepo, err := p.getSourceRepository(
 		bld.ComponentConfigConnection.ExternalImageComponentConfig,
 		bld.ComponentConfigConnection.ComponentID,
@@ -29,14 +34,7 @@ func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.C
 		return nil, errors.Wrap(err, "unable to get source repository")
 	}
 
-	plan := &plantypes.ContainerImagePullPlan{
-		Image:        bld.ComponentConfigConnection.ExternalImageComponentConfig.ImageURL,
-		Tag:          bld.ComponentConfigConnection.ExternalImageComponentConfig.Tag,
-		UpdatePolicy: bld.ComponentConfigConnection.ExternalImageComponentConfig.UpdatePolicy,
-		Verification: bld.ComponentConfigConnection.ExternalImageComponentConfig.Verification,
-
-		RepoCfg: srcRepo,
-	}
+	plan.RepoCfg = srcRepo
 
 	// Look up the most recent prior Active build's SourceDigest so the runner
 	// can detect a no-op (upstream digest unchanged) and skip the artifact
@@ -91,33 +89,10 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 	}
 
 	if cfg.AWSECRImageConfig != nil {
-		assumeRole := &credentials.AssumeRoleConfig{
-			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
-			SessionName:            "container-image-build",
-			SessionDurationSeconds: 30 * 60,
-			UseGCPOIDC:             b.cloudProvider == "gcp",
-		}
-
-		// Control-plane builds run as the ctl-api pod identity, which the
-		// vendor's ECR pull role does not trust — vendors grant the Nuon
-		// management account, so hop through the management role first. AWS
-		// is the default cloud provider, so it is represented as anything
-		// other than gcp/azure (including an empty string).
-		if b.cloudProvider != "gcp" && b.cloudProvider != "azure" && b.managementIAMRoleARN != "" {
-			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
-				IAMRoleARN: b.managementIAMRoleARN,
-			}
-		}
-
 		return &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeECR,
 			Repository:   cfg.ImageURL,
 			Region:       cfg.AWSECRImageConfig.AWSRegion,
-
-			ECRAuth: &credentials.Config{
-				Region:     cfg.AWSECRImageConfig.AWSRegion,
-				AssumeRole: assumeRole,
-			},
 		}, nil
 	}
 
@@ -141,6 +116,13 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 			return nil, err
 		}
 
+		if cfg.AzureACRImageConfig.UsesCloudConnection() {
+			return &configs.OCIRegistryRepository{
+				RegistryType: configs.OCIRegistryTypeACR,
+				Repository:   cfg.ImageURL,
+				LoginServer:  cfg.AzureACRImageConfig.RegistryURL,
+			}, nil
+		}
 		acrCfg := &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeACR,
 			Repository:   cfg.ImageURL,
@@ -150,14 +132,6 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 			},
 		}
 
-		// Naming an app registration is what makes a registry in someone else's
-		// tenant reachable; without one the ambient identity is all there is,
-		// which only works when the registry shares our tenant.
-		//
-		// Any field being set is enough to attach it. A half-specified
-		// registration is rejected at sync, but attaching it here too means a
-		// config that slipped through fails loudly in the token activity rather
-		// than quietly falling back to an identity that cannot see the registry.
 		if acr := cfg.AzureACRImageConfig; acr.ClientID != "" || acr.TenantID != "" ||
 			acr.ClientSecretName != "" || acr.ClientCertificateName != "" {
 			acrCfg.ACRAppRegistration = &configs.ACRAppRegistration{

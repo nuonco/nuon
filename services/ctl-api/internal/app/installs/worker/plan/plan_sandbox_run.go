@@ -102,7 +102,11 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 				// Only a missing build falls back to git, which resolves branch HEAD rather
 				// than the commit the artifact was built from.
 				l.Info("checking for active sandbox build OCI artifact")
-				sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuildByAppConfigID(ctx, appCfg.ID)
+				buildReq := activities.GetLatestActiveSandboxBuildRequest{AppConfigID: appCfg.ID}
+				if workflow.GetVersion(ctx, "sandbox-run-build-snapshot-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+					buildReq.SandboxRunID = run.ID
+				}
+				sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuild(ctx, buildReq)
 				if sbErr != nil {
 					return nil, nil, errors.Wrap(sbErr, "unable to check for sandbox build")
 				}

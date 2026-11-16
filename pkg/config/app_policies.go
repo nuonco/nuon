@@ -104,8 +104,6 @@ const (
 	AppPolicyTypeHelmChart AppPolicyType = "helm_chart"
 	// AppPolicyTypeKubernetesManifest applies to kubernetes manifest components
 	AppPolicyTypeKubernetesManifest AppPolicyType = "kubernetes_manifest"
-	// AppPolicyTypeDockerBuild applies to docker build components
-	AppPolicyTypeDockerBuild AppPolicyType = "docker_build"
 	// AppPolicyTypeContainerImage applies to container image components
 	AppPolicyTypeContainerImage AppPolicyType = "container_image"
 	// AppPolicyTypePulumi applies to pulumi components
@@ -120,7 +118,6 @@ var AllAppPolicyTypes = []AppPolicyType{
 	AppPolicyTypeTerraformModule,
 	AppPolicyTypeHelmChart,
 	AppPolicyTypeKubernetesManifest,
-	AppPolicyTypeDockerBuild,
 	AppPolicyTypeContainerImage,
 	AppPolicyTypePulumi,
 	AppPolicyTypeSandbox,

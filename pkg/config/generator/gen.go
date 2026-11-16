@@ -67,8 +67,6 @@ func schemaTypeForInstance(instance any) string {
 		return "terraform"
 	case *config.HelmChartComponentConfig:
 		return "helm"
-	case *config.DockerBuildComponentConfig:
-		return "docker-build"
 	case *config.ExternalImageComponentConfig:
 		return "container-image"
 	case *config.KubernetesManifestComponentConfig:
@@ -86,8 +84,6 @@ func componentTypeSchemaSlug(t config.ComponentType) string {
 		return "terraform"
 	case config.HelmChartComponentType:
 		return "helm"
-	case config.DockerBuildComponentType:
-		return "docker-build"
 	case config.ContainerImageComponentType, config.ExternalImageComponentType:
 		return "container-image"
 	case config.KubernetesManifestComponentType:
@@ -113,7 +109,6 @@ var IgnoredProperties = []string{
 	"source",
 	"helm_chart",
 	"terraform_module",
-	"docker_build",
 	"job",
 	"external_image",
 	"kubernetes_manifest",

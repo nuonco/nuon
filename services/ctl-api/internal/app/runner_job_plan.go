@@ -86,6 +86,18 @@ func (r *RunnerJobPlan) GetCompositePlan(ctx context.Context, blobRead bool) (*p
 	return &r.CompositePlan, false
 }
 
+// RedactCredentials blanks registry and cloud secrets in both stored copies of
+// the plan before it is returned outside the runner API.
+func (r *RunnerJobPlan) RedactCredentials() error {
+	planJSON, err := plantypes.RedactPlanJSON(r.PlanJSON)
+	if err != nil {
+		return fmt.Errorf("unable to redact plan json: %w", err)
+	}
+	r.PlanJSON = planJSON
+	r.CompositePlan.RedactCredentials()
+	return nil
+}
+
 func (r *RunnerJobPlan) DeriveCompositePlan(runnerJob *RunnerJob) (*plantypes.CompositePlan, error) {
 	var compositePlan plantypes.CompositePlan
 	switch runnerJob.Group {

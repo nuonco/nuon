@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -81,7 +82,12 @@ func (s *service) getOrgRunnerJobPlan(ctx context.Context, runnerJobID string, o
 		return "", fmt.Errorf("unable to get job plan: %w", res.Error)
 	}
 
-	return runnerPlan.PlanJSON, nil
+	plan, err := plantypes.RedactPlanJSON(runnerPlan.PlanJSON)
+	if err != nil {
+		return "", fmt.Errorf("unable to redact job plan: %w", err)
+	}
+
+	return plan, nil
 }
 
 // @ID						GetRunnerJobPlanV2

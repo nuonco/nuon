@@ -15,12 +15,14 @@ import (
 type EnsureCronWorkflowsRequest struct{}
 
 type EnsureCronWorkflowsResponse struct {
-	SweepStarted                bool `json:"sweep_started"`
-	ComponentHealthSweepStarted bool `json:"component_health_sweep_started"`
-	MetricsStarted              bool `json:"metrics_started"`
-	CleanupStarted              bool `json:"cleanup_started"`
-	TriggerEventCleanupStarted  bool `json:"trigger_event_cleanup_started"`
-	OIDCTokenCleanupStarted     bool `json:"oidc_token_cleanup_started"`
+	SweepStarted                 bool `json:"sweep_started"`
+	ComponentHealthSweepStarted  bool `json:"component_health_sweep_started"`
+	MetricsStarted               bool `json:"metrics_started"`
+	CleanupStarted               bool `json:"cleanup_started"`
+	TriggerEventCleanupStarted   bool `json:"trigger_event_cleanup_started"`
+	OIDCTokenCleanupStarted      bool `json:"oidc_token_cleanup_started"`
+	LogStreamAccountSweepStarted bool `json:"log_stream_account_sweep_started"`
+	DeadTokenCleanupStarted      bool `json:"dead_token_cleanup_started"`
 }
 
 // EnsureCronWorkflows starts (or replaces) the enqueuer-sweep and
@@ -112,6 +114,36 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	}
 	resp.OIDCTokenCleanupStarted = true
 	a.logger.Info("oidc exchanged token cleanup cron started/replaced", zap.String("workflow-id", "general-oidc-exchanged-token-cleanup-cron"))
+
+	logStreamAccountSweepOpts := tclient.StartWorkflowOptions{
+		ID:                    "general-log-stream-account-sweep-cron",
+		TaskQueue:             workflows.APITaskQueue,
+		CronSchedule:          "*/15 * * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", logStreamAccountSweepOpts, "SweepLogStreamAccounts"); err != nil {
+		return nil, fmt.Errorf("unable to start log stream account sweep workflow: %w", err)
+	}
+	resp.LogStreamAccountSweepStarted = true
+	a.logger.Info("log stream account sweep cron started/replaced", zap.String("workflow-id", "general-log-stream-account-sweep-cron"))
+
+	deadTokenCleanupOpts := tclient.StartWorkflowOptions{
+		ID:                    "general-dead-token-cleanup-cron",
+		TaskQueue:             workflows.APITaskQueue,
+		CronSchedule:          "40 * * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", deadTokenCleanupOpts, "CleanupDeadTokens"); err != nil {
+		return nil, fmt.Errorf("unable to start dead token cleanup workflow: %w", err)
+	}
+	resp.DeadTokenCleanupStarted = true
+	a.logger.Info("dead token cleanup cron started/replaced", zap.String("workflow-id", "general-dead-token-cleanup-cron"))
 
 	// One fleet-wide sweep replaces what used to be a cron emitter per install:
 	// live installs are evaluated when their report lands, so all that is left

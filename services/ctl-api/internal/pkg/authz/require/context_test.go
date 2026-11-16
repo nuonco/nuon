@@ -26,8 +26,8 @@ func TestOrg(t *testing.T) {
 func TestWriteOAuthReadOnly(t *testing.T) {
 	acct := &app.Account{
 		ID: "acct_1",
-		AllPermissions: permissions.Set{
-			"org_abc": permissions.PermissionAll,
+		Authority: &permissions.AccountPermissions{
+			Sources: map[string]permissions.PermissionSource{"org_abc": {Permission: permissions.PermissionAll}},
 		},
 	}
 	ctx := cctx.SetAccountContext(context.Background(), acct)
@@ -41,8 +41,8 @@ func TestWriteOAuthReadOnly(t *testing.T) {
 func TestWriteRBAC(t *testing.T) {
 	acct := &app.Account{
 		ID: "acct_1",
-		AllPermissions: permissions.Set{
-			"org_abc": permissions.PermissionRead,
+		Authority: &permissions.AccountPermissions{
+			Sources: map[string]permissions.PermissionSource{"org_abc": {Permission: permissions.PermissionRead}},
 		},
 	}
 	ctx := cctx.SetAccountContext(context.Background(), acct)
@@ -51,7 +51,7 @@ func TestWriteRBAC(t *testing.T) {
 	_, err := Write(ctx)
 	assert.Error(t, err)
 
-	acct.AllPermissions["org_abc"] = permissions.PermissionCreate
+	acct.Authority.Sources["org_abc"] = permissions.PermissionSource{Permission: permissions.PermissionCreate}
 	_, err = Write(ctx)
 	assert.NoError(t, err)
 }
@@ -59,8 +59,8 @@ func TestWriteRBAC(t *testing.T) {
 func TestReadRBAC(t *testing.T) {
 	acct := &app.Account{
 		ID: "acct_1",
-		AllPermissions: permissions.Set{
-			"org_abc": permissions.PermissionRead,
+		Authority: &permissions.AccountPermissions{
+			Sources: map[string]permissions.PermissionSource{"org_abc": {Permission: permissions.PermissionRead}},
 		},
 	}
 	ctx := cctx.SetAccountContext(context.Background(), acct)
@@ -70,7 +70,7 @@ func TestReadRBAC(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "org_abc", orgID)
 
-	acct.AllPermissions["org_abc"] = permissions.PermissionDelete
+	acct.Authority.Sources["org_abc"] = permissions.PermissionSource{Permission: permissions.PermissionDelete}
 	_, err = Read(ctx)
 	assert.Error(t, err)
 }

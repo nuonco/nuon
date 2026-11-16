@@ -10,6 +10,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -46,6 +47,24 @@ func (s *service) GetRunnerJobCompositePlan(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, cp)
 }
 
+func (s *service) GetRunnerJobCompositePlanPublic(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	runnerJobID := ctx.Param("runner_job_id")
+
+	cp, err := s.getOrgRunnerJobCompositePlan(ctx, runnerJobID, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get runner job: %w", err))
+		return
+	}
+	cp.RedactCredentials()
+
+	ctx.JSON(http.StatusOK, cp)
+}
+
 func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID string) (*plantypes.CompositePlan, error) {
 	var runnerPlan app.RunnerJobPlan
 
@@ -64,7 +83,7 @@ func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID str
 			zap.String("plan_id", runnerPlan.ID))
 	}
 	if !cp.IsEmpty() {
-		return cp, nil
+		return helpers.ResumeBuildSource(ctx, s.db, runnerJobID, cp)
 	}
 
 	// if empty derive from plan json
@@ -78,7 +97,11 @@ func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID str
 		return nil, fmt.Errorf("unable to get job: %w", res.Error)
 	}
 
-	return runnerPlan.DeriveCompositePlan(&runnerJob)
+	cp, err := runnerPlan.DeriveCompositePlan(&runnerJob)
+	if err != nil {
+		return nil, err
+	}
+	return helpers.ResumeBuildSource(ctx, s.db, runnerJobID, cp)
 }
 
 func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID string, orgID string) (*plantypes.CompositePlan, error) {
@@ -99,7 +122,7 @@ func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID 
 			zap.String("plan_id", runnerPlan.ID))
 	}
 	if !cp.IsEmpty() {
-		return cp, nil
+		return helpers.ResumeBuildSource(ctx, s.db, runnerJobID, cp)
 	}
 
 	// if empty derive from plan json
@@ -112,5 +135,9 @@ func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID 
 		return nil, fmt.Errorf("unable to get job: %w", res.Error)
 	}
 
-	return runnerPlan.DeriveCompositePlan(&runnerJob)
+	cp, err := runnerPlan.DeriveCompositePlan(&runnerJob)
+	if err != nil {
+		return nil, err
+	}
+	return helpers.ResumeBuildSource(ctx, s.db, runnerJobID, cp)
 }

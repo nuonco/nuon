@@ -25,7 +25,7 @@ title: 'Job'
 | **`cmd`**<br/>array | command to execute Command to run in the job container | **Optional** | `"python"`, `"bash"` |
 | **`env_vars`**<br/>object | environment variables Map of environment variables to pass to the job container | **Optional** | - |
 | **`args`**<br/>array | command arguments Arguments to pass to the command | **Optional** | `"-c 'echo hello'"`, `"script.py"` |
-| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "10m", "30m"). Default: 5m. Max: 30m | **Optional**<br/>Default: `"5m"` | `"30m"` |
 | **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for job execution (e.g., "30m", "1h"). Default: 15m. Max: 1h | **Optional**<br/>Default: `"15m"` | `"30m"`, `"1h"` |
 | **`env_var`**<br/>[array](#env_var) | - | **Optional** | - |
 

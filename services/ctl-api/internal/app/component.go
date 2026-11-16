@@ -28,7 +28,6 @@ type ComponentType string
 const (
 	ComponentTypeTerraformModule    ComponentType = "terraform_module"
 	ComponentTypeHelmChart          ComponentType = "helm_chart"
-	ComponentTypeDockerBuild        ComponentType = "docker_build"
 	ComponentTypeExternalImage      ComponentType = "external_image"
 	ComponentTypeJob                ComponentType = "job"
 	ComponentTypeKubernetesManifest ComponentType = "kubernetes_manifest"
@@ -38,7 +37,6 @@ const (
 
 func (c ComponentType) IsImage() bool {
 	return generics.SliceContains(c, []ComponentType{
-		ComponentTypeDockerBuild,
 		ComponentTypeExternalImage,
 	})
 }
@@ -46,7 +44,6 @@ func (c ComponentType) IsImage() bool {
 func (c ComponentType) SyncJobType() RunnerJobType {
 	switch c {
 	case ComponentTypeTerraformModule,
-		ComponentTypeDockerBuild,
 		ComponentTypeExternalImage,
 		ComponentTypeHelmChart,
 		ComponentTypeKubernetesManifest,
@@ -75,8 +72,7 @@ func (c ComponentType) DeployJobType() RunnerJobType {
 		return RunnerJobTypePulumiDeploy
 
 		// the following do not require deploys
-	case ComponentTypeDockerBuild,
-		ComponentTypeExternalImage:
+	case ComponentTypeExternalImage:
 		return RunnerJobTypeJobNOOPDeploy
 	default:
 	}
@@ -90,8 +86,6 @@ func (c ComponentType) DeployPlanJobType() RunnerJobType {
 		return RunnerJobTypeTerraformDeploy
 	case ComponentTypeHelmChart:
 		return RunnerJobTypeHelmChartDeploy
-	case ComponentTypeDockerBuild:
-		return RunnerJobTypeJobNOOPDeploy
 	case ComponentTypeExternalImage:
 		return RunnerJobTypeJobNOOPDeploy
 	case ComponentTypeKubernetesManifest:
@@ -110,8 +104,6 @@ func (c ComponentType) BuildJobType() RunnerJobType {
 		return RunnerJobTypeTerraformModuleBuild
 	case ComponentTypeHelmChart:
 		return RunnerJobTypeHelmChartBuild
-	case ComponentTypeDockerBuild:
-		return RunnerJobTypeDockerBuild
 	case ComponentTypeExternalImage:
 		return RunnerJobTypeContainerImageBuild
 	case ComponentTypeKubernetesManifest:

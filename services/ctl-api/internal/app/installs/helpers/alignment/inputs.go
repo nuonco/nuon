@@ -6,8 +6,6 @@ import (
 	"slices"
 	"strings"
 
-	"gorm.io/gorm"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 )
@@ -60,8 +58,8 @@ func (st *installAlignmentState) inputWorkflowTargets(wf *app.Workflow) map[stri
 	return out
 }
 
-func (s *Helpers) addInputWorkflowAttempts(ctx context.Context, db *gorm.DB, st *installAlignmentState, ev *alignmentEvidence) error {
-	latest := db.WithContext(ctx).Raw(`
+func (s *Helpers) addInputWorkflowAttempts(ctx context.Context, st *installAlignmentState, ev *alignmentEvidence) error {
+	latest := s.db.WithContext(ctx).Raw(`
 		SELECT DISTINCT ON (changed.name, COALESCE(w.metadata->'resolve_drift_component_id', '')) w.id
 		FROM install_workflows w
 		CROSS JOIN LATERAL unnest(string_to_array(w.metadata->'inputs', ',')) AS changed(name)
@@ -70,7 +68,7 @@ func (s *Helpers) addInputWorkflowAttempts(ctx context.Context, db *gorm.DB, st 
 		ORDER BY changed.name, COALESCE(w.metadata->'resolve_drift_component_id', ''), w.created_at DESC, w.id DESC`,
 		st.install.ID, st.install.OrgID, alignmentInputWorkflowTypes)
 	var workflows []app.Workflow
-	if err := db.WithContext(ctx).Select("id", "type", "status", "metadata", "created_at").
+	if err := s.db.WithContext(ctx).Select("id", "type", "status", "metadata", "created_at").
 		Where("id IN (?)", latest).Find(&workflows).Error; err != nil {
 		return fmt.Errorf("unable to get input update attempts: %w", err)
 	}

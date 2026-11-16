@@ -18,7 +18,7 @@ func TestAWSSetup(t *testing.T) {
 	require.NoError(t, err)
 	issuer, err := oidcissuer.New("https://api.example.com", key, "example-key")
 	require.NoError(t, err)
-	svc := &service{issuer: issuer}
+	svc := &service{issuer: issuer, jwks: issuer.PublicJWKS()}
 
 	tests := map[string]struct {
 		preset  app.CloudConnectionPreset

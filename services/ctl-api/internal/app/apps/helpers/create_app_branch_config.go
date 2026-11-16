@@ -53,7 +53,7 @@ func (h *Helpers) CreateAppBranchConfig(
 	var config *app.AppBranchConfig
 	err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var err error
-		config, err = h.CreateAppBranchConfigWithDB(ctx, tx, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs, ignoreChanges, previewConfig, clearPreviewConfig, runConfig)
+		config, err = h.WithDB(tx).CreateAppBranchConfigRecord(ctx, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs, ignoreChanges, previewConfig, clearPreviewConfig, runConfig)
 		return err
 	})
 	return config, err
@@ -76,9 +76,8 @@ func WithDefaultInstallGroup(groups []app.AppBranchInstallGroup) []app.AppBranch
 }
 
 // Callers inside a transaction must use this, or the app_branch_id FK fails.
-func (h *Helpers) CreateAppBranchConfigWithDB(
+func (h *Helpers) CreateAppBranchConfigRecord(
 	ctx context.Context,
-	db *gorm.DB,
 	appBranchID string,
 	connectedGithubVCSConfig *app.ConnectedGithubVCSConfig,
 	publicGitVCSConfig *app.PublicGitVCSConfig,
@@ -96,7 +95,7 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 	}
 
 	if postDeployRunbookIDs != nil && len(*postDeployRunbookIDs) > 0 {
-		if err := h.validatePostDeployRunbooks(ctx, db, appBranchID, *postDeployRunbookIDs); err != nil {
+		if err := h.validatePostDeployRunbooks(ctx, appBranchID, *postDeployRunbookIDs); err != nil {
 			return nil, err
 		}
 	}
@@ -109,7 +108,7 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 	}
 
 	var previous app.AppBranchConfig
-	res := db.WithContext(ctx).
+	res := h.db.WithContext(ctx).
 		Where(app.AppBranchConfig{AppBranchID: appBranchID}).
 		Order("created_at DESC").
 		First(&previous)
@@ -161,10 +160,10 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 		config.RunConfig = previous.RunConfig
 	}
 
-	if err := db.WithContext(ctx).Create(&config).Error; err != nil {
+	if err := h.db.WithContext(ctx).Create(&config).Error; err != nil {
 		return nil, fmt.Errorf("unable to create app branch config: %w", err)
 	}
-	if err := ReconcileBranchInstallAppBranchGroupsWithDB(ctx, db, appBranchID, config.InstallGroups); err != nil {
+	if err := ReconcileBranchInstallAppBranchGroupsWithDB(ctx, h.db, appBranchID, config.InstallGroups); err != nil {
 		return nil, fmt.Errorf("unable to reconcile install branch groups: %w", err)
 	}
 
@@ -174,14 +173,14 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 // validatePostDeployRunbooks rejects runbook IDs that don't belong to the branch's
 // app. Every caller passes through here, so a bad ID fails at config time rather
 // than mid-rollout.
-func (h *Helpers) validatePostDeployRunbooks(ctx context.Context, db *gorm.DB, appBranchID string, runbookIDs []string) error {
+func (h *Helpers) validatePostDeployRunbooks(ctx context.Context, appBranchID string, runbookIDs []string) error {
 	var branch app.AppBranch
-	if err := db.WithContext(ctx).First(&branch, "id = ?", appBranchID).Error; err != nil {
+	if err := h.db.WithContext(ctx).First(&branch, "id = ?", appBranchID).Error; err != nil {
 		return fmt.Errorf("unable to find app branch: %w", err)
 	}
 
 	var found []app.Runbook
-	if err := db.WithContext(ctx).
+	if err := h.db.WithContext(ctx).
 		Where(app.Runbook{AppID: branch.AppID}).
 		Where("id IN ?", runbookIDs).
 		Find(&found).Error; err != nil {

@@ -50,7 +50,6 @@ func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateC
 	if err != nil {
 		return nil, fmt.Errorf("create component build: %w", err)
 	}
-
 	// If a pre-resolved commit ID was provided and the build doesn't already have one, attach it.
 	if req.VCSConnectionCommitID != nil && build.VCSConnectionCommitID == nil {
 		if res := a.db.WithContext(ctx).Model(build).Update("vcs_connection_commit_id", *req.VCSConnectionCommitID); res.Error != nil {

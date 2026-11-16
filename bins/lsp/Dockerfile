@@ -145,7 +145,7 @@ FROM code AS build
 
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
-    CGO_ENABLED=0 GOOS=linux go build -o /bin/${BIN_NAME} && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /bin/${BIN_NAME} && \
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS test
@@ -182,6 +182,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     GOOS=darwin \
     GOARCH=arm64 \
     go build \
+    -ldflags="-s -w" \
     -o /out/${BIN_NAME}_darwin_arm64 . && \
     touch /go/pkg/build-cache/.nuon-dirty
 
@@ -194,6 +195,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_RELEASE_CACHE_ID}
     GOOS=darwin \
     GOARCH=amd64 \
     go build \
+    -ldflags="-s -w" \
     -o /out/${BIN_NAME}_darwin_amd64 . && \
     touch /go/pkg/build-cache/.nuon-dirty
 
@@ -206,6 +208,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_RELEASE_CACHE_ID}
     GOOS=linux \
     GOARCH=arm \
     go build \
+    -ldflags="-s -w" \
     -o /out/${BIN_NAME}_linux_arm . && \
     touch /go/pkg/build-cache/.nuon-dirty
 
@@ -218,6 +221,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_RELEASE_CACHE_ID}
     GOOS=linux \
     GOARCH=arm64 \
     go build \
+    -ldflags="-s -w" \
     -o /out/${BIN_NAME}_linux_arm64 . && \
     touch /go/pkg/build-cache/.nuon-dirty
 
@@ -230,6 +234,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_RELEASE_CACHE_ID}
     GOOS=linux \
     GOARCH=386 \
     go build \
+    -ldflags="-s -w" \
     -o /out/${BIN_NAME}_linux_386 . && \
     touch /go/pkg/build-cache/.nuon-dirty
 
@@ -242,6 +247,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     GOOS=linux \
     GOARCH=amd64 \
     go build \
+    -ldflags="-s -w" \
     -o /out/${BIN_NAME}_linux_amd64 . && \
     touch /go/pkg/build-cache/.nuon-dirty
 

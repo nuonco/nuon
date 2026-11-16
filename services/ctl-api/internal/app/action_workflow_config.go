@@ -80,6 +80,14 @@ func (a *ActionWorkflowConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &ActionWorkflowConfig{}, "action_workflow_id_created_at"),
+			Columns: []string{
+				"action_workflow_id",
+				"created_at DESC",
+			},
+			Concurrently: true,
+		},
 	}
 }
 

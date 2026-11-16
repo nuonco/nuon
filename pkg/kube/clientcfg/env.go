@@ -1,0 +1,48 @@
+package clientcfg
+
+import (
+	"context"
+	"fmt"
+
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/kube"
+)
+
+func fetchEnv(ctx context.Context, c *kube.ClusterInfo) ([]clientcmdapi.ExecEnvVar, error) {
+	envVars := c.EnvVars
+	if envVars == nil {
+		envVars = make(map[string]string)
+	}
+
+	if c.AWSAuth != nil {
+		credEnvVars, err := awscredentials.FetchEnv(ctx, c.AWSAuth)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch credentials for aws auth: %w", err)
+		}
+
+		envVars = generics.MergeMap(envVars, credEnvVars)
+	}
+	if c.AzureAuth != nil {
+		credEnvVars, err := azurecredentials.FetchEnv(ctx, c.AzureAuth)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch credentials for aws auth: %w", err)
+		}
+
+		envVars = generics.MergeMap(envVars, credEnvVars)
+	}
+
+	execEnvVars := make([]clientcmdapi.ExecEnvVar, 0)
+	for k, v := range envVars {
+		execEnvVars = append(execEnvVars, clientcmdapi.ExecEnvVar{
+			Name:  k,
+			Value: v,
+		})
+	}
+
+	return execEnvVars, nil
+}

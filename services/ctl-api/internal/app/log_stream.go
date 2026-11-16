@@ -31,6 +31,9 @@ type LogStream struct {
 
 	Open bool `json:"open,omitzero" temporaljson:"open,omitzero,omitempty"`
 
+	LogsDeletedAt   *time.Time `json:"logs_deleted_at,omitempty" temporaljson:"logs_deleted_at,omitzero,omitempty"`
+	LogsDeletedByID string     `json:"logs_deleted_by_id,omitzero" temporaljson:"logs_deleted_by_id,omitzero,omitempty"`
+
 	Attrs pgtype.Hstore `json:"attrs,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"attrs,omitzero,omitempty"`
 
 	ParentLogStreamID generics.NullString `json:"-" swaggerignore:"true" temporaljson:"parent_log_stream_id,omitzero,omitempty"`

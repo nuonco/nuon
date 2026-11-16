@@ -348,7 +348,7 @@ The LSP activates for `.toml` files. For the LSP to provide completions, your TO
 # ... configuration ...
 ```
 
-The schema type is specified as a comment with `# <type>`. Supported types: `helm`, `docker_build`, `terraform_module`, `job`, and others.
+The schema type is specified as a comment with `# <type>`. Supported types: `helm`, `terraform_module`, `job`, and others.
 
 ### How It Works
 

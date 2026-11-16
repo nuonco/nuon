@@ -1,10 +1,14 @@
 package helpers
 
 import (
+	"time"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/google/go-github/v50/github"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -25,23 +29,37 @@ type Params struct {
 }
 
 type Helpers struct {
-	cfg           *internal.Config
-	ghClient      *github.Client
-	db            *gorm.DB
-	l             *zap.Logger
-	queueClient   *queueclient.Client
-	emitterClient *emitterclient.Client
+	cfg                 *internal.Config
+	ghClient            *github.Client
+	db                  *gorm.DB
+	l                   *zap.Logger
+	queueClient         *queueclient.Client
+	emitterClient       *emitterclient.Client
+	sourceTrees         *expirable.LRU[string, *SourceTree]
+	sourceTreesTooLarge *expirable.LRU[string, struct{}]
+	sourceFetches       *singleflight.Group
+	sourceFetchSlots    chan struct{}
 }
 
 func New(params Params) *Helpers {
 	return &Helpers{
-		cfg:           params.Cfg,
-		ghClient:      params.GhClient,
-		db:            params.DB,
-		l:             params.L,
-		queueClient:   params.QueueClient,
-		emitterClient: params.EmitterClient,
+		cfg:                 params.Cfg,
+		ghClient:            params.GhClient,
+		db:                  params.DB,
+		l:                   params.L,
+		queueClient:         params.QueueClient,
+		emitterClient:       params.EmitterClient,
+		sourceTrees:         expirable.NewLRU[string, *SourceTree](16, nil, 5*time.Minute),
+		sourceTreesTooLarge: expirable.NewLRU[string, struct{}](256, nil, time.Minute),
+		sourceFetches:       &singleflight.Group{},
+		sourceFetchSlots:    make(chan struct{}, maxConcurrentSourceFetches),
 	}
+}
+
+func (h *Helpers) WithDB(db *gorm.DB) *Helpers {
+	scoped := *h
+	scoped.db = db
+	return &scoped
 }
 
 // Logger returns the helpers logger (may be nil in tests).

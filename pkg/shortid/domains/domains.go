@@ -133,6 +133,10 @@ func NewCloudConnectionID() string {
 	return shortid.NewNanoID("clc")
 }
 
+func NewImageRepositoryID() string {
+	return shortid.NewNanoID("imr")
+}
+
 func NewInstallStackID() string {
 	return shortid.NewNanoID("ist")
 }

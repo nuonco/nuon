@@ -37,9 +37,6 @@ func overrideComponentBranch(comp *config.Component, branchRepo, branchName stri
 	if comp.HelmChart != nil {
 		overrideRepoConfigs(comp.HelmChart.ConnectedRepo, comp.HelmChart.PublicRepo, branchRepo, branchName)
 	}
-	if comp.DockerBuild != nil {
-		overrideRepoConfigs(comp.DockerBuild.ConnectedRepo, comp.DockerBuild.PublicRepo, branchRepo, branchName)
-	}
 	if comp.KubernetesManifest != nil {
 		overrideRepoConfigs(comp.KubernetesManifest.ConnectedRepo, comp.KubernetesManifest.PublicRepo, branchRepo, branchName)
 	}

@@ -27,7 +27,7 @@ func successMesssage(path string, configType string) {
 	fmt.Printf("%s\n", bubbles.SuccessStyle.Render(fmt.Sprintf("Successfully initialized %s in %s", configType, path)))
 	fmt.Printf("%s\n", bubbles.InfoStyle.Render("Next steps:"))
 	fmt.Printf("  1. Review and edit the generated configuration file\n")
-	fmt.Printf("  2. Run 'nuon apps sync' to sync your configuration to Nuon\n")
+	fmt.Printf("  2. Run `nuon apps sync`, or commit the config and run your app branch\n")
 }
 
 func (c *cli) initCmd() *cobra.Command {

@@ -49,7 +49,7 @@ func TestReverify(t *testing.T) {
 			status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError,
 			onDemand:  true,
 			awsPreset: app.CloudConnectionPresetStacks, wantProbes: 1, wantUpdates: 1, wantSignals: 1,
-			message: "The role lacks CloudFormation read access required to manage install stacks.",
+			message: "The role lacks CloudFormation read access required to manage install stacks. Verification failed: AccessDenied: Denied",
 		},
 		"on demand custom skips stack permissions": {
 			status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusVerified,
@@ -106,7 +106,7 @@ func TestReverify(t *testing.T) {
 				require.NoError(t, err)
 				issuer, err := oidcissuer.New("https://api.example.com", key, "acme")
 				require.NoError(t, err)
-				awsVerifier = cloudconnections.NewAWSVerifier(issuer, zap.NewNop())
+				awsVerifier = cloudconnections.NewVerifier(issuer, zap.NewNop())
 			}
 			db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=localhost dbname=unused"}), &gorm.Config{DryRun: true, DisableAutomaticPing: true, SkipDefaultTransaction: true})
 			require.NoError(t, err)

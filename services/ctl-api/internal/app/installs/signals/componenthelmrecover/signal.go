@@ -134,6 +134,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream for the recovery")
 	}
+	defer func() {
+		closeCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		activities.AwaitCloseLogStreamByLogStreamID(closeCtx, logStream.ID)
+	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 
@@ -184,9 +189,6 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 	if err != nil {
 		return err
 	}
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
-	}()
 
 	op := app.RunnerJobOperationTypeApplyPlan
 	jobTyp := app.RunnerJobTypeHelmChartDeploy

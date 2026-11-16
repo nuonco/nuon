@@ -40,13 +40,14 @@ type appInstallSyncer struct {
 	interactive       bool
 	asJSON            bool
 	approveAll        bool
+	appSyncDisabled   bool
 	branchesByInstall map[string]*models.AppAppBranch
 }
 
 func newAppInstallSyncer(
 	api nuon.Client,
 	appID, orgID string,
-	interactive, asJSON, approveAll bool,
+	interactive, asJSON, approveAll, appSyncDisabled bool,
 	branchesByInstall map[string]*models.AppAppBranch,
 ) *appInstallSyncer {
 	return &appInstallSyncer{
@@ -56,6 +57,7 @@ func newAppInstallSyncer(
 		interactive:       interactive,
 		asJSON:            asJSON,
 		approveAll:        approveAll,
+		appSyncDisabled:   appSyncDisabled,
 		branchesByInstall: branchesByInstall,
 	}
 }
@@ -126,7 +128,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 	if err := unknownInputsError(appInputCfg.Inputs, finalInputs); err != nil {
-		return nil, err
+		return nil, s.withUnknownInputHint(err)
 	}
 	installCfg.InputGroups = []config.InputGroup{{
 		Inputs: finalInputs,
@@ -510,9 +512,9 @@ func (s *appInstallSyncer) inputConfigForNewInstall(
 	branch *models.AppAppBranch,
 ) (*models.AppAppInputConfig, error) {
 	if branch == nil {
-		appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
+		appInputCfg, err := installcreate.ResolveInputConfig(ctx, s.api, s.appID, "")
 		if err != nil {
-			return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
+			return nil, err
 		}
 		return appInputCfg, nil
 	}
@@ -527,6 +529,13 @@ func (s *appInstallSyncer) inputConfigForNewInstall(
 		return nil, fmt.Errorf("latest app config %s for app branch %q has no input configuration", appConfig.ID, branch.Name)
 	}
 	return appConfig.Input, nil
+}
+
+func (s *appInstallSyncer) withUnknownInputHint(err error) error {
+	if s.appSyncDisabled {
+		return fmt.Errorf("%w; add it, then run your app branch", err)
+	}
+	return fmt.Errorf("%w; add it, then run `nuon apps sync` or run your app branch", err)
 }
 
 func branchID(branch *models.AppAppBranch) string {

@@ -2,6 +2,11 @@ package nuon
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -38,14 +43,32 @@ func (c *client) GetCurrentUser(ctx context.Context) (*models.AppAccount, error)
 }
 
 func (c *client) GetCLIConfig(ctx context.Context) (*models.ServiceCLIConfig, error) {
-	resp, err := c.genClient.Operations.GetCLIConfig(&operations.GetCLIConfigParams{
-		Context: ctx,
-	})
+	endpoint := strings.TrimRight(c.APIURL, "/") + "/v1/general/cli-config"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve cli-config: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := (&http.Client{Transport: c.appTransport}).Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve cli-config: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 32<<10))
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve cli-config: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, newCLIConfigHTTPError(resp.StatusCode, body)
 	}
 
-	return resp.Payload, nil
+	cfg := new(models.ServiceCLIConfig)
+	if err := json.Unmarshal(body, cfg); err != nil {
+		return nil, fmt.Errorf("failed to retrieve cli-config: %w", err)
+	}
+	return cfg, nil
 }
 
 func (c *client) GetCloudPlatformRegions(ctx context.Context, cloudPlatform string) ([]*models.AppCloudPlatformRegion, error) {

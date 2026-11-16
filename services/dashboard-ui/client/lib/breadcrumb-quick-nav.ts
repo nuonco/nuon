@@ -5,6 +5,7 @@ type TQuickNavTarget = {
   appId?: string
   resourceId?: string
   name?: string
+  appBranchId?: string
 }
 
 const branchSections = new Set([
@@ -32,8 +33,17 @@ const branchStaticSuffixes = new Set([
   '/policies/analytics',
 ])
 
+const installSections = new Set([
+  'configuration',
+  'deployments',
+  'health',
+  'operations',
+  'resources',
+])
+
 const installStaticSuffixes = new Set([
   '',
+  '/deployments',
   '/health',
   '/resources',
   '/resources/sandbox',
@@ -88,7 +98,7 @@ const withQuickNav = (
     basePath: string
   }
 ) => {
-  const { orgId, appId, resourceId, name } = target
+  const { orgId, appId, resourceId, name, appBranchId } = target
   if (!enabled || !orgId || !appId || !resourceId || !name) return crumbs
 
   let attached = false
@@ -103,6 +113,7 @@ const withQuickNav = (
         appId,
         resourceId,
         basePath,
+        ...(appBranchId ? { appBranchId } : {}),
       },
     }
   })
@@ -148,7 +159,10 @@ export const installQuickNavHref = ({
   targetBasePath: string
 }) => {
   const suffix = normalizedSuffix(pathname, currentBasePath)
-  return installStaticSuffixes.has(suffix)
-    ? `${targetBasePath}${suffix}`
+  if (installStaticSuffixes.has(suffix)) return `${targetBasePath}${suffix}`
+
+  const section = suffix.split('/').filter(Boolean)[0]
+  return section && installSections.has(section)
+    ? `${targetBasePath}/${section}`
     : targetBasePath
 }

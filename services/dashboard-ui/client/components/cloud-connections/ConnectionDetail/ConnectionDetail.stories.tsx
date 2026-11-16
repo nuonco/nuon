@@ -2,14 +2,26 @@ import { ConnectionDetail } from './ConnectionDetail'
 import { InstallsTableComponent } from '@/components/installs/InstallsTable'
 import {
   PageStory,
+  acrConnection,
+  failedACRConnection,
+  failedACRTrustConnection,
+  verifiedACRConnection,
   connection,
   customConnection,
+  ecrConnection,
+  garConnection,
+  failedGARConnection,
+  failedGARTrustConnection,
+  verifiedGARConnection,
+  failedECRConnection,
   failedConnection,
+  verifiedECRConnection,
   verifiedConnection,
   noop,
 } from '../__stories__/fixtures'
 export default { title: 'Features / Cloud connections / Detail' }
 const props = {
+  orgId: 'org-mock-001',
   basePath: '/org-mock-001/settings/cloud-connections/cc-example',
   onVerify: noop,
   onDelete: noop,
@@ -19,9 +31,54 @@ export const Overview = () => (
     <ConnectionDetail {...props} connection={connection} tab="overview" />
   </PageStory>
 )
+export const SharedRole = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={ecrConnection}
+      sharedConnections={[connection]}
+      tab="overview"
+    />
+  </PageStory>
+)
 export const Custom = () => (
   <PageStory>
     <ConnectionDetail {...props} connection={customConnection} tab="overview" />
+  </PageStory>
+)
+export const ECROverview = () => (
+  <PageStory>
+    <ConnectionDetail {...props} connection={ecrConnection} tab="overview" />
+  </PageStory>
+)
+export const ECRVerification = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={verifiedECRConnection}
+      tab="verification"
+    />
+  </PageStory>
+)
+export const ImageConfigurations = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={{
+        ...verifiedECRConnection,
+        used_by: { installs: 0, image_repositories: 3 },
+      }}
+      tab="overview"
+    />
+  </PageStory>
+)
+export const ECRTokenFailed = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={failedECRConnection}
+      tab="verification"
+    />
   </PageStory>
 )
 export const Loading = () => (
@@ -72,6 +129,90 @@ export const Verifying = () => (
       connection={verifiedConnection}
       tab="verification"
       isVerifying
+    />
+  </PageStory>
+)
+export const GAROverview = () => (
+  <PageStory>
+    <ConnectionDetail {...props} connection={garConnection} tab="overview" />
+  </PageStory>
+)
+export const GARVerification = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={verifiedGARConnection}
+      tab="verification"
+    />
+  </PageStory>
+)
+export const GARVerifying = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={garConnection}
+      tab="verification"
+      isVerifying
+    />
+  </PageStory>
+)
+export const GARImpersonationFailed = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={failedGARConnection}
+      tab="verification"
+    />
+  </PageStory>
+)
+export const GARTrustFailed = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={failedGARTrustConnection}
+      tab="verification"
+    />
+  </PageStory>
+)
+export const ACROverview = () => (
+  <PageStory>
+    <ConnectionDetail {...props} connection={acrConnection} tab="overview" />
+  </PageStory>
+)
+export const ACRVerification = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={verifiedACRConnection}
+      tab="verification"
+    />
+  </PageStory>
+)
+export const ACRVerifying = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={acrConnection}
+      tab="verification"
+      isVerifying
+    />
+  </PageStory>
+)
+export const ACRTokenFailed = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={failedACRConnection}
+      tab="verification"
+    />
+  </PageStory>
+)
+export const ACRTrustFailed = () => (
+  <PageStory>
+    <ConnectionDetail
+      {...props}
+      connection={failedACRTrustConnection}
+      tab="verification"
     />
   </PageStory>
 )

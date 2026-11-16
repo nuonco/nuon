@@ -152,6 +152,16 @@ Never use `fmt.Println`. See [conventions/logging.md](/conventions/logging.md).
 | Temporal workflows | `log.WorkflowLogger(ctx)` from `internal/pkg/log` |
 | Temporal activities | See [activities AGENTS.md](internal/pkg/workflows/workflow/activities/AGENTS.md) |
 
+## Private image registries
+
+Cloud-connection ACR tokens always use `acr.RegistryScope`
+(`https://containerregistry.azure.net/.default`). That includes connection verification, the
+foreign-subject probe, and `GetRepositoryTokenWithCredential`, which posts the access token with
+`ConnectionExchangeClient`. Do not request an Azure Resource Manager management scope
+(`https://management.azure.com/` or `https://management.azure.com/.default`) for those calls.
+Legacy `GetRepositoryToken` keeps `armTokenScope` and the default HTTP client so existing runners
+behind a proxy keep working. Do not move that path onto `RegistryScope` or `ConnectionExchangeClient`.
+
 ## Auth and Multi-Tenancy (essentials)
 
 - Org-scoped routes require `X-Nuon-Org-ID` unless marked global in `internal/middlewares/global/global.go`

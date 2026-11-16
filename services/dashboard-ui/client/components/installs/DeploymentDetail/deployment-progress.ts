@@ -66,6 +66,24 @@ export const deploymentTemplateScope = (
   }
 }
 
+export const deploymentBuildChanged = (
+  deployment: TInstallDeploymentRecord | undefined,
+  kind: 'component' | 'sandbox',
+  name: string
+) =>
+  !!deployment?.change_groups?.some(
+    (group) =>
+      group.scope === kind &&
+      (kind === 'sandbox' || group.resource_name === name) &&
+      group.changes.some(
+        (change) =>
+          change.path === 'build' &&
+          !!change.previous_value &&
+          !!change.next_value &&
+          change.previous_value !== change.next_value
+      )
+  )
+
 export const ACTIVE_DEPLOYMENT_STATUSES = new Set([
   '',
   'pending',

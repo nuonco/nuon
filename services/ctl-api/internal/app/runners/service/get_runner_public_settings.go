@@ -5,13 +5,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/pkg/azure"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type RunnerPublicSettings struct {
-	BinaryVersion string                  `json:"binary_version"`
-	AWSAuthMethod app.RunnerAWSAuthMethod `json:"aws_auth_method" swaggertype:"string" enums:"iid,sts"`
-	RunnerAPIURL  string                  `json:"runner_api_url"`
+	BinaryVersion     string                  `json:"binary_version"`
+	AWSAuthMethod     app.RunnerAWSAuthMethod `json:"aws_auth_method" swaggertype:"string" enums:"iid,sts"`
+	RunnerAPIURL      string                  `json:"runner_api_url"`
+	AzureAuthAudience string                  `json:"azure_auth_audience,omitempty"`
 }
 
 // @ID						GetRunnerPublicSettings
@@ -43,6 +45,9 @@ func (s *service) GetRunnerPublicSettings(ctx *gin.Context) {
 		BinaryVersion: runner.RunnerGroup.Settings.BinaryVersion,
 		AWSAuthMethod: runner.RunnerGroup.Settings.AWSAuthMethod,
 		RunnerAPIURL:  runner.RunnerGroup.Settings.RunnerAPIURL,
+	}
+	if s.cfg != nil {
+		settings.AzureAuthAudience = azure.ConfiguredRunnerAudience(s.cfg.AzureRunnerAuthAudience)
 	}
 
 	ctx.JSON(http.StatusOK, settings)

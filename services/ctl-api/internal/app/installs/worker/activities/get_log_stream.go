@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -31,9 +30,13 @@ func (a *Activities) getLogStream(ctx context.Context, logStreamID string) (*app
 		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
 	}
 
-	token, err := a.acctClient.CreateToken(ctx, account.ServiceAccountEmail(installLogStream.ID), defaultLogStreamTokenDuration)
+	token, err := a.acctClient.IssueLogStreamToken(ctx, orgID, installLogStream.ID, defaultLogStreamTokenDuration)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create log stream token: %w", err)
+	}
+
+	if err := a.db.WithContext(ctx).Model(&installLogStream).Update("open", true).Error; err != nil {
+		return nil, fmt.Errorf("unable to reopen log stream: %w", err)
 	}
 
 	installLogStream.RunnerAPIURL = a.cfg.RunnerAPIURL

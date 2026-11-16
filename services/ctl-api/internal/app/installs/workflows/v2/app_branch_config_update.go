@@ -14,7 +14,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-const appBranchGroupDirectiveVersion = "app-branch-group-directive-v1"
+const (
+	appBranchGroupDirectiveVersion   = "app-branch-group-directive-v1"
+	appBranchConfigOnlyDeployVersion = "app-branch-config-only-deploy-v1"
+)
 
 func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
@@ -68,12 +71,13 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 	steps = append(steps, configStep)
 
-	if useGroupDirective && installConfigDiffEmpty(diff) {
+	configOnlyDeploy := workflow.GetVersion(ctx, appBranchConfigOnlyDeployVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	sandboxChanged := diff != nil && (diff.SandboxChanged || (!configOnlyDeploy && diff.SandboxBuildChanged))
+	if useGroupDirective && installConfigDiffEmpty(diff) && !sandboxChanged {
 		return sg.Result(steps), nil
 	}
 
 	stackChanged := diff != nil && diff.StackChanged
-	sandboxChanged := diff != nil && (diff.SandboxChanged || diff.SandboxBuildChanged)
 
 	newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, newAppConfigID)
 	if err != nil {
@@ -183,7 +187,7 @@ func installConfigDiffEmpty(diff *app.InstallConfigDiff) bool {
 	if diff == nil {
 		return false
 	}
-	return !diff.StackChanged && !diff.SandboxChanged && !diff.SandboxBuildChanged &&
+	return !diff.StackChanged && !diff.SandboxChanged &&
 		len(diff.Added) == 0 && len(diff.Changed) == 0 && len(diff.Removed) == 0
 }
 

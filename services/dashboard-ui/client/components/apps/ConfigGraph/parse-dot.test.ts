@@ -4,7 +4,7 @@ import { parseDotGraph } from './parse-dot'
 const dotFixture = `
 digraph {
   "cmp-db" [ label="database", type="terraform_module", color="blue" ];
-  "cmp-api" [ label="api", type="docker_build", color="red" ];
+  "cmp-api" [ label="api", type="external_image", color="red" ];
   "cmp-db" -> "cmp-api" [ color="red" ];
   "cmp-api" -> "cmp-worker" [ ];
 }

@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildsource"
 )
 
 func TestNormalizeRepoPath(t *testing.T) {
@@ -14,10 +16,10 @@ func TestNormalizeRepoPath(t *testing.T) {
 }
 
 func TestNormalizeRepoURL(t *testing.T) {
-	require.True(t, repoURLsEqual("acme/app", "https://github.com/acme/app.git"))
-	require.True(t, repoURLsEqual("git@github.com:acme/app.git", "acme/app"))
-	require.False(t, repoURLsEqual("acme/app", "acme/other"))
-	require.False(t, repoURLsEqual("", "acme/app"))
+	require.True(t, buildsource.SameRepo("acme/app", "https://github.com/acme/app.git"))
+	require.True(t, buildsource.SameRepo("git@github.com:acme/app.git", "acme/app"))
+	require.False(t, buildsource.SameRepo("acme/app", "acme/other"))
+	require.False(t, buildsource.SameRepo("", "acme/app"))
 }
 
 func TestPathMatchesDirectory(t *testing.T) {

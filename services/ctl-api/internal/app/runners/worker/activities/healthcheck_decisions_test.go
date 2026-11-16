@@ -34,6 +34,10 @@ func corpusProcess(tc processHealthCase) (*app.RunnerProcess, *time.Time) {
 			Metadata: metadata,
 		},
 	}
+	if tc.startedAge != nil {
+		started := corpusNow.Add(-*tc.startedAge)
+		process.StartedAt = &started
+	}
 	var hbAt *time.Time
 	if tc.heartbeatAge != nil {
 		at := corpusNow.Add(-*tc.heartbeatAge)

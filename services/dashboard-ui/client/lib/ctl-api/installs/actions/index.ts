@@ -1,3 +1,4 @@
+export * from './delete-install-action-run-logs'
 export * from './get-install-action'
 export * from './get-install-action-run'
 export * from './get-install-actions-latest-runs'

@@ -31,7 +31,7 @@ type AppPolicy struct {
 	// name
 	Name AppPolicyName `json:"name,omitempty"`
 
-	// Permissions are used to track granular permissions for each domain
+	// permissions
 	Permissions map[string]string `json:"permissions,omitempty"`
 
 	// role id

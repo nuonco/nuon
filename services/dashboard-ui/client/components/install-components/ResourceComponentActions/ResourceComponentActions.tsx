@@ -3,15 +3,19 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
 import { ToggleComponentButton } from '@/components/install-components/management/ToggleComponent'
 import { ComponentConfigPanel } from '@/components/installs/InstallResourceConfig'
-import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TComponent } from '@/types'
+import {
+  ComponentHistoryPanel,
+  IMAGE_CONFIG_EMPTY_MESSAGE,
+  componentConfigKey,
+  componentHistoryKey,
+} from './use-resource-component-panel-links'
 
 export interface IResourceComponentActions {
   appliedConfigId?: string
@@ -81,13 +85,11 @@ export const ResourceComponentActions = ({
                     appliedConfigId={appliedConfigId}
                     componentId={component.id}
                     emptyMessage={
-                      isImage
-                        ? 'This image is not in the app config this install is using.'
-                        : undefined
+                      isImage ? IMAGE_CONFIG_EMPTY_MESSAGE : undefined
                     }
                     name={component.name}
                   />,
-                  `component-config-${component.id}`
+                  componentConfigKey(component.id)
                 )
               }
             >
@@ -98,18 +100,11 @@ export const ResourceComponentActions = ({
               <Button
                 onClick={() =>
                   addPanel(
-                    <Panel
-                      heading={`${component.name} sync history`}
-                      size="half"
-                    >
-                      <DeployTimeline
-                        componentName={component.name}
-                        componentId={component.id}
-                        openWorkflowPanel
-                        shouldPoll
-                        variant="sync"
-                      />
-                    </Panel>
+                    <ComponentHistoryPanel
+                      componentId={component.id}
+                      name={component.name}
+                    />,
+                    componentHistoryKey(component.id)
                   )
                 }
               >

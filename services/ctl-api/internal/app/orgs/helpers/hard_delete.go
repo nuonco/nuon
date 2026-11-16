@@ -49,7 +49,6 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.ExternalImageComponentConfig{},
 		&app.JobComponentConfig{},
 		&app.KubernetesManifestComponentConfig{},
-		&app.DockerBuildComponentConfig{},
 		&app.TerraformModuleComponentConfig{},
 		&app.HelmComponentConfig{},
 		&app.InstallActionWorkflowRunStep{},

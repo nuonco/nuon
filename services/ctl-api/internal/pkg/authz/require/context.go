@@ -54,7 +54,8 @@ func permission(ctx context.Context, orgID string, perm permissions.Permission) 
 	if err != nil {
 		return fmt.Errorf("authentication required: %w", err)
 	}
-	if err := acct.AllPermissions.CanPerform(orgID, perm); err != nil {
+	readOnly := keys.TokenRoleFromContext(ctx) == string(app.RoleTypeOrgReadOnly)
+	if err := acct.Authority.CanPerform(orgID, perm, readOnly); err != nil {
 		return fmt.Errorf("permission denied: %w", err)
 	}
 	return nil

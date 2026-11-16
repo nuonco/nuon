@@ -3,6 +3,8 @@ package compositeerrors
 import (
 	"strings"
 	"testing"
+
+	"github.com/nuonco/nuon/pkg/redact"
 )
 
 // unmarshalableError carries a field json.Marshal cannot encode, so New() must
@@ -77,78 +79,6 @@ func (sensitiveError) Severity() Severity    { return SeverityError }
 func (e sensitiveError) Sections() []Section { return []Section{CodeSection("Output", e.Output)} }
 func (e sensitiveError) Hints() Hints        { return e.hints }
 
-func TestRedactDiagnosticSecrets(t *testing.T) {
-	tests := map[string]struct {
-		input string
-		want  string
-	}{
-		"nuon token query": {
-			input: "https://api.example.com/state?workspace_id=tfw123&token=tok_secret&operation=plan",
-			want:  "https://api.example.com/state?workspace_id=tfw123&token=[REDACTED]&operation=plan",
-		},
-		"case insensitive multiple values": {
-			input: "https://example.com?API_KEY=key-secret&Client-Secret=client-secret",
-			want:  "https://example.com?API_KEY=[REDACTED]&Client-Secret=[REDACTED]",
-		},
-		"aws signed URL": {
-			input: "https://s3.example.com/object?X-Amz-Credential=credential&X-Amz-Security-Token=session-token&X-Amz-Signature=signature",
-			want:  "https://s3.example.com/object?X-Amz-Credential=[REDACTED]&X-Amz-Security-Token=[REDACTED]&X-Amz-Signature=[REDACTED]",
-		},
-		"azure SAS URL": {
-			input: "https://account.blob.core.windows.net/container?sv=2025-01-05&sig=azure-signature&sp=r",
-			want:  "https://account.blob.core.windows.net/container?sv=2025-01-05&sig=[REDACTED]&sp=r",
-		},
-		"gcp signed URL": {
-			input: "https://storage.googleapis.com/object?X-Goog-Credential=credential&X-Goog-Signature=gcp-signature",
-			want:  "https://storage.googleapis.com/object?X-Goog-Credential=[REDACTED]&X-Goog-Signature=[REDACTED]",
-		},
-		"URL userinfo": {
-			input: "unable to clone https://user:github-token@github.com/acme/repo.git",
-			want:  "unable to clone https://[REDACTED]@github.com/acme/repo.git",
-		},
-		"authorization and cookie headers": {
-			input: "Authorization: Bearer bearer-token\nCookie: session=cookie-secret\nContent-Type: application/json",
-			want:  "Authorization: [REDACTED]\nCookie: [REDACTED]\nContent-Type: application/json",
-		},
-		"JSON credential": {
-			input: `request body: {"token":"json-secret","name":"safe"}`,
-			want:  `request body: {"token":"[REDACTED]","name":"safe"}`,
-		},
-		"bare assignment": {
-			input: "command failed with TOKEN=bare-secret",
-			want:  "command failed with TOKEN=[REDACTED]",
-		},
-		"prefixed environment variables": {
-			input: "AWS_SECRET_ACCESS_KEY=aws-secret GITHUB_TOKEN=github-secret DATABASE_PASSWORD=db-secret",
-			want:  "AWS_SECRET_ACCESS_KEY=[REDACTED] GITHUB_TOKEN=[REDACTED] DATABASE_PASSWORD=[REDACTED]",
-		},
-		"prefixed JSON credential": {
-			input: `request body: {"github_token":"json-secret","name":"safe"}`,
-			want:  `request body: {"github_token":"[REDACTED]","name":"safe"}`,
-		},
-		"quoted HCL assignments": {
-			input: `password = "hcl-secret" and api_token='single-quoted-secret'`,
-			want:  `password = "[REDACTED]" and api_token='[REDACTED]'`,
-		},
-		"HTML encoded separator": {
-			input: "https://example.com?first=safe&amp;token=html-secret&amp;last=safe",
-			want:  "https://example.com?first=safe&amp;token=[REDACTED]&amp;last=safe",
-		},
-		"benign URL": {
-			input: "https://example.com?workspace_id=tfw123&operation=plan",
-			want:  "https://example.com?workspace_id=tfw123&operation=plan",
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := RedactDiagnosticSecrets(test.input); got != test.want {
-				t.Fatalf("got %q, want %q", got, test.want)
-			}
-		})
-	}
-}
-
 func TestNew_RedactsDiagnosticSecretsFromAllPayloadFields(t *testing.T) {
 	const querySecret = "tok_test_secret"
 	const nestedSecret = "nested-secret"
@@ -181,7 +111,7 @@ func TestNew_RedactsDiagnosticSecretsFromAllPayloadFields(t *testing.T) {
 			}
 		}
 	}
-	if !strings.Contains(d.Message, "token="+redactedValue) || !strings.Contains(d.Message, "operation=plan") {
+	if !strings.Contains(d.Message, "token="+redact.Placeholder) || !strings.Contains(d.Message, "operation=plan") {
 		t.Errorf("message was not redacted without losing safe query parameters: %q", d.Message)
 	}
 	if !strings.Contains(string(d.Data), `Authorization: [REDACTED]`) {
@@ -190,7 +120,7 @@ func TestNew_RedactsDiagnosticSecretsFromAllPayloadFields(t *testing.T) {
 	if !strings.Contains(string(d.Data), `"github_token":"[REDACTED]"`) {
 		t.Errorf("credential-keyed nested data was not redacted: %s", d.Data)
 	}
-	if !strings.Contains(d.Hints[HintDocsURL], "access_token="+redactedValue) {
+	if !strings.Contains(d.Hints[HintDocsURL], "access_token="+redact.Placeholder) {
 		t.Errorf("hint was not redacted: %q", d.Hints[HintDocsURL])
 	}
 }

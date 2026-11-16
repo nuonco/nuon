@@ -2,6 +2,7 @@ package runnerconfig
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -96,6 +97,7 @@ func NewConfig() (*Config, error) {
 	if err := config.LoadInto(nil, &cfg); err != nil {
 		return nil, fmt.Errorf("unable to load config: %w", err)
 	}
+	cfg.RunnerAPIURL = strings.TrimRight(cfg.RunnerAPIURL, "/")
 
 	v := validator.New()
 	if err := v.Struct(&cfg); err != nil {

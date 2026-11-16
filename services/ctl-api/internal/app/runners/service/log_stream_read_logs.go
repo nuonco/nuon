@@ -501,9 +501,14 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 		return
 	}
 
-	_, err = s.getOrgLogStream(ctx, logStreamID, orgID)
+	logStream, err := s.getOrgLogStream(ctx, logStreamID, orgID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get log stream"))
+		return
+	}
+
+	if logStream.LogsDeletedAt != nil {
+		ctx.JSON(http.StatusOK, []app.OtelLogRecord{})
 		return
 	}
 

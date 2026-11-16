@@ -24,6 +24,9 @@ type ServiceRunnerPublicSettings struct {
 	// Enum: ["iid","sts"]
 	AwsAuthMethod string `json:"aws_auth_method,omitempty"`
 
+	// azure auth audience
+	AzureAuthAudience string `json:"azure_auth_audience,omitempty"`
+
 	// binary version
 	BinaryVersion string `json:"binary_version,omitempty"`
 

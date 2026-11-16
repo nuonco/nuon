@@ -26,11 +26,13 @@ export function useResourceSSE({
 }: UseResourceSSEOptions) {
   const [connected, setConnected] = useState(false)
   const [suspended, setSuspended] = useState(false)
+  const [closed, setClosed] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const reconnectAttemptRef = useRef(0)
   const finishedRef = useRef(false)
   const expiredRef = useRef(false)
+  const closedRef = useRef(false)
   const resumeCleanupRef = useRef<(() => void) | null>(null)
   const onMessageRef = useRef(onMessage)
   onMessageRef.current = onMessage
@@ -89,12 +91,17 @@ export function useResourceSSE({
       expiredRef.current = true
     })
 
+    eventSource.addEventListener('closed', () => {
+      closedRef.current = true
+      setClosed(true)
+    })
+
     eventSource.addEventListener('fetch-error', (event: MessageEvent) => {
       try {
         const errorData = JSON.parse(event.data)
         onErrorRef.current?.(errorData?.error ?? 'Connection issue')
       } catch {
-        // non-JSON error event
+        return
       }
     })
 
@@ -105,7 +112,7 @@ export function useResourceSSE({
 
       // The server closes finished resources for good after a grace period;
       // fallback polling takes over instead of reconnecting forever.
-      if (finishedRef.current) return
+      if (finishedRef.current || closedRef.current) return
 
       // The server expires streams after a max lifetime. If the user hasn't
       // interacted recently, suspend until their next interaction instead of
@@ -136,6 +143,8 @@ export function useResourceSSE({
   useEffect(() => {
     ensureActivityTracking()
     finishedRef.current = false
+    closedRef.current = false
+    setClosed(false)
     if (enabled && url && document.visibilityState !== 'hidden') {
       connect()
     }
@@ -149,7 +158,7 @@ export function useResourceSSE({
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         disconnect()
-      } else if (enabled && url && !finishedRef.current) {
+      } else if (enabled && url && !finishedRef.current && !closedRef.current) {
         reconnectAttemptRef.current = 0
         connect()
       }
@@ -158,5 +167,5 @@ export function useResourceSSE({
     return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [enabled, url, connect, disconnect])
 
-  return { connected, suspended, disconnect }
+  return { connected, suspended, closed, disconnect }
 }

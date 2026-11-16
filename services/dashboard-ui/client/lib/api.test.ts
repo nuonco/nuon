@@ -13,13 +13,18 @@ const server = setupServer(
   })
 )
 
+const realLocation = Object.getOwnPropertyDescriptor(window, 'location')
 Object.defineProperty(window, 'location', {
+  configurable: true,
   value: { ...window.location, reload: mock() },
 })
 
 beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
+afterAll(() => {
+  server.close()
+  if (realLocation) Object.defineProperty(window, 'location', realLocation)
+})
 
 test('api should return a list of apps when provided apps path', async () => {
   const result = await api<TApp[]>({ path: 'apps', orgId, baseUrl })

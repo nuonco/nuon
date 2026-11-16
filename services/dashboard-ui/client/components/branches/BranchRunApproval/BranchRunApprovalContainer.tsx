@@ -1,6 +1,6 @@
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflow } from '@/types'
-import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { GroupApprovalActions } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import { useOpenWorkflowRunPanel } from '@/components/branches/WorkflowRunPanel'
 import {
   BranchRunApproval,
@@ -38,8 +38,7 @@ export const BranchRunApprovalContainer = ({
         groupName,
         onReview: () => openWorkflowRunPanel(run.id ?? '', step.id),
         actions: (
-          <GroupActionButton
-            action="approve"
+          <GroupApprovalActions
             target={{
               orgId,
               workflowId: step.install_workflow_id ?? run.id ?? '',

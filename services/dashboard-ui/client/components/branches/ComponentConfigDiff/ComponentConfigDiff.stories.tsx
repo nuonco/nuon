@@ -241,7 +241,7 @@ const fullAppSections: DiffSectionData[] = [
       {
         name: 'worker',
         op: 'add',
-        componentType: 'docker_build',
+        componentType: 'external_image',
         fields: [],
         files: [{ name: 'components/worker/Dockerfile', op: 'add' }],
       },

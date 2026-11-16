@@ -19,7 +19,7 @@ func CanCreate(ctx *gin.Context, objectID string) error {
 		return fmt.Errorf("invalid object id: %s", objectID)
 	}
 
-	return acct.AllPermissions.CanPerform(objectID, permissions.PermissionCreate)
+	return acct.Authority.CanPerform(objectID, permissions.PermissionCreate, false)
 }
 
 func CanRead(ctx *gin.Context, objectID string) error {
@@ -32,7 +32,7 @@ func CanRead(ctx *gin.Context, objectID string) error {
 		return fmt.Errorf("invalid object id: %s", objectID)
 	}
 
-	return acct.AllPermissions.CanPerform(objectID, permissions.PermissionRead)
+	return acct.Authority.CanPerform(objectID, permissions.PermissionRead, false)
 }
 
 func CanUpdate(ctx *gin.Context, objectID string) error {
@@ -45,7 +45,7 @@ func CanUpdate(ctx *gin.Context, objectID string) error {
 		return fmt.Errorf("invalid object id: %s", objectID)
 	}
 
-	return acct.AllPermissions.CanPerform(objectID, permissions.PermissionUpdate)
+	return acct.Authority.CanPerform(objectID, permissions.PermissionUpdate, false)
 }
 
 func CanDelete(ctx *gin.Context, objectID string) error {
@@ -58,5 +58,5 @@ func CanDelete(ctx *gin.Context, objectID string) error {
 		return fmt.Errorf("invalid object id: %s", objectID)
 	}
 
-	return acct.AllPermissions.CanPerform(objectID, permissions.PermissionDelete)
+	return acct.Authority.CanPerform(objectID, permissions.PermissionDelete, false)
 }

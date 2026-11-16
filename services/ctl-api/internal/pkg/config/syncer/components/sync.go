@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
@@ -33,7 +34,7 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 		}
 	}
 
-	newComp, err := helpers.CreateComponentWithDB(ctx, db, &componenthelpers.CreateComponentParams{
+	newComp, err := helpers.WithDB(db).CreateComponent(ctx, &componenthelpers.CreateComponentParams{
 		AppID:            appID,
 		Name:             comp.Name,
 		VarName:          comp.VarName,
@@ -76,6 +77,8 @@ type SyncComponentParams struct {
 	// build signals for (the signal packages would import-cycle from here).
 	// Leave off when a later step schedules builds (branch run's builds step).
 	DispatchBuilds bool
+
+	LegacyImageAuth bool
 }
 
 // SyncComponent updates a component and creates its configuration via the shared
@@ -121,7 +124,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 
 	depIDs := []string{}
 	if len(comp.Dependencies) > 0 {
-		depIDs, err = helpers.GetComponentIDsWithDB(ctx, db, appID, comp.Dependencies)
+		depIDs, err = helpers.WithDB(db).GetComponentIDs(ctx, appID, comp.Dependencies)
 		if err != nil {
 			return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve dependencies", err)
 		}
@@ -172,6 +175,9 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 			Err:         err,
 		}
 	}
+	if err := cloudconnections.ResolveImageConnection(ctx, db, apiComp.OrgID, ccc, params.LegacyImageAuth); err != nil {
+		return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "invalid image repository cloud connection", err)
+	}
 
 	if params.DispatchBuilds {
 		reusableID, err := reusableConfigID(ctx, db, apiComp.ID, ccc)
@@ -221,7 +227,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 				}
 			}
 		} else if comp.ExternalImage != nil {
-			if _, err := helpers.CreateComponentBuildInTx(ctx, db, apiComp.ID, ccc.ID, false, nil); err != nil {
+			if _, err := helpers.WithDB(db).CreateComponentBuildForConfigConnection(ctx, apiComp.ID, ccc.ID, nil); err != nil {
 				return sync.SyncInternalErr{
 					Description: fmt.Sprintf("unable to queue build for component %s", comp.Name),
 					Err:         err,
@@ -433,19 +439,19 @@ func EnsureComponentDependencies(ctx context.Context, db *gorm.DB, helpers *comp
 		}
 	}
 
-	depIDs, err := helpers.GetComponentIDsWithDB(ctx, db, appID, comp.Dependencies)
+	depIDs, err := helpers.WithDB(db).GetComponentIDs(ctx, appID, comp.Dependencies)
 	if err != nil {
 		return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve dependencies", err)
 	}
 
-	if err := helpers.ClearComponentDependenciesWithDB(ctx, db, apiComp.ID); err != nil {
+	if err := helpers.WithDB(db).ClearComponentDependencies(ctx, apiComp.ID); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to clear existing dependencies for component %s", comp.Name),
 			Err:         err,
 		}
 	}
 
-	if err := helpers.CreateComponentDependenciesWithDB(ctx, db, apiComp.ID, depIDs); err != nil {
+	if err := helpers.WithDB(db).CreateComponentDependencies(ctx, apiComp.ID, depIDs); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create dependencies for component %s", comp.Name),
 			Err:         err,

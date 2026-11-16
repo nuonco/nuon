@@ -17,6 +17,9 @@ import { OIDCTrustPolicies } from './OIDCTrustPolicies'
 import { CloudConnections } from './CloudConnections'
 import { CloudConnection } from './CloudConnection'
 import { CloudConnectionCreate } from './CloudConnectionCreate'
+import { ImageRepositories } from './ImageRepositories'
+import { ImageRepository } from './ImageRepository'
+import { AddImageRepository } from './AddImageRepository'
 import { Triggers } from './Triggers'
 import { TriggerLayout } from './TriggerLayout'
 import { TriggerOverview } from './trigger-tabs/TriggerOverview'
@@ -68,6 +71,18 @@ export const orgRoutes: RouteObject[] = [
           {
             path: ':orgId/settings/vcs/:connectionId',
             element: <VCSConnectionDetail />,
+          },
+          {
+            path: ':orgId/settings/image-repositories',
+            element: <ImageRepositories />,
+          },
+          {
+            path: ':orgId/settings/image-repositories/add',
+            element: <AddImageRepository />,
+          },
+          {
+            path: ':orgId/settings/image-repositories/:repositoryId',
+            element: <ImageRepository />,
           },
           {
             path: ':orgId/settings/cloud-connections',

@@ -14,6 +14,13 @@
             </div>
             <div class="bg-white dark:bg-dark-grey-900 rounded-lg shadow-sm p-8">
                 <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-2">Authorize {{ .ClientName }}</h2>
+                {{ if .CLILogin }}
+                <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-6">
+                    Sign in to the Nuon CLI on this computer.
+                    Nuon will send the authorization code to
+                    <span class="break-all">{{ .RedirectURI }}</span>.
+                </p>
+                {{ else }}
                 <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-6">
                     <span class="font-semibold text-cool-grey-950 dark:text-cool-grey-50">{{ .ClientName }}</span>
                     ({{ .RedirectHost }}) is requesting access to your Nuon account.
@@ -21,6 +28,7 @@
                     <span class="break-all">{{ .RedirectURI }}</span>.
                     Choose the level of access to grant.
                 </p>
+                {{ end }}
 
                 <div class="bg-cool-grey-50 dark:bg-dark-grey-800 rounded-md p-4 mb-6">
                     <p class="text-sm text-cool-grey-700 dark:text-cool-grey-300">
@@ -32,6 +40,7 @@
                 <form action="/oauth/consent" method="POST">
                     <input type="hidden" name="rid" value="{{ .RequestID }}">
 
+                    {{ if not .CLILogin }}
                     <div class="space-y-3 mb-6">
                         <label class="flex items-start gap-3 p-4 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md cursor-pointer hover:bg-cool-grey-50 dark:hover:bg-dark-grey-800">
                             <input type="radio" name="scope" value="{{ .ReadOnlyScope }}" class="mt-1" checked>
@@ -48,10 +57,11 @@
                             </span>
                         </label>
                     </div>
+                    {{ end }}
 
                     <div class="space-y-3">
                         <button type="submit" class="flex items-center justify-center w-full py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold transition-colors">
-                            Authorize
+                            {{ if .CLILogin }}Continue{{ else }}Authorize{{ end }}
                         </button>
                         <a href="/" class="flex items-center justify-center w-full py-3 px-4 bg-white dark:bg-dark-grey-800 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md hover:bg-cool-grey-50 dark:hover:bg-dark-grey-700 text-cool-grey-700 dark:text-cool-grey-50 font-semibold transition-colors">
                             Cancel

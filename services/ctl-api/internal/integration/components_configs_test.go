@@ -48,39 +48,6 @@ func (s *componentConfigsSuite) SetupTest() {
 	s.compID = comp.ID
 }
 
-func (s *componentConfigsSuite) TestCreateDockerBuildComponentConfig() {
-	s.T().Run("success with public git vcs config", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
-		req.ConnectedGithubVcsConfig = nil
-		req.PublicGitVcsConfig.Repo = generics.ToPtr("nuonco/installer")
-
-		cfg, err := s.apiClient.CreateDockerBuildComponentConfig(s.ctx, s.compID, req)
-		require.Nil(t, err)
-		require.NotNil(t, cfg)
-	})
-
-	s.T().Run("success with connected github vcs config", func(t *testing.T) {
-		if s.githubInstallID == "" {
-			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
-			return
-		}
-
-		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
-		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
-
-		cfg, err := s.apiClient.CreateDockerBuildComponentConfig(s.ctx, s.compID, req)
-		require.Nil(t, err)
-		require.NotNil(t, cfg)
-	})
-
-	s.T().Run("errors on invalid parameters", func(t *testing.T) {
-		cfg, err := s.apiClient.CreateDockerBuildComponentConfig(s.ctx, s.compID, &models.ServiceCreateDockerBuildComponentConfigRequest{})
-		require.NotNil(t, err)
-		require.Nil(t, cfg)
-	})
-}
-
 func (s *componentConfigsSuite) TestCreateTerraformModuleComponentConfig() {
 	s.T().Run("success with connected github config", func(t *testing.T) {
 		if s.githubInstallID == "" {
@@ -269,26 +236,6 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 
 		require.Equal(t, cfg.ID, latestCfg.TerraformModule.ID)
 	})
-	s.T().Run("success with docker build", func(t *testing.T) {
-		if s.githubInstallID == "" {
-			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
-			return
-		}
-		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
-		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
-
-		cfg, err := s.apiClient.CreateDockerBuildComponentConfig(s.ctx, s.compID, req)
-		require.Nil(t, err)
-		require.NotNil(t, cfg)
-
-		latestCfg, err := s.apiClient.GetComponentLatestConfig(s.ctx, s.compID)
-		require.Nil(t, err)
-		require.NotNil(t, latestCfg)
-
-		require.Equal(t, cfg.ID, latestCfg.DockerBuild.ID)
-	})
-
 	s.T().Run("success with external image", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
 

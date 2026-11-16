@@ -3,11 +3,13 @@ package activities
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appliedstate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -32,13 +34,67 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 		return errors.Wrap(err, "unable to get step")
 	}
 
+	return stderrors.Join(a.syncNoopDeployOutputs(ctx, step), a.recordNoopApplied(ctx, step))
+}
+
+func (a *Activities) recordNoopApplied(ctx context.Context, step *app.WorkflowStep) error {
+	var flw app.Workflow
+	if err := a.db.WithContext(ctx).Select("id", "plan_only").Where(app.Workflow{ID: step.InstallWorkflowID}).First(&flw).Error; err != nil {
+		return errors.Wrap(err, "unable to get workflow")
+	}
+	if flw.PlanOnly {
+		return nil
+	}
+	var applySteps int64
+	if err := a.db.WithContext(ctx).Model(&app.WorkflowStep{}).
+		Where(app.WorkflowStep{InstallWorkflowID: step.InstallWorkflowID}).
+		Where("group_idx = ? AND idx > ? AND execution_type <> ?", step.GroupIdx, step.Idx, app.WorkflowStepExecutionTypeSkipped).
+		Count(&applySteps).Error; err != nil {
+		return errors.Wrap(err, "unable to get apply step")
+	}
+	if applySteps == 0 {
+		return nil
+	}
+
+	switch step.StepTargetType {
+	case string(app.WorkflowStepTargetTypeInstallDeploys):
+		var deploy app.InstallDeploy
+		if err := a.db.WithContext(ctx).Select("id", "type").Where(app.InstallDeploy{ID: step.StepTargetID}).First(&deploy).Error; err != nil {
+			return errors.Wrap(err, "unable to get install deploy")
+		}
+		if deploy.Type == app.InstallDeployTypeTeardown || deploy.Type == app.InstallDeployTypeRecover {
+			return nil
+		}
+		if err := a.db.WithContext(ctx).Model(&app.InstallDeploy{}).Where(app.InstallDeploy{ID: deploy.ID}).
+			Update("applied_inputs_digest", gorm.Expr("planned_inputs_digest")).Error; err != nil {
+			return errors.Wrap(err, "unable to record noop deploy inputs")
+		}
+		return appliedstate.RecordDeploy(ctx, a.db, deploy.ID)
+	case string(app.WorkflowStepTargetTypeInstallSandboxRuns):
+		var run app.InstallSandboxRun
+		if err := a.db.WithContext(ctx).Select("id", "run_type").Where(app.InstallSandboxRun{ID: step.StepTargetID}).First(&run).Error; err != nil {
+			return errors.Wrap(err, "unable to get install sandbox run")
+		}
+		if run.RunType != app.SandboxRunTypeProvision && run.RunType != app.SandboxRunTypeReprovision {
+			return nil
+		}
+		if err := a.db.WithContext(ctx).Model(&app.InstallSandboxRun{}).Where(app.InstallSandboxRun{ID: run.ID}).
+			Update("applied_inputs_digest", gorm.Expr("planned_inputs_digest")).Error; err != nil {
+			return errors.Wrap(err, "unable to record noop sandbox run inputs")
+		}
+		return appliedstate.RecordSandboxRun(ctx, a.db, run.ID)
+	}
+	return nil
+}
+
+func (a *Activities) syncNoopDeployOutputs(ctx context.Context, step *app.WorkflowStep) error {
 	if step.StepTargetType != string(app.WorkflowStepTargetTypeInstallDeploys) {
 		return nil
 	}
 
 	// Get the latest plan job (uses the view, so outputs are available).
 	var planJob app.RunnerJob
-	err = a.db.WithContext(ctx).
+	err := a.db.WithContext(ctx).
 		Where("owner_id = ? AND operation = ?", step.StepTargetID, app.RunnerJobOperationTypeCreateApplyPlan).
 		Order("created_at DESC").
 		First(&planJob).Error

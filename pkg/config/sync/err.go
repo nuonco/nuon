@@ -2,8 +2,6 @@ package sync
 
 import (
 	"fmt"
-
-	"github.com/nuonco/nuon/pkg/config"
 )
 
 type SyncInternalErr struct {
@@ -44,26 +42,3 @@ func (s SyncAPIErr) Error() string {
 }
 
 func (s SyncAPIErr) Unwrap() error { return s.Err }
-
-func RejectDockerBuildComponentsForFeature(cfg *config.AppConfig) error {
-	if cfg == nil {
-		return nil
-	}
-
-	for _, comp := range cfg.Components {
-		if comp == nil || comp.Type != config.DockerBuildComponentType {
-			continue
-		}
-
-		return SyncErr{
-			Resource: "app config",
-			Description: fmt.Sprintf(
-				"component %q uses docker_build, but docker_build components have been deprecated and are no longer supported. "+
-					"Use a container_image component to reference a pre-built image instead.",
-				comp.Name,
-			),
-		}
-	}
-
-	return nil
-}

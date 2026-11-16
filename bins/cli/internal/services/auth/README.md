@@ -44,10 +44,15 @@ Declining the confirmation prompts for a new URL.
 
 ### 2. Authentication
 
-The CLI fetches auth configuration from the API (`GetCLIConfig`) and gets a device code flow against the Nuon auth
-service using the device authorization grant (RFC 8628). It asks `auth.<root_domain>/device/authorize` for a device code
-and a user code, prints the user code, opens a browser to `auth.<root_domain>/device` with the user code pre-filled, and
-polls `/device/token` with the device code until the user approves.
+The CLI fetches auth configuration from the API (`GetCLIConfig`) and signs in against the Nuon auth service.
+
+On an interactive terminal it uses the authorization-code grant with PKCE. It listens on `127.0.0.1` at a random
+port, opens `auth.<root_domain>/oauth/authorize`, and exchanges the code from that callback at `/oauth/token`.
+The token stored in `~/.nuon` is the same Nuon auth token device login issues.
+
+When stdout is not a terminal (`NUON_NO_TTY`, `CI`, a pipe, or a detected coding agent), login uses the device
+authorization grant (RFC 8628). It asks `auth.<root_domain>/device/authorize` for a device code and a user code,
+prints the user code, opens a browser to `auth.<root_domain>/device`, and polls `/device/token` until the user approves.
 
 ### 3. Org Selection
 

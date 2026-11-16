@@ -36,7 +36,6 @@ const (
 	AppConfigTemplateTypeTerraform         AppConfigTemplateType = "terraform"
 	AppConfigTemplateTypeTerraformInfra    AppConfigTemplateType = "terraformInfra"
 	AppConfigTemplateTypeHelm              AppConfigTemplateType = "helm"
-	AppConfigTemplateTypeDockerBuild       AppConfigTemplateType = "docker-build"
 	AppConfigTemplateTypeJob               AppConfigTemplateType = "job"
 	AppConfigTemplateTypeContainerImage    AppConfigTemplateType = "container-image"
 	AppConfigTemplateTypeECRContainerImage AppConfigTemplateType = "ecr-container-image"
@@ -152,12 +151,6 @@ func (s *service) createAppTemplate(currentApp *app.App, typ AppConfigTemplateTy
 			Filename: "template_helm_component.toml",
 			Format:   app.AppConfigVersionDefault,
 			Content:  s.withSchemaBaseURL(helmComponentConfig),
-		}, nil
-	case AppConfigTemplateTypeDockerBuild:
-		return &AppConfigTemplate{
-			Filename: "template_docker_build_component.toml",
-			Format:   app.AppConfigVersionDefault,
-			Content:  s.withSchemaBaseURL(dockerBuildComponentConfig),
 		}, nil
 	case AppConfigTemplateTypeContainerImage:
 		return &AppConfigTemplate{

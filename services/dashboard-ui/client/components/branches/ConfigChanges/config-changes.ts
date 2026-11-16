@@ -1,4 +1,5 @@
 import type { TIconVariant } from '@/components/common/Icon'
+import type { TInstallDeploymentSourceDiffTarget } from '@/lib/ctl-api/installs/get-install-deployment-source-diff'
 import {
   emptyDiffSummary,
   MISSING_DIFF_ERROR,
@@ -32,6 +33,7 @@ export type TTemplateBuildChange = {
   status: string
   changeReason?: string
   href?: string
+  sourceDiffTarget?: TInstallDeploymentSourceDiffTarget
   commit?: {
     sha: string
     message?: string

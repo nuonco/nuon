@@ -1,0 +1,340 @@
+---
+title: "Database Migrations"
+description: "How to run migrations in your customer's environment"
+keywords: ["database migrations", "db migrations", "schema migrations", "data migrations", "migrate database", "init container", "migration action", "pre-deploy action", "container action", "migration runbook", "kubernetes job", "helm job", "cronjob template", "flyway", "golang-migrate", "alembic", "prisma migrate", "break glass database", "database access"]
+---
+
+There are three common ways to run migrations in your customers' installs:
+
+- **[Kubernetes Job](#run-migrations-in-a-kubernetes-job)** from your chart, started by an
+  [action](/concepts/actions).
+- **[Init container](#run-migrations-in-an-init-container)** in your app's pods.
+- **[Action with a container image](#run-migrations-with-an-action-and-a-container-image)** on the install runner,
+  for migrations that must finish before new pods start, or apps outside Kubernetes.
+
+## Run migrations in a Kubernetes Job
+
+Add a suspended CronJob to your chart as a template. An action creates a Job from it after
+each deploy, so the migration runs once, with your app's image, network access and credentials:
+
+```yaml charts/api/templates/migrate-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: api-migrate
+spec:
+  suspend: true
+  schedule: "0 0 1 1 *"
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: migrate
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              command: ["/app/migrate", "up"]
+              env:
+                - name: DB_HOST
+                  value: "{{ .Values.database.host }}"
+```
+
+Pass database details to the chart from your component config:
+
+```toml components/api/nuon.toml
+# helm
+name           = "api"
+type           = "helm_chart"
+chart_name     = "api"
+namespace      = "acme"
+deploy_timeout = "45m"
+dependencies   = ["database"]
+
+[public_repo]
+repo      = "acme/acme-charts"
+directory = "charts/api"
+branch    = "main"
+
+[[values_file]]
+contents = "./values/api.yaml"
+```
+
+```yaml components/values/api.yaml
+database:
+  host: "{{ .nuon.components.database.outputs.address }}"
+```
+
+The action runs on the runner, which has `kubectl` and a kubeconfig for the install's cluster:
+
+```toml actions/api/api_migrate_job/api_migrate_job.toml
+# action
+name    = "api_migrate_job"
+timeout = "30m"
+
+[[triggers]]
+type           = "post-deploy-component"
+component_name = "api"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name            = "migrate"
+inline_contents = "./api/api_migrate_job/migrate.sh"
+
+[steps.env_vars]
+NAMESPACE = "acme"
+```
+
+```sh actions/api/api_migrate_job/migrate.sh
+#!/usr/bin/env sh
+set -eu
+
+JOB="api-migrate-$(date +%s)"
+kubectl -n "$NAMESPACE" create job "$JOB" --from=cronjob/api-migrate
+
+until kubectl -n "$NAMESPACE" get job "$JOB" -o jsonpath='{.status.conditions[?(@.status=="True")].type}' \
+  | grep -qE 'Complete|Failed'; do
+  sleep 5
+done
+
+kubectl -n "$NAMESPACE" logs "job/$JOB"
+kubectl -n "$NAMESPACE" get job "$JOB" -o jsonpath='{.status.succeeded}' | grep -q 1
+```
+
+Keep in mind:
+
+- **The action runs after the deploy.** The Job template ships with the chart, so new pods start before the migration.
+- **The migration logs land in the action run.** You can see which migrations ran on each install from the
+  dashboard.
+- **Rerun it by hand** from the dashboard with the `manual` trigger.
+
+## Run migrations in an init container
+
+Add an init container to your chart that runs your migration tool from the new image:
+
+```yaml charts/api/templates/deployment.yaml
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["/app/migrate", "up"]
+          env:
+            - name: DB_HOST
+              value: "{{ .Values.database.host }}"
+```
+
+Pass database details to the chart from your component config, as in the
+[Kubernetes Job example](#run-migrations-in-a-kubernetes-job).
+
+Keep in mind:
+
+- **Set `deploy_timeout` longer than your slowest migration.** A [Helm chart component](/guides/helm-chart-components)
+  waits for its pods to be ready, for 30 minutes by default and up to 1 hour.
+- **Gate Kubernetes manifest deploys on health.** A
+  [Kubernetes manifest component](/guides/kubernetes-manifest-components) finishes once the manifests are applied,
+  before the init container completes. Set [`block_deploy`](/guides/health-checks#verified-deploys) to fail the deploy
+  when the pods stay unhealthy.
+- **Helm hooks also run.** If your chart already migrates in a `pre-upgrade` hook Job, Nuon deploys run it.
+
+## Run migrations with an action and a container image
+
+Use an action when the migration must finish before new pods start, or your app runs outside Kubernetes. When you set
+`image` on the action, its steps run inside a [container image](/guides/container-actions) on the install runner.
+
+This example is for AWS. On Google Cloud and Azure, swap the registry block and the secret lookup for Google Artifact
+Registry and Secret Manager, or Azure Container Registry and Key Vault.
+
+<Steps>
+  <Step title="Publish your migrations image">
+    Add the image as a [container image component](/guides/container-image-components):
+
+    ```toml components/migrations_image/nuon.toml
+    # container-image
+    name = "migrations_image"
+    type = "container_image"
+
+    [aws_ecr]
+    image_url    = "123456789012.dkr.ecr.us-east-1.amazonaws.com/acme-migrations"
+    tag          = "v2.4.0"
+    region       = "us-east-1"
+    iam_role_arn = "arn:aws:iam::123456789012:role/nuon-image-pull"
+    ```
+
+    If your app's image already contains your migration binary, point `image` at that image's component instead.
+  </Step>
+  <Step title="Define the action">
+    Point `image` at the component and run the action before the `api` component deploys:
+
+    ```toml actions/api/api_migrate/api_migrate.toml
+    # action
+    name    = "api_migrate"
+    timeout = "30m"
+    image   = "{{ .nuon.components.migrations_image.outputs.image.ref }}"
+
+    [[triggers]]
+    type           = "pre-deploy-component"
+    component_name = "api"
+
+    [[triggers]]
+    type = "manual"
+
+    [[steps]]
+    name            = "migrate"
+    inline_contents = "./api/api_migrate/migrate.sh"
+
+    [steps.env_vars]
+    DB_HOST    = "{{ .nuon.components.database.outputs.address }}"
+    SECRET_ARN = "{{ .nuon.components.database.outputs.master_user_secret_arn }}"
+    REGION     = "{{ .nuon.install_stack.outputs.region }}"
+    ```
+  </Step>
+  <Step title="Write the script">
+    The path in `inline_contents` is relative to `actions/`. The script reads the database password with the
+    action's role, then runs the migration:
+
+    ```sh actions/api/api_migrate/migrate.sh
+    #!/usr/bin/env sh
+    set -eu
+
+    DB_PASSWORD=$(aws secretsmanager get-secret-value \
+      --region "$REGION" --secret-id "$SECRET_ARN" \
+      --query SecretString --output text | jq -r .password)
+
+    export DATABASE_URL="postgres://acme:${DB_PASSWORD}@${DB_HOST}:5432/acme?sslmode=require"
+    migrate -path /migrations -database "$DATABASE_URL" up
+    ```
+  </Step>
+</Steps>
+
+Keep in mind:
+
+- **The database must accept connections from the runner.** The runner's virtual machine sits in the install's network
+  on AWS, Google Cloud and Azure.
+- **The action runs as the install's default [operation role](/concepts/operation-roles)** unless you set `role`. That
+  role needs read access to the database secret. See
+  [Operation roles](/guides/operation-roles#which-role-a-run-uses).
+- **A failed migration pauses the deploy.** Someone has to retry or skip it. If they skip it, or three retries fail,
+  the deploy goes ahead without the migration.
+- **The action `timeout` defaults to 5 minutes** and can be up to 1 hour.
+
+### Hold the deploy until the migration succeeds
+
+In a [runbook](/guides/runbooks), a migration step that fails three times stops the runbook before the deploy:
+
+```toml runbooks/api_upgrade.toml
+name        = "api_upgrade"
+description = "Migrate the database, then deploy the API."
+
+[[steps]]
+name        = "migrate"
+type        = "action"
+action_name = "api_migrate"
+
+[[steps]]
+name           = "deploy-api"
+type           = "component_deploy"
+component_name = "api"
+```
+
+A runbook's deploy step skips `pre-deploy-component` actions, so the migration runs once. Someone can still skip a
+failed step, and the runbook then moves on to the deploy.
+
+Start the runbook from the install's **Runbooks** tab or with `nuon runbooks create-run -i <install> -r api_upgrade`.
+
+To restore the database if a migration goes wrong, add a snapshot action as the first step and give its role permission
+to create snapshots. To see each install's migration version, add an action that prints your migration tool's status.
+
+## Choose an approach
+
+|  | Kubernetes Job | Init container | Action with a container image |
+| --- | --- | --- | --- |
+| Best for | Migrations that ship in your app's image | Apps that already migrate at startup | Migrations that must finish before new pods start, or apps outside Kubernetes |
+| Where it runs | Your customer's cluster | Your app's pods | The install [runner](/concepts/runners) |
+| When it runs | After the chart deploys, or by hand | Every time a pod starts | Before a deploy, after a deploy, or by hand |
+| If it fails | The deploy pauses until someone retries or skips the action. | Helm chart: the deploy fails at `deploy_timeout`. Kubernetes manifest: the deploy succeeds unless you turn on health gating. | The deploy or runbook pauses until someone retries or skips the action. |
+| Time limit | Action `timeout`, up to 1 hour | Component `deploy_timeout`, up to 1 hour | Action `timeout`, up to 1 hour |
+| Database credentials | Your app's own | Your app's own | Passed in as environment variables, plus the cloud role the action runs as |
+
+## Use break glass for elevated database access
+
+When you need to service your customer's database urgently, such as resizing it or restoring a snapshot during an
+incident, your customer can switch on a [break glass](/concepts/break-glass) role.
+
+This AWS role can modify and reboot the database, and its policy denies every delete:
+
+```toml break_glass.toml
+[[role]]
+name         = "{{ .nuon.install.id }}-db-maintenance"
+display_name = "Database maintenance"
+description  = "Lets the vendor modify, reboot and snapshot the app database."
+
+[[role.policies]]
+name     = "db-maintenance"
+contents = """
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "rds:Describe*",
+        "rds:CreateDBSnapshot",
+        "rds:ModifyDBInstance",
+        "rds:RebootDBInstance"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Deny",
+      "Action": [
+        "rds:DeleteDBInstance",
+        "rds:DeleteDBCluster",
+        "rds:DeleteDBSnapshot",
+        "rds:DeleteDBClusterSnapshot"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+"""
+```
+
+Set the action's `role` to the break glass role:
+
+```toml actions/db/db_resize/db_resize.toml
+# action
+name    = "db_resize"
+timeout = "45m"
+role    = "{{ .nuon.install.id }}-db-maintenance"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "resize"
+command = "aws rds modify-db-instance --region $REGION --db-instance-identifier $DB_ID --db-instance-class $DB_CLASS --apply-immediately"
+
+[steps.env_vars]
+DB_ID    = "{{ .nuon.components.database.outputs.identifier }}"
+DB_CLASS = "db.r6g.xlarge"
+REGION   = "{{ .nuon.install_stack.outputs.region }}"
+```
+
+<Warning>
+  If the role is switched off, this action runs as the default role and fails with permission errors. To fail fast
+  instead, pick the role for the run: `nuon actions create-run -i <install> -w db_resize --role-name <role>`.
+</Warning>
+
+For Google Cloud and Azure role fields, and how your customer switches a role on, see
+[Break glass](/concepts/break-glass).
+
+## Next steps
+
+- [Container actions](/guides/container-actions) for private images and images without a shell.
+- [Configure runbooks](/guides/runbooks) for every runbook step type.
+- [Health checks](/guides/health-checks) to gate a deploy on a migration check.

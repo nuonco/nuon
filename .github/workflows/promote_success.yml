@@ -12,29 +12,23 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: write
+
 jobs:
-  # trigger_promotion_callback:
-  #   name: trigger promotion callback
-  #   uses: ./.github/workflows/internal_api.yml
-  #   with:
-  #     env: prod
-  #     endpoint: /v1/general/promotion
-  #     method: POST
-  #     data: '{"tag": "${{ inputs.tag }}" }'
-  #   secrets: inherit
   sdks:
     name: Update SDKs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.1.0
       - name: Elixir
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@v4.0.1
         with:
           token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
           repository: nuonco/nuon-elixir
           event-type: generate
       - name: Python
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@v4.0.1
         with:
           token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
           repository: nuonco/nuon-python
@@ -44,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call nuonco/homebrew-tap generate workflow
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@v4.0.1
         with:
           token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
           repository: nuonco/homebrew-tap
@@ -55,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call nuonco/byoc update_images workflow
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@v4.0.1
         with:
           token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
           repository: nuonco/byoc

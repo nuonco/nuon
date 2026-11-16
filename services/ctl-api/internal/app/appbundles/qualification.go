@@ -166,7 +166,7 @@ func Qualify(cfg *app.AppConfig, platform string) QualificationReport {
 
 func qualifyComponent(c *app.ComponentConfigConnection, member string, add, warn func(string, string, string)) {
 	surfaces := 0
-	for _, present := range []bool{c.TerraformModuleComponentConfig != nil, c.HelmComponentConfig != nil, c.ExternalImageComponentConfig != nil, c.DockerBuildComponentConfig != nil, c.JobComponentConfig != nil, c.KubernetesManifestComponentConfig != nil, c.PulumiComponentConfig != nil} {
+	for _, present := range []bool{c.TerraformModuleComponentConfig != nil, c.HelmComponentConfig != nil, c.ExternalImageComponentConfig != nil, c.JobComponentConfig != nil, c.KubernetesManifestComponentConfig != nil, c.PulumiComponentConfig != nil} {
 		if present {
 			surfaces++
 		}
@@ -193,8 +193,6 @@ func qualifyComponent(c *app.ComponentConfigConnection, member string, add, warn
 			add("component.source_config_mismatch", member, "Kubernetes manifest source config is missing")
 		}
 		warn("component.embedded_images_undetected", member, "images referenced by Kubernetes manifests are not detected or bundled; declare them as external_image components")
-	case app.ComponentTypeDockerBuild:
-		add("component.docker_build_unsupported", member, "docker_build components are not supported")
 	case app.ComponentTypePulumi:
 		add("component.pulumi_unsupported", member, "Pulumi components are not supported")
 	case app.ComponentTypeJob:

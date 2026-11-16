@@ -366,10 +366,6 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 }
 
 func (e *Executor) handler(job *models.AppRunnerJob) (jobs.JobHandler, error) {
-	if job.Type == models.AppRunnerJobTypeDockerDashBuild {
-		return nil, fmt.Errorf("docker_build components are not supported by control-plane builds; replace this component with a container_image component")
-	}
-
 	job.Status = models.AppRunnerJobStatusAvailable
 	for _, handler := range e.handlers {
 		if err := jobs.Matches(job, handler); err == nil {

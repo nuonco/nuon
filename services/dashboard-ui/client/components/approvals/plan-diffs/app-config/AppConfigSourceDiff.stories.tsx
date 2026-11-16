@@ -205,16 +205,11 @@ value = "8Gi"
 `
 
 const legacyWorkerBefore = `name = "legacy-worker"
-type = "docker_build"
+type = "external_image"
 
-[docker_build]
-dockerfile = "Dockerfile.worker"
-build_args = ["TARGET=worker"]
-
-[docker_build.public_repo]
-repo = "https://github.com/acme/legacy-worker"
-directory = "."
-branch = "main"
+[external_image]
+image_url = "766121324316.dkr.ecr.us-west-2.amazonaws.com/acme/legacy-worker:bld-abc123"
+tag = "bld-abc123"
 `
 
 const healthcheckBefore = `name="healthcheck"
@@ -351,8 +346,8 @@ const mockComputedSections: TAppConfigDiffSection[] = [
       {
         name: 'legacy-worker',
         op: 'remove',
-        componentType: 'docker_build',
-        fields: [{ key: 'type', op: 'remove', diff: "'docker_build' -> ''" }],
+        componentType: 'external_image',
+        fields: [{ key: 'type', op: 'remove', diff: "'external_image' -> ''" }],
       },
     ],
     fields: [],

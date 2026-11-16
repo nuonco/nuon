@@ -37,6 +37,10 @@ func (s *service) UpdateTerraformWorkspaceStateJSON(ctx *gin.Context) {
 		})
 		return
 	}
+	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	// keeping jobID optional to remain backwards compatible for old runners
 	jobID := ctx.Query("job_id")

@@ -101,7 +101,7 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 		return nil, res.Error
 	}
 
-	if err := s.helpers.UploadCustomNestedStackTemplates(ctx, s.db, appCloudFormationStackConfig); err != nil {
+	if err := s.helpers.UploadCustomNestedStackTemplates(ctx, appCloudFormationStackConfig); err != nil {
 		return nil, err
 	}
 

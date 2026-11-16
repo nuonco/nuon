@@ -5,6 +5,9 @@ on:
   watch:
     types: [started]
 
+permissions:
+  contents: read
+
 jobs:
   notify:
     name: Send Slack notification

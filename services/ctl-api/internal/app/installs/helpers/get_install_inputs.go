@@ -25,9 +25,9 @@ func (h *Helpers) getInstallInputs(ctx context.Context, installID string) ([]app
 	return install.InstallInputs, nil
 }
 
-func (h *Helpers) LatestInstallInputs(ctx context.Context, db *gorm.DB, installID string) (*app.InstallInputs, error) {
+func (h *Helpers) LatestInstallInputs(ctx context.Context, installID string) (*app.InstallInputs, error) {
 	installInputs := app.InstallInputs{}
-	res := db.WithContext(ctx).
+	res := h.db.WithContext(ctx).
 		Where("install_id = ?", installID).
 		Order("created_at DESC").
 		First(&installInputs)

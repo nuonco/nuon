@@ -7,6 +7,7 @@ import { Text } from '@/components/common/Text'
 import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { useAutoFocusOnVisible } from '@/hooks/use-auto-focus-on-visible'
 import { useEscapeKey } from '@/hooks/use-escape-key'
+import { PanelVisibilityContext } from '@/hooks/use-panel-visibility'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { hasPanelKey } from '@/providers/surfaces-provider'
 import { Tooltip } from '@/components/common/Tooltip'
@@ -132,16 +133,16 @@ export const PanelBase = ({
                     }
                   >
                     <Icon
-                      variant={size === 'full' ? 'CornersInIcon' : 'CornersOutIcon'}
+                      variant={
+                        size === 'full' ? 'CornersInIcon' : 'CornersOutIcon'
+                      }
                     />
                   </Button>
                 </Tooltip>
               ) : null}
               <Tooltip
                 position="bottom"
-                tipContent={
-                  <Text variant="subtext">Close panel</Text>
-                }
+                tipContent={<Text variant="subtext">Close panel</Text>}
               >
                 <Button
                   className="!p-2 ml-auto"
@@ -160,7 +161,9 @@ export const PanelBase = ({
               childrenClassName
             )}
           >
-            {children}
+            <PanelVisibilityContext.Provider value={isVisible && isTopPanel}>
+              {children}
+            </PanelVisibilityContext.Provider>
           </div>
           {footer ? (
             <footer className="flex shrink-0 items-center justify-end gap-4 border-t px-4 md:px-6 py-4 bg-background">
@@ -183,7 +186,8 @@ export const Panel = ({ triggerButton, ...props }: IPanel) => {
     addPanel(panel, props.panelKey)
   }
 
-  const panelDeepLinked = !!props.panelKey && hasPanelKey(searchParams, props.panelKey)
+  const panelDeepLinked =
+    !!props.panelKey && hasPanelKey(searchParams, props.panelKey)
   useEffect(() => {
     if (openedByTrigger.current) {
       openedByTrigger.current = false

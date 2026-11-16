@@ -596,6 +596,7 @@ func (s *GetOrgMembersTestSuite) TestGetOrgMembers() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			s.setCaller(s.testAcc)
 			tc.setupFunc()
 
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs/current/members"+tc.queryParams)

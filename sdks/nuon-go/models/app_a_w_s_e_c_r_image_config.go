@@ -20,6 +20,9 @@ type AppAWSECRImageConfig struct {
 	// aws region
 	AwsRegion string `json:"aws_region,omitempty"`
 
+	// actual configuration
+	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
+
 	// connection to parent model
 	ComponentConfigID string `json:"component_config_id,omitempty"`
 
@@ -32,7 +35,7 @@ type AppAWSECRImageConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
-	// actual configuration
+	// iam role arn
 	IamRoleArn string `json:"iam_role_arn,omitempty"`
 
 	// id

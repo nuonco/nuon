@@ -408,6 +408,15 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			continue
 		}
 
+		if unsupportedComponentType(comp) {
+			skipStep, err := unsupportedComponentTypeSkipStep(ctx, dg.sg, dg.installID, comp, "skipped deploy "+comp.Name)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, skipStep)
+			continue
+		}
+
 		// Dep-aware image-sync prepend.
 		//
 		// When deploying a non-image component, walk its image dependencies
@@ -489,7 +498,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 				steps = append(steps, deployStep)
 			}
 		} else {
-			if dg.flw.PlanOnly && comp.Type == app.ComponentTypeExternalImage || comp.Type == app.ComponentTypeDockerBuild {
+			if dg.flw.PlanOnly && comp.Type == app.ComponentTypeExternalImage {
 				continue
 			}
 
@@ -554,6 +563,21 @@ func componentStepMetadata(componentName string) pgtype.Hstore {
 	return pgtype.Hstore{"component_name": generics.ToPtr(componentName)}
 }
 
+func unsupportedComponentType(comp app.Component) bool {
+	return !comp.Type.IsImage() && comp.Type.DeployJobType() == app.RunnerJobTypeUnknown
+}
+
+func unsupportedComponentTypeSkipStep(ctx workflow.Context, sg *stepGroup, installID string, comp app.Component, stepName string) (*app.WorkflowStep, error) {
+	step, err := sg.installSignalStep(ctx, installID, stepName, pgtype.Hstore{
+		"reason":         generics.ToPtr(fmt.Sprintf("unsupported component type %s", comp.Type)),
+		"component_name": generics.ToPtr(comp.Name),
+	}, nil, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create unsupported component type skip step")
+	}
+	return step, nil
+}
+
 // getComponentTeardownSteps emits the steps that tear a single component down
 // off an install: a teardown sync-and-plan followed by an apply for
 // infrastructure components, or a no-op skip step for image components (whose
@@ -571,6 +595,14 @@ func getComponentTeardownSteps(ctx workflow.Context, dg *genCtx, comp app.Compon
 		}, nil, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image teardown skip step")
+		}
+		return append(steps, skipStep), nil
+	}
+
+	if unsupportedComponentType(comp) {
+		skipStep, err := unsupportedComponentTypeSkipStep(ctx, dg.sg, dg.installID, comp, "skipped teardown "+comp.Name)
+		if err != nil {
+			return nil, err
 		}
 		return append(steps, skipStep), nil
 	}

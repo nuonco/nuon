@@ -97,6 +97,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	if workflow.GetVersion(ctx, "app-branch-builds-as-ready-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		builds, err := s.buildsAsReady(ctx, l, appConfig, run.AppConfigID, previousAppConfigID, run.Force)
+		if err != nil {
+			buildsErr := s.markBuildsCompleted(ctx, l, false)
+			s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
+			if isPreview && run.PRNumber != nil {
+				s.finalizePreview(ctx, l, run, builds, err)
+			}
+			return buildsFailure("builds failed", buildsErr, err)
+		}
+		return s.finishBuilds(ctx, l, run, appConfig, builds)
+	}
+
 	builds, err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID, run.Force)
 	if err != nil {
 		buildsErr := s.markBuildsCompleted(ctx, l, false)
@@ -141,7 +154,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		builds = append(builds, sandboxEntry)
 		s.updateBuildMetadata(ctx, builds)
 
-		if err := s.buildSandbox(ctx, l); err != nil {
+		if err := s.buildSandbox(ctx, l, false); err != nil {
 			s.setBuildStatus(builds, activities.SandboxComponentID, "error")
 			buildsErr := s.markBuildsCompleted(ctx, l, false)
 			s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
@@ -154,6 +167,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.updateBuildMetadata(ctx, builds)
 	}
 
+	return s.finishBuilds(ctx, l, run, appConfig, builds)
+}
+
+func (s *Signal) finishBuilds(ctx workflow.Context, l log.Logger, run *app.AppBranchRun, appConfig *app.AppConfig, builds []buildEntry) error {
+	isPreview := run.IsPreview()
 	if isPreview && run.PRNumber != nil {
 		s.finalizePreview(ctx, l, run, builds, nil)
 	}
@@ -234,6 +252,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 				ComponentID:    componentID,
 				NewAppConfigID: appConfigID,
 				OldAppConfigID: previousAppConfigID,
+				RunID:          s.RunID,
 			}
 			if _, ok := sourceChangedByName[name]; ok {
 				changed := sourceChangedByName[name]
@@ -241,6 +260,9 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			}
 
 			check, err := activities.AwaitCheckBuildNeeded(ctx, checkInput)
+			if err != nil && workflow.GetVersion(ctx, "build-source-preparation-required-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+				return builds, fmt.Errorf("component %s: prepare source: %w", componentID, err)
+			}
 			if err == nil && !check.NeedsBuild {
 				l.Info("skipping build for unchanged component",
 					"component_id", componentID,
@@ -394,7 +416,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			switch br.Status {
 			case string(app.ComponentBuildStatusActive):
 				s.setBuildStatus(builds, br.ComponentID, "success")
-			case string(app.ComponentBuildStatusError), "cancelled":
+			case string(app.ComponentBuildStatusError), string(app.ComponentBuildStatusPolicyFailed), "cancelled":
 				s.setBuildStatus(builds, br.ComponentID, "error")
 			}
 		}
@@ -669,7 +691,7 @@ func previewInstallURL(commentContext *activities.GetPreviewCommentContextOutput
 	return commentContext.PreviewInstallURL
 }
 
-func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {
+func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger, reuseChecked bool) error {
 	cb := callback.New(ctx, s.AppBranchID+"-sandbox-infra")
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.AppBranchID,
@@ -678,9 +700,10 @@ func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {
 		SignalOwnerID:   s.AppBranchID,
 		SignalOwnerType: "app_branches",
 		Signal: &sandboxbuild.Signal{
-			AppBranchID: s.AppBranchID,
-			RunID:       s.RunID,
-			StepID:      s.StepID,
+			AppBranchID:  s.AppBranchID,
+			RunID:        s.RunID,
+			StepID:       s.StepID,
+			ReuseChecked: reuseChecked,
 		},
 		Callback: cb,
 	})

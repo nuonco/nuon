@@ -50,7 +50,11 @@ export function useSSETimelineQuery<TData>({
     [queryClient, eventName, transform, extraListeners, ...queryKey]
   )
 
-  const { connected: sseConnected, suspended: sseSuspended } = useResourceSSE({
+  const {
+    connected: sseConnected,
+    suspended: sseSuspended,
+    closed: sseClosed,
+  } = useResourceSSE({
     url: sseUrl,
     enabled: shouldPoll,
     listeners,
@@ -63,7 +67,7 @@ export function useSSETimelineQuery<TData>({
     placeholderData: retainPreviousData ? keepPreviousData : undefined,
     refetchOnMount: 'always',
     refetchInterval:
-      !shouldPoll || sseConnected
+      !shouldPoll || sseConnected || sseClosed
         ? false
         : sseSuspended
           ? SUSPENDED_POLL_MS

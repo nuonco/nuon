@@ -37,6 +37,9 @@ type AppAppSandboxBuild struct {
 	// app sandbox config id
 	AppSandboxConfigID string `json:"app_sandbox_config_id,omitempty"`
 
+	// checksum
+	Checksum string `json:"checksum,omitempty"`
+
 	// composite error
 	CompositeError *CompositeerrorsCompositeErrorData `json:"composite_error,omitempty"`
 
@@ -57,6 +60,12 @@ type AppAppSandboxBuild struct {
 
 	// runner job
 	RunnerJob *AppRunnerJob `json:"runner_job,omitempty"`
+
+	// source checksum
+	SourceChecksum string `json:"source_checksum,omitempty"`
+
+	// source identity
+	SourceIdentity *SourceidentityIdentity `json:"source_identity,omitempty"`
 
 	// status
 	Status string `json:"status,omitempty"`
@@ -98,6 +107,10 @@ func (m *AppAppSandboxBuild) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRunnerJob(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSourceIdentity(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -230,6 +243,29 @@ func (m *AppAppSandboxBuild) validateRunnerJob(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppSandboxBuild) validateSourceIdentity(formats strfmt.Registry) error {
+	if swag.IsZero(m.SourceIdentity) { // not required
+		return nil
+	}
+
+	if m.SourceIdentity != nil {
+		if err := m.SourceIdentity.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_identity")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_identity")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppSandboxBuild) validateStatusV2(formats strfmt.Registry) error {
 	if swag.IsZero(m.StatusV2) { // not required
 		return nil
@@ -297,6 +333,10 @@ func (m *AppAppSandboxBuild) ContextValidate(ctx context.Context, formats strfmt
 	}
 
 	if err := m.contextValidateRunnerJob(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSourceIdentity(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -430,6 +470,31 @@ func (m *AppAppSandboxBuild) contextValidateRunnerJob(ctx context.Context, forma
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("runner_job")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppSandboxBuild) contextValidateSourceIdentity(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SourceIdentity != nil {
+
+		if swag.IsZero(m.SourceIdentity) { // not required
+			return nil
+		}
+
+		if err := m.SourceIdentity.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_identity")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_identity")
 			}
 
 			return err

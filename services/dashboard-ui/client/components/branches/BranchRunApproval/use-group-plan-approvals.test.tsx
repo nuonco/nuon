@@ -69,6 +69,9 @@ test('clicking review changes opens the plan diff panel', () => {
   withMockedFetch(() => {
     renderHarness(['/branches/br-1'])
 
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeTruthy()
+
     fireEvent.click(screen.getByText('Review changes'))
 
     expect(screen.getByText('Plan for production')).toBeTruthy()

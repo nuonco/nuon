@@ -3,6 +3,7 @@ package oidcissuer
 import (
 	"context"
 	"crypto/rsa"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -115,6 +116,14 @@ func (i *Issuer) Issuer() string {
 
 func (i *Issuer) KeyID() string {
 	return i.keyID
+}
+
+func (i *Issuer) PublicJWKS() JWKS {
+	return JWKS{Keys: []JWK{{
+		KeyType: "RSA", KeyID: i.keyID, Use: "sig", Algorithm: jwt.SigningMethodRS256.Alg(),
+		Modulus:  base64.RawURLEncoding.EncodeToString(i.privateKey.PublicKey.N.Bytes()),
+		Exponent: encodeJWKInteger(int64(i.privateKey.PublicKey.E)),
+	}}}
 }
 
 type DiscoveryDocument struct {

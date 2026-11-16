@@ -68,8 +68,14 @@ func (s *service) LogStreamReadSpans(ctx *gin.Context) {
 
 	// Authorize: confirm the log stream exists and belongs to this org.
 	// Reuses the same lookup as LogStreamReadLogs.
-	if _, err := s.getOrgLogStream(ctx, logStreamID, orgID); err != nil {
+	logStream, err := s.getOrgLogStream(ctx, logStreamID, orgID)
+	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get log stream"))
+		return
+	}
+
+	if logStream.LogsDeletedAt != nil {
+		ctx.JSON(http.StatusOK, []LogStreamSpan{})
 		return
 	}
 

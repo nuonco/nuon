@@ -34,7 +34,6 @@ This skill covers `engine = "opa"` only — that's the only engine to use for Re
 | `kubernetes_manifest` | Raw k8s manifest components | Kubernetes AdmissionReview: `input.review.object`, `input.review.kind` |
 | `kubernetes_cluster` | Cluster-level resources (namespaces, CRDs) | Kubernetes AdmissionReview: `input.review.object`, `input.review.kind` |
 | `container_image` | Container image components | Image reference/metadata |
-| `docker_build` | Docker build components | Build metadata |
 
 When unsure which `input` shape a type produces, look for an existing policy of the same `type` in the app's `policies/` directory and match its input access pattern.
 

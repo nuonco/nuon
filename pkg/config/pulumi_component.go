@@ -47,7 +47,7 @@ func (p PulumiComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled. Supports templating").
 		Example("0 2 * * *").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for build operations (e.g., \"30m\", \"1h\"). Default: 5m. Max: 1h").
+		Long("Duration string for build operations (e.g., \"10m\", \"30m\"). Default: 5m. Max: 30m").
 		Default("5m").
 		Field("deploy_timeout").Short("deploy operation timeout").
 		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\"). Default: 60m. Max: 1h").

@@ -599,7 +599,7 @@ func (s *InstallStateIntegrationSuite) TestMixedMissingAndExistingHeadsDoNotDead
 	tx := s.deps.DB.WithContext(ctx).Begin()
 	require.NoError(s.T(), tx.Error)
 	defer tx.Rollback()
-	require.NoError(s.T(), s.deps.Helpers.MarkInstallStatePartialsStale(ctx, tx, low, pkgstate.PartialInputs))
+	require.NoError(s.T(), s.deps.Helpers.WithDB(tx).MarkInstallStatePartialsStale(ctx, low, pkgstate.PartialInputs))
 	pid := s.backendPID(tx)
 	done := make(chan struct{})
 	var fanoutErr error
