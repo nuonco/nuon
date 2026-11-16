@@ -47,6 +47,28 @@ export const Default = () => (
   />
 )
 
+export const PinnedBranch = () => (
+  <BuildSelect
+    builds={[
+      { ...mockBuilds[0], app_branch_id: 'br-main' },
+      {
+        ...mockBuilds[1],
+        id: 'bld-older',
+        app_branch_id: 'br-main',
+        component_config_connection: { app_config_id: 'cfg-older' },
+      },
+      { ...mockBuilds[1], app_branch_id: 'br-other' },
+    ]}
+    installAppBranchId="br-main"
+    installAppConfigId="cfg-main"
+    isLoading={false}
+    isLoadingMore={false}
+    hasMorePages={false}
+    onSelectBuild={noop}
+    onScroll={noop}
+  />
+)
+
 export const ConfigMismatch = () => (
   <BuildSelect
     builds={mockBuilds}
