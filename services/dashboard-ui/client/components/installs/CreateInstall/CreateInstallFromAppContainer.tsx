@@ -202,6 +202,7 @@ export const CreateInstallFromAppContainer = ({
         hasBranch: true,
         hasActiveConfig: hasActive,
         runs: query.state.data,
+        latestConfigStatus: configs?.[0]?.status,
       }).phase === 'waiting'
         ? BRANCH_CONFIG_POLL_MS
         : false
@@ -232,6 +233,7 @@ export const CreateInstallFromAppContainer = ({
         hasBranch: !!selectedBranch,
         hasActiveConfig: hasActive,
         runs: queryClient.getQueryData(branchRunsKey),
+        latestConfigStatus: query.state.data?.[0]?.status,
       }).phase === 'waiting'
         ? BRANCH_CONFIG_POLL_MS
         : false
@@ -253,6 +255,7 @@ export const CreateInstallFromAppContainer = ({
     hasBranch: phase === 'form' && !!selectedBranch,
     hasActiveConfig: !!configId,
     runs: branchRuns,
+    latestConfigStatus: branchConfigs?.[0]?.status,
   })
 
   const {
