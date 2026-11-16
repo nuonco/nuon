@@ -14,9 +14,10 @@ import (
 const DeployPlanRenderErrorType compositeerrors.Type = "deploy.plan_render_failed"
 
 type DeployPlanRenderError struct {
-	ComponentName string `json:"component_name,omitempty"`
-	Stage         string `json:"stage,omitempty"`
-	Detail        string `json:"detail,omitempty"`
+	ComponentName   string `json:"component_name,omitempty"`
+	Stage           string `json:"stage,omitempty"`
+	Detail          string `json:"detail,omitempty"`
+	AppSyncDisabled bool   `json:"app_sync_disabled,omitempty"`
 }
 
 var _ compositeerrors.CompositeError = (*DeployPlanRenderError)(nil)
@@ -52,7 +53,11 @@ func (e *DeployPlanRenderError) Sections() []compositeerrors.Section {
 	if e.Detail != "" {
 		sections = append(sections, compositeerrors.CodeSection("Error detail", e.Detail))
 	}
-	sections = append(sections, compositeerrors.MarkdownSection("How to fix", "Check the referenced value exists in your app config — a missing sandbox output, action workflow output, or input is the usual cause. Fix the reference, re-run `nuon apps sync`, then retry the deploy."))
+	fix := "Check the referenced value exists in your app config — a missing sandbox output, action workflow output, or input is the usual cause. Fix the reference, run your app branch with the fix, then retry the deploy."
+	if !e.AppSyncDisabled {
+		fix = "Check the referenced value exists in your app config — a missing sandbox output, action workflow output, or input is the usual cause. Fix the reference, re-run `nuon apps sync` or run your app branch with the fix, then retry the deploy."
+	}
+	sections = append(sections, compositeerrors.MarkdownSection("How to fix", fix))
 	return sections
 }
 
