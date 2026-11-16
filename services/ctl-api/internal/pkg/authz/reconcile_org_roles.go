@@ -29,9 +29,13 @@ func ReconcileOrgRoles(ctx context.Context, db *gorm.DB, org app.Org) error {
 		byType[role.RoleType] = role
 	}
 
+	standardRoles, err := standardOrgRoles(org.ID)
+	if err != nil {
+		return err
+	}
 	var toCreate []app.Role
 	var toUpdate []app.Role
-	for _, want := range standardOrgRoles(org.ID) {
+	for _, want := range standardRoles {
 		existing, ok := byType[want.RoleType]
 		if !ok {
 			want.CreatedByID = org.CreatedByID
