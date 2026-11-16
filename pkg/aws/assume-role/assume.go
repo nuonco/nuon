@@ -26,7 +26,7 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 		return aws.Config{}, err
 	}
 
-	creds, err := a.assumeIamRole(ctx, stsClient, a.RoleARN, a.ExternalID)
+	creds, err := a.assumeIamRole(ctx, stsClient, a.RoleARN, a.ExternalID, a.SessionPolicy)
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("failed to assume role: %w", err)
 	}
@@ -45,7 +45,7 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 	return cfg, nil
 }
 
-func (a *assumer) assumeIamRole(ctx context.Context, client stsRoleAssumer, role, externalID string) (*sts_types.Credentials, error) {
+func (a *assumer) assumeIamRole(ctx context.Context, client stsRoleAssumer, role, externalID, sessionPolicy string) (*sts_types.Credentials, error) {
 	if a.UseGithubOIDC || a.UseGCPOIDC {
 		var token string
 		var err error
@@ -58,12 +58,16 @@ func (a *assumer) assumeIamRole(ctx context.Context, client stsRoleAssumer, role
 			return nil, fmt.Errorf("unable to get OIDC token: %w", err)
 		}
 
-		resp, err := client.AssumeRoleWithWebIdentity(ctx, &sts.AssumeRoleWithWebIdentityInput{
+		input := &sts.AssumeRoleWithWebIdentityInput{
 			RoleArn:          generics.ToPtr(role),
 			RoleSessionName:  generics.ToPtr(a.RoleSessionName),
 			WebIdentityToken: generics.ToPtr(token),
 			DurationSeconds:  generics.ToPtr(int32(a.RoleSessionDuration.Seconds())),
-		})
+		}
+		if sessionPolicy != "" {
+			input.Policy = &sessionPolicy
+		}
+		resp, err := client.AssumeRoleWithWebIdentity(ctx, input)
 		if err != nil {
 			return nil, fmt.Errorf("unable to assume role with web identity: %w", err)
 		}
@@ -78,6 +82,9 @@ func (a *assumer) assumeIamRole(ctx context.Context, client stsRoleAssumer, role
 	}
 	if externalID != "" {
 		params.ExternalId = &externalID
+	}
+	if sessionPolicy != "" {
+		params.Policy = &sessionPolicy
 	}
 
 	resp, err := client.AssumeRole(ctx, params)
