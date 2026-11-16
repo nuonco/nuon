@@ -66,10 +66,23 @@ type AppAWSIAMRoleConfig struct {
 	// same permissions config. JSONB because each app config is a snapshot.
 	// Templated for the same reason the policy's Name is: both sides must
 	// render to the same string for the attachment to resolve.
-	NamedPolicyNames             []string `json:"named_policy_names,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" features:"template" temporaljson:"named_policy_names,omitzero,omitempty"`
-	PermissionsBoundaryJSON      []byte   `json:"permissions_boundary,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"permissions_boundary_json,omitzero,omitempty"`
-	CloudFormationStackName      string   `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
-	CloudFormationStackParamName string   `json:"cloudformation_param_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_param_name,omitzero,omitempty"`
+	NamedPolicyNames             []string                `json:"named_policy_names,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" features:"template" temporaljson:"named_policy_names,omitzero,omitempty"`
+	PermissionsBoundaryJSON      []byte                  `json:"permissions_boundary,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"permissions_boundary_json,omitzero,omitempty"`
+	EKSAccess                    *AppAWSIAMRoleEKSAccess `json:"eks_access,omitempty" gorm:"type:jsonb;serializer:json" temporaljson:"eks_access,omitzero,omitempty"`
+	CloudFormationStackName      string                  `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
+	CloudFormationStackParamName string                  `json:"cloudformation_param_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_param_name,omitzero,omitempty"`
+}
+
+type AppAWSIAMRoleEKSAccess struct {
+	ClusterName      string                         `json:"cluster_name" temporaljson:"cluster_name,omitzero,omitempty"`
+	KubernetesGroups []string                       `json:"kubernetes_groups,omitempty" temporaljson:"kubernetes_groups,omitzero,omitempty"`
+	Policies         []AppAWSIAMRoleEKSAccessPolicy `json:"policies,omitempty" temporaljson:"policies,omitzero,omitempty"`
+}
+
+type AppAWSIAMRoleEKSAccessPolicy struct {
+	PolicyARN   string   `json:"policy_arn" temporaljson:"policy_arn,omitzero,omitempty"`
+	AccessScope string   `json:"access_scope,omitempty" temporaljson:"access_scope,omitzero,omitempty"`
+	Namespaces  []string `json:"namespaces,omitempty" temporaljson:"namespaces,omitzero,omitempty"`
 }
 
 func (a *AppAWSIAMRoleConfig) Indexes(db *gorm.DB) []migrations.Index {
