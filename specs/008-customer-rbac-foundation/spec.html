@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>008 — RBAC foundation: existing boundaries, new policy model</title>
+<style>
+:root { color-scheme: light; --ink: #182e3c; --muted: #526674; --line: #d5dfe5; --accent: #13675e; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body { margin: 0; color: var(--ink); background: #f4f6f7; font: 16px/1.7 system-ui, sans-serif; }
+.masthead { background: #163d3a; color: #fff; padding: 18px max(24px, calc((100vw - 1440px) / 2)); display: flex; gap: 20px; justify-content: space-between; font-size: 13px; letter-spacing: .06em; }
+.layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1440px; margin: auto; }
+nav { padding: 30px 22px; position: sticky; top: 0; align-self: start; max-height: 100vh; overflow: auto; font-size: 13px; }
+nav h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; border: 0; margin: 0 0 16px; padding: 0; }
+nav ul { list-style: none; padding: 0; }
+nav li { margin: 0 0 12px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--accent); text-decoration: underline; }
+nav .review-link { display: block; padding-top: 18px; border-top: 1px solid var(--line); font-weight: 650; }
+main { background: #fff; padding: 42px 48px 72px; min-width: 0; border-left: 1px solid var(--line); }
+h1, h2, h3 { line-height: 1.25; letter-spacing: -.025em; }
+h1 { font-size: clamp(30px, 3.2vw, 46px); margin: 0 0 14px; }
+h2 { margin: 48px 0 20px; padding-top: 26px; border-top: 1px solid var(--line); font-size: 26px; }
+h3 { margin-top: 30px; font-size: 19px; }
+p, li { max-width: 90ch; }
+li { margin-bottom: 7px; }
+a { color: #08685e; text-underline-offset: 3px; overflow-wrap: anywhere; }
+code { font: .88em/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; background: #edf3f3; padding: 2px 4px; border-radius: 3px; overflow-wrap: anywhere; }
+pre { padding: 22px; border: 1px solid var(--line); background: #f0f6f5; overflow: auto; font-size: 13px; }
+pre code { background: none; padding: 0; white-space: pre; }
+.architecture { overflow: auto; padding: 16px; border: 1px solid var(--line); }
+.architecture svg { display: block; min-width: 700px; margin: auto; }
+.table-scroll { overflow-x: auto; margin: 24px 0; border: 1px solid var(--line); border-radius: 5px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.6; }
+th, td { text-align: left; vertical-align: top; padding: 14px 16px; min-width: 150px; border-bottom: 1px solid var(--line); }
+th { background: #e9f1ef; font-weight: 650; }
+tr:last-child td { border-bottom: 0; }
+tbody tr:nth-child(even) { background: #fafcfc; }
+button { font: inherit; cursor: pointer; border: 1px solid #a9babd; border-radius: 4px; color: var(--ink); background: #fff; padding: 6px 12px; }
+button:hover { background: #e9f1ef; }
+button:focus-visible, a:focus-visible, summary:focus-visible, textarea:focus { outline: 3px solid #1b8073; outline-offset: 2px; }
+.listing { margin: 20px 0; border: 1px solid var(--line); font: 13px/1.65 ui-monospace, monospace; }
+.review-line { display: grid; grid-template-columns: 32px 36px minmax(0, 1fr); align-items: start; gap: 10px; padding: 6px 10px; }
+.review-line:nth-child(even) { background: #f3f6f7; }
+.review-line.added { background: #e3f3e9; }
+.review-line.removed { background: #fbeaea; }
+.review-line button { padding: 0; height: 26px; width: 28px; }
+.line-number { color: var(--muted); text-align: right; user-select: none; }
+.line-text { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+summary { cursor: pointer; font-weight: 650; }
+.note { color: var(--muted); font-size: 14px; }
+dialog { color: var(--ink); border: 1px solid var(--line); border-radius: 8px; width: min(660px, 92vw); padding: 26px; }
+dialog::backdrop { background: #132c3a88; }
+dialog h2 { margin: 0 0 18px; padding: 0; border: 0; font-size: 22px; }
+dialog blockquote { margin: 12px 0; padding: 12px; background: #f0f6f5; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; }
+textarea { width: 100%; min-height: 150px; font: inherit; padding: 10px; margin: 8px 0 16px; }
+.actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; }
+.primary { background: #13675e; color: #fff; border-color: #13675e; }
+.primary:hover { background: #0c514a; }
+@media (max-width: 950px) { .layout { grid-template-columns: 210px minmax(0, 1fr); } main { padding: 30px 24px; } }
+@media (max-width: 700px) { .layout { display: block; } nav { position: static; max-height: none; padding: 20px; } nav > ul > li > ul { columns: 2; column-gap: 22px; } nav li { break-inside: avoid; } main { padding: 28px 20px 50px; border: 0; } .masthead { padding: 16px 20px; flex-wrap: wrap; gap: 6px 20px; } h2 { font-size: 23px; } .review-line { gap: 6px; grid-template-columns: 28px 27px minmax(0, 1fr); padding: 6px; } }
+@media (max-width: 700px) { pre code { white-space: pre-wrap; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media print { nav, .masthead, #review, dialog, .review-line button { display: none; } body, main { background: #fff; } .layout { display: block; } main { padding: 0; border: 0; } .review-line { grid-template-columns: 36px minmax(0, 1fr); } .table-scroll { overflow: visible; } table { font-size: 10px; } th, td { min-width: 0; padding: 6px; } h2, h3 { break-after: avoid; } }
+</style>
+</head>
+<body>
+<header class="masthead"><span>NUON / ENGINEERING PROPOSAL 008</span><span>EXISTING BOUNDARIES · NEW POLICY MODEL</span></header>
+<div class="layout">
+<nav aria-label="Proposal contents"><h2>On this page</h2><ul>
+<li><a href="#rbac-foundation-existing-boundaries-new-policy-model"
+id="toc-rbac-foundation-existing-boundaries-new-policy-model">RBAC
+foundation: existing boundaries, new policy model</a>
+<ul>
+<li><a href="#ship-todays-boundaries-on-the-new-foundation"
+id="toc-ship-todays-boundaries-on-the-new-foundation">1. Ship today’s
+boundaries on the new foundation</a></li>
+<li><a href="#data-model-and-document-contract"
+id="toc-data-model-and-document-contract">2. Data model and document
+contract</a></li>
+<li><a href="#keep-authorization-and-wire-behavior-unchanged"
+id="toc-keep-authorization-and-wire-behavior-unchanged">3. Keep
+authorization and wire behavior unchanged</a></li>
+<li><a href="#classify-exact-source-records-not-role-labels"
+id="toc-classify-exact-source-records-not-role-labels">4. Classify exact
+source records, not role labels</a></li>
+<li><a href="#activation-increments-retain-real-deployment-boundaries"
+id="toc-activation-increments-retain-real-deployment-boundaries">5.
+Activation increments retain real deployment boundaries</a></li>
+<li><a href="#verification-and-evidence"
+id="toc-verification-and-evidence">6. Verification and evidence</a></li>
+<li><a href="#future-work-is-separate"
+id="toc-future-work-is-separate">7. Future work is separate</a></li>
+</ul></li>
+</ul><a class="review-link" href="#review">Review and comment →</a><p class="note"><a href="prompt.md">Markdown source</a><br>Prior specs remain unchanged.</p></nav>
+<main id="main"><h1
+id="rbac-foundation-existing-boundaries-new-policy-model">RBAC
+foundation: existing boundaries, new policy model</h1>
+<p><strong>008 · Boundary-preserving activation plan · 4 November
+2026</strong></p>
+<p><strong>Status, 16 November 2026: delivered and running in
+production.</strong> Sections 1–4 remain the contract. Sections 5–6 are
+the historical rollout record; where they say “local”, “unregistered” or
+“remaining”, the shipped state below wins.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>PR</th>
+<th>Contents</th>
+<th>Production</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/nuonco/nuon/pull/3185">#3185</a>, <a
+href="https://github.com/nuonco/nuon/pull/3192">#3192</a></td>
+<td>Foundation PRs 1–3; duplicate-binding cleanup and live-binding
+index</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a href="https://github.com/nuonco/nuon/pull/3258">#3258</a></td>
+<td>Compatible readers: optional <code>api</code>, scoped
+<code>resource_rules</code>, document-aware reconciliation and stack
+adoption; 153 document-aware</td>
+<td>0.19.1293</td>
+</tr>
+<tr>
+<td><a href="https://github.com/nuonco/nuon/pull/3246">#3246</a></td>
+<td>v3 writers for standard and scoped roles,
+<code>policies_single_authority</code> CHECK, classifier, migration
+<code>156-convert-standard-org-roles</code>, legacy-safe 126/150</td>
+<td>0.19.1295</td>
+</tr>
+<tr>
+<td><a href="https://github.com/nuonco/nuon/pull/3277">#3277</a></td>
+<td>Runtime registration of the AccountRole join model (revoked bindings
+no longer load)</td>
+<td>0.19.1296</td>
+</tr>
+<tr>
+<td><a href="https://github.com/nuonco/nuon/pull/3275">#3275</a></td>
+<td>Admin-migrate creates v3 runner roles (last v2 writer)</td>
+<td>merged, pending deploy</td>
+</tr>
+</tbody>
+</table>
+<p>Differences from the plan text below:</p>
+<ul>
+<li><code>log_stream</code> roles are converted and written as v3
+<code>resource_rules</code> (<code>log_stream.create</code> on the exact
+stream), not kept legacy.</li>
+<li>Unbound runner-install roles were converted too, under the later
+“convert every exactly representable role” decision.</li>
+<li>Migration 156 exceeded the 5-minute startup deadline in production
+after 27,566 roles; the expired context left its row
+<code>in_progress</code> and the retry skipped it, so the deploy
+reported success. It was recovered with
+<code>DB_MIGRATIONS_TIMEOUT=20m</code>. The migrator fix is tracked
+separately.</li>
+</ul>
+<p>Production census on the read replica, 16 November 2026 11:48 UTC
+(<code>.amp/in/artifacts/rbac-closeout-census-20261116/</code>): the
+only live legacy policies are the three v1 <code>hosted-installer</code>
+roles with wildcard authority; no v1/v2 role was created after 156; zero
+dual-authority policies. 54,858 runner-install roles have no binding and
+no managed-owner reference (created 29 October–12 November, none since);
+113 Reader roles belong to deleted orgs. Their cleanup is separate
+work.</p>
+<p>Enforcement is unchanged: routes still derive
+create/read/update/delete from the HTTP method and the legacy adapter
+maps v3 grants onto those checks. Section 7 and spec 007 own what comes
+next.</p>
+<h2 id="ship-todays-boundaries-on-the-new-foundation">1. Ship today’s
+boundaries on the new foundation</h2>
+<p>Adopt <a
+href="../006-control-plane-authorization/authorization-model.md">006’s
+catalog, policy, scope and evaluator model</a> without requiring its
+full security cutover. Start with today’s <strong>Read-only
+(<code>org_read_only</code>)</strong> and <strong>Admin
+(<code>org_admin</code>)</strong> at org scope, then include recognized
+machine-policy shapes using separate permissions and scopes. Preserve
+who can access what. Later resource-boundary changes must be explicit
+increments.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>In this activation</th>
+<th>Out of scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Minimal Reader <code>{org.read}</code> and Admin
+<code>{org.read, org.write}</code> bundles; exact scoped compatibility
+grants</td>
+<td>Org Editor, new customer role-management APIs, route remaps</td>
+</tr>
+<tr>
+<td>Exact existing v1/v2 standard-role conversion, followed by
+recognized machine shapes once writers are ready</td>
+<td>Unknown/custom policy inference, historical grant repair, promising
+zero legacy rows</td>
+</tr>
+<tr>
+<td>Optional legacy <code>api</code> metadata to preserve existing
+restrictions</td>
+<td>Token audiences, OAuth resource approval, issuer or credential
+rewrites</td>
+</tr>
+<tr>
+<td>Existing API guards, token restrictions, Admin-only checks and
+transport distinctions</td>
+<td>Moving enforcement, tighter security boundaries, role-guard
+retirement</td>
+</tr>
+<tr>
+<td>One skip-version-capable release, accepting transient mixed-version
+errors</td>
+<td>Mandatory intermediate releases, zero-downtime activation gate,
+separate apply CLI</td>
+</tr>
+<tr>
+<td>Existing migrator, atomic row updates, idempotent conversion</td>
+<td>Migration-harness rewrite, new scheduler/progress tables, global
+mutation locks</td>
+</tr>
+</tbody>
+</table>
+<p>The model remains identity-neutral: all accounts use roles, policies
+and the same matcher. There is no customer-only permission category. New
+recognized machine/private roles use scoped documents. Exact
+Support/Installer/Runner org-wide grants reuse the full-access bundle
+without changing role identity. Builder, hosted-installer and unknown
+custom shapes remain legacy, as does main’s newer log-stream role;
+conversion requires exact contents and verified ownership, not role-name
+inference. Preserve log-stream creation and its existing runner API
+restriction without adding log-stream documents or broadening this
+converter. No new account, binding, token, OAuth, invitation or workflow
+schema is needed for the scoped extension.</p>
+<p>The previous audience redesign is <strong>deferred in its
+entirety</strong>. Its <a href="issuance-inventory.md">source
+inventory</a> is future design material, not a dependency or acceptance
+gate here. Action tokens, session/admin cookies, specialized phone-home
+receivers and historical credential ownership do not need redesign to
+convert these two standard roles. No new token audience column,
+validation, backfill, rotation, consent flow or issuer default is
+introduced.</p>
+<p>The rebased main includes <a
+href="https://github.com/nuonco/nuon/pull/3197">#3197</a>, which blocks
+REST writes for read-only OAuth tokens. Preserve it. Earlier foundation
+evidence describing REST/MCP differences predates that change; do not
+restore the earlier REST behavior or tighten other credential behavior
+incidentally.</p>
+<h2 id="data-model-and-document-contract">2. Data model and document
+contract</h2>
+<pre class="mermaid"><code>flowchart LR
+    A[Account] --&gt; B[AccountRole]
+    B --&gt; C[Role]
+    C --&gt; D[Policy]
+    B --- E[Trusted OrgID supplies tenant]
+    C --- F[RoleType is identity; Version is bookkeeping]
+    D --- G[Document NULL: legacy hstore]
+    D --- H[Document present: org bundle or scoped rules]</code></pre>
+<p>The deployed foundation adds nullable <code>Policy.Document</code>
+JSONB without a default or index. <code>AccountRole.OrgID</code> remains
+the binding’s tenant. Org bundles use that org as their scope; resource
+rules name their narrower scope in the policy. Existing role IDs,
+contexts, metadata, associations and Admin identity are retained. No
+binding schema changes or <code>OrgGrant</code> abstraction are needed;
+use <code>ScopedPermissions{Scope, Permissions}</code>.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Persisted state</th>
+<th>Reader contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SQL NULL document</td>
+<td>Use legacy hstore and existing v1/v2 interpretation.</td>
+</tr>
+<tr>
+<td>Present document</td>
+<td>Use v3 independently of Role.Version; do not retry legacy on
+error.</td>
+</tr>
+<tr>
+<td>JSON null, malformed/unsupported document, or document with nonempty
+hstore</td>
+<td>Fail loading; no fallback or partial authority.</td>
+</tr>
+<tr>
+<td>Valid document with stale Role.Version</td>
+<td>Document still selects v3. Do not reject solely for bookkeeping
+drift.</td>
+</tr>
+<tr>
+<td>SQL NULL document with Role.Version 3</td>
+<td>Legacy branch; never reconstruct authority from the role label.</td>
+</tr>
+</tbody>
+</table>
+<p>Hstore and document must be fetched from the same policy row.
+Separate role/policy preloads can observe stale bookkeeping without
+choosing the wrong format. This does not introduce new atomic revocation
+semantics.</p>
+<p><code>Document []byte</code> stays absent from public JSON and
+included in Temporal serialization. Its byte representation preserves
+SQL NULL versus the JSON literal <code>null</code>; the current
+converter’s <code>json.RawMessage</code> roundtrip does not.</p>
+<h3
+id="optional-api-preserves-old-behavior-it-is-not-new-token-audience-support">Optional
+api preserves old behavior; it is not new token audience support</h3>
+<p>Exact v1 Reader after conversion:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;kind&quot;</span><span class="fu">:</span><span class="st">&quot;bundle&quot;</span><span class="fu">,</span><span class="dt">&quot;binding_kind&quot;</span><span class="fu">:</span><span class="st">&quot;org&quot;</span><span class="fu">,</span><span class="dt">&quot;permissions&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;org.read&quot;</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
+<p>Exact v2 Admin after conversion, also the shape for newly created
+Admin roles:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;kind&quot;</span><span class="fu">:</span><span class="st">&quot;bundle&quot;</span><span class="fu">,</span><span class="dt">&quot;api&quot;</span><span class="fu">:</span><span class="st">&quot;ctl-api&quot;</span><span class="fu">,</span><span class="dt">&quot;binding_kind&quot;</span><span class="fu">:</span><span class="st">&quot;org&quot;</span><span class="fu">,</span><span class="dt">&quot;permissions&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;org.read&quot;</span><span class="ot">,</span><span class="st">&quot;org.write&quot;</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>Required, <code>bundle</code> or <code>resource_rules</code>. Each
+has its own strictly decoded fields.</td>
+</tr>
+<tr>
+<td><code>binding_kind</code></td>
+<td>Required, exactly <code>org</code>. Org identity comes from trusted
+records, not the document.</td>
+</tr>
+<tr>
+<td><code>permissions</code></td>
+<td>Required non-null array for a bundle, or within each resource rule.
+Empty grants nothing; writers sort/deduplicate. No bare CRUD strings or
+wildcard permissions.</td>
+</tr>
+<tr>
+<td><code>rules</code></td>
+<td>Required non-null array only for <code>resource_rules</code>. Each
+rule has an explicit scope and permission array; empty grants
+nothing.</td>
+</tr>
+<tr>
+<td><code>api</code></td>
+<td>Optional. Absence contributes no legacy API restriction. Present
+values must be <code>ctl-api</code>, <code>runner</code> or
+<code>stack</code>; null, empty, unknown, <code>all</code> and wrong
+types are rejected.</td>
+</tr>
+</tbody>
+</table>
+<p>Reject unknown/duplicate fields, malformed JSON and trailing data.
+Duplicate fields must be rejected before JSONB normalization. Use the
+existing <code>permissions.Policy</code> codec, not a third document
+format or public wrapper type.</p>
+<p>The pure codec understands the catalog without classifying
+principals. Org-bundle runtime integration accepts only empty, minimal
+Reader and minimal Admin sets. Resource-rule integration accepts the
+exact mappings below. Other codec-valid sets, such as
+<code>{org.write}</code> or <code>{org.read, install.read}</code>, must
+fail integration explicitly, not grant <code>all</code>, disappear
+silently or fall back to hstore. Permission applicability belongs in the
+matcher; the compatibility adapter separately limits what can be
+represented by today’s route verbs and response maps.</p>
+<p>The deployed R1 codec requires <code>api</code>. The next reader
+release accepts its absence and preserves absence when serializing. This
+is an explicit compatibility extension: R1 cannot read audience-neutral
+documents.</p>
+<h3 id="scoped-rules-separate-what-from-where">Scoped rules separate
+what from where</h3>
+<p>An install’s telemetry grant is represented as:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;kind&quot;</span><span class="fu">:</span> <span class="st">&quot;resource_rules&quot;</span><span class="fu">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;binding_kind&quot;</span><span class="fu">:</span> <span class="st">&quot;org&quot;</span><span class="fu">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;rules&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span><span class="dt">&quot;scope&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;kind&quot;</span><span class="fu">:</span> <span class="st">&quot;install&quot;</span><span class="fu">,</span> <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;install_acme&quot;</span><span class="fu">},</span> <span class="dt">&quot;permissions&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;telemetry.all&quot;</span><span class="ot">]</span><span class="fu">}</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>The same install scope can carry <code>stack.all</code>,
+independently or alongside <code>telemetry.all</code>. Neither implies
+<code>install.all</code>, org access, or phone-home access. The org
+comes only from the validated role/policy/binding records;
+<code>scope.org_id</code> is rejected. Scope IDs must be explicit,
+without wildcard or legacy-key separators.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Existing scalar grant</th>
+<th>V3 scope</th>
+<th>V3 permission</th>
+<th>Preserved operation boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;org&gt;:install/&lt;install&gt;</code> → all</td>
+<td>install / install ID</td>
+<td><code>install.all</code></td>
+<td>Exact install object, not every child namespace</td>
+</tr>
+<tr>
+<td><code>&lt;org&gt;:telemetry/&lt;install&gt;</code> → all</td>
+<td>install / install ID</td>
+<td><code>telemetry.all</code></td>
+<td>Only that install’s telemetry object</td>
+</tr>
+<tr>
+<td><code>&lt;org&gt;:stack/&lt;install&gt;</code> → all</td>
+<td>install / install ID</td>
+<td><code>stack.all</code></td>
+<td>Only that install’s stack object</td>
+</tr>
+<tr>
+<td><code>&lt;org&gt;:runner-job/&lt;job&gt;</code> → all</td>
+<td>runner-job / job ID</td>
+<td><code>runner_job.all</code></td>
+<td>Only that job object</td>
+</tr>
+<tr>
+<td><code>&lt;org&gt;:phone_home/&lt;version&gt;</code> → create</td>
+<td>phone_home / stack-version ID</td>
+<td><code>phone_home.create</code></td>
+<td>Create on that exact version callback only</td>
+</tr>
+</tbody>
+</table>
+<p><code>phone_home</code> scope names an exact stack-version callback,
+not an install. Conversion must preserve that version ID. An
+install-wide phone-home permission would broaden historical access to
+other versions and is not enabled by this extension. A future explicit
+install-wide grant would need server-resolved version→install
+ownership.</p>
+<p>The <code>.all</code> IDs are named, finite catalog bundles, not
+prefix wildcards. The pure matcher recognizes their explicitly listed
+operations only within the bundle’s target kind; <code>stack.all</code>
+must not gain phone-home access through the existing
+<code>stack.report</code> permission. New catalog members do not
+automatically join a bundle. The legacy adapter preserves the old scalar
+<code>all</code> behavior, including its existing unknown-verb behavior,
+on the exact original key.</p>
+<p>Multiple permissions at the same install scope can share a rule.
+Rules that produce the same legacy object twice are rejected rather than
+applying order-dependent intra-document merging. Across roles, the
+existing reducer remains unchanged. Its surviving sources keep separate
+permission sets so one surviving namespace cannot resurrect another.</p>
+<p>No resource existence scan is added to request authentication.
+Existing route ownership checks remain responsible for resolving
+resources. The planned converter must independently validate source
+ownership before writing rules.</p>
+<h2 id="keep-authorization-and-wire-behavior-unchanged">3. Keep
+authorization and wire behavior unchanged</h2>
+<p><code>APIFromRole</code> inspects documents before its legacy version
+check. For document policies, a missing <code>api</code> contributes no
+restriction even with Version 3; a present value retains its
+restriction. Legacy v1/v2 behavior remains unchanged, including errors
+for malformed v2 API metadata. No <code>api: all</code>, role-name
+inference or implicit ctl-api default.</p>
+<p>Keep <code>APIForRoles</code> and assignment compatibility checks at
+their existing sites. REST continues to consider the entire account role
+set, including other orgs. MCP does not acquire that whole-account API
+guard. Existing MCP static-token, account-type and membership checks
+remain. The shared permission loader must not become a new audience
+gate.</p>
+<p>For document-backed roles, validate one live policy and live
+bindings/accounts/orgs, matching RoleID and OrgID across associations.
+Never infer missing ownership from request headers or silently repair
+bindings. The merged unique live account-role index remains a
+prerequisite, not new cleanup work in this branch.</p>
+<h3 id="preserve-the-deployed-decision-adapter">Preserve the deployed
+decision adapter</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Existing requirement</th>
+<th>V3 mapping</th>
+<th>Legacy path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Read / GET / HEAD</td>
+<td><code>org.read</code> at the verified org</td>
+<td>Original read with existing object/org/wildcard fallback</td>
+</tr>
+<tr>
+<td>Create / update / delete</td>
+<td><code>org.write</code> at the verified org</td>
+<td>Original CRUD verb; no collapsed write permission</td>
+</tr>
+<tr>
+<td>MCP read-only credential</td>
+<td>Existing org.read ceiling</td>
+<td>Existing write denial applies to legacy grants too</td>
+</tr>
+<tr>
+<td>Scoped resource verb</td>
+<td>Exact compatibility mapping above; read-only credentials still
+reject non-read operations</td>
+<td>Original resource key and verb</td>
+</tr>
+<tr>
+<td>Unknown verb in <code>require</code></td>
+<td>Existing configuration error</td>
+<td>Same error</td>
+</tr>
+<tr>
+<td>Unknown verb in org middleware</td>
+<td>Actual minimal full-access contribution, subject to credential
+limits</td>
+<td>Existing all matches unknown</td>
+</tr>
+</tbody>
+</table>
+<p>Keep existing REST token restrictions, ownership checks, runner/stack
+guards, error conventions and Admin-only checks. Explicit
+<code>require.Route</code> verbs do not override an earlier middleware
+check. Support/all is not Admin identity.</p>
+<p>The compatibility reducer preserves the supplied Roles sequence:
+first <code>all</code> survives; otherwise the last scalar contribution
+wins for an object. Only surviving contributions reach the v3 matcher or
+legacy adapter. Do not allow an overwritten read grant to reappear
+through an independent old/new union. Exact resources, parent org and
+wildcard keys remain distinct. The pure v3 matcher still uses scoped
+grant union intersected with the synthesized ceiling.</p>
+<p>Unordered SQL preloads never promised stable ordering. Do not add
+sorting or account-wide historical replay as a new subsystem. Classify
+Reader holders with another same-org create/update/delete scalar as
+ambiguous and leave those candidates legacy. Ordinary Admin/Reader
+combinations and independent resource keys are not excluded
+wholesale.</p>
+<h3 id="response-projection-is-not-authority">Response projection is not
+authority</h3>
+<p>Keep <code>Account.permissions</code> and policy permissions as
+string maps. Minimal Reader projects org → read; Admin projects org →
+all. Scoped rules project their exact original resource key and scalar
+verb, never the parent org or another namespace. Include the
+<code>api</code> entry only when it is actually retained in the
+document. Empty policies without api project an empty map. Do not
+manufacture an api entry or persist the projection.</p>
+<p>Existing decisions continue using loaded authority, not response
+maps. Keep public/internal serialization and Temporal raw-policy
+roundtrips compatible. No public API schema or client shape changes are
+required.</p>
+<h2 id="classify-exact-source-records-not-role-labels">4. Classify exact
+source records, not role labels</h2>
+<p>The classifier now covers the five standard org-role types and the
+five recognized scoped role types. Scoped runtime support alone is
+insufficient: conversion independently verifies the source grant and its
+ownership records.</p>
+<p><code>authz.ClassifyOrgRole</code> is pure and shared by inventory
+and the converter. It returns <code>eligible</code> with the typed
+target policy, permission IDs and optional legacy API metadata,
+<code>already_v3</code>, a named <code>skipped</code> reason, or an
+invalid-document error. It does not write records, encode an alternative
+format, repair bookkeeping or infer a document from a role name.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Source</th>
+<th>Disposition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Live v1 standard Reader/Admin with exact
+<code>{org: read/all}</code></td>
+<td>Eligible without api.</td>
+</tr>
+<tr>
+<td>Live v2 standard Reader/Admin with exact
+<code>{org: read/all, api: ctl-api}</code></td>
+<td>Eligible retaining ctl-api.</td>
+</tr>
+<tr>
+<td>Exact Support/Installer/Runner <code>{org: all}</code></td>
+<td>Eligible without api at v1; v2 retains ctl-api for Support/Installer
+or runner for Runner. RoleType is unchanged.</td>
+</tr>
+<tr>
+<td>Exact runner-install, runner-job, stack, telemetry or
+version-phone-home shape</td>
+<td>Eligible after scoped ownership checks; v1 omits api, v2 retains the
+valid stored API.</td>
+</tr>
+<tr>
+<td>Valid integration-supported stored document</td>
+<td>Validate and leave unchanged, including stale Role.Version.</td>
+</tr>
+<tr>
+<td>Builder/hosted-installer/unknown custom roles; other versions or
+shapes</td>
+<td>Leave legacy and report reason.</td>
+</tr>
+<tr>
+<td>Missing/deleted/mismatched ownership, duplicate bindings or standard
+roles, ambiguous custom combinations</td>
+<td>Skip/review; no repair or grant resurrection.</td>
+</tr>
+<tr>
+<td>Present malformed/nonminimal document or conflicting hstore</td>
+<td>Error, never fallback or successful conversion.</td>
+</tr>
+</tbody>
+</table>
+<p>Require exactly one live policy with matching role/org ownership. An
+unbound standard org role is valid. V1 with extra api metadata, extra
+resource/wildcard keys or custom CRUD values is not an exact candidate.
+New role metadata is not proof of old policy contents. Standard org
+roles with private ownership remain excluded. Scoped roles require
+exactly one live service-account binding, no managed-role flag or
+selectable contexts, and matching live resource/org relationships.</p>
+<p>Runner-install ownership follows the account’s exact subject to a
+runner, or a job then its runner, and checks the runner group’s install
+owner. Stack ownership follows the subject to its install stack.
+Runner-job ownership checks the subject against the exact job. These
+paths accept historical missing managed-account rows only with that live
+resource evidence. Telemetry and phone-home require explicit managed
+ownership. Phone-home additionally verifies the exact version, stack and
+install chain, and the binding’s version instance key. Present
+deleted/conflicting managed ownership is never treated as missing.
+Private-role references must agree with the bound account.
+Missing/deleted or ambiguous sources are skipped, not repaired; no
+subject/email heuristics or install-wide callback inference.</p>
+<p>Load raw snapshots without runtime Account/Policy projection hooks.
+<code>OrgRoleSnapshot.Role</code> includes its actual org and all live
+raw policies; <code>OrgRoles</code> includes live same-type roles for
+standard-role uniqueness. <code>Bindings</code> includes all live
+bindings to the source and their actual accounts. Standard candidates
+also load holder roles/raw policies; scoped candidates instead load
+<code>Resource</code> ownership records by exact IDs.
+<code>Private</code> comes from managed ownership references. Scoped
+candidates do not scan every role in their org. Missing/deleted records
+remain observable.</p>
+<p>Keep bounded source loading and stable-ID enumeration outside the
+classifier. A disposable read-only harness is sufficient; no startup
+scan, public endpoint, permanent apply command or feature flag. Report
+raw population counts and exceptions independently of eligibility,
+including policies with no live owner. Resource IDs belong in restricted
+logs, not metric labels. Refresh production classification before
+activation.</p>
+<h2 id="activation-increments-retain-real-deployment-boundaries">5.
+Activation increments retain real deployment boundaries</h2>
+<p>The original org-role increments are implemented locally as follows.
+The approved scoped extension adds readers now and requires
+corresponding writer/converter follow-through before machine-role
+conversion is released.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>PR</th>
+<th>Scope</th>
+<th>Exit evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4 — Read-only classifier</td>
+<td>Exact v1/v2 standard-role classification and raw inventory; no live
+behavior change</td>
+<td>Exact/near-miss fixtures, mixed contributions, existing-document
+validation, read-only census</td>
+</tr>
+<tr>
+<td>5 — Compatible policy readers</td>
+<td>Optional legacy api plus scoped resource rules in the existing
+codec, API derivation and wire projections; keep all guards</td>
+<td>Absent versus invalid api, scoped namespace/version isolation,
+unchanged v2 restrictions, mixed roles, assignment checks,
+serialization, legacy parity</td>
+</tr>
+<tr>
+<td>6 — New-role writers</td>
+<td>All five standard org-role factories and five scoped-role paths use
+compatible v3 policies</td>
+<td>Factory/reconciliation/assignment checks; existing formats/API
+restrictions remain unchanged</td>
+</tr>
+<tr>
+<td>7 — Exact conversion</td>
+<td>Registered migration reusing classifier; v1 omits api and v2 retains
+it</td>
+<td>Atomic updates, retry/no-op/error behavior, before/after decisions
+and maps, bounded runtime, explicit exceptions</td>
+</tr>
+</tbody>
+</table>
+<p>This replaces the superseded PRs 4–8 audience/activation sequence.
+Token audience readers and credential issuers are not an intermediate
+milestone. The issuer inventory is deferred, not part of PR 4’s
+completion criteria.</p>
+<h3
+id="scoped-writer-implementation-and-remaining-activation-work">Scoped
+writer implementation and remaining activation work</h3>
+<p>New runner-install, runner-job, stack, telemetry and
+version-phone-home roles use the exact rules above through the shared
+private-role persistence path. Existing desired-role factories retain
+their scalar templates; persistence validates their shape and writes
+document-only v3 policies. Runner-install and runner-job retain runner
+API; new stack roles retain stack API; telemetry and version-phone-home
+retain no API restriction.</p>
+<p>Reconciliation locks the existing role and preserves its storage
+format, IDs, version and document API restriction, including absence. It
+compares semantic projections before writing, and updates
+document/hstore atomically. Stack adoption understands either format.
+Historical v1/v2 stack convergence remains unchanged, including
+read-to-all and stripped-v2-API restoration. Missing v3 policy documents
+fail instead of reconstructing a lost API restriction from defaults.
+Existing roles are not converted opportunistically by these writers.</p>
+<p>The shared classifier and still-unreleased migration 153 now
+implement these recognized shapes. Support/Installer/ Runner new-role
+factories also write v3, preserving their identity and API guard, so
+they do not keep introducing legacy rows after conversion. Existing
+standard-role reconciliation remains metadata-only.</p>
+<p>Remaining: refresh the read-only production classification and verify
+rollout ordering. The 24,028 runner-install roles are a population
+count, not an eligibility count; they include roles held by runner-job
+accounts. Hosted-installer contents remain unverified and excluded. Do
+not assume every historical record is convertible.</p>
+<p>One conversion migration can cover all verified supported shapes
+ready before that converter ships. Later shapes require a later
+migration; an applied migration must not be edited to pick them up.</p>
+<h3 id="accepted-single-release-rollout">Accepted single-release
+rollout</h3>
+<p>Ship compatible readers and reconcilers, all recognized v3 creation
+paths, and the expanded converter together. Customers may upgrade
+directly from supported legacy versions. Do not require the separately
+prepared <code>ps/rbac-compatibility</code> artifact to be deployed
+first; preserve it as a recovery candidate, not a rollout
+dependency.</p>
+<p>Accepted effects during upgrade:</p>
+<ul>
+<li>Old APIs/workers can reject converted policies until replaced.
+Temporary request and workflow-activity failures are accepted, not
+evidence of changed intended permission semantics.</li>
+<li>Legacy roles created after the converter passes can remain legacy.
+New readers support them; a future explicitly numbered catch-up
+migration can handle them. Zero legacy rows is not an acceptance
+criterion.</li>
+<li>No maintenance window, global mutation pause, audience redesign or
+runtime activation flag is required by this plan.</li>
+</ul>
+<p>Failures must settle after all target processes are running.
+Persistent mixed authority, permission broadening, silent
+historical-migration corruption and rollback to incompatible readers
+remain outside that acceptance.</p>
+<h3 id="deployment-ordering-established-from-source">Deployment ordering
+established from source</h3>
+<ul>
+<li>Cloud: <code>mono/services/ctl-api/k8s/templates/startup.tpl</code>
+runs the target image’s startup as a Helm
+<code>pre-install,pre-upgrade</code> hook. Old APIs/workers remain live
+during migration. <code>nuonctl</code> enables
+<code>RollbackOnFailure</code>; Helm rollback does not undo database
+conversion.</li>
+<li>BYOC AWS/GCP: <code>deploy_control_plane</code> deploys the chart,
+then invokes the post-deploy startup action. The pinned charts start API
+containers normally while the startup deployment waits for an explicit
+exec. Both startup actions default <code>SCALE_DOWN=false</code>;
+optional draining continues after timeout and is not a strict
+compatibility barrier.</li>
+<li>These are repository-source observations, not a census of every
+customer’s installed configuration.</li>
+</ul>
+<h3 id="current-implementation-versus-the-accepted-plan">Current
+implementation versus the accepted plan</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Area</th>
+<th>Current source state</th>
+<th>Reconciliation needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Readers and reconciliation</td>
+<td>Rebased branch retains optional-api/scoped readers, document-aware
+private reconciliation and stack adoption.</td>
+<td>Targeted package checks passed; full upgrade/recovery rehearsal
+remains outstanding.</td>
+</tr>
+<tr>
+<td>Standard/private writers</td>
+<td>Five standard types and five recognized scoped types write v3.
+Log-stream creation explicitly stays legacy.</td>
+<td>No additional policy shape is introduced.</td>
+</tr>
+<tr>
+<td>Log-stream integration</td>
+<td><code>ensurePrivateRole</code> limits v3 construction to the five
+supported scoped types.</td>
+<td>Disposable PostgreSQL verified log-stream create/repeat and exact
+boundaries; the pre-fix helper fails the same scenario with unsupported
+<code>log_stream</code>.</td>
+</tr>
+<tr>
+<td>Cleanup integration</td>
+<td>Main’s <code>RoleType.IsPrivate</code>,
+<code>DeletePrivateRoles</code>, log-stream-account deletion and queued
+cleanup callers are retained. The removed
+<code>DeleteStackInstallRoles</code> is not restored.</td>
+<td>Disposable PostgreSQL verified deletion of legacy log-stream and v3
+install policies while preserving a standard role/binding. Concurrent
+cleanup/conversion and full credential-cleanup workflow rehearsal remain
+outstanding.</td>
+</tr>
+<tr>
+<td>Converter</td>
+<td>Expanded converter is renamed 155; snapshot/classification files
+remain restored and untracked as before. <code>Migrations.All()</code>
+includes main’s 153/154, excludes conversion.</td>
+<td>Register conversion only after the remaining safeguards; no
+migration was executed by the registry check.</td>
+</tr>
+<tr>
+<td>Historical migrations</td>
+<td>Main’s 153 still reads/writes hstore without checking
+<code>Document</code>; 126/150 still use current reconciliation.</td>
+<td>Skip-version compatibility remains unresolved; the earlier plan did
+not implement it.</td>
+</tr>
+<tr>
+<td>Database safeguard</td>
+<td><code>Policy.Document</code> declares
+<code>policies_single_authority</code> through GORM schema migration,
+before global migrations.</td>
+<td>Disposable PostgreSQL verifies installation, legacy upgrade,
+rejection of stale writes and invalid existing rows, rerun and
+lock-deadline recovery. Production validation cost and BYOC
+schema-before-writer deployment ordering remain outstanding.</td>
+</tr>
+<tr>
+<td>Compatibility artifact</td>
+<td><code>ps/rbac-compatibility</code> remains on <a
+href="https://github.com/nuonco/nuon/commit/57c4ae9a9c">57c4ae9a9c</a>
+with 12 local reader/reconciler files; it is 20 main commits
+behind.</td>
+<td>Preserve it, but do not call it a tested recovery image for the
+latest combined source without rebuilding/reverification.</td>
+</tr>
+<tr>
+<td>Production cleanup and scale</td>
+<td>Main merged <a
+href="https://github.com/nuonco/nuon/pull/3211">#3211</a>, <a
+href="https://github.com/nuonco/nuon/pull/3212">#3212</a> and <a
+href="https://github.com/nuonco/nuon/pull/3179">#3179</a>.</td>
+<td>Merged lifecycle cleanup is not proof that historical million-holder
+bindings were removed. No fresh shared DB census was run; keep the scale
+rehearsal deferred.</td>
+</tr>
+</tbody>
+</table>
+<p><code>scoped_role_snapshot.go</code> supplies live/deleted ownership
+evidence to classification for the five supported scoped role types. It
+does not perform cleanup, register conversion, enforce rollout order or
+support the new log-stream type. Keep that boundary unchanged unless a
+separately approved conversion shape requires more.</p>
+<h3 id="bounded-implementation-and-verification-work">Bounded
+implementation and verification work</h3>
+<ol type="1">
+<li>Main integration and overlap resolution are complete locally.
+Log-stream creation stays legacy; main’s private-role
+validation/deletion, credential-cleanup callers, telemetry guard and
+log-ingest alternatives are preserved. The converter is renumbered 155
+and still unregistered. The compatibility worktree is untouched.</li>
+<li>Make historical migrations safe under the target binary.
+Migrations126/150 call current role reconciliation and can therefore
+create v3 before main’s153 runs. Keep their missing-role creation
+legacy, and make153 explicitly document-aware so it cannot add hstore
+beside a document. Preserve already-recorded migration identity and
+avoid opportunistically changing existing document restrictions.
+Rehearse both skipped-version and already-migrated data.</li>
+<li>Prevent a stale old writer from restoring nonempty hstore beside a
+document. A database CHECK matching the existing reader invariant is
+implemented:
+<code>document IS NULL OR permissions IS NULL OR permissions = ''::hstore</code>.
+Application checks and converter row locks cannot constrain an
+already-running old binary. This constraint is installed in the model
+schema phase before all global migrations, including149. Actual migrator
+verification passed on disposable Policy schemas; production-scale
+validation/locking cost remains deferred until cleanup. BYOC currently
+starts writers before startup, so placing the guard only at converter
+entry would leave an earlier race. Resolve this schema-before-writer
+ordering in the deployment path; do not claim that fast conversion fixes
+it.</li>
+<li>Verify the full target through disposable PostgreSQL: historical
+migrations, new standard/private creation, legacy log-stream creation,
+converter, rerun, compatible reconciliation and deletion of v3 private
+roles. Force a stale update after conversion and assert failure without
+row corruption. Include cleanup/deletion overlap, late legacy insertion
+as an accepted control, and authorization projections. Earlier
+isolated-reader checks do not establish these combined-source
+results.</li>
+<li>Prepare release recovery: suppress automatic rollback to an
+incompatible image once v3 writes/conversion can occur. Prefer
+roll-forward with the target or a verified compatible recovery image. Do
+not restore hstore from role names. An early BYOC writer failure before
+schema preparation must not be silently treated as a successful
+upgrade.</li>
+</ol>
+<p>The rebase and log-stream overlap fix are local; no deployment
+configuration changed. The converter remains unregistered pending the
+remaining safeguards. Shared migration execution, deployments and
+cleanup remain unauthorized.</p>
+<h3 id="verification-evidence-and-remaining-release-gates">Verification
+evidence and remaining release gates</h3>
+<p>Rebase verification used six existing package suites with
+<code>-count=1 -race</code>: authz, permissions, require, app, account
+and PostgreSQL migrations. Disposable PostgreSQL exercised actual role
+creation/reconciliation/deletion helpers and the migration registry; it
+was not a full startup or transport E2E test. The negative control
+restored the pre-fix private-role helper with the existing exported
+adapter name and failed on log-stream creation. The fixed helper passed.
+The full ctl-api build passed after regenerating ignored Temporal
+wrappers for the newly integrated main code. Logs and preservation
+hashes are in <code>.amp/in/artifacts/rbac-rebase/</code>. The initial
+scratch fixture mistakenly used <code>log-stream</code> instead of the
+actual <code>log_stream</code> namespace; that fixture was corrected
+before the final passing run.</p>
+<p>A disposable PostgreSQL SQL replay reproduced the specific old-writer
+update after conversion: without a constraint, both authority formats
+persisted. With the proposed CHECK, PostgreSQL returned SQLSTATE23514
+and left the row unchanged. Late legacy insertion and empty hstore
+alongside a document remained allowed, matching the reader contract.
+Evidence:
+<code>.amp/in/artifacts/rbac-single-release-overlap.json</code>. This is
+a replay of the relevant SQL statements, not an old-binary,
+full-migrator or deployed E2E test. The disposable database was
+removed.</p>
+<p>The CHECK implementation additionally passed a disposable PostgreSQL
+probe using <code>Migrator.Exec</code>, <code>app.Policy</code> and a
+global sentinel asserting the constraint is validated before global
+execution. Fresh and pre-document schemas, legacy/document/empty-hstore
+cases, JSON null and NULL-valued hstore keys, soft-deleted rows, a
+stale-writer transaction, invalid existing data, repeated migration and
+deadline/retry under a blocking table lock were exercised. Removing the
+CHECK reproduced the conflicting write. Relationship/FK migration was
+disabled to isolate Policy; this was not full startup, execution
+of149/153/155, an old-binary deployment or a scale rehearsal. Logs are
+in <code>.amp/in/artifacts/rbac-policy-check/</code>; initial probe
+failures were verifier assumptions about GORM’s translated errors and
+dropping/recreating hstore with cached statements, corrected before the
+final passing run. No shared DB changed.</p>
+<p>Existing compatibility verification remains useful but is not proof
+of the combined artifact. Its old-reconciler negative control also
+rewrote writer-produced policies; the compatible reconciler preserved
+them. The compatibility artifact and the writer work remain local and
+uncommitted where previously recorded.</p>
+<p>After cleanup, refresh eligibility/cardinality counts and rehearse
+the remaining scale; this work is deferred, not waived. Budget the
+existing startup deadline shared by PostgreSQL and ClickHouse. Capture
+migration status plus eligible/skipped/converted counts and post-rollout
+conflicting-authority counts. Compare authorization errors against
+baseline after all target consumers have replaced old processes;
+transient overlap failures are accepted, persistent failures are not.
+Verify Admin/Reader read/write, cross-org denial, read-only OAuth/MCP
+and runner/stack callbacks.</p>
+<h3 id="conversion-mechanics">Conversion mechanics</h3>
+<p>The retained converter (originally
+<code>153-convert-standard-org-roles</code>, pending renumbering) uses
+the existing startup framework and 100-role stable-ID batches, not
+offsets over a shrinking cohort. Re-read and classify each candidate and
+its associations in a short repeatable-read transaction, locking the
+candidate role and its live policies. Use raw scans to avoid runtime
+projection hooks. Conditionally update the policy row’s document and
+clear hstore <strong>together</strong>, verifying the original full
+shape. Update Role.Version to 3 in that same transaction; require
+expected affected-row counts and roll back on failure. Preserve
+policy/role/binding IDs and metadata. Changed candidates are
+reclassified or skipped, not overwritten. Concurrent source updates that
+invalidate the snapshot propagate a serialization failure; reinvocation
+reclassifies the current state. There is no unbounded retry loop or
+global lock on role assignment.</p>
+<p>Already-converted rows are no-ops. Partial conversion leaves readable
+mixed-format data; reinvocation processes the remaining eligible rows.
+Malformed/unsupported present documents propagate errors. Measure a
+representative run against the existing startup timeout before deciding
+whether its existing override is needed.</p>
+<p>Normal valid assignment/removal may overlap conversion: bindings
+reference existing roles rather than copying policy data. Do not add
+shared role locks to every writer or pause all membership/machine
+provisioning. If a writer can mutate a candidate policy incompatibly,
+handle that specific conflict before rollout.</p>
+<p><strong>Accepted harness assumption:</strong> scheduling, claims,
+status persistence and retry delivery belong to the existing migrator.
+Its known recovery/reporting issues remain separate maintenance work. PR
+7 owns atomicity, idempotency, accurate results and error propagation
+when called, not a framework rewrite or process-crash recovery
+subsystem.</p>
+<h3 id="rollback-floor-and-completion">Rollback floor and
+completion</h3>
+<p>The first document <strong>without api</strong> raises the rollback
+floor to the compatible reader release; R1 would reject it. Do not
+remove a retained api restriction to bypass validation, restore hstore
+speculatively, or roll back to an incompatible reader. Keep legacy API
+guards indefinitely until their own separately reviewed cutover.</p>
+<p>The first <code>resource_rules</code> document additionally requires
+scoped readers for successful requests. The optional-api-only checkpoint
+cannot read it. Old-process failures during replacement are accepted;
+those processes cannot be a recovery target after activation.</p>
+<p>A recovery image must include document-aware reconciliation and stack
+adoption. The bare scoped-reader checkpoint <code>0f60e62359</code> is
+not safe: it lacks document-aware reconciliation and stack adoption. Any
+recovery deployment must preserve the schema, binding index and stored
+documents; do not roll back to the merged foundation or restore hstore.
+The former A/B/C labels describe historical packaging only, not
+mandatory sequential deployments.</p>
+<p>If a compatible recovery image resumes v2 creation after conversion
+was recorded, reclassify and add an explicit catch-up migration when
+needed. Startup does not rerun an applied migration. Do not add
+hypothetical catch-up code now. Completion means new standard creation
+is v3 and exact conversions/exceptions are accounted for—not zero legacy
+rows.</p>
+<h2 id="verification-and-evidence">6. Verification and evidence</h2>
+<p>Use existing tests and disposable PostgreSQL/API fixtures. Package
+guidance requires explicit approval and a choice of test form before
+adding permanent tests. Source review alone is not production or
+deployment proof.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Distinguishing checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Optional api broadens restrictions</td>
+<td>Omitted api versus null/empty/all/unknown/wrong types; retained
+values roundtrip; invalid v2 remains invalid</td>
+</tr>
+<tr>
+<td>V1 conversion gains a guard</td>
+<td>Mixed neutral document + legacy runner role behaves like original v1
++ runner; no fake api response entry</td>
+</tr>
+<tr>
+<td>V2 conversion loses a guard</td>
+<td>Retained ctl-api + runner remains rejected by REST and assignment
+compatibility; MCP guard placement unchanged</td>
+</tr>
+<tr>
+<td>Incorrect permission composition</td>
+<td>Both read/create orders; all in either order; independent
+org/resource/wildcard keys; read-only ceilings</td>
+</tr>
+<tr>
+<td>Wrong authority source</td>
+<td>SQL NULL versus JSON null; stale version; malformed/nonminimal
+document; no hstore fallback</td>
+</tr>
+<tr>
+<td>Ownership/identity drift</td>
+<td>Deleted/missing/mismatched associations, duplicate bindings/roles,
+private roles; Support/all does not become Admin</td>
+</tr>
+<tr>
+<td>Wire/serialization regression</td>
+<td>Account/policy maps, empty bundles, raw policy Temporal roundtrip,
+no persisted projection</td>
+</tr>
+<tr>
+<td>Writer or converter scope creep</td>
+<td>Existing standard policy bytes unchanged under reconciliation; exact
+recognized new-role shapes switch; unsupported records stay legacy</td>
+</tr>
+<tr>
+<td>Scoped grant broadening</td>
+<td>Same install ID across telemetry/stack/install; sibling
+install/job/version and foreign org denials; phone-home create versus
+read/update/delete; no install-wide callback inference</td>
+</tr>
+<tr>
+<td>Named bundle overreach</td>
+<td>Explicit bundle membership, target-kind restriction, missing/wrong
+ceiling, no stack.report access to phone-home through stack.all</td>
+</tr>
+<tr>
+<td>Migration correctness</td>
+<td>Transaction rollback between updates, partial run/reinvocation,
+source edit, concurrent valid assignment/removal, all-ineligible
+no-op</td>
+</tr>
+</tbody>
+</table>
+<p>Use existing logs/metrics for
+scanned/eligible/skipped/converted/failed counts and affected
+denial/load-error rates. No new dashboard, events, high-cardinality
+metrics or full-platform journey certification is required.</p>
+<h3 id="recorded-evidence-with-limits">Recorded evidence, with
+limits</h3>
+<ul>
+<li>Foundation PRs 1–3 passed pure-layer, model/loader, mixed-source,
+middleware and serialization checks. Local full-stack testing exercised
+191 REST/MCP requests across human/service, legacy/document, read/write
+and token cases. These historical checks do not prove the optional-api
+reader change or a production conversion.</li>
+<li>Stage verification confirmed foundation/binding-fix deployment,
+nullable Document, applied migrations and valid live-binding uniqueness.
+CLI/REST/MCP reads and denial controls worked; sampled worker/token
+failures predated the foundation. All live policy documents were SQL
+NULL. Writes and conversion were not exercised there.</li>
+<li>PR 4’s 19:17 UTC stage snapshot classified 2,161 live roles:
+<strong>28 eligible</strong> (4 v1, 24 v2), 2,133 unsupported/private
+skips, zero already-v3 and zero invalid-document results. It included
+475 relevant bindings and 15 holders, and separately reported 100 live
+policies without a live role. PostgreSQL reported zero transaction
+writes. This is stage-only evidence; the older production census is not
+final eligibility or deployment proof.</li>
+<li>The read-only classifier passed disposable exact/near-miss,
+ownership, mixed-grant and document probes plus existing authz tests
+with race detection and go vet. No permanent tests were added. Evidence:
+<code>.amp/in/pr4-verification/</code>.</li>
+<li>PR 5’s disposable probes failed against the original readers on
+omitted-api decoding, projection and PostgreSQL role assignment, then
+passed with the reader change. They exercised strict decoding/roundtrip,
+both mixed-role orders, REST API-surface guards, model hooks, assignment
+compatibility, the shared loader and MCP read/write guards. Existing
+authz, account, model and MCP package tests passed. This used an
+isolated disposable PostgreSQL database and in-process middleware, not
+deployed end-to-end traffic or a conversion migration. No permanent
+tests were added. Evidence:
+<code>.amp/in/pr5-reader-verification/</code>.</li>
+<li>PR 6’s disposable PostgreSQL checks failed against the original v2
+writers and passed with the writer change. Fresh roles had the exact
+minimal v3 documents and ctl-api metadata; Support/Installer/Runner
+remained legacy. Assignment, Reader-to-Admin replacement, read/write and
+read-only ceilings, cross-org denial and incompatible Runner assignment
+were exercised through real models and the shared loader. Reconciliation
+created a missing Reader while preserving every existing policy row and
+role version across v1/v2/v3 fixtures; a second run was unchanged.
+Existing authz/account/model/MCP tests passed. These are isolated
+model/database checks, not deployed E2E proof. The existing factory
+test’s expectations were updated for the new format; no permanent test
+cases were added. Evidence:
+<code>.amp/in/pr6-writer-verification/</code>.</li>
+<li>PR 7’s registered migration function passed disposable PostgreSQL
+checks, including a race-enabled run. A 107-role fixture crossed the
+batch boundary with identical before/after read/write decisions, API
+restrictions and metadata; rerunning was a no-op. Eleven
+unsupported/private/ambiguous roles were skipped without modification.
+Injected failure between the policy and role updates rolled back the
+failed role; reinvocation preserved prior conversions and finished the
+remaining roles. JSON null, unsupported bundles and conflicting
+authority failed without fallback. Stale bookkeeping on a valid document
+remained unchanged. Deadline cancellation and a concurrent source edit
+left the source intact. A real assignment overlapped conversion under a
+role foreign-key lock, while removal of the original binding succeeded;
+the new holder retained Reader permissions after commit. Existing
+package tests and targeted go vet passed. The local 107-role conversion
+took about 0.23 seconds without race instrumentation; this is not a
+production runtime estimate. The initial probe had an incomplete
+role-table fixture, corrected before the passing checks. No permanent
+tests were added. Evidence:
+<code>.amp/in/pr7-conversion-verification/</code>. These checks invoke
+the registered function, not the full startup migrator, a process-crash
+recovery scenario, or a shared database conversion.</li>
+<li>The 21:23 UTC production read-replica snapshot had 26,163 live
+roles. The standard-role classifier found 435 eligible before locally
+simulating the prerequisite duplicate-binding cleanup and 497 afterward
+(241 Admin, 256 Reader, all v1). Fifteen standard roles retained
+missing/deleted account bindings and 113 belonged to deleted orgs. The
+remaining 25,538 roles were other types, including 24,028 runner-install
+roles. These are counts for the current narrow classifier, not proof of
+scoped-role eligibility. No shared writes were made. Evidence:
+<code>.amp/in/prod-rbac-classification/</code>.</li>
+<li>Scoped-reader validation used disposable PostgreSQL tables, real
+GORM model/binding hooks, the shared account permission loader and
+in-process Gin resource routes. The same probe failed with the
+checkpoint readers because they reject resource rules, and passed with
+the extension: 1,500 permission decisions and 440 HTTP requests. Cases
+covered namespace/sibling/version/org isolation, read-only limits,
+mixed-role precedence, API metadata, strict JSON decoding,
+projection/roundtrip, empty policies and invalid rule/permission
+combinations. Typed matcher checks also denied phone-home via stack.all
+and denied requests without a ceiling. The initial probe used the
+context setter rather than the Gin setter; this fixture error was
+corrected before the passing run. The same probe passed with race
+detection; existing authz/account/model/MCP/migration package tests and
+targeted go vet passed. No permanent test cases were added. Evidence:
+<code>.amp/in/scoped-policy-verification/</code>. This is
+reader/model/adapter evidence, not deployed traffic, scoped writer
+verification or broader migration proof.</li>
+<li>Scoped-writer validation passed 704 assertions with race detection
+against a disposable PostgreSQL database and a minimal schema, using the
+real runner-install, runner-job, stack, phone-home and telemetry
+creation paths. Telemetry invoked its Gin handler directly, not the
+network authentication stack. Coverage includes unbound and managed
+stack adoption, repeated reconciliation, legacy v1/v2 retention, API
+absence and stale document versions, rebinding, document updates,
+read-only/sibling/org boundaries, conflicting authority,
+missing-document rejection, and role-lock deadline rollback. Restoring
+the previous private-role writer through a Go overlay fails the same
+probe on its first v3 assertion because it still writes v2. Targeted
+package tests and go vet passed; the existing full integration suites
+remained disabled. No permanent test cases were added; existing stack
+fixtures were adapted to inspect projections and explicitly recreate
+legacy records. Reproducible probe source, overlay and logs are in
+<code>.amp/in/artifacts/scoped-writer-verification/</code>. This does
+not prove the broader converter, full-stack provisioning or production
+rollout. The disposable database and execution symlink were removed
+afterward.</li>
+<li>Expanded conversion passed a disposable PostgreSQL rehearsal,
+including race detection: 123 roles converted across the 100-role batch
+boundary, 18 near-miss/unsupported fixtures stayed unchanged, and 5,640
+before/after authorization decisions matched. Fixtures cover all ten
+recognized role types at v1/v2, runner-install roles held by job
+accounts, historical stack/job ownership without managed rows, retained
+API metadata, exact version callbacks, and wrong or deleted ownership.
+Writer reconciliation left converted policy rows unchanged, and
+migration reinvocation was a no-op. An injected role-update failure
+rolled back the preceding policy update; retry succeeded, and an invalid
+present document propagated an error. The prior migration
+implementation, overlaid onto the current tree, fails the same probe
+because Support remains unconverted. The non-race initial conversion
+took about 0.34 seconds for this small local fixture, not a production
+timing estimate. Existing authz/account/model/
+MCP/migration/runner-helper/install-service package tests and targeted
+go vet passed; full integration suites were disabled. Source and logs:
+<code>.amp/in/artifacts/scoped-conversion-verification/</code>. This
+invokes the registered migration function, not startup orchestration, a
+production-sized dataset, a deployed API or production conversion.</li>
+<li>Production preflight on 2026-11-05 used the read replica and
+read-only repeatable-read transactions, with zero transaction writes.
+The 15:23 UTC scoped census found 27,837 live scoped roles: <strong>747
+eligible</strong> (35 runner-install, 645 runner-job, 67 stack), 20
+bound roles skipped for missing/deleted installs (19 runner-install, one
+stack), and 27,070 unbound runner-install roles excluded from
+conversion. All 767 bound scoped roles were exported with their
+ownership metadata; none hit the binding cap. Local replay used the
+actual classifier and checked that every eligible document’s
+permission/API projection exactly matched its original hstore, including
+a race-enabled run. There were no live telemetry-collector or phone-home
+roles in this snapshot, so their coverage remains disposable fixture
+evidence. The scoped result is not an estimate that all 27,124
+runner-install roles are convertible.</li>
+<li>A separate 15:19 UTC stratified sample contained 403 roles (up to 50
+per type, ordered by hashed ID). After local simulation of migration152
+it classified 313 eligible, 82 skipped and eight org-wide Runner roles
+not assessed because their binding exports reached the 100-binding cap.
+The sample’s standard-role results are not a final production-wide
+conversion count. SQL peer counts and a zero disqualifying-org-grants
+check preserve the classifier’s standard-role uniqueness and Reader
+mixed-grant checks despite the sample. All three hosted-installer roles
+retain wildcard authority and remain excluded. Broader export attempts
+timed out at the bounded deadline; one lost its connection. The
+successful scoped export took about ten seconds; this does not measure
+migration runtime. <code>policies.document</code> was still absent in
+production, so the foundation schema and binding fix remain
+prerequisites. Queries, snapshots, classifier replay source and
+aggregate results:
+<code>.amp/in/artifacts/prod-scoped-classification/</code>.</li>
+<li>The uncapped standard-role preflight at <strong>16:32 UTC on
+2026-11-05</strong> assessed all <strong>1,428</strong> live standard
+roles in one read-only repeatable-read replica snapshot. Current data
+yields <strong>1,029 eligible / 399 skipped</strong>; after local
+simulation of migration152, <strong>1,241 eligible / 187
+skipped</strong>: Admin 242/15, Reader 257/113, Support 257/0, Installer
+257/0 and Runner 228/59. Remaining blockers are 15 roles with
+missing/deleted account holders, 113 with deleted orgs and 59 ambiguous
+same-type Runner definitions. All eight previously capped sample roles
+are now accounted for: seven eligible and one ambiguous Runner
+definition. These counts supersede the earlier standard-role sample, not
+the separate 15:23 scoped census; do not combine snapshots into a
+contemporaneous total.</li>
+<li>This preflight used the actual core classifier plus exhaustive SQL
+binding/account guards, rather than exporting millions of holder rows.
+The snapshot had no document column and zero disqualifying mixed-org
+grants; binding-org consistency and dedup winner ambiguity checks were
+also clear. Those facts establish the holder checks without loading
+every holder’s policy into the replay. Every eligible document’s
+permission/API projection matched the original hstore; race-enabled
+replay produced identical results. The binding aggregate completed in
+24.5 seconds under a 60-second statement limit after earlier 20-second
+attempts timed out; successful transactions recorded zero writes. This
+is eligibility evidence, not an execution of migration153. SQL,
+snapshots, replay and results:
+<code>.amp/in/artifacts/prod-standard-preflight/</code>.</li>
+<li>Production still lacked <code>policies.document</code> and
+<code>idx_account_roles_live_uq</code>; migration150 was recorded, but
+neither migration152 nor migration153 was recorded at the 16:24 UTC
+prerequisite check. The standard-role snapshot contains
+<strong>3,737,198 live bindings / 3,735,447 distinct account-role
+pairs</strong>. Deduplication removes only <strong>1,751 rows</strong>
+across 651 duplicate pairs. The two largest eligible Runner roles have
+<strong>1,010,306 and 1,004,443 distinct holders</strong>; the next has
+528,033. This exceeds the 10,000-holder rehearsal below by over 100
+times. Batched queries still accumulate bindings/accounts in memory, so
+production memory use and startup-deadline compliance remain unproven.
+Validate or address that scale before rollout; cleanup is not a
+substitute for that verification.</li>
+<li>A disposable PostgreSQL performance rehearsal retained the entire
+27,070-role unbound tail in a synthetic 29,125-role fixture, plus a
+10,000-holder Runner role and 100,000 soft-deleted historical bindings.
+Both the original and batched loaders converted 2,032 roles, left 27,093
+policies unchanged, preserved all 29,125 permission/API projections and
+completed an idempotent rerun within the five-minute migration deadline.
+Batching account and held-role/policy reads in groups of 500 reduced
+first-pass ORM statements from 192,787 to 157,707 (18.2%) and rerun
+statements from 158,062 to 148,082. Per-role transactions, locks, raw
+source reads and conversion decisions are unchanged. First-pass wall
+times were 60.58 and 59.69 seconds; reruns were 46.65 and 70.20 seconds.
+These single local runs, with concurrent verification during the batched
+run, do not establish a wall-time improvement or production runtime.
+They show that this fixture completes without pre-cleanup, not that
+every production cardinality is covered.</li>
+<li>Disposable 501-holder and 501-policy boundary scenarios passed with
+race detection against both loaders: Reader order-sensitive grants still
+skip, unrelated holders do not contaminate decisions, deleted accounts
+remain disqualifying, deleted roles/bindings/policies remain excluded,
+and invalid policies on another held role still fail conversion.
+Restoring valid authority and accounts allowed retry. The existing
+scoped-conversion rehearsal also passed again (5,640 before/after
+authorization comparisons), along with targeted package tests and go
+vet. No permanent tests were added. The initial large-fixture SQL
+required an explicit JSONB cast, corrected before either measured run.
+Reproduction sources, pre-batching overlay and logs:
+<code>.amp/in/artifacts/migration-performance/</code>.</li>
+</ul>
+<p>The standard-writer, scoped-reader, standard-conversion and
+scoped-writer checkpoints are local and unpushed. The expanded
+classifier/converter, batched holder reads, remaining standard-role
+writers and this spec remain uncommitted. No shared-data writes or
+deployments were performed. Scoped and uncapped standard-role production
+eligibility are recorded above; million-holder memory/runtime
+verification, deployment prerequisites and deployment gates remain
+outstanding. Keep the unbound-role tail and stale ownership records
+unchanged; their cleanup is separate from format activation. Earlier
+Oracle reviews apply to the designs they reviewed, not blanket rollout
+approval.</p>
+<h2 id="future-work-is-separate">7. Future work is separate</h2>
+<p>After this activation, choose one bounded permission or security
+increment: resource route remaps with coordinated stored/new bundles and
+ceilings; Org Editor; reusable app/install bindings; persisted
+permission ceilings; or credential audiences. None is required to
+implement the exact scoped compatibility rules accepted here.</p>
+<p>Token-owned audiences remain a possible later design direction. The
+<a href="issuance-inventory.md">deferred inventory</a> records
+issuer/receiver findings without making its open choices blockers here.
+Specs 006/007 are not changed by this scope decision. Do not remove
+today’s API guard until a separate compatible replacement is reviewed
+and deployed.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Responsibility</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pure model</td>
+<td><code>internal/pkg/authz/permissions/{catalog,scope,policy,evaluate,roles}.go</code></td>
+</tr>
+<tr>
+<td>Persistence and projection</td>
+<td><code>internal/app/{policy,role,account_role,account}.go</code></td>
+</tr>
+<tr>
+<td>Loader and API guards</td>
+<td><code>internal/pkg/authz/{account_permissions,role_api}.go</code>,
+<code>internal/pkg/account/{fetch,lookup}.go</code></td>
+</tr>
+<tr>
+<td>Exact classification</td>
+<td><code>internal/pkg/authz/org_role_classification.go</code></td>
+</tr>
+<tr>
+<td>Factories/assignment</td>
+<td><code>internal/pkg/authz/{create_org_roles,reconcile_org_roles,add_account_role,set_account_role}.go</code></td>
+</tr>
+<tr>
+<td>Existing migration machinery</td>
+<td><code>cmd/startup.go</code>,
+<code>internal/pkg/db/plugins/migrations/</code>,
+<code>internal/pkg/db/psql/migrations/</code></td>
+</tr>
+</tbody>
+</table>
+<p>Paths in the table are relative to <code>services/ctl-api/</code>.
+Keep this Markdown authoritative and regenerate
+<code>spec.html</code>.</p>
+<section id="review" aria-labelledby="review-heading">
+<h2 id="review-heading">Line-by-line review</h2>
+<p>Open the source below and click <strong>+</strong> beside any line. The illustrative diff above supports comments too. Each comment downloads as Markdown with its source excerpt.</p>
+<p class="note">Save downloads in <code>specs/008-customer-rbac-foundation/</code>. Nothing is submitted to a server. Unsubmitted text is not retained after closing this page.</p>
+<details><summary>Review the complete proposal source</summary><div id="source-lines" class="listing"></div></details>
+<p id="review-status" role="status" aria-live="polite"></p>
+</section>
+</main></div>
+<dialog id="comment-dialog" aria-labelledby="comment-title">
+<form id="comment-form"><h2 id="comment-title">Review comment</h2>
+<blockquote id="comment-excerpt"></blockquote>
+<label for="comment-text">Your comment</label><textarea id="comment-text" required></textarea>
+<div class="actions"><button type="button" id="cancel-comment">Cancel</button><button class="primary" type="submit">Download comment</button></div>
+</form></dialog>
+<script id="markdown-source" type="application/json">"# RBAC foundation: existing boundaries, new policy model\n\n**008 · Boundary-preserving activation plan · 4 November 2026**\n\n**Status, 16 November 2026: delivered and running in production.** Sections 1–4 remain the contract. Sections 5–6\nare the historical rollout record; where they say \"local\", \"unregistered\" or \"remaining\", the shipped state below wins.\n\n| PR | Contents | Production |\n| --- | --- | --- |\n| [#3185](https://github.com/nuonco/nuon/pull/3185), [#3192](https://github.com/nuonco/nuon/pull/3192) | Foundation PRs 1–3; duplicate-binding cleanup and live-binding index | yes |\n| [#3258](https://github.com/nuonco/nuon/pull/3258) | Compatible readers: optional `api`, scoped `resource_rules`, document-aware reconciliation and stack adoption; 153 document-aware | 0.19.1293 |\n| [#3246](https://github.com/nuonco/nuon/pull/3246) | v3 writers for standard and scoped roles, `policies_single_authority` CHECK, classifier, migration `156-convert-standard-org-roles`, legacy-safe 126/150 | 0.19.1295 |\n| [#3277](https://github.com/nuonco/nuon/pull/3277) | Runtime registration of the AccountRole join model (revoked bindings no longer load) | 0.19.1296 |\n| [#3275](https://github.com/nuonco/nuon/pull/3275) | Admin-migrate creates v3 runner roles (last v2 writer) | merged, pending deploy |\n\nDifferences from the plan text below:\n\n- `log_stream` roles are converted and written as v3 `resource_rules` (`log_stream.create` on the exact stream), not kept legacy.\n- Unbound runner-install roles were converted too, under the later \"convert every exactly representable role\" decision.\n- Migration 156 exceeded the 5-minute startup deadline in production after 27,566 roles; the expired context left its\n  row `in_progress` and the retry skipped it, so the deploy reported success. It was recovered with\n  `DB_MIGRATIONS_TIMEOUT=20m`. The migrator fix is tracked separately.\n\nProduction census on the read replica, 16 November 2026 11:48 UTC (`.amp/in/artifacts/rbac-closeout-census-20261116/`):\nthe only live legacy policies are the three v1 `hosted-installer` roles with wildcard authority; no v1/v2 role was created\nafter 156; zero dual-authority policies. 54,858 runner-install roles have no binding and no managed-owner reference\n(created 29 October–12 November, none since); 113 Reader roles belong to deleted orgs. Their cleanup is separate work.\n\nEnforcement is unchanged: routes still derive create/read/update/delete from the HTTP method and the legacy adapter maps\nv3 grants onto those checks. Section 7 and spec 007 own what comes next.\n\n## 1. Ship today's boundaries on the new foundation\n\nAdopt [006's catalog, policy, scope and evaluator model](../006-control-plane-authorization/authorization-model.md)\nwithout requiring its full security cutover. Start with today's **Read-only (`org_read_only`)** and **Admin (`org_admin`)**\nat org scope, then include recognized machine-policy shapes using separate permissions and scopes. Preserve who\ncan access what. Later resource-boundary changes must be explicit increments.\n\n| In this activation | Out of scope |\n| --- | --- |\n| Minimal Reader `{org.read}` and Admin `{org.read, org.write}` bundles; exact scoped compatibility grants | Org Editor, new customer role-management APIs, route remaps |\n| Exact existing v1/v2 standard-role conversion, followed by recognized machine shapes once writers are ready | Unknown/custom policy inference, historical grant repair, promising zero legacy rows |\n| Optional legacy `api` metadata to preserve existing restrictions | Token audiences, OAuth resource approval, issuer or credential rewrites |\n| Existing API guards, token restrictions, Admin-only checks and transport distinctions | Moving enforcement, tighter security boundaries, role-guard retirement |\n| One skip-version-capable release, accepting transient mixed-version errors | Mandatory intermediate releases, zero-downtime activation gate, separate apply CLI |\n| Existing migrator, atomic row updates, idempotent conversion | Migration-harness rewrite, new scheduler/progress tables, global mutation locks |\n\nThe model remains identity-neutral: all accounts use roles, policies and the same matcher. There is no customer-only\npermission category. New recognized machine/private roles use scoped documents. Exact Support/Installer/Runner\norg-wide grants reuse the full-access bundle without changing role identity. Builder, hosted-installer and unknown\ncustom shapes remain legacy, as does main's newer log-stream role; conversion requires exact contents and verified\nownership, not role-name inference. Preserve log-stream creation and its existing runner API restriction without\nadding log-stream documents or broadening this converter.\nNo new account, binding, token, OAuth, invitation or workflow schema is needed for the scoped extension.\n\nThe previous audience redesign is **deferred in its entirety**. Its [source inventory](issuance-inventory.md) is\nfuture design material, not a dependency or acceptance gate here. Action tokens, session/admin cookies, specialized\nphone-home receivers and historical credential ownership do not need redesign to convert these two standard roles.\nNo new token audience column, validation, backfill, rotation, consent flow or issuer default is introduced.\n\nThe rebased main includes [#3197](https://github.com/nuonco/nuon/pull/3197), which blocks REST writes for read-only\nOAuth tokens. Preserve it. Earlier foundation evidence describing REST/MCP differences predates that change;\ndo not restore the earlier REST behavior or tighten other credential behavior incidentally.\n\n## 2. Data model and document contract\n\n```mermaid\nflowchart LR\n    A[Account] --> B[AccountRole]\n    B --> C[Role]\n    C --> D[Policy]\n    B --- E[Trusted OrgID supplies tenant]\n    C --- F[RoleType is identity; Version is bookkeeping]\n    D --- G[Document NULL: legacy hstore]\n    D --- H[Document present: org bundle or scoped rules]\n```\n\nThe deployed foundation adds nullable `Policy.Document` JSONB without a default or index. `AccountRole.OrgID` remains\nthe binding's tenant. Org bundles use that org as their scope; resource rules name their narrower scope in the policy.\nExisting role IDs, contexts, metadata, associations and Admin identity are retained. No binding schema changes or\n`OrgGrant` abstraction are needed; use `ScopedPermissions{Scope, Permissions}`.\n\n| Persisted state | Reader contract |\n| --- | --- |\n| SQL NULL document | Use legacy hstore and existing v1/v2 interpretation. |\n| Present document | Use v3 independently of Role.Version; do not retry legacy on error. |\n| JSON null, malformed/unsupported document, or document with nonempty hstore | Fail loading; no fallback or partial authority. |\n| Valid document with stale Role.Version | Document still selects v3. Do not reject solely for bookkeeping drift. |\n| SQL NULL document with Role.Version 3 | Legacy branch; never reconstruct authority from the role label. |\n\nHstore and document must be fetched from the same policy row. Separate role/policy preloads can observe stale\nbookkeeping without choosing the wrong format. This does not introduce new atomic revocation semantics.\n\n`Document []byte` stays absent from public JSON and included in Temporal serialization. Its byte representation\npreserves SQL NULL versus the JSON literal `null`; the current converter's `json.RawMessage` roundtrip does not.\n\n### Optional api preserves old behavior; it is not new token audience support\n\nExact v1 Reader after conversion:\n\n```json\n{\"kind\":\"bundle\",\"binding_kind\":\"org\",\"permissions\":[\"org.read\"]}\n```\n\nExact v2 Admin after conversion, also the shape for newly created Admin roles:\n\n```json\n{\"kind\":\"bundle\",\"api\":\"ctl-api\",\"binding_kind\":\"org\",\"permissions\":[\"org.read\",\"org.write\"]}\n```\n\n| Field | Contract |\n| --- | --- |\n| `kind` | Required, `bundle` or `resource_rules`. Each has its own strictly decoded fields. |\n| `binding_kind` | Required, exactly `org`. Org identity comes from trusted records, not the document. |\n| `permissions` | Required non-null array for a bundle, or within each resource rule. Empty grants nothing; writers sort/deduplicate. No bare CRUD strings or wildcard permissions. |\n| `rules` | Required non-null array only for `resource_rules`. Each rule has an explicit scope and permission array; empty grants nothing. |\n| `api` | Optional. Absence contributes no legacy API restriction. Present values must be `ctl-api`, `runner` or `stack`; null, empty, unknown, `all` and wrong types are rejected. |\n\nReject unknown/duplicate fields, malformed JSON and trailing data. Duplicate fields must be rejected before JSONB\nnormalization. Use the existing `permissions.Policy` codec, not a third document format or public wrapper type.\n\nThe pure codec understands the catalog without classifying principals. Org-bundle runtime integration accepts only\nempty, minimal Reader and minimal Admin sets. Resource-rule integration accepts the exact mappings below. Other\ncodec-valid sets, such as `{org.write}` or `{org.read, install.read}`, must fail integration explicitly, not grant `all`,\ndisappear silently or fall back to hstore. Permission applicability belongs in the matcher; the compatibility adapter\nseparately limits what can be represented by today's route verbs and response maps.\n\nThe deployed R1 codec requires `api`. The next reader release accepts its absence and preserves absence when\nserializing. This is an explicit compatibility extension: R1 cannot read audience-neutral documents.\n\n### Scoped rules separate what from where\n\nAn install's telemetry grant is represented as:\n\n```json\n{\n  \"kind\": \"resource_rules\",\n  \"binding_kind\": \"org\",\n  \"rules\": [\n    {\"scope\": {\"kind\": \"install\", \"id\": \"install_acme\"}, \"permissions\": [\"telemetry.all\"]}\n  ]\n}\n```\n\nThe same install scope can carry `stack.all`, independently or alongside `telemetry.all`. Neither implies\n`install.all`, org access, or phone-home access. The org comes only from the validated role/policy/binding records;\n`scope.org_id` is rejected. Scope IDs must be explicit, without wildcard or legacy-key separators.\n\n| Existing scalar grant | V3 scope | V3 permission | Preserved operation boundary |\n| --- | --- | --- | --- |\n| `<org>:install/<install>` → all | install / install ID | `install.all` | Exact install object, not every child namespace |\n| `<org>:telemetry/<install>` → all | install / install ID | `telemetry.all` | Only that install's telemetry object |\n| `<org>:stack/<install>` → all | install / install ID | `stack.all` | Only that install's stack object |\n| `<org>:runner-job/<job>` → all | runner-job / job ID | `runner_job.all` | Only that job object |\n| `<org>:phone_home/<version>` → create | phone_home / stack-version ID | `phone_home.create` | Create on that exact version callback only |\n\n`phone_home` scope names an exact stack-version callback, not an install. Conversion must preserve that version ID.\nAn install-wide phone-home permission would broaden historical access to other versions and is not enabled by this\nextension. A future explicit install-wide grant would need server-resolved version→install ownership.\n\nThe `.all` IDs are named, finite catalog bundles, not prefix wildcards. The pure matcher recognizes their explicitly\nlisted operations only within the bundle's target kind; `stack.all` must not gain phone-home access through the\nexisting `stack.report` permission. New catalog members do not automatically join a bundle. The legacy adapter\npreserves the old scalar `all` behavior, including its existing unknown-verb behavior, on the exact original key.\n\nMultiple permissions at the same install scope can share a rule. Rules that produce the same legacy object twice\nare rejected rather than applying order-dependent intra-document merging. Across roles, the existing reducer remains\nunchanged. Its surviving sources keep separate permission sets so one surviving namespace cannot resurrect another.\n\nNo resource existence scan is added to request authentication. Existing route ownership checks remain responsible\nfor resolving resources. The planned converter must independently validate source ownership before writing rules.\n\n## 3. Keep authorization and wire behavior unchanged\n\n`APIFromRole` inspects documents before its legacy version check. For document policies, a missing `api` contributes\nno restriction even with Version 3; a present value retains its restriction. Legacy v1/v2 behavior remains unchanged,\nincluding errors for malformed v2 API metadata. No `api: all`, role-name inference or implicit ctl-api default.\n\nKeep `APIForRoles` and assignment compatibility checks at their existing sites. REST continues to consider the entire\naccount role set, including other orgs. MCP does not acquire that whole-account API guard. Existing MCP static-token,\naccount-type and membership checks remain. The shared permission loader must not become a new audience gate.\n\nFor document-backed roles, validate one live policy and live bindings/accounts/orgs, matching RoleID and OrgID across\nassociations. Never infer missing ownership from request headers or silently repair bindings. The merged unique live\naccount-role index remains a prerequisite, not new cleanup work in this branch.\n\n### Preserve the deployed decision adapter\n\n| Existing requirement | V3 mapping | Legacy path |\n| --- | --- | --- |\n| Read / GET / HEAD | `org.read` at the verified org | Original read with existing object/org/wildcard fallback |\n| Create / update / delete | `org.write` at the verified org | Original CRUD verb; no collapsed write permission |\n| MCP read-only credential | Existing org.read ceiling | Existing write denial applies to legacy grants too |\n| Scoped resource verb | Exact compatibility mapping above; read-only credentials still reject non-read operations | Original resource key and verb |\n| Unknown verb in `require` | Existing configuration error | Same error |\n| Unknown verb in org middleware | Actual minimal full-access contribution, subject to credential limits | Existing all matches unknown |\n\nKeep existing REST token restrictions, ownership checks, runner/stack guards, error conventions and Admin-only checks.\nExplicit `require.Route` verbs do not override an earlier middleware check. Support/all is not Admin identity.\n\nThe compatibility reducer preserves the supplied Roles sequence: first `all` survives; otherwise the last scalar\ncontribution wins for an object. Only surviving contributions reach the v3 matcher or legacy adapter. Do not allow\nan overwritten read grant to reappear through an independent old/new union. Exact resources, parent org and wildcard\nkeys remain distinct. The pure v3 matcher still uses scoped grant union intersected with the synthesized ceiling.\n\nUnordered SQL preloads never promised stable ordering. Do not add sorting or account-wide historical replay as a new\nsubsystem. Classify Reader holders with another same-org create/update/delete scalar as ambiguous and leave those\ncandidates legacy. Ordinary Admin/Reader combinations and independent resource keys are not excluded wholesale.\n\n### Response projection is not authority\n\nKeep `Account.permissions` and policy permissions as string maps. Minimal Reader projects org → read; Admin projects\norg → all. Scoped rules project their exact original resource key and scalar verb, never the parent org or another\nnamespace. Include the `api` entry only when it is actually retained in the document. Empty policies without api\nproject an empty map. Do not manufacture an api entry or persist the projection.\n\nExisting decisions continue using loaded authority, not response maps. Keep public/internal serialization and Temporal\nraw-policy roundtrips compatible. No public API schema or client shape changes are required.\n\n## 4. Classify exact source records, not role labels\n\nThe classifier now covers the five standard org-role types and the five recognized scoped role types. Scoped runtime\nsupport alone is insufficient: conversion independently verifies the source grant and its ownership records.\n\n`authz.ClassifyOrgRole` is pure and shared by inventory and the converter. It returns `eligible` with the typed target\npolicy, permission IDs and optional legacy API metadata, `already_v3`, a named `skipped` reason, or an invalid-document error.\nIt does not write records, encode an alternative format, repair bookkeeping or infer a document from a role name.\n\n| Source | Disposition |\n| --- | --- |\n| Live v1 standard Reader/Admin with exact `{org: read/all}` | Eligible without api. |\n| Live v2 standard Reader/Admin with exact `{org: read/all, api: ctl-api}` | Eligible retaining ctl-api. |\n| Exact Support/Installer/Runner `{org: all}` | Eligible without api at v1; v2 retains ctl-api for Support/Installer or runner for Runner. RoleType is unchanged. |\n| Exact runner-install, runner-job, stack, telemetry or version-phone-home shape | Eligible after scoped ownership checks; v1 omits api, v2 retains the valid stored API. |\n| Valid integration-supported stored document | Validate and leave unchanged, including stale Role.Version. |\n| Builder/hosted-installer/unknown custom roles; other versions or shapes | Leave legacy and report reason. |\n| Missing/deleted/mismatched ownership, duplicate bindings or standard roles, ambiguous custom combinations | Skip/review; no repair or grant resurrection. |\n| Present malformed/nonminimal document or conflicting hstore | Error, never fallback or successful conversion. |\n\nRequire exactly one live policy with matching role/org ownership. An unbound standard org role is valid. V1 with extra api metadata,\nextra resource/wildcard keys or custom CRUD values is not an exact candidate. New role metadata is not proof of old\npolicy contents. Standard org roles with private ownership remain excluded. Scoped roles require exactly one live\nservice-account binding, no managed-role flag or selectable contexts, and matching live resource/org relationships.\n\nRunner-install ownership follows the account's exact subject to a runner, or a job then its runner, and checks the\nrunner group's install owner. Stack ownership follows the subject to its install stack. Runner-job ownership checks\nthe subject against the exact job. These paths accept historical missing managed-account rows only with that live\nresource evidence. Telemetry and phone-home require explicit managed ownership. Phone-home additionally verifies the\nexact version, stack and install chain, and the binding's version instance key. Present deleted/conflicting managed\nownership is never treated as missing. Private-role references must agree with the bound account. Missing/deleted or\nambiguous sources are skipped, not repaired; no subject/email heuristics or install-wide callback inference.\n\nLoad raw snapshots without runtime Account/Policy projection hooks. `OrgRoleSnapshot.Role` includes its actual org\nand all live raw policies; `OrgRoles` includes live same-type roles for standard-role uniqueness. `Bindings` includes\nall live bindings to the source and their actual accounts. Standard candidates also load holder roles/raw policies;\nscoped candidates instead load `Resource` ownership records by exact IDs. `Private` comes from managed ownership\nreferences. Scoped candidates do not scan every role in their org. Missing/deleted records remain observable.\n\nKeep bounded source loading and stable-ID enumeration outside the classifier. A disposable read-only harness is\nsufficient; no startup scan, public endpoint, permanent apply command or feature flag. Report raw population counts\nand exceptions independently of eligibility, including policies with no live owner. Resource IDs belong in restricted\nlogs, not metric labels. Refresh production classification before activation.\n\n## 5. Activation increments retain real deployment boundaries\n\nThe original org-role increments are implemented locally as follows. The approved scoped extension adds readers\nnow and requires corresponding writer/converter follow-through before machine-role conversion is released.\n\n| PR | Scope | Exit evidence |\n| --- | --- | --- |\n| 4 — Read-only classifier | Exact v1/v2 standard-role classification and raw inventory; no live behavior change | Exact/near-miss fixtures, mixed contributions, existing-document validation, read-only census |\n| 5 — Compatible policy readers | Optional legacy api plus scoped resource rules in the existing codec, API derivation and wire projections; keep all guards | Absent versus invalid api, scoped namespace/version isolation, unchanged v2 restrictions, mixed roles, assignment checks, serialization, legacy parity |\n| 6 — New-role writers | All five standard org-role factories and five scoped-role paths use compatible v3 policies | Factory/reconciliation/assignment checks; existing formats/API restrictions remain unchanged |\n| 7 — Exact conversion | Registered migration reusing classifier; v1 omits api and v2 retains it | Atomic updates, retry/no-op/error behavior, before/after decisions and maps, bounded runtime, explicit exceptions |\n\nThis replaces the superseded PRs 4–8 audience/activation sequence. Token audience readers and credential issuers are\nnot an intermediate milestone. The issuer inventory is deferred, not part of PR 4's completion criteria.\n\n### Scoped writer implementation and remaining activation work\n\nNew runner-install, runner-job, stack, telemetry and version-phone-home roles use the exact rules above through the\nshared private-role persistence path. Existing desired-role factories retain their scalar templates; persistence\nvalidates their shape and writes document-only v3 policies. Runner-install and runner-job retain runner API;\nnew stack roles retain stack API; telemetry and version-phone-home retain no API restriction.\n\nReconciliation locks the existing role and preserves its storage format, IDs, version and document API restriction,\nincluding absence. It compares semantic projections before writing, and updates document/hstore atomically.\nStack adoption understands either format. Historical v1/v2 stack convergence remains unchanged, including\nread-to-all and stripped-v2-API restoration. Missing v3 policy documents fail instead of reconstructing a lost API\nrestriction from defaults. Existing roles are not converted opportunistically by these writers.\n\nThe shared classifier and still-unreleased migration 153 now implement these recognized shapes. Support/Installer/\nRunner new-role factories also write v3, preserving their identity and API guard, so they do not keep introducing\nlegacy rows after conversion. Existing standard-role reconciliation remains metadata-only.\n\nRemaining: refresh the read-only production classification and verify rollout ordering. The 24,028 runner-install\nroles are a population count, not an eligibility count; they include roles held by runner-job accounts. Hosted-installer\ncontents remain unverified and excluded. Do not assume every historical record is convertible.\n\nOne conversion migration can cover all verified supported shapes ready before that converter ships.\nLater shapes require a later migration; an applied migration must not be edited to pick them up.\n\n### Accepted single-release rollout\n\nShip compatible readers and reconcilers, all recognized v3 creation paths, and the expanded converter together.\nCustomers may upgrade directly from supported legacy versions. Do not require the separately prepared\n`ps/rbac-compatibility` artifact to be deployed first; preserve it as a recovery candidate, not a rollout dependency.\n\nAccepted effects during upgrade:\n\n- Old APIs/workers can reject converted policies until replaced. Temporary request and workflow-activity failures\n  are accepted, not evidence of changed intended permission semantics.\n- Legacy roles created after the converter passes can remain legacy. New readers support them; a future explicitly\n  numbered catch-up migration can handle them. Zero legacy rows is not an acceptance criterion.\n- No maintenance window, global mutation pause, audience redesign or runtime activation flag is required by this plan.\n\nFailures must settle after all target processes are running. Persistent mixed authority, permission broadening,\nsilent historical-migration corruption and rollback to incompatible readers remain outside that acceptance.\n\n### Deployment ordering established from source\n\n- Cloud: `mono/services/ctl-api/k8s/templates/startup.tpl` runs the target image's startup as a Helm\n  `pre-install,pre-upgrade` hook. Old APIs/workers remain live during migration. `nuonctl` enables\n  `RollbackOnFailure`; Helm rollback does not undo database conversion.\n- BYOC AWS/GCP: `deploy_control_plane` deploys the chart, then invokes the post-deploy startup action. The pinned\n  charts start API containers normally while the startup deployment waits for an explicit exec. Both startup actions\n  default `SCALE_DOWN=false`; optional draining continues after timeout and is not a strict compatibility barrier.\n- These are repository-source observations, not a census of every customer's installed configuration.\n\n### Current implementation versus the accepted plan\n\n| Area | Current source state | Reconciliation needed |\n| --- | --- | --- |\n| Readers and reconciliation | Rebased branch retains optional-api/scoped readers, document-aware private reconciliation and stack adoption. | Targeted package checks passed; full upgrade/recovery rehearsal remains outstanding. |\n| Standard/private writers | Five standard types and five recognized scoped types write v3. Log-stream creation explicitly stays legacy. | No additional policy shape is introduced. |\n| Log-stream integration | `ensurePrivateRole` limits v3 construction to the five supported scoped types. | Disposable PostgreSQL verified log-stream create/repeat and exact boundaries; the pre-fix helper fails the same scenario with unsupported `log_stream`. |\n| Cleanup integration | Main's `RoleType.IsPrivate`, `DeletePrivateRoles`, log-stream-account deletion and queued cleanup callers are retained. The removed `DeleteStackInstallRoles` is not restored. | Disposable PostgreSQL verified deletion of legacy log-stream and v3 install policies while preserving a standard role/binding. Concurrent cleanup/conversion and full credential-cleanup workflow rehearsal remain outstanding. |\n| Converter | Expanded converter is renamed 155; snapshot/classification files remain restored and untracked as before. `Migrations.All()` includes main's 153/154, excludes conversion. | Register conversion only after the remaining safeguards; no migration was executed by the registry check. |\n| Historical migrations | Main's 153 still reads/writes hstore without checking `Document`; 126/150 still use current reconciliation. | Skip-version compatibility remains unresolved; the earlier plan did not implement it. |\n| Database safeguard | `Policy.Document` declares `policies_single_authority` through GORM schema migration, before global migrations. | Disposable PostgreSQL verifies installation, legacy upgrade, rejection of stale writes and invalid existing rows, rerun and lock-deadline recovery. Production validation cost and BYOC schema-before-writer deployment ordering remain outstanding. |\n| Compatibility artifact | `ps/rbac-compatibility` remains on [57c4ae9a9c](https://github.com/nuonco/nuon/commit/57c4ae9a9c) with 12 local reader/reconciler files; it is 20 main commits behind. | Preserve it, but do not call it a tested recovery image for the latest combined source without rebuilding/reverification. |\n| Production cleanup and scale | Main merged [#3211](https://github.com/nuonco/nuon/pull/3211), [#3212](https://github.com/nuonco/nuon/pull/3212) and [#3179](https://github.com/nuonco/nuon/pull/3179). | Merged lifecycle cleanup is not proof that historical million-holder bindings were removed. No fresh shared DB census was run; keep the scale rehearsal deferred. |\n\n`scoped_role_snapshot.go` supplies live/deleted ownership evidence to classification for the five\nsupported scoped role types. It does not perform cleanup, register conversion, enforce rollout order or support the\nnew log-stream type. Keep that boundary unchanged unless a separately approved conversion shape requires more.\n\n### Bounded implementation and verification work\n\n1. Main integration and overlap resolution are complete locally. Log-stream creation stays legacy; main's private-role\n   validation/deletion, credential-cleanup callers, telemetry guard and log-ingest alternatives are preserved. The\n   converter is renumbered 155 and still unregistered. The compatibility worktree is untouched.\n2. Make historical migrations safe under the target binary. Migrations126/150 call current role reconciliation and\n   can therefore create v3 before main's153 runs. Keep their missing-role creation legacy, and make153 explicitly\n   document-aware so it cannot add hstore beside a document. Preserve already-recorded migration identity and avoid\n   opportunistically changing existing document restrictions. Rehearse both skipped-version and already-migrated data.\n3. Prevent a stale old writer from restoring nonempty hstore beside a document. A database CHECK matching the existing\n   reader invariant is implemented: `document IS NULL OR permissions IS NULL OR permissions = ''::hstore`.\n   Application checks and converter row locks cannot constrain an already-running old binary. This constraint is\n   installed in the model schema phase before all global migrations, including149. Actual migrator verification\n   passed on disposable Policy schemas; production-scale validation/locking cost remains deferred until cleanup.\n   BYOC currently starts writers before startup, so placing the guard only at converter entry would leave an earlier\n   race. Resolve this schema-before-writer ordering in the deployment path; do not claim that fast conversion fixes it.\n4. Verify the full target through disposable PostgreSQL: historical migrations, new standard/private creation,\n   legacy log-stream creation, converter, rerun, compatible reconciliation and deletion of v3 private roles.\n   Force a stale update after conversion and assert failure without row corruption. Include cleanup/deletion overlap,\n   late legacy insertion as an accepted control, and authorization projections. Earlier isolated-reader checks do not\n   establish these combined-source results.\n5. Prepare release recovery: suppress automatic rollback to an incompatible image once v3 writes/conversion can occur.\n   Prefer roll-forward with the target or a verified compatible recovery image. Do not restore hstore from role names.\n   An early BYOC writer failure before schema preparation must not be silently treated as a successful upgrade.\n\nThe rebase and log-stream overlap fix are local; no deployment configuration changed. The converter remains\nunregistered pending the remaining safeguards. Shared migration execution, deployments and cleanup remain unauthorized.\n\n### Verification evidence and remaining release gates\n\nRebase verification used six existing package suites with `-count=1 -race`: authz, permissions, require, app, account\nand PostgreSQL migrations. Disposable PostgreSQL exercised actual role creation/reconciliation/deletion helpers and\nthe migration registry; it was not a full startup or transport E2E test. The negative control restored the pre-fix\nprivate-role helper with the existing exported adapter name and failed on log-stream creation. The fixed helper passed.\nThe full ctl-api build passed after regenerating ignored Temporal wrappers for the newly integrated main code.\nLogs and preservation hashes are in `.amp/in/artifacts/rbac-rebase/`. The initial scratch fixture mistakenly used\n`log-stream` instead of the actual `log_stream` namespace; that fixture was corrected before the final passing run.\n\nA disposable PostgreSQL SQL replay reproduced the specific old-writer update after conversion: without a constraint,\nboth authority formats persisted. With the proposed CHECK, PostgreSQL returned SQLSTATE23514 and left the row\nunchanged. Late legacy insertion and empty hstore alongside a document remained allowed, matching the reader contract.\nEvidence: `.amp/in/artifacts/rbac-single-release-overlap.json`. This is a replay of the relevant SQL statements, not\nan old-binary, full-migrator or deployed E2E test. The disposable database was removed.\n\nThe CHECK implementation additionally passed a disposable PostgreSQL probe using `Migrator.Exec`, `app.Policy` and\na global sentinel asserting the constraint is validated before global execution. Fresh and pre-document schemas,\nlegacy/document/empty-hstore cases, JSON null and NULL-valued hstore keys, soft-deleted rows, a stale-writer transaction,\ninvalid existing data, repeated migration and deadline/retry under a blocking table lock were exercised. Removing the\nCHECK reproduced the conflicting write. Relationship/FK migration was disabled to isolate Policy; this was not full\nstartup, execution of149/153/155, an old-binary deployment or a scale rehearsal. Logs are in\n`.amp/in/artifacts/rbac-policy-check/`; initial probe failures were verifier assumptions about GORM's translated errors\nand dropping/recreating hstore with cached statements, corrected before the final passing run. No shared DB changed.\n\nExisting compatibility verification remains useful but is not proof of the combined artifact. Its old-reconciler\nnegative control also rewrote writer-produced policies; the compatible reconciler preserved them. The compatibility\nartifact and the writer work remain local and uncommitted where previously recorded.\n\nAfter cleanup, refresh eligibility/cardinality counts and rehearse the remaining scale; this work is deferred, not\nwaived. Budget the existing startup deadline shared by PostgreSQL and ClickHouse. Capture migration status plus\neligible/skipped/converted counts and post-rollout conflicting-authority counts. Compare authorization errors against\nbaseline after all target consumers have replaced old processes; transient overlap failures are accepted, persistent\nfailures are not. Verify Admin/Reader read/write, cross-org denial, read-only OAuth/MCP and runner/stack callbacks.\n\n### Conversion mechanics\n\nThe retained converter (originally `153-convert-standard-org-roles`, pending renumbering) uses the existing startup\nframework and 100-role stable-ID batches,\nnot offsets over a shrinking cohort. Re-read and classify each candidate and its associations in a short repeatable-read\ntransaction, locking the candidate role and its live policies. Use raw scans to avoid runtime projection hooks.\nConditionally update the policy row's document and clear hstore **together**, verifying the original full shape.\nUpdate Role.Version to 3 in that same transaction; require expected affected-row counts and roll back on failure.\nPreserve policy/role/binding IDs and metadata. Changed candidates are reclassified or skipped, not overwritten.\nConcurrent source updates that invalidate the snapshot propagate a serialization failure; reinvocation reclassifies\nthe current state. There is no unbounded retry loop or global lock on role assignment.\n\nAlready-converted rows are no-ops. Partial conversion leaves readable mixed-format data; reinvocation processes the\nremaining eligible rows. Malformed/unsupported present documents propagate errors. Measure a representative run\nagainst the existing startup timeout before deciding whether its existing override is needed.\n\nNormal valid assignment/removal may overlap conversion: bindings reference existing roles rather than copying\npolicy data. Do not add shared role locks to every writer or pause all membership/machine provisioning. If a writer\ncan mutate a candidate policy incompatibly, handle that specific conflict before rollout.\n\n**Accepted harness assumption:** scheduling, claims, status persistence and retry delivery belong to the existing\nmigrator. Its known recovery/reporting issues remain separate maintenance work. PR 7 owns atomicity, idempotency,\naccurate results and error propagation when called, not a framework rewrite or process-crash recovery subsystem.\n\n### Rollback floor and completion\n\nThe first document **without api** raises the rollback floor to the compatible reader release; R1 would reject it. Do not\nremove a retained api restriction to bypass validation, restore hstore speculatively, or roll back to an incompatible\nreader. Keep legacy API guards indefinitely until their own separately reviewed cutover.\n\nThe first `resource_rules` document additionally requires scoped readers for successful requests. The optional-api-only\ncheckpoint cannot read it. Old-process failures during replacement are accepted; those processes cannot be a recovery\ntarget after activation.\n\nA recovery image must include document-aware reconciliation and stack adoption. The bare scoped-reader checkpoint\n`0f60e62359` is not safe: it lacks document-aware reconciliation and stack adoption. Any recovery deployment must\npreserve the schema, binding index and stored documents; do not roll back to the merged foundation or restore hstore.\nThe former A/B/C labels describe historical packaging only, not mandatory sequential deployments.\n\nIf a compatible recovery image resumes v2 creation after conversion was recorded, reclassify and add an explicit\ncatch-up migration when needed. Startup does not rerun an applied migration. Do not add hypothetical catch-up code now.\nCompletion means new standard creation is v3 and exact conversions/exceptions are accounted for—not zero legacy rows.\n\n## 6. Verification and evidence\n\nUse existing tests and disposable PostgreSQL/API fixtures. Package guidance requires explicit approval and a choice\nof test form before adding permanent tests. Source review alone is not production or deployment proof.\n\n| Risk | Distinguishing checks |\n| --- | --- |\n| Optional api broadens restrictions | Omitted api versus null/empty/all/unknown/wrong types; retained values roundtrip; invalid v2 remains invalid |\n| V1 conversion gains a guard | Mixed neutral document + legacy runner role behaves like original v1 + runner; no fake api response entry |\n| V2 conversion loses a guard | Retained ctl-api + runner remains rejected by REST and assignment compatibility; MCP guard placement unchanged |\n| Incorrect permission composition | Both read/create orders; all in either order; independent org/resource/wildcard keys; read-only ceilings |\n| Wrong authority source | SQL NULL versus JSON null; stale version; malformed/nonminimal document; no hstore fallback |\n| Ownership/identity drift | Deleted/missing/mismatched associations, duplicate bindings/roles, private roles; Support/all does not become Admin |\n| Wire/serialization regression | Account/policy maps, empty bundles, raw policy Temporal roundtrip, no persisted projection |\n| Writer or converter scope creep | Existing standard policy bytes unchanged under reconciliation; exact recognized new-role shapes switch; unsupported records stay legacy |\n| Scoped grant broadening | Same install ID across telemetry/stack/install; sibling install/job/version and foreign org denials; phone-home create versus read/update/delete; no install-wide callback inference |\n| Named bundle overreach | Explicit bundle membership, target-kind restriction, missing/wrong ceiling, no stack.report access to phone-home through stack.all |\n| Migration correctness | Transaction rollback between updates, partial run/reinvocation, source edit, concurrent valid assignment/removal, all-ineligible no-op |\n\nUse existing logs/metrics for scanned/eligible/skipped/converted/failed counts and affected denial/load-error rates.\nNo new dashboard, events, high-cardinality metrics or full-platform journey certification is required.\n\n### Recorded evidence, with limits\n\n- Foundation PRs 1–3 passed pure-layer, model/loader, mixed-source, middleware and serialization checks. Local full-stack\n  testing exercised 191 REST/MCP requests across human/service, legacy/document, read/write and token cases. These\n  historical checks do not prove the optional-api reader change or a production conversion.\n- Stage verification confirmed foundation/binding-fix deployment, nullable Document, applied migrations and valid\n  live-binding uniqueness. CLI/REST/MCP reads and denial controls worked; sampled worker/token failures predated\n  the foundation. All live policy documents were SQL NULL. Writes and conversion were not exercised there.\n- PR 4's 19:17 UTC stage snapshot classified 2,161 live roles: **28 eligible** (4 v1, 24 v2), 2,133 unsupported/private\n  skips, zero already-v3 and zero invalid-document results. It included 475 relevant bindings and 15 holders, and\n  separately reported 100 live policies without a live role. PostgreSQL reported zero transaction writes. This is\n  stage-only evidence; the older production census is not final eligibility or deployment proof.\n- The read-only classifier passed disposable exact/near-miss, ownership, mixed-grant and document probes plus existing\n  authz tests with race detection and go vet. No permanent tests were added. Evidence: `.amp/in/pr4-verification/`.\n- PR 5's disposable probes failed against the original readers on omitted-api decoding, projection and PostgreSQL\n  role assignment, then passed with the reader change. They exercised strict decoding/roundtrip, both mixed-role\n  orders, REST API-surface guards, model hooks, assignment compatibility, the shared loader and MCP read/write guards.\n  Existing authz, account, model and MCP package tests passed. This used an isolated disposable PostgreSQL database\n  and in-process middleware, not deployed end-to-end traffic or a conversion migration. No permanent tests were added.\n  Evidence: `.amp/in/pr5-reader-verification/`.\n- PR 6's disposable PostgreSQL checks failed against the original v2 writers and passed with the writer change.\n  Fresh roles had the exact minimal v3 documents and ctl-api metadata; Support/Installer/Runner remained legacy.\n  Assignment, Reader-to-Admin replacement, read/write and read-only ceilings, cross-org denial and incompatible Runner\n  assignment were exercised through real models and the shared loader. Reconciliation created a missing Reader while\n  preserving every existing policy row and role version across v1/v2/v3 fixtures; a second run was unchanged.\n  Existing authz/account/model/MCP tests passed. These are isolated model/database checks, not deployed E2E proof.\n  The existing factory test's expectations were updated for the new format; no permanent test cases were added.\n  Evidence: `.amp/in/pr6-writer-verification/`.\n- PR 7's registered migration function passed disposable PostgreSQL checks, including a race-enabled run. A 107-role\n  fixture crossed the batch boundary with identical before/after read/write decisions, API restrictions and metadata;\n  rerunning was a no-op. Eleven unsupported/private/ambiguous roles were skipped without modification. Injected failure\n  between the policy and role updates rolled back the failed role; reinvocation preserved prior conversions and finished\n  the remaining roles. JSON null, unsupported bundles and conflicting authority failed without fallback. Stale bookkeeping\n  on a valid document remained unchanged. Deadline cancellation and a concurrent source edit left the source intact.\n  A real assignment overlapped conversion under a role foreign-key lock, while removal of the original binding succeeded;\n  the new holder retained Reader permissions after commit. Existing package tests and targeted go vet passed.\n  The local 107-role conversion took about 0.23 seconds without race instrumentation; this is not a production runtime\n  estimate. The initial probe had an incomplete role-table fixture, corrected before the passing checks. No permanent\n  tests were added. Evidence: `.amp/in/pr7-conversion-verification/`. These checks invoke the registered function,\n  not the full startup migrator, a process-crash recovery scenario, or a shared database conversion.\n- The 21:23 UTC production read-replica snapshot had 26,163 live roles. The standard-role classifier found 435\n  eligible before locally simulating the prerequisite duplicate-binding cleanup and 497 afterward (241 Admin,\n  256 Reader, all v1). Fifteen standard roles retained missing/deleted account bindings and 113 belonged to deleted\n  orgs. The remaining 25,538 roles were other types, including 24,028 runner-install roles. These are counts for\n  the current narrow classifier, not proof of scoped-role eligibility. No shared writes were made.\n  Evidence: `.amp/in/prod-rbac-classification/`.\n- Scoped-reader validation used disposable PostgreSQL tables, real GORM model/binding hooks, the shared account\n  permission loader and in-process Gin resource routes. The same probe failed with the checkpoint readers because\n  they reject resource rules, and passed with the extension: 1,500 permission decisions and 440 HTTP requests.\n  Cases covered namespace/sibling/version/org isolation, read-only limits, mixed-role precedence, API metadata,\n  strict JSON decoding, projection/roundtrip, empty policies and invalid rule/permission combinations. Typed matcher\n  checks also denied phone-home via stack.all and denied requests without a ceiling. The initial probe used the\n  context setter rather than the Gin setter; this fixture error was corrected before the passing run.\n  The same probe passed with race detection; existing authz/account/model/MCP/migration package tests and targeted\n  go vet passed. No permanent test cases were added.\n  Evidence: `.amp/in/scoped-policy-verification/`. This is reader/model/adapter evidence, not deployed traffic,\n  scoped writer verification or broader migration proof.\n- Scoped-writer validation passed 704 assertions with race detection against a disposable PostgreSQL database and\n  a minimal schema, using the real runner-install, runner-job, stack, phone-home and telemetry creation paths.\n  Telemetry invoked its Gin handler directly, not the network authentication stack. Coverage includes unbound and\n  managed stack adoption, repeated reconciliation, legacy v1/v2 retention, API absence and stale document versions,\n  rebinding, document updates, read-only/sibling/org boundaries, conflicting authority, missing-document rejection,\n  and role-lock deadline rollback. Restoring the previous private-role writer through a Go overlay fails the same\n  probe on its first v3 assertion because it still writes v2. Targeted package tests and go vet passed; the existing\n  full integration suites remained disabled. No permanent test cases were added; existing stack fixtures were adapted\n  to inspect projections and explicitly recreate legacy records. Reproducible probe source, overlay and logs are in\n  `.amp/in/artifacts/scoped-writer-verification/`. This does not prove the broader converter, full-stack provisioning\n  or production rollout. The disposable database and execution symlink were removed afterward.\n- Expanded conversion passed a disposable PostgreSQL rehearsal, including race detection: 123 roles converted across\n  the 100-role batch boundary, 18 near-miss/unsupported fixtures stayed unchanged, and 5,640 before/after authorization\n  decisions matched. Fixtures cover all ten recognized role types at v1/v2, runner-install roles held by job accounts,\n  historical stack/job ownership without managed rows, retained API metadata, exact version callbacks, and wrong or\n  deleted ownership. Writer reconciliation left converted policy rows unchanged, and migration reinvocation was a\n  no-op. An injected role-update failure rolled back the preceding policy update;\n  retry succeeded, and an invalid present document propagated an error. The prior migration implementation, overlaid\n  onto the current tree, fails the same probe because Support remains unconverted. The non-race initial conversion\n  took about 0.34 seconds for this small local fixture, not a production timing estimate. Existing authz/account/model/\n  MCP/migration/runner-helper/install-service package tests and targeted go vet passed; full integration suites were\n  disabled. Source and logs: `.amp/in/artifacts/scoped-conversion-verification/`. This invokes the registered migration\n  function, not startup orchestration, a production-sized dataset, a deployed API or production conversion.\n- Production preflight on 2026-11-05 used the read replica and read-only repeatable-read transactions, with zero\n  transaction writes. The 15:23 UTC scoped census found 27,837 live scoped roles: **747 eligible** (35 runner-install,\n  645 runner-job, 67 stack), 20 bound roles skipped for missing/deleted installs (19 runner-install, one stack), and\n  27,070 unbound runner-install roles excluded from conversion. All 767 bound scoped roles were exported with their\n  ownership metadata; none hit the binding cap. Local replay used the actual classifier and checked that every\n  eligible document's permission/API projection exactly matched its original hstore, including a race-enabled run.\n  There were no live telemetry-collector or phone-home roles in this snapshot, so their coverage remains disposable\n  fixture evidence. The scoped result is not an estimate that all 27,124 runner-install roles are convertible.\n- A separate 15:19 UTC stratified sample contained 403 roles (up to 50 per type, ordered by hashed ID). After local\n  simulation of migration152 it classified 313 eligible, 82 skipped and eight org-wide Runner roles not assessed\n  because their binding exports reached the 100-binding cap. The sample's standard-role results are not a final\n  production-wide conversion count. SQL peer counts and a zero disqualifying-org-grants check preserve the classifier's\n  standard-role uniqueness and Reader mixed-grant checks despite the sample. All three hosted-installer roles retain\n  wildcard authority and remain excluded. Broader export attempts timed out at the bounded deadline; one lost its\n  connection. The successful scoped export took about ten seconds; this does not measure migration runtime.\n  `policies.document` was still absent in production, so the foundation schema and binding fix remain prerequisites.\n  Queries, snapshots, classifier replay source and aggregate results: `.amp/in/artifacts/prod-scoped-classification/`.\n- The uncapped standard-role preflight at **16:32 UTC on 2026-11-05** assessed all **1,428** live standard roles in\n  one read-only repeatable-read replica snapshot. Current data yields **1,029 eligible / 399 skipped**; after local\n  simulation of migration152, **1,241 eligible / 187 skipped**: Admin 242/15, Reader 257/113, Support 257/0,\n  Installer 257/0 and Runner 228/59. Remaining blockers are 15 roles with missing/deleted account holders,\n  113 with deleted orgs and 59 ambiguous same-type Runner definitions. All eight previously capped sample roles\n  are now accounted for: seven eligible and one ambiguous Runner definition. These counts supersede the earlier\n  standard-role sample, not the separate 15:23 scoped census; do not combine snapshots into a contemporaneous total.\n- This preflight used the actual core classifier plus exhaustive SQL binding/account guards, rather than exporting\n  millions of holder rows. The snapshot had no document column and zero disqualifying mixed-org grants; binding-org\n  consistency and dedup winner ambiguity checks were also clear. Those facts establish the holder checks without\n  loading every holder's policy into the replay. Every eligible document's permission/API projection matched the\n  original hstore; race-enabled replay produced identical results. The binding aggregate completed in 24.5 seconds\n  under a 60-second statement limit after earlier\n  20-second attempts timed out; successful transactions recorded zero writes. This is eligibility evidence, not an\n  execution of migration153. SQL, snapshots, replay and results: `.amp/in/artifacts/prod-standard-preflight/`.\n- Production still lacked `policies.document` and `idx_account_roles_live_uq`; migration150 was recorded, but neither\n  migration152 nor migration153 was recorded at the 16:24 UTC prerequisite check. The standard-role snapshot contains\n  **3,737,198 live bindings / 3,735,447 distinct account-role pairs**. Deduplication removes only **1,751 rows** across\n  651 duplicate pairs. The two largest eligible Runner roles have **1,010,306 and 1,004,443 distinct holders**;\n  the next has 528,033. This exceeds the 10,000-holder rehearsal below by over 100 times. Batched queries still\n  accumulate bindings/accounts in memory, so production memory use and startup-deadline compliance remain unproven.\n  Validate or address that scale before rollout; cleanup is not a substitute for that verification.\n- A disposable PostgreSQL performance rehearsal retained the entire 27,070-role unbound tail in a synthetic\n  29,125-role fixture, plus a 10,000-holder Runner role and 100,000 soft-deleted historical bindings. Both the original\n  and batched loaders converted 2,032 roles, left 27,093 policies unchanged, preserved all 29,125 permission/API\n  projections and completed an idempotent rerun within the five-minute migration deadline. Batching account and\n  held-role/policy reads in groups of 500 reduced first-pass ORM statements from 192,787 to 157,707 (18.2%) and rerun\n  statements from 158,062 to 148,082. Per-role transactions, locks, raw source reads and conversion decisions are\n  unchanged. First-pass wall times were 60.58 and 59.69 seconds; reruns were 46.65 and 70.20 seconds. These single local\n  runs, with concurrent verification during the batched run, do not establish a wall-time improvement or production\n  runtime. They show that this fixture completes without pre-cleanup, not that every production cardinality is covered.\n- Disposable 501-holder and 501-policy boundary scenarios passed with race detection against both loaders: Reader\n  order-sensitive grants still skip, unrelated holders do not contaminate decisions, deleted accounts remain\n  disqualifying, deleted roles/bindings/policies remain excluded, and invalid policies on another held role still fail\n  conversion. Restoring valid authority and accounts allowed retry. The existing scoped-conversion rehearsal also\n  passed again (5,640 before/after authorization comparisons), along with targeted package tests and go vet. No\n  permanent tests were added. The initial large-fixture SQL required an explicit JSONB cast, corrected before either\n  measured run. Reproduction sources, pre-batching overlay and logs: `.amp/in/artifacts/migration-performance/`.\n\nThe standard-writer, scoped-reader, standard-conversion and scoped-writer checkpoints are local and unpushed.\nThe expanded classifier/converter, batched holder reads, remaining standard-role writers and this spec remain uncommitted. No shared-data\nwrites or deployments were performed. Scoped and uncapped standard-role production eligibility are recorded above;\nmillion-holder memory/runtime verification, deployment prerequisites and deployment gates remain outstanding. Keep the unbound-role\ntail and stale ownership records unchanged; their cleanup is separate from format activation.\nEarlier Oracle reviews apply to the designs they reviewed, not blanket rollout approval.\n\n## 7. Future work is separate\n\nAfter this activation, choose one bounded permission or security increment: resource route remaps with coordinated\nstored/new bundles and ceilings; Org Editor; reusable app/install bindings; persisted permission ceilings; or\ncredential audiences. None is required to implement the exact scoped compatibility rules accepted here.\n\nToken-owned audiences remain a possible later design direction. The [deferred inventory](issuance-inventory.md)\nrecords issuer/receiver findings without making its open choices blockers here. Specs 006/007 are not changed by this\nscope decision. Do not remove today's API guard until a separate compatible replacement is reviewed and deployed.\n\n| Responsibility | Source |\n| --- | --- |\n| Pure model | `internal/pkg/authz/permissions/{catalog,scope,policy,evaluate,roles}.go` |\n| Persistence and projection | `internal/app/{policy,role,account_role,account}.go` |\n| Loader and API guards | `internal/pkg/authz/{account_permissions,role_api}.go`, `internal/pkg/account/{fetch,lookup}.go` |\n| Exact classification | `internal/pkg/authz/org_role_classification.go` |\n| Factories/assignment | `internal/pkg/authz/{create_org_roles,reconcile_org_roles,add_account_role,set_account_role}.go` |\n| Existing migration machinery | `cmd/startup.go`, `internal/pkg/db/plugins/migrations/`, `internal/pkg/db/psql/migrations/` |\n\nPaths in the table are relative to `services/ctl-api/`. Keep this Markdown authoritative and regenerate `spec.html`.\n"</script>
+<script>
+const source = JSON.parse(document.getElementById('markdown-source').textContent);
+const dialog = document.getElementById('comment-dialog');
+const input = document.getElementById('comment-text');
+let target;
+function listing(root, lines, file, diff = false) {
+  lines.forEach((text, index) => {
+    const row = document.createElement('div');
+    row.className = 'review-line' + (diff && text.startsWith('+') ? ' added' : diff && text.startsWith('-') ? ' removed' : '');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = '+';
+    button.setAttribute('aria-label', 'Comment on ' + file + ' line ' + (index + 1));
+    button.onclick = () => {
+      target = {file, line: index + 1, text};
+      document.getElementById('comment-title').textContent = file + ':' + target.line;
+      document.getElementById('comment-excerpt').textContent = text;
+      input.value = '';
+      dialog.showModal();
+      input.focus();
+    };
+    const number = document.createElement('span');
+    number.className = 'line-number';
+    number.textContent = index + 1;
+    const content = document.createElement('span');
+    content.className = 'line-text';
+    content.textContent = text;
+    row.append(button, number, content);
+    root.append(row);
+  });
+}
+document.querySelectorAll('table').forEach(table => {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'table-scroll';
+  wrapper.tabIndex = 0;
+  wrapper.setAttribute('role', 'region');
+  wrapper.setAttribute('aria-label', 'Scrollable proposal table');
+  table.before(wrapper);
+  wrapper.append(table);
+});
+document.querySelectorAll('pre.diff, pre.sourceCode.diff').forEach(pre => {
+  const root = document.createElement('div');
+  root.className = 'listing';
+  root.setAttribute('aria-label', 'Illustrative authorization contract diff');
+  listing(root, pre.textContent.trimEnd().split('\n'), 'illustrative-contract.diff', true);
+  pre.replaceWith(root);
+});
+listing(document.getElementById('source-lines'), source.trimEnd().split('\n'), 'prompt.md');
+document.getElementById('cancel-comment').onclick = () => dialog.close();
+document.getElementById('comment-form').onsubmit = event => {
+  event.preventDefault();
+  if (!input.value.trim()) return;
+  const body = '# Spec 008 review: ' + target.file + ':' + target.line + '\n\nSource excerpt:\n\n    ' + target.text + '\n\n' + input.value.trim() + '\n';
+  const url = URL.createObjectURL(new Blob([body], {type: 'text/markdown;charset=utf-8'}));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'comment-' + target.file + '-L' + target.line + '-' + Date.now() + '.md';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  document.getElementById('review-status').textContent = 'Comment download requested. Save it in specs/008-customer-rbac-foundation/.';
+  dialog.close();
+};
+</script>
+<script type="module">
+try {
+  const {default: mermaid} = await import('https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs');
+  mermaid.initialize({startOnLoad: false, securityLevel: 'strict', theme: 'neutral'});
+  for (const [index, pre] of [...document.querySelectorAll('pre.mermaid')].entries()) {
+    const {svg} = await mermaid.render('architecture-' + index, pre.textContent);
+    const diagram = document.createElement('div');
+    diagram.className = 'architecture';
+    diagram.setAttribute('role', 'img');
+    diagram.setAttribute('aria-label', [
+      'Account, binding, role and policy; trusted org scope and policy-row format selection',
+      'Shared authorization with v3 scoped grants, legacy precedence and synthesized credential ceilings',
+      'Trusted issuance, explicit token audience validation and historical credential compatibility'
+    ][index]);
+    diagram.innerHTML = svg;
+    pre.replaceWith(diagram);
+  }
+} catch {
+  document.querySelectorAll('pre.mermaid').forEach(pre => {
+    const note = document.createElement('p');
+    note.className = 'note';
+    note.textContent = 'Diagram renderer unavailable. Architecture source is shown below; text and review comments still work offline.';
+    pre.before(note);
+  });
+}
+</script>
+</body></html>

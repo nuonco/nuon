@@ -13,6 +13,7 @@ type PermissionSource struct {
 }
 
 type AccountPermissions struct {
+	Grants  []ScopedPermissions
 	Sources map[string]PermissionSource
 }
 
@@ -78,16 +79,6 @@ func (p *AccountPermissions) Add(object string, source PermissionSource) {
 	p.Sources[object] = source
 }
 
-func (p *AccountPermissions) Grants() []ScopedPermissions {
-	grants := make([]ScopedPermissions, 0)
-	for _, source := range p.Sources {
-		if source.Grant != nil {
-			grants = append(grants, *source.Grant)
-		}
-	}
-	return grants
-}
-
 func (p *AccountPermissions) Legacy() Set {
 	legacy := Set(NewSet())
 	for object, source := range p.Sources {
@@ -127,7 +118,12 @@ func (p *AccountPermissions) CanPerform(object string, verb Permission, readOnly
 			return denied
 		}
 	}
-	grants := p.Grants()
+	grants := make([]ScopedPermissions, 0)
+	for _, source := range p.Sources {
+		if source.Grant != nil {
+			grants = append(grants, *source.Grant)
+		}
+	}
 	ceiling := grants
 	target := Scope{Kind: KindOrg, OrgID: orgID, ID: orgID}
 	if readOnly {

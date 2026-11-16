@@ -43,6 +43,7 @@ func (c *Client) LoadAccountPermissions(ctx context.Context, account *app.Accoun
 			if err != nil {
 				return nil, err
 			}
+			loaded.Grants = append(loaded.Grants, grants...)
 			for object, source := range sources {
 				source.RoleID, source.PolicyID = role.ID, role.Policies[0].ID
 				loaded.Add(object, source)
