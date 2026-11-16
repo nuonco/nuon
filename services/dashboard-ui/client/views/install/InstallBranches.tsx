@@ -10,9 +10,11 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 
 export const InstallBranches = () => {
   const { install, refresh } = useInstall()
+  const appSyncDisabled = useOrgFeatureFlag('disable-app-sync')
   const branchId = install?.app_branch_id
   const branchName = install?.app_branch?.name ?? branchId
 
@@ -74,9 +76,9 @@ export const InstallBranches = () => {
 
         {!branchId && (
           <Text variant="subtext" theme="neutral">
-            This install uses the most recent config from{' '}
-            <code>nuon apps sync</code>. Branch-based deployments and install
-            groups are not available until you explicitly move it to a branch.
+            {appSyncDisabled
+              ? 'This install has no app branch. App sync is disabled for this org, so move it to an app branch to get config changes.'
+              : 'This install uses the latest sync config. Branch-based deployments and install groups are not available until you move it to an app branch.'}
           </Text>
         )}
       </Card>
