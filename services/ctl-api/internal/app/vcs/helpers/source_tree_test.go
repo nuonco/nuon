@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -17,6 +18,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestUploadPackRefusedCommit(t *testing.T) {
+	assert.True(t, uploadPackRefusedCommit(errors.New("fatal: git upload-pack: not our ref")))
+	assert.True(t, uploadPackRefusedCommit(errors.New("sending upload-req message: encoding depth 1: write |1: broken pipe")))
+	assert.False(t, uploadPackRefusedCommit(errors.New("sending upload-req message: encoding depth 1: write |1: no space left on device")))
+	assert.False(t, uploadPackRefusedCommit(nil))
+}
 
 func TestFetchSourceTree(t *testing.T) {
 	dir := t.TempDir()
