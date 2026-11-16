@@ -50,6 +50,10 @@ describe('buildMatchesInstallConfig', () => {
 })
 
 describe('buildMatchesInstallBranch', () => {
+  test('keeps every build when the install has no app branch', () => {
+    expect(buildMatchesInstallBranch({} as TBuild, undefined)).toBe(true)
+  })
+
   test('matches the build app branch id', () => {
     expect(
       buildMatchesInstallBranch({ app_branch_id: 'br-1' } as TBuild, 'br-1')
@@ -71,10 +75,7 @@ describe('buildMatchesInstallBranch', () => {
     ).toBe(false)
   })
 
-  test('stays quiet when either branch id is missing', () => {
-    expect(buildMatchesInstallBranch({} as TBuild, 'br-1')).toBe(true)
-    expect(
-      buildMatchesInstallBranch({ app_branch_id: 'br-1' } as TBuild, undefined)
-    ).toBe(true)
+  test('rejects a build with no branch when the install is on one', () => {
+    expect(buildMatchesInstallBranch({} as TBuild, 'br-1')).toBe(false)
   })
 })

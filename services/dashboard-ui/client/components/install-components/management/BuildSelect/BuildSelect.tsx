@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Status } from '@/components/common/Status'
 import { Banner } from '@/components/common/Banner'
-import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Select } from '@/components/common/form/Select'
@@ -43,8 +42,9 @@ export const buildMatchesInstallBranch = (
   build: TBuild,
   installAppBranchId?: string
 ) => {
+  if (!installAppBranchId) return true
   const branchId = buildAppBranchId(build)
-  if (!installAppBranchId || !branchId) return true
+  if (!branchId) return false
   return branchId === installAppBranchId
 }
 
@@ -113,62 +113,43 @@ export const BuildSelect = ({
 }: IBuildSelect) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<TSortOrder>('newest')
-  const [showOtherConfigs, setShowOtherConfigs] = useState(false)
   const deployableBuilds = useMemo(() => excludePreviewBuilds(builds), [builds])
-
-  // A build deploys only when it belongs to the install's app branch and
-  // its app config matches the install. Other branches never deploy here.
-  // Other configs on this branch stay behind the toggle.
-  const branchMatchedBuilds = useMemo(
+  const branchBuilds = useMemo(
     () =>
       deployableBuilds.filter((build) =>
         buildMatchesInstallBranch(build, installAppBranchId)
       ),
     [deployableBuilds, installAppBranchId]
   )
-  const configMatchedBuilds = useMemo(
-    () =>
-      branchMatchedBuilds.filter((build) =>
-        buildMatchesInstallConfig(build, installAppConfigId)
-      ),
-    [branchMatchedBuilds, installAppConfigId]
-  )
-  const otherConfigBuildCount =
-    branchMatchedBuilds.length - configMatchedBuilds.length
-  const baseBuilds =
-    showOtherConfigs || otherConfigBuildCount === 0
-      ? branchMatchedBuilds
-      : configMatchedBuilds
 
   useEffect(() => {
-    if (!selectedBuildId && baseBuilds.length > 0) {
-      const mostRecentActiveBuild = baseBuilds.find(
+    if (!selectedBuildId && branchBuilds.length > 0) {
+      const mostRecentActiveBuild = branchBuilds.find(
         (build) => build?.status_v2?.status === 'active'
       )
       if (mostRecentActiveBuild) {
         onSelectBuild(mostRecentActiveBuild.id)
       }
     }
-  }, [selectedBuildId, baseBuilds, onSelectBuild])
+  }, [selectedBuildId, branchBuilds, onSelectBuild])
 
   const visibleBuilds = useMemo(() => {
     const filtered = searchQuery
-      ? baseBuilds.filter((build) => matchesQuery(build, searchQuery))
-      : baseBuilds
+      ? branchBuilds.filter((build) => matchesQuery(build, searchQuery))
+      : branchBuilds
     return [...filtered].sort((a, b) =>
       sortOrder === 'newest'
         ? buildTimestamp(b) - buildTimestamp(a)
         : buildTimestamp(a) - buildTimestamp(b)
     )
-  }, [baseBuilds, searchQuery, sortOrder])
+  }, [branchBuilds, searchQuery, sortOrder])
 
-  const showControls = deployableBuilds.length > 0 && !error
-  const selectedBuild = deployableBuilds.find(
-    (build) => build.id === selectedBuildId
-  )
-  const selectedConfigMismatch = selectedBuild
-    ? !buildMatchesInstallConfig(selectedBuild, installAppConfigId)
-    : false
+  const showControls = branchBuilds.length > 0 && !error
+  const selectedBuild = branchBuilds.find((build) => build.id === selectedBuildId)
+  const selectedConfigMismatch =
+    !!selectedBuild &&
+    !installAppBranchId &&
+    !buildMatchesInstallConfig(selectedBuild, installAppConfigId)
   const selectedBranchName = selectedBuild
     ? buildBranchName(selectedBuild)
     : undefined
@@ -190,24 +171,19 @@ export const BuildSelect = ({
       )
     }
 
-    if (deployableBuilds.length === 0 && !isLoading) {
+    if (branchBuilds.length === 0 && !isLoading) {
       return (
         <EmptyState
           variant="search"
           size="sm"
-          emptyTitle="No builds available"
-          emptyMessage="No builds found. Create a build first."
-        />
-      )
-    }
-
-    if (baseBuilds.length === 0 && !isLoading) {
-      return (
-        <EmptyState
-          variant="search"
-          size="sm"
-          emptyTitle="No matching builds"
-          emptyMessage={`No builds match this install's app config. ${otherConfigBuildCount} build${otherConfigBuildCount === 1 ? '' : 's'} from other app configs are hidden — show them to pick one anyway.`}
+          emptyTitle={
+            installAppBranchId ? 'No builds on this branch' : 'No builds available'
+          }
+          emptyMessage={
+            installAppBranchId
+              ? 'Builds from other app branches are hidden. Run this branch to create a build.'
+              : 'No builds found. Create a build first.'
+          }
         />
       )
     }
@@ -380,21 +356,6 @@ export const BuildSelect = ({
               />
             </div>
           </div>
-          {otherConfigBuildCount > 0 && (
-            <CheckboxInput
-              checked={showOtherConfigs}
-              onChange={(e) => setShowOtherConfigs(e.target.checked)}
-              labelProps={{
-                className:
-                  'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !p-0 gap-2',
-                labelText: (
-                  <Text variant="subtext" theme="neutral">
-                    {`Show ${otherConfigBuildCount} build${otherConfigBuildCount === 1 ? '' : 's'} from other app configs (these will fail to deploy)`}
-                  </Text>
-                ),
-              }}
-            />
-          )}
         </div>
       )}
       <div className="px-6 py-6">{renderContent()}</div>
