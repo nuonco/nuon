@@ -8,12 +8,12 @@ COPY processor ./processor/
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-telemetry-relay \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-telemetry-relay \
-    go run go.opentelemetry.io/collector/cmd/builder@v0.150.0 \
+    go run go.opentelemetry.io/collector/cmd/builder@v0.165.0 \
     --config build-config.yaml \
     --skip-compilation && \
     CGO_ENABLED=0 GOOS=linux go build -C ./otelcol-build -o /bin/nuon-telemetry-relay
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.21 AS final
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.24 AS final
 
 RUN apk add --no-cache ca-certificates && \
     addgroup -S -g 10001 relay && \

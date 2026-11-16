@@ -223,7 +223,7 @@ FROM ${RUNTIME_IMAGE} AS final
 
 WORKDIR /src/services/ctl-api
 
-ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
 
 # expected as --build-args flags
 ARG VERSION

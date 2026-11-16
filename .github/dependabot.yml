@@ -26,6 +26,24 @@ updates:
         patterns:
           - "nuon*"
 
+  - package-ecosystem: "gomod"
+    directories:
+      - "/bins/telemetry-relay/extension/nuonjwtauthextension"
+      - "/bins/telemetry-relay/extension/nuonpartialsuccessextension"
+      - "/bins/telemetry-relay/processor/nuonidentityprocessor"
+    schedule:
+      day: sunday
+      interval: "monthly"
+      time: "07:10"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 3
+    labels:
+      - dependabot
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

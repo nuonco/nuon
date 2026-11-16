@@ -7,7 +7,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go/aws"
 
 	"github.com/nuonco/nuon/pkg/generics"
 )
@@ -31,7 +30,7 @@ type s3BlobGetter interface {
 }
 
 func (s *s3Downloader) getBlob(ctx context.Context, client s3BlobGetter, key string) ([]byte, error) {
-	buf := aws.NewWriteAtBuffer([]byte{})
+	buf := manager.NewWriteAtBuffer([]byte{})
 	_, err := client.Download(ctx, buf, &s3.GetObjectInput{
 		Bucket: generics.ToPtr(s.Bucket),
 		Key:    generics.ToPtr(key),
