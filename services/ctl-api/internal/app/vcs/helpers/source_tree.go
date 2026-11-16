@@ -187,6 +187,20 @@ func (h *Helpers) cacheSourceTree(key string, tree *SourceTree) {
 	}
 }
 
+// git-upload-pack exits as soon as it rejects the want. On the local transport
+// that closes the pipe while go-git is still writing the depth line, and go-git
+// stringifies the write error, so the syscall value is only in the message.
+func uploadPackRefusedCommit(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	if strings.Contains(msg, "not our ref") {
+		return true
+	}
+	return strings.Contains(msg, "sending upload-req message:") && strings.Contains(msg, "broken pipe")
+}
+
 func githubUploadPackCapabilities() *capability.List {
 	caps := capability.NewList()
 	for _, c := range []capability.Capability{capability.OFSDelta, capability.Sideband64k, capability.Shallow, capability.Filter} {
@@ -236,7 +250,7 @@ func fetchSourceTree(ctx context.Context, url string, auth transport.AuthMethod,
 		req.Filter = packp.FilterBlobNone()
 	}
 	resp, err := sess.UploadPack(ctx, req)
-	if errors.Is(err, transport.ErrEmptyUploadPackRequest) || (err != nil && strings.Contains(err.Error(), "not our ref")) {
+	if errors.Is(err, transport.ErrEmptyUploadPackRequest) || uploadPackRefusedCommit(err) {
 		return nil, ErrSourceCommitNotFound
 	}
 	if err != nil {
