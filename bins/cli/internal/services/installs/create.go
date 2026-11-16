@@ -28,7 +28,7 @@ const (
 	statusAccessError = "access_error"
 
 	skipBranchID    = "\x00skip-branch"
-	skipBranchLabel = "Skip app branch (use the most recent config from `nuon apps sync`)"
+	skipBranchLabel = "Skip app branch (use the latest sync config)"
 	skipGroupID     = "\x00skip-group"
 	skipGroupLabel  = "Skip install group (the install will be orphaned until its labels match)"
 )
@@ -65,7 +65,12 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 		return ui.PrintError(fmt.Errorf("label removal (key-) is not allowed at install creation; use `nuon installs label` after the install exists"))
 	}
 
-	branch, err := s.resolveCreateInstallBranch(ctx, appID, appBranchID, installGroupID, asJSON)
+	org, err := s.api.GetOrg(ctx)
+	if err != nil {
+		return ui.PrintError(fmt.Errorf("unable to read org features: %w", err))
+	}
+
+	branch, err := s.resolveCreateInstallBranch(ctx, appID, appBranchID, installGroupID, asJSON, org.Features["disable-app-sync"])
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -268,12 +273,31 @@ type createInstallBranch struct {
 	groupLabels map[string]string
 }
 
-func (s *Service) resolveCreateInstallBranch(ctx context.Context, appID, appBranchID, installGroupID string, asJSON bool) (*createInstallBranch, error) {
+func branchSelectorItems(branches []*models.AppAppBranch, allowSkip bool) []bubbles.SelectorItem {
+	items := make([]bubbles.SelectorItem, 0, len(branches)+1)
+	for _, branch := range branches {
+		if branch != nil {
+			items = append(items, bubbles.NewSelectorItem(branch.Name, branch.ID, branch.ID))
+		}
+	}
+	if allowSkip {
+		items = append(items, bubbles.NewSelectorItem(skipBranchLabel, "", skipBranchID))
+	}
+	return items
+}
+
+func (s *Service) resolveCreateInstallBranch(ctx context.Context, appID, appBranchID, installGroupID string, asJSON, appSyncDisabled bool) (*createInstallBranch, error) {
 	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return nil, err
 	}
 	if len(branches) == 0 {
+		if appSyncDisabled {
+			return nil, fmt.Errorf("app has no app branches and disable-app-sync is enabled; create one with `nuon branches sync`")
+		}
+		if asJSON || !s.cfg.Interactive {
+			fmt.Fprintln(os.Stderr, "no --app-branch-id; using the latest sync config")
+		}
 		return &createInstallBranch{}, nil
 	}
 
@@ -281,7 +305,10 @@ func (s *Service) resolveCreateInstallBranch(ctx context.Context, appID, appBran
 		return nil, fmt.Errorf("--install-group-id requires --app-branch-id")
 	}
 	if appBranchID == "" && (asJSON || !s.cfg.Interactive) {
-		fmt.Fprintln(os.Stderr, "no --app-branch-id; using the app config from the last nuon apps sync")
+		if appSyncDisabled {
+			return nil, fmt.Errorf("--app-branch-id is required when disable-app-sync is enabled")
+		}
+		fmt.Fprintln(os.Stderr, "no --app-branch-id; using the latest sync config")
 		return &createInstallBranch{}, nil
 	}
 
@@ -297,17 +324,7 @@ func (s *Service) resolveCreateInstallBranch(ctx context.Context, appID, appBran
 			return nil, fmt.Errorf("app branch %q was not found on this app", appBranchID)
 		}
 	} else {
-		items := make([]bubbles.SelectorItem, 0, len(branches))
-		for _, branch := range branches {
-			if branch != nil {
-				items = append(items, bubbles.NewSelectorItem(branch.Name, branch.ID, branch.ID))
-			}
-		}
-		items = append(items, bubbles.NewSelectorItem(
-			skipBranchLabel,
-			"",
-			skipBranchID,
-		))
+		items := branchSelectorItems(branches, !appSyncDisabled)
 		selectedID, err := bubbles.SelectFromItems("Select an app branch", items, s.cfg.Interactive)
 		if err != nil {
 			return nil, err
