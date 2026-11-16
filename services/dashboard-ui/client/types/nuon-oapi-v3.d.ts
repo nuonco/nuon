@@ -9659,20 +9659,12 @@ export interface components {
       resources?: components["schemas"]["service.InstallAlignmentResource"][];
     };
     "service.InstallAlignmentAttempt": {
-      build_id?: string;
+      branch_run?: components["schemas"]["service.InstallOverviewCommit"];
       created_at?: string;
       id?: string;
-      run?: components["schemas"]["service.InstallOverviewCommit"];
       status?: string;
-      step_id?: string;
       type?: components["schemas"]["app.WorkflowType"];
       workflow_id?: string;
-    };
-    "service.InstallAlignmentBuild": {
-      created_at?: string;
-      id?: string;
-      resolved_tag?: string;
-      sha?: string;
     };
     /** @enum {string} */
     "service.InstallAlignmentCategory": "changes-not-applied" | "state-drift-detected" | "in-sync" | "unknown" | "disabled" | "torn-down";
@@ -9709,7 +9701,6 @@ export interface components {
       workflow_id?: string;
     };
     "service.InstallAlignmentResource": {
-      applied_build?: components["schemas"]["service.InstallAlignmentBuild"];
       applied_build_id?: string;
       applied_by?: components["schemas"]["service.InstallAlignmentOrigin"];
       applied_config_id?: string;
@@ -9720,9 +9711,7 @@ export interface components {
       component_id?: string;
       component_type?: string;
       earlier_attempts?: number;
-      expected_build?: components["schemas"]["service.InstallAlignmentBuild"];
       expected_build_id?: string;
-      expected_by?: components["schemas"]["service.InstallAlignmentOrigin"];
       expected_config_id?: string;
       explanation?: components["schemas"]["service.InstallAlignmentExplanation"];
       id?: string;

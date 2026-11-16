@@ -1,67 +1,35 @@
-import {
-  CommitLink,
-  PullRequestLink,
-  TagLink,
-} from '@/components/common/GitReferenceLink'
+import { RunSourceMark } from '@/components/branches/BranchOverview/RunSourceCard'
+import { resolveRunSource } from '@/components/branches/BranchOverview/run-source'
+import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TInstallAlignmentOrigin } from '@/types'
 import { humanize } from '@/utils/string-utils'
 
-const SourceMark = ({
-  origin,
-  repo,
-}: {
-  origin: TInstallAlignmentOrigin
-  repo?: string
-}) => {
-  const run = origin.run
-  if (run?.metadata?.pr_number) {
-    return (
-      <PullRequestLink
-        number={run.metadata.pr_number}
-        repo={repo}
-        className="shrink-0"
-      />
-    )
-  }
-  if (run?.metadata?.tag) {
-    return (
-      <TagLink
-        tag={run.metadata.tag}
-        repo={repo}
-        className="max-w-36 truncate shrink-0"
-      />
-    )
-  }
-  return <CommitLink sha={run?.sha} repo={repo} className="shrink-0" />
-}
-
 export const RunRef = ({
-  emptyLabel = 'Not deployed',
   href,
   origin,
   repo,
 }: {
-  emptyLabel?: string
   href?: string
-  origin?: TInstallAlignmentOrigin
+  origin: TInstallAlignmentOrigin
   repo?: string
 }) => {
-  if (!origin?.run && !origin?.workflow_type) {
-    return (
-      <Text as="span" variant="subtext" theme="neutral">
-        {emptyLabel}
-      </Text>
-    )
-  }
-  const label = origin.run
-    ? origin.run.message?.split('\n')[0] || 'View run'
-    : humanize(origin.workflow_type!)
+  const run = origin.run
+  const source = run
+    ? resolveRunSource({ metadata: run.metadata }, repo)
+    : undefined
+  const label = run
+    ? run.message?.split('\n')[0] || 'View run'
+    : humanize(origin.workflow_type ?? '')
   return (
     <span className="flex items-center gap-1.5 min-w-0" data-testid="run-ref">
-      {origin.run ? <SourceMark origin={origin} repo={repo} /> : null}
+      {source?.kind === 'pull-request' || source?.kind === 'tag' ? (
+        <RunSourceMark source={source} />
+      ) : run ? (
+        <CommitLink sha={run.sha} repo={repo} className="shrink-0" />
+      ) : null}
       {href ? (
         <Link href={href} className="truncate min-w-0">
           {label}

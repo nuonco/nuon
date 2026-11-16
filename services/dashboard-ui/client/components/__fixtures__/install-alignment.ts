@@ -72,12 +72,6 @@ export const alignmentPlan = (resourceId: string, planOnly = false) => ({
   changes_noop: 0,
 })
 
-export const alignmentBuild = (id: string, sha: string, hours = 30) => ({
-  id,
-  sha,
-  created_at: hoursAgo(hours),
-})
-
 export const alignmentResource = (
   overrides: Partial<TInstallAlignmentResource> = {}
 ): TInstallAlignmentResource => ({
@@ -92,12 +86,10 @@ export const alignmentResource = (
 })
 
 export const liveFields = (
-  componentId: string,
-  sha = '4f1d9c2a7be03e5d8a6c1b4f7a9e3c5b2d8f1a0e'
+  componentId: string
 ): Partial<TInstallAlignmentResource> => ({
   expected_build_id: `bld-${componentId}`,
   applied_build_id: `bld-${componentId}`,
-  applied_build: alignmentBuild(`bld-${componentId}`, sha, 76),
   applied_deploy_id: `dep-live-${componentId}`,
   applied_deploy_at: hoursAgo(72),
   applied_by: runOrigin(liveCommit),
@@ -112,23 +104,14 @@ export const unappliedResource = (
     status: 'error',
     expected_build_id: 'bld-selected',
     applied_build_id: 'bld-applied',
-    expected_build: alignmentBuild('bld-selected', selectedCommit.sha!, 8),
-    applied_build: alignmentBuild(
-      'bld-applied',
-      '4f1d9c2a7be03e5d8a6c1b4f7a9e3c5b2d8f1a0e',
-      72
-    ),
     applied_deploy_at: hoursAgo(72),
     applied_by: runOrigin(liveCommit),
-    expected_by: runOrigin(selectedCommit),
     blocking_attempt: {
       id: `dep-${overrides.id ?? 'ic-api'}`,
       status: 'error',
       created_at: hoursAgo(5),
       workflow_id: `wf-attempt-${overrides.id ?? 'ic-api'}`,
-      step_id: `step-wf-attempt-${overrides.id ?? 'ic-api'}`,
-      build_id: 'bld-selected',
-      run: selectedCommit,
+      branch_run: selectedCommit,
     },
     earlier_attempts: 2,
     plan: alignmentPlan(overrides.id ?? 'ic-api'),
@@ -167,7 +150,6 @@ export const inputUpdateResource = (
     reason: 'Saved input changes haven’t taken effect.',
     expected_build_id: 'bld-selected',
     applied_build_id: 'bld-selected',
-    applied_build: alignmentBuild('bld-selected', selectedCommit.sha!, 8),
     expected_config_id: 'cfg-selected',
     applied_config_id: 'cfg-selected',
     blocking_attempt: {
@@ -253,7 +235,6 @@ const pastAttempt = (resourceId: string, status: string) => ({
   status,
   created_at: hoursAgo(5),
   workflow_id: `wf-attempt-${resourceId}`,
-  build_id: 'bld-selected',
 })
 
 const openCause = (index: number, status: string, summary: string) => {

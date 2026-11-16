@@ -28,9 +28,6 @@ type ServiceInstallAlignmentAttempt struct {
 	// id
 	ID string `json:"id,omitempty"`
 
-	// run
-	Run *ServiceInstallOverviewCommit `json:"run,omitempty"`
-
 	// status
 	Status string `json:"status,omitempty"`
 
@@ -48,10 +45,6 @@ type ServiceInstallAlignmentAttempt struct {
 func (m *ServiceInstallAlignmentAttempt) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateRun(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateType(formats); err != nil {
 		res = append(res, err)
 	}
@@ -59,29 +52,6 @@ func (m *ServiceInstallAlignmentAttempt) Validate(formats strfmt.Registry) error
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceInstallAlignmentAttempt) validateRun(formats strfmt.Registry) error {
-	if swag.IsZero(m.Run) { // not required
-		return nil
-	}
-
-	if m.Run != nil {
-		if err := m.Run.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("run")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("run")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -110,10 +80,6 @@ func (m *ServiceInstallAlignmentAttempt) validateType(formats strfmt.Registry) e
 func (m *ServiceInstallAlignmentAttempt) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateRun(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateType(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -121,31 +87,6 @@ func (m *ServiceInstallAlignmentAttempt) ContextValidate(ctx context.Context, fo
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceInstallAlignmentAttempt) contextValidateRun(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Run != nil {
-
-		if swag.IsZero(m.Run) { // not required
-			return nil
-		}
-
-		if err := m.Run.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("run")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("run")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 

@@ -14,6 +14,7 @@ import {
   inputUpdateResource,
   inSyncResources,
   mixedAlignmentResources,
+  selectedCommit,
 } from '@/components/__fixtures__/install-alignment'
 import type { TInstallAlignmentResource } from '@/types'
 import { explanationEvidence, hasOngoingDeployment } from '../alignment-utils'
@@ -64,6 +65,7 @@ const Interactive = ({
           origin?.run ? `#run-${origin.run.run_id}` : undefined
         }
         repo="acme/payments"
+        selectedCommit={selectedCommit}
         {...props}
       />
     </div>

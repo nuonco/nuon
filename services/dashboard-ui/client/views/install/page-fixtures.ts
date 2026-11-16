@@ -1141,7 +1141,6 @@ const resolveDriftFixture = (
       resource.category = 'in-sync'
       resource.status = 'active'
       resource.applied_build_id = resource.expected_build_id
-      resource.applied_build = resource.expected_build
       resource.applied_deploy_id = `${id}-deploy`
       resource.applied_deploy_at = new Date(approvedAt! + 2000).toISOString()
       resource.reason = undefined

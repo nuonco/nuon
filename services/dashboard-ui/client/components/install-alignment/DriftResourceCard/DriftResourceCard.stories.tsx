@@ -4,10 +4,8 @@ export default {
 
 import {
   causeResources,
-  inputUpdateResource,
   manualOrigin,
   openDeploymentResource,
-  selectedCommit,
   stateDriftResource,
   unappliedResource,
 } from '@/components/__fixtures__/install-alignment'
@@ -50,39 +48,11 @@ export const ResolveError = () => (
   />
 )
 
-export const PolicyDenied = () => (
-  <DriftResourceCard
-    {...links}
-    onViewPlan={undefined}
-    resource={unappliedResource({
-      blocking_attempt: {
-        id: 'dep-ic-api',
-        status: 'policy-failed',
-        created_at: new Date(Date.now() - 2 * 3_600_000).toISOString(),
-        workflow_id: 'wf-attempt-ic-api',
-        build_id: 'bld-selected',
-        run: selectedCommit,
-      },
-      earlier_attempts: 1,
-      plan: undefined,
-      explanation: {
-        summary: 'A policy denied the latest deployment.',
-        status: 'policy-failed',
-        workflow_id: 'wf-attempt-ic-api',
-      },
-    })}
-  />
-)
-
 export const LiveFromManualDeploy = () => (
   <DriftResourceCard
     {...links}
     resource={unappliedResource({ applied_by: manualOrigin })}
   />
-)
-
-export const InputsChanged = () => (
-  <DriftResourceCard {...links} resource={inputUpdateResource()} />
 )
 
 export const OpenDeployment = () => (

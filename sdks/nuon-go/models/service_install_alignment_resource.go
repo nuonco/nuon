@@ -19,9 +19,6 @@ import (
 // swagger:model service.InstallAlignmentResource
 type ServiceInstallAlignmentResource struct {
 
-	// applied build
-	AppliedBuild *ServiceInstallAlignmentBuild `json:"applied_build,omitempty"`
-
 	// applied build id
 	AppliedBuildID string `json:"applied_build_id,omitempty"`
 
@@ -52,14 +49,8 @@ type ServiceInstallAlignmentResource struct {
 	// earlier attempts
 	EarlierAttempts int64 `json:"earlier_attempts,omitempty"`
 
-	// expected build
-	ExpectedBuild *ServiceInstallAlignmentBuild `json:"expected_build,omitempty"`
-
 	// expected build id
 	ExpectedBuildID string `json:"expected_build_id,omitempty"`
-
-	// expected by
-	ExpectedBy *ServiceInstallAlignmentOrigin `json:"expected_by,omitempty"`
 
 	// expected config id
 	ExpectedConfigID string `json:"expected_config_id,omitempty"`
@@ -93,10 +84,6 @@ type ServiceInstallAlignmentResource struct {
 func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAppliedBuild(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateAppliedBy(formats); err != nil {
 		res = append(res, err)
 	}
@@ -106,14 +93,6 @@ func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) erro
 	}
 
 	if err := m.validateCategory(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateExpectedBuild(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateExpectedBy(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -136,29 +115,6 @@ func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) erro
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) validateAppliedBuild(formats strfmt.Registry) error {
-	if swag.IsZero(m.AppliedBuild) { // not required
-		return nil
-	}
-
-	if m.AppliedBuild != nil {
-		if err := m.AppliedBuild.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("applied_build")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("applied_build")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -224,52 +180,6 @@ func (m *ServiceInstallAlignmentResource) validateCategory(formats strfmt.Regist
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) validateExpectedBuild(formats strfmt.Registry) error {
-	if swag.IsZero(m.ExpectedBuild) { // not required
-		return nil
-	}
-
-	if m.ExpectedBuild != nil {
-		if err := m.ExpectedBuild.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("expected_build")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("expected_build")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) validateExpectedBy(formats strfmt.Registry) error {
-	if swag.IsZero(m.ExpectedBy) { // not required
-		return nil
-	}
-
-	if m.ExpectedBy != nil {
-		if err := m.ExpectedBy.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("expected_by")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("expected_by")
-			}
-
-			return err
-		}
 	}
 
 	return nil
@@ -369,10 +279,6 @@ func (m *ServiceInstallAlignmentResource) validatePlan(formats strfmt.Registry) 
 func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateAppliedBuild(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateAppliedBy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -382,14 +288,6 @@ func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, f
 	}
 
 	if err := m.contextValidateCategory(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateExpectedBuild(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateExpectedBy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -412,31 +310,6 @@ func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, f
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) contextValidateAppliedBuild(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.AppliedBuild != nil {
-
-		if swag.IsZero(m.AppliedBuild) { // not required
-			return nil
-		}
-
-		if err := m.AppliedBuild.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("applied_build")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("applied_build")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -507,56 +380,6 @@ func (m *ServiceInstallAlignmentResource) contextValidateCategory(ctx context.Co
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) contextValidateExpectedBuild(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.ExpectedBuild != nil {
-
-		if swag.IsZero(m.ExpectedBuild) { // not required
-			return nil
-		}
-
-		if err := m.ExpectedBuild.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("expected_build")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("expected_build")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) contextValidateExpectedBy(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.ExpectedBy != nil {
-
-		if swag.IsZero(m.ExpectedBy) { // not required
-			return nil
-		}
-
-		if err := m.ExpectedBy.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("expected_by")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("expected_by")
-			}
-
-			return err
-		}
 	}
 
 	return nil

@@ -43,17 +43,6 @@ export const PushRun = () => (
   />
 )
 
-export const Sync = () => (
-  <LiveBuild
-    appliedAt={appliedAt}
-    origin={runOrigin(liveCommit)}
-    originHref="#run"
-    repo="acme/payments"
-    deployHref="#sync"
-    variant="sync"
-  />
-)
-
 export const ManualDeploy = () => (
   <LiveBuild
     appliedAt={appliedAt}

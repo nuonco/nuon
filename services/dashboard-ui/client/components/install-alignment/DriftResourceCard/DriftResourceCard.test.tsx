@@ -24,7 +24,7 @@ const renderCard = (props: Parameters<typeof DriftResourceCard>[0]) =>
     </MemoryRouter>
   )
 
-test('a version change shows the running branch run, the blocking attempt, and earlier attempts', () => {
+test('a version change shows the deployed branch run, the blocking attempt, and earlier attempts', () => {
   renderCard({
     resource: unappliedResource(),
     explanationHref: '/workflows/wf-attempt-ic-api',
@@ -33,10 +33,10 @@ test('a version change shows the running branch run, the blocking attempt, and e
     repo: 'acme/payments',
   })
 
-  const builds = screen.getByTestId('drift-builds')
+  const builds = screen.getByTestId('live-build')
   const [live] = within(builds).getAllByTestId('run-ref')
   expect(builds.textContent).toStartWith(
-    'RunningPR #412Pin the ledger module to 2.4.0· deployed'
+    'DeployedPR #412Pin the ledger module to 2.4.0·'
   )
   expect(
     within(live)
@@ -84,12 +84,11 @@ test('a live version from outside a branch run names its workflow', () => {
   renderCard({
     resource: unappliedResource({
       applied_by: manualOrigin,
-      expected_by: undefined,
     }),
     originHref,
   })
 
-  const builds = screen.getByTestId('drift-builds')
+  const builds = screen.getByTestId('live-build')
   expect(
     within(builds)
       .getByRole('link', { name: 'Manual deploy' })
@@ -105,7 +104,7 @@ test('changed inputs on the live build show the reason instead of a build change
     historyHref: '/components/cmp-api/deploys',
   })
 
-  expect(screen.queryByTestId('drift-builds')).toBeNull()
+  expect(screen.queryByTestId('live-build')).toBeNull()
   expect(screen.getByTestId('drift-consequence').textContent).toBe(
     'Saved input changes haven’t taken effect.'
   )
@@ -136,8 +135,8 @@ test('an open deployment links only to itself and counts the superseded failure 
 test('unattributed changes explain the missing evidence without inventing a workflow', () => {
   renderCard({
     resource: unappliedResource({
-      expected_build: undefined,
-      applied_build: undefined,
+      expected_build_id: undefined,
+      applied_build_id: undefined,
       reason: 'This component hasn’t been deployed yet.',
       explanation: undefined,
       blocking_attempt: undefined,

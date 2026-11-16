@@ -24,7 +24,7 @@ import {
   hasOngoingDeployment,
   isDrifted,
 } from '../alignment-utils'
-import { RunRef } from '../LiveBuild'
+import { LiveBuild, RunRef } from '../LiveBuild'
 
 export interface IDriftResourceCard {
   deploymentHref?: string
@@ -112,10 +112,11 @@ export const DriftResourceCard = ({
         ? resource.blocking_attempt?.created_at
         : undefined
 
-  const expected = resource.expected_build
-  const applied = resource.applied_build
+  const deployed = !!resource.applied_build_id
   const showBuilds =
-    !isStateDrift && !!expected?.id && expected.id !== applied?.id
+    !isStateDrift &&
+    !!resource.expected_build_id &&
+    resource.expected_build_id !== resource.applied_build_id
   const consequence = showBuilds
     ? undefined
     : (isImage && !isStateDrift
@@ -127,10 +128,10 @@ export const DriftResourceCard = ({
   const attempt = resource.blocking_attempt
   const attemptOrigin =
     !openDeployment &&
-    attempt?.run &&
+    attempt?.branch_run &&
     evidenceWorkflowId &&
     evidenceWorkflowId === attempt.workflow_id
-      ? { run: attempt.run, workflow_id: attempt.workflow_id }
+      ? { run: attempt.branch_run, workflow_id: attempt.workflow_id }
       : undefined
   const earlier = openDeployment
     ? (resource.earlier_attempts ?? 0) + (resource.blocking_attempt ? 1 : 0)
@@ -235,34 +236,19 @@ export const DriftResourceCard = ({
       ) : null}
 
       {showBuilds ? (
-        <div
-          className="flex flex-wrap items-center gap-x-1.5 gap-y-1"
-          data-testid="drift-builds"
-        >
-          <Text as="span" variant="subtext" theme="neutral">
-            {applied?.id ? 'Running' : 'Not deployed yet'}
+        deployed ? (
+          <LiveBuild
+            appliedAt={resource.applied_deploy_at}
+            origin={resource.applied_by}
+            originHref={originHref?.(resource.applied_by)}
+            repo={repo}
+            variant={isImage ? 'sync' : 'deploy'}
+          />
+        ) : (
+          <Text variant="subtext" theme="neutral">
+            Not deployed yet
           </Text>
-          {applied?.id ? (
-            <>
-              <RunRef
-                origin={resource.applied_by}
-                href={originHref?.(resource.applied_by)}
-                repo={repo}
-              />
-              {resource.applied_deploy_at ? (
-                <Text as="span" variant="subtext" theme="neutral" flex nowrap>
-                  · {isImage ? 'synced' : 'deployed'}
-                  <Time
-                    time={resource.applied_deploy_at}
-                    format="relative"
-                    variant="subtext"
-                    theme="neutral"
-                  />
-                </Text>
-              ) : null}
-            </>
-          ) : null}
-        </div>
+        )
       ) : (
         <Text variant="subtext" data-testid="drift-consequence">
           {consequence}
@@ -302,9 +288,7 @@ export const DriftResourceCard = ({
         >
           <Text variant="subtext" theme="neutral">
             {earlierAttemptsLabel(earlier)}
-            {applied?.id
-              ? ` since the live ${isImage ? 'sync' : 'deploy'}`
-              : null}
+            {deployed ? ` since the live ${isImage ? 'sync' : 'deploy'}` : null}
           </Text>
           {historyHref ? (
             <Link href={historyHref}>View deploy history</Link>

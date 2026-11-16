@@ -14,6 +14,7 @@ import type {
   TAPIError,
   TInstallAlignmentOrigin,
   TInstallAlignmentResource,
+  TInstallOverviewCommit,
 } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
@@ -36,6 +37,7 @@ export interface IDriftedResources {
   onRetry?: () => void
   originHref?: (origin?: TInstallAlignmentOrigin) => string | undefined
   repo?: string
+  selectedCommit?: TInstallOverviewCommit
   pageSize?: number
   renderCard: (resource: TInstallAlignmentResource) => ReactNode
   resources: TInstallAlignmentResource[]
@@ -69,6 +71,7 @@ export const DriftedResources = ({
   originHref,
   pageSize = 4,
   repo,
+  selectedCommit,
   renderCard,
   resources,
   search,
@@ -279,13 +282,16 @@ export const DriftedResources = ({
                         .slice(start, start + pageSize)
                         .filter((resource) => resource.category === category)
                       if (!group.length) return null
-                      const wanted = group.find(
-                        (resource) =>
-                          resource.expected_by &&
-                          resource.expected_build?.id &&
-                          resource.expected_build.id !==
-                            resource.applied_build?.id
-                      )?.expected_by
+                      const wanted =
+                        selectedCommit &&
+                        group.some(
+                          (resource) =>
+                            resource.expected_build_id &&
+                            resource.expected_build_id !==
+                              resource.applied_build_id
+                        )
+                          ? { run: selectedCommit }
+                          : undefined
                       return (
                         <section key={category} className="flex flex-col gap-2">
                           <div className="flex flex-col gap-1">

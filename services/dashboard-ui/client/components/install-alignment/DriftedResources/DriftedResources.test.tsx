@@ -13,6 +13,7 @@ import {
   openDeploymentResource,
   stateDriftResource,
   unappliedResource,
+  selectedCommit,
 } from '@/components/__fixtures__/install-alignment'
 import type { TAPIError, TInstallAlignmentResource } from '@/types'
 import { DriftResourceCard } from '../DriftResourceCard'
@@ -67,6 +68,7 @@ const View = ({
       pageSize={pageSize}
       unavailable={unavailable}
       onRetry={onRetry}
+      selectedCommit={selectedCommit}
       renderCard={(resource) => (
         <DriftResourceCard
           resource={resource}
@@ -87,7 +89,7 @@ test('ongoing resources appear once above drift, without hiding their unapplied 
   expect(
     within(ongoing).getByRole('heading', { name: 'running-deploy' })
   ).toBeTruthy()
-  expect(within(ongoing).getAllByTestId('drift-builds')).toHaveLength(1)
+  expect(within(ongoing).getAllByTestId('live-build')).toHaveLength(1)
   expect(within(ongoing).getByText('In progress')).toBeTruthy()
   expect(within(ongoing).queryByText('Workflow cancelled')).toBeNull()
   expect(

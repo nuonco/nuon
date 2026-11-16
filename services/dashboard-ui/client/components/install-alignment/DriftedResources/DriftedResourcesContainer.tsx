@@ -41,26 +41,20 @@ export const useDriftCardProps = () => {
 
   return (resource: TInstallAlignmentResource) => {
     const evidence = explanationEvidence(resource)
+    const nameHref =
+      resource.kind === 'component' || resource.kind === 'image'
+        ? installLink({
+            installId: install?.id,
+            appId: install?.app_id,
+            suffix: `/components/${resource.component_id}`,
+          })
+        : undefined
     return {
       resource,
-      nameHref:
-        resource.kind === 'component' || resource.kind === 'image'
-          ? installLink({
-              installId: install?.id,
-              appId: install?.app_id,
-              suffix: `/components/${resource.component_id}`,
-            })
-          : undefined,
+      nameHref,
       originHref,
       repo,
-      historyHref:
-        resource.kind === 'component' || resource.kind === 'image'
-          ? installLink({
-              installId: install?.id,
-              appId: install?.app_id,
-              suffix: `/components/${resource.component_id}/deploys`,
-            })
-          : undefined,
+      historyHref: nameHref ? `${nameHref}/deploys` : undefined,
       explanationHref: workflowHref(evidence?.workflowId, evidence?.stepId),
       deploymentHref: workflowHref(resource.open_deployment?.id),
       metadata:
@@ -107,6 +101,7 @@ export const DriftedResourcesContainer = ({
     <DriftedResources
       originHref={originHref}
       repo={data?.branch_tracking?.repo}
+      selectedCommit={data?.branch_tracking?.selected_commit}
       resources={resourcesOfKinds(data?.alignment?.resources, kinds).filter(
         (resource) =>
           (resource.category !== 'torn-down' ||
