@@ -39,6 +39,8 @@ func NewCachedResponseWriter(w gin.ResponseWriter) *CachedResponseWriter {
 	}
 }
 
+const statusClientClosedRequest = 499
+
 // maxLoggedRequestBody bounds how much of a request body is buffered for error logs.
 const maxLoggedRequestBody = 64 << 10
 
@@ -258,6 +260,15 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				Error:       "invalid request",
 				UserError:   true,
 				Description: fmt.Sprintf("invalid request input: %s", err),
+			})
+			return
+		}
+
+		if errors.Is(err, context.Canceled) && c.Request.Context().Err() != nil {
+			c.JSON(statusClientClosedRequest, ErrResponse{
+				Error:       "client closed request",
+				UserError:   true,
+				Description: err.Error(),
 			})
 			return
 		}
