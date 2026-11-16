@@ -12,7 +12,6 @@ type InstallAlignmentAttempt = alignment.InstallAlignmentAttempt
 type InstallAlignmentOpenDeployment = alignment.InstallAlignmentOpenDeployment
 type InstallAlignmentExplanation = alignment.InstallAlignmentExplanation
 type InstallAlignmentPlan = alignment.InstallAlignmentPlan
-type InstallAlignmentBuild = alignment.InstallAlignmentBuild
 
 const (
 	InstallAlignmentResourceKindComponent = alignment.InstallAlignmentResourceKindComponent

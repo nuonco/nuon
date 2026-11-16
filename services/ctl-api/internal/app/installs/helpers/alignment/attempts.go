@@ -8,6 +8,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 )
@@ -21,7 +22,6 @@ type attemptCandidate struct {
 	targetID     string
 	workflowID   string
 	createdAt    time.Time
-	buildID      string
 	status       string
 	policySkip   bool
 	denied       bool
@@ -51,10 +51,7 @@ func (s *Helpers) equivalentBuilds(ctx context.Context, st *installAlignmentStat
 	if len(buildIDs) == 0 {
 		return out, nil
 	}
-	ids := make([]string, 0, len(buildIDs))
-	for id := range buildIDs {
-		ids = append(ids, id)
-	}
+	ids := generics.MapToKeys(buildIDs)
 	var builds []app.ComponentBuild
 	if err := s.db.WithContext(ctx).
 		Select("id", "component_config_connection_id", "source_checksum", "source_digest", "source_identity").
@@ -105,32 +102,15 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 	}
 	candidates := map[string][]*attemptCandidate{}
 	if len(componentIDs) > 0 {
-		var rows []struct {
-			ID                 string
-			InstallComponentID string
-			ComponentBuildID   string
-			Type               app.InstallDeployType
-			Status             string
-			PolicyAction       string
-			Denied             bool
-			Applied            bool
-			CreatedAt          time.Time
-			InstallWorkflowID  *string
-		}
-		query := s.db.WithContext(ctx).Table("install_deploys AS d").
-			Select("d.id", "d.install_component_id", "d.component_build_id", "d.type",
-				"COALESCE(NULLIF(d.status_v2->>'status', ''), d.status) AS status",
-				"COALESCE(d.status_v2->'metadata'->>'policy_action', '') AS policy_action",
-				"CASE WHEN jsonb_typeof(d.status_v2->'metadata'->'deny_violations') = 'array' THEN jsonb_array_length(d.status_v2->'metadata'->'deny_violations') > 0 ELSE false END AS denied",
-				"d.applied_at IS NOT NULL AS applied",
-				"d.created_at", "d.install_workflow_id").
-			Joins("JOIN install_workflows w ON w.id = d.install_workflow_id").
+		var rows []app.InstallDeploy
+		query := s.db.WithContext(ctx).Select(deployCandidateColumns, "install_deploys.install_component_id", "install_deploys.component_build_id", "install_deploys.type").
+			Joins("JOIN install_workflows w ON w.id = install_deploys.install_workflow_id").
 			Where("w.owner_id = ? AND w.owner_type = ? AND w.deleted_at = 0 AND NOT w.plan_only", st.install.ID, "installs").
-			Where("d.deleted_at = 0 AND d.install_component_id IN ?", componentIDs)
+			Where("install_deploys.install_component_id IN ?", componentIDs)
 		if minSince != nil {
-			query = query.Where("d.created_at > ?", *minSince)
+			query = query.Where("install_deploys.created_at > ?", *minSince)
 		}
-		if err := query.Order("d.created_at DESC").Scan(&rows).Error; err != nil {
+		if err := query.Order("install_deploys.created_at DESC").Find(&rows).Error; err != nil {
 			return fmt.Errorf("unable to get install deploy attempts: %w", err)
 		}
 		otherBuilds := map[string]struct{}{}
@@ -143,36 +123,23 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 		if err != nil {
 			return err
 		}
-		for _, row := range rows {
+		for i := range rows {
+			row := &rows[i]
 			res := byID[row.InstallComponentID]
-			if res == nil || len(candidates[res.ID]) >= maxAttemptsPerResource || !deployTypeWanted(res, row.Type, row.Status) ||
+			if res == nil || len(candidates[res.ID]) >= maxAttemptsPerResource || !deployTypeWanted(res, row.Type, string(row.Status)) ||
 				(res.attemptsSince != nil && !row.CreatedAt.After(*res.attemptsSince)) {
 				continue
 			}
 			if !res.wantsTeardown && row.ComponentBuildID != res.ExpectedBuildID && !equivalent[row.ComponentBuildID] {
 				continue
 			}
-			c := &attemptCandidate{
-				targetID:   row.ID,
-				createdAt:  row.CreatedAt,
-				buildID:    row.ComponentBuildID,
-				status:     row.Status,
-				policySkip: row.PolicyAction == "skip_apply",
-				denied:     row.Denied,
-				applied:    row.Applied,
-			}
-			if row.InstallWorkflowID != nil {
-				c.workflowID = *row.InstallWorkflowID
-			}
-			candidates[res.ID] = append(candidates[res.ID], c)
+			candidates[res.ID] = append(candidates[res.ID], deployCandidate(row))
 		}
 	}
 
 	if st.sandbox != nil && byID[st.sandbox.ID] != nil {
 		res := byID[st.sandbox.ID]
-		query := s.db.WithContext(ctx).
-			Select("install_sandbox_runs.id", "install_sandbox_runs.created_at", "install_sandbox_runs.install_workflow_id",
-				"install_sandbox_runs.status", "install_sandbox_runs.status_v2", "install_sandbox_runs.applied_at").
+		query := s.db.WithContext(ctx).Select(sandboxRunCandidateColumns).
 			Joins("JOIN install_workflows w ON w.id = install_sandbox_runs.install_workflow_id AND w.deleted_at = 0 AND NOT w.plan_only").
 			Where(app.InstallSandboxRun{InstallSandboxID: &st.sandbox.ID}).
 			Where("install_sandbox_runs.run_type IS DISTINCT FROM ?", app.SandboxRunTypeDeprovision)
@@ -187,22 +154,7 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 			return fmt.Errorf("unable to get install sandbox run attempts: %w", err)
 		}
 		for i := range runs {
-			status := string(runs[i].StatusV2.Status)
-			if status == "" {
-				status = string(runs[i].Status)
-			}
-			c := &attemptCandidate{
-				targetID:   runs[i].ID,
-				createdAt:  runs[i].CreatedAt,
-				status:     status,
-				policySkip: runs[i].StatusV2.Metadata["policy_action"] == "skip_apply",
-				denied:     metadataDenied(runs[i].StatusV2.Metadata),
-				applied:    runs[i].AppliedAt != nil,
-			}
-			if runs[i].InstallWorkflowID != nil {
-				c.workflowID = *runs[i].InstallWorkflowID
-			}
-			candidates[res.ID] = append(candidates[res.ID], c)
+			candidates[res.ID] = append(candidates[res.ID], sandboxRunCandidate(&runs[i]))
 		}
 	}
 
@@ -293,7 +245,11 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 				}
 				outcome, ok = workflowOutcome(wf)
 			} else {
-				outcome, ok = rowOutcome(c, wf)
+				var wfStatus app.Status
+				if wf != nil {
+					wfStatus = wf.Status.Status
+				}
+				outcome, ok = rowOutcome(c, wfStatus)
 			}
 			if !ok {
 				continue
@@ -307,8 +263,7 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 				Status:     outcome.status,
 				CreatedAt:  c.createdAt,
 				WorkflowID: c.workflowID,
-				StepID:     links[c.targetID].stepID,
-				BuildID:    c.buildID,
+				stepID:     links[c.targetID].stepID,
 			}
 			if wf != nil {
 				res.BlockingAttempt.Type = wf.Type
@@ -354,13 +309,9 @@ func (s *Helpers) attemptWorkflows(ctx context.Context, ids map[string]struct{})
 	if len(ids) == 0 {
 		return out, nil
 	}
-	list := make([]string, 0, len(ids))
-	for id := range ids {
-		list = append(list, id)
-	}
 	var workflows []app.Workflow
-	if err := s.db.WithContext(ctx).Select("id", "type", "status", "created_at").
-		Where("id IN ?", list).Find(&workflows).Error; err != nil {
+	if err := s.db.WithContext(ctx).Select("id", "type", "status", "created_at", "metadata").
+		Where("id IN ?", generics.MapToKeys(ids)).Find(&workflows).Error; err != nil {
 		return nil, fmt.Errorf("unable to get attempt workflows: %w", err)
 	}
 	for i := range workflows {
@@ -369,18 +320,33 @@ func (s *Helpers) attemptWorkflows(ctx context.Context, ids map[string]struct{})
 	return out, nil
 }
 
+var (
+	deployCandidateColumns     = []string{"install_deploys.id", "install_deploys.created_at", "install_deploys.install_workflow_id", "install_deploys.status", "install_deploys.status_v2", "install_deploys.applied_at"}
+	sandboxRunCandidateColumns = []string{"install_sandbox_runs.id", "install_sandbox_runs.created_at", "install_sandbox_runs.install_workflow_id", "install_sandbox_runs.status", "install_sandbox_runs.status_v2", "install_sandbox_runs.applied_at"}
+)
+
+func deployCandidate(d *app.InstallDeploy) *attemptCandidate {
+	return &attemptCandidate{
+		targetID: d.ID, workflowID: generics.FromPtrStr(d.InstallWorkflowID), createdAt: d.CreatedAt, status: string(d.Status),
+		policySkip: d.StatusV2.Metadata["policy_action"] == "skip_apply", denied: metadataDenied(d.StatusV2.Metadata), applied: d.AppliedAt != nil,
+	}
+}
+
+func sandboxRunCandidate(r *app.InstallSandboxRun) *attemptCandidate {
+	return &attemptCandidate{
+		targetID: r.ID, workflowID: generics.FromPtrStr(r.InstallWorkflowID), createdAt: r.CreatedAt, status: string(r.Status),
+		policySkip: r.StatusV2.Metadata["policy_action"] == "skip_apply", denied: metadataDenied(r.StatusV2.Metadata), applied: r.AppliedAt != nil,
+	}
+}
+
 func metadataDenied(meta map[string]any) bool {
 	denied, ok := meta["deny_violations"].([]any)
 	return ok && len(denied) > 0
 }
 
-func rowOutcome(c *attemptCandidate, wf *app.Workflow) (attemptOutcome, bool) {
+func rowOutcome(c *attemptCandidate, wfStatus app.Status) (attemptOutcome, bool) {
 	if c.applied {
 		return attemptOutcome{}, false
-	}
-	var wfStatus app.Status
-	if wf != nil {
-		wfStatus = wf.Status.Status
 	}
 	switch app.Status(c.status) {
 	case app.StatusError, app.Status(app.InstallDeployStatusHealthFailed), app.Status(app.SandboxRunStatusAccessError):
@@ -449,41 +415,4 @@ func workflowOutcome(wf *app.Workflow) (attemptOutcome, bool) {
 	default:
 		return attemptOutcome{status: string(app.StatusInProgress)}, true
 	}
-}
-
-func (s *Helpers) loadBuildSummaries(ctx context.Context, alignment *InstallAlignment) error {
-	ids := []string{}
-	for _, res := range alignment.Resources {
-		for _, id := range []string{res.ExpectedBuildID, res.AppliedBuildID} {
-			if id != "" {
-				ids = append(ids, id)
-			}
-		}
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	var builds []app.ComponentBuild
-	if err := s.db.WithContext(ctx).
-		Select("id", "created_at", "vcs_connection_commit_id", "resolved_tag").
-		Preload("VCSConnectionCommit", func(db *gorm.DB) *gorm.DB { return db.Select("id", "sha") }).
-		Where("id IN ?", ids).
-		Find(&builds).Error; err != nil {
-		return fmt.Errorf("unable to get alignment builds: %w", err)
-	}
-	summaries := make(map[string]*InstallAlignmentBuild, len(builds))
-	for i := range builds {
-		b := &builds[i]
-		summary := &InstallAlignmentBuild{ID: b.ID, ResolvedTag: b.ResolvedTag, CreatedAt: b.CreatedAt}
-		if b.VCSConnectionCommit != nil {
-			summary.SHA = b.VCSConnectionCommit.SHA
-		}
-		summaries[b.ID] = summary
-	}
-	for i := range alignment.Resources {
-		res := &alignment.Resources[i]
-		res.ExpectedBuild = summaries[res.ExpectedBuildID]
-		res.AppliedBuild = summaries[res.AppliedBuildID]
-	}
-	return nil
 }

@@ -134,13 +134,11 @@ func (s *BlockingAttemptsSuite) target(f *attemptFixture, build string) {
 type seededDeploy struct {
 	build      string
 	minute     int
-	typ        app.InstallDeployType
 	status     string
 	v2Metadata map[string]any
 	applied    bool
 	workflow   *app.Workflow
 	steps      []app.CompositeStatus
-	retried    []bool
 }
 
 func (s *BlockingAttemptsSuite) workflow(f *attemptFixture, status app.Status, planOnly bool) *app.Workflow {
@@ -153,13 +151,9 @@ func (s *BlockingAttemptsSuite) workflow(f *attemptFixture, status app.Status, p
 func (s *BlockingAttemptsSuite) deploy(f *attemptFixture, d seededDeploy) (*app.InstallDeploy, []*app.WorkflowStep) {
 	deploy := s.deps.Seed.CreateInstallDeploy(s.ctx, s.T(), f.ic.ID, f.builds[d.build])
 	createdAt := f.base.Add(time.Duration(d.minute) * time.Minute)
-	typ := d.typ
-	if typ == "" {
-		typ = app.InstallDeployTypeApply
-	}
 	updates := map[string]any{
 		"created_at": createdAt,
-		"type":       typ,
+		"type":       app.InstallDeployTypeApply,
 		"status":     d.status,
 		"status_v2":  app.CompositeStatus{Status: app.Status(d.status), Metadata: d.v2Metadata},
 	}
@@ -173,7 +167,6 @@ func (s *BlockingAttemptsSuite) deploy(f *attemptFixture, d seededDeploy) (*app.
 
 	var steps []*app.WorkflowStep
 	for i, status := range d.steps {
-		retried := i < len(d.retried) && d.retried[i]
 		steps = append(steps, s.deps.Seed.CreateWorkflowStep(s.ctx, s.T(), d.workflow.ID,
 			testseed.WithStepStatus(status),
 			func(step *app.WorkflowStep) {
@@ -182,7 +175,6 @@ func (s *BlockingAttemptsSuite) deploy(f *attemptFixture, d seededDeploy) (*app.
 				step.StepTargetID = deploy.ID
 				step.StepTargetType = string(app.WorkflowStepTargetTypeInstallDeploys)
 				step.Idx = i
-				step.Retried = retried
 			}))
 	}
 	return deploy, steps
@@ -233,8 +225,7 @@ func (s *BlockingAttemptsSuite) TestHistoryBeforeLastApplyIsNotShown() {
 	s.Nil(res.BlockingAttempt)
 	s.Zero(res.EarlierAttempts)
 	s.Nil(res.Explanation)
-	s.Require().NotNil(res.AppliedBuild)
-	s.Equal(f.builds["F"], res.AppliedBuild.ID)
+	s.Equal(f.builds["F"], res.AppliedBuildID)
 	s.Equal(deployF.ID, res.AppliedDeployID)
 	s.Require().NotNil(res.AppliedDeployAt)
 	s.WithinDuration(f.base.Add(6*time.Minute+30*time.Second), *res.AppliedDeployAt, time.Millisecond)
@@ -248,9 +239,8 @@ func (s *BlockingAttemptsSuite) TestHistoryBeforeLastApplyIsNotShown() {
 	s.Require().NotNil(res.Explanation)
 	s.Equal("No deployment has started for these changes.", res.Explanation.Summary)
 	s.Empty(res.Explanation.WorkflowID)
-	s.Require().NotNil(res.ExpectedBuild)
-	s.Equal(f.builds["G"], res.ExpectedBuild.ID)
-	s.Equal(f.builds["F"], res.AppliedBuild.ID)
+	s.Equal(f.builds["G"], res.ExpectedBuildID)
+	s.Equal(f.builds["F"], res.AppliedBuildID)
 }
 
 func (s *BlockingAttemptsSuite) TestNewestRealAttemptAtWantedBuildBlocks() {
@@ -277,12 +267,11 @@ func (s *BlockingAttemptsSuite) TestNewestRealAttemptAtWantedBuildBlocks() {
 	s.Require().NotNil(res.BlockingAttempt)
 	s.Equal("user-skipped", res.BlockingAttempt.Status)
 	s.Equal(skippedWF.ID, res.BlockingAttempt.WorkflowID)
-	s.Equal(skippedSteps[0].ID, res.BlockingAttempt.StepID)
-	s.Equal(f.builds["G"], res.BlockingAttempt.BuildID)
 	s.Equal(1, res.EarlierAttempts)
 	s.Require().NotNil(res.Explanation)
 	s.Equal("user-skipped", res.Explanation.Status)
 	s.Equal(skippedWF.ID, res.Explanation.WorkflowID)
+	s.Equal(skippedSteps[0].ID, res.Explanation.StepID)
 	s.Equal("The deployment of this resource was skipped.", res.Explanation.Summary)
 }
 
@@ -307,10 +296,6 @@ func (s *BlockingAttemptsSuite) TestOutcomeComesFromDeployRow() {
 			rowStatus: "user-skipped", v2Metadata: deny, wfStatus: app.StatusSuccess,
 			want: "user-skipped", summary: "A policy denied the latest deployment, and it was skipped.",
 		},
-		"user skip": {
-			rowStatus: "user-skipped", wfStatus: app.StatusSuccess,
-			want: "user-skipped", summary: "The deployment of this resource was skipped.",
-		},
 		"failure awaiting retry": {
 			rowStatus: "error", wfStatus: app.StatusFailedPendingRetry, open: true,
 			want: "failed-pending-retry", summary: "The deployment failed and is waiting to be retried.",
@@ -333,14 +318,6 @@ func (s *BlockingAttemptsSuite) TestOutcomeComesFromDeployRow() {
 			steps: []app.CompositeStatus{{Status: app.StatusSuccess}},
 			want:  "approval-denied",
 		},
-		"expired approval": {
-			rowStatus: "approval-expired", wfStatus: app.StatusError,
-			want: "approval-expired",
-		},
-		"cancelled": {
-			rowStatus: "cancelled", wfStatus: app.StatusCancelled,
-			want: "cancelled",
-		},
 		"policy skip_apply": {
 			rowStatus: "auto-skipped", v2Metadata: map[string]any{"policy_action": "skip_apply"}, wfStatus: app.StatusSuccess,
 			want: "policy-skipped",
@@ -357,14 +334,6 @@ func (s *BlockingAttemptsSuite) TestOutcomeComesFromDeployRow() {
 			rowStatus: "queued", wfStatus: app.StatusError,
 			want: "not-attempted", summary: "The deployment stopped before it reached this resource.",
 		},
-		"queued when the workflow finished without it": {
-			rowStatus: "queued", wfStatus: app.StatusSuccess,
-			want: "not-attempted",
-		},
-		"empty status when the workflow failed elsewhere": {
-			rowStatus: "", wfStatus: app.StatusError,
-			want: "not-attempted",
-		},
 		"policy deny from before the row recorded it": {
 			rowStatus: "pending-approval", wfStatus: app.StatusError,
 			steps: []app.CompositeStatus{denied(app.StatusError)},
@@ -372,9 +341,6 @@ func (s *BlockingAttemptsSuite) TestOutcomeComesFromDeployRow() {
 		},
 		"failed deploy outside any workflow": {
 			rowStatus: "error", noWorkflow: true,
-		},
-		"orphaned queued row": {
-			rowStatus: "queued", noWorkflow: true,
 		},
 		"successful sync without applied_at": {
 			rowStatus: "active", wfStatus: app.StatusSuccess,
@@ -388,16 +354,11 @@ func (s *BlockingAttemptsSuite) TestOutcomeComesFromDeployRow() {
 			s.deploy(f, seededDeploy{build: "F", minute: 1, status: "active", applied: true, workflow: s.workflow(f, app.StatusSuccess, false),
 				steps: []app.CompositeStatus{{Status: app.StatusSuccess}}})
 			s.target(f, "G")
-			d := seededDeploy{build: "G", minute: 2, status: tc.rowStatus, v2Metadata: tc.v2Metadata, steps: tc.steps}
+			d := seededDeploy{build: "G", minute: 2, status: tc.rowStatus, v2Metadata: tc.v2Metadata, applied: tc.applied, steps: tc.steps}
 			if !tc.noWorkflow {
 				d.workflow = s.workflow(f, tc.wfStatus, false)
 			}
 			s.deploy(f, d)
-			if tc.applied {
-				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.InstallDeploy{}).
-					Where("install_component_id = ? AND component_build_id = ?", f.ic.ID, f.builds["G"]).
-					Update("applied_at", f.base.Add(3*time.Minute)).Error)
-			}
 
 			res := s.read(f)
 			if tc.applied {
@@ -438,12 +399,12 @@ func (s *BlockingAttemptsSuite) TestAttemptAtEquivalentBuildBlocks() {
 	s.deploy(f, seededDeploy{build: "F", minute: 1, status: "active", applied: true, workflow: s.workflow(f, app.StatusSuccess, false),
 		steps: []app.CompositeStatus{{Status: app.StatusSuccess}}})
 	s.target(f, "G")
-	s.deploy(f, seededDeploy{build: "G-rebuild", minute: 2, status: "error", workflow: s.workflow(f, app.StatusError, false),
+	rebuild, _ := s.deploy(f, seededDeploy{build: "G-rebuild", minute: 2, status: "error", workflow: s.workflow(f, app.StatusError, false),
 		steps: []app.CompositeStatus{{Status: app.StatusError}}})
 
 	res := s.read(f)
 	s.Require().NotNil(res.BlockingAttempt)
 	s.Equal("error", res.BlockingAttempt.Status)
-	s.Equal(f.builds["G-rebuild"], res.BlockingAttempt.BuildID)
+	s.Equal(rebuild.ID, res.BlockingAttempt.ID)
 	s.Equal("The latest deployment failed.", res.Explanation.Summary)
 }

@@ -53,10 +53,10 @@ type InstallAlignmentAttempt struct {
 	Status     string                 `json:"status"`
 	CreatedAt  time.Time              `json:"created_at"`
 	WorkflowID string                 `json:"workflow_id,omitempty"`
-	StepID     string                 `json:"step_id,omitempty"`
 	Type       app.WorkflowType       `json:"type,omitempty"`
-	BuildID    string                 `json:"build_id,omitempty"`
-	Run        *InstallOverviewCommit `json:"run,omitempty"`
+	BranchRun  *InstallOverviewCommit `json:"branch_run,omitempty"`
+
+	stepID string
 } // @name service.InstallAlignmentAttempt
 
 type InstallAlignmentOrigin struct {
@@ -64,13 +64,6 @@ type InstallAlignmentOrigin struct {
 	WorkflowType app.WorkflowType       `json:"workflow_type,omitempty"`
 	Run          *InstallOverviewCommit `json:"run,omitempty"`
 } // @name service.InstallAlignmentOrigin
-
-type InstallAlignmentBuild struct {
-	ID          string    `json:"id"`
-	SHA         string    `json:"sha,omitempty"`
-	ResolvedTag string    `json:"resolved_tag,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-} // @name service.InstallAlignmentBuild
 
 type InstallAlignmentOpenDeployment struct {
 	ID        string           `json:"id"`
@@ -117,9 +110,6 @@ type InstallAlignmentResource struct {
 	AppliedDeployAt  *time.Time                      `json:"applied_deploy_at,omitempty"`
 	ExpectedConfigID string                          `json:"expected_config_id,omitempty"`
 	AppliedConfigID  string                          `json:"applied_config_id,omitempty"`
-	ExpectedBuild    *InstallAlignmentBuild          `json:"expected_build,omitempty"`
-	AppliedBuild     *InstallAlignmentBuild          `json:"applied_build,omitempty"`
-	ExpectedBy       *InstallAlignmentOrigin         `json:"expected_by,omitempty"`
 	AppliedBy        *InstallAlignmentOrigin         `json:"applied_by,omitempty"`
 	BlockingAttempt  *InstallAlignmentAttempt        `json:"blocking_attempt,omitempty"`
 	EarlierAttempts  int                             `json:"earlier_attempts,omitempty"`
@@ -562,16 +552,13 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 		}
 		res.applyDriftEvidence(ev)
 	}
-	if err := s.loadBuildSummaries(ctx, alignment); err != nil {
-		return nil, err
-	}
 	if err := s.loadBlockingAttempts(ctx, st, alignment, ev.inputAttempts); err != nil {
 		return nil, err
 	}
 	if err := s.explainInstallAlignment(ctx, st, alignment); err != nil {
 		return nil, err
 	}
-	if err := s.loadOrigins(ctx, st, alignment); err != nil {
+	if err := s.loadOrigins(ctx, alignment); err != nil {
 		return nil, err
 	}
 	return alignment, nil
@@ -1052,8 +1039,6 @@ type alignmentStep struct {
 	Retried           bool
 	SignalType        string
 	SignalComponentID string
-	SignalBuildID     string
-	ResourceID        string
 }
 
 var (

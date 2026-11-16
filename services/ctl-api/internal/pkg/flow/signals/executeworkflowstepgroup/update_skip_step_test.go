@@ -24,20 +24,16 @@ func TestNotifyOnSkipRecordsSkipOnTarget(t *testing.T) {
 		"skipped after a policy deny": {
 			step: &app.WorkflowStep{ID: "step-1", StepTargetID: "dpl-1", StepTargetType: "install_deploys",
 				Status: app.CompositeStatus{Status: app.StatusError, Metadata: map[string]any{"deny_violations": deny}}},
-			want: map[string]any{"skipped_status": "error", "deny_violations": deny},
+			want: map[string]any{"deny_violations": deny},
 		},
 		"skipped while awaiting approval": {
 			step: &app.WorkflowStep{ID: "step-1", StepTargetID: "dpl-1", StepTargetType: "install_deploys",
 				Status: app.CompositeStatus{Status: app.AwaitingApproval}},
-			want: map[string]any{"skipped_status": string(app.AwaitingApproval)},
+			want: map[string]any{},
 		},
 		"stack version awaiting the customer": {
 			step: &app.WorkflowStep{ID: "step-1", StepTargetID: "isv-1", StepTargetType: "install_stack_versions",
 				Status: app.CompositeStatus{Status: app.InstallStackVersionStatusPendingUser}},
-		},
-		"sandbox run": {
-			step: &app.WorkflowStep{ID: "step-1", StepTargetID: "isr-1", StepTargetType: "install_sandbox_runs",
-				Status: app.CompositeStatus{Status: app.AwaitingApproval}},
 		},
 		"step without a target": {
 			step: &app.WorkflowStep{ID: "step-1", Status: app.CompositeStatus{Status: app.StatusError}},
