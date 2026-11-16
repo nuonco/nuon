@@ -105,6 +105,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 			}
 			return nil
 		},
+		func() error {
+			return ValidateGCPCloudSQLDeleteOutsideBreakGlass(a)
+		},
 	}
 
 	var warnings []string
