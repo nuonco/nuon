@@ -6,7 +6,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
@@ -14,15 +13,6 @@ import (
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxapplyplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxapplyplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -48,17 +38,6 @@ const (
 	InstallAlignmentCategoryTornDown           InstallAlignmentCategory = "torn-down"
 )
 
-type InstallAlignmentAttempt struct {
-	ID         string                 `json:"id"`
-	Status     string                 `json:"status"`
-	CreatedAt  time.Time              `json:"created_at"`
-	WorkflowID string                 `json:"workflow_id,omitempty"`
-	Type       app.WorkflowType       `json:"type,omitempty"`
-	BranchRun  *InstallOverviewCommit `json:"branch_run,omitempty"`
-
-	stepID string
-} // @name service.InstallAlignmentAttempt
-
 type InstallAlignmentOrigin struct {
 	WorkflowID   string                 `json:"workflow_id,omitempty"`
 	WorkflowType app.WorkflowType       `json:"workflow_type,omitempty"`
@@ -71,13 +50,6 @@ type InstallAlignmentOpenDeployment struct {
 	CreatedAt time.Time        `json:"created_at"`
 	Type      app.WorkflowType `json:"type,omitempty"`
 } // @name service.InstallAlignmentOpenDeployment
-
-type InstallAlignmentExplanation struct {
-	Summary    string `json:"summary"`
-	Status     string `json:"status,omitempty"`
-	WorkflowID string `json:"workflow_id,omitempty"`
-	StepID     string `json:"step_id,omitempty"`
-} // @name service.InstallAlignmentExplanation
 
 type InstallAlignmentPlan struct {
 	WorkflowID     string                       `json:"workflow_id"`
@@ -111,17 +83,11 @@ type InstallAlignmentResource struct {
 	ExpectedConfigID string                          `json:"expected_config_id,omitempty"`
 	AppliedConfigID  string                          `json:"applied_config_id,omitempty"`
 	AppliedBy        *InstallAlignmentOrigin         `json:"applied_by,omitempty"`
-	BlockingAttempt  *InstallAlignmentAttempt        `json:"blocking_attempt,omitempty"`
-	EarlierAttempts  int                             `json:"earlier_attempts,omitempty"`
 	OpenDeployment   *InstallAlignmentOpenDeployment `json:"open_deployment,omitempty"`
 	Plan             *InstallAlignmentPlan           `json:"plan,omitempty"`
-	Explanation      *InstallAlignmentExplanation    `json:"explanation,omitempty"`
 
 	appliedAt         *time.Time
 	appliedWorkflowID string
-	attemptsSince     *time.Time
-	wantsTeardown     bool
-	blockingAfterDeny bool
 	inputsDiffer      bool
 	inputsUnknown     bool
 } // @name service.InstallAlignmentResource
@@ -130,13 +96,6 @@ type InstallAlignment struct {
 	Error     string                     `json:"error,omitempty"`
 	Resources []InstallAlignmentResource `json:"resources"`
 } // @name service.InstallAlignment
-
-type alignmentTarget struct {
-	kind             InstallAlignmentResourceKind
-	installComponent *app.InstallComponent
-	sandbox          *app.InstallSandbox
-	stack            *app.InstallStack
-}
 
 type installAlignmentState struct {
 	install          *app.Install
@@ -362,10 +321,6 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 			res.AppliedConfigID = applied.ComponentBuild.ComponentConfigConnection.AppConfigID
 		}
 		res.appliedAt = applied.AppliedAt
-		res.attemptsSince = applied.AppliedAt
-		if res.attemptsSince == nil {
-			res.attemptsSince = &applied.CreatedAt
-		}
 		res.appliedWorkflowID = generics.FromPtrStr(applied.InstallWorkflowID)
 	}
 	inactive := ic.Status == app.InstallComponentStatusInactive || ic.Status == app.InstallComponentStatusDeleted || ic.Status == app.InstallComponentStatusDisabled
@@ -383,7 +338,6 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 	case !st.componentEnabled(target) && !inactive && (applied != nil || ic.EverDeployed()):
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "This component is disabled, but is still deployed."
-		res.wantsTeardown = true
 	case !st.componentEnabled(target):
 		res.Category = InstallAlignmentCategoryDisabled
 		res.Reason = "component is disabled on this install"
@@ -446,10 +400,6 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 		res.AppliedConfigID = st.appliedSandbox.AppSandboxConfig.AppConfigID
 		res.appliedAt = st.appliedSandbox.AppliedAt
 		res.appliedWorkflowID = generics.FromPtrStr(st.appliedSandbox.InstallWorkflowID)
-		res.attemptsSince = st.appliedSandbox.AppliedAt
-		if res.attemptsSince == nil {
-			res.attemptsSince = &st.appliedSandbox.CreatedAt
-		}
 	}
 
 	switch {
@@ -488,7 +438,6 @@ func (st *installAlignmentState) stackResource() *InstallAlignmentResource {
 		ExpectedConfigID: st.install.AppConfigID,
 		AppliedConfigID:  st.stack.AppConfigRef.AppliedConfigID,
 		appliedAt:        st.stack.AppConfigRef.AppliedConfigAt,
-		attemptsSince:    st.stack.AppConfigRef.AppliedConfigAt,
 	}
 	applied := st.stack.AppConfigRef.AppliedConfigID
 	switch {
@@ -538,10 +487,7 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 	if err != nil {
 		return nil, err
 	}
-	open, err := s.openDeployments(ctx, st)
-	if err != nil {
-		return nil, err
-	}
+	open := st.openDeployments()
 
 	for i := range alignment.Resources {
 		res := &alignment.Resources[i]
@@ -551,12 +497,6 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 			res.Plan = nil
 		}
 		res.applyDriftEvidence(ev)
-	}
-	if err := s.loadBlockingAttempts(ctx, st, alignment, ev.inputAttempts); err != nil {
-		return nil, err
-	}
-	if err := s.explainInstallAlignment(ctx, st, alignment); err != nil {
-		return nil, err
 	}
 	if err := s.loadOrigins(ctx, alignment); err != nil {
 		return nil, err
@@ -579,7 +519,6 @@ func (res *InstallAlignmentResource) applyDriftEvidence(ev *alignmentEvidence) {
 }
 
 type alignmentEvidence struct {
-	inputAttempts map[string]*app.Workflow
 	plans         map[string]*InstallAlignmentPlan
 	drifted       map[string]bool
 	inputsAligned map[string]bool
@@ -587,7 +526,6 @@ type alignmentEvidence struct {
 
 func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmentState) (*alignmentEvidence, error) {
 	ev := &alignmentEvidence{
-		inputAttempts: map[string]*app.Workflow{},
 		plans:         map[string]*InstallAlignmentPlan{},
 		drifted:       map[string]bool{},
 		inputsAligned: map[string]bool{},
@@ -687,10 +625,6 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmen
 		}
 	}
 
-	if err := s.addInputWorkflowAttempts(ctx, st, ev); err != nil {
-		return nil, err
-	}
-
 	return ev, nil
 }
 
@@ -738,7 +672,7 @@ func (s *Helpers) latestInstallDeploysByComponent(ctx context.Context, icIDs []s
 	}
 	var deploys []app.InstallDeploy
 	if err := s.db.WithContext(ctx).Preload("InstallWorkflow", func(db *gorm.DB) *gorm.DB {
-		return db.Select("id", "type")
+		return db.Select("id", "type", "status", "created_at")
 	}).Where("id IN ?", ids).Find(&deploys).Error; err != nil {
 		return nil, fmt.Errorf("unable to load install deploys: %w", err)
 	}
@@ -864,254 +798,21 @@ func alignmentPlanFromApproval(aa *alignmentApproval) *InstallAlignmentPlan {
 	return plan
 }
 
-var alignmentOpenStepStatuses = map[app.Status]struct{}{
-	"":                                     {},
-	app.StatusPending:                      {},
-	app.StatusQueued:                       {},
-	app.StatusInProgress:                   {},
-	app.StatusRetrying:                     {},
-	app.StatusPlanning:                     {},
-	app.StatusApplying:                     {},
-	app.StatusCheckPlan:                    {},
-	app.StatusFailedPendingRetry:           {},
-	app.AwaitingApproval:                   {},
-	app.WorkflowStepApprovalStatusApproved: {},
-}
-
-func workflowAwaitingRetry(status app.Status) bool {
-	return status == app.StatusFailedPendingRetry || status == app.StatusRetrying
-}
-
-func workflowCoversKind(wf *app.Workflow, kind InstallAlignmentResourceKind) bool {
-	componentKind := kind == InstallAlignmentResourceKindComponent || kind == InstallAlignmentResourceKindImage
-	switch wf.Type {
-	case app.WorkflowTypeProvision,
-		app.WorkflowTypeReprovision,
-		app.WorkflowTypeAppBranchConfigUpdate,
-		app.WorkflowTypeAppBranchesRun,
-		app.WorkflowTypeAppBranchesConfigRepoUpdate,
-		app.WorkflowTypeAppBranchesComponentRepoUpdate,
-		app.WorkflowTypeAppInstallSync:
-		return true
-	case app.WorkflowTypeDeployComponents, app.WorkflowTypeInputUpdate:
-		return componentKind
-	case app.WorkflowTypeTeardownComponents:
-		return kind == InstallAlignmentResourceKindComponent
-	case app.WorkflowTypeReprovisionSandbox:
-		if kind == InstallAlignmentResourceKindSandbox {
-			return true
-		}
-		skip := wf.Metadata["skip_components"]
-		return componentKind && (skip == nil || *skip != "true")
-	case app.WorkflowTypeReprovisionStack:
-		return kind == InstallAlignmentResourceKindStack
-	default:
-		return false
-	}
-}
-
-func (s *Helpers) openDeployments(ctx context.Context, st *installAlignmentState) (map[string]*InstallAlignmentOpenDeployment, error) {
+func (st *installAlignmentState) openDeployments() map[string]*InstallAlignmentOpenDeployment {
 	out := map[string]*InstallAlignmentOpenDeployment{}
-
-	var workflows []app.Workflow
-	if err := s.db.WithContext(ctx).
-		Select("id", "type", "status", "metadata", "created_at", "plan_only", "finished_at").
-		Where(app.Workflow{OwnerID: st.install.ID, OrgID: st.install.OrgID, OwnerType: "installs"}).
-		Where("plan_only = ?", false).
-		Where("(status->>'status' IN ? OR status->>'status' = ? OR status->>'status' IS NULL)", installhelpers.InstallDeploymentActiveStatuses, app.StatusFailedPendingRetry).
-		Order("created_at ASC").
-		Find(&workflows).Error; err != nil {
-		return nil, fmt.Errorf("unable to get active install workflows: %w", err)
-	}
-	if len(workflows) == 0 {
-		return out, nil
-	}
-	workflowIDs := make([]string, 0, len(workflows))
-	for i := range workflows {
-		workflowIDs = append(workflowIDs, workflows[i].ID)
-	}
-
-	var steps []alignmentStep
-	if err := s.db.WithContext(ctx).
-		Model(&app.WorkflowStep{}).
-		Select("id", "install_workflow_id", "status", "step_target_type", "step_target_id", "metadata", "retried",
-			"queue_signal->>'type' AS signal_type",
-			"queue_signal->'data'->>'ComponentID' AS signal_component_id").
-		Where("install_workflow_id IN ?", workflowIDs).
-		Scan(&steps).Error; err != nil {
-		return nil, fmt.Errorf("unable to get active workflow steps: %w", err)
-	}
-	stepsByWorkflow := map[string][]*alignmentStep{}
-	for i := range steps {
-		stepsByWorkflow[steps[i].InstallWorkflowID] = append(stepsByWorkflow[steps[i].InstallWorkflowID], &steps[i])
-	}
-
-	var deploys []app.InstallDeploy
-	if err := s.db.WithContext(ctx).
-		Select("id", "install_component_id", "install_workflow_id").
-		Where("install_workflow_id IN ?", workflowIDs).
-		Find(&deploys).Error; err != nil {
-		return nil, fmt.Errorf("unable to get active workflow deploys: %w", err)
-	}
-	deployComponent := map[string]string{}
-	workflowComponents := map[string]map[string]struct{}{}
-	for i := range deploys {
-		deployComponent[deploys[i].ID] = deploys[i].InstallComponentID
-		if deploys[i].InstallWorkflowID == nil {
+	for icID, d := range st.latestDeploys {
+		wf := d.InstallWorkflow
+		if wf == nil {
 			continue
 		}
-		wfID := *deploys[i].InstallWorkflowID
-		if workflowComponents[wfID] == nil {
-			workflowComponents[wfID] = map[string]struct{}{}
-		}
-		workflowComponents[wfID][deploys[i].InstallComponentID] = struct{}{}
-	}
-
-	targets := make([]alignmentTarget, 0, len(st.components)+2)
-	if st.stack != nil {
-		targets = append(targets, alignmentTarget{kind: InstallAlignmentResourceKindStack, stack: st.stack})
-	}
-	if st.sandbox != nil {
-		targets = append(targets, alignmentTarget{kind: InstallAlignmentResourceKindSandbox, sandbox: st.sandbox})
-	}
-	for i := range st.components {
-		kind := InstallAlignmentResourceKindComponent
-		if st.components[i].Component.Type.IsImage() {
-			kind = InstallAlignmentResourceKindImage
-		}
-		targets = append(targets, alignmentTarget{kind: kind, installComponent: &st.components[i]})
-	}
-
-	for i := range workflows {
-		wf := &workflows[i]
-		wfSteps := stepsByWorkflow[wf.ID]
-		var inputTargets map[string]bool
-		if slices.Contains(alignmentInputWorkflowTypes, wf.Type) {
-			inputTargets = st.inputWorkflowTargets(wf)
-		}
-		for _, target := range targets {
-			id := target.id()
-			if _, ok := out[id]; ok {
-				continue
-			}
-			isOpen := workflowOpenForTarget(wf, wfSteps, target, deployComponent, workflowComponents[wf.ID])
-			if len(wfSteps) == 0 && inputTargets != nil {
-				isOpen = inputTargets[id]
-			}
-			if !isOpen {
-				continue
-			}
-			status := string(wf.Status.Status)
-			if status == "" {
-				status = string(app.StatusPending)
-			}
-			out[id] = &InstallAlignmentOpenDeployment{
-				ID:        wf.ID,
-				Status:    status,
-				CreatedAt: wf.CreatedAt,
-				Type:      wf.Type,
-			}
-		}
-	}
-	return out, nil
-}
-
-func (t alignmentTarget) id() string {
-	switch {
-	case t.installComponent != nil:
-		return t.installComponent.ID
-	case t.sandbox != nil:
-		return t.sandbox.ID
-	case t.stack != nil:
-		return t.stack.ID
-	default:
-		return ""
-	}
-}
-
-type alignmentStep struct {
-	ID                string
-	InstallWorkflowID string
-	Status            app.CompositeStatus
-	StepTargetType    string
-	StepTargetID      string
-	Metadata          pgtype.Hstore `gorm:"type:hstore"`
-	Retried           bool
-	SignalType        string
-	SignalComponentID string
-}
-
-var (
-	alignmentSandboxSignalTypes = map[string]struct{}{
-		string(provisionsandboxplan.SignalType):        {},
-		string(provisionsandboxapplyplan.SignalType):   {},
-		string(reprovisionsandboxplan.SignalType):      {},
-		string(reprovisionsandboxapplyplan.SignalType): {},
-		string(deprovisionsandboxplan.SignalType):      {},
-		string(deprovisionsandboxapplyplan.SignalType): {},
-	}
-	alignmentStackSignalTypes = map[string]struct{}{
-		string(generateinstallstackversion.SignalType): {},
-		string(awaitinstallstackversionrun.SignalType): {},
-		string(stackrun.SignalType):                    {},
-	}
-)
-
-func workflowOpenForTarget(
-	wf *app.Workflow,
-	steps []*alignmentStep,
-	target alignmentTarget,
-	deployComponent map[string]string,
-	workflowComponents map[string]struct{},
-) bool {
-	if len(steps) == 0 {
-		if target.installComponent != nil {
-			if _, ok := workflowComponents[target.installComponent.ID]; ok {
-				return true
-			}
-			if wf.Type == app.WorkflowTypeTeardownComponent && target.kind == InstallAlignmentResourceKindComponent {
-				id := wf.Metadata["component_id"]
-				return id != nil && *id == target.installComponent.ComponentID
-			}
-		}
-		return workflowCoversKind(wf, target.kind)
-	}
-	for _, step := range steps {
-		if step.Retried || !stepRelatesToTarget(step, target, deployComponent) {
+		status := string(wf.Status.Status)
+		if status != string(app.StatusFailedPendingRetry) && !slices.Contains(installhelpers.InstallDeploymentActiveStatuses, status) {
 			continue
 		}
-		status := step.Status.Status
-		if _, ok := alignmentOpenStepStatuses[status]; ok {
-			return true
+		if status == "" {
+			status = string(app.StatusPending)
 		}
-		if status == app.StatusError && workflowAwaitingRetry(wf.Status.Status) {
-			return true
-		}
+		out[icID] = &InstallAlignmentOpenDeployment{ID: wf.ID, Status: status, CreatedAt: wf.CreatedAt, Type: wf.Type}
 	}
-	return false
-}
-
-func stepRelatesToTarget(step *alignmentStep, target alignmentTarget, deployComponent map[string]string) bool {
-	switch target.kind {
-	case InstallAlignmentResourceKindStack:
-		_, ok := alignmentStackSignalTypes[step.SignalType]
-		return ok || step.StepTargetType == string(app.WorkflowStepTargetTypeInstallStackVersions)
-	case InstallAlignmentResourceKindSandbox:
-		_, ok := alignmentSandboxSignalTypes[step.SignalType]
-		return ok || step.StepTargetType == string(app.WorkflowStepTargetTypeInstallSandboxRuns)
-	default:
-		ic := target.installComponent
-		if step.SignalComponentID != "" && step.SignalComponentID == ic.ComponentID {
-			return true
-		}
-		if step.StepTargetType == string(app.WorkflowStepTargetTypeInstallDeploys) && step.StepTargetID != "" {
-			if deployComponent[step.StepTargetID] == ic.ID {
-				return true
-			}
-		}
-		if name, ok := step.Metadata["component_name"]; ok && name != nil && *name == ic.Component.Name {
-			return true
-		}
-		return false
-	}
+	return out
 }

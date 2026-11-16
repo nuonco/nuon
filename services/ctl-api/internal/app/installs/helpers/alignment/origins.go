@@ -14,13 +14,17 @@ func (s *Helpers) loadOrigins(ctx context.Context, alignment *InstallAlignment) 
 		if res.appliedWorkflowID != "" {
 			workflowIDs[res.appliedWorkflowID] = struct{}{}
 		}
-		if res.BlockingAttempt != nil && res.BlockingAttempt.WorkflowID != "" {
-			workflowIDs[res.BlockingAttempt.WorkflowID] = struct{}{}
-		}
 	}
-	workflows, err := s.attemptWorkflows(ctx, workflowIDs)
-	if err != nil {
-		return err
+	workflows := map[string]*app.Workflow{}
+	if len(workflowIDs) > 0 {
+		var list []app.Workflow
+		if err := s.db.WithContext(ctx).Select("id", "type", "metadata").
+			Where("id IN ?", generics.MapToKeys(workflowIDs)).Find(&list).Error; err != nil {
+			return fmt.Errorf("unable to get alignment origin workflows: %w", err)
+		}
+		for i := range list {
+			workflows[list[i].ID] = &list[i]
+		}
 	}
 
 	runIDOf := func(workflowID string) string {
@@ -50,9 +54,6 @@ func (s *Helpers) loadOrigins(ctx context.Context, alignment *InstallAlignment) 
 		res := &alignment.Resources[i]
 		if wf := workflows[res.appliedWorkflowID]; wf != nil {
 			res.AppliedBy = &InstallAlignmentOrigin{WorkflowID: wf.ID, WorkflowType: wf.Type, Run: runs[runIDOf(wf.ID)]}
-		}
-		if res.BlockingAttempt != nil {
-			res.BlockingAttempt.BranchRun = runs[runIDOf(res.BlockingAttempt.WorkflowID)]
 		}
 	}
 	return nil
