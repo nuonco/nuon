@@ -3,6 +3,7 @@ package psql
 import (
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/afterquery"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/metrics"
@@ -14,6 +15,10 @@ import (
 )
 
 func (d *database) registerPlugins(db *gorm.DB) error {
+	if err := db.SetupJoinTable(&app.Account{}, "Roles", &app.AccountRole{}); err != nil {
+		return err
+	}
+
 	db.Use(metrics.NewMetricsPlugin(d.MetricsWriter, "psql", &d.Logger))
 	db.Use(tracing.NewTracingPlugin("psql"))
 	db.Use(afterquery.NewAfterQueryPlugin())
