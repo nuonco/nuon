@@ -16,9 +16,10 @@ var (
 )
 
 // AwaitBranchConfig waits until the branch has an active app config.
-// A nil branch skips the wait. A branch whose only run has failed returns
-// immediately. An in-flight run is polled until its config is active.
-// Dry run fails immediately when the config is not already ready.
+// A nil branch skips the wait. A branch whose latest run failed or was
+// skipped, with no app config, returns immediately regardless of run count.
+// An in-flight run is polled until its config is active. Dry run fails
+// immediately when the config is not already ready.
 func AwaitBranchConfig(
 	ctx context.Context,
 	api nuon.Client,
@@ -65,12 +66,11 @@ func AwaitBranchConfig(
 
 func branchConfigReady(ctx context.Context, api nuon.Client, appID string, branch *models.AppAppBranch) (bool, error) {
 	run := branch.LatestRun
-	if run != nil && branchRunFailed(run.Status) && run.AppConfigID == "" {
-		runs, err := api.GetAppBranchRuns(ctx, appID, branch.ID)
-		if err != nil {
-			return false, fmt.Errorf("error listing runs for app branch %q: %w", branch.Name, err)
+	if run != nil && run.AppConfigID == "" {
+		if run.Status == "not-attempted" {
+			return false, fmt.Errorf("app branch %q latest run was skipped; run the branch again", branch.Name)
 		}
-		if len(runs) <= 1 {
+		if branchRunFailed(run.Status) {
 			return false, fmt.Errorf("app branch %q run failed", branch.Name)
 		}
 	}
@@ -96,7 +96,7 @@ func branchConfigReady(ctx context.Context, api nuon.Client, appID string, branc
 
 func branchRunFailed(status string) bool {
 	switch status {
-	case "failed", "error", "cancelled":
+	case "failed", "error", "cancelled", "discarded":
 		return true
 	default:
 		return false
