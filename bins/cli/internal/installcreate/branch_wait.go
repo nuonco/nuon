@@ -18,9 +18,7 @@ var (
 const branchRunsPageSize = 50
 
 // AwaitBranchConfig waits until the branch has an active app config.
-// A nil branch skips the wait. Preview runs and finished runs without a config
-// are skipped in favor of the newest earlier run that has one; with none, the
-// call returns immediately. An in-flight run is polled until its config is active.
+// A nil branch skips the wait. An in-flight run is polled until its config is active.
 // Dry run fails immediately when the config is not already ready.
 func AwaitBranchConfig(
 	ctx context.Context,
@@ -66,10 +64,6 @@ func AwaitBranchConfig(
 	}
 }
 
-// branchConfigReady reports whether the branch has an active app config. The
-// returned branch is non-nil when ready; its LatestRun is the run the config
-// belongs to, which differs from the branch's own latest run when that run is
-// a preview or finished without producing a config.
 func branchConfigReady(ctx context.Context, api nuon.Client, appID string, branch *models.AppAppBranch) (*models.AppAppBranch, error) {
 	run, err := branchConfigRun(ctx, api, appID, branch)
 	if err != nil || run == nil {
@@ -98,11 +92,6 @@ func branchConfigReady(ctx context.Context, api nuon.Client, appID string, branc
 	}
 }
 
-// branchConfigRun returns the run whose app config the branch currently
-// serves, or nil when the caller should keep waiting. Preview runs and runs
-// that finished without a config (such as ones skipped by ignore_changes_regex)
-// never produce the branch's config, so they fall back to the newest earlier
-// run that has one instead of being waited on.
 func branchConfigRun(ctx context.Context, api nuon.Client, appID string, branch *models.AppAppBranch) (*models.AppAppBranchRun, error) {
 	run := branch.LatestRun
 	if run == nil {
