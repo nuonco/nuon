@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
@@ -60,18 +59,24 @@ func (s *service) AdminMigrateOrg(ctx *gin.Context) {
 
 func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 	// create runner role
+	policy, err := permissions.RolePolicy(permissions.RoleOrgAdmin, permissions.APIRunner)
+	if err != nil {
+		return errors.Wrap(err, "unable to create runner policy")
+	}
+	document, err := policy.MarshalJSON()
+	if err != nil {
+		return errors.Wrap(err, "unable to marshal runner policy")
+	}
+
 	role := app.Role{
 		OrgID:    generics.NewNullString(org.ID),
 		RoleType: app.RoleTypeRunner,
-		Version:  app.RoleVersionV2,
+		Version:  app.RoleVersionV3,
 		Policies: []app.Policy{
 			{
-				OrgID: generics.NewNullString(org.ID),
-				Name:  "admin",
-				Permissions: pgtype.Hstore(map[string]*string{
-					org.ID:                       permissions.PermissionAll.ToStrPtr(),
-					permissions.APIPermissionKey: generics.ToPtr(string(permissions.APIRunner)),
-				}),
+				OrgID:    generics.NewNullString(org.ID),
+				Name:     "admin",
+				Document: document,
 			},
 		},
 	}
