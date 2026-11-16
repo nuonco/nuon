@@ -235,7 +235,6 @@ export const InstallSetupContainer = () => {
         hasBranch: true,
         hasActiveConfig: hasActive,
         runs: query.state.data,
-        latestConfigStatus: configs?.[0]?.status,
       }).phase === 'waiting'
         ? BRANCH_CONFIG_POLL_MS
         : false
@@ -275,7 +274,6 @@ export const InstallSetupContainer = () => {
         hasBranch: true,
         hasActiveConfig: hasActive,
         runs: queryClient.getQueryData(branchRunsKey),
-        latestConfigStatus: query.state.data?.[0]?.status,
       }).phase === 'waiting'
         ? BRANCH_CONFIG_POLL_MS
         : false
@@ -287,7 +285,6 @@ export const InstallSetupContainer = () => {
     hasBranch: !!selectedBranchId && !installId,
     hasActiveConfig: !!selectedConfig,
     runs: branchRuns,
-    latestConfigStatus: configList?.[0]?.status,
   })
   const { data: config, isLoading: configLoading } = useQuery({
     queryKey: [
