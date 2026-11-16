@@ -106,7 +106,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 
-	disableComponentIDs, err := activeDisabledComponentIDs(ctx, dg, componentIDs)
+	disableComponentIDs, err := activeDisabledComponentIDs(ctx, dg, diff)
 	if err != nil {
 		return nil, err
 	}
@@ -168,10 +168,14 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	return sg.Result(steps), nil
 }
 
-func activeDisabledComponentIDs(ctx workflow.Context, dg *genCtx, componentIDs []string) ([]string, error) {
+func activeDisabledComponentIDs(ctx workflow.Context, dg *genCtx, diff *app.InstallConfigDiff) ([]string, error) {
+	if diff == nil {
+		return nil, nil
+	}
 	var disabled []string
-	for _, id := range componentIDs {
-		if _, ok := dg.cccByComp[id]; ok && !dg.effectiveEnabled(id) {
+	for _, entry := range diff.Changed {
+		id := entry.ComponentID
+		if _, ok := dg.cccByComp[id]; ok && !dg.ownEnabled(id) {
 			disabled = append(disabled, id)
 		}
 	}

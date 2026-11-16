@@ -25,6 +25,9 @@ type ServiceToggleInstallComponentRequest struct {
 
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
+
+	// tear down dependents
+	TearDownDependents bool `json:"tear_down_dependents,omitempty"`
 }
 
 // Validate validates this service toggle install component request

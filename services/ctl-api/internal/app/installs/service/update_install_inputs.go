@@ -96,7 +96,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, req.InputsOnly, false, app.WorkflowTypeInputUpdate, workflowRequest)
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, false, req.InputsOnly, false, app.WorkflowTypeInputUpdate, workflowRequest)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -110,7 +110,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 // input-update workflow that reconciles the change. It is shared by the
 // inputs PATCH endpoint and any flow that drives install inputs (e.g. the
 // component enable/disable toggle, which writes the synthetic enabled input).
-func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, inputsOnly bool, planOnly bool, workflowType app.WorkflowType, request *app.WorkflowRequest) (*app.InstallInputs, error) {
+func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, tearDownDependents bool, inputsOnly bool, planOnly bool, workflowType app.WorkflowType, request *app.WorkflowRequest) (*app.InstallInputs, error) {
 	checkMetadata := map[string]string{}
 	if inputsOnly {
 		checkMetadata[app.WorkflowMetadataKeyInputsOnly] = strconv.FormatBool(true)
@@ -123,7 +123,7 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 	var metadata map[string]string
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var err error
-		inputs, metadata, err = s.persistInstallInputsUpdateTx(ctx, tx, install, patch, deployDependents, inputsOnly)
+		inputs, metadata, err = s.persistInstallInputsUpdateTx(ctx, tx, install, patch, deployDependents, inputsOnly, workflowType == app.WorkflowTypeComponentDisabled)
 		return err
 	}); err != nil {
 		return nil, err
@@ -140,6 +140,7 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 		metadata[app.WorkflowMetadataKeyChangedInputValues],
 		role,
 		deployDependents,
+		tearDownDependents,
 		inputsOnly,
 		planOnly,
 		workflowType,
@@ -222,6 +223,7 @@ func (s *service) persistInstallInputsUpdateTx(
 	patch map[string]*string,
 	deployDependents bool,
 	inputsOnly bool,
+	allowEnabledDependents bool,
 ) (*app.InstallInputs, map[string]string, error) {
 	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
 	if err != nil {
@@ -261,7 +263,7 @@ func (s *service) persistInstallInputsUpdateTx(
 	// Reject an inputs update that would leave the install in an inconsistent
 	// component-enablement state (e.g. an enabled component depending on a
 	// disabled one). Validated against the full resulting desired state.
-	if err := s.validateInstallToggles(ctx, install, patch, merged); err != nil {
+	if err := s.validateInstallToggles(ctx, install, patch, merged, allowEnabledDependents); err != nil {
 		return nil, nil, err
 	}
 
@@ -437,7 +439,7 @@ func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig,
 // the full resulting desired state (merged) through the installvalidate
 // framework. With dependent-cascade removed from the disable workflow, this is
 // what stops a user from authoring an inconsistent toggle combination.
-func (s *service) validateInstallToggles(ctx context.Context, install *app.Install, patch, merged map[string]*string) error {
+func (s *service) validateInstallToggles(ctx context.Context, install *app.Install, patch, merged map[string]*string, allowEnabledDependents bool) error {
 	touchesToggle := false
 	for name := range patch {
 		if kind, _, ok := config.ParseComponentOverrideInputName(name); ok && kind == config.ComponentOverrideKindEnabled {
@@ -445,7 +447,7 @@ func (s *service) validateInstallToggles(ctx context.Context, install *app.Insta
 			break
 		}
 	}
-	if !touchesToggle {
+	if !touchesToggle || allowEnabledDependents {
 		return nil
 	}
 

@@ -122,6 +122,7 @@ func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.In
 		true,
 		false,
 		false,
+		false,
 		app.WorkflowTypeInputUpdate,
 		nil,
 		"",

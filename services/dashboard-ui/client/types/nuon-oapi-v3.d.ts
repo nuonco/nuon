@@ -10402,6 +10402,7 @@ export interface components {
     "service.ToggleInstallComponentRequest": {
       enabled: boolean;
       plan_only?: boolean;
+      tear_down_dependents?: boolean;
     };
     "service.TokenResponse": {
       account_email?: string;
