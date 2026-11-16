@@ -36,12 +36,17 @@ func (a *Activities) SetInstallDeployPlanCompositeError(ctx context.Context, req
 			}
 		}
 
-		var err error
+		appSyncDisabled, err := a.deployInstallAppSyncDisabled(ctx, req.InstallDeployID)
+		if err != nil {
+			l.Warn("unable to check disable-app-sync for deploy", zap.Error(err))
+		}
+
 		data, err = compositeerrors.New(
 			&deployerrors.DeployPlanRenderError{
-				ComponentName: componentName,
-				Stage:         req.Stage,
-				Detail:        req.Detail,
+				ComponentName:   componentName,
+				Stage:           req.Stage,
+				Detail:          req.Detail,
+				AppSyncDisabled: appSyncDisabled,
 			},
 			compositeerrors.WithSource("install_deploys", req.InstallDeployID),
 		)
@@ -63,6 +68,29 @@ func (a *Activities) SetInstallDeployPlanCompositeError(ctx context.Context, req
 
 	l.Info("updated install deploy plan composite error")
 	return nil
+}
+
+// deployInstallAppSyncDisabled reports whether disable-app-sync is enabled
+// for the org that owns the install behind the given install deploy.
+func (a *Activities) deployInstallAppSyncDisabled(ctx context.Context, installDeployID string) (bool, error) {
+	var installID string
+	if err := a.db.WithContext(ctx).
+		Model(&app.InstallDeploy{}).
+		Select("install_components.install_id").
+		Joins("join install_components on install_components.id = install_deploys.install_component_id").
+		Where(app.InstallDeploy{ID: installDeployID}).
+		Scan(&installID).Error; err != nil {
+		return false, fmt.Errorf("unable to get install for install deploy %s: %w", installDeployID, err)
+	}
+
+	var install app.Install
+	if err := a.db.WithContext(ctx).
+		Select("org_id").
+		Where(app.Install{ID: installID}).
+		First(&install).Error; err != nil {
+		return false, fmt.Errorf("unable to get install %s: %w", installID, err)
+	}
+	return a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureDisableAppSync)
 }
 
 func (a *Activities) componentNameForDeploy(ctx context.Context, installDeployID string) (string, error) {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -91,6 +92,10 @@ func (a *Helpers) RevokeUnusedTokens(ctx context.Context, runnerID string) (int6
 
 	keep, err := tokensToKeep(processes)
 	if err != nil {
+		if errors.Is(err, ErrTokenCleanupNotReady) {
+			a.l.Warn("skipping unused runner token revocation", zap.String("runner_id", runnerID), zap.Error(err))
+			return 0, nil
+		}
 		return 0, err
 	}
 

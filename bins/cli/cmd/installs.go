@@ -167,7 +167,7 @@ sandbox and components unprovisioned:
 	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
 	createCmd.Flags().BoolVar(&stackOnly, "stack-only", false, "Provision the install stack and runner only, stopping before the sandbox and components")
-	createCmd.Flags().StringVar(&appBranchID, "app-branch-id", "", "App branch that will own this install (omit to use the most recent config from `nuon apps sync`)")
+	createCmd.Flags().StringVar(&appBranchID, "app-branch-id", "", "App branch that will own this install (required when disable-app-sync is enabled; otherwise omit to use the latest sync config)")
 	createCmd.Flags().StringVar(&installGroupID, "install-group-id", "", "Label-based install group whose labels should be applied (requires --app-branch-id)")
 	addRequestIDFlag(createCmd, &requestID)
 	installsCmds.AddCommand(createCmd)
@@ -457,7 +457,7 @@ sandbox and components unprovisioned:
 	componentsForgetCmd := &cobra.Command{
 		Use:   "forget",
 		Short: "Forget a component on an install",
-		Long:  "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via nuon apps sync). This is irreversible via the API.",
+		Long:  "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via `nuon apps sync`, or a run of the app branch). This is irreversible via the API.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
 			return svc.ForgetComponent(cmd.Context(), id, componentID, skipConfirm, PrintJSON)
@@ -1077,7 +1077,7 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Deprecated: "use `nuon installs components forget` instead",
 		Hidden:     true,
 		Short:      "Forget a component on an install.",
-		Long:       "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via nuon apps sync). This is irreversible via the API.",
+		Long:       "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via `nuon apps sync`, or a run of the app branch). This is irreversible via the API.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
 			return svc.ForgetComponent(cmd.Context(), id, componentID, skipConfirm, PrintJSON)

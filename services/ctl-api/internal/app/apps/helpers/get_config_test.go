@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
@@ -13,6 +14,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/types"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -90,4 +93,36 @@ func (s *GetLatestActiveAppConfigTestSuite) TestReturnsNewestActiveConfigNotSmal
 	gotBare, err := s.deps.Helpers.GetLatestActiveAppConfigBare(ctx, testApp.ID)
 	s.Require().NoError(err)
 	s.Equal(newest.ID, gotBare.ID, "expected the newest active config, not %s (oldest/smallest ID)", oldest.ID)
+}
+
+func (s *GetLatestActiveAppConfigTestSuite) TestNoActiveConfigMessageWhenAppSyncEnabled() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+
+	_, err := s.deps.Helpers.GetLatestActiveAppConfig(ctx, testApp.ID)
+	require.Error(s.T(), err)
+
+	var notFound stderr.ErrNotFound
+	require.ErrorAs(s.T(), err, &notFound)
+	require.Equal(s.T(), "This app has no app config. Run `nuon apps sync`, or run an app branch.", notFound.Description)
+}
+
+func (s *GetLatestActiveAppConfigTestSuite) TestNoActiveConfigMessageWhenAppSyncDisabled() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, testOrg := s.deps.Seed.EnsureOrg(ctx, s.T())
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+
+	require.NoError(s.T(), s.deps.DB.WithContext(ctx).
+		Model(&app.Org{ID: testOrg.ID}).
+		Update("features", types.StringBoolMap{string(app.OrgFeatureDisableAppSync): true}).Error)
+
+	_, err := s.deps.Helpers.GetLatestActiveAppConfig(ctx, testApp.ID)
+	require.Error(s.T(), err)
+
+	var notFound stderr.ErrNotFound
+	require.ErrorAs(s.T(), err, &notFound)
+	require.Equal(s.T(), "This app has no app config. Run an app branch.", notFound.Description)
 }
