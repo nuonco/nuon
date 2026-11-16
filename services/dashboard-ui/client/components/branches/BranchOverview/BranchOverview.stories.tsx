@@ -445,6 +445,13 @@ const changeProps = {
   source: rollout.source,
 }
 
+const pageChangeProps = {
+  ...changeProps,
+  versionLabel: undefined,
+  previousSha: undefined,
+  sha: undefined,
+}
+
 const changes = <TemplateChangesButton {...changeProps} />
 
 const completedBuilds = [
@@ -472,7 +479,7 @@ const props = {
   hasPlan: true,
   rollout,
   changes,
-  configChanges: <TemplateChangesContent {...changeProps} />,
+  configChanges: <TemplateChangesContent {...pageChangeProps} />,
   configChangesKey: 'v6-v7-cache',
   buildRows: completedBuilds,
   groups,
