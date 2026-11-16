@@ -7,22 +7,25 @@ keywords: ["BYOC architecture", "enterprise deployment", "deploy in customer VPC
 
 Use this page to match an enterprise customer's requirement to an architecture you can build with Nuon. Each pattern lists what the customer asks for, how to build it, and a reference app in [`nuonco/example-app-configs`](https://github.com/nuonco/example-app-configs).
 
+BYOC covers more than one shape. You can run your whole product in the customer's account, or only the part that touches customer data. Build the one your customer asks for.
+
 Every pattern shares the same base:
 
 - The customer deploys a [stack](/concepts/stacks) with their own credentials. It creates the [runner](/concepts/runners) and the [operation roles](/concepts/operation-roles) it uses.
 - The runner connects outbound only, so you need no cross-account access. The customer can [turn it off](/guides/runner-kill-switch) at any time.
 - [Secrets](/concepts/app-secrets) stay in the customer's cloud secret manager, and [break glass roles](/concepts/break-glass) cover incidents.
 - Customers can [export runner audit logs](/guides/export-runner-audit-logs) to their own logging backend.
+- The Nuon control plane stores install metadata, logs of infrastructure operations, [action](/concepts/actions) outputs, and Terraform state. Application logs and secret values stay in the customer's account.
 
 For the full security model, see [Security](/security).
 
 ## Supported patterns
 
-### Dedicated account (full BYOC)
+### Whole product in the customer account
 
 **The customer asks:** "Run your product in our AWS, Azure, or GCP account, but you operate it."
 
-**Build it:** Use the [stand-alone VPC](/concepts/stacks/stand-alone-vpc) stack, which creates a new VPC for the [install](/concepts/installs). The [sandbox](/concepts/sandboxes) creates the base infrastructure, such as a Kubernetes cluster. Your [components](/concepts/components) deploy your Helm charts, Terraform modules, Kubernetes manifests, and container images on top.
+**Build it:** Use the [stand-alone VPC](/concepts/stacks/stand-alone-vpc) stack, which creates a new VPC for the [install](/concepts/installs). The [sandbox](/concepts/sandboxes) creates the base infrastructure, such as a Kubernetes cluster. Kubernetes is optional: see [`ecs-simple`](https://github.com/nuonco/example-app-configs/tree/main/ecs-simple) and the [AWS Lambda example](/get-started/app-aws-lambda). Your [components](/concepts/components) deploy your Helm charts, Terraform modules, Kubernetes manifests, and container images on top.
 
 **Reference apps:** [`eks-simple-auto`](https://github.com/nuonco/example-app-configs/tree/main/eks-simple-auto) (AWS), [`gke-simple`](https://github.com/nuonco/example-app-configs/tree/main/gke-simple) (GCP), [`aks-simple`](https://github.com/nuonco/example-app-configs/tree/main/aks-simple) (Azure). See [platform support](/platform-support/introduction) for what each cloud supports.
 
@@ -46,7 +49,7 @@ For the full security model, see [Security](/security).
 
 **The customer asks:** "Keep our data in our network. Your hosted product can still manage the work."
 
-**Build it:** Your hosted product stays the control plane for your users. Package the agent or worker that touches customer data as a [Helm chart](/guides/helm-chart-components), [Kubernetes manifest](/guides/kubernetes-manifest-components), or [container image](/guides/container-image-components) component, and Nuon installs and upgrades it in each customer account. To run it in a cluster the customer already has, use the [existing cluster pattern](#existing-customer-kubernetes-cluster).
+**Build it:** Your hosted product stays your product's control plane. The Nuon control plane only delivers the agent or worker. Package the agent or worker that touches customer data as a [Helm chart](/guides/helm-chart-components), [Kubernetes manifest](/guides/kubernetes-manifest-components), or [container image](/guides/container-image-components) component, and Nuon installs and upgrades it in each customer account. To run it in a cluster the customer already has, use the [existing cluster pattern](#existing-customer-kubernetes-cluster).
 
 **Reference apps:** [`datadog-operator`](https://github.com/nuonco/example-app-configs/tree/main/datadog-operator) (operator in the customer's cluster), [`ecs-simple`](https://github.com/nuonco/example-app-configs/tree/main/ecs-simple) (ECS).
 
