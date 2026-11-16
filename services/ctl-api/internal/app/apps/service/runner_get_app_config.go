@@ -1,9 +1,13 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetRunnerAppConfig
@@ -24,11 +28,21 @@ import (
 // @Success				200	{object}	app.AppConfig
 // @Router					/v1/apps/{app_id}/config/{app_config_id} [get]
 func (s *service) GetRunnerAppConfig(ctx *gin.Context) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	appID := ctx.Param("app_id")
 	appConfigID := ctx.Param("app_config_id")
 
 	appConfig, err := s.helpers.GetFullAppConfig(ctx, appConfigID, true)
 	if err != nil {
 		ctx.Error(err)
+		return
+	}
+	if appConfig.OrgID != orgID || appConfig.AppID != appID {
+		ctx.Error(fmt.Errorf("app config %s: %w", appConfigID, gorm.ErrRecordNotFound))
 		return
 	}
 
