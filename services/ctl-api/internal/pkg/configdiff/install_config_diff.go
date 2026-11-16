@@ -118,7 +118,7 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 			// Every sync writes fresh sandbox and stack config rows, so their IDs
 			// always differ between versions — only a content change is a real change.
 			if oldAppCfg.SandboxConfig.ID != newAppCfg.SandboxConfig.ID &&
-				!sandboxConfigEqual(oldAppCfg.SandboxConfig, newAppCfg.SandboxConfig) {
+				(!sandboxConfigEqual(oldAppCfg.SandboxConfig, newAppCfg.SandboxConfig) || sandboxPolicyImpacted(graphDiff)) {
 				diff.SandboxChanged = true
 				diff.SandboxOldID = oldAppCfg.SandboxConfig.ID
 				diff.SandboxNewID = newAppCfg.SandboxConfig.ID
@@ -249,7 +249,11 @@ func ComputeCompositeInstallConfigDiff(ctx context.Context, db *gorm.DB, baselin
 	if err := fillStackSlice(diff, loaded[baselines.Stack], &newAppCfg, stackGraph); err != nil {
 		return nil, err
 	}
-	if err := fillSandboxSlice(ctx, db, diff, loaded[baselines.Sandbox], &newAppCfg, baselines.Sandbox, newAppConfigID); err != nil {
+	sandboxGraph, err := graphBetween(baselines.Sandbox)
+	if err != nil {
+		return nil, err
+	}
+	if err := fillSandboxSlice(ctx, db, diff, loaded[baselines.Sandbox], &newAppCfg, baselines.Sandbox, newAppConfigID, sandboxGraph); err != nil {
 		return nil, err
 	}
 
@@ -291,6 +295,22 @@ func loadBaselineConfigs(ctx context.Context, db *gorm.DB, baselines CompositeBa
 		loaded[id] = &copied
 	}
 	return loaded, nil
+}
+
+func sandboxPolicyImpacted(graph *pkgdiff.Diff) bool {
+	if graph == nil {
+		return false
+	}
+	sandbox := graph.FindResource(config.SandboxResourceID)
+	if sandbox == nil {
+		return false
+	}
+	for _, reason := range sandbox.ImpactReasons {
+		if reason.Edge == pkgdiff.EdgeReasonPolicy {
+			return true
+		}
+	}
+	return false
 }
 
 func StackChanged(ctx context.Context, db *gorm.DB, oldAppConfigID, newAppConfigID string) (bool, error) {
@@ -347,7 +367,7 @@ func fillStackSlice(diff *app.InstallConfigDiff, oldCfg, newCfg *app.AppConfig, 
 	return nil
 }
 
-func fillSandboxSlice(ctx context.Context, db *gorm.DB, diff *app.InstallConfigDiff, oldCfg, newCfg *app.AppConfig, oldID, newID string) error {
+func fillSandboxSlice(ctx context.Context, db *gorm.DB, diff *app.InstallConfigDiff, oldCfg, newCfg *app.AppConfig, oldID, newID string, graph *pkgdiff.Diff) error {
 	if oldCfg == nil {
 		if newCfg.SandboxConfig.ID != "" {
 			diff.SandboxChanged = true
@@ -363,7 +383,8 @@ func fillSandboxSlice(ctx context.Context, db *gorm.DB, diff *app.InstallConfigD
 		}
 		return nil
 	}
-	if oldCfg.SandboxConfig.ID != newCfg.SandboxConfig.ID && !sandboxConfigEqual(oldCfg.SandboxConfig, newCfg.SandboxConfig) {
+	if oldCfg.SandboxConfig.ID != newCfg.SandboxConfig.ID &&
+		(!sandboxConfigEqual(oldCfg.SandboxConfig, newCfg.SandboxConfig) || sandboxPolicyImpacted(graph)) {
 		diff.SandboxChanged = true
 		diff.SandboxOldID = oldCfg.SandboxConfig.ID
 		diff.SandboxNewID = newCfg.SandboxConfig.ID
