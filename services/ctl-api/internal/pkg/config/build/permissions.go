@@ -60,11 +60,14 @@ func PermissionsConfig(in PermissionsInput) (*app.AppPermissionsConfig, error) {
 	if err := ValidateNamedIAMPolicies(in, obj.Roles); err != nil {
 		return nil, err
 	}
+	if err := ValidateEKSAccess(obj.Roles, in.StackType); err != nil {
+		return nil, err
+	}
 
 	return obj, nil
 }
 
-func BreakGlassConfig(appID, appConfigID string, roles []*config.AppAWSIAMRole) (*app.AppBreakGlassConfig, error) {
+func BreakGlassConfig(appID, appConfigID, stackType string, roles []*config.AppAWSIAMRole) (*app.AppBreakGlassConfig, error) {
 	for _, role := range roles {
 		if role == nil {
 			continue
@@ -81,6 +84,9 @@ func BreakGlassConfig(appID, appConfigID string, roles []*config.AppAWSIAMRole) 
 	}
 
 	if err := ValidateInlinePolicyContents(obj.Roles); err != nil {
+		return nil, err
+	}
+	if err := ValidateEKSAccess(obj.Roles, stackType); err != nil {
 		return nil, err
 	}
 
