@@ -25,11 +25,13 @@ type ServiceRunnerAuthGCPRequest struct {
 	IdentityToken *string `json:"identity_token"`
 
 	// metadata
-	// Required: true
-	Metadata *GcpMetadataRequest `json:"metadata"`
+	Metadata *GcpMetadataRequest `json:"metadata,omitempty"`
 
 	// refreshable
 	Refreshable bool `json:"refreshable,omitempty"`
+
+	// runner id
+	RunnerID string `json:"runner_id,omitempty"`
 }
 
 // Validate validates this service runner auth g c p request
@@ -60,9 +62,8 @@ func (m *ServiceRunnerAuthGCPRequest) validateIdentityToken(formats strfmt.Regis
 }
 
 func (m *ServiceRunnerAuthGCPRequest) validateMetadata(formats strfmt.Registry) error {
-
-	if err := validate.Required("metadata", "body", m.Metadata); err != nil {
-		return err
+	if swag.IsZero(m.Metadata) { // not required
+		return nil
 	}
 
 	if m.Metadata != nil {
@@ -100,6 +101,10 @@ func (m *ServiceRunnerAuthGCPRequest) ContextValidate(ctx context.Context, forma
 func (m *ServiceRunnerAuthGCPRequest) contextValidateMetadata(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Metadata != nil {
+
+		if swag.IsZero(m.Metadata) { // not required
+			return nil
+		}
 
 		if err := m.Metadata.ContextValidate(ctx, formats); err != nil {
 			ve := new(errors.Validation)
