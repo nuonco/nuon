@@ -35,6 +35,19 @@ export const buildMatchesInstallConfig = (
   return buildConfigId === installAppConfigId
 }
 
+export const buildAppBranchId = (build: TBuild) =>
+  build.app_branch_id || build.app_branch_run?.app_branch?.id
+
+export const buildMatchesInstallBranch = (
+  build: TBuild,
+  installAppBranchId?: string
+) => {
+  if (!installAppBranchId) return true
+  const branchId = buildAppBranchId(build)
+  if (!branchId) return false
+  return branchId === installAppBranchId
+}
+
 const matchesQuery = (build: TBuild, query: string) => {
   const haystack = [
     build?.id,
@@ -79,6 +92,7 @@ interface IBuildSelect {
   hasMorePages: boolean
   error?: { error?: string } | null
   installAppConfigId?: string
+  installAppBranchId?: string
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void
 }
 
@@ -94,41 +108,48 @@ export const BuildSelect = ({
   hasMorePages,
   error,
   installAppConfigId,
+  installAppBranchId,
   onScroll,
 }: IBuildSelect) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<TSortOrder>('newest')
   const deployableBuilds = useMemo(() => excludePreviewBuilds(builds), [builds])
+  const branchBuilds = useMemo(
+    () =>
+      deployableBuilds.filter((build) =>
+        buildMatchesInstallBranch(build, installAppBranchId)
+      ),
+    [deployableBuilds, installAppBranchId]
+  )
 
   useEffect(() => {
-    if (!selectedBuildId && deployableBuilds.length > 0) {
-      const mostRecentActiveBuild = deployableBuilds.find(
+    if (!selectedBuildId && branchBuilds.length > 0) {
+      const mostRecentActiveBuild = branchBuilds.find(
         (build) => build?.status_v2?.status === 'active'
       )
       if (mostRecentActiveBuild) {
         onSelectBuild(mostRecentActiveBuild.id)
       }
     }
-  }, [selectedBuildId, deployableBuilds, onSelectBuild])
+  }, [selectedBuildId, branchBuilds, onSelectBuild])
 
   const visibleBuilds = useMemo(() => {
     const filtered = searchQuery
-      ? deployableBuilds.filter((build) => matchesQuery(build, searchQuery))
-      : deployableBuilds
+      ? branchBuilds.filter((build) => matchesQuery(build, searchQuery))
+      : branchBuilds
     return [...filtered].sort((a, b) =>
       sortOrder === 'newest'
         ? buildTimestamp(b) - buildTimestamp(a)
         : buildTimestamp(a) - buildTimestamp(b)
     )
-  }, [deployableBuilds, searchQuery, sortOrder])
+  }, [branchBuilds, searchQuery, sortOrder])
 
-  const showControls = deployableBuilds.length > 0 && !error
-  const selectedBuild = deployableBuilds.find(
-    (build) => build.id === selectedBuildId
-  )
-  const selectedConfigMismatch = selectedBuild
-    ? !buildMatchesInstallConfig(selectedBuild, installAppConfigId)
-    : false
+  const showControls = branchBuilds.length > 0 && !error
+  const selectedBuild = branchBuilds.find((build) => build.id === selectedBuildId)
+  const selectedConfigMismatch =
+    !!selectedBuild &&
+    !installAppBranchId &&
+    !buildMatchesInstallConfig(selectedBuild, installAppConfigId)
   const selectedBranchName = selectedBuild
     ? buildBranchName(selectedBuild)
     : undefined
@@ -150,13 +171,19 @@ export const BuildSelect = ({
       )
     }
 
-    if (deployableBuilds.length === 0 && !isLoading) {
+    if (branchBuilds.length === 0 && !isLoading) {
       return (
         <EmptyState
           variant="search"
           size="sm"
-          emptyTitle="No builds available"
-          emptyMessage="No builds found. Create a build first."
+          emptyTitle={
+            installAppBranchId ? 'No builds on this branch' : 'No builds available'
+          }
+          emptyMessage={
+            installAppBranchId
+              ? 'Builds from other app branches are hidden. Run this branch to create a build.'
+              : 'No builds found. Create a build first.'
+          }
         />
       )
     }

@@ -3,7 +3,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getComponentBuilds } from '@/lib'
 import type { TBuild } from '@/types'
-import { BuildSelect } from './BuildSelect'
+import { BuildSelect, buildMatchesInstallBranch } from './BuildSelect'
 
 interface IBuildSelectContainer {
   componentId: string
@@ -12,6 +12,7 @@ interface IBuildSelectContainer {
   currentBuildId?: string
   currentDeployStatus?: string
   installAppConfigId?: string
+  installAppBranchId?: string
   onSelectBuild: (buildId: string) => void
   onClose: () => void
 }
@@ -23,6 +24,7 @@ export const BuildSelectContainer = ({
   currentBuildId,
   currentDeployStatus,
   installAppConfigId,
+  installAppBranchId,
   onSelectBuild,
 }: IBuildSelectContainer) => {
   const { org } = useOrg()
@@ -72,7 +74,11 @@ export const BuildSelectContainer = ({
   }, [buildsResult, currentPage, isLoadingMore])
 
   useEffect(() => {
-    const hasDeployableBuild = allBuilds.some((build) => !build?.is_preview)
+    const hasDeployableBuild = allBuilds.some(
+      (build) =>
+        !build?.is_preview &&
+        buildMatchesInstallBranch(build, installAppBranchId)
+    )
     if (
       allBuilds.length > 0 &&
       !hasDeployableBuild &&
@@ -83,7 +89,7 @@ export const BuildSelectContainer = ({
       setIsLoadingMore(true)
       setCurrentPage((prev) => prev + 1)
     }
-  }, [allBuilds, hasMorePages, isFetching, isLoadingMore])
+  }, [allBuilds, hasMorePages, installAppBranchId, isFetching, isLoadingMore])
 
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
@@ -111,6 +117,7 @@ export const BuildSelectContainer = ({
       currentBuildId={currentBuildId}
       currentDeployStatus={currentDeployStatus}
       installAppConfigId={installAppConfigId}
+      installAppBranchId={installAppBranchId}
       onSelectBuild={onSelectBuild}
       builds={allBuilds}
       isLoading={isLoading}
