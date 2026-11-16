@@ -18,6 +18,22 @@ func (s *InstallsServiceTestSuite) TestForgetInstallComponentStillInConfig() {
 	path := fmt.Sprintf("/v1/installs/%s/components/%s/forget", install.ID, helmComp.ID)
 	rr := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
+	require.Equal(s.T(), "This component is still in the app config. Remove it, run `nuon apps sync` or run your app branch, then try again.", s.errDescription(rr))
+}
+
+func (s *InstallsServiceTestSuite) TestForgetInstallComponentStillInConfigWhenAppSyncDisabled() {
+	s.setOrgFeatures(app.OrgFeatureDisableAppSync)
+	install := s.createTestInstall()
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	s.connectInstallToBranch(install, branch)
+	helmComp := s.getSeededComponent(app.ComponentTypeHelmChart)
+	s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), install.ID, helmComp.ID)
+
+	path := fmt.Sprintf("/v1/installs/%s/components/%s/forget", install.ID, helmComp.ID)
+	rr := s.makeRequest(http.MethodPost, path, nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
+	require.Equal(s.T(), "This component is still in the app config. Remove it, run your app branch, then try again.", s.errDescription(rr))
 }
 
 // TestForgetInstallComponentStillInConfigUnchangedAcrossVersion covers the case where a
