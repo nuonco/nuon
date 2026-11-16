@@ -17,7 +17,6 @@ import (
 const (
 	appBranchGroupDirectiveVersion   = "app-branch-group-directive-v1"
 	appBranchConfigOnlyDeployVersion = "app-branch-config-only-deploy-v1"
-	appBranchDisabledTeardownVersion = "app-branch-disabled-teardown-v1"
 )
 
 func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -107,12 +106,9 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 
-	var disableComponentIDs []string
-	if workflow.GetVersion(ctx, appBranchDisabledTeardownVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		disableComponentIDs, err = activeDisabledComponentIDs(ctx, dg, componentIDs)
-		if err != nil {
-			return nil, err
-		}
+	disableComponentIDs, err := activeDisabledComponentIDs(ctx, dg, componentIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	// A stack change recycles the runner, so gating on the outgoing one would
