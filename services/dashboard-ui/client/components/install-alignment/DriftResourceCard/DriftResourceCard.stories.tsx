@@ -10,7 +10,6 @@ import {
   unappliedResource,
 } from '@/components/__fixtures__/install-alignment'
 import type { TInstallAlignmentOrigin } from '@/types'
-import { explanationEvidence } from '../alignment-utils'
 import { DriftResourceCard } from './DriftResourceCard'
 
 const links = {
@@ -19,7 +18,7 @@ const links = {
       ? `#run-${origin.run.run_id}`
       : `#workflow-${origin?.workflow_id}`,
   repo: 'acme/payments',
-  explanationHref: '#evidence',
+  driftCheckHref: '#drift-check',
   historyHref: '#deploy-history',
   deploymentHref: '#deployment',
   nameHref: '#component',
@@ -72,20 +71,6 @@ export const StateDriftDetected = () => (
   />
 )
 
-export const NeverAttempted = () => (
-  <DriftResourceCard
-    {...links}
-    explanationHref={undefined}
-    onViewPlan={undefined}
-    resource={unappliedResource({
-      blocking_attempt: undefined,
-      earlier_attempts: 0,
-      plan: undefined,
-      explanation: { summary: 'No deployment has started for these changes.' },
-    })}
-  />
-)
-
 const causeCard = (view: 'list' | 'grid') => {
   const Causes = () => (
     <div
@@ -99,9 +84,7 @@ const causeCard = (view: 'list' | 'grid') => {
           {...links}
           view={view}
           resource={resource}
-          explanationHref={
-            explanationEvidence(resource) ? '#evidence' : undefined
-          }
+          driftCheckHref={resource.plan?.plan_only ? '#drift-check' : undefined}
           onViewPlan={resource.plan ? () => {} : undefined}
         />
       ))}

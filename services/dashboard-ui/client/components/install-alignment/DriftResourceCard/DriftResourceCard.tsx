@@ -18,17 +18,12 @@ import type {
   TInstallAlignmentResourceKind,
 } from '@/types'
 import { cn } from '@/utils/classnames'
-import {
-  driftExplanation,
-  explanationEvidence,
-  hasOngoingDeployment,
-  isDrifted,
-} from '../alignment-utils'
-import { LiveBuild, RunRef } from '../LiveBuild'
+import { hasOngoingDeployment, isDrifted } from '../alignment-utils'
+import { LiveBuild } from '../LiveBuild'
 
 export interface IDriftResourceCard {
   deploymentHref?: string
-  explanationHref?: string
+  driftCheckHref?: string
   historyHref?: string
   metadata?: ReactNode
   nameHref?: string
@@ -49,30 +44,14 @@ const KIND_ICONS: Record<TInstallAlignmentResourceKind, TIconVariant> = {
   stack: 'StackIcon',
 }
 
-const REASON_STATUS_LABELS: Record<string, string> = {
-  cancelled: 'Workflow cancelled',
-  error: 'Deployment failed',
-  'policy-failed': 'Denied by policy',
-  'policy-skipped': 'Skipped by policy',
-  'auto-skipped': 'No changes',
+const OPEN_STATUS_LABELS: Record<string, string> = {
   'failed-pending-retry': 'Failed — awaiting retry',
-  'awaiting-retry': 'Failed — awaiting retry',
   'approval-awaiting': 'Awaiting approval',
-  'awaiting-approval': 'Awaiting approval',
-  'approval-denied': 'Approval denied',
-  'approval-expired': 'Approval expired',
-  'user-skipped': 'Deploy skipped',
-  'not-attempted': 'Blocked by earlier step',
-  discarded: 'Blocked by earlier step',
-  unknown: 'Outcome unknown',
 }
-
-const earlierAttemptsLabel = (count: number) =>
-  `${count} earlier ${count === 1 ? 'attempt' : 'attempts'}`
 
 export const DriftResourceCard = ({
   deploymentHref,
-  explanationHref,
+  driftCheckHref,
   historyHref,
   metadata,
   nameHref,
@@ -90,52 +69,21 @@ export const DriftResourceCard = ({
     ? resource.open_deployment
     : undefined
   const isImage = resource.kind === 'image'
-  const ongoingOnly = !!openDeployment && !isDrifted(resource)
   const isStateDrift = resource.category === 'state-drift-detected'
-  const explanation = ongoingOnly
+  const summary = openDeployment
     ? isImage
       ? 'An image sync is pending or in progress.'
       : 'A deployment is pending or in progress.'
-    : driftExplanation(resource)
-  const evidenceWorkflowId = explanationEvidence(resource)?.workflowId
-  const reasonStatus = openDeployment
-    ? (evidenceWorkflowId === openDeployment.id &&
-        resource.explanation?.status) ||
-      openDeployment.status
-    : resource.explanation?.status
-  const evidenceTime = openDeployment
+    : isStateDrift
+      ? 'Live resources differ from what was last applied.'
+      : isImage && resource.expected_build_id !== resource.applied_build_id
+        ? 'This image version hasn’t been synced.'
+        : resource.reason || 'Saved changes haven’t taken effect.'
+  const summaryTime = openDeployment
     ? openDeployment.created_at
     : isStateDrift
       ? resource.plan?.created_at
-      : evidenceWorkflowId &&
-          evidenceWorkflowId === resource.blocking_attempt?.workflow_id
-        ? resource.blocking_attempt?.created_at
-        : undefined
-
-  const deployed = !!resource.applied_build_id
-  const showBuilds =
-    !isStateDrift &&
-    !!resource.expected_build_id &&
-    resource.expected_build_id !== resource.applied_build_id
-  const consequence = showBuilds
-    ? undefined
-    : (isImage && !isStateDrift
-        ? 'This image version hasn’t been synced.'
-        : resource.reason) ||
-      (isStateDrift
-        ? 'Live resources differ from what was last applied.'
-        : 'Saved changes haven’t taken effect.')
-  const attempt = resource.blocking_attempt
-  const attemptOrigin =
-    !openDeployment &&
-    attempt?.branch_run &&
-    evidenceWorkflowId &&
-    evidenceWorkflowId === attempt.workflow_id
-      ? { run: attempt.branch_run, workflow_id: attempt.workflow_id }
       : undefined
-  const earlier = openDeployment
-    ? (resource.earlier_attempts ?? 0) + (resource.blocking_attempt ? 1 : 0)
-    : (resource.earlier_attempts ?? 0)
 
   const name = (
     <Text
@@ -189,13 +137,9 @@ export const DriftResourceCard = ({
             <Badge size="sm" theme="warn">
               Drift detected
             </Badge>
-          ) : reasonStatus ? (
-            <Status status={reasonStatus} variant="badge">
-              {isImage && reasonStatus === 'error'
-                ? 'Sync failed'
-                : isImage && reasonStatus === 'cancelled'
-                  ? 'Sync cancelled'
-                  : REASON_STATUS_LABELS[reasonStatus]}
+          ) : openDeployment ? (
+            <Status status={openDeployment.status} variant="badge">
+              {OPEN_STATUS_LABELS[openDeployment.status ?? '']}
             </Status>
           ) : null}
           {onViewPlan ? (
@@ -235,66 +179,42 @@ export const DriftResourceCard = ({
         </Banner>
       ) : null}
 
-      {showBuilds ? (
-        deployed ? (
-          <LiveBuild
-            appliedAt={resource.applied_deploy_at}
-            origin={resource.applied_by}
-            originHref={originHref?.(resource.applied_by)}
-            repo={repo}
-            variant={isImage ? 'sync' : 'deploy'}
-          />
-        ) : (
-          <Text variant="subtext" theme="neutral">
-            Not deployed yet
-          </Text>
-        )
-      ) : (
-        <Text variant="subtext" data-testid="drift-consequence">
-          {consequence}
+      {resource.applied_build_id ? (
+        <LiveBuild
+          appliedAt={resource.applied_deploy_at}
+          origin={resource.applied_by}
+          originHref={originHref?.(resource.applied_by)}
+          repo={repo}
+          variant={isImage ? 'sync' : 'deploy'}
+        />
+      ) : openDeployment ? (
+        <Text variant="subtext" theme="neutral">
+          Not deployed yet
         </Text>
-      )}
+      ) : null}
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <Text variant="subtext" data-testid="drift-explanation">
-          {explanation}
-        </Text>
-        {attemptOrigin ? (
-          <RunRef
-            origin={attemptOrigin}
-            href={originHref?.(attemptOrigin)}
-            repo={repo}
-          />
-        ) : null}
-        {explanationHref && evidenceWorkflowId && !openDeployment ? (
-          <Link href={explanationHref}>
-            {isStateDrift ? 'View drift scan' : 'View workflow'}
-          </Link>
-        ) : null}
-        {evidenceTime ? (
+      <div
+        className="flex flex-wrap items-center gap-x-3 gap-y-1"
+        data-testid="drift-summary"
+      >
+        <Text variant="subtext">{summary}</Text>
+        {summaryTime ? (
           <Time
-            time={evidenceTime}
+            time={summaryTime}
             format="relative"
             variant="subtext"
             theme="neutral"
           />
         ) : null}
+        {isStateDrift && driftCheckHref ? (
+          <Link href={driftCheckHref}>View drift check</Link>
+        ) : null}
+        {!isStateDrift && historyHref ? (
+          <Link href={historyHref}>
+            {isImage ? 'View sync history' : 'View deploy history'}
+          </Link>
+        ) : null}
       </div>
-
-      {earlier > 0 && !isStateDrift ? (
-        <div
-          className="flex flex-wrap items-center gap-x-3 gap-y-1"
-          data-testid="drift-history"
-        >
-          <Text variant="subtext" theme="neutral">
-            {earlierAttemptsLabel(earlier)}
-            {deployed ? ` since the live ${isImage ? 'sync' : 'deploy'}` : null}
-          </Text>
-          {historyHref ? (
-            <Link href={historyHref}>View deploy history</Link>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   )
 

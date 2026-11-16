@@ -27,11 +27,6 @@ const resources = [
     id: 'running',
     name: 'running-deploy',
     open_deployment: { id: 'wf-new', status: 'in-progress' },
-    explanation: {
-      summary: 'An older attempt was cancelled.',
-      status: 'cancelled',
-      workflow_id: 'wf-old',
-    },
   }),
   stateDriftResource({ id: 'scan', name: 'scan-drift' }),
   alignmentResource({
@@ -96,8 +91,8 @@ test('ongoing resources appear once above drift, without hiding their unapplied 
     within(ongoing).getByRole('heading', { name: 'aligned-redeploy' })
   ).toBeTruthy()
   expect(
-    within(ongoing).getByText('A deployment is pending or in progress.')
-  ).toBeTruthy()
+    within(ongoing).getAllByText('A deployment is pending or in progress.')
+  ).toHaveLength(2)
   expect(
     screen.getAllByRole('heading', { name: 'running-deploy' })
   ).toHaveLength(1)
@@ -169,15 +164,7 @@ test('a stopped deployment returns to drift until its changes are actually appli
     ).toBeTruthy()
   }
   rerender(
-    <View
-      items={[
-        alignmentResource({
-          id: 'changing',
-          name: 'changing',
-          blocking_attempt: { id: 'failed-redeploy', status: 'error' },
-        }),
-      ]}
-    />
+    <View items={[alignmentResource({ id: 'changing', name: 'changing' })]} />
   )
   expect(screen.queryByRole('region', { name: 'Drifted' })).toBeNull()
   expect(
@@ -220,10 +207,6 @@ test('images describe recorded registry syncs separately from deployment drift',
           name: 'api',
           reason: 'This image version hasn’t been synced.',
           plan: undefined,
-          explanation: {
-            summary: 'The latest image sync failed.',
-            status: 'error',
-          },
         }),
         alignmentResource({
           kind: 'image',
@@ -242,10 +225,6 @@ test('images describe recorded registry syncs separately from deployment drift',
           id: 'cancelled-sync',
           name: 'cancelled-image',
           plan: undefined,
-          explanation: {
-            summary: 'The image sync was cancelled.',
-            status: 'cancelled',
-          },
         }),
       ]}
     />
@@ -261,17 +240,15 @@ test('images describe recorded registry syncs separately from deployment drift',
       .getByRole('link', { name: 'View sync' })
       .getAttribute('href')
   ).toBe('/workflows/wf-sync')
-  expect(within(unapplied).getByText('Sync failed')).toBeTruthy()
   expect(
     within(unapplied).getByRole('heading', { name: 'retry-image' })
   ).toBeTruthy()
   expect(
     within(unapplied).getByRole('heading', { name: 'cancelled-image' })
   ).toBeTruthy()
-  expect(within(unapplied).getByText('Sync cancelled')).toBeTruthy()
   expect(
-    within(unapplied).getByText('The latest image sync failed.')
-  ).toBeTruthy()
+    within(unapplied).getAllByText('This image version hasn’t been synced.')
+  ).toHaveLength(3)
   expect(screen.queryByText('State drift detected')).toBeNull()
   expect(screen.queryByText('Deployment failed')).toBeNull()
   expect(screen.queryByRole('link', { name: 'View deployment' })).toBeNull()

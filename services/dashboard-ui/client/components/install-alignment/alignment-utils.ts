@@ -6,32 +6,6 @@ import type {
   TInstallOverviewCommit,
 } from '@/types'
 
-export const driftExplanation = (resource: TInstallAlignmentResource) =>
-  resource.explanation?.summary?.trim() ||
-  (resource.category === 'state-drift-detected'
-    ? 'A drift check found differences between live resources and what was last applied.'
-    : 'We couldn’t determine why these changes haven’t taken effect.')
-
-export const explanationEvidence = (
-  resource: TInstallAlignmentResource
-): { workflowId: string; stepId?: string } | undefined => {
-  const explanation = resource.explanation
-  if (explanation?.workflow_id) {
-    return { workflowId: explanation.workflow_id, stepId: explanation.step_id }
-  }
-  if (
-    resource.category === 'state-drift-detected' &&
-    resource.plan?.plan_only &&
-    resource.plan?.workflow_id
-  ) {
-    return {
-      workflowId: resource.plan.workflow_id,
-      stepId: resource.plan.step_id,
-    }
-  }
-  return undefined
-}
-
 export type TDriftFilter =
   | 'all'
   | 'changes-not-applied'

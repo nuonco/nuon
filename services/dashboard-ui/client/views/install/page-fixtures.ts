@@ -777,11 +777,6 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
         type: 'input_update',
         created_at: new Date(Date.now() - 1_800_000).toISOString(),
       },
-      explanation: {
-        summary: 'These changes are waiting for approval.',
-        status: 'approval-awaiting',
-        workflow_id: 'wf-open-ic-cmp-worker',
-      },
     }),
     stateDriftResource(component('cmp-ledger', 'ledger', 'terraform_module')),
     inputUpdateResource({
@@ -800,19 +795,6 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
       applied_build_id: undefined,
       applied_build: undefined,
       applied_config_id: undefined,
-      blocking_attempt: {
-        id: 'wf-input-enable-search',
-        workflow_id: 'wf-input-enable-search',
-        type: 'component_enabled',
-        status: 'cancelled',
-        created_at: new Date(Date.now() - 3_600_000).toISOString(),
-      },
-      explanation: {
-        summary:
-          'Enabling this component was cancelled. It hasn’t been deployed.',
-        status: 'cancelled',
-        workflow_id: 'wf-input-enable-search',
-      },
     }),
     alignmentResource({
       ...component('cmp-scheduler', 'scheduler', 'pulumi'),
@@ -824,12 +806,6 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
         id: 'wf-open-ic-cmp-migrate',
         status: 'in-progress',
         created_at: new Date(Date.now() - 900_000).toISOString(),
-      },
-      explanation: {
-        summary:
-          'The deployment is in progress. These changes haven’t taken effect yet.',
-        status: 'in-progress',
-        workflow_id: 'wf-open-ic-cmp-migrate',
       },
     }),
     alignmentResource({
@@ -850,12 +826,6 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
       kind: 'image',
       reason: 'This image version hasn’t been synced.',
       plan: undefined,
-      explanation: {
-        summary:
-          'This install’s configuration specifies an image version that hasn’t been copied to its registry. The latest image sync failed.',
-        status: 'error',
-        workflow_id: 'wf-attempt-ic-cmp-api-image',
-      },
     }),
     alignmentResource({
       ...component('cmp-worker-image', 'worker-image', 'external_image'),
@@ -1129,14 +1099,6 @@ const resolveDriftFixture = (
     resource.open_deployment = finished
       ? undefined
       : { id, status, created_at: workflow.created_at }
-    if (finished && denied) {
-      resource.blocking_attempt = {
-        id: `${id}-deploy`,
-        workflow_id: id,
-        status,
-        created_at: workflow.created_at,
-      }
-    }
     if (finished && !denied) {
       resource.category = 'in-sync'
       resource.status = 'active'
@@ -1144,7 +1106,6 @@ const resolveDriftFixture = (
       resource.applied_deploy_id = `${id}-deploy`
       resource.applied_deploy_at = new Date(approvedAt! + 2000).toISOString()
       resource.reason = undefined
-      resource.explanation = undefined
       resource.plan = undefined
       const component = components.find(
         (row) => row.component_id === resource.component_id
@@ -1301,16 +1262,6 @@ export const resourcesFixture = (
     )
     if (image) {
       image.status = 'cancelled'
-      image.blocking_attempt = {
-        ...image.blocking_attempt!,
-        status: 'cancelled',
-      }
-      image.explanation = {
-        summary:
-          'The image sync was cancelled before this version was copied to the install’s registry.',
-        status: 'cancelled',
-        workflow_id: image.blocking_attempt.workflow_id,
-      }
     }
   }
   if (alignment === 'ongoing') {
@@ -1322,14 +1273,6 @@ export const resourcesFixture = (
           id: `wf-open-${resource.id}`,
           status: 'queued',
           created_at: new Date(Date.now() - 600_000).toISOString(),
-        }
-        resource.explanation = {
-          summary:
-            resource.kind === 'image'
-              ? 'The image sync is queued and hasn’t started yet.'
-              : 'The deployment is queued and hasn’t started yet.',
-          workflow_id: `wf-open-${resource.id}`,
-          status: 'queued',
         }
       }
     }
@@ -1356,9 +1299,6 @@ export const resourcesFixture = (
         reason: 'This component is enabled, but hasn’t been deployed.',
         expected_build_id: 'bld-cmp-api',
         expected_config_id: APP_CONFIG_ID,
-        explanation: {
-          summary: 'No deployment has started for this component.',
-        },
       }),
       alignmentResource({
         id: 'ic-cmp-worker',

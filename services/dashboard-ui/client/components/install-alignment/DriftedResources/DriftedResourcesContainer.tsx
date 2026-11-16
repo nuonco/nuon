@@ -12,7 +12,6 @@ import type {
   TInstallAlignmentResourceKind,
 } from '@/types'
 import {
-  explanationEvidence,
   hasOngoingDeployment,
   isDrifted,
   resourcesOfKinds,
@@ -40,7 +39,6 @@ export const useDriftCardProps = () => {
       : undefined
 
   return (resource: TInstallAlignmentResource) => {
-    const evidence = explanationEvidence(resource)
     const nameHref =
       resource.kind === 'component' || resource.kind === 'image'
         ? installLink({
@@ -55,7 +53,9 @@ export const useDriftCardProps = () => {
       originHref,
       repo,
       historyHref: nameHref ? `${nameHref}/deploys` : undefined,
-      explanationHref: workflowHref(evidence?.workflowId, evidence?.stepId),
+      driftCheckHref: resource.plan?.plan_only
+        ? workflowHref(resource.plan.workflow_id, resource.plan.step_id)
+        : undefined,
       deploymentHref: workflowHref(resource.open_deployment?.id),
       metadata:
         resource.kind === 'image' && resource.component_id ? (

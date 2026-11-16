@@ -5,6 +5,7 @@ import {
   inputUpdateResource,
   manualOrigin,
   openDeploymentResource,
+  stateDriftResource,
   unappliedResource,
 } from '@/components/__fixtures__/install-alignment'
 import type { TInstallAlignmentOrigin } from '@/types'
@@ -24,10 +25,9 @@ const renderCard = (props: Parameters<typeof DriftResourceCard>[0]) =>
     </MemoryRouter>
   )
 
-test('a version change shows the deployed branch run, the blocking attempt, and earlier attempts', () => {
+test('a version change shows the deployed branch run, the reason, and deploy history', () => {
   renderCard({
     resource: unappliedResource(),
-    explanationHref: '/workflows/wf-attempt-ic-api',
     historyHref: '/components/cmp-api/deploys',
     originHref,
     repo: 'acme/payments',
@@ -48,36 +48,17 @@ test('a version change shows the deployed branch run, the blocking attempt, and 
       .getByRole('link', { name: 'Pin the ledger module to 2.4.0' })
       .getAttribute('href')
   ).toBe('/runs/wf-branch-run-1')
-  expect(builds.textContent).not.toContain('bld-')
-  const runs = screen.getAllByTestId('run-ref')
-  expect(runs).toHaveLength(2)
-  expect(
-    within(runs[1])
-      .getByRole('link', { name: /Tag v1.4.2/ })
-      .getAttribute('href')
-  ).toBe('https://github.com/acme/payments/releases/tag/v1.4.2')
-  expect(
-    within(runs[1])
-      .getByRole('link', { name: 'Raise the checkout worker retry budget' })
-      .getAttribute('href')
-  ).toBe('/runs/wf-branch-run-6')
-  expect(screen.queryByTestId('drift-consequence')).toBeNull()
-  expect(screen.getByText('Deployment failed')).toBeTruthy()
-  expect(screen.getByText('The latest deployment failed.')).toBeTruthy()
-  expect(
-    screen.getByRole('link', { name: 'View workflow' }).getAttribute('href')
-  ).toBe('/workflows/wf-attempt-ic-api')
-  const history = screen.getByTestId('drift-history')
-  expect(history.textContent).toContain(
-    '2 earlier attempts since the live deploy'
+  expect(screen.getAllByTestId('run-ref')).toHaveLength(1)
+  const summary = screen.getByTestId('drift-summary')
+  expect(summary.textContent).toStartWith(
+    'The deployed version doesn’t match this install’s configuration.'
   )
+  expect(summary.textContent).not.toContain('bld-')
   expect(
-    within(history)
+    within(summary)
       .getByRole('link', { name: 'View deploy history' })
       .getAttribute('href')
   ).toBe('/components/cmp-api/deploys')
-  expect(screen.queryByText(/branch run/)).toBeNull()
-  expect(screen.queryByText(/Last attempt/)).toBeNull()
 })
 
 test('a live version from outside a branch run names its workflow', () => {
@@ -97,61 +78,41 @@ test('a live version from outside a branch run names its workflow', () => {
   expect(within(builds).getAllByTestId('run-ref')).toHaveLength(1)
 })
 
-test('changed inputs on the live build show the reason instead of a build change', () => {
-  renderCard({
-    resource: inputUpdateResource(),
-    explanationHref: '/workflows/input-update?panel=deploy',
-    historyHref: '/components/cmp-api/deploys',
-  })
+test('changed inputs on the live build keep the live run and show the reason', () => {
+  renderCard({ resource: inputUpdateResource(), originHref })
 
-  expect(screen.queryByTestId('live-build')).toBeNull()
-  expect(screen.getByTestId('drift-consequence').textContent).toBe(
+  expect(screen.getByTestId('live-build')).toBeTruthy()
+  expect(screen.getByTestId('drift-summary').textContent).toBe(
     'Saved input changes haven’t taken effect.'
   )
-  expect(screen.getByText('Workflow cancelled')).toBeTruthy()
-  expect(
-    screen.getByRole('link', { name: 'View workflow' }).getAttribute('href')
-  ).toBe('/workflows/input-update?panel=deploy')
-  expect(screen.queryByTestId('drift-history')).toBeNull()
 })
 
-test('an open deployment links only to itself and counts the superseded failure as earlier', () => {
+test('an open deployment shows its status and links to it instead of resolving', () => {
   renderCard({
-    resource: openDeploymentResource({ earlier_attempts: 0 }),
+    resource: openDeploymentResource(),
     deploymentHref: '/workflows/wf-open-ic-api',
-    explanationHref: '/workflows/wf-open-ic-api',
+    onResolve: () => {},
   })
 
+  expect(screen.getByText('Failed — awaiting retry')).toBeTruthy()
   expect(
     screen.getByRole('link', { name: 'View deployment' }).getAttribute('href')
   ).toBe('/workflows/wf-open-ic-api')
-  expect(screen.queryByRole('link', { name: 'View workflow' })).toBeNull()
-  expect(screen.getByText('Failed — awaiting retry')).toBeTruthy()
-  expect(screen.getByTestId('drift-history').textContent).toContain(
-    '1 earlier attempt since'
-  )
+  expect(screen.queryByRole('button', { name: /Resolve drift/ })).toBeNull()
 })
 
-test('unattributed changes explain the missing evidence without inventing a workflow', () => {
+test('state drift keeps the live run and links to the drift check, not deploy history', () => {
   renderCard({
-    resource: unappliedResource({
-      expected_build_id: undefined,
-      applied_build_id: undefined,
-      reason: 'This component hasn’t been deployed yet.',
-      explanation: undefined,
-      blocking_attempt: undefined,
-      earlier_attempts: 0,
-      plan: undefined,
-    }),
+    resource: stateDriftResource(),
+    driftCheckHref: '/workflows/wf-plan-ic-api',
+    historyHref: '/components/cmp-api/deploys',
+    originHref,
   })
-  expect(screen.getByTestId('drift-consequence').textContent).toBe(
-    'This component hasn’t been deployed yet.'
-  )
+
+  expect(screen.getByTestId('live-build')).toBeTruthy()
+  expect(screen.getByText('Drift detected')).toBeTruthy()
   expect(
-    screen.getByText(
-      'We couldn’t determine why these changes haven’t taken effect.'
-    )
-  ).toBeTruthy()
-  expect(screen.queryByRole('link')).toBeNull()
-  expect(screen.queryByText('Workflow cancelled')).toBeNull()
+    screen.getByRole('link', { name: 'View drift check' }).getAttribute('href')
+  ).toBe('/workflows/wf-plan-ic-api')
+  expect(screen.queryByRole('link', { name: 'View deploy history' })).toBeNull()
 })

@@ -17,7 +17,7 @@ import {
   selectedCommit,
 } from '@/components/__fixtures__/install-alignment'
 import type { TInstallAlignmentResource } from '@/types'
-import { explanationEvidence, hasOngoingDeployment } from '../alignment-utils'
+import { hasOngoingDeployment } from '../alignment-utils'
 import { DriftResourceCard } from '../DriftResourceCard'
 import { DriftedResources, type IDriftedResources } from './DriftedResources'
 
@@ -26,7 +26,7 @@ const card =
     <DriftResourceCard
       resource={resource}
       view={view}
-      explanationHref={explanationEvidence(resource) ? '#evidence' : undefined}
+      driftCheckHref={resource.plan?.plan_only ? '#drift-check' : undefined}
       historyHref="#deploy-history"
       deploymentHref="#deployment"
       originHref={(origin) =>
@@ -134,11 +134,6 @@ export const InputUpdates = () => (
           type: 'input_update',
           status: 'approval-awaiting',
           created_at: new Date(Date.now() - 1_800_000).toISOString(),
-        },
-        explanation: {
-          summary: 'These changes are waiting for approval.',
-          status: 'approval-awaiting',
-          workflow_id: 'wf-open-input-worker',
         },
       }),
     ]}

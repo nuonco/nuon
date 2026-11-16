@@ -34,9 +34,6 @@ type ServiceInstallAlignmentResource struct {
 	// applied deploy id
 	AppliedDeployID string `json:"applied_deploy_id,omitempty"`
 
-	// blocking attempt
-	BlockingAttempt *ServiceInstallAlignmentAttempt `json:"blocking_attempt,omitempty"`
-
 	// category
 	Category ServiceInstallAlignmentCategory `json:"category,omitempty"`
 
@@ -46,17 +43,11 @@ type ServiceInstallAlignmentResource struct {
 	// component type
 	ComponentType string `json:"component_type,omitempty"`
 
-	// earlier attempts
-	EarlierAttempts int64 `json:"earlier_attempts,omitempty"`
-
 	// expected build id
 	ExpectedBuildID string `json:"expected_build_id,omitempty"`
 
 	// expected config id
 	ExpectedConfigID string `json:"expected_config_id,omitempty"`
-
-	// explanation
-	Explanation *ServiceInstallAlignmentExplanation `json:"explanation,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`
@@ -88,15 +79,7 @@ func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) erro
 		res = append(res, err)
 	}
 
-	if err := m.validateBlockingAttempt(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateCategory(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateExplanation(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -141,29 +124,6 @@ func (m *ServiceInstallAlignmentResource) validateAppliedBy(formats strfmt.Regis
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) validateBlockingAttempt(formats strfmt.Registry) error {
-	if swag.IsZero(m.BlockingAttempt) { // not required
-		return nil
-	}
-
-	if m.BlockingAttempt != nil {
-		if err := m.BlockingAttempt.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("blocking_attempt")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("blocking_attempt")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *ServiceInstallAlignmentResource) validateCategory(formats strfmt.Registry) error {
 	if swag.IsZero(m.Category) { // not required
 		return nil
@@ -180,29 +140,6 @@ func (m *ServiceInstallAlignmentResource) validateCategory(formats strfmt.Regist
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) validateExplanation(formats strfmt.Registry) error {
-	if swag.IsZero(m.Explanation) { // not required
-		return nil
-	}
-
-	if m.Explanation != nil {
-		if err := m.Explanation.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("explanation")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("explanation")
-			}
-
-			return err
-		}
 	}
 
 	return nil
@@ -283,15 +220,7 @@ func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, f
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateBlockingAttempt(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateCategory(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateExplanation(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -338,31 +267,6 @@ func (m *ServiceInstallAlignmentResource) contextValidateAppliedBy(ctx context.C
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) contextValidateBlockingAttempt(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.BlockingAttempt != nil {
-
-		if swag.IsZero(m.BlockingAttempt) { // not required
-			return nil
-		}
-
-		if err := m.BlockingAttempt.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("blocking_attempt")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("blocking_attempt")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *ServiceInstallAlignmentResource) contextValidateCategory(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Category) { // not required
@@ -380,31 +284,6 @@ func (m *ServiceInstallAlignmentResource) contextValidateCategory(ctx context.Co
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallAlignmentResource) contextValidateExplanation(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Explanation != nil {
-
-		if swag.IsZero(m.Explanation) { // not required
-			return nil
-		}
-
-		if err := m.Explanation.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("explanation")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("explanation")
-			}
-
-			return err
-		}
 	}
 
 	return nil
