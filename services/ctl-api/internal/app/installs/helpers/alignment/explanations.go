@@ -3,8 +3,7 @@ package alignment
 import (
 	"context"
 	"fmt"
-
-	"gorm.io/gorm"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -27,24 +26,9 @@ func (s *Helpers) explainInstallAlignment(ctx context.Context, st *installAlignm
 		}
 	}
 
-	stepsByWorkflow := map[string][]*alignmentStep{}
-	deployComponent := map[string]string{}
-	if len(openIDs) > 0 {
-		steps, err := s.loadAttemptSteps(ctx, func(db *gorm.DB) *gorm.DB { return db.Where("install_workflow_id IN ?", openIDs) })
-		if err != nil {
-			return err
-		}
-		for _, step := range steps {
-			stepsByWorkflow[step.InstallWorkflowID] = append(stepsByWorkflow[step.InstallWorkflowID], step)
-		}
-		var deploys []app.InstallDeploy
-		if err := s.db.WithContext(ctx).Select("id", "install_component_id").
-			Where("install_workflow_id IN ?", openIDs).Find(&deploys).Error; err != nil {
-			return fmt.Errorf("unable to get open workflow deploys: %w", err)
-		}
-		for i := range deploys {
-			deployComponent[deploys[i].ID] = deploys[i].InstallComponentID
-		}
+	openRows, links, err := s.loadOpenDeploymentRows(ctx, st, openIDs)
+	if err != nil {
+		return err
 	}
 
 	for i := range alignment.Resources {
@@ -54,7 +38,7 @@ func (s *Helpers) explainInstallAlignment(ctx context.Context, st *installAlignm
 		}
 		switch {
 		case res.OpenDeployment != nil:
-			res.Explanation = st.explainOpenDeployment(res, stepsByWorkflow[res.OpenDeployment.ID], deployComponent)
+			res.Explanation = explainOpenDeployment(res, openRows[res.ID], links)
 		case res.BlockingAttempt != nil:
 			a := res.BlockingAttempt
 			res.Explanation = &InstallAlignmentExplanation{
@@ -72,30 +56,93 @@ func (s *Helpers) explainInstallAlignment(ctx context.Context, st *installAlignm
 	return nil
 }
 
-func (st *installAlignmentState) explainOpenDeployment(res *InstallAlignmentResource, steps []*alignmentStep, deployComponent map[string]string) *InstallAlignmentExplanation {
-	open := res.OpenDeployment
-	wf := &app.Workflow{ID: open.ID, Type: open.Type, Status: app.CompositeStatus{Status: app.Status(open.Status)}}
-	var related []*alignmentStep
-	if target, ok := st.alignmentTargetFor(res); ok {
-		for _, step := range steps {
-			if stepRelatesToTarget(step, target, deployComponent) {
-				related = append(related, step)
-			}
+func (s *Helpers) loadOpenDeploymentRows(ctx context.Context, st *installAlignmentState, openIDs []string) (map[string]*attemptCandidate, map[string]attemptStepLink, error) {
+	rows := map[string]*attemptCandidate{}
+	if len(openIDs) == 0 {
+		return rows, nil, nil
+	}
+	keep := func(resourceID string, c *attemptCandidate) {
+		if prev := rows[resourceID]; prev == nil || c.createdAt.After(prev.createdAt) {
+			rows[resourceID] = c
 		}
 	}
-	status := string(app.StatusQueued)
+	var deploys []struct {
+		ID                 string
+		InstallComponentID string
+		Status             string
+		PolicyAction       string
+		Denied             bool
+		Applied            bool
+		CreatedAt          time.Time
+		InstallWorkflowID  string
+	}
+	if err := s.db.WithContext(ctx).Table("install_deploys AS d").
+		Select("d.id", "d.install_component_id",
+			"COALESCE(NULLIF(d.status_v2->>'status', ''), d.status) AS status",
+			"COALESCE(d.status_v2->'metadata'->>'policy_action', '') AS policy_action",
+			"CASE WHEN jsonb_typeof(d.status_v2->'metadata'->'deny_violations') = 'array' THEN jsonb_array_length(d.status_v2->'metadata'->'deny_violations') > 0 ELSE false END AS denied",
+			"d.applied_at IS NOT NULL AS applied",
+			"d.created_at", "d.install_workflow_id").
+		Where("d.deleted_at = 0 AND d.install_workflow_id IN ?", openIDs).
+		Where("COALESCE(NULLIF(d.status_v2->>'status', ''), d.status) IS DISTINCT FROM ?", app.InstallDeployStatusRetried).
+		Scan(&deploys).Error; err != nil {
+		return nil, nil, fmt.Errorf("unable to get open workflow deploys: %w", err)
+	}
+	var targetIDs []string
+	for _, d := range deploys {
+		targetIDs = append(targetIDs, d.ID)
+		keep(d.InstallComponentID, &attemptCandidate{
+			targetID: d.ID, workflowID: d.InstallWorkflowID, createdAt: d.CreatedAt, status: d.Status,
+			policySkip: d.PolicyAction == "skip_apply", denied: d.Denied, applied: d.Applied,
+		})
+	}
+	if st.sandbox != nil {
+		var runs []app.InstallSandboxRun
+		if err := s.db.WithContext(ctx).
+			Select("id", "created_at", "install_workflow_id", "status", "status_v2", "applied_at").
+			Where(app.InstallSandboxRun{InstallSandboxID: &st.sandbox.ID}).
+			Where("install_workflow_id IN ?", openIDs).
+			Where("status IS DISTINCT FROM ?", app.SandboxRunStatusRetried).
+			Find(&runs).Error; err != nil {
+			return nil, nil, fmt.Errorf("unable to get open workflow sandbox runs: %w", err)
+		}
+		for i := range runs {
+			status := string(runs[i].StatusV2.Status)
+			if status == "" {
+				status = string(runs[i].Status)
+			}
+			targetIDs = append(targetIDs, runs[i].ID)
+			keep(st.sandbox.ID, &attemptCandidate{
+				targetID: runs[i].ID, createdAt: runs[i].CreatedAt, status: status,
+				policySkip: runs[i].StatusV2.Metadata["policy_action"] == "skip_apply",
+				denied:     metadataDenied(runs[i].StatusV2.Metadata),
+				applied:    runs[i].AppliedAt != nil,
+			})
+		}
+	}
+	links, err := s.attemptStepLinks(ctx, targetIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return rows, links, nil
+}
+
+func explainOpenDeployment(res *InstallAlignmentResource, row *attemptCandidate, links map[string]attemptStepLink) *InstallAlignmentExplanation {
+	open := res.OpenDeployment
+	wf := &app.Workflow{ID: open.ID, Type: open.Type, Status: app.CompositeStatus{Status: app.Status(open.Status)}}
+	outcome := attemptOutcome{status: string(app.StatusQueued)}
 	var stepID string
-	afterDeny := false
-	if len(related) > 0 {
-		if outcome, ok := classifyAttempt(wf, related, "", false); ok && outcome.status != attemptStatusUnknown {
-			status, stepID, afterDeny = outcome.status, outcome.stepID, outcome.afterDeny
+	if row != nil {
+		stepID = links[row.targetID].stepID
+		if o, ok := rowOutcome(row, wf); ok && o.status != attemptStatusUnknown {
+			outcome = o
 		} else {
-			status = string(app.StatusInProgress)
+			outcome = attemptOutcome{status: string(app.StatusInProgress)}
 		}
 	}
 	return &InstallAlignmentExplanation{
-		Summary:    attemptSummary(res, status, open.Type, afterDeny),
-		Status:     status,
+		Summary:    attemptSummary(res, outcome.status, open.Type, outcome.afterDeny),
+		Status:     outcome.status,
 		WorkflowID: open.ID,
 		StepID:     stepID,
 	}

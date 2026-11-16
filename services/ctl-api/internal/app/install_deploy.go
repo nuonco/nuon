@@ -47,6 +47,7 @@ const (
 	InstallDeployStatusNoDrift         InstallDeployStatus = "no-drift"
 	InstallDeployApprovalDenied        InstallDeployStatus = "approval-denied"
 	InstallDeployStatusRetried         InstallDeployStatus = "retried"
+	InstallDeployStatusUserSkipped     InstallDeployStatus = "user-skipped"
 	// Applied, then refused by the health gate. Unlike error the plan IS live, so
 	// "what is running" counts it and "did it succeed" does not.
 	InstallDeployStatusHealthFailed InstallDeployStatus = "health-failed"

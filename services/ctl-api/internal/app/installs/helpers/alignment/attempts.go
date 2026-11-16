@@ -24,33 +24,14 @@ type attemptCandidate struct {
 	buildID      string
 	status       string
 	policySkip   bool
+	denied       bool
+	applied      bool
 	workflowOnly bool
 }
 
 type attemptOutcome struct {
 	status    string
-	stepID    string
 	afterDeny bool
-}
-
-var attemptFailureStatuses = map[string]struct{}{
-	string(app.StatusError):                               {},
-	string(app.StatusCancelled):                           {},
-	string(app.WorkflowStepApprovalStatusApprovalDenied):  {},
-	string(app.WorkflowStepApprovalStatusApprovalExpired): {},
-	string(app.InstallDeployStatusHealthFailed):           {},
-}
-
-var attemptActiveStepStatuses = map[app.Status]struct{}{
-	"":                   {},
-	app.StatusPending:    {},
-	app.StatusQueued:     {},
-	app.StatusInProgress: {},
-	app.StatusRetrying:   {},
-	app.StatusPlanning:   {},
-	app.StatusApplying:   {},
-	app.StatusCheckPlan:  {},
-	app.AwaitingApproval: {},
 }
 
 func deployTypeWanted(res *InstallAlignmentResource, typ app.InstallDeployType, status string) bool {
@@ -131,6 +112,8 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 			Type               app.InstallDeployType
 			Status             string
 			PolicyAction       string
+			Denied             bool
+			Applied            bool
 			CreatedAt          time.Time
 			InstallWorkflowID  *string
 		}
@@ -138,6 +121,8 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 			Select("d.id", "d.install_component_id", "d.component_build_id", "d.type",
 				"COALESCE(NULLIF(d.status_v2->>'status', ''), d.status) AS status",
 				"COALESCE(d.status_v2->'metadata'->>'policy_action', '') AS policy_action",
+				"CASE WHEN jsonb_typeof(d.status_v2->'metadata'->'deny_violations') = 'array' THEN jsonb_array_length(d.status_v2->'metadata'->'deny_violations') > 0 ELSE false END AS denied",
+				"d.applied_at IS NOT NULL AS applied",
 				"d.created_at", "d.install_workflow_id").
 			Joins("JOIN install_workflows w ON w.id = d.install_workflow_id").
 			Where("w.owner_id = ? AND w.owner_type = ? AND w.deleted_at = 0 AND NOT w.plan_only", st.install.ID, "installs").
@@ -173,6 +158,8 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 				buildID:    row.ComponentBuildID,
 				status:     row.Status,
 				policySkip: row.PolicyAction == "skip_apply",
+				denied:     row.Denied,
+				applied:    row.Applied,
 			}
 			if row.InstallWorkflowID != nil {
 				c.workflowID = *row.InstallWorkflowID
@@ -185,7 +172,7 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 		res := byID[st.sandbox.ID]
 		query := s.db.WithContext(ctx).
 			Select("install_sandbox_runs.id", "install_sandbox_runs.created_at", "install_sandbox_runs.install_workflow_id",
-				"install_sandbox_runs.status", "install_sandbox_runs.status_v2").
+				"install_sandbox_runs.status", "install_sandbox_runs.status_v2", "install_sandbox_runs.applied_at").
 			Joins("JOIN install_workflows w ON w.id = install_sandbox_runs.install_workflow_id AND w.deleted_at = 0 AND NOT w.plan_only").
 			Where(app.InstallSandboxRun{InstallSandboxID: &st.sandbox.ID}).
 			Where("install_sandbox_runs.run_type IS DISTINCT FROM ?", app.SandboxRunTypeDeprovision)
@@ -200,11 +187,17 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 			return fmt.Errorf("unable to get install sandbox run attempts: %w", err)
 		}
 		for i := range runs {
+			status := string(runs[i].StatusV2.Status)
+			if status == "" {
+				status = string(runs[i].Status)
+			}
 			c := &attemptCandidate{
 				targetID:   runs[i].ID,
 				createdAt:  runs[i].CreatedAt,
-				status:     string(runs[i].Status),
+				status:     status,
 				policySkip: runs[i].StatusV2.Metadata["policy_action"] == "skip_apply",
+				denied:     metadataDenied(runs[i].StatusV2.Metadata),
+				applied:    runs[i].AppliedAt != nil,
 			}
 			if runs[i].InstallWorkflowID != nil {
 				c.workflowID = *runs[i].InstallWorkflowID
@@ -227,9 +220,11 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 		}
 		for i := range versions {
 			candidates[res.ID] = append(candidates[res.ID], &attemptCandidate{
-				targetID:  versions[i].ID,
-				createdAt: versions[i].CreatedAt,
-				status:    string(versions[i].Status.Status),
+				targetID:   versions[i].ID,
+				createdAt:  versions[i].CreatedAt,
+				status:     string(versions[i].Status.Status),
+				policySkip: versions[i].Status.Metadata["policy_action"] == "skip_apply",
+				denied:     metadataDenied(versions[i].Status.Metadata),
 			})
 		}
 	}
@@ -243,89 +238,41 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 			targetID:     wf.ID,
 			workflowID:   wf.ID,
 			createdAt:    wf.CreatedAt,
-			status:       string(wf.Status.Status),
 			workflowOnly: true,
 		})
 	}
 
-	var targetIDs, workflowOnlyIDs []string
+	var targetIDs []string
 	for _, list := range candidates {
 		for _, c := range list {
-			if c.workflowOnly {
-				workflowOnlyIDs = append(workflowOnlyIDs, c.workflowID)
-			} else {
+			if !c.workflowOnly {
 				targetIDs = append(targetIDs, c.targetID)
 			}
 		}
 	}
-	stepsByTarget := map[string][]*alignmentStep{}
-	stepsByWorkflow := map[string][]*alignmentStep{}
-	deployComponent := map[string]string{}
-	if len(targetIDs) > 0 {
-		steps, err := s.loadAttemptSteps(ctx, func(db *gorm.DB) *gorm.DB { return db.Where("step_target_id IN ?", targetIDs) })
-		if err != nil {
-			return err
-		}
-		for _, step := range steps {
-			stepsByTarget[step.StepTargetID] = append(stepsByTarget[step.StepTargetID], step)
-		}
-	}
-	if len(workflowOnlyIDs) > 0 {
-		steps, err := s.loadAttemptSteps(ctx, func(db *gorm.DB) *gorm.DB { return db.Where("install_workflow_id IN ?", workflowOnlyIDs) })
-		if err != nil {
-			return err
-		}
-		for _, step := range steps {
-			stepsByWorkflow[step.InstallWorkflowID] = append(stepsByWorkflow[step.InstallWorkflowID], step)
-		}
-		var deploys []app.InstallDeploy
-		if err := s.db.WithContext(ctx).Select("id", "install_component_id").
-			Where("install_workflow_id IN ?", workflowOnlyIDs).Find(&deploys).Error; err != nil {
-			return fmt.Errorf("unable to get input workflow deploys: %w", err)
-		}
-		for i := range deploys {
-			deployComponent[deploys[i].ID] = deploys[i].InstallComponentID
-		}
+	links, err := s.attemptStepLinks(ctx, targetIDs)
+	if err != nil {
+		return err
 	}
 
 	workflowIDs := map[string]struct{}{}
 	for _, list := range candidates {
 		for _, c := range list {
 			if c.workflowID == "" {
-				for _, step := range stepsByTarget[c.targetID] {
-					if step.InstallWorkflowID != "" {
-						c.workflowID = step.InstallWorkflowID
-						break
-					}
-				}
+				c.workflowID = links[c.targetID].workflowID
 			}
 			if c.workflowID != "" {
 				workflowIDs[c.workflowID] = struct{}{}
 			}
 		}
 	}
-	workflowsByID := map[string]*app.Workflow{}
-	if len(workflowIDs) > 0 {
-		ids := make([]string, 0, len(workflowIDs))
-		for id := range workflowIDs {
-			ids = append(ids, id)
-		}
-		var workflows []app.Workflow
-		if err := s.db.WithContext(ctx).Select("id", "type", "status", "created_at").
-			Where("id IN ?", ids).Find(&workflows).Error; err != nil {
-			return fmt.Errorf("unable to get attempt workflows: %w", err)
-		}
-		for i := range workflows {
-			workflowsByID[workflows[i].ID] = &workflows[i]
-		}
+	workflowsByID, err := s.attemptWorkflows(ctx, workflowIDs)
+	if err != nil {
+		return err
 	}
 
 	for id, list := range candidates {
 		res := byID[id]
-		target, ok := st.alignmentTargetFor(res)
-		if !ok {
-			continue
-		}
 		sort.SliceStable(list, func(i, j int) bool { return list[i].createdAt.After(list[j].createdAt) })
 		deployWorkflows := map[string]struct{}{}
 		for _, c := range list {
@@ -337,25 +284,17 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 			if res.OpenDeployment != nil && c.workflowID == res.OpenDeployment.ID {
 				continue
 			}
-			var steps []*alignmentStep
+			wf := workflowsByID[c.workflowID]
+			var outcome attemptOutcome
+			ok := false
 			if c.workflowOnly {
 				if _, ok := deployWorkflows[c.workflowID]; ok {
 					continue
 				}
-				for _, step := range stepsByWorkflow[c.workflowID] {
-					if stepRelatesToTarget(step, target, deployComponent) {
-						steps = append(steps, step)
-					}
-				}
+				outcome, ok = workflowOutcome(wf)
 			} else {
-				steps = stepsByTarget[c.targetID]
+				outcome, ok = rowOutcome(c, wf)
 			}
-			wf := workflowsByID[c.workflowID]
-			fallback := c.status
-			if c.workflowOnly {
-				fallback = ""
-			}
-			outcome, ok := classifyAttempt(wf, steps, fallback, c.policySkip)
 			if !ok {
 				continue
 			}
@@ -368,7 +307,7 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 				Status:     outcome.status,
 				CreatedAt:  c.createdAt,
 				WorkflowID: c.workflowID,
-				StepID:     outcome.stepID,
+				StepID:     links[c.targetID].stepID,
 				BuildID:    c.buildID,
 			}
 			if wf != nil {
@@ -380,133 +319,135 @@ func (s *Helpers) loadBlockingAttempts(ctx context.Context, st *installAlignment
 	return nil
 }
 
-func (s *Helpers) loadAttemptSteps(ctx context.Context, scope func(*gorm.DB) *gorm.DB) ([]*alignmentStep, error) {
-	var steps []alignmentStep
-	if err := scope(s.db.WithContext(ctx).Model(&app.WorkflowStep{})).
-		Select("id", "install_workflow_id", "status", "step_target_type", "step_target_id", "metadata", "retried",
-			"queue_signal->>'type' AS signal_type",
-			"queue_signal->'data'->>'ComponentID' AS signal_component_id").
+type attemptStepLink struct {
+	stepID     string
+	workflowID string
+}
+
+func (s *Helpers) attemptStepLinks(ctx context.Context, targetIDs []string) (map[string]attemptStepLink, error) {
+	links := map[string]attemptStepLink{}
+	if len(targetIDs) == 0 {
+		return links, nil
+	}
+	var steps []struct {
+		ID                string
+		InstallWorkflowID string
+		StepTargetID      string
+	}
+	if err := s.db.WithContext(ctx).Model(&app.WorkflowStep{}).
+		Select("id", "install_workflow_id", "step_target_id").
+		Where("step_target_id IN ? AND NOT retried", targetIDs).
+		Order("idx DESC, created_at DESC").
 		Scan(&steps).Error; err != nil {
 		return nil, fmt.Errorf("unable to get attempt steps: %w", err)
 	}
-	out := make([]*alignmentStep, len(steps))
-	for i := range steps {
-		out[i] = &steps[i]
+	for _, step := range steps {
+		if _, ok := links[step.StepTargetID]; !ok {
+			links[step.StepTargetID] = attemptStepLink{stepID: step.ID, workflowID: step.InstallWorkflowID}
+		}
+	}
+	return links, nil
+}
+
+func (s *Helpers) attemptWorkflows(ctx context.Context, ids map[string]struct{}) (map[string]*app.Workflow, error) {
+	out := map[string]*app.Workflow{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	list := make([]string, 0, len(ids))
+	for id := range ids {
+		list = append(list, id)
+	}
+	var workflows []app.Workflow
+	if err := s.db.WithContext(ctx).Select("id", "type", "status", "created_at").
+		Where("id IN ?", list).Find(&workflows).Error; err != nil {
+		return nil, fmt.Errorf("unable to get attempt workflows: %w", err)
+	}
+	for i := range workflows {
+		out[workflows[i].ID] = &workflows[i]
 	}
 	return out, nil
 }
 
-func (st *installAlignmentState) alignmentTargetFor(res *InstallAlignmentResource) (alignmentTarget, bool) {
-	switch res.Kind {
-	case InstallAlignmentResourceKindStack:
-		return alignmentTarget{kind: res.Kind, stack: st.stack}, st.stack != nil
-	case InstallAlignmentResourceKindSandbox:
-		return alignmentTarget{kind: res.Kind, sandbox: st.sandbox}, st.sandbox != nil
-	default:
-		for i := range st.components {
-			if st.components[i].ID == res.ID {
-				return alignmentTarget{kind: res.Kind, installComponent: &st.components[i]}, true
-			}
-		}
-		return alignmentTarget{}, false
-	}
-}
-
-func stepDenied(step *alignmentStep) bool {
-	denied, ok := step.Status.Metadata["deny_violations"].([]any)
+func metadataDenied(meta map[string]any) bool {
+	denied, ok := meta["deny_violations"].([]any)
 	return ok && len(denied) > 0
 }
 
-func classifyAttempt(wf *app.Workflow, steps []*alignmentStep, fallback string, policySkip bool) (attemptOutcome, bool) {
-	var live []*alignmentStep
-	for _, step := range steps {
-		if !step.Retried {
-			live = append(live, step)
-		}
-	}
-	if len(steps) > 0 && len(live) == 0 {
+func rowOutcome(c *attemptCandidate, wf *app.Workflow) (attemptOutcome, bool) {
+	if c.applied {
 		return attemptOutcome{}, false
 	}
 	var wfStatus app.Status
 	if wf != nil {
 		wfStatus = wf.Status.Status
 	}
-	find := func(statuses ...app.Status) *alignmentStep {
-		for _, step := range live {
-			for _, status := range statuses {
-				if step.Status.Status == status {
-					return step
-				}
-			}
-		}
-		return nil
-	}
-
-	if step := find(app.StatusError); step != nil {
+	switch app.Status(c.status) {
+	case app.StatusError, app.Status(app.InstallDeployStatusHealthFailed), app.Status(app.SandboxRunStatusAccessError):
 		switch {
-		case stepDenied(step):
-			return attemptOutcome{status: "policy-failed", stepID: step.ID}, true
+		case c.denied:
+			return attemptOutcome{status: "policy-failed"}, true
 		case workflowAwaitingRetry(wfStatus):
-			return attemptOutcome{status: string(app.StatusFailedPendingRetry), stepID: step.ID}, true
-		default:
-			return attemptOutcome{status: string(app.StatusError), stepID: step.ID}, true
+			return attemptOutcome{status: string(app.StatusFailedPendingRetry)}, true
 		}
-	}
-	for _, status := range []app.Status{app.WorkflowStepApprovalStatusApprovalDenied, app.WorkflowStepApprovalStatusApprovalExpired} {
-		if step := find(status); step != nil {
-			return attemptOutcome{status: string(status), stepID: step.ID}, true
+		return attemptOutcome{status: string(app.StatusError)}, true
+	case app.WorkflowStepApprovalStatusApprovalDenied, app.WorkflowStepApprovalStatusApprovalExpired, app.StatusCancelled:
+		return attemptOutcome{status: c.status}, true
+	case app.StatusUserSkipped:
+		return attemptOutcome{status: c.status, afterDeny: c.denied}, true
+	case app.StatusAutoSkipped:
+		if c.policySkip {
+			return attemptOutcome{status: "policy-skipped"}, true
 		}
+		return attemptOutcome{status: c.status}, true
+	case app.StatusNotAttempted, app.StatusDiscarded, app.InstallStackVersionStatusOutdated, app.InstallStackVersionStatusExpired:
+		return attemptOutcome{status: string(app.StatusNotAttempted)}, true
+	case app.Status(app.InstallDeployStatusActive), app.Status(app.InstallDeployStatusInactive), app.Status(app.InstallDeployStatusNoop),
+		app.StatusSuccess, app.Status(app.SandboxRunStatusDeprovisioned):
+		return attemptOutcome{}, false
+	case "", app.StatusQueued, app.StatusPending, app.Status(app.InstallDeployStatusPendingApproval), app.AwaitingApproval,
+		app.StatusPlanning, app.StatusApplying, app.StatusInProgress, app.StatusRetrying, app.StatusCheckPlan,
+		app.Status(app.InstallDeployStatusSyncing), app.Status(app.InstallDeployStatusExecuting),
+		app.Status(app.SandboxRunStatusProvisioning), app.Status(app.SandboxRunStatusReprovisioning), app.Status(app.SandboxRunStatusDeprovisioning),
+		app.InstallStackVersionStatusGenerating, app.InstallStackVersionStatusPendingUser:
+		return unfinishedOutcome(c.status, wfStatus), true
 	}
-	if step := find(app.StatusUserSkipped); step != nil {
-		return attemptOutcome{status: string(app.StatusUserSkipped), stepID: step.ID, afterDeny: stepDenied(step)}, true
-	}
-	if step := find(app.StatusCancelled); step != nil {
-		return attemptOutcome{status: string(app.StatusCancelled), stepID: step.ID}, true
-	}
-	if step := find(app.StatusAutoSkipped); step != nil {
-		if policySkip || step.Status.Metadata["check"] == "policy-skip-apply" || step.Status.Metadata["policy_action"] == "skip_apply" {
-			return attemptOutcome{status: "policy-skipped", stepID: step.ID}, true
-		}
-		return attemptOutcome{status: string(app.StatusAutoSkipped), stepID: step.ID}, true
-	}
-	if step := find(app.StatusNotAttempted, app.StatusDiscarded); step != nil {
-		return attemptOutcome{status: string(app.StatusNotAttempted), stepID: step.ID}, true
-	}
-	if _, failed := attemptFailureStatuses[fallback]; failed {
-		return attemptOutcome{status: fallback}, true
-	}
-	succeeded := find(app.StatusSuccess) != nil
-	for _, step := range live {
-		_, active := attemptActiveStepStatuses[step.Status.Status]
-		if !active && (succeeded || step.Status.Status != app.WorkflowStepApprovalStatusApproved) {
-			continue
-		}
-		switch {
-		case wfStatus == app.StatusCancelled:
-			return attemptOutcome{status: string(app.StatusCancelled), stepID: step.ID}, true
-		case wfStatus == app.StatusError || wfStatus == app.StatusSuccess:
-			return attemptOutcome{status: string(app.StatusNotAttempted), stepID: step.ID}, true
-		case step.Status.Status == app.AwaitingApproval:
-			return attemptOutcome{status: string(app.AwaitingApproval), stepID: step.ID}, true
-		default:
-			return attemptOutcome{status: string(app.StatusInProgress), stepID: step.ID}, true
-		}
-	}
+	return attemptOutcome{status: attemptStatusUnknown}, true
+}
 
+func unfinishedOutcome(status string, wfStatus app.Status) attemptOutcome {
+	switch {
+	case wfStatus == app.StatusCancelled:
+		return attemptOutcome{status: string(app.StatusCancelled)}
+	case wfStatus == "" || wfStatus == app.StatusError || wfStatus == app.StatusSuccess || workflowAwaitingRetry(wfStatus):
+		return attemptOutcome{status: string(app.StatusNotAttempted)}
+	case status == string(app.InstallDeployStatusPendingApproval) || status == string(app.AwaitingApproval) || wfStatus == app.AwaitingApproval:
+		return attemptOutcome{status: string(app.AwaitingApproval)}
+	case status == "" || status == string(app.StatusQueued) || status == string(app.StatusPending):
+		return attemptOutcome{status: string(app.StatusQueued)}
+	default:
+		return attemptOutcome{status: string(app.StatusInProgress)}
+	}
+}
+
+func workflowOutcome(wf *app.Workflow) (attemptOutcome, bool) {
 	if wf == nil {
 		return attemptOutcome{}, false
 	}
-	switch {
-	case wfStatus == app.StatusCancelled:
-		return attemptOutcome{status: string(app.StatusCancelled)}, true
-	case len(live) > 0:
-		return attemptOutcome{status: attemptStatusUnknown}, true
-	case wfStatus == app.StatusError || workflowAwaitingRetry(wfStatus):
-		return attemptOutcome{status: string(app.StatusNotAttempted)}, true
-	case wfStatus == app.StatusSuccess:
+	switch status := wf.Status.Status; {
+	case status == app.StatusSuccess:
 		return attemptOutcome{}, false
-	default:
+	case status == app.StatusCancelled, status == app.StatusError,
+		status == app.WorkflowStepApprovalStatusApprovalDenied, status == app.WorkflowStepApprovalStatusApprovalExpired:
+		return attemptOutcome{status: string(status)}, true
+	case workflowAwaitingRetry(status):
+		return attemptOutcome{status: string(app.StatusFailedPendingRetry)}, true
+	case status == app.AwaitingApproval:
+		return attemptOutcome{status: string(app.AwaitingApproval)}, true
+	case status == "" || status == app.StatusPending || status == app.StatusQueued:
 		return attemptOutcome{status: string(app.StatusQueued)}, true
+	default:
+		return attemptOutcome{status: string(app.StatusInProgress)}, true
 	}
 }
 
