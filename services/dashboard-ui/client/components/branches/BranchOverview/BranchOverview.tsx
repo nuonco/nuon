@@ -771,13 +771,17 @@ export const BranchOverview = ({
             </Banner>
           ) : null}
 
-          {showConfigChanges
-            ? (configChanges ?? (
-                <Text variant="subtext" theme="neutral">
-                  No config changes for this run.
-                </Text>
-              ))
-            : null}
+          {showConfigChanges ? (
+            configChanges ? (
+              <Card elevation="1" className="!gap-4 !p-4">
+                {configChanges}
+              </Card>
+            ) : (
+              <Text variant="subtext" theme="neutral">
+                No config changes for this run.
+              </Text>
+            )
+          ) : null}
 
           {showBuilds ? (
             <ActiveBuilds
