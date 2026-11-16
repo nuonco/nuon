@@ -68,6 +68,8 @@ func (a *Activities) BatchProcessHealthchecks(ctx context.Context, req BatchProc
 		Where("composite_status->>'status' IN ?", []string{
 			string(app.RunnerProcessStatusActive),
 			string(app.RunnerProcessStatusOffline),
+			string(app.RunnerProcessStatusPendingShutdown),
+			string(app.RunnerProcessStatusShuttingDown),
 		}).
 		Where("id > ?", req.CursorID).
 		Order("id").
@@ -331,7 +333,11 @@ func (a *Activities) handleBatchProcessShutdown(ectx context.Context, p *app.Run
 }
 
 func (a *Activities) handleBatchProcessInactive(ectx context.Context, p *app.RunnerProcess, queue app.Queue, hasQueue bool, now time.Time, tags map[string]string, resp *BatchProcessHealthchecksResponse) {
-	updated, err := a.guardedProcessStatusUpdate(ectx, p, app.RunnerProcessStatusInactive, "no heartbeat received for 5 minutes")
+	desc := "no heartbeat received for 5 minutes"
+	if isShuttingDownProcessStatus(p.ProcessStatus()) {
+		desc = "no heartbeat received for 1 hour during shutdown"
+	}
+	updated, err := a.guardedProcessStatusUpdate(ectx, p, app.RunnerProcessStatusInactive, desc)
 	if err != nil {
 		resp.Errors++
 		a.l.Warn("unable to update process status to inactive", zap.String("process_id", p.ID), zap.Error(err))
@@ -353,6 +359,13 @@ func (a *Activities) handleBatchProcessInactive(ectx context.Context, p *app.Run
 	}
 
 	if !hasQueue {
+		return
+	}
+
+	if isShuttingDownProcessStatus(p.ProcessStatus()) {
+		if err := a.helpers.StopProcessQueue(ectx, queue.ID); err != nil {
+			a.l.Warn("unable to stop process queue", zap.String("process_id", p.ID), zap.Error(err))
+		}
 		return
 	}
 
@@ -452,8 +465,9 @@ func (a *Activities) checkBatchVersionMismatch(ectx context.Context, p *app.Runn
 }
 
 // guardedProcessStatusUpdate is a single-statement status transition that
-// re-checks the process is still active/offline at write time, so batch checks
-// can't clobber a concurrent shutdown or init transition.
+// re-checks the process is still active/offline (or, mid-shutdown, still in the
+// same shutdown status) at write time, so batch checks can't clobber a
+// concurrent shutdown or init transition.
 func (a *Activities) guardedProcessStatusUpdate(ectx context.Context, current *app.RunnerProcess, to app.RunnerProcessStatus, desc string) (bool, error) {
 	newComposite := app.NewCompositeStatus(ectx, app.Status(to))
 	newComposite.StatusHumanDescription = desc
@@ -470,13 +484,18 @@ func (a *Activities) guardedProcessStatusUpdate(ectx context.Context, current *a
 		newComposite.History = newComposite.History[:25]
 	}
 
+	from := []string{
+		string(app.RunnerProcessStatusActive),
+		string(app.RunnerProcessStatusOffline),
+	}
+	if isShuttingDownProcessStatus(current.ProcessStatus()) {
+		from = []string{string(current.ProcessStatus())}
+	}
+
 	res := a.db.WithContext(ectx).
 		Model(&app.RunnerProcess{}).
 		Where("id = ?", current.ID).
-		Where("composite_status->>'status' IN ?", []string{
-			string(app.RunnerProcessStatusActive),
-			string(app.RunnerProcessStatusOffline),
-		}).
+		Where("composite_status->>'status' IN ?", from).
 		Update("composite_status", newComposite)
 	if res.Error != nil {
 		return false, res.Error
