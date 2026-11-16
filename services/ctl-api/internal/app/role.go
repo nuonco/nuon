@@ -112,19 +112,11 @@ func (a *Role) CompilePermissions(binding AccountRole) ([]permissions.ScopedPerm
 	if !a.HasPolicyDocument() {
 		return nil, nil
 	}
-	if a.DeletedAt != 0 || len(a.Policies) != 1 {
-		return nil, fmt.Errorf("role %s requires one live document policy", a.ID)
+	if err := a.validateDocumentBinding(binding); err != nil {
+		return nil, err
 	}
 	orgID := binding.OrgID.String
-	if binding.DeletedAt != 0 || binding.AccountID == "" || binding.RoleID != a.ID ||
-		binding.OrgID.Empty() || a.OrgID.Empty() || a.OrgID.String != orgID ||
-		binding.Org == nil || binding.Org.ID != orgID || binding.Org.DeletedAt != 0 {
-		return nil, fmt.Errorf("role %s has an invalid org binding", a.ID)
-	}
 	policy := &a.Policies[0]
-	if policy.DeletedAt != 0 || policy.RoleID != a.ID || policy.OrgID.Empty() || policy.OrgID.String != orgID {
-		return nil, fmt.Errorf("policy %s does not belong to role %s and its org", policy.ID, a.ID)
-	}
 	document, err := policy.DecodeDocument()
 	if err != nil {
 		return nil, err
@@ -137,6 +129,38 @@ func (a *Role) CompilePermissions(binding AccountRole) ([]permissions.ScopedPerm
 		return nil, fmt.Errorf("policy %s: %w", policy.ID, err)
 	}
 	return grants, nil
+}
+
+func (a *Role) CompileNativePermissions(binding AccountRole, catalog *permissions.Catalog) (*permissions.CompiledPolicy, error) {
+	if err := a.validateDocumentBinding(binding); err != nil {
+		return nil, err
+	}
+	policy := &a.Policies[0]
+	if policy.Document == nil || len(policy.Permissions) != 0 {
+		return nil, fmt.Errorf("policy %s requires a native document as its only authority", policy.ID)
+	}
+	document, err := catalog.DecodePolicy(policy.Document)
+	if err != nil {
+		return nil, fmt.Errorf("policy %s: %w", policy.ID, err)
+	}
+	return catalog.Compile(document, binding.OrgID.String)
+}
+
+func (a *Role) validateDocumentBinding(binding AccountRole) error {
+	if a.DeletedAt != 0 || len(a.Policies) != 1 {
+		return fmt.Errorf("role %s requires one live document policy", a.ID)
+	}
+	orgID := binding.OrgID.String
+	if binding.DeletedAt != 0 || binding.AccountID == "" || binding.RoleID != a.ID ||
+		binding.OrgID.Empty() || a.OrgID.Empty() || a.OrgID.String != orgID ||
+		binding.Org == nil || binding.Org.ID != orgID || binding.Org.DeletedAt != 0 {
+		return fmt.Errorf("role %s has an invalid org binding", a.ID)
+	}
+	policy := &a.Policies[0]
+	if policy.DeletedAt != 0 || policy.RoleID != a.ID || policy.OrgID.Empty() || policy.OrgID.String != orgID {
+		return fmt.Errorf("policy %s does not belong to role %s and its org", policy.ID, a.ID)
+	}
+	return nil
 }
 
 // AllowsContext reports whether the role may be offered on the given

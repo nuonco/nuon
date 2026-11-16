@@ -36,34 +36,27 @@ func (c *Catalog) Match(input NativePermissionCheck) PermissionMatch {
 			return PermissionMatch{Reason: ReasonInvalidTarget}
 		}
 	}
-	for _, policy := range input.Grants {
-		if policy == nil || policy.revision != c.revision {
-			return PermissionMatch{Reason: ReasonInvalidGrant}
-		}
+	grants, err := c.operationScopes(input.Grants, input.Target.OrgID, input.API, input.Permission)
+	if err != nil {
+		return PermissionMatch{Reason: ReasonInvalidGrant}
 	}
-	for _, policy := range input.Ceiling {
-		if policy == nil || policy.revision != c.revision {
-			return PermissionMatch{Reason: ReasonInvalidCeiling}
-		}
+	ceiling, err := c.operationScopes(input.Ceiling, input.Target.OrgID, input.API, input.Permission)
+	if err != nil {
+		return PermissionMatch{Reason: ReasonInvalidCeiling}
 	}
-	if !nativePoliciesPermit(input.Grants, input) {
+	if !nativeScopesPermit(grants, input) {
 		return PermissionMatch{Reason: ReasonNoGrant}
 	}
-	if input.Ceiling != nil && !nativePoliciesPermit(input.Ceiling, input) {
+	if input.Ceiling != nil && !nativeScopesPermit(ceiling, input) {
 		return PermissionMatch{Reason: ReasonCeilingExceeded}
 	}
 	return PermissionMatch{Matched: true, Reason: ReasonMatched}
 }
 
-func nativePoliciesPermit(policies []*CompiledPolicy, input NativePermissionCheck) bool {
-	for _, policy := range policies {
-		if policy.orgID != input.Target.OrgID || (policy.api != "" && policy.api != input.API) {
-			continue
-		}
-		for _, grant := range policy.grants {
-			if slices.Contains(grant.operations, input.Permission) && grant.scope.covers(input.Target, input.Permission) {
-				return true
-			}
+func nativeScopesPermit(scopes []NativeScope, input NativePermissionCheck) bool {
+	for _, scope := range scopes {
+		if scope.covers(input.Target, input.Permission) {
+			return true
 		}
 	}
 	return false
