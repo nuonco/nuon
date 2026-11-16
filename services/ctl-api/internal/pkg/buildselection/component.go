@@ -148,6 +148,18 @@ func ValidateComponent(ctx context.Context, db *gorm.DB, appConfigID, componentI
 	if componentID == "" || buildID == "" {
 		return fmt.Errorf("component ID and build ID are required")
 	}
+	var build app.ComponentBuild
+	if err := db.WithContext(ctx).
+		Preload("AppBranchRun.Preview").
+		Preload("ComponentConfigConnection").
+		Where(app.ComponentBuild{ID: buildID}).
+		First(&build).Error; err != nil {
+		return err
+	}
+	if build.ComponentConfigConnection.ComponentID == componentID &&
+		OnPinnedBranch(&build, cfg.AppBranchID.String) {
+		return nil
+	}
 	var ccc app.ComponentConfigConnection
 	if err := db.WithContext(ctx).
 		Where(app.ComponentConfigConnection{AppConfigID: appConfigID, ComponentID: componentID}).
@@ -162,6 +174,13 @@ func ValidateComponent(ctx context.Context, db *gorm.DB, appConfigID, componentI
 		return fmt.Errorf("build %s is not selected by app config %s for component %s", buildID, appConfigID, componentID)
 	}
 	return nil
+}
+
+func OnPinnedBranch(build *app.ComponentBuild, branchID string) bool {
+	if branchID == "" || build == nil || build.AppBranchRun == nil || build.AppBranchRun.IsPreview() {
+		return false
+	}
+	return build.AppBranchRun.AppBranchID == branchID
 }
 
 func ValidateDeploy(ctx context.Context, db *gorm.DB, deploy *app.InstallDeploy) error {

@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import type { TBuild } from '@/types'
-import { buildMatchesInstallConfig, excludePreviewBuilds } from './BuildSelect'
+import {
+  buildMatchesInstallBranch,
+  buildMatchesInstallConfig,
+  excludePreviewBuilds,
+} from './BuildSelect'
 
 describe('excludePreviewBuilds', () => {
   test('removes preview builds from deploy choices', () => {
@@ -42,5 +46,36 @@ describe('buildMatchesInstallConfig', () => {
         undefined
       )
     ).toBe(true)
+  })
+})
+
+describe('buildMatchesInstallBranch', () => {
+  test('keeps every build when the install has no app branch', () => {
+    expect(buildMatchesInstallBranch({} as TBuild, undefined)).toBe(true)
+  })
+
+  test('matches the build app branch id', () => {
+    expect(
+      buildMatchesInstallBranch({ app_branch_id: 'br-1' } as TBuild, 'br-1')
+    ).toBe(true)
+  })
+
+  test('matches the nested app branch when the build column is empty', () => {
+    expect(
+      buildMatchesInstallBranch(
+        { app_branch_run: { app_branch: { id: 'br-1' } } } as TBuild,
+        'br-1'
+      )
+    ).toBe(true)
+  })
+
+  test('rejects a build from another app branch', () => {
+    expect(
+      buildMatchesInstallBranch({ app_branch_id: 'br-other' } as TBuild, 'br-1')
+    ).toBe(false)
+  })
+
+  test('rejects a build with no branch when the install is on one', () => {
+    expect(buildMatchesInstallBranch({} as TBuild, 'br-1')).toBe(false)
   })
 })
