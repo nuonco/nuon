@@ -194,14 +194,35 @@ func TestAwaitBranchConfig(t *testing.T) {
 	})
 
 	t.Run("single failed run", func(t *testing.T) {
-		api := &branchConfigAPI{runs: []*models.AppWorkflow{{ID: "run-1"}}}
+		api := &branchConfigAPI{}
 		branch := &models.AppAppBranch{ID: "b1", Name: "seed", LatestRun: &models.AppAppBranchRun{Status: "failed"}}
 		_, err := (&appInstallSyncer{api: api, appID: "app"}).awaitBranchConfig(context.Background(), branch, false)
 		if err == nil || !strings.Contains(err.Error(), "run failed") {
 			t.Fatalf("err = %v", err)
 		}
-		if api.fetches != 0 || api.runLists != 1 {
+		if api.fetches != 0 || api.runLists != 0 {
 			t.Fatalf("fetches=%d runLists=%d", api.fetches, api.runLists)
+		}
+	})
+
+	t.Run("latest of several runs failed", func(t *testing.T) {
+		api := &branchConfigAPI{}
+		branch := &models.AppAppBranch{ID: "b1", Name: "seed", LatestRun: &models.AppAppBranchRun{Status: "cancelled"}}
+		_, err := (&appInstallSyncer{api: api, appID: "app"}).awaitBranchConfig(context.Background(), branch, false)
+		if err == nil || !strings.Contains(err.Error(), "run failed") {
+			t.Fatalf("err = %v", err)
+		}
+		if api.fetches != 0 || api.runLists != 0 {
+			t.Fatalf("fetches=%d runLists=%d", api.fetches, api.runLists)
+		}
+	})
+
+	t.Run("latest run was skipped", func(t *testing.T) {
+		api := &branchConfigAPI{}
+		branch := &models.AppAppBranch{ID: "b1", Name: "seed", LatestRun: &models.AppAppBranchRun{Status: "not-attempted"}}
+		_, err := (&appInstallSyncer{api: api, appID: "app"}).awaitBranchConfig(context.Background(), branch, false)
+		if err == nil || !strings.Contains(err.Error(), "was skipped") {
+			t.Fatalf("err = %v", err)
 		}
 	})
 }
