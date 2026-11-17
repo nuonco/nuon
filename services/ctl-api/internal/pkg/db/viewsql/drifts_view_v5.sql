@@ -89,18 +89,41 @@ FROM (
                 END AS live_state
         ) st
         CROSS JOIN LATERAL (
-            SELECT st.expected_state = 'ready' AND st.live_state = 'deployed' AND (
-                COALESCE(sel.checksum, '') = ''
-                OR sel.checksum IS DISTINCT FROM live_config.checksum
-                OR NOT COALESCE(
-                    sel.selected_build_id = live.component_build_id
-                    OR (COALESCE(expected_build.source_checksum, '') <> ''
-                        AND expected_build.source_checksum = live_build.source_checksum)
-                    OR (expected_build.source_identity IS NULL
-                        AND live_build.source_identity IS NULL
-                        AND expected_build.source_digest LIKE 'sha256:%'
-                        AND expected_build.source_digest = live_build.source_digest),
-                    false)) AS live_outdated
+            SELECT
+                CASE WHEN expected_build.source_identity ->> 'version' = '1'
+                    AND expected_build.source_identity ->> 'coverage' = 'complete'
+                    AND expected_build.source_identity ->> 'captured' = 'true'
+                    AND COALESCE(expected_build.source_identity ->> 'config_checksum', '') <> ''
+                    AND COALESCE(expected_build.source_identity ->> 'checksum', '') <> ''
+                    AND NOT (COALESCE(expected_build.source_identity ->> 'digest', '') LIKE 'git:%'
+                        AND COALESCE(expected_build.source_identity ->> 'inputs_recorded', '') <> 'true')
+                THEN expected_build.source_identity ->> 'checksum' END AS expected_source,
+                CASE WHEN live_build.source_identity ->> 'version' = '1'
+                    AND live_build.source_identity ->> 'coverage' = 'complete'
+                    AND live_build.source_identity ->> 'captured' = 'true'
+                    AND COALESCE(live_build.source_identity ->> 'config_checksum', '') <> ''
+                    AND COALESCE(live_build.source_identity ->> 'checksum', '') <> ''
+                    AND NOT (COALESCE(live_build.source_identity ->> 'digest', '') LIKE 'git:%'
+                        AND COALESCE(live_build.source_identity ->> 'inputs_recorded', '') <> 'true')
+                THEN live_build.source_identity ->> 'checksum' END AS live_source
+        ) eligible ON true
+        CROSS JOIN LATERAL (
+            SELECT st.expected_state = 'ready' AND st.live_state = 'deployed' AND NOT COALESCE(
+                sel.selected_build_id = live.component_build_id
+                OR (COALESCE(expected_build.source_checksum, '') <> ''
+                    AND expected_build.source_checksum = live_build.source_checksum
+                    AND COALESCE(sel.checksum, '') <> ''
+                    AND sel.checksum = live_config.checksum
+                    AND COALESCE(eligible.expected_source, '') <> ''
+                    AND eligible.expected_source = eligible.live_source
+                    AND eligible.expected_source = expected_build.source_checksum)
+                OR (expected_build.source_identity IS NULL
+                    AND live_build.source_identity IS NULL
+                    AND expected_build.source_digest LIKE 'sha256:%'
+                    AND expected_build.source_digest = live_build.source_digest
+                    AND COALESCE(sel.checksum, '') <> ''
+                    AND sel.checksum = live_config.checksum),
+                false) AS live_outdated
         ) cmp
     WHERE
         ic.deleted_at = 0
