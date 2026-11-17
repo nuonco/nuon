@@ -25,7 +25,7 @@ func (s *service) mcpGetComponent(ctx context.Context, _ *mcp.CallToolRequest, i
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := require.MCPPoint(ctx, s.db, access.Components, permissions.ComponentInspect, component.ID); err != nil {
+	if _, err := require.MCPPoint(ctx, s.db, access.Components, permissions.ComponentInspect, component.ID); err != nil {
 		return nil, nil, err
 	}
 

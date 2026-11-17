@@ -10,7 +10,10 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/render"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -45,9 +48,28 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 		return
 	}
 
-	installID := ctx.Param("install_id")
+	var install *app.Install
+	if authz.HasAuthority(ctx) {
+		access, accessErr := require.Access(ctx)
+		if accessErr != nil {
+			ctx.Error(accessErr)
+			return
+		}
+		target, targetErr := access.Target(permissions.InstallConfigRead)
+		if targetErr != nil {
+			ctx.Error(targetErr)
+			return
+		}
+		install = &app.Install{ID: target.ID, OrgID: target.OrgID, AppID: target.AppID}
+	} else {
+		install, err = s.helpers.GetInstall(ctx, org.ID, ctx.Param("install_id"))
+		if err != nil {
+			ctx.Error(errors.Wrap(err, "unable to get install"))
+			return
+		}
+	}
 
-	response, err := s.renderInstallReadme(ctx, org.ID, installID)
+	response, err := s.renderInstallReadme(ctx, install)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -61,16 +83,7 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 	ctx.JSON(statusCode, response)
 }
 
-func (s *service) renderInstallReadme(ctx context.Context, orgID, installID string) (*Readme, error) {
-	load := s.helpers.GetInstall
-	if authz.HasAuthority(ctx) {
-		load = s.findInstall
-	}
-	install, err := load(ctx, orgID, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
+func (s *service) renderInstallReadme(ctx context.Context, install *app.Install) (*Readme, error) {
 	installState, err := s.helpers.GetInstallState(ctx, install.ID, true, true)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install state: %w", err)

@@ -46,6 +46,7 @@ func (m *middleware) authenticateBoundedToken(ctx *gin.Context, token *app.Token
 	}
 	authority, err := m.authzClient.LoadAuthority(ctx, catalog, authz.AuthorityInput{
 		AccountID: account.ID, CredentialID: token.ID, OrgID: token.OrgID, API: api, Ceiling: token.PermissionCeiling,
+		CredentialOrgID: token.OrgID,
 	})
 	if err != nil {
 		return nil, err
@@ -93,6 +94,7 @@ func (m *middleware) authenticateAccount(ctx *gin.Context, token *app.Token) (*a
 	}
 	authority, err := m.authzClient.LoadAuthority(ctx, catalog, authz.AuthorityInput{
 		AccountID: account.ID, CredentialID: token.ID, OrgID: orgID, API: api,
+		CredentialOrgID: token.OrgID,
 	})
 	if err != nil {
 		m.l.Warn("grant authentication denied", zap.Error(err))

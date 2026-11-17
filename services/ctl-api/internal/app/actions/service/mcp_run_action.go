@@ -61,7 +61,7 @@ func (s *service) mcpRunAction(ctx context.Context, _ *mcp.CallToolRequest, in m
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install: %w", err)
 	}
-	if err := require.MCPPoint(ctx, s.db, installaccess.Installs, permissions.ActionExecute, install.ID); err != nil {
+	if _, err := require.MCPPoint(ctx, s.db, installaccess.Installs, permissions.ActionExecute, install.ID); err != nil {
 		return nil, nil, err
 	}
 

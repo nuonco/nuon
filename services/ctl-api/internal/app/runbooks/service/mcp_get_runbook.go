@@ -95,7 +95,7 @@ func (s *service) mcpGetRunbook(ctx context.Context, _ *mcp.CallToolRequest, in 
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find runbook %q: %w", ref, err)
 	}
-	if err := require.MCPPoint(ctx, s.db, access.Runbooks, permissions.RunbookInspect, runbook.ID); err != nil {
+	if _, err := require.MCPPoint(ctx, s.db, access.Runbooks, permissions.RunbookInspect, runbook.ID); err != nil {
 		return nil, nil, err
 	}
 
@@ -126,7 +126,7 @@ func (s *service) getInstallPinnedRunbook(ctx context.Context, orgID, installRef
 	if err != nil {
 		return nil, fmt.Errorf("unable to find install runbook %q: %w", runbookRef, err)
 	}
-	if err := require.MCPPoint(ctx, s.db, access.InstallRunbooks, permissions.InstallRunbookInspect, installRunbook.ID); err != nil {
+	if _, err := require.MCPPoint(ctx, s.db, access.InstallRunbooks, permissions.InstallRunbookInspect, installRunbook.ID); err != nil {
 		return nil, err
 	}
 

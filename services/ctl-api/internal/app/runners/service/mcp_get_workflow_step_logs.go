@@ -46,7 +46,7 @@ func (s *service) mcpGetWorkflowStepLogs(ctx context.Context, _ *mcp.CallToolReq
 		First(&step).Error; err != nil {
 		return nil, nil, fmt.Errorf("unable to find step %q: %w", in.StepID, err)
 	}
-	if err := require.MCPPoint(ctx, s.db, access.Workflows, permissions.WorkflowInspect, step.InstallWorkflowID); err != nil {
+	if _, err := require.MCPPoint(ctx, s.db, access.Workflows, permissions.WorkflowInspect, step.InstallWorkflowID); err != nil {
 		return nil, nil, err
 	}
 

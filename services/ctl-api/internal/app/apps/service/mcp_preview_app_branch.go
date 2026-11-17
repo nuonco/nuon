@@ -105,7 +105,7 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := require.MCPPoint(ctx, s.db, access.Branches, permissions.AppAutomationManage, branch.ID); err != nil {
+	if _, err := require.MCPPoint(ctx, s.db, access.Branches, permissions.AppAutomationManage, branch.ID); err != nil {
 		return nil, nil, err
 	}
 	if authz.HasAuthority(ctx) && in.AppConfigID != "" {
@@ -140,7 +140,7 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 		}
 		return nil, nil, fmt.Errorf("unable to find latest branch config: %w", res.Error)
 	}
-	if err := require.MCPPoint(ctx, s.db, access.BranchConfigs, permissions.AppAutomationManage, config.ID); err != nil {
+	if _, err := require.MCPPoint(ctx, s.db, access.BranchConfigs, permissions.AppAutomationManage, config.ID); err != nil {
 		return nil, nil, err
 	}
 

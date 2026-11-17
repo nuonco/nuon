@@ -11,7 +11,8 @@ import (
 )
 
 func (s *service) mcpAppPoint(ctx context.Context, id string, operation permissions.PermissionID) error {
-	return require.MCPPoint(ctx, s.db, access.Apps, operation, id)
+	_, err := require.MCPPoint(ctx, s.db, access.Apps, operation, id)
+	return err
 }
 
 func (s *service) mcpAppCollection(ctx context.Context) func(*gorm.DB) *gorm.DB {
@@ -19,7 +20,8 @@ func (s *service) mcpAppCollection(ctx context.Context) func(*gorm.DB) *gorm.DB 
 }
 
 func (s *service) mcpBranchPoint(ctx context.Context, id string) error {
-	return require.MCPPoint(ctx, s.db, access.Branches, permissions.AppBranchRead, id)
+	_, err := require.MCPPoint(ctx, s.db, access.Branches, permissions.AppBranchRead, id)
+	return err
 }
 
 func (s *service) mcpBranchCollection(ctx context.Context) func(*gorm.DB) *gorm.DB {

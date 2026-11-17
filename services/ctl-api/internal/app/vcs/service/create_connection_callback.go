@@ -149,6 +149,7 @@ func (s *service) authorizeConnectionCallback(ctx *gin.Context, acct *app.Accoun
 	}
 	authority, err := client.LoadAuthority(ctx, catalog, authz.AuthorityInput{
 		AccountID: acct.ID, CredentialID: token.ID, OrgID: orgID, API: permissions.APICtl, Ceiling: token.PermissionCeiling,
+		CredentialOrgID: token.OrgID,
 	})
 	if err != nil {
 		return err

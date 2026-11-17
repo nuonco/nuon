@@ -13,11 +13,13 @@ import (
 )
 
 func (s *service) mcpInstallPoint(ctx context.Context, id string, operation permissions.PermissionID) error {
-	return require.MCPPoint(ctx, s.db, access.Installs, operation, id)
+	_, err := require.MCPPoint(ctx, s.db, access.Installs, operation, id)
+	return err
 }
 
 func (s *service) mcpWorkflowPoint(ctx context.Context, id string, operation permissions.PermissionID) error {
-	return require.MCPPoint(ctx, s.db, access.Workflows, operation, id)
+	_, err := require.MCPPoint(ctx, s.db, access.Workflows, operation, id)
+	return err
 }
 
 func (s *service) mcpApprovalContinuation(ctx context.Context, orgID string, approval app.WorkflowStepApproval) error {

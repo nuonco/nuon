@@ -78,7 +78,7 @@ func (s *service) queryMCPLogs(ctx context.Context, orgID, logStreamID string, f
 		if err != nil {
 			return mcpLogPage{}, err
 		}
-		if err := require.MCPOperation(ctx, permissions.LogStreamRead, target); err != nil {
+		if _, err := require.MCPAll(ctx, authz.Requirement{Operation: permissions.LogStreamRead, Target: target}); err != nil {
 			return mcpLogPage{}, err
 		}
 	}

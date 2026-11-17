@@ -215,6 +215,7 @@ func (s *service) checkPhoneHomePermission(ctx context.Context, acct *app.Accoun
 	}
 	authority, err := client.LoadAuthority(ctx, catalog, authz.AuthorityInput{
 		AccountID: acct.ID, CredentialID: token.ID, OrgID: install.OrgID, API: api, Ceiling: token.PermissionCeiling,
+		CredentialOrgID: token.OrgID,
 	})
 	if err != nil {
 		return err

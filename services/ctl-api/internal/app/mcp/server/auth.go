@@ -82,6 +82,7 @@ func (s *Server) authorizeOrg(ctx context.Context, acct *app.Account, tok *app.T
 		}
 		authority, err := client.LoadAuthority(ctx, catalog, authz.AuthorityInput{
 			AccountID: acct.ID, CredentialID: tok.ID, OrgID: orgID, API: permissions.APICtl, Ceiling: tok.PermissionCeiling,
+			CredentialOrgID: tok.OrgID,
 		})
 		if err != nil {
 			return ctx, err

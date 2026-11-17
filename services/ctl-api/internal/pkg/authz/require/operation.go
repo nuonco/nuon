@@ -58,17 +58,17 @@ func Point(operation permissions.PermissionID,
 }
 
 type Rule struct {
-	check          func(*gin.Context, *authz.Authority) error
+	check          func(*gin.Context, *authz.AccessContext) (*authz.AccessContext, error)
 	notFoundDenied bool
 }
 
 func All(resolve func(*gin.Context) ([]authz.Requirement, error)) Rule {
-	return Rule{notFoundDenied: true, check: func(ctx *gin.Context, authority *authz.Authority) error {
+	return Rule{notFoundDenied: true, check: func(ctx *gin.Context, access *authz.AccessContext) (*authz.AccessContext, error) {
 		requirements, err := resolve(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return authority.Require(requirements...)
+		return access.Require(requirements...)
 	}}
 }
 
@@ -87,7 +87,15 @@ func (rule Rule) handler(api permissions.API) gin.HandlerFunc {
 			operationFailure(ctx, errors.New("missing authorization rule"))
 			return
 		}
-		err = rule.check(ctx, authority)
+		access := authority.Access()
+		if _, exists := ctx.Get(accessKey); exists {
+			access, err = Access(ctx)
+			if err != nil {
+				operationFailure(ctx, err)
+				return
+			}
+		}
+		access, err = rule.check(ctx, access)
 		if errors.Is(err, authz.ErrDenied) || rule.notFoundDenied && errors.Is(err, gorm.ErrRecordNotFound) {
 			operationDenied(ctx, err)
 			return
@@ -102,29 +110,39 @@ func (rule Rule) handler(api permissions.API) gin.HandlerFunc {
 			operationFailure(ctx, err)
 			return
 		}
+		ctx.Set(accessKey, access)
 		ctx.Next()
 	}
 }
 
-const collectionIDsKey = "nuon.authz.collection_ids"
+const accessKey = "nuon.authz.access"
+
+func Access(ctx *gin.Context) (*authz.AccessContext, error) {
+	api, _ := OperationAPI(ctx)
+	authority, err := authz.RequestAuthority(ctx, api)
+	if err != nil {
+		return nil, err
+	}
+	value, _ := ctx.Get(accessKey)
+	access, ok := value.(*authz.AccessContext)
+	if !ok || !access.Matches(authority) {
+		return nil, fmt.Errorf("missing or mismatched authorized request context")
+	}
+	return access, nil
+}
 
 func Collection(operation permissions.PermissionID,
 	resources func(*gin.Context) (*authz.Resources, error),
 ) Rule {
-	return Rule{check: func(ctx *gin.Context, authority *authz.Authority) error {
-		if _, exists := ctx.Get(collectionIDsKey); exists {
-			return errors.New("a route cannot apply multiple collection authorization rules")
+	return Rule{check: func(ctx *gin.Context, access *authz.AccessContext) (*authz.AccessContext, error) {
+		if _, err := access.Collection(); err == nil {
+			return nil, errors.New("a route cannot apply multiple collection authorization rules")
 		}
 		set, err := resources(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		selection, err := authority.Select(ctx, operation, set)
-		if err != nil {
-			return err
-		}
-		ctx.Set(collectionIDsKey, selection)
-		return nil
+		return access.Select(ctx.Request.Context(), operation, set)
 	}}
 }
 
@@ -137,12 +155,11 @@ func CollectionIDs(ctx *gin.Context) (*gorm.DB, error) {
 }
 
 func collectionSelection(ctx *gin.Context) (*authz.Selection, error) {
-	value, ok := ctx.Get(collectionIDsKey)
-	selection, valid := value.(*authz.Selection)
-	if !ok || !valid || selection == nil {
-		return nil, fmt.Errorf("collection requires an authorized ID query")
+	access, err := Access(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return selection, nil
+	return access.Collection()
 }
 
 func CollectionScope(ctx *gin.Context, columns ...clause.Column) func(*gorm.DB) *gorm.DB {

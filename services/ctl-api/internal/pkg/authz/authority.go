@@ -40,17 +40,19 @@ func RequestAuthority(ctx cctx.ValueContext, api permissions.API) (*Authority, e
 }
 
 type AuthorityInput struct {
-	AccountID    string
-	CredentialID string
-	OrgID        string
-	API          permissions.API
-	Ceiling      []byte
+	AccountID       string
+	CredentialID    string
+	OrgID           string
+	CredentialOrgID string
+	API             permissions.API
+	Ceiling         []byte
 }
 
 type Authority struct {
 	accountID       string
 	credentialID    string
 	orgID           string
+	credentialOrgID string
 	api             permissions.API
 	catalog         *permissions.Catalog
 	grants          []*permissions.CompiledPolicy
@@ -83,7 +85,8 @@ func (c *Client) LoadAuthority(ctx context.Context, catalog *permissions.Catalog
 	}
 	return &Authority{
 		accountID: input.AccountID, credentialID: input.CredentialID, orgID: input.OrgID,
-		api: input.API, catalog: catalog, grants: grants, ceiling: ceiling,
+		credentialOrgID: input.CredentialOrgID,
+		api:             input.API, catalog: catalog, grants: grants, ceiling: ceiling,
 		ceilingDocument: bytes.Clone(input.Ceiling),
 	}, nil
 }

@@ -34,7 +34,7 @@ func (s *service) mcpGetBuild(ctx context.Context, _ *mcp.CallToolRequest, in mc
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := require.MCPPoint(ctx, s.db, access.Builds, permissions.ComponentBuildInspect, in.BuildID); err != nil {
+	if _, err := require.MCPPoint(ctx, s.db, access.Builds, permissions.ComponentBuildInspect, in.BuildID); err != nil {
 		return nil, nil, err
 	}
 

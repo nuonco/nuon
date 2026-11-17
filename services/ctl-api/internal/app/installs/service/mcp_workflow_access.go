@@ -25,10 +25,6 @@ func (s *service) mcpWorkflowContinuation(ctx context.Context, orgID, workflowID
 	if err != nil {
 		return err
 	}
-	for _, requirement := range requirements {
-		if err := require.MCPOperation(ctx, requirement.Operation, requirement.Target); err != nil {
-			return err
-		}
-	}
-	return nil
+	_, err = require.MCPAll(ctx, requirements...)
+	return err
 }

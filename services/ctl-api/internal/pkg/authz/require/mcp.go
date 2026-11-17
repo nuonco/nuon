@@ -41,35 +41,36 @@ func mcpRequest(ctx context.Context, write bool) (string, error) {
 	return orgID, nil
 }
 
-func MCPOperation(ctx context.Context, operation permissions.PermissionID, target permissions.Target) error {
+func MCPAll(ctx context.Context, requirements ...authz.Requirement) (*authz.AccessContext, error) {
 	authority, err := authz.RequestAuthority(ctx, permissions.APICtl)
 	if err != nil || authority == nil {
-		return err
+		return nil, err
 	}
-	if err := authority.Require(authz.Requirement{Operation: operation, Target: target}); err != nil {
-		return gorm.ErrRecordNotFound
+	access, err := authority.Access().Require(requirements...)
+	if err != nil {
+		return nil, gorm.ErrRecordNotFound
 	}
-	return nil
+	return access, nil
 }
 
-func MCPPoint(ctx context.Context, db *gorm.DB, set authz.ResourceSet, operation permissions.PermissionID, id string) error {
+func MCPPoint(ctx context.Context, db *gorm.DB, set authz.ResourceSet, operation permissions.PermissionID, id string) (*authz.AccessContext, error) {
 	authority, err := authz.RequestAuthority(ctx, permissions.APICtl)
 	if err != nil || authority == nil {
-		return err
+		return nil, err
 	}
 	orgID, err := MCPRead(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	resources, err := set.In(db, orgID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	target, err := resources.Resolve(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return MCPOperation(ctx, operation, target)
+	return MCPAll(ctx, authz.Requirement{Operation: operation, Target: target})
 }
 
 func MCPCollection(ctx context.Context, source *gorm.DB, set authz.ResourceSet, operation permissions.PermissionID) func(*gorm.DB) *gorm.DB {
