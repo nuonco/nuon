@@ -137,6 +137,9 @@ func (h *Helpers) AppliedInstallSandboxRun(ctx context.Context, sandbox *app.Ins
 	query := h.db.WithContext(ctx).
 		Preload("AppSandboxConfig", func(db *gorm.DB) *gorm.DB {
 			return db.Unscoped()
+		}).
+		Preload("InstallWorkflow", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "type", "metadata")
 		})
 	switch {
 	case ref.AppliedConfigByType == app.AppConfigRefByTypeInstallSandboxRuns && ref.AppliedConfigByID != "":
