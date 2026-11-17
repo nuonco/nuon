@@ -175,40 +175,22 @@ func (h *Helpers) AppliedInstallSandboxRun(ctx context.Context, sandbox *app.Ins
 	if sandbox == nil || sandbox.ID == "" {
 		return nil, nil
 	}
-	ref := sandbox.AppConfigRef
-	query := h.db.WithContext(ctx).
+	var run app.InstallSandboxRun
+	err := h.db.WithContext(ctx).
+		Scopes(scopes.WithOverrideTable("install_sandbox_runs_live_view_v1")).
 		Preload("AppSandboxConfig", func(db *gorm.DB) *gorm.DB {
 			return db.Unscoped()
 		}).
 		Preload("InstallWorkflow", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "type", "metadata")
-		})
-	switch {
-	case ref.AppliedConfigByType == app.AppConfigRefByTypeInstallSandboxRuns && ref.AppliedConfigByID != "":
-		if ref.AppliedConfigID == "" {
-			return nil, nil
-		}
-		query = query.Where(app.InstallSandboxRun{ID: ref.AppliedConfigByID})
-	case ref.AppliedConfigByID == "":
-		query = query.
-			Where(app.InstallSandboxRun{InstallSandboxID: &sandbox.ID}).
-			Where("applied_at IS NOT NULL").
-			Order("applied_at DESC").
-			Order("created_at DESC")
-	default:
-		return nil, nil
-	}
-
-	var run app.InstallSandboxRun
-	err := query.First(&run).Error
+		}).
+		Where(app.InstallSandboxRun{InstallSandboxID: &sandbox.ID}).
+		First(&run).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to get applied install sandbox run: %w", err)
-	}
-	if run.RunType == app.SandboxRunTypeDeprovision {
-		return nil, nil
 	}
 	return &run, nil
 }
