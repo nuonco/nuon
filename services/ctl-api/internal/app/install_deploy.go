@@ -113,6 +113,7 @@ type InstallDeploy struct {
 	// DEPRECATED: use WorkflowID
 	InstallWorkflowID *string   `json:"install_workflow_id,omitzero" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
 	InstallWorkflow   *Workflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
+	PlanOnly          bool      `json:"plan_only" gorm:"not null;default:false" temporaljson:"plan_only,omitzero,omitempty"`
 
 	// Fields that are de-nested at read time using AfterQuery
 	InstallID              string    `json:"install_id" gorm:"-" temporaljson:"install_id,omitzero,omitempty"`
@@ -121,7 +122,6 @@ type InstallDeploy struct {
 	ComponentConfigVersion int       `gorm:"-" json:"component_config_version,omitzero" temporaljson:"component_config_version,omitzero,omitempty"`
 	WorkflowID             *string   `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_step_id,omitzero,omitempty"`
 	Workflow               *Workflow `json:"workflow,omitzero" gorm:"-" temporaljson:"workflow_step,omitzero,omitempty"`
-	PlanOnly               bool      `json:"plan_only" gorm:"-" temporaljson:"plan_only,omitzero,omitempty"`
 
 	Outputs map[string]any `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
 }
@@ -170,6 +170,15 @@ func (c *InstallDeploy) Indexes(db *gorm.DB) []migrations.Index {
 				"created_at DESC",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallDeploy{}, "component_real_created_at"),
+			Columns: []string{
+				"install_component_id",
+				"created_at DESC",
+			},
+			Option:       "WHERE deleted_at = 0 AND plan_only = false",
+			Concurrently: true,
+		},
 	}
 }
 
@@ -180,6 +189,14 @@ func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
 	}
 	if c.OrgID == "" {
 		c.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+	if c.InstallWorkflowID != nil && *c.InstallWorkflowID != "" && !c.PlanOnly {
+		var planOnly []bool
+		if err := tx.Session(&gorm.Session{NewDB: true}).Model(&Workflow{}).
+			Where(Workflow{ID: *c.InstallWorkflowID}).Pluck("plan_only", &planOnly).Error; err != nil {
+			return err
+		}
+		c.PlanOnly = len(planOnly) > 0 && planOnly[0]
 	}
 
 	return nil
