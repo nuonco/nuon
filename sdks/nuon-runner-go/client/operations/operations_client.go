@@ -2683,7 +2683,7 @@ func (a *Client) RunnerAuthAWSIID(params *RunnerAuthAWSIIDParams, opts ...Client
 /*
 RunnerAuthAWSSTS authenticates a runner using a bound a w s s t s request
 
-Validates runner identity by executing a presigned AWS STS GetCallerIdentity request that is bound to this API and to the runner. Type sts is signed by the runner's own IAM role; type sts-vendor is signed by the runner's Nuon-side identity role.
+Validates runner identity by executing a presigned AWS STS GetCallerIdentity request that is bound to this API and to the runner. Type sts-bound is signed by the runner's own IAM role; type sts-vendor is signed by the runner's Nuon-side identity role. The runner group's aws_auth_method must equal the type. Runners on the sts method keep using /v1/runner-auth/aws.
 */
 func (a *Client) RunnerAuthAWSSTS(params *RunnerAuthAWSSTSParams, opts ...ClientOption) (*RunnerAuthAWSSTSOK, error) {
 	// NOTE: parameters are not validated before sending

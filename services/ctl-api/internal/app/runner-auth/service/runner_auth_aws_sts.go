@@ -24,14 +24,14 @@ import (
 )
 
 const (
-	runnerAuthAWSSTSTypeSTS       = "sts"
-	runnerAuthAWSSTSTypeSTSVendor = "sts-vendor"
+	runnerAuthAWSSTSTypeSTSBound  = string(app.RunnerAWSAuthMethodSTSBound)
+	runnerAuthAWSSTSTypeSTSVendor = string(app.RunnerAWSAuthMethodSTSVendor)
 
 	vendorRunnerRoleNamePrefix = "nuon-runner-"
 )
 
 type RunnerAuthAWSSTSRequest struct {
-	Type       string                     `json:"type" validate:"required,oneof=sts sts-vendor" enums:"sts,sts-vendor"`
+	Type       string                     `json:"type" validate:"required,oneof=sts-bound sts-vendor" enums:"sts-bound,sts-vendor"`
 	RunnerID   string                     `json:"runner_id" validate:"required"`
 	STSRequest *awstypes.PresignedRequest `json:"sts" validate:"required"`
 }
@@ -44,7 +44,7 @@ type RunnerAuthAWSSTSResponse struct {
 
 // @ID						RunnerAuthAWSSTS
 // @Summary				Authenticate a runner using a bound AWS STS request
-// @Description			Validates runner identity by executing a presigned AWS STS GetCallerIdentity request that is bound to this API and to the runner. Type sts is signed by the runner's own IAM role; type sts-vendor is signed by the runner's Nuon-side identity role.
+// @Description			Validates runner identity by executing a presigned AWS STS GetCallerIdentity request that is bound to this API and to the runner. Type sts-bound is signed by the runner's own IAM role; type sts-vendor is signed by the runner's Nuon-side identity role. The runner group's aws_auth_method must equal the type. Runners on the sts method keep using /v1/runner-auth/aws.
 // @Param					req			body	RunnerAuthAWSSTSRequest	true	"Bound presigned AWS STS request"
 // @Param					ttl_seconds	query	int						false	"Requested token lifetime in seconds, at most 691200 (8 days). Defaults to the maximum."
 // @Tags					runners/auth
@@ -167,17 +167,9 @@ func (s *service) RunnerAuthAWSSTS(ctx *gin.Context) {
 	}
 
 	groupMethod := runner.RunnerGroup.Settings.AWSAuthMethod
-	switch req.Type {
-	case runnerAuthAWSSTSTypeSTSVendor:
-		if groupMethod != app.RunnerAWSAuthMethodSTSVendor || !s.cfg.RunnerIdentityEnabled() {
-			s.refuseAWSSTS(ctx, metricTags, "type_not_enabled", append(logFields, zap.String("aws_auth_method", string(groupMethod)))...)
-			return
-		}
-	default:
-		if groupMethod == app.RunnerAWSAuthMethodSTSVendor {
-			s.refuseAWSSTS(ctx, metricTags, "type_not_enabled", append(logFields, zap.String("aws_auth_method", string(groupMethod)))...)
-			return
-		}
+	if string(groupMethod) != req.Type || (req.Type == runnerAuthAWSSTSTypeSTSVendor && !s.cfg.RunnerIdentityEnabled()) {
+		s.refuseAWSSTS(ctx, metricTags, "type_not_enabled", append(logFields, zap.String("aws_auth_method", string(groupMethod)))...)
+		return
 	}
 
 	if bound.region != identity.Region {

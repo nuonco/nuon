@@ -21,7 +21,7 @@ import (
 type AppRunnerGroupSettings struct {
 
 	// aws auth method
-	// Enum: ["iid","sts","sts-vendor"]
+	// Enum: ["iid","sts","sts-bound","sts-vendor"]
 	AwsAuthMethod string `json:"aws_auth_method,omitempty"`
 
 	// aws cloudformation stack type
@@ -169,7 +169,7 @@ var appRunnerGroupSettingsTypeAwsAuthMethodPropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["iid","sts","sts-vendor"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["iid","sts","sts-bound","sts-vendor"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -184,6 +184,9 @@ const (
 
 	// AppRunnerGroupSettingsAwsAuthMethodSts captures enum value "sts"
 	AppRunnerGroupSettingsAwsAuthMethodSts string = "sts"
+
+	// AppRunnerGroupSettingsAwsAuthMethodStsDashBound captures enum value "sts-bound"
+	AppRunnerGroupSettingsAwsAuthMethodStsDashBound string = "sts-bound"
 
 	// AppRunnerGroupSettingsAwsAuthMethodStsDashVendor captures enum value "sts-vendor"
 	AppRunnerGroupSettingsAwsAuthMethodStsDashVendor string = "sts-vendor"

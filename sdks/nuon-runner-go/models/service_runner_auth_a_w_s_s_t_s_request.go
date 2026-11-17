@@ -31,7 +31,7 @@ type ServiceRunnerAuthAWSSTSRequest struct {
 
 	// type
 	// Required: true
-	// Enum: ["sts","sts-vendor"]
+	// Enum: ["sts-bound","sts-vendor"]
 	Type *string `json:"type"`
 }
 
@@ -94,7 +94,7 @@ var serviceRunnerAuthAWSSTSRequestTypeTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["sts","sts-vendor"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["sts-bound","sts-vendor"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -104,8 +104,8 @@ func init() {
 
 const (
 
-	// ServiceRunnerAuthAWSSTSRequestTypeSts captures enum value "sts"
-	ServiceRunnerAuthAWSSTSRequestTypeSts string = "sts"
+	// ServiceRunnerAuthAWSSTSRequestTypeStsDashBound captures enum value "sts-bound"
+	ServiceRunnerAuthAWSSTSRequestTypeStsDashBound string = "sts-bound"
 
 	// ServiceRunnerAuthAWSSTSRequestTypeStsDashVendor captures enum value "sts-vendor"
 	ServiceRunnerAuthAWSSTSRequestTypeStsDashVendor string = "sts-vendor"
