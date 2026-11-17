@@ -86,6 +86,32 @@ pick a method once and have it stick for the rest of the page.
 </Tabs>
 ```
 
+## Highlighting lines in code samples
+
+When a sample adds, removes, or hinges on specific lines, mark them with Mintlify's
+[code block options](https://www.mintlify.com/docs/create/code) so readers don't have to hunt for
+the change. The language must come first in the fence, before any other option.
+
+- **Added or removed lines:** end the line with a diff comment in the language's comment syntax.
+  Use `# [!code ++]` and `# [!code --]` for TOML, YAML, and shell, and `// [!code ++]` for Go and
+  JavaScript. Add a count to cover consecutive lines (`# [!code ++:3]`).
+- **Lines to notice that didn't change:** use `highlight={...}` with line numbers or ranges.
+
+````mdx
+```toml installs/acme.toml highlight={2}
+name       = "acme"
+app_branch = "main"
+```
+
+```yaml .github/workflows/rollout.yaml
+command: "apps sync" # [!code --]
+command: "branches trigger --branch-id main --no-wait" # [!code ++]
+```
+````
+
+Mark only the lines the surrounding text is about. A block where most lines are highlighted
+draws attention to nothing.
+
 ## Search
 
 Mintlify ranks title matches above heading matches above body matches. `boost` only reorders
