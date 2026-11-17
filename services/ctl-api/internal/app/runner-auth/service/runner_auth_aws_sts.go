@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,7 +45,8 @@ type RunnerAuthAWSSTSResponse struct {
 // @ID						RunnerAuthAWSSTS
 // @Summary				Authenticate a runner using a bound AWS STS request
 // @Description			Validates runner identity by executing a presigned AWS STS GetCallerIdentity request that is bound to this API and to the runner. Type sts is signed by the runner's own IAM role; type sts-vendor is signed by the runner's Nuon-side identity role.
-// @Param					req	body	RunnerAuthAWSSTSRequest	true	"Bound presigned AWS STS request"
+// @Param					req			body	RunnerAuthAWSSTSRequest	true	"Bound presigned AWS STS request"
+// @Param					ttl_seconds	query	int						false	"Requested token lifetime in seconds, at most 691200 (8 days). Defaults to the maximum."
 // @Tags					runners/auth
 // @Accept					json
 // @Produce				json
@@ -85,6 +87,15 @@ func (s *service) RunnerAuthAWSSTS(ctx *gin.Context) {
 		return
 	}
 	metricTags["auth_method"] = req.Type
+
+	tokenTTL, err := awsSTSRunnerTokenTTL(ctx.Query("ttl_seconds"))
+	if err != nil {
+		metricTags["reason"] = "invalid_request"
+		s.l.Warn("runner auth aws sts: invalid ttl_seconds", zap.Error(err))
+		ctx.Error(stderr.NewInvalidRequest(err))
+		ctx.Abort()
+		return
+	}
 
 	if !domains.IsRunnerID(req.RunnerID) {
 		s.refuseAWSSTS(ctx, metricTags, "invalid_runner_id")
@@ -201,7 +212,7 @@ func (s *service) RunnerAuthAWSSTS(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createRunnerToken(reqCtx, runner.ID, awsSTSRunnerTokenTimeout)
+	token, err := s.createRunnerToken(reqCtx, runner.ID, tokenTTL)
 	if err != nil {
 		s.failAWSSTS(ctx, metricTags, "token_error", err)
 		return
@@ -216,6 +227,19 @@ func (s *service) RunnerAuthAWSSTS(ctx *gin.Context) {
 		RunnerID:  runner.ID,
 		ExpiresAt: token.ExpiresAt,
 	})
+}
+
+func awsSTSRunnerTokenTTL(raw string) (time.Duration, error) {
+	if raw == "" {
+		return awsSTSRunnerTokenTimeout, nil
+	}
+
+	seconds, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || seconds <= 0 || seconds > int64(awsSTSRunnerTokenTimeout/time.Second) {
+		return 0, fmt.Errorf("ttl_seconds must be between 1 and %d", int64(awsSTSRunnerTokenTimeout/time.Second))
+	}
+
+	return time.Duration(seconds) * time.Second, nil
 }
 
 func (s *service) refuseAWSSTS(ctx *gin.Context, metricTags map[string]string, reason string, fields ...zap.Field) {

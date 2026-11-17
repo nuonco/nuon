@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
@@ -68,6 +69,12 @@ type RunnerAuthAWSSTSParams struct {
 	   Bound presigned AWS STS request
 	*/
 	Req *models.ServiceRunnerAuthAWSSTSRequest
+
+	/* TTLSeconds.
+
+	   Requested token lifetime in seconds, at most 691200 (8 days). Defaults to the maximum.
+	*/
+	TTLSeconds *int64
 
 	timeout    time.Duration
 	Context    context.Context
@@ -133,6 +140,17 @@ func (o *RunnerAuthAWSSTSParams) SetReq(req *models.ServiceRunnerAuthAWSSTSReque
 	o.Req = req
 }
 
+// WithTTLSeconds adds the tTLSeconds to the runner auth a w s s t s params
+func (o *RunnerAuthAWSSTSParams) WithTTLSeconds(tTLSeconds *int64) *RunnerAuthAWSSTSParams {
+	o.SetTTLSeconds(tTLSeconds)
+	return o
+}
+
+// SetTTLSeconds adds the ttlSeconds to the runner auth a w s s t s params
+func (o *RunnerAuthAWSSTSParams) SetTTLSeconds(tTLSeconds *int64) {
+	o.TTLSeconds = tTLSeconds
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *RunnerAuthAWSSTSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -143,6 +161,23 @@ func (o *RunnerAuthAWSSTSParams) WriteToRequest(r runtime.ClientRequest, reg str
 	if o.Req != nil {
 		if err := r.SetBodyParam(o.Req); err != nil {
 			return err
+		}
+	}
+
+	if o.TTLSeconds != nil {
+
+		// query param ttl_seconds
+		var qrTTLSeconds int64
+
+		if o.TTLSeconds != nil {
+			qrTTLSeconds = *o.TTLSeconds
+		}
+		qTTLSeconds := swag.FormatInt64(qrTTLSeconds)
+		if qTTLSeconds != "" {
+
+			if err := r.SetQueryParam("ttl_seconds", qTTLSeconds); err != nil {
+				return err
+			}
 		}
 	}
 
