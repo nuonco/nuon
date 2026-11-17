@@ -4,6 +4,11 @@
 `docs.json`. Preview locally with `./dev.sh` (see [docs/README.md](README.md)). It serves at
 http://localhost:3333.
 
+Never start a docs server yourself (`./dev.sh`, `mint dev`, or `npx mint dev`). To preview, use
+the one already running at http://localhost:3333. If nothing is running there, ask the user to
+start it. Every `mint dev` shares one install under `~/.mintlify`, and starting a second one
+replaces that install and breaks the server that's already running.
+
 The conventions below apply to any page you edit — don't retrofit pages you aren't otherwise
 touching.
 
