@@ -38,8 +38,9 @@ const (
 	// Bound STS tokens are not refreshed in-process, so each one has to outlive the
 	// process that fetched it: the mng process lives until its VM rotates (7 days),
 	// the install process until its next scheduled restart (4 hours, plus 15 minutes
-	// for jobs still draining at the boundary). A longer lifetime costs little:
-	// the control plane expires a token once the process that owns it goes offline.
+	// for jobs still draining at the boundary). The lifetime is part of the signed
+	// request, so the control plane issues exactly what the runner signed, up to its
+	// 8 day ceiling. Nothing revokes a token early when its process goes offline.
 	MngTokenTTL     = 7 * 24 * time.Hour
 	InstallTokenTTL = 4*time.Hour + 15*time.Minute
 )
@@ -58,7 +59,7 @@ type fetchOptions struct {
 
 type FetchOption func(*fetchOptions)
 
-// WithTTL sets the token lifetime requested from endpoints that accept one (bound STS).
+// WithTTL sets the token lifetime signed into requests that carry one (bound STS).
 func WithTTL(ttl time.Duration) FetchOption {
 	return func(o *fetchOptions) { o.ttl = ttl }
 }
@@ -212,14 +213,14 @@ func fetchTokenAWSSTSBound(ctx context.Context, apiClient nuonrunner.Client, run
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
 
-	stsRequest, err := pkgaws.PresignBoundSTS(ctx, cfg, serverID, runnerID)
+	stsRequest, err := pkgaws.PresignBoundSTS(ctx, cfg, serverID, runnerID, ttl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bound presigned STS request: %w", err)
 	}
 
 	req := pkgaws.BuildBoundSTSAuthRequest(AuthMethodSTSBound, runnerID, stsRequest)
 
-	resp, err := apiClient.RunnerAuthAWSSTS(ctx, req, ttl)
+	resp, err := apiClient.RunnerAuthAWSSTS(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to authenticate with bound STS: %w", err)
 	}

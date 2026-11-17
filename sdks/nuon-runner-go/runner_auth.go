@@ -2,7 +2,6 @@ package nuonrunner
 
 import (
 	"context"
-	"time"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -34,18 +33,12 @@ func (c *client) RunnerAuthAWSIID(ctx context.Context, req *models.ServiceRunner
 	return resp.Payload, nil
 }
 
-func (c *client) RunnerAuthAWSSTS(ctx context.Context, req *models.ServiceRunnerAuthAWSSTSRequest, ttl time.Duration) (*models.ServiceRunnerAuthAWSSTSResponse, error) {
-	params := &operations.RunnerAuthAWSSTSParams{
+func (c *client) RunnerAuthAWSSTS(ctx context.Context, req *models.ServiceRunnerAuthAWSSTSRequest) (*models.ServiceRunnerAuthAWSSTSResponse, error) {
+	resp, err := c.genClient.Operations.RunnerAuthAWSSTS(&operations.RunnerAuthAWSSTSParams{
 		Req:        req,
 		Context:    ctx,
 		HTTPClient: c.unauthClient,
-	}
-	if ttl > 0 {
-		seconds := int64(ttl / time.Second)
-		params.TTLSeconds = &seconds
-	}
-
-	resp, err := c.genClient.Operations.RunnerAuthAWSSTS(params)
+	})
 	if err != nil {
 		return nil, err
 	}

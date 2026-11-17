@@ -135,8 +135,8 @@ type Client interface {
 	// authentication
 	RunnerAuthAWS(ctx context.Context, req *models.ServiceRunnerAuthAWSRequest) (*models.ServiceRunnerAuthAWSResponse, error)
 	RunnerAuthAWSIID(ctx context.Context, req *models.ServiceRunnerAuthAWSIIDRequest) (*models.ServiceRunnerAuthAWSIIDResponse, error)
-	// RunnerAuthAWSSTS authenticates with a bound STS request. A zero ttl asks for the server default.
-	RunnerAuthAWSSTS(ctx context.Context, req *models.ServiceRunnerAuthAWSSTSRequest, ttl time.Duration) (*models.ServiceRunnerAuthAWSSTSResponse, error)
+	// RunnerAuthAWSSTS authenticates with a bound STS request. The token lifetime is signed into the request.
+	RunnerAuthAWSSTS(ctx context.Context, req *models.ServiceRunnerAuthAWSSTSRequest) (*models.ServiceRunnerAuthAWSSTSResponse, error)
 	RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAuthGCPRequest) (*models.ServiceRunnerAuthGCPResponse, error)
 	RunnerAuthAzure(ctx context.Context, req *models.ServiceRunnerAuthAzureRequest) (*models.ServiceRunnerAuthAzureResponse, error)
 	GetPublicSettings(ctx context.Context, runnerID string) (*models.ServiceRunnerPublicSettings, error)

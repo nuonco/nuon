@@ -19,6 +19,7 @@ import (
 const (
 	boundServerIDHeader = "X-Nuon-Server-Id"
 	boundRunnerIDHeader = "X-Nuon-Runner-Id"
+	boundTokenTTLHeader = "X-Nuon-Token-Ttl"
 	boundHeaderPrefix   = "x-nuon-"
 
 	boundSTSMaxAge       = 5 * time.Minute
@@ -28,12 +29,13 @@ const (
 )
 
 var allowedBoundPresignedHeaders = func() map[string]struct{} {
-	allowed := make(map[string]struct{}, len(allowedPresignedHeaders)+2)
+	allowed := make(map[string]struct{}, len(allowedPresignedHeaders)+3)
 	for name := range allowedPresignedHeaders {
 		allowed[name] = struct{}{}
 	}
 	allowed[strings.ToLower(boundServerIDHeader)] = struct{}{}
 	allowed[strings.ToLower(boundRunnerIDHeader)] = struct{}{}
+	allowed[strings.ToLower(boundTokenTTLHeader)] = struct{}{}
 	return allowed
 }()
 
@@ -41,6 +43,7 @@ type boundSTSRequest struct {
 	request       *awstypes.PresignedRequest
 	region        string
 	serverID      string
+	tokenTTL      time.Duration
 	signatureHash string
 	expiresAt     time.Time
 }
@@ -85,13 +88,22 @@ func parseBoundSTSRequest(presignedReq *awstypes.PresignedRequest, runnerID stri
 	}
 
 	signedHeaders := strings.Split(strings.ToLower(query.Get("X-Amz-SignedHeaders")), ";")
-	for _, name := range []string{boundServerIDHeader, boundRunnerIDHeader} {
+	for _, name := range []string{boundServerIDHeader, boundRunnerIDHeader, boundTokenTTLHeader} {
 		if !slices.Contains(signedHeaders, strings.ToLower(name)) {
 			return nil, fmt.Errorf("%s is not a signed header", name)
 		}
 	}
 
 	serverID, err := singleHeaderValue(presignedReq.Headers, boundServerIDHeader)
+	if err != nil {
+		return nil, err
+	}
+
+	rawTokenTTL, err := singleHeaderValue(presignedReq.Headers, boundTokenTTLHeader)
+	if err != nil {
+		return nil, err
+	}
+	tokenTTL, err := awsSTSRunnerTokenTTL(rawTokenTTL)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +128,7 @@ func parseBoundSTSRequest(presignedReq *awstypes.PresignedRequest, runnerID stri
 		}
 	}
 
-	headers := make(map[string]string, len(presignedReq.Headers)+2)
+	headers := make(map[string]string, len(presignedReq.Headers)+3)
 	for key, value := range presignedReq.Headers {
 		if strings.HasPrefix(strings.ToLower(key), boundHeaderPrefix) {
 			continue
@@ -125,6 +137,7 @@ func parseBoundSTSRequest(presignedReq *awstypes.PresignedRequest, runnerID stri
 	}
 	headers[boundServerIDHeader] = serverID
 	headers[boundRunnerIDHeader] = runnerID
+	headers[boundTokenTTLHeader] = rawTokenTTL
 
 	hash := sha256.Sum256([]byte(strings.ToLower(signature)))
 
@@ -136,6 +149,7 @@ func parseBoundSTSRequest(presignedReq *awstypes.PresignedRequest, runnerID stri
 		},
 		region:        match[2],
 		serverID:      strings.ToLower(serverID),
+		tokenTTL:      tokenTTL,
 		signatureHash: hex.EncodeToString(hash[:]),
 		expiresAt:     signedAt.Add(boundSTSMaxAge + boundSTSMaxClockSkew),
 	}, nil

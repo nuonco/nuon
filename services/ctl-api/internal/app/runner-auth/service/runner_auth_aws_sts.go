@@ -44,9 +44,8 @@ type RunnerAuthAWSSTSResponse struct {
 
 // @ID						RunnerAuthAWSSTS
 // @Summary				Authenticate a runner using a bound AWS STS request
-// @Description			Validates runner identity by executing a presigned AWS STS GetCallerIdentity request that is bound to this API and to the runner. Type sts-bound is signed by the runner's own IAM role; type sts-vendor is signed by the runner's Nuon-side identity role. The runner group's aws_auth_method must equal the type. Runners on the sts method keep using /v1/runner-auth/aws.
+// @Description			Validates runner identity by executing a presigned AWS STS GetCallerIdentity request that is bound to this API and to the runner. Type sts-bound is signed by the runner's own IAM role; type sts-vendor is signed by the runner's Nuon-side identity role. The signature must also cover X-Nuon-Token-Ttl, the token lifetime in seconds, at most 691200 (8 days). The runner group's aws_auth_method must equal the type. Runners on the sts method keep using /v1/runner-auth/aws.
 // @Param					req			body	RunnerAuthAWSSTSRequest	true	"Bound presigned AWS STS request"
-// @Param					ttl_seconds	query	int						false	"Requested token lifetime in seconds, at most 691200 (8 days). Defaults to the maximum."
 // @Tags					runners/auth
 // @Accept					json
 // @Produce				json
@@ -87,15 +86,6 @@ func (s *service) RunnerAuthAWSSTS(ctx *gin.Context) {
 		return
 	}
 	metricTags["auth_method"] = req.Type
-
-	tokenTTL, err := awsSTSRunnerTokenTTL(ctx.Query("ttl_seconds"))
-	if err != nil {
-		metricTags["reason"] = "invalid_request"
-		s.l.Warn("runner auth aws sts: invalid ttl_seconds", zap.Error(err))
-		ctx.Error(stderr.NewInvalidRequest(err))
-		ctx.Abort()
-		return
-	}
 
 	if !domains.IsRunnerID(req.RunnerID) {
 		s.refuseAWSSTS(ctx, metricTags, "invalid_runner_id")
@@ -204,7 +194,7 @@ func (s *service) RunnerAuthAWSSTS(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createRunnerToken(reqCtx, runner.ID, tokenTTL)
+	token, err := s.createRunnerToken(reqCtx, runner.ID, bound.tokenTTL)
 	if err != nil {
 		s.failAWSSTS(ctx, metricTags, "token_error", err)
 		return
@@ -222,13 +212,9 @@ func (s *service) RunnerAuthAWSSTS(ctx *gin.Context) {
 }
 
 func awsSTSRunnerTokenTTL(raw string) (time.Duration, error) {
-	if raw == "" {
-		return awsSTSRunnerTokenTimeout, nil
-	}
-
 	seconds, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || seconds <= 0 || seconds > int64(awsSTSRunnerTokenTimeout/time.Second) {
-		return 0, fmt.Errorf("ttl_seconds must be between 1 and %d", int64(awsSTSRunnerTokenTimeout/time.Second))
+		return 0, fmt.Errorf("%s must be between 1 and %d seconds", boundTokenTTLHeader, int64(awsSTSRunnerTokenTimeout/time.Second))
 	}
 
 	return time.Duration(seconds) * time.Second, nil

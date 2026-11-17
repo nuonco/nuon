@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -75,16 +76,21 @@ func GetPresignedSTSRequest(ctx context.Context) (*awstypes.PresignedRequest, er
 const (
 	boundServerIDHeader = "X-Nuon-Server-ID"
 	boundRunnerIDHeader = "X-Nuon-Runner-ID"
+	boundTokenTTLHeader = "X-Nuon-Token-TTL"
 )
 
 // PresignBoundSTS creates a presigned STS GetCallerIdentity request whose signature
-// covers the runner API host and the runner ID, so the request is only usable against
-// that API and for that runner. The identity it proves is whatever credentials cfg
+// covers the runner API host, the runner ID and the requested token lifetime, so the
+// request is only usable against that API, for that runner, and for a token of that
+// lifetime. The identity it proves is whatever credentials cfg
 // carries. The region comes from cfg (AWS_REGION, which IRSA and EKS Pod Identity
 // inject) and falls back to IMDS so EC2 instances need no extra configuration.
-func PresignBoundSTS(ctx context.Context, cfg aws.Config, serverID, runnerID string) (*awstypes.PresignedRequest, error) {
+func PresignBoundSTS(ctx context.Context, cfg aws.Config, serverID, runnerID string, tokenTTL time.Duration) (*awstypes.PresignedRequest, error) {
 	if serverID == "" || runnerID == "" {
 		return nil, fmt.Errorf("server ID and runner ID are required for a bound STS request")
+	}
+	if tokenTTL < time.Second {
+		return nil, fmt.Errorf("a token lifetime of at least one second is required for a bound STS request")
 	}
 
 	if cfg.Region == "" {
@@ -102,6 +108,7 @@ func PresignBoundSTS(ctx context.Context, cfg aws.Config, serverID, runnerID str
 				o.APIOptions = append(o.APIOptions,
 					smithyhttp.AddHeaderValue(boundServerIDHeader, serverID),
 					smithyhttp.AddHeaderValue(boundRunnerIDHeader, runnerID),
+					smithyhttp.AddHeaderValue(boundTokenTTLHeader, strconv.FormatInt(int64(tokenTTL/time.Second), 10)),
 				)
 			})
 		})
