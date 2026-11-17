@@ -76,10 +76,6 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func (s *service) RegisterStackRoutes(api *gin.Engine) error {
-	return s.RegisterRunnerRoutes(api)
-}
-
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
