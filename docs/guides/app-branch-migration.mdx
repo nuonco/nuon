@@ -1,61 +1,262 @@
 ---
-title: "App branch migration"
-description: "Migrate your app template from Nuon CLI-driven syncs to App Branches and Install Groups."
-keywords: ["app branch migration", "migrate to app branches", "install groups", "deployment groups", "control plane sync", "branch.toml", "PR previews"]
+title: "Migrate to App Branches"
+description: "Migrate an app from using `nuon apps sync` to App Branches."
+keywords: ["app branches", "app branch", "app branch migration", "migrate to app branches", "migrate from nuon apps sync", "nuon apps sync deprecated", "move installs to an app branch", "app_branch", "change app branch", "branch.toml", "nuon branches sync"]
 ---
 
-App Branches were introduced in [changelog 040](/updates/040-app-branches). Use this guide to migrate from `nuon apps sync` to app branches and install groups.
+[App Branches](/concepts/app-branches) provide change management for apps.
+They allow you to manage creating and rolling out new versions of an app in a controlled way.
 
-*Shortcut: Ask Nuon to enable the feature flag, then run `nuon apps sync`. The CLI walks you through the migration.*
+For new orgs, App Branches are the only way to package and deploy app changes.
+If your org predates App Branches, `nuon apps sync` will continue to work, but we recommend migrating as soon as possible.
+This guide will walk you through the migration process.
 
 ## What's changing
 
-Previously, running `nuon apps sync` validated, synced, and built your app template directly from the Nuon CLI.
+With `nuon apps sync`, the CLI validates, syncs, and builds your app template directly from your machine or CI runner.
+With App Branches, Nuon fetches your app template from your Git repo, builds and packages the new app version, and rolls it out to installs.
+`nuon apps sync` keeps working for any install that isn't on an App Branch yet, so you can move installs over in batches rather than all at once.
 
-With App Branches, Nuon directly fetches your app template Git repository and syncs it to the Nuon control plane. This unlocks features like automated previews and install rollouts.
+## Before you start
 
-## Migration Steps
+Before getting started, you will need the following in place.
 
-### Step 1: Create Your App Branch
+- An app template in a Git repository.
+- If the template, sandbox, or any component repositories are private, [connect the Nuon GitHub App](/guides/vcs) to grant access to clone them.
+- If you use config files, the [Nuon CLI](/cli) installed and authenticated (`nuon auth login`), with the app selected (`nuon apps select`).
 
-1. Add a `branch.toml` to your app template.
-2. Sync it to the Nuon control plane with `nuon branches sync`.
+## Step 1: Create the App Branch
 
-For `branch.toml` examples and how to write one, see the [App Branches docs](/guides/app-branches#write-a-branch-config).
+<Tabs>
+  <Tab title="Config file">
+    Create a branch config file in a folder named `./app-branches`, alongside your app template directory.
 
-### Step 2: Automations and Triggers
+    ```toml app-branches/main.toml
+    name = "main"
 
-Nuon automatically starts the first branch run on sync, which pulls the app template and builds the sandbox and components. Confirm that run succeeds.
+    [connected_repo]
+    repo      = "acmeco/my-app-template"
+    directory = "."
+    branch    = "main"
 
-You can now trigger updates to your installs using:
-* Git pushes
-* Git tags
-* Pull Request (PR) labels
-* Manual runs
+    [run]
+    mode = "push"
 
-Automate these triggers using a GitHub Webhook or the [GitHub Action (GHA)](/guides/github-actions#trigger-a-branch-run-from-your-workflow).
+    [[install_groups]]
+    name  = "stage"
+    order = 1
+    [install_groups.label_selector]
+    env = "stage"
 
-### Step 3: Create Install Groups
+    [[install_groups]]
+    name    = "production"
+    order   = 2
+    default = true
+    [install_groups.label_selector]
+    env = "prod"
+    ```
 
-Install rollouts were previously managed on an install-by-install basis using the Nuon CLI or dashboard. With App Branches, installs are categorized into Install Groups which are vendor-defined ways to rollout upgrades to similar installs.
+    Exactly one Install Group must set `default = true`.
+    See [Configure App Branches](/guides/app-branches#write-a-branch-config) for details on every field, and [structuring branches and Install Groups](/concepts/app-branches#structuring-branches-and-install-groups) for deployment plans beyond a single staged rollout.
 
-1. Add [labels](/guides/install-configs#labeling-installs) to your installs or [install configs](/guides/install-configs#install-configs) so they join an install group on the app branch.
-2. Push to the app branch’s tracked git branch to roll the update out to those installs.
+    <Note>
+      While you migrate, keep branch config files out of your app template directory.
+      `nuon apps sync` will refuse to run if it finds a `branch.toml` or `branches/` folder there.
+      Once you stop running `nuon apps sync`, you can move branch config files to `branches/`.
+    </Note>
 
-For how to structure Install Groups, see the [App Branches docs](/concepts/app-branches#structuring-branches-and-install-groups).
+    Sync the branch config file:
 
-### Step 4: Setup Previews
-Validate changes on your app template’s git branch before merging them into the branch your app is configured to use. When you open a pull request or create a feature branch, you can preview changes in three distinct modes:
-1. Validate and Build: Validates your config and builds your components.
-2. Plan Only: Previews deploys and updates against a single test install without applying changes.
-3. Apply: Runs and executes changes on a single test install.
+    ```sh
+    nuon branches sync --file app-branches/main.toml --confirm
+    ```
+  </Tab>
+  <Tab title="Dashboard">
+    1. Open the app's **Branches** page and click **Create branch**.
+    2. Enter a **Branch name**. Leave **Connect to git repository** checked, select the **VCS connection**, **Repository**, and **Git branch** of your app template, and set the **Directory** that contains it. Click **Create branch**.
+    3. On the branch's **Settings** tab, click **Edit plan**. The branch starts with one group, named `Default`.
+    4. Rename `Default` to `production`, then click **Add group** and name the new group `stage`.
+    5. On each group, select **Labels**, type a label such as `env=stage`, and press Enter.
+    6. Put `stage` first with **Move up** in the group's menu.
+    7. Leave **Default group** checked only on `production`, then click **Save changes**.
+  </Tab>
+</Tabs>
 
-For how to set up Previews, see the [App Branches docs](/guides/app-branches#previews).
+## Step 2: Confirm the first run
 
-## Next Steps & Advanced Setup
+Creating the branch starts its first run automatically. The run fetches the tracked branch, reads the app template, creates a new app version from it, and builds components and the sandbox.
+No installs are on the branch yet, so the run skips the Rollout phase.
 
-Now that your base migration is complete, expand your setup with these advanced features:
+## Step 3: Assign installs to the App Branch
 
-* Set up [GitHub Actions](/guides/github-actions#trigger-a-branch-run-from-your-workflow) for Branch Syncing
-* Automate deployment group rollouts with git pushes, tags, or PR labels
-* Set up [pull request previews](/guides/app-branches#previews) that comment and set checks on your PRs
+Installs can be assigned to an App Branch with an [install config file](/guides/install-configs) or in the Dashboard.
+
+We recommend assigning installs in batches, in the same order as your Install Groups (for example, staging before production).
+Assigning an install updates it to the branch's latest app version immediately.
+Moving one batch at a time lets you confirm each batch deployed cleanly before you move the next.
+Installs you haven't moved keep deploying from the app template last synced with `nuon apps sync`.
+
+<Tabs>
+  <Tab title="Config file">
+    Set `app_branch` in the install config file of each install in your first Install Group, then sync them:
+
+    ```toml installs/acme-stage.toml highlight={2}
+    name       = "acme-stage"
+    app_branch = "main"
+
+    [labels]
+    env = "stage"
+    ```
+
+    ```sh
+    nuon installs sync -d installs/acme-stage.toml --app-id <your-app-id> --confirm
+    ```
+
+    Once those installs have deployed, do the same for the next Install Group:
+
+    ```toml installs/customer-acme.toml highlight={2}
+    name       = "customer-acme"
+    app_branch = "main"
+
+    [labels]
+    env = "prod"
+    ```
+
+    ```sh
+    nuon installs sync -d installs/customer-acme.toml --app-id <your-app-id> --confirm
+    ```
+
+    Confirm where each install landed in the `BRANCH` column:
+
+    ```sh
+    nuon installs list --app-id <your-app-id>
+    ```
+
+    <Note>
+      If a sync moves an install and sets an input that only exists on the branch's app template in the same call, it
+      fails with `unknown input(s): <name>`. Move the install first, then set the new input in a second
+      `nuon installs sync`.
+    </Note>
+  </Tab>
+  <Tab title="Dashboard">
+    Open the page of each install in your first Install Group:
+
+    1. In the install's header, click the edit button next to its branch.
+    2. Under **Select destination branch**, select the App Branch.
+    3. Under **Deployment group**, select the install's Install Group. For any group other than the default, choose **Add group labels to install**.
+    4. Click **Move and reconcile**.
+
+    Once those installs have deployed, do the same for the next Install Group.
+    Confirm where each install landed in the **Branch** column of the app's **Installs** page.
+  </Tab>
+</Tabs>
+
+## Step 4: Update your automation
+
+If you have automation using `nuon apps sync`, you can remove it once every install is on an App Branch.
+
+If you want to use your own automation to trigger branch runs instead, set the run mode to `manual_only` in the branch config file, so pushes no longer start runs:
+
+```toml app-branches/main.toml highlight={9}
+name = "main"
+
+[connected_repo]
+repo      = "acmeco/my-app-template"
+directory = "."
+branch    = "main"
+
+[run]
+mode = "manual_only"
+```
+
+Sync the branch config file with `nuon branches sync`, then use the CLI in your automation to trigger runs.
+The example below uses the official [Nuon GitHub Action](/guides/github-actions#trigger-a-branch-run-from-your-workflow) to replace a `nuon apps sync` step:
+
+```yaml .github/workflows/sync.yaml
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync app template # [!code --]
+      - name: Trigger branch run # [!code ++]
+        uses: nuonco/actions-nuon@v0.5.0
+        with:
+          org_id: ${{ vars.nuon_org_id }}
+          app_id: ${{ vars.nuon_app_id }}
+          command: "apps sync" # [!code --]
+          command: "branches trigger --branch-id main --no-wait" # [!code ++]
+```
+
+## Step 5 (optional): Configure Previews
+
+App Branches support testing pull requests against a single install before they merge, using [Previews](/guides/app-branches#previews).
+
+<Tabs>
+  <Tab title="Config file">
+    Add a `[preview]` block to the branch config file:
+
+    ```toml app-branches/main.toml
+    name = "main"
+
+    [preview] # [!code ++:5]
+    mode = "plan-only"
+
+    [preview.label_selector]
+    preview = "true"
+    ```
+
+    Add a dedicated preview install carrying that label to its install config file:
+
+    ```toml installs/acme-preview.toml
+    name       = "acme-preview"
+    app_branch = "main"
+
+    [labels]
+    preview = "true"
+    ```
+
+    Sync both the branch config file and the install config file.
+  </Tab>
+  <Tab title="Dashboard">
+    1. Assign a dedicated preview install to the App Branch, as in Step 3.
+    2. On the branch's **Settings** tab, click **Edit preview defaults**.
+    3. Turn on **Enable automated previews**, set **Default mode** to **Plan only**, and select the preview install as the **Default install**. Click **Save changes**.
+  </Tab>
+</Tabs>
+
+Then open a pull request against the tracked branch.
+Nuon plans against the preview install and comments on the pull request with the result.
+See [Previews](/guides/app-branches#previews) for more details.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configure App Branches" icon="code-branch" href="/guides/app-branches">
+    Branch structure patterns, Triggers, and Previews in depth.
+  </Card>
+  <Card title="How App Branches work" icon="lightbulb" href="/concepts/app-branches">
+    Run types, plan and approval flow, and install version history.
+  </Card>
+  <Card title="Branch config reference" icon="file" href="/config-ref/branch">
+    Every field in a branch config file.
+  </Card>
+  <Card title="GitHub Actions" icon="github" href="/guides/github-actions">
+    Trigger App Branch runs and sync installs from CI.
+  </Card>
+  <Card title="Install Configs" icon="sliders" href="/guides/install-configs">
+    Label installs and manage their config in install config files.
+  </Card>
+  <Card title="Connecting a repository" icon="github" href="/guides/vcs">
+    Connect the Nuon GitHub App for your repo's owner.
+  </Card>
+</CardGroup>
