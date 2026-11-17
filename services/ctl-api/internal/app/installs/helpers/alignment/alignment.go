@@ -6,7 +6,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/lib/pq"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -15,6 +14,7 @@ import (
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -88,6 +88,8 @@ type InstallAlignmentResource struct {
 
 	appliedAt         *time.Time
 	appliedWorkflowID string
+	appliedWorkflow   app.WorkflowType
+	appliedRunID      string
 	inputsDiffer      bool
 	inputsUnknown     bool
 } // @name service.InstallAlignmentResource
@@ -103,7 +105,7 @@ type installAlignmentState struct {
 	targets          map[string]*installhelpers.ComponentTarget
 	enablement       *appconfiggraph.ComponentEnablementResolver
 	appliedDeploys   map[string]*app.InstallDeploy
-	latestDeploys    map[string]*app.InstallDeploy
+	sync             map[string]*componentSync
 	sandbox          *app.InstallSandbox
 	appliedSandbox   *app.InstallSandboxRun
 	expectedSandbox  *app.AppSandboxConfig
@@ -175,15 +177,16 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 		return nil, err
 	}
 
-	if len(st.components) > 0 {
-		ids := make([]string, 0, len(st.components))
-		for _, ic := range st.components {
-			ids = append(ids, ic.ID)
-		}
-		st.latestDeploys, err = s.latestInstallDeploysByComponent(ctx, ids, false)
-		if err != nil {
-			return nil, err
-		}
+	var rows []componentSync
+	if err := s.db.WithContext(ctx).
+		Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 5)).
+		Where("install_id = ? AND org_id = ? AND resource_type = ?", install.ID, install.OrgID, "install_component").
+		Scan(&rows).Error; err != nil {
+		return nil, fmt.Errorf("unable to get component sync state: %w", err)
+	}
+	st.sync = make(map[string]*componentSync, len(rows))
+	for i := range rows {
+		st.sync[rows[i].InstallComponentID] = &rows[i]
 	}
 
 	var sandbox app.InstallSandbox
@@ -323,10 +326,14 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 		res.appliedAt = applied.AppliedAt
 		res.appliedWorkflowID = generics.FromPtrStr(applied.InstallWorkflowID)
 	}
+	if row := st.sync[ic.ID]; row != nil && row.LiveWorkflowType != "" {
+		res.appliedWorkflow = row.LiveWorkflowType
+		res.appliedRunID = row.LiveAppBranchRunID
+	}
 	inactive := ic.Status == app.InstallComponentStatusInactive || ic.Status == app.InstallComponentStatusDeleted || ic.Status == app.InstallComponentStatusDisabled
-	last := st.latestDeploys[ic.ID]
-	tornDown := last != nil && last.Type == app.InstallDeployTypeTeardown && last.Status == app.InstallDeployStatusInactive &&
-		(last.InstallWorkflow == nil || (last.InstallWorkflow.Type != app.WorkflowTypeInputUpdate && last.InstallWorkflow.Type != app.WorkflowTypeComponentDisabled))
+	last := st.sync[ic.ID]
+	tornDown := last != nil && last.LastType == app.InstallDeployTypeTeardown && last.LastStatus == app.InstallDeployStatusInactive &&
+		last.LastWorkflowType != app.WorkflowTypeInputUpdate && last.LastWorkflowType != app.WorkflowTypeComponentDisabled
 
 	switch {
 	case tornDown && (target == nil || st.componentEnabled(target)):
@@ -400,6 +407,10 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 		res.AppliedConfigID = st.appliedSandbox.AppSandboxConfig.AppConfigID
 		res.appliedAt = st.appliedSandbox.AppliedAt
 		res.appliedWorkflowID = generics.FromPtrStr(st.appliedSandbox.InstallWorkflowID)
+		if wf := st.appliedSandbox.InstallWorkflow; wf != nil {
+			res.appliedWorkflow = wf.Type
+			res.appliedRunID = generics.FromPtrStr(wf.Metadata["app_branch_run_id"])
+		}
 	}
 
 	switch {
@@ -492,11 +503,14 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 	for i := range alignment.Resources {
 		res := &alignment.Resources[i]
 		res.OpenDeployment = open[res.ID]
+		res.applyDriftEvidence(ev)
 		res.Plan = ev.plans[res.ID]
+		if scan := ev.scanPlans[res.ID]; scan != nil && res.Category == InstallAlignmentCategoryStateDriftDetected {
+			res.Plan = scan
+		}
 		if res.Plan != nil && res.appliedAt != nil && res.Plan.CreatedAt.Before(*res.appliedAt) {
 			res.Plan = nil
 		}
-		res.applyDriftEvidence(ev)
 	}
 	if err := s.loadOrigins(ctx, alignment); err != nil {
 		return nil, err
@@ -520,6 +534,7 @@ func (res *InstallAlignmentResource) applyDriftEvidence(ev *alignmentEvidence) {
 
 type alignmentEvidence struct {
 	plans         map[string]*InstallAlignmentPlan
+	scanPlans     map[string]*InstallAlignmentPlan
 	drifted       map[string]bool
 	inputsAligned map[string]bool
 }
@@ -527,62 +542,48 @@ type alignmentEvidence struct {
 func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmentState) (*alignmentEvidence, error) {
 	ev := &alignmentEvidence{
 		plans:         map[string]*InstallAlignmentPlan{},
+		scanPlans:     map[string]*InstallAlignmentPlan{},
 		drifted:       map[string]bool{},
 		inputsAligned: map[string]bool{},
 	}
 
-	icIDs := make([]string, 0, len(st.components))
-	targetByResource := map[string]*installhelpers.ComponentTarget{}
 	for i := range st.components {
-		icIDs = append(icIDs, st.components[i].ID)
-		targetByResource[st.components[i].ID] = st.targets[st.components[i].ComponentID]
+		icID := st.components[i].ID
+		row := st.sync[icID]
+		if row == nil {
+			continue
+		}
+		applied := st.appliedDeploys[icID]
+		target := st.targets[st.components[i].ComponentID]
+		if target != nil && target.Build != nil && target.Build.ID == row.LastBuildID &&
+			row.LastStatus == app.InstallDeployStatusAutoSkipped && row.LastPlannedAt != nil && row.LastPolicyAction != "skip_apply" &&
+			(applied == nil || applied.AppliedAt == nil || !row.LastPlannedAt.Before(*applied.AppliedAt)) {
+			cfg := &target.Build.ComponentConfigConnection
+			inputs := st.desiredInputs(cfg.AppConfigID)
+			ev.inputsAligned[icID] = row.LastPlannedInputsDigest == installhelpers.InputsDigest(installhelpers.ComponentInputNames(cfg, inputs), inputs)
+		}
+		ev.drifted[icID] = row.ScanDrifted
 	}
-	if len(icIDs) > 0 {
-		lastDeploys := st.latestDeploys
-		for icID, d := range lastDeploys {
-			applied := st.appliedDeploys[icID]
-			target := targetByResource[icID]
-			if target != nil && target.Build != nil && target.Build.ID == d.ComponentBuildID &&
-				d.Status == app.InstallDeployStatusAutoSkipped && d.PlannedAt != nil &&
-				d.StatusV2.Metadata["policy_action"] != "skip_apply" &&
-				(applied == nil || applied.AppliedAt == nil || !d.PlannedAt.Before(*applied.AppliedAt)) {
-				cfg := &target.Build.ComponentConfigConnection
-				inputs := st.desiredInputs(cfg.AppConfigID)
-				ev.inputsAligned[icID] = d.PlannedInputsDigest == installhelpers.InputsDigest(installhelpers.ComponentInputNames(cfg, inputs), inputs)
+	var approvalIDs []string
+	for _, row := range st.sync {
+		for _, id := range []string{row.RealPlanApprovalID, row.ScanPlanApprovalID} {
+			if id != "" {
+				approvalIDs = append(approvalIDs, id)
 			}
 		}
-
-		scans, err := s.latestInstallDeploysByComponent(ctx, icIDs, true)
+	}
+	if len(approvalIDs) > 0 {
+		approvals, err := s.loadAlignmentApprovals(ctx, approvalIDs)
 		if err != nil {
 			return nil, err
 		}
-		for icID, scan := range scans {
-			applied := st.appliedDeploys[icID]
-			if applied == nil || scan.ComponentBuildID != applied.ComponentBuildID {
-				continue
+		for icID, row := range st.sync {
+			if a := approvals[row.RealPlanApprovalID]; a != nil {
+				ev.plans[icID] = alignmentPlanFromApproval(a)
 			}
-			if applied.AppliedAt != nil && scan.CreatedAt.Before(*applied.AppliedAt) {
-				continue
+			if a := approvals[row.ScanPlanApprovalID]; a != nil {
+				ev.scanPlans[icID] = alignmentPlanFromApproval(a)
 			}
-			if last := lastDeploys[icID]; last != nil && scan.CreatedAt.Before(last.CreatedAt) {
-				continue
-			}
-			ev.drifted[icID] = scan.Status == app.InstallDeployStatus(app.WorkflowStepDrifted)
-		}
-
-		plans, err := s.latestPlansByOwner(ctx, `
-			SELECT DISTINCT ON (d.install_component_id) a.id AS approval_id, d.install_component_id AS resource_id
-			FROM install_workflow_step_approvals a
-			JOIN install_deploys d ON d.id = a.owner_id AND d.deleted_at = 0
-			WHERE a.deleted_at = 0
-			  AND a.owner_type = 'install_deploys'
-			  AND d.install_component_id IN ?
-			ORDER BY d.install_component_id, a.created_at DESC`, icIDs)
-		if err != nil {
-			return nil, err
-		}
-		for k, v := range plans {
-			ev.plans[k] = v
 		}
 	}
 
@@ -639,47 +640,6 @@ func sandboxScanMatchesApplied(st *installAlignmentState, scan *app.InstallSandb
 		return true
 	}
 	return !st.sandboxChanged
-}
-
-func (s *Helpers) latestInstallDeploysByComponent(ctx context.Context, icIDs []string, planOnly bool) (map[string]*app.InstallDeploy, error) {
-	if len(icIDs) == 0 {
-		return map[string]*app.InstallDeploy{}, nil
-	}
-	join := "LEFT JOIN install_workflows w ON w.id = d.install_workflow_id AND w.deleted_at = 0"
-	filter := "(w.id IS NULL OR w.plan_only = false)"
-	if planOnly {
-		join = "JOIN install_workflows w ON w.id = d.install_workflow_id AND w.deleted_at = 0"
-		filter = "w.plan_only = true"
-	}
-	var ids []string
-	if err := s.db.WithContext(ctx).Raw(`
-		SELECT latest.id
-		FROM unnest(?::text[]) AS component_ids(id)
-		CROSS JOIN LATERAL (
-			SELECT d.id FROM install_deploys d
-			`+join+`
-			WHERE d.deleted_at = 0 AND d.install_component_id = component_ids.id
-			  AND `+filter+`
-			ORDER BY d.created_at DESC
-			LIMIT 1
-		) latest`, pq.Array(icIDs)).
-		Scan(&ids).Error; err != nil {
-		return nil, fmt.Errorf("unable to get latest install deploys: %w", err)
-	}
-	out := map[string]*app.InstallDeploy{}
-	if len(ids) == 0 {
-		return out, nil
-	}
-	var deploys []app.InstallDeploy
-	if err := s.db.WithContext(ctx).Preload("InstallWorkflow", func(db *gorm.DB) *gorm.DB {
-		return db.Select("id", "type", "status", "created_at")
-	}).Where("id IN ?", ids).Find(&deploys).Error; err != nil {
-		return nil, fmt.Errorf("unable to load install deploys: %w", err)
-	}
-	for i := range deploys {
-		out[deploys[i].InstallComponentID] = &deploys[i]
-	}
-	return out, nil
 }
 
 func (s *Helpers) latestSandboxRun(ctx context.Context, sandboxID string, planOnly bool) (*app.InstallSandboxRun, error) {
@@ -798,21 +758,37 @@ func alignmentPlanFromApproval(aa *alignmentApproval) *InstallAlignmentPlan {
 	return plan
 }
 
+type componentSync struct {
+	InstallComponentID      string
+	LastBuildID             string
+	LastType                app.InstallDeployType
+	LastStatus              app.InstallDeployStatus
+	LastPlannedAt           *time.Time
+	LastPlannedInputsDigest string
+	LastPolicyAction        string
+	LastWorkflowID          string
+	LastWorkflowType        app.WorkflowType
+	LastWorkflowStatus      string
+	LastWorkflowCreatedAt   *time.Time
+	ScanDrifted             bool
+	LiveWorkflowType        app.WorkflowType
+	LiveAppBranchRunID      string
+	RealPlanApprovalID      string
+	ScanPlanApprovalID      string
+}
+
 func (st *installAlignmentState) openDeployments() map[string]*InstallAlignmentOpenDeployment {
 	out := map[string]*InstallAlignmentOpenDeployment{}
-	for icID, d := range st.latestDeploys {
-		wf := d.InstallWorkflow
-		if wf == nil {
-			continue
-		}
-		status := string(wf.Status.Status)
-		if status != string(app.StatusFailedPendingRetry) && !slices.Contains(installhelpers.InstallDeploymentActiveStatuses, status) {
+	for icID, row := range st.sync {
+		status := row.LastWorkflowStatus
+		if row.LastWorkflowID == "" || row.LastWorkflowCreatedAt == nil ||
+			(status != string(app.StatusFailedPendingRetry) && !slices.Contains(installhelpers.InstallDeploymentActiveStatuses, status)) {
 			continue
 		}
 		if status == "" {
 			status = string(app.StatusPending)
 		}
-		out[icID] = &InstallAlignmentOpenDeployment{ID: wf.ID, Status: status, CreatedAt: wf.CreatedAt, Type: wf.Type}
+		out[icID] = &InstallAlignmentOpenDeployment{ID: row.LastWorkflowID, Status: status, CreatedAt: *row.LastWorkflowCreatedAt, Type: row.LastWorkflowType}
 	}
 	return out
 }
