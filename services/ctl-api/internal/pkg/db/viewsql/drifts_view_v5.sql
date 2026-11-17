@@ -1,3 +1,8 @@
+/* per install, the sync facts the Resources page builds cards from, one row per
+   component and one per sandbox: the expected build/config, the live deploy/run,
+   the newest real attempt, and a drift scan taken at the live build.
+   Classification (in-sync / changes-not-applied / torn-down / disabled) stays in Go;
+   out_of_sync is ready-but-different, state_drift is scan-detected live drift */
 SELECT
     drifted.*,
     drifted.expected_state = 'ready' AND (drifted.live_state = 'not_deployed' OR drifted.live_outdated) AS out_of_sync

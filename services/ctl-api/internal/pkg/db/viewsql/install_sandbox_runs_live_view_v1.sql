@@ -1,3 +1,7 @@
+/* the sandbox run each install sandbox is actually running: its applied pointer, or
+   for legacy sandboxes without one, the newest successfully applied non-deprovision run.
+   Requires a nonempty applied_config_id so migration-136-era references without one fall
+   through to the legacy selection instead of reviving a historical run */
 SELECT
     live.*
 FROM (
