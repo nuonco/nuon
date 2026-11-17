@@ -6,6 +6,7 @@ import type {
   TInstallOverview,
   TInstallStatus,
   TInstallStatusAxis,
+  TWorkflowStepApproval,
 } from '@/types'
 
 const main = { id: 'br-main', name: 'main', app_id: 'app-1' }
@@ -60,6 +61,54 @@ const branchWithRun = (
   latest_run: latest,
 })
 
+const ROLES = [
+  { type: 'runner_provision', display_name: 'Provision' },
+  { type: 'runner_maintenance', display_name: 'Maintenance' },
+  { type: 'runner_deprovision', display_name: 'Deprovision' },
+] as const
+
+const installRoles = (
+  installId: string,
+  disabled: (typeof ROLES)[number]['type'][] = []
+): TInstall['install_roles'] =>
+  ROLES.map((role) => ({
+    id: `role-${installId}-${role.type}`,
+    install_id: installId,
+    role_id: `acme-${role.type}`,
+    provisioned: true,
+    enabled: !disabled.includes(role.type),
+    app_role_config: { type: role.type, display_name: role.display_name },
+  }))
+
+const hex = (value: string) =>
+  [...value]
+    .map((char) => char.charCodeAt(0).toString(16).padStart(2, '0'))
+    .join('')
+
+const overrideInputs = (
+  installId: string,
+  components: string[]
+): TInstall['install_inputs'] => [
+  {
+    id: `inputs-${installId}`,
+    install_id: installId,
+    values: Object.fromEntries(
+      components.map((component) => [
+        `nuon_component_override_v1_helm_values_${hex(component)}`,
+        'replicaCount: 2\n',
+      ])
+    ),
+  },
+]
+
+const RECENT_UPGRADE = '2026-11-16T15:20:00Z'
+const STALE_UPGRADE = '2026-10-09T10:05:00Z'
+
+const appliedRef = (configId: string, at: string) => ({
+  applied_config_id: configId,
+  applied_config_at: at,
+})
+
 const install = (
   id: string,
   name: string,
@@ -70,6 +119,7 @@ const install = (
   org_id: 'org-1',
   app_id: 'app-1',
   labels: {},
+  install_roles: installRoles(id),
   runner_status: 'active',
   runner_type: 'aws',
   cloud_platform: 'aws',
@@ -87,12 +137,15 @@ export const mixedFleet: TInstall[] = [
   install('inst-canary', 'acme-canary', {
     labels: { env: 'stage', tier: 'canary' },
     app_config_id: MAIN_LATEST,
+    app_config_ref: appliedRef(MAIN_LATEST, RECENT_UPGRADE),
     app_branch: main,
     app_branch_group: 'stage',
+    install_inputs: overrideInputs('inst-canary', ['api', 'web']),
   }),
   install('inst-stage-eu', 'acme-stage-eu', {
     labels: { env: 'stage', region: 'eu-west-1' },
     app_config_id: MAIN_LATEST,
+    app_config_ref: appliedRef(MAIN_LATEST, RECENT_UPGRADE),
     app_branch: main,
     app_branch_group: 'stage',
     composite_health_status: 'progressing',
@@ -102,20 +155,25 @@ export const mixedFleet: TInstall[] = [
   install('inst-prod-us', 'acme-prod-us', {
     labels: { env: 'prod', region: 'us-east-1' },
     app_config_id: MAIN_LATEST,
+    app_config_ref: appliedRef(MAIN_LATEST, RECENT_UPGRADE),
     app_branch: main,
     app_branch_group: 'production',
+    install_inputs: overrideInputs('inst-prod-us', ['api']),
   }),
   install('inst-prod-eu', 'acme-prod-eu', {
     labels: { env: 'prod', region: 'eu-west-1' },
     app_config_id: MAIN_STALE,
+    app_config_ref: appliedRef(MAIN_STALE, STALE_UPGRADE),
     app_branch: main,
     app_branch_group: 'production',
     composite_health_status: 'degraded',
     composite_health_status_description: 'A component is degraded',
+    install_roles: installRoles('inst-prod-eu', ['runner_maintenance']),
   }),
   install('inst-prod-ap', 'acme-prod-ap', {
     labels: { env: 'prod', region: 'ap-south-1' },
     app_config_id: MAIN_STALE,
+    app_config_ref: appliedRef(MAIN_STALE, STALE_UPGRADE),
     app_branch: main,
     app_branch_group: 'production',
     runner_status: 'offline',
@@ -123,10 +181,15 @@ export const mixedFleet: TInstall[] = [
     composite_health_status: 'unhealthy',
     composite_health_status_description: 'A component is unhealthy',
     composite_component_status: 'error',
+    install_roles: installRoles('inst-prod-ap', [
+      'runner_provision',
+      'runner_deprovision',
+    ]),
   }),
   install('inst-bank', 'acme-bank', {
     labels: { env: 'prod', cadence: 'monthly' },
     app_config_id: MONTHLY_LATEST,
+    app_config_ref: appliedRef(MONTHLY_LATEST, RECENT_UPGRADE),
     app_branch: monthly,
     app_branch_group: 'production',
     cloud_platform: 'azure',
@@ -450,6 +513,15 @@ const buildLargeFleet = () => {
         labels: { ...labels, region },
         composite_health_status: health,
         runner_status: runner,
+        install_roles: installRoles(
+          id,
+          n % 13 === 0
+            ? ['runner_maintenance']
+            : n % 19 === 0
+              ? ['runner_deprovision']
+              : []
+        ),
+        install_inputs: n % 7 === 0 ? overrideInputs(id, ['api']) : undefined,
         updated_at: `2026-11-${String(1 + (n % 15)).padStart(2, '0')}T09:30:00Z`,
         ...overrides,
       })
@@ -468,6 +540,10 @@ const buildLargeFleet = () => {
           app_config_id: isApplied
             ? branch.latestConfigId
             : branch.staleConfigId,
+          app_config_ref: appliedRef(
+            isApplied ? branch.latestConfigId : branch.staleConfigId,
+            isApplied ? RECENT_UPGRADE : STALE_UPGRADE
+          ),
         })
         overviews[`inst-${String(n).padStart(3, '0')}`] = isApplied
           ? overviewFor(
@@ -563,3 +639,54 @@ export const largeFleetStatus = largeFleetData.status
 export const largeFleetBranches = largeFleetData.branches
 export const largeFleetOverviews = largeFleetData.overviews
 export const largeFleetRuns = largeFleetData.runs
+
+const versionsOf = (configIds: (string | undefined)[]) =>
+  Object.fromEntries(
+    configIds
+      .filter((id): id is string => !!id)
+      .map((id) => [id, Number(id.split('-').pop())])
+  )
+
+export const mixedFleetConfigVersions = versionsOf(
+  mixedFleet.map((install) => install.app_config_id)
+)
+
+export const largeFleetConfigVersions = versionsOf(
+  largeFleet.map((install) => install.app_config_id)
+)
+
+const approval = (
+  id: string,
+  installId: string,
+  stepName: string,
+  type: TWorkflowStepApproval['type']
+): TWorkflowStepApproval => ({
+  id,
+  owner_type: 'installs',
+  owner_id: installId,
+  type,
+  created_at: '2026-11-17T13:40:00Z',
+  workflow_step: {
+    id: `step-${id}`,
+    name: stepName,
+    owner_type: 'installs',
+    owner_id: installId,
+    install_workflow_id: `wf-${id}`,
+  },
+})
+
+export const mixedFleetApprovals: TWorkflowStepApproval[] = [
+  approval('apr-canary', 'inst-canary', 'deploy api', 'terraform_plan'),
+  approval('apr-prod-eu', 'inst-prod-eu', 'deploy web', 'helm_approval'),
+]
+
+export const largeFleetApprovals: TWorkflowStepApproval[] = [5, 18, 27, 44, 61]
+  .map((n) => `inst-${String(n).padStart(3, '0')}`)
+  .map((installId, i) =>
+    approval(
+      `apr-${installId}`,
+      installId,
+      i % 2 ? 'deploy worker' : 'deploy api',
+      i % 2 ? 'kubernetes_manifest_approval' : 'terraform_plan'
+    )
+  )
