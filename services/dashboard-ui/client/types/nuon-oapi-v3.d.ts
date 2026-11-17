@@ -756,6 +756,13 @@ export interface paths {
      */
     get: operations["GetAppInputLatestConfig"];
   };
+  "/v1/apps/{app_id}/install-input-config": {
+    /**
+     * get the input config a new install would be created with
+     * @description Returns the input config that a new install would be created with for this app, optionally pinned to an app branch. Unlike `input-latest-config`, which always returns the newest input config of any kind, this endpoint mirrors the server's install-creation rules: without an `app_branch_id` it returns the latest config from `nuon apps sync`, and with one it returns the branch's latest deployable config.
+     */
+    get: operations["GetAppInstallInputConfig"];
+  };
   "/v1/apps/{app_id}/install-syncs": {
     /**
      * list app install config syncs
@@ -2295,7 +2302,7 @@ export interface paths {
   "/v1/installs/{install_id}/reconciliation": {
     /**
      * install reconciliation state
-     * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+     * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. pinned is the install's selected app config, which is the config a reconcile diffs from. status is current when the install already runs the target, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the pinned config and the target. Requires the install-reconciliation org feature.
      */
     get: operations["GetInstallReconciliation"];
   };
@@ -9982,22 +9989,15 @@ export interface components {
       commit?: components["schemas"]["service.InstallOverviewCommit"];
       version?: number;
     };
-    "service.InstallReconciliationDiffSummary": {
-      added?: number;
-      changed?: number;
-      removed?: number;
-      sandbox_changed?: boolean;
-      stack_changed?: boolean;
-    };
     "service.InstallReconciliationResponse": {
       app_branch_id?: string;
       app_branch_name?: string;
       applied?: components["schemas"]["service.InstallReconciliationConfig"];
       blockers?: components["schemas"]["service.InstallReconciliationBlocker"][];
-      diff_summary?: components["schemas"]["service.InstallReconciliationDiffSummary"];
       in_flight_workflow_id?: string;
       install_group_id?: string;
       install_group_name?: string;
+      pinned?: components["schemas"]["service.InstallReconciliationConfig"];
       skipped_run_count?: number;
       skipped_runs?: components["schemas"]["service.InstallOverviewCommit"][];
       /** @enum {string} */
@@ -16833,6 +16833,60 @@ export interface operations {
    */
   GetAppInputLatestConfig: {
     parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppInputConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get the input config a new install would be created with
+   * @description Returns the input config that a new install would be created with for this app, optionally pinned to an app branch. Unlike `input-latest-config`, which always returns the newest input config of any kind, this endpoint mirrors the server's install-creation rules: without an `app_branch_id` it returns the latest config from `nuon apps sync`, and with one it returns the branch's latest deployable config.
+   */
+  GetAppInstallInputConfig: {
+    parameters: {
+      query?: {
+        /** @description app branch ID */
+        app_branch_id?: string;
+      };
       path: {
         /** @description app ID */
         app_id: string;
@@ -27669,7 +27723,7 @@ export interface operations {
   };
   /**
    * install reconciliation state
-   * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+   * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. pinned is the install's selected app config, which is the config a reconcile diffs from. status is current when the install already runs the target, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the pinned config and the target. Requires the install-reconciliation org feature.
    */
   GetInstallReconciliation: {
     parameters: {
