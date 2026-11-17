@@ -135,7 +135,7 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 		return nil, fmt.Errorf("unable to list install components: %w", err)
 	}
 
-	targets, err := s.installs.EffectiveComponentTargets(ctx, install.AppConfigID)
+	targets, err := s.installs.EffectiveComponentTargetConfigs(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +150,47 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 		enabledInputs = inputs.Values
 	}
 	st.inputs = inputs
+
+	var rows []componentSync
+	if err := s.db.WithContext(ctx).
+		Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 5)).
+		Where("install_id = ? AND org_id = ? AND resource_type = ?", install.ID, install.OrgID, "install_component").
+		Scan(&rows).Error; err != nil {
+		return nil, fmt.Errorf("unable to get component sync state: %w", err)
+	}
+	st.sync = make(map[string]*componentSync, len(rows))
+	for i := range rows {
+		st.sync[rows[i].InstallComponentID] = &rows[i]
+	}
+
+	buildIDs := make([]string, 0, len(st.components))
+	liveIDs := make([]string, 0, len(st.components))
+	for i := range st.components {
+		row := st.sync[st.components[i].ID]
+		if row == nil {
+			continue
+		}
+		if st.targets[st.components[i].ComponentID] != nil && row.ExpectedBuildID != "" {
+			buildIDs = append(buildIDs, row.ExpectedBuildID)
+		}
+		if row.LiveID != "" {
+			liveIDs = append(liveIDs, row.LiveID)
+		}
+	}
+	builds, err := s.installs.ComponentBuildsWithConfigs(ctx, buildIDs)
+	if err != nil {
+		return nil, err
+	}
+	for i := range st.components {
+		row := st.sync[st.components[i].ID]
+		if row == nil || row.ExpectedBuildID == "" {
+			continue
+		}
+		if target := st.targets[st.components[i].ComponentID]; target != nil {
+			target.Build = builds[row.ExpectedBuildID]
+		}
+	}
+
 	configIDs := []string{install.AppConfigID}
 	for _, target := range targets {
 		if target.Build != nil {
@@ -172,21 +213,9 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 	}
 	st.enablement = appconfiggraph.NewComponentEnablementResolver(configs, enabledInputs)
 
-	st.appliedDeploys, err = s.installs.AppliedInstallDeploys(ctx, st.components)
+	st.appliedDeploys, err = s.installs.AppliedInstallDeploysByIDs(ctx, liveIDs)
 	if err != nil {
 		return nil, err
-	}
-
-	var rows []componentSync
-	if err := s.db.WithContext(ctx).
-		Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 5)).
-		Where("install_id = ? AND org_id = ? AND resource_type = ?", install.ID, install.OrgID, "install_component").
-		Scan(&rows).Error; err != nil {
-		return nil, fmt.Errorf("unable to get component sync state: %w", err)
-	}
-	st.sync = make(map[string]*componentSync, len(rows))
-	for i := range rows {
-		st.sync[rows[i].InstallComponentID] = &rows[i]
 	}
 
 	var sandbox app.InstallSandbox
@@ -760,6 +789,8 @@ func alignmentPlanFromApproval(aa *alignmentApproval) *InstallAlignmentPlan {
 
 type componentSync struct {
 	InstallComponentID      string
+	ExpectedBuildID         string
+	LiveID                  string
 	LastBuildID             string
 	LastType                app.InstallDeployType
 	LastStatus              app.InstallDeployStatus
