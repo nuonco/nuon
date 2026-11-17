@@ -15,6 +15,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -77,6 +79,10 @@ func (s *service) ClaimRunnerJobToken(ctx *gin.Context) {
 
 	token, err := s.claimRunnerJobToken(ctx, orgID, runnerID, jobID)
 	if err != nil {
+		if errors.Is(err, authz.ErrDenied) {
+			ctx.Error(stderr.ErrAuthorization{Err: err, Description: "bounded job claims require grant-based job access"})
+			return
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.Error(stderr.ErrNotFound{Err: err, Description: "job not found"})
 			return
@@ -99,8 +105,16 @@ func (s *service) ClaimRunnerJobToken(ctx *gin.Context) {
 }
 
 func (s *service) claimRunnerJobToken(ctx *gin.Context, orgID, runnerID, jobID string) (*app.Token, error) {
+	authority, err := authz.RequestAuthority(ctx, permissions.APIRunner)
+	if err != nil {
+		return nil, err
+	}
+	var ceiling []byte
+	if authority != nil {
+		ceiling = authority.CredentialCeiling()
+	}
 	var issued *app.Token
-	err := s.db.WithContext(ctx.Request.Context()).Transaction(func(tx *gorm.DB) error {
+	err = s.db.WithContext(ctx.Request.Context()).Transaction(func(tx *gorm.DB) error {
 		var job app.RunnerJob
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where(app.RunnerJob{ID: jobID, RunnerID: runnerID}).
@@ -114,6 +128,15 @@ func (s *service) claimRunnerJobToken(ctx *gin.Context, orgID, runnerID, jobID s
 		jobAcct, err := account.New(account.Params{DB: tx}).FindAccount(ctx.Request.Context(), account.ServiceAccountEmail(job.ID))
 		if err != nil {
 			return fmt.Errorf("job service account not provisioned: %w", err)
+		}
+		if ceiling != nil {
+			usesGrants, err := authz.New(authz.Params{DB: tx}).AccountUsesGrants(ctx.Request.Context(), jobAcct.ID, orgID)
+			if err != nil {
+				return err
+			}
+			if !usesGrants {
+				return authz.ErrDenied
+			}
 		}
 
 		now := time.Now()
@@ -129,16 +152,17 @@ func (s *service) claimRunnerJobToken(ctx *gin.Context, orgID, runnerID, jobID s
 		}
 
 		token := app.Token{
-			CreatedByID: jobAcct.ID,
-			Token:       domains.NewUserTokenID(),
-			TokenType:   app.TokenTypeNuon,
-			ExpiresAt:   now.Add(jobTokenTTL),
-			IssuedAt:    now,
-			Issuer:      "nuon",
-			AccountID:   jobAcct.ID,
-			OrgID:       orgID,
-			SourceType:  app.TokenSourceTypeRunnerJob,
-			SourceID:    job.ID,
+			CreatedByID:       jobAcct.ID,
+			Token:             domains.NewUserTokenID(),
+			TokenType:         app.TokenTypeNuon,
+			ExpiresAt:         now.Add(jobTokenTTL),
+			IssuedAt:          now,
+			Issuer:            "nuon",
+			AccountID:         jobAcct.ID,
+			OrgID:             orgID,
+			SourceType:        app.TokenSourceTypeRunnerJob,
+			SourceID:          job.ID,
+			PermissionCeiling: ceiling,
 		}
 		if err := tx.Create(&token).Error; err != nil {
 			return fmt.Errorf("create job token: %w", err)

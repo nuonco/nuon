@@ -1,6 +1,7 @@
 package authz
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -47,13 +48,14 @@ type AuthorityInput struct {
 }
 
 type Authority struct {
-	accountID    string
-	credentialID string
-	orgID        string
-	api          permissions.API
-	catalog      *permissions.Catalog
-	grants       []*permissions.CompiledPolicy
-	ceiling      []*permissions.CompiledPolicy
+	accountID       string
+	credentialID    string
+	orgID           string
+	api             permissions.API
+	catalog         *permissions.Catalog
+	grants          []*permissions.CompiledPolicy
+	ceiling         []*permissions.CompiledPolicy
+	ceilingDocument []byte
 }
 
 func (c *Client) LoadAuthority(ctx context.Context, catalog *permissions.Catalog, input AuthorityInput) (*Authority, error) {
@@ -82,11 +84,16 @@ func (c *Client) LoadAuthority(ctx context.Context, catalog *permissions.Catalog
 	return &Authority{
 		accountID: input.AccountID, credentialID: input.CredentialID, orgID: input.OrgID,
 		api: input.API, catalog: catalog, grants: grants, ceiling: ceiling,
+		ceilingDocument: bytes.Clone(input.Ceiling),
 	}, nil
 }
 
 func (a *Authority) HasCeiling() bool {
 	return a != nil && a.ceiling != nil
+}
+
+func (a *Authority) CredentialCeiling() []byte {
+	return bytes.Clone(a.ceilingDocument)
 }
 
 func (a *Authority) ValidateIdentity(accountID, credentialID, orgID string, api permissions.API) error {

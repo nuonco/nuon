@@ -24,7 +24,7 @@ func (c *Client) EnsurePhoneHomeServiceAccount(
 	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		client := New(Params{
 			DB:          tx,
-			AuthzClient: authz.New(authz.Params{DB: tx}),
+			AuthzClient: authz.New(authz.Params{DB: tx, Cfg: c.cfg}),
 		})
 		var err error
 		binding, err = client.EnsureManagedServiceAccount(ctx, ManagedServiceAccountRequest{

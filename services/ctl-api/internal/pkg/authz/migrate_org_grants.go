@@ -26,14 +26,28 @@ func (c *Client) MigrateOrgGrantPolicies(ctx context.Context, orgID string, appl
 		}
 		var roles []app.Role
 		if err := tx.Preload("Policies").Where(app.Role{OrgID: generics.NewNullString(orgID)}).
-			Where("role_type IN ?", []app.RoleType{app.RoleTypeOrgAdmin, app.RoleTypeOrgReadOnly}).Find(&roles).Error; err != nil {
+			Where("role_type IN ?", []app.RoleType{app.RoleTypeOrgAdmin, app.RoleTypeOrgReadOnly, app.RoleTypeOrgSupport, app.RoleTypeInstaller}).Find(&roles).Error; err != nil {
 			return err
 		}
-		if len(roles) != 2 || roles[0].RoleType == roles[1].RoleType {
+		byType := make(map[app.RoleType]bool, len(roles))
+		roleIDs := make([]string, 0, len(roles))
+		for _, role := range roles {
+			if byType[role.RoleType] {
+				return fmt.Errorf("org has multiple managed %s roles", role.RoleType)
+			}
+			byType[role.RoleType] = true
+			roleIDs = append(roleIDs, role.ID)
+		}
+		if !byType[app.RoleTypeOrgAdmin] || !byType[app.RoleTypeOrgReadOnly] {
 			return fmt.Errorf("org requires exactly one managed Admin and Reader role before conversion")
 		}
 		eligible := make(map[string]bool, len(roles))
 		documents := make(map[string][]byte, len(roles))
+		type boundary struct {
+			api    permissions.API
+			grants bool
+		}
+		boundaries := make(map[string]boundary, len(roles))
 		for _, role := range roles {
 			if !role.Managed || len(role.Policies) != 1 {
 				return fmt.Errorf("role %s is not a standard managed role", role.ID)
@@ -42,6 +56,11 @@ func (c *Client) MigrateOrgGrantPolicies(ctx context.Context, orgID string, appl
 			if policy.RoleID != role.ID || policy.OrgID.ValueString() != orgID {
 				return fmt.Errorf("role %s has inconsistent policy ownership", role.ID)
 			}
+			roleAPI, _, err := APIFromRole(&role)
+			if err != nil {
+				return err
+			}
+			boundaries[role.ID] = boundary{api: roleAPI, grants: policy.HasGrantDocument()}
 			eligible[role.ID] = true
 			if isStandardOrgGrant(role) {
 				continue
@@ -75,18 +94,23 @@ func (c *Client) MigrateOrgGrantPolicies(ctx context.Context, orgID string, appl
 			}
 			documents[policy.ID] = document
 		}
-		roleIDs := []string{roles[0].ID, roles[1].ID}
 		var bindings []app.AccountRole
 		if err := tx.Where("role_id IN ?", roleIDs).Find(&bindings).Error; err != nil {
 			return err
 		}
 		accounts := make([]string, 0, len(bindings))
 		seen := make(map[[2]string]bool)
+		accountBoundaries := make(map[string]boundary)
 		for _, binding := range bindings {
 			key := [2]string{binding.AccountID, binding.RoleID}
 			if binding.OrgID.ValueString() != orgID || binding.AccountID == "" || seen[key] {
 				return fmt.Errorf("role %s has an inconsistent or duplicate binding", binding.RoleID)
 			}
+			current := boundaries[binding.RoleID]
+			if previous, exists := accountBoundaries[binding.AccountID]; exists && previous != current {
+				return fmt.Errorf("account %s mixes policy formats or API restrictions; requires explicit effective-access conversion", binding.AccountID)
+			}
+			accountBoundaries[binding.AccountID] = current
 			seen[key] = true
 			accounts = append(accounts, binding.AccountID)
 		}

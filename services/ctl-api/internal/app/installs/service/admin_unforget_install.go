@@ -164,14 +164,14 @@ func (s *service) unforgetInstall(ctx context.Context, install *app.Install) err
 		if res.RowsAffected < 1 {
 			return fmt.Errorf("install not found %s: %w", install.ID, gorm.ErrRecordNotFound)
 		}
-		return ensureUnforgottenStackServiceAccounts(ctx, tx, install.OrgID, install.ID, stackIDs)
+		return s.ensureUnforgottenStackServiceAccounts(ctx, tx, install.OrgID, install.ID, stackIDs)
 	})
 	return err
 }
 
-func ensureUnforgottenStackServiceAccounts(ctx context.Context, tx *gorm.DB, orgID, installID string, stackIDs []string) error {
+func (s *service) ensureUnforgottenStackServiceAccounts(ctx context.Context, tx *gorm.DB, orgID, installID string, stackIDs []string) error {
 	acctClient := account.New(account.Params{DB: tx})
-	authzClient := authz.New(authz.Params{DB: tx})
+	authzClient := authz.New(authz.Params{DB: tx, Cfg: s.cfg})
 	ownerType := plugins.TableName(tx, app.InstallStack{})
 	for _, stackID := range stackIDs {
 		binding, err := acctClient.EnsureManagedServiceAccount(ctx, account.ManagedServiceAccountRequest{

@@ -332,7 +332,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.GET("/public-settings", s.GetRunnerPublicSettings)
 	runnerRoutes.POST("/traces", require.Point(permissions.RunnerTelemetryWrite, s.runnerTarget), s.OtelWriteTraces)
 	runnerRoutes.POST("/metrics", require.Point(permissions.RunnerTelemetryWrite, s.runnerTarget), s.OtelWriteMetrics)
-	require.UnboundedCredentialRoute(runnerRoutes.For(require.Point(permissions.RunnerJobClaim, s.protocolJobTarget))).POST("/jobs/:job_id/token", s.ClaimRunnerJobToken)
+	runnerRoutes.POST("/jobs/:job_id/token", require.Point(permissions.RunnerJobClaim, s.protocolJobTarget), s.ClaimRunnerJobToken)
 	// Job SA has object-scoped runner-job grants, not org-level read — these must use ResourceRoute.
 	jobByRunner := require.Routes(require.ResourceRoute(runners, permissions.KindRunnerJob, "job_id"), permissions.APIRunner)
 	jobByRunner.GET("/jobs/:job_id", require.Point(permissions.RunnerJobInspect, s.protocolJobTarget), s.GetRunnerJobV2)

@@ -19,8 +19,10 @@ func (m *middleware) authenticateBoundedToken(ctx *gin.Context, token *app.Token
 	if !declared || cctx.IsGlobal(ctx) {
 		return nil, fmt.Errorf("bounded tokens require an org-scoped operation-based route")
 	}
-	if token.TokenType != app.TokenTypeStatic || token.SourceType != "" || token.SourceID != "" {
-		return nil, fmt.Errorf("bounded-token authentication currently supports direct static service-account tokens only")
+	direct := token.TokenType == app.TokenTypeStatic && token.SourceType == "" && token.SourceID == ""
+	jobToken := token.TokenType == app.TokenTypeNuon && token.SourceType == app.TokenSourceTypeRunnerJob && token.SourceID != ""
+	if !direct && !jobToken {
+		return nil, fmt.Errorf("bounded-token authentication requires a direct static or runner-job credential")
 	}
 	account, err := m.fetchGrantAccount(ctx, token.AccountID, api)
 	if err != nil {
@@ -28,6 +30,15 @@ func (m *middleware) authenticateBoundedToken(ctx *gin.Context, token *app.Token
 	}
 	if account.AccountType != app.AccountTypeService {
 		return nil, fmt.Errorf("bounded tokens require a service account")
+	}
+	if jobToken {
+		if account.Subject != token.SourceID || token.OrgID == "" {
+			return nil, fmt.Errorf("job token must identify its job service account and org")
+		}
+		var job app.RunnerJob
+		if err := m.db.WithContext(ctx.Request.Context()).Select("id").Where(app.RunnerJob{ID: token.SourceID, OrgID: token.OrgID}).Take(&job).Error; err != nil {
+			return nil, fmt.Errorf("job token requires a live job in its org: %w", err)
+		}
 	}
 	catalog, err := permissions.DefaultCatalog()
 	if err != nil {

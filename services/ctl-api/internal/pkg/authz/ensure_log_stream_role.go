@@ -55,6 +55,6 @@ func (h *Client) EnsureLogStreamRole(ctx context.Context, orgID, logStreamID, ac
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("load log stream role: %w", err)
 		}
-		return ensurePrivateRole(tx, accountID, logStreamRole(orgID, logStreamID))
+		return h.ensurePrivateRole(tx, accountID, logStreamRole(orgID, logStreamID))
 	})
 }

@@ -54,7 +54,7 @@ func (a *Activities) EnsureInstallStackServiceAccount(
 			return fmt.Errorf("unable to ensure stack service account: %w", err)
 		}
 		accountID = binding.AccountID
-		authzClient := authz.New(authz.Params{DB: tx})
+		authzClient := authz.New(authz.Params{DB: tx, Cfg: a.cfg})
 		if err := authzClient.EnsureStackInstallRole(ctx, stack.OrgID, stack.InstallID, accountID); err != nil {
 			return fmt.Errorf("unable to ensure stack service account role: %w", err)
 		}

@@ -57,7 +57,7 @@ func (h *Helpers) ProvisionJobServiceAccount(ctx context.Context, orgID string, 
 			},
 		}},
 	}
-	if err := authz.New(authz.Params{DB: h.db}).EnsureManagedServiceAccountRole(roleCtx, acct.ID, role); err != nil {
+	if err := authz.New(authz.Params{DB: h.db, Cfg: h.cfg}).EnsureManagedServiceAccountRole(roleCtx, acct.ID, role); err != nil {
 		return fmt.Errorf("create job role: %w", err)
 	}
 
@@ -69,7 +69,7 @@ func (h *Helpers) ProvisionJobServiceAccount(ctx context.Context, orgID string, 
 		return nil
 	}
 	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerID != "" {
-		if err := authz.New(authz.Params{DB: h.db}).EnsureRunnerInstallRole(ctx, orgID, runner.RunnerGroup.OwnerID, acct.ID); err != nil {
+		if err := authz.New(authz.Params{DB: h.db, Cfg: h.cfg}).EnsureRunnerInstallRole(ctx, orgID, runner.RunnerGroup.OwnerID, acct.ID); err != nil {
 			return fmt.Errorf("ensure job install role: %w", err)
 		}
 	}
