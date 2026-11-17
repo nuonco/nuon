@@ -26,6 +26,11 @@ func TestNotifyOnSkipRecordsSkipOnTarget(t *testing.T) {
 				Status: app.CompositeStatus{Status: app.StatusError, Metadata: map[string]any{"deny_violations": deny}}},
 			want: map[string]any{"deny_violations": deny},
 		},
+		"skipped sandbox reprovision": {
+			step: &app.WorkflowStep{ID: "step-2", StepTargetID: "run-1", StepTargetType: "install_sandbox_runs",
+				Status: app.CompositeStatus{Status: app.AwaitingApproval}},
+			want: map[string]any{},
+		},
 		"stack version awaiting the customer": {
 			step: &app.WorkflowStep{ID: "step-1", StepTargetID: "isv-1", StepTargetType: "install_stack_versions",
 				Status: app.CompositeStatus{Status: app.InstallStackVersionStatusPendingUser}},
@@ -56,7 +61,7 @@ func TestNotifyOnSkipRecordsSkipOnTarget(t *testing.T) {
 				return
 			}
 			require.Len(t, updates, 1)
-			require.Equal(t, "step-1", updates[0].StepID)
+			require.Equal(t, tt.step.ID, updates[0].StepID)
 			require.Equal(t, app.StatusUserSkipped, updates[0].Status)
 			require.Equal(t, tt.want, updates[0].Metadata)
 		})

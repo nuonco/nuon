@@ -152,10 +152,19 @@ func NotifyOnSkip(ctx workflow.Context, step *app.WorkflowStep) {
 }
 
 func recordSkipOnTarget(ctx workflow.Context, step *app.WorkflowStep) {
-	if step == nil || step.StepTargetID == "" || step.StepTargetType != "install_deploys" {
+	if step == nil || step.StepTargetID == "" {
 		return
 	}
-	if workflow.GetVersion(ctx, "skip-records-target-status-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+	switch step.StepTargetType {
+	case "install_deploys":
+		if workflow.GetVersion(ctx, "skip-records-target-status-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return
+		}
+	case "install_sandbox_runs":
+		if workflow.GetVersion(ctx, "skip-records-sandbox-target-status-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return
+		}
+	default:
 		return
 	}
 	meta := map[string]any{}
