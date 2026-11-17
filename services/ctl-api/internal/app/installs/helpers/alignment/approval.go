@@ -78,7 +78,7 @@ func (s *Helpers) validateResolvePlan(ctx context.Context, st *installAlignmentS
 		}
 		matches := st.expectedSandbox != nil && run.AppSandboxConfigID == st.expectedSandbox.ID
 		if !matches && res.Category == InstallAlignmentCategoryStateDriftDetected && st.appliedSandbox != nil {
-			matches = sandboxScanMatchesApplied(st, &run)
+			matches = sandboxScanMatchesApplied(st, run.AppSandboxConfigID)
 		}
 		if !matches {
 			return nil, invalid("the plan was made for a different sandbox config than the selected target")

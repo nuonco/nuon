@@ -94,6 +94,9 @@ var InstallActionWorkflowRunsStateViewV1 string
 //go:embed install_sandbox_runs_state_view_v1.sql
 var InstallSandboxRunsStateViewV1 string
 
+//go:embed install_sandbox_runs_live_view_v1.sql
+var InstallSandboxRunsLiveViewV1 string
+
 //go:embed install_deploys_state_view_v1.sql
 var InstallDeploysStateViewV1 string
 

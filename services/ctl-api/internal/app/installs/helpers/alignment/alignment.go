@@ -107,6 +107,7 @@ type installAlignmentState struct {
 	appliedDeploys   map[string]*app.InstallDeploy
 	sync             map[string]*componentSync
 	sandbox          *app.InstallSandbox
+	sandboxRow       *sandboxSync
 	appliedSandbox   *app.InstallSandboxRun
 	expectedSandbox  *app.AppSandboxConfig
 	stack            *app.InstallStack
@@ -230,6 +231,16 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 		st.appliedSandbox, err = s.installs.AppliedInstallSandboxRun(ctx, &sandbox)
 		if err != nil {
 			return nil, err
+		}
+		var sandboxRow sandboxSync
+		if err := s.db.WithContext(ctx).
+			Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 5)).
+			Where("install_id = ? AND org_id = ? AND resource_type = ? AND install_sandbox_id = ?", install.ID, install.OrgID, "install_sandbox", sandbox.ID).
+			Scan(&sandboxRow).Error; err != nil {
+			return nil, fmt.Errorf("unable to get sandbox sync state: %w", err)
+		}
+		if sandboxRow.InstallSandboxID != "" {
+			st.sandboxRow = &sandboxRow
 		}
 		if install.AppConfigID != "" {
 			var cfg app.AppSandboxConfig
@@ -436,9 +447,9 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 		res.AppliedConfigID = st.appliedSandbox.AppSandboxConfig.AppConfigID
 		res.appliedAt = st.appliedSandbox.AppliedAt
 		res.appliedWorkflowID = generics.FromPtrStr(st.appliedSandbox.InstallWorkflowID)
-		if wf := st.appliedSandbox.InstallWorkflow; wf != nil {
-			res.appliedWorkflow = wf.Type
-			res.appliedRunID = generics.FromPtrStr(wf.Metadata["app_branch_run_id"])
+		if row := st.sandboxRow; row != nil && row.LiveWorkflowType != "" {
+			res.appliedWorkflow = row.LiveWorkflowType
+			res.appliedRunID = row.LiveAppBranchRunID
 		}
 	}
 
@@ -616,110 +627,54 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmen
 		}
 	}
 
-	if st.sandbox != nil {
-		last, err := s.latestSandboxRun(ctx, st.sandbox.ID, false)
-		if err != nil {
-			return nil, err
+	if st.sandbox != nil && st.sandboxRow != nil {
+		row := st.sandboxRow
+		if st.expectedSandbox != nil && row.LastAppSandboxConfigID == st.expectedSandbox.ID &&
+			row.LastStatus == app.SandboxRunAutoSkipped && row.LastPlannedAt != nil &&
+			row.LastPolicyAction != "skip_apply" &&
+			(st.appliedSandbox == nil || st.appliedSandbox.AppliedAt == nil || !row.LastPlannedAt.Before(*st.appliedSandbox.AppliedAt)) {
+			ev.inputsAligned[st.sandbox.ID] = row.LastPlannedInputsDigest == installhelpers.InputsDigest(installhelpers.InputNames(st.expectedSandbox.Refs), st.desiredInputs(""))
 		}
-		if last != nil {
-			if st.expectedSandbox != nil && last.AppSandboxConfigID == st.expectedSandbox.ID &&
-				last.Status == app.SandboxRunAutoSkipped && last.PlannedAt != nil &&
-				last.StatusV2.Metadata["policy_action"] != "skip_apply" &&
-				(st.appliedSandbox == nil || st.appliedSandbox.AppliedAt == nil || !last.PlannedAt.Before(*st.appliedSandbox.AppliedAt)) {
-				ev.inputsAligned[st.sandbox.ID] = last.PlannedInputsDigest == installhelpers.InputsDigest(installhelpers.InputNames(st.expectedSandbox.Refs), st.desiredInputs(""))
-			}
-		}
-		scan, err := s.latestSandboxRun(ctx, st.sandbox.ID, true)
-		if err != nil {
-			return nil, err
-		}
-		if scan != nil && st.appliedSandbox != nil && sandboxScanMatchesApplied(st, scan) &&
-			(st.appliedSandbox.AppliedAt == nil || !scan.CreatedAt.Before(*st.appliedSandbox.AppliedAt)) &&
-			(last == nil || !scan.CreatedAt.Before(last.CreatedAt)) {
-			ev.drifted[st.sandbox.ID] = scan.Status == app.SandboxRunStatus(app.WorkflowStepDrifted)
+		if row.ScanCreatedAt != nil && st.appliedSandbox != nil && sandboxScanMatchesApplied(st, row.ScanAppSandboxConfigID) &&
+			(st.appliedSandbox.AppliedAt == nil || !row.ScanCreatedAt.Before(*st.appliedSandbox.AppliedAt)) &&
+			(row.LastCreatedAt == nil || !row.ScanCreatedAt.Before(*row.LastCreatedAt)) {
+			ev.drifted[st.sandbox.ID] = row.ScanStatus == app.SandboxRunStatus(app.WorkflowStepDrifted)
 		}
 
-		plans, err := s.latestPlansByOwner(ctx, `
-			SELECT DISTINCT ON (r.install_sandbox_id) a.id AS approval_id, r.install_sandbox_id AS resource_id
-			FROM install_workflow_step_approvals a
-			JOIN install_sandbox_runs r ON r.id = a.owner_id AND r.deleted_at = 0
-			WHERE a.deleted_at = 0
-			  AND a.owner_type = 'install_sandbox_runs'
-			  AND r.install_sandbox_id IN ?
-			ORDER BY r.install_sandbox_id, a.created_at DESC`, []string{st.sandbox.ID})
-		if err != nil {
-			return nil, err
+		var approvalIDs []string
+		for _, id := range []string{row.RealPlanApprovalID, row.ScanPlanApprovalID} {
+			if id != "" {
+				approvalIDs = append(approvalIDs, id)
+			}
 		}
-		for k, v := range plans {
-			ev.plans[k] = v
+		if len(approvalIDs) > 0 {
+			approvals, err := s.loadAlignmentApprovals(ctx, approvalIDs)
+			if err != nil {
+				return nil, err
+			}
+			if a := approvals[row.RealPlanApprovalID]; a != nil {
+				ev.plans[st.sandbox.ID] = alignmentPlanFromApproval(a)
+			}
+			if a := approvals[row.ScanPlanApprovalID]; a != nil {
+				ev.scanPlans[st.sandbox.ID] = alignmentPlanFromApproval(a)
+			}
 		}
 	}
 
 	return ev, nil
 }
 
-func sandboxScanMatchesApplied(st *installAlignmentState, scan *app.InstallSandboxRun) bool {
-	if scan.AppSandboxConfigID == st.appliedSandbox.AppSandboxConfigID {
+func sandboxScanMatchesApplied(st *installAlignmentState, scanAppSandboxConfigID string) bool {
+	if scanAppSandboxConfigID == st.appliedSandbox.AppSandboxConfigID {
 		return true
 	}
-	if st.expectedSandbox == nil || scan.AppSandboxConfigID != st.expectedSandbox.ID {
+	if st.expectedSandbox == nil || scanAppSandboxConfigID != st.expectedSandbox.ID {
 		return false
 	}
 	if st.appliedSandbox.AppSandboxConfigID == st.expectedSandbox.ID {
 		return true
 	}
 	return !st.sandboxChanged
-}
-
-func (s *Helpers) latestSandboxRun(ctx context.Context, sandboxID string, planOnly bool) (*app.InstallSandboxRun, error) {
-	query := s.db.WithContext(ctx).
-		Where(app.InstallSandboxRun{InstallSandboxID: &sandboxID})
-	if planOnly {
-		query = query.
-			Joins("JOIN install_workflows w ON w.id = install_sandbox_runs.install_workflow_id AND w.deleted_at = 0").
-			Where("w.plan_only = ?", true)
-	} else {
-		query = query.
-			Joins("LEFT JOIN install_workflows w ON w.id = install_sandbox_runs.install_workflow_id AND w.deleted_at = 0").
-			Where("(w.id IS NULL OR w.plan_only = ?)", false)
-	}
-	var run app.InstallSandboxRun
-	err := query.Order("install_sandbox_runs.created_at DESC").First(&run).Error
-	if isNotFound(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("unable to get latest install sandbox run: %w", err)
-	}
-	return &run, nil
-}
-
-func (s *Helpers) latestPlansByOwner(ctx context.Context, query string, ids []string) (map[string]*InstallAlignmentPlan, error) {
-	var rows []struct {
-		ApprovalID string
-		ResourceID string
-	}
-	if err := s.db.WithContext(ctx).Raw(query, ids).Scan(&rows).Error; err != nil {
-		return nil, fmt.Errorf("unable to get latest plans: %w", err)
-	}
-	out := map[string]*InstallAlignmentPlan{}
-	if len(rows) == 0 {
-		return out, nil
-	}
-	approvalIDs := make([]string, 0, len(rows))
-	for _, row := range rows {
-		approvalIDs = append(approvalIDs, row.ApprovalID)
-	}
-	approvals, err := s.loadAlignmentApprovals(ctx, approvalIDs)
-	if err != nil {
-		return nil, err
-	}
-	for _, row := range rows {
-		if a := approvals[row.ApprovalID]; a != nil {
-			out[row.ResourceID] = alignmentPlanFromApproval(a)
-		}
-	}
-	return out, nil
 }
 
 type alignmentApproval struct {
@@ -804,6 +759,24 @@ type componentSync struct {
 	ScanDrifted             bool
 	LiveWorkflowType        app.WorkflowType
 	LiveAppBranchRunID      string
+	RealPlanApprovalID      string
+	ScanPlanApprovalID      string
+}
+
+type sandboxSync struct {
+	InstallSandboxID        string
+	LiveWorkflowType        app.WorkflowType
+	LiveAppBranchRunID      string
+	LastAppSandboxConfigID  string
+	LastStatus              app.SandboxRunStatus
+	LastPlannedAt           *time.Time
+	LastPlannedInputsDigest string
+	LastPolicyAction        string
+	LastCreatedAt           *time.Time
+	ScanID                  string
+	ScanStatus              app.SandboxRunStatus
+	ScanAppSandboxConfigID  string
+	ScanCreatedAt           *time.Time
 	RealPlanApprovalID      string
 	ScanPlanApprovalID      string
 }
