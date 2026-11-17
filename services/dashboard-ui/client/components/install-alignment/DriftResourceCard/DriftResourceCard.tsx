@@ -30,7 +30,6 @@ export interface IDriftResourceCard {
   onResolve?: () => void
   onViewPlan?: () => void
   originHref?: (origin?: TInstallAlignmentOrigin) => string | undefined
-  repo?: string
   resolveError?: TAPIError | null
   resolving?: boolean
   resource: TInstallAlignmentResource
@@ -58,7 +57,6 @@ export const DriftResourceCard = ({
   onResolve,
   onViewPlan,
   originHref,
-  repo,
   resolveError,
   resolving = false,
   resource,
@@ -184,12 +182,11 @@ export const DriftResourceCard = ({
           appliedAt={resource.applied_deploy_at}
           origin={resource.applied_by}
           originHref={originHref?.(resource.applied_by)}
-          repo={repo}
           variant={isImage ? 'sync' : 'deploy'}
         />
       ) : openDeployment ? (
         <Text variant="subtext" theme="neutral">
-          Not deployed yet
+          {isImage ? 'Not synced yet' : 'Not deployed yet'}
         </Text>
       ) : null}
 
@@ -207,7 +204,7 @@ export const DriftResourceCard = ({
           />
         ) : null}
         {isStateDrift && driftCheckHref ? (
-          <Link href={driftCheckHref}>View drift check</Link>
+          <Link href={driftCheckHref}>View drift scan</Link>
         ) : null}
         {!isStateDrift && historyHref ? (
           <Link href={historyHref}>

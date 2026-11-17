@@ -18,7 +18,6 @@ export const Deploy = () => (
     appliedAt={appliedAt}
     origin={runOrigin(liveCommit)}
     originHref="#run"
-    repo="acme/payments"
     deployHref="#deploy"
   />
 )
@@ -28,7 +27,6 @@ export const TaggedRun = () => (
     appliedAt={appliedAt}
     origin={runOrigin(selectedCommit)}
     originHref="#run"
-    repo="acme/payments"
     deployHref="#deploy"
   />
 )
@@ -38,7 +36,6 @@ export const PushRun = () => (
     appliedAt={appliedAt}
     origin={runOrigin(alignmentCommit(3))}
     originHref="#run"
-    repo="acme/payments"
     deployHref="#deploy"
   />
 )
@@ -48,7 +45,6 @@ export const ManualDeploy = () => (
     appliedAt={appliedAt}
     origin={manualOrigin}
     originHref="#workflow"
-    repo="acme/payments"
     deployHref="#deploy"
   />
 )

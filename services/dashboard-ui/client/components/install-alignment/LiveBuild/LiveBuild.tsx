@@ -48,7 +48,6 @@ export interface ILiveBuild {
   deployHref?: string
   origin?: TInstallAlignmentOrigin
   originHref?: string
-  repo?: string
   variant?: 'deploy' | 'sync'
 }
 
@@ -57,7 +56,6 @@ export const LiveBuild = ({
   deployHref,
   origin,
   originHref,
-  repo,
   variant = 'deploy',
 }: ILiveBuild) => (
   <div
@@ -67,7 +65,7 @@ export const LiveBuild = ({
     <Text as="span" variant="subtext" theme="neutral">
       {variant === 'sync' ? 'Synced' : 'Deployed'}
     </Text>
-    {origin ? <RunRef origin={origin} href={originHref} repo={repo} /> : null}
+    {origin ? <RunRef origin={origin} href={originHref} /> : null}
     {appliedAt ? (
       <Text as="span" variant="subtext" theme="neutral" flex nowrap>
         {origin ? '·' : null}

@@ -30,7 +30,6 @@ test('a version change shows the deployed branch run, the reason, and deploy his
     resource: unappliedResource(),
     historyHref: '/components/cmp-api/deploys',
     originHref,
-    repo: 'acme/payments',
   })
 
   const builds = screen.getByTestId('live-build')
@@ -39,10 +38,8 @@ test('a version change shows the deployed branch run, the reason, and deploy his
     'DeployedPR #412Pin the ledger module to 2.4.0·'
   )
   expect(
-    within(live)
-      .getByRole('link', { name: /Pull request 412/ })
-      .getAttribute('href')
-  ).toBe('https://github.com/acme/payments/pull/412')
+    within(live).queryByRole('link', { name: /Pull request 412/ })
+  ).toBeNull()
   expect(
     within(live)
       .getByRole('link', { name: 'Pin the ledger module to 2.4.0' })
@@ -112,7 +109,7 @@ test('state drift keeps the live run and links to the drift check, not deploy hi
   expect(screen.getByTestId('live-build')).toBeTruthy()
   expect(screen.getByText('Drift detected')).toBeTruthy()
   expect(
-    screen.getByRole('link', { name: 'View drift check' }).getAttribute('href')
+    screen.getByRole('link', { name: 'View drift scan' }).getAttribute('href')
   ).toBe('/workflows/wf-plan-ic-api')
   expect(screen.queryByRole('link', { name: 'View deploy history' })).toBeNull()
 })

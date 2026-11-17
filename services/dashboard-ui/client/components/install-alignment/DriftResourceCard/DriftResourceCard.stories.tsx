@@ -17,7 +17,6 @@ const links = {
     origin?.run
       ? `#run-${origin.run.run_id}`
       : `#workflow-${origin?.workflow_id}`,
-  repo: 'acme/payments',
   driftCheckHref: '#drift-check',
   historyHref: '#deploy-history',
   deploymentHref: '#deployment',
@@ -56,6 +55,39 @@ export const LiveFromManualDeploy = () => (
 
 export const OpenDeployment = () => (
   <DriftResourceCard {...links} resource={openDeploymentResource()} />
+)
+
+export const FirstImageSync = () => (
+  <DriftResourceCard
+    {...links}
+    onViewPlan={undefined}
+    resource={openDeploymentResource({
+      kind: 'image',
+      component_type: 'external_image',
+      applied_build_id: undefined,
+      applied_by: undefined,
+      applied_deploy_at: undefined,
+      plan: undefined,
+      open_deployment: { id: 'wf-first-sync', status: 'in-progress' },
+    })}
+  />
+)
+
+export const SandboxAwaitingApproval = () => (
+  <DriftResourceCard
+    {...links}
+    resource={openDeploymentResource({
+      kind: 'sandbox',
+      name: 'sandbox',
+      component_id: undefined,
+      component_type: undefined,
+      open_deployment: {
+        id: 'wf-sandbox',
+        status: 'approval-awaiting',
+        type: 'reprovision',
+      },
+    })}
+  />
 )
 
 export const StateDriftDetected = () => (

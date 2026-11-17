@@ -27,8 +27,6 @@ export const useDriftCardProps = () => {
   const { addPanel } = useSurfaces()
   const resolve = useResolveInstallDrift()
   const originHref = useOriginHref()
-  const { data: overview } = useInstallOverview()
-  const repo = overview?.branch_tracking?.repo
   const workflowHref = (workflowId?: string, stepId?: string) =>
     workflowId
       ? installLink({
@@ -51,7 +49,6 @@ export const useDriftCardProps = () => {
       resource,
       nameHref,
       originHref,
-      repo,
       historyHref: nameHref ? `${nameHref}/deploys` : undefined,
       driftCheckHref: resource.plan?.plan_only
         ? workflowHref(resource.plan.workflow_id, resource.plan.step_id)

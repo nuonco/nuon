@@ -32,7 +32,6 @@ const card =
       originHref={(origin) =>
         origin?.run ? `#run-${origin.run.run_id}` : undefined
       }
-      repo="acme/payments"
       onViewPlan={resource.plan ? () => {} : undefined}
     />
   )

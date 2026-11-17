@@ -242,7 +242,6 @@ export const InstallComponentsListContainer = () => {
                   appliedAt={alignment.applied_deploy_at}
                   origin={alignment.applied_by}
                   originHref={originHref(alignment.applied_by)}
-                  repo={overview?.branch_tracking?.repo}
                   deployHref={installLink({
                     installId: install?.id,
                     appId: install?.app_id,

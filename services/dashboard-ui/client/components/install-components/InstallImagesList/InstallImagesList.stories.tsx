@@ -105,7 +105,6 @@ export const Synced = () => (
                 appliedAt="2026-09-22T14:04:00Z"
                 origin={runOrigin(liveCommit)}
                 originHref="#"
-                repo="acme/payments"
                 deployHref="#"
                 variant="sync"
               />
