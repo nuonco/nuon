@@ -94,10 +94,6 @@ func PhoneHomeRoleName(installID string) string {
 	return fmt.Sprintf("%s-phone-home", installID)
 }
 
-func RunnerRoleName(installID string) string {
-	return fmt.Sprintf("%s-runner", installID)
-}
-
 // FormatRunnerEnvVars converts an AppRunnerConfig's EnvVars hstore into a
 // newline-delimited string of "export key=value" statements. Default values
 // are injected only when not already defined in cfg.EnvVars.
