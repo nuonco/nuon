@@ -37,9 +37,11 @@ const (
 
 	// Bound STS tokens are not refreshed in-process, so each one has to outlive the
 	// process that fetched it: the mng process lives until its VM rotates (7 days),
-	// the install process until its next scheduled restart (4 hours).
+	// the install process until its next scheduled restart (4 hours, plus 15 minutes
+	// for jobs still draining at the boundary). A longer lifetime costs little:
+	// the control plane expires a token once the process that owns it goes offline.
 	MngTokenTTL     = 7 * 24 * time.Hour
-	InstallTokenTTL = 4 * time.Hour
+	InstallTokenTTL = 4*time.Hour + 15*time.Minute
 )
 
 // TokenTTLForProcess returns the bound STS token lifetime a runner process should request.
