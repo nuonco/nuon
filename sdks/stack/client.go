@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/go-openapi/runtime"
@@ -66,16 +65,17 @@ func newDefaultTransport() *http.Transport {
 	}
 }
 
-// newOps builds a generated operations client rooted at rawURL. Callers pass the
-// runner API base for reads and the server-supplied phone-home host for reports,
-// so a report always lands where the config said it should.
+// newOps builds a generated operations client. rawURL may still be the runner
+// API; APIBase rewrites that host onto the stack API. Routes are the generated
+// /v1/stacks/... paths, so a path on rawURL is not a base path.
 func newOps(rawURL string, hc *http.Client) (operations.ClientService, error) {
-	u, err := url.Parse(strings.TrimSuffix(rawURL, "/"))
+	base, err := APIBase(rawURL)
+	if err != nil {
+		return nil, err
+	}
+	u, err := url.Parse(base)
 	if err != nil {
 		return nil, fmt.Errorf("parse api url %q: %w", rawURL, err)
-	}
-	if u.Host == "" {
-		return nil, fmt.Errorf("api url %q has no host", rawURL)
 	}
 
 	if hc == nil {
@@ -87,13 +87,7 @@ func newOps(rawURL string, hc *http.Client) (operations.ClientService, error) {
 		schemes = []string{"https"}
 	}
 
-	// Honour a path prefix: the runner api is served under one in some environments.
-	basePath := u.Path
-	if basePath == "" {
-		basePath = genclient.DefaultBasePath
-	}
-
-	tr := httptransport.NewWithClient(u.Host, basePath, schemes, hc)
+	tr := httptransport.NewWithClient(u.Host, genclient.DefaultBasePath, schemes, hc)
 	return operations.New(tr, strfmt.Default), nil
 }
 

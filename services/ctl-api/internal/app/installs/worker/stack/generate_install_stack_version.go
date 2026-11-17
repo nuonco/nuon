@@ -176,7 +176,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 			AppCfg:                     cfg,
 			Runner:                     runner,
 			Settings:                   &runner.RunnerGroup.Settings,
-			StackAPIURL:                w.cfg.StackAPIURL,
 			RunnerInitScriptURL:        initScriptURL,
 			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
 		}
@@ -224,7 +223,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		AppCfg:                          cfg,
 		Runner:                          runner,
 		Settings:                        &runner.RunnerGroup.Settings,
-		StackAPIURL:                     w.cfg.StackAPIURL,
 		APIToken:                        generics.FromPtrStr(token),
 		ConfiguredRunnerInstanceType:    cfg.RunnerConfig.InstanceType,
 		RunnerEnvVars:                   stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),

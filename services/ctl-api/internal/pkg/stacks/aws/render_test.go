@@ -139,11 +139,8 @@ func TestRenderStandardVars(t *testing.T) {
 	}
 }
 
-func TestProviderTfvarsUsesStackAPIURL(t *testing.T) {
-	inp := testInput()
-	inp.StackAPIURL = "https://stack.nuon.co/"
-
-	out, _, err := Render(inp, "")
+func TestProviderTfvarsUsesStackHost(t *testing.T) {
+	out, _, err := Render(testInput(), "")
 	require.NoError(t, err)
 
 	var envelope map[string]string

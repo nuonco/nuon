@@ -229,7 +229,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			AppCfg:                     cfg,
 			Runner:                     runner,
 			Settings:                   &runner.RunnerGroup.Settings,
-			StackAPIURL:                s.cfg.StackAPIURL,
 			RunnerInitScriptURL:        initScriptURL,
 			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, s.cfg.RunnerContainerImageTag),
 		}
@@ -290,7 +289,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		AppCfg:                          cfg,
 		Runner:                          runner,
 		Settings:                        &runner.RunnerGroup.Settings,
-		StackAPIURL:                     s.cfg.StackAPIURL,
 		APIToken:                        generics.FromPtrStr(token),
 		ConfiguredRunnerInstanceType:    cfg.RunnerConfig.InstanceType,
 		RunnerEnvVars:                   stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, s.cfg.RunnerContainerImageTag),
