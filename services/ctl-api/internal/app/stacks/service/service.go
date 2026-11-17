@@ -52,16 +52,20 @@ var _ api.Service = (*service)(nil)
 func registerStackRoutes(s *service, ge *gin.Engine) {
 	stacks := ge.Group("/v1/stacks/:install_id")
 	{
-		require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id").GET("/config", s.GetStackConfig)
-		require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id").POST("/phone-home", s.PostStackPhoneHome)
+		config := require.Routes(require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id"), permissions.APIStack)
+		config.GET("/config", require.Point(permissions.StackConfigRead, s.installTarget), s.GetStackConfig)
+		phoneHome := require.Routes(require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id"), permissions.APIStack)
+		phoneHome.POST("/phone-home", require.Point(permissions.StackReport, s.installTarget), s.PostStackPhoneHome)
 	}
 }
 
 func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
 	stacks := ge.Group("/v1/stacks/:install_id")
-	config := require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id")
+	config := require.Routes(require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id"), permissions.APIRunner).
+		For(require.Point(permissions.StackConfigRead, s.installTarget))
 	s.GET(config, "/config", s.GetStackConfigRunner, api.APIContextTypeRunner, true)
-	phoneHome := require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id")
+	phoneHome := require.Routes(require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id"), permissions.APIRunner).
+		For(require.Point(permissions.StackReport, s.installTarget))
 	s.POST(phoneHome, "/phone-home", s.PostStackPhoneHomeRunner, api.APIContextTypeRunner, true)
 	return nil
 }

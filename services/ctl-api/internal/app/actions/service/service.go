@@ -160,16 +160,16 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	// Job SA has install-scoped grants, not org-level read/update.
-	actionWorkflows := require.OrgOrInstallRoute(api).Group("/v1/action-workflows")
+	actionWorkflows := require.Routes(require.OrgOrInstallRoute(api), permissions.APIRunner).Group("/v1/action-workflows")
 	{
-		actionWorkflows.GET("/:workflow_id/latest-config", s.GetActionWorkflowLatestConfig)
-		actionWorkflows.GET("/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
+		actionWorkflows.GET("/:workflow_id/latest-config", require.Point(permissions.ExecutionConfigRead, s.runnerActionLatestConfigTarget), s.GetActionWorkflowLatestConfig)
+		actionWorkflows.GET("/configs/:action_workflow_config_id", require.Point(permissions.ExecutionConfigRead, s.runnerActionConfigTarget), s.GetActionWorkflowConfig)
 	}
 
-	installs := require.ResourceRoute(api, permissions.KindInstall, "install_id").Group("/v1/installs/:install_id")
+	installs := require.Routes(require.ResourceRoute(api, permissions.KindInstall, "install_id"), permissions.APIRunner).Group("/v1/installs/:install_id")
 	{
-		installs.PUT("/action-workflow-runs/:workflow_run_id/steps/:step_id", s.UpdateInstallActionWorkflowRunStep)
-		installs.GET("/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)
+		installs.PUT("/action-workflow-runs/:workflow_run_id/steps/:step_id", require.Point(permissions.ActionRunReport, s.actionStepTarget), s.UpdateInstallActionWorkflowRunStep)
+		installs.GET("/action-workflows/runs/:run_id", require.Point(permissions.InstallActionInspect, s.actionRunTarget), s.GetInstallActionWorkflowRun)
 	}
 
 	return nil

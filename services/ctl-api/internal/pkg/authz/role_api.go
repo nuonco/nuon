@@ -33,7 +33,7 @@ func APIFromRole(role *app.Role) (permissions.API, bool, error) {
 			if err != nil {
 				return "", true, err
 			}
-			api, has = document.API, true
+			api, has = document.API, document.API != ""
 		} else if policy.Document != nil {
 			document, err := policy.DecodeDocument()
 			if err != nil {

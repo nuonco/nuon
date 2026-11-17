@@ -314,105 +314,107 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	s.tailMetrics = newRunnerJobTailMetrics(s.meterProvider)
 	s.executionResults = newRunnerJobExecutionResults(s.meterProvider)
 	// In-job APIs: root runner has org all; job SA has install-scoped grants only.
-	org := require.OrgOrInstallRoute(api)
-	org.POST("/v1/telemetry/access-token", s.CreateTelemetryAccessToken)
+	org := require.Routes(require.OrgOrInstallRoute(api), permissions.APIRunner)
+	org.POST("/v1/telemetry/access-token", require.Point(permissions.RunnerTelemetryTokenCreate, s.telemetryRunnerTarget), s.CreateTelemetryAccessToken)
 
 	runners := api.Group("/v1/runners/:runner_id")
-	runnerRoutes := require.OrgRoute(runners)
-	runnerRoutes.POST("/health-checks", s.CreateRunnerHealthCheck)
-	runnerRoutes.POST("/heart-beats", s.CreateRunnerHeartBeat)
-	runnerRoutes.POST("/component-health", s.CreateComponentHealth)
-	runnerRoutes.GET("/install-components", s.GetRunnerInstallComponents)
-	runnerRoutes.PUT("/component-health-context", s.PutComponentHealthContext)
-	runnerRoutes.GET("/component-health-context", s.GetComponentHealthContext)
-	runnerRoutes.GET("", s.GetRunner)
-	runnerRoutes.GET("/jobs", s.GetRunnerJobs)
-	runnerRoutes.GET("/jobs/tail", s.TailRunnerJobs)
-	runnerRoutes.GET("/settings", s.GetRunnerSettings)
+	runnerRoutes := require.Routes(require.OrgRoute(runners), permissions.APIRunner)
+	runnerRoutes.POST("/health-checks", require.Point(permissions.RunnerHealthReport, s.runnerTarget), s.CreateRunnerHealthCheck)
+	runnerRoutes.POST("/heart-beats", require.Point(permissions.RunnerHealthReport, s.heartbeatRunnerTarget), s.CreateRunnerHeartBeat)
+	runnerRoutes.POST("/component-health", require.Point(permissions.RunnerComponentHealthReport, s.componentHealthRunnerTarget), s.CreateComponentHealth)
+	runnerRoutes.GET("/install-components", require.Point(permissions.RunnerComponentHealthRead, s.runnerTarget), s.GetRunnerInstallComponents)
+	runnerRoutes.PUT("/component-health-context", require.Point(permissions.RunnerComponentHealthReport, s.runnerTarget), s.PutComponentHealthContext)
+	runnerRoutes.GET("/component-health-context", require.Point(permissions.RunnerComponentHealthRead, s.runnerTarget), s.GetComponentHealthContext)
+	runnerRoutes.GET("", require.Point(permissions.RunnerInspect, s.runnerTarget), s.GetRunner)
+	runnerRoutes.GET("/jobs", require.Point(permissions.RunnerQueueRead, s.runnerTarget), s.GetRunnerJobs)
+	runnerRoutes.GET("/jobs/tail", require.Point(permissions.RunnerQueueRead, s.runnerTarget), s.TailRunnerJobs)
+	runnerRoutes.GET("/settings", require.Point(permissions.RunnerInspect, s.runnerTarget), s.GetRunnerSettings)
 	runners.GET("/public-settings", s.GetRunnerPublicSettings)
-	runnerRoutes.POST("/traces", s.OtelWriteTraces)
-	runnerRoutes.POST("/metrics", s.OtelWriteMetrics)
-	runnerRoutes.POST("/jobs/:job_id/token", s.ClaimRunnerJobToken)
+	runnerRoutes.POST("/traces", require.Point(permissions.RunnerTelemetryWrite, s.runnerTarget), s.OtelWriteTraces)
+	runnerRoutes.POST("/metrics", require.Point(permissions.RunnerTelemetryWrite, s.runnerTarget), s.OtelWriteMetrics)
+	require.UnboundedCredentialRoute(runnerRoutes.For(require.Point(permissions.RunnerJobClaim, s.protocolJobTarget))).POST("/jobs/:job_id/token", s.ClaimRunnerJobToken)
 	// Job SA has object-scoped runner-job grants, not org-level read — these must use ResourceRoute.
-	jobByRunner := require.ResourceRoute(runners, permissions.KindRunnerJob, "job_id")
-	jobByRunner.GET("/jobs/:job_id", s.GetRunnerJobV2)
-	jobByRunner.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
-	jobByRunner.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
+	jobByRunner := require.Routes(require.ResourceRoute(runners, permissions.KindRunnerJob, "job_id"), permissions.APIRunner)
+	jobByRunner.GET("/jobs/:job_id", require.Point(permissions.RunnerJobInspect, s.protocolJobTarget), s.GetRunnerJobV2)
+	jobByRunner.GET("/jobs/:job_id/plan", require.Point(permissions.RunnerJobInspect, s.protocolJobTarget), s.GetRunnerJobPlanV2)
+	jobByRunner.PATCH("/jobs/:job_id", require.Point(permissions.RunnerJobReport, s.protocolJobTarget), s.UpdateRunnerJobV2)
 
 	// sandbox configs — job token may load these during exec
-	sandboxConfigs := require.OrgOrInstallRoute(runners)
+	sandboxConfigs := require.Routes(require.OrgOrInstallRoute(runners), permissions.APIRunner).For(require.Point(permissions.RunnerSandboxConfigRead, s.runnerTarget))
 	sandboxConfigs.GET("/sandbox-configs", s.GetRunnerSandboxConfigs)
 	sandboxConfigs.GET("/sandbox-config", s.GetRunnerSandboxConfig)
 
 	// runner process lifecycle
-	runnerRoutes.POST("/processes", s.CreateRunnerProcess)
-	runnerRoutes.GET("/processes/:process_id", s.GetRunnerProcess)
-	runnerRoutes.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
+	runnerRoutes.POST("/processes", require.Point(permissions.RunnerProcessReport, s.runnerTarget), s.CreateRunnerProcess)
+	runnerRoutes.GET("/processes/:process_id", require.Point(permissions.RunnerInspect, s.processRunnerTarget), s.GetRunnerProcess)
+	runnerRoutes.PATCH("/processes/:process_id", require.Point(permissions.RunnerProcessReport, s.processRunnerTarget), s.UpdateRunnerProcess)
 	// When public, register outside OrgRoute so unauthenticated upgrade-path
 	// runners can poll; public middleware allowlists the path when the flag is on.
 	// cfg may be nil in route-registration tests that construct a bare service.
 	if s.cfg != nil && s.cfg.PublicRunnerProcessShutdowns {
 		runners.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
 	} else {
-		runnerRoutes.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+		runnerRoutes.GET("/processes/:process_id/shutdowns", require.Point(permissions.RunnerInspect, s.processRunnerTarget), s.GetRunnerProcessShutdowns)
 	}
-	runnerRoutes.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
-	runnerRoutes.POST("/processes/:process_id/terminating", s.ReportRunnerProcessTerminating)
+	runnerRoutes.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", require.Point(permissions.RunnerProcessReport, s.processRunnerTarget), s.CompleteRunnerProcessShutdown)
+	runnerRoutes.POST("/processes/:process_id/terminating", require.Point(permissions.RunnerProcessReport, s.processRunnerTarget), s.ReportRunnerProcessTerminating)
 
 	// Reads and writes share ResourceRoute so the job SA's org:runner-job/<id> grant applies.
-	jobRoutes := require.ResourceRoute(api, permissions.KindRunnerJob, "runner_job_id")
-	jobRoutes.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
-	jobRoutes.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlan)
-	jobRoutes.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlan)
-	jobRoutes.GET("/v1/runner-jobs/:runner_job_id/executions", s.GetRunnerJobExecutions)
-	jobRoutes.GET("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.GetRunnerJobExecution)
-	jobRoutes.PATCH("/v1/runner-jobs/:runner_job_id", s.UpdateRunnerJob)
-	jobRoutes.POST("/v1/runner-jobs/:runner_job_id/executions", s.CreateRunnerJobExecution)
-	jobRoutes.PATCH("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.UpdateRunnerJobExecution)
-	jobRoutes.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
-	jobRoutes.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
+	jobRoutes := require.Routes(require.ResourceRoute(api, permissions.KindRunnerJob, "runner_job_id"), permissions.APIRunner)
+	jobRead := jobRoutes.For(require.Point(permissions.RunnerJobInspect, s.protocolJobTarget))
+	jobReport := jobRoutes.For(require.Point(permissions.RunnerJobReport, s.protocolJobTarget))
+	jobRead.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
+	jobRead.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlan)
+	jobRead.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlan)
+	jobRead.GET("/v1/runner-jobs/:runner_job_id/executions", s.GetRunnerJobExecutions)
+	jobRead.GET("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.GetRunnerJobExecution)
+	jobReport.PATCH("/v1/runner-jobs/:runner_job_id", s.UpdateRunnerJob)
+	jobReport.POST("/v1/runner-jobs/:runner_job_id/executions", s.CreateRunnerJobExecution)
+	jobReport.PATCH("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.UpdateRunnerJobExecution)
+	jobReport.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
+	jobReport.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
 	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), "/v1/runner-jobs/:runner_job_id")
 	s.EndpointAudit.Add("PATCH", string(apiPkg.APIContextTypeRunner), "/v1/runner-jobs/:runner_job_id")
 	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), "/v1/runner-jobs/:runner_job_id/plan")
 
 	// Terraform backend
 	tfBackend := org.Group("/v1/terraform-backend")
-	tfBackend.GET("", s.GetTerraformCurrentStateData)
-	tfBackend.POST("", s.UpdateTerraformState)
-	tfBackend.DELETE("", s.DeleteTerraformState)
+	tfBackend.GET("", require.Point(permissions.TerraformRead, s.terraformTarget), s.GetTerraformCurrentStateData)
+	tfBackend.POST("", require.Point(permissions.TerraformStateWrite, s.terraformStateTarget), s.UpdateTerraformState)
+	tfBackend.DELETE("", require.Point(permissions.TerraformStateDelete, s.terraformTarget), s.DeleteTerraformState)
 
 	// pulumi state
 	pulumiState := org.Group("/v1/runners/pulumi-state")
-	pulumiState.GET("/:workspace_id", s.GetPulumiState)
-	pulumiState.POST("/:workspace_id", s.UpdatePulumiState)
+	pulumiState.GET("/:workspace_id", require.Point(permissions.TerraformRead, s.terraformTarget), s.GetPulumiState)
+	pulumiState.POST("/:workspace_id", require.Point(permissions.TerraformStateWrite, s.terraformStateTarget), s.UpdatePulumiState)
 
 	// terraform workspaces
 	tfWorkspaces := org.Group("/v1/terraform-workspaces")
-	tfWorkspaces.GET("", s.GetTerraformWorkpaces)
-	tfWorkspaces.POST("", s.CreateTerraformWorkspace)
-	tfWorkspaces.GET("/:workspace_id", s.GetTerraformWorkpace)
-	tfWorkspaces.DELETE("/:workspace_id", s.DeleteTerraformWorkpace)
-	tfWorkspaces.POST("/:workspace_id/lock", s.LockTerraformWorkspace)
-	tfWorkspaces.POST("/:workspace_id/unlock", s.UnlockTerraformWorkspace)
+	tfWorkspaces.GET("", require.Collection(permissions.TerraformRead, s.terraformResources), s.GetTerraformWorkpaces)
+	tfWorkspaces.POST("", require.Point(permissions.TerraformCreate, s.terraformCreateTarget), s.CreateTerraformWorkspace)
+	tfWorkspaces.GET("/:workspace_id", require.Point(permissions.TerraformRead, s.terraformTarget), s.GetTerraformWorkpace)
+	tfWorkspaces.DELETE("/:workspace_id", require.Point(permissions.TerraformDelete, s.terraformTarget), s.DeleteTerraformWorkpace)
+	tfWorkspaces.POST("/:workspace_id/lock", require.Point(permissions.TerraformLock, s.terraformStateTarget), s.LockTerraformWorkspace)
+	tfWorkspaces.POST("/:workspace_id/unlock", require.Point(permissions.TerraformLock, s.terraformStateTarget), s.UnlockTerraformWorkspace)
 	// terraform state json
-	tfWorkspaces.POST("/:workspace_id/state-json", s.UpdateTerraformWorkspaceStateJSON)
-	tfWorkspaces.DELETE("/:workspace_id/states", s.DeleteTerraformWorkspaceStateJSON)
+	tfWorkspaces.POST("/:workspace_id/state-json", require.Point(permissions.TerraformStateWrite, s.terraformStateTarget), s.UpdateTerraformWorkspaceStateJSON)
+	tfWorkspaces.DELETE("/:workspace_id/states", require.Point(permissions.TerraformStateDelete, s.terraformTarget), s.DeleteTerraformWorkspaceStateJSON)
 
 	// helm release api
 	helmReleasePath := "/v1/helm-releases/:helm_chart_id/releases/"
-	org.GET(helmReleasePath+":namespace", s.GetHelmReleases)
-	org.GET(helmReleasePath+":namespace/:key", s.GetHelmRelease)
-	org.GET(helmReleasePath+":namespace/query", s.QueryHelmRelease)
-	org.POST(helmReleasePath+":namespace/:key", s.CreateHelmRelease)
-	org.PUT(helmReleasePath+":namespace/:key", s.UpdateHelmRelease)
-	org.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
+	org.GET(helmReleasePath+":namespace", require.Point(permissions.HelmReleaseRead, s.helmTarget), s.GetHelmReleases)
+	org.GET(helmReleasePath+":namespace/:key", require.Point(permissions.HelmReleaseRead, s.helmTarget), s.GetHelmRelease)
+	org.GET(helmReleasePath+":namespace/query", require.Point(permissions.HelmReleaseRead, s.helmTarget), s.QueryHelmRelease)
+	org.POST(helmReleasePath+":namespace/:key", require.Point(permissions.HelmReleaseWrite, s.helmTarget), s.CreateHelmRelease)
+	org.PUT(helmReleasePath+":namespace/:key", require.Point(permissions.HelmReleaseWrite, s.helmTarget), s.UpdateHelmRelease)
+	org.DELETE(helmReleasePath+":namespace/:key", require.Point(permissions.HelmReleaseDelete, s.helmTarget), s.DeleteHelmRelease)
 
 	// TODO(jm): these will be moved to the otel namespace
-	require.OrgInstallOrLogStreamRoute(api, "log_stream_id").POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
+	require.Routes(require.OrgInstallOrLogStreamRoute(api, "log_stream_id"), permissions.APIRunner).POST("/v1/log-streams/:log_stream_id/logs", require.Point(permissions.LogStreamAppend, s.logStreamTarget), s.LogStreamWriteLogs)
 
 	// installs
 	installs := org.Group("/v1/installs")
-	installs.GET("/:install_id/:component_id/last-active-plan", s.GetInstallComponenetLastActivePlan)
+	installs.GET("/:install_id/:component_id/last-active-plan", require.Point(permissions.InstallHistoryRead, s.installComponentTarget), s.GetInstallComponenetLastActivePlan)
 
 	return nil
 }

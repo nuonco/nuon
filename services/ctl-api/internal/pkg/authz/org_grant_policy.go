@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-func orgGrantPolicy(orgID string, roleType app.RoleType) ([]byte, error) {
+func orgGrantPolicy(orgID string, roleType app.RoleType, api permissions.API) ([]byte, error) {
 	refs := []permissions.PermissionID{permissions.OrgRead, permissions.SlackConnect}
 	switch roleType {
 	case app.RoleTypeOrgReadOnly:
@@ -23,7 +23,7 @@ func orgGrantPolicy(orgID string, roleType app.RoleType) ([]byte, error) {
 		return nil, err
 	}
 	document, err := catalog.NormalizePolicy(permissions.Policy{
-		Format: permissions.PolicyFormatV4, API: permissions.APICtl,
+		Format: permissions.PolicyFormatV4, API: api,
 		Grants: []permissions.Grant{{Scope: permissions.GrantScope{Kind: permissions.KindOrg, IDs: []string{orgID}}, Permissions: refs}},
 	})
 	if err != nil {
@@ -41,7 +41,7 @@ func useOrgGrantPolicies(roles []app.Role) error {
 		if role.RoleType != app.RoleTypeOrgAdmin && role.RoleType != app.RoleTypeOrgReadOnly {
 			continue
 		}
-		document, err := orgGrantPolicy(role.OrgID.ValueString(), role.RoleType)
+		document, err := orgGrantPolicy(role.OrgID.ValueString(), role.RoleType, "")
 		if err != nil {
 			return err
 		}
@@ -55,15 +55,15 @@ func isStandardOrgGrant(role app.Role) bool {
 	if !role.Managed || len(role.Policies) != 1 || !role.Policies[0].HasGrantDocument() {
 		return false
 	}
-	expected, err := orgGrantPolicy(role.OrgID.ValueString(), role.RoleType)
-	if err != nil {
-		return false
-	}
 	catalog, err := permissions.DefaultCatalog()
 	if err != nil {
 		return false
 	}
 	document, err := role.Policies[0].DecodeGrants(catalog)
+	if err != nil || (document.API != "" && document.API != permissions.APICtl) {
+		return false
+	}
+	expected, err := orgGrantPolicy(role.OrgID.ValueString(), role.RoleType, document.API)
 	if err != nil {
 		return false
 	}

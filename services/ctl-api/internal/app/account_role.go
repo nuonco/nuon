@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -49,12 +50,32 @@ func (c *AccountRole) BeforeSave(tx *gorm.DB) error {
 		Find(&role).Error; err != nil {
 		return err
 	}
+	if !c.OrgID.Empty() || role.HasPolicyDocument() {
+		var account Account
+		if err := db.Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where(&Account{ID: c.AccountID}, "id").First(&account).Error; err != nil {
+			return fmt.Errorf("lock account for role assignment: %w", err)
+		}
+		bindings := db.Model(&AccountRole{}).Select("role_id").
+			Where(AccountRole{AccountID: c.AccountID, OrgID: c.OrgID})
+		var existing []Role
+		if err := db.Preload("Policies").Where("id IN (?)", bindings).
+			Not(Role{ID: c.RoleID}).Find(&existing).Error; err != nil {
+			return err
+		}
+		usesGrants := len(role.Policies) == 1 && role.Policies[0].HasGrantDocument()
+		for _, current := range existing {
+			currentUsesGrants := false
+			for _, policy := range current.Policies {
+				currentUsesGrants = currentUsesGrants || policy.HasGrantDocument()
+			}
+			if usesGrants != currentUsesGrants {
+				return fmt.Errorf("cannot mix grant and legacy roles in the same account and org")
+			}
+		}
+	}
 	if !role.HasPolicyDocument() {
 		return nil
-	}
-	var account Account
-	if err := db.Select("id").Where(&Account{ID: c.AccountID}, "id").First(&account).Error; err != nil {
-		return fmt.Errorf("document policy binding requires a live account: %w", err)
 	}
 	var org Org
 	if err := db.Select("id").Where(&Org{ID: c.OrgID.String}, "id").First(&org).Error; err != nil {

@@ -16,13 +16,13 @@ import (
 
 func (m *middleware) authenticateBoundedToken(ctx *gin.Context, token *app.Token) (*app.Account, error) {
 	api, declared := require.OperationAPI(ctx)
-	if !declared || api != permissions.APICtl || cctx.IsGlobal(ctx) {
-		return nil, fmt.Errorf("bounded tokens require an org-scoped operation-based ctl-api route")
+	if !declared || cctx.IsGlobal(ctx) {
+		return nil, fmt.Errorf("bounded tokens require an org-scoped operation-based route")
 	}
 	if token.TokenType != app.TokenTypeStatic || token.SourceType != "" || token.SourceID != "" {
 		return nil, fmt.Errorf("bounded-token authentication currently supports direct static service-account tokens only")
 	}
-	account, err := m.acctClient.FetchAccountIdentity(ctx, token.AccountID)
+	account, err := m.fetchGrantAccount(ctx, token.AccountID, api)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +52,13 @@ func (m *middleware) authenticateAccount(ctx *gin.Context, token *app.Token) (*a
 	if orgID == "" {
 		orgID = ctx.Query("org_id")
 	}
+	if orgID == "" && declared && api != permissions.APICtl {
+		account, err := m.acctClient.FetchAccount(ctx, token.AccountID)
+		if err != nil || len(account.OrgIDs) != 1 {
+			return account, err
+		}
+		orgID = account.OrgIDs[0]
+	}
 	if orgID == "" {
 		return m.acctClient.FetchAccount(ctx, token.AccountID)
 	}
@@ -62,10 +69,10 @@ func (m *middleware) authenticateAccount(ctx *gin.Context, token *app.Token) (*a
 	if !usesGrants {
 		return m.acctClient.FetchAccount(ctx, token.AccountID)
 	}
-	if !declared || api != permissions.APICtl || (token.OrgID != "" && token.OrgID != orgID) {
+	if !declared || (token.OrgID != "" && token.OrgID != orgID) {
 		return nil, stderr.ErrAuthorization{Err: fmt.Errorf("token is not allowed in this org or API"), Description: "token is not allowed in this org or API"}
 	}
-	account, err := m.acctClient.FetchAccountIdentity(ctx, token.AccountID)
+	account, err := m.fetchGrantAccount(ctx, token.AccountID, api)
 	if err != nil {
 		return nil, err
 	}
@@ -82,4 +89,11 @@ func (m *middleware) authenticateAccount(ctx *gin.Context, token *app.Token) (*a
 	}
 	authz.SetAuthorityGinContext(ctx, authority)
 	return account, nil
+}
+
+func (m *middleware) fetchGrantAccount(ctx *gin.Context, accountID string, api permissions.API) (*app.Account, error) {
+	if api == permissions.APIRunner || api == permissions.APIStack {
+		return m.acctClient.FetchAccount(ctx, accountID)
+	}
+	return m.acctClient.FetchAccountIdentity(ctx, accountID)
 }

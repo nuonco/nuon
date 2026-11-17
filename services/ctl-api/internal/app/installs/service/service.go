@@ -374,10 +374,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterRunnerRoutes(engine *gin.Engine) error {
 	s.POST(engine, "/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHomeRunner, api.APIContextTypeRunner, true)
-	require.Route(engine, permissions.KindTelemetry, permissions.PermissionRead, "install_id").
-		GET("/v1/installs/:install_id/telemetry/collector-settings", s.GetInstallTelemetryCollectorSettings)
-	require.Route(engine, permissions.KindTelemetry, permissions.PermissionCreate, "install_id").
-		POST("/v1/installs/:install_id/telemetry/access-token", s.CreateInstallTelemetryAccessToken)
+	settings := require.Routes(require.Route(engine, permissions.KindTelemetry, permissions.PermissionRead, "install_id"), permissions.APIRunner)
+	settings.GET("/v1/installs/:install_id/telemetry/collector-settings", require.Point(permissions.TelemetrySettingsRead, s.installIDTarget), s.GetInstallTelemetryCollectorSettings)
+	tokens := require.Routes(require.Route(engine, permissions.KindTelemetry, permissions.PermissionCreate, "install_id"), permissions.APIRunner)
+	tokens.POST("/v1/installs/:install_id/telemetry/access-token", require.Point(permissions.TelemetryTokenCreate, s.installIDTarget), s.CreateInstallTelemetryAccessToken)
 	return nil
 }
 

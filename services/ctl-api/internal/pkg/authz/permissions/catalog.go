@@ -94,7 +94,7 @@ func DefaultCatalog() (*Catalog, error) {
 		{ID: RunnerJobInspect, Title: "Inspect job", Description: "Read the job inspection response.", Scopes: job, Targets: []ResourceKind{KindRunnerJob}},
 		{ID: RunnerJobCancel, Title: "Cancel job", Description: "Cancel an existing job, subject to its state constraints.", Scopes: job, Targets: []ResourceKind{KindRunnerJob}},
 		{ID: LogStreamRead, Title: "Read log stream", Description: "Read the whole stream, including shared or copied records.", Scopes: stream, Targets: []ResourceKind{KindLogStream}},
-		{ID: LogStreamAppend, Title: "Append log stream", Description: "Append records with the existing parent-copy side effects.", Scopes: []ResourceKind{KindLogStream}, Targets: []ResourceKind{KindLogStream}},
+		{ID: LogStreamAppend, Title: "Append log stream", Description: "Append records with the existing parent-copy side effects.", Scopes: []ResourceKind{KindOrg, KindApp, KindInstall, KindLogStream}, Targets: []ResourceKind{KindLogStream}},
 		{ID: PolicyReportInspect, Title: "Inspect policy reports", Description: "Read and export reports for verified build, deploy and sandbox-run owners.", Scopes: install, Targets: []ResourceKind{KindOperation}},
 		{ID: PolicyAnalyticsRead, Title: "Read policy analytics", Description: "Read aggregate policy results across an app, including its installs; not available at install scope.", Scopes: app, Targets: []ResourceKind{KindApp}},
 		{ID: AppBundleRead, Title: "Read app bundle metadata", Description: "Read publish status and metadata for app bundles.", Scopes: app, Targets: []ResourceKind{KindApp}},
@@ -106,13 +106,15 @@ func DefaultCatalog() (*Catalog, error) {
 		{ID: InstallRead, Title: "Install Reader", Description: "Read installs and their owned state, configuration, history, workflows, jobs and logs.", Scopes: []ResourceKind{KindInstall}, Members: []PermissionID{InstallInspect, InstallStateRead, InstallConfigRead, InstallHistoryRead, InstallActionInspect, InstallRunbookInspect, NotebookInspect, WorkflowInspect, RunnerInspect, RunnerJobRead, LogStreamRead, PolicyReportInspect, QueueInspect, TerraformRead}},
 		{ID: InstallWrite, Title: "Install write", Description: "Broad install writes, including destructive lifecycle, execution, runner bootstrap and collector identities; not an Editor preset.", Scopes: []ResourceKind{KindInstall}, Members: []PermissionID{InstallUpdate, InstallDelete, InstallProvision, InstallDeploy, InstallTeardown, InstallInputsUpdate, InstallConfigUpdate, InstallSecretsSync, InstallDriftResolve, InstallRunnerBootstrap, InstallCollectorManage, ActionExecute, ActionAdhocExecute, RunbookExecute, NotebookCreate, NotebookUpdate, NotebookDelete, NotebookExecute, WorkflowCancel, WorkflowRetry, WorkflowApprove, RunnerJobCancel, RunnerControl, RunnerSettingsUpdate, RunnerTokensPrune, TerraformCreate, TerraformDelete, TerraformLock, TerraformStateWrite}},
 		{ID: AppRead, Title: "App Reader", Description: "Read apps and their supported owned installs, workflows, jobs and logs.", Scopes: []ResourceKind{KindApp}, Members: []PermissionID{AppInspect, AppDefinitionRead, AppBundleRead, ActionInspect, RunbookInspect, InstallRead, WorkflowInspect, RunnerJobRead, LogStreamRead, PolicyReportInspect, PolicyAnalyticsRead}},
-		{ID: OrgRead, Title: "Org Reader", Description: "Read the org and supported owned apps, installs, workflows, jobs and logs.", Scopes: org, Members: []PermissionID{OrgInspect, OrgMembersRead, OrgInvitesRead, OrgStatsRead, OrgFeaturesRead, OrgWebhooksRead, RolesRead, AppRead, InstallRead, WorkflowInspect, RunnerJobRead, LogStreamRead, QueueInspect, QueueGraphRead, CloudConnectionRead, ImageRepositoryRead, VCSConnectionRead, SlackRead, TriggerRead}},
+		{ID: OrgRead, Title: "Org Reader", Description: "Read the org and supported owned apps, installs, workflows, jobs and logs.", Scopes: org, Members: []PermissionID{OrgInspect, OrgMembersRead, OrgInvitesRead, OrgStatsRead, OrgFeaturesRead, OrgWebhooksRead, RolesRead, AppRead, InstallRead, WorkflowInspect, RunnerJobRead, LogStreamRead, QueueInspect, QueueGraphRead, CloudConnectionRead, ImageRepositoryRead, VCSConnectionRead, SlackRead, TriggerRead, ExecutionConfigRead, StackConfigRead, TelemetrySettingsRead, RunnerComponentHealthRead, RunnerQueueRead, RunnerSandboxConfigRead, HelmReleaseRead}},
 	}
 	definitions = append(definitions, OrgDefinitions()...)
 	definitions = append(definitions, AppDefinitions()...)
 	definitions = append(definitions, ExecutionDefinitions()...)
 	definitions = append(definitions, IntegrationDefinitions()...)
 	definitions = append(definitions, RunnerDefinitions()...)
+	definitions = append(definitions, RunnerProtocolDefinitions()...)
+	definitions = append(definitions, WorkloadDefinitions()...)
 	definitions = append(definitions, AccessDefinitions()...)
 	definitions = append(definitions, TriggerDefinitions()...)
 	return NewCatalog(definitions)

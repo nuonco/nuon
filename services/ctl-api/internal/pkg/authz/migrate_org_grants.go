@@ -53,15 +53,23 @@ func (c *Client) MigrateOrgGrantPolicies(ctx context.Context, orgID string, appl
 			if err != nil {
 				return err
 			}
+			var api permissions.API
+			keys := 1
+			if value, present := projection[permissions.APIPermissionKey]; present {
+				if value == nil || *value != string(permissions.APICtl) {
+					return fmt.Errorf("role %s differs from its baseline API restriction", role.ID)
+				}
+				api = permissions.APICtl
+				keys++
+			}
 			verb := permissions.PermissionAll
 			if role.RoleType == app.RoleTypeOrgReadOnly {
 				verb = permissions.PermissionRead
 			}
-			if len(projection) != 2 || projection[orgID] == nil || *projection[orgID] != string(verb) ||
-				projection[permissions.APIPermissionKey] == nil || *projection[permissions.APIPermissionKey] != string(permissions.APICtl) {
+			if len(projection) != keys || projection[orgID] == nil || *projection[orgID] != string(verb) {
 				return fmt.Errorf("role %s differs from its baseline authority", role.ID)
 			}
-			document, err := orgGrantPolicy(orgID, role.RoleType)
+			document, err := orgGrantPolicy(orgID, role.RoleType, api)
 			if err != nil {
 				return err
 			}

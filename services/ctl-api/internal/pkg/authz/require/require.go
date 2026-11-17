@@ -63,6 +63,10 @@ func OrgRoute(router gin.IRouter) *gin.RouterGroup {
 // request (job SA path). Org-wide grants still pass. Denials stay 403.
 func OrgOrInstallRoute(router gin.IRouter) *gin.RouterGroup {
 	return group(router, func(ctx *gin.Context) {
+		if _, declared := OperationAPI(ctx); declared && authz.HasAuthority(ctx) {
+			ctx.Next()
+			return
+		}
 		verb := permissions.FromRequest(ctx)
 		if verb == permissions.PermissionUnknown {
 			ctx.Error(stderr.ErrSystem{
@@ -119,6 +123,10 @@ func OrgOrInstallRoute(router gin.IRouter) *gin.RouterGroup {
 // named by paramName. A log-stream account holds that grant and no org or install grant.
 func OrgInstallOrLogStreamRoute(router gin.IRouter, paramName string) *gin.RouterGroup {
 	return group(router, func(ctx *gin.Context) {
+		if _, declared := OperationAPI(ctx); declared && authz.HasAuthority(ctx) {
+			ctx.Next()
+			return
+		}
 		verb := permissions.FromRequest(ctx)
 		if verb == permissions.PermissionUnknown {
 			ctx.Error(stderr.ErrSystem{

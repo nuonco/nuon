@@ -10,6 +10,7 @@ import (
 	actionaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/access"
 	appaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/access"
 	installaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
+	runneraccess "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/access"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -96,7 +97,11 @@ func (s *service) actionInstallTarget(ctx *gin.Context) (permissions.Target, err
 }
 
 func (s *service) actionRunTarget(ctx *gin.Context) (permissions.Target, error) {
-	return s.actionResource(ctx, actionaccess.Runs, ctx.Param("run_id"))
+	target, err := s.actionResource(ctx, actionaccess.Runs, ctx.Param("run_id"))
+	if err == nil && ctx.Param("install_id") != "" && target.InstallID != ctx.Param("install_id") {
+		err = gorm.ErrRecordNotFound
+	}
+	return target, err
 }
 
 func (s *service) actionStepTarget(ctx *gin.Context) (permissions.Target, error) {
@@ -104,12 +109,36 @@ func (s *service) actionStepTarget(ctx *gin.Context) (permissions.Target, error)
 	if err != nil {
 		return target, err
 	}
+	runID := ctx.Param("run_id")
+	if runID == "" {
+		runID = ctx.Param("workflow_run_id")
+	}
 	var step app.InstallActionWorkflowRunStep
-	err = s.db.WithContext(ctx).Where(app.InstallActionWorkflowRunStep{ID: target.ID, OrgID: target.OrgID, InstallActionWorkflowRunID: ctx.Param("run_id")}).First(&step).Error
+	err = s.db.WithContext(ctx).Where(app.InstallActionWorkflowRunStep{ID: target.ID, OrgID: target.OrgID, InstallActionWorkflowRunID: runID}).First(&step).Error
 	if err == nil && target.InstallID != ctx.Param("install_id") {
 		err = gorm.ErrRecordNotFound
 	}
 	return target, err
+}
+
+func (s *service) runnerActionConfigTarget(ctx *gin.Context) (permissions.Target, error) {
+	target, err := s.actionConfigTarget(ctx)
+	if err != nil {
+		return target, err
+	}
+	return runneraccess.ExecutionConfigTarget(ctx, s.db, target)
+}
+
+func (s *service) runnerActionLatestConfigTarget(ctx *gin.Context) (permissions.Target, error) {
+	config, err := s.getActionWorkflowLatestConfig(ctx, ctx.Param("workflow_id"))
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	target, err := s.actionResource(ctx, actionaccess.Configs, config.ID)
+	if err != nil {
+		return target, err
+	}
+	return runneraccess.ExecutionConfigTarget(ctx, s.db, target)
 }
 
 func (s *service) installedActionTarget(ctx *gin.Context) (permissions.Target, error) {

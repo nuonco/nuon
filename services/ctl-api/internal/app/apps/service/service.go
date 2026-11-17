@@ -294,7 +294,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	require.OrgOrInstallRoute(api).GET("/v1/apps/:app_id/config/:app_config_id", s.GetRunnerAppConfig)
+	require.Routes(require.OrgOrInstallRoute(api), permissions.APIRunner).
+		GET("/v1/apps/:app_id/config/:app_config_id", require.Point(permissions.ExecutionConfigRead, s.runnerAppConfigTarget), s.GetRunnerAppConfig)
 	return nil
 }
 

@@ -59,6 +59,9 @@ func (s *service) GetAppActionLatestConfig(ctx *gin.Context) {
 //		@Router					/v1/action-workflows/{action_workflow_id}/latest-config [get]
 func (s *service) GetActionWorkflowLatestConfig(ctx *gin.Context) {
 	awID := ctx.Param("action_workflow_id")
+	if awID == "" {
+		awID = ctx.Param("workflow_id")
+	}
 	awc, err := s.getActionWorkflowLatestConfig(ctx, awID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflow config %s: %w", awID, err))

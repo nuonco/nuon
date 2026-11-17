@@ -25,7 +25,6 @@ Use a new document format in the existing JSONB policy column, rather than chang
 ```json
 {
   "format": 4,
-  "api": "ctl-api",
   "grants": [
     {
       "scope": {"kind": "install", "ids": ["install_a", "install_b"]},
@@ -45,7 +44,9 @@ Use a new document format in the existing JSONB policy column, rather than chang
 
 IDs here are fictional shorthand. An org reader has the same shape: `org.read` with `scope: {"kind": "org", "ids": ["org_acme"]}`. An org admin combines `org.read` and `org.write` at that org. No separate `bundle` versus `resource_rules` policy variants remain in the new format, and format 4 has no singular `id` alternative.
 
-The trusted role and binding provide the tenant. Every selected resource must resolve within it when used; IDs never supply or override the tenant. An org scope can explicitly name only that org, or use `["*"]` to select that same org, never all orgs. The role's org does not itself grant org-wide access. Preserve the existing meaning of optional `api` metadata and `Role.Version` bookkeeping.
+The trusted role and binding provide the tenant. Every selected resource must resolve within it when used; IDs never supply or override the tenant. An org scope can explicitly name only that org, or use `["*"]` to select that same org, never all orgs. The role's org does not itself grant org-wide access. Preserve `Role.Version` bookkeeping.
+
+New v4 customer policies omit `api`: capabilities and scopes define their authority. Retain optional `api` decoding and enforcement as a compatibility constraint on existing policies and credential ceilings. Standard-role conversion preserves an existing `ctl-api` restriction or its absence; it neither adds a restriction to an unrestricted source nor removes an explicit restriction. Legacy workload writers retain their API restrictions until their endpoint authorization has capability-based equivalents. This is not a token audience system, and omitting the field does not make an unintegrated listener grant-aware. Listener compatibility remains a separate release gate; no legacy fallback or runner-shadow policy is implied.
 
 Require non-null `grants` and `permissions` arrays; empty arrays grant nothing. Each scope requires a known `kind` and a nonempty `ids` array of valid IDs, or exactly `["*"]`. Reject missing/null/empty selections, scalar strings, wildcard-plus-ID mixtures, repeated wildcard entries, and partial globs such as `install_*`. Duplicate explicit IDs may be deduplicated; order has no meaning. Reject malformed documents, duplicate JSON keys, unknown fields/permission IDs/formats, and unsupported scope combinations. Equivalent duplicate grants are harmless. Keep scope and permissions paired throughout evaluation.
 

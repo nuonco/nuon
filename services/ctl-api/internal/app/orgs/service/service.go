@@ -185,7 +185,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	require.OrgRoute(api).GET("/v1/orgs/current", s.GetOrg)
+	require.Routes(require.OrgRoute(api), permissions.APIRunner).
+		GET("/v1/orgs/current", require.Organization(permissions.OrgInspect), s.GetOrg)
 	return nil
 }
 

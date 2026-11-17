@@ -35,6 +35,7 @@ var ownerQueries = []struct {
 	{"component_builds", componentaccess.Builds.Query, true},
 	{"runners", Runners.Query, false},
 	{"runner_operations", operations, false},
+	{"runner_processes", processes, false},
 }
 
 func Jobs(db *gorm.DB, orgID string) (*authz.Resources, error) {
@@ -87,7 +88,10 @@ func logResources(db *gorm.DB, orgID, ownerType string) (*authz.Resources, error
 		(SELECT COALESCE(jsonb_agg(j.id ORDER BY j.id), '[]'::jsonb) FROM runner_jobs j
 		 WHERE j.log_stream_id = s.id AND j.org_id = s.org_id AND j.deleted_at = 0
 		 AND j.owner_type = s.owner_type AND j.owner_id = s.owner_id AND o.job_logs) AS related_job_ids
-		FROM log_streams s JOIN (?) o ON o.id = s.owner_id AND o.owner_type = s.owner_type AND o.org_id = s.org_id
+		FROM log_streams s JOIN (?) o ON o.owner_type = s.owner_type AND o.org_id = s.org_id
+		AND (o.id = s.owner_id OR (s.owner_type = 'runner_processes' AND COALESCE(s.owner_id, '') = ''
+		 AND EXISTS (SELECT 1 FROM runner_processes p WHERE p.id = o.id AND p.org_id = s.org_id
+		 AND p.log_stream_id = s.id AND p.deleted_at = 0)))
 		WHERE s.deleted_at = 0`, owners)
 	return authz.NewResources(targets, permissions.KindLogStream, orgID)
 }
@@ -121,4 +125,9 @@ var Runners = authz.DefineResources(permissions.KindRunner, func(db *gorm.DB, or
 func operations(db *gorm.DB, orgID string) *gorm.DB {
 	return db.Session(&gorm.Session{NewDB: true}).Raw(`SELECT o.id, o.org_id, r.app_id, r.install_id FROM runner_operations o
 		JOIN (?) r ON r.id = o.runner_id AND r.org_id = o.org_id WHERE o.deleted_at = 0`, Runners.Query(db, orgID))
+}
+
+func processes(db *gorm.DB, orgID string) *gorm.DB {
+	return db.Session(&gorm.Session{NewDB: true}).Raw(`SELECT p.id, p.org_id, r.app_id, r.install_id FROM runner_processes p
+		JOIN (?) r ON r.id = p.runner_id AND r.org_id = p.org_id WHERE p.deleted_at = 0`, Runners.Query(db, orgID))
 }
