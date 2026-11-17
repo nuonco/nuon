@@ -139,6 +139,19 @@ func TestRenderStandardVars(t *testing.T) {
 	}
 }
 
+func TestProviderTfvarsUsesStackAPIURL(t *testing.T) {
+	inp := testInput()
+	inp.StackAPIURL = "https://stack.nuon.co/"
+
+	out, _, err := Render(inp, "")
+	require.NoError(t, err)
+
+	var envelope map[string]string
+	require.NoError(t, json.Unmarshal(out, &envelope))
+	assert.Equal(t, `"https://stack.nuon.co"`, findVarValue(t, envelope["provider_tfvars"], "api_url"))
+	assert.Equal(t, `"https://runner.nuon.co"`, findVarValue(t, extractTfvars(t, out), "runner_api_url"))
+}
+
 func TestRenderEmptyPermissions(t *testing.T) {
 	out, _, err := Render(testInput(), "")
 	require.NoError(t, err)

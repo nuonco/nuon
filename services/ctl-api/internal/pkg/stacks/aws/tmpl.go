@@ -54,7 +54,7 @@ install_inputs = {
 // from the API via the stack_config data source, so only the API base URL, the
 // phone-home ID, the customer AWS region, and the install-input names need to be
 // supplied here.
-const providerInputsTmpl = `api_url       = "{{.Settings.RunnerAPIURL}}"
+const providerInputsTmpl = `api_url       = "{{.ProviderAPIURL}}"
 phone_home_id = "{{.CloudFormationStackVersion.PhoneHomeID}}"
 
 aws = {

@@ -19,6 +19,10 @@ type TemplateInput struct {
 	Settings *app.RunnerGroupSettings `validate:"required"`
 	APIToken string                   `validate:"required"`
 
+	// StackAPIURL is the stack API the Terraform provider calls. Stack service
+	// account tokens are rejected by the runner API.
+	StackAPIURL string
+
 	// ConfiguredRunnerInstanceType is the instance type the app's runner config declares,
 	// empty when it declares none. Settings.AWSInstanceType cannot express "unset" — the
 	// stack generators resolve the platform default into it before rendering, because the
@@ -79,6 +83,19 @@ type TemplateInput struct {
 	// RenderCustomNestedStackParameters rewrites install-input references into
 	// literals.
 	UnrenderedCustomStackParameters map[string]map[string]string
+}
+
+func (in *TemplateInput) ProviderAPIURL() string {
+	if in == nil {
+		return ""
+	}
+	if in.StackAPIURL != "" {
+		return strings.TrimRight(in.StackAPIURL, "/")
+	}
+	if in.Settings != nil {
+		return strings.TrimRight(in.Settings.RunnerAPIURL, "/")
+	}
+	return ""
 }
 
 // PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home
