@@ -1,11 +1,16 @@
 # Docs
 
 `docs/` is the Mintlify site published at https://docs.nuon.co. Navigation and site config live in
-`docs.json`. Preview locally with `./dev.sh` (see [docs/README.md](README.md)); it serves at
+`docs.json`. Preview locally with `./dev.sh` (see [docs/README.md](README.md)). It serves at
 http://localhost:3333.
 
 The conventions below apply to any page you edit — don't retrofit pages you aren't otherwise
 touching.
+
+## Punctuation
+
+Don't join two sentences with a semicolon. Use a period and start a new sentence. Semicolons
+are fine only inside code, TOML, and shell examples.
 
 ## Feature names
 
@@ -42,7 +47,7 @@ Features without their own concept page link to the page or section that defines
 ## Naming config files
 
 Name TOML config files by type: "branch config file", "install config file" — never just "file"
-or "branch file". The file type stays lowercase; link its first mention to the feature's page
+or "branch file". The file type stays lowercase. Link its first mention to the feature's page
 (e.g. [install config file](/guides/install-configs)).
 
 Call the app's directory of TOML files the "app template" and the files in it "app template
@@ -83,8 +88,8 @@ pick a method once and have it stick for the rest of the page.
 
 ## Search
 
-Mintlify ranks title matches above heading matches above body matches; `boost` only reorders
-results within a match group, it doesn't move a page into a higher group.
+Mintlify ranks title matches above heading matches above body matches. `boost` only reorders
+results within a match group. It doesn't move a page into a higher group.
 
 - Put the term users will actually search for in `title`.
 - Use `keywords` for related terms — they raise relevance but aren't title matches.
