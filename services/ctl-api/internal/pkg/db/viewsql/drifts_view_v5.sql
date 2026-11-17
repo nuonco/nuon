@@ -46,6 +46,7 @@ FROM (
                 LEFT JOIN install_workflows w ON w.id = d.install_workflow_id
             WHERE d.install_component_id = ic.id
                 AND d.deleted_at = 0
+                AND d.plan_only = false
                 AND w.plan_only IS NOT TRUE
             ORDER BY d.created_at DESC
             LIMIT 1
