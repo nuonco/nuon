@@ -3,7 +3,6 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HealthBars, type IHealthBar } from '@/components/common/HealthBars'
 import { ID } from '@/components/common/ID'
@@ -25,6 +24,7 @@ import { useInstallHref } from '@/hooks/use-install-path'
 import type {
   TAppBranch,
   TAppBranchConfig,
+  TAppBranchRun,
   TInstall,
   TInstallOverview,
   TInstallStatus,
@@ -32,25 +32,29 @@ import type {
 import { cn } from '@/utils/classnames'
 import {
   componentOptions,
+  countOnRun,
   groupFleet,
   labelOptions,
   latestConfigIdByBranch,
   matchesFilters,
   rolloutState,
+  runsIndex,
   summarizeFleet,
-  type TComponentState,
   type TFleetBranch,
   type TFleetContext,
   type TFleetGroup,
   type TFleetRunnerFilter,
   type TRolloutState,
 } from './fleet'
-import { FleetFiltersDropdown } from './FleetFiltersDropdown'
+import { BranchRunPicker, type TFleetRunOption } from './BranchRunPicker'
 import { HealthFilterDropdown } from './HealthFilterDropdown'
+import { LabelsFilterDropdown } from './LabelsFilterDropdown'
+import { FleetFiltersDropdown } from './FleetFiltersDropdown'
 
 export interface IInstallFleet {
   installs: TInstall[]
   branches?: TAppBranch[]
+  branchRuns?: Record<string, TAppBranchRun[]>
   branchConfigs?: TAppBranchConfig[]
   statusById?: Record<string, TInstallStatus>
   overviewById?: Record<string, TInstallOverview>
@@ -62,6 +66,24 @@ export interface IInstallFleet {
 export type TFleetView = 'table' | 'board'
 
 type TFleetMatch = { ids: Set<string>; active: boolean }
+
+type TBranchRollout = Exclude<TRolloutState, 'unknown'>
+
+type TBranchControls = {
+  runsFor: (branchId: string) => TFleetRunOption[]
+  runByBranch: Record<string, string | undefined>
+  onRunChange: (branchId: string, run?: string) => void
+  rolloutByBranch: Record<string, TBranchRollout | undefined>
+  onRolloutChange: (branchId: string, rollout?: TBranchRollout) => void
+}
+
+const rolloutCounts = (installs: TInstall[], context: TFleetContext) => {
+  const states = installs.map((install) => rolloutState(install, context))
+  return {
+    on: states.filter((state) => state === 'applied').length,
+    off: states.filter((state) => state === 'behind').length,
+  }
+}
 
 const plural = (count: number, noun: string) =>
   `${count} ${noun}${count === 1 ? '' : 's'}`
@@ -85,9 +107,9 @@ const groupCountText = (
   const total = group.installs.length
   if (match.active)
     return `${matchedOf(group.installs, match).length} of ${total} match`
-  const states = group.installs.map((install) => rolloutState(install, context))
-  if (states.every((state) => state === 'unknown')) return plural(total, 'install')
-  return `${states.filter((state) => state === 'applied').length} of ${total} on latest run`
+  const { on, off } = rolloutCounts(group.installs, context)
+  if (!on && !off) return plural(total, 'install')
+  return `${on} on · ${off} not on`
 }
 
 const ROLLOUT_LABEL: Record<TRolloutState, string> = {
@@ -137,9 +159,7 @@ const InstallStatusAxes = ({
   status?: TInstallStatus
   wrap?: boolean
 }) => (
-  <div
-    className={cn('flex items-center gap-2', wrap ? 'flex-wrap' : 'w-max')}
-  >
+  <div className={cn('flex items-center gap-2', wrap ? 'flex-wrap' : 'w-max')}>
     {INSTALL_STATUS_AXES.map(({ key, label }) => (
       <span key={key} title={label}>
         <InstallStatusAxis axis={status?.[key]} loading={!status} />
@@ -169,7 +189,7 @@ const buildColumns = (
   },
   {
     id: 'rollout',
-    header: 'Latest run',
+    header: 'Run',
     enableSorting: false,
     meta: { className: 'w-32' },
     cell: (info) => {
@@ -323,14 +343,26 @@ const GroupName = ({ group }: { group: TFleetGroup }) =>
 const BranchHeading = ({
   branch,
   match,
+  context,
+  controls,
 }: {
   branch: TFleetBranch
   match: TFleetMatch
+  context: TFleetContext
+  controls: TBranchControls
 }) => {
   const appId = branch.installs[0]?.app_id
   const orgId = branch.installs[0]?.org_id
+  const branchId = branch.branchId
+  const runs = branchId ? controls.runsFor(branchId) : []
+  const { on, off } = rolloutCounts(branch.installs, context)
+  const rollout = branchId ? controls.rolloutByBranch[branchId] : undefined
+  const toggle = (value: TBranchRollout) => {
+    if (branchId)
+      controls.onRolloutChange(branchId, rollout === value ? undefined : value)
+  }
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {branch.branchId ? (
         <>
           <Icon variant="GitBranchIcon" size={16} />
@@ -351,6 +383,32 @@ const BranchHeading = ({
       <Text variant="subtext" theme="neutral">
         {branchCountText(branch, match)}
       </Text>
+      {branchId && runs.length ? (
+        <>
+          <BranchRunPicker
+            id={`fleet-branch-run-${branchId}`}
+            runs={runs}
+            selected={controls.runByBranch[branchId]}
+            onChange={(value) => controls.onRunChange(branchId, value)}
+          />
+          <Button
+            size="sm"
+            variant={rollout === 'applied' ? 'secondary' : 'ghost'}
+            aria-pressed={rollout === 'applied'}
+            onClick={() => toggle('applied')}
+          >
+            {on} on
+          </Button>
+          <Button
+            size="sm"
+            variant={rollout === 'behind' ? 'secondary' : 'ghost'}
+            aria-pressed={rollout === 'behind'}
+            onClick={() => toggle('behind')}
+          >
+            {off} not on
+          </Button>
+        </>
+      ) : null}
     </div>
   )
 }
@@ -399,15 +457,22 @@ const FleetBranchSection = ({
   labelColors,
   match,
   context,
+  controls,
 }: {
   branch: TFleetBranch
   columns: ColumnDef<TInstall>[]
   labelColors?: Record<string, string>
   match: TFleetMatch
   context: TFleetContext
+  controls: TBranchControls
 }) => (
   <div className="flex flex-col gap-4">
-    <BranchHeading branch={branch} match={match} />
+    <BranchHeading
+      branch={branch}
+      match={match}
+      context={context}
+      controls={controls}
+    />
     <div className="flex flex-col gap-6">
       {branch.groups.map((group) => (
         <FleetGroupTable
@@ -447,7 +512,7 @@ const GroupRolloutBars = ({
             {install.name}
           </Text>
           <Text variant="label" theme="neutral">
-            Latest run: {ROLLOUT_LABEL[state]}
+            {ROLLOUT_LABEL[state]}
           </Text>
         </div>
       ),
@@ -467,20 +532,30 @@ const INSTALL_CARD_CLASS =
   'flex w-full flex-wrap items-center justify-between gap-3 rounded-md border bg-elevation-2 px-4 py-3 shadow-sm'
 
 const FleetGroupPanelBody = ({
+  branch,
   group,
   statusById,
   match,
   context,
 }: {
+  branch: TFleetBranch
   group: TFleetGroup
   statusById: Record<string, TInstallStatus>
   match: TFleetMatch
   context: TFleetContext
 }) => {
   const [search, setSearch] = useState('')
-  const [rollout, setRollout] = useState<'applied' | 'behind'>()
+  const [rollout, setRollout] = useState<TBranchRollout>()
   const installs = matchedOf(group.installs, match).filter((install) =>
-    matchesFilters(install, { search, labels: new Set(), rollout }, context)
+    matchesFilters(
+      install,
+      {
+        search,
+        labels: new Set(),
+        rolloutByBranch: { [branch.branchId ?? '']: rollout },
+      },
+      context
+    )
   )
 
   return (
@@ -514,7 +589,7 @@ const FleetGroupPanelBody = ({
           />
           <RadioFilterDropdown
             id={`fleet-group-${group.key}-rollout`}
-            label="Latest run"
+            label="Run"
             options={[
               { value: 'applied', label: ROLLOUT_LABEL.applied },
               { value: 'behind', label: ROLLOUT_LABEL.behind },
@@ -571,7 +646,11 @@ const FleetGroupCard = ({
         <GroupSelectorLabels group={group} labelColors={labelColors} />
       </div>
     ) : null}
-    <GroupRolloutBars installs={group.installs} match={match} context={context} />
+    <GroupRolloutBars
+      installs={group.installs}
+      match={match}
+      context={context}
+    />
     <div className="flex items-center justify-between gap-2">
       <Text variant="subtext" theme="neutral">
         {groupCountText(group, match, context)}
@@ -587,6 +666,7 @@ const FleetGroupCard = ({
         }}
       >
         <FleetGroupPanelBody
+          branch={branch}
           group={group}
           statusById={statusById}
           match={match}
@@ -603,17 +683,24 @@ const FleetLanes = ({
   labelColors,
   match,
   context,
+  controls,
 }: {
   branches: TFleetBranch[]
   statusById: Record<string, TInstallStatus>
   labelColors?: Record<string, string>
   match: TFleetMatch
   context: TFleetContext
+  controls: TBranchControls
 }) => (
   <div className="flex flex-col gap-8 md:gap-10">
     {branches.map((branch) => (
       <div key={branch.key} className="flex flex-col gap-4">
-        <BranchHeading branch={branch} match={match} />
+        <BranchHeading
+          branch={branch}
+          match={match}
+          context={context}
+          controls={controls}
+        />
         <div className="flex items-stretch gap-4 overflow-x-auto pb-2">
           {branch.groups.map((group) => (
             <FleetGroupCard
@@ -635,6 +722,7 @@ const FleetLanes = ({
 export const InstallFleet = ({
   installs,
   branches = [],
+  branchRuns = {},
   branchConfigs = [],
   statusById = {},
   overviewById = {},
@@ -646,22 +734,47 @@ export const InstallFleet = ({
   const [labels, setLabels] = useState<Set<string>>(new Set())
   const [health, setHealth] = useState<Set<string>>(new Set())
   const [runner, setRunner] = useState<TFleetRunnerFilter>()
-  const [rollout, setRollout] = useState<'applied' | 'behind'>()
-  const [component, setComponent] = useState<string>()
-  const [componentState, setComponentState] = useState<TComponentState>('live')
+  const [scope, setScope] = useState<string>()
+  const [runByBranch, setRunByBranch] = useState<
+    Record<string, string | undefined>
+  >({})
+  const [rolloutByBranch, setRolloutByBranch] = useState<
+    Record<string, TBranchRollout | undefined>
+  >({})
   const [view, setView] = useState<TFleetView>(defaultView)
 
   const context: TFleetContext = {
     latestConfigIdByBranch: latestConfigIdByBranch(branches),
+    runsById: runsIndex(branchRuns),
     overviewById,
+    runByBranch,
+    scope,
   }
   const columns = buildColumns(statusById, context, labelColors)
   const options = labelOptions(installs)
   const componentChoices = componentOptions(overviewById)
+  const controls: TBranchControls = {
+    runsFor: (branchId) =>
+      (branchRuns[branchId] ?? []).map((branchRun) => ({
+        value: branchRun.id ?? '',
+        title:
+          branchRun.vcs_connection_commit?.message?.split('\n')[0]?.trim() ||
+          'Branch run',
+        sha: branchRun.head_sha ?? branchRun.vcs_connection_commit?.sha,
+        createdAt: branchRun.created_at,
+        count: countOnRun(installs, branchRun.id ?? '', scope, context),
+      })),
+    runByBranch,
+    onRunChange: (branchId, run) =>
+      setRunByBranch((current) => ({ ...current, [branchId]: run })),
+    rolloutByBranch,
+    onRolloutChange: (branchId, rollout) =>
+      setRolloutByBranch((current) => ({ ...current, [branchId]: rollout })),
+  }
   const visible = installs.filter((install) =>
     matchesFilters(
       install,
-      { search, labels, health, runner, rollout, component, componentState },
+      { search, labels, health, runner, rolloutByBranch },
       context
     )
   )
@@ -672,23 +785,21 @@ export const InstallFleet = ({
       labels.size > 0 ||
       health.size > 0 ||
       !!runner ||
-      !!rollout ||
-      !!component,
+      Object.values(rolloutByBranch).some(Boolean),
   }
   const fleet = groupFleet(installs, branchConfigs, context)
 
-  const resetMenuFilters = () => {
+  const resetOtherFilters = () => {
+    setScope(undefined)
     setRunner(undefined)
-    setRollout(undefined)
-    setComponent(undefined)
-    setComponentState('live')
   }
 
   const clearFilters = () => {
     setSearch('')
     setLabels(new Set())
     setHealth(new Set())
-    resetMenuFilters()
+    setRolloutByBranch({})
+    resetOtherFilters()
   }
 
   return (
@@ -738,29 +849,20 @@ export const InstallFleet = ({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {options.length ? (
-            <CheckboxFilterDropdown
-              id="fleet-filter-labels"
-              label="Labels"
-              options={options.map((value) => ({ value, label: value }))}
+            <LabelsFilterDropdown
+              options={options}
               selected={labels}
               onChange={setLabels}
             />
           ) : null}
           <HealthFilterDropdown selected={health} onChange={setHealth} />
           <FleetFiltersDropdown
-            rollout={rollout}
-            onRolloutChange={setRollout}
             componentChoices={componentChoices}
-            component={component}
-            onComponentChange={(value) => {
-              setComponent(value)
-              setComponentState('live')
-            }}
-            componentState={componentState}
-            onComponentStateChange={setComponentState}
+            component={scope}
+            onComponentChange={setScope}
             runner={runner}
             onRunnerChange={setRunner}
-            onReset={resetMenuFilters}
+            onReset={resetOtherFilters}
           />
         </div>
       </div>
@@ -792,6 +894,7 @@ export const InstallFleet = ({
           labelColors={labelColors}
           match={match}
           context={context}
+          controls={controls}
         />
       ) : (
         <div className="flex flex-col gap-8 md:gap-10">
@@ -803,6 +906,7 @@ export const InstallFleet = ({
               labelColors={labelColors}
               match={match}
               context={context}
+              controls={controls}
             />
           ))}
         </div>

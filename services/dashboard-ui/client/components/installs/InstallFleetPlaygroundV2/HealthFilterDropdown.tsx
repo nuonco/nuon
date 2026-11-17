@@ -1,8 +1,3 @@
-import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
-import { Dropdown } from '@/components/common/Dropdown'
-import { Icon } from '@/components/common/Icon'
-import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { CheckboxInputWithButton } from '@/components/common/form/CheckboxInput'
 import { cn } from '@/utils/classnames'
@@ -13,8 +8,8 @@ import {
   HEALTH_UNHEALTHY,
   HEALTH_UNKNOWN,
 } from '@/utils/health-utils'
-import { humanize } from '@/utils/string-utils'
-import { HEALTH_FILTER_OPTIONS, NO_SIGNAL } from './fleet'
+import { HEALTH_FILTER_OPTIONS, healthFilterLabel, NO_SIGNAL } from './fleet'
+import { FleetFilterDropdown } from './FleetFilterDropdown'
 
 const HEALTH_BORDER_CLASSES: Record<string, string> = {
   [HEALTH_UNHEALTHY]: '!border-l-red-600 dark:!border-l-red-500',
@@ -25,15 +20,12 @@ const HEALTH_BORDER_CLASSES: Record<string, string> = {
   [NO_SIGNAL]: '!border-l-cool-grey-600 dark:!border-l-cool-grey-500',
 }
 
-export const healthFilterLabel = (value: string) =>
-  value === NO_SIGNAL ? 'No health signal' : humanize(value)
-
 export interface IHealthFilterDropdown {
   selected: Set<string>
   onChange: (selected: Set<string>) => void
 }
 
-export const HealthFilterOptions = ({
+export const HealthFilterDropdown = ({
   selected,
   onChange,
 }: IHealthFilterDropdown) => {
@@ -50,7 +42,12 @@ export const HealthFilterOptions = ({
     )
 
   return (
-    <>
+    <FleetFilterDropdown
+      id="fleet-filter-health"
+      label="Health"
+      count={selected.size}
+      onReset={() => onChange(new Set())}
+    >
       {HEALTH_FILTER_OPTIONS.map((value) => {
         const checked = selected.has(value)
         const isOnlySelected = selected.size === 1 && checked
@@ -90,39 +87,6 @@ export const HealthFilterOptions = ({
           />
         )
       })}
-    </>
+    </FleetFilterDropdown>
   )
 }
-
-export const HealthFilterDropdown = ({
-  selected,
-  onChange,
-}: IHealthFilterDropdown) => (
-  <Dropdown
-    buttonText={
-      <span className="flex items-center gap-2">
-        Health
-        {selected.size ? (
-          <Badge size="sm" theme="info">
-            {selected.size}
-          </Badge>
-        ) : null}
-      </span>
-    }
-    icon={<Icon variant="FunnelIcon" size="14" />}
-    iconAlignment="left"
-    id="fleet-filter-health"
-    alignment="right"
-    closeOnBlur={false}
-  >
-    <Menu className="min-w-56">
-      <HealthFilterOptions selected={selected} onChange={onChange} />
-      {selected.size ? <hr /> : null}
-      {selected.size ? (
-        <Button variant="ghost" onClick={() => onChange(new Set())}>
-          Reset
-        </Button>
-      ) : null}
-    </Menu>
-  </Dropdown>
-)

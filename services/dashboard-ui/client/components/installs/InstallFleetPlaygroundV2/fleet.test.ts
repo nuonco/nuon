@@ -4,14 +4,17 @@ import {
   mixedFleetBranches,
   mixedFleetConfigs,
   mixedFleetOverviews,
+  mixedFleetRuns,
 } from './fixtures'
 import {
   componentOptions,
+  countOnRun,
   groupFleet,
   labelOptions,
   latestConfigIdByBranch,
   matchesFilters,
   rolloutState,
+  runsIndex,
   summarizeFleet,
   type TFleetContext,
   type TFleetFilters,
@@ -21,6 +24,7 @@ const noFilters: TFleetFilters = { search: '', labels: new Set() }
 
 const context: TFleetContext = {
   latestConfigIdByBranch: latestConfigIdByBranch(mixedFleetBranches),
+  runsById: runsIndex(mixedFleetRuns),
   overviewById: mixedFleetOverviews,
 }
 
@@ -68,10 +72,7 @@ describe('groupFleet', () => {
 
 describe('rolloutState', () => {
   const state = (name: string) =>
-    rolloutState(
-      mixedFleet.find((install) => install.name === name)!,
-      context
-    )
+    rolloutState(mixedFleet.find((install) => install.name === name)!, context)
 
   test('compares the install config to the latest branch run config', () => {
     expect(state('acme-prod-us')).toBe('applied')
@@ -80,9 +81,9 @@ describe('rolloutState', () => {
 
   test('is unknown without a branch or without a latest run', () => {
     expect(state('acme-labs')).toBe('unknown')
-    expect(
-      rolloutState(mixedFleet[0], { latestConfigIdByBranch: {} })
-    ).toBe('unknown')
+    expect(rolloutState(mixedFleet[0], { latestConfigIdByBranch: {} })).toBe(
+      'unknown'
+    )
   })
 })
 
@@ -98,21 +99,30 @@ describe('summarizeFleet', () => {
 })
 
 describe('matchesFilters', () => {
-  const names = (filters: Partial<TFleetFilters>) =>
+  const names = (
+    filters: Partial<TFleetFilters>,
+    extra: Partial<TFleetContext> = {}
+  ) =>
     mixedFleet
       .filter((install) =>
-        matchesFilters(install, { ...noFilters, ...filters }, context)
+        matchesFilters(
+          install,
+          { ...noFilters, ...filters },
+          { ...context, ...extra }
+        )
       )
       .map((install) => install.name)
 
   test('requires every selected label', () => {
-    expect(names({ labels: new Set(['env:prod', 'region:eu-west-1']) })).toEqual(
-      ['acme-prod-eu']
-    )
+    expect(
+      names({ labels: new Set(['env:prod', 'region:eu-west-1']) })
+    ).toEqual(['acme-prod-eu'])
   })
 
   test('filters by any selected health, keeping progressing distinct from unknown', () => {
-    expect(names({ health: new Set(['progressing']) })).toEqual(['acme-stage-eu'])
+    expect(names({ health: new Set(['progressing']) })).toEqual([
+      'acme-stage-eu',
+    ])
     expect(names({ health: new Set(['no-signal']) })).toEqual(['acme-labs'])
     expect(names({ health: new Set(['degraded', 'unhealthy']) })).toEqual([
       'acme-prod-eu',
@@ -131,37 +141,69 @@ describe('matchesFilters', () => {
     expect(names({ search: 'inst-bank' })).toEqual(['acme-bank'])
   })
 
-  test('filters by whether the latest branch run is applied', () => {
-    expect(names({ rollout: 'behind' })).toEqual([
+  test('filters one branch to installs on or not on its run, leaving other branches alone', () => {
+    expect(names({ rolloutByBranch: { 'br-main': 'behind' } })).toEqual([
       'acme-prod-eu',
       'acme-prod-ap',
-    ])
-    expect(names({ rollout: 'applied' })).toEqual([
-      'acme-canary',
-      'acme-stage-eu',
-      'acme-prod-us',
       'acme-bank',
+      'acme-labs',
     ])
   })
 
-  test('filters by whether a component is live', () => {
-    expect(names({ component: 'comp-worker' })).toEqual([
-      'acme-canary',
-      'acme-stage-eu',
-      'acme-prod-us',
-      'acme-bank',
-    ])
+  test('compares against the run picked for that branch', () => {
     expect(
-      names({ component: 'comp-worker', componentState: 'not-live' })
-    ).toEqual(['acme-prod-eu', 'acme-prod-ap'])
+      names(
+        { rolloutByBranch: { 'br-main': 'applied' } },
+        { runByBranch: { 'br-main': 'run-main-2' } }
+      )
+    ).toEqual(['acme-prod-eu', 'acme-prod-ap', 'acme-bank', 'acme-labs'])
   })
 
-  test('treats a component the install has no drift data for as neither live nor not live', () => {
-    expect(names({ component: 'comp-web', componentState: 'not-live' })).toEqual(
-      []
-    )
-    expect(names({ component: 'comp-web' })).not.toContain('acme-labs')
+  test('compares one component when a scope is set', () => {
+    expect(
+      names(
+        { rolloutByBranch: { 'br-main': 'applied' } },
+        { scope: 'comp-api' }
+      )
+    ).toEqual(['acme-canary', 'acme-stage-eu', 'acme-bank', 'acme-labs'])
   })
+})
+
+describe('rolloutState with a picked run', () => {
+  const state = (name: string, extra: Partial<TFleetContext>) =>
+    rolloutState(mixedFleet.find((install) => install.name === name)!, {
+      ...context,
+      ...extra,
+    })
+
+  test('installs on an older run read as applied for that run', () => {
+    expect(
+      state('acme-prod-eu', { runByBranch: { 'br-main': 'run-main-2' } })
+    ).toBe('applied')
+    expect(
+      state('acme-prod-us', { runByBranch: { 'br-main': 'run-main-2' } })
+    ).toBe('behind')
+  })
+
+  test('a lagging component reads as behind even when the install took the run', () => {
+    expect(state('acme-prod-us', { scope: 'comp-api' })).toBe('behind')
+    expect(state('acme-prod-us', {})).toBe('applied')
+  })
+
+  test('the summary ignores the picked run and scope', () => {
+    expect(
+      summarizeFleet(mixedFleet, {
+        ...context,
+        runByBranch: { 'br-main': 'run-main-2' },
+        scope: 'comp-api',
+      })
+    ).toEqual({ total: 7, applied: 4, behind: 2, runnerNotActive: 2 })
+  })
+})
+
+test('countOnRun counts installs on a run', () => {
+  expect(countOnRun(mixedFleet, 'run-main-3', undefined, context)).toBe(3)
+  expect(countOnRun(mixedFleet, 'run-main-3', 'comp-api', context)).toBe(2)
 })
 
 test('componentOptions lists each component once, by name', () => {
