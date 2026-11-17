@@ -2302,7 +2302,7 @@ export interface paths {
   "/v1/installs/{install_id}/reconciliation": {
     /**
      * install reconciliation state
-     * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+     * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. pinned is the install's selected app config, which is the config a reconcile diffs from. status is current when the install already runs the target, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the pinned config and the target. Requires the install-reconciliation org feature.
      */
     get: operations["GetInstallReconciliation"];
   };
@@ -27723,7 +27723,7 @@ export interface operations {
   };
   /**
    * install reconciliation state
-   * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. status is current when the install already runs it, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the install's applied config and the target. Requires the install-reconciliation org feature.
+   * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. pinned is the install's selected app config, which is the config a reconcile diffs from. status is current when the install already runs the target, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the pinned config and the target. Requires the install-reconciliation org feature.
    */
   GetInstallReconciliation: {
     parameters: {
