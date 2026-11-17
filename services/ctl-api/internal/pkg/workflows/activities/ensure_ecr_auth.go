@@ -3,6 +3,7 @@ package activities
 import (
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/aws/ecr/sessionpolicy"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
@@ -15,6 +16,10 @@ func EnsureECRAuth(ctx workflow.Context, cfg *configs.OCIRegistryRepository) err
 	}
 	if cfg.OCIAuth != nil && cfg.OCIAuth.Password != "" {
 		return nil
+	}
+
+	if err := scopeECRPull(cfg); err != nil {
+		return err
 	}
 
 	token, err := AwaitGetECRAccessToken(ctx, &GetECRAccessTokenRequest{
@@ -33,5 +38,21 @@ func EnsureECRAuth(ctx workflow.Context, cfg *configs.OCIRegistryRepository) err
 	}
 	cfg.ECRAuth = nil
 
+	return nil
+}
+
+func scopeECRPull(cfg *configs.OCIRegistryRepository) error {
+	if cfg.ECRAuth == nil || cfg.ECRAuth.AssumeRole == nil {
+		return nil
+	}
+	repositoryARN, err := sessionpolicy.RepositoryARN(cfg.Repository)
+	if err != nil {
+		return err
+	}
+	policy, err := sessionpolicy.Document(repositoryARN, false)
+	if err != nil {
+		return err
+	}
+	cfg.ECRAuth.AssumeRole.SessionPolicy = policy
 	return nil
 }
