@@ -43,8 +43,11 @@ Features without their own concept page link to the page or section that defines
 
 Name TOML config files by type: "branch config file", "install config file" — never just "file"
 or "branch file". The file type stays lowercase; link its first mention to the feature's page
-(e.g. [install config file](/guides/install-configs)). The app config is a directory, so it stays
-"app config" (no "file").
+(e.g. [install config file](/guides/install-configs)).
+
+Call the app's directory of TOML files the "app template" and the files in it "app template
+files" — never "app config", "app config files", or just "config". Link the first mention to
+[app template](/concepts/apps).
 
 ## Tabs for multiple methods
 
