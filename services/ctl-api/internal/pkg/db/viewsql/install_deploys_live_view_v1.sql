@@ -1,3 +1,6 @@
+/* the deploy each component is actually running: its applied pointer, or for legacy
+   components without one, the newest successful real (non plan-only) deploy, excluding
+   recover rows and any teardown that removed the component */
 SELECT
     live.*
 FROM (

@@ -1,3 +1,6 @@
+/* per component config connection, the build that should be selected: the pinned
+   latest_build_id when valid and the app config builds its components, otherwise
+   the newest active build with the same config checksum on unpinned app configs */
 SELECT
     c.id AS component_config_connection_id,
     c.app_config_id,
