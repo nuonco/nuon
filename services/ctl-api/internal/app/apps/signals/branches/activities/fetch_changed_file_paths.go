@@ -3,12 +3,57 @@ package activities
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+	"unicode"
 
 	"github.com/google/go-github/v50/github"
+	"go.temporal.io/sdk/temporal"
 )
 
 const maxChangedFilePaths = 3000
 const maxComparedFilePaths = 300
+
+var commitSHARegexp = regexp.MustCompile(`^(?:[0-9a-f]{40}|[0-9a-f]{64})$`)
+
+func isCommitSHA(s string) bool {
+	return commitSHARegexp.MatchString(s)
+}
+
+func isZeroCommitSHA(s string) bool {
+	return s != "" && strings.Trim(s, "0") == ""
+}
+
+// isSafeGitRef rejects refs that could change the GitHub API URL they are
+// interpolated into.
+func isSafeGitRef(ref string) bool {
+	if ref == "" || strings.HasPrefix(ref, "/") || strings.HasSuffix(ref, "/") ||
+		strings.Contains(ref, "..") || strings.ContainsAny(ref, `\?#%`) {
+		return false
+	}
+	for _, r := range ref {
+		if unicode.IsControl(r) || unicode.IsSpace(r) {
+			return false
+		}
+	}
+	return true
+}
+
+func validateChangedFilePathsInput(input *FetchChangedFilePathsInput) error {
+	if !isCommitSHA(input.CommitSHA) {
+		return fmt.Errorf("commit_sha must be a full commit SHA")
+	}
+	if input.BaseSHA != "" && !isCommitSHA(input.BaseSHA) {
+		return fmt.Errorf("base_sha must be a full commit SHA")
+	}
+	if input.BaseBranch != "" && !isSafeGitRef(input.BaseBranch) {
+		return fmt.Errorf("base_branch is not a valid git ref")
+	}
+	if input.PRNumber != nil && *input.PRNumber <= 0 {
+		return fmt.Errorf("pr_number must be positive")
+	}
+	return nil
+}
 
 type FetchChangedFilePathsInput struct {
 	VcsConfigID string `json:"vcs_config_id" validate:"required"`
@@ -33,6 +78,10 @@ type ChangedFilePaths struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 60s
 func (a *Activities) FetchChangedFilePaths(ctx context.Context, input *FetchChangedFilePathsInput) (*ChangedFilePaths, error) {
+	if err := validateChangedFilePathsInput(input); err != nil {
+		return nil, temporal.NewNonRetryableApplicationError(err.Error(), "InvalidChangedFilePathsInput", err)
+	}
+
 	owner, repo, client, err := a.resolveGithubClient(ctx, input.VcsConfigID)
 	if err != nil {
 		return nil, err

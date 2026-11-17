@@ -8,7 +8,11 @@ import { Text } from '@/components/common/Text'
 import { carryForwardBranchConfigRequest } from '@/components/branches/shared/branch-config-request'
 import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
 import { BranchCISettingsCard, BranchCISettingsModal } from './BranchCISettings'
-import type { BranchCISettingsValues } from './schema'
+import {
+  pathFilterFromRunConfig,
+  runConfigWithPathFilter,
+  type BranchCISettingsValues,
+} from './schema'
 
 export const BranchCISettingsContainer = ({
   branch,
@@ -26,11 +30,13 @@ export const BranchCISettingsContainer = ({
   const { addModal } = useSurfaces()
   const ignoreChangesRegex = currentConfig?.ignore_changes_regex ?? ''
   const sendStatusesOnIgnore = currentConfig?.send_statuses_on_ignore ?? false
+  const pathFilter = pathFilterFromRunConfig(currentConfig?.run_config)
 
   return (
     <BranchCISettingsCard
       ignoreChangesRegex={ignoreChangesRegex}
       sendStatusesOnIgnore={sendStatusesOnIgnore}
+      {...pathFilter}
       onEdit={() =>
         addModal(
           <BranchCISettingsEditor
@@ -40,6 +46,7 @@ export const BranchCISettingsContainer = ({
             appId={appId}
             ignoreChangesRegex={ignoreChangesRegex}
             sendStatusesOnIgnore={sendStatusesOnIgnore}
+            {...pathFilter}
             onSuccess={onSuccess}
           />
         )
@@ -55,6 +62,8 @@ const BranchCISettingsEditor = ({
   appId,
   ignoreChangesRegex,
   sendStatusesOnIgnore,
+  pathFilterMode,
+  pathPatterns,
   onSuccess,
   onSubmit: _onSubmit,
   ...props
@@ -66,7 +75,8 @@ const BranchCISettingsEditor = ({
   ignoreChangesRegex: string
   sendStatusesOnIgnore: boolean
   onSuccess?: () => void
-} & IModal) => {
+} & Pick<BranchCISettingsValues, 'pathFilterMode' | 'pathPatterns'> &
+  IModal) => {
   const queryClient = useQueryClient()
   const { addToast } = useToast()
   const { removeModal } = useSurfaces()
@@ -84,6 +94,10 @@ const BranchCISettingsEditor = ({
         request: carryForwardBranchConfigRequest(currentConfig, {
           ignore_changes_regex: values.ignoreChangesRegex,
           send_statuses_on_ignore: values.sendStatusesOnIgnore,
+          run_config: runConfigWithPathFilter(
+            currentConfig?.run_config,
+            values
+          ),
         }),
       }),
     onSuccess: () => {
@@ -107,6 +121,8 @@ const BranchCISettingsEditor = ({
     <BranchCISettingsModal
       ignoreChangesRegex={ignoreChangesRegex}
       sendStatusesOnIgnore={sendStatusesOnIgnore}
+      pathFilterMode={pathFilterMode}
+      pathPatterns={pathPatterns}
       isPending={isPending}
       error={error ?? null}
       onSubmit={(values) => save(values)}

@@ -4054,6 +4054,8 @@ export interface components {
     "app.AppBranchRunConfig": {
       github_label?: string;
       mode?: components["schemas"]["app.AppBranchRunMode"];
+      paths?: string[];
+      paths_ignore?: string[];
       tag_prefix?: string;
     };
     "app.AppBranchRunMetadata": {

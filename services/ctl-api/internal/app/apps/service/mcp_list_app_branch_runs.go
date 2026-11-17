@@ -7,6 +7,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
@@ -74,6 +75,7 @@ func (s *service) mcpListAppBranchRuns(ctx context.Context, _ *mcp.CallToolReque
 		Preload("VCSConnectionCommit").
 		Preload("Preview").
 		Where(app.AppBranchRun{AppBranchID: branch.ID}).
+		Scopes(appshelpers.ExcludeIgnoredPreviewRuns).
 		Order("created_at DESC").
 		Limit(limit + 1).
 		Offset(offset).

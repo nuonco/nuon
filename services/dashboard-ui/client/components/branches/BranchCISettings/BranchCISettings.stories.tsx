@@ -9,6 +9,8 @@ export const Card = () => (
   <BranchCISettingsCard
     ignoreChangesRegex="^(docs/|README\.md)"
     sendStatusesOnIgnore
+    pathFilterMode="paths"
+    pathPatterns={'apps/acme/**\nshared/helm/**'}
     onEdit={() => {}}
   />
 )
@@ -17,6 +19,18 @@ export const Disabled = () => (
   <BranchCISettingsCard
     ignoreChangesRegex=""
     sendStatusesOnIgnore={false}
+    pathFilterMode="paths"
+    pathPatterns=""
+    onEdit={() => {}}
+  />
+)
+
+export const IgnoredPaths = () => (
+  <BranchCISettingsCard
+    ignoreChangesRegex=""
+    sendStatusesOnIgnore
+    pathFilterMode="paths_ignore"
+    pathPatterns={'docs/**\n**/*.md'}
     onEdit={() => {}}
   />
 )
@@ -26,6 +40,8 @@ export const Editor = () => (
     <BranchCISettingsModal
       ignoreChangesRegex="^docs/"
       sendStatusesOnIgnore
+      pathFilterMode="paths"
+      pathPatterns={'apps/acme/**\n!apps/acme/docs/**'}
       isPending={false}
       error={null}
       onSubmit={() => {}}

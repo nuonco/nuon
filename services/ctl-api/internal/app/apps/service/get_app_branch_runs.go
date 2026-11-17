@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
@@ -180,6 +181,7 @@ func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string, include
 		Preload("AppBranchRuns.Preview").
 		Where("owner_type = ?", "app_branches").
 		Where("owner_id = ?", appBranchID).
+		Scopes(appshelpers.ExcludeIgnoredPreviewWorkflows).
 		Order("created_at DESC")
 
 	if !includePlanOnly {

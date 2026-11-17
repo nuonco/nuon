@@ -6,6 +6,7 @@ import (
 
 	"github.com/invopop/jsonschema"
 
+	"github.com/nuonco/nuon/pkg/branchpaths"
 	"github.com/nuonco/nuon/pkg/labels"
 )
 
@@ -34,12 +35,17 @@ type AppBranchRunConfig struct {
 	Mode        string `mapstructure:"mode,omitempty" toml:"mode,omitempty" jsonschema:"enum=push,enum=on_tag,enum=on_github_label,enum=manual_only"`
 	TagPrefix   string `mapstructure:"tag_prefix,omitempty" toml:"tag_prefix,omitempty"`
 	GithubLabel string `mapstructure:"github_label,omitempty" toml:"github_label,omitempty"`
+
+	Paths       []string `mapstructure:"paths,omitempty" toml:"paths,omitempty"`
+	PathsIgnore []string `mapstructure:"paths_ignore,omitempty" toml:"paths_ignore,omitempty"`
 }
 
 func (c AppBranchRunConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "mode", "automatic run mode: push, on_tag, on_github_label, or manual_only")
 	addDescription(schema, "tag_prefix", "case-sensitive git tag prefix required by on_tag")
 	addDescription(schema, "github_label", "exact pull request label required by on_github_label")
+	addDescription(schema, "paths", "repo-root globs; push and PR runs start only when a changed file matches. ! excludes. Defaults to the repo directory. Not with paths_ignore")
+	addDescription(schema, "paths_ignore", "repo-root globs; push and PR runs are skipped when every changed file matches. Not with paths")
 }
 
 func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -122,6 +128,9 @@ func (c *AppBranchConfig) Validate() error {
 			}
 		default:
 			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown run mode %q (valid modes: push, on_tag, on_github_label, manual_only)", c.Name, mode)}
+		}
+		if err := branchpaths.Validate(c.Run.Paths, c.Run.PathsIgnore); err != nil {
+			return ErrConfig{Description: fmt.Sprintf("branch %q: run: %v", c.Name, err)}
 		}
 	}
 

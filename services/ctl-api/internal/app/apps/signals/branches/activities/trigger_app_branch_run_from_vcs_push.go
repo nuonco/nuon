@@ -9,6 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/branchpaths"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -199,6 +200,9 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 		if runConfig.Mode != app.AppBranchRunModeTagPrefix || !strings.HasPrefix(req.HeadRef, runConfig.TagPrefix) {
 			return metadata, false, nil
 		}
+		if !isSafeGitRef(req.HeadRef) {
+			return metadata, false, nil
+		}
 		metadata.Tag = req.HeadRef
 		baseBranch, vcsConfigID, err := branchVCSIdentity(config)
 		if err != nil {
@@ -224,7 +228,7 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 	case "push":
 		switch runConfig.Mode {
 		case app.AppBranchRunModePush:
-			return metadata, true, nil
+			return metadata, a.pushMatchesRunPaths(ctx, config, runConfig, req), nil
 		case app.AppBranchRunModeGithubLabel:
 			baseBranch, vcsConfigID, err := branchVCSIdentity(config)
 			if err != nil {
@@ -259,6 +263,65 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 	default:
 		return metadata, false, nil
 	}
+}
+
+func (a *Activities) pushMatchesRunPaths(ctx context.Context, config *app.AppBranchConfig, runConfig app.AppBranchRunConfig, req *TriggerAppBranchRunFromVCSPushRequest) bool {
+	filter, err := branchpaths.New(runConfig.Paths, runConfig.PathsIgnore, appBranchConfigDirectory(config))
+	if err != nil {
+		a.l.Warn("invalid app branch run paths, running branch", zap.String("app_branch_config_id", config.ID), zap.Error(err))
+		return true
+	}
+	if filter == nil {
+		return true
+	}
+
+	files, ok := a.pushChangedFiles(ctx, config, req)
+	if !ok {
+		return true
+	}
+	decision := filter.Match(files)
+	if !decision.Run {
+		a.l.Info("skipping push outside app branch run paths",
+			zap.String("app_branch_config_id", config.ID),
+			zap.String("reason", decision.Reason),
+		)
+	}
+	return decision.Run
+}
+
+// pushChangedFiles compares before...after on GitHub because the webhook's
+// per-commit file lists are incomplete for forced and large pushes.
+func (a *Activities) pushChangedFiles(ctx context.Context, config *app.AppBranchConfig, req *TriggerAppBranchRunFromVCSPushRequest) ([]string, bool) {
+	if !isCommitSHA(req.HeadSHA) || !isCommitSHA(req.BaseSHA) || isZeroCommitSHA(req.BaseSHA) {
+		return nil, false
+	}
+	_, vcsConfigID, err := branchVCSIdentity(config)
+	if err != nil {
+		return nil, false
+	}
+	changed, err := a.FetchChangedFilePaths(ctx, &FetchChangedFilePathsInput{
+		VcsConfigID: vcsConfigID,
+		CommitSHA:   req.HeadSHA,
+		BaseSHA:     req.BaseSHA,
+	})
+	if err != nil {
+		a.l.Warn("unable to fetch changed files for run paths, running branch", zap.String("app_branch_config_id", config.ID), zap.Error(err))
+		return nil, false
+	}
+	if changed.Truncated {
+		return nil, false
+	}
+	return changed.Paths, true
+}
+
+func appBranchConfigDirectory(config *app.AppBranchConfig) string {
+	if config.ConnectedGithubVCSConfig != nil {
+		return config.ConnectedGithubVCSConfig.Directory
+	}
+	if config.PublicGitVCSConfig != nil {
+		return config.PublicGitVCSConfig.Directory
+	}
+	return ""
 }
 
 func branchVCSIdentity(config *app.AppBranchConfig) (string, string, error) {

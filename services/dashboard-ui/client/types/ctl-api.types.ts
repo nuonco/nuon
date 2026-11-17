@@ -40,6 +40,8 @@ export type TAppBranchRunConfig = {
   mode?: TAppBranchRunMode
   tag_prefix?: string
   github_label?: string
+  paths?: string[]
+  paths_ignore?: string[]
 }
 
 export type TAppBranchRunMetadata = {
