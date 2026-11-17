@@ -25,6 +25,11 @@ supports. mint refuses to run on node 25, which bun reports itself as, so
 running `mint` under bun or an active node 25 fails. Overrides: `MINT_NODE`,
 `MINT_VERSION`, `PORT`.
 
+### Writing conventions
+
+Before editing a page, read [AGENTS.md](AGENTS.md) for feature naming, linking, tabs, and search
+conventions.
+
 ### Publishing Changes
 
 Install our Github App to autopropagate changes from youre repo to your deployment. Changes will be deployed to production automatically after pushing to the default branch. Find the link to install on your dashboard.

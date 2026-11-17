@@ -65,6 +65,7 @@ account/RBAC models.
 | Runner behavior | [bins/runner/AGENTS.md](bins/runner/AGENTS.md) |
 | API, workflows, RBAC, signals/webhooks | [services/ctl-api/AGENTS.md](services/ctl-api/AGENTS.md) |
 | Dashboard UI | [services/dashboard-ui/AGENTS.md](services/dashboard-ui/AGENTS.md) |
+| Docs writing conventions | [docs/AGENTS.md](docs/AGENTS.md) |
 | Logging conventions | [conventions/logging.md](conventions/logging.md) |
 | Contributing / issues | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
