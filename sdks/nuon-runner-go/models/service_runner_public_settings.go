@@ -21,7 +21,7 @@ import (
 type ServiceRunnerPublicSettings struct {
 
 	// aws auth method
-	// Enum: ["iid","sts"]
+	// Enum: ["iid","sts","sts-vendor"]
 	AwsAuthMethod string `json:"aws_auth_method,omitempty"`
 
 	// azure auth audience
@@ -52,7 +52,7 @@ var serviceRunnerPublicSettingsTypeAwsAuthMethodPropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["iid","sts"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["iid","sts","sts-vendor"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -67,6 +67,9 @@ const (
 
 	// ServiceRunnerPublicSettingsAwsAuthMethodSts captures enum value "sts"
 	ServiceRunnerPublicSettingsAwsAuthMethodSts string = "sts"
+
+	// ServiceRunnerPublicSettingsAwsAuthMethodStsDashVendor captures enum value "sts-vendor"
+	ServiceRunnerPublicSettingsAwsAuthMethodStsDashVendor string = "sts-vendor"
 )
 
 // prop value enum

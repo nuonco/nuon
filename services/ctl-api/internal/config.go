@@ -2,8 +2,10 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
@@ -529,6 +531,26 @@ type Config struct {
 	PhoneHomeScriptURL    string `config:"phone_home_script_url"`
 	PhoneHomeAuthRequired bool   `config:"phone_home_auth_required"`
 
+	// runner identity broker (see plans/runner-job-sts-identity.md)
+	//
+	// AWSRunnerIdentityBrokerRoleARN is the role in the Nuon orgs AWS account that
+	// ctl-api assumes to manage the per-runner and per-job IAM roles under
+	// /nuon/runners/ and /nuon/jobs/. Like the phone-home secrets role it is an AWS
+	// role whichever cloud this control plane runs on. The orgs account ID is
+	// derived from it, see RunnerIdentityAccountID.
+	//
+	// Empty is a supported state, not a misconfiguration. BYOC control planes get
+	// their broker from a standalone module the operator applies in their own AWS
+	// account (the byoc-ph-secrets precedent), and until they do, vendor-side
+	// runner identity is simply off for that plane: see RunnerIdentityEnabled.
+	// Nothing may fail, and no template parameter may change, because it is unset.
+	AWSRunnerIdentityBrokerRoleARN string `config:"aws_runner_identity_broker_role_arn"`
+	// AWSRunnerIdentityBoundaryPolicyARN is the permissions boundary every minted
+	// role is created with; the broker's iam:CreateRole grant is conditioned on it,
+	// so a CreateRole without it is refused. Set together with the broker ARN or
+	// not at all (validateRunnerIdentityConfig).
+	AWSRunnerIdentityBoundaryPolicyARN string `config:"aws_runner_identity_boundary_policy_arn"`
+
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
 
@@ -739,6 +761,74 @@ func (c *Config) ManagementSecretsCreds() *credentials.Config {
 	}
 }
 
+// RunnerIdentityBrokerCreds returns credentials for the Nuon orgs AWS account where
+// per-runner and per-job IAM roles live, or nil when vendor-side runner identity is
+// not configured. Same credential chain as ManagementSecretsCreds: direct assume on
+// AWS, web identity on GCP, no path on Azure.
+func (c *Config) RunnerIdentityBrokerCreds() *credentials.Config {
+	if c.AWSRunnerIdentityBrokerRoleARN == "" || c.IsAzure() {
+		return nil
+	}
+
+	return &credentials.Config{
+		Region: c.ManagementRegion,
+		AssumeRole: &credentials.AssumeRoleConfig{
+			RoleARN:                c.AWSRunnerIdentityBrokerRoleARN,
+			SessionName:            "ctl-api-runner-identity",
+			SessionDurationSeconds: 60 * 60,
+			UseGCPOIDC:             c.IsGCP(),
+		},
+	}
+}
+
+// RunnerIdentityEnabled reports whether this control plane can mint vendor-side
+// runner and job identity roles. False on every plane that has not been given a
+// broker, which today is every BYOC plane; callers treat it as "feature off", never
+// as an error, and runner groups on such a plane are not eligible for sts-vendor.
+func (c *Config) RunnerIdentityEnabled() bool {
+	return c.RunnerIdentityBrokerCreds() != nil
+}
+
+// RunnerIdentityAccountID is the AWS account that holds the runner identity roles,
+// taken from the broker role ARN so the two cannot disagree. Empty when the broker
+// is not configured.
+func (c *Config) RunnerIdentityAccountID() string {
+	parsed, err := arn.Parse(c.AWSRunnerIdentityBrokerRoleARN)
+	if err != nil {
+		return ""
+	}
+	return parsed.AccountID
+}
+
+// validateRunnerIdentityConfig accepts the broker/boundary pair fully unset
+// (vendor-side runner identity off, the BYOC default) or fully set and
+// self-consistent. A half-set or cross-account pair would otherwise only surface
+// as an iam:CreateRole AccessDenied on the first runner create.
+func validateRunnerIdentityConfig(cfg *Config) error {
+	broker, boundary := cfg.AWSRunnerIdentityBrokerRoleARN, cfg.AWSRunnerIdentityBoundaryPolicyARN
+	if broker == "" && boundary == "" {
+		return nil
+	}
+	if broker == "" || boundary == "" {
+		return fmt.Errorf("aws_runner_identity_broker_role_arn and aws_runner_identity_boundary_policy_arn must be set together")
+	}
+
+	brokerARN, err := arn.Parse(broker)
+	if err != nil || brokerARN.Service != "iam" || !strings.HasPrefix(brokerARN.Resource, "role/") {
+		return fmt.Errorf("aws_runner_identity_broker_role_arn is not an IAM role ARN")
+	}
+	boundaryARN, err := arn.Parse(boundary)
+	if err != nil || boundaryARN.Service != "iam" || !strings.HasPrefix(boundaryARN.Resource, "policy/") {
+		return fmt.Errorf("aws_runner_identity_boundary_policy_arn is not an IAM policy ARN")
+	}
+	if brokerARN.AccountID != boundaryARN.AccountID {
+		return fmt.Errorf("aws_runner_identity_broker_role_arn (account %s) and aws_runner_identity_boundary_policy_arn (account %s) must be in the same account",
+			brokerARN.AccountID, boundaryARN.AccountID)
+	}
+
+	return nil
+}
+
 func NewConfig() (*Config, error) {
 	var cfg Config
 	if err := config.LoadInto(nil, &cfg); err != nil {
@@ -756,6 +846,10 @@ func NewConfig() (*Config, error) {
 
 	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)
 	orgfeatures.SetAuto(cfg.AutoEnabledFeatures)
+
+	if err := validateRunnerIdentityConfig(&cfg); err != nil {
+		return nil, err
+	}
 
 	switch {
 	case cfg.IsGCP():

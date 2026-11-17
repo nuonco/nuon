@@ -11,7 +11,7 @@ import (
 
 type RunnerPublicSettings struct {
 	BinaryVersion     string                  `json:"binary_version"`
-	AWSAuthMethod     app.RunnerAWSAuthMethod `json:"aws_auth_method" swaggertype:"string" enums:"iid,sts"`
+	AWSAuthMethod     app.RunnerAWSAuthMethod `json:"aws_auth_method" swaggertype:"string" enums:"iid,sts,sts-vendor"`
 	RunnerAPIURL      string                  `json:"runner_api_url"`
 	AzureAuthAudience string                  `json:"azure_auth_audience,omitempty"`
 }
