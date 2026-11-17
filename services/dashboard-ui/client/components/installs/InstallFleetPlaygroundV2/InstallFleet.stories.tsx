@@ -7,45 +7,41 @@ import { HealthFilterDropdown } from './HealthFilterDropdown'
 import { InstallFleet } from './InstallFleet'
 import {
   largeFleet,
+  largeFleetBranches,
   largeFleetConfigs,
+  largeFleetOverviews,
   largeFleetStatus,
   mixedFleet,
+  mixedFleetBranches,
   mixedFleetConfigs,
+  mixedFleetOverviews,
   mixedFleetStatus,
 } from './fixtures'
 
-export const MixedFleet = () => (
-  <InstallFleet
-    installs={mixedFleet}
-    branchConfigs={mixedFleetConfigs}
-    statusById={mixedFleetStatus}
-  />
-)
+const mixedProps = {
+  installs: mixedFleet,
+  branches: mixedFleetBranches,
+  branchConfigs: mixedFleetConfigs,
+  statusById: mixedFleetStatus,
+  overviewById: mixedFleetOverviews,
+}
 
-export const Board = () => (
-  <InstallFleet
-    installs={mixedFleet}
-    branchConfigs={mixedFleetConfigs}
-    statusById={mixedFleetStatus}
-    defaultView="board"
-  />
-)
+const largeProps = {
+  installs: largeFleet,
+  branches: largeFleetBranches,
+  branchConfigs: largeFleetConfigs,
+  statusById: largeFleetStatus,
+  overviewById: largeFleetOverviews,
+}
 
-export const LargeFleet = () => (
-  <InstallFleet
-    installs={largeFleet}
-    branchConfigs={largeFleetConfigs}
-    statusById={largeFleetStatus}
-  />
-)
+export const MixedFleet = () => <InstallFleet {...mixedProps} />
+
+export const Board = () => <InstallFleet {...mixedProps} defaultView="board" />
+
+export const LargeFleet = () => <InstallFleet {...largeProps} />
 
 export const LargeFleetBoard = () => (
-  <InstallFleet
-    installs={largeFleet}
-    branchConfigs={largeFleetConfigs}
-    statusById={largeFleetStatus}
-    defaultView="board"
-  />
+  <InstallFleet {...largeProps} defaultView="board" />
 )
 
 export const HealthFilter = () => {

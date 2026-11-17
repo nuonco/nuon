@@ -1,5 +1,10 @@
 import { installAppBranchGroup } from '@/components/branches/active-app-branch-connection'
-import type { TAppBranchConfig, TInstall } from '@/types'
+import type {
+  TAppBranch,
+  TAppBranchConfig,
+  TInstall,
+  TInstallOverview,
+} from '@/types'
 import {
   bearsHealthVerdict,
   compareHealthSeverityDesc,
@@ -8,7 +13,6 @@ import {
   HEALTH_PROGRESSING,
   HEALTH_UNHEALTHY,
   HEALTH_UNKNOWN,
-  worstHealth,
 } from '@/utils/health-utils'
 
 export const NO_SIGNAL = 'no-signal'
@@ -23,12 +27,22 @@ export const HEALTH_FILTER_OPTIONS = [
 ]
 
 export type TFleetRunnerFilter = 'active' | 'not-active'
+export type TRolloutState = 'applied' | 'behind' | 'unknown'
+export type TComponentState = 'live' | 'not-live'
+
+export type TFleetContext = {
+  latestConfigIdByBranch?: Record<string, string | undefined>
+  overviewById?: Record<string, TInstallOverview>
+}
 
 export type TFleetFilters = {
   search: string
   labels: Set<string>
   health?: Set<string>
   runner?: TFleetRunnerFilter
+  rollout?: Exclude<TRolloutState, 'unknown'>
+  component?: string
+  componentState?: TComponentState
 }
 
 export type TFleetGroup = {
@@ -36,7 +50,6 @@ export type TFleetGroup = {
   name?: string
   labels?: Record<string, string>
   installs: TInstall[]
-  worst: string
 }
 
 export type TFleetBranch = {
@@ -49,11 +62,8 @@ export type TFleetBranch = {
 
 export type TFleetSummary = {
   total: number
-  healthy: number
-  degraded: number
-  unhealthy: number
-  unknown: number
-  noSignal: number
+  applied: number
+  behind: number
   runnerNotActive: number
 }
 
@@ -64,15 +74,61 @@ export const healthFilterValue = (install: TInstall): string => {
   return bearsHealthVerdict(health) ? health : HEALTH_UNKNOWN
 }
 
-// Progressing folds into unknown to match the buckets GET /v1/installs/health
-// returns, so these counts agree with a rollout script polling that endpoint.
-export const healthBucket = (install: TInstall): string => {
-  const value = healthFilterValue(install)
-  return value === HEALTH_PROGRESSING ? HEALTH_UNKNOWN : value
-}
-
 export const isRunnerActive = (install: TInstall) =>
   install.runner_status === 'active'
+
+export const latestConfigIdByBranch = (branches: TAppBranch[] = []) =>
+  Object.fromEntries(
+    branches
+      .filter((branch) => branch.id)
+      .map((branch) => [branch.id as string, branch.latest_run?.app_config_id])
+  )
+
+export const rolloutState = (
+  install: TInstall,
+  context: TFleetContext = {}
+): TRolloutState => {
+  const branchId = install.app_branch?.id
+  const latest = branchId
+    ? context.latestConfigIdByBranch?.[branchId]
+    : undefined
+  if (!latest || !install.app_config_id) return 'unknown'
+  return install.app_config_id === latest ? 'applied' : 'behind'
+}
+
+const ROLLOUT_RANK: Record<TRolloutState, number> = {
+  behind: 0,
+  unknown: 1,
+  applied: 2,
+}
+
+export const componentLive = (
+  overview: TInstallOverview | undefined,
+  componentId: string
+): boolean | undefined => {
+  const entry = overview?.config_drift?.components?.find(
+    (component) => component.component_id === componentId
+  )
+  return entry ? !entry.drifted : undefined
+}
+
+export const componentOptions = (
+  overviewById: Record<string, TInstallOverview> = {}
+) => {
+  const names = new Map<string, string>()
+  for (const overview of Object.values(overviewById)) {
+    for (const component of overview.config_drift?.components ?? []) {
+      if (component.component_id)
+        names.set(
+          component.component_id,
+          component.name ?? component.component_id
+        )
+    }
+  }
+  return [...names.entries()]
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
 
 export const labelPairs = (install: TInstall) =>
   Object.entries(install.labels ?? {})
@@ -82,7 +138,11 @@ export const labelPairs = (install: TInstall) =>
 export const labelOptions = (installs: TInstall[]) =>
   [...new Set(installs.flatMap(labelPairs))].sort()
 
-export const matchesFilters = (install: TInstall, filters: TFleetFilters) => {
+export const matchesFilters = (
+  install: TInstall,
+  filters: TFleetFilters,
+  context: TFleetContext = {}
+) => {
   const needle = filters.search.trim().toLowerCase()
   if (
     needle &&
@@ -98,40 +158,51 @@ export const matchesFilters = (install: TInstall, filters: TFleetFilters) => {
     return false
   if (filters.runner === 'active' && !isRunnerActive(install)) return false
   if (filters.runner === 'not-active' && isRunnerActive(install)) return false
+  if (filters.rollout && rolloutState(install, context) !== filters.rollout)
+    return false
+  if (filters.component) {
+    const live = componentLive(
+      context.overviewById?.[install.id ?? ''],
+      filters.component
+    )
+    if (live !== (filters.componentState !== 'not-live')) return false
+  }
   return true
 }
 
-export const summarizeFleet = (installs: TInstall[]): TFleetSummary => {
+export const summarizeFleet = (
+  installs: TInstall[],
+  context: TFleetContext = {}
+): TFleetSummary => {
   const summary: TFleetSummary = {
     total: installs.length,
-    healthy: 0,
-    degraded: 0,
-    unhealthy: 0,
-    unknown: 0,
-    noSignal: 0,
+    applied: 0,
+    behind: 0,
     runnerNotActive: 0,
   }
   for (const install of installs) {
-    const bucket = healthBucket(install)
-    if (bucket === HEALTH_HEALTHY) summary.healthy++
-    else if (bucket === HEALTH_DEGRADED) summary.degraded++
-    else if (bucket === HEALTH_UNHEALTHY) summary.unhealthy++
-    else if (bucket === NO_SIGNAL) summary.noSignal++
-    else summary.unknown++
+    const state = rolloutState(install, context)
+    if (state === 'applied') summary.applied++
+    else if (state === 'behind') summary.behind++
     if (!isRunnerActive(install)) summary.runnerNotActive++
   }
   return summary
 }
 
-const compareInstalls = (a: TInstall, b: TInstall) =>
-  compareHealthSeverityDesc(
-    a.composite_health_status,
-    b.composite_health_status
-  ) || (a.name ?? '').localeCompare(b.name ?? '')
+const compareInstalls =
+  (context: TFleetContext) => (a: TInstall, b: TInstall) =>
+    ROLLOUT_RANK[rolloutState(a, context)] -
+      ROLLOUT_RANK[rolloutState(b, context)] ||
+    compareHealthSeverityDesc(
+      a.composite_health_status,
+      b.composite_health_status
+    ) ||
+    (a.name ?? '').localeCompare(b.name ?? '')
 
 const groupsOf = (
   installs: TInstall[],
-  config?: TAppBranchConfig
+  config: TAppBranchConfig | undefined,
+  context: TFleetContext
 ): TFleetGroup[] => {
   const byGroup = new Map<string, TInstall[]>()
   for (const install of installs) {
@@ -141,6 +212,7 @@ const groupsOf = (
   const order = (name: string) =>
     config?.install_groups?.find((group) => group.name === name)?.order ??
     Number.MAX_SAFE_INTEGER
+  const compare = compareInstalls(context)
   return [...byGroup.entries()]
     .sort(([a], [b]) =>
       !a ? 1 : !b ? -1 : order(a) - order(b) || a.localeCompare(b)
@@ -150,14 +222,14 @@ const groupsOf = (
       name: key || undefined,
       labels: config?.install_groups?.find((group) => group.name === key)
         ?.label_selector?.match_labels,
-      installs: [...members].sort(compareInstalls),
-      worst: worstHealth(members.map((m) => m.composite_health_status)),
+      installs: [...members].sort(compare),
     }))
 }
 
 export const groupFleet = (
   installs: TInstall[],
-  configs: TAppBranchConfig[] = []
+  configs: TAppBranchConfig[] = [],
+  context: TFleetContext = {}
 ): TFleetBranch[] => {
   const byBranch = new Map<string, TInstall[]>()
   for (const install of installs) {
@@ -172,10 +244,15 @@ export const groupFleet = (
       installs: members,
       groups: groupsOf(
         members,
-        configs.find((config) => config.app_branch_id === key)
+        configs.find((config) => config.app_branch_id === key),
+        context
       ),
     }))
     .sort((a, b) =>
-      !a.branchId ? 1 : !b.branchId ? -1 : (a.name ?? '').localeCompare(b.name ?? '')
+      !a.branchId
+        ? 1
+        : !b.branchId
+          ? -1
+          : (a.name ?? '').localeCompare(b.name ?? '')
     )
 }

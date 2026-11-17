@@ -1,7 +1,49 @@
-import type { TAppBranchConfig, TInstall, TInstallStatus, TInstallStatusAxis } from '@/types'
+import type {
+  TAppBranch,
+  TAppBranchConfig,
+  TInstall,
+  TInstallOverview,
+  TInstallStatus,
+  TInstallStatusAxis,
+} from '@/types'
 
 const main = { id: 'br-main', name: 'main', app_id: 'app-1' }
 const monthly = { id: 'br-monthly', name: 'monthly', app_id: 'app-1' }
+
+const MAIN_LATEST = 'cfg-main-3'
+const MAIN_STALE = 'cfg-main-2'
+const MONTHLY_LATEST = 'cfg-monthly-2'
+
+const COMPONENTS = [
+  { id: 'comp-api', name: 'api' },
+  { id: 'comp-web', name: 'web' },
+  { id: 'comp-worker', name: 'worker' },
+]
+
+const overviewFor = (
+  current: string,
+  stale: string,
+  drifted: string[] = []
+): TInstallOverview => ({
+  config_drift: {
+    current_app_config_id: current,
+    components: COMPONENTS.map((component) => ({
+      component_id: component.id,
+      name: component.name,
+      applied_app_config_id: drifted.includes(component.id) ? stale : current,
+      drifted: drifted.includes(component.id),
+    })),
+  },
+})
+
+const branchWithRun = (
+  branch: { id: string; name: string; app_id: string },
+  runId: string,
+  appConfigId: string
+): TAppBranch => ({
+  ...branch,
+  latest_run: { id: runId, app_config_id: appConfigId },
+})
 
 const install = (
   id: string,
@@ -29,11 +71,13 @@ const install = (
 export const mixedFleet: TInstall[] = [
   install('inst-canary', 'acme-canary', {
     labels: { env: 'stage', tier: 'canary' },
+    app_config_id: MAIN_LATEST,
     app_branch: main,
     app_branch_group: 'stage',
   }),
   install('inst-stage-eu', 'acme-stage-eu', {
     labels: { env: 'stage', region: 'eu-west-1' },
+    app_config_id: MAIN_LATEST,
     app_branch: main,
     app_branch_group: 'stage',
     composite_health_status: 'progressing',
@@ -42,11 +86,13 @@ export const mixedFleet: TInstall[] = [
   }),
   install('inst-prod-us', 'acme-prod-us', {
     labels: { env: 'prod', region: 'us-east-1' },
+    app_config_id: MAIN_LATEST,
     app_branch: main,
     app_branch_group: 'production',
   }),
   install('inst-prod-eu', 'acme-prod-eu', {
     labels: { env: 'prod', region: 'eu-west-1' },
+    app_config_id: MAIN_STALE,
     app_branch: main,
     app_branch_group: 'production',
     composite_health_status: 'degraded',
@@ -54,6 +100,7 @@ export const mixedFleet: TInstall[] = [
   }),
   install('inst-prod-ap', 'acme-prod-ap', {
     labels: { env: 'prod', region: 'ap-south-1' },
+    app_config_id: MAIN_STALE,
     app_branch: main,
     app_branch_group: 'production',
     runner_status: 'offline',
@@ -64,6 +111,7 @@ export const mixedFleet: TInstall[] = [
   }),
   install('inst-bank', 'acme-bank', {
     labels: { env: 'prod', cadence: 'monthly' },
+    app_config_id: MONTHLY_LATEST,
     app_branch: monthly,
     app_branch_group: 'production',
     cloud_platform: 'azure',
@@ -150,49 +198,130 @@ export const mixedFleetStatus: Record<string, TInstallStatus> = {
   },
 }
 
+export const mixedFleetBranches: TAppBranch[] = [
+  branchWithRun(main, 'run-main-3', MAIN_LATEST),
+  branchWithRun(monthly, 'run-monthly-2', MONTHLY_LATEST),
+]
+
+const mixedBehind = ['comp-api', 'comp-worker']
+
+export const mixedFleetOverviews: Record<string, TInstallOverview> = {
+  'inst-canary': overviewFor(MAIN_LATEST, MAIN_STALE),
+  'inst-stage-eu': overviewFor(MAIN_LATEST, MAIN_STALE),
+  'inst-prod-us': overviewFor(MAIN_LATEST, MAIN_STALE),
+  'inst-prod-eu': overviewFor(MAIN_LATEST, MAIN_STALE, mixedBehind),
+  'inst-prod-ap': overviewFor(MAIN_LATEST, MAIN_STALE, mixedBehind),
+  'inst-bank': overviewFor(MONTHLY_LATEST, 'cfg-monthly-1'),
+}
+
 type TLargeGroup = {
   name: string
   matchLabels: Record<string, string>
   count: number
+  progress: number
 }
 
-type TLargeBranch = { id: string; name: string; groups: TLargeGroup[] }
+type TLargeBranch = {
+  id: string
+  name: string
+  latestConfigId: string
+  staleConfigId: string
+  groups: TLargeGroup[]
+}
 
 const LARGE_BRANCHES: TLargeBranch[] = [
   {
     id: 'br-main',
     name: 'main',
+    latestConfigId: 'cfg-main-9',
+    staleConfigId: 'cfg-main-8',
     groups: [
-      { name: 'canary', matchLabels: { ring: 'canary' }, count: 4 },
-      { name: 'stage', matchLabels: { env: 'stage' }, count: 8 },
-      { name: 'prod-us', matchLabels: { env: 'prod', geo: 'us' }, count: 28 },
-      { name: 'prod-eu', matchLabels: { env: 'prod', geo: 'eu' }, count: 22 },
-      { name: 'prod-ap', matchLabels: { env: 'prod', geo: 'ap' }, count: 12 },
+      { name: 'canary', matchLabels: { ring: 'canary' }, count: 4, progress: 1 },
+      { name: 'stage', matchLabels: { env: 'stage' }, count: 8, progress: 1 },
+      {
+        name: 'prod-us',
+        matchLabels: { env: 'prod', geo: 'us' },
+        count: 28,
+        progress: 0.7,
+      },
+      {
+        name: 'prod-eu',
+        matchLabels: { env: 'prod', geo: 'eu' },
+        count: 22,
+        progress: 0.4,
+      },
+      {
+        name: 'prod-ap',
+        matchLabels: { env: 'prod', geo: 'ap' },
+        count: 12,
+        progress: 0,
+      },
     ],
   },
   {
     id: 'br-monthly',
     name: 'monthly',
+    latestConfigId: 'cfg-monthly-4',
+    staleConfigId: 'cfg-monthly-3',
     groups: [
-      { name: 'wave-1', matchLabels: { cadence: 'monthly', wave: '1' }, count: 6 },
-      { name: 'wave-2', matchLabels: { cadence: 'monthly', wave: '2' }, count: 14 },
-      { name: 'wave-3', matchLabels: { cadence: 'monthly', wave: '3' }, count: 18 },
+      {
+        name: 'wave-1',
+        matchLabels: { cadence: 'monthly', wave: '1' },
+        count: 6,
+        progress: 1,
+      },
+      {
+        name: 'wave-2',
+        matchLabels: { cadence: 'monthly', wave: '2' },
+        count: 14,
+        progress: 0.5,
+      },
+      {
+        name: 'wave-3',
+        matchLabels: { cadence: 'monthly', wave: '3' },
+        count: 18,
+        progress: 0,
+      },
     ],
   },
   {
     id: 'br-lts',
     name: 'release/lts',
+    latestConfigId: 'cfg-lts-2',
+    staleConfigId: 'cfg-lts-1',
     groups: [
-      { name: 'regulated', matchLabels: { tier: 'regulated' }, count: 9 },
-      { name: 'production', matchLabels: { tier: 'lts' }, count: 11 },
+      {
+        name: 'regulated',
+        matchLabels: { tier: 'regulated' },
+        count: 9,
+        progress: 0.3,
+      },
+      {
+        name: 'production',
+        matchLabels: { tier: 'lts' },
+        count: 11,
+        progress: 1,
+      },
     ],
   },
   {
     id: 'br-preview',
     name: 'preview',
+    latestConfigId: 'cfg-preview-7',
+    staleConfigId: 'cfg-preview-6',
     groups: [
-      { name: 'internal', matchLabels: { ring: 'internal' }, count: 3 },
-      { name: 'design-partners', matchLabels: { ring: 'partner' }, count: 5 },
+      {
+        name: 'internal',
+        matchLabels: { ring: 'internal' },
+        count: 3,
+        progress: 1,
+      },
+      {
+        name: 'design-partners',
+        matchLabels: { ring: 'partner' },
+        count: 5,
+        progress: 0.6,
+      },
     ],
   },
 ]
@@ -244,6 +373,7 @@ const largeHealth = (n: number): TLargeHealth => {
 const buildLargeFleet = () => {
   const installs: TInstall[] = []
   const status: Record<string, TInstallStatus> = {}
+  const overviews: Record<string, TInstallOverview> = {}
   let n = 0
   const push = (
     labels: Record<string, string>,
@@ -268,11 +398,25 @@ const buildLargeFleet = () => {
 
   for (const branch of LARGE_BRANCHES) {
     for (const group of branch.groups) {
+      const appliedCount = Math.round(group.count * group.progress)
       for (let i = 0; i < group.count; i++) {
+        const isApplied = i < appliedCount
         push(group.matchLabels, {
           app_branch: { id: branch.id, name: branch.name, app_id: 'app-1' },
           app_branch_group: group.name,
+          app_config_id: isApplied
+            ? branch.latestConfigId
+            : branch.staleConfigId,
         })
+        overviews[`inst-${String(n).padStart(3, '0')}`] = overviewFor(
+          branch.latestConfigId,
+          branch.staleConfigId,
+          isApplied
+            ? []
+            : n % 2
+              ? ['comp-api', 'comp-worker']
+              : ['comp-worker']
+        )
       }
     }
   }
@@ -303,7 +447,15 @@ const buildLargeFleet = () => {
     })),
   }))
 
-  return { installs, configs, status }
+  const branches: TAppBranch[] = LARGE_BRANCHES.map((branch) =>
+    branchWithRun(
+      { id: branch.id, name: branch.name, app_id: 'app-1' },
+      `run-${branch.id}`,
+      branch.latestConfigId
+    )
+  )
+
+  return { installs, configs, status, branches, overviews }
 }
 
 const largeFleetData = buildLargeFleet()
@@ -311,3 +463,5 @@ const largeFleetData = buildLargeFleet()
 export const largeFleet = largeFleetData.installs
 export const largeFleetConfigs = largeFleetData.configs
 export const largeFleetStatus = largeFleetData.status
+export const largeFleetBranches = largeFleetData.branches
+export const largeFleetOverviews = largeFleetData.overviews

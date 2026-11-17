@@ -33,7 +33,7 @@ export interface IHealthFilterDropdown {
   onChange: (selected: Set<string>) => void
 }
 
-export const HealthFilterDropdown = ({
+export const HealthFilterOptions = ({
   selected,
   onChange,
 }: IHealthFilterDropdown) => {
@@ -50,71 +50,79 @@ export const HealthFilterDropdown = ({
     )
 
   return (
-    <Dropdown
-      buttonText={
-        <span className="flex items-center gap-2">
-          Health
-          {selected.size ? (
-            <Badge size="sm" theme="info">
-              {selected.size}
-            </Badge>
-          ) : null}
-        </span>
-      }
-      icon={<Icon variant="FunnelIcon" size="14" />}
-      iconAlignment="left"
-      id="fleet-filter-health"
-      alignment="right"
-      closeOnBlur={false}
-    >
-      <Menu className="min-w-56">
-        {HEALTH_FILTER_OPTIONS.map((value) => {
-          const checked = selected.has(value)
-          const isOnlySelected = selected.size === 1 && checked
-          return (
-            <CheckboxInputWithButton
-              key={value}
-              className={cn(
-                'w-full border-l-4 pl-2 pr-0',
-                HEALTH_BORDER_CLASSES[value]
-              )}
-              name={`fleet-health-${value}`}
-              value={value}
-              checked={checked}
-              onChange={() => toggle(value)}
-              buttonProps={{
-                className:
-                  '!p-1 flex items-center justify-between group w-full !rounded-sm',
-                variant: 'ghost',
-                type: 'button',
-                value,
-                onClick: () => only(value),
-                children: (
-                  <>
-                    <Text variant="body" weight="strong">
-                      {healthFilterLabel(value)}
-                    </Text>
-                    <Text
-                      variant="subtext"
-                      theme="neutral"
-                      className="ml-2 opacity-0 group-hover:opacity-100"
-                    >
-                      {isOnlySelected ? 'Reset' : 'Only'}
-                    </Text>
-                  </>
-                ),
-              }}
-            />
-          )
-        })}
-
-        {selected.size ? <hr /> : null}
-        {selected.size ? (
-          <Button variant="ghost" onClick={() => onChange(new Set())}>
-            Reset
-          </Button>
-        ) : null}
-      </Menu>
-    </Dropdown>
+    <>
+      {HEALTH_FILTER_OPTIONS.map((value) => {
+        const checked = selected.has(value)
+        const isOnlySelected = selected.size === 1 && checked
+        return (
+          <CheckboxInputWithButton
+            key={value}
+            className={cn(
+              'w-full border-l-4 pl-2 pr-0',
+              HEALTH_BORDER_CLASSES[value]
+            )}
+            name={`fleet-health-${value}`}
+            value={value}
+            checked={checked}
+            onChange={() => toggle(value)}
+            buttonProps={{
+              className:
+                '!p-1 flex items-center justify-between group w-full !rounded-sm',
+              variant: 'ghost',
+              type: 'button',
+              value,
+              onClick: () => only(value),
+              children: (
+                <>
+                  <Text variant="body" weight="strong">
+                    {healthFilterLabel(value)}
+                  </Text>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="ml-2 opacity-0 group-hover:opacity-100"
+                  >
+                    {isOnlySelected ? 'Reset' : 'Only'}
+                  </Text>
+                </>
+              ),
+            }}
+          />
+        )
+      })}
+    </>
   )
 }
+
+export const HealthFilterDropdown = ({
+  selected,
+  onChange,
+}: IHealthFilterDropdown) => (
+  <Dropdown
+    buttonText={
+      <span className="flex items-center gap-2">
+        Health
+        {selected.size ? (
+          <Badge size="sm" theme="info">
+            {selected.size}
+          </Badge>
+        ) : null}
+      </span>
+    }
+    icon={<Icon variant="FunnelIcon" size="14" />}
+    iconAlignment="left"
+    id="fleet-filter-health"
+    alignment="right"
+    closeOnBlur={false}
+  >
+    <Menu className="min-w-56">
+      <HealthFilterOptions selected={selected} onChange={onChange} />
+      {selected.size ? <hr /> : null}
+      {selected.size ? (
+        <Button variant="ghost" onClick={() => onChange(new Set())}>
+          Reset
+        </Button>
+      ) : null}
+    </Menu>
+  </Dropdown>
+)
