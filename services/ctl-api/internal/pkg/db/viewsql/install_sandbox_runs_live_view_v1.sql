@@ -28,7 +28,7 @@ FROM (
         JOIN install_sandbox_runs r ON r.id = sb.app_config_ref ->> 'applied_config_by_id'
     WHERE
         sb.app_config_ref ->> 'applied_config_by_type' = 'install_sandbox_runs'
-        AND COALESCE(sb.app_config_ref ->> 'applied_config_by_id', '') <> ''
+        AND COALESCE(sb.app_config_ref ->> 'applied_config_id', '') <> ''
         AND r.deleted_at = 0
         AND r.run_type IS DISTINCT FROM 'deprovision'
     UNION ALL

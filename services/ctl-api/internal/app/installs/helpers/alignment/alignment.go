@@ -3,6 +3,7 @@ package alignment
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -43,6 +43,22 @@ type InstallAlignmentOrigin struct {
 	WorkflowType app.WorkflowType       `json:"workflow_type,omitempty"`
 	Run          *InstallOverviewCommit `json:"run,omitempty"`
 } // @name service.InstallAlignmentOrigin
+
+type InstallAlignmentAttempt struct {
+	ID         string                 `json:"id"`
+	Status     string                 `json:"status"`
+	CreatedAt  time.Time              `json:"created_at"`
+	WorkflowID string                 `json:"workflow_id,omitempty"`
+	Type       app.WorkflowType       `json:"type,omitempty"`
+	BranchRun  *InstallOverviewCommit `json:"branch_run,omitempty"`
+} // @name service.InstallAlignmentAttempt
+
+type InstallAlignmentExplanation struct {
+	Summary    string `json:"summary"`
+	Status     string `json:"status,omitempty"`
+	WorkflowID string `json:"workflow_id,omitempty"`
+	StepID     string `json:"step_id,omitempty"`
+} // @name service.InstallAlignmentExplanation
 
 type InstallAlignmentOpenDeployment struct {
 	ID        string           `json:"id"`
@@ -85,6 +101,9 @@ type InstallAlignmentResource struct {
 	AppliedBy        *InstallAlignmentOrigin         `json:"applied_by,omitempty"`
 	OpenDeployment   *InstallAlignmentOpenDeployment `json:"open_deployment,omitempty"`
 	Plan             *InstallAlignmentPlan           `json:"plan,omitempty"`
+	LastAttempt      *InstallAlignmentAttempt        `json:"last_attempt,omitempty"`
+	NewerBranchRuns  *int                            `json:"newer_branch_runs,omitempty" extensions:"x-nullable"`
+	Explanation      *InstallAlignmentExplanation    `json:"explanation,omitempty"`
 
 	appliedAt         *time.Time
 	appliedWorkflowID string
@@ -106,8 +125,11 @@ type installAlignmentState struct {
 	enablement       *appconfiggraph.ComponentEnablementResolver
 	appliedDeploys   map[string]*app.InstallDeploy
 	sync             map[string]*componentSync
+	lastDeploys      map[string]*app.InstallDeploy
+	driftChecks      map[string]*app.InstallDeploy
 	sandbox          *app.InstallSandbox
-	sandboxRow       *sandboxSync
+	lastSandboxRun   *app.InstallSandboxRun
+	sandboxCheck     *app.InstallSandboxRun
 	appliedSandbox   *app.InstallSandboxRun
 	expectedSandbox  *app.AppSandboxConfig
 	stack            *app.InstallStack
@@ -160,8 +182,33 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 		return nil, fmt.Errorf("unable to get component sync state: %w", err)
 	}
 	st.sync = make(map[string]*componentSync, len(rows))
+	deployIDs := make([]string, 0, 2*len(rows))
 	for i := range rows {
 		st.sync[rows[i].InstallComponentID] = &rows[i]
+		deployIDs = append(deployIDs, rows[i].LastDeployID, rows[i].DriftCheckID)
+	}
+	var deploys []app.InstallDeploy
+	if err := s.db.WithContext(ctx).
+		Preload("InstallWorkflow", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "type", "status", "created_at")
+		}).
+		Where("id IN ?", slices.DeleteFunc(deployIDs, func(id string) bool { return id == "" })).
+		Find(&deploys).Error; err != nil {
+		return nil, fmt.Errorf("unable to get latest install deploys: %w", err)
+	}
+	deploysByID := make(map[string]*app.InstallDeploy, len(deploys))
+	for i := range deploys {
+		deploysByID[deploys[i].ID] = &deploys[i]
+	}
+	st.lastDeploys = make(map[string]*app.InstallDeploy, len(rows))
+	st.driftChecks = make(map[string]*app.InstallDeploy, len(rows))
+	for icID, row := range st.sync {
+		if d := deploysByID[row.LastDeployID]; d != nil {
+			st.lastDeploys[icID] = d
+		}
+		if d := deploysByID[row.DriftCheckID]; d != nil {
+			st.driftChecks[icID] = d
+		}
 	}
 
 	buildIDs := make([]string, 0, len(st.components))
@@ -232,15 +279,11 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 		if err != nil {
 			return nil, err
 		}
-		var sandboxRow sandboxSync
-		if err := s.db.WithContext(ctx).
-			Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 5)).
-			Where("install_id = ? AND org_id = ? AND resource_type = ? AND install_sandbox_id = ?", install.ID, install.OrgID, "install_sandbox", sandbox.ID).
-			Scan(&sandboxRow).Error; err != nil {
-			return nil, fmt.Errorf("unable to get sandbox sync state: %w", err)
+		if st.lastSandboxRun, err = s.latestSandboxRun(ctx, sandbox.ID, false); err != nil {
+			return nil, err
 		}
-		if sandboxRow.InstallSandboxID != "" {
-			st.sandboxRow = &sandboxRow
+		if st.sandboxCheck, err = s.latestSandboxRun(ctx, sandbox.ID, true); err != nil {
+			return nil, err
 		}
 		if install.AppConfigID != "" {
 			var cfg app.AppSandboxConfig
@@ -366,14 +409,13 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 		res.appliedAt = applied.AppliedAt
 		res.appliedWorkflowID = generics.FromPtrStr(applied.InstallWorkflowID)
 	}
-	if row := st.sync[ic.ID]; row != nil && row.LiveWorkflowType != "" {
-		res.appliedWorkflow = row.LiveWorkflowType
-		res.appliedRunID = row.LiveAppBranchRunID
+	if applied != nil && applied.InstallWorkflow != nil {
+		res.appliedWorkflow = applied.InstallWorkflow.Type
+		res.appliedRunID = generics.FromPtrStr(applied.InstallWorkflow.Metadata["app_branch_run_id"])
 	}
 	inactive := ic.Status == app.InstallComponentStatusInactive || ic.Status == app.InstallComponentStatusDeleted || ic.Status == app.InstallComponentStatusDisabled
-	last := st.sync[ic.ID]
-	tornDown := last != nil && last.LastType == app.InstallDeployTypeTeardown && last.LastStatus == app.InstallDeployStatusInactive &&
-		last.LastWorkflowType != app.WorkflowTypeInputUpdate && last.LastWorkflowType != app.WorkflowTypeComponentDisabled
+	row := st.sync[ic.ID]
+	tornDown := row != nil && row.LiveState == "torn_down"
 
 	switch {
 	case tornDown && (target == nil || st.componentEnabled(target)):
@@ -403,8 +445,7 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 	case applied == nil:
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "This component hasn’t been deployed yet."
-	case target.Config.Checksum == "" || applied.ComponentBuild == nil || applied.ComponentBuild.ComponentConfigConnection.Checksum != target.Config.Checksum ||
-		!configdiff.ComponentSourcesEqual(applied.ComponentBuild, target.Build):
+	case row == nil || row.LiveOutdated:
 		res.Category = InstallAlignmentCategoryChangesNotApplied
 		res.Reason = "The deployed version doesn’t match this install’s configuration."
 	default:
@@ -447,9 +488,9 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 		res.AppliedConfigID = st.appliedSandbox.AppSandboxConfig.AppConfigID
 		res.appliedAt = st.appliedSandbox.AppliedAt
 		res.appliedWorkflowID = generics.FromPtrStr(st.appliedSandbox.InstallWorkflowID)
-		if row := st.sandboxRow; row != nil && row.LiveWorkflowType != "" {
-			res.appliedWorkflow = row.LiveWorkflowType
-			res.appliedRunID = row.LiveAppBranchRunID
+		if wf := st.appliedSandbox.InstallWorkflow; wf != nil {
+			res.appliedWorkflow = wf.Type
+			res.appliedRunID = generics.FromPtrStr(wf.Metadata["app_branch_run_id"])
 		}
 	}
 
@@ -589,75 +630,58 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmen
 
 	for i := range st.components {
 		icID := st.components[i].ID
-		row := st.sync[icID]
-		if row == nil {
-			continue
-		}
 		applied := st.appliedDeploys[icID]
 		target := st.targets[st.components[i].ComponentID]
-		if target != nil && target.Build != nil && target.Build.ID == row.LastBuildID &&
-			row.LastStatus == app.InstallDeployStatusAutoSkipped && row.LastPlannedAt != nil && row.LastPolicyAction != "skip_apply" &&
-			(applied == nil || applied.AppliedAt == nil || !row.LastPlannedAt.Before(*applied.AppliedAt)) {
+		if last := st.lastDeploys[icID]; last != nil && target != nil && target.Build != nil && target.Build.ID == last.ComponentBuildID &&
+			last.Status == app.InstallDeployStatusAutoSkipped && last.PlannedAt != nil && last.StatusV2.Metadata["policy_action"] != "skip_apply" &&
+			(applied == nil || applied.AppliedAt == nil || !last.PlannedAt.Before(*applied.AppliedAt)) {
 			cfg := &target.Build.ComponentConfigConnection
 			inputs := st.desiredInputs(cfg.AppConfigID)
-			ev.inputsAligned[icID] = row.LastPlannedInputsDigest == installhelpers.InputsDigest(installhelpers.ComponentInputNames(cfg, inputs), inputs)
+			ev.inputsAligned[icID] = last.PlannedInputsDigest == installhelpers.InputsDigest(installhelpers.ComponentInputNames(cfg, inputs), inputs)
 		}
-		ev.drifted[icID] = row.ScanDrifted
-	}
-	var approvalIDs []string
-	for _, row := range st.sync {
-		for _, id := range []string{row.RealPlanApprovalID, row.ScanPlanApprovalID} {
-			if id != "" {
-				approvalIDs = append(approvalIDs, id)
-			}
-		}
-	}
-	if len(approvalIDs) > 0 {
-		approvals, err := s.loadAlignmentApprovals(ctx, approvalIDs)
-		if err != nil {
-			return nil, err
-		}
-		for icID, row := range st.sync {
-			if a := approvals[row.RealPlanApprovalID]; a != nil {
-				ev.plans[icID] = alignmentPlanFromApproval(a)
-			}
-			if a := approvals[row.ScanPlanApprovalID]; a != nil {
-				ev.scanPlans[icID] = alignmentPlanFromApproval(a)
-			}
+		if check := st.driftChecks[icID]; check != nil {
+			ev.drifted[icID] = check.Status == app.InstallDeployStatus(app.WorkflowStepDrifted)
 		}
 	}
 
-	if st.sandbox != nil && st.sandboxRow != nil {
-		row := st.sandboxRow
-		if st.expectedSandbox != nil && row.LastAppSandboxConfigID == st.expectedSandbox.ID &&
-			row.LastStatus == app.SandboxRunAutoSkipped && row.LastPlannedAt != nil &&
-			row.LastPolicyAction != "skip_apply" &&
-			(st.appliedSandbox == nil || st.appliedSandbox.AppliedAt == nil || !row.LastPlannedAt.Before(*st.appliedSandbox.AppliedAt)) {
-			ev.inputsAligned[st.sandbox.ID] = row.LastPlannedInputsDigest == installhelpers.InputsDigest(installhelpers.InputNames(st.expectedSandbox.Refs), st.desiredInputs(""))
-		}
-		if row.ScanCreatedAt != nil && st.appliedSandbox != nil && sandboxScanMatchesApplied(st, row.ScanAppSandboxConfigID) &&
-			(st.appliedSandbox.AppliedAt == nil || !row.ScanCreatedAt.Before(*st.appliedSandbox.AppliedAt)) &&
-			(row.LastCreatedAt == nil || !row.ScanCreatedAt.Before(*row.LastCreatedAt)) {
-			ev.drifted[st.sandbox.ID] = row.ScanStatus == app.SandboxRunStatus(app.WorkflowStepDrifted)
-		}
+	deployIDs := map[string]string{}
+	driftCheckIDs := map[string]string{}
+	for icID, row := range st.sync {
+		deployIDs[icID], driftCheckIDs[icID] = row.LastDeployID, row.DriftCheckID
+	}
 
-		var approvalIDs []string
-		for _, id := range []string{row.RealPlanApprovalID, row.ScanPlanApprovalID} {
-			if id != "" {
-				approvalIDs = append(approvalIDs, id)
-			}
+	if st.sandbox != nil {
+		last, check := st.lastSandboxRun, st.sandboxCheck
+		if last != nil && st.expectedSandbox != nil && last.AppSandboxConfigID == st.expectedSandbox.ID &&
+			last.Status == app.SandboxRunAutoSkipped && last.PlannedAt != nil &&
+			last.StatusV2.Metadata["policy_action"] != "skip_apply" &&
+			(st.appliedSandbox == nil || st.appliedSandbox.AppliedAt == nil || !last.PlannedAt.Before(*st.appliedSandbox.AppliedAt)) {
+			ev.inputsAligned[st.sandbox.ID] = last.PlannedInputsDigest == installhelpers.InputsDigest(installhelpers.InputNames(st.expectedSandbox.Refs), st.desiredInputs(""))
 		}
-		if len(approvalIDs) > 0 {
-			approvals, err := s.loadAlignmentApprovals(ctx, approvalIDs)
-			if err != nil {
-				return nil, err
-			}
-			if a := approvals[row.RealPlanApprovalID]; a != nil {
-				ev.plans[st.sandbox.ID] = alignmentPlanFromApproval(a)
-			}
-			if a := approvals[row.ScanPlanApprovalID]; a != nil {
-				ev.scanPlans[st.sandbox.ID] = alignmentPlanFromApproval(a)
-			}
+		if check != nil && st.appliedSandbox != nil && sandboxScanMatchesApplied(st, check.AppSandboxConfigID) &&
+			(st.appliedSandbox.AppliedAt == nil || !check.CreatedAt.Before(*st.appliedSandbox.AppliedAt)) &&
+			(last == nil || !check.CreatedAt.Before(last.CreatedAt)) {
+			ev.drifted[st.sandbox.ID] = check.Status == app.SandboxRunStatus(app.WorkflowStepDrifted)
+		}
+		if last != nil {
+			deployIDs[st.sandbox.ID] = last.ID
+		}
+		if check != nil {
+			driftCheckIDs[st.sandbox.ID] = check.ID
+		}
+	}
+	plans, err := s.loadAlignmentPlans(ctx, append(slices.Collect(maps.Values(deployIDs)), slices.Collect(maps.Values(driftCheckIDs))...))
+	if err != nil {
+		return nil, err
+	}
+	for id, ownerID := range deployIDs {
+		if plan := plans[ownerID]; plan != nil {
+			ev.plans[id] = plan
+		}
+	}
+	for id, ownerID := range driftCheckIDs {
+		if plan := plans[ownerID]; plan != nil {
+			ev.scanPlans[id] = plan
 		}
 	}
 
@@ -682,7 +706,11 @@ type alignmentApproval struct {
 	workflow *app.Workflow
 }
 
-func (s *Helpers) loadAlignmentApprovals(ctx context.Context, ids []string) (map[string]*alignmentApproval, error) {
+func (s *Helpers) loadAlignmentPlans(ctx context.Context, ownerIDs []string) (map[string]*InstallAlignmentPlan, error) {
+	ownerIDs = slices.DeleteFunc(ownerIDs, func(id string) bool { return id == "" })
+	if len(ownerIDs) == 0 {
+		return nil, nil
+	}
 	var approvals []app.WorkflowStepApproval
 	if err := s.db.WithContext(ctx).
 		Select("id", "org_id", "install_workflow_step_id", "owner_id", "owner_type", "type", "created_at",
@@ -690,12 +718,15 @@ func (s *Helpers) loadAlignmentApprovals(ctx context.Context, ids []string) (map
 		Preload("InstallWorkflowStep", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "install_workflow_id")
 		}).
-		Where("id IN ?", ids).
+		Where("owner_id IN ?", ownerIDs).
+		Order("created_at ASC").
 		Find(&approvals).Error; err != nil {
-		return nil, fmt.Errorf("unable to load approvals: %w", err)
+		return nil, fmt.Errorf("unable to load plans: %w", err)
 	}
+	newest := make(map[string]*app.WorkflowStepApproval, len(approvals))
 	workflowIDs := make([]string, 0, len(approvals))
 	for i := range approvals {
+		newest[approvals[i].OwnerID] = &approvals[i]
 		workflowIDs = append(workflowIDs, approvals[i].InstallWorkflowStep.InstallWorkflowID)
 	}
 	workflowsByID := map[string]*app.Workflow{}
@@ -705,19 +736,17 @@ func (s *Helpers) loadAlignmentApprovals(ctx context.Context, ids []string) (map
 			Select("id", "plan_only").
 			Where("id IN ?", workflowIDs).
 			Find(&workflows).Error; err != nil {
-			return nil, fmt.Errorf("unable to load approval workflows: %w", err)
+			return nil, fmt.Errorf("unable to load plan workflows: %w", err)
 		}
 		for i := range workflows {
 			workflowsByID[workflows[i].ID] = &workflows[i]
 		}
 	}
-	out := make(map[string]*alignmentApproval, len(approvals))
-	for i := range approvals {
-		wf := workflowsByID[approvals[i].InstallWorkflowStep.InstallWorkflowID]
-		if wf == nil {
-			continue
+	out := make(map[string]*InstallAlignmentPlan, len(newest))
+	for ownerID, a := range newest {
+		if wf := workflowsByID[a.InstallWorkflowStep.InstallWorkflowID]; wf != nil {
+			out[ownerID] = alignmentPlanFromApproval(&alignmentApproval{approval: a, workflow: wf})
 		}
-		out[approvals[i].ID] = &alignmentApproval{approval: &approvals[i], workflow: wf}
 	}
 	return out, nil
 }
@@ -743,56 +772,61 @@ func alignmentPlanFromApproval(aa *alignmentApproval) *InstallAlignmentPlan {
 }
 
 type componentSync struct {
-	InstallComponentID      string
-	ExpectedBuildID         string
-	LiveID                  string
-	LastBuildID             string
-	LastType                app.InstallDeployType
-	LastStatus              app.InstallDeployStatus
-	LastPlannedAt           *time.Time
-	LastPlannedInputsDigest string
-	LastPolicyAction        string
-	LastWorkflowID          string
-	LastWorkflowType        app.WorkflowType
-	LastWorkflowStatus      string
-	LastWorkflowCreatedAt   *time.Time
-	ScanDrifted             bool
-	LiveWorkflowType        app.WorkflowType
-	LiveAppBranchRunID      string
-	RealPlanApprovalID      string
-	ScanPlanApprovalID      string
+	InstallComponentID string
+	ExpectedBuildID    string
+	LiveID             string
+	LiveState          string
+	LiveOutdated       bool
+	LastDeployID       string
+	DriftCheckID       string
 }
 
-type sandboxSync struct {
-	InstallSandboxID        string
-	LiveWorkflowType        app.WorkflowType
-	LiveAppBranchRunID      string
-	LastAppSandboxConfigID  string
-	LastStatus              app.SandboxRunStatus
-	LastPlannedAt           *time.Time
-	LastPlannedInputsDigest string
-	LastPolicyAction        string
-	LastCreatedAt           *time.Time
-	ScanID                  string
-	ScanStatus              app.SandboxRunStatus
-	ScanAppSandboxConfigID  string
-	ScanCreatedAt           *time.Time
-	RealPlanApprovalID      string
-	ScanPlanApprovalID      string
+func (s *Helpers) latestSandboxRun(ctx context.Context, sandboxID string, planOnly bool) (*app.InstallSandboxRun, error) {
+	query := s.db.WithContext(ctx).
+		Where(app.InstallSandboxRun{InstallSandboxID: &sandboxID})
+	if planOnly {
+		query = query.
+			Joins("JOIN install_workflows w ON w.id = install_sandbox_runs.install_workflow_id AND w.deleted_at = 0").
+			Where("w.plan_only = ?", true)
+	} else {
+		query = query.
+			Preload("InstallWorkflow", func(db *gorm.DB) *gorm.DB {
+				return db.Select("id", "type", "status", "created_at")
+			}).
+			Joins("LEFT JOIN install_workflows w ON w.id = install_sandbox_runs.install_workflow_id AND w.deleted_at = 0").
+			Where("w.plan_only IS NOT TRUE")
+	}
+	var run app.InstallSandboxRun
+	err := query.Order("install_sandbox_runs.created_at DESC").First(&run).Error
+	if isNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to get latest install sandbox run: %w", err)
+	}
+	return &run, nil
 }
 
 func (st *installAlignmentState) openDeployments() map[string]*InstallAlignmentOpenDeployment {
 	out := map[string]*InstallAlignmentOpenDeployment{}
-	for icID, row := range st.sync {
-		status := row.LastWorkflowStatus
-		if row.LastWorkflowID == "" || row.LastWorkflowCreatedAt == nil ||
-			(status != string(app.StatusFailedPendingRetry) && !slices.Contains(installhelpers.InstallDeploymentActiveStatuses, status)) {
-			continue
+	add := func(resourceID string, wf *app.Workflow) {
+		if wf == nil {
+			return
+		}
+		status := string(wf.Status.Status)
+		if status != string(app.StatusFailedPendingRetry) && !slices.Contains(installhelpers.InstallDeploymentActiveStatuses, status) {
+			return
 		}
 		if status == "" {
 			status = string(app.StatusPending)
 		}
-		out[icID] = &InstallAlignmentOpenDeployment{ID: row.LastWorkflowID, Status: status, CreatedAt: *row.LastWorkflowCreatedAt, Type: row.LastWorkflowType}
+		out[resourceID] = &InstallAlignmentOpenDeployment{ID: wf.ID, Status: status, CreatedAt: wf.CreatedAt, Type: wf.Type}
+	}
+	for icID, last := range st.lastDeploys {
+		add(icID, last.InstallWorkflow)
+	}
+	if st.sandbox != nil && st.lastSandboxRun != nil {
+		add(st.sandbox.ID, st.lastSandboxRun.InstallWorkflow)
 	}
 	return out
 }

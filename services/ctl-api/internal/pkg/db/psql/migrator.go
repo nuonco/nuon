@@ -24,9 +24,7 @@ type PSQLParams struct {
 }
 
 func MigratorOpts() *migrations.Opts {
-	opts := migrations.NewOpts()
-	opts.DropViewSQLTmpl = "DROP VIEW IF EXISTS %s CASCADE"
-	return opts
+	return migrations.NewOpts()
 }
 
 func NewPSQLMigrator(p PSQLParams, lc fx.Lifecycle) *migrations.Migrator {
