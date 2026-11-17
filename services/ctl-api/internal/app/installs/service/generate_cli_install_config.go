@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
 // @ID						GenerateCLIInstallConfig
@@ -77,6 +78,9 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 	install, err := s.getInstall(ctx, installID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install %s: %w", installID, err)
+	}
+	if authz.HasAuthority(ctx) {
+		installID = install.ID
 	}
 
 	// Template-managed keys echo template text, and app-default keys are

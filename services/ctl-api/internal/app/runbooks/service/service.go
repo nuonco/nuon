@@ -9,8 +9,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	runbookaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/access"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -61,31 +63,31 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error { return nil }
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	apps := api.Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
-		runbooks := apps.Group("/runbooks")
+		runbooks := require.Routes(apps.Group("/runbooks"), permissions.APICtl)
 		{
-			runbooks.POST("", s.CreateRunbook)
-			runbooks.GET("", s.GetRunbooks)
-			runbooks.GET("/:runbook_id", s.GetRunbook)
-			runbooks.PATCH("/:runbook_id", s.UpdateRunbook)
-			runbooks.DELETE("/:runbook_id", s.DeleteRunbook)
-			runbooks.POST("/:runbook_id/configs", s.CreateRunbookConfig)
-			runbooks.GET("/:runbook_id/configs", s.GetRunbookConfigs)
+			runbooks.POST("", require.Point(permissions.RunbookCreate, s.runbookAppTarget), s.CreateRunbook)
+			runbooks.GET("", s.runbookListRule(permissions.RunbookInspect, runbookaccess.Runbooks), s.GetRunbooks)
+			runbooks.GET("/:runbook_id", require.Point(permissions.RunbookInspect, s.runbookReadTarget), s.GetRunbook)
+			runbooks.PATCH("/:runbook_id", require.Point(permissions.RunbookUpdate, s.runbookTarget), s.UpdateRunbook)
+			runbooks.DELETE("/:runbook_id", require.Point(permissions.RunbookDelete, s.runbookTarget), s.DeleteRunbook)
+			runbooks.POST("/:runbook_id/configs", require.Point(permissions.RunbookConfigCreate, s.runbookConfigWriteTarget), s.CreateRunbookConfig)
+			runbooks.GET("/:runbook_id/configs", s.runbookListRule(permissions.RunbookInspect, runbookaccess.Configs), s.GetRunbookConfigs)
 		}
 	}
 
 	installs := api.Group("/v1/installs/:install_id")
 	{
-		installRunbooks := installs.Group("/runbooks")
+		installRunbooks := require.Routes(installs.Group("/runbooks"), permissions.APICtl)
 		{
-			installRunbooks.GET("", s.GetInstallRunbooks)
-			installRunbooks.GET("/:runbook_id", s.GetInstallRunbook)
-			installRunbooks.POST("/:runbook_id/runs", s.CreateRunbookRun)
+			installRunbooks.GET("", s.runbookListRule(permissions.InstallRunbookInspect, runbookaccess.InstallRunbooks), s.GetInstallRunbooks)
+			installRunbooks.GET("/:runbook_id", require.Point(permissions.InstallRunbookInspect, s.installRunbookTarget), s.GetInstallRunbook)
+			installRunbooks.POST("/:runbook_id/runs", require.Point(permissions.RunbookExecute, s.runbookExecutionTarget), s.CreateRunbookRun)
 		}
 
-		runbookRuns := installs.Group("/runbook-runs")
+		runbookRuns := require.Routes(installs.Group("/runbook-runs"), permissions.APICtl)
 		{
-			runbookRuns.GET("", s.GetInstallRunbookRuns)
-			runbookRuns.GET("/:run_id", s.GetInstallRunbookRun)
+			runbookRuns.GET("", s.runbookListRule(permissions.InstallRunbookInspect, runbookaccess.Runs), s.GetInstallRunbookRuns)
+			runbookRuns.GET("/:run_id", require.Point(permissions.InstallRunbookInspect, s.runbookRunTarget), s.GetInstallRunbookRun)
 		}
 	}
 

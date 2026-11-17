@@ -5,6 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -46,6 +49,25 @@ func (s *service) ListQueues(ctx *gin.Context) {
 	// Set defaults
 	if req.Limit == 0 {
 		req.Limit = 50
+	}
+
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		var queues []app.Queue
+		err = s.db.WithContext(ctx.Request.Context()).
+			Where(&app.Queue{OrgID: &org.ID, OwnerID: req.OwnerID, OwnerType: req.OwnerType}).
+			Where("id IN (?)", ids).
+			Limit(req.Limit).Offset(req.Offset).Order("created_at DESC").Find(&queues).Error
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		ctx.JSON(http.StatusOK, queues)
+		return
 	}
 
 	queues, err := s.queueClient.ListQueues(ctx, org.ID, req.OwnerID, req.OwnerType, req.Limit, req.Offset)

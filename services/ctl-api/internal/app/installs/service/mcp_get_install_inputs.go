@@ -26,7 +26,7 @@ type mcpGetInstallInputsResult struct {
 }
 
 func (s *service) mcpGetInstallInputs(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetInstallInputsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -37,6 +37,9 @@ func (s *service) mcpGetInstallInputs(ctx context.Context, _ *mcp.CallToolReques
 	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install %q: %w", in.Install, err)
+	}
+	if err := s.mcpInstallPoint(ctx, install.ID, "install.config.read"); err != nil {
+		return nil, nil, err
 	}
 
 	result := mcpGetInstallInputsResult{

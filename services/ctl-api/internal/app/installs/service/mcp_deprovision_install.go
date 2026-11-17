@@ -19,7 +19,7 @@ type mcpDeprovisionInstallInput struct {
 }
 
 func (s *service) mcpDeprovisionInstall(ctx context.Context, _ *mcp.CallToolRequest, in mcpDeprovisionInstallInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

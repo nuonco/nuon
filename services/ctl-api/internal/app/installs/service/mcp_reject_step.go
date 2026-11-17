@@ -17,7 +17,7 @@ type mcpRejectStepInput struct {
 }
 
 func (s *service) mcpRejectStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpRejectStepInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -33,6 +33,9 @@ func (s *service) mcpRejectStep(ctx context.Context, _ *mcp.CallToolRequest, in 
 		First(&approval).Error
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find approval %q: %w", in.ApprovalID, err)
+	}
+	if err := s.mcpApprovalContinuation(ctx, orgID, approval); err != nil {
+		return nil, nil, err
 	}
 
 	if approval.Response != nil {

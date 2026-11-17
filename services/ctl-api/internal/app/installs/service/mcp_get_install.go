@@ -66,7 +66,7 @@ type mcpInstallLastUpdate struct {
 }
 
 func (s *service) mcpGetInstall(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetInstallInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -76,6 +76,9 @@ func (s *service) mcpGetInstall(ctx context.Context, _ *mcp.CallToolRequest, in 
 
 	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.mcpInstallPoint(ctx, install.ID, "install.inspect"); err != nil {
 		return nil, nil, err
 	}
 	result, err := s.mcpInstallOverviewFor(ctx, orgID, install)

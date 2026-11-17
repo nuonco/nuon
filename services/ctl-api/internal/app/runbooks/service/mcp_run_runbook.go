@@ -7,7 +7,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
@@ -41,7 +43,7 @@ type mcpNextAction struct {
 }
 
 func (s *service) mcpRunRunbook(ctx context.Context, _ *mcp.CallToolRequest, in mcpRunRunbookInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -58,6 +60,9 @@ func (s *service) mcpRunRunbook(ctx context.Context, _ *mcp.CallToolRequest, in 
 
 	install, err := s.resolveInstallRef(ctx, orgID, in.Install)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := require.MCPPoint(ctx, s.db, access.Installs, permissions.RunbookExecute, install.ID); err != nil {
 		return nil, nil, err
 	}
 	if err := s.installHelpers.ValidateInstallRole(ctx, install.ID, in.Role); err != nil {

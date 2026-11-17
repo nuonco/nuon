@@ -53,7 +53,7 @@ func (s *service) UpdateAppConfigInstallsV2(ctx *gin.Context) {
 	appConfigID := ctx.Param("config_id")
 
 	var req UpdateAppConfigInstallsRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
@@ -62,6 +62,10 @@ func (s *service) UpdateAppConfigInstallsV2(ctx *gin.Context) {
 		return
 	}
 
+	if ids, ok := ctx.Get("nuon.apps.config_install_ids"); ok {
+		req.UpdateAll = false
+		req.InstallIDs = ids.([]string)
+	}
 	err := s.updateAppConfigInstalls(ctx, appID, appConfigID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update app config installs: %w", err))
@@ -94,7 +98,7 @@ func (s *service) UpdateAppConfigInstalls(ctx *gin.Context) {
 	appConfigID := ctx.Param("app_config_id")
 
 	var req UpdateAppConfigInstallsRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
@@ -103,6 +107,10 @@ func (s *service) UpdateAppConfigInstalls(ctx *gin.Context) {
 		return
 	}
 
+	if ids, ok := ctx.Get("nuon.apps.config_install_ids"); ok {
+		req.UpdateAll = false
+		req.InstallIDs = ids.([]string)
+	}
 	err := s.updateAppConfigInstalls(ctx, appID, appConfigID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update app config installs: %w", err))

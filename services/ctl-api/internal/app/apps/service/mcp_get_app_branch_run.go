@@ -27,7 +27,7 @@ type mcpGetAppBranchRunResult struct {
 }
 
 func (s *service) mcpGetAppBranchRun(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetAppBranchRunInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -52,8 +52,12 @@ func (s *service) mcpGetAppBranchRun(ctx context.Context, _ *mcp.CallToolRequest
 	if err != nil {
 		return nil, nil, err
 	}
+	if err := s.mcpBranchPoint(ctx, branch.ID); err != nil {
+		return nil, nil, err
+	}
 
 	query := s.db.WithContext(ctx).
+		Scopes(s.mcpBranchRunCollection(ctx)).
 		Preload("VCSConnectionCommit").
 		Preload("Preview").
 		Preload("Comparison").

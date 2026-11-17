@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -39,6 +40,7 @@ func (s *service) GetCellRuns(ctx *gin.Context) {
 
 	runs := []*app.NotebookCellRun{}
 	res := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx)).
 		Scopes(scopes.WithOffsetPagination).
 		Where(app.NotebookCellRun{OrgID: org.ID, CellID: ctx.Param("cell_id")}).
 		Order("created_at DESC").

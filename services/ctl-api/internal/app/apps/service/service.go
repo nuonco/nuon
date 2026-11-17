@@ -64,200 +64,205 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
-	ge.GET("/v1/branches", s.GetOrgBranches)
+	geAccess := require.Routes(ge, permissions.APICtl)
+	geAccess.GET("/v1/branches", require.Collection(permissions.AppBranchRead, s.branchResources), s.GetOrgBranches)
 
 	// manage apps
 	apps := ge.Group("/v1/apps")
+	appsAccess := require.Routes(apps, permissions.APICtl)
 	{
-		apps.POST("", s.CreateApp)
-		require.CollectionRoute(apps, permissions.APICtl, permissions.AppInspect, s.appResources).GET("", s.GetApps)
-		appByID := apps.Group("/:app_id", require.AppInOrg(s.db))
-		appByID.PATCH("", s.UpdateApp)
-		require.OperationRoute(appByID, permissions.APICtl, permissions.AppInspect, s.appTarget).GET("", s.GetApp)
-		appByID.DELETE("", s.DeleteApp)
+		appsAccess.POST("", require.Point(permissions.AppCreate, s.appOrgTarget), s.CreateApp)
+		appsAccess.GET("", require.Collection(permissions.AppInspect, s.appResources), s.GetApps)
+
+		appByID := require.Routes(apps.Group("/:app_id", require.AppInOrg(s.db)), permissions.APICtl)
+		appByID.PATCH("", s.namedAppRule(permissions.AppUpdate), s.UpdateApp)
+		appByID.GET("", require.Point(permissions.AppInspect, s.appTarget), s.GetApp)
+		appByID.DELETE("", s.appRule(permissions.AppDelete), s.DeleteApp)
 	}
 
 	// app-specific routes
 	app := ge.Group("/v1/apps/:app_id", require.AppInOrg(s.db))
+	// app configs
+	appAccess := require.Routes(app, permissions.APICtl)
 	{
-		// app configs
-		app.GET("/template-config", s.GetAppConfigTemplate)
-		appConfig := app.Group("/config") // deprecated singular route
+		appAccess.GET("/template-config", s.namedAppRule(permissions.AppConfigRead), s.GetAppConfigTemplate)
+
+		// deprecated singular route
+		appConfig := require.Routes(app.Group("/config"), permissions.APICtl)
 		{
-			s.POST(appConfig, "", s.CreateAppConfig, api.APIContextTypePublic, true)                                        // deprecated singular route
-			s.GET(appConfig, "/:app_config_id", s.GetAppConfig, api.APIContextTypePublic, true)                             // deprecated singular route
-			s.PATCH(appConfig, "/:app_config_id", s.UpdateAppConfig, api.APIContextTypePublic, true)                        // deprecated singular route
-			s.POST(appConfig, "/:app_config_id/update-installs", s.UpdateAppConfigInstalls, api.APIContextTypePublic, true) // deprecated singular route
-			s.GET(appConfig, "/:app_config_id/graph", s.GetAppConfigGraph, api.APIContextTypePublic, true)                  // deprecated singular route
+			s.POST(appConfig.For(s.appRule(permissions.AppConfigWrite)), "", s.CreateAppConfig, api.APIContextTypePublic, true)                                           // deprecated singular route
+			s.GET(appConfig.For(s.appRule(permissions.AppConfigRead)), "/:app_config_id", s.GetAppConfig, api.APIContextTypePublic, true)                                 // deprecated singular route
+			s.PATCH(appConfig.For(s.appRule(permissions.AppAutomationManage)), "/:app_config_id", s.UpdateAppConfig, api.APIContextTypePublic, true)                      // deprecated singular route
+			s.POST(appConfig.For(require.All(s.configInstallRequirements)), "/:app_config_id/update-installs", s.UpdateAppConfigInstalls, api.APIContextTypePublic, true) // deprecated singular route
+			s.GET(appConfig.For(s.appRule(permissions.AppConfigRead)), "/:app_config_id/graph", s.GetAppConfigGraph, api.APIContextTypePublic, true)                      // deprecated singular route
 		}
 
-		appConfigs := app.Group("/configs")
+		appConfigs := require.Routes(app.Group("/configs"), permissions.APICtl)
 		{
-			appConfigs.GET("", s.GetAppConfigs)
-			appConfigs.POST("", s.CreateAppConfigV2)
-			appConfigs.PATCH("/:config_id", s.UpdateAppConfigV2)
-			appConfigs.GET("/:config_id", s.GetAppConfigV2)
-			appConfigs.POST("/:config_id/update-installs", s.UpdateAppConfigInstallsV2)
-			appConfigs.GET("/:config_id/graph", s.GetAppConfigGraphV2)
-			appConfigs.POST("/:config_id/sync", s.SyncAppConfig)
-			appConfigs.POST("/:config_id/build", s.BuildAppConfig)
-			appConfigs.GET("/:config_id/diff", s.GetAppConfigDiff)
-			appConfigs.GET("/:config_id/source-files/*path", s.GetAppConfigSourceFile)
+			appConfigs.GET("", s.appRule(permissions.AppConfigRead), s.GetAppConfigs)
+			appConfigs.POST("", s.appRule(permissions.AppConfigWrite), s.CreateAppConfigV2)
+			appConfigs.PATCH("/:config_id", s.appRule(permissions.AppAutomationManage), s.UpdateAppConfigV2)
+			appConfigs.GET("/:config_id", s.appRule(permissions.AppConfigRead), s.GetAppConfigV2)
+			appConfigs.POST("/:config_id/update-installs", require.All(s.configInstallRequirements), s.UpdateAppConfigInstallsV2)
+			appConfigs.GET("/:config_id/graph", s.appRule(permissions.AppConfigRead), s.GetAppConfigGraphV2)
+			appConfigs.POST("/:config_id/sync", s.appRule(permissions.AppAutomationManage), s.SyncAppConfig)
+			appConfigs.POST("/:config_id/build", s.appRule(permissions.AppAutomationManage), s.BuildAppConfig)
+			appConfigs.GET("/:config_id/diff", s.appRule(permissions.AppConfigRead), s.GetAppConfigDiff)
+			appConfigs.GET("/:config_id/source-files/*path", s.appRule(permissions.AppConfigRead), s.GetAppConfigSourceFile)
 		}
 
 		// app sandbox builds
-		sandboxBuilds := app.Group("/sandbox/builds")
+		sandboxBuilds := require.Routes(app.Group("/sandbox/builds"), permissions.APICtl)
 		{
-			sandboxBuilds.GET("", s.GetAppSandboxBuilds)
-			sandboxBuilds.POST("", s.CreateAppSandboxBuild)
-			sandboxBuilds.GET("/:build_id", s.GetAppSandboxBuild)
+			sandboxBuilds.GET("", s.appRule(permissions.AppBuildRead), s.GetAppSandboxBuilds)
+			sandboxBuilds.POST("", s.appRule(permissions.AppBuildCreate), s.CreateAppSandboxBuild)
+			sandboxBuilds.GET("/:build_id", s.appRule(permissions.AppBuildRead), s.GetAppSandboxBuild)
 		}
 
 		// app sandbox management
-		sandboxConfig := app.Group("/sandbox-config")
+		sandboxConfig := require.Routes(app.Group("/sandbox-config"), permissions.APICtl)
 		{
-			s.POST(sandboxConfig, "", s.CreateAppSandboxConfigV2, api.APIContextTypePublic, true) // deprecated singular route
+			s.POST(sandboxConfig.For(s.childConfigRule()), "", s.CreateAppSandboxConfigV2, api.APIContextTypePublic, true) // deprecated singular route
 		}
 
-		sandboxConfigs := app.Group("/sandbox-configs")
+		sandboxConfigs := require.Routes(app.Group("/sandbox-configs"), permissions.APICtl)
 		{
-			sandboxConfigs.GET("", s.GetAppSandboxConfigs)
-			sandboxConfigs.POST("", s.CreateAppSandboxConfigV2)
+			sandboxConfigs.GET("", s.namedAppRule(permissions.AppConfigRead), s.GetAppSandboxConfigs)
+			sandboxConfigs.POST("", s.childConfigRule(), s.CreateAppSandboxConfigV2)
 		}
-
-		app.GET("/labels", s.GetAppLabels)
+		appAccess.GET("/labels", s.namedAppRule(permissions.AppConfigRead), s.GetAppLabels)
 
 		// app secrets configs management
-		secretsConfigs := app.Group("/secrets-configs")
+		secretsConfigs := require.Routes(app.Group("/secrets-configs"), permissions.APICtl)
 		{
-			secretsConfigs.POST("", s.CreateAppSecretsConfig)
-			secretsConfigs.GET("/:config_id", s.GetAppSecretsConfig)
+			secretsConfigs.POST("", s.childConfigRule(), s.CreateAppSecretsConfig)
+			secretsConfigs.GET("/:config_id", s.namedAppRule(permissions.AppConfigRead), s.GetAppSecretsConfig)
 		}
 
 		// app kubernetes contexts management
-		kubernetesContextsConfigs := app.Group("/kubernetes-contexts-configs")
+		kubernetesContextsConfigs := require.Routes(app.Group("/kubernetes-contexts-configs"), permissions.APICtl)
 		{
-			kubernetesContextsConfigs.POST("", s.CreateAppKubernetesContextsConfig)
+			kubernetesContextsConfigs.POST("", s.childConfigRule(), s.CreateAppKubernetesContextsConfig)
 		}
 
 		// app stack configs
-		stackConfigs := app.Group("/stack-configs")
+		stackConfigs := require.Routes(app.Group("/stack-configs"), permissions.APICtl)
 		{
-			stackConfigs.POST("", s.CreateAppStackConfig)
-			stackConfigs.GET("/:config_id", s.GetAppSecretsConfig)
+			stackConfigs.POST("", s.childConfigRule(), s.CreateAppStackConfig)
+			stackConfigs.GET("/:config_id", s.namedAppRule(permissions.AppConfigRead), s.GetAppSecretsConfig)
 		}
 
 		// app policies management
-		policiesConfigs := app.Group("/policies-configs")
+		policiesConfigs := require.Routes(app.Group("/policies-configs"), permissions.APICtl)
 		{
-			policiesConfigs.GET("", s.GetAppPoliciesConfigs)
-			policiesConfigs.POST("", s.CreateAppPoliciesConfig)
-			policiesConfigs.GET("/:config_id", s.GetAppPoliciesConfig)
+			policiesConfigs.GET("", s.namedAppRule(permissions.AppConfigRead), s.GetAppPoliciesConfigs)
+			policiesConfigs.POST("", s.childConfigRule(), s.CreateAppPoliciesConfig)
+			policiesConfigs.GET("/:config_id", s.namedAppRule(permissions.AppConfigRead), s.GetAppPoliciesConfig)
 		}
-
 		// individual policy config lookup
-		app.GET("/policy-config/:policy_config_id", s.GetAppPolicyConfig)
+		appAccess.GET("/policy-config/:policy_config_id", s.namedAppRule(permissions.AppConfigRead), s.GetAppPolicyConfig)
 
 		// app break glass
-		breakGlassConfigs := app.Group("/break-glass-configs")
+		breakGlassConfigs := require.Routes(app.Group("/break-glass-configs"), permissions.APICtl)
 		{
-			breakGlassConfigs.POST("", s.CreateAppBreakGlasssConfig)
-			breakGlassConfigs.GET("/:config_id", s.GetAppBreakGlassConfig)
+			breakGlassConfigs.POST("", s.childConfigRule(), s.CreateAppBreakGlasssConfig)
+			breakGlassConfigs.GET("/:config_id", s.namedAppRule(permissions.AppConfigRead), s.GetAppBreakGlassConfig)
 		}
 
 		// app permissions
-		permissionsConfigs := app.Group("/permissions-configs")
+		permissionsConfigs := require.Routes(app.Group("/permissions-configs"), permissions.APICtl)
 		{
-			permissionsConfigs.POST("", s.CreateAppPermissionsConfig)
-			permissionsConfigs.GET("/:config_id", s.GetAppPermissionsConfig)
+			permissionsConfigs.POST("", require.All(s.configApplyRequirements), s.CreateAppPermissionsConfig)
+			permissionsConfigs.GET("/:config_id", s.namedAppRule(permissions.AppConfigRead), s.GetAppPermissionsConfig)
 		}
 
-		operationRoleConfigs := app.Group("/operation-role-configs")
+		operationRoleConfigs := require.Routes(app.Group("/operation-role-configs"), permissions.APICtl)
 		{
-			operationRoleConfigs.POST("", s.CreateAppOperationRoleConfig)
-			operationRoleConfigs.GET("/:operation_role_config_id", s.GetAppOperationRoleConfigs)
+			operationRoleConfigs.POST("", s.childConfigRule(), s.CreateAppOperationRoleConfig)
+			operationRoleConfigs.GET("/:operation_role_config_id", s.namedAppRule(permissions.AppConfigRead), s.GetAppOperationRoleConfigs)
 		}
 
 		// app runner management
-		runnerConfigs := app.Group("/runner-configs")
+		runnerConfigs := require.Routes(app.Group("/runner-configs"), permissions.APICtl)
 		{
-			runnerConfigs.POST("", s.CreateAppRunnerConfig)
-			runnerConfigs.GET("", s.GetAppRunnerConfigs)
+			runnerConfigs.POST("", require.All(s.configApplyRequirements), s.CreateAppRunnerConfig)
+			runnerConfigs.GET("", s.namedAppRule(permissions.AppConfigRead), s.GetAppRunnerConfigs)
 		}
-
 		// app input management
-		app.POST("/input-config", s.CreateAppInputsConfig)
-		inputConfigs := app.Group("/input-configs")
+		appAccess.POST("/input-config", s.childConfigRule(), s.CreateAppInputsConfig)
+
+		inputConfigs := require.Routes(app.Group("/input-configs"), permissions.APICtl)
 		{
-			inputConfigs.GET("", s.GetAppInputConfigs)
-			inputConfigs.GET("/:input_config_id", s.GetAppInputConfig)
+			inputConfigs.GET("", s.namedAppRule(permissions.AppConfigRead), s.GetAppInputConfigs)
+			inputConfigs.GET("/:input_config_id", s.namedAppRule(permissions.AppConfigRead), s.GetAppInputConfig)
 		}
 
 		// app secrets management
-		s.POST(app, "/secret", s.CreateAppSecretV2, api.APIContextTypePublic, true) // deprecated singular route
-		app.POST("/secrets", s.CreateAppSecretV2)
-		secret := app.Group("/secret")
+		s.POST(appAccess.For(s.namedAppRule(permissions.AppSecretsWrite)), "/secret", s.CreateAppSecretV2, api.APIContextTypePublic, true)
+		// deprecated singular route
+		appAccess.POST("/secrets", s.namedAppRule(permissions.AppSecretsWrite), s.CreateAppSecretV2)
+
+		secret := require.Routes(app.Group("/secret"), permissions.APICtl)
 		{
-			s.DELETE(secret, "/:secret_id", s.DeleteAppSecret, api.APIContextTypePublic, true) // deprecated singular route
+			s.DELETE(secret.For(s.namedAppRule(permissions.AppSecretsWrite)), "/:secret_id", s.DeleteAppSecret, api.APIContextTypePublic, true) // deprecated singular route
 		}
 
-		secrets := app.Group("/secrets")
+		secrets := require.Routes(app.Group("/secrets"), permissions.APICtl)
 		{
-			secrets.GET("", s.GetAppSecrets)
-			secrets.DELETE("/:secret_id", s.DeleteAppSecretV2)
+			secrets.GET("", s.namedAppRule(permissions.AppSecretsRead), s.GetAppSecrets)
+			secrets.DELETE("/:secret_id", s.namedAppRule(permissions.AppSecretsWrite), s.DeleteAppSecretV2)
 
 		}
 
 		// app branches
-		branches := app.Group("/branches")
+		branches := require.Routes(app.Group("/branches"), permissions.APICtl)
 		{
-			branches.POST("", s.CreateAppBranch)
-			branches.GET("", s.GetAppBranches)
-			branches.GET("/:app_branch_id", s.GetAppBranch)
-			branches.PATCH("/:app_branch_id", s.UpdateAppBranch)
-			branches.DELETE("/:app_branch_id", s.DeleteAppBranch)
-			branches.GET("/:app_branch_id/configs", s.GetAppBranchAppConfigs)
-			branches.POST("/:app_branch_id/configs", s.CreateAppBranchConfig)
-			branches.PATCH("/:app_branch_id/configs/:config_id", s.UpdateAppBranchConfig)
-			branches.GET("/:app_branch_id/latest-config", s.GetAppBranchLatestConfig)
-			branches.GET("/:app_branch_id/preview-sources", s.GetAppBranchPreviewSources)
-			branches.GET("/:app_branch_id/preview-install-candidates", s.GetAppBranchPreviewInstallCandidates)
-			branches.POST("/:app_branch_id/runs", s.TriggerAppBranchRun)
-			branches.GET("/:app_branch_id/runs", s.GetAppBranchRuns)
-			branches.GET("/:app_branch_id/runs/:run_id", s.GetAppBranchRun)
-			branches.GET("/:app_branch_id/runs/:run_id/builds", s.GetAppBranchRunBuilds)
-			branches.GET("/:app_branch_id/runs/:run_id/comparison", s.GetAppBranchRunComparison)
-			branches.GET("/:app_branch_id/runs/:run_id/install-groups", s.GetAppBranchRunInstallGroups)
-			branches.GET("/:app_branch_id/runs/:run_id/install-group-runs", s.GetInstallGroupRuns)
-			branches.GET("/:app_branch_id/runs/:run_id/install-group-runs/:install_group_run_id", s.GetInstallGroupRun)
-			branches.POST("/:app_branch_id/sync-install-configs", s.TriggerInstallConfigSync)
+			branches.POST("", s.appRule(permissions.AppBranchWrite), s.CreateAppBranch)
+			branches.GET("", s.appRule(permissions.AppBranchRead), s.GetAppBranches)
+			branches.GET("/:app_branch_id", s.appRule(permissions.AppBranchRead), s.GetAppBranch)
+			branches.PATCH("/:app_branch_id", s.appRule(permissions.AppBranchWrite), s.UpdateAppBranch)
+			branches.DELETE("/:app_branch_id", require.All(s.branchDeleteRequirements), s.DeleteAppBranch)
+			branches.GET("/:app_branch_id/configs", s.appRule(permissions.AppBranchRead), s.GetAppBranchAppConfigs)
+			branches.POST("/:app_branch_id/configs", s.appRule(permissions.AppAutomationManage), s.CreateAppBranchConfig)
+			branches.PATCH("/:app_branch_id/configs/:config_id", s.appRule(permissions.AppAutomationManage), s.UpdateAppBranchConfig)
+			branches.GET("/:app_branch_id/latest-config", s.appRule(permissions.AppBranchRead), s.GetAppBranchLatestConfig)
+			branches.GET("/:app_branch_id/preview-sources", s.appRule(permissions.AppBranchRead), s.GetAppBranchPreviewSources)
+			branches.GET("/:app_branch_id/preview-install-candidates", s.appRule(permissions.AppBranchRead), s.GetAppBranchPreviewInstallCandidates)
+			branches.POST("/:app_branch_id/runs", s.appRule(permissions.AppAutomationManage), s.TriggerAppBranchRun)
+			branches.GET("/:app_branch_id/runs", s.appRule(permissions.AppBranchRead), s.GetAppBranchRuns)
+			branches.GET("/:app_branch_id/runs/:run_id", s.appRule(permissions.AppBranchRead), s.GetAppBranchRun)
+			branches.GET("/:app_branch_id/runs/:run_id/builds", s.appRule(permissions.AppBranchRead), s.GetAppBranchRunBuilds)
+			branches.GET("/:app_branch_id/runs/:run_id/comparison", s.appRule(permissions.AppBranchRead), s.GetAppBranchRunComparison)
+			branches.GET("/:app_branch_id/runs/:run_id/install-groups", s.appRule(permissions.AppBranchRead), s.GetAppBranchRunInstallGroups)
+			branches.GET("/:app_branch_id/runs/:run_id/install-group-runs", s.appRule(permissions.AppBranchRead), s.GetInstallGroupRuns)
+			branches.GET("/:app_branch_id/runs/:run_id/install-group-runs/:install_group_run_id", require.Point(permissions.AppBranchRead, s.installGroupRunTarget), s.GetInstallGroupRun)
+			branches.POST("/:app_branch_id/sync-install-configs", require.All(s.branchConfigSyncRequirements), s.TriggerInstallConfigSync)
 		}
 
-		installSyncs := app.Group("/install-syncs")
+		installSyncs := require.Routes(app.Group("/install-syncs"), permissions.APICtl)
 		{
-			installSyncs.GET("", s.GetAppInstallSyncs)
-			installSyncs.POST("", s.TriggerAppInstallSync)
-			installSyncs.GET("/:sync_id", s.GetAppInstallSync)
-			installSyncs.POST("/:sync_id/approvals/:approval_id/response", s.RespondInstallCreationApproval)
+			installSyncs.GET("", s.appRule(permissions.AppBranchRead), s.GetAppInstallSyncs)
+			installSyncs.POST("", s.appRule(permissions.AppAutomationManage), s.TriggerAppInstallSync)
+			installSyncs.GET("/:sync_id", s.appRule(permissions.AppBranchRead), s.GetAppInstallSync)
+			installSyncs.POST("/:sync_id/approvals/:approval_id/response", s.appRule(permissions.AppAutomationManage), s.RespondInstallCreationApproval)
 		}
 
-		installsConfigs := app.Group("/installs-configs")
+		installsConfigs := require.Routes(app.Group("/installs-configs"), permissions.APICtl)
 		{
-			installsConfigs.GET("", s.GetAppInstallsConfig)
-			installsConfigs.POST("", s.CreateAppInstallsConfig)
-			installsConfigs.DELETE("/:config_id", s.DeleteAppInstallsConfig)
+			installsConfigs.GET("", s.appRule(permissions.AppConfigRead), s.GetAppInstallsConfig)
+			installsConfigs.POST("", s.appRule(permissions.AppAutomationManage), s.CreateAppInstallsConfig)
+			installsConfigs.DELETE("/:config_id", s.appRule(permissions.AppAutomationManage), s.DeleteAppInstallsConfig)
 		}
-
 		// TODO deprecate - latest config routes
-		app.GET("/latest-break-glass-config", s.GetLatestAppBreakGlassConfig)
-		app.GET("/runner-latest-config", s.GetAppRunnerLatestConfig)
-		app.GET("/input-latest-config", s.GetAppInputLatestConfig)
-		app.GET("/install-input-config", s.GetAppInstallInputConfig)
-		app.GET("/latest-policies-config", s.GetLatestAppPoliciesConfig)
-		app.GET("/latest-config", s.GetAppLatestConfig)
-		app.GET("/sandbox-latest-config", s.GetAppSandboxLatestConfig)
-		app.GET("/latest-secrets-config", s.GetLatestAppSecretsConfig)
-		app.GET("/latest-permissions-config", s.GetLatestAppPermissionsConfig)
+		appAccess.GET("/latest-break-glass-config", s.namedAppRule(permissions.AppConfigRead), s.GetLatestAppBreakGlassConfig)
+		appAccess.GET("/runner-latest-config", s.namedAppRule(permissions.AppConfigRead), s.GetAppRunnerLatestConfig)
+		appAccess.GET("/input-latest-config", s.namedAppRule(permissions.AppConfigRead), s.GetAppInputLatestConfig)
+		appAccess.GET("/install-input-config", s.namedAppRule(permissions.AppConfigRead), s.GetAppInstallInputConfig)
+		appAccess.GET("/latest-policies-config", s.namedAppRule(permissions.AppConfigRead), s.GetLatestAppPoliciesConfig)
+		appAccess.GET("/latest-config", s.namedAppRule(permissions.AppConfigRead), s.GetAppLatestConfig)
+		appAccess.GET("/sandbox-latest-config", s.namedAppRule(permissions.AppConfigRead), s.GetAppSandboxLatestConfig)
+		appAccess.GET("/latest-secrets-config", s.namedAppRule(permissions.AppConfigRead), s.GetLatestAppSecretsConfig)
+		appAccess.GET("/latest-permissions-config", s.namedAppRule(permissions.AppConfigRead), s.GetLatestAppPermissionsConfig)
 	}
 
 	return nil

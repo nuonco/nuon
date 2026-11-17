@@ -9,6 +9,40 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
+func (c *Client) LoadAccountLegacyAccess(ctx context.Context, account *app.Account) (*permissions.AccountPermissions, error) {
+	if account == nil || account.ID == "" || account.DeletedAt != 0 {
+		return nil, fmt.Errorf("permissions require a live account")
+	}
+	grantOrgs := make(map[string]bool)
+	for _, role := range account.Roles {
+		for _, policy := range role.Policies {
+			if policy.HasGrantDocument() {
+				grantOrgs[role.OrgID.ValueString()] = true
+			}
+		}
+	}
+	if len(grantOrgs) == 0 {
+		return c.LoadLegacyAccountPermissions(ctx, account)
+	}
+	catalog, err := permissions.DefaultCatalog()
+	if err != nil {
+		return nil, err
+	}
+	for orgID := range grantOrgs {
+		if _, err := c.LoadAccountGrants(ctx, account.ID, orgID, catalog); err != nil {
+			return nil, err
+		}
+	}
+	legacy := *account
+	legacy.Roles = make([]app.Role, 0, len(account.Roles))
+	for _, role := range account.Roles {
+		if !grantOrgs[role.OrgID.ValueString()] {
+			legacy.Roles = append(legacy.Roles, role)
+		}
+	}
+	return c.LoadLegacyAccountPermissions(ctx, &legacy)
+}
+
 func (c *Client) LoadLegacyAccountPermissions(ctx context.Context, account *app.Account) (*permissions.AccountPermissions, error) {
 	if account == nil || account.ID == "" || account.DeletedAt != 0 {
 		return nil, fmt.Errorf("permissions require a live account")

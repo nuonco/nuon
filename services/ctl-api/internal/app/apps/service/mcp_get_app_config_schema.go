@@ -28,7 +28,7 @@ type mcpGetAppConfigSchemaResult struct {
 }
 
 func (s *service) mcpGetAppConfigSchema(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetAppConfigSchemaInput) (*mcp.CallToolResult, any, error) {
-	if _, err := require.Read(ctx); err != nil {
+	if _, err := require.MCPRead(ctx); err != nil {
 		return nil, nil, err
 	}
 

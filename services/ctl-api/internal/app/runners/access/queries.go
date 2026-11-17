@@ -20,20 +20,20 @@ var ownerQueries = []struct {
 	query     func(*gorm.DB, string) *gorm.DB
 	jobLogs   bool
 }{
-	{"orgs", orgaccess.Orgs, false},
-	{"apps", appaccess.Apps, false},
-	{"app_branches", appaccess.Branches, false},
-	{"app_branch_configs", appaccess.BranchConfigs, false},
-	{"app_branch_runs", appaccess.BranchRuns, false},
-	{"app_sandbox_builds", appaccess.SandboxBuilds, true},
-	{"installs", installaccess.Installs, false},
-	{"install_deploys", installaccess.Deploys, true},
-	{"install_action_workflow_runs", installaccess.ActionRuns, true},
-	{"install_sandbox_runs", installaccess.SandboxRuns, true},
-	{"install_workflows", installaccess.Workflows, false},
-	{"install_workflow_steps", installaccess.WorkflowSteps, false},
-	{"component_builds", componentaccess.Builds, true},
-	{"runners", runners, false},
+	{"orgs", orgaccess.Orgs.Query, false},
+	{"apps", appaccess.Apps.Query, false},
+	{"app_branches", appaccess.Branches.Query, false},
+	{"app_branch_configs", appaccess.BranchConfigs.Query, false},
+	{"app_branch_runs", appaccess.BranchRuns.Query, false},
+	{"app_sandbox_builds", appaccess.SandboxBuilds.Query, true},
+	{"installs", installaccess.Installs.Query, false},
+	{"install_deploys", installaccess.Deploys.Query, true},
+	{"install_action_workflow_runs", installaccess.ActionRuns.Query, true},
+	{"install_sandbox_runs", installaccess.SandboxRuns.Query, true},
+	{"install_workflows", installaccess.Workflows.Query, false},
+	{"install_workflow_steps", installaccess.WorkflowSteps.Query, false},
+	{"component_builds", componentaccess.Builds.Query, true},
+	{"runners", Runners.Query, false},
 	{"runner_operations", operations, false},
 }
 
@@ -108,17 +108,17 @@ func owners(db *gorm.DB, orgID, ownerType string) (*gorm.DB, error) {
 	return db.Session(&gorm.Session{NewDB: true}).Raw(strings.Join(parts, " UNION ALL "), args...), nil
 }
 
-func runners(db *gorm.DB, orgID string) *gorm.DB {
+var Runners = authz.DefineResources(permissions.KindRunner, func(db *gorm.DB, orgID string) *gorm.DB {
 	db = db.Session(&gorm.Session{NewDB: true})
 	owners := db.Raw(`SELECT 'installs'::text AS owner_type, i.id, i.org_id, i.app_id, i.install_id FROM (?) i
-		UNION ALL SELECT 'orgs', o.id, o.org_id, o.app_id, o.install_id FROM (?) o`, installaccess.Installs(db, orgID), orgaccess.Orgs(db, orgID))
+		UNION ALL SELECT 'orgs', o.id, o.org_id, o.app_id, o.install_id FROM (?) o`, installaccess.Installs.Query(db, orgID), orgaccess.Orgs.Query(db, orgID))
 	return db.Raw(`SELECT r.id, r.org_id, o.app_id, o.install_id FROM runners r
 		JOIN runner_groups g ON g.id = r.runner_group_id AND g.org_id = r.org_id AND g.deleted_at = 0
 		JOIN (?) o ON o.id = g.owner_id AND o.owner_type = g.owner_type AND o.org_id = g.org_id
 		WHERE r.deleted_at = 0`, owners)
-}
+})
 
 func operations(db *gorm.DB, orgID string) *gorm.DB {
 	return db.Session(&gorm.Session{NewDB: true}).Raw(`SELECT o.id, o.org_id, r.app_id, r.install_id FROM runner_operations o
-		JOIN (?) r ON r.id = o.runner_id AND r.org_id = o.org_id WHERE o.deleted_at = 0`, runners(db, orgID))
+		JOIN (?) r ON r.id = o.runner_id AND r.org_id = o.org_id WHERE o.deleted_at = 0`, Runners.Query(db, orgID))
 }

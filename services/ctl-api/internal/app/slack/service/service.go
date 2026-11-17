@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/signing"
@@ -74,19 +75,17 @@ func New(params Params) *service {
 // reachable, end-user-authenticated API surface" (vs. the runner / internal /
 // auth listeners). It is NOT unauthenticated.
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
-	orgs := ge.Group("/v1/orgs/:org_id/slack", require.PathOrgMatches())
+	orgs := require.Routes(ge.Group("/v1/orgs/:org_id/slack", require.PathOrgMatches()), permissions.APICtl)
 	{
-		orgs.GET("/install-url", s.GetInstallURL)
-		orgs.GET("/installations", s.ListInstallations)
-		orgs.GET("/installations/:installation_id/channels", s.ListChannels)
-
-		orgs.GET("/org-links", s.ListOrgLinks)
-		orgs.DELETE("/org-links/:link_id", s.DeleteOrgLink)
-
-		orgs.GET("/channel-subscriptions", s.ListChannelSubscriptions)
-		orgs.POST("/channel-subscriptions", s.CreateChannelSubscription)
-		orgs.PATCH("/channel-subscriptions/:sub_id", s.UpdateChannelSubscription)
-		orgs.DELETE("/channel-subscriptions/:sub_id", s.DeleteChannelSubscription)
+		orgs.GET("/install-url", require.Organization(permissions.SlackConnect), s.GetInstallURL)
+		orgs.GET("/installations", require.Organization(permissions.SlackRead), s.ListInstallations)
+		orgs.GET("/installations/:installation_id/channels", require.Organization(permissions.SlackRead), s.ListChannels)
+		orgs.GET("/org-links", require.Organization(permissions.SlackRead), s.ListOrgLinks)
+		orgs.DELETE("/org-links/:link_id", require.Organization(permissions.SlackDisconnect), s.DeleteOrgLink)
+		orgs.GET("/channel-subscriptions", require.Organization(permissions.SlackRead), s.ListChannelSubscriptions)
+		orgs.POST("/channel-subscriptions", require.Organization(permissions.SlackSubscriptionWrite), s.CreateChannelSubscription)
+		orgs.PATCH("/channel-subscriptions/:sub_id", require.Organization(permissions.SlackSubscriptionWrite), s.UpdateChannelSubscription)
+		orgs.DELETE("/channel-subscriptions/:sub_id", require.Organization(permissions.SlackSubscriptionWrite), s.DeleteChannelSubscription)
 	}
 
 	return nil

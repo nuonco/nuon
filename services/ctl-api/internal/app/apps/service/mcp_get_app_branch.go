@@ -131,7 +131,7 @@ type mcpAppBranchDeployInstall struct {
 }
 
 func (s *service) mcpGetAppBranch(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetAppBranchInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -148,6 +148,9 @@ func (s *service) mcpGetAppBranch(ctx context.Context, _ *mcp.CallToolRequest, i
 	}
 	branch, err := s.findAppBranch(ctx, orgID, a.ID, in.Branch)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.mcpBranchPoint(ctx, branch.ID); err != nil {
 		return nil, nil, err
 	}
 

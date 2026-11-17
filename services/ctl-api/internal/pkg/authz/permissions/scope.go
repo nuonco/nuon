@@ -16,6 +16,7 @@ const (
 	KindEvent           ResourceKind = "event"
 	KindNotification    ResourceKind = "notification"
 	KindOperation       ResourceKind = "operation"
+	KindWorkflow        ResourceKind = "workflow"
 )
 
 type Scope struct {
@@ -37,7 +38,7 @@ func validScopeID(value string) bool {
 func (kind ResourceKind) Validate() error {
 	switch kind {
 	case KindOrg, KindApp, KindInstall, KindComponent, KindComponentBuild, KindComponentConfig, KindStack, KindTelemetry, KindPhoneHome, KindRunnerJob,
-		KindRunner, KindLogStream, KindExecutionState, KindEvent, KindNotification, KindOperation:
+		KindRunner, KindLogStream, KindExecutionState, KindEvent, KindNotification, KindOperation, KindWorkflow:
 		return nil
 	default:
 		return fmt.Errorf("invalid scope kind %q", kind)

@@ -41,7 +41,7 @@ type mcpPolicyValidationInfo struct {
 }
 
 func (s *service) mcpGetWorkflowStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetWorkflowStepInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -58,6 +58,9 @@ func (s *service) mcpGetWorkflowStep(ctx context.Context, _ *mcp.CallToolRequest
 		First(&step).Error
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find step %q: %w", in.StepID, err)
+	}
+	if err := s.mcpWorkflowPoint(ctx, step.InstallWorkflowID, "workflow.inspect"); err != nil {
+		return nil, nil, err
 	}
 
 	detail := mcpStepDetail{

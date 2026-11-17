@@ -385,8 +385,9 @@ type Config struct {
 	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
 	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"` // if true, any user with an allowedDomain can sign in
 
-	DisableAccountSignup bool `config:"disable_account_signup"`
-	DisableOrgCreation   bool `config:"disable_org_creation"`
+	DisableAccountSignup   bool `config:"disable_account_signup"`
+	DisableOrgCreation     bool `config:"disable_org_creation"`
+	EnableOrgGrantPolicies bool `config:"enable_org_grant_policies"`
 
 	DisableVCSConnectionCallback bool `config:"disable_vcs_connection_callback"`
 	// Skips the GitHub user-authorization check on the connection callback.

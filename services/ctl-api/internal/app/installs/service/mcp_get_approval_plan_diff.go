@@ -36,7 +36,7 @@ type mcpApprovalPlanDiffResult struct {
 }
 
 func (s *service) mcpGetApprovalPlanDiff(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetApprovalPlanDiffInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -50,6 +50,7 @@ func (s *service) mcpGetApprovalPlanDiff(ctx context.Context, _ *mcp.CallToolReq
 
 	var approval app.WorkflowStepApproval
 	err = s.db.WithContext(ctx).
+		Scopes(s.mcpApprovalCollection(ctx, orgID)).
 		Preload("InstallWorkflowStep").
 		Where("id = ? AND org_id = ?", in.ApprovalID, orgID).
 		First(&approval).Error

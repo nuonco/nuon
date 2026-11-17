@@ -29,7 +29,7 @@ type mcpUpdateInstallInputsResult struct {
 }
 
 func (s *service) mcpUpdateInstallInputs(ctx context.Context, _ *mcp.CallToolRequest, in mcpUpdateInstallInputsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -48,6 +48,9 @@ func (s *service) mcpUpdateInstallInputs(ctx context.Context, _ *mcp.CallToolReq
 	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install %q: %w", in.Install, err)
+	}
+	if err := s.mcpInstallPoint(ctx, install.ID, "install.inputs.update"); err != nil {
+		return nil, nil, err
 	}
 
 	if err := s.helpers.ValidateInstallRole(ctx, install.ID, in.Role); err != nil {

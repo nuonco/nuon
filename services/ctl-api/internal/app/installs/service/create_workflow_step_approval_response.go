@@ -67,7 +67,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	}
 
 	var req CreateWorkflowStepApprovalResponseRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}

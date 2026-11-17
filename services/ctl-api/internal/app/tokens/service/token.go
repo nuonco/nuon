@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -55,7 +56,7 @@ type CreateTokenResponse struct {
 // @Success				201	{object}	CreateTokenResponse
 // @Router					/v1/tokens [POST]
 func (s *service) CreateToken(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.TokenCreate)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -126,7 +127,7 @@ type TokenResponse struct {
 // @Success				200	{array}		TokenResponse
 // @Router					/v1/tokens [GET]
 func (s *service) ListTokens(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.TokensRead)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -247,7 +248,7 @@ func (s *service) enrichTokensWithAccounts(ctx *gin.Context, orgID string, token
 // @Success				204
 // @Router					/v1/tokens/{token_id} [DELETE]
 func (s *service) DeleteToken(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.TokenDelete)
 	if err != nil {
 		ctx.Error(err)
 		return

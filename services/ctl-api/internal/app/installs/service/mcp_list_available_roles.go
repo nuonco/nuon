@@ -25,7 +25,7 @@ type mcpAvailableRole struct {
 }
 
 func (s *service) mcpListAvailableRoles(ctx context.Context, _ *mcp.CallToolRequest, in mcpListAvailableRolesInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -39,6 +39,9 @@ func (s *service) mcpListAvailableRoles(ctx context.Context, _ *mcp.CallToolRequ
 	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install %q: %w", in.Install, err)
+	}
+	if err := s.mcpInstallPoint(ctx, install.ID, "install.config.read"); err != nil {
+		return nil, nil, err
 	}
 
 	roles, err := s.availableRolesForInstall(ctx, orgID, install, in.PrincipalType, in.OperationType, in.PrincipalID, nil)

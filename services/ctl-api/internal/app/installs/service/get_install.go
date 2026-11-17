@@ -65,6 +65,14 @@ func (s *service) GetInstall(ctx *gin.Context) {
 }
 
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
+	if request, ok := ctx.(*gin.Context); ok && installID == request.Param("install_id") {
+		if value, ok := request.Get(authorizedInstallKey); ok {
+			install := value.(*app.Install)
+			if install.OrgID == orgID {
+				return install, nil
+			}
+		}
+	}
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {

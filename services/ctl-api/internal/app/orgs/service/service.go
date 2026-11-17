@@ -73,47 +73,55 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	{
 		require.NotFederatedTokenRoute(orgs, "create organizations").POST("", s.CreateOrg)
 		orgs.GET("", s.GetCurrentUserOrgs)
-		orgs.GET("/features", s.GetOrgFeatures)
+		s.orgRoute(orgs, permissions.OrgFeaturesRead).GET("/features", s.GetOrgFeatures)
 
 		// update your current org
 		current := orgs.Group("/current")
+		currentAccess := require.Routes(current, permissions.APICtl)
 		{
-			require.OperationRoute(current, permissions.APICtl, permissions.OrgInspect, s.orgTarget).GET("", s.GetOrg)
-			current.DELETE("", s.DeleteOrg)
-			current.PATCH("", s.UpdateOrg)
-			current.PATCH("/telemetry", s.UpdateOrgTelemetry)
-			current.POST("/user", s.CreateUser)
-			current.POST("/remove-user", s.RemoveUser)
+			currentAccess.GET("", require.Point(permissions.OrgInspect, s.orgTarget), s.GetOrg)
+			s.orgRoute(current, permissions.OrgDelete).DELETE("", s.DeleteOrg)
+			s.orgRoute(current, permissions.OrgUpdate).PATCH("", s.UpdateOrg)
+			s.orgRoute(current, permissions.OrgTelemetryUpdate).PATCH("/telemetry", s.UpdateOrgTelemetry)
+			delegate := require.UnboundedCredentialRoute(current)
+			s.orgRoute(delegate, permissions.OrgMemberAdd).POST("/user", s.CreateUser)
+			s.orgRoute(current, permissions.OrgMemberRemove).POST("/remove-user", s.RemoveUser)
 
 			// accounts
-			current.GET("/accounts", s.GetOrgAccounts)
-			current.GET("/members", s.GetOrgMembers)
-			current.PATCH("/accounts/:account_id/role", s.UpdateOrgAccountRole)
+			s.orgRoute(current, permissions.OrgMembersRead).GET("/accounts", s.GetOrgAccounts)
+			s.orgRoute(current, permissions.OrgMembersRead).GET("/members", s.GetOrgMembers)
+			s.orgRoute(delegate, permissions.OrgMemberRoleUpdate).PATCH("/accounts/:account_id/role", s.UpdateOrgAccountRole)
 
 			// invites
 			invites := current.Group("/invites")
 			{
-				invites.GET("", s.GetOrgInvites)
-				invites.POST("", s.CreateOrgInvite)
-				invites.POST("/:invite_id/resend", s.ResendOrgInvite)
-				invites.POST("/:invite_id/revoke", s.RevokeOrgInvite)
+				s.orgRoute(invites, permissions.OrgInvitesRead).GET("", s.GetOrgInvites)
+				issue := require.UnboundedCredentialRoute(invites)
+				s.orgRoute(issue, permissions.OrgInviteCreate).POST("", s.CreateOrgInvite)
+				s.orgRoute(issue, permissions.OrgInviteCreate).POST("/:invite_id/resend", s.ResendOrgInvite)
+				s.orgRoute(invites, permissions.OrgInviteRevoke).POST("/:invite_id/revoke", s.RevokeOrgInvite)
 			}
 
-			current.GET("/stats", s.GetOrgStats)
+			s.orgRoute(current, permissions.OrgStatsRead).GET("/stats", s.GetOrgStats)
 
 			// features
-			current.GET("/features", s.GetCurrentOrgFeatures)
-			current.PATCH("/features", s.UpdateOrgFeatures) // requires user-managed-features flag
+			s.orgRoute(current, permissions.OrgFeaturesRead).GET("/features", s.GetCurrentOrgFeatures)
+			s.orgRoute(current, permissions.OrgFeaturesUpdate).PATCH("/features", s.UpdateOrgFeatures) // requires user-managed-features flag
 
 			// webhooks
-			current.GET("/webhooks", s.GetCurrentOrgWebhooks)
-			current.POST("/webhooks", s.CreateCurrentOrgWebhook)
-			current.PATCH("/webhooks/:webhook_id", s.UpdateCurrentOrgWebhook)
-			current.DELETE("/webhooks/:webhook_id", s.DeleteCurrentOrgWebhook)
+			s.orgRoute(current, permissions.OrgWebhooksRead).GET("/webhooks", s.GetCurrentOrgWebhooks)
+			s.orgRoute(current, permissions.OrgWebhookCreate).POST("/webhooks", s.CreateCurrentOrgWebhook)
+			s.orgRoute(current, permissions.OrgWebhookUpdate).PATCH("/webhooks/:webhook_id", s.UpdateCurrentOrgWebhook)
+			s.orgRoute(current, permissions.OrgWebhookDelete).DELETE("/webhooks/:webhook_id", s.DeleteCurrentOrgWebhook)
 		}
 	}
 
 	return nil
+}
+
+func (s *service) orgRoute(router gin.IRouter, operation permissions.PermissionID) *gin.RouterGroup {
+	routerAccess := require.Routes(router, permissions.APICtl)
+	return routerAccess.For(require.Point(operation, s.orgTarget))
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {

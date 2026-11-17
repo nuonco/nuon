@@ -71,7 +71,7 @@ func (s *service) CreateAppStackConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppStackConfigRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}

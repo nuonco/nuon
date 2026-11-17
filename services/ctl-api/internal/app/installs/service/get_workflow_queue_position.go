@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -94,7 +96,30 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 	}
 	workflowOwnerTypes := []string{"install_workflows", "install_action_workflows"}
 
+	var authorizedIDs *gorm.DB
+	if authz.HasAuthority(ctx) {
+		authority, err := authz.AuthorityFromContext(ctx)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		resources, err := s.workflowResources(ctx)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		selection, err := authority.Select(ctx.Request.Context(), permissions.WorkflowInspect, resources)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		authorizedIDs = selection.IDs()
+	}
+
 	inQueue := func(db *gorm.DB) *gorm.DB {
+		if authorizedIDs != nil {
+			db = db.Where(&app.QueueSignal{OrgID: &org.ID, OwnerType: "install_workflows"}).Where("owner_id IN (?)", authorizedIDs)
+		}
 		return db.
 			Where("queue_id = ?", qs.QueueID).
 			Where("owner_type IN ?", workflowOwnerTypes).

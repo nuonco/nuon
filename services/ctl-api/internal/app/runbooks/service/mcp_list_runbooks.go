@@ -8,7 +8,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -44,7 +46,7 @@ type mcpListRunbooksResult struct {
 }
 
 func (s *service) mcpListRunbooks(ctx context.Context, _ *mcp.CallToolRequest, in mcpListRunbooksInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -82,6 +84,7 @@ func (s *service) mcpListRunbooks(ctx context.Context, _ *mcp.CallToolRequest, i
 func (s *service) listAppRunbooks(ctx context.Context, orgID, appID string, limit, offset int) ([]mcpRunbookListItem, bool, error) {
 	var runbooks []app.Runbook
 	err := s.db.WithContext(ctx).
+		Scopes(require.MCPCollection(ctx, s.db, access.Runbooks, permissions.RunbookInspect)).
 		Where(app.Runbook{OrgID: orgID, AppID: appID}).
 		Order("created_at DESC").
 		Limit(limit + 1).
@@ -121,6 +124,7 @@ func (s *service) listInstallRunbooks(ctx context.Context, orgID string, in mcpL
 
 	var installRunbooks []app.InstallRunbook
 	tx := s.db.WithContext(ctx).
+		Scopes(require.MCPCollection(ctx, s.db, access.InstallRunbooks, permissions.InstallRunbookInspect)).
 		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Preload("Runbook").
 		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {

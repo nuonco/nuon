@@ -43,7 +43,7 @@ type mcpListAppBranchesResult struct {
 }
 
 func (s *service) mcpListAppBranches(ctx context.Context, _ *mcp.CallToolRequest, in mcpListAppBranchesInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -60,9 +60,13 @@ func (s *service) mcpListAppBranches(ctx context.Context, _ *mcp.CallToolRequest
 	if err != nil {
 		return nil, nil, err
 	}
+	if err := s.mcpAppPoint(ctx, a.ID, "app.branch.read"); err != nil {
+		return nil, nil, err
+	}
 
 	var branches []app.AppBranch
 	res := s.db.WithContext(ctx).
+		Scopes(s.mcpBranchCollection(ctx)).
 		Where(app.AppBranch{OrgID: orgID, AppID: a.ID}).
 		Order("name ASC").
 		Limit(limit + 1).

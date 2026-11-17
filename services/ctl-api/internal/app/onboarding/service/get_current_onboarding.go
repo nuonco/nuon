@@ -39,6 +39,12 @@ func (s *service) GetCurrentOnboarding(ctx *gin.Context) {
 
 // getActiveOnboarding loads the current active onboarding for an account.
 func (s *service) getActiveOnboarding(ctx *gin.Context, accountID string) (*app.Onboarding, error) {
+	if value, ok := ctx.Get(authorizedOnboardingKey); ok {
+		onboarding, valid := value.(*app.Onboarding)
+		if valid && onboarding.AccountID == accountID {
+			return onboarding, nil
+		}
+	}
 	var onboarding app.Onboarding
 	res := s.db.WithContext(ctx).
 		Where("account_id = ? AND status = ?", accountID, app.OnboardingStatusActive).

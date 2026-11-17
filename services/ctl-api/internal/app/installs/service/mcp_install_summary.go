@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -89,7 +90,7 @@ type mcpInstallFailure struct {
 }
 
 func (s *service) mcpInstallSummary(ctx context.Context, _ *mcp.CallToolRequest, in mcpInstallSummaryInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -100,6 +101,11 @@ func (s *service) mcpInstallSummary(ctx context.Context, _ *mcp.CallToolRequest,
 	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
 		return nil, nil, err
+	}
+	for _, operation := range []permissions.PermissionID{permissions.InstallInspect, permissions.InstallStateRead, permissions.InstallConfigRead} {
+		if err := s.mcpInstallPoint(ctx, install.ID, operation); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	overview, err := s.mcpInstallOverviewFor(ctx, orgID, install)
@@ -189,6 +195,7 @@ func mcpInstallVersionCommitFrom(commit *InstallOverviewCommit) *mcpInstallVersi
 func (s *service) mcpFailingInstallWorkflows(ctx context.Context, orgID, installID string) ([]mcpInstallFailure, error) {
 	var workflows []app.Workflow
 	err := s.db.WithContext(ctx).
+		Scopes(s.mcpWorkflowCollection(ctx)).
 		Where(app.Workflow{OrgID: orgID, OwnerID: installID}).
 		Where("status->>'status' IN ?", []string{string(app.StatusError), string(app.StatusFailedPendingRetry)}).
 		Order("created_at DESC").

@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -55,102 +56,105 @@ var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// show all components for an org
-	api.GET("/v1/components", s.GetOrgComponents)
-	api.GET("/v1/component-builds", s.ListOrgComponentBuilds)
+	apiAccess := require.Routes(api, permissions.APICtl)
+	apiAccess.GET("/v1/components", require.Collection(permissions.ComponentInspect, s.componentResources), s.GetOrgComponents)
+	apiAccess.GET("/v1/component-builds", require.Collection(permissions.ComponentBuildInspect, s.buildResources), s.ListOrgComponentBuilds)
 
 	// components belong to an app
 	apps := api.Group("/v1/apps/:app_id", require.AppInOrg(s.db))
 	{
-		components := apps.Group("/components")
+		components := require.Routes(apps.Group("/components"), permissions.APICtl)
 		{
-			components.GET("", s.GetAppComponents)
-			components.GET("/label-keys", s.GetComponentLabelKeys)
-			components.POST("", s.CreateComponent)
-			components.POST("/build-all", s.BuildAllComponents)
+			components.GET("", require.Collection(permissions.ComponentInspect, s.componentResources), s.GetAppComponents)
+			components.GET("/label-keys", require.Collection(permissions.ComponentInspect, s.componentResources), s.GetComponentLabelKeys)
+			components.POST("", require.Point(permissions.ComponentCreate, s.componentAppTarget), s.CreateComponent)
+			components.POST("/build-all", require.All(s.buildAllRequirements), s.BuildAllComponents)
 		}
 
 		// single component routes
-		component := apps.Group("/component")
+		component := require.Routes(apps.Group("/component"), permissions.APICtl)
 		{
-			component.GET("/:component_name_or_id", s.GetAppComponent)
+			component.GET("/:component_name_or_id", require.Point(permissions.ComponentInspect, s.namedComponentTarget), s.GetAppComponent)
 		}
 
 		// component-specific routes
 		comp := apps.Group("/components/:component_id")
+		compAccess := require.Routes(comp, permissions.APICtl)
 		{
-			comp.PATCH("", s.UpdateAppComponent)
-			comp.DELETE("", s.DeleteAppComponent)
-			comp.POST("/labels", s.AddAppComponentLabels)
-			comp.DELETE("/labels", s.RemoveAppComponentLabels)
-
+			compAccess.PATCH("", require.Point(permissions.ComponentUpdate, s.componentTarget), s.UpdateAppComponent)
+			compAccess.DELETE("", require.Point(permissions.ComponentDelete, s.componentTarget), s.DeleteAppComponent)
+			compAccess.POST("/labels", require.Point(permissions.ComponentUpdate, s.componentTarget), s.AddAppComponentLabels)
+			compAccess.DELETE("/labels", require.Point(permissions.ComponentUpdate, s.componentTarget), s.RemoveAppComponentLabels)
 			// dependencies
-			comp.GET("/dependencies", s.GetAppComponentDependencies)
-			comp.GET("/dependents", s.GetAppComponentDependents)
+			compAccess.GET("/dependencies", require.Point(permissions.AppConfigRead, s.componentGraphTarget), s.GetAppComponentDependencies)
+			compAccess.GET("/dependents", require.Point(permissions.AppConfigRead, s.componentGraphTarget), s.GetAppComponentDependents)
 
 			// builds
-			builds := comp.Group("/builds")
+			builds := require.Routes(comp.Group("/builds"), permissions.APICtl)
 			{
-				builds.POST("", s.CreateAppComponentBuild)
-				builds.GET("/latest", s.GetAppComponentLatestBuild)
-				builds.GET("/:build_id", s.GetAppComponentBuild)
-				builds.POST("/:build_id/cancel", s.CancelAppComponentBuild)
-				builds.GET("", s.GetAppComponentBuilds)
+				builds.POST("", require.Point(permissions.ComponentBuildCreate, s.namedComponentTarget), s.CreateAppComponentBuild)
+				builds.GET("/latest", require.Collection(permissions.ComponentBuildInspect, s.buildResources), s.GetAppComponentLatestBuild)
+				builds.GET("/:build_id", require.Point(permissions.ComponentBuildInspect, s.buildTarget), s.GetAppComponentBuild)
+				builds.POST("/:build_id/cancel", require.Point(permissions.ComponentBuildCancel, s.buildTarget), s.CancelAppComponentBuild)
+				builds.GET("", require.Collection(permissions.ComponentBuildInspect, s.buildResources), s.GetAppComponentBuilds)
 			}
 
 			// component configurations
-			configs := comp.Group("/configs")
+			configs := require.Routes(comp.Group("/configs"), permissions.APICtl)
 			{
-				configs.POST("/terraform-module", s.CreateAppTerraformModuleComponentConfig)
-				configs.POST("/helm", s.CreateAppHelmComponentConfig)
-				configs.POST("/external-image", s.CreateAppExternalImageComponentConfig)
-				configs.POST("/job", s.CreateAppJobComponentConfig)
-				configs.POST("/kubernetes-manifest", s.CreateAppKubernetesManifestComponentConfig)
-				configs.POST("/pulumi", s.CreateAppPulumiComponentConfig)
-				configs.GET("", s.GetAppComponentConfigs)
-				configs.GET("/:config_id", s.GetAppComponentConfig)
-				configs.GET("/latest", s.GetAppComponentLatestConfig)
+				configs.POST("/terraform-module", require.All(s.componentConfigRequirements), s.CreateAppTerraformModuleComponentConfig)
+				configs.POST("/helm", require.All(s.componentConfigRequirements), s.CreateAppHelmComponentConfig)
+				configs.POST("/external-image", require.All(s.componentConfigRequirements), s.CreateAppExternalImageComponentConfig)
+				configs.POST("/job", require.All(s.componentConfigRequirements), s.CreateAppJobComponentConfig)
+				configs.POST("/kubernetes-manifest", require.All(s.componentConfigRequirements), s.CreateAppKubernetesManifestComponentConfig)
+				configs.POST("/pulumi", require.All(s.componentConfigRequirements), s.CreateAppPulumiComponentConfig)
+				configs.GET("", require.Point(permissions.ComponentConfigRead, s.componentTarget), s.GetAppComponentConfigs)
+				configs.GET("/:config_id", require.Point(permissions.ComponentConfigRead, s.componentTarget), s.GetAppComponentConfig)
+				configs.GET("/latest", require.Point(permissions.ComponentConfigRead, s.componentTarget), s.GetAppComponentLatestConfig)
 			}
 		}
 	}
 
 	// deprecated routes
 	deprecatedComponents := api.Group("/v1/components/:component_id", require.ComponentInOrg(s.db))
+	// crud ops for components
+	deprecatedComponentsAccess := require.Routes(deprecatedComponents, permissions.APICtl)
 	{
-		// crud ops for components
-		s.GET(deprecatedComponents, "", s.GetComponent, apiPkg.APIContextTypePublic, true)
-		s.PATCH(deprecatedComponents, "", s.UpdateComponent, apiPkg.APIContextTypePublic, true)
-		s.DELETE(deprecatedComponents, "", s.DeleteComponent, apiPkg.APIContextTypePublic, true)
+
+		s.GET(deprecatedComponentsAccess.For(require.Point(permissions.ComponentInspect, s.namedComponentTarget)), "", s.GetComponent, apiPkg.APIContextTypePublic, true)
+		s.PATCH(deprecatedComponentsAccess.For(require.Point(permissions.ComponentUpdate, s.componentTarget)), "", s.UpdateComponent, apiPkg.APIContextTypePublic, true)
+		s.DELETE(deprecatedComponentsAccess.For(require.Point(permissions.ComponentDelete, s.componentTarget)), "", s.DeleteComponent, apiPkg.APIContextTypePublic, true)
 
 		// dependencies
-		s.GET(deprecatedComponents, "/dependencies", s.GetComponentDependencies, apiPkg.APIContextTypePublic, true)
-		s.GET(deprecatedComponents, "/dependents", s.GetComponentDependents, apiPkg.APIContextTypePublic, true)
+		s.GET(deprecatedComponentsAccess.For(require.Point(permissions.AppConfigRead, s.componentGraphTarget)), "/dependencies", s.GetComponentDependencies, apiPkg.APIContextTypePublic, true)
+		s.GET(deprecatedComponentsAccess.For(require.Point(permissions.AppConfigRead, s.componentGraphTarget)), "/dependents", s.GetComponentDependents, apiPkg.APIContextTypePublic, true)
 
 		// component configurations
-		deprecatedConfigs := deprecatedComponents.Group("/configs")
+		deprecatedConfigs := require.Routes(deprecatedComponents.Group("/configs"), permissions.APICtl)
 		{
-			s.POST(deprecatedConfigs, "/terraform-module", s.CreateTerraformModuleComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.POST(deprecatedConfigs, "/helm", s.CreateHelmComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.POST(deprecatedConfigs, "/external-image", s.CreateExternalImageComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.POST(deprecatedConfigs, "/job", s.CreateJobComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.POST(deprecatedConfigs, "/kubernetes-manifest", s.CreateKubernetesManifestComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.POST(deprecatedConfigs, "/pulumi", s.CreatePulumiComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedConfigs, "", s.GetComponentConfigs, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedConfigs, "/:config_id", s.GetComponentConfig, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedConfigs, "/latest", s.GetComponentLatestConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs.For(require.All(s.componentConfigRequirements)), "/terraform-module", s.CreateTerraformModuleComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs.For(require.All(s.componentConfigRequirements)), "/helm", s.CreateHelmComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs.For(require.All(s.componentConfigRequirements)), "/external-image", s.CreateExternalImageComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs.For(require.All(s.componentConfigRequirements)), "/job", s.CreateJobComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs.For(require.All(s.componentConfigRequirements)), "/kubernetes-manifest", s.CreateKubernetesManifestComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs.For(require.All(s.componentConfigRequirements)), "/pulumi", s.CreatePulumiComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedConfigs.For(require.Point(permissions.ComponentConfigRead, s.componentTarget)), "", s.GetComponentConfigs, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedConfigs.For(require.Point(permissions.ComponentConfigRead, s.componentTarget)), "/:config_id", s.GetComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedConfigs.For(require.Point(permissions.ComponentConfigRead, s.componentTarget)), "/latest", s.GetComponentLatestConfig, apiPkg.APIContextTypePublic, true)
 		}
 
 		// builds
-		deprecatedBuilds := deprecatedComponents.Group("/builds")
+		deprecatedBuilds := require.Routes(deprecatedComponents.Group("/builds"), permissions.APICtl)
 		{
-			s.POST(deprecatedBuilds, "", s.CreateComponentBuild, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedBuilds, "/latest", s.GetComponentLatestBuild, apiPkg.APIContextTypePublic, true)
-			s.GET(deprecatedBuilds, "/:build_id", s.GetComponentBuild, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedBuilds.For(require.Point(permissions.ComponentBuildCreate, s.namedComponentTarget)), "", s.CreateComponentBuild, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedBuilds.For(require.Collection(permissions.ComponentBuildInspect, s.buildResources)), "/latest", s.GetComponentLatestBuild, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedBuilds.For(require.Point(permissions.ComponentBuildInspect, s.buildTarget)), "/:build_id", s.GetComponentBuild, apiPkg.APIContextTypePublic, true)
 		}
 	}
 
 	// other deprecated build routes
-	s.GET(api, "/v1/builds", s.GetComponentBuilds, apiPkg.APIContextTypePublic, true)
-	s.GET(api, "/v1/components/builds/:build_id", s.GetBuild, apiPkg.APIContextTypePublic, true)
+	s.GET(apiAccess.For(require.Collection(permissions.ComponentBuildInspect, s.buildResources)), "/v1/builds", s.GetComponentBuilds, apiPkg.APIContextTypePublic, true)
+	s.GET(apiAccess.For(require.Point(permissions.ComponentBuildInspect, s.buildTarget)), "/v1/components/builds/:build_id", s.GetBuild, apiPkg.APIContextTypePublic, true)
 
 	return nil
 }

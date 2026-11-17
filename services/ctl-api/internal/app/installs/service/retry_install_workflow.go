@@ -70,7 +70,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 	_ = ctx.Param("install_id")
 
 	var req RetryWorkflowRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err: err,
 		})

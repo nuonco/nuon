@@ -22,7 +22,7 @@ type mcpGetInstallReadmeResult struct {
 }
 
 func (s *service) mcpGetInstallReadme(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetInstallReadmeInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -32,6 +32,9 @@ func (s *service) mcpGetInstallReadme(ctx context.Context, _ *mcp.CallToolReques
 
 	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.mcpInstallPoint(ctx, install.ID, "install.config.read"); err != nil {
 		return nil, nil, err
 	}
 	readme, err := s.renderInstallReadme(ctx, orgID, install.ID)

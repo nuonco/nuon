@@ -19,7 +19,7 @@ type mcpDeprovisionSandboxInput struct {
 }
 
 func (s *service) mcpDeprovisionSandbox(ctx context.Context, _ *mcp.CallToolRequest, in mcpDeprovisionSandboxInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

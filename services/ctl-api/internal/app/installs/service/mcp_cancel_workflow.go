@@ -20,12 +20,15 @@ type mcpCancelWorkflowInput struct {
 }
 
 func (s *service) mcpCancelWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in mcpCancelWorkflowInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	if in.WorkflowID == "" {
 		return nil, nil, fmt.Errorf("workflow_id is required")
+	}
+	if err := s.mcpWorkflowPoint(ctx, in.WorkflowID, "workflow.cancel"); err != nil {
+		return nil, nil, err
 	}
 
 	var wf app.Workflow

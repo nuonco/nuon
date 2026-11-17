@@ -14,13 +14,16 @@ type mcpGetAppInput struct {
 }
 
 func (s *service) mcpGetApp(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetAppInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	result, err := s.findApp(ctx, orgID, in.App)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.mcpAppPoint(ctx, result.ID, "app.inspect"); err != nil {
 		return nil, nil, err
 	}
 

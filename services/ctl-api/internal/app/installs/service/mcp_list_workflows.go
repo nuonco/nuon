@@ -23,13 +23,14 @@ type mcpWorkflowListItem struct {
 }
 
 func (s *service) mcpListWorkflows(ctx context.Context, _ *mcp.CallToolRequest, in mcpListWorkflowsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	var workflows []app.Workflow
 	err = s.db.WithContext(ctx).
+		Scopes(s.mcpWorkflowCollection(ctx)).
 		Where(app.Workflow{OrgID: orgID, OwnerID: in.InstallID}).
 		Order("created_at DESC").
 		Limit(20).

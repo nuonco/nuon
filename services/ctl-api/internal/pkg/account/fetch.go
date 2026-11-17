@@ -31,7 +31,7 @@ func (m *Client) FetchAccount(ctx context.Context, acctID string) (*app.Account,
 		return nil, fmt.Errorf("unable to fetch account %s: %w", acctID, res.Error)
 	}
 
-	authority, err := authz.New(authz.Params{DB: m.db}).LoadLegacyAccountPermissions(ctx, &acct)
+	authority, err := authz.New(authz.Params{DB: m.db}).LoadAccountLegacyAccess(ctx, &acct)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load account permissions: %w", err)
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigsync"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -49,7 +50,7 @@ func (s *service) TriggerInstallConfigSync(ctx *gin.Context) {
 	branchID := ctx.Param("app_branch_id")
 
 	var req TriggerInstallConfigSyncRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
@@ -106,6 +107,14 @@ func (s *service) TriggerInstallConfigSync(ctx *gin.Context) {
 	query := s.db.WithContext(ctx).Where(app.Install{AppID: appID, OrgID: org.ID})
 	if req.InstallName != "" {
 		query = query.Where(app.Install{Name: req.InstallName})
+	}
+	if authz.HasAuthority(ctx) {
+		ids, ok := ctx.Value("nuon.apps.config_install_ids").([]string)
+		if !ok {
+			ctx.Error(fmt.Errorf("missing admitted installs for branch config sync"))
+			return
+		}
+		query = query.Where("id IN ?", ids)
 	}
 	if err := query.Find(&installs).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs: %w", err))

@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/render"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -61,7 +62,11 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 }
 
 func (s *service) renderInstallReadme(ctx context.Context, orgID, installID string) (*Readme, error) {
-	install, err := s.helpers.GetInstall(ctx, orgID, installID)
+	load := s.helpers.GetInstall
+	if authz.HasAuthority(ctx) {
+		load = s.findInstall
+	}
+	install, err := load(ctx, orgID, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}

@@ -5,8 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -50,6 +52,7 @@ func (s *service) getOrgBranches(ctx *gin.Context, orgID string) ([]app.AppBranc
 	branches := make([]app.AppBranch, 0)
 
 	res := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx, clause.Column{Table: "app_branches", Name: "id"})).
 		Model(&app.AppBranch{}).
 		Select(fmt.Sprintf("app_branches.*, "+
 			"(SELECT COUNT(*) FROM %s w "+

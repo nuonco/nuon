@@ -49,7 +49,7 @@ func (s *service) UpdateOrgAccountRole(ctx *gin.Context) {
 		return
 	}
 
-	if !s.isOrgAdmin(caller, org.ID) {
+	if !authz.HasAuthority(ctx) && !s.isOrgAdmin(caller, org.ID) {
 		ctx.Error(stderr.ErrAuthorization{
 			Err:         fmt.Errorf("only org admins can change member roles"),
 			Description: "only org admins can change member roles",

@@ -75,7 +75,7 @@ func (s *service) CreateAppPoliciesConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppPoliciesConfigRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.ErrInvalidRequest{
 			Err: err,
 		})

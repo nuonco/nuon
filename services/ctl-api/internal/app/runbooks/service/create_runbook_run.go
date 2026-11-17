@@ -13,6 +13,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
@@ -148,6 +150,48 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 	} else {
 		if err := configQuery.Order("created_at DESC").First(&runbookConfig).Error; err != nil {
 			return nil, fmt.Errorf("runbook has no configurations")
+		}
+	}
+
+	if authz.HasAuthority(ctx) {
+		if runbookConfig.AppID != install.AppID {
+			return nil, gorm.ErrRecordNotFound
+		}
+		if install.AppConfigID != "" {
+			var config app.AppConfig
+			if err := s.db.WithContext(ctx).Where(app.AppConfig{ID: install.AppConfigID, OrgID: orgID, AppID: install.AppID}).First(&config).Error; err != nil {
+				return nil, err
+			}
+		}
+		for _, step := range runbookConfig.Steps {
+			if step.Type == app.RunbookStepTypeWaitForEvent {
+				authority, err := authz.AuthorityFromContext(ctx)
+				if err != nil {
+					return nil, err
+				}
+				target := permissions.Target{ResolvedTarget: permissions.ResolvedTarget{
+					Scope: permissions.Scope{Kind: permissions.KindInstall, OrgID: orgID, ID: install.ID}, AppID: install.AppID, InstallID: install.ID,
+				}}
+				if step.TriggerID == "" || !authority.Check(permissions.AppAutomationManage, target).Matched {
+					return nil, stderr.ErrNotFound{Err: gorm.ErrRecordNotFound, Description: "resource not found"}
+				}
+				var trigger app.Trigger
+				if err := s.db.WithContext(ctx).Where(app.Trigger{ID: step.TriggerID, OrgID: orgID}).First(&trigger).Error; err != nil {
+					return nil, err
+				}
+			}
+			if step.ActionWorkflowID.Valid {
+				var action app.ActionWorkflow
+				if err := s.db.WithContext(ctx).Where(app.ActionWorkflow{ID: step.ActionWorkflowID.String, OrgID: orgID, AppID: install.AppID}).First(&action).Error; err != nil {
+					return nil, err
+				}
+			}
+			if step.ComponentName != "" {
+				var component app.Component
+				if err := s.db.WithContext(ctx).Where(app.Component{OrgID: orgID, AppID: install.AppID, Name: step.ComponentName}).First(&component).Error; err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 

@@ -2,12 +2,41 @@ package authz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
+
+var ErrDenied = errors.New("authorization denied")
+
+type Requirement struct {
+	Operation permissions.PermissionID
+	Target    permissions.Target
+}
+
+func RequestAuthority(ctx cctx.ValueContext, api permissions.API) (*Authority, error) {
+	account, err := cctx.AccountFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !HasAuthority(ctx) && account.Authority != nil {
+		return nil, nil
+	}
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	authority, err := AuthorityFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := authority.ValidateIdentity(account.ID, cctx.TokenIDFromContext(ctx), orgID, api); err != nil {
+		return nil, err
+	}
+	return authority, nil
+}
 
 type AuthorityInput struct {
 	AccountID    string
@@ -56,6 +85,10 @@ func (c *Client) LoadAuthority(ctx context.Context, catalog *permissions.Catalog
 	}, nil
 }
 
+func (a *Authority) HasCeiling() bool {
+	return a != nil && a.ceiling != nil
+}
+
 func (a *Authority) ValidateIdentity(accountID, credentialID, orgID string, api permissions.API) error {
 	if a == nil || a.catalog == nil ||
 		a.accountID != accountID || a.credentialID != credentialID || a.orgID != orgID || a.api != api {
@@ -76,11 +109,27 @@ func (a *Authority) Check(operation permissions.PermissionID, target permissions
 	})
 }
 
-func (a *Authority) AuthorizedIDs(ctx context.Context, operation permissions.PermissionID, resources *Resources) (*gorm.DB, error) {
+func (a *Authority) Require(requirements ...Requirement) error {
+	if len(requirements) == 0 {
+		return fmt.Errorf("%w: operation requires an authorization target", ErrDenied)
+	}
+	for _, requirement := range requirements {
+		if match := a.Check(requirement.Operation, requirement.Target); !match.Matched {
+			return fmt.Errorf("%w: operation %s denied: %s", ErrDenied, requirement.Operation, match.Reason)
+		}
+	}
+	return nil
+}
+
+func (a *Authority) Select(ctx context.Context, operation permissions.PermissionID, resources *Resources) (*Selection, error) {
 	if a == nil || a.catalog == nil {
 		return nil, fmt.Errorf("authority was not loaded")
 	}
-	return resources.AuthorizedIDs(ctx, a.catalog, permissions.Query{
+	ids, err := resources.AuthorizedIDs(ctx, a.catalog, permissions.Query{
 		API: a.api, Permission: operation, Kind: resources.kind, OrgID: a.orgID, Grants: a.grants, Ceiling: a.ceiling,
 	})
+	if err != nil {
+		return nil, err
+	}
+	return &Selection{ids: ids}, nil
 }

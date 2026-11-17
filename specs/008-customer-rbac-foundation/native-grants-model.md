@@ -107,7 +107,7 @@ The same mechanism supports write bundles. For this slice, `install.write` inclu
 
 Broad `.write` is not an Editor preset. Preserve its destructive compatibility meaning; the later routine-write catalog introduces `.edit` bundles excluding destructive lifecycle and access-administration operations. Reader/Editor/Admin presets are recipes for ordinary grants, not special evaluator behavior or a new policy shape. Their exact memberships and supported scopes are defined when those operations are ready; they do not enlarge this slice's scope table.
 
-This is not the complete production catalog. State, stack, runner, telemetry, credential-bearing operations, and other existing families need explicit mappings before their routes migrate. Their current checks remain in place meanwhile.
+This worked example is not the complete catalog. The local implementation now adds explicit state, stack, runner, telemetry, credential-bearing and other domain operations. See the [delivery ledger](../009-service-account-permissions/delivery-ledger.md) for implemented coverage, verification and outstanding activation gates; the example above does not freeze bundle membership at its original three leaves.
 
 The code-owned catalog is also the source for future authoring metadata: stable operation/bundle IDs, titles, descriptions, supported scopes, and explicit bundle membership. Distinguish definitions from combinations ready for customer assignment and from the current actor's delegation authority. Readiness and display metadata do not themselves grant access. A later catalog API and picker consume these definitions rather than maintaining a second permission registry; neither is part of the first implementation increment.
 
@@ -250,6 +250,18 @@ The new typed `["*"]` selection does not establish equivalence with historical w
 
 Adding the document format alone needs no new SQL column or bulk rewrite. Once native documents are written, rollback must retain a reader-capable binary; an old binary or approximate reverse conversion is not a safe rollback.
 
+### Local implementation decisions for broad coverage
+
+The current implementation integrates existing customer HTTP and MCP endpoints before resuming the service-account editor. Format-4 requests use explicit operations and never fall back to v3. Existing v3 requests keep their original route checks until their cohorts are verified and converted. The runtime registration census covers all registered org-scoped customer routes; it does not establish every handler's compatibility or asynchronous execution parity.
+
+**Dynamic automation remains deliberately coarse.** `app.automation.manage` is assignable only at org scope. It covers config activation, connected repositories, branch runs, install synchronization and event-driven execution whose workers discover current/future targets. Known app-owned workflow approvals/retries require both this capability and the continuation operation. Connected-repository action configuration and event-waiting runbooks require it in addition to their ordinary operations. `app.delete` is also org-scoped because its existing cleanup affects descendants. These capabilities describe existing side effects; they do not promise isolated app/install automation. Immediate handlers with a concrete multi-resource selection instead authorize and consume the selected IDs.
+
+**Accepted work keeps its existing execution contract.** HTTP and MCP share domain continuation validation, checking actual workflow ancestry and the underlying execution operation. This does not serialize a grant snapshot into every worker or promise revocation of already accepted work. Unknown or contradictory provenance, including notebook-linked action runs presented through the generic action continuation path, denies rather than guessing an operation. Notebook execution still uses its own declared operation and existing warm-workflow path.
+
+**Standard conversion is narrow and opt-in.** `enable_org_grant_policies` defaults off. It enables format-4 standard Admin/Reader creation and explicit application through the internal reconciliation endpoint; preview is read-only and requires exactly one org. The converter verifies the standard managed role pair, actual old authority, ownership and bindings. It refuses same-org mixtures with custom/private roles instead of unioning their potentially order-sensitive legacy decisions. Reconciliation preserves authored grants; standard-role replacement cannot erase custom grants. Support/Installer/Runner and private policies remain outside this converter.
+
+The standard Admin recipe explicitly includes org reads/writes plus the existing admin-only access-management reads. Reader additionally retains the readable Slack installation-URL capability. No Editor preset or blanket permission-name translation is introduced. Apply serializes conversion with table-wide authority-write locks, whose production impact must be measured. Production inventory, complete-stack journeys, cohort parity, deployment ordering and a reader-capable rollback are activation gates, not completed claims.
+
 ## 10. Implementation boundaries and verification gates
 
 Reuse the current owners under `services/ctl-api/internal/`: `pkg/authz/permissions/{catalog,policy,scope,evaluate}.go` for definitions, codec and matching; `pkg/authz/account_permissions.go` and account/role/policy models for loading; existing role constructors/reconciliation for writing; `pkg/authz/require` and domain helpers for explicit enforcement and queries. Remove legacy projection dependencies at their sources, not through a new framework.
@@ -267,6 +279,6 @@ Before activating the native slice, validate:
 - Actual policy/account hook round-trips and managed-role reconciliation for grants with no legacy projection.
 - Differential checks against the existing checker for every migrated cohort and route, including embedded payloads and log fan-out.
 
-These are implementation acceptance gates, not claims of completed runtime verification. This revision changes only the proposal. The earlier path-based reference probe does not validate this simpler model.
+These are implementation acceptance gates, not claims of completed runtime verification. Current evidence and remaining gaps are recorded in the delivery ledger. The earlier path-based reference probe does not validate this simpler model.
 
 The [Oracle review](https://ampcode.com/artifacts/spec-008-oracle-critique-of-permission-representation-eb58f52f-f513-4c5d-b2b8-bc817a975609) records why the earlier design changed. Keep the initial catalog/matcher change independently reviewable and free of policy rewrites or authorization cutover, then continue through spec 009's coordinated plan. Catalog APIs, permission-editor UI, delegation validation, persisted token ceilings, audit storage, and required workflow changes belong to that same delivery effort, not a sequence of separately postponed projects. The foundation acceptance gates above remain prerequisites for exposing native access; unrelated security cleanup is not added to them.

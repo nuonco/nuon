@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -50,6 +51,7 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 
 	runbooks := []*app.Runbook{}
 	tx := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx)).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("labels", lbls)).
 		Preload("Configs", func(tx2 *gorm.DB) *gorm.DB {

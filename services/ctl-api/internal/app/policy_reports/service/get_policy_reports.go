@@ -9,6 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -65,6 +67,14 @@ func (s *service) getPolicyReports(ctx *gin.Context, orgID, ownerType, ownerID, 
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Where("org_id = ?", orgID)
+
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		query = query.Where("id IN (?)", ids)
+	}
 
 	if ownerType != "" {
 		if ownerType != string(app.PolicyReportOwnerTypeInstallDeploy) &&

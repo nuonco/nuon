@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -164,7 +165,7 @@ func (s *service) CreateAppPermissionsConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppPermissionsConfigRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.ErrInvalidRequest{
 			Err: err,
 		})
@@ -203,9 +204,16 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 	}
 
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		res := s.db.WithContext(ctx).Create(obj)
+		res := tx.Create(obj)
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to create app permissions config")
+		}
+		if authz.HasAuthority(ctx) {
+			ids, ok := ctx.Value("nuon.apps.config_install_ids").([]string)
+			if !ok {
+				return errors.New("missing admitted installs for permissions configuration")
+			}
+			return s.installsHelpers.WithDB(tx).MigrateSelectedInstallRoles(ctx, appID, *obj, ids)
 		}
 		if err := s.installsHelpers.WithDB(tx).MigrateInstallRoles(ctx, appID, *obj); err != nil {
 			return errors.Wrap(err, "failed to migrate install roles")

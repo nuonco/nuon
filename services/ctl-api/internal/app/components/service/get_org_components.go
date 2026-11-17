@@ -7,8 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -62,6 +64,7 @@ func (s *service) getOrgComponents(ctx *gin.Context, orgID string) ([]app.Compon
 	comps := []app.Component{}
 
 	res := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx, clause.Column{Table: "components", Name: "id"})).
 		Scopes(scopes.WithOffsetPagination).
 		Joins("JOIN apps on apps.id=components.app_id").
 		Where("apps.org_id = ?", orgID)

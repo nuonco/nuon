@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -304,7 +305,7 @@ func (s *service) searchServiceAccounts(ctx context.Context, org *app.Org, scope
 // @Success				200	{object}	[]ServiceAccount
 // @Router					/v1/service-accounts [GET]
 func (s *service) ListServiceAccounts(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.ServiceAccountsRead)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -434,7 +435,7 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 // @Success				200	{array}		string
 // @Router					/v1/service-accounts/purposes [GET]
 func (s *service) ListServiceAccountPurposes(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.ServiceAccountsRead)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -478,7 +479,7 @@ type CreateServiceAccountRequest struct {
 // @Success				201	{object}	app.Account
 // @Router					/v1/service-accounts [POST]
 func (s *service) CreateServiceAccount(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.ServiceAccountCreate)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -542,7 +543,7 @@ type UpdateServiceAccountRequest struct {
 // @Success				200	{object}	app.Account
 // @Router					/v1/service-accounts/{account_id} [PATCH]
 func (s *service) UpdateServiceAccount(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.ServiceAccountUpdate)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -606,7 +607,7 @@ type UpdateServiceAccountRoleRequest struct {
 // @Success				200	{object}	app.Account
 // @Router					/v1/service-accounts/{account_id}/role [PATCH]
 func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.ServiceAccountRoleUpdate)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -671,7 +672,7 @@ func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
 // @Success				202
 // @Router					/v1/service-accounts/{account_id} [DELETE]
 func (s *service) DeleteServiceAccount(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.ServiceAccountDelete)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -734,7 +735,7 @@ type CreateServiceAccountTokenResponse struct {
 // @Deprecated				true
 // @Router					/v1/service-accounts/{account_id}/tokens [POST]
 func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.TokenCreate)
 	if err != nil {
 		ctx.Error(err)
 		return

@@ -20,17 +20,30 @@ func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string,
 		if err != nil {
 			return err
 		}
-		if usesGrants {
-			return fmt.Errorf("cannot replace scoped grants with a legacy org role")
-		}
 		var role app.Role
 		if err := tx.
+			Preload("Policies").
 			Where(app.Role{
 				OrgID:    generics.NewNullString(orgID),
 				RoleType: roleType,
 			}).
 			First(&role).Error; err != nil {
 			return fmt.Errorf("unable to find role: %w", err)
+		}
+		if usesGrants {
+			if !isStandardOrgGrant(role) {
+				return fmt.Errorf("cannot replace scoped grants with a legacy or custom org role")
+			}
+			bindings := tx.Model(&app.AccountRole{}).Select("role_id").Where(app.AccountRole{AccountID: accountID, OrgID: generics.NewNullString(orgID)})
+			var current []app.Role
+			if err := tx.Preload("Policies").Where("id IN (?)", bindings).Find(&current).Error; err != nil {
+				return err
+			}
+			for _, existing := range current {
+				if !isStandardOrgGrant(existing) {
+					return fmt.Errorf("cannot replace custom grants through org-role assignment")
+				}
+			}
 		}
 
 		if err := tx.

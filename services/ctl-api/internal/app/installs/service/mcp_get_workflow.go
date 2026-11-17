@@ -64,8 +64,11 @@ type mcpWorkflowStepSummary struct {
 }
 
 func (s *service) mcpGetWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetWorkflowInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.mcpWorkflowPoint(ctx, in.WorkflowID, "workflow.inspect"); err != nil {
 		return nil, nil, err
 	}
 

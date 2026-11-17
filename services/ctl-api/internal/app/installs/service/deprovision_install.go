@@ -53,10 +53,15 @@ func (c *DeprovisionInstallRequest) Validate(v *validator.Validate) error {
 func (s *service) DeprovisionInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
-	install, err := s.getInstall(ctx, installID)
-	if err != nil {
-		ctx.Error(err)
-		return
+	value, _ := ctx.Get(authorizedInstallKey)
+	install, loaded := value.(*app.Install)
+	if !loaded {
+		var err error
+		install, err = s.getInstall(ctx, installID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
 	}
 
 	var req DeprovisionInstallRequest

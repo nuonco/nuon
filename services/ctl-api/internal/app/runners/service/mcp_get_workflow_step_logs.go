@@ -9,7 +9,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -32,7 +34,7 @@ type mcpStepLogResult struct {
 }
 
 func (s *service) mcpGetWorkflowStepLogs(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetWorkflowStepLogsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -43,6 +45,9 @@ func (s *service) mcpGetWorkflowStepLogs(ctx context.Context, _ *mcp.CallToolReq
 		Where("id = ?", in.StepID).
 		First(&step).Error; err != nil {
 		return nil, nil, fmt.Errorf("unable to find step %q: %w", in.StepID, err)
+	}
+	if err := require.MCPPoint(ctx, s.db, access.Workflows, permissions.WorkflowInspect, step.InstallWorkflowID); err != nil {
+		return nil, nil, err
 	}
 
 	if step.StepTargetID == "" || !stepTargetHasLogs(step.StepTargetType) {

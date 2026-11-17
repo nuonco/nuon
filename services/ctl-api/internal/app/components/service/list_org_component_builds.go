@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -101,6 +102,7 @@ func (s *service) ListOrgComponentBuilds(ctx *gin.Context) {
 func (s *service) listOrgComponentBuilds(ctx *gin.Context, orgID string, cursor *componentBuildCursor, limit int) ([]app.ComponentBuild, bool, error) {
 	builds := []app.ComponentBuild{}
 	query := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx, clause.Column{Table: "component_builds", Name: "id"})).
 		Preload("CreatedBy").
 		Preload("VCSConnectionCommit").
 		Preload("ComponentConfigConnection.Component").

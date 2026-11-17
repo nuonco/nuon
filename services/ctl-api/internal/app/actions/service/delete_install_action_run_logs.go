@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -59,7 +60,7 @@ func (s *service) DeleteInstallActionRunLogs(ctx *gin.Context) {
 		return
 	}
 
-	if !s.accountsHelpers.IsOrgAdmin(acct, org.ID) {
+	if !authz.HasAuthority(ctx) && !s.accountsHelpers.IsOrgAdmin(acct, org.ID) {
 		ctx.Error(stderr.ErrAuthorization{
 			Err:         fmt.Errorf("only org admins can delete action run logs"),
 			Description: "only org admins can delete action run logs",

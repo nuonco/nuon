@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -57,6 +58,9 @@ func (s *service) GetInstallAppPermissionsConfig(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
+	}
+	if authz.HasAuthority(ctx) {
+		installID = install.ID
 	}
 
 	appCfg, err := s.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)

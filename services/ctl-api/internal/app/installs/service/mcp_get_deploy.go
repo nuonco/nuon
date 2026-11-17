@@ -30,13 +30,14 @@ type mcpDeployDetail struct {
 }
 
 func (s *service) mcpGetDeploy(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetDeployInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	var deploy app.InstallDeploy
 	err = s.db.WithContext(ctx).
+		Scopes(s.mcpDeployCollection(ctx, orgID)).
 		Preload("InstallComponent").
 		Preload("InstallComponent.Component").
 		Preload("ComponentBuild").

@@ -15,6 +15,11 @@ func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
 	if err != nil {
 		return err
 	}
+	if c.cfg != nil && c.cfg.EnableOrgGrantPolicies {
+		if err := useOrgGrantPolicies(roles); err != nil {
+			return err
+		}
+	}
 
 	res := c.db.
 		WithContext(ctx).

@@ -52,7 +52,9 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	result, err := s.createInstallActionWorkflowRun(ctx, installID, req)
+	value, _ := ctx.Get(authorizedActionRunKey)
+	prepared, _ := value.(*preparedInstallActionWorkflowRun)
+	result, err := s.createInstallActionWorkflowRun(ctx, installID, req, prepared)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -67,14 +69,17 @@ type createInstallActionWorkflowRunResult struct {
 	ActionWorkflowConfigID string
 }
 
-func (s *service) createInstallActionWorkflowRun(ctx context.Context, installID string, req CreateInstallActionWorkflowRunRequest) (*createInstallActionWorkflowRunResult, error) {
+func (s *service) createInstallActionWorkflowRun(ctx context.Context, installID string, req CreateInstallActionWorkflowRunRequest, prepared *preparedInstallActionWorkflowRun) (*createInstallActionWorkflowRunResult, error) {
 	if req.RequestID != "" {
 		return s.createIdempotentInstallActionWorkflowRun(ctx, installID, req)
 	}
 
-	prepared, err := s.prepareInstallActionWorkflowRun(ctx, installID, req)
-	if err != nil {
-		return nil, err
+	if prepared == nil {
+		var err error
+		prepared, err = s.prepareInstallActionWorkflowRun(ctx, installID, req)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	workflow, err := s.installHelpers.CreateWorkflowWithRole(ctx,

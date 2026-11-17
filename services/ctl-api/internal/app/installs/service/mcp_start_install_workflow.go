@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
@@ -28,6 +30,24 @@ func (s *service) startInstallWorkflow(
 	install, err := s.findInstall(ctx, orgID, installRef)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install %q: %w", installRef, err)
+	}
+	if authz.HasAuthority(ctx) {
+		var operation permissions.PermissionID
+		switch workflowType {
+		case app.WorkflowTypeDeployComponents:
+			operation = permissions.InstallDeploy
+		case app.WorkflowTypeDeprovision:
+			operation = permissions.InstallDelete
+		case app.WorkflowTypeDeprovisionSandbox:
+			operation = permissions.InstallTeardown
+		case app.WorkflowTypeReprovision, app.WorkflowTypeReprovisionStack, app.WorkflowTypeReprovisionSandbox:
+			operation = permissions.InstallProvision
+		default:
+			return nil, fmt.Errorf("unsupported MCP install workflow")
+		}
+		if err := s.mcpInstallPoint(ctx, install.ID, operation); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := s.helpers.ValidateInstallRole(ctx, install.ID, role); err != nil {

@@ -9,10 +9,12 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -84,6 +86,7 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, branchID, q string, 
 
 	var components []app.Component
 	tx := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx, clause.Column{Table: "components", Name: "id"})).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("components.labels", lbls)).
 		Where("id IN ?", []string(appCfg.ComponentIDs)).

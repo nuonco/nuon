@@ -90,247 +90,232 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	s.POST(ge, "/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome, api.APIContextTypePublic, true)
 
 	org := require.OrgRoute(ge)
-
 	// get all installs across orgs
-	require.CollectionRoute(org, permissions.APICtl, permissions.InstallInspect, s.installResources).GET("/v1/installs", s.GetOrgInstalls)
-	org.GET("/v1/installs/label-keys", s.GetInstallLabelKeys)
-	org.GET("/v1/installs/health", s.GetInstallsHealth)
-	org.POST("/v1/installs", s.CreateInstallV2)
+	orgAccess := require.Routes(org, permissions.APICtl)
+	orgAccess.GET("/v1/installs", require.Collection(permissions.InstallInspect, s.installResources), s.GetOrgInstalls)
+	orgAccess.GET("/v1/installs/label-keys", require.Collection(permissions.InstallInspect, s.installResources), s.GetInstallLabelKeys)
+	orgAccess.GET("/v1/installs/health", require.Collection(permissions.InstallStateRead, s.installResources), s.GetInstallsHealth)
+	orgAccess.POST("/v1/installs", require.Point(permissions.InstallCreate, s.createInstallTarget), s.CreateInstallV2)
 
 	// get / create installs for an app
-	apps := require.OrgRoute(ge).Group("/v1/apps/:app_id", require.AppInOrg(s.db))
+	apps := require.Routes(require.OrgRoute(ge).Group("/v1/apps/:app_id", require.AppInOrg(s.db)), permissions.APICtl)
 	{
-		require.CollectionRoute(apps, permissions.APICtl, permissions.InstallInspect, s.installResources).GET("/installs", s.GetAppInstalls)
-		s.POST(apps, "/installs", s.CreateInstall, api.APIContextTypePublic, true) // Deprecated
+		apps.GET("/installs", require.Collection(permissions.InstallInspect, s.installResources), s.GetAppInstalls)
+		s.POST(apps.For(require.Point(permissions.InstallCreate, s.createInstallTarget)), "/installs", s.CreateInstall, api.APIContextTypePublic, true) // Deprecated
 	}
 
 	// deprecated sandbox run route
-	s.GET(org, "/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun, api.APIContextTypePublic, true) // Deprecated
+	s.GET(orgAccess.For(require.Point(permissions.InstallHistoryRead, s.sandboxRunInstallTarget)), "/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun, api.APIContextTypePublic, true) // Deprecated
 
 	installs := require.ResourceRoute(ge, permissions.KindInstall, "install_id").Group("/v1/installs/:install_id")
+	installsAccess := require.Routes(installs, permissions.APICtl)
 	{
-		require.OperationRoute(installs, permissions.APICtl, permissions.InstallInspect, s.installTarget).GET("", s.GetInstall)
-		installs.PATCH("", s.UpdateInstall)
-		installs.DELETE("", s.DeleteInstall)
-		installs.POST("/labels", s.AddInstallLabels)
-		installs.DELETE("/labels", s.RemoveInstallLabels)
-		installs.PATCH("/app-branch", s.MoveInstallToAppBranch)
-		installs.POST("/reprovision", s.ReprovisionInstall)
-		installs.POST("/reprovision-stack", s.ReprovisionInstallStack)
-		installs.POST("/deprovision", s.DeprovisionInstall)
-		installs.POST("/forget", s.ForgetInstall)
-		s.POST(installs, "/retry-workflow", s.RetryWorkflow, api.APIContextTypePublic, true) // Deprecated
+		installsAccess.GET("", require.Point(permissions.InstallInspect, s.installTarget), s.GetInstall)
+		installsAccess.PATCH("", require.Point(permissions.InstallUpdate, s.installIDTarget), s.UpdateInstall)
+		installsAccess.DELETE("", require.Point(permissions.InstallDelete, s.installTarget), s.DeleteInstall)
+		installsAccess.POST("/labels", require.Point(permissions.InstallUpdate, s.installIDTarget), s.AddInstallLabels)
+		installsAccess.DELETE("/labels", require.Point(permissions.InstallUpdate, s.installIDTarget), s.RemoveInstallLabels)
+		installsAccess.PATCH("/app-branch", require.Point(permissions.InstallConfigUpdate, s.installIDTarget), s.MoveInstallToAppBranch)
+		installsAccess.POST("/reprovision", require.Point(permissions.InstallProvision, s.installLifecycleTarget), s.ReprovisionInstall)
+		installsAccess.POST("/reprovision-stack", require.Point(permissions.InstallProvision, s.installLifecycleTarget), s.ReprovisionInstallStack)
+		installsAccess.POST("/deprovision", require.Point(permissions.InstallDelete, s.installTarget), s.DeprovisionInstall)
+		installsAccess.POST("/forget", require.Point(permissions.InstallDelete, s.installTarget), s.ForgetInstall)
+		s.POST(installsAccess.For(require.All(s.installWorkflowRetryRequirements)), "/retry-workflow", s.RetryWorkflow, api.APIContextTypePublic, true) // Deprecated
 
 		// install deploys
-		s.GET(installs, "/deploys", s.GetInstallDeploys, api.APIContextTypePublic, true)             // Deprecated
-		s.POST(installs, "/deploys", s.CreateInstallDeploy, api.APIContextTypePublic, true)          // Deprecated
-		s.GET(installs, "/deploys/latest", s.GetInstallLatestDeploy, api.APIContextTypePublic, true) // Deprecated
-		s.GET(installs, "/deploys/:deploy_id", s.GetInstallDeploy, api.APIContextTypePublic, true)   // Deprecated
-		installs.GET("/components/deploys", s.GetInstallComponentsDeploys)
-		installs.GET("/components/:component_id/deploys/:deploy_id", s.GetInstallComponentDeploy)
-
+		s.GET(installsAccess.For(require.Point(permissions.InstallHistoryRead, s.installIDTarget)), "/deploys", s.GetInstallDeploys, api.APIContextTypePublic, true)           // Deprecated
+		s.POST(installsAccess.For(require.Point(permissions.InstallDeploy, s.installDeployTarget)), "/deploys", s.CreateInstallDeploy, api.APIContextTypePublic, true)         // Deprecated
+		s.GET(installsAccess.For(require.Point(permissions.InstallHistoryRead, s.installTarget)), "/deploys/latest", s.GetInstallLatestDeploy, api.APIContextTypePublic, true) // Deprecated
+		s.GET(installsAccess.For(require.Point(permissions.InstallHistoryRead, s.installIDTarget)), "/deploys/:deploy_id", s.GetInstallDeploy, api.APIContextTypePublic, true)
+		// Deprecated
+		installsAccess.GET("/components/deploys", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallComponentsDeploys)
+		installsAccess.GET("/components/:component_id/deploys/:deploy_id", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallComponentDeploy)
 		// install readme
-		installs.GET("/readme", s.GetInstallReadme)
-
+		installsAccess.GET("/readme", require.Point(permissions.InstallConfigRead, s.installTarget), s.GetInstallReadme)
 		// install drifts
-		installs.GET("/drifted-objects", s.GetDriftedObjects)
-
+		installsAccess.GET("/drifted-objects", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetDriftedObjects)
 		// live component resource explorer
-		installs.GET("/status", s.GetInstallStatus)
-		installs.GET("/resources", s.GetInstallResources)
-
+		installsAccess.GET("/status", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallStatus)
+		installsAccess.GET("/resources", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallResources)
 		// install-level component health rollup
-		installs.GET("/health/timeline", s.GetInstallHealthTimeline)
-		installs.POST("/health/baseline", s.ResetInstallHealthBaseline)
-		installs.POST("/health/cluster-access", s.RefreshInstallHealthClusterAccess)
-
+		installsAccess.GET("/health/timeline", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallHealthTimeline)
+		installsAccess.POST("/health/baseline", require.Point(permissions.InstallConfigUpdate, s.installIDTarget), s.ResetInstallHealthBaseline)
+		installsAccess.POST("/health/cluster-access", require.Point(permissions.InstallConfigUpdate, s.installIDTarget), s.RefreshInstallHealthClusterAccess)
 		// install state
-		installs.GET("/state", s.GetInstallState)
-		installs.GET("/state-history", s.GetInstallStateHistory)
-
+		installsAccess.GET("/state", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallState)
+		installsAccess.GET("/state-history", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallStateHistory)
 		// install dns delegation check
-		installs.GET("/dns/check", s.CheckInstallDNSDelegation)
-
+		installsAccess.GET("/dns/check", require.Point(permissions.InstallStateRead, s.installTarget), s.CheckInstallDNSDelegation)
 		// install sandbox
-		installs.POST("/reprovision-sandbox", s.ReprovisionInstallSandbox)
-		installs.POST("/deprovision-sandbox", s.DeprovisionInstallSandbox)
+		installsAccess.POST("/reprovision-sandbox", require.Point(permissions.InstallProvision, s.installLifecycleTarget), s.ReprovisionInstallSandbox)
+		installsAccess.POST("/deprovision-sandbox", require.Point(permissions.InstallTeardown, s.installLifecycleTarget), s.DeprovisionInstallSandbox)
 
-		sandboxRuns := installs.Group("/sandbox-runs")
+		sandboxRuns := require.Routes(installs.Group("/sandbox-runs"), permissions.APICtl)
 		{
-			sandboxRuns.GET("", s.GetInstallSandboxRuns)
-			sandboxRuns.GET("/:run_id", s.GetInstallSandboxRunV2)
+			sandboxRuns.GET("", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallSandboxRuns)
+			sandboxRuns.GET("/:run_id", require.Point(permissions.InstallHistoryRead, s.sandboxRunInstallTarget), s.GetInstallSandboxRunV2)
 		}
 
 		// install inputs
-		inputs := installs.Group("/inputs")
+		inputs := require.Routes(installs.Group("/inputs"), permissions.APICtl)
 		{
-			inputs.GET("", s.GetInstallInputs)
-			inputs.POST("", s.CreateInstallInputs)
-			inputs.GET("/current", s.GetInstallCurrentInputs)
-			inputs.PATCH("", s.UpdateInstallInputs)
+			inputs.GET("", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallInputs)
+			inputs.POST("", require.Point(permissions.InstallInputsUpdate, s.installLifecycleTarget), s.CreateInstallInputs)
+			inputs.GET("/current", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallCurrentInputs)
+			inputs.PATCH("", require.Point(permissions.InstallInputsUpdate, s.installLifecycleTarget), s.UpdateInstallInputs)
 		}
 
 		// install components
 		components := installs.Group("/components")
+		componentsAccess := require.Routes(components, permissions.APICtl)
 		{
-			components.GET("", s.GetInstallComponents)
-			components.POST("/teardown-all", s.TeardownInstallComponents)
-			components.POST("/deploy-all", s.DeployInstallComponents)
+			componentsAccess.GET("", require.Point(permissions.InstallInspect, s.installIDTarget), s.GetInstallComponents)
+			componentsAccess.POST("/teardown-all", require.Point(permissions.InstallTeardown, s.installLifecycleTarget), s.TeardownInstallComponents)
+			componentsAccess.POST("/deploy-all", require.Point(permissions.InstallDeploy, s.installLifecycleTarget), s.DeployInstallComponents)
 
-			component := components.Group("/:component_id")
+			component := require.Routes(components.Group("/:component_id"), permissions.APICtl)
 			{
-				component.GET("", s.GetInstallComponent)
-				component.POST("/teardown", s.TeardownInstallComponent)
-				component.POST("/toggle", s.ToggleInstallComponent)
-				component.POST("/forget", s.ForgetInstallComponent)
-				component.GET("/deploys", s.GetInstallComponentDeploys)
-				component.GET("/outputs", s.GetInstallComponentOutputs)
-				component.GET("/deploys/latest", s.GetInstallComponentLatestDeploy)
-				component.POST("/deploys", s.CreateInstallComponentDeploy)
-				component.POST("/recover-helm-release", s.RecoverInstallComponentHelmRelease)
-
+				component.GET("", require.Point(permissions.InstallInspect, s.installIDTarget), s.GetInstallComponent)
+				component.POST("/teardown", require.Point(permissions.InstallTeardown, s.installComponentTarget), s.TeardownInstallComponent)
+				component.POST("/toggle", require.Point(permissions.InstallConfigUpdate, s.installComponentTarget), s.ToggleInstallComponent)
+				component.POST("/forget", require.Point(permissions.InstallTeardown, s.installTarget), s.ForgetInstallComponent)
+				component.GET("/deploys", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallComponentDeploys)
+				component.GET("/outputs", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallComponentOutputs)
+				component.GET("/deploys/latest", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallComponentLatestDeploy)
+				component.POST("/deploys", require.Point(permissions.InstallDeploy, s.installDeployTarget), s.CreateInstallComponentDeploy)
+				component.POST("/recover-helm-release", require.Point(permissions.InstallDeploy, s.installComponentTarget), s.RecoverInstallComponentHelmRelease)
 				// component health: gin can't mix wildcard names at the same path
 				// depth, so these reuse the ":component_id" node above, but the
 				// value they expect is the install_component's own ID (matching
 				// the ClickHouse rows), not the catalog component ID the sibling
 				// routes above use. The Swagger docs name it install_component_id.
-				component.GET("/health/timeline", s.GetInstallComponentHealthTimeline)
-				component.GET("/health/incident", s.GetInstallComponentHealthIncident)
-				component.GET("/health/checks", s.GetInstallComponentHealthChecks)
-				component.PUT("/health/checks/:check_name", s.PutInstallComponentHealthCheck)
+				component.GET("/health/timeline", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallComponentHealthTimeline)
+				component.GET("/health/incident", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallComponentHealthIncident)
+				component.GET("/health/checks", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallComponentHealthChecks)
+				component.PUT("/health/checks/:check_name", require.Point(permissions.InstallConfigUpdate, s.installIDTarget), s.PutInstallComponentHealthCheck)
 			}
 		}
 
 		// install action workflows
 		actions := installs.Group("/actions")
 		{
-			action := actions.Group("/:action_id")
+			action := require.Routes(actions.Group("/:action_id"), permissions.APICtl)
 			{
-				action.GET("/outputs", s.GetInstallActionWorkflowOutputs)
+				action.GET("/outputs", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallActionWorkflowOutputs)
 			}
 		}
-
-		installs.POST("/sync-secrets", s.SyncSecrets)
-		installs.POST("/sync-config", s.SyncInstallConfig)
+		installsAccess.POST("/sync-secrets", require.Point(permissions.InstallSecretsSync, s.installLifecycleTarget), s.SyncSecrets)
+		installsAccess.POST("/sync-config", require.Point(permissions.InstallConfigUpdate, s.installIDTarget), s.SyncInstallConfig)
 
 		// install events
-		events := installs.Group("/events")
+		events := installsAccess.For(require.Point(permissions.InstallHistoryRead, s.installIDTarget)).Group("/events")
 		{
 			events.GET("", s.GetInstallEvents)
 			events.GET("/:event_id", s.GetInstallEvent)
 		}
-
 		// workflows for install
-		installs.GET("/workflows", s.GetWorkflows)
-
+		installsAccess.GET("/workflows", require.Collection(permissions.WorkflowInspect, s.workflowResources), s.GetWorkflows)
 		// install runner group
-		installs.GET("/runner-group", s.GetInstallRunnerGroup)
-		installs.GET("/telemetry", s.GetInstallTelemetrySettings)
-		installs.POST("/telemetry/collector", s.EnsureInstallTelemetryCollector)
-		installs.GET("/telemetry/collector", s.GetInstallTelemetryCollector)
-		installs.DELETE("/telemetry/collector", s.DeleteInstallTelemetryCollector)
-
+		installsAccess.GET("/runner-group", require.Point(permissions.InstallInspect, s.installIDTarget), s.GetInstallRunnerGroup)
+		installsAccess.GET("/telemetry", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallTelemetrySettings)
+		installsAccess.POST("/telemetry/collector", require.Point(permissions.InstallCollectorManage, s.installIDTarget), s.EnsureInstallTelemetryCollector)
+		installsAccess.GET("/telemetry/collector", require.Point(permissions.InstallInspect, s.installIDTarget), s.GetInstallTelemetryCollector)
+		installsAccess.DELETE("/telemetry/collector", require.Point(permissions.InstallCollectorManage, s.installIDTarget), s.DeleteInstallTelemetryCollector)
 		// runner bootstrap token
-		installs.POST("/runner-bootstrap-token", s.CreateRunnerBootstrapToken)
-
+		installsAccess.POST("/runner-bootstrap-token", require.Point(permissions.InstallRunnerBootstrap, s.installTarget), s.CreateRunnerBootstrapToken)
 		// install stacks
-		installs.GET("/stack", s.GetInstallStackByInstallID)
-		installs.GET("/stack-runs", s.GetInstallStackRuns)
-
+		installsAccess.GET("/stack", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallStackByInstallID)
+		installsAccess.GET("/stack-runs", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallStackRuns)
 		// available roles
-		installs.GET("/available-roles", s.GetAvailableRoles)
-
+		installsAccess.GET("/available-roles", require.Point(permissions.InstallConfigRead, s.installLifecycleTarget), s.GetAvailableRoles)
 		// app permissions config with provisioning status
-		installs.GET("/app-permissions-config", s.GetInstallAppPermissionsConfig)
+		installsAccess.GET("/app-permissions-config", require.Point(permissions.InstallConfigRead, s.installLifecycleTarget), s.GetInstallAppPermissionsConfig)
 
 		// install roles
-		roles := installs.Group("/roles")
+		roles := require.Routes(installs.Group("/roles"), permissions.APICtl)
 		{
-			roles.GET("", s.GetInstallRoles)
-			roles.GET("/latest", s.GetLatestInstallRoles)
-			roles.GET("/usages", s.GetInstallRoleUsages)
-			roles.PATCH("/:role_id", s.UpdateInstallRole)
+			roles.GET("", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallRoles)
+			roles.GET("/latest", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetLatestInstallRoles)
+			roles.GET("/usages", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallRoleUsages)
+			roles.PATCH("/:role_id", require.Point(permissions.InstallConfigUpdate, s.installIDTarget), s.UpdateInstallRole)
 		}
 
 		// install config
-		configs := installs.Group("/configs")
+		configs := installsAccess.For(require.Point(permissions.InstallConfigUpdate, s.installIDTarget)).Group("/configs")
 		{
 			configs.POST("", s.CreateInstallConfig)
 			configs.PATCH("/:config_id", s.UpdateInstallConfig)
 		}
-
 		// install app config versions
-		installs.GET("/app-config-versions", s.GetInstallAppConfigVersions)
-		installs.GET("/app-config-versions/:version_id/diff", s.GetInstallAppConfigVersionDiff)
-		installs.GET("/app-configs/:config_id/diff", s.GetInstallAppConfigTreeDiff)
-		installs.GET("/deployments", s.GetInstallDeployments)
-		installs.GET("/deployments/:workflow_id", s.GetInstallDeployment)
-		installs.GET("/deployments/:workflow_id/source-diff", s.GetInstallDeploymentSourceDiff)
-		installs.GET("/deployment-summaries", s.GetInstallDeploymentSummaries)
-		installs.GET("/overview", s.GetInstallOverview)
-		installs.POST("/resolve-drift", s.ResolveInstallDrift)
-		installs.GET("/activity", s.GetInstallActivity)
-		installs.GET("/updates", s.GetInstallUpdates)
-		installs.GET("/config-versions", s.GetInstallConfigVersions)
-		installs.GET("/config-versions/:version_id/diff", s.GetInstallConfigVersionDiff)
-		installs.GET("/config-syncs", s.GetInstallConfigSyncs)
-		installs.POST("/app-config-updates", s.CreateInstallAppConfigUpdate)
-
+		installsAccess.GET("/app-config-versions", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallAppConfigVersions)
+		installsAccess.GET("/app-config-versions/:version_id/diff", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallAppConfigVersionDiff)
+		installsAccess.GET("/app-configs/:config_id/diff", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallAppConfigTreeDiff)
+		installsAccess.GET("/deployments", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallDeployments)
+		installsAccess.GET("/deployments/:workflow_id", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallDeployment)
+		installsAccess.GET("/deployments/:workflow_id/source-diff", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallDeploymentSourceDiff)
+		installsAccess.GET("/deployment-summaries", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallDeploymentSummaries)
+		installsAccess.GET("/overview", require.Point(permissions.InstallStateRead, s.installIDTarget), s.GetInstallOverview)
+		installsAccess.POST("/resolve-drift", require.Point(permissions.InstallDriftResolve, s.installIDTarget), s.ResolveInstallDrift)
+		installsAccess.GET("/activity", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallActivity)
+		installsAccess.GET("/updates", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallUpdates)
+		installsAccess.GET("/config-versions", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallConfigVersions)
+		installsAccess.GET("/config-versions/:version_id/diff", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallConfigVersionDiff)
+		installsAccess.GET("/config-syncs", require.Point(permissions.InstallConfigRead, s.installIDTarget), s.GetInstallConfigSyncs)
+		installsAccess.POST("/app-config-updates", require.Point(permissions.InstallConfigUpdate, s.installLifecycleTarget), s.CreateInstallAppConfigUpdate)
 		// install audit logs
-		installs.GET("/audit_logs", s.GetInstallAuditLogs)
-
+		installsAccess.GET("/audit_logs", require.Point(permissions.InstallHistoryRead, s.installIDTarget), s.GetInstallAuditLogs)
 		// install cli config
-		installs.GET("/generate-cli-install-config", s.GenerateCLIInstallConfig)
+		installsAccess.GET("/generate-cli-install-config", require.Point(permissions.InstallConfigRead, s.installLifecycleTarget), s.GenerateCLIInstallConfig)
 	}
-
 	// stack lookup by stack_id
-	org.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
-
+	orgAccess.GET("/v1/installs/stacks/:stack_id", require.Point(permissions.InstallConfigRead, s.stackInstallTarget), s.GetInstallStackByStackID)
 	// org-level workflow queries (must be registered before /:workflow_id group)
-	org.GET("/v1/workflows/pending-approvals", s.GetOrgPendingApprovals)
-	org.GET("/v1/workflows", s.GetOrgWorkflows)
-	org.POST("/v1/workflows/cancel", s.CancelWorkflows)
+	orgAccess.GET("/v1/workflows/pending-approvals", require.Collection(permissions.WorkflowInspect, s.workflowResources), s.GetOrgPendingApprovals)
+	orgAccess.GET("/v1/workflows", require.Collection(permissions.WorkflowInspect, s.workflowResources), s.GetOrgWorkflows)
+	orgAccess.POST("/v1/workflows/cancel", require.Collection(permissions.WorkflowCancel, s.workflowResources), s.CancelWorkflows)
 
 	// workflows (standalone)
 	workflows := require.OrgRoute(ge).Group("/v1/workflows/:workflow_id", require.WorkflowInOrg(s.db))
+	workflowsAccess := require.Routes(workflows, permissions.APICtl)
 	{
-		workflows.GET("", s.GetWorkflow)
-		workflows.PATCH("", s.UpdateWorkflow)
-		workflows.POST("/cancel", s.CancelWorkflow)
-		workflows.GET("/queue-position", s.GetWorkflowQueuePosition)
+		workflowsAccess.GET("", require.Point(permissions.WorkflowInspect, s.workflowTarget), s.GetWorkflow)
+		workflowsAccess.PATCH("", require.All(s.workflowContinuation(permissions.WorkflowApprove)), s.UpdateWorkflow)
+		workflowsAccess.POST("/cancel", require.Point(permissions.WorkflowCancel, s.workflowTarget), s.CancelWorkflow)
+		workflowsAccess.GET("/queue-position", require.Point(permissions.WorkflowInspect, s.workflowTarget), s.GetWorkflowQueuePosition)
 
-		stepGroups := workflows.Group("/step-groups")
+		stepGroups := workflowsAccess.For(require.Point(permissions.WorkflowInspect, s.workflowTarget)).Group("/step-groups")
 		{
 			stepGroups.GET("", s.GetWorkflowStepGroups)
 			stepGroups.GET("/:step_group_id", s.GetWorkflowStepGroup)
 		}
 
 		steps := workflows.Group("/steps")
+		stepsAccess := require.Routes(steps, permissions.APICtl)
 		{
-			steps.GET("", s.GetWorkflowSteps)
-			steps.GET("/:step_id", s.GetWorkflowStep)
-			steps.GET("/:step_id/await", s.AwaitWorkflowStep)
-			steps.POST("/:step_id/retry", s.RetryWorkflowStep)
-			steps.POST("/:step_id/skip", s.SkipWorkflowStep)
-			steps.POST("/:step_id/cancel", s.CancelWorkflowStep)
+			stepsAccess.GET("", require.Point(permissions.WorkflowInspect, s.workflowTarget), s.GetWorkflowSteps)
+			stepsAccess.GET("/:step_id", require.Point(permissions.WorkflowInspect, s.workflowTarget), s.GetWorkflowStep)
+			stepsAccess.GET("/:step_id/await", require.Point(permissions.WorkflowInspect, s.workflowTarget), s.AwaitWorkflowStep)
+			stepsAccess.POST("/:step_id/retry", require.All(s.workflowContinuation(permissions.WorkflowRetry)), s.RetryWorkflowStep)
+			stepsAccess.POST("/:step_id/skip", require.All(s.workflowContinuation(permissions.WorkflowRetry)), s.SkipWorkflowStep)
+			stepsAccess.POST("/:step_id/cancel", require.Point(permissions.WorkflowCancel, s.workflowTarget), s.CancelWorkflowStep)
 
-			approvals := steps.Group("/:step_id/approvals/:approval_id")
+			approvals := require.Routes(steps.Group("/:step_id/approvals/:approval_id"), permissions.APICtl)
 			{
-				approvals.GET("", s.GetWorkflowStepApproval)
-				approvals.POST("/response", s.CreateWorkflowStepApprovalResponse)
-				approvals.GET("/contents", s.GetWorkflowStepApprovalContents)
+				approvals.GET("", require.Point(permissions.WorkflowInspect, s.workflowTarget), s.GetWorkflowStepApproval)
+				approvals.POST("/response", require.All(s.workflowApprovalRequirements), s.CreateWorkflowStepApprovalResponse)
+				approvals.GET("/contents", require.Point(permissions.WorkflowInspect, s.workflowTarget), s.GetWorkflowStepApprovalContents)
 			}
 		}
 	}
 
 	// deprecated install-workflows
-	installWorkflows := org.Group("/v1/install-workflows/:install_workflow_id", require.InstallWorkflowInOrg(s.db))
-	s.GET(installWorkflows, "", s.GetInstallWorkflow, api.APIContextTypePublic, true)
-	s.PATCH(installWorkflows, "", s.UpdateInstallWorkflow, api.APIContextTypePublic, true)
-	s.GET(installWorkflows, "/steps", s.GetInstallWorkflowSteps, api.APIContextTypePublic, true)
-	s.GET(installWorkflows, "/steps/:install_workflow_step_id", s.GetInstallWorkflowStep, api.APIContextTypePublic, true)
-	s.POST(installWorkflows, "/cancel", s.CancelInstallWorkflow, api.APIContextTypePublic, true)
-	s.GET(installWorkflows, "/steps/:install_workflow_step_id/approvals/:approval_id", s.GetInstallWorkflowStepApproval, api.APIContextTypePublic, true)
+	installWorkflows := require.Routes(org.Group("/v1/install-workflows/:install_workflow_id", require.InstallWorkflowInOrg(s.db)), permissions.APICtl)
+	s.GET(installWorkflows.For(require.Point(permissions.WorkflowInspect, s.workflowTarget)), "", s.GetInstallWorkflow, api.APIContextTypePublic, true)
+	s.PATCH(installWorkflows.For(require.All(s.workflowContinuation(permissions.WorkflowApprove))), "", s.UpdateInstallWorkflow, api.APIContextTypePublic, true)
+	s.GET(installWorkflows.For(require.Point(permissions.WorkflowInspect, s.workflowTarget)), "/steps", s.GetInstallWorkflowSteps, api.APIContextTypePublic, true)
+	s.GET(installWorkflows.For(require.Point(permissions.WorkflowInspect, s.workflowTarget)), "/steps/:install_workflow_step_id", s.GetInstallWorkflowStep, api.APIContextTypePublic, true)
+	s.POST(installWorkflows.For(require.Point(permissions.WorkflowCancel, s.workflowTarget)), "/cancel", s.CancelInstallWorkflow, api.APIContextTypePublic, true)
+	s.GET(installWorkflows.For(require.Point(permissions.WorkflowInspect, s.workflowTarget)), "/steps/:install_workflow_step_id/approvals/:approval_id", s.GetInstallWorkflowStepApproval, api.APIContextTypePublic, true)
 
 	return nil
 }

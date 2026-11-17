@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -46,7 +47,7 @@ func (s *service) UpdateOrgTelemetry(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	if !s.isOrgAdmin(caller, org.ID) {
+	if !authz.HasAuthority(ctx) && !s.isOrgAdmin(caller, org.ID) {
 		ctx.Error(stderr.ErrAuthorization{
 			Err:         fmt.Errorf("only org admins can change telemetry settings"),
 			Description: "only org admins can change telemetry settings",

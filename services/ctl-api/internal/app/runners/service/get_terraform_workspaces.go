@@ -8,6 +8,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -43,6 +45,13 @@ func (s *service) listWorkspaces(ctx *gin.Context) ([]app.TerraformWorkspace, er
 	}
 
 	query := s.db.WithContext(ctx).Model(&app.TerraformWorkspace{}).Where("org_id = ?", orgID)
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		query = query.Where("id IN (?)", ids)
+	}
 	if runner, err := cctx.RunnerFromContext(ctx); err == nil {
 		if runner.RunnerGroup.Type != app.RunnerGroupTypeInstall || runner.RunnerGroup.OwnerID == "" {
 			return nil, stderr.ErrNotFound{Err: fmt.Errorf("runner %s has no install", runner.ID), Description: "not found"}

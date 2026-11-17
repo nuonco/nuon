@@ -11,9 +11,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/appbundles/transport"
+	appaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/access"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -63,12 +66,24 @@ func (s *service) requireBundleExport(ctx *gin.Context) bool {
 }
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	group := api.Group("/v1/apps/:app_id/bundles", require.AppInOrg(s.db))
-	group.POST("", s.CreateBundle)
-	group.GET("", s.ListBundles)
-	group.GET("/:bundle_id", s.GetBundle)
-	group.POST("/:bundle_id/download-grants", s.CreateDownloadGrant)
+	group := require.Routes(api.Group("/v1/apps/:app_id/bundles", require.AppInOrg(s.db)), permissions.APICtl)
+	group.POST("", require.Point(permissions.AppBundleCreate, s.appTarget), s.CreateBundle)
+	group.GET("", require.Point(permissions.AppBundleRead, s.appTarget), s.ListBundles)
+	group.GET("/:bundle_id", require.Point(permissions.AppBundleRead, s.appTarget), s.GetBundle)
+	group.POST("/:bundle_id/download-grants", require.Point(permissions.AppBundleDownload, s.appTarget), s.CreateDownloadGrant)
 	return nil
+}
+
+func (s *service) appTarget(ctx *gin.Context) (permissions.Target, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	resources, err := appaccess.Apps.In(s.db, orgID)
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	return resources.Resolve(ctx.Request.Context(), ctx.Param("app_id"))
 }
 
 func (s *service) RegisterRunnerRoutes(*gin.Engine) error         { return nil }

@@ -8,7 +8,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -39,7 +41,7 @@ type mcpListInstallsResult struct {
 }
 
 func (s *service) mcpListInstalls(ctx context.Context, _ *mcp.CallToolRequest, in mcpListInstallsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -51,6 +53,7 @@ func (s *service) mcpListInstalls(ctx context.Context, _ *mcp.CallToolRequest, i
 
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
+		Scopes(require.MCPCollection(ctx, s.db, access.Installs, permissions.InstallInspect)).
 		Preload("App").
 		Preload("AppRunnerConfig").
 		Preload("AppConfig", func(db *gorm.DB) *gorm.DB {

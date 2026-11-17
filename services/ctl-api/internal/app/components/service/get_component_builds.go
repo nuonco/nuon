@@ -7,9 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -132,6 +134,7 @@ func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
 	// via the double join.
 	res := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx, clause.Column{Table: "component_builds", Name: "id"})).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
@@ -174,6 +177,7 @@ func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.Comp
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
 			return db.
+				Scopes(require.CollectionScope(ctx, clause.Column{Table: "component_builds", Name: "id"})).
 				Scopes(scopes.WithOffsetPagination).
 				Order("component_builds.created_at DESC")
 		}).

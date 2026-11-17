@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/oidc/githubauth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -78,7 +79,7 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
-	if err := acct.Authority.CanPerform(req.OrgID, permissions.PermissionCreate, false); err != nil {
+	if err := s.authorizeConnectionCallback(ctx, acct, req.OrgID); err != nil {
 		ctx.Error(require.PermissionDeniedError(acct, req.OrgID, permissions.PermissionCreate, require.ScopeFromPath(ctx.FullPath())))
 		return
 	}
@@ -120,6 +121,43 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, vcsConn)
+}
+
+func (s *service) authorizeConnectionCallback(ctx *gin.Context, acct *app.Account, orgID string) error {
+	usesGrants := false
+	for _, role := range acct.Roles {
+		if role.OrgID.ValueString() == orgID {
+			for _, policy := range role.Policies {
+				usesGrants = usesGrants || policy.HasGrantDocument()
+			}
+		}
+	}
+	if !usesGrants {
+		return acct.Authority.CanPerform(orgID, permissions.PermissionCreate, false)
+	}
+	client := authz.New(authz.Params{DB: s.db})
+	var token app.Token
+	if err := s.db.WithContext(ctx).Where(app.Token{ID: cctx.TokenIDFromContext(ctx), AccountID: acct.ID}).First(&token).Error; err != nil {
+		return err
+	}
+	if token.OrgID != "" && token.OrgID != orgID {
+		return fmt.Errorf("credential belongs to a different org")
+	}
+	catalog, err := permissions.DefaultCatalog()
+	if err != nil {
+		return err
+	}
+	authority, err := client.LoadAuthority(ctx, catalog, authz.AuthorityInput{
+		AccountID: acct.ID, CredentialID: token.ID, OrgID: orgID, API: permissions.APICtl, Ceiling: token.PermissionCeiling,
+	})
+	if err != nil {
+		return err
+	}
+	target := permissions.Target{ResolvedTarget: permissions.ResolvedTarget{Scope: permissions.Scope{Kind: permissions.KindOrg, OrgID: orgID, ID: orgID}}}
+	if !authority.Check(permissions.VCSConnectionCreate, target).Matched {
+		return fmt.Errorf("connecting VCS is not allowed")
+	}
+	return nil
 }
 
 // verifyInstallationOwnership rejects installation ids the authorizing GitHub

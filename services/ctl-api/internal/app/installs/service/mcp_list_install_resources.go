@@ -53,7 +53,7 @@ type mcpListInstallResourcesResult struct {
 }
 
 func (s *service) mcpListInstallResources(ctx context.Context, _ *mcp.CallToolRequest, in mcpListInstallResourcesInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,6 +67,9 @@ func (s *service) mcpListInstallResources(ctx context.Context, _ *mcp.CallToolRe
 
 	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.mcpInstallPoint(ctx, install.ID, "install.state.read"); err != nil {
 		return nil, nil, err
 	}
 	deployed, err := s.deployedInstallComponentIDs(ctx, orgID, install.ID)

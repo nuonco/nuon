@@ -11,16 +11,27 @@ import (
 // install keeps one live set. Rows are repointed in place: a stable ID is what keeps
 // install_role_usage history and enabled/provisioned/role_id attached across syncs.
 func (s *Helpers) MigrateInstallRoles(ctx context.Context, appID string, permCfg app.AppPermissionsConfig) error {
+	return s.migrateInstallRoles(ctx, appID, permCfg, nil)
+}
+
+func (s *Helpers) MigrateSelectedInstallRoles(ctx context.Context, appID string, permCfg app.AppPermissionsConfig, installIDs []string) error {
+	return s.migrateInstallRoles(ctx, appID, permCfg, &installIDs)
+}
+
+func (s *Helpers) migrateInstallRoles(ctx context.Context, appID string, permCfg app.AppPermissionsConfig, installIDs *[]string) error {
 	if permCfg.ID == "" {
 		return nil
 	}
 
 	var installs []app.Install
-	res := s.db.WithContext(ctx).
+	query := s.db.WithContext(ctx).
 		Preload("InstallRoles").
 		Preload("InstallRoles.AppRoleConfig").
-		Where(app.Install{AppID: appID}).
-		Find(&installs)
+		Where(app.Install{AppID: appID})
+	if installIDs != nil {
+		query = query.Where("id IN ?", *installIDs)
+	}
+	res := query.Find(&installs)
 	if res.Error != nil {
 		return fmt.Errorf("unable to get installs for app %s: %w", appID, res.Error)
 	}

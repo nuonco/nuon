@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -90,6 +91,7 @@ func (s *service) GetActionWorkflowConfigs(ctx *gin.Context) {
 func (s *service) findActionWorkflowConfigs(ctx *gin.Context, orgID, awID string) ([]*app.ActionWorkflowConfig, error) {
 	actionWorkflowConfigs := []*app.ActionWorkflowConfig{}
 	res := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx)).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("Triggers").
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {

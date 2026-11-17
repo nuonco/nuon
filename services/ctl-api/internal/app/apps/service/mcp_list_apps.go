@@ -34,7 +34,7 @@ type mcpListAppsResult struct {
 }
 
 func (s *service) mcpListApps(ctx context.Context, _ *mcp.CallToolRequest, in mcpListAppsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -46,6 +46,7 @@ func (s *service) mcpListApps(ctx context.Context, _ *mcp.CallToolRequest, in mc
 
 	var apps []*app.App
 	err = s.db.WithContext(ctx).
+		Scopes(s.mcpAppCollection(ctx)).
 		Where(app.App{OrgID: orgID}).
 		Preload("Components").
 		Order("name ASC").

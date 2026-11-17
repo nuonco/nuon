@@ -14,11 +14,13 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	installaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type Params struct {
@@ -72,12 +74,24 @@ func (s *service) RegisterStackRoutes(ge *gin.Engine) error {
 // Public API: the dashboard shows this before the customer has a credential.
 // No create route — tokens come from POST /v1/service-accounts/{id}/tokens.
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
-	stacks := ge.Group("/v1/stacks/:install_id")
+	stacks := require.Routes(ge.Group("/v1/stacks/:install_id"), permissions.APICtl)
 	{
-		stacks.GET("/service-account", s.GetStackServiceAccount)
+		stacks.GET("/service-account", require.Point(permissions.InstallConfigRead, s.installTarget), s.GetStackServiceAccount)
 	}
 
 	return nil
+}
+
+func (s *service) installTarget(ctx *gin.Context) (permissions.Target, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	resources, err := installaccess.Resources(s.db, orgID)
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	return resources.Resolve(ctx.Request.Context(), ctx.Param("install_id"))
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
