@@ -81,7 +81,7 @@ provided labels must match (AND semantics):
 		}),
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
-	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum installs to return")
 	listCmd.Flags().StringSliceVar(&labelArgs, "labels", []string{}, "Filter installs by labels (repeatable, format: key=value). All labels must match.")
 	installsCmds.AddCommand(listCmd)
@@ -274,7 +274,7 @@ sandbox and components unprovisioned:
 	}
 	componentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	componentsCmd.MarkFlagRequired("install-id")
-	componentsCmd.Flags().IntVarP(&compOffset, "offset", "o", 0, "Offset for pagination")
+	componentsCmd.Flags().IntVar(&compOffset, "offset", 0, "Offset for pagination")
 	componentsCmd.Flags().IntVarP(&compLimit, "limit", "l", 0, "Maximum components to return (0 returns all)")
 
 	componentsOutputsCmd := &cobra.Command{
@@ -338,7 +338,7 @@ sandbox and components unprovisioned:
 	}
 	componentsListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	componentsListCmd.MarkFlagRequired("install-id")
-	componentsListCmd.Flags().IntVarP(&compOffset, "offset", "o", 0, "Offset for pagination")
+	componentsListCmd.Flags().IntVar(&compOffset, "offset", 0, "Offset for pagination")
 	componentsListCmd.Flags().IntVarP(&compLimit, "limit", "l", 0, "Maximum components to return (0 returns all)")
 	componentsListCmd.Flags().BoolVar(&compShowAll, "all", false, "Show all components including those removed from the current config")
 	componentsCmd.AddCommand(componentsListCmd)
@@ -357,7 +357,7 @@ sandbox and components unprovisioned:
 	componentsDeploysCmd.MarkFlagRequired("install-id")
 	componentsDeploysCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name")
 	componentsDeploysCmd.MarkFlagRequired("component-id")
-	componentsDeploysCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	componentsDeploysCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	componentsDeploysCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum deploys to return")
 	componentsCmd.AddCommand(componentsDeploysCmd)
 
@@ -493,7 +493,7 @@ sandbox and components unprovisioned:
 	deploysListCmd.MarkFlagRequired("install-id")
 	deploysListCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name")
 	deploysListCmd.MarkFlagRequired("component-id")
-	deploysListCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	deploysListCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	deploysListCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum deploys to return")
 	deploysCmd.AddCommand(deploysListCmd)
 
@@ -648,7 +648,7 @@ sandbox and components unprovisioned:
 	}
 	listDeploysCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install whose deploy you want to view")
 	listDeploysCmd.MarkFlagRequired("install-id")
-	listDeploysCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listDeploysCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	listDeploysCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum deploys to return")
 	installsCmds.AddCommand(listDeploysCmd)
 
@@ -674,7 +674,7 @@ sandbox and components unprovisioned:
 	}
 	sandboxRunsListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	sandboxRunsListCmd.MarkFlagRequired("install-id")
-	sandboxRunsListCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	sandboxRunsListCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	sandboxRunsListCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum runs to return")
 	sandboxRunsCmd.AddCommand(sandboxRunsListCmd)
 
@@ -773,7 +773,7 @@ sandbox and components unprovisioned:
 	}
 	sandboxRunsPorcelainCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	sandboxRunsPorcelainCmd.MarkFlagRequired("install-id")
-	sandboxRunsPorcelainCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	sandboxRunsPorcelainCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	sandboxRunsPorcelainCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum runs to return")
 	sandboxCmd.AddCommand(sandboxRunsPorcelainCmd)
 
@@ -1203,7 +1203,7 @@ By default, launches an interactive TUI to view workflows.`,
 	}
 	workflowsListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	workflowsListCmd.MarkFlagRequired("install-id")
-	workflowsListCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	workflowsListCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	workflowsListCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum workflows to return")
 	workflowsCmd.AddCommand(workflowsListCmd)
 
@@ -1238,7 +1238,7 @@ By default, launches an interactive TUI to view workflows.`,
 	}
 	workflowsSelectCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	workflowsSelectCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow to select directly")
-	workflowsSelectCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	workflowsSelectCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	workflowsSelectCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum workflows to return")
 	workflowsCmd.AddCommand(workflowsSelectCmd)
 
@@ -1688,7 +1688,7 @@ By default, launches an interactive TUI to browse and execute actions.`,
 	}
 	actionsCmd.PersistentFlags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	actionsCmd.MarkPersistentFlagRequired("install-id")
-	actionsCmd.PersistentFlags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	actionsCmd.PersistentFlags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	actionsCmd.PersistentFlags().IntVarP(&limit, "limit", "l", 20, "Maximum actions to return")
 	actionsCmd.PersistentFlags().StringVar(&actionWorkflowID, "action-workflow-id", "", "The action workflow ID or slug")
 

@@ -34,7 +34,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 	}
 
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter action workflows by")
-	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	actionsCmd.AddCommand(listCmd)
 
@@ -52,7 +52,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID or name of the install (defaults to the selected install)")
 	recentRunsCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID or name of the action")
 	recentRunsCmd.MarkFlagRequired("action-workflow-id")
-	recentRunsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	recentRunsCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	recentRunsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	actionsCmd.AddCommand(recentRunsCmd)
 

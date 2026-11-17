@@ -37,7 +37,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of a component to filter builds by")
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the component belongs to")
 	listCmd.MarkFlagRequired("app-id")
-	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum builds to return")
 	buildsCmd.AddCommand(listCmd)
 

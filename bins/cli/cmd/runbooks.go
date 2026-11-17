@@ -78,7 +78,7 @@ func (c *cli) runbooksCmd() *cobra.Command {
 	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID or name of the install")
 	recentRunsCmd.MarkFlagRequired("install-id")
 	recentRunsCmd.Flags().StringVarP(&runbookID, "runbook-id", "r", "", "Filter runs by runbook ID or name")
-	recentRunsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	recentRunsCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	recentRunsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	runbooksCmd.AddCommand(recentRunsCmd)
 

@@ -23,7 +23,7 @@ func (c *cli) imageRepositoriesCmd() *cobra.Command {
 	}
 	list.Flags().StringVarP(&query, "query", "q", "", "Filter by image URL")
 	list.Flags().StringVar(&platform, "platform", "", "Filter by cloud platform: aws, gcp, or azure")
-	list.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	list.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	list.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum image repositories to return")
 	command.AddCommand(list)
 

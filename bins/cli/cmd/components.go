@@ -31,7 +31,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		}),
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter components by")
-	listCmd.Flags().IntVarP(&listOffset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVar(&listOffset, "offset", 0, "Offset for pagination")
 	listCmd.Flags().IntVarP(&listLimit, "limit", "l", 0, "Limit for pagination (0 returns all)")
 	componentsCmd.AddCommand(listCmd)
 
@@ -93,7 +93,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 	listConfigsCmd.MarkFlagRequired("id")
 	listConfigsCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the component belongs to")
 	listConfigsCmd.MarkFlagRequired("app-id")
-	listConfigsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listConfigsCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	listConfigsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	componentsCmd.AddCommand(listConfigsCmd)
 

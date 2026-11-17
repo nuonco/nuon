@@ -36,7 +36,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		}),
 	}
 
-	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	appsCmd.AddCommand(listCmd)
 
@@ -91,7 +91,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	}
 	configs.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	configs.MarkFlagRequired("app-id")
-	configs.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	configs.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	configs.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	appsCmd.AddCommand(configs)
 
@@ -367,7 +367,7 @@ func (c *cli) variablesCmd() *cobra.Command {
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app")
 	listCmd.MarkFlagRequired("app-id")
-	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset to start listing variables from")
+	listCmd.Flags().IntVar(&offset, "offset", 0, "The offset to start listing variables from")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The number of variables to list")
 	variablesCmd.AddCommand(listCmd)
 

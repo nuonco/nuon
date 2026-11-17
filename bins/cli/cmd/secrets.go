@@ -33,7 +33,7 @@ func (c *cli) secretsCmd() *cobra.Command {
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to delete the secret from")
 	listCmd.MarkFlagRequired("app-id")
-	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset to start listing secrets from")
+	listCmd.Flags().IntVar(&offset, "offset", 0, "The offset to start listing secrets from")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The number of secrets to list")
 	secretsCmd.AddCommand(listCmd)
 

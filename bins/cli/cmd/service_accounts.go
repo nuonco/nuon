@@ -37,7 +37,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 			return svc.ListServiceAccounts(cmd.Context(), includeRunners, includeStacks, offset, limit, PrintJSON)
 		}),
 	}
-	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset of results to return")
+	listCmd.Flags().IntVar(&offset, "offset", 0, "The offset of results to return")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The limit of results to return")
 	listCmd.Flags().BoolVar(&includeRunners, "include-runners", false, "Include service accounts with the runner role (excluded by default)")
 	listCmd.Flags().BoolVar(&includeStacks, "include-stacks", false, "Include service accounts with the stack role (excluded by default)")
@@ -130,7 +130,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 	}
 	listTokensCmd.Flags().StringVar(&id, "id", "", "Only list tokens for this service account")
 	listTokensCmd.Flags().StringVar(&search, "search", "", "Search tokens by name or ID")
-	listTokensCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset of results to return")
+	listTokensCmd.Flags().IntVar(&offset, "offset", 0, "The offset of results to return")
 	listTokensCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The limit of results to return")
 	tokensCmd.AddCommand(listTokensCmd)
 

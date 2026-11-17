@@ -50,7 +50,7 @@ nuon sync
 
 	rootCmd.PersistentFlags().BoolVarP(&PrintJSON, "json", "j", false, "print output as json (shorthand for --output json)")
 	_ = rootCmd.PersistentFlags().MarkDeprecated("json", "use --output json instead; --json will be removed in a future release")
-	rootCmd.PersistentFlags().StringVar(&Output, "output", "o", "table", "output format: table, json, or agent. 'agent' is machine-friendly for LLM/agent use (non-interactive, results wrapped in a stable {ok,data,error} envelope on stdout). Can also be set with NUON_OUTPUT.")
+	rootCmd.PersistentFlags().StringVarP(&Output, "output", "o", "table", "output format: table, json, or agent. 'agent' is machine-friendly for LLM/agent use (non-interactive, results wrapped in a stable {ok,data,error} envelope on stdout). Can also be set with NUON_OUTPUT.")
 	rootCmd.PersistentFlags().BoolVar(&ReadOnly, "read-only", false, "block commands that modify state; safe default when driving the CLI with an agent. Can also be set with NUON_READ_ONLY=1.")
 	rootCmd.PersistentFlags().BoolVar(&Debug, "debug", false, "print per-request API timing (DNS, connect, TLS, server, transfer) to stderr")
 	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "C", DefaultConfigFilePath, "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")

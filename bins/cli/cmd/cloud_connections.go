@@ -23,7 +23,7 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 			return c.cloudConnections.List(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
-	list.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	list.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	list.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum cloud connections to return")
 	command.AddCommand(list)
 	command.AddCommand(&cobra.Command{

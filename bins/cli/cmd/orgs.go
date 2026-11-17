@@ -94,7 +94,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 			return svc.List(cmd.Context(), offset, limit, search, PrintJSON)
 		}),
 	}
-	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	listCmd.Flags().StringVar(&search, "search", "", "Search orgs by name")
 	orgsCmd.AddCommand(listCmd)
@@ -108,7 +108,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 			return svc.VCSConnections(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
-	listVCSConnections.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listVCSConnections.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	listVCSConnections.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	orgsCmd.AddCommand(listVCSConnections)
 
@@ -164,7 +164,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		}),
 	}
 	selectOrgCmd.Flags().StringVar(&id, "org", "", "The ID of the org you want to use")
-	selectOrgCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	selectOrgCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	selectOrgCmd.Flags().IntVarP(&limit, "limit", "l", 50, "Limit for pagination")
 	orgsCmd.AddCommand(selectOrgCmd)
 
@@ -226,7 +226,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 			return svc.ListInvites(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
-	listInvitesCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listInvitesCmd.Flags().IntVar(&offset, "offset", 0, "Offset for pagination")
 	listInvitesCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum invites to return")
 	orgsCmd.AddCommand(listInvitesCmd)
 
