@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -74,8 +75,9 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 	}
 
 	// The authenticated report route. CloudFormation and ARM keep the capability URL.
+	// stack_api_url defaults to localhost, which terraform cannot reach.
 	phoneHomeBase := cfg.RunnerAPIURL
-	if s.cfg != nil && s.cfg.StackAPIURL != "" {
+	if s.cfg != nil && publicAPIBase(s.cfg.StackAPIURL) {
 		phoneHomeBase = s.cfg.StackAPIURL
 	}
 	cfg.PhoneHomeURL = fmt.Sprintf("%s/v1/stacks/%s/phone-home",
@@ -102,4 +104,17 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 // @Router					/v1/stacks/{install_id}/config [get]
 func (s *service) GetStackConfigRunner(ctx *gin.Context) {
 	s.GetStackConfig(ctx)
+}
+
+func publicAPIBase(raw string) bool {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Hostname() == "" || u.Scheme == "" {
+		return false
+	}
+	switch u.Hostname() {
+	case "localhost", "127.0.0.1", "::1":
+		return false
+	default:
+		return true
+	}
 }

@@ -151,16 +151,6 @@ func TestRenderStandardVars(t *testing.T) {
 	assert.NotContains(t, tfvars, "runner_api_token")
 }
 
-func TestProviderTfvarsUsesStackHost(t *testing.T) {
-	out, _, err := Render(testInput())
-	require.NoError(t, err)
-
-	var envelope map[string]string
-	require.NoError(t, json.Unmarshal(out, &envelope))
-	assert.Contains(t, envelope["provider_tfvars"], `api_url       = "https://stack.nuon.co"`)
-	assert.Contains(t, extractTfvars(t, out), `"https://runner.nuon.co"`)
-}
-
 func TestRenderGCPAccountInjection(t *testing.T) {
 	t.Run("with project_id and region", func(t *testing.T) {
 		out, _, err := Render(testInput())

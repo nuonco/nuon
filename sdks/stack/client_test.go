@@ -152,7 +152,7 @@ func TestPhoneHomeAcceptsADifferentHost(t *testing.T) {
 	assert.Equal(t, "/v1/stacks/inst-1/phone-home", gotPath)
 }
 
-func TestPhoneHomeDropsABasePathPrefix(t *testing.T) {
+func TestPhoneHomeKeepsABasePathPrefix(t *testing.T) {
 	clearAmbientCredentials(t)
 
 	var gotPath string
@@ -169,5 +169,5 @@ func TestPhoneHomeDropsABasePathPrefix(t *testing.T) {
 	}, srv.URL+"/runner/v1/stacks/install-1/phone-home", map[string]any{"request_type": "Create"})
 	require.NoError(t, err)
 
-	assert.Equal(t, "/v1/stacks/install-1/phone-home", gotPath)
+	assert.Equal(t, "/runner/v1/stacks/install-1/phone-home", gotPath)
 }

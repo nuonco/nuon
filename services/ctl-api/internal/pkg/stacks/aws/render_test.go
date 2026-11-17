@@ -139,16 +139,6 @@ func TestRenderStandardVars(t *testing.T) {
 	}
 }
 
-func TestProviderTfvarsUsesStackHost(t *testing.T) {
-	out, _, err := Render(testInput(), "")
-	require.NoError(t, err)
-
-	var envelope map[string]string
-	require.NoError(t, json.Unmarshal(out, &envelope))
-	assert.Equal(t, `"https://stack.nuon.co"`, findVarValue(t, envelope["provider_tfvars"], "api_url"))
-	assert.Equal(t, `"https://runner.nuon.co"`, findVarValue(t, extractTfvars(t, out), "runner_api_url"))
-}
-
 func TestRenderEmptyPermissions(t *testing.T) {
 	out, _, err := Render(testInput(), "")
 	require.NoError(t, err)

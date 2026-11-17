@@ -2,8 +2,6 @@ package stacks
 
 import (
 	"fmt"
-	"net"
-	"net/url"
 	"sort"
 	"strings"
 
@@ -81,46 +79,6 @@ type TemplateInput struct {
 	// RenderCustomNestedStackParameters rewrites install-input references into
 	// literals.
 	UnrenderedCustomStackParameters map[string]map[string]string
-}
-
-func (in *TemplateInput) ProviderAPIURL() string {
-	if in == nil || in.Settings == nil {
-		return ""
-	}
-	base, err := stackAPIBase(in.Settings.RunnerAPIURL)
-	if err != nil {
-		return strings.TrimRight(in.Settings.RunnerAPIURL, "/")
-	}
-	return base
-}
-
-// stackAPIBase matches sdks/stack.APIBase. The Terraform provider is given an
-// origin only; it calls the hardcoded /v1/stacks/... routes itself.
-func stackAPIBase(raw string) (string, error) {
-	u, err := url.Parse(strings.TrimRight(strings.TrimSpace(raw), "/"))
-	if err != nil {
-		return "", err
-	}
-	if u.Hostname() == "" {
-		return "", fmt.Errorf("api url %q has no host", raw)
-	}
-	host := u.Hostname()
-	if label, rest, ok := strings.Cut(host, "."); ok && label == "runner" && rest != "" {
-		host = "stack." + rest
-	}
-	if port := u.Port(); port != "" {
-		u.Host = net.JoinHostPort(host, port)
-	} else {
-		u.Host = host
-	}
-	u.Path = ""
-	u.RawPath = ""
-	u.RawQuery = ""
-	u.Fragment = ""
-	if u.Scheme == "" {
-		u.Scheme = "https"
-	}
-	return u.String(), nil
 }
 
 // PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home
