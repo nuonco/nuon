@@ -161,6 +161,9 @@ func (h *Helpers) AppliedInstallDeploysByIDs(ctx context.Context, deployIDs []st
 	if err := h.db.WithContext(ctx).
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection", appliedDeployConfigLoad).
+		Preload("InstallWorkflow", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "type", "metadata")
+		}).
 		Where("id IN ?", deployIDs).
 		Find(&deploys).Error; err != nil {
 		return nil, fmt.Errorf("unable to get applied install deploys: %w", err)

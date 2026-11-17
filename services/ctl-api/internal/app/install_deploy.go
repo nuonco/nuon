@@ -193,7 +193,7 @@ func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
 	if c.InstallWorkflowID != nil && *c.InstallWorkflowID != "" && !c.PlanOnly {
 		var planOnly []bool
 		if err := tx.Session(&gorm.Session{NewDB: true}).Model(&Workflow{}).
-			Where(Workflow{ID: *c.InstallWorkflowID}).Pluck("plan_only", &planOnly).Error; err != nil {
+			Where(Workflow{ID: *c.InstallWorkflowID}).Pluck("COALESCE(plan_only, false)", &planOnly).Error; err != nil {
 			return err
 		}
 		c.PlanOnly = len(planOnly) > 0 && planOnly[0]

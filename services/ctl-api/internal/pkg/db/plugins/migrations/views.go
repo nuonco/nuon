@@ -3,6 +3,7 @@ package migrations
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -30,6 +31,23 @@ func (m *Migrator) toViewModel(obj any) (viewModel, bool) {
 	return jtm, ok
 }
 
+func (m *Migrator) dropViews(ctx context.Context) error {
+	names := []string{}
+	for _, model := range m.models {
+		if vm, ok := m.toViewModel(model); ok {
+			for _, view := range vm.Views(m.db) {
+				if view.AlwaysReapply {
+					names = append(names, m.db.Statement.Quote(view.Name))
+				}
+			}
+		}
+	}
+	if len(names) == 0 {
+		return nil
+	}
+	return m.db.WithContext(ctx).Exec("DROP VIEW IF EXISTS " + strings.Join(names, ", ")).Error
+}
+
 func (m *Migrator) applyViews(ctx context.Context, obj any) error {
 	im, ok := m.toViewModel(obj)
 	if !ok {
@@ -50,7 +68,7 @@ func (m *Migrator) applyViews(ctx context.Context, obj any) error {
 }
 
 func (m *Migrator) applyView(ctx context.Context, obj any, view View) error {
-	if view.AlwaysReapply {
+	if view.AlwaysReapply && m.db.Dialector.Name() != "postgres" {
 		dropSQLTmpl := m.opts.DropViewSQLTmpl
 		dropSQL := fmt.Sprintf(dropSQLTmpl, view.Name)
 

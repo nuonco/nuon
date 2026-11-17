@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
@@ -13,7 +14,7 @@ import (
 type step struct {
 	name string
 
-	objMethod func(context.Context, any) error
+	objMethod func(*Migrator, context.Context, any) error
 }
 
 func (m *Migrator) Exec(ctx context.Context) error {
@@ -24,23 +25,23 @@ func (m *Migrator) Exec(ctx context.Context) error {
 	methods := []step{
 		{
 			"join-tables",
-			m.applyJoinTables,
+			(*Migrator).applyJoinTables,
 		},
 		{
 			"gorm-migrations",
-			m.applyGormMigrations,
+			(*Migrator).applyGormMigrations,
 		},
 		{
 			"indexes",
-			m.applyIndexes,
+			(*Migrator).applyIndexes,
 		},
 		{
 			"views",
-			m.applyViews,
+			(*Migrator).applyViews,
 		},
 		{
 			"custom-migrations",
-			m.applyMigrations,
+			(*Migrator).applyMigrations,
 		},
 	}
 
@@ -48,16 +49,33 @@ func (m *Migrator) Exec(ctx context.Context) error {
 		m.l.Info(fmt.Sprintf("executing %s migration method", method.name),
 			zap.String("db_type", m.dbType))
 
-		for _, model := range m.models {
-			if err := method.objMethod(ctx, model); err != nil {
-				tableName := plugins.TableName(m.db, model)
+		apply := func(m *Migrator) error {
+			for _, model := range m.models {
+				if err := method.objMethod(m, ctx, model); err != nil {
+					tableName := plugins.TableName(m.db, model)
 
-				m.l.Error("unable to migrate model",
-					zap.Error(err),
-					zap.String("model", tableName))
+					m.l.Error("unable to migrate model",
+						zap.Error(err),
+						zap.String("model", tableName))
 
+					return err
+				}
+			}
+			return nil
+		}
+		if method.name == "views" && m.db.Dialector.Name() == "postgres" {
+			if err := m.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+				scoped := *m
+				scoped.db = tx
+				if err := scoped.dropViews(ctx); err != nil {
+					return errors.Wrap(err, "unable to drop registered views")
+				}
+				return apply(&scoped)
+			}); err != nil {
 				return err
 			}
+		} else if err := apply(m); err != nil {
+			return err
 		}
 	}
 

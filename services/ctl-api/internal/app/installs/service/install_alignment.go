@@ -8,7 +8,9 @@ type InstallAlignment = alignment.InstallAlignment
 type InstallAlignmentResource = alignment.InstallAlignmentResource
 type InstallAlignmentResourceKind = alignment.InstallAlignmentResourceKind
 type InstallAlignmentCategory = alignment.InstallAlignmentCategory
+type InstallAlignmentAttempt = alignment.InstallAlignmentAttempt
 type InstallAlignmentOpenDeployment = alignment.InstallAlignmentOpenDeployment
+type InstallAlignmentExplanation = alignment.InstallAlignmentExplanation
 type InstallAlignmentPlan = alignment.InstallAlignmentPlan
 
 const (
