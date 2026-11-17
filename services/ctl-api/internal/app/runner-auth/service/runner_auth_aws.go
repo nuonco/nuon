@@ -28,6 +28,7 @@ const (
 	runnerIDTagKey                = "runner.nuon.co/id"
 	defaultRunnerTokenTimeout     = time.Hour * 24 * 90
 	refreshableRunnerTokenTimeout = time.Hour * 12
+	awsSTSRunnerTokenTimeout      = time.Hour * 24 * 8
 
 	presignedRequestTimeout  = 10 * time.Second
 	maxPresignedResponseSize = 64 * 1024

@@ -30,10 +30,9 @@ const (
 )
 
 type RunnerAuthAWSSTSRequest struct {
-	Type        string                     `json:"type" validate:"required,oneof=sts sts-vendor" enums:"sts,sts-vendor"`
-	RunnerID    string                     `json:"runner_id" validate:"required"`
-	STSRequest  *awstypes.PresignedRequest `json:"sts" validate:"required"`
-	Refreshable bool                       `json:"refreshable,omitempty"`
+	Type       string                     `json:"type" validate:"required,oneof=sts sts-vendor" enums:"sts,sts-vendor"`
+	RunnerID   string                     `json:"runner_id" validate:"required"`
+	STSRequest *awstypes.PresignedRequest `json:"sts" validate:"required"`
 }
 
 type RunnerAuthAWSSTSResponse struct {
@@ -202,7 +201,7 @@ func (s *service) RunnerAuthAWSSTS(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createRunnerToken(reqCtx, runner.ID, runnerTokenTimeout(req.Refreshable))
+	token, err := s.createRunnerToken(reqCtx, runner.ID, awsSTSRunnerTokenTimeout)
 	if err != nil {
 		s.failAWSSTS(ctx, metricTags, "token_error", err)
 		return
@@ -210,7 +209,6 @@ func (s *service) RunnerAuthAWSSTS(ctx *gin.Context) {
 
 	metricTags["status"] = "ok"
 	s.l.Info("runner auth aws sts: authentication successful", append(logFields,
-		zap.Bool("refreshable", req.Refreshable),
 		zap.Time("expires_at", token.ExpiresAt))...)
 
 	ctx.JSON(http.StatusOK, RunnerAuthAWSSTSResponse{

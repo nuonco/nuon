@@ -21,9 +21,6 @@ import (
 // swagger:model service.RunnerAuthAWSSTSRequest
 type ServiceRunnerAuthAWSSTSRequest struct {
 
-	// refreshable
-	Refreshable bool `json:"refreshable,omitempty"`
-
 	// runner id
 	// Required: true
 	RunnerID *string `json:"runner_id"`
