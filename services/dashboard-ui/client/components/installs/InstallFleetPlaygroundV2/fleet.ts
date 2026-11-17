@@ -2,6 +2,7 @@ import { installAppBranchGroup } from '@/components/branches/active-app-branch-c
 import type {
   TAppBranch,
   TAppBranchConfig,
+  TAppBranchRun,
   TInstall,
   TInstallOverview,
 } from '@/types'
@@ -14,6 +15,7 @@ import {
   HEALTH_UNHEALTHY,
   HEALTH_UNKNOWN,
 } from '@/utils/health-utils'
+import { humanize } from '@/utils/string-utils'
 
 export const NO_SIGNAL = 'no-signal'
 
@@ -26,13 +28,20 @@ export const HEALTH_FILTER_OPTIONS = [
   NO_SIGNAL,
 ]
 
+export const LATEST_RUN = 'latest'
+
 export type TFleetRunnerFilter = 'active' | 'not-active'
 export type TRolloutState = 'applied' | 'behind' | 'unknown'
-export type TComponentState = 'live' | 'not-live'
+export type TRunMatch = 'on' | 'off'
+
+export type TFleetRunRef = { branchId: string; appConfigId?: string }
 
 export type TFleetContext = {
   latestConfigIdByBranch?: Record<string, string | undefined>
+  runsById?: Record<string, TFleetRunRef>
   overviewById?: Record<string, TInstallOverview>
+  runByBranch?: Record<string, string | undefined>
+  scope?: string
 }
 
 export type TFleetFilters = {
@@ -40,9 +49,10 @@ export type TFleetFilters = {
   labels: Set<string>
   health?: Set<string>
   runner?: TFleetRunnerFilter
-  rollout?: Exclude<TRolloutState, 'unknown'>
-  component?: string
-  componentState?: TComponentState
+  rolloutByBranch?: Record<
+    string,
+    Exclude<TRolloutState, 'unknown'> | undefined
+  >
 }
 
 export type TFleetGroup = {
@@ -88,12 +98,9 @@ export const rolloutState = (
   install: TInstall,
   context: TFleetContext = {}
 ): TRolloutState => {
-  const branchId = install.app_branch?.id
-  const latest = branchId
-    ? context.latestConfigIdByBranch?.[branchId]
-    : undefined
-  if (!latest || !install.app_config_id) return 'unknown'
-  return install.app_config_id === latest ? 'applied' : 'behind'
+  const run = context.runByBranch?.[install.app_branch?.id ?? ''] ?? LATEST_RUN
+  const match = runMatch(install, run, context.scope, context)
+  return match === 'on' ? 'applied' : match === 'off' ? 'behind' : 'unknown'
 }
 
 const ROLLOUT_RANK: Record<TRolloutState, number> = {
@@ -102,15 +109,63 @@ const ROLLOUT_RANK: Record<TRolloutState, number> = {
   applied: 2,
 }
 
-export const componentLive = (
-  overview: TInstallOverview | undefined,
-  componentId: string
-): boolean | undefined => {
-  const entry = overview?.config_drift?.components?.find(
-    (component) => component.component_id === componentId
+export const runsIndex = (
+  branchRuns: Record<string, TAppBranchRun[]> = {}
+): Record<string, TFleetRunRef> =>
+  Object.fromEntries(
+    Object.entries(branchRuns).flatMap(([branchId, runs]) =>
+      runs
+        .filter((run) => run.id)
+        .map((run) => [
+          run.id as string,
+          { branchId, appConfigId: run.app_config_id },
+        ])
+    )
   )
-  return entry ? !entry.drifted : undefined
+
+const runTargetConfig = (
+  install: TInstall,
+  run: string,
+  context: TFleetContext
+) => {
+  const branchId = install.app_branch?.id
+  if (!branchId) return undefined
+  if (run === LATEST_RUN) return context.latestConfigIdByBranch?.[branchId]
+  const ref = context.runsById?.[run]
+  return ref?.branchId === branchId ? ref.appConfigId : undefined
 }
+
+const appliedConfig = (
+  install: TInstall,
+  scope: string | undefined,
+  context: TFleetContext
+) =>
+  scope
+    ? context.overviewById?.[install.id ?? '']?.config_drift?.components?.find(
+        (component) => component.component_id === scope
+      )?.applied_app_config_id
+    : install.app_config_id
+
+export const runMatch = (
+  install: TInstall,
+  run: string,
+  scope: string | undefined,
+  context: TFleetContext = {}
+): TRunMatch | undefined => {
+  const target = runTargetConfig(install, run, context)
+  const applied = appliedConfig(install, scope, context)
+  if (!target || !applied) return undefined
+  return applied === target ? 'on' : 'off'
+}
+
+export const countOnRun = (
+  installs: TInstall[],
+  run: string,
+  scope: string | undefined,
+  context: TFleetContext = {}
+) =>
+  installs.filter((install) => runMatch(install, run, scope, context) === 'on')
+    .length
 
 export const componentOptions = (
   overviewById: Record<string, TInstallOverview> = {}
@@ -138,6 +193,9 @@ export const labelPairs = (install: TInstall) =>
 export const labelOptions = (installs: TInstall[]) =>
   [...new Set(installs.flatMap(labelPairs))].sort()
 
+export const healthFilterLabel = (value: string) =>
+  value === NO_SIGNAL ? 'No health signal' : humanize(value)
+
 export const matchesFilters = (
   install: TInstall,
   filters: TFleetFilters,
@@ -158,15 +216,8 @@ export const matchesFilters = (
     return false
   if (filters.runner === 'active' && !isRunnerActive(install)) return false
   if (filters.runner === 'not-active' && isRunnerActive(install)) return false
-  if (filters.rollout && rolloutState(install, context) !== filters.rollout)
-    return false
-  if (filters.component) {
-    const live = componentLive(
-      context.overviewById?.[install.id ?? ''],
-      filters.component
-    )
-    if (live !== (filters.componentState !== 'not-live')) return false
-  }
+  const rollout = filters.rolloutByBranch?.[install.app_branch?.id ?? '']
+  if (rollout && rolloutState(install, context) !== rollout) return false
   return true
 }
 
@@ -180,8 +231,9 @@ export const summarizeFleet = (
     behind: 0,
     runnerNotActive: 0,
   }
+  const latest = { ...context, runByBranch: undefined, scope: undefined }
   for (const install of installs) {
-    const state = rolloutState(install, context)
+    const state = rolloutState(install, latest)
     if (state === 'applied') summary.applied++
     else if (state === 'behind') summary.behind++
     if (!isRunnerActive(install)) summary.runnerNotActive++

@@ -1,6 +1,7 @@
 import type {
   TAppBranch,
   TAppBranchConfig,
+  TAppBranchRun,
   TInstall,
   TInstallOverview,
   TInstallStatus,
@@ -36,13 +37,27 @@ const overviewFor = (
   },
 })
 
+const branchRun = (
+  id: string,
+  appConfigId: string,
+  message: string,
+  sha: string,
+  createdAt: string
+): TAppBranchRun => ({
+  id,
+  app_config_id: appConfigId,
+  head_sha: sha,
+  status: 'active',
+  created_at: createdAt,
+  vcs_connection_commit: { sha, message },
+})
+
 const branchWithRun = (
   branch: { id: string; name: string; app_id: string },
-  runId: string,
-  appConfigId: string
+  latest: TAppBranchRun
 ): TAppBranch => ({
   ...branch,
-  latest_run: { id: runId, app_config_id: appConfigId },
+  latest_run: latest,
 })
 
 const install = (
@@ -198,19 +213,44 @@ export const mixedFleetStatus: Record<string, TInstallStatus> = {
   },
 }
 
+const mainLatestRun = branchRun(
+  'run-main-3',
+  MAIN_LATEST,
+  'Bump api to v2.4.0',
+  'a1b2c3d4e5f6',
+  '2026-11-16T15:20:00Z'
+)
+const mainStaleRun = branchRun(
+  'run-main-2',
+  MAIN_STALE,
+  'Bump api to v2.3.1',
+  'f6e5d4c3b2a1',
+  '2026-11-09T10:05:00Z'
+)
+const monthlyLatestRun = branchRun(
+  'run-monthly-2',
+  MONTHLY_LATEST,
+  'November release',
+  '0a9b8c7d6e5f',
+  '2026-11-02T13:00:00Z'
+)
+
 export const mixedFleetBranches: TAppBranch[] = [
-  branchWithRun(main, 'run-main-3', MAIN_LATEST),
-  branchWithRun(monthly, 'run-monthly-2', MONTHLY_LATEST),
+  branchWithRun(main, mainLatestRun),
+  branchWithRun(monthly, monthlyLatestRun),
 ]
 
-const mixedBehind = ['comp-api', 'comp-worker']
+export const mixedFleetRuns: Record<string, TAppBranchRun[]> = {
+  'br-main': [mainLatestRun, mainStaleRun],
+  'br-monthly': [monthlyLatestRun],
+}
 
 export const mixedFleetOverviews: Record<string, TInstallOverview> = {
   'inst-canary': overviewFor(MAIN_LATEST, MAIN_STALE),
   'inst-stage-eu': overviewFor(MAIN_LATEST, MAIN_STALE),
-  'inst-prod-us': overviewFor(MAIN_LATEST, MAIN_STALE),
-  'inst-prod-eu': overviewFor(MAIN_LATEST, MAIN_STALE, mixedBehind),
-  'inst-prod-ap': overviewFor(MAIN_LATEST, MAIN_STALE, mixedBehind),
+  'inst-prod-us': overviewFor(MAIN_LATEST, MAIN_STALE, ['comp-api']),
+  'inst-prod-eu': overviewFor(MAIN_STALE, MAIN_STALE),
+  'inst-prod-ap': overviewFor(MAIN_STALE, MAIN_STALE),
   'inst-bank': overviewFor(MONTHLY_LATEST, 'cfg-monthly-1'),
 }
 
@@ -226,6 +266,8 @@ type TLargeBranch = {
   name: string
   latestConfigId: string
   staleConfigId: string
+  latestMessage: string
+  staleMessage: string
   groups: TLargeGroup[]
 }
 
@@ -235,8 +277,15 @@ const LARGE_BRANCHES: TLargeBranch[] = [
     name: 'main',
     latestConfigId: 'cfg-main-9',
     staleConfigId: 'cfg-main-8',
+    latestMessage: 'Bump api to v2.4.0',
+    staleMessage: 'Bump api to v2.3.1',
     groups: [
-      { name: 'canary', matchLabels: { ring: 'canary' }, count: 4, progress: 1 },
+      {
+        name: 'canary',
+        matchLabels: { ring: 'canary' },
+        count: 4,
+        progress: 1,
+      },
       { name: 'stage', matchLabels: { env: 'stage' }, count: 8, progress: 1 },
       {
         name: 'prod-us',
@@ -263,6 +312,8 @@ const LARGE_BRANCHES: TLargeBranch[] = [
     name: 'monthly',
     latestConfigId: 'cfg-monthly-4',
     staleConfigId: 'cfg-monthly-3',
+    latestMessage: 'November release',
+    staleMessage: 'October release',
     groups: [
       {
         name: 'wave-1',
@@ -289,6 +340,8 @@ const LARGE_BRANCHES: TLargeBranch[] = [
     name: 'release/lts',
     latestConfigId: 'cfg-lts-2',
     staleConfigId: 'cfg-lts-1',
+    latestMessage: 'Patch worker base image',
+    staleMessage: 'LTS 1.0 baseline',
     groups: [
       {
         name: 'regulated',
@@ -309,6 +362,8 @@ const LARGE_BRANCHES: TLargeBranch[] = [
     name: 'preview',
     latestConfigId: 'cfg-preview-7',
     staleConfigId: 'cfg-preview-6',
+    latestMessage: 'Try new web layout',
+    staleMessage: 'Add feature flags',
     groups: [
       {
         name: 'internal',
@@ -328,7 +383,13 @@ const LARGE_BRANCHES: TLargeBranch[] = [
 
 const LARGE_UNASSIGNED = 7
 
-const REGIONS = ['us-east-1', 'us-west-2', 'eu-west-1', 'eu-central-1', 'ap-south-1']
+const REGIONS = [
+  'us-east-1',
+  'us-west-2',
+  'eu-west-1',
+  'eu-central-1',
+  'ap-south-1',
+]
 
 type TLargeHealth = {
   health: string
@@ -408,15 +469,13 @@ const buildLargeFleet = () => {
             ? branch.latestConfigId
             : branch.staleConfigId,
         })
-        overviews[`inst-${String(n).padStart(3, '0')}`] = overviewFor(
-          branch.latestConfigId,
-          branch.staleConfigId,
-          isApplied
-            ? []
-            : n % 2
-              ? ['comp-api', 'comp-worker']
-              : ['comp-worker']
-        )
+        overviews[`inst-${String(n).padStart(3, '0')}`] = isApplied
+          ? overviewFor(
+              branch.latestConfigId,
+              branch.staleConfigId,
+              n % 3 === 0 ? ['comp-api'] : []
+            )
+          : overviewFor(branch.staleConfigId, branch.staleConfigId)
       }
     }
   }
@@ -447,15 +506,53 @@ const buildLargeFleet = () => {
     })),
   }))
 
+  const runs: Record<string, TAppBranchRun[]> = Object.fromEntries(
+    LARGE_BRANCHES.map((branch, i) => [
+      branch.id,
+      [
+        branchRun(
+          `run-${branch.id}-latest`,
+          branch.latestConfigId,
+          branch.latestMessage,
+          `${'abcdef'[i]}${i}c0ffee${i}1234`,
+          `2026-11-${String(16 - i).padStart(2, '0')}T15:20:00Z`
+        ),
+        branchRun(
+          `run-${branch.id}-prev`,
+          branch.staleConfigId,
+          branch.staleMessage,
+          `${'abcdef'[i]}${i}deadbe${i}5678`,
+          `2026-11-${String(9 - i).padStart(2, '0')}T10:05:00Z`
+        ),
+        ...(branch.id === 'br-main'
+          ? [
+              'Bump api to v2.3.0',
+              'Rotate worker credentials',
+              'Bump web to v1.8.2',
+              'Add stage sandbox',
+              'Bump api to v2.2.4',
+            ].map((message, n) =>
+              branchRun(
+                `run-br-main-old-${n}`,
+                `cfg-main-${7 - n}`,
+                message,
+                `a${n}0ld${n}feed${n}9abc`,
+                `2026-10-${String(28 - n * 4).padStart(2, '0')}T09:00:00Z`
+              )
+            )
+          : []),
+      ],
+    ])
+  )
+
   const branches: TAppBranch[] = LARGE_BRANCHES.map((branch) =>
     branchWithRun(
       { id: branch.id, name: branch.name, app_id: 'app-1' },
-      `run-${branch.id}`,
-      branch.latestConfigId
+      runs[branch.id][0]
     )
   )
 
-  return { installs, configs, status, branches, overviews }
+  return { installs, configs, status, branches, overviews, runs }
 }
 
 const largeFleetData = buildLargeFleet()
@@ -465,3 +562,4 @@ export const largeFleetConfigs = largeFleetData.configs
 export const largeFleetStatus = largeFleetData.status
 export const largeFleetBranches = largeFleetData.branches
 export const largeFleetOverviews = largeFleetData.overviews
+export const largeFleetRuns = largeFleetData.runs
