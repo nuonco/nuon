@@ -87,6 +87,11 @@ across:
 For example, a "production deploy failures" subscription matches `installs` with
 the `env=prod` label, and interests of `deploy` + `failures`.
 
+## Health alerts
+
+To get a message when a component becomes unhealthy, and another when it recovers, turn on component health for
+`components` in the subscription. See [Health Checks](/guides/health-checks#alerting) for what each alert contains.
+
 ## Role change notifications
 
 When a customer enables or disables an [operation role](/concepts/operation-roles)
