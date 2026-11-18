@@ -765,6 +765,7 @@ func diffPolicies(old, new *PoliciesConfig) *diff.Diff {
 	diffPolicy := func(op, p AppPolicy) *diff.Diff {
 		return diff.NewDiff(
 			diff.WithKey("policy."+p.Name),
+			diff.WithResourceID(PolicyResourceID(p.Name)),
 			diff.WithChildren(
 				diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(string(op.Type), string(p.Type))),
 				diff.NewDiff(diff.WithKey("engine"), diff.WithStringDiff(string(op.Engine), string(p.Engine))),
