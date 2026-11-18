@@ -89,12 +89,12 @@ permissions:
   id-token: write
 
 jobs:
-  sync:
+  nuon:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: curl -sSL install.nuon.co | bash
-      - run: nuon apps sync
+      - run: nuon apps list
         env:
           NUON_ORG_ID: ${{ vars.nuon_org_id }}
 ```
