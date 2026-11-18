@@ -1,13 +1,21 @@
 import { describe, expect, test } from 'bun:test'
 import {
   mixedFleet,
+  mixedFleetApprovals,
   mixedFleetBranches,
+  mixedFleetConfigVersions,
   mixedFleetConfigs,
   mixedFleetOverviews,
   mixedFleetRuns,
 } from './fixtures'
 import {
+  approvalsByInstall,
+  attentionItems,
+  disabledRolesText,
+  installOverrides,
+  overridesText,
   componentOptions,
+  configVersion,
   countOnRun,
   groupFleet,
   labelOptions,
@@ -199,6 +207,51 @@ describe('rolloutState with a picked run', () => {
       })
     ).toEqual({ total: 7, applied: 4, behind: 2, runnerNotActive: 2 })
   })
+})
+
+test('attentionItems merges failing health and pending approvals, worst first', () => {
+  expect(
+    attentionItems(mixedFleet, approvalsByInstall(mixedFleetApprovals)).map(
+      (item) => [item.install.name, item.reasons]
+    )
+  ).toEqual([
+    ['acme-prod-ap', ['unhealthy']],
+    ['acme-canary', ['pending-approval']],
+    ['acme-prod-eu', ['pending-approval', 'degraded']],
+  ])
+})
+
+test('approvalsByInstall ignores approvals not owned by an install', () => {
+  expect(
+    approvalsByInstall([
+      { id: 'apr-run', owner_type: 'app_branches', owner_id: 'br-main' },
+    ])
+  ).toEqual({})
+})
+
+test('disabledRolesText counts roles that are turned off', () => {
+  const byName = (name: string) =>
+    mixedFleet.find((install) => install.name === name)!
+  expect(disabledRolesText(byName('acme-prod-ap'))).toBe('2 roles disabled')
+  expect(disabledRolesText(byName('acme-prod-eu'))).toBe('1 role disabled')
+  expect(disabledRolesText(byName('acme-canary'))).toBeUndefined()
+})
+
+test('overridesText counts components with an override value set', () => {
+  const byName = (name: string) =>
+    mixedFleet.find((install) => install.name === name)!
+  expect(overridesText(byName('acme-canary'))).toBe('2 overrides')
+  expect(installOverrides(byName('acme-canary'))).toEqual(['api', 'web'])
+  expect(overridesText(byName('acme-prod-us'))).toBe('1 override')
+  expect(overridesText(byName('acme-prod-eu'))).toBeUndefined()
+})
+
+test('configVersion maps the install config to its version', () => {
+  expect(
+    configVersion(mixedFleet[0], {
+      configVersionById: mixedFleetConfigVersions,
+    })
+  ).toBe(3)
 })
 
 test('countOnRun counts installs on a run', () => {
