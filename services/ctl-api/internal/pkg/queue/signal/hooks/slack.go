@@ -1182,9 +1182,21 @@ func (h *SlackSignalLifecycleHook) enrichRoleChangeWithActionTriggers(ctx contex
 	if err := h.db.WithContext(ctx).
 		Table("action_workflows").
 		Select("action_workflows.name").
-		Joins("JOIN action_workflow_configs_latest_view_v1 awc ON awc.action_workflow_id = action_workflows.id").
-		Joins("JOIN action_workflow_trigger_configs awtc ON awtc.action_workflow_config_id = awc.id").
-		Where("action_workflows.app_id = ? AND awtc.type = ? AND awtc.deleted_at = 0", appID, triggerType).
+		Where("action_workflows.app_id = ?", appID).
+		Where(`EXISTS (
+			SELECT 1 FROM action_workflow_configs awc
+			WHERE awc.action_workflow_id = action_workflows.id
+				AND NOT EXISTS (
+					SELECT 1 FROM action_workflow_configs awc2
+					WHERE awc2.action_workflow_id = awc.action_workflow_id
+						AND (awc2.created_at > awc.created_at OR (awc2.created_at = awc.created_at AND awc2.id > awc.id))
+				)
+				AND EXISTS (
+					SELECT 1 FROM action_workflow_trigger_configs awtc
+					WHERE awtc.action_workflow_config_id = awc.id
+						AND awtc.type = ? AND awtc.deleted_at = 0
+				)
+		)`, triggerType).
 		Scan(&names).Error; err != nil || len(names) == 0 {
 		return
 	}
