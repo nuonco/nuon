@@ -425,6 +425,23 @@ func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, vers
 		return errors.Wrap(err, "unable to update runner group settings")
 	}
 
+	if installStackOutputs.AWSStackOutputs != nil && workflow.GetVersion(ctx, "update-runner-cloud-identity-role", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		update, err := activities.AwaitUpdateRunnerCloudIdentityRole(ctx, &activities.UpdateRunnerCloudIdentityRole{
+			RunnerID:         install.RunnerID,
+			RunnerIAMRoleARN: runnerIAMRoleARN,
+		})
+		if err != nil {
+			l.Warn("unable to update runner cloud identity role", zap.Error(err))
+		} else if update.Bound && !update.Accepted {
+			l.Warn("runner role from stack outputs was not bound",
+				zap.String("install_id", install.ID),
+				zap.String("runner_id", install.RunnerID),
+				zap.String("reason", update.Reason),
+				zap.String("reported_role_arn", runnerIAMRoleARN),
+				zap.String("expected_account_id", update.ExpectedAccount))
+		}
+	}
+
 	if installStackOutputs.GCPStackOutputs != nil && installStackOutputs.GCPStackOutputs.Region != "" {
 		if err := activities.AwaitUpdateGCPAccountRegion(ctx, &activities.UpdateGCPAccountRegion{
 			InstallID: install.ID,
