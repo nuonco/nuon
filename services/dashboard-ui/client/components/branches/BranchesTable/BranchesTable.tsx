@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ID } from '@/components/common/ID'
+import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
+import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -14,6 +16,9 @@ type TBranchRow = {
   workflowCount: number
   createdAt: string
   href: string
+  latestRunAt?: string
+  latestRunStatus?: string
+  updatedAt?: string
   action?: ReactNode
 }
 
@@ -27,6 +32,9 @@ export function parseBranchesToTableData(
     branchName: branch.name || '',
     workflowCount: branch.workflow_count ?? 0,
     createdAt: branch.created_at || '',
+    latestRunAt: branch.latest_run?.created_at,
+    latestRunStatus: branch.latest_run?.status,
+    updatedAt: branch.updated_at,
     href: `/${orgId}/apps/${appId}/branches/${branch.id}`,
     action: (
       <div className="hidden md:flex justify-end">
@@ -70,6 +78,40 @@ const columns: ColumnDef<TBranchRow>[] = [
     cell: (info) => <Time time={info.getValue() as string} format="relative" />,
   },
   {
+    accessorKey: 'latestRunStatus',
+    header: 'Latest run',
+    enableSorting: false,
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Status status={info.getValue() as string} variant="badge" />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
+    accessorKey: 'latestRunAt',
+    header: 'Last run',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time time={info.getValue() as string} format="relative" />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
+    accessorKey: 'updatedAt',
+    header: 'Updated',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time time={info.getValue() as string} format="relative" />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
     enableSorting: false,
     accessorKey: 'action',
     id: 'action',
@@ -91,6 +133,7 @@ export const BranchesTable = ({
 }: IBranchesTable) => {
   return (
     <Table<TBranchRow>
+      tableId="branches"
       columns={columns}
       data={data}
       isLoading={isLoading}

@@ -88,6 +88,21 @@ export const WebhooksTable = ({
         },
       },
       {
+        header: 'Updated',
+        accessorKey: 'updated_at',
+        meta: { defaultHidden: true },
+        cell: (props) => {
+          const time = props.getValue<string | undefined>()
+          return time ? (
+            <Time variant="subtext" time={time} format="relative" />
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              —
+            </Text>
+          )
+        },
+      },
+      {
         id: 'action',
         header: '',
         cell: (props) => <ActionCell webhook={props.row.original} />,
@@ -98,6 +113,7 @@ export const WebhooksTable = ({
 
   return (
     <Table<TWebhook>
+      tableId="webhooks"
       columns={columns}
       data={data}
       isLoading={isLoading}
