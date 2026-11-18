@@ -170,7 +170,16 @@
                   "guides/helm-chart-components",
                   "guides/kubernetes-manifest-components",
                   "guides/container-image-components",
-                  "guides/private-image-registries",
+                  {
+                    "group": "Private Image Registries",
+                    "root": "guides/private-image-registries",
+                    "expanded": false,
+                    "pages": [
+                      "guides/private-image-registries/amazon-ecr",
+                      "guides/private-image-registries/google-artifact-registry",
+                      "guides/private-image-registries/azure-container-registry"
+                    ]
+                  },
                   "guides/image-signature-verification",
                   "guides/image-update-policies",
                   "guides/pulumi-components",

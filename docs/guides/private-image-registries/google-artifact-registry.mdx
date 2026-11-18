@@ -1,0 +1,39 @@
+---
+title: "Google Artifact Registry"
+description: "Configure Nuon read-only access to private Google Artifact Registry repositories."
+keywords: ["private images", "GAR", "Artifact Registry", "GCP", "image repositories", "pull identity", "OIDC"]
+---
+
+Shared flow: [Private Image Registries](/guides/private-image-registries).
+
+## Prerequisites
+
+- Docker-format GAR repos in the target project and location. Record project ID **and** numeric project number.
+- Admin rights to enable APIs and manage workload identity + service accounts + repo IAM.
+- Enable `iam`, `iamcredentials`, `sts`, and `artifactregistry` APIs.
+
+## Configure
+
+1. [Add an image repository](/guides/private-image-registries#add-an-image-repository) → **Google Artifact Registry**. Enter the repository ID (e.g. `acme-images`), not an image path.
+2. Choose or create a `gar` pull identity. Apply detail-page setup, then verify. One assignment covers all images in that GAR repository.
+
+```bash
+nuon cloud-connections create \
+  --name acme-gar-images \
+  --platform gcp \
+  --target-id acme-project \
+  --gcp-project-number 123456789012 \
+  --principal nuon-puller@acme-project.iam.gserviceaccount.com \
+  --default-region us-central1 \
+  --preset gar
+
+nuon image-repositories create \
+  --connection-id <connection-id> \
+  --repository projects/acme-project/locations/us-central1/repositories/api
+```
+
+- `--default-region` must match the GAR location. Service account must be in the target project.
+- Setup grants exact-subject impersonation and `roles/artifactregistry.reader` on registered repos only.
+- On Nuon signing-key rotation, refresh the provider JWKS from fresh setup material.
+- Then set `gcp_gar` on the component — [Container Image Components](/guides/container-image-components).
+- Another repo: [Grant access to another repository](/guides/private-image-registries#grant-access-to-another-repository).

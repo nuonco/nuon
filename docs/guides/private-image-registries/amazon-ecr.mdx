@@ -1,0 +1,37 @@
+---
+title: "Amazon ECR"
+description: "Configure Nuon read-only access to private Amazon ECR repositories."
+keywords: ["private images", "ECR", "Amazon ECR", "image repositories", "pull identity", "OIDC"]
+---
+
+Shared flow: [Private Image Registries](/guides/private-image-registries).
+
+## Prerequisites
+
+- ECR repos exist in one account and region (setup does not create or publish them).
+- Admin rights to manage the IAM OIDC provider, role, and inline policy.
+- Reuse an existing OIDC provider for this Nuon issuer if you already have one (`sts.amazonaws.com` audience; one connection subject per role).
+
+## Configure
+
+1. [Add an image repository](/guides/private-image-registries#add-an-image-repository) → **Amazon ECR** (name like `acme/platform/api`; no hostname/tag/digest).
+2. Choose or create an `ecr` pull identity. Apply detail-page setup, then verify.
+
+```bash
+nuon cloud-connections create \
+  --name acme-images \
+  --platform aws \
+  --target-id 123456789012 \
+  --principal arn:aws:iam::123456789012:role/nuon-image-access \
+  --default-region us-west-2 \
+  --preset ecr
+
+nuon image-repositories create \
+  --connection-id <connection-id> \
+  --repository arn:aws:ecr:us-west-2:123456789012:repository/acme/api
+```
+
+- `--default-region` is required; ARNs must match it.
+- Use preset `ecr` only (not `custom` or `stacks`).
+- Generated policy is read-only on the exact repository (`ecr:GetAuthorizationToken` on `*`, plus describe/list/get/download APIs).
+- Another repo: [Grant access to another repository](/guides/private-image-registries#grant-access-to-another-repository).
