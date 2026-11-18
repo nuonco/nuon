@@ -25,6 +25,20 @@ Before getting started, you will need the following in place.
 - If the template, sandbox, or any component repositories are private, [connect the Nuon GitHub App](/guides/vcs) to grant access to clone them.
 - If you use config files, the [Nuon CLI](/cli) installed and authenticated (`nuon auth login`), with the app selected (`nuon apps select`).
 
+## Shortcut: migrate with `nuon apps sync`
+
+The CLI can create the App Branch and move your installs for you:
+
+1. Ask Nuon to enable App Branch migration for your org. This turns off `nuon apps sync` for every app in the org, so installs you haven't moved stay on the app template you last synced.
+2. In your app template directory, run `nuon apps sync` in an interactive terminal. The directory must be a Git checkout with a GitHub `origin` remote.
+3. Confirm **Create an app branch now?**, choose the App Branch name, and confirm writing and syncing the branch config file at `branches/<name>.toml`.
+4. Once the first branch run finishes, confirm **Add installs to app branch "&lt;name&gt;"?** and choose **All**, or choose installs one at a time.
+5. Commit and push the branch config file.
+
+The branch config file the CLI writes has no Install Groups, so every install lands in a single `default` group.
+To roll out in stages, add Install Groups as shown in Step 1 and sync the branch config file with `nuon branches sync`.
+Then continue from Step 4.
+
 ## Step 1: Create the App Branch
 
 <Tabs>
