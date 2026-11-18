@@ -23,7 +23,7 @@ func (m *middleware) handleInvites(ctx context.Context, acct *app.Account) error
 	}
 
 	for _, invite := range invites {
-		if err := m.authz.AcceptInvite(ctx, &invite, acct); err != nil {
+		if err := m.accounts.AcceptInvite(ctx, &invite, acct); err != nil {
 			return nil
 		}
 	}

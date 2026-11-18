@@ -27,6 +27,19 @@ func (h *Client) EnsureRunnerJobRole(ctx context.Context, orgID, jobID, installI
 	})
 }
 
+func (h *Client) EnsureLogStreamRole(ctx context.Context, orgID, logStreamID, accountID string) error {
+	return h.EnsureManagedServiceAccountRole(ctx, accountID, &app.Role{
+		OrgID: generics.NewNullString(orgID), RoleType: app.RoleTypeLogStream,
+		Version: app.RoleVersionV2, Title: "Log stream", Description: "Append to one log stream.",
+		Policies: []app.Policy{{OrgID: generics.NewNullString(orgID), Name: app.PolicyNameLogStream,
+			Permissions: pgtype.Hstore{
+				permissions.APIPermissionKey:                                      generics.ToPtr(string(permissions.APIRunner)),
+				permissions.Object(orgID, permissions.KindLogStream, logStreamID): permissions.PermissionCreate.ToStrPtr(),
+			},
+		}},
+	})
+}
+
 func (h *Client) EnsureTelemetryCollectorRole(ctx context.Context, orgID, installID, accountID string) error {
 	return h.EnsureManagedServiceAccountRole(ctx, accountID, &app.Role{
 		OrgID: generics.NewNullString(orgID), RoleType: app.RoleTypeTelemetryCollector,
