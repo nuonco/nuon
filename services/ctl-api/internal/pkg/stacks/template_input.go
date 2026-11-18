@@ -2,6 +2,7 @@ package stacks
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -18,6 +19,10 @@ type TemplateInput struct {
 	Runner   *app.Runner              `validate:"required"`
 	Settings *app.RunnerGroupSettings `validate:"required"`
 	APIToken string                   `validate:"required"`
+
+	// StackAPIURL is ctl-api stack_api_url. Empty or loopback keeps the runner URL,
+	// which is what a deployment uses until the stack API host is set.
+	StackAPIURL string
 
 	// ConfiguredRunnerInstanceType is the instance type the app's runner config declares,
 	// empty when it declares none. Settings.AWSInstanceType cannot express "unset" — the
@@ -79,6 +84,32 @@ type TemplateInput struct {
 	// RenderCustomNestedStackParameters rewrites install-input references into
 	// literals.
 	UnrenderedCustomStackParameters map[string]map[string]string
+}
+
+func (in *TemplateInput) ProviderAPIURL() string {
+	if in == nil {
+		return ""
+	}
+	if PublicAPIBase(in.StackAPIURL) {
+		return strings.TrimRight(in.StackAPIURL, "/")
+	}
+	if in.Settings != nil {
+		return strings.TrimRight(in.Settings.RunnerAPIURL, "/")
+	}
+	return ""
+}
+
+func PublicAPIBase(raw string) bool {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Hostname() == "" || u.Scheme == "" {
+		return false
+	}
+	switch strings.ToLower(u.Hostname()) {
+	case "localhost", "127.0.0.1", "::1":
+		return false
+	default:
+		return true
+	}
 }
 
 // PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home
