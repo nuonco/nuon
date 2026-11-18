@@ -32,6 +32,8 @@ const toEditorGroups = (config?: TAppBranchConfig): IInstallGroup[] =>
       is_default: !!g.default,
       order: g.order ?? idx,
       max_parallel: g.max_parallel || 1,
+      approval_option:
+        g.approval_option === 'approve-all' ? 'approve-all' : 'prompt',
       auto_approve_on_policies_passing: !!g.auto_approve_on_policies_passing,
     }
   }) || []
@@ -107,6 +109,7 @@ export const DeploymentPlanEditorContainer = ({
           default: group.is_default || undefined,
           order: index,
           max_parallel: group.max_parallel || 1,
+          approval_option: group.approval_option,
           auto_approve_on_policies_passing:
             group.auto_approve_on_policies_passing,
         }

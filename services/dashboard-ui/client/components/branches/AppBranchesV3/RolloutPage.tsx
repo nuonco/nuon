@@ -16,9 +16,10 @@ const toTrackGroup = (group: TRolloutInstallGroup): TTrackGroup => ({
   name: group.name || 'Install group',
   status: group.status,
   maxParallel: group.max_parallel ?? 1,
-  approval: group.auto_approve_on_policies_passing
-    ? 'Auto-approves when policies pass'
-    : 'Manual approval',
+  approval:
+    group.approval_option === 'approve-all'
+      ? "Auto-approves this group's plan"
+      : 'Manual approval',
   match: group.default
     ? { kind: 'default' }
     : group.label_selector?.match_labels

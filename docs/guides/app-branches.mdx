@@ -348,9 +348,9 @@ For each install group:
 - **Skip install group:** move the rollout past this install group's deploy without applying it.
 
 The run stops at the next install group's plan step, so each install group is approved or skipped on its own. By
-default the plan waits for approval. Set `auto_approve_on_policies_passing = true` on an install group to approve
-automatically when policy checks pass. You can also subscribe to [webhook](/guides/webhooks) events and approve
-through the API.
+default the plan waits for approval. Set `approval_option = "approve-all"` on an install group to approve that
+group's config diff and start its deploys. Each install still uses its own approval setting. You can also subscribe
+to [webhook](/guides/webhooks) events and approve through the API.
 
 ## Previews
 

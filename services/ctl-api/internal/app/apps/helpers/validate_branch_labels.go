@@ -37,3 +37,23 @@ func LatestConfigInstallGroupsWithDB(ctx context.Context, db *gorm.DB, branchID 
 
 	return groups, nil
 }
+
+func (h *Helpers) GroupApprovalOption(ctx context.Context, branchID, groupName string) (app.InstallApprovalOption, error) {
+	return GroupApprovalOptionWithDB(ctx, h.db, branchID, groupName)
+}
+
+func GroupApprovalOptionWithDB(ctx context.Context, db *gorm.DB, branchID, groupName string) (app.InstallApprovalOption, error) {
+	if branchID == "" || groupName == "" {
+		return app.InstallApprovalOptionPrompt, nil
+	}
+	groups, err := LatestConfigInstallGroupsWithDB(ctx, db, branchID)
+	if err != nil {
+		return "", err
+	}
+	for i := range groups {
+		if groups[i].Name == groupName {
+			return groups[i].ResolvedApprovalOption(), nil
+		}
+	}
+	return app.InstallApprovalOptionPrompt, nil
+}

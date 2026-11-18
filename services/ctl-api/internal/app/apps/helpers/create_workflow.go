@@ -62,8 +62,10 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 ) (*app.Workflow, error) {
 	status := app.NewCompositeStatus(ctx, app.StatusPending)
 	if approvalOption == app.InstallApprovalOptionApproveAll {
-		metadata["approval_type"] = "install-config"
-		status.Metadata["approval_type"] = "install-config"
+		if metadata["approval_type"] == "" {
+			metadata["approval_type"] = "install-config"
+		}
+		status.Metadata["approval_type"] = metadata["approval_type"]
 	}
 	wf := app.Workflow{
 		Type:              workflowType,

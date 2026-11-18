@@ -1,8 +1,8 @@
 export const installGroupApprovalLabel = (group?: {
-  auto_approve_on_policies_passing?: boolean | null
+  approval_option?: 'approve-all' | 'prompt' | string | null
 }) => {
   if (!group) return undefined
-  return group.auto_approve_on_policies_passing
-    ? 'Auto-approves when policies pass'
+  return group.approval_option === 'approve-all'
+    ? "Auto-approves this group's plan"
     : 'Manual approval'
 }
