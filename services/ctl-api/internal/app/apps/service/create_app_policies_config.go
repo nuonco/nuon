@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -96,6 +97,10 @@ func (s *service) CreateAppPoliciesConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppPoliciesConfig(ctx context.Context, appID string, req *CreateAppPoliciesConfigRequest) (*app.AppPoliciesConfig, error) {
+	if err := require.AppConfigInApp(ctx, s.db, appID, req.AppConfigID); err != nil {
+		return nil, err
+	}
+
 	obj, err := build.PoliciesConfig(req.buildInputs(), appID, req.AppConfigID)
 	if err != nil {
 		return nil, stderr.ErrUser{Err: err, Description: err.Error()}

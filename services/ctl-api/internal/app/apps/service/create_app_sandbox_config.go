@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -162,6 +163,10 @@ func (s *service) CreateAppSandboxConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req *CreateAppSandboxConfigRequest) (*app.AppSandboxConfig, error) {
+	if err := require.AppConfigInApp(ctx, s.db, appID, req.AppConfigID); err != nil {
+		return nil, err
+	}
+
 	var parentApp app.App
 	res := s.db.WithContext(ctx).
 		Preload("Org").
