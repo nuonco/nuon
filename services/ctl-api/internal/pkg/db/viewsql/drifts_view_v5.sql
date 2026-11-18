@@ -73,6 +73,7 @@ FROM (
             WHERE live.id IS NOT NULL
                 AND d.install_component_id = ic.id
                 AND d.deleted_at = 0
+                AND d.component_build_id = live.component_build_id
                 AND d.created_at >= COALESCE(live.applied_at, live.created_at)
                 AND d.created_at >= COALESCE(last.created_at, '-infinity')
             ORDER BY d.created_at DESC
