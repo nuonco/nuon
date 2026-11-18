@@ -152,6 +152,17 @@ export const PolicyReportsTable = ({
         },
       },
       {
+        id: 'passed',
+        accessorFn: (row) => row.report?.pass_count ?? 0,
+        header: 'Passed',
+        meta: { defaultHidden: true },
+        cell: ({ row }) => (
+          <Text variant="subtext" family="mono">
+            {row.original.report?.pass_count ?? 0}
+          </Text>
+        ),
+      },
+      {
         id: 'evaluated',
         accessorFn: (row) => getReportTime(row.report),
         header: 'Evaluated',

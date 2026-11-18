@@ -19,9 +19,12 @@ export type TComponentRow = {
   componentId: string
   componentName: string
   componentType: ReactNode
+  configVersions?: number
   href: string
   dependencies: ReactNode
   labels: ReactNode
+  lastBuiltAt?: string
+  updatedAt?: string
 }
 
 export function parseComponentToTableData(
@@ -35,6 +38,9 @@ export function parseComponentToTableData(
     return {
       componentId: component.id,
       componentName: component.name,
+      configVersions: component.config_versions,
+      lastBuiltAt: component.latest_build?.created_at,
+      updatedAt: component.updated_at,
       componentType: (
         <ComponentType
           type={component.type}
@@ -84,13 +90,20 @@ export function parseComponentToTableData(
       ),
       labels: (() => {
         const lbls = component.labels
-        if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
+        if (!lbls || Object.keys(lbls).length === 0)
+          return <Icon variant="MinusIcon" />
         return (
           <span className="flex flex-wrap gap-1">
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" customColor={labelColors?.[k]} />
+                <LabelBadge
+                  key={k}
+                  labelKey={k}
+                  labelValue={lbls[k]}
+                  size="sm"
+                  customColor={labelColors?.[k]}
+                />
               ))}
           </span>
         )
@@ -109,7 +122,9 @@ const columns: ColumnDef<TComponentRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">
+            {info.getValue() as string}
+          </Link>
         </Text>
         <ID>{info.row.original.componentId as string}</ID>
       </span>
@@ -126,7 +141,9 @@ const columns: ColumnDef<TComponentRow>[] = [
     accessorKey: 'dependencies',
     header: 'Dependencies',
     cell: (info) => (
-      <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
+      <Text as="div" className="flex">
+        {info.getValue() as ReactNode}
+      </Text>
     ),
   },
   {
@@ -144,13 +161,60 @@ const columns: ColumnDef<TComponentRow>[] = [
     ),
   },
   {
+    accessorKey: 'configVersions',
+    header: 'Config versions',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() == null ? (
+        <Icon variant="MinusIcon" />
+      ) : (
+        <Text family="mono" theme="neutral">
+          {info.getValue() as number}
+        </Text>
+      ),
+  },
+  {
+    accessorKey: 'lastBuiltAt',
+    header: 'Last built',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time
+          time={info.getValue() as string}
+          format="relative"
+          variant="subtext"
+        />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
+    accessorKey: 'updatedAt',
+    header: 'Updated',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time
+          time={info.getValue() as string}
+          format="relative"
+          variant="subtext"
+        />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
     enableSorting: false,
     accessorKey: 'href',
     id: 'href',
     header: '',
     cell: (info) => (
       <Text>
-        <Link className="text-left" href={info.getValue() as string} variant="inline">
+        <Link
+          className="text-left"
+          href={info.getValue() as string}
+          variant="inline"
+        >
           View component
         </Link>
       </Text>

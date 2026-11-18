@@ -54,7 +54,9 @@ export const RunnerProcessesTable = ({
             <div className="flex items-center gap-2">
               <Text variant="subtext">{process.version || '-'}</Text>
               {process.labels?.map((label) => (
-                <Badge key={label} theme="neutral" variant="code" size="sm">{label}</Badge>
+                <Badge key={label} theme="neutral" variant="code" size="sm">
+                  {label}
+                </Badge>
               ))}
             </div>
           )
@@ -85,6 +87,19 @@ export const RunnerProcessesTable = ({
           const createdAt = info.getValue() as string | undefined
           return createdAt ? (
             <Time variant="subtext" time={createdAt} format="relative" />
+          ) : (
+            <Text variant="subtext">-</Text>
+          )
+        },
+      },
+      {
+        accessorKey: 'next_scheduled_restart_at',
+        header: 'Next restart',
+        meta: { defaultHidden: true },
+        cell: (info) => {
+          const restartAt = info.getValue() as string | undefined
+          return restartAt ? (
+            <Time variant="subtext" time={restartAt} format="relative" />
           ) : (
             <Text variant="subtext">-</Text>
           )

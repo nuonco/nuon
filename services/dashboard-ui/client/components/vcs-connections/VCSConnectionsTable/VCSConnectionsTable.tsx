@@ -64,6 +64,18 @@ export const VCSConnectionsTable = ({
             <Text theme="neutral">—</Text>
           ),
       },
+      {
+        header: 'Connected',
+        id: 'connected_at',
+        accessorFn: (row) => row.connection?.created_at,
+        meta: { defaultHidden: true },
+        cell: ({ row }) =>
+          row.original.connection?.created_at ? (
+            <Time time={row.original.connection.created_at} format="relative" />
+          ) : (
+            <Text theme="neutral">—</Text>
+          ),
+      },
     ],
     []
   )

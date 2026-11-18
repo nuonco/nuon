@@ -6,6 +6,7 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import type { TActionConfigTriggerType, TAction } from '@/types'
 import { ActionTriggerType } from '../ActionTriggerType'
 
@@ -15,7 +16,9 @@ export type TActionRow = {
   labels: ReactNode
   actionTriggers: ReactNode
   actionSteps: ReactNode
+  createdAt?: string
   href: string
+  updatedAt?: string
 }
 
 export function parseActionsToTableData(
@@ -33,6 +36,8 @@ export function parseActionsToTableData(
     return {
       actionId: action?.id,
       actionName: action?.name,
+      createdAt: action?.created_at,
+      updatedAt: action?.updated_at,
       actionSteps: (() => {
         const steps = action?.configs?.at(-1)?.steps
         if (!steps?.length) return <Icon variant="MinusIcon" />
@@ -51,13 +56,20 @@ export function parseActionsToTableData(
       })(),
       labels: (() => {
         const lbls = action.labels
-        if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
+        if (!lbls || Object.keys(lbls).length === 0)
+          return <Icon variant="MinusIcon" />
         return (
           <span className="flex flex-wrap gap-1">
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" customColor={labelColors?.[k]} />
+                <LabelBadge
+                  key={k}
+                  labelKey={k}
+                  labelValue={lbls[k]}
+                  size="sm"
+                  customColor={labelColors?.[k]}
+                />
               ))}
           </span>
         )
@@ -91,7 +103,9 @@ const columns: ColumnDef<TActionRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">
+            {info.getValue() as string}
+          </Link>
         </Text>
         <ID>{info.row.original.actionId as string}</ID>
       </span>
@@ -113,6 +127,36 @@ const columns: ColumnDef<TActionRow>[] = [
     accessorKey: 'actionSteps',
     header: 'Steps',
     cell: (info) => info.getValue() as ReactNode,
+  },
+  {
+    accessorKey: 'createdAt',
+    header: 'Created',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time
+          time={info.getValue() as string}
+          format="relative"
+          variant="subtext"
+        />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
+    accessorKey: 'updatedAt',
+    header: 'Updated',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time
+          time={info.getValue() as string}
+          format="relative"
+          variant="subtext"
+        />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
   },
 ]
 

@@ -7,6 +7,7 @@ import { Menu } from '@/components/common/Menu'
 import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { ResendOrgInviteButton } from '@/components/team/ResendOrgInvite'
 import { RevokeOrgInviteButton } from '@/components/team/RevokeOrgInvite'
 import type { TOrgInvite } from '@/types'
@@ -54,9 +55,7 @@ export const InvitedUsers = ({
       {
         accessorKey: 'email',
         header: 'Email',
-        cell: ({ row }) => (
-          <Text variant="body">{row.original?.email}</Text>
-        ),
+        cell: ({ row }) => <Text variant="body">{row.original?.email}</Text>,
       },
       {
         id: 'role',
@@ -73,6 +72,17 @@ export const InvitedUsers = ({
         cell: ({ row }) => (
           <Status variant="badge" status={row.original?.status} />
         ),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Invited',
+        meta: { defaultHidden: true },
+        cell: ({ row }) =>
+          row.original?.created_at ? (
+            <Time time={row.original.created_at} format="relative" />
+          ) : (
+            <Text theme="neutral">—</Text>
+          ),
       },
       {
         id: 'more-options',
@@ -110,5 +120,7 @@ export const InvitedUsersError = ({
   message?: string
   title?: string
 }) => {
-  return <EmptyState variant="table" emptyMessage={message} emptyTitle={title} />
+  return (
+    <EmptyState variant="table" emptyMessage={message} emptyTitle={title} />
+  )
 }

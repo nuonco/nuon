@@ -4,6 +4,7 @@ export default {
 
 import type { ColumnDef } from '@tanstack/react-table'
 import { Button } from '@/components/common/Button'
+import { Status } from '@/components/common/Status'
 import { CloudRegion } from '@/components/common/CloudRegion'
 import { ContextTooltip } from '@/components/common/ContextTooltip'
 import { Icon } from '@/components/common/Icon'
@@ -21,8 +22,10 @@ import { StoryFrame, hoursAgo, useMockPage } from './story-utils'
 import { TableV2 } from '@/components/common/TableV2'
 
 type TMockBranchInstall = {
+  appliedAt?: string
   createdAt: string
   createdBy: string
+  current: boolean
   group?: string
   id: string
   labels: Record<string, string>
@@ -91,7 +94,9 @@ const mockInstalls: TMockBranchInstall[] = Array.from(
     const customer = CUSTOMERS[i % CUSTOMERS.length]
     const target = PLATFORMS[(i * 3) % PLATFORMS.length]
     return {
+      appliedAt: i % 5 === 4 ? undefined : hoursAgo(6 + i * 5),
       createdAt: hoursAgo(24 * (40 + i)),
+      current: i % 3 !== 2,
       createdBy:
         i % 3 === 0 ? 'ops-bot@example.com' : `admin${(i % 4) + 1}@example.com`,
       group: GROUPS[i % GROUPS.length],
@@ -246,6 +251,39 @@ const columns: ColumnDef<TMockBranchInstall>[] = [
     cell: (info) => <ActivityCell install={info.row.original} />,
   },
   {
+    id: 'config',
+    header: 'Config',
+    enableSorting: false,
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.row.original.appliedAt ? (
+        <Status
+          status={info.row.original.current ? 'active' : 'outdated'}
+          variant="badge"
+        >
+          {info.row.original.current ? 'Current' : 'Behind'}
+        </Status>
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
+    id: 'upgraded',
+    header: 'Upgraded',
+    enableSorting: false,
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.row.original.appliedAt ? (
+        <Time
+          time={info.row.original.appliedAt}
+          format="relative"
+          variant="subtext"
+        />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
     id: 'action',
     header: '',
     enableSorting: false,
@@ -278,7 +316,7 @@ export const Default = () => {
     matchesInstall
   )
   return (
-    <StoryFrame note="Mirrors the installs table on a branch page (scope branch with status axes). The app and branch columns are left out because the page already implies them. Region starts hidden because the current table only shows it on very wide screens.">
+      <StoryFrame note="Mirrors the installs table on a branch page (scope branch with status axes). The app and branch columns are left out because the page already implies them. Region, config, and upgraded start hidden.">
       <TableV2
         tableId="playground-branch-installs"
         columns={columns}

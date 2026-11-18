@@ -110,6 +110,28 @@ export const InstallRolesTable = ({
         ),
       },
       {
+        accessorKey: 'enabled',
+        header: 'Enabled',
+        meta: { defaultHidden: true },
+        cell: ({ row }) => (
+          <Status status={row.original.enabled ? 'active' : 'disabled'}>
+            {row.original.enabled ? 'Enabled' : 'Disabled'}
+          </Status>
+        ),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created',
+        meta: { defaultHidden: true },
+        cell: ({ row }) => (
+          <Time
+            variant="subtext"
+            time={row.original.created_at}
+            format="relative"
+          />
+        ),
+      },
+      {
         accessorKey: 'last_used_at',
         header: 'Last used',
         cell: ({ row }) =>

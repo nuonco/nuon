@@ -7,6 +7,7 @@ import { ContextTooltip } from '@/components/common/ContextTooltip'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
+import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -23,8 +24,10 @@ export type InstallRow = {
   action: ReactNode
   activity: ReactNode
   branch: ReactNode
+  config: ReactNode
   group: ReactNode
   updatedAt: string
+  upgraded: ReactNode
   appHref: string
   appName: string
   installId: string
@@ -32,6 +35,7 @@ export type InstallRow = {
   name: string
   nameHref: string
   region?: ReactNode
+  runner: ReactNode
   statuses: ReactNode
   platform: ReactNode
 }
@@ -102,7 +106,8 @@ export function parseInstallsToTableData(
   orgId: string,
   labelColorsByApp?: Record<string, Record<string, string>>,
   lazyComponents = false,
-  installHref?: (install: TInstall) => string
+  installHref?: (install: TInstall) => string,
+  latestConfigId?: string
 ): InstallRow[] {
   return installs.map((install) => ({
     appHref: `/${install.org_id}/apps/${install.app_id}`,
@@ -174,6 +179,30 @@ export function parseInstallsToTableData(
       <Text variant="subtext" theme="neutral" family="mono">
         {installAppBranchGroup(install) || '—'}
       </Text>
+    ),
+    runner: install.runner_status ? (
+      <Status status={install.runner_status} variant="badge" />
+    ) : (
+      <Icon variant="MinusIcon" />
+    ),
+    config: (() => {
+      const applied = install.app_config_ref?.applied_config_id
+      if (!applied || !latestConfigId) return <Icon variant="MinusIcon" />
+      const current = applied === latestConfigId
+      return (
+        <Status status={current ? 'active' : 'outdated'} variant="badge">
+          {current ? 'Current' : 'Behind'}
+        </Status>
+      )
+    })(),
+    upgraded: install.app_config_ref?.applied_config_at ? (
+      <Time
+        time={install.app_config_ref.applied_config_at}
+        format="relative"
+        variant="subtext"
+      />
+    ) : (
+      <Icon variant="MinusIcon" />
     ),
     activity: <ActivityCell install={install} />,
     updatedAt: install?.updated_at ?? '',
@@ -257,6 +286,27 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => info.getValue() as ReactNode,
   },
   {
+    enableSorting: false,
+    accessorKey: 'runner',
+    header: 'Runner',
+    meta: { defaultHidden: true },
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'config',
+    header: 'Config',
+    meta: { defaultHidden: true },
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'upgraded',
+    header: 'Upgraded',
+    meta: { defaultHidden: true },
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
     id: 'activity',
     accessorKey: 'updatedAt',
     header: 'Activity',
@@ -273,8 +323,8 @@ const columns: ColumnDef<InstallRow>[] = [
 ]
 
 const HIDDEN_COLUMNS: Record<TInstallsTableScope, string[]> = {
-  org: [],
-  app: ['appName'],
+  org: ['config', 'upgraded'],
+  app: ['appName', 'config', 'upgraded'],
   branch: ['appName', 'branch'],
 }
 

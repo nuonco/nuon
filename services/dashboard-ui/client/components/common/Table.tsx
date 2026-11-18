@@ -212,8 +212,7 @@ export const Table = <T extends object>({
         tableId={tableId}
         loadingRows={skeletonRows}
         emptyStateProps={
-          emptyStateProps ??
-          (emptyMessage ? { emptyMessage } : undefined)
+          emptyStateProps ?? (emptyMessage ? { emptyMessage } : undefined)
         }
       />
     )
@@ -223,6 +222,7 @@ export const Table = <T extends object>({
     <PaginationProvider>
       <TableBase<T>
         {...props}
+        columns={props.columns.filter((column) => !column.meta?.defaultHidden)}
         emptyMessage={emptyMessage}
         emptyStateProps={emptyStateProps}
         skeletonRows={skeletonRows}

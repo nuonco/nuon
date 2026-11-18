@@ -29,6 +29,14 @@ export const LegacyPersonalTokens = ({
         ),
       },
       {
+        header: 'Role',
+        accessorKey: 'role',
+        meta: { defaultHidden: true },
+        cell: (props) => (
+          <Text variant="body">{props.getValue<string>() || '—'}</Text>
+        ),
+      },
+      {
         header: 'Created',
         accessorKey: 'created_at',
         cell: (props) => (
@@ -76,7 +84,8 @@ export const LegacyPersonalTokens = ({
         enableSearch={false}
         emptyStateProps={{
           emptyTitle: 'No legacy personal tokens',
-          emptyMessage: 'Personal tokens created before service account tokens will appear here.',
+          emptyMessage:
+            'Personal tokens created before service account tokens will appear here.',
         }}
       />
     </PageSection>
