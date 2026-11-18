@@ -128,6 +128,11 @@ func (i *ActionWorkflowConfig) Views(db *gorm.DB) []migrations.View {
 			SQL:           viewsql.ActionWorkflowConfigsViewV1,
 			AlwaysReapply: true,
 		},
+		{
+			Name:          views.CustomViewName(db, &ActionWorkflowConfig{}, "latest_view_v2"),
+			SQL:           viewsql.ActionWorkflowConfigsViewV2,
+			AlwaysReapply: true,
+		},
 	}
 }
 
