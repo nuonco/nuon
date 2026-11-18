@@ -72,6 +72,36 @@ export const TriggersTable = ({
         ),
       },
       {
+        header: 'Description',
+        id: 'description',
+        accessorFn: (trigger) => trigger?.description,
+        enableSorting: false,
+        meta: { defaultHidden: true },
+        cell: ({ getValue }) => (
+          <Text variant="subtext" theme="neutral">
+            {getValue<string>() || '—'}
+          </Text>
+        ),
+      },
+      {
+        header: 'Created',
+        id: 'created_at',
+        accessorFn: (trigger) => trigger?.created_at,
+        meta: { defaultHidden: true },
+        cell: ({ getValue }) =>
+          getValue<string>() ? (
+            <Time
+              time={getValue<string>()}
+              format="relative"
+              variant="subtext"
+            />
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              —
+            </Text>
+          ),
+      },
+      {
         header: 'Last event',
         id: 'last_event_at',
         accessorFn: (trigger) => trigger?.last_event_at || undefined,
@@ -105,6 +135,7 @@ export const TriggersTable = ({
     )
   return (
     <Table
+      tableId="triggers"
       columns={columns}
       data={data}
       enableSearch={false}
