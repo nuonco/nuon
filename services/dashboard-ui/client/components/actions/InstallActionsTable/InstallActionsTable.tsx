@@ -159,6 +159,7 @@ export const InstallActionsTable = ({
 }: IInstallActionsTable) => {
   return (
     <Table<InstallActionRow>
+      tableId="install-actions"
       columns={columns}
       data={data}
       isLoading={isLoading}

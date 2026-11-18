@@ -9,12 +9,14 @@ import {
 } from '@tanstack/react-table'
 import { PaginationProvider } from '@/providers/pagination-provider'
 import { usePagination } from '@/hooks/use-pagination'
+import { useTableVersion } from '@/hooks/use-table-version'
 import { cn } from '@/utils/classnames'
 import { DebouncedSearchInput } from './DeboundedSearch'
 import { EmptyState, type IEmptyState } from './EmptyState'
 import { Icon } from './Icon'
 import { Pagination, type IPagination } from './Pagination'
 import { Skeleton } from './Skeleton'
+import { TableV2 } from './TableV2'
 
 function SkeletonCell() {
   return <Skeleton height="24px" width="100%" />
@@ -37,6 +39,7 @@ export interface ITable<TData extends object> {
   pagination?: Omit<IPagination, 'position'>
   searchPlaceholder?: string
   skeletonRows?: number
+  tableId?: string
 }
 
 export function TableBase<TData extends object>({
@@ -193,8 +196,37 @@ export function TableBase<TData extends object>({
   )
 }
 
-export const Table = <T extends object>(props: ITable<T>) => (
-  <PaginationProvider>
-    <TableBase<T> {...props} />
-  </PaginationProvider>
-)
+export const Table = <T extends object>({
+  tableId,
+  emptyMessage,
+  emptyStateProps,
+  skeletonRows,
+  ...props
+}: ITable<T>) => {
+  const tableVersion = useTableVersion()
+
+  if (tableVersion === 'v2' && tableId) {
+    return (
+      <TableV2<T>
+        {...props}
+        tableId={tableId}
+        loadingRows={skeletonRows}
+        emptyStateProps={
+          emptyStateProps ?? (emptyMessage ? { emptyMessage } : undefined)
+        }
+      />
+    )
+  }
+
+  return (
+    <PaginationProvider>
+      <TableBase<T>
+        {...props}
+        columns={props.columns.filter((column) => !column.meta?.defaultHidden)}
+        emptyMessage={emptyMessage}
+        emptyStateProps={emptyStateProps}
+        skeletonRows={skeletonRows}
+      />
+    </PaginationProvider>
+  )
+}

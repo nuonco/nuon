@@ -17,6 +17,7 @@ export type TRunbookRow = {
   runbookId: string
   runbookName: string
   description: ReactNode
+  createdAt?: string
   labels: ReactNode
   lastUpdated: ReactNode
   href: string
@@ -49,6 +50,7 @@ export function parseRunbooksToTableData(
     return {
       runbookId: runbook.id,
       runbookName: runbook.name,
+      createdAt: runbook.created_at,
       description: runbook.description ? (
         <Text variant="subtext" theme="neutral">
           {runbook.description}
@@ -154,6 +156,25 @@ const columns: ColumnDef<TRunbookRow>[] = [
     enableSorting: false,
   },
   {
+    accessorKey: 'createdAt',
+    header: 'Created',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Text flex className="gap-2">
+          <Icon variant="CalendarBlankIcon" />
+          <Time
+            time={info.getValue() as string}
+            format="relative"
+            variant="subtext"
+          />
+        </Text>
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+    enableSorting: false,
+  },
+  {
     accessorKey: 'lastUpdated',
     header: 'Last updated',
     cell: (info) => info.getValue() as ReactNode,
@@ -196,6 +217,7 @@ export const RunbooksTable = ({
 
   return (
     <Table<TRunbookRow>
+      tableId={`runbooks-${scope}`}
       columns={scopedColumns}
       data={data}
       filterActions={filterActions}

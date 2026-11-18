@@ -133,6 +133,7 @@ export const ChannelSubscriptionsTable = ({
 
   return (
     <Table<TSlackChannelSubscription>
+      tableId="slack-channel-subscriptions"
       columns={columns}
       data={data}
       isLoading={isLoading}
