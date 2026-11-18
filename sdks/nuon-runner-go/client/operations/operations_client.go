@@ -206,6 +206,8 @@ type ClientService interface {
 
 	RunnerAuthAWSIID(params *RunnerAuthAWSIIDParams, opts ...ClientOption) (*RunnerAuthAWSIIDOK, error)
 
+	RunnerAuthAWSSTS(params *RunnerAuthAWSSTSParams, opts ...ClientOption) (*RunnerAuthAWSSTSOK, error)
+
 	RunnerAuthAzure(params *RunnerAuthAzureParams, opts ...ClientOption) (*RunnerAuthAzureOK, error)
 
 	RunnerAuthGCP(params *RunnerAuthGCPParams, opts ...ClientOption) (*RunnerAuthGCPOK, error)
@@ -2675,6 +2677,51 @@ func (a *Client) RunnerAuthAWSIID(params *RunnerAuthAWSIIDParams, opts ...Client
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for RunnerAuthAWSIID: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RunnerAuthAWSSTS authenticates a runner using a bound a w s s t s request
+
+Validates runner identity by executing a presigned AWS STS GetCallerIdentity request that is bound to this API and to the runner. Type sts-bound is signed by the runner's own IAM role; type sts-vendor is signed by the runner's Nuon-side identity role. The signature must also cover X-Nuon-Token-Ttl, the token lifetime in seconds, at most 691200 (8 days). The runner group's aws_auth_method must equal the type. Runners on the sts method keep using /v1/runner-auth/aws.
+*/
+func (a *Client) RunnerAuthAWSSTS(params *RunnerAuthAWSSTSParams, opts ...ClientOption) (*RunnerAuthAWSSTSOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRunnerAuthAWSSTSParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RunnerAuthAWSSTS",
+		Method:             "POST",
+		PathPattern:        "/v1/runner-auth/aws/sts",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RunnerAuthAWSSTSReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RunnerAuthAWSSTSOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RunnerAuthAWSSTS: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

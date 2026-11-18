@@ -48,12 +48,15 @@ func (s *service) RunnerAuthAWSIID(ctx *gin.Context) {
 	start := time.Now()
 	metricTags := map[string]string{
 		"cloud_provider": "aws",
+		"endpoint":       "aws-iid",
 		"auth_method":    "iid",
 		"status":         "error",
 	}
 	defer func() {
 		if s.mw != nil {
-			s.mw.Timing("runner.auth.latency", time.Since(start), metrics.ToTags(metricTags))
+			tags := metrics.ToTags(metricTags)
+			s.mw.Timing("runner.auth.latency", time.Since(start), tags)
+			s.mw.Incr("runner.auth", tags)
 		}
 	}()
 

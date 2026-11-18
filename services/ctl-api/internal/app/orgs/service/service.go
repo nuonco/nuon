@@ -167,6 +167,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			org.DELETE("/admin-labels", s.AdminRemoveOrgLabels)
 			org.PATCH("/admin-features", s.AdminUpdateOrgFeatures)
 			org.POST("/admin-backfill-phone-home", s.AdminBackfillOrgPhoneHome)
+			org.POST("/admin-backfill-runner-cloud-identities", s.AdminBackfillOrgRunnerCloudIdentities)
 			org.POST("/admin-add-tags", s.AdminAddTags)
 			org.POST("/admin-remove-tags", s.AdminRemoveTags)
 		}
