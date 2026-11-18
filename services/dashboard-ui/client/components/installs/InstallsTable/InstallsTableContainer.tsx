@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
+import { useOptionalBranch } from '@/hooks/use-branch'
 import { useInstallHref } from '@/hooks/use-install-path'
 import { useNewInstallIA } from '@/hooks/use-new-install-ia'
 import { useOrg } from '@/hooks/use-org'
@@ -50,6 +51,9 @@ export const InstallsTableContainer = ({
   const q = searchParams.get('q') || undefined
 
   const scope: TInstallsTableScope = branchId ? 'branch' : appId ? 'app' : 'org'
+  const branch = useOptionalBranch()?.branch
+  const latestConfigId =
+    scope === 'branch' ? branch?.latest_run?.app_config_id : undefined
 
   const { data: result, isLoading } = useQuery({
     queryKey: [
@@ -115,7 +119,8 @@ export const InstallsTableContainer = ({
           installHref({
             installId: install.id,
             appId: install.app_id,
-          })
+          }),
+        latestConfigId
       )}
       isLoading={isLoading}
       emptyStateAction={emptyStateAction ?? <CreateInstallButton />}

@@ -110,6 +110,45 @@ export const EventsTable = ({
         ),
       },
       {
+        header: 'Source',
+        id: 'source',
+        accessorFn: (event) => event?.source,
+        enableSorting: false,
+        meta: { defaultHidden: true },
+        cell: ({ getValue }) => (
+          <Text variant="subtext">{getValue<string>() || '—'}</Text>
+        ),
+      },
+      {
+        header: 'Dispatches',
+        id: 'dispatch_count',
+        accessorFn: (event) => event?.dispatch_count ?? 0,
+        meta: { defaultHidden: true },
+        cell: ({ getValue }) => (
+          <Text variant="subtext" family="mono">
+            {getValue<number>()}
+          </Text>
+        ),
+      },
+      {
+        header: 'Occurred',
+        id: 'occurred_at',
+        accessorFn: (event) => event?.occurred_at,
+        meta: { defaultHidden: true },
+        cell: ({ getValue }) =>
+          getValue<string>() ? (
+            <Time
+              variant="subtext"
+              time={getValue<string>()}
+              format="relative"
+            />
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              —
+            </Text>
+          ),
+      },
+      {
         header:
           receivedOrder && onReceivedOrderChange
             ? () => (
@@ -176,11 +215,7 @@ export const EventsTable = ({
                 Showing the most recently loaded events.
               </Text>
             </div>
-            <Button
-              variant="secondary"
-              disabled={isRetrying}
-              onClick={onRetry}
-            >
+            <Button variant="secondary" disabled={isRetrying} onClick={onRetry}>
               <Icon variant={isRetrying ? 'Loading' : 'ArrowClockwiseIcon'} />
               {isRetrying ? 'Refreshing events' : 'Refresh events'}
             </Button>
@@ -189,6 +224,7 @@ export const EventsTable = ({
       ) : null}
       {filters}
       <Table
+        tableId="trigger-events"
         columns={columns}
         data={data}
         isLoading={isLoading}

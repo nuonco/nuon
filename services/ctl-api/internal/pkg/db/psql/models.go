@@ -157,6 +157,8 @@ func AllModels() []any {
 		&app.RunnerOperation{},
 		&app.RunnerGroupSettings{},
 		&app.Runner{},
+		&app.RunnerCloudIdentity{},
+		&app.RunnerAuthUsedSignature{},
 		&app.RunnerProcess{},
 		&app.RunnerProcessShutdown{},
 		&app.RunnerJob{},

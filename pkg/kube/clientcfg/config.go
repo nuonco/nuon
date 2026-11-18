@@ -13,6 +13,9 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/impersonate"
@@ -88,24 +91,11 @@ func ConfigForCluster(ctx context.Context, cInfo *kube.ClusterInfo) (*rest.Confi
 	}
 
 	if cInfo.Inline {
-		env, err := credentials.FetchEnv(ctx, cInfo.AWSAuth)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to fetch env")
-		}
-		for k, v := range env {
-			os.Setenv(k, v)
-		}
-
-		gen, err := token.NewGenerator(true, false)
+		tok, err := inlineAWSToken(ctx, cInfo)
 		if err != nil {
 			return nil, err
 		}
-
-		tok, err := gen.Get(cInfo.ID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get token")
-		}
-		cfg.BearerToken = tok.Token
+		cfg.BearerToken = tok
 		cfg.ExecProvider = nil
 	}
 
@@ -208,4 +198,41 @@ func ConfigForCluster(ctx context.Context, cInfo *kube.ClusterInfo) (*rest.Confi
 	}
 
 	return withRateLimits(cfg), nil
+}
+
+func inlineAWSToken(ctx context.Context, cInfo *kube.ClusterInfo) (string, error) {
+	if cInfo.AWSAuth == nil {
+		return "", fmt.Errorf("inline auth requires an aws auth configuration")
+	}
+
+	awsCfg, err := credentials.Fetch(ctx, cInfo.AWSAuth)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to fetch credentials")
+	}
+	if awsCfg.Credentials == nil {
+		return "", fmt.Errorf("no credentials were set on aws config")
+	}
+	if awsCfg.Region == "" {
+		return "", fmt.Errorf("aws region is required for inline eks auth")
+	}
+
+	if cInfo.TrustedRoleARN != "" {
+		awsCfg.Credentials = stscreds.NewAssumeRoleProvider(sts.NewFromConfig(awsCfg), cInfo.TrustedRoleARN)
+	}
+	awsCfg.Credentials = aws.NewCredentialsCache(awsCfg.Credentials)
+	if _, err := awsCfg.Credentials.Retrieve(ctx); err != nil {
+		return "", errors.Wrap(err, "unable to retrieve credentials")
+	}
+
+	gen, err := token.NewGenerator(true, false)
+	if err != nil {
+		return "", err
+	}
+
+	tok, err := gen.GetWithSTS(cInfo.ID, sts.NewFromConfig(awsCfg))
+	if err != nil {
+		return "", errors.Wrap(err, "unable to get token")
+	}
+
+	return tok.Token, nil
 }

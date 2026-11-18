@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/eventfilter"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
@@ -104,6 +105,10 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 	appConfigID := ""
 	if req.AppConfigID != nil {
 		appConfigID = *req.AppConfigID
+	}
+	if err := require.AppConfigInApp(ctx, s.db, runbook.AppID, appConfigID); err != nil {
+		ctx.Error(err)
+		return
 	}
 
 	if len(req.Triggers) == 0 {

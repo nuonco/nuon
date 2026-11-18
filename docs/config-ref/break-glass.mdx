@@ -26,4 +26,5 @@ title: 'Break Glass'
 | **`permissions_boundary`**<br/>string | [AWS] permissions boundary policy [AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) ... | **Optional** | `"./provision_boundary.json"`, `"./maintenance_boundary.json"` |
 | **`enabled_in_stack`**<br/>boolean | whether the role is on by default CloudFormation and Azure only. Defaults to true, or false for break glass roles. When false, the role is created once the customer turns it on | **Optional** | - |
 | **`named_policies`**<br/>array | named IAM policies to attach Named IAM policies to attach to this role, referenced by name. Use [[named_policies]] like [[policies]]. The name must match a named policy defined under permissions. T... | **Optional** | - |
+| **`eks_access`**<br/>AppAWSIAMRoleEKSAccess | [AWS] EKS access entry for the role [AWS CloudFormation only] EKS access entry the install stack creates alongside the role, so cluster access is granted and removed with the role. Break glass and ... | **Optional** | - |
 

@@ -83,6 +83,19 @@ export const BranchConfigsTable = ({
         },
       },
       {
+        id: 'commit',
+        accessorFn: (config) =>
+          config?.vcs_connection_commit?.message?.split('\n')[0] ?? '',
+        header: 'Commit message',
+        enableSorting: false,
+        meta: { defaultHidden: true },
+        cell: ({ getValue }) => (
+          <Text variant="subtext" theme="neutral">
+            {getValue<string>() || '—'}
+          </Text>
+        ),
+      },
+      {
         accessorKey: 'id',
         header: 'Config',
         enableSorting: false,
@@ -105,6 +118,7 @@ export const BranchConfigsTable = ({
 
   return (
     <Table<TAppConfig>
+      tableId="branch-configs"
       columns={columns}
       data={configs ?? []}
       enableSearch={false}

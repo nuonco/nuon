@@ -10,6 +10,7 @@ import type {
   TDiffViewer,
   TDiffWrap,
   TPlanSections,
+  TTableVersion,
 } from '@/providers/dashboard-preferences-provider'
 import type { TThemePreference } from '@/providers/theme-provider'
 
@@ -62,6 +63,17 @@ const sectionDescription = (description: string) => (
   </Text>
 )
 
+const betaLabel = (label: string) => (
+  <span className="inline-flex items-center gap-2">
+    <Text as="span" variant="label" theme="neutral">
+      {label}
+    </Text>
+    <Badge size="sm" theme="info">
+      Beta
+    </Badge>
+  </span>
+)
+
 const preferencesSchema = z.object({
   theme: z.enum([
     'system',
@@ -74,6 +86,7 @@ const preferencesSchema = z.object({
   showIds: z.enum(['hidden', 'shown']),
   installsTab: z.enum(['hidden', 'shown']),
   statusBar: z.enum(['hidden', 'shown']),
+  tableVersion: z.enum(['legacy', 'v2']),
   diffViewer: z.enum(['legacy', 'v2']),
   diffView: z.enum(['unified', 'split']),
   diffWrap: z.enum(['scroll', 'wrap']),
@@ -89,6 +102,8 @@ export interface IUserPreferencesPanel extends IPanel {
   onInstallsTabChange: (isEnabled: boolean) => void
   isStatusBarEnabled: boolean
   onStatusBarChange: (isEnabled: boolean) => void
+  tableVersion: TTableVersion
+  onTableVersionChange: (version: TTableVersion) => void
   diffViewer: TDiffViewer
   onDiffViewerChange: (viewer: TDiffViewer) => void
   diffView: TDiffView
@@ -109,6 +124,8 @@ export const UserPreferencesPanel = ({
   onInstallsTabChange,
   isStatusBarEnabled,
   onStatusBarChange,
+  tableVersion,
+  onTableVersionChange,
   diffViewer,
   onDiffViewerChange,
   diffView,
@@ -127,6 +144,7 @@ export const UserPreferencesPanel = ({
       ? ('shown' as const)
       : ('hidden' as const),
     statusBar: isStatusBarEnabled ? ('shown' as const) : ('hidden' as const),
+    tableVersion,
     diffViewer,
     diffView,
     diffWrap,
@@ -255,6 +273,28 @@ export const UserPreferencesPanel = ({
         </form.Field>
 
         <form.Field
+          name="tableVersion"
+          listeners={{
+            onChange: ({ value }) =>
+              onTableVersionChange(value as TTableVersion),
+          }}
+        >
+          {(field) => (
+            <FormRadioGroup
+              field={field}
+              label={betaLabel('Tables')}
+              description={sectionDescription(
+                'The new tables let you choose which columns to show and switch to a card grid. Small screens show the grid. Column and layout choices are saved per table in this browser.'
+              )}
+              options={[
+                { value: 'legacy', label: 'Current' },
+                { value: 'v2', label: 'New' },
+              ]}
+            />
+          )}
+        </form.Field>
+
+        <form.Field
           name="diffViewer"
           listeners={{
             onChange: ({ value }) => onDiffViewerChange(value as TDiffViewer),
@@ -263,16 +303,7 @@ export const UserPreferencesPanel = ({
           {(field) => (
             <FormRadioGroup
               field={field}
-              label={
-                <span className="inline-flex items-center gap-2">
-                  <Text as="span" variant="label" theme="neutral">
-                    Plan diff viewer
-                  </Text>
-                  <Badge size="sm" theme="info">
-                    Beta
-                  </Badge>
-                </span>
-              }
+              label={betaLabel('Plan diff viewer')}
               description={sectionDescription(
                 'The new viewer adds search, chunk collapsing and split view. The plan graphs and attribute tree are only in the current viewer.'
               )}
