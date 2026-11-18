@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 
 	awstypes "github.com/nuonco/nuon/pkg/types/aws"
 )
@@ -58,6 +60,63 @@ func GetPresignedSTSRequest(ctx context.Context) (*awstypes.PresignedRequest, er
 	}
 
 	headers := make(map[string]string)
+	for key, values := range presignedReq.SignedHeader {
+		if len(values) > 0 {
+			headers[key] = values[0]
+		}
+	}
+
+	return &awstypes.PresignedRequest{
+		Method:  presignedReq.Method,
+		URL:     presignedReq.URL,
+		Headers: headers,
+	}, nil
+}
+
+const (
+	boundServerIDHeader = "X-Nuon-Server-ID"
+	boundRunnerIDHeader = "X-Nuon-Runner-ID"
+	boundTokenTTLHeader = "X-Nuon-Token-TTL"
+)
+
+// PresignBoundSTS creates a presigned STS GetCallerIdentity request whose signature
+// covers the runner API host, the runner ID and the requested token lifetime, so the
+// request is only usable against that API, for that runner, and for a token of that
+// lifetime. The identity it proves is whatever credentials cfg
+// carries. The region comes from cfg (AWS_REGION, which IRSA and EKS Pod Identity
+// inject) and falls back to IMDS so EC2 instances need no extra configuration.
+func PresignBoundSTS(ctx context.Context, cfg aws.Config, serverID, runnerID string, tokenTTL time.Duration) (*awstypes.PresignedRequest, error) {
+	if serverID == "" || runnerID == "" {
+		return nil, fmt.Errorf("server ID and runner ID are required for a bound STS request")
+	}
+	if tokenTTL < time.Second {
+		return nil, fmt.Errorf("a token lifetime of at least one second is required for a bound STS request")
+	}
+
+	if cfg.Region == "" {
+		region, err := getRegionFromIMDS(ctx)
+		if err != nil {
+			return nil, err
+		}
+		cfg.Region = region
+	}
+
+	presignClient := sts.NewPresignClient(sts.NewFromConfig(cfg))
+	presignedReq, err := presignClient.PresignGetCallerIdentity(ctx, &sts.GetCallerIdentityInput{},
+		func(po *sts.PresignOptions) {
+			po.ClientOptions = append(po.ClientOptions, func(o *sts.Options) {
+				o.APIOptions = append(o.APIOptions,
+					smithyhttp.AddHeaderValue(boundServerIDHeader, serverID),
+					smithyhttp.AddHeaderValue(boundRunnerIDHeader, runnerID),
+					smithyhttp.AddHeaderValue(boundTokenTTLHeader, strconv.FormatInt(int64(tokenTTL/time.Second), 10)),
+				)
+			})
+		})
+	if err != nil {
+		return nil, fmt.Errorf("failed to presign bound GetCallerIdentity: %w", err)
+	}
+
+	headers := make(map[string]string, len(presignedReq.SignedHeader))
 	for key, values := range presignedReq.SignedHeader {
 		if len(values) > 0 {
 			headers[key] = values[0]

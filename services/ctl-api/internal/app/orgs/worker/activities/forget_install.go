@@ -101,6 +101,12 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 
 	if len(runnerIDs) > 0 {
 		if res := a.db.WithContext(ctx).
+			Where("runner_id IN ?", runnerIDs).
+			Delete(&app.RunnerCloudIdentity{}); res.Error != nil {
+			return dbgenerics.TemporalGormError(res.Error, "unable to delete runner cloud identities: %w")
+		}
+
+		if res := a.db.WithContext(ctx).
 			Where("id IN ?", runnerIDs).
 			Delete(&app.Runner{}); res.Error != nil {
 			return dbgenerics.TemporalGormError(res.Error, "unable to delete runners: %w")
