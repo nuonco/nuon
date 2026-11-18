@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -192,6 +193,10 @@ func (s *service) CreatePulumiComponentConfig(ctx *gin.Context) {
 func (s *service) createPulumiComponentConfig(ctx context.Context, cmpID string, req *CreatePulumiComponentConfigRequest) (*app.PulumiComponentConfig, error) {
 	parentCmp, err := s.getComponentWithParents(ctx, cmpID)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := require.AppConfigInApp(ctx, s.db, parentCmp.AppID, req.AppConfigID); err != nil {
 		return nil, err
 	}
 
