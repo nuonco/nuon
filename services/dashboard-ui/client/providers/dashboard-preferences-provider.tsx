@@ -13,6 +13,7 @@ export type TDiffViewer = 'legacy' | 'v2'
 export type TDiffWrap = 'scroll' | 'wrap'
 export type TDiffView = 'unified' | 'split'
 export type TPlanSections = 'collapsed' | 'expanded'
+export type TTableVersion = 'legacy' | 'v2'
 
 export const DIFF_VIEWERS: readonly TDiffViewer[] = ['legacy', 'v2']
 export const DIFF_WRAPS: readonly TDiffWrap[] = ['scroll', 'wrap']
@@ -22,12 +23,15 @@ export const PLAN_SECTIONS: readonly TPlanSections[] = [
   'expanded',
 ]
 
+export const TABLE_VERSIONS: readonly TTableVersion[] = ['legacy', 'v2']
+
 export const SHOW_IDS_STORAGE_KEY = 'nuon-show-ids'
 
 export const DEFAULT_DIFF_VIEWER: TDiffViewer = 'legacy'
 export const DEFAULT_DIFF_WRAP: TDiffWrap = 'scroll'
 export const DEFAULT_DIFF_VIEW: TDiffView = 'unified'
 export const DEFAULT_PLAN_SECTIONS: TPlanSections = 'collapsed'
+export const DEFAULT_TABLE_VERSION: TTableVersion = 'legacy'
 
 function readStoredShowIds(): boolean | undefined {
   try {
@@ -60,6 +64,8 @@ export interface IDashboardPreferencesContext {
   setDiffView: (view: TDiffView) => void
   planSections: TPlanSections
   setPlanSections: (sections: TPlanSections) => void
+  tableVersion: TTableVersion
+  setTableVersion: (version: TTableVersion) => void
   resetPreferences: () => void
 }
 
@@ -102,6 +108,11 @@ export const DashboardPreferencesProvider = ({
     PLAN_SECTIONS,
     DEFAULT_PLAN_SECTIONS
   )
+  const [tableVersion, setTableVersion] = useStoredViewMode<TTableVersion>(
+    'nuon-table-version',
+    TABLE_VERSIONS,
+    DEFAULT_TABLE_VERSION
+  )
 
   const value = useMemo(
     () => ({
@@ -128,6 +139,8 @@ export const DashboardPreferencesProvider = ({
       setDiffView,
       planSections,
       setPlanSections,
+      tableVersion,
+      setTableVersion,
       resetPreferences: () => {
         writeStoredShowIds(undefined)
         setStoredShowIds(undefined)
@@ -139,6 +152,7 @@ export const DashboardPreferencesProvider = ({
         setDiffWrap(DEFAULT_DIFF_WRAP)
         setDiffView(DEFAULT_DIFF_VIEW)
         setPlanSections(DEFAULT_PLAN_SECTIONS)
+        setTableVersion(DEFAULT_TABLE_VERSION)
       },
     }),
     [
@@ -153,6 +167,8 @@ export const DashboardPreferencesProvider = ({
       setDiffView,
       planSections,
       setPlanSections,
+      tableVersion,
+      setTableVersion,
     ]
   )
 
